@@ -11,6 +11,7 @@ on:
 
 jobs:
   analyze:
+    if: false # false to skip job during debug
     name: Analyze
     runs-on: ubuntu-latest
     permissions:
