@@ -124,6 +124,7 @@ jobs:
 
     - name: Get dependencies
       run: |
+        cd src
         go mod download
         go version
 
