@@ -26,7 +26,6 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 
 	"github.com/shirou/gopsutil/v3/disk"
@@ -4845,19 +4844,6 @@ func GetGoPsutilDiskTotals() ([]map[string]interface{}, error) {
 	retMap["write_count"] = writes
 
 	return []map[string]interface{}{retMap}, nil
-}
-
-func getPathUnderlyingDeviceId(path string) (uint64, error) {
-	fp, err := os.Open(path)
-	if err != nil {
-		return 0, err
-	}
-	fi, err := fp.Stat()
-	if err != nil {
-		return 0, err
-	}
-	stat := fi.Sys().(*syscall.Stat_t)
-	return stat.Dev, nil
 }
 
 // connects actually to the instance to determine PG relevant disk paths / mounts
