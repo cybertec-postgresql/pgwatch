@@ -128,10 +128,10 @@ jobs:
         go mod download
         go version
 
-    - name: GolangCI-Lint
-      uses: golangci/golangci-lint-action@v3
-      with:
-        version: latest
+    # - name: GolangCI-Lint
+    #   uses: golangci/golangci-lint-action@v3
+    #   with:
+    #     version: latest
         
     - name: Test
       run: |
