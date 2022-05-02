@@ -1,0 +1,157 @@
+name: Go Build & Test
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+
+  test-postgresql-windows:
+    if: true # false to skip job during debug
+    name: Test on Windows
+    runs-on: windows-latest
+    steps:
+
+    # - name: Start PostgreSQL on Windows
+    #   run: |
+    #     $pgService = Get-Service -Name postgresql*
+    #     Set-Service -InputObject $pgService -Status running -StartupType automatic
+    #     Start-Process -FilePath "$env:PGBIN\pg_isready" -Wait -PassThru
+
+    # - name: Create scheduler user on Windows
+    #   run: |
+    #     & $env:PGBIN\psql --command="CREATE USER scheduler PASSWORD 'somestrong'" --command="\du"
+
+    # - name: Create timetable database
+    #   run: |
+    #     & $env:PGBIN\createdb --owner=scheduler timetable
+    #     $env:PGPASSWORD = 'somestrong'
+    #     & $env:PGBIN\psql --username=scheduler --host=localhost --list timetable
+
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Set up Golang
+      uses: actions/setup-go@v3
+      with:
+        go-version: '1.18'
+
+    - name: Test
+      run: |
+        cd src
+        go build
+        go test -v -p 1 -parallel 1 -failfast ./...
+
+
+
+
+  test-postgresql-macos:
+    if: true # false to skip job during debug
+    name: Test on MacOS
+    runs-on: macos-latest
+    steps:
+
+    # - name: Start PostgreSQL on MacOS
+    #   run: |
+    #     brew services start postgresql
+    #     echo "Check PostgreSQL service is running"
+    #     i=10
+    #     COMMAND='pg_isready'
+    #     while [ $i -gt 0 ]; do
+    #         echo "Check PostgreSQL service status"
+    #         eval $COMMAND && break
+    #         ((i--))
+    #         if [ $i == 0 ]; then
+    #             echo "PostgreSQL service not ready, all attempts exhausted"
+    #             exit 1
+    #         fi
+    #         echo "PostgreSQL service not ready, wait 10 more sec, attempts left: $i"
+    #         sleep 10
+    #     done
+
+    # # Homebrew creates an account with the same name as the installing user, but no password
+    # - name: Create scheduler user
+    #   run: |
+    #     psql --command="CREATE USER scheduler PASSWORD 'somestrong'" --command="\du" postgres
+
+    # - name: Create timetable database
+    #   run: |
+    #     createdb --owner=scheduler timetable
+    #     PGPASSWORD=somestrong psql --username=scheduler --host=localhost --list timetable
+
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Set up Golang
+      uses: actions/setup-go@v3
+      with:
+        go-version: '1.18'
+
+    - name: Test
+      run: |
+        cd src
+        go build
+        go test -v -p 1 -parallel 1 -failfast ./...
+
+
+
+  test-postgresql-ubuntu:
+    if: true # false to skip job during debug
+    name: Test and Build on Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+
+    # - name: Start PostgreSQL on Ubuntu
+    #   run: |
+    #     sudo systemctl start postgresql.service
+    #     pg_isready
+
+    # - name: Create scheduler user
+    #   run: |
+    #     sudo -u postgres psql --command="CREATE USER scheduler PASSWORD 'somestrong'" --command="\du"
+
+    # - name: Create timetable database
+    #   run: |
+    #     sudo -u postgres createdb --owner=scheduler timetable
+    #     PGPASSWORD=somestrong psql --username=scheduler --host=localhost --list timetable
+
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Set up Golang
+      uses: actions/setup-go@v3
+      with:
+        go-version: '1.18'
+
+    - name: Get dependencies
+      run: |
+        go mod download
+        go version
+
+    - name: GolangCI-Lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        
+    - name: Test
+      run: |
+        cd src
+        go build
+        go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./...
+
+    - name: Convert coverage to lcov
+      uses: jandelgado/gcov2lcov-action@v1.0.8
+      with:
+          infile: profile.cov
+          outfile: coverage.lcov
+
+    # - name: Coveralls
+    #   uses: coverallsapp/github-action@master
+    #   with:
+    #     github-token: ${{ secrets.GITHUB_TOKEN }}
+    #     path-to-lcov: coverage.lcov
+
+    # - name: Run GoReleaser
+    #   uses: goreleaser/goreleaser-action@v2
+    #   with:
+    #     version: latest
+    #     args: release --snapshot --skip-publish --rm-dist
