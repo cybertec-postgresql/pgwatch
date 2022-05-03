@@ -1,21 +1,16 @@
-[![Documentation Status](https://readthedocs.org/projects/pgwatch2/badge/?version=latest)](https://pgwatch2.readthedocs.io/en/latest/?badge=latest)
-[![Release](https://img.shields.io/github/v/release/cybertec-postgresql/pgwatch2?include_prereleases)](https://github.com/cybertec-postgresql/pgwatch2/releases)
-[![Github All Releases](https://img.shields.io/github/downloads/cybertec-postgresql/pgwatch2/total?style=flat-square)](https://github.com/cybertec-postgresql/pgwatch2/releases)
-[![Docker Pulls](https://img.shields.io/docker/pulls/cybertec/pgwatch2-nonroot)](https://hub.docker.com/search?q=cybertec%20pgwatch2&type=image)
-
-# pgwatch2
+# pgwatch3 WIP. Do not use!
 
 Flexible self-contained PostgreSQL metrics monitoring/dashboarding solution. Supports monitoring PG versions 9.0 to 14 out of the box.
 
-# Demo
+## Demo
 
 [https://demo.pgwatch.com/](https://demo.pgwatch.com/)
 
-# Documentation
+## Documentation
 
 [https://pgwatch2.readthedocs.io/en/latest/](https://pgwatch2.readthedocs.io/en/latest/)
 
-# Quick Start
+## Quick Start
 
 For the fastest setup experience [Docker images](https://hub.docker.com/search?q=cybertec%20pgwatch2&type=image) are provided via Docker Hub (for a Docker quickstart see
 [here](https://docs.docker.com/get-started/)). For custom setups see the according [chapter](https://pgwatch2.readthedocs.io/en/latest/custom_installation.html)
@@ -39,7 +34,7 @@ parameter when launching the container.
 The behaviour of the Docker images can be customized in many ways - for a complete list of all supported Docker environment
 variables see [ENV_VARIABLES.md](https://github.com/cybertec-postgresql/pgwatch2/blob/master/ENV_VARIABLES.md).
 
-# Main features
+## Main features
 
 * Non-invasive setup, no extensions nor superuser rights required for the base functionality
 * Intuitive metrics presentation using the Grafana dashboarding engine with optional Alerting
@@ -56,7 +51,7 @@ variables see [ENV_VARIABLES.md](https://github.com/cybertec-postgresql/pgwatch2
 * Very low resource requirements for the collector - 1 CPU core can handle ~3k monitored DBs at 1GB RAM usage
 * Log parsing capabilities when deployed locally in "push" mode
 
-# Component diagram for the default Docker setup
+## Component diagram for the default Docker setup
 
 pgwatch2 can be deployed in various configurations, as all components are "loosely coupled". This means that you can very
 well reuse your existing PostgreSQL or Grafana installations, adding only pgwatch2 specific components - see [here](https://pgwatch2.readthedocs.io/en/latest/components.html)
