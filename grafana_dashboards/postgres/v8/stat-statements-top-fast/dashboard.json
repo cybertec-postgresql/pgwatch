@@ -164,7 +164,6 @@
       "targets": [
         {
           "alias": "ass",
-          "dsType": "influxdb",
           "format": "table",
           "group": [],
           "groupBy": [
@@ -329,7 +328,6 @@
       "targets": [
         {
           "alias": "ass",
-          "dsType": "influxdb",
           "format": "table",
           "group": [],
           "groupBy": [
@@ -511,7 +509,6 @@
       "targets": [
         {
           "alias": "ass",
-          "dsType": "influxdb",
           "format": "table",
           "group": [],
           "groupBy": [
@@ -668,7 +665,6 @@
       ],
       "targets": [
         {
-          "dsType": "influxdb",
           "format": "table",
           "group": [],
           "groupBy": [
@@ -825,7 +821,6 @@
       ],
       "targets": [
         {
-          "dsType": "influxdb",
           "format": "table",
           "group": [],
           "groupBy": [
@@ -1000,7 +995,6 @@
       ],
       "targets": [
         {
-          "dsType": "influxdb",
           "format": "table",
           "group": [],
           "groupBy": [
@@ -1192,7 +1186,6 @@
       ],
       "targets": [
         {
-          "dsType": "influxdb",
           "format": "table",
           "group": [],
           "groupBy": [
