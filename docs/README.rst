@@ -14,12 +14,12 @@ For the fastest setup experience Docker images are provided via Docker Hub (if n
 For custom setups see the :ref:`Custom installations <custom_installation>` paragraph below or turn to the pre-built DEB / RPM / Tar
 packages on the Github Releases `page <https://github.com/cybertec-postgresql/pgwatch2/releases>`_.
 
-Launching the latest pgwatch2 Docker image with built-in InfluxDB metrics storage DB:
+Launching the latest pgwatch2 Docker image with built-in Postgres metrics storage DB:
 
 ::
 
     # run the latest Docker image, exposing Grafana on port 3000 and the administrative web UI on 8080
-    docker run -d -p 3000:3000 -p 8080:8080 -e PW2_TESTDB=true --name pw2 cybertec/pgwatch2
+    docker run -d -p 3000:3000 -p 8080:8080 -e PW2_TESTDB=true --name pw2 cybertec/pgwatch2-postgres
 
 After some minutes you could for example open the `"DB overview" <http://127.0.0.1:3000/dashboard/db/db-overview>`_ dashboard and start
 looking at metrics in Grafana. For defining your own dashboards or making changes you need to log in as admin (default

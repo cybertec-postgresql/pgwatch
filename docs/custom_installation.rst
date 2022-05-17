@@ -153,11 +153,10 @@ All examples here assume Ubuntu as OS - but it's basically the same for RedHat f
          sudo apt install python3 python3-pip
          cd /etc/pgwatch2/webpy/
          sudo pip3 install -U -r requirements_pg_metrics.txt
-         # NB! Replace with "requirements_influx_metrics.txt" if using InfluxDB to store metrics
 
    #. Exposing component logs (optional)
 
-      For use cases where exposing the component (Grafana, Postgres, Influx, gatherer daemon, Web UI itself) logs over the
+      For use cases where exposing the component (Grafana, Postgres, gatherer daemon, Web UI itself) logs over the
       "/logs" endpoint remotely is wanted, then in the custom setup mode some actual code changes are needed to specify
       where logs of all components are situated - see top of the pgwatch2.py file for that. Defaults are set to work with the Docker image.
 
@@ -206,18 +205,6 @@ All examples here assume Ubuntu as OS - but it's basically the same for RedHat f
 
       Another tip to configure connection strings inside SystemD service files is to use the "systemd-escape" utility to
       escape special characters like spaces etc if using the LibPQ connect string syntax rather than JDBC syntax.
-
-   #. Alternative start command when using InfluxDB storage:
-
-      ::
-
-        pgwatch2-daemon \
-          --host=localhost --user=pgwatch2 --dbname=pgwatch2 \
-          --datastore=influx \
-          --ihost=my-influx-db --idbname=pgwatch2 --iuser=pgwatch2 --ipassword=xyz
-
-      NB! pgwatch2 has also support for writing metrics into two separate Influx databases in parallel as the Open Source
-      version has no HA options comparable to Postgres.
 
    #. Monitor the console or log output for any problems
 
@@ -328,59 +315,3 @@ Relevant gatherer parameters / env. vars: ``--config / PW2_CONFIG`` and ``--metr
 For details on individual steps like installing pgwatch2 see the above paragraph.
 
 NB! The Web UI component cannot be used in file based mode.
-
-Using InfluxDB for metrics storage
-----------------------------------
-
-An alternative flow for the above examples would be to replace Postgres metrics storage with InfluxDB. This might be a
-good idea when you have hundreds of databases to monitor or want to use very aggressive intervals as InfluxDB has the
-smallest disk footprint of the supported options (with more CPU / RAM usage though). See the :ref:`Sizing recommendations <sizing_recommendations>`
-chapter for indicative numbers.
-
-#. Install InfluxDB (the Open Source version)
-
-   #. From project package repositories:
-
-     Follow the instructions from https://docs.influxdata.com/influxdb/latest/introduction/install/ or just download and
-     install the latest package:
-
-   #. Or directly from the packages:
-
-      ::
-
-        INFLUX_LATEST=$(curl -so- https://api.github.com/repos/influxdata/influxdb/releases/latest \
-                          | jq .tag_name | grep -oE '[0-9\.]+')
-        wget https://dl.influxdata.com/influxdb/releases/influxdb_${INFLUX_LATEST}_amd64.deb
-        sudo dpkg -i influxdb_${INFLUX_LATEST}_amd64.deb
-
-#. Review / adjust the config and start the server
-
-   Take a look at the default config located at */etc/influxdb/influxdb.conf* and edit per use case / hardware needs. Most
-   importantly one should enable authentication if not running InfluxDB on the same host as the collector or to set the server
-   to listen only on localhost (the *bind-address* parameter).
-
-   Also changing the *wal-fsync-delay* parameter usually makes sense to get better performance, as metric data is usually
-   something where we can in the worst case lose the latest half a second of data without problems.
-
-   See `here <https://docs.influxdata.com/influxdb/latest/administration/config/>`__ for more information on configuring InfluxDB.
-
-#. Create a non-root user, a metrics database and a retention policy (optional)
-
-   If security is topic one should create a separate non-root login user (e.g. "pgwatch2") to be used by the metrics gathering
-   daemon to store metrics. See `here <https://docs.influxdata.com/influxdb/latest/administration/authentication_and_authorization/>`__
-   for details on creating new users.
-
-   If going that road one also needs to create manually a database and a retention policy to go with it as by default old
-   metrics data is not purged. These tasks by the way are also tried by the pgwatch2 daemon automatically, but will fail
-   if not an admin user.
-
-   Sample commands:
-
-   ::
-
-     CREATE DATABASE pgwatch2 WITH DURATION 30d REPLICATION 1 SHARD DURATION 1d NAME pgwatch2_def_ret
-     CREATE USER pgwatch2 WITH PASSWORD 'qwerty'
-     GRANT READ ON pgwatch2 TO pgwatch2
-     GRANT WRITE ON pgwatch2 TO pgwatch2
-
-Default port for the InfluxDB client API: **8086**

@@ -18,7 +18,6 @@ Some points on security:
 
 * Viewing Grafana dashboards by default doesn't require login. Editing needs a password. Configurable via env. variables.
 
-* InfluxDB has no authentication in Docker setup, so one should just not expose the ports when having concerns.
 
 * Dashboards based on the "stat_statements" metric (Stat Statement Overview / Top) expose actual queries.
 

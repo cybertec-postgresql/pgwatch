@@ -60,7 +60,6 @@
       "targets": [
         {
           "alias": "total_relation_size",
-          "dsType": "influxdb",
           "format": "time_series",
           "group": [],
           "groupBy": [
@@ -211,7 +210,6 @@
       "targets": [
         {
           "alias": "seq_scans",
-          "dsType": "influxdb",
           "format": "time_series",
           "group": [],
           "groupBy": [
@@ -364,7 +362,6 @@
       "targets": [
         {
           "alias": "INS",
-          "dsType": "influxdb",
           "format": "time_series",
           "group": [],
           "groupBy": [
@@ -520,7 +517,6 @@
       "targets": [
         {
           "alias": "Heap",
-          "dsType": "influxdb",
           "format": "time_series",
           "group": [],
           "groupBy": [
@@ -678,7 +674,6 @@
       "targets": [
         {
           "alias": "$tag_index_name",
-          "dsType": "influxdb",
           "format": "time_series",
           "group": [],
           "groupBy": [

@@ -33,13 +33,12 @@ way to get the latest components would be just to launch new container and impor
   psql -p5432 -U pgwatch2 -d pgwatch2 -c "\copy monitored_db from 'monitored_db.copy'"
 
 If metrics data and other settings like custom dashboards need to be preserved then some more steps are needed, but basically
-it's about pulling InfluxDB / Postgres backups and restoring them into the new container - see the take_backup.sh
-`script <https://github.com/cybertec-postgresql/pgwatch2/blob/master/take_backup.sh>`__ for an example with InfluxDB storage.
+it's about pulling Postgres backups and restoring them into the new container.
 
 A tip: to make the restore process easier it would already make sense to mount the host folder with the backups in it on the
 new container with "-v ~/pgwatch2_backups:/pgwatch2_backups:rw,z" when starting the Docker image. Otherwise one needs to set
-up SSH or use something like S3 for example. Also note that ports 5432 and 8088 need to be exposed to take backups
-outside of Docker for Postgres and InfluxDB respectively.
+up SSH or use something like S3 for example. Also note that port 5432 need to be exposed to take backups
+outside of Docker for Postgres respectively.
 
 With volumes
 ~~~~~~~~~~~~
@@ -58,7 +57,7 @@ nor dashboard changes and they need to be updated separately.
 Updating without Docker
 -----------------------
 
-For a custom installation there's quite some freedom in doing updates - as components (Grafana, InfluxDB, PostgreSQL) are
+For a custom installation there's quite some freedom in doing updates - as components (Grafana, PostgreSQL) are
 loosely coupled, they can be updated any time without worrying too much about the other components. Only "tightly coupled" components are the
 pgwatch2 metrics collector, config DB and the optional Web UI - if the pgwatch2 config is kept in the database. If YAML based
 approach (see details :ref:`here <yaml_setup>`) is used, then things are even more simple - the pgwatch2 daemon can be updated
@@ -82,16 +81,6 @@ Updating the config / metrics DB version
 ----------------------------------------
 
 Database updates can be quite complex, with many steps, so it makes sense to follow the manufacturer's instructions here.
-
-For InfluxDB typically something like that is enough though (assuming Debian based here):
-
-::
-
-    influxd version # check current version
-    INFLUX_LATEST=$(curl -so- https://api.github.com/repos/influxdata/influxdb/releases/latest \
-                      | jq .tag_name | grep -oE '[0-9\.]+')
-    wget https://dl.influxdata.com/influxdb/releases/influxdb_${INFLUX_LATEST}_amd64.deb
-    sudo dpkg -i influxdb_${INFLUX_LATEST}_amd64.deb
 
 For PostgreSQL one should distinguish between minor version updates and major version upgrades. Minor updates are quite
 straightforward and problem-free, consisting of running something like:
