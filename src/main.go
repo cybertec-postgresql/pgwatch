@@ -32,7 +32,6 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 
 	"github.com/coreos/go-systemd/daemon"
-	client "github.com/influxdata/influxdb1-client/v2"
 	"github.com/jessevdk/go-flags"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -213,7 +212,6 @@ const GRAPHITE_METRICS_PREFIX string = "pgwatch2"
 const PERSIST_QUEUE_MAX_SIZE = 10000 // storage queue max elements. when reaching the limit, older metrics will be dropped.
 // actual requirements depend a lot of metric type and nr. of obects in schemas,
 // but 100k should be enough for 24h, assuming 5 hosts monitored with "exhaustive" preset config. this would also require ~2 GB RAM per one Influx host
-const DATASTORE_INFLUX = "influx"
 const DATASTORE_GRAPHITE = "graphite"
 const DATASTORE_JSON = "json"
 const DATASTORE_POSTGRES = "postgres"
@@ -915,124 +913,6 @@ func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
 		monitoredDBs = append(monitoredDBs)
 	}
 	return monitoredDBs, err
-}
-
-func SendToInflux(connect_str, conn_id string, storeMessages []MetricStoreMessage) error {
-	if len(storeMessages) == 0 {
-		return nil
-	}
-	skipSSLCertVerify := InfluxSkipSSLCertVerify // conn_id == "0"
-	if conn_id == "1" {
-		skipSSLCertVerify = InfluxSkipSSLCertVerify2
-	}
-	ts_warning_printed := false
-	retries := 1 // 1 retry
-retry:
-
-	c, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:               connect_str,
-		Username:           opts.InfluxUser,
-		Password:           opts.InfluxPassword,
-		InsecureSkipVerify: skipSSLCertVerify,
-	})
-
-	if err != nil {
-		log.Error("Error connecting to Influx", conn_id, ": ", err)
-		if retries > 0 {
-			retries--
-			time.Sleep(time.Millisecond * 200)
-			goto retry
-		}
-		atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-		return err
-	}
-	defer c.Close()
-
-	bp, err := client.NewBatchPoints(client.BatchPointsConfig{Database: opts.InfluxDbname})
-
-	if err != nil {
-		atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-		return err
-	}
-	rows_batched := 0
-	total_rows := 0
-
-	for _, msg := range storeMessages {
-		if msg.Data == nil || len(msg.Data) == 0 {
-			continue
-		}
-		log.Debugf("SendToInflux %s data[0] of %d [%s:%s]: %v", conn_id, len(msg.Data), msg.DBUniqueName, msg.MetricName, msg.Data[0])
-
-		for _, dr := range msg.Data {
-			// Create a point and add to batch
-			var epoch_time time.Time
-			var epoch_ns int64
-			tags := make(map[string]string)
-			fields := make(map[string]interface{})
-
-			total_rows += 1
-			tags["dbname"] = msg.DBUniqueName
-
-			if msg.CustomTags != nil {
-				for k, v := range msg.CustomTags {
-					tags[k] = fmt.Sprintf("%v", v)
-				}
-			}
-
-			for k, v := range dr {
-				if v == nil || v == "" {
-					continue // not storing NULLs
-				}
-				if k == EPOCH_COLUMN_NAME {
-					epoch_ns = v.(int64)
-				} else if strings.HasPrefix(k, TAG_PREFIX) {
-					tag := k[4:]
-					tags[tag] = fmt.Sprintf("%v", v)
-				} else {
-					fields[k] = v
-				}
-			}
-
-			if epoch_ns == 0 {
-				if !ts_warning_printed && msg.MetricName != SPECIAL_METRIC_PGBOUNCER_STATS {
-					log.Warning("No timestamp_ns found, (gatherer) server time will be used. measurement:", msg.MetricName)
-					ts_warning_printed = true
-				}
-				epoch_time = time.Now()
-			} else {
-				epoch_time = time.Unix(0, epoch_ns)
-			}
-
-			pt, err := client.NewPoint(msg.MetricName, tags, fields, epoch_time)
-
-			if err != nil {
-				log.Errorf("Calling NewPoint() of Influx driver failed. Datapoint \"%s\" dropped. Err: %s", dr, err)
-				atomic.AddUint64(&totalMetricsDroppedCounter, 1)
-				continue
-			}
-
-			bp.AddPoint(pt)
-			rows_batched += 1
-		}
-	}
-	t1 := time.Now()
-	err = c.Write(bp)
-	t_diff := time.Since(t1)
-	if err == nil {
-		if len(storeMessages) == 1 {
-			log.Infof("wrote %d/%d rows to InfluxDB %s for [%s:%s] in %.1f ms", rows_batched, total_rows,
-				conn_id, storeMessages[0].DBUniqueName, storeMessages[0].MetricName, float64(t_diff.Nanoseconds())/1000000.0)
-		} else {
-			log.Infof("wrote %d/%d rows from %d metric sets to InfluxDB %s in %.1f ms", rows_batched, total_rows,
-				len(storeMessages), conn_id, float64(t_diff.Nanoseconds())/1000000.0)
-		}
-		atomic.StoreInt64(&lastSuccessfulDatastoreWriteTimeEpoch, t1.Unix())
-		atomic.AddUint64(&datastoreTotalWriteTimeMicroseconds, uint64(t_diff.Microseconds()))
-		atomic.AddUint64(&datastoreWriteSuccessCounter, 1)
-	} else {
-		atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-	}
-	return err
 }
 
 func SendToPostgres(storeMessages []MetricStoreMessage) error {
@@ -1851,9 +1731,7 @@ func ProcessRetryQueue(data_source, conn_str, conn_ident string, retry_queue *li
 		log.Debug("Processing retry_queue", conn_ident, ". Items in retry_queue: ", retry_queue.Len())
 		msg := retry_queue.Back().Value.([]MetricStoreMessage)
 
-		if data_source == DATASTORE_INFLUX {
-			err = SendToInflux(conn_str, conn_ident, msg)
-		} else if data_source == DATASTORE_POSTGRES {
+		if data_source == DATASTORE_POSTGRES {
 			err = SendToPostgres(msg)
 		} else if data_source == DATASTORE_GRAPHITE {
 			for _, m := range msg {
@@ -1867,22 +1745,7 @@ func ProcessRetryQueue(data_source, conn_str, conn_ident string, retry_queue *li
 			log.Fatal("Invalid datastore:", data_source)
 		}
 		if err != nil {
-			if data_source == DATASTORE_INFLUX && strings.Contains(err.Error(), "unable to parse") {
-				if len(msg) == 1 { // can only pinpoint faulty input data without batching
-					log.Errorf("Dropping metric [%s:%s] as Influx is unable to parse the data: %v",
-						msg[0].DBUniqueName, msg[0].MetricName, msg[0].Data) // ignore data points consisting of anything else than strings and floats
-					atomic.AddUint64(&totalMetricsDroppedCounter, 1)
-				} else {
-					log.Errorf("Dropping %d metric-sets as Influx is unable to parse the data: %s", len(msg), err)
-					atomic.AddUint64(&totalMetricsDroppedCounter, uint64(len(msg)))
-				}
-			} else if data_source == DATASTORE_INFLUX && strings.Contains(err.Error(), "partial write: max-values-per-tag limit exceeded") {
-				log.Errorf("Partial write into Influx for [%s:%s], check / increase the max-values-per-tag in InfluxDB config: %v",
-					msg[0].DBUniqueName, msg[0].MetricName, err)
-				atomic.AddUint64(&totalMetricsDroppedCounter, 1)
-			} else {
-				return err // still gone, retry later
-			}
+			return err // still gone, retry later
 		}
 		retry_queue.Remove(retry_queue.Back())
 		iterations_done++
@@ -2005,8 +1868,6 @@ func MetricsPersister(data_store string, storage_ch <-chan []MetricStoreMessage)
 						msg := msg_arr[0]
 						PromAsyncCacheAddMetricData(msg.DBUniqueName, msg.MetricName, msg_arr)
 						log.Infof("[%s:%s] Added %d rows to Prom cache", msg.DBUniqueName, msg.MetricName, len(msg.Data))
-					} else if data_store == DATASTORE_INFLUX {
-						err = SendToInflux(InfluxConnectStrings[i], strconv.Itoa(i), msg_arr)
 					} else if data_store == DATASTORE_POSTGRES {
 						err = SendToPostgres(msg_arr)
 						if err != nil && strings.Contains(err.Error(), "does not exist") {
@@ -2030,30 +1891,9 @@ func MetricsPersister(data_store string, storage_ch <-chan []MetricStoreMessage)
 					last_try[i] = time.Now()
 
 					if err != nil {
-						if opts.Datastore == DATASTORE_INFLUX {
-							if strings.Contains(err.Error(), "unable to parse") { // TODO move to a separate func
-								if len(msg_arr) == 1 {
-									log.Errorf("Dropping metric [%s:%s] as Influx is unable to parse the data: %s",
-										msg_arr[0].DBUniqueName, msg_arr[0].MetricName, msg_arr[0].Data) // ignore data points consisting of anything else than strings and floats
-								} else {
-									log.Errorf("Dropping %d metric-sets as Influx is unable to parse the data: %s", len(msg_arr), err)
-									// TODO loop over single metrics in case of errors?
-								}
-							} else if strings.Contains(err.Error(), "partial write: max-values-per-tag limit exceeded") {
-								if len(msg_arr) == 1 {
-									log.Errorf("Partial write into Influx for [%s:%s], check / increase the max-values-per-tag in InfluxDB config: %v",
-										msg_arr[0].DBUniqueName, msg_arr[0].MetricName, err)
-								} else {
-									log.Errorf("Partial write into Influx, check / increase the max-values-per-tag in InfluxDB config: %v", err)
-								}
-							} else {
-								log.Errorf("Failed to write into datastore %d: %s", i, err)
-							}
-						} else {
-							log.Errorf("Failed to write into datastore %d: %s", i, err)
-							in_error[i] = true
-							retry_queue.PushFront(msg_arr)
-						}
+						log.Errorf("Failed to write into datastore %d: %s", i, err)
+						in_error[i] = true
+						retry_queue.PushFront(msg_arr)
 					}
 				}
 			}
@@ -3899,111 +3739,6 @@ func mapToJson(metricsMap map[string]interface{}) ([]byte, error) {
 	return json.Marshal(metricsMap)
 }
 
-// queryInfluxDB convenience function to query the database
-func queryInfluxDB(clnt client.Client, cmd string) (res []client.Result, err error) {
-	q := client.Query{
-		Command:  cmd,
-		Database: opts.InfluxDbname,
-	}
-	if response, err := clnt.Query(q); err == nil {
-		if response.Error() != nil {
-			return res, response.Error()
-		}
-		res = response.Results
-	} else {
-		return res, err
-	}
-	return res, nil
-}
-
-func InitAndTestInfluxConnection(HostId, InfluxHost, InfluxPort, InfluxDbname, InfluxUser, InfluxPassword, InfluxSSL, SkipSSLCertVerify string, RetentionPeriod int64) (string, error) {
-	log.Infof("Testing Influx connection to host %s: %s, port: %s, DB: %s", HostId, InfluxHost, InfluxPort, InfluxDbname)
-	var connect_string string
-	var pgwatchDbExists bool = false
-	skipSSLCertVerify, _ := strconv.ParseBool(SkipSSLCertVerify)
-	retries := 3
-
-	if b, _ := strconv.ParseBool(InfluxSSL); b {
-		connect_string = fmt.Sprintf("https://%s:%s", InfluxHost, InfluxPort)
-	} else {
-		connect_string = fmt.Sprintf("http://%s:%s", InfluxHost, InfluxPort)
-	}
-
-	// Make client
-	c, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:               connect_string,
-		Username:           InfluxUser,
-		Password:           InfluxPassword,
-		InsecureSkipVerify: skipSSLCertVerify,
-	})
-
-	if err != nil {
-		log.Fatal("Getting Influx client failed", err)
-	}
-
-retry:
-	res, err := queryInfluxDB(c, "SHOW DATABASES")
-
-	if err != nil {
-		if retries > 0 {
-			log.Error("SHOW DATABASES failed, retrying in 5s (max 3x)...", err)
-			time.Sleep(time.Second * 5)
-			retries = retries - 1
-			goto retry
-		} else {
-			return connect_string, err
-		}
-	}
-
-	for _, db_arr := range res[0].Series[0].Values {
-		log.Debug("Found db:", db_arr[0])
-		if InfluxDbname == db_arr[0] {
-			log.Info(fmt.Sprintf("Database '%s' existing", InfluxDbname))
-			pgwatchDbExists = true
-			break
-		}
-	}
-	if pgwatchDbExists && RetentionPeriod > 0 {
-		var currentRetentionAsString string
-		// get current retention period
-		res, err := queryInfluxDB(c, fmt.Sprintf("SHOW RETENTION POLICIES ON %s", InfluxDbname))
-		if err != nil {
-			log.Errorf("Could not check Influx retention policies: %v", err)
-			return connect_string, err
-		}
-		for _, rp := range res[0].Series[0].Values {
-			log.Debugf("Found retention policy: %+v", rp)
-			if opts.InfluxRetentionName == rp[0].(string) {
-				// duration is represented as "720h0m0s" so construct similar string from --iretentiondays input
-				currentRetentionAsString = rp[1].(string)
-				break
-			}
-		}
-		targetRetentionAsString := fmt.Sprintf("%dh0m0s", RetentionPeriod*24)
-		if currentRetentionAsString != targetRetentionAsString {
-			log.Warningf("InfluxDB retention policy change detected, changing from %s to %s ...", currentRetentionAsString, targetRetentionAsString)
-			isql := fmt.Sprintf("ALTER RETENTION POLICY %s ON %s DURATION %dd REPLICATION 1 SHARD DURATION 1d", opts.InfluxRetentionName, InfluxDbname, RetentionPeriod)
-			log.Warningf("Executing: %s", isql)
-			_, err = queryInfluxDB(c, isql)
-			if err != nil {
-				log.Errorf("Could not change InfluxDB retention policy - manul review / correction recommended: %v", err)
-			}
-		}
-		return connect_string, nil
-	} else if !pgwatchDbExists {
-		log.Warningf("Database '%s' not found! Creating with %d days retention and retention policy name \"%s\"...", InfluxDbname, RetentionPeriod, opts.InfluxRetentionName)
-		isql := fmt.Sprintf("CREATE DATABASE %s WITH DURATION %dd REPLICATION 1 SHARD DURATION 1d NAME %s", InfluxDbname, RetentionPeriod, opts.InfluxRetentionName)
-		_, err = queryInfluxDB(c, isql)
-		if err != nil {
-			log.Fatal(err)
-		} else {
-			log.Infof("Database 'pgwatch2' created on InfluxDB host %s:%s", InfluxHost, InfluxPort)
-		}
-	}
-
-	return connect_string, nil
-}
-
 func DoesFunctionExists(dbUnique, functionName string) bool {
 	log.Debug("Checking for function existence", dbUnique, functionName)
 	sql := fmt.Sprintf("select /* pgwatch2_generated */ 1 from pg_proc join pg_namespace n on pronamespace = n.oid where proname = '%s' and n.nspname = 'public'", functionName)
@@ -5124,22 +4859,6 @@ type Options struct {
 	PrometheusListenAddr string `long:"prometheus-listen-addr" description:"Network interface to listen on" default:"0.0.0.0" env:"PW2_PROMETHEUS_LISTEN_ADDR"`
 	PrometheusNamespace  string `long:"prometheus-namespace" description:"Prefix for all non-process (thus Postgres) metrics" default:"pgwatch2" env:"PW2_PROMETHEUS_NAMESPACE"`
 	PrometheusAsyncMode  string `long:"prometheus-async-mode" description:"Gather in background as with other storage and cache last fetch results in memory" default:"false" env:"PW2_PROMETHEUS_ASYNC_MODE"`
-	InfluxHost           string `long:"ihost" description:"Influx host" default:"localhost" env:"PW2_IHOST"`
-	InfluxPort           string `long:"iport" description:"Influx port" default:"8086" env:"PW2_IPORT"`
-	InfluxDbname         string `long:"idbname" description:"Influx DB name" default:"pgwatch2" env:"PW2_IDATABASE"`
-	InfluxUser           string `long:"iuser" description:"Influx user" default:"root" env:"PW2_IUSER"`
-	InfluxPassword       string `long:"ipassword" description:"Influx password" default:"root" env:"PW2_IPASSWORD"`
-	InfluxSSL            string `long:"issl" description:"Influx require SSL" env:"PW2_ISSL"`
-	InfluxSSLSkipVerify  string `long:"issl-skip-verify" description:"Skip Influx Cert validation i.e. allows self-signed certs" default:"true" env:"PW2_ISSL_SKIP_VERIFY"`
-	InfluxHost2          string `long:"ihost2" description:"Influx host II" env:"PW2_IHOST2"`
-	InfluxPort2          string `long:"iport2" description:"Influx port II" env:"PW2_IPORT2"`
-	InfluxDbname2        string `long:"idbname2" description:"Influx DB name II" default:"pgwatch2" env:"PW2_IDATABASE2"`
-	InfluxUser2          string `long:"iuser2" description:"Influx user II" default:"root" env:"PW2_IUSER2"`
-	InfluxPassword2      string `long:"ipassword2" description:"Influx password II" default:"root" env:"PW2_IPASSWORD2"`
-	InfluxSSL2           string `long:"issl2" description:"Influx require SSL II" env:"PW2_ISSL2"`
-	InfluxSSLSkipVerify2 string `long:"issl-skip-verify2" description:"Skip Influx Cert validation i.e. allows self-signed certs" default:"true" env:"PW2_ISSL_SKIP_VERIFY2"`
-	InfluxRetentionDays  int64  `long:"iretentiondays" description:"Retention period in days. Set to 0 to use database defaults for an existing DB [default: 30]" default:"30" env:"PW2_IRETENTIONDAYS"`
-	InfluxRetentionName  string `long:"iretentionname" description:"Retention policy name. [Default: pgwatch_def_ret]" default:"pgwatch_def_ret" env:"PW2_IRETENTIONNAME"`
 	GraphiteHost         string `long:"graphite-host" description:"Graphite host" env:"PW2_GRAPHITEHOST"`
 	GraphitePort         string `long:"graphite-port" description:"Graphite port" env:"PW2_GRAPHITEPORT"`
 	JsonStorageFile      string `long:"json-storage-file" description:"Path to file where metrics will be stored when --datastore=json, one metric set per line" env:"PW2_JSON_STORAGE_FILE"`
@@ -5222,22 +4941,6 @@ func main() {
 
 	if opts.MaxParallelConnectionsPerDb < 1 {
 		log.Fatal("--max-parallel-connections-per-db must be >= 1")
-	}
-
-	if len(opts.InfluxSSLSkipVerify) > 0 {
-		var err error
-		InfluxSkipSSLCertVerify, err = strconv.ParseBool(opts.InfluxSSLSkipVerify)
-		if err != nil {
-			log.Fatal("Invalid --issl-skip-verify input: strconv.ParseBool compatible expected")
-		}
-	}
-
-	if len(opts.InfluxSSLSkipVerify2) > 0 {
-		var err error
-		InfluxSkipSSLCertVerify2, err = strconv.ParseBool(opts.InfluxSSLSkipVerify2)
-		if err != nil {
-			log.Fatal("Invalid --issl-skip-verify2 input: strconv.ParseBool compatible expected")
-		}
 	}
 
 	if len(opts.AesGcmKeyphraseFile) > 0 {
@@ -5376,23 +5079,6 @@ func main() {
 	}
 
 	// validate that input is boolean is set
-	if len(strings.TrimSpace(opts.InfluxSSL)) > 0 {
-		if _, err := strconv.ParseBool(opts.InfluxSSL); err != nil {
-			fmt.Println("Check --issl parameter - can be of: 1, t, T, TRUE, true, True, 0, f, F, FALSE, false, False")
-			return
-		}
-	} else {
-		opts.InfluxSSL = "false"
-	}
-	if len(strings.TrimSpace(opts.InfluxSSL2)) > 0 {
-		if _, err := strconv.ParseBool(opts.InfluxSSL2); err != nil {
-			fmt.Println("Check --issl2 parameter - can be of: 1, t, T, TRUE, true, True, 0, f, F, FALSE, false, False")
-			return
-		}
-	} else {
-		opts.InfluxSSL2 = "false"
-	}
-
 	if opts.BatchingDelayMs < 0 || opts.BatchingDelayMs > 3600000 {
 		log.Fatal("--batching-delay-ms must be between 0 and 3600000")
 	}
@@ -5428,12 +5114,6 @@ func main() {
 
 	if !opts.Ping {
 
-		if opts.BatchingDelayMs > 0 && opts.Datastore != DATASTORE_PROMETHEUS {
-			buffered_persist_ch = make(chan []MetricStoreMessage, 10000) // "staging area" for metric storage batching, when enabled
-			log.Info("starting MetricsBatcher...")
-			go MetricsBatcher(DATASTORE_INFLUX, opts.BatchingDelayMs, buffered_persist_ch, persist_ch)
-		}
-
 		if opts.Datastore == DATASTORE_GRAPHITE {
 			if opts.GraphiteHost == "" || opts.GraphitePort == "" {
 				log.Fatal("--graphite-host/port needed!")
@@ -5444,30 +5124,6 @@ func main() {
 			InitGraphiteConnection(graphite_host, graphite_port)
 			log.Info("starting GraphitePersister...")
 			go MetricsPersister(DATASTORE_GRAPHITE, persist_ch)
-		} else if opts.Datastore == DATASTORE_INFLUX {
-			// check connection and store connection string
-			conn_str, err := InitAndTestInfluxConnection("0", opts.InfluxHost, opts.InfluxPort, opts.InfluxDbname, opts.InfluxUser,
-				opts.InfluxPassword, opts.InfluxSSL, opts.InfluxSSLSkipVerify, opts.InfluxRetentionDays)
-			if err != nil {
-				log.Fatal("Could not initialize InfluxDB", err)
-			}
-			InfluxConnectStrings[0] = conn_str
-			if len(opts.InfluxHost2) > 0 { // same check for Influx host
-				if len(opts.InfluxPort2) == 0 {
-					log.Fatal("Invalid Influx II connect info")
-				}
-				conn_str, err = InitAndTestInfluxConnection("1", opts.InfluxHost2, opts.InfluxPort2, opts.InfluxDbname2, opts.InfluxUser2,
-					opts.InfluxPassword2, opts.InfluxSSL2, opts.InfluxSSLSkipVerify2, opts.InfluxRetentionDays)
-				if err != nil {
-					log.Fatal("Could not initialize InfluxDB II", err)
-				}
-				InfluxConnectStrings[1] = conn_str
-				influx_host_count = 2
-			}
-			log.Info("InfluxDB connection(s) OK")
-
-			log.Info("starting InfluxPersister...")
-			go MetricsPersister(DATASTORE_INFLUX, persist_ch)
 		} else if opts.Datastore == DATASTORE_JSON {
 			if len(opts.JsonStorageFile) == 0 {
 				log.Fatal("--datastore=json requires --json-storage-file to be set")
