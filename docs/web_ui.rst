@@ -10,7 +10,7 @@ technically also log into the configuration database and change the *pgwatch2.mo
 
 Besides managing the metrics gathering configurations, the two other useful features for the Web UI would be the possibility
 to look at the logs of the single components and to verify that metrics gathering is working on the "Stat Statements Overview" page,
-which will contact the metrics DB (only Postgres and InfluxDB supported) and present some stats summaries.
+which will contact the metrics DB (only Postgres is supported) and present some stats summaries.
 
 Default port: **8080**
 
@@ -51,7 +51,7 @@ a standard cookie based techniques vulnerable to snooping / MITM attacks.
 Exposing the component logs
 ---------------------------
 
-When using the Docker images, internal component logs (Postgres, Influx, Grafana, Go daemon, Web UI itself) are exposed via the "/logs"
+When using the Docker images, internal component logs (Postgres, Grafana, Go daemon, Web UI itself) are exposed via the "/logs"
 endpoint. If this is not wanted set the PW2_WEBNOCOMPONENTLOGS env. variable. Note that if a working "/logs" endpoint is desired
 also in custom setup mode (non-docker) then some actual code changes are needed to specify where logs of all components are
 situated - see top of the pgwatch2.py file for that.

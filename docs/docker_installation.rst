@@ -6,8 +6,7 @@ Simple setup steps
 
 The simplest real-life pgwatch2 setup should look something like that:
 
-#. Decide which metrics storage engine you want to use - *cybertec/pgwatch2* and *cybertec/pgwatch2-nonroot* images use InfluxDB
-   internally for metrics storage, while *cybertec/pgwatch2-postgres* uses PostgreSQL. For Prometheus mode (exposing a port
+#. Decide which metrics storage engine you want to use - *cybertec/pgwatch2-postgres* uses PostgreSQL. For Prometheus mode (exposing a port
    for remote scraping) one should use the slimmer *cybertec/pgwatch2-daemon* image which doesn't have any built in databases.
 #. Find the latest pgwatch2 release version by going to the project's Github *Releases* page or use the public API with
    something like that:
@@ -20,18 +19,17 @@ The simplest real-life pgwatch2 setup should look something like that:
 
    ::
 
-     docker pull cybertec/pgwatch2:X.Y.Z
+     docker pull cybertec/pgwatch2-postgres:X.Y.Z
 
 #. Run the Docker image, exposing minimally the Grafana port served on port 3000 internally. In a relatively secure
    environment you'd usually also include the administrative web UI served on port 8080:
 
    ::
 
-     docker run -d --restart=unless-stopped -p 3000:3000 -p 8080:8080 --name pw2 cybertec/pgwatch2:X.Y.Z
+     docker run -d --restart=unless-stopped -p 3000:3000 -p 8080:8080 --name pw2 cybertec/pgwatch2-postgres:X.Y.Z
 
-   Note that we're using a Docker image with the built-in InfluxDB metrics storage DB here and setting the container to be automatically
-   restarted in case of a reboot / crash - which is highly recommended if not using some container management framework to
-   run pgwatch2.
+   Note that we're setting the container to be automatically restarted in case of a reboot/crash - 
+   which is highly recommended if not using some container management framework to run pgwatch2.
 
 .. _docker_example_launch:
 
@@ -42,7 +40,7 @@ Although the above simple setup example will do for more temporal setups / troub
 it's highly recommended to create separate volumes for all software components in the container, so that it would be easier
 to :ref:`update <upgrading>` to newer pgwatch2 Docker images and pull file system based backups and also it might be a good idea
 to expose all internal ports at least on *localhost* for possible troubleshooting and making possible to use native backup
-tools more conveniently for InfluxDB or Postgres.
+tools more conveniently for Postgres.
 
 Note that for maximum flexibility, security and update simplicity it's best to do a custom setup though - see the next
 :ref:`chapter <custom_installation>` for that.
@@ -73,19 +71,9 @@ Available Docker images
 
 Following images are regularly pushed to `Docked Hub <https://hub.docker.com/u/cybertec>`_:
 
-*cybertec/pgwatch2*
-  The original pgwatch2 "batteries-included" image with InfluxDB metrics storage. Just insert connect infos to your
-  database via the admin Web UI (or directly into the Config DB) and then turn to the pre-defined Grafana dashboards
-  to analyze DB health and performance.
-
 *cybertec/pgwatch2-postgres*
   Exactly the same as previous, but metrics are also stored in PostgreSQL - thus needs more disk space. But in return you
   get more "out of the box" dashboards, as the power of standard SQL gives more complex visualization options.
-
-*cybertec/pgwatch2-nonroot*
-  Same components as for the original *cybertec/pgwatch2* image, but no "root" user is used internally, so it can also be
-  launched in security restricted environments like OpenShift. Limits ad-hoc troubleshooting and "in container" customizations
-  or updates though, but this is the standard for orchestrated cloud environments - you need to fix the image and re-deploy.
 
 *cybertec/pgwatch2-daemon*
   A light-weight image containing only the metrics collection daemon / agent, that can be integrated into the monitoring
@@ -128,7 +116,7 @@ Interacting with the Docker container
 
 * To add a new metrics yourself (which are simple SQL queries returning any values and a timestamp) head to http://127.0.0.1:8080/metrics.
   The queries should always include a "epoch_ns" column and "tag\_" prefix can be used for columns that should be quickly
-  searchable / groupable, and thus will be indexed with the InfluxDB and PostgreSQL metric stores. See to the bottom of the
+  searchable/groupable, and thus will be indexed with the PostgreSQL metric stores. See to the bottom of the
   "metrics" page for more explanations or the documentation chapter on metrics :ref:`here <custom_metrics>`.
 
 * For a quickstart on dashboarding, a list of available metrics together with some instructions are presented on the "Documentation" dashboard.
@@ -141,15 +129,12 @@ Interacting with the Docker container
 * For effective graphing you want to familiarize yourself with the query language of the database system that was selected
   for metrics storage. Some tips to get going:
 
-  * For InfluxQL -  the non_negative_derivative() function is very handy as Postgres statistics are mostly evergrowing counters
-    and one needs to calculate so called *deltas* to show change. Documentation `here <https://docs.influxdata.com/influxdb/latest/query_language/functions/#non-negative-derivative>`__.
-
-  * For PostgreSQL / TimescaleDB - some knowledge of `Window functions <https://www.postgresql.org/docs/current/tutorial-window.html>`_
+  * For PostgreSQL/TimescaleDB - some knowledge of `Window functions <https://www.postgresql.org/docs/current/tutorial-window.html>`_
     is a must if looking at longer time periods of data as the statistics could have been reset in the mean time by user request
     or the server might have crashed, so that simple *max() - min()* aggregates on cumulative counters (most data provided by Postgres is cumulative) would lie.
 
 * For possible troubleshooting needs, logs of the components running inside Docker are by default (if not disabled on container launch) visible under:
-  http://127.0.0.1:8080/logs/[pgwatch2|postgres|webui|influxdb|grafana]. It's of course also possible to log into the container
+  http://127.0.0.1:8080/logs/[pgwatch2|postgres|webui|grafana]. It's of course also possible to log into the container
   and look at log files directly - they're situated under */var/logs/supervisor/*.
 
   FYI - ``docker logs ...`` command is not really useful after a successful container startup in pgwatch2 case.
@@ -162,8 +147,6 @@ Ports used
 * 8080 - Management Web UI (monitored hosts, metrics, metrics configurations)
 * 8081 - Gatherer healthcheck / statistics on number of gathered metrics (JSON).
 * 3000 - Grafana dashboarding
-* 8086 - InfluxDB API (when using the InfluxDB version)
-* 8088 - InfluxDB Backup port (when using the InfluxDB version)
 
 Docker Compose
 --------------

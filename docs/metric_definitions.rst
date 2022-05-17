@@ -72,18 +72,11 @@ For defining metrics definitions you should adhere to a couple of basic concepts
 * Metric queries should execute fast - at least below the selected *Statement timeout* (default 5s)
 
 * Columns can be optionally "tagged" by prefixing them with "tag\_". By doing this, the column data
-  will be indexed by the InfluxDB / Postgres giving following advantages:
+  will be indexed by the Postgres giving following advantages:
 
   * Sophisticated auto-discovery support for indexed keys/values, when building charts with Grafana.
 
   * Faster queries for queries on those columns.
-
-  * Less disk space used for repeating values in InfluxDB. Thus when you’re for example returning some longish
-    and repetitive status strings (possible with Singlestat or Table panels) that you’ll be looking
-    up by some ID column, it might still make sense to prefix the column with "tag\_" to reduce disks space.
-
-  * If using InfluxDB storage, there needs to be at least one tag column, identifying all rows uniquely, is more than
-    on row can be returned by the query.
 
 * All fetched metric rows can also be "prettyfied" with any custom static key-value data, per host. To enable use the "Custom tags"
   Web UI field for the monitored DB entry or "custom_tags" YAML field. Note that this works per host and applies to all metrics.

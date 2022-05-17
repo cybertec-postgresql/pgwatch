@@ -36,11 +36,6 @@ Metrics storage DB
 Many options here so that one can for example go for maximum storage effectiveness or pick something where they already
 know the query language:
 
-  - `InfluxDB <https://www.influxdata.com/time-series-platform/influxdb/>`_ Time Series Database
-
-    InfluxDB is specifically designed for storing metrics so it's disk footprint is much smaller compared to PostgreSQL
-    but downsides are the limited query capabilities and higher hardware (CPU / RAM) requirements - see the :ref:`Sizing recommendations <sizing_recommendations>` chapter for more details.
-
   - `PostgreSQL <https://www.postgresql.org/>`_ - world's most advanced Open Source RDBMS
 
     Postgres storage is based on the JSONB datatype so minimally version 9.4+ is required, but for bigger setups where
@@ -82,7 +77,7 @@ Metrics representation
 ----------------------
 
 Standard pgwatch2 setup uses `Grafana <http://grafana.org/>`_ for analyzing the gathered metrics data in a visual, point-and-click
-way. For that a rich set of predefined dashboards for Postgres and InfluxDB data sources is provided, that should cover
+way. For that a rich set of predefined dashboards for Postgres is provided, that should cover
 the needs of most users - advanced users would mostly always want to customize some aspects though, so it's not meant as
 a one-size-fits-all solution. Also as metrics are stored in a DB, they can be visualized or processed in any other way.
 
@@ -100,8 +95,8 @@ Component diagram of a typical setup:
 Component reuse
 ---------------
 
-NB! All components are *loosely coupled*, thus for non-pgwatch2 components (pgwatch2 components are only the metrics collector
-and the optional Web UI) you can decide to make use of an already existing installation of Postgres, Grafana or InfluxDB
+All components are *loosely coupled*, thus for non-pgwatch2 components (pgwatch2 components are only the metrics collector
+and the optional Web UI) you can decide to make use of an already existing installation of Postgres, Grafana or Prometheus
 and run additionally just the pgwatch2 collector.
 
 * To use an existing Postgres DB for storing the monitoring config
@@ -113,18 +108,11 @@ and run additionally just the pgwatch2 collector.
 
   Load the pgwatch2 dashboards from *grafana_dashboard* folder if needed (one can totally define their own) and set the following paramater: PW2_GRAFANA_BASEURL.
   This parameter only provides correct links to Grafana dashboards from the Web UI. Grafana is the most loosely coupled component for pgwatch2
-  and basically doesn't have to be used at all. One can make use of the gathered metrics directly over the Influx (or Graphite) API-s.
-
-* To use an existing InfluxDB installation
-
-  Set the following env variables: PW2_IHOST, PW2_IPORT, PW2_IDATABASE, PW2_IUSER, PW2_IPASSWORD, PW2_ISSL (optional).
-
-  NB! Note that if wanting to use SSL with self-signed certificates on InfluxDB side then some extra steps described in `this <https://github.com/cybertec-postgresql/pgwatch2/issues/162>`__
-  Github issue are needed.
+  and basically doesn't have to be used at all. One can make use of the gathered metrics directly over the Postgres (or Graphite) API-s.
 
 * To use an existing Graphite installation
 
-  One can also store the metrics in Graphite instead of InfluxDB (no predefined pgwatch2 dashboards for Graphite though).
+  One can also store the metrics in Graphite instead of Postgres (no predefined pgwatch2 dashboards for Graphite though).
   Following parameters needs to be set then: PW2_DATASTORE=graphite, PW2_GRAPHITEHOST, PW2_GRAPHITEPORT
 
 * To use an existing Postgres DB for storing metrics
@@ -134,7 +122,7 @@ and run additionally just the pgwatch2 collector.
 
     * ``--datastore=postgres`` or ``PW2_DATASTORE=postgres``
     * ``--pg-metric-store-conn-str="postgresql://user:pwd@host:port/db"`` or ``PW2_PG_METRIC_STORE_CONN_STR="..."``
-    * optionally also adjust the ``--pg-retention-days`` parameter. By default 30 days for InfluxDB and 14 days for Postgres are kept
+    * optionally also adjust the ``--pg-retention-days`` parameter. By default 14 days for Postgres are kept
 
   3. If using the Web UI also set the datastore parameters ``--datastore`` and ``--pg-metric-store-conn-str`` if wanting to
      have an option to be able to clean up data also via the UI in a more targeted way.

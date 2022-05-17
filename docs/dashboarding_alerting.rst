@@ -11,9 +11,7 @@ available to cover most of the metrics gathered via the *Preset Configs*.
 This does not mean though that Grafana is in any way tightly coupled with project's other components - quite the opposite
 actually, one can use any other means / tools to use the metrics data gathered by the pgwatch2 daemon.
 
-Currently there are around 30 preset dashboards available for PostgreSQL data sources and about 25 for InfluxDB. The reason
-why InfluxDB (originally the only supported metrics storage DB) has less, is the fact that the custom query language is
-just much more limiting compared to standard SQL so that it makes it hard to build more complex dashboards. Due to that
+Currently there are around 30 preset dashboards available for PostgreSQL data sources. Due to that
 nowadays, if metric gathering volumes are not a problem, we recommend using Postgres storage for most users.
 
 Note though that most users will probably want to always adjust the built-in dashboards slightly (colors, roundings, etc)
@@ -24,8 +22,6 @@ dashboards *en masse* per script, without losing any custom user changes.
 **Links:**
 
 `Built-in dashboards for PostgreSQL (TimescaleDB) storage <https://github.com/cybertec-postgresql/pgwatch2/tree/master/grafana_dashboards/postgres/>`_
-
-`Built-in dashboards for InfluxDB storage <https://github.com/cybertec-postgresql/pgwatch2/tree/master/grafana_dashboards/influxdb/>`_
 
 `Screenshots of pgwatch2 default dashboards <https://github.com/cybertec-postgresql/pgwatch2/tree/master/screenshots>`_
 
