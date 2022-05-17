@@ -40,7 +40,7 @@ variables see [ENV_VARIABLES.md](https://github.com/cybertec-postgresql/pgwatch2
 * Intuitive metrics presentation using the Grafana dashboarding engine with optional Alerting
 * Lots of pre-configured dashboards and metric configurations covering all Statistics Collector data
 * Easy extensibility by defining metrics in pure SQL (thus they could also be from business domain)
-* 4 supported data stores for metrics storage (PostgreSQL with or without TimescaleDB, InfluxDB, Graphite, Prometheus)
+* 3 supported data stores for metrics storage (PostgreSQL with or without TimescaleDB, Graphite, Prometheus)
 * Multiple configuration options (YAML, PostgreSQL, ENV) supporting both "push" and "pull" models
 * Possible to monitoring all or a subset of DBs of a PostgreSQL cluster
 * Global or DB level configuration of metrics/intervals
@@ -73,7 +73,6 @@ For storing metrics collected by the pgwatch2 daemon there are quite some option
 
 * PostgreSQL - v11+ recommended. Multiple storage partitioning layouts available depending on the amount of servers to be monitored.
 * PostgreSQL with the TimescaleDB extension - offers good compression and generally recommended when monitoring 100+ databases.
-* InfluxDB - Time-Series optimized database. Note that the newly released v2.0 is not yet supported. Good Grafana integration but quite limited query language.
 * Prometheus - here the pgwatch2 daemon would not store anything directly but just expose an endpoint for remote scraping / storage via Prometheus.
 * Graphite - legacy support for Graphite. Not recommended anymore for new installations as it does not support the "tag" system.
 
