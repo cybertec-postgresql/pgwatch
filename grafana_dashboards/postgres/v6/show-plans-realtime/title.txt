@@ -1,1 +1,0 @@
-Show EXPLAIN plans realtime
