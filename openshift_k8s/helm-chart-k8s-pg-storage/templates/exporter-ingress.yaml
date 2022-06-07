@@ -1,5 +1,5 @@
 {{- if .Values.exporter.ingress.enabled -}}
-{{- $fullName := include "pgwatch2.fullname" . -}}
+{{- $fullName := include "pgwatch3.fullname" . -}}
 {{- $svcPort := .Values.exporter.service.servicePort -}}
 {{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
 apiVersion: networking.k8s.io/v1beta1
@@ -10,7 +10,7 @@ kind: Ingress
 metadata:
   name: {{ $fullName }}-exporter
   labels:
-{{ include "pgwatch2.labels" . | indent 4 }}
+{{ include "pgwatch3.labels" . | indent 4 }}
   {{- with .Values.exporter.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}

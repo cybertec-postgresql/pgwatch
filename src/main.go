@@ -208,7 +208,7 @@ type ExtensionInfo struct {
 const EPOCH_COLUMN_NAME string = "epoch_ns" // this column (epoch in nanoseconds) is expected in every metric query
 const TAG_PREFIX string = "tag_"
 const METRIC_DEFINITION_REFRESH_TIME int64 = 120 // min time before checking for new/changed metric definitions
-const GRAPHITE_METRICS_PREFIX string = "pgwatch2"
+const GRAPHITE_METRICS_PREFIX string = "pgwatch3"
 const PERSIST_QUEUE_MAX_SIZE = 10000 // storage queue max elements. when reaching the limit, older metrics will be dropped.
 // actual requirements depend a lot of metric type and nr. of obects in schemas,
 // but 100k should be enough for 24h, assuming 5 hosts monitored with "exhaustive" preset config. this would also require ~2 GB RAM per one Influx host
@@ -219,7 +219,7 @@ const DATASTORE_PROMETHEUS = "prometheus"
 const PRESET_CONFIG_YAML_FILE = "preset-configs.yaml"
 const FILE_BASED_METRIC_HELPERS_DIR = "00_helpers"
 const PG_CONN_RECYCLE_SECONDS = 1800 // applies for monitored nodes
-const APPLICATION_NAME = "pgwatch2"  // will be set on all opened PG connections for informative purposes
+const APPLICATION_NAME = "pgwatch3"  // will be set on all opened PG connections for informative purposes
 const GATHERER_STATUS_START = "START"
 const GATHERER_STATUS_STOP = "STOP"
 const METRICDB_IDENT = "metricDb"
@@ -251,8 +251,8 @@ const METRIC_PSUTIL_CPU = "psutil_cpu"
 const METRIC_PSUTIL_DISK = "psutil_disk"
 const METRIC_PSUTIL_DISK_IO_TOTAL = "psutil_disk_io_total"
 const METRIC_PSUTIL_MEM = "psutil_mem"
-const DEFAULT_METRICS_DEFINITION_PATH_PKG = "/etc/pgwatch2/metrics" // prebuilt packages / Docker default location
-const DEFAULT_METRICS_DEFINITION_PATH_DOCKER = "/pgwatch2/metrics"  // prebuilt packages / Docker default location
+const DEFAULT_METRICS_DEFINITION_PATH_PKG = "/etc/pgwatch3/metrics" // prebuilt packages / Docker default location
+const DEFAULT_METRICS_DEFINITION_PATH_DOCKER = "/pgwatch3/metrics"  // prebuilt packages / Docker default location
 const DB_SIZE_CACHING_INTERVAL = 30 * time.Minute
 const DB_METRIC_JOIN_STR = "¤¤¤" // just some unlikely string for a DB name to avoid using maps of maps for DB+metric data
 const EXEC_ENV_UNKNOWN = "UNKNOWN"
@@ -748,7 +748,7 @@ func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride i
 
 func GetAllActiveHostsFromConfigDB() ([](map[string]interface{}), error) {
 	sql_latest := `
-		select /* pgwatch2_generated */
+		select /* pgwatch3_generated */
 		  md_unique_name, md_group, md_dbtype, md_hostname, md_port, md_dbname, md_user, coalesce(md_password, '') as md_password,
 		  coalesce(p.pc_config, md_config)::text as md_config, coalesce(s.pc_config, md_config_standby, '{}'::jsonb)::text as md_config_standby,
 		  md_statement_timeout_seconds, md_sslmode, md_is_superuser,
@@ -756,25 +756,25 @@ func GetAllActiveHostsFromConfigDB() ([](map[string]interface{}), error) {
 		  coalesce(md_custom_tags::text, '{}') as md_custom_tags, md_root_ca_path, md_client_cert_path, md_client_key_path,
 		  md_password_type, coalesce(md_host_config, '{}')::text as md_host_config, md_only_if_master
 		from
-		  pgwatch2.monitored_db
+		  pgwatch3.monitored_db
 	          left join
-		  pgwatch2.preset_config p on p.pc_name = md_preset_config_name /* primary preset if any */
+		  pgwatch3.preset_config p on p.pc_name = md_preset_config_name /* primary preset if any */
 	          left join
-		  pgwatch2.preset_config s on s.pc_name = md_preset_config_name_standby /* standby preset if any */
+		  pgwatch3.preset_config s on s.pc_name = md_preset_config_name_standby /* standby preset if any */
 		where
 		  md_is_enabled
 	`
 	sql_prev := `
-		select /* pgwatch2_generated */
+		select /* pgwatch3_generated */
 		  md_unique_name, md_group, md_dbtype, md_hostname, md_port, md_dbname, md_user, coalesce(md_password, '') as md_password,
 		  coalesce(pc_config, md_config)::text as md_config, md_statement_timeout_seconds, md_sslmode, md_is_superuser,
 		  coalesce(md_include_pattern, '') as md_include_pattern, coalesce(md_exclude_pattern, '') as md_exclude_pattern,
 		  coalesce(md_custom_tags::text, '{}') as md_custom_tags, md_root_ca_path, md_client_cert_path, md_client_key_path,
 		  md_password_type, coalesce(md_host_config, '{}')::text as md_host_config, md_only_if_master
 		from
-		  pgwatch2.monitored_db
+		  pgwatch3.monitored_db
 	          left join
-		  pgwatch2.preset_config on pc_name = md_preset_config_name
+		  pgwatch3.preset_config on pc_name = md_preset_config_name
 		where
 		  md_is_enabled
 	`
@@ -916,6 +916,13 @@ func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
 }
 
 func SendToPostgres(storeMessages []MetricStoreMessage) error {
+
+	log.Notice(`
+	
+	ENTERING SendToPostgres
+	
+	`)
+
 	if len(storeMessages) == 0 {
 		return nil
 	}
@@ -1228,7 +1235,7 @@ func DeleteOldPostgresMetrics(metricAgeDaysThreshold int64) (int64, error) {
 	join pg_namespace n on n.oid = c.relnamespace
 	where relkind in ('r', 'p') and nspname = 'public'
 	and exists (select 1 from pg_attribute where attrelid = c.oid and attname = 'time')
-	and pg_catalog.obj_description(c.oid, 'pg_class') = 'pgwatch2-generated-metric-lvl'
+	and pg_catalog.obj_description(c.oid, 'pg_class') = 'pgwatch3-generated-metric-lvl'
 	order by 1
 	`
 	delete_sql := `
@@ -1317,7 +1324,7 @@ func CheckIfPGSchemaInitializedOrFail() string {
 		log.Fatal("have you initialized the metrics schema, including a row in 'storage_schema_type' table, from schema_base.sql?", err)
 	}
 	if err == nil && len(ret) == 0 {
-		log.Fatal("no metric schema selected, no row in table 'storage_schema_type'. see the README from the 'pgwatch2/sql/metric_store' folder on choosing a schema")
+		log.Fatal("no metric schema selected, no row in table 'storage_schema_type'. see the README from the 'pgwatch3/sql/metric_store' folder on choosing a schema")
 	}
 	pgSchemaType = ret[0]["schema_type"].(string)
 	if !(pgSchemaType == "metric" || pgSchemaType == "metric-time" || pgSchemaType == "metric-dbname-time" || pgSchemaType == "custom" || pgSchemaType == "timescale") {
@@ -1360,7 +1367,7 @@ func CheckIfPGSchemaInitializedOrFail() string {
 			`
 		ret, err := DBExecRead(metricDb, METRICDB_IDENT, fmt.Sprintf(sql, partFuncSignature))
 		if err != nil || (err == nil && !ret[0]["ok"].(bool)) {
-			log.Fatalf("%s function not existing or no EXECUTE privileges. Have you rolled out the schema correctly from pgwatch2/sql/metric_store?", partFuncSignature)
+			log.Fatalf("%s function not existing or no EXECUTE privileges. Have you rolled out the schema correctly from pgwatch3/sql/metric_store?", partFuncSignature)
 		}
 	}
 	return pgSchemaType
@@ -1757,7 +1764,7 @@ func ProcessRetryQueue(data_source, conn_str, conn_ident string, retry_queue *li
 	return nil
 }
 
-func MetricsBatcher(data_store string, batchingMaxDelayMillis int64, buffered_storage_ch <-chan []MetricStoreMessage, storage_ch chan<- []MetricStoreMessage) {
+func MetricsBatcher(batchingMaxDelayMillis int64, buffered_storage_ch <-chan []MetricStoreMessage, storage_ch chan<- []MetricStoreMessage) {
 	if batchingMaxDelayMillis <= 0 {
 		log.Fatalf("Check --batching-delay-ms, zero/negative batching delay:", batchingMaxDelayMillis)
 	}
@@ -1840,6 +1847,10 @@ func MetricsPersister(data_store string, storage_ch <-chan []MetricStoreMessage)
 		select {
 		case msg_arr := <-storage_ch:
 
+			log.Notice(`
+	Metric Storage Messages:
+	`, msg_arr)
+
 			for i, retry_queue := range retry_queues {
 
 				retry_queue_length := retry_queue.Len()
@@ -1917,7 +1928,7 @@ func MetricsPersister(data_store string, storage_ch <-chan []MetricStoreMessage)
 }
 
 func DBGetSizeMB(dbUnique string) (int64, error) {
-	sql_db_size := `select /* pgwatch2_generated */ pg_database_size(current_database());`
+	sql_db_size := `select /* pgwatch3_generated */ pg_database_size(current_database());`
 	var sizeMB int64
 
 	lastDBSizeCheckLock.RLock()
@@ -1956,7 +1967,7 @@ func DBGetSizeMB(dbUnique string) (int64, error) {
 }
 
 func TryDiscoverExecutionEnv(dbUnique string) string {
-	sqlPGExecEnv := `select /* pgwatch2_generated */
+	sqlPGExecEnv := `select /* pgwatch3_generated */
 	case
 	  when exists (select * from pg_settings where name = 'pg_qs.host_database' and setting = 'azure_sys') and version() ~* 'compiled by Visual C' then 'AZURE_SINGLE'
 	  when exists (select * from pg_settings where name = 'pg_qs.host_database' and setting = 'azure_sys') and version() ~* 'compiled by gcc' then 'AZURE_FLEXIBLE'
@@ -1974,7 +1985,7 @@ func TryDiscoverExecutionEnv(dbUnique string) string {
 
 func GetDBTotalApproxSize(dbUnique string) (int64, error) {
 	sqlApproxDBSize := `
-	select /* pgwatch2_generated */
+	select /* pgwatch3_generated */
 		current_setting('block_size')::int8 * sum(relpages) as db_size_approx
 	from
 		pg_class c
@@ -1993,15 +2004,15 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 	var verNew DBVersionMapEntry
 	var ok bool
 	sql := `
-		select /* pgwatch2_generated */ (regexp_matches(
+		select /* pgwatch3_generated */ (regexp_matches(
 			regexp_replace(current_setting('server_version'), '(beta|devel).*', '', 'g'),
 			E'\\d+\\.?\\d+?')
 			)[1]::text as ver, pg_is_in_recovery(), current_database()::text;
 	`
-	sql_sysid := `select /* pgwatch2_generated */ system_identifier::text from pg_control_system();`
-	sql_su := `select /* pgwatch2_generated */ rolsuper
+	sql_sysid := `select /* pgwatch3_generated */ system_identifier::text from pg_control_system();`
+	sql_su := `select /* pgwatch3_generated */ rolsuper
 			   from pg_roles r where rolname = session_user;`
-	sql_extensions := `select /* pgwatch2_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
+	sql_extensions := `select /* pgwatch3_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
 	pgpool_version := `SHOW POOL_VERSION` // supported from pgpool2 v3.0
 
 	db_pg_version_map_lock.Lock()
@@ -3642,13 +3653,13 @@ func UpdateMetricDefinitionMap(newMetrics map[string]map[decimal.Decimal]MetricV
 func ReadMetricDefinitionMapFromPostgres(failOnError bool) (map[string]map[decimal.Decimal]MetricVersionProperties, error) {
 	metric_def_map_new := make(map[string]map[decimal.Decimal]MetricVersionProperties)
 	metricNameRemapsNew := make(map[string]string)
-	sql := `select /* pgwatch2_generated */ m_name, m_pg_version_from::text, m_sql, m_master_only, m_standby_only,
+	sql := `select /* pgwatch3_generated */ m_name, m_pg_version_from::text, m_sql, m_master_only, m_standby_only,
 			  coalesce(m_column_attrs::text, '') as m_column_attrs, coalesce(m_column_attrs::text, '') as m_column_attrs,
 			  coalesce(ma_metric_attrs::text, '') as ma_metric_attrs, m_sql_su
 			from
-              pgwatch2.metric
+              pgwatch3.metric
               left join
-              pgwatch2.metric_attribute on (ma_metric_name = m_name)
+              pgwatch3.metric_attribute on (ma_metric_name = m_name)
 			where
               m_is_active
 		    order by
@@ -3669,7 +3680,7 @@ func ReadMetricDefinitionMapFromPostgres(failOnError bool) (map[string]map[decim
 		return metric_def_map_new, err
 	}
 
-	log.Debug(len(data), "active metrics found from config db (pgwatch2.metric)")
+	log.Debug(len(data), "active metrics found from config db (pgwatch3.metric)")
 	for _, row := range data {
 		_, ok := metric_def_map_new[row["m_name"].(string)]
 		if !ok {
@@ -3741,7 +3752,7 @@ func mapToJson(metricsMap map[string]interface{}) ([]byte, error) {
 
 func DoesFunctionExists(dbUnique, functionName string) bool {
 	log.Debug("Checking for function existence", dbUnique, functionName)
-	sql := fmt.Sprintf("select /* pgwatch2_generated */ 1 from pg_proc join pg_namespace n on pronamespace = n.oid where proname = '%s' and n.nspname = 'public'", functionName)
+	sql := fmt.Sprintf("select /* pgwatch3_generated */ 1 from pg_proc join pg_namespace n on pronamespace = n.oid where proname = '%s' and n.nspname = 'public'", functionName)
 	data, err, _ := DBExecReadByDbUniqueName(dbUnique, "", 0, sql)
 	if err != nil {
 		log.Error("Failed to check for function existence", dbUnique, functionName, err)
@@ -3833,7 +3844,7 @@ func TryCreateMetricsFetchingHelpers(dbUnique string) error {
 		}
 
 	} else {
-		sql_helpers := "select /* pgwatch2_generated */ distinct m_name from pgwatch2.metric where m_is_active and m_is_helper" // m_name is a helper function name
+		sql_helpers := "select /* pgwatch3_generated */ distinct m_name from pgwatch3.metric where m_is_active and m_is_helper" // m_name is a helper function name
 		data, err := DBExecRead(configDb, CONFIGDB_IDENT, sql_helpers)
 		if err != nil {
 			log.Error(err)
@@ -4221,7 +4232,7 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 	}
 	defer c.Close()
 
-	sql := `select /* pgwatch2_generated */ datname::text as datname,
+	sql := `select /* pgwatch3_generated */ datname::text as datname,
 		quote_ident(datname)::text as datname_escaped
 		from pg_database
 		where not datistemplate
@@ -4480,7 +4491,7 @@ func goPsutilCalcCPUUtilization(probe0, probe1 cpu.TimesStat) float64 {
 }
 
 // Simulates "psutil" metric output. Assumes the result from last call as input, otherwise uses a 1s measurement
-// https://github.com/cybertec-postgresql/pgwatch2/blob/master/pgwatch2/metrics/psutil_cpu/9.0/metric.sql
+// https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/metrics/psutil_cpu/9.0/metric.sql
 func GetGoPsutilCPU(interval time.Duration) ([]map[string]interface{}, error) {
 	prevCPULoadTimeStatsLock.RLock()
 	prevTime := prevCPULoadTimestamp
@@ -4825,7 +4836,7 @@ func IsDBDormant(dbUnique string) bool {
 func DoesEmergencyTriggerfileExist() bool {
 	// Main idea of the feature is to be able to quickly free monitored DBs / network of any extra "monitoring effect" load.
 	// In highly automated K8s / IaC environments such a temporary change might involve pull requests, peer reviews, CI/CD etc
-	// which can all take too long vs "exec -it pgwatch2-pod -- touch /tmp/pgwatch2-emergency-pause".
+	// which can all take too long vs "exec -it pgwatch3-pod -- touch /tmp/pgwatch3-emergency-pause".
 	// NB! After creating the file it can still take up to --servers-refresh-loop-seconds (2min def.) for change to take effect!
 	if opts.EmergencyPauseTriggerfile == "" {
 		return false
@@ -4847,8 +4858,8 @@ type Options struct {
 	Verbose              string `short:"v" long:"verbose" description:"Chat level [DEBUG|INFO|WARN]. Default: WARN" env:"PW2_VERBOSE"`
 	Host                 string `long:"host" description:"PG config DB host" default:"localhost" env:"PW2_PGHOST"`
 	Port                 string `short:"p" long:"port" description:"PG config DB port" default:"5432" env:"PW2_PGPORT"`
-	Dbname               string `short:"d" long:"dbname" description:"PG config DB dbname" default:"pgwatch2" env:"PW2_PGDATABASE"`
-	User                 string `short:"u" long:"user" description:"PG config DB user" default:"pgwatch2" env:"PW2_PGUSER"`
+	Dbname               string `short:"d" long:"dbname" description:"PG config DB dbname" default:"pgwatch3" env:"PW2_PGDATABASE"`
+	User                 string `short:"u" long:"user" description:"PG config DB user" default:"pgwatch3" env:"PW2_PGUSER"`
 	Password             string `long:"password" description:"PG config DB password" env:"PW2_PGPASSWORD"`
 	PgRequireSSL         string `long:"pg-require-ssl" description:"PG config DB SSL connection only" default:"false" env:"PW2_PGSSL"`
 	Group                string `short:"g" long:"group" description:"Group (or groups, comma separated) for filtering which DBs to monitor. By default all are monitored" env:"PW2_GROUP"`
@@ -4857,7 +4868,7 @@ type Options struct {
 	PGRetentionDays      int64  `long:"pg-retention-days" description:"If set, metrics older than that will be deleted" default:"14" env:"PW2_PG_RETENTION_DAYS"`
 	PrometheusPort       int64  `long:"prometheus-port" description:"Prometheus port. Effective with --datastore=prometheus" default:"9187" env:"PW2_PROMETHEUS_PORT"`
 	PrometheusListenAddr string `long:"prometheus-listen-addr" description:"Network interface to listen on" default:"0.0.0.0" env:"PW2_PROMETHEUS_LISTEN_ADDR"`
-	PrometheusNamespace  string `long:"prometheus-namespace" description:"Prefix for all non-process (thus Postgres) metrics" default:"pgwatch2" env:"PW2_PROMETHEUS_NAMESPACE"`
+	PrometheusNamespace  string `long:"prometheus-namespace" description:"Prefix for all non-process (thus Postgres) metrics" default:"pgwatch3" env:"PW2_PROMETHEUS_NAMESPACE"`
 	PrometheusAsyncMode  string `long:"prometheus-async-mode" description:"Gather in background as with other storage and cache last fetch results in memory" default:"false" env:"PW2_PROMETHEUS_ASYNC_MODE"`
 	GraphiteHost         string `long:"graphite-host" description:"Graphite host" env:"PW2_GRAPHITEHOST"`
 	GraphitePort         string `long:"graphite-port" description:"Graphite port" env:"PW2_GRAPHITEPORT"`
@@ -4890,7 +4901,7 @@ type Options struct {
 	MaxParallelConnectionsPerDb  int    `long:"max-parallel-connections-per-db" description:"Max parallel metric fetches per DB. Note the multiplication effect on multi-DB instances" env:"PW2_MAX_PARALLEL_CONNECTIONS_PER_DB" default:"2"`
 	Version                      bool   `long:"version" description:"Show Git build version and exit" env:"PW2_VERSION"`
 	Ping                         bool   `long:"ping" description:"Try to connect to all configured DB-s, report errors and then exit" env:"PW2_PING"`
-	EmergencyPauseTriggerfile    string `long:"emergency-pause-triggerfile" description:"When the file exists no metrics will be temporarily fetched / scraped" env:"PW2_EMERGENCY_PAUSE_TRIGGERFILE" default:"/tmp/pgwatch2-emergency-pause"`
+	EmergencyPauseTriggerfile    string `long:"emergency-pause-triggerfile" description:"When the file exists no metrics will be temporarily fetched / scraped" env:"PW2_EMERGENCY_PAUSE_TRIGGERFILE" default:"/tmp/pgwatch3-emergency-pause"`
 	NoHelperFunctions            string `long:"no-helper-functions" description:"Ignore metric definitions using helper functions (in form get_smth()) and don't also roll out any helpers automatically" env:"PW2_NO_HELPER_FUNCTIONS" default:"false"`
 	TryCreateListedExtsIfMissing string `long:"try-create-listed-exts-if-missing" description:"Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements" env:"PW2_TRY_CREATE_LISTED_EXTS_IF_MISSING" default:""`
 }
@@ -5113,6 +5124,12 @@ func main() {
 	var buffered_persist_ch chan []MetricStoreMessage
 
 	if !opts.Ping {
+
+		if opts.BatchingDelayMs > 0 && opts.Datastore != DATASTORE_PROMETHEUS {
+			buffered_persist_ch = make(chan []MetricStoreMessage, 10000) // "staging area" for metric storage batching, when enabled
+			log.Info("starting MetricsBatcher...")
+			go MetricsBatcher(opts.BatchingDelayMs, buffered_persist_ch, persist_ch)
+		}
 
 		if opts.Datastore == DATASTORE_GRAPHITE {
 			if opts.GraphiteHost == "" || opts.GraphitePort == "" {

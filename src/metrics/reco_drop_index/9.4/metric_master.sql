@@ -2,7 +2,7 @@
 with q_database_size as (
   select pg_database_size(current_database()) as database_size_b
 )
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   'drop_index'::text as tag_reco_topic,
   quote_ident(schemaname)||'.'||quote_ident(indexrelname) as tag_object_name,

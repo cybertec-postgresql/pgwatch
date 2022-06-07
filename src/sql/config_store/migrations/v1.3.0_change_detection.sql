@@ -2,7 +2,7 @@ begin;
 
 delete from metric where m_name = 'table_hasher';
 
-insert into pgwatch2.metric(m_name, m_pg_version_from,m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from,m_sql)
 values (
 'table_hashes',
 9.0,

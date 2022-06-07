@@ -1,21 +1,21 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: pgwatch2-template 
+  name: pgwatch3-template 
 objects:
 - kind: "DeploymentConfig"
   apiVersion: v1
   metadata:
-    name: "pgwatch2"
+    name: "pgwatch3"
   spec:
     template:
       metadata:
         labels:
-          name: "pgwatch2"
+          name: "pgwatch3"
       spec:
         containers:
-          - name: "pgwatch2"
-            image: "cybertec/pgwatch2-nonroot"
+          - name: "pgwatch3"
+            image: "cybertec/pgwatch3-nonroot"
             ports:
               - containerPort: 8080
                 protocol: "TCP"
@@ -28,20 +28,20 @@ objects:
               - containerPort: 8088
                 protocol: "TCP"
             volumeMounts:
-              - mountPath: /pgwatch2/persistent-config
-                name: pgwatch2-config
+              - mountPath: /pgwatch3/persistent-config
+                name: pgwatch3-config
               - mountPath: /var/lib/postgresql
-                name: pgwatch2-postgresql
+                name: pgwatch3-postgresql
               - mountPath: /var/lib/grafana
-                name: pgwatch2-grafana
+                name: pgwatch3-grafana
               - mountPath: /var/lib/influxdb
-                name: pgwatch2-influx
+                name: pgwatch3-influx
             livenessProbe:
               exec:
                 command:
                 - /usr/bin/pg_isready
                 - -qU
-                - pgwatch2
+                - pgwatch3
               initialDelaySeconds: 30
               periodSeconds: 30
             env:
@@ -92,16 +92,16 @@ objects:
               - name: PW2_GRAPHITEPORT
                 value: ${PW2_GRAPHITEPORT}
         volumes:
-        - name: pgwatch2-config
+        - name: pgwatch3-config
           persistentVolumeClaim:
-            claimName: ${PVC_PGWATCH2}
-        - name: pgwatch2-postgresql
+            claimName: ${PVC_pgwatch3}
+        - name: pgwatch3-postgresql
           persistentVolumeClaim:
             claimName: ${PVC_POSTGRESQL}
-        - name: pgwatch2-grafana
+        - name: pgwatch3-grafana
           persistentVolumeClaim:
             claimName: ${PVC_GRAFANA}
-        - name: pgwatch2-influx
+        - name: pgwatch3-influx
           persistentVolumeClaim:
             claimName: ${PVC_INFLUX}
     replicas: 1
@@ -113,10 +113,10 @@ objects:
 - kind: Service
   apiVersion: v1
   metadata:
-    name: pgwatch2-webui
+    name: pgwatch3-webui
   spec:
     selector:
-      name: pgwatch2
+      name: pgwatch3
     ports:
     - port: 8080
       protocol: TCP
@@ -124,17 +124,17 @@ objects:
 - kind: Service
   apiVersion: v1
   metadata:
-    name: pgwatch2-grafana
+    name: pgwatch3-grafana
   spec:
     selector:
-      name: pgwatch2
+      name: pgwatch3
     ports:
     - port: 3000
       protocol: TCP
       targetPort: 3000
 parameters:
-- description: PVC name for pgwatch2 config(must be pre-created, min 10 MB)
-  name: PVC_PGWATCH2
+- description: PVC name for pgwatch3 config(must be pre-created, min 10 MB)
+  name: PVC_pgwatch3
   value: ""
   required: true
 - description: PVC name for Postgres (must be pre-created, min 100 MB)
@@ -166,7 +166,7 @@ parameters:
   value: "admin"
 - description: Web UI admin user password
   name: PW2_WEBPASSWORD
-  value: "pgwatch2admin"
+  value: "pgwatch3admin"
 - description: Can be set to require login even for viewing dashboards
   name: PW2_GRAFANANOANONYMOUS
   value: ""
@@ -175,7 +175,7 @@ parameters:
   value: "admin"
 - description: Grafana administrative user password
   name: PW2_GRAFANAPASSWORD
-  value: "pgwatch2admin"
+  value: "pgwatch3admin"
 - description: When using Grafana externally, set this to get correct links from the Admin UI
   name: PW2_GRAFANA_BASEURL
   value: ""
@@ -187,10 +187,10 @@ parameters:
   value: "5432"
 - description: Postgres config store - DB name
   name: PW2_PGDATABASE
-  value: "pgwatch2"
+  value: "pgwatch3"
 - description: Postgres config store - user
   name: PW2_PGUSER
-  value: "pgwatch2"
+  value: "pgwatch3"
 - description: Postgres config store - password
   name: PW2_PGPASSWORD
   value: ""
@@ -205,7 +205,7 @@ parameters:
   value: "8086"
 - description: External Influx DB - DB name
   name: PW2_IDATABASE
-  value: "pgwatch2"
+  value: "pgwatch3"
 - description: External Influx DB - user
   name: PW2_IUSER
   value: "root"

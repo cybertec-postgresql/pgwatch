@@ -58,7 +58,7 @@ with recursive
           and c.relpersistence != 't' -- and temp tables
     )
 
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
     epoch_ns,
     tag_schema,
     tag_table_name,

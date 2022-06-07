@@ -5,7 +5,7 @@
 export PGHOST=localhost
 export PGPORT=5432
 export PGUSER=postgres
-export PGDATABASE=pgwatch2_grafana
+export PGDATABASE=pgwatch3_grafana
 
 DRY_RUN=1
 PW2_DASHBOARD_NAMES=`ls -1 postgres/v8/`

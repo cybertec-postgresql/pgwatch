@@ -1,2 +1,2 @@
-alter table pgwatch2.metric
+alter table pgwatch3.metric
   add m_column_attrs jsonb;

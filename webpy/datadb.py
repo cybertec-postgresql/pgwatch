@@ -3,8 +3,8 @@ import psycopg2
 import psycopg2.extras
 
 
-connection_string = "host=localhost dbname=pgwatch2 user=pgwatch2 password=pgwatch2admin connect_timeout='3'"
-connection_string_metrics = "host=localhost dbname=pgwatch2_metrics user=pgwatch2 password=pgwatch2admin connect_timeout='3'"
+connection_string = "host=localhost dbname=pgwatch3 user=pgwatch3 password=pgwatch3admin connect_timeout='3'"
+connection_string_metrics = "host=localhost dbname=pgwatch3_metrics user=pgwatch3 password=pgwatch3admin connect_timeout='3'"
 
 
 def setConnectionString(conn_string):
@@ -102,6 +102,6 @@ def isMetricStoreConnectionOK():
 
 if __name__ == '__main__':
     print('execute', execute('select 1 as x'))
-    print('executeOnRemoteHost', executeOnRemoteHost('select 1 as x', 'localhost', 5432, 'postgres', 'pgwatch2', 'pgwatch2admin'))
+    print('executeOnRemoteHost', executeOnRemoteHost('select 1 as x', 'localhost', 5432, 'postgres', 'pgwatch3', 'pgwatch3admin'))
     print('isMetricStoreConnectionOK', isMetricStoreConnectionOK())
 

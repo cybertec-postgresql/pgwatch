@@ -40,4 +40,4 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
-GRANT EXECUTE ON FUNCTION admin.timescale_change_compress_interval(interval) TO pgwatch2;
+GRANT EXECUTE ON FUNCTION admin.timescale_change_compress_interval(interval) TO pgwatch3;

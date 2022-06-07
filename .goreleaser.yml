@@ -3,12 +3,12 @@
 before:
   hooks:
     # weirdly goreleaser doesn't all to include outside of the Go build "root" so need to copy
-    - cp -r grafana_dashboards ./pgwatch2/
-    - cp -r webpy ./pgwatch2/
+    - cp -r grafana_dashboards ./src/
+    - cp -r webpy ./src/
 
 builds:
-  - dir: pgwatch2
-    binary: pgwatch2-daemon
+  - dir: src
+    binary: pgwatch3-daemon
     env:
       - CGO_ENABLED=0
     goos:
@@ -53,11 +53,11 @@ archives:
     files:
       - ./grafana_dashboards/**/*
       - ./webpy/**/*
-      - ./pgwatch2/metrics/**/*
-      - ./pgwatch2/config/**/*
-      - ./pgwatch2/sql/**/*
-      - ./pgwatch2/startup-scripts/**/*
-      - ./pgwatch2/bootstrap/**/*
+      - ./src/metrics/**/*
+      - ./src/config/**/*
+      - ./src/sql/**/*
+      - ./src/startup-scripts/**/*
+      - ./src/bootstrap/**/*
       - ./README.md
 
 nfpms:
@@ -78,12 +78,12 @@ nfpms:
     vendor: CYBERTEC PostgreSQL International GmbH
     # Your app's homepage.
     # Default is empty.
-    homepage: https://github.com/cybertec-postgresql/pgwatch2
+    homepage: https://github.com/cybertec-postgresql/pgwatch3
     maintainer: Pavlo Golub <open.an.issue@github.com>
 
     # Your app's description.
     # Default is empty.
-    description: pgwatch2 metrics collector with metric definitions and sample YAML config
+    description: pgwatch3 metrics collector with metric definitions and sample YAML config
 
     # Your app's license.
     # Default is empty.
@@ -115,27 +115,27 @@ nfpms:
     # implementation.
     # Default is empty.
     empty_folders:
-      - /etc/pgwatch2
+      - /etc/pgwatch3
 
     # Files or directories to add to your package (beyond the binary).
     # Keys are source paths/globs to get the files from.
     # Values are the destination locations of the files in the package.
     contents:
-      - src: "./pgwatch2/metrics/*"
-        dst: "/etc/pgwatch2/metrics"
+      - src: "./pgwatch3/metrics/*"
+        dst: "/etc/pgwatch3/metrics"
         type: config
-      - src: "./pgwatch2/config/*"
-        dst: "/etc/pgwatch2/config"
+      - src: "./pgwatch3/config/*"
+        dst: "/etc/pgwatch3/config"
         type: config
-      - src: "./pgwatch2/sql/*"
-        dst: "/etc/pgwatch2/sql"
-      - src: "./pgwatch2/bootstrap/*"
-        dst: "/etc/pgwatch2/bootstrap"
-      - src: "./pgwatch2/startup-scripts/pgwatch2.service"
-        dst: "/etc/pgwatch2/startup-scripts/pgwatch2.service"
+      - src: "./pgwatch3/sql/*"
+        dst: "/etc/pgwatch3/sql"
+      - src: "./pgwatch3/bootstrap/*"
+        dst: "/etc/pgwatch3/bootstrap"
+      - src: "./pgwatch3/startup-scripts/pgwatch3.service"
+        dst: "/etc/pgwatch3/startup-scripts/pgwatch3.service"
       - src: "./grafana_dashboards/*"
-        dst: "/etc/pgwatch2/grafana-dashboards"
-      - src: "./pgwatch2/webpy/*"
-        dst: "/etc/pgwatch2/webpy"
+        dst: "/etc/pgwatch3/grafana-dashboards"
+      - src: "./pgwatch3/webpy/*"
+        dst: "/etc/pgwatch3/webpy"
       - src: "./README.md"
-        dst: "/etc/pgwatch2/README.md"
+        dst: "/etc/pgwatch3/README.md"

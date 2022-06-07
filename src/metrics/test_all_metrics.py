@@ -138,7 +138,7 @@ def get_metrics_from_filesystem(target_pgver, is_primary):
 
 
 def main():
-    argp = argparse.ArgumentParser(description='Roll out pgwatch2 metric fetching helpers to all monitored DB-s configured in config DB or to a specified DB / instance (all DBs)')
+    argp = argparse.ArgumentParser(description='Roll out pgwatch3 metric fetching helpers to all monitored DB-s configured in config DB or to a specified DB / instance (all DBs)')
 
     argp.add_argument('--metrics-path', dest='metrics_path', default='.', help='Path to the folder containing metric definitions. Current working directory by default')
     # target db connect info

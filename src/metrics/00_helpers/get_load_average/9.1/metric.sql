@@ -9,8 +9,8 @@ la = getloadavg()
 return [la[0], la[1], la[2]]
 $$ LANGUAGE plpython3u VOLATILE;
 
-GRANT EXECUTE ON FUNCTION get_load_average() TO pgwatch2;
+GRANT EXECUTE ON FUNCTION get_load_average() TO pgwatch3;
 
-COMMENT ON FUNCTION get_load_average() is 'created for pgwatch2';
+COMMENT ON FUNCTION get_load_average() is 'created for pgwatch3';
 
 COMMIT;

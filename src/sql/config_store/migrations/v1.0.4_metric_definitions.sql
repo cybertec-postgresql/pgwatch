@@ -1,5 +1,5 @@
 
-update pgwatch2.metric
+update pgwatch3.metric
 set m_sql = $sql$
 with sa_snapshot as (
   select * from pg_stat_activity where pid != pg_backend_pid() and not query like 'autovacuum:%' and datname = current_database()
@@ -21,7 +21,7 @@ $sql$
 where m_name = 'backends' and  m_pg_version_from = 9.6
 ;
 
-update pgwatch2.metric
+update pgwatch3.metric
 set m_sql = $sql$
 with sa_snapshot as (
   select * from pg_stat_activity where pid != pg_backend_pid() and not query like 'autovacuum:%' and datname = current_database()
@@ -44,7 +44,7 @@ where m_name = 'backends' and  m_pg_version_from = 9.0
 ;
 
 
-update pgwatch2.metric
+update pgwatch3.metric
 set m_sql = $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,

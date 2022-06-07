@@ -1,6 +1,6 @@
-# Sets up a standard v12 Postgres cluster from PGDG repos + ensure a pgwatch2 monitoring role
+# Sets up a standard v12 Postgres cluster from PGDG repos + ensure a pgwatch3 monitoring role
 # NB! Expects Ubuntu / Debian hosts currently!
-# NB2! Although a trusted environment is assumed a password (perftesting) for the pgwatch2 (superuser!) user is set. Change accordingly
+# NB2! Although a trusted environment is assumed a password (perftesting) for the pgwatch3 (superuser!) user is set. Change accordingly
 
 - hosts: all
   become: yes
@@ -58,14 +58,14 @@
         name: postgresql
         state: restarted
 
-    - name: Ensure pgwatch2 role. NB! Using superuser here which is not of course recommended generally for remote monitoring
-      shell: 'createuser -U postgres --superuser -g pg_monitor pgwatch2'
+    - name: Ensure pgwatch3 role. NB! Using superuser here which is not of course recommended generally for remote monitoring
+      shell: 'createuser -U postgres --superuser -g pg_monitor pgwatch3'
       ignore_errors: yes
 
-    - name: Set pgwatch2 password to "perftesting"
+    - name: Set pgwatch3 password to "perftesting"
       shell:
         cmd: |
-          psql -U postgres -c "alter role pgwatch2 password 'md56d9f217af43ed7b01c23fd48bfa3bb3f'"
+          psql -U postgres -c "alter role pgwatch3 password 'md56d9f217af43ed7b01c23fd48bfa3bb3f'"
 
     - name: Create the pg_stat_statements extension
       shell:

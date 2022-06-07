@@ -1,5 +1,5 @@
 /* assumes the pg_qualstats extension and superuser or select grant on pg_qualstats_index_advisor() function */
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   epoch_ns,
   tag_reco_topic,
   tag_object_name,

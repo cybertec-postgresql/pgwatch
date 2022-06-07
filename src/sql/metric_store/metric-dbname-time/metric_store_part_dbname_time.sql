@@ -1,14 +1,14 @@
 /* NB! PG 11+ only, for lesser PG versions see "metric_store_simple.sql"
    This schema is recommended for 25+ monitored DBs or for short intervals /
    long retention periods i.e. gigs and gigs of data.
-   NB! A fresh separate DB, only for pgwatch2 metrics storage purposes, is assumed.
+   NB! A fresh separate DB, only for pgwatch3 metrics storage purposes, is assumed.
 */
 
-CREATE SCHEMA IF NOT EXISTS subpartitions AUTHORIZATION pgwatch2;
+CREATE SCHEMA IF NOT EXISTS subpartitions AUTHORIZATION pgwatch3;
 
 CREATE EXTENSION IF NOT EXISTS btree_gin;
 
-SET ROLE TO pgwatch2;
+SET ROLE TO pgwatch3;
 
 -- drop table if exists metrics_template;
 
@@ -32,17 +32,17 @@ create index on admin.metrics_template using gin (dbname, tag_data, time) where 
 create table public."mymetric"
   (LIKE admin.metrics_template)
   PARTITION BY LIST (dbname);
-COMMENT ON TABLE public."mymetric" IS 'pgwatch2-generated-metric-lvl';
+COMMENT ON TABLE public."mymetric" IS 'pgwatch3-generated-metric-lvl';
 
 create table subpartitions."mymetric_mydbname"
   PARTITION OF public."mymetric"
   FOR VALUES IN ('my-dbname') PARTITION BY RANGE (time);
-COMMENT ON TABLE subpartitions."mymetric_mydbname" IS 'pgwatch2-generated-metric-dbname-lvl';
+COMMENT ON TABLE subpartitions."mymetric_mydbname" IS 'pgwatch3-generated-metric-dbname-lvl';
 
 create table subpartitions."mymetric_mydbname_y2019w01" -- month calculated dynamically of course
   PARTITION OF subpartitions."mymetric_mydbname"
   FOR VALUES FROM ('2019-01-01') TO ('2019-01-07');
-COMMENT ON TABLE subpartitions."mymetric_mydbname_y2019w01" IS 'pgwatch2-generated-metric-dbname-time-lvl';
+COMMENT ON TABLE subpartitions."mymetric_mydbname_y2019w01" IS 'pgwatch3-generated-metric-dbname-time-lvl';
 
 */
 

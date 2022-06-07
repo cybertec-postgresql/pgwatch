@@ -6,9 +6,9 @@ Security aspects
 General security information
 ----------------------------
 
-Security can be tightened for most pgwatch2 components quite granularly, but the default values for the Docker image
+Security can be tightened for most pgwatch3 components quite granularly, but the default values for the Docker image
 don't focus on security though but rather on being quickly usable for ad-hoc performance troubleshooting, which is where
-the roots of pgwatch2 lie.
+the roots of pgwatch3 lie.
 
 Some points on security:
 
@@ -38,14 +38,14 @@ Some points on security:
   gatherer. If using YAML configs then encrypted passwords can be generated using the *--aes-gcm-password-to-encrypt* flag
   for embedding in YAML.
 
-  Note that although pgwatch2 can handle password security, in many cases it's better to still use the standard LibPQ *.pgpass*
+  Note that although pgwatch3 can handle password security, in many cases it's better to still use the standard LibPQ *.pgpass*
   file to store passwords.
 
 Launching a more secure Docker container
 ----------------------------------------
 
 Some common sense security is built into default Docker images for all components but not actived by default. A sample
-command to launch pgwatch2 with following security "checkpoints" enabled:
+command to launch pgwatch3 with following security "checkpoints" enabled:
 
 #. HTTPS for both Grafana and the Web UI with self-signed certificates
 #. No anonymous viewing of graphs in Grafana
@@ -63,7 +63,7 @@ command to launch pgwatch2 with following security "checkpoints" enabled:
       -e PW2_WEBNOANONYMOUS=1 -e PW2_WEBNOCOMPONENTLOGS=1 \
       -e PW2_WEBUSER=myuser -e PW2_WEBPASSWORD=mypass \
       -e PW2_AES_GCM_KEYPHRASE=qwerty \
-      cybertec/pgwatch2-postgres
+      cybertec/pgwatch3-postgres
 
 NB! For custom installs it's up to the user though. A hint - Docker *launcher* files can also be inspected to see
 which config parameters are being touched.

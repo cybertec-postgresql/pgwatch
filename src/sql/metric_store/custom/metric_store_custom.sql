@@ -6,7 +6,7 @@
   a couple of DB-s and performance / minimal storage is no issue.
 */
 
-SET ROLE TO pgwatch2;
+SET ROLE TO pgwatch3;
 
 -- drop table if exists metrics;
 

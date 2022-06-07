@@ -42,7 +42,7 @@ BEGIN
         END IF;
 
         EXECUTE format($$CREATE TABLE IF NOT EXISTS public.%I (LIKE %s INCLUDING INDEXES)$$, metric, l_template_table);
-        EXECUTE format($$COMMENT ON TABLE public.%I IS 'pgwatch2-generated-metric-lvl'$$, metric);
+        EXECUTE format($$COMMENT ON TABLE public.%I IS 'pgwatch3-generated-metric-lvl'$$, metric);
         PERFORM create_hypertable(format('public.%I', metric), 'time', chunk_time_interval => l_chunk_time_interval);
         EXECUTE format(l_compression_policy, metric);
         SELECT ((regexp_matches(extversion, '\d+\.\d+'))[1])::numeric INTO l_timescale_version FROM pg_extension WHERE extname = 'timescaledb';
@@ -56,4 +56,4 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
-GRANT EXECUTE ON FUNCTION admin.ensure_partition_timescale(text) TO pgwatch2;
+GRANT EXECUTE ON FUNCTION admin.ensure_partition_timescale(text) TO pgwatch3;

@@ -1,4 +1,4 @@
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   current_setting('block_size')::int8 * (
     select sum(relpages) from pg_class c

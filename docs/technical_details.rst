@@ -1,7 +1,7 @@
 Technical details
 =================
 
-Here are some technical details that might be interesting for those who are planning to use pgwatch2 for critical monitoring tasks
+Here are some technical details that might be interesting for those who are planning to use pgwatch3 for critical monitoring tasks
 or customize it in some way.
 
 * Dynamic management of monitored databases, metrics and their intervals - no need to restart/redeploy
@@ -22,7 +22,7 @@ or customize it in some way.
 
 * Instance-level metrics caching
 
-  To further reduce load on multi-DB instances, pgwatch2 can cache the output of metrics that are marked to gather only
+  To further reduce load on multi-DB instances, pgwatch3 can cache the output of metrics that are marked to gather only
   instance-level data. One such metric is for example "wal", and the *metric attribute* is "is_instance_level".
   Caching will by activated only for *continuous* :ref:`DB types <db_types>`, and to a default limit of up to 30 seconds (changeable via the
   \-\-instance-level-cache-max-seconds param).

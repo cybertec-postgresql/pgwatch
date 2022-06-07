@@ -13,5 +13,5 @@ sw = swap_memory()
 return vm.total, vm.used, vm.free, vm.buffers + vm.cached, vm.available, vm.percent, sw.total, sw.used, sw.free, sw.percent
 $FUNCTION$;
 
-GRANT EXECUTE ON FUNCTION get_psutil_mem() TO pgwatch2;
-COMMENT ON FUNCTION get_psutil_mem() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_psutil_mem() TO pgwatch3;
+COMMENT ON FUNCTION get_psutil_mem() IS 'created for pgwatch3';

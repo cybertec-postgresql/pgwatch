@@ -41,7 +41,7 @@ BEGIN
     l_sql := format($$CREATE %s TABLE IF NOT EXISTS public.%s (LIKE %s INCLUDING INDEXES) PARTITION BY RANGE (time)$$,
                     l_unlogged, quote_ident(metric), l_template_table);
     EXECUTE l_sql;
-    EXECUTE format($$COMMENT ON TABLE public.%s IS 'pgwatch2-generated-metric-lvl'$$, quote_ident(metric));
+    EXECUTE format($$COMMENT ON TABLE public.%s IS 'pgwatch3-generated-metric-lvl'$$, quote_ident(metric));
   END IF;
   
   FOR i IN 0..partitions_to_precreate LOOP
@@ -89,7 +89,7 @@ BEGIN
     l_sql := format($$CREATE %s TABLE IF NOT EXISTS subpartitions.%s PARTITION OF public.%s FOR VALUES FROM ('%s') TO ('%s')$$,
                     l_unlogged, quote_ident(l_part_name), quote_ident(metric), l_part_start, l_part_end);
     EXECUTE l_sql;
-    EXECUTE format($$COMMENT ON TABLE subpartitions.%s IS 'pgwatch2-generated-metric-time-lvl'$$, quote_ident(l_part_name));
+    EXECUTE format($$COMMENT ON TABLE subpartitions.%s IS 'pgwatch3-generated-metric-time-lvl'$$, quote_ident(l_part_name));
   END IF;
 
   END LOOP;
@@ -98,4 +98,4 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
-GRANT EXECUTE ON FUNCTION admin.ensure_partition_metric_time(text,timestamp with time zone,integer) TO pgwatch2;
+GRANT EXECUTE ON FUNCTION admin.ensure_partition_metric_time(text,timestamp with time zone,integer) TO pgwatch3;

@@ -3,5 +3,5 @@ $$
   select * from pg_sequences
 $$ LANGUAGE sql VOLATILE SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION get_sequences() TO pgwatch2;
-COMMENT ON FUNCTION get_sequences() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_sequences() TO pgwatch3;
+COMMENT ON FUNCTION get_sequences() IS 'created for pgwatch3';

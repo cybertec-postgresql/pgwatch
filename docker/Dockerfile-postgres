@@ -1,13 +1,13 @@
 FROM golang:1.17
 
-# For showing Git version via 'pgwatch2 --version'
+# For showing Git version via 'pgwatch3 --version'
 ARG GIT_HASH
 ARG GIT_TIME
 ENV GIT_HASH=${GIT_HASH}
 ENV GIT_TIME=${GIT_TIME}
 
-ADD pgwatch2 /pgwatch2
-RUN cd /pgwatch2 && bash build_gatherer.sh
+ADD src /pgwatch3
+RUN cd /pgwatch3 && bash build_gatherer.sh
 
 
 FROM ubuntu:18.04
@@ -16,8 +16,8 @@ RUN apt-get -q update && DEBIAN_FRONTEND=noninteractive apt-get install -qy curl
     && echo "deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && apt-get -q update \
     && DEBIAN_FRONTEND=noninteractive apt-get -qy install wget apt-transport-https vim git postgresql-11 \
-       postgresql-plpython-11 libfontconfig python3-pip python-pip libssl-dev libpq-dev \
-    && pip install -U pip && pip3 install -U pip \
+       postgresql-plpython-11 libfontconfig python3-pip libssl-dev libpq-dev \
+    && pip3 install -U pip \
     && locale-gen "en_US.UTF-8" && apt autoremove -y \
     && pg_dropcluster 11 main ; pg_createcluster --locale en_US.UTF-8 11 main \
     && echo "include = 'pgwatch_postgresql.conf'" >> /etc/postgresql/11/main/postgresql.conf
@@ -26,23 +26,23 @@ RUN wget -q -O grafana.deb https://dl.grafana.com/oss/release/grafana_8.3.4_amd6
     && dpkg -i grafana.deb && rm grafana.deb
 
 
-# Add pgwatch2 sources
-ADD pgwatch2 /pgwatch2
+# Add pgwatch3 sources
+ADD src /pgwatch3
 # Copy over the compiled gatherer
-COPY --from=0 /pgwatch2/pgwatch2 /pgwatch2
-ADD webpy /pgwatch2/webpy
+COPY --from=0 /pgwatch3/pgwatch3 /pgwatch3
+ADD webpy /pgwatch3/webpy
 
-# For showing Git versions via :8080/versions or 'pgwatch2 --version'
+# For showing Git versions via :8080/versions or 'pgwatch3 --version'
 ARG GIT_HASH
 ARG GIT_TIME
 ENV GIT_HASH=${GIT_HASH}
 ENV GIT_TIME=${GIT_TIME}
-RUN echo "${GIT_HASH} ${GIT_TIME}" > /pgwatch2/build_git_version.txt
+RUN echo "${GIT_HASH} ${GIT_TIME}" > /pgwatch3/build_git_version.txt
 
 # Grafana config customizations, Web UI requirements, compilation of the Go gatherer
-RUN cp /pgwatch2/bootstrap/grafana_custom_config.ini /etc/grafana/grafana.ini \
-    && pip3 install -r /pgwatch2/webpy/requirements_pg_metrics.txt \
-    && pip2 install psutil \
+RUN cp /pgwatch3/bootstrap/grafana_custom_config.ini /etc/grafana/grafana.ini \
+    && pip3 install -r /pgwatch3/webpy/requirements_pg_metrics.txt \
+    && pip3 install psutil \
     && grafana-cli plugins install savantly-heatmap-panel \
     && pip3 install supervisor pyyaml && mkdir /var/log/supervisor
 
@@ -51,39 +51,39 @@ RUN cp /pgwatch2/bootstrap/grafana_custom_config.ini /etc/grafana/grafana.ini \
 RUN apt-get -q update && DEBIAN_FRONTEND=noninteractive apt-get -qy install postgresql-11-pg-qualstats \
     postgresql-plpython3-11 && pip3 install psutil
 
-ADD grafana_dashboards /pgwatch2/grafana_dashboards
+ADD grafana_dashboards /pgwatch3/grafana_dashboards
 
 
 # Set up supervisord [https://docs.docker.com/engine/admin/using_supervisord/]
 COPY supervisord-postgres.conf /etc/supervisor/supervisord.conf
 
-# NB! When security is a concern one should definitely alter "pgwatch2" password in change_pw.sql and maybe modify pg_hba.conf accordingly
+# NB! When security is a concern one should definitely alter "pgwatch3" password in change_pw.sql and maybe modify pg_hba.conf accordingly
 COPY postgresql_18.04.conf /etc/postgresql/11/main/pgwatch_postgresql.conf
 COPY pg_hba.conf /etc/postgresql/11/main/pg_hba.conf
-COPY docker-launcher-postgres.sh postgresql.conf pg_hba.conf /pgwatch2/
+COPY docker-launcher-postgres.sh postgresql.conf pg_hba.conf /pgwatch3/
 
 ENV PW2_DATASTORE postgres
-ENV PW2_PG_METRIC_STORE_CONN_STR postgresql://pgwatch2:pgwatch2admin@localhost:5432/pgwatch2_metrics
+ENV PW2_PG_METRIC_STORE_CONN_STR postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
 ENV PW2_PG_SCHEMA_TYPE metric-time
-ENV PW2_AES_GCM_KEYPHRASE_FILE /pgwatch2/persistent-config/default-password-encryption-key.txt
+ENV PW2_AES_GCM_KEYPHRASE_FILE /pgwatch3/persistent-config/default-password-encryption-key.txt
 
 # Admin UI for configuring servers to be monitored
 EXPOSE 8080
 # Gatherer healthcheck port / metric statistics (JSON)
 EXPOSE 8081
-# Postgres DB holding the pgwatch2 config DB / metrics
+# Postgres DB holding the pgwatch3 config DB / metrics
 EXPOSE 5432
 # Grafana UI
 EXPOSE 3000
 # Prometheus scraping port
 EXPOSE 9187
 
-### Volumes for easier updating to newer to newer pgwatch2 containers
+### Volumes for easier updating to newer to newer pgwatch3 containers
 ### NB! Backwards compatibility is not 100% guaranteed so a backup
 ### using traditional means is still recommended before updating - see "Updating to a newer Docker version" from README
 
-VOLUME /pgwatch2/persistent-config
+VOLUME /pgwatch3/persistent-config
 VOLUME /var/lib/postgresql
 VOLUME /var/lib/grafana
 
-CMD ["/pgwatch2/docker-launcher-postgres.sh"]
+CMD ["/pgwatch3/docker-launcher-postgres.sh"]

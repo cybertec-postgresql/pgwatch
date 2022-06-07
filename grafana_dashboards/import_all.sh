@@ -5,7 +5,7 @@
 export PGHOST=localhost
 export PGPORT=5432
 export PGUSER=postgres
-export PGDATABASE=pgwatch2_grafana
+export PGDATABASE=pgwatch3_grafana
 
 GRAFANA_DB_TYPE=postgres
 GRAFANA_MAJOR_VER=8

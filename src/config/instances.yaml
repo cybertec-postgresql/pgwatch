@@ -4,7 +4,7 @@
                       # defaults to postgres if not specified
   host: localhost
   port: 5432          # defaults to 5432 if not specified
-  dbname: pgwatch2
+  dbname: pgwatch3
   user: someuser
   password: somepass
   sslmode: disable    # supported options: disable, require, verify-ca, verify-full

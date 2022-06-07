@@ -1,24 +1,24 @@
-create schema if not exists pgwatch2 authorization pgwatch2;
+create schema if not exists pgwatch3 authorization pgwatch3;
 
-set search_path to pgwatch2, public;
+set search_path to pgwatch3, public;
 
-alter database pgwatch2 set search_path to public, pgwatch2;
+alter database pgwatch3 set search_path to public, pgwatch3;
 
-set role to pgwatch2; -- NB! Role/db create script is in bootstrap/create_db_pgwatch.sql
+set role to pgwatch3; -- NB! Role/db create script is in bootstrap/create_db_pgwatch.sql
 
 -- drop table if exists preset_config cascade;
 
 /* preset configs for typical usecases */
-create table if not exists pgwatch2.preset_config (
+create table if not exists pgwatch3.preset_config (
     pc_name text primary key,
     pc_description text not null,
     pc_config jsonb not null,
     pc_last_modified_on timestamptz not null default now()
 );
 
--- drop table if exists pgwatch2.monitored_db;
+-- drop table if exists pgwatch3.monitored_db;
 
-create table if not exists pgwatch2.monitored_db (
+create table if not exists pgwatch3.monitored_db (
     md_id serial not null primary key,
     md_unique_name text not null,
     md_hostname text not null,
@@ -28,7 +28,7 @@ create table if not exists pgwatch2.monitored_db (
     md_password text,
     md_is_superuser boolean not null default false,
     md_sslmode text not null default 'disable',  -- set to 'require' for to force SSL
-    md_preset_config_name text references pgwatch2.preset_config(pc_name) default 'basic',
+    md_preset_config_name text references pgwatch3.preset_config(pc_name) default 'basic',
     md_config jsonb,
     md_is_enabled boolean not null default 't',
     md_last_modified_on timestamptz not null default now(),
@@ -44,7 +44,7 @@ create table if not exists pgwatch2.monitored_db (
     md_password_type text not null default 'plain-text',
     md_host_config jsonb,
     md_only_if_master bool not null default false,
-    md_preset_config_name_standby text references pgwatch2.preset_config(pc_name),
+    md_preset_config_name_standby text references pgwatch3.preset_config(pc_name),
     md_config_standby jsonb,
 
     UNIQUE (md_unique_name),
@@ -59,7 +59,7 @@ create table if not exists pgwatch2.monitored_db (
 create unique index if not exists monitored_db_md_hostname_md_port_md_dbname_md_is_enabled_idx on monitored_db(md_hostname, md_port, md_dbname, md_is_enabled) where not md_dbtype ~ 'patroni';
 
 
-alter table pgwatch2.monitored_db add constraint preset_or_custom_config check
+alter table pgwatch3.monitored_db add constraint preset_or_custom_config check
     ((not (md_preset_config_name is null and md_config is null))
     and not (md_preset_config_name is not null and md_config is not null)),
 
@@ -101,10 +101,10 @@ create table if not exists schema_version (
     sv_created_on timestamptz not null default now()
 );
 
-insert into pgwatch2.schema_version (sv_tag) values ('1.8.5');
+insert into pgwatch3.schema_version (sv_tag) values ('1.8.5');
 
 
-insert into pgwatch2.preset_config (pc_name, pc_description, pc_config)
+insert into pgwatch3.preset_config (pc_name, pc_description, pc_config)
     values ('minimal', 'single "Key Performance Indicators" query for fast cluster/db overview',
     '{
     "kpi": 60
@@ -411,5 +411,5 @@ insert into pgwatch2.preset_config (pc_name, pc_description, pc_config)
      }');
 
 /* one host for demo purposes, so that "docker run" could immediately show some graphs */
---insert into pgwatch2.monitored_db (md_unique_name, md_preset_config_name, md_config, md_hostname, md_port, md_dbname, md_user, md_password)
---    values ('test', 'exhaustive', null, 'localhost', '5432', 'pgwatch2', 'pgwatch2', 'pgwatch2admin');
+--insert into pgwatch3.monitored_db (md_unique_name, md_preset_config_name, md_config, md_hostname, md_port, md_dbname, md_user, md_password)
+--    values ('test', 'exhaustive', null, 'localhost', '5432', 'pgwatch3', 'pgwatch3', 'pgwatch3admin');

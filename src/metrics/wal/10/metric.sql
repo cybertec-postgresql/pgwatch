@@ -1,4 +1,4 @@
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   case
     when pg_is_in_recovery() = false then

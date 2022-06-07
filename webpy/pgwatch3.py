@@ -8,8 +8,7 @@ from datetime import datetime
 from datetime import timedelta
 
 
-SERVICES = {'pgwatch2': {'log_root': '/var/log/supervisor/', 'glob': 'pgwatch2-stderr*'},
-            'influxdb': {'log_root': '/var/log/supervisor/', 'glob': 'influxdb-stderr*'},
+SERVICES = {'pgwatch3': {'log_root': '/var/log/supervisor/', 'glob': 'pgwatch3-stderr*'},
             'grafana': {'log_root': '/var/log/grafana/', 'glob': 'grafana.log'},
             'postgres': {'log_root': '/var/log/postgresql/', 'glob': 'postgresql-*.csv'},
             'webui': {'log_root': '/var/log/supervisor/', 'glob': 'webpy-stderr*'},
@@ -19,7 +18,7 @@ STATEMENT_SORT_COLUMNS = ['total_time', 'mean_time', 'calls', 'shared_blks_hit',
                           'temp_blks_read', 'temp_blks_written', 'blk_read_time', 'blk_write_time']
 
 
-def get_last_log_lines(service='pgwatch2', lines=200):
+def get_last_log_lines(service='pgwatch3', lines=200):
     if service not in SERVICES:
         raise Exception('service needs to be one of: ' + SERVICES.keys())
 
@@ -48,7 +47,7 @@ def get_all_monitored_dbs():
           coalesce(md_include_pattern, '') as md_include_pattern,
           coalesce(md_exclude_pattern, '') as md_exclude_pattern
         from
-          pgwatch2.monitored_db
+          pgwatch3.monitored_db
         order by
           md_is_enabled desc, md_id
     """
@@ -67,7 +66,7 @@ def get_monitored_db_by_id(id):
           coalesce(md_include_pattern, '') as md_include_pattern,
           coalesce(md_exclude_pattern, '') as md_exclude_pattern
         from
-          pgwatch2.monitored_db
+          pgwatch3.monitored_db
         where
           md_id = %s
     """
@@ -82,7 +81,7 @@ def get_active_db_uniques():
         select
           md_unique_name
         from
-          pgwatch2.monitored_db
+          pgwatch3.monitored_db
         where
           md_is_enabled
         order by
@@ -99,10 +98,10 @@ def get_preset_configs():
         select
           pc_name, pc_description, pc_config::text, date_trunc('second', pc_last_modified_on)::text as pc_last_modified_on,
           coalesce((select array_to_string(array_agg(md_unique_name order by md_unique_name), ', ')
-            from pgwatch2.monitored_db where md_preset_config_name = pc_name and md_is_enabled
+            from pgwatch3.monitored_db where md_preset_config_name = pc_name and md_is_enabled
             group by md_preset_config_name), '') as active_dbs
         from
-          pgwatch2.preset_config
+          pgwatch3.preset_config
         order by
           pc_name
     """
@@ -114,7 +113,7 @@ def get_active_metrics_with_versions():
         select
           m_name, array_to_string(array_agg(m_pg_version_from order by m_pg_version_from), ',') as versions
         from
-          pgwatch2.metric
+          pgwatch3.metric
         where
           m_is_active
         group by
@@ -130,9 +129,9 @@ def get_all_metrics():
           date_trunc('second', m_last_modified_on::timestamp) as m_last_modified_on, m_master_only, m_standby_only,
           coalesce(m_column_attrs::text, '') as m_column_attrs, coalesce(ma_metric_attrs::text, '') as ma_metric_attrs
         from
-          pgwatch2.metric
+          pgwatch3.metric
           left join
-          pgwatch2.metric_attribute on (ma_metric_name = m_name)
+          pgwatch3.metric_attribute on (ma_metric_name = m_name)
         order by
           m_is_active desc, m_name, m_pg_version_from
     """
@@ -183,11 +182,11 @@ def update_monitored_db(params, cmd_args=None):
     sql = """
         with q_old as (
           /* using CTE to be enable detect if connect info is being changed */
-          select * from pgwatch2.monitored_db
+          select * from pgwatch3.monitored_db
           where md_id = %(md_id)s
         )
         update
-          pgwatch2.monitored_db new
+          pgwatch3.monitored_db new
         set
           md_group = %(md_group)s,
           md_hostname = %(md_hostname)s,
@@ -268,7 +267,7 @@ def insert_monitored_db(params, cmd_args=None):
             params[p] = default
     sql_insert_new_db = """
         insert into
-          pgwatch2.monitored_db (md_unique_name, md_hostname, md_port, md_dbname, md_user, md_password, md_password_type, md_is_superuser,
+          pgwatch3.monitored_db (md_unique_name, md_hostname, md_port, md_dbname, md_user, md_password, md_password_type, md_is_superuser,
           md_sslmode, md_root_ca_path,md_client_cert_path, md_client_key_path, md_is_enabled, md_preset_config_name, md_config, md_statement_timeout_seconds, md_dbtype,
           md_include_pattern, md_exclude_pattern, md_custom_tags, md_group, md_host_config, md_only_if_master, md_preset_config_name_standby, md_config_standby)
         values
@@ -308,7 +307,7 @@ def insert_monitored_db(params, cmd_args=None):
             active_dbs_on_host = [x['datname'] for x in active_dbs_on_host]
 
             # "subtract" DBs that are already monitored
-            currently_monitored_dbs, err = datadb.execute("select md_dbname from pgwatch2.monitored_db where "
+            currently_monitored_dbs, err = datadb.execute("select md_dbname from pgwatch3.monitored_db where "
                                                           " (md_hostname, md_port) = (%(md_hostname)s, %(md_port)s)", params)
             if err:
                 raise Exception("Could not read currently active DBs from config DB!")
@@ -355,7 +354,7 @@ def insert_monitored_db(params, cmd_args=None):
 def delete_monitored_db(params):
     # delete in config db
     sql = """
-        delete from pgwatch2.monitored_db where md_id = %(md_id)s
+        delete from pgwatch3.monitored_db where md_id = %(md_id)s
     """
     ret, err = datadb.execute(sql, params)
     if err:
@@ -367,7 +366,7 @@ def delete_monitored_db(params):
 def update_preset_config(params):
     sql = """
         update
-          pgwatch2.preset_config
+          pgwatch3.preset_config
         set
           pc_description = %(pc_description)s,
           pc_config = %(pc_config)s,
@@ -383,7 +382,7 @@ def update_preset_config(params):
 def insert_preset_config(params):
     sql = """
         insert into
-          pgwatch2.preset_config (pc_name, pc_description, pc_config)
+          pgwatch3.preset_config (pc_name, pc_description, pc_config)
         values
           (%(pc_name)s, %(pc_description)s, %(pc_config)s)
         returning pc_name
@@ -396,7 +395,7 @@ def insert_preset_config(params):
 
 def delete_preset_config(params):
     sql = """
-        delete from pgwatch2.preset_config where pc_name = %(pc_name)s
+        delete from pgwatch3.preset_config where pc_name = %(pc_name)s
     """
     ret, err = datadb.execute(sql, params)
     if err:
@@ -406,7 +405,7 @@ def delete_preset_config(params):
 def update_metric(params):
     sql_metric = """
         update
-          pgwatch2.metric
+          pgwatch3.metric
         set
           m_name = %(m_name)s,
           m_pg_version_from = %(m_pg_version_from)s,
@@ -425,7 +424,7 @@ def update_metric(params):
     sql_metric_attribute = """
         with q_try_upd as (
             update
-              pgwatch2.metric_attribute
+              pgwatch3.metric_attribute
             set
               ma_metric_attrs = %(ma_metric_attrs)s,
               ma_last_modified_on = now()
@@ -433,7 +432,7 @@ def update_metric(params):
               ma_metric_name = %(m_name)s
             returning *
         )
-        insert into pgwatch2.metric_attribute (ma_metric_name, ma_metric_attrs)
+        insert into pgwatch3.metric_attribute (ma_metric_name, ma_metric_attrs)
         select
           %(m_name)s,
           %(ma_metric_attrs)s
@@ -456,14 +455,14 @@ def insert_metric(params):
     msg = ''
     sql = """
         insert into
-          pgwatch2.metric (m_name, m_pg_version_from, m_sql, m_sql_su, m_comment, m_is_active, m_is_helper, m_master_only, m_standby_only, m_column_attrs)
+          pgwatch3.metric (m_name, m_pg_version_from, m_sql, m_sql_su, m_comment, m_is_active, m_is_helper, m_master_only, m_standby_only, m_column_attrs)
         values
           (%(m_name)s, %(m_pg_version_from)s, %(m_sql)s, %(m_sql_su)s, %(m_comment)s, %(m_is_active)s, %(m_is_helper)s, %(m_master_only)s, %(m_standby_only)s, %(m_column_attrs)s)
         returning m_id
     """
     sql_metric_attribute = """
         insert into
-          pgwatch2.metric_attribute (ma_metric_name, ma_metric_attrs)
+          pgwatch3.metric_attribute (ma_metric_name, ma_metric_attrs)
         select
           %(m_name)s, %(ma_metric_attrs)s
     """
@@ -483,12 +482,12 @@ def insert_metric(params):
 def delete_metric(params):
     msg = ''
     sql = """
-        delete from pgwatch2.metric where m_id = %(m_id)s
+        delete from pgwatch3.metric where m_id = %(m_id)s
     """
     sql_metric_attribute = """
-        delete from pgwatch2.metric_attribute
+        delete from pgwatch3.metric_attribute
         where ma_metric_name = %(m_name)s
-        and (select count(*) from pgwatch2.metric where m_name = %(m_name)s) = 0
+        and (select count(*) from pgwatch3.metric where m_name = %(m_name)s) = 0
     """
 
     _, err = datadb.execute(sql, params, quiet=True)
@@ -550,28 +549,28 @@ def delete_postgres_metrics_for_all_inactive_hosts(active_dbs):
     return list(to_delete)
 
 def disable_all_dbs():
-    sql = """update pgwatch2.monitored_db set md_is_enabled = false, md_last_modified_on = now() where md_is_enabled"""
+    sql = """update pgwatch3.monitored_db set md_is_enabled = false, md_last_modified_on = now() where md_is_enabled"""
     ret, _ = datadb.execute(sql)
     if ret and len(ret) == 1:
         return ret[0]['rows_affected']
     return '0'
 
 def enable_all_dbs():
-    sql = """update pgwatch2.monitored_db set md_is_enabled = true, md_last_modified_on = now() where not md_is_enabled"""
+    sql = """update pgwatch3.monitored_db set md_is_enabled = true, md_last_modified_on = now() where not md_is_enabled"""
     ret, _ = datadb.execute(sql)
     if ret and len(ret) == 1:
         return ret[0]['rows_affected']
     return '0'
 
 def set_bulk_config(params):
-    sql = """update pgwatch2.monitored_db set md_preset_config_name = %(bulk_preset_config_name)s, md_config = null, md_last_modified_on = now() where md_preset_config_name != %(bulk_preset_config_name)s"""
+    sql = """update pgwatch3.monitored_db set md_preset_config_name = %(bulk_preset_config_name)s, md_config = null, md_last_modified_on = now() where md_preset_config_name != %(bulk_preset_config_name)s"""
     ret, _ = datadb.execute(sql, params)
     if ret and len(ret) == 1:
         return ret[0]['rows_affected']
     return '0'
 
 def set_bulk_timeout(params):
-    sql = """update pgwatch2.monitored_db set md_statement_timeout_seconds = %(bulk_timeout_seconds)s, md_last_modified_on = now() where md_statement_timeout_seconds != %(bulk_timeout_seconds)s"""
+    sql = """update pgwatch3.monitored_db set md_statement_timeout_seconds = %(bulk_timeout_seconds)s, md_last_modified_on = now() where md_statement_timeout_seconds != %(bulk_timeout_seconds)s"""
     ret, _ = datadb.execute(sql, params)
     if ret and len(ret) == 1:
         return ret[0]['rows_affected']
@@ -579,7 +578,7 @@ def set_bulk_timeout(params):
 
 def set_bulk_password(params, cmd_args):
     err = ''
-    sql = """update pgwatch2.monitored_db set md_password_type = %(bulk_password_type)s,  md_password = %(bulk_password)s, md_last_modified_on = now() where (md_password, md_password_type) is distinct from (%(bulk_password)s, %(bulk_password_type)s)"""
+    sql = """update pgwatch3.monitored_db set md_password_type = %(bulk_password_type)s,  md_password = %(bulk_password)s, md_last_modified_on = now() where (md_password, md_password_type) is distinct from (%(bulk_password)s, %(bulk_password_type)s)"""
 
     if params.get('bulk_password_type') == 'aes-gcm-256':    # NB! when changing this part also review insert/update_monitored_db()
         if not cmd_args.aes_gcm_keyphrase:
@@ -855,7 +854,7 @@ def find_top_growth_statements(dbname, sort_column, start_time=(datetime.utcnow(
         where dbname = %(dbname)s
         and time between %(start_time)s and %(end_time)s
         and not tag_data->>'query' ~* E'\\(extract\\(\\$\\d+\\W*from\\W*now\\(\\)\\)\\W?\\*\\W*\\$\\d+\\).*::\\w+\\W+as\\W+epoch_ns\\W*,'
-        and not tag_data->>'query' ~* E'/\\*\\W*pgwatch2_generated\\W*\\*/'
+        and not tag_data->>'query' ~* E'/\\*\\W*pgwatch3_generated\\W*\\*/'
       window w as (partition by tag_data->>'queryid' order by time)
     ) x
     where calls > calls_lag
