@@ -1,7 +1,7 @@
 with q_sr as (
   select * from pg_subscription_rel
 )
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   subname::text as tag_subname,
   subenabled,

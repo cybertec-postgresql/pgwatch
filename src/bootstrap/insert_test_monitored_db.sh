@@ -6,7 +6,7 @@ export PGUSER=postgres
 
 if [ -z "$NOTESTDB" ] ; then
 
-if [ ! -f /pgwatch2/test_db_installed_marker ] ; then
+if [ ! -f /pgwatch3/test_db_installed_marker ] ; then
 
 while true ; do
 
@@ -24,18 +24,18 @@ while true ; do
 done
 
 SQL=$(cat <<-HERE
-insert into pgwatch2.monitored_db (md_unique_name, md_preset_config_name, md_config, md_hostname, md_port, md_dbname, md_user, md_password)
-  select 'test', 'full', null, 'localhost', '5432', 'pgwatch2', 'pgwatch2', 'pgwatch2admin'
+insert into pgwatch3.monitored_db (md_unique_name, md_preset_config_name, md_config, md_hostname, md_port, md_dbname, md_user, md_password)
+  select 'test', 'full', null, 'localhost', '5432', 'pgwatch3', 'pgwatch3', 'pgwatch3admin'
   where not exists (
-    select * from pgwatch2.monitored_db where (md_unique_name, md_hostname, md_dbname) = ('test', 'localhost', 'pgwatch2')
+    select * from pgwatch3.monitored_db where (md_unique_name, md_hostname, md_dbname) = ('test', 'localhost', 'pgwatch3')
   )
 HERE
 )
 
-psql -c "$SQL" pgwatch2
+psql -c "$SQL" pgwatch3
 
 if [ $? -eq 0 ] ; then
- touch /pgwatch2/test_db_installed_marker
+ touch /pgwatch3/test_db_installed_marker
 fi
 
 fi

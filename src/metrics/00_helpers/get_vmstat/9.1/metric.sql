@@ -42,5 +42,5 @@ AS $FUNCTION$
         vm[9] * unit, vm[10], vm[11], vm[12], vm[13], vm[14], vm[15], vm[16], cpu_count, load_1m, load_5m, load_15m, total_memory
 $FUNCTION$;
 
-GRANT EXECUTE ON FUNCTION get_vmstat(int) TO pgwatch2;
-COMMENT ON FUNCTION get_vmstat(int) IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_vmstat(int) TO pgwatch3;
+COMMENT ON FUNCTION get_vmstat(int) IS 'created for pgwatch3';

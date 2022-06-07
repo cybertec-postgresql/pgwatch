@@ -13,7 +13,7 @@ LANGUAGE sql
 SECURITY DEFINER
 AS $$
 
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   quote_ident(schemaname)||'.'||quote_ident(tblname) as full_table_name,
   bloat_ratio as approx_bloat_percent,
   bloat_size as approx_bloat_bytes,
@@ -126,8 +126,8 @@ FROM (
  ) s4
 $$;
 
-GRANT EXECUTE ON FUNCTION get_table_bloat_approx_sql() TO pgwatch2;
-COMMENT ON FUNCTION get_table_bloat_approx_sql() is 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_table_bloat_approx_sql() TO pgwatch3;
+COMMENT ON FUNCTION get_table_bloat_approx_sql() is 'created for pgwatch3';
 
 -- below routine fixes function search_path to only include "more secure" schemas with no "public" CREATE privileges
 DO $SQL$

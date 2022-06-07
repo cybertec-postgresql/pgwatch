@@ -1,4 +1,4 @@
-pgwatch2:
+pgwatch3:
   testDBEnabled: true
 
 web:
@@ -7,7 +7,7 @@ web:
     servicePort: 8080
     nodePort: 30000
   noAnonymous: false
-  user: pgwatch2
+  user: pgwatch3
   password: password
 
 exporter:
@@ -24,5 +24,5 @@ grafana:
     servicePort: 3000
     nodePort: 30002
   noAnonymous: false
-  user: pgwatch2
+  user: pgwatch3
   password: password

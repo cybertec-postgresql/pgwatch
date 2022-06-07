@@ -26,7 +26,7 @@ type and scope (cluster name) information. A sample config (for Config DB based 
       "namespace": "/service/"
     }
 
-For YAML based setups an example can be found from the `instances.yaml <https://github.com/cybertec-postgresql/pgwatch2/blob/master/pgwatch2/config/instances.yaml#L34>`_ file.
+For YAML based setups an example can be found from the `instances.yaml <https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/config/instances.yaml#L34>`_ file.
 
 NB! If Patroni is powered by *etcd*, then also username, password, ca_file, cert_file, key_file optional security parameters can be defined - other DCS systems
 are currently only supported without authentication.
@@ -43,11 +43,11 @@ Log parsing
 As of v1.7.0 the metrics collector daemon, when running on a DB server (controlled best over a YAML config), has capabilities
 to parse the database server logs for errors. Out-of-the-box it will though only work when logs are written in **CVSLOG** format. For other
 formats user needs to specify a regex that parses out named groups of following fields: *database_name*, *error_severity*.
-See `here <https://github.com/cybertec-postgresql/pgwatch2/blob/master/pgwatch2/logparse.go#L27>`__ for an example regex.
+See `here <https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/logparse.go#L27>`__ for an example regex.
 
 NB! Note that only the event counts are stored, no error texts, usernames or other infos! Errors are grouped by severity for the monitored DB and for the whole instance. The metric name to enable log parsing is "server_log_event_counts". Also note that for auto-detection
 of log destination / setting to work, the monitoring user needs superuser / pg_monitor privileges - if this is not possible
-then log settings need to be specified manually under "Host config" as seen for example `here <https://github.com/cybertec-postgresql/pgwatch2/blob/master/pgwatch2/config/instances.yaml>`__.
+then log settings need to be specified manually under "Host config" as seen for example `here <https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/config/instances.yaml>`__.
 
 **Sample configuration if not using CSVLOG logging:**
 
@@ -72,7 +72,7 @@ NB! For log parsing to work the metric **server_log_event_counts** needs to be e
 PgBouncer support
 -----------------
 
-Pgwatch2 also supports collecting internal statistics from the PgBouncer connection pooler, via the built-in special
+pgwatch3 also supports collecting internal statistics from the PgBouncer connection pooler, via the built-in special
 "pgbouncer" database and the ``SHOW STATS`` command. To enable it choose the according *DB Type*, provide connection
 info to the pooler port and make sure the **pgbouncer_stats** metric or "pgbouncer" preset config is selected for the host.
 Note that for the "DB Name" field you should insert not "pgbouncer" (although this special DB provides all the statistics)
@@ -81,9 +81,9 @@ will be identified / separated via the "database" tag.
 
 There's also a built-in Grafana dashboard for PgBouncer data, looking like that:
 
-.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch2/master/screenshots/pgbouncer_stats.png
+.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgbouncer_stats.png
    :alt: Grafana dash for PgBouncer stats
-   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch2/master/screenshots/pgbouncer_stats.png
+   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgbouncer_stats.png
 
 
 
@@ -96,15 +96,15 @@ info to the pooler port and make sure the **pgpool_stats** metric / preset confi
 
 The built-in Grafana dashboard for Pgpool data looks something like that:
 
-.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch2/master/screenshots/pgpool_status.png
+.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgpool_status.png
    :alt: Grafana dash for PgPool stats
-   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch2/master/screenshots/pgpool_status.png
+   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgpool_status.png
 
 
 Prometheus scraping
 -------------------
 
-pgwatch2 was originally designed with direct metrics storage in mind, but later also support for externally controlled
+pgwatch3 was originally designed with direct metrics storage in mind, but later also support for externally controlled
 `Prometheus <https://prometheus.io/>`__ scraping was added. Note that currently though the storage modes are exclusive, i.e. when
 you enable the Promotheus endpoint (default port 9187) there will be no direct metrics storage.
 

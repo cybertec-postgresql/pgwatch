@@ -6,8 +6,8 @@ Monitoring managed cloud databases
 Although all cloud service providers offer some kind of built-in instrumentation and graphs, they're mostly rather conservative
 in this are not to consume extra server resources and not to overflow and confuse beginners with too much information. So
 for advanced troubleshooting it might make sense to gather some additional metrics on your own, especially given that
-you can also easily add custom business metrics to pgwatch2 using plain SQL, for example to track the amount of incoming
-sales orders. Also with pgwatch2 / Grafana you have more freedom on the visual representation side and access to around
+you can also easily add custom business metrics to pgwatch3 using plain SQL, for example to track the amount of incoming
+sales orders. Also with pgwatch3 / Grafana you have more freedom on the visual representation side and access to around
 30 prebuilt dashboards and a lot of freedom creating custom alerting rules.
 
 The common denominator for all managed cloud services is that they remove / disallow dangerous or potentially dangerous
@@ -16,7 +16,7 @@ and "helper functions" compared to a standard on-site setup described in the :re
 This also means that you will get some errors displayed on some preset dashboards like "DB overview" and thus will be
 better off using a dashboard called "DB overview Unprivileged" tailored specially for such a use case.
 
-pgwatch2 has been tested to work with the following managed database services:
+pgwatch3 has been tested to work with the following managed database services:
 
 Google Cloud SQL for PostgreSQL
 -------------------------------
@@ -25,11 +25,11 @@ Google Cloud SQL for PostgreSQL
 
 * "pg_monitor" system role available
 
-* pgwatch2 default preset name: "gce"
+* pgwatch3 default preset name: "gce"
 
 * Documentation: https://cloud.google.com/sql/docs/postgres
 
-NB! To get most out pgwatch2 on GCE you need some additional clicks in the GUI / Cloud Console "Flags" section to enable
+NB! To get most out pgwatch3 on GCE you need some additional clicks in the GUI / Cloud Console "Flags" section to enable
 some common PostgreSQL monitoring parameters like *track_io_timing* and *track_functions*.
 
 
@@ -40,7 +40,7 @@ Amazon RDS for PostgreSQL
 
 * "pg_monitor" system role available
 
-* pgwatch2 default preset names: "rds", "aurora"
+* pgwatch3 default preset names: "rds", "aurora"
 
 * Documentation:
 
@@ -57,7 +57,7 @@ Azure Database for PostgreSQL
 
 * "pg_monitor" system role available
 
-* pgwatch2 default preset name: "azure"
+* pgwatch3 default preset name: "azure"
 
 * Documentation: https://docs.microsoft.com/en-us/azure/postgresql/
 
@@ -70,4 +70,4 @@ the API. Documentation link `here <https://docs.microsoft.com/en-us/azure/postgr
 Aiven for PostgreSQL
 --------------------
 
-The `Aiven developer documentation <https://developer.aiven.io/docs/products/postgresql/howto/monitor-with-pgwatch2.html>`_ contains information on how to monitor PostgreSQL instances running on the Aiven platform with pgwatch2.
+The `Aiven developer documentation <https://developer.aiven.io/docs/products/postgresql/howto/monitor-with-pgwatch3.html>`_ contains information on how to monitor PostgreSQL instances running on the Aiven platform with pgwatch3.

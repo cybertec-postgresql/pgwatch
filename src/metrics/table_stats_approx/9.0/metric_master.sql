@@ -20,7 +20,7 @@ with q_tbls_by_total_associated_relpages_approx as (
 ), q_block_size as (
   select current_setting('block_size')::int8 as bs
 )
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
   bs * relpages as table_size_b,

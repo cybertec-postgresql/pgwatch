@@ -4,8 +4,8 @@
 ## Meant for Cron for example
 
 export PGHOST=localhost
-export PGDATABASE=pgwatch2_metrics
-export PGUSER=pgwatch2
+export PGDATABASE=pgwatch3_metrics
+export PGUSER=pgwatch3
 # for password .pgpass is recommended
 export PGPORT=5432
 

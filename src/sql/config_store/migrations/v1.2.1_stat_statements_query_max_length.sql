@@ -1,4 +1,4 @@
-UPDATE pgwatch2.metric
+UPDATE pgwatch3.metric
 SET m_sql =
   $sql$
 with q_data as (

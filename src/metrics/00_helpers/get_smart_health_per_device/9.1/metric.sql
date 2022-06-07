@@ -28,6 +28,6 @@ return ret_list
 
 $$ LANGUAGE plpython3u VOLATILE;
 
-GRANT EXECUTE ON FUNCTION get_smart_health_per_device() TO pgwatch2;
+GRANT EXECUTE ON FUNCTION get_smart_health_per_device() TO pgwatch3;
 
-COMMENT ON FUNCTION get_smart_health_per_device() is 'created for pgwatch2';
+COMMENT ON FUNCTION get_smart_health_per_device() is 'created for pgwatch3';

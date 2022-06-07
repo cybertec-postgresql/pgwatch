@@ -20,7 +20,7 @@ target database and checking the Postgres version, recovery state, and if the mo
 metrics have alternate SQL definitions (as of v1.6.2) so that no "helpers" are needed for Postgres-native Stats Collector infos.
 Using superuser accounts for remote monitoring is of course not really recommended.
 
-There's a good set of pre-defined metrics & metric configs provided by the pgwatch2 project to cover all typical needs,
+There's a good set of pre-defined metrics & metric configs provided by the pgwatch3 project to cover all typical needs,
 but when monitoring hundreds of hosts you'd typically want to develop some custom *Preset Configs* or at least adjust the
 metric fetching intervals according to your monitoring goals.
 
@@ -28,7 +28,7 @@ Some things to note about the built-in metrics:
 
 * Only a half of them are included in the *Preset configs* and are ready for direct usage. The rest need some extra
   extensions or privileges, OS level tool installations etc. To see what's possible just browse the
-  `sample metrics <https://github.com/cybertec-postgresql/pgwatch2/tree/master/pgwatch2/metrics>`__.
+  `sample metrics <https://github.com/cybertec-postgresql/pgwatch3/tree/master/pgwatch3/metrics>`__.
 
 * Some builtin metrics are marked to be only executed when server is a primary or conversely, a standby. The flags can be
   inspected / set on the Web UI Metrics tab or in YAML mode by suffixing the metric definition with "standby" or "master".
@@ -101,7 +101,7 @@ For *Config DB* based setups:
 
 For *YAML* based setups:
 
-  #. Create a new folder for the metric under "/etc/pgwatch2/metrics". The folder name will be the metric's name, so choose
+  #. Create a new folder for the metric under "/etc/pgwatch3/metrics". The folder name will be the metric's name, so choose
      wisely.
 
   #. Create a new subfolder for each "minimally supported Postgres version* and insert the metric's SQL definition into a
@@ -109,18 +109,18 @@ For *YAML* based setups:
      v13 then you only need one folder called "9.0". If there was a breaking change in the internal catalogs at v9.6 so
      that the query stopped working, you need a new folder named "9.6" that will be used for all versions above v9.5.
 
-  #. Activate the newly added metric by including it in some existing *Preset Config* (/etc/pgwatch2/metrics/preset-configs.yaml)
+  #. Activate the newly added metric by including it in some existing *Preset Config* (/etc/pgwatch3/metrics/preset-configs.yaml)
      or add it directly to the YAML config "custom_metrics" section.
 
 FYI - another neat way to quickly test if the metric can be successfully executed on the "to be monitored" DB is to launch
-pgwatch2 in *ad-hoc mode*:
+pgwatch3 in *ad-hoc mode*:
 
   ::
 
-    pgwatch2-daemon \
+    pgwatch3-daemon \
       --adhoc-config='{"my_new_metric": 10}' --adhoc-conn-str="host=mytestdb dbname=postgres" \
       --datastore=postgres --pg-metric-store-conn-str=postgresql://... \
-      --metrics-folder2=/etc/pgwatch2/metrics --verbose=info
+      --metrics-folder2=/etc/pgwatch3/metrics --verbose=info
 
 Metric attributes
 -----------------
@@ -155,7 +155,7 @@ Currently supported attributes:
   Note that if time zone is not specified the server time of the gather daemon is used.
   NB! disabled_days / disabled_times can also be defined both on metric and host (host_attrs) level.
 
-For a sample definition see `here <https://github.com/cybertec-postgresql/pgwatch2/blob/master/pgwatch2/metrics/wal/metric_attrs.yaml>`_.
+For a sample definition see `here <https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/metrics/wal/metric_attrs.yaml>`_.
 
 Column attributes
 -----------------
@@ -172,7 +172,7 @@ Supported column attributes:
 
 *prometheus_gauge_columns*
   Describe the mentioned output columns as of TYPE *gauge*, i.e. the value can change any time in any direction. Default
-  TYPE for pgwatch2 is *counter*.
+  TYPE for pgwatch3 is *counter*.
 
 *prometheus_all_gauge_columns*
   Describe all columns of metrics as of TYPE *gauge*.
@@ -183,7 +183,7 @@ Adding metric fetching helpers
 As mentioned in :ref:`Helper Functions <helper_functions>` section, Postgres knows very little about the Operating System that it's running on,
 so in some (most) cases it might be advantageous to also monitor some basic OS statistics
 together with the PostgreSQL ones, to get a better head start when troubleshooting performance problems. But as setup of
-such OS tools and linking the gathered data is not always trivial, pgwatch2 has a system of *helpers* for fetching such data.
+such OS tools and linking the gathered data is not always trivial, pgwatch3 has a system of *helpers* for fetching such data.
 
 One can invent and install such *helpers* on the monitored databases freely to expose any information needed (backup status etc)
 via Python, or any other PL-language supported by Postgres, and then add according metrics similarly to any normal Postgres-native metrics.

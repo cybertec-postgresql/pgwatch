@@ -35,8 +35,8 @@ $$
       on d.oid = s.dbid and d.datname = current_database()
 $$ LANGUAGE sql VOLATILE SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION get_stat_statements() TO pgwatch2;
-COMMENT ON FUNCTION get_stat_statements() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_stat_statements() TO pgwatch3;
+COMMENT ON FUNCTION get_stat_statements() IS 'created for pgwatch3';
 
 -- below routine fixes function search_path to only include "more secure" schemas with no "public" CREATE privileges
 DO $SQL$

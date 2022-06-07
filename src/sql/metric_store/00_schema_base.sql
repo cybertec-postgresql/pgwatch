@@ -4,19 +4,19 @@
  "subpartitions" schema - subpartitions of "public" schema top level metric tables (if using time / dbname-time partitioning)
 */
 
-CREATE SCHEMA IF NOT EXISTS admin AUTHORIZATION pgwatch2;
+CREATE SCHEMA IF NOT EXISTS admin AUTHORIZATION pgwatch3;
 
-GRANT ALL ON SCHEMA public TO pgwatch2;
+GRANT ALL ON SCHEMA public TO pgwatch3;
 
 DO $SQL$
 BEGIN
-  EXECUTE format($$ALTER ROLE pgwatch2 IN DATABASE %s SET statement_timeout TO '5min'$$, current_database());
-  RAISE WARNING 'NB! Enabling asynchronous commit for pgwatch2 role - revert if possible data loss on crash is not acceptable!';
-  EXECUTE format($$ALTER ROLE pgwatch2 IN DATABASE %s SET synchronous_commit TO off$$, current_database());
+  EXECUTE format($$ALTER ROLE pgwatch3 IN DATABASE %s SET statement_timeout TO '5min'$$, current_database());
+  RAISE WARNING 'NB! Enabling asynchronous commit for pgwatch3 role - revert if possible data loss on crash is not acceptable!';
+  EXECUTE format($$ALTER ROLE pgwatch3 IN DATABASE %s SET synchronous_commit TO off$$, current_database());
 END
 $SQL$;
 
-SET ROLE TO pgwatch2;
+SET ROLE TO pgwatch3;
 
 -- drop table if exists public.storage_schema_type;
 
@@ -27,7 +27,7 @@ create table admin.storage_schema_type (
   check (schema_type in ('metric', 'metric-time', 'metric-dbname-time', 'custom', 'timescale'))
 );
 
-comment on table admin.storage_schema_type is 'identifies storage schema for other pgwatch2 components';
+comment on table admin.storage_schema_type is 'identifies storage schema for other pgwatch3 components';
 
 create unique index max_one_row on admin.storage_schema_type ((1));
 
@@ -107,7 +107,7 @@ BEGIN
           END IF;
       END IF;
 
-      EXECUTE format($$COMMENT ON TABLE public."%s" IS 'pgwatch2-generated-metric-lvl'$$, metric);
+      EXECUTE format($$COMMENT ON TABLE public."%s" IS 'pgwatch3-generated-metric-lvl'$$, metric);
 
       RETURN true;
 
@@ -116,7 +116,7 @@ BEGIN
   RETURN false;
 END;
 $SQL$ LANGUAGE plpgsql;
-GRANT EXECUTE ON FUNCTION admin.ensure_dummy_metrics_table(text) TO pgwatch2;
+GRANT EXECUTE ON FUNCTION admin.ensure_dummy_metrics_table(text) TO pgwatch3;
 
 
 

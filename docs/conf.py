@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'pgwatch2'
+project = 'pgwatch3'
 copyright = '2020, Cybertec PostgreSQL Consulting'
 author = 'Cybertec PostgreSQL Consulting'
 

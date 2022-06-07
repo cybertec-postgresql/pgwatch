@@ -1,4 +1,4 @@
-select distinct /* pgwatch2_generated */
+select distinct /* pgwatch3_generated */
     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
     'partial_index_candidates'::text as tag_reco_topic,
     quote_ident(ni.nspname)||'.'||quote_ident(ci.relname) as tag_object_name,

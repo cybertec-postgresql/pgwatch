@@ -1,10 +1,10 @@
 /* METRIC DEFINITIONS + METRIC ATTRIBUTES below */
 
--- truncate pgwatch2.metric;
+-- truncate pgwatch3.metric;
 
 /* backends */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
 values (
 'backends',
 9.0,
@@ -63,7 +63,7 @@ select
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
 values (
 'backends',
 9.2,
@@ -122,7 +122,7 @@ select
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
 values (
 'backends',
 9.4,
@@ -183,7 +183,7 @@ select
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
 values (
 'backends',
 9.6,
@@ -246,7 +246,7 @@ select
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
 values (
 'backends',
 10,
@@ -314,7 +314,7 @@ $sql$
 /* bgwriter */
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_master_only, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql)
 values (
 'bgwriter',
 9.0,
@@ -334,7 +334,7 @@ select
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_master_only, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql)
 values (
 'bgwriter',
 9.2,
@@ -359,7 +359,7 @@ $sql$
 
 /* cpu_load */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'cpu_load',
 9.0,
@@ -378,7 +378,7 @@ $sql$,
 
 /* db_stats */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'db_stats',
 9.0,
@@ -405,7 +405,7 @@ $sql$,
 '{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s"]}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'db_stats',
 9.1,
@@ -433,7 +433,7 @@ $sql$,
 '{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s"]}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'db_stats',
 9.2,
@@ -466,7 +466,7 @@ $sql$,
 '{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s"]}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'db_stats',
 9.3,
@@ -500,7 +500,7 @@ $sql$,
 '{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s", "backup_duration_s"]}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
 values (
 'db_stats',
 10,
@@ -563,7 +563,7 @@ $sql$,
 '{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s", "backup_duration_s"]}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
 values (
 'db_stats',
 12,
@@ -630,7 +630,7 @@ $sql$,
 '{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s", "backup_duration_s", "checksum_last_failure_s"]}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
 values (
 'db_stats',
 14,
@@ -711,7 +711,7 @@ $sql$,
 '{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s", "backup_duration_s", "checksum_last_failure_s"]}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'db_stats_aurora',
 9.6,
@@ -744,7 +744,7 @@ $sql$,
 '{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s"]}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'db_stats_aurora',
 10,
@@ -780,7 +780,7 @@ $sql$,
 
 /* db_size */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'db_size',
 9.0,
@@ -798,12 +798,12 @@ $sql$,
 
 /* db_size_approx */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'db_size_approx',
 9.1,
 $sql$
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   current_setting('block_size')::int8 * (
     select sum(relpages) from pg_class c
@@ -827,7 +827,7 @@ $sql$,
 
 /* index_stats */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'index_stats',
 9.0,
@@ -933,7 +933,7 @@ $sql$,
 '{"prometheus_gauge_columns": ["index_size_b", "is_invalid_int", "is_pk_int"]}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'index_stats',
 9.1,
@@ -1040,7 +1040,7 @@ $sql$,
 '{"prometheus_gauge_columns": ["index_size_b", "is_invalid_int", "is_pk_int"]}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'index_stats',
 10,
@@ -1152,7 +1152,7 @@ $sql$,
 
 /* kpi */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
 values (
 'kpi',
 9.0,
@@ -1225,7 +1225,7 @@ WHERE
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
 values (
 'kpi',
 9.2,
@@ -1321,7 +1321,7 @@ WHERE
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
 values (
 'kpi',
 9.6,
@@ -1419,7 +1419,7 @@ $sql$
 
 /* kpi */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
 values (
 'kpi',
 10,
@@ -1518,7 +1518,7 @@ $sql$
 
 /* replication */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
 values (
 'replication',
 9.2,
@@ -1561,7 +1561,7 @@ $sql$
 
 /* replication */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'replication',
 10,
@@ -1591,7 +1591,7 @@ $sql$,
 
 /* sproc_stats */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'sproc_stats',
 9.0,
@@ -1618,7 +1618,7 @@ $sql$
 
 /* table_io_stats */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'table_io_stats',
 9.0,
@@ -1654,7 +1654,7 @@ ORDER BY
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'table_io_stats',
 10,
@@ -1758,7 +1758,7 @@ $sql$
 
 /* table_stats */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'table_stats',
 9.0,
@@ -1800,7 +1800,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_standby_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_standby_only)
 values (
 'table_stats',
 9.0,
@@ -1841,7 +1841,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'table_stats',
 9.1,
@@ -1887,7 +1887,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_standby_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_standby_only)
 values (
 'table_stats',
 9.1,
@@ -1934,7 +1934,7 @@ true
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'table_stats',
 9.2,
@@ -1980,7 +1980,7 @@ $sql$,
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'table_stats',
 10,
@@ -2123,7 +2123,7 @@ $sql$,
 
 /* table_stats_approx */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'table_stats_approx',
 9.0,
@@ -2150,7 +2150,7 @@ with q_tbls_by_total_associated_relpages_approx as (
 ), q_block_size as (
   select current_setting('block_size')::int8 as bs
 )
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
   bs * relpages as table_size_b,
@@ -2183,7 +2183,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_standby_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_standby_only)
 values (
 'table_stats_approx',
 9.0,
@@ -2209,7 +2209,7 @@ with q_tbls_by_total_associated_relpages_approx as (
 ), q_block_size as (
   select current_setting('block_size')::int8 as bs
 )
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
   bs * relpages as table_size_b,
@@ -2241,7 +2241,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'table_stats_approx',
 9.1,
@@ -2269,7 +2269,7 @@ with q_tbls_by_total_associated_relpages_approx as (
 ), q_block_size as (
   select current_setting('block_size')::int8 as bs
 )
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
   bs * relpages as table_size_b,
@@ -2307,7 +2307,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_standby_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_standby_only)
 values (
 'table_stats_approx',
 9.1,
@@ -2334,7 +2334,7 @@ with q_tbls_by_total_associated_relpages_approx as (
 ), q_block_size as (
   select current_setting('block_size')::int8 as bs
 )
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
   bs * relpages as table_size_b,
@@ -2372,7 +2372,7 @@ true
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'table_stats_approx',
 9.2,
@@ -2400,7 +2400,7 @@ with q_tbls_by_total_associated_relpages_approx as (
 ), q_block_size as (
   select current_setting('block_size')::int8 as bs
 )
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
   bs * relpages as table_size_b,
@@ -2438,7 +2438,7 @@ $sql$,
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'table_stats_approx',
 10,
@@ -2490,7 +2490,7 @@ with recursive
       ), q_block_size as (
         select current_setting('block_size')::int8 as bs
       )
-      select /* pgwatch2_generated */
+      select /* pgwatch3_generated */
         (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
         relid,
         quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
@@ -2528,7 +2528,7 @@ with recursive
 
     )
 
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
     epoch_ns,
     tag_table_full_name,
     0 as is_part_root,
@@ -2601,7 +2601,7 @@ $sql$,
 
 /* wal */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'wal',
 9.2,
@@ -2623,7 +2623,7 @@ $sql$,
 
 /* wal */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
 values (
 'wal',
 10,
@@ -2660,7 +2660,7 @@ $sql$,
 
 /* stat_statements */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'stat_statements',
 9.2,
@@ -2938,7 +2938,7 @@ FROM (
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'stat_statements',
 9.4,
@@ -3217,7 +3217,7 @@ $sql$
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'stat_statements',
 13,
@@ -3512,7 +3512,7 @@ $sql$
 
 /* stat_statements_no_query_text - the same as normal ss but leaving out query texts for security */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'stat_statements_no_query_text',
 9.2,
@@ -3714,7 +3714,7 @@ select * from (
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'stat_statements_no_query_text',
 9.4,
@@ -3917,7 +3917,7 @@ $sql$
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'stat_statements_no_query_text',
 13,
@@ -4128,7 +4128,7 @@ $sql$
 
 /* stat_statements_calls - enables to show QPS queries per second. "calls" works without the above wrapper also */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'stat_statements_calls',
 9.2,
@@ -4145,7 +4145,7 @@ where
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'stat_statements_calls',
 13,
@@ -4165,7 +4165,7 @@ $sql$
 
 
 /* buffercache_by_db */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'buffercache_by_db',
 9.2,
@@ -4186,7 +4186,7 @@ $sql$,
 );
 
 /* buffercache_by_type */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'buffercache_by_type',
 9.2,
@@ -4214,12 +4214,12 @@ $sql$,
 
 
 /* stat_ssl */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'stat_ssl',
 9.5,
 $sql$
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   count(*) as total,
   count(*) FILTER (WHERE ssl) as "on",
@@ -4234,7 +4234,7 @@ WHERE
   AND NOT (a.client_addr = '127.0.0.1' OR client_port = -1);
 $sql$,
 $sql$
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   count(*) as total,
   count(*) FILTER (WHERE ssl) as "on",
@@ -4252,7 +4252,7 @@ $sql$
 
 
 /* database_conflicts */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_standby_only, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_standby_only, m_sql)
 values (
 'database_conflicts',
 9.2,
@@ -4275,7 +4275,7 @@ $sql$
 
 /* locks - counts only */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'locks',
 9.0,
@@ -4301,7 +4301,7 @@ $sql$,
 
 /* locks - counts only */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'locks_mode',
 9.0,
@@ -4329,7 +4329,7 @@ $sql$,
 /* blocking_locks - based on https://wiki.postgresql.org/wiki/Lock_dependency_information.
  needs fast intervals though as locks are quite volatile normally, thus could be costly */
 -- not usable for Prometheus
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'blocking_locks',
 9.2,
@@ -4433,7 +4433,7 @@ $sql$
 
 
 /* approx. bloat - needs pgstattuple extension! superuser or pg_stat_scan_tables/pg_monitor builtin role required */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
 values (
 'table_bloat_approx_stattuple',
 9.5,
@@ -4463,7 +4463,7 @@ $sql$,
 /* Stored procedure needed for fetching stat_statements data - needs pg_stat_statements extension enabled on the machine!
  NB! approx_free_percent is just an average. more exact way would be to calculate a weighed average in Go
 */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_table_bloat_approx',
 9.5,
@@ -4493,8 +4493,8 @@ $$
       and not n.nspname like any (array[E'pg\\_%', 'information_schema'])
 $$ LANGUAGE sql SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION get_table_bloat_approx() TO pgwatch2;
-COMMENT ON FUNCTION get_table_bloat_approx() is 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_table_bloat_approx() TO pgwatch3;
+COMMENT ON FUNCTION get_table_bloat_approx() is 'created for pgwatch3';
 
 -- below routine fixes function search_path to only include "more secure" schemas with no "public" CREATE privileges
 DO $_$
@@ -4526,7 +4526,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_is_helper)
 values (
 'get_table_bloat_approx_sql',
 9.0,
@@ -4659,8 +4659,8 @@ FROM (
  ) s4
 $$;
 
-GRANT EXECUTE ON FUNCTION get_table_bloat_approx_sql() TO pgwatch2;
-COMMENT ON FUNCTION get_table_bloat_approx_sql() is 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_table_bloat_approx_sql() TO pgwatch3;
+COMMENT ON FUNCTION get_table_bloat_approx_sql() is 'created for pgwatch3';
 
 -- below routine fixes function search_path to only include "more secure" schemas with no "public" CREATE privileges
 DO $_$
@@ -4691,7 +4691,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_is_helper)
 values (
 'get_table_bloat_approx_sql',
 12,
@@ -4824,8 +4824,8 @@ FROM (
  ) s4
 $$;
 
-GRANT EXECUTE ON FUNCTION get_table_bloat_approx_sql() TO pgwatch2;
-COMMENT ON FUNCTION get_table_bloat_approx_sql() is 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_table_bloat_approx_sql() TO pgwatch3;
+COMMENT ON FUNCTION get_table_bloat_approx_sql() is 'created for pgwatch3';
 
 -- below routine fixes function search_path to only include "more secure" schemas with no "public" CREATE privileges
 DO $_$
@@ -4857,7 +4857,7 @@ true
 );
 
 /* approx. bloat summary */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs, m_sql_su)
 values (
 'table_bloat_approx_summary',
 9.5,
@@ -4906,7 +4906,7 @@ $sql$
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
 values (
 'table_bloat_approx_summary',
 10,
@@ -4947,7 +4947,7 @@ $sql$,
 );
 
 /* approx. bloat summary pure SQL estimate */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs, m_sql_su)
 values (
 'table_bloat_approx_summary_sql',
 9.0,
@@ -5084,7 +5084,7 @@ SELECT
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs, m_sql_su)
 values (
 'table_bloat_approx_summary_sql',
 12,
@@ -5222,7 +5222,7 @@ $sql$
 );
 
 /* "parent" setting for all of the below "*_hashes" metrics. only this parent "change_events" metric should be used in configs! */
-insert into pgwatch2.metric(m_name, m_pg_version_from,m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from,m_sql)
 values (
 'change_events',
 9.0,
@@ -5231,7 +5231,7 @@ $sql$
 );
 
 /* sproc hashes for change detection */
-insert into pgwatch2.metric(m_name, m_pg_version_from,m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from,m_sql)
 values (
 'sproc_hashes',
 9.0,
@@ -5251,7 +5251,7 @@ $sql$
 );
 
 /* table (and view) hashes for change detection  */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'table_hashes',
 9.0,
@@ -5316,7 +5316,7 @@ order by
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'table_hashes',
 9.3,
@@ -5425,7 +5425,7 @@ $sql$
 
 
 /* configuration settings hashes for change detection  */
-insert into pgwatch2.metric(m_name, m_pg_version_from,m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from,m_sql)
 values (
 'configuration_hashes',
 9.0,
@@ -5440,7 +5440,7 @@ $sql$
 );
 
 /* index hashes for change detection  */
-insert into pgwatch2.metric(m_name, m_pg_version_from,m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from,m_sql)
 values (
 'index_hashes',
 9.0,
@@ -5465,7 +5465,7 @@ $sql$
 );
 
 /* object privileges for change detection  */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment)
 values (
 'privilege_changes',
 9.0,
@@ -5603,7 +5603,7 @@ $sql$,
 );
 
 /* Stored procedure needed for CPU load - needs plpythonu! */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_load_average',
 9.1,
@@ -5619,9 +5619,9 @@ la = getloadavg()
 return [la[0], la[1], la[2]]
 $$ LANGUAGE plpython3u VOLATILE;
 
-GRANT EXECUTE ON FUNCTION get_load_average() TO pgwatch2;
+GRANT EXECUTE ON FUNCTION get_load_average() TO pgwatch3;
 
-COMMENT ON FUNCTION get_load_average() is 'created for pgwatch2';
+COMMENT ON FUNCTION get_load_average() is 'created for pgwatch3';
 
 COMMIT;
 $sql$,
@@ -5630,7 +5630,7 @@ true
 );
 
 /* for cases where PL/Python is not an option. not included in preset configs */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_load_average_copy',
 9.0,
@@ -5659,9 +5659,9 @@ begin
 end;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION get_load_average_copy() TO pgwatch2;
+GRANT EXECUTE ON FUNCTION get_load_average_copy() TO pgwatch3;
 
-COMMENT ON FUNCTION get_load_average_copy() is 'created for pgwatch2';
+COMMENT ON FUNCTION get_load_average_copy() is 'created for pgwatch3';
 
 -- below routine fixes function search_path to only include "more secure" schemas with no "public" CREATE privileges
 DO $_$
@@ -5694,7 +5694,7 @@ true
 );
 
 /* for cases where PL/Python is not an option. not included in preset configs */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_load_average_windows',
 9.0,
@@ -5753,9 +5753,9 @@ $$
 	SELECT val, val, val FROM cpu() AS cpu_now(val);
 $$ LANGUAGE sql;
 
-GRANT EXECUTE ON FUNCTION get_load_average_windows() TO pgwatch2;
+GRANT EXECUTE ON FUNCTION get_load_average_windows() TO pgwatch3;
 
-COMMENT ON FUNCTION get_load_average_windows() is 'created for pgwatch2';
+COMMENT ON FUNCTION get_load_average_windows() is 'created for pgwatch3';
 
 COMMIT;
 
@@ -5765,7 +5765,7 @@ true
 );
 
 /* Stored procedure needed for fetching stat_statements data - needs pg_stat_statements extension enabled on the machine! */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_stat_statements',
 9.2,
@@ -5794,8 +5794,8 @@ $$
       on d.oid = s.dbid and d.datname = current_database()
 $$ LANGUAGE sql VOLATILE SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION get_stat_statements() TO pgwatch2;
-COMMENT ON FUNCTION get_stat_statements() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_stat_statements() TO pgwatch3;
+COMMENT ON FUNCTION get_stat_statements() IS 'created for pgwatch3';
 
 -- below routine fixes function search_path to only include "more secure" schemas with no "public" CREATE privileges
 DO $_$
@@ -5829,7 +5829,7 @@ true
 
 
 /* Stored procedure needed for fetching stat_statements data - needs pg_stat_statements extension enabled on the machine! */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_stat_statements',
 9.4,
@@ -5849,8 +5849,8 @@ $$
       on d.oid = s.dbid and d.datname = current_database()
 $$ LANGUAGE sql VOLATILE SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION get_stat_statements() TO pgwatch2;
-COMMENT ON FUNCTION get_stat_statements() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_stat_statements() TO pgwatch3;
+COMMENT ON FUNCTION get_stat_statements() IS 'created for pgwatch3';
 
 -- below routine fixes function search_path to only include "more secure" schemas with no "public" CREATE privileges
 DO $_$
@@ -5883,7 +5883,7 @@ true
 );
 
 /* pgbouncer_stats - assumes also that monitored DB has type 'pgbouncer' */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'pgbouncer_stats',
 0,
@@ -5893,7 +5893,7 @@ false
 );
 
 /* pgpool_stats - assumes also that monitored DB has type 'pgpool' */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'pgpool_stats',
 3.0,
@@ -5909,7 +5909,7 @@ false
 );
 
 /* Stored procedure needed for fetching backend/session data */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_stat_activity',
 9.0,
@@ -5938,8 +5938,8 @@ BEGIN
 END;
 $OUTER$;
 
-GRANT EXECUTE ON FUNCTION get_stat_activity() TO pgwatch2;
-COMMENT ON FUNCTION get_stat_activity() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_stat_activity() TO pgwatch3;
+COMMENT ON FUNCTION get_stat_activity() IS 'created for pgwatch3';
 
 $sql$,
 'for internal usage - when connecting user is marked as superuser then the daemon will automatically try to create the needed helpers on the monitored db',
@@ -5948,7 +5948,7 @@ true
 
 /* replication slot info */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
 values (
 'replication_slots',
 9.4,
@@ -5969,7 +5969,7 @@ $sql$,
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
 values (
 'replication_slots',
 10,
@@ -5990,7 +5990,7 @@ $sql$,
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'psutil_cpu',
 9.1,
@@ -6015,7 +6015,7 @@ $sql$,
 '{"prometheus_all_gauge_columns": true}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_psutil_cpu',
 9.1,
@@ -6058,8 +6058,8 @@ return t.cpu_utilization_info, la[0] / cpu_count(), la[0], la[1] / cpu_count(), 
 
 $FUNCTION$;
 
-GRANT EXECUTE ON FUNCTION get_psutil_cpu() TO pgwatch2;
-COMMENT ON FUNCTION get_psutil_cpu() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_psutil_cpu() TO pgwatch3;
+COMMENT ON FUNCTION get_psutil_cpu() IS 'created for pgwatch3';
 
 
 $sql$,
@@ -6067,7 +6067,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'psutil_mem',
 9.1,
@@ -6082,7 +6082,7 @@ $sql$,
 '{"prometheus_all_gauge_columns": true}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_psutil_mem',
 9.1,
@@ -6102,15 +6102,15 @@ sw = swap_memory()
 return vm.total, vm.used, vm.free, vm.buffers + vm.cached, vm.available, vm.percent, sw.total, sw.used, sw.free, sw.percent
 $FUNCTION$;
 
-GRANT EXECUTE ON FUNCTION get_psutil_mem() TO pgwatch2;
-COMMENT ON FUNCTION get_psutil_mem() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_psutil_mem() TO pgwatch3;
+COMMENT ON FUNCTION get_psutil_mem() IS 'created for pgwatch3';
 
 $sql$,
 '{"prometheus_all_gauge_columns": true}',
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'psutil_disk',
 9.1,
@@ -6126,7 +6126,7 @@ $sql$,
 '{"prometheus_all_gauge_columns": true}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_psutil_disk',
 9.1,
@@ -6190,15 +6190,15 @@ return ret_list
 
 $FUNCTION$;
 
-GRANT EXECUTE ON FUNCTION get_psutil_disk() TO pgwatch2;
-COMMENT ON FUNCTION get_psutil_disk() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_psutil_disk() TO pgwatch3;
+COMMENT ON FUNCTION get_psutil_disk() IS 'created for pgwatch3';
 
 $sql$,
 '{"prometheus_all_gauge_columns": true}',
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'psutil_disk_io_total',
 9.1,
@@ -6215,7 +6215,7 @@ $sql$,
 '{"prometheus_all_gauge_columns": true}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_psutil_disk_io_total',
 9.1,
@@ -6237,15 +6237,15 @@ else:
     return None, None, None, None
 $FUNCTION$;
 
-GRANT EXECUTE ON FUNCTION get_psutil_disk_io_total() TO pgwatch2;
-COMMENT ON FUNCTION get_psutil_disk_io_total() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_psutil_disk_io_total() TO pgwatch3;
+COMMENT ON FUNCTION get_psutil_disk_io_total() IS 'created for pgwatch3';
 
 $sql$,
 '{"prometheus_all_gauge_columns": true}',
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'archiver',
 9.4,
@@ -6265,7 +6265,7 @@ $sql$,
 );
 
 /* Stored procedure for getting WAL folder size */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_wal_size',
 9.0,
@@ -6276,8 +6276,8 @@ $$
 select sum((pg_stat_file('pg_xlog/'||f)).size)::int8 from (select pg_ls_dir('pg_xlog') f) ls
 $$ LANGUAGE sql VOLATILE SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION get_wal_size() TO pgwatch2;
-COMMENT ON FUNCTION get_wal_size() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_wal_size() TO pgwatch3;
+COMMENT ON FUNCTION get_wal_size() IS 'created for pgwatch3';
 
 $sql$,
 'for internal usage - when connecting user is marked as superuser then the daemon will automatically try to create the needed helpers on the monitored db',
@@ -6285,7 +6285,7 @@ true
 );
 
 /* Stored procedure for getting WAL folder size */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_wal_size',
 10,
@@ -6296,15 +6296,15 @@ $$
 select (sum((pg_stat_file('pg_wal/' || name)).size))::int8 from pg_ls_waldir()
 $$ LANGUAGE sql VOLATILE SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION get_wal_size() TO pgwatch2;
-COMMENT ON FUNCTION get_wal_size() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_wal_size() TO pgwatch3;
+COMMENT ON FUNCTION get_wal_size() IS 'created for pgwatch3';
 
 $sql$,
 'for internal usage - when connecting user is marked as superuser then the daemon will automatically try to create the needed helpers on the monitored db',
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'wal_size',
 9.0,
@@ -6320,7 +6320,7 @@ select
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
 values (
 'wal_size',
 10,
@@ -6332,7 +6332,7 @@ $sql$,
 '{"prometheus_all_gauge_columns": true}',
 $sql$
 /* NB! If using not a real superuser but a role with "pg_monitor" grant then below execute grant is needed:
-  GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch2;
+  GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch3;
 */
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -6342,7 +6342,7 @@ $sql$
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_standby_only, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_standby_only, m_sql, m_column_attrs)
 values (
 'wal_receiver',
 9.2,
@@ -6356,7 +6356,7 @@ $sql$,
 '{"prometheus_all_gauge_columns": true}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_standby_only, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_standby_only, m_sql, m_column_attrs)
 values (
 'wal_receiver',
 10,
@@ -6372,7 +6372,7 @@ $sql$,
 
 
 /* from PG10+ it's best to use the "pg_monitor" system role to grant access to this and other pg_stat* views */
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_stat_replication',
 9.2,
@@ -6383,15 +6383,15 @@ $$
   select * from pg_stat_replication
 $$ LANGUAGE sql VOLATILE SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION get_stat_replication() TO pgwatch2;
-COMMENT ON FUNCTION get_stat_replication() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_stat_replication() TO pgwatch3;
+COMMENT ON FUNCTION get_stat_replication() IS 'created for pgwatch3';
 
 $sql$,
 'for internal usage - when connecting user is marked as superuser then the daemon will automatically try to create the needed helpers on the monitored db',
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'settings',
 9.0,
@@ -6454,7 +6454,7 @@ $sql$,
 '{"prometheus_all_gauge_columns": true}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'stat_activity_realtime',
 9.0,
@@ -6487,7 +6487,7 @@ LIMIT 25;
 $sql$,
 '{"prometheus_all_gauge_columns": true}'
 );
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'stat_activity_realtime',
 9.2,
@@ -6520,7 +6520,7 @@ LIMIT 25;
 $sql$,
 '{"prometheus_all_gauge_columns": true}'
 );
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'stat_activity_realtime',
 9.6,
@@ -6548,7 +6548,7 @@ LIMIT 25;
 $sql$,
 '{"prometheus_all_gauge_columns": true}'
 );
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'stat_activity_realtime',
 10,
@@ -6580,14 +6580,14 @@ $sql$,
 
 /* RECO */
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'recommendations',
 9.0,
 '/* dummy placeholder - special handling in code to collect other metrics named reco_* */'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_add_index',
 9.1,
@@ -6609,7 +6609,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_add_index_ext_qualstats_2.0',
 9.1,
@@ -6640,7 +6640,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_default_public_schema',
 9.1,
@@ -6662,7 +6662,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_drop_index',
 9.0,
@@ -6688,7 +6688,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_drop_index',
 9.4,
@@ -6715,7 +6715,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_nested_views',
 9.1,
@@ -6774,7 +6774,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_sprocs_wo_search_path',
 9.1,
@@ -6787,7 +6787,7 @@ from
   pg_proc p
   join pg_namespace n on n.oid = p.pronamespace
   where prosecdef and not 'search_path' = ANY(coalesce(proconfig, '{}'::text[]))
-  and not pg_catalog.obj_description(p.oid, 'pg_proc') ~ 'pgwatch2'
+  and not pg_catalog.obj_description(p.oid, 'pg_proc') ~ 'pgwatch3'
 )
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -6804,7 +6804,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_superusers',
 9.1,
@@ -6834,7 +6834,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_disabled_triggers',
 9.0,
@@ -6860,7 +6860,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_partial_index_candidates',
 9.0,
@@ -6896,7 +6896,7 @@ $sql$,
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'show_plans_realtime',
 9.0,
@@ -6932,7 +6932,7 @@ $sql$,
 false
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'show_plans_realtime',
 10,
@@ -6969,7 +6969,7 @@ $sql$,
 false
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_smart_health_per_device',
 9.1,
@@ -7003,15 +7003,15 @@ return ret_list
 
 $$ LANGUAGE plpython3u VOLATILE;
 
-GRANT EXECUTE ON FUNCTION get_smart_health_per_device() TO pgwatch2;
+GRANT EXECUTE ON FUNCTION get_smart_health_per_device() TO pgwatch3;
 
-COMMENT ON FUNCTION get_smart_health_per_device() is 'created for pgwatch2';
+COMMENT ON FUNCTION get_smart_health_per_device() is 'created for pgwatch3';
 $sql$,
 '{"prometheus_all_gauge_columns": true}',
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'smart_health_per_disk',
 9.1,
@@ -7026,7 +7026,7 @@ $sql$,
 '{"prometheus_all_gauge_columns": true}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'server_log_event_counts',
 9.0,
@@ -7037,7 +7037,7 @@ $sql$,
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_backup_age_walg',
 9.1,
@@ -7079,16 +7079,16 @@ $$ LANGUAGE plpython3u VOLATILE;
 /* contacting S3 could be laggy depending on location */
 ALTER FUNCTION get_backup_age_walg() SET statement_timeout TO '30s';
 
-GRANT EXECUTE ON FUNCTION get_backup_age_walg() TO pgwatch2;
+GRANT EXECUTE ON FUNCTION get_backup_age_walg() TO pgwatch3;
 
-COMMENT ON FUNCTION get_backup_age_walg() is 'created for pgwatch2';
+COMMENT ON FUNCTION get_backup_age_walg() is 'created for pgwatch3';
 
 $sql$,
 'for internal usage - when connecting user is marked as superuser then the daemon will automatically try to create the needed helpers on the monitored db',
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'backup_age_walg',
 9.1,
@@ -7105,7 +7105,7 @@ $sql$,
 '{"prometheus_all_gauge_columns": true}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_backup_age_pgbackrest',
 9.1,
@@ -7146,16 +7146,16 @@ $$ LANGUAGE plpython3u VOLATILE;
 /* contacting S3 could be laggy depending on location */
 ALTER FUNCTION get_backup_age_pgbackrest() SET statement_timeout TO '30s';
 
-GRANT EXECUTE ON FUNCTION get_backup_age_pgbackrest() TO pgwatch2;
+GRANT EXECUTE ON FUNCTION get_backup_age_pgbackrest() TO pgwatch3;
 
-COMMENT ON FUNCTION get_backup_age_pgbackrest() is 'created for pgwatch2';
+COMMENT ON FUNCTION get_backup_age_pgbackrest() is 'created for pgwatch3';
 
 $sql$,
 'for internal usage - when connecting user is marked as superuser then the daemon will automatically try to create the needed helpers on the monitored db',
 true
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'backup_age_pgbackrest',
 9.1,
@@ -7173,7 +7173,7 @@ $sql$,
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'logical_subscriptions',
 10,
@@ -7199,7 +7199,7 @@ $sql$,
 '{"prometheus_all_gauge_columns": true}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_vmstat',
 9.1,
@@ -7248,8 +7248,8 @@ AS $FUNCTION$
         vm[9] * unit, vm[10], vm[11], vm[12], vm[13], vm[14], vm[15], vm[16], cpu_count, load_1m, load_5m, load_15m, total_memory
 $FUNCTION$;
 
-GRANT EXECUTE ON FUNCTION get_vmstat(int) TO pgwatch2;
-COMMENT ON FUNCTION get_vmstat(int) IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_vmstat(int) TO pgwatch3;
+COMMENT ON FUNCTION get_vmstat(int) IS 'created for pgwatch3';
 
 $sql$,
 '',
@@ -7257,7 +7257,7 @@ true
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'vmstat',
 9.1,
@@ -7272,7 +7272,7 @@ $sql$,
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_comment)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment)
 values (
 'instance_up',
 9.0,
@@ -7286,7 +7286,7 @@ $sql$,
 Thus it can be used to for example calculate some percentual "uptime" indicator.'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_is_helper, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_is_helper, m_sql)
 values (
 'get_sequences',
 10,
@@ -7297,12 +7297,12 @@ $$
   select * from pg_sequences
 $$ LANGUAGE sql VOLATILE SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION get_sequences() TO pgwatch2;
-COMMENT ON FUNCTION get_sequences() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_sequences() TO pgwatch3;
+COMMENT ON FUNCTION get_sequences() IS 'created for pgwatch3';
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'sequence_health',
 10,
@@ -7328,7 +7328,7 @@ select
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'replication_slot_stats',
 14,
@@ -7349,7 +7349,7 @@ from
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'wal_stats',
 14,
@@ -7370,7 +7370,7 @@ $sql$
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'wait_events',
 9.6,
@@ -7399,10 +7399,10 @@ $sql$
 
 
 /* Metric attributes */
--- truncate pgwatch2.metric_attribute;
+-- truncate pgwatch3.metric_attribute;
 
 -- mark instance level metrics for metrics defined by pgwatch, enables stats caching / sharing for multi-DB instances
-insert into pgwatch2.metric_attribute (ma_metric_name, ma_metric_attrs)
+insert into pgwatch3.metric_attribute (ma_metric_name, ma_metric_attrs)
 select m, '{"is_instance_level": true}'
 from unnest(
    array['archiver', 'backup_age_pgbackrest', 'backup_age_walg', 'bgwriter', 'buffercache_by_db', 'buffercache_by_type',
@@ -7410,30 +7410,30 @@ from unnest(
   'smart_health_per_disk', 'wal', 'wal_receiver', 'wal_size']
 ) m
 on conflict (ma_metric_name)
-do update set ma_metric_attrs = pgwatch2.metric_attribute.ma_metric_attrs || '{"is_instance_level": true}', ma_last_modified_on = now();
+do update set ma_metric_attrs = pgwatch3.metric_attribute.ma_metric_attrs || '{"is_instance_level": true}', ma_last_modified_on = now();
 
 -- dynamic re-routing of metric names
-insert into pgwatch2.metric_attribute (ma_metric_name, ma_metric_attrs)
+insert into pgwatch3.metric_attribute (ma_metric_name, ma_metric_attrs)
 select 'stat_statements_no_query_text', '{"metric_storage_name": "stat_statements"}'
 on conflict (ma_metric_name)
-do update set ma_metric_attrs = pgwatch2.metric_attribute.ma_metric_attrs || '{"metric_storage_name": "stat_statements"}', ma_last_modified_on = now();
+do update set ma_metric_attrs = pgwatch3.metric_attribute.ma_metric_attrs || '{"metric_storage_name": "stat_statements"}', ma_last_modified_on = now();
 
-insert into pgwatch2.metric_attribute (ma_metric_name, ma_metric_attrs)
+insert into pgwatch3.metric_attribute (ma_metric_name, ma_metric_attrs)
 select 'db_stats_aurora', '{"metric_storage_name": "db_stats"}'
 on conflict (ma_metric_name)
-do update set ma_metric_attrs = pgwatch2.metric_attribute.ma_metric_attrs || '{"metric_storage_name": "db_stats"}', ma_last_modified_on = now();
+do update set ma_metric_attrs = pgwatch3.metric_attribute.ma_metric_attrs || '{"metric_storage_name": "db_stats"}', ma_last_modified_on = now();
 
-insert into pgwatch2.metric_attribute (ma_metric_name, ma_metric_attrs)
+insert into pgwatch3.metric_attribute (ma_metric_name, ma_metric_attrs)
 select 'db_size_approx', '{"metric_storage_name": "db_size_approx"}'
 on conflict (ma_metric_name)
-do update set ma_metric_attrs = pgwatch2.metric_attribute.ma_metric_attrs || '{"metric_storage_name": "db_size_approx"}', ma_last_modified_on = now();
+do update set ma_metric_attrs = pgwatch3.metric_attribute.ma_metric_attrs || '{"metric_storage_name": "db_size_approx"}', ma_last_modified_on = now();
 
-insert into pgwatch2.metric_attribute (ma_metric_name, ma_metric_attrs)
+insert into pgwatch3.metric_attribute (ma_metric_name, ma_metric_attrs)
 select 'table_stats_approx', '{"metric_storage_name": "table_stats"}'
 on conflict (ma_metric_name)
-do update set ma_metric_attrs = pgwatch2.metric_attribute.ma_metric_attrs || '{"metric_storage_name": "table_stats"}', ma_last_modified_on = now();
+do update set ma_metric_attrs = pgwatch3.metric_attribute.ma_metric_attrs || '{"metric_storage_name": "table_stats"}', ma_last_modified_on = now();
 
-insert into pgwatch2.metric_attribute (ma_metric_name, ma_metric_attrs)
+insert into pgwatch3.metric_attribute (ma_metric_name, ma_metric_attrs)
 select 'reco_add_index', '{"extension_version_based_overrides": [{"target_metric": "reco_add_index_ext_qualstats_2.0", "expected_extension_versions": [{"ext_name": "pg_qualstats", "ext_min_version": "2.0"}] }]}'
 on conflict (ma_metric_name)
-do update set ma_metric_attrs = pgwatch2.metric_attribute.ma_metric_attrs || '{"extension_version_based_overrides": [{"target_metric": "reco_add_index_ext_qualstats_2.0", "expected_extension_versions": [{"ext_name": "pg_qualstats", "ext_min_version": "2.0"}] }]}', ma_last_modified_on = now();
+do update set ma_metric_attrs = pgwatch3.metric_attribute.ma_metric_attrs || '{"extension_version_based_overrides": [{"target_metric": "reco_add_index_ext_qualstats_2.0", "expected_extension_versions": [{"ext_name": "pg_qualstats", "ext_min_version": "2.0"}] }]}', ma_last_modified_on = now();

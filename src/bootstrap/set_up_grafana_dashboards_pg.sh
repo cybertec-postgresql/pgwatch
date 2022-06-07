@@ -9,7 +9,7 @@ while true ; do
   # It will take some time for Postgres to start and Grafana to do schema initialization
   sleep 3
 
-  DB_OK=$(psql -qXAt -c "select count(1) from dashboard" pgwatch2_grafana)
+  DB_OK=$(psql -qXAt -c "select count(1) from dashboard" pgwatch3_grafana)
 
   if [[ $? -ne 0 ]] ; then
     continue
@@ -24,13 +24,13 @@ done
 
 GRAFANA_MAJOR_VER=$(grafana-server -v | egrep -o [0-9]{1} | head -1)
 
-psql -h /var/run/postgresql -f /pgwatch2/bootstrap/grafana_datasource_pg.sql pgwatch2_grafana
+psql -h /var/run/postgresql -f /pgwatch3/bootstrap/grafana_datasource_pg.sql pgwatch3_grafana
 
-for slug in $(ls --hide='*.md' /pgwatch2/grafana_dashboards/postgres/v${GRAFANA_MAJOR_VER}) ; do
+for slug in $(ls --hide='*.md' /pgwatch3/grafana_dashboards/postgres/v${GRAFANA_MAJOR_VER}) ; do
 
 echo "inserting dashboard: $slug"
-TITLE=$(cat /pgwatch2/grafana_dashboards/postgres/v${GRAFANA_MAJOR_VER}/${slug}/title.txt)
-JSON=$(cat /pgwatch2/grafana_dashboards/postgres/v${GRAFANA_MAJOR_VER}/${slug}/dashboard.json)
+TITLE=$(cat /pgwatch3/grafana_dashboards/postgres/v${GRAFANA_MAJOR_VER}/${slug}/title.txt)
+JSON=$(cat /pgwatch3/grafana_dashboards/postgres/v${GRAFANA_MAJOR_VER}/${slug}/dashboard.json)
 
 # in Grafana 5 "uid" column was introduced that is normally filled by the app
 if [ "$GRAFANA_MAJOR_VER" -gt 4 ] ; then
@@ -51,15 +51,15 @@ fi
 
 SQL+=")"
 
-echo "$SQL" | psql -h /var/run/postgresql pgwatch2_grafana
+echo "$SQL" | psql -h /var/run/postgresql pgwatch3_grafana
 
 done
 
-psql -h /var/run/postgresql -d pgwatch2_grafana -c "insert into public.dashboard_tag(dashboard_id, term) select id, 'pgwatch2' from public.dashboard on conflict do nothing"
+psql -h /var/run/postgresql -d pgwatch3_grafana -c "insert into public.dashboard_tag(dashboard_id, term) select id, 'pgwatch3' from public.dashboard on conflict do nothing"
 
 HEALTHCHECK_STAR="INSERT INTO star (user_id, dashboard_id) SELECT 1, id FROM dashboard WHERE slug = 'health-check'"
-psql -h /var/run/postgresql -c "$HEALTHCHECK_STAR" pgwatch2_grafana
+psql -h /var/run/postgresql -c "$HEALTHCHECK_STAR" pgwatch3_grafana
 HOME_DASH="INSERT INTO preferences (org_id, user_id, version, home_dashboard_id, timezone, theme, created, updated, team_id) SELECT 1, 0, 0, id, '', '', now(), now(), 0 FROM dashboard WHERE slug = 'health-check'"
-psql -h /var/run/postgresql -c "$HOME_DASH" pgwatch2_grafana
+psql -h /var/run/postgresql -c "$HOME_DASH" pgwatch3_grafana
 
 exit 0

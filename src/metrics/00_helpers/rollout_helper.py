@@ -95,7 +95,7 @@ def resolve_configdb_host_to_dbs(md_entry):
 
 def get_active_dbs_from_configdb():
     ret = []
-    sql = """select md_unique_name, md_hostname, md_port, md_dbname, md_user, md_password, md_sslmode, md_dbtype from pgwatch2.monitored_db where md_is_enabled and md_dbtype in ('postgres') order by 1"""
+    sql = """select md_unique_name, md_hostname, md_port, md_dbname, md_user, md_password, md_sslmode, md_dbtype from pgwatch3.monitored_db where md_is_enabled and md_dbtype in ('postgres') order by 1"""
     md_entries, err = executeOnRemoteHost(sql, args.configdb_host, args.configdb_port, args.configdb_dbname, args.configdb_user, args.configdb_password)
     if err:
         logging.fatal('could not connect to configDB: %s', err)
@@ -135,8 +135,8 @@ def do_roll_out(md, pgver):
 
     for hp in helpers:
         sql = hp['sql']
-        if args.monitoring_user != 'pgwatch2':  # change helper definitions so that 'grant execute' is done for the monitoring role specified in the configuration
-            sql = re.sub(r'(?i)TO\s+pgwatch2', 'TO ' + args.monitoring_user, sql)
+        if args.monitoring_user != 'pgwatch3':  # change helper definitions so that 'grant execute' is done for the monitoring role specified in the configuration
+            sql = re.sub(r'(?i)TO\s+pgwatch3', 'TO ' + args.monitoring_user, sql)
         if args.python2:
             sql = sql.replace('plpython3u', 'plpythonu')
 
@@ -219,18 +219,18 @@ def get_monitored_dbs_from_yaml_config():   # active entries ("is_enabled": true
 
 
 def main():
-    argp = argparse.ArgumentParser(description='Roll out pgwatch2 metric fetching helpers to all monitored DB-s configured in config DB or to a specified DB / instance (all DBs)')
+    argp = argparse.ArgumentParser(description='Roll out pgwatch3 metric fetching helpers to all monitored DB-s configured in config DB or to a specified DB / instance (all DBs)')
 
     # to use file based helper / config definitions
     argp.add_argument('--metrics-path', dest='metrics_path', default='.', help='Path to the folder containing helper definitions. Current working directory by default')
     argp.add_argument('--config-path', dest='config_path', default='', help='Path including YAML based monitoring config files. Subfolders are supported the same as with collector')
 
-    # pgwatch2 config db connect info
-    argp.add_argument('--configdb-host', dest='configdb_host', default='', help='pgwatch2 config DB host address')
-    argp.add_argument('--configdb-dbname', dest='configdb_dbname', default='pgwatch2', help='pgwatch2 config DB dbname (relevant in configdb mode)')
-    argp.add_argument('--configdb-port', dest='configdb_port', default='5432', help='pgwatch2 config DB port (relevant in configdb mode)')
-    argp.add_argument('--configdb-user', dest='configdb_user', default='postgres', help='pgwatch2 config DB user (relevant in configdb mode)')
-    argp.add_argument('--configdb-password', dest='configdb_password', default='', help='pgwatch2 config DB password (relevant in configdb mode)')
+    # pgwatch3 config db connect info
+    argp.add_argument('--configdb-host', dest='configdb_host', default='', help='pgwatch3 config DB host address')
+    argp.add_argument('--configdb-dbname', dest='configdb_dbname', default='pgwatch3', help='pgwatch3 config DB dbname (relevant in configdb mode)')
+    argp.add_argument('--configdb-port', dest='configdb_port', default='5432', help='pgwatch3 config DB port (relevant in configdb mode)')
+    argp.add_argument('--configdb-user', dest='configdb_user', default='postgres', help='pgwatch3 config DB user (relevant in configdb mode)')
+    argp.add_argument('--configdb-password', dest='configdb_password', default='', help='pgwatch3 config DB password (relevant in configdb mode)')
 
     # rollout target db connect info
     argp.add_argument('--host', dest='host', help='Host address for explicit single DB / instance rollout')
@@ -238,7 +238,7 @@ def main():
     argp.add_argument('--dbname', dest='dbname', help='Explicit dbname for rollout')
     argp.add_argument('-U', '--user', dest='user', help='Superuser username for helper function creation')
     argp.add_argument('--password', dest='password', default='', help='Superuser password for helper function creation. The .pgpass file can also be used instead')
-    argp.add_argument('--monitoring-user', dest='monitoring_user', default='pgwatch2', help='The user getting execute privileges to created helpers (relevant for single or instance mode)')
+    argp.add_argument('--monitoring-user', dest='monitoring_user', default='pgwatch3', help='The user getting execute privileges to created helpers (relevant for single or instance mode)')
     argp.add_argument('--target-schema', dest='target_schema', default='', help='If specified, used to set the search_path')
 
     argp.add_argument('-c', '--confirm', dest='confirm', action='store_true', default=False, help='perform the actual rollout')
@@ -259,7 +259,7 @@ def main():
 
     if not args.mode or not args.mode.lower() in ['configdb-all', 'yaml-all', 'single-db', 'single-instance']:
         logging.fatal('invalid --mode param value "%s". must be one of: [configdb-all|single-db|instance]', args.mode)
-        logging.fatal('     configdb-all - roll out helpers to all active DBs defined in pgwatch2 config DB')
+        logging.fatal('     configdb-all - roll out helpers to all active DBs defined in pgwatch3 config DB')
         logging.fatal('     yaml-all - roll out helpers to all active DBs defined in YAML configs')
         logging.fatal('     single-db - roll out helpers on a single DB specified by --host, --port (5432*), --dbname and --user params')
         logging.fatal('     single-instance - roll out helpers on all DB-s of an instance specified by --host, --port (5432*) and --user params')

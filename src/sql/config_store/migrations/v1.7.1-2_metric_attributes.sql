@@ -1,8 +1,8 @@
 begin;
 
-set role to pgwatch2;
+set role to pgwatch3;
 
-create table pgwatch2.metric_attribute (
+create table pgwatch3.metric_attribute (
     ma_metric_name          text not null primary key,
     ma_last_modified_on     timestamptz not null default now(),
     ma_metric_attrs    jsonb not null,
@@ -10,7 +10,7 @@ create table pgwatch2.metric_attribute (
     check (ma_metric_name ~ '^[a-z0-9_]+$')
 );
 
-insert into pgwatch2.metric_attribute (ma_metric_name, ma_metric_attrs)
+insert into pgwatch3.metric_attribute (ma_metric_name, ma_metric_attrs)
 select m, '{"is_instance_level": true}'
 from unnest(
    array['archiver', 'backup_age_pgbackrest', 'backup_age_walg', 'bgwriter', 'buffercache_by_db', 'buffercache_by_type',
@@ -18,6 +18,6 @@ from unnest(
   'smart_health_per_disk', 'wal', 'wal_receiver', 'wal_size']
 ) m;
 
-insert into pgwatch2.schema_version (sv_tag) values ('1.7.1');
+insert into pgwatch3.schema_version (sv_tag) values ('1.7.1');
 
 end;

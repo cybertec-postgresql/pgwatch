@@ -1,5 +1,5 @@
 with q_data as (
-  select /* pgwatch2_generated */
+  select /* pgwatch3_generated */
     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
     '-'::text as tag_query,
     coalesce(queryid::text, 'insufficient-privileges-total') as tag_queryid,

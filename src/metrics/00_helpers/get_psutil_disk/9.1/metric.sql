@@ -57,5 +57,5 @@ return ret_list
 
 $FUNCTION$;
 
-GRANT EXECUTE ON FUNCTION get_psutil_disk() TO pgwatch2;
-COMMENT ON FUNCTION get_psutil_disk() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_psutil_disk() TO pgwatch3;
+COMMENT ON FUNCTION get_psutil_disk() IS 'created for pgwatch3';

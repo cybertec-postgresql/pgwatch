@@ -23,9 +23,9 @@ begin
 end;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION get_load_average_copy() TO pgwatch2;
+GRANT EXECUTE ON FUNCTION get_load_average_copy() TO pgwatch3;
 
-COMMENT ON FUNCTION get_load_average_copy() is 'created for pgwatch2';
+COMMENT ON FUNCTION get_load_average_copy() is 'created for pgwatch3';
 
 -- below routine fixes function search_path to only include "more secure" schemas with no "public" CREATE privileges
 DO $SQL$

@@ -2,59 +2,59 @@
   apiVersion: apps/v1
   kind: Deployment
   metadata:
-    name: pgwatch2-deployment
+    name: pgwatch3-deployment
     labels:
-      app: pgwatch2
+      app: pgwatch3
   spec:
     replicas: 1
     selector:
       matchLabels:
-        app: pgwatch2
+        app: pgwatch3
     template:
       metadata:
         labels:
-          app: pgwatch2
+          app: pgwatch3
       spec:
         containers:
-          - name: pgwatch2
-            image: cybertec/pgwatch2-postgres:latest
+          - name: pgwatch3
+            image: cybertec/pgwatch3-postgres:latest
             ports:
               - containerPort: 8080
               - containerPort: 8081
               - containerPort: 5432
               - containerPort: 3000
             volumeMounts:
-              - mountPath: /pgwatch2/persistent-config
-                name: pgwatch2-config
+              - mountPath: /pgwatch3/persistent-config
+                name: pgwatch3-config
               - mountPath: /var/lib/postgresql
-                name: pgwatch2-postgresql
+                name: pgwatch3-postgresql
               - mountPath: /var/lib/grafana
-                name: pgwatch2-grafana
+                name: pgwatch3-grafana
             livenessProbe:
               exec:
                 command:
                   - /usr/bin/pg_isready
                   - -qU
-                  - pgwatch2
+                  - pgwatch3
               initialDelaySeconds: 30
               periodSeconds: 30
         volumes:
-          - name: pgwatch2-config
+          - name: pgwatch3-config
             persistentVolumeClaim:
-              claimName: pgwatch2-config
-          - name: pgwatch2-postgresql
+              claimName: pgwatch3-config
+          - name: pgwatch3-postgresql
             persistentVolumeClaim:
-              claimName: pgwatch2-postgresql
-          - name: pgwatch2-grafana
+              claimName: pgwatch3-postgresql
+          - name: pgwatch3-grafana
             persistentVolumeClaim:
-              claimName: pgwatch2-grafana
+              claimName: pgwatch3-grafana
 ---
   kind: PersistentVolumeClaim
   apiVersion: v1
   metadata:
-    name: pgwatch2-config
+    name: pgwatch3-config
     labels:
-      app: pgwatch2
+      app: pgwatch3
   spec:
     accessModes:
       - ReadWriteOnce
@@ -65,9 +65,9 @@
   kind: PersistentVolumeClaim
   apiVersion: v1
   metadata:
-    name: pgwatch2-postgresql
+    name: pgwatch3-postgresql
     labels:
-      app: pgwatch2
+      app: pgwatch3
   spec:
     accessModes:
       - ReadWriteOnce
@@ -78,9 +78,9 @@
   kind: PersistentVolumeClaim
   apiVersion: v1
   metadata:
-    name: pgwatch2-grafana
+    name: pgwatch3-grafana
     labels:
-      app: pgwatch2
+      app: pgwatch3
   spec:
     accessModes:
       - ReadWriteOnce
@@ -91,11 +91,11 @@
 #  kind: Service
 #  apiVersion: v1
 #  metadata:
-#    name: pgwatch2-webui
+#    name: pgwatch3-webui
 #  spec:
 #    type: NodePort
 #    selector:
-#      app: pgwatch2
+#      app: pgwatch3
 #    ports:
 #      - port: 8080
 #        protocol: TCP
@@ -104,11 +104,11 @@
 #  kind: Service
 #  apiVersion: v1
 #  metadata:
-#    name: pgwatch2-grafana
+#    name: pgwatch3-grafana
 #  spec:
 #    type: NodePort
 #    selector:
-#      app: pgwatch2
+#      app: pgwatch3
 #    ports:
 #      - port: 3000
 #        protocol: TCP

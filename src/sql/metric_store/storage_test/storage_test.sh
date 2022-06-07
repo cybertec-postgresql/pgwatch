@@ -6,7 +6,7 @@
 ### so Grafana dashboards will not be realistic, only "interaction speed"
 ###
 
-# Before running pgwatch2 daemon in the test data generation mode, for more accurate results
+# Before running pgwatch3 daemon in the test data generation mode, for more accurate results
 # one should install the helpers manually or just use a superuser (then helpers are created automatically
 # in the "ad-hoc mode", which is implicit with "testdata mode"). Also it's recommended to run quite some various
 # queries repeatedly on the target host if it's freshly bootstrapped, otherwise "stat_statements" will not contain
@@ -16,9 +16,9 @@
 
 # 2. step - run the pgwatch daemon in the "test data" mode
 # Here we generate 1 week of data for 5 hosts. (could run for a couple of hours!)
-/pgwatch2/pgwatch2 --testdata-days 7 --testdata-multiplier 5 --adhoc-config=exhaustive \
-    --adhoc-conn-str "host=localhost dbname=monitored_db user=pgwatch2 sslmode=disable" \   # metrics collection target
-    --pg-metric-store-conn-str="host=localhost port=5434 dbname=metricsdb user=pgwatch2 sslmode=disable" \ # metrics storage target
+/pgwatch3/pgwatch3 --testdata-days 7 --testdata-multiplier 5 --adhoc-config=exhaustive \
+    --adhoc-conn-str "host=localhost dbname=monitored_db user=pgwatch3 sslmode=disable" \   # metrics collection target
+    --pg-metric-store-conn-str="host=localhost port=5434 dbname=metricsdb user=pgwatch3 sslmode=disable" \ # metrics storage target
     --pg-schema-type=metric-time --verbose
 
 # 3. as current implementation of generating test data a bit slow, if wanting to simulate longer retention / dozens

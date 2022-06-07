@@ -45,7 +45,7 @@ with recursive
       ), q_block_size as (
         select current_setting('block_size')::int8 as bs
       )
-      select /* pgwatch2_generated */
+      select /* pgwatch3_generated */
         (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
         relid,
         quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
@@ -83,7 +83,7 @@ with recursive
 
     )
 
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
     epoch_ns,
     tag_table_full_name,
     0 as is_part_root,

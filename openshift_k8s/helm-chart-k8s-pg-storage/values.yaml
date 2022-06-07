@@ -1,4 +1,4 @@
-pgwatch2:
+pgwatch3:
   service:
     type: ClusterIP
     servicePort: 8081 # the health-check / status port
@@ -13,7 +13,7 @@ pgwatch2:
       accessModes:
         - ReadWriteOnce
       existingClaim: ""
-      mountPath: /pgwatch2/persistent-config
+      mountPath: /pgwatch3/persistent-config
       size: 2Gi
     database:
       enabled: true
@@ -30,15 +30,15 @@ web:
     servicePort: 80
   noAnonymous: false
   user: admin
-  password: pgwatch2admin # password will be auto generated if emtpy
+  password: pgwatch3admin # password will be auto generated if emtpy
   ingress:
     enabled: false
     annotations: {}
-    host: pgwatch2-web.local
+    host: pgwatch3-web.local
     tls: []
     #  - secretName: chart-web-tls
     #    hosts:
-    #      - pgwatch2-web.local
+    #      - pgwatch3-web.local
 
 grafana:
   service:
@@ -46,15 +46,15 @@ grafana:
     servicePort: 3000
   noAnonymous: false
   user: admin
-  password: pgwatch2admin # password will be auto generated if emtpy
+  password: pgwatch3admin # password will be auto generated if emtpy
   ingress:
     enabled: false
     annotations: {}
-    host: pgwatch2-grafana.local
+    host: pgwatch3-grafana.local
     tls: []
     #  - secretName: chart-grafana-tls
     #    hosts:
-    #      - pgwatch2-grafana.local
+    #      - pgwatch3-grafana.local
 
 # NB! The port only actually listens when datastore=prometheus
 exporter:
@@ -64,17 +64,17 @@ exporter:
   ingress:
     enabled: false
     annotations: {}
-    host: pgwatch2-exporter.local
+    host: pgwatch3-exporter.local
     tls: []
     #  - secretName: chart-exporter-tls
     #    hosts:
-    #      - pgwatch2-exporter.local
+    #      - pgwatch3-exporter.local
 
 
 replicaCount: 1
 
 image:
-  repository: cybertec/pgwatch2-postgres
+  repository: cybertec/pgwatch3-postgres
   tag: 1.8.3
   pullPolicy: IfNotPresent
 

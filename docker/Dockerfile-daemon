@@ -1,33 +1,33 @@
 FROM golang:1.17
 
-# For showing Git version via 'pgwatch2 --version'
+# For showing Git version via 'pgwatch3 --version'
 ARG GIT_HASH
 ARG GIT_TIME
 ENV GIT_HASH=${GIT_HASH}
 ENV GIT_TIME=${GIT_TIME}
 
-ADD pgwatch2 /pgwatch2
-RUN cd /pgwatch2 && bash build_gatherer.sh
+ADD src /pgwatch3
+RUN cd /pgwatch3 && bash build_gatherer.sh
 
 
 FROM ubuntu:20.04
 
-RUN apt-get -q update && apt-get -qy install wget git && apt autoremove -y && mkdir /pgwatch2
+RUN apt-get -q update && apt-get -qy install wget git && apt autoremove -y && mkdir /pgwatch3
 
-ADD pgwatch2/metrics /pgwatch2/metrics
-ADD pgwatch2/config /pgwatch2/config
+ADD pgwatch3/metrics /pgwatch3/metrics
+ADD pgwatch3/config /pgwatch3/config
 
 # Copy over the compiled gatherer
-COPY --from=0 /pgwatch2/pgwatch2 /pgwatch2
+COPY --from=0 /pgwatch3/pgwatch3 /pgwatch3
 
-RUN chgrp -R 0 /pgwatch2 \
-    && chmod -R g=u /pgwatch2
+RUN chgrp -R 0 /pgwatch3 \
+    && chmod -R g=u /pgwatch3
 
-# pgwatch2 internal status endpoint
+# pgwatch3 internal status endpoint
 EXPOSE 8081
 # Prometheus metrics scraping port
 EXPOSE 9187
 
 USER 10001
 
-ENTRYPOINT ["/pgwatch2/pgwatch2"]
+ENTRYPOINT ["/pgwatch3/pgwatch3"]

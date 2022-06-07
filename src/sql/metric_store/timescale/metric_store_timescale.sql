@@ -1,14 +1,14 @@
 /*
   NB! Make sure you're on PG v11+ and TimescaleDB v1.7+.
-  A fresh separate DB, only for pgwatch2 metrics storage purposes, is assumed.
+  A fresh separate DB, only for pgwatch3 metrics storage purposes, is assumed.
 */
-CREATE SCHEMA IF NOT EXISTS subpartitions AUTHORIZATION pgwatch2;
+CREATE SCHEMA IF NOT EXISTS subpartitions AUTHORIZATION pgwatch3;
 
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 
 CREATE EXTENSION IF NOT EXISTS btree_gin;
 
-SET ROLE TO pgwatch2;
+SET ROLE TO pgwatch3;
 
 -- drop table if exists metrics_template;
 
@@ -31,7 +31,7 @@ create index on admin.metrics_template using gin (tag_data) where tag_data notnu
 
 create table public."some_metric"
   (LIKE admin.metrics_template INCLUDING INDEXES);
-COMMENT ON TABLE public."some_metric" IS 'pgwatch2-generated-metric-lvl';
+COMMENT ON TABLE public."some_metric" IS 'pgwatch3-generated-metric-lvl';
 
 ALTER TABLE some_metric SET (
   timescaledb.compress,

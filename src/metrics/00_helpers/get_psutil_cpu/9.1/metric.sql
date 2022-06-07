@@ -36,5 +36,5 @@ return t.cpu_utilization_info, la[0] / cpu_count(), la[0], la[1] / cpu_count(), 
 
 $FUNCTION$;
 
-GRANT EXECUTE ON FUNCTION get_psutil_cpu() TO pgwatch2;
-COMMENT ON FUNCTION get_psutil_cpu() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_psutil_cpu() TO pgwatch3;
+COMMENT ON FUNCTION get_psutil_cpu() IS 'created for pgwatch3';

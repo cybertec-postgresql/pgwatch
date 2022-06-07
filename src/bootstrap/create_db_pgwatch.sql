@@ -1,1 +1,1 @@
-CREATE DATABASE pgwatch2 OWNER pgwatch2;
+CREATE DATABASE pgwatch3 OWNER pgwatch3;

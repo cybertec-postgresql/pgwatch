@@ -5,9 +5,9 @@ metadata:
   annotations:
 {{ toYaml .Values.web.service.annotations | indent 4 }}
 {{- end }}
-  name: {{ include "pgwatch2.fullname" . }}-web
+  name: {{ include "pgwatch3.fullname" . }}-web
   labels:
-{{ include "pgwatch2.labels" . | indent 4 }}
+{{ include "pgwatch3.labels" . | indent 4 }}
 spec:
 {{- if .Values.web.service.clusterIP }}
   clusterIP: {{ .Values.web.service.clusterIP }}
@@ -35,5 +35,5 @@ spec:
       nodePort: {{ .Values.web.service.nodePort }}
     {{- end }}
   selector:
-    app.kubernetes.io/name: {{ include "pgwatch2.name" . }}
+    app.kubernetes.io/name: {{ include "pgwatch3.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}

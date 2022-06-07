@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {{ include "pgwatch2.fullname" . }}-test-connection
+  name: {{ include "pgwatch3.fullname" . }}-test-connection
   labels:
-{{ include "pgwatch2.labels" . | indent 4 }}
+{{ include "pgwatch3.labels" . | indent 4 }}
   annotations:
     "helm.sh/hook": test-success
 spec:
@@ -11,5 +11,5 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args:  ['{{ include "pgwatch2.fullname" . }}:{{ .Values.web.service.port }}']
+      args:  ['{{ include "pgwatch3.fullname" . }}:{{ .Values.web.service.port }}']
   restartPolicy: Never

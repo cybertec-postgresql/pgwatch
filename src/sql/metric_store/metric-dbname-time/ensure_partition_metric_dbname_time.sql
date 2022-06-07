@@ -44,7 +44,7 @@ BEGIN
     -- RAISE NOTICE 'creating partition % ...', metric;
     EXECUTE format($$CREATE %s TABLE IF NOT EXISTS public.%s (LIKE %s INCLUDING INDEXES) PARTITION BY LIST (dbname)$$,
                    l_unlogged, quote_ident(metric), l_template_table);
-    EXECUTE format($$COMMENT ON TABLE public.%s IS 'pgwatch2-generated-metric-lvl'$$, quote_ident(metric));
+    EXECUTE format($$COMMENT ON TABLE public.%s IS 'pgwatch3-generated-metric-lvl'$$, quote_ident(metric));
   END IF;
 
   -- 2. level
@@ -65,7 +65,7 @@ BEGIN
     --RAISE NOTICE 'creating partition % ...', l_part_name_2nd; 
     EXECUTE format($$CREATE %s TABLE IF NOT EXISTS subpartitions.%s PARTITION OF public.%s FOR VALUES IN (%s) PARTITION BY RANGE (time)$$,
                     l_unlogged, quote_ident(l_part_name_2nd), quote_ident(metric), quote_literal(dbname));
-    EXECUTE format($$COMMENT ON TABLE subpartitions.%s IS 'pgwatch2-generated-metric-dbname-lvl'$$, quote_ident(l_part_name_2nd));
+    EXECUTE format($$COMMENT ON TABLE subpartitions.%s IS 'pgwatch3-generated-metric-dbname-lvl'$$, quote_ident(l_part_name_2nd));
   END IF;
 
   -- 3. level
@@ -127,7 +127,7 @@ BEGIN
     l_sql := format($$CREATE %s TABLE IF NOT EXISTS subpartitions.%s PARTITION OF subpartitions.%s FOR VALUES FROM ('%s') TO ('%s')$$,
                     l_unlogged, quote_ident(l_part_name_3rd), quote_ident(l_part_name_2nd), l_part_start, l_part_end);
     EXECUTE l_sql;
-    EXECUTE format($$COMMENT ON TABLE subpartitions.%s IS 'pgwatch2-generated-metric-dbname-time-lvl'$$, quote_ident(l_part_name_3rd));
+    EXECUTE format($$COMMENT ON TABLE subpartitions.%s IS 'pgwatch3-generated-metric-dbname-time-lvl'$$, quote_ident(l_part_name_3rd));
   END IF;
 
   END LOOP;
@@ -136,4 +136,4 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
-GRANT EXECUTE ON FUNCTION admin.ensure_partition_metric_dbname_time(text,text,timestamp with time zone,integer) TO pgwatch2;
+GRANT EXECUTE ON FUNCTION admin.ensure_partition_metric_dbname_time(text,text,timestamp with time zone,integer) TO pgwatch3;

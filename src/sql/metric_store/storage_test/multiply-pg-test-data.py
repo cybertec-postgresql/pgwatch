@@ -12,7 +12,7 @@ import logging
 import time
 
 ## ADJUST AS NEEDED ##
-METRICSCONN_STR = "host=localhost port=5432 dbname=pgwatch2_metrics user=pgwatch2"
+METRICSCONN_STR = "host=localhost port=5432 dbname=pgwatch3_metrics user=pgwatch3"
 HOW_MANY_TIME_TO_DOUBLE = 1   # i.e. when having 1d of data, 5 means there will be 1m (1*2*2*2*2*2)
 LOGLVL = logging.INFO   # logging.DEBUG
 

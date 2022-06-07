@@ -33,6 +33,6 @@ $$ LANGUAGE plpython3u VOLATILE;
 /* contacting S3 could be laggy depending on location */
 ALTER FUNCTION get_backup_age_pgbackrest() SET statement_timeout TO '30s';
 
-GRANT EXECUTE ON FUNCTION get_backup_age_pgbackrest() TO pgwatch2;
+GRANT EXECUTE ON FUNCTION get_backup_age_pgbackrest() TO pgwatch3;
 
-COMMENT ON FUNCTION get_backup_age_pgbackrest() is 'created for pgwatch2';
+COMMENT ON FUNCTION get_backup_age_pgbackrest() is 'created for pgwatch3';

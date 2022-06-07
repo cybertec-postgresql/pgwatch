@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for prog in postgres grafana grafana_dashboard_setup pgwatch2 webpy ; do
+for prog in postgres grafana grafana_dashboard_setup pgwatch3 webpy ; do
   echo "supervisorctl start $prog ..."
   supervisorctl start $prog
   echo "sleep 5"

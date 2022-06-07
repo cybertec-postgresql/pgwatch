@@ -52,8 +52,8 @@ $$
 	SELECT val, val, val FROM cpu() AS cpu_now(val);
 $$ LANGUAGE sql;
 
-GRANT EXECUTE ON FUNCTION get_load_average_windows() TO pgwatch2;
+GRANT EXECUTE ON FUNCTION get_load_average_windows() TO pgwatch3;
 
-COMMENT ON FUNCTION get_load_average_windows() is 'created for pgwatch2';
+COMMENT ON FUNCTION get_load_average_windows() is 'created for pgwatch3';
 
 COMMIT;

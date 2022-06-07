@@ -9,7 +9,7 @@ import argparse
 import logging
 
 
-PGWATCH2_METRIC_NAME = 'vmstat'
+pgwatch3_METRIC_NAME = 'vmstat'
 VMSTAT_BYTE_UNITS = {'k': 1000, 'K': 1024, 'm': 1000000, 'M': 1048576}
 
 args = None  # cmd. line input params
@@ -75,9 +75,9 @@ def ensureSubpartition(dbname, time):  # TODO could be optimized
     ret, err = executeSQL(sqlSchemaType, connection=metricsDBConn)
     if ret and len(ret) == 1:
         if ret[0]['schema_type'] == 'metric-time':
-            executeSQL(sqlEnsureMetricTime, (PGWATCH2_METRIC_NAME, time), connection=metricsDBConn)
+            executeSQL(sqlEnsureMetricTime, (pgwatch3_METRIC_NAME, time), connection=metricsDBConn)
         elif ret[0]['schema_type'] == 'metric-dbname-time':
-            executeSQL(sqlEnsureMetricDbnameTime, (PGWATCH2_METRIC_NAME, dbname, time), connection=metricsDBConn)
+            executeSQL(sqlEnsureMetricDbnameTime, (pgwatch3_METRIC_NAME, dbname, time), connection=metricsDBConn)
 
 
 def parseVmstatLineToDict(line):
@@ -131,22 +131,22 @@ procs -----------------------memory---------------------- ---swap-- -----io---- 
 
 
 def insertOneVmstatLine(line):  # TODO use COPY or prepared statements
-    sqlInsert = "insert into {} select %s, %s, %s, %s where not exists (select * from {} where time = %s and dbname = %s)".format(PGWATCH2_METRIC_NAME, PGWATCH2_METRIC_NAME)
+    sqlInsert = "insert into {} select %s, %s, %s, %s where not exists (select * from {} where time = %s and dbname = %s)".format(pgwatch3_METRIC_NAME, pgwatch3_METRIC_NAME)
     time, lineDict = parseVmstatLineToDict(line)
     if lineDict and time:
         logging.info('storing line: %s', lineDict)
-        ensureSubpartition(args.pgwatch2_dbname, time)
-        executeSQL(sqlInsert, (time, args.pgwatch2_dbname, psycopg2.extras.Json(lineDict), args.pgwatch2_tag_data, time, args.pgwatch2_dbname), connection=metricsDBConn, async_commit=True)
+        ensureSubpartition(args.pgwatch3_dbname, time)
+        executeSQL(sqlInsert, (time, args.pgwatch3_dbname, psycopg2.extras.Json(lineDict), args.pgwatch3_tag_data, time, args.pgwatch3_dbname), connection=metricsDBConn, async_commit=True)
 
 
 if __name__ == '__main__':
 
-    argp = argparse.ArgumentParser(description='''Parse a 'vmstat [-w] -t $interval' output text file and insert the data into pgwatch2 Postgres metrics DB''')
+    argp = argparse.ArgumentParser(description='''Parse a 'vmstat [-w] -t $interval' output text file and insert the data into pgwatch3 Postgres metrics DB''')
     argp.add_argument('-f', '--file', dest='file', required=True, help='''Path to the vmstat log file or '-' for stdin piping''')
-    argp.add_argument('--pgwatch2-dbname', dest='pgwatch2_dbname', required=True, help='''The host name / unique DB name on pgwatch2 side''')
-    argp.add_argument('--pgwatch2-tag-data', dest='pgwatch2_tag_data', default=None, help='''In JSON format''')
+    argp.add_argument('--pgwatch3-dbname', dest='pgwatch3_dbname', required=True, help='''The host name / unique DB name on pgwatch3 side''')
+    argp.add_argument('--pgwatch3-tag-data', dest='pgwatch3_tag_data', default=None, help='''In JSON format''')
     argp.add_argument('--vmstat-unit', dest='vmstat_unit', default='K', help='''Vmstat -S / --unit parameter. Default is 'K' ~ 1024 bytes per reported block''')
-    # pgwatch2 metrics DB connect info
+    # pgwatch3 metrics DB connect info
     argp.add_argument('-H', '--host', dest='host', default='localhost')
     argp.add_argument('-d', '--dbname', dest='dbname', required=True)
     argp.add_argument('-p', '--port', dest='port', type=int, default=5432)
@@ -167,9 +167,9 @@ if __name__ == '__main__':
 
     logging.basicConfig(format='%(asctime)s %(message)s', level=(logging.DEBUG if args.verbose else logging.WARNING))
 
-    # test connection to pgwatch2 metric storage DB + ensure our PGWATCH2_METRIC_NAME table
+    # test connection to pgwatch3 metric storage DB + ensure our pgwatch3_METRIC_NAME table
     logging.info('checking DB connection...')
-    executeSQL('select admin.ensure_dummy_metrics_table(%s)', (PGWATCH2_METRIC_NAME,), quiet=True)
+    executeSQL('select admin.ensure_dummy_metrics_table(%s)', (pgwatch3_METRIC_NAME,), quiet=True)
     logging.info('OK')
 
     fp = None

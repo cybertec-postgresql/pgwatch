@@ -14,5 +14,5 @@ else:
     return None, None, None, None
 $FUNCTION$;
 
-GRANT EXECUTE ON FUNCTION get_psutil_disk_io_total() TO pgwatch2;
-COMMENT ON FUNCTION get_psutil_disk_io_total() IS 'created for pgwatch2';
+GRANT EXECUTE ON FUNCTION get_psutil_disk_io_total() TO pgwatch3;
+COMMENT ON FUNCTION get_psutil_disk_io_total() IS 'created for pgwatch3';
