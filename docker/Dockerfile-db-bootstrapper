@@ -2,7 +2,7 @@ FROM ubuntu:20.04
 
 # WORKDIR /root
 
-RUN apt-get -q update && DEBIAN_FRONTEND=noninteractive apt-get install -qy postgresql-client-12 wget unzip \
+RUN apt-get -q update && DEBIAN_FRONTEND=noninteractive apt-get install -qy postgresql-client-14 wget unzip \
   && useradd -m -s /bin/bash postgres
 
 USER postgres

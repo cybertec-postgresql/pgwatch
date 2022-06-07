@@ -44,16 +44,16 @@ fi
 
 if [ ! -f /pgwatch3/persistent-config/db-bootstrap-done-marker ] ; then
 
-if [ ! -d /var/lib/postgresql/11 ]; then
-  mkdir /var/lib/postgresql/11 && chown -R postgres:postgres /var/lib/postgresql/11
-  pg_dropcluster 11 main
-  pg_createcluster --locale en_US.UTF-8 11 main
-  echo "include = 'pgwatch_postgresql.conf'" >> /etc/postgresql/11/main/postgresql.conf
-  cp /pgwatch3/postgresql.conf /etc/postgresql/11/main/pgwatch_postgresql.conf
-  cp /pgwatch3/pg_hba.conf /etc/postgresql/11/main/pg_hba.conf
+if [ ! -d /var/lib/postgresql/14 ]; then
+  mkdir /var/lib/postgresql/14 && chown -R postgres:postgres /var/lib/postgresql/14
+  pg_dropcluster 14 main
+  pg_createcluster --locale en_US.UTF-8 14 main
+  echo "include = 'pgwatch_postgresql.conf'" >> /etc/postgresql/14/main/postgresql.conf
+  cp /pgwatch3/postgresql.conf /etc/postgresql/14/main/pgwatch_postgresql.conf
+  cp /pgwatch3/pg_hba.conf /etc/postgresql/14/main/pg_hba.conf
 fi
 
-pg_ctlcluster 11 main start -- --wait
+pg_ctlcluster 14 main start -- --wait
 
 su -c "psql -d postgres -f /pgwatch3/bootstrap/change_pw.sql" postgres
 su -c "psql -d postgres -f /pgwatch3/bootstrap/grant_monitor_to_pgwatch3.sql" postgres
@@ -73,11 +73,11 @@ else
   su -c "psql -d pgwatch3_metrics -f /pgwatch3/sql/metric_store/metric-time/ensure_partition_metric_time.sql" postgres
 fi
 su -c "psql -d pgwatch3 -f /pgwatch3/metrics/00_helpers/get_load_average/9.1/metric.sql" postgres
-su -c "psql -d pgwatch3 -f /pgwatch3/metrics/00_helpers/get_stat_statements/9.2/metric.sql" postgres
+su -c "psql -d pgwatch3 -f /pgwatch3/metrics/00_helpers/get_stat_statements/9.4/metric.sql" postgres
 su -c "psql -d pgwatch3 -f /pgwatch3/metrics/00_helpers/get_stat_activity/9.2/metric.sql" postgres
 su -c "psql -d pgwatch3 -f /pgwatch3/metrics/00_helpers/get_stat_replication/9.2/metric.sql" postgres
 su -c "psql -d pgwatch3 -f /pgwatch3/metrics/00_helpers/get_table_bloat_approx/9.5/metric.sql" postgres
-su -c "psql -d pgwatch3 -f /pgwatch3/metrics/00_helpers/get_table_bloat_approx_sql/9.0/metric.sql" postgres
+su -c "psql -d pgwatch3 -f /pgwatch3/metrics/00_helpers/get_table_bloat_approx_sql/12/metric.sql" postgres
 su -c "psql -d pgwatch3 -f /pgwatch3/metrics/00_helpers/get_wal_size/10/metric.sql" postgres
 su -c "psql -d pgwatch3 -f /pgwatch3/metrics/00_helpers/get_psutil_cpu/9.1/metric.sql" postgres
 su -c "psql -d pgwatch3 -f /pgwatch3/metrics/00_helpers/get_psutil_mem/9.1/metric.sql" postgres
@@ -91,7 +91,7 @@ fi
 
 touch /pgwatch3/persistent-config/db-bootstrap-done-marker
 
-pg_ctlcluster 11 main stop -- --wait
+pg_ctlcluster 14 main stop -- --wait
 
 fi
 
