@@ -53,7 +53,7 @@ NB! The *delete_all_old_pw2_dashes.sh* script deletes all pgwatch3 built-in dash
 some extra care when you've changed them. In general it's a good idea not to modify the preset dashboards too much, but
 rate use the "Save As..." button and rename the dashboards to something else.
 
-FYI - notable new dashboards are usually listed also in `release notes <https://github.com/cybertec-postgresql/pgwatch3/blob/master/CHANGELOG.md>`__
+FYI - notable new dashboards are usually listed also in `release notes <https://github.com/cybertec-postgresql/pgwatch3/blob/master/docs/CHANGELOG.md>`__
 and most dashboards also have a sample `screenshots <https://github.com/cybertec-postgresql/pgwatch3/tree/master/screenshots>`__ available.
 
 Storage monitoring

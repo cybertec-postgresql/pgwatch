@@ -63,7 +63,7 @@ Note that in non-trusted environments it's a good idea to specify more sensitive
 interfaces for additional security - by default Docker listens on all network devices!
 
 Also note that one can configure many aspects of the software components running inside the container via ENV - for a complete
-list of all supported Docker environment variables see the `ENV_VARIABLES.md <https://github.com/cybertec-postgresql/pgwatch3/blob/master/ENV_VARIABLES.md>`_
+list of all supported Docker environment variables see the `ENV_VARIABLES.md <https://github.com/cybertec-postgresql/pgwatch3/blob/master/docs/ENV_VARIABLES.md>`_
 file.
 
 Available Docker images

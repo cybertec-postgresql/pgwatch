@@ -99,7 +99,7 @@ Updating the pgwatch3 schema
 This is the pgwatch3 specific part, with some coupling between the following components - Config DB SQL schema, metrics collector,
 and the optional Web UI.
 
-Here one should check from the `CHANGELOG <https://github.com/cybertec-postgresql/pgwatch3/blob/master/CHANGELOG.md>`__ if
+Here one should check from the `CHANGELOG <https://github.com/cybertec-postgresql/pgwatch3/blob/master/docs/CHANGELOG.md>`__ if
 pgwatch3 schema needs updating. If yes, then manual applying of schema diffs is required before running the new gatherer
 or Web UI. If no, i.e. no schema changes, all components can be updated independently in random order.
 
