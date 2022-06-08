@@ -61,11 +61,11 @@ Two most common deployment options are:
 
 ## The Configuration DB centric "pull" model
 
-![Component diagram](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgwatch3_architecture.png)
+![Component diagram](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgwatch3_architecture.png)
 
 ## The de-centralized "push" model
 
-![Component diagram](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgwatch3_architecture_push.png)
+![Component diagram](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgwatch3_architecture_push.png)
 
 # Metrics storage options
 

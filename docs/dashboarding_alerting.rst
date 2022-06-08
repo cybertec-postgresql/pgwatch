@@ -23,7 +23,7 @@ dashboards *en masse* per script, without losing any custom user changes.
 
 `Built-in dashboards for PostgreSQL (TimescaleDB) storage <https://github.com/cybertec-postgresql/pgwatch3/tree/master/grafana_dashboards/postgres/>`_
 
-`Screenshots of pgwatch3 default dashboards <https://github.com/cybertec-postgresql/pgwatch3/tree/master/screenshots>`_
+`Screenshots of pgwatch3 default dashboards <https://github.com/cybertec-postgresql/pgwatch3/tree/master/docs/screenshots>`_
 
 `The online Demo site <https://demo.pgwatch.com/>`_
 

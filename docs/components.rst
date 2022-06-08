@@ -86,9 +86,9 @@ Component diagram
 
 Component diagram of a typical setup:
 
-.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgwatch3_architecture.png
+.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgwatch3_architecture.png
    :alt: pgwatch3 typical deployment architecture diagram
-   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgwatch3_architecture.png
+   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgwatch3_architecture.png
 
 .. _component_reuse:
 

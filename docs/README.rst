@@ -39,9 +39,9 @@ Typical "pull" architecture
 To get an idea how pgwatch3 is typically deployed a diagram of the standard Docker image fetching metrics from a set of
 Postgres databases configured via a configuration DB:
 
-.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgwatch3_architecture.png
+.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgwatch3_architecture.png
    :alt: pgwatch3 typical deployment architecture diagram
-   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgwatch3_architecture.png
+   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgwatch3_architecture.png
 
 Typical "push" architecture
 ---------------------------
@@ -49,6 +49,6 @@ Typical "push" architecture
 A better fit for very dynamic (Cloud) environments might be a more de-centralized "push" approach or just exposing the metrics
 over a port for remote scraping. In that case the only component required would be the pgwatch3 metrics collection daemon.
 
-.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgwatch3_architecture_push.png
+.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgwatch3_architecture_push.png
    :alt: pgwatch3 "push" deployment architecture diagram
-   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgwatch3_architecture_push.png
+   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgwatch3_architecture_push.png
