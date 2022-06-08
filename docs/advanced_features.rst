@@ -81,9 +81,9 @@ will be identified / separated via the "database" tag.
 
 There's also a built-in Grafana dashboard for PgBouncer data, looking like that:
 
-.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgbouncer_stats.png
+.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgbouncer_stats.png
    :alt: Grafana dash for PgBouncer stats
-   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgbouncer_stats.png
+   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgbouncer_stats.png
 
 
 
@@ -96,9 +96,9 @@ info to the pooler port and make sure the **pgpool_stats** metric / preset confi
 
 The built-in Grafana dashboard for Pgpool data looks something like that:
 
-.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgpool_status.png
+.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgpool_status.png
    :alt: Grafana dash for PgPool stats
-   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgpool_status.png
+   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgpool_status.png
 
 
 Prometheus scraping

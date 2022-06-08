@@ -16,9 +16,9 @@ Default port: **8080**
 
 Sample screenshot of the Web UI:
 
-.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/web_ui_dbs.png
+.. image:: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/web_ui_dbs.png
    :alt: A sample screenshot of the pgwatch3 admin Web UI
-   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/web_ui_dbs.png
+   :target: https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/web_ui_dbs.png
 
 Web UI security
 ---------------

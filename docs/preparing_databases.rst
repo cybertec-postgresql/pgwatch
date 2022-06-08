@@ -195,7 +195,7 @@ Running with developer credentials
 
 As mentioned above, helper / wrapper functions are not strictly needed, they just provide a bit more information for unprivileged users - thus for developers
 with no means to install any wrappers as superuser, it's also possible to benefit from pgwatch3 - for such use cases e.g.
-the "unprivileged" preset metrics profile and the according "DB overview Unprivileged / Developer" `dashboard <https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/overview_developer.png>`_
+the "unprivileged" preset metrics profile and the according "DB overview Unprivileged / Developer" `dashboard <https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/overview_developer.png>`_
 are a good starting point as it only assumes existence of `pg_stat_statements` (which should be available by all cloud providers).
 
 .. _db_types:

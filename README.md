@@ -32,7 +32,7 @@ NB! If you don't want to add the "test" database (the pgwatch3 configuration db)
 parameter when launching the container.
 
 The behaviour of the Docker images can be customized in many ways - for a complete list of all supported Docker environment
-variables see [ENV_VARIABLES.md](https://github.com/cybertec-postgresql/pgwatch3/blob/master/ENV_VARIABLES.md).
+variables see [ENV_VARIABLES.md](https://github.com/cybertec-postgresql/pgwatch3/blob/master/docs/ENV_VARIABLES.md).
 
 ## Main features
 
@@ -61,11 +61,11 @@ Two most common deployment options are:
 
 ## The Configuration DB centric "pull" model
 
-![Component diagram](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgwatch3_architecture.png)
+![Component diagram](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgwatch3_architecture.png)
 
 ## The de-centralized "push" model
 
-![Component diagram](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/screenshots/pgwatch3_architecture_push.png)
+![Component diagram](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgwatch3_architecture_push.png)
 
 # Metrics storage options
 
