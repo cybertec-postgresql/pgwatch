@@ -10,10 +10,10 @@ ADD src /pgwatch3
 RUN cd /pgwatch3 && bash build_gatherer.sh
 
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 RUN apt-get -q update && DEBIAN_FRONTEND=noninteractive apt-get install -qy curl ca-certificates gnupg \
-    && echo "deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && apt-get -q update \
     && DEBIAN_FRONTEND=noninteractive apt-get -qy install wget apt-transport-https vim git postgresql-14 \
        postgresql-plpython3-14 libfontconfig python3-pip libssl-dev libpq-dev \
@@ -55,7 +55,7 @@ ADD grafana_dashboards /pgwatch3/grafana_dashboards
 COPY supervisord-postgres.conf /etc/supervisor/supervisord.conf
 
 # NB! When security is a concern one should definitely alter "pgwatch3" password in change_pw.sql and maybe modify pg_hba.conf accordingly
-COPY postgresql_18.04.conf /etc/postgresql/14/main/pgwatch_postgresql.conf
+COPY postgresql.conf /etc/postgresql/14/main/pgwatch_postgresql.conf
 COPY pg_hba.conf /etc/postgresql/14/main/pg_hba.conf
 COPY docker-launcher-postgres.sh postgresql.conf pg_hba.conf /pgwatch3/
 

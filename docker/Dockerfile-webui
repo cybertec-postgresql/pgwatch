@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:20.04
 
 RUN apt-get -q update && apt-get -qy install python3-pip \
     && mkdir /pgwatch3
@@ -11,7 +11,7 @@ ADD webpy /pgwatch3/webpy
 ADD docker/launch-wrapper-webui.sh /pgwatch3
 
 # Get Web UI requirements
-RUN pip3 install -U "pip < 21.0" && pip3 install -r /pgwatch3/webpy/requirements_pg_metrics.txt \
+RUN pip3 install -U pip && pip3 install -r /pgwatch3/webpy/requirements_pg_metrics.txt \
     && chgrp -R 0 /pgwatch3 \
     && chmod -R g=u /pgwatch3 \
     && mkdir /pgwatch3/persistent-config \

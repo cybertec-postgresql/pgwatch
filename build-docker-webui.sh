@@ -2,5 +2,5 @@
 docker build --no-cache \
  --build-arg GIT_TIME=`git show -s --format=%cI HEAD` \
  --build-arg GIT_HASH=`git show -s --format=%H HEAD` \
- -t cybertec/pgwatch3-postgres:latest \
- -f docker/Dockerfile-postgres .
+ -t cybertec/pgwatch3-webui:latest \
+ -f docker/Dockerfile-webui .
