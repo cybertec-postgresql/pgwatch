@@ -19,7 +19,7 @@ Launching the latest pgwatch3 Docker image with built-in Postgres metrics storag
 ::
 
     # run the latest Docker image, exposing Grafana on port 3000 and the administrative web UI on 8080
-    docker run -d -p 3000:3000 -p 8080:8080 -e PW2_TESTDB=true --name pw2 cybertec/pgwatch3-postgres
+    docker run -d -p 3000:3000 -p 8080:8080 -e PW2_TESTDB=true --name pw2 cybertec/pgwatch3
 
 After some minutes you could for example open the `"DB overview" <http://127.0.0.1:3000/dashboard/db/db-overview>`_ dashboard and start
 looking at metrics in Grafana. For defining your own dashboards or making changes you need to log in as admin (default

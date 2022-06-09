@@ -22,7 +22,7 @@ from documentation or turn to the "Releases" tab for pre-built DEB / RPM / Tar p
 docker run -d --restart=unless-stopped --name pw2 \
   -p 3000:3000 -p 8080:8080 -p 127.0.0.1:5432:5432 \
   -e PW2_TESTDB=true \
-  cybertec/pgwatch3-postgres:latest
+  cybertec/pgwatch3:latest
 ```
 
 After some minutes you could open the ["db-overview"](http://127.0.0.1:3000/dashboard/db/db-overview) dashboard and start
@@ -178,7 +178,7 @@ environment variables, which can be beneficial for Cloud setups. Details [here](
 docker run --rm -d --name pw2_temp \
     -p 3000:3000 \
     -e PW2_ADHOC_CONN_STR="postgresql://postgres:postgres@172.17.0.1:5432/postgres" \
-    -e PW2_ADHOC_CONFIG=unprivileged cybertec/pgwatch3-postgres
+    -e PW2_ADHOC_CONFIG=unprivileged cybertec/pgwatch3
 ```
 
 # Prometheus mode

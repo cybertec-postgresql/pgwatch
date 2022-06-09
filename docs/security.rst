@@ -63,7 +63,7 @@ command to launch pgwatch3 with following security "checkpoints" enabled:
       -e PW2_WEBNOANONYMOUS=1 -e PW2_WEBNOCOMPONENTLOGS=1 \
       -e PW2_WEBUSER=myuser -e PW2_WEBPASSWORD=mypass \
       -e PW2_AES_GCM_KEYPHRASE=qwerty \
-      cybertec/pgwatch3-postgres
+      cybertec/pgwatch3
 
 NB! For custom installs it's up to the user though. A hint - Docker *launcher* files can also be inspected to see
 which config parameters are being touched.

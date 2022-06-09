@@ -23,7 +23,7 @@ A single / separate table for each distinct metric in the "public" schema. No pa
 A single top-level table for each distinct metric in the "public" schema + weekly partitions in the "subpartitions" schema.
 Works on PG 11+ versions. Suitable for up to ~50 monitored DBs. Reduced IO compared to "metric" as old data partitions will be dropped, not deleted.
 
-Default storage schema for the "pgwatch3-postgres" Docker image.
+Default storage schema for the "pgwatch3" Docker image.
 
 ## metric-dbname-time
 
