@@ -10,11 +10,11 @@ ADD src /pgwatch3
 RUN cd /pgwatch3 && bash build_gatherer.sh
 
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 RUN apt-get -q update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -qy curl ca-certificates gnupg \
-    && echo "deb http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && apt-get -q update \
     && DEBIAN_FRONTEND=noninteractive apt-get -qy install postgresql-14 \
        postgresql-plpython3-14 libfontconfig python3-pip libssl-dev libpq-dev \
