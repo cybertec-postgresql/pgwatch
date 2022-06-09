@@ -167,7 +167,8 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Test Docker Image
+      shell: bash
       run: |
         ls -al
-        sudo ./build-docker.sh 
-        sudo docker/test/smoke_test_docker_image.sh cybertec/pgwatch3:latest     
+        ./build-docker.sh 
+        docker/test/smoke_test_docker_image.sh cybertec/pgwatch3:latest     
