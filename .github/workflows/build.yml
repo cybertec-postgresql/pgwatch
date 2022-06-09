@@ -171,8 +171,8 @@ jobs:
       run: |
         ./build-docker.sh 
 
-    - name: Smoke Test Docker Image
-      timeout-minutes: 10
-      shell: bash
-      run: |        
-        docker/test/smoke_test_docker_image.sh cybertec/pgwatch3:latest     
+    # - name: Smoke Test Docker Image
+    #   timeout-minutes: 10
+    #   shell: bash
+    #   run: |        
+    #     docker/test/smoke_test_docker_image.sh cybertec/pgwatch3:latest     
