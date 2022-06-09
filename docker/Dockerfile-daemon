@@ -1,4 +1,4 @@
-FROM golang:1.18
+FROM golang:alpine AS builder
 
 # For showing Git version via 'pgwatch3 --version'
 ARG GIT_HASH
@@ -6,28 +6,41 @@ ARG GIT_TIME
 ENV GIT_HASH=${GIT_HASH}
 ENV GIT_TIME=${GIT_TIME}
 
-ADD src /pgwatch3
-RUN cd /pgwatch3 && bash build_gatherer.sh
+# Set necessary environmet variables needed for our image
+ENV GO111MODULE=on \
+    CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64
 
+# Move to working directory /build
+WORKDIR /build    
 
-FROM ubuntu:22.04
+# Update certificates
+RUN apk update && apk upgrade && apk add --no-cache ca-certificates
+RUN update-ca-certificates
 
-RUN apt-get -q update && apt-get -qy install wget git && apt autoremove -y && mkdir /pgwatch3
+# Copy and download dependency using go mod
+COPY src/go.mod .
+COPY src/go.sum .
+RUN go mod download
 
-ADD pgwatch3/metrics /pgwatch3/metrics
-ADD pgwatch3/config /pgwatch3/config
+# Copy the code into the container
+COPY src/. .
+RUN sh build_gatherer.sh
 
-# Copy over the compiled gatherer
-COPY --from=0 /pgwatch3/pgwatch3 /pgwatch3
+FROM alpine
 
-RUN chgrp -R 0 /pgwatch3 \
-    && chmod -R g=u /pgwatch3
+# Copy the binary and certificates into the container
+COPY --from=builder /build/pgwatch3 /
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+ADD src/metrics /metrics
+ADD src/config  /config
 
 # pgwatch3 internal status endpoint
 EXPOSE 8081
 # Prometheus metrics scraping port
 EXPOSE 9187
 
-USER 10001
-
-ENTRYPOINT ["/pgwatch3/pgwatch3"]
+# Command to run the executable
+ENTRYPOINT ["/pgwatch3"]

@@ -22,7 +22,7 @@ else
 
   git_on_path=$(which git)
   # assuming located in pgwatch3 Git repo ...
-  if [ -n "$git_on_path" -a -f pgwatch3.go ] ; then
+  if [ -n "$git_on_path" -a -f main.go ] ; then
     COMMIT=`git show -s --format=%H HEAD`
     DATE=`git show -s --format=%cI HEAD`
     echo "running (3): go build -ldflags \"-X main.commit=$COMMIT -X main.date=$DATE\""
