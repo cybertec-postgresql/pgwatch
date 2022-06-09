@@ -169,6 +169,7 @@ jobs:
     - name: Build Docker Image
       shell: bash
       run: |
+        ./build-docker-daemon.sh
         ./build-docker.sh 
 
     # - name: Smoke Test Docker Image
