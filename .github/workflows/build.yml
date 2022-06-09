@@ -159,7 +159,7 @@ jobs:
 
   test-docker-images:
     if: true # false to skip job during debug
-    name: Test and Build on Ubuntu
+    name: Test Docker Image on Ubuntu
     runs-on: ubuntu-latest
     steps:
 
@@ -168,4 +168,4 @@ jobs:
 
     - name: Test Docker Image
       run: |
-        ./build-docker.sh && docker/test/smoke_test_docker_image.sh cybertec/pgwatch3:latest     
+        sudo ./build-docker.sh && sudo docker/test/smoke_test_docker_image.sh cybertec/pgwatch3:latest     
