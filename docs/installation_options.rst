@@ -52,11 +52,11 @@ Relevant Gatherer env. vars / flags: ``--adhoc-conn-str, --adhoc-config, --adhoc
 
     # launching in ad-hoc / test mode
     docker run --rm -p 3000:3000 -e PW2_ADHOC_CONN_STR="postgresql://user:pwd@mydb:5432/mydb1" \
-        -e PW2_ADHOC_CONFIG=unprivileged --name pw2 cybertec/pgwatch3-postgres
+        -e PW2_ADHOC_CONFIG=unprivileged --name pw2 cybertec/pgwatch3
 
     # launching in ad-hoc / test mode, creating metrics helpers automatically (requires superuser)
     docker run --rm -p 3000:3000 -e PW2_ADHOC_CONN_STR="postgresql://user:pwd@mydb:5432/mydb1" \
-        -e PW2_ADHOC_CONFIG=exhaustive -e PW2_ADHOC_CREATE_HELPERS=true --name pw2 cybertec/pgwatch3-postgres
+        -e PW2_ADHOC_CONFIG=exhaustive -e PW2_ADHOC_CREATE_HELPERS=true --name pw2 cybertec/pgwatch3
 
 NB! Using the ``PW2_ADHOC_CREATE_HELPERS`` flag will try to create all metrics fetching helpers automatically if not already
 existing - this assumes superuser privileges though, which is not recommended for long term setups for obvious reasons.

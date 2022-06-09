@@ -8,8 +8,8 @@ else
   echo "ok"
 fi
 
-echo "building build-docker-postgres (log: build-docker-postgres.log)"
-./build-docker-postgres.sh &> build-docker-postgres.log
+echo "building build-docker (log: build-docker.log)"
+./build-docker.sh &> build-docker.log
 if [ $? -ne 0 ]; then
   echo "failed. see log for details"
 else

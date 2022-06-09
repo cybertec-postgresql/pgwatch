@@ -6,7 +6,7 @@ Simple setup steps
 
 The simplest real-life pgwatch3 setup should look something like that:
 
-#. Decide which metrics storage engine you want to use - *cybertec/pgwatch3-postgres* uses PostgreSQL. For Prometheus mode (exposing a port
+#. Decide which metrics storage engine you want to use - *cybertec/pgwatch3* uses PostgreSQL. For Prometheus mode (exposing a port
    for remote scraping) one should use the slimmer *cybertec/pgwatch3-daemon* image which doesn't have any built in databases.
 #. Find the latest pgwatch3 release version by going to the project's Github *Releases* page or use the public API with
    something like that:
@@ -19,14 +19,14 @@ The simplest real-life pgwatch3 setup should look something like that:
 
    ::
 
-     docker pull cybertec/pgwatch3-postgres:X.Y.Z
+     docker pull cybertec/pgwatch3:X.Y.Z
 
 #. Run the Docker image, exposing minimally the Grafana port served on port 3000 internally. In a relatively secure
    environment you'd usually also include the administrative web UI served on port 8080:
 
    ::
 
-     docker run -d --restart=unless-stopped -p 3000:3000 -p 8080:8080 --name pw2 cybertec/pgwatch3-postgres:X.Y.Z
+     docker run -d --restart=unless-stopped -p 3000:3000 -p 8080:8080 --name pw2 cybertec/pgwatch3:X.Y.Z
 
    Note that we're setting the container to be automatically restarted in case of a reboot/crash - 
    which is highly recommended if not using some container management framework to run pgwatch3.
@@ -57,7 +57,7 @@ So in short, for plain Docker setups would be best to do something like:
   docker run -d --restart=unless-stopped --name pw2 \
     -p 3000:3000 -p 8081:8081 -p 127.0.0.1:5432:5432 -p 192.168.1.XYZ:8080:8080 \
     -v pg:/var/lib/postgresql -v grafana:/var/lib/grafana -v pw2:/pgwatch3/persistent-config \
-    cybertec/pgwatch3-postgres:X.Y.Z
+    cybertec/pgwatch3:X.Y.Z
 
 Note that in non-trusted environments it's a good idea to specify more sensitive ports together with some explicit network
 interfaces for additional security - by default Docker listens on all network devices!
@@ -71,7 +71,7 @@ Available Docker images
 
 Following images are regularly pushed to `Docked Hub <https://hub.docker.com/u/cybertec>`_:
 
-*cybertec/pgwatch3-postgres*
+*cybertec/pgwatch3*
   Exactly the same as previous, but metrics are also stored in PostgreSQL - thus needs more disk space. But in return you
   get more "out of the box" dashboards, as the power of standard SQL gives more complex visualization options.
 
@@ -143,7 +143,7 @@ Interacting with the Docker container
 Ports used
 ----------
 
-* 5432 - Postgres configuration or metrics storage DB (when using the cybertec/pgwatch3-postgres image)
+* 5432 - Postgres configuration or metrics storage DB (when using the cybertec/pgwatch3 image)
 * 8080 - Management Web UI (monitored hosts, metrics, metrics configurations)
 * 8081 - Gatherer healthcheck / statistics on number of gathered metrics (JSON).
 * 3000 - Grafana dashboarding

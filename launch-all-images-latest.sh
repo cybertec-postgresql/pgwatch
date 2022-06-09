@@ -6,8 +6,8 @@ for x in pw2 pw2pg pw2nr ; do
   docker rm $x &>/dev/null
 done
 
-echo "run -d --rm --name pw2pg -p 9433:5432 -p 9001:3000 -p 9081:8080 -e PW2_TESTDB=1 cybertec/pgwatch3-postgres:latest"
-docker run -d --rm --name pw2pg -p 9433:5432 -p 9001:3000 -p 9081:8080 -e PW2_TESTDB=1 cybertec/pgwatch3-postgres:latest
+echo "run -d --rm --name pw2pg -p 9433:5432 -p 9001:3000 -p 9081:8080 -e PW2_TESTDB=1 cybertec/pgwatch3:latest"
+docker run -d --rm --name pw2pg -p 9433:5432 -p 9001:3000 -p 9081:8080 -e PW2_TESTDB=1 cybertec/pgwatch3:latest
 
 sleep 30
 

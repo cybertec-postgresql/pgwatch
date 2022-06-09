@@ -12,17 +12,18 @@ RUN cd /pgwatch3 && bash build_gatherer.sh
 
 FROM ubuntu:20.04
 
-RUN apt-get -q update && DEBIAN_FRONTEND=noninteractive apt-get install -qy curl ca-certificates gnupg \
+RUN apt-get -q update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qy curl ca-certificates gnupg \
     && echo "deb http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && apt-get -q update \
-    && DEBIAN_FRONTEND=noninteractive apt-get -qy install wget apt-transport-https vim git postgresql-14 \
+    && DEBIAN_FRONTEND=noninteractive apt-get -qy install postgresql-14 \
        postgresql-plpython3-14 libfontconfig python3-pip libssl-dev libpq-dev \
     && pip3 install -U pip \
     && locale-gen "en_US.UTF-8" && apt autoremove -y \
     && pg_dropcluster 14 main ; pg_createcluster --locale en_US.UTF-8 14 main \
     && echo "include = 'pgwatch_postgresql.conf'" >> /etc/postgresql/14/main/postgresql.conf
 
-RUN wget -q -O grafana.deb https://dl.grafana.com/oss/release/grafana_8.5.4_amd64.deb \
+RUN curl -o grafana.deb https://dl.grafana.com/oss/release/grafana_8.5.4_amd64.deb \
     && dpkg -i grafana.deb && rm grafana.deb
 
 

@@ -4,7 +4,7 @@ set -e
 
 if [ -z $1 ] ; then
   echo "usage:   smoke_test_docker_image.sh IMAGE_TAG"
-  echo "example: smoke_test_docker_image.sh cybertec/pgwatch3-postgres:latest"
+  echo "example: smoke_test_docker_image.sh cybertec/pgwatch3:latest"
   exit 1
 fi
 
