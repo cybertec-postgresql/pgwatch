@@ -168,4 +168,6 @@ jobs:
 
     - name: Test Docker Image
       run: |
-        sudo ./build-docker.sh && sudo docker/test/smoke_test_docker_image.sh cybertec/pgwatch3:latest     
+        ls -al
+        sudo ./build-docker.sh 
+        sudo docker/test/smoke_test_docker_image.sh cybertec/pgwatch3:latest     
