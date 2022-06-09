@@ -156,3 +156,16 @@ jobs:
     #   with:
     #     version: latest
     #     args: release --snapshot --skip-publish --rm-dist
+
+  test-docker-images:
+    if: true # false to skip job during debug
+    name: Test and Build on Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Test Docker Image
+      run: |
+        ./build-docker.sh && docker/test/smoke_test_docker_image.sh cybertec/pgwatch3:latest     
