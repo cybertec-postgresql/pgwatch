@@ -35,7 +35,7 @@ sleep 60
 
 
 echo "checking Web UI response ..."
-curl -s $LOCALHOST:$WEBUIPORT/dbs >/dev/null
+curl -s $LOCALHOST:$WEBUIPORT/dbs
 echo "OK"
 
 
