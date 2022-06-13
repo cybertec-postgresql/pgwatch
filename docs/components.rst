@@ -102,26 +102,26 @@ and run additionally just the pgwatch3 collector.
 * To use an existing Postgres DB for storing the monitoring config
 
   Create a new pgwatch3 DB, preferrably also an accroding role who owns it. Then roll out the schema (pgwatch3/sql/config_store/config_store.sql)
-  and set the following parameters when running the image: PW2_PGHOST, PW2_PGPORT, PW2_PGDATABASE, PW2_PGUSER, PW2_PGPASSWORD, PW2_PGSSL (optional).
+  and set the following parameters when running the image: PW3_PGHOST, PW3_PGPORT, PW3_PGDATABASE, PW3_PGUSER, PW3_PGPASSWORD, PW3_PGSSL (optional).
 
 * To use an existing Grafana installation
 
-  Load the pgwatch3 dashboards from *grafana_dashboard* folder if needed (one can totally define their own) and set the following paramater: PW2_GRAFANA_BASEURL.
+  Load the pgwatch3 dashboards from *grafana_dashboard* folder if needed (one can totally define their own) and set the following paramater: PW3_GRAFANA_BASEURL.
   This parameter only provides correct links to Grafana dashboards from the Web UI. Grafana is the most loosely coupled component for pgwatch3
   and basically doesn't have to be used at all. One can make use of the gathered metrics directly over the Postgres (or Graphite) API-s.
 
 * To use an existing Graphite installation
 
   One can also store the metrics in Graphite instead of Postgres (no predefined pgwatch3 dashboards for Graphite though).
-  Following parameters needs to be set then: PW2_DATASTORE=graphite, PW2_GRAPHITEHOST, PW2_GRAPHITEPORT
+  Following parameters needs to be set then: PW3_DATASTORE=graphite, PW3_GRAPHITEHOST, PW3_GRAPHITEPORT
 
 * To use an existing Postgres DB for storing metrics
 
   1. Roll out the metrics storage schema according to instructions from :ref:`here <metrics_db_bootstrap>`.
   2. Following parameters need to be set for the gatherer:
 
-    * ``--datastore=postgres`` or ``PW2_DATASTORE=postgres``
-    * ``--pg-metric-store-conn-str="postgresql://user:pwd@host:port/db"`` or ``PW2_PG_METRIC_STORE_CONN_STR="..."``
+    * ``--datastore=postgres`` or ``PW3_DATASTORE=postgres``
+    * ``--pg-metric-store-conn-str="postgresql://user:pwd@host:port/db"`` or ``PW3_PG_METRIC_STORE_CONN_STR="..."``
     * optionally also adjust the ``--pg-retention-days`` parameter. By default 14 days for Postgres are kept
 
   3. If using the Web UI also set the datastore parameters ``--datastore`` and ``--pg-metric-store-conn-str`` if wanting to

@@ -60,10 +60,10 @@ COPY postgresql.conf /etc/postgresql/14/main/pgwatch_postgresql.conf
 COPY pg_hba.conf /etc/postgresql/14/main/pg_hba.conf
 COPY docker-launcher-postgres.sh postgresql.conf pg_hba.conf /pgwatch3/
 
-ENV PW2_DATASTORE postgres
-ENV PW2_PG_METRIC_STORE_CONN_STR postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
-ENV PW2_PG_SCHEMA_TYPE metric-time
-ENV PW2_AES_GCM_KEYPHRASE_FILE /pgwatch3/persistent-config/default-password-encryption-key.txt
+ENV PW3_DATASTORE postgres
+ENV PW3_PG_METRIC_STORE_CONN_STR postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
+ENV PW3_PG_SCHEMA_TYPE metric-time
+ENV PW3_AES_GCM_KEYPHRASE_FILE /pgwatch3/persistent-config/default-password-encryption-key.txt
 
 # Admin UI for configuring servers to be monitored
 EXPOSE 8080

@@ -162,7 +162,7 @@ def update_monitored_db(params, cmd_args=None):
 
     if params.get('md_password_type') == 'aes-gcm-256' and old_row_data.get('md_password_type') == 'plain-text':    # NB! when changing this part also review set_bulk_password()
         if not cmd_args.aes_gcm_keyphrase:
-            ret.append("FYI - not enabling password encryption as keyphrase/keyfile not specified on UI startup (hint: use the PW2_AES_GCM_KEYPHRASE env. variable or --aes-gcm-keyphrase param)")
+            ret.append("FYI - not enabling password encryption as keyphrase/keyfile not specified on UI startup (hint: use the PW3_AES_GCM_KEYPHRASE env. variable or --aes-gcm-keyphrase param)")
             params['md_password_type'] = old_row_data['md_password_type']
             params['md_password'] = '***'
         else:
@@ -172,7 +172,7 @@ def update_monitored_db(params, cmd_args=None):
                 params['md_password'] = crypto.encrypt(cmd_args.aes_gcm_keyphrase, old_row_data.get('md_password'))
     elif params.get('md_password_type') == 'plain-text' and old_row_data.get('md_password_type') == 'aes-gcm-256':
             if not cmd_args.aes_gcm_keyphrase:
-                ret.append("FYI - skipping password decryption as keyphrase/keyfile not specified on UI startup (hint: use the PW2_AES_GCM_KEYPHRASE env. variable or --aes-gcm-keyphrase param)")
+                ret.append("FYI - skipping password decryption as keyphrase/keyfile not specified on UI startup (hint: use the PW3_AES_GCM_KEYPHRASE env. variable or --aes-gcm-keyphrase param)")
                 params['md_password_type'] = old_row_data['md_password_type']
                 params['md_password'] = '***'
             else:
@@ -287,7 +287,7 @@ def insert_monitored_db(params, cmd_args=None):
 
     if params.get('md_password_type') == 'aes-gcm-256':
         if not cmd_args.aes_gcm_keyphrase:
-            ret.append("FYI - skipping password encryption as keyphrase/keyfile not specified on UI startup (hint: use the PW2_AES_GCM_KEYPHRASE env. variable or --aes-gcm-keyphrase param)")
+            ret.append("FYI - skipping password encryption as keyphrase/keyfile not specified on UI startup (hint: use the PW3_AES_GCM_KEYPHRASE env. variable or --aes-gcm-keyphrase param)")
             params['md_password_type'] = 'plain-text'
         else:
             params['md_password'] = crypto.encrypt(cmd_args.aes_gcm_keyphrase, password_plain)
@@ -582,7 +582,7 @@ def set_bulk_password(params, cmd_args):
 
     if params.get('bulk_password_type') == 'aes-gcm-256':    # NB! when changing this part also review insert/update_monitored_db()
         if not cmd_args.aes_gcm_keyphrase:
-            return "Password encryption not possible as keyphrase/keyfile not specified on UI startup - use the PW2_AES_GCM_KEYPHRASE env. variable or --aes-gcm-keyphrase/ aes-gcm-keyphrase-file params", 0
+            return "Password encryption not possible as keyphrase/keyfile not specified on UI startup - use the PW3_AES_GCM_KEYPHRASE env. variable or --aes-gcm-keyphrase/ aes-gcm-keyphrase-file params", 0
 
         params['bulk_password'] = crypto.encrypt(cmd_args.aes_gcm_keyphrase, params.get('bulk_password'))
 

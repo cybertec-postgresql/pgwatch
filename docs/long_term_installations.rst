@@ -49,7 +49,7 @@ occasionally also. The bulk delete / import scripts can be found `here <https://
 or you could also manually just re-import some dashboards of interest from JSON files in `/etc/pgwatch3/grafana-dashboards` folder
 or from `Github <https://github.com/cybertec-postgresql/pgwatch3/tree/master/grafana_dashboards>`__.
 
-NB! The *delete_all_old_pw2_dashes.sh* script deletes all pgwatch3 built-in dashboards so you should take
+NB! The *delete_all_old_pw3_dashes.sh* script deletes all pgwatch3 built-in dashboards so you should take
 some extra care when you've changed them. In general it's a good idea not to modify the preset dashboards too much, but
 rate use the "Save As..." button and rename the dashboards to something else.
 

@@ -28,19 +28,19 @@ though it can be enabled:
 
   * HTTPS
 
-    ``--ssl, --ssl-cert, --ssl-key, --ssl-certificate-chain`` or ``PW2_WEBSSL, PW2_WEBCERT, PW2_WEBKEY, PW2_WEBCERTCHAIN``
+    ``--ssl, --ssl-cert, --ssl-key, --ssl-certificate-chain`` or ``PW3_WEBSSL, PW3_WEBCERT, PW3_WEBKEY, PW3_WEBCERTCHAIN``
 
   * Password protection
 
-    ``--no-anonymous-access, --admin-user, --admin-password`` or ``PW2_WEBNOANONYMOUS, PW2_WEBUSER, PW2_WEBPASSWORD``
+    ``--no-anonymous-access, --admin-user, --admin-password`` or ``PW3_WEBNOANONYMOUS, PW3_WEBUSER, PW3_WEBPASSWORD``
 
   * Hiding some possibly sensitive information
 
-    ``--no-component-logs, --no-stats-summary`` or ``PW2_WEBNOCOMPONENTLOGS, PW2_WEBNOSTATSSUMMARY``
+    ``--no-component-logs, --no-stats-summary`` or ``PW3_WEBNOCOMPONENTLOGS, PW3_WEBNOSTATSSUMMARY``
 
   * Password encryption for the role used for fetching metrics
 
-    ``--aes-gcm-keyphrase, --aes-gcm-keyphrase-file`` or ``PW2_AES_GCM_KEYPHRASE, PW2_AES_GCM_KEYPHRASE_FILE``
+    ``--aes-gcm-keyphrase, --aes-gcm-keyphrase-file`` or ``PW3_AES_GCM_KEYPHRASE, PW3_AES_GCM_KEYPHRASE_FILE``
 
     Note that standard *LibPQ .pgpass files* can also be used so there's no requirement to store any passwords in pgwatch3
     config DB. Also note that when enabling password encryption, the same key needs to be presented also for the gatherer.
@@ -52,6 +52,6 @@ Exposing the component logs
 ---------------------------
 
 When using the Docker images, internal component logs (Postgres, Grafana, Go daemon, Web UI itself) are exposed via the "/logs"
-endpoint. If this is not wanted set the PW2_WEBNOCOMPONENTLOGS env. variable. Note that if a working "/logs" endpoint is desired
+endpoint. If this is not wanted set the PW3_WEBNOCOMPONENTLOGS env. variable. Note that if a working "/logs" endpoint is desired
 also in custom setup mode (non-docker) then some actual code changes are needed to specify where logs of all components are
 situated - see top of the pgwatch3.py file for that.

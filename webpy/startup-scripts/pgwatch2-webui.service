@@ -10,10 +10,10 @@ After=network-online.target
 #After=postgresql@12-main.service
 
 [Service]
-Environment="PW2_WEBPORT=8080"
-Environment="PW2_PGHOST=localhost"
-Environment="PW2_PGDATASTORE=postgres"
-Environment="PW2_PG_METRIC_STORE_CONN_STR=postgresql://pgwatch3@localhost:5432/pgwatch3_metrics"
+Environment="PW3_WEBPORT=8080"
+Environment="PW3_PGHOST=localhost"
+Environment="PW3_PGDATASTORE=postgres"
+Environment="PW3_PG_METRIC_STORE_CONN_STR=postgresql://pgwatch3@localhost:5432/pgwatch3_metrics"
 
 Type=simple
 User=pgwatch3

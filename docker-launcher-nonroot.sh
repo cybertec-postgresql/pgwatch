@@ -10,7 +10,7 @@ if [ "$?" -ne 0 ] ; then
 fi
 
 if [ ! -f /pgwatch3/persistent-config/self-signed-ssl.key -o ! -f /pgwatch3/persistent-config/self-signed-ssl.pem ] ; then
-    openssl req -x509 -newkey rsa:4096 -keyout /pgwatch3/persistent-config/self-signed-ssl.key -out /pgwatch3/persistent-config/self-signed-ssl.pem -days 3650 -nodes -sha256 -subj '/CN=pw2'
+    openssl req -x509 -newkey rsa:4096 -keyout /pgwatch3/persistent-config/self-signed-ssl.key -out /pgwatch3/persistent-config/self-signed-ssl.pem -days 3650 -nodes -sha256 -subj '/CN=pw3'
     chmod 0600 /pgwatch3/persistent-config/self-signed-ssl.*
 fi
 
@@ -20,7 +20,7 @@ if [ ! -f /pgwatch3/persistent-config/default-password-encryption-key.txt ]; the
   chmod 0600 /pgwatch3/persistent-config/default-password-encryption-key.txt
 fi
 
-GRAFANASSL="${PW2_GRAFANASSL,,}"    # to lowercase
+GRAFANASSL="${PW3_GRAFANASSL,,}"    # to lowercase
 if [ "$GRAFANASSL" == "1" ] || [ "${GRAFANASSL:0:1}" == "t" ]; then
     $(grep -q 'protocol = http$' /etc/grafana/grafana.ini)
     if [ "$?" -eq 0 ] ; then
@@ -28,15 +28,15 @@ if [ "$GRAFANASSL" == "1" ] || [ "${GRAFANASSL:0:1}" == "t" ]; then
     fi
 fi
 
-if [ -n "$PW2_GRAFANAUSER" ] ; then
-    sed -i "s/admin_user =.*/admin_user = ${PW2_GRAFANAUSER}/" /etc/grafana/grafana.ini
+if [ -n "$PW3_GRAFANAUSER" ] ; then
+    sed -i "s/admin_user =.*/admin_user = ${PW3_GRAFANAUSER}/" /etc/grafana/grafana.ini
 fi
 
-if [ -n "$PW2_GRAFANAPASSWORD" ] ; then
-    sed -i "s/admin_password =.*/admin_password = ${PW2_GRAFANAPASSWORD}/" /etc/grafana/grafana.ini
+if [ -n "$PW3_GRAFANAPASSWORD" ] ; then
+    sed -i "s/admin_password =.*/admin_password = ${PW3_GRAFANAPASSWORD}/" /etc/grafana/grafana.ini
 fi
 
-if [ -n "$PW2_GRAFANANOANONYMOUS" ] ; then
+if [ -n "$PW3_GRAFANANOANONYMOUS" ] ; then
 CFG=$(cat <<-'HERE'
 [auth.anonymous]
 enabled = false
@@ -70,7 +70,7 @@ fi
 /usr/lib/postgresql/9.5/bin/postgres --single -j -D /var/lib/postgresql/9.5/main -c config_file=/etc/postgresql/9.5/main/postgresql.conf pgwatch3 </pgwatch3/metrics/00_helpers/get_table_bloat_approx_sql/9.0/metric.sql
 /usr/lib/postgresql/9.5/bin/postgres --single -j -D /var/lib/postgresql/9.5/main -c config_file=/etc/postgresql/9.5/main/postgresql.conf pgwatch3 </pgwatch3/metrics/00_helpers/get_wal_size/9.0/metric.sql
 
-if [ -n "$PW2_TESTDB" ] ; then
+if [ -n "$PW3_TESTDB" ] ; then
 /usr/lib/postgresql/9.5/bin/postgres --single -j -D /var/lib/postgresql/9.5/main -c config_file=/etc/postgresql/9.5/main/postgresql.conf pgwatch3 </pgwatch3/bootstrap/insert_test_monitored_db_nonroot.sql
 fi
 

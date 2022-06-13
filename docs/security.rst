@@ -33,7 +33,7 @@ Some points on security:
 * Encryption / decryption of connection string passwords stored in the config DB or in YAML config files
 
   By default passwords are stored in plaintext but as of v1.5 it's possible to use an encryption passphrase, or a file
-  with the passphrase in it,  via *\-\-aes-gcm-keyphrase / \-\-aes-gcm-keyphrase-file* or *PW2_AES_GCM_KEYPHRASE / PW2_AES_GCM_KEYPHRASE_FILE* parameters.
+  with the passphrase in it,  via *\-\-aes-gcm-keyphrase / \-\-aes-gcm-keyphrase-file* or *PW3_AES_GCM_KEYPHRASE / PW3_AES_GCM_KEYPHRASE_FILE* parameters.
   If using the Web UI to store connection info, the same encryption key needs to be specified for both the Web UI and the
   gatherer. If using YAML configs then encrypted passwords can be generated using the *--aes-gcm-password-to-encrypt* flag
   for embedding in YAML.
@@ -56,13 +56,13 @@ command to launch pgwatch3 with following security "checkpoints" enabled:
 
 ::
 
-    docker run --name pw2 -d --restart=unless-stopped \
+    docker run --name pw3 -d --restart=unless-stopped \
       -p 3000:3000 -p 8080:8080 \
-      -e PW2_GRAFANASSL=1 -e PW2_WEBSSL=1 \
-      -e PW2_GRAFANANOANONYMOUS=1 -e PW2_GRAFANAUSER=myuser -e PW2_GRAFANAPASSWORD=mypass \
-      -e PW2_WEBNOANONYMOUS=1 -e PW2_WEBNOCOMPONENTLOGS=1 \
-      -e PW2_WEBUSER=myuser -e PW2_WEBPASSWORD=mypass \
-      -e PW2_AES_GCM_KEYPHRASE=qwerty \
+      -e PW3_GRAFANASSL=1 -e PW3_WEBSSL=1 \
+      -e PW3_GRAFANANOANONYMOUS=1 -e PW3_GRAFANAUSER=myuser -e PW3_GRAFANAPASSWORD=mypass \
+      -e PW3_WEBNOANONYMOUS=1 -e PW3_WEBNOCOMPONENTLOGS=1 \
+      -e PW3_WEBUSER=myuser -e PW3_WEBPASSWORD=mypass \
+      -e PW3_AES_GCM_KEYPHRASE=qwerty \
       cybertec/pgwatch3
 
 NB! For custom installs it's up to the user though. A hint - Docker *launcher* files can also be inspected to see

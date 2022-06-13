@@ -300,59 +300,59 @@ if __name__ == '__main__':
     parser = ArgumentParser(description='pgwatch3 Web UI')
     # Webserver
     parser.add_argument('--socket-host', help='Webserver Listen Address',
-                        default=(os.getenv('PW2_WEBHOST') or '0.0.0.0'))
+                        default=(os.getenv('PW3_WEBHOST') or '0.0.0.0'))
     parser.add_argument('--socket-port', help='Webserver Listen Port',
-                        default=(os.getenv('PW2_WEBPORT') or 8080), type=int)
+                        default=(os.getenv('PW3_WEBPORT') or 8080), type=int)
     parser.add_argument('--ssl', help='Enable Webserver SSL (Self-signed Cert)',
-                        default=(str_to_bool_or_fail(os.getenv('PW2_WEBSSL')) or False))
+                        default=(str_to_bool_or_fail(os.getenv('PW3_WEBSSL')) or False))
     parser.add_argument('--ssl-cert', help='Path to SSL certificate',
-                        default=(os.getenv('PW2_WEBCERT') or '/pgwatch3/persistent-config/self-signed-ssl.pem'))
+                        default=(os.getenv('PW3_WEBCERT') or '/pgwatch3/persistent-config/self-signed-ssl.pem'))
     parser.add_argument('--ssl-key', help='Path to SSL private key',
-                        default=(os.getenv('PW2_WEBKEY') or '/pgwatch3/persistent-config/self-signed-ssl.key'))
+                        default=(os.getenv('PW3_WEBKEY') or '/pgwatch3/persistent-config/self-signed-ssl.key'))
     parser.add_argument('--ssl-certificate-chain', help='Path to certificate chain file',
-                        default=(os.getenv('PW2_WEBCERTCHAIN')))
+                        default=(os.getenv('PW3_WEBCERTCHAIN')))
 
     # pgwatch3
     parser.add_argument(
-        '-v', '--verbose', help='Chat level. none(default)|-v|-vv [$PW2_VERBOSE]', action='count', default=(os.getenv('PW2_VERBOSE', '').count('v')))
+        '-v', '--verbose', help='Chat level. none(default)|-v|-vv [$PW3_VERBOSE]', action='count', default=(os.getenv('PW3_VERBOSE', '').count('v')))
     parser.add_argument('--no-anonymous-access', help='If set, login is required to configure monitoring/metrics',
-                        action='store_true', default=(os.getenv('PW2_WEBNOANONYMOUS') or False))
+                        action='store_true', default=(os.getenv('PW3_WEBNOANONYMOUS') or False))
     parser.add_argument('--admin-user', help='Username for login',
-                        default=(os.getenv('PW2_WEBUSER') or 'admin'))
+                        default=(os.getenv('PW3_WEBUSER') or 'admin'))
     parser.add_argument('--admin-password', help='Password for login to read and configure monitoring',
-                        default=(os.getenv('PW2_WEBPASSWORD') or 'pgwatch3admin'))
+                        default=(os.getenv('PW3_WEBPASSWORD') or 'pgwatch3admin'))
     parser.add_argument('--no-component-logs', help='Don''t expose component logs via the Web UI',
-                        action='store_true', default=(str_to_bool_or_fail(os.getenv('PW2_WEBNOCOMPONENTLOGS')) or False))
+                        action='store_true', default=(str_to_bool_or_fail(os.getenv('PW3_WEBNOCOMPONENTLOGS')) or False))
     parser.add_argument('--no-stats-summary', help='Don''t expose summary metrics and "top queries" on monitored DBs',
-                        action='store_true', default=(str_to_bool_or_fail(os.getenv('PW2_WEBNOSTATSSUMMARY')) or False))
+                        action='store_true', default=(str_to_bool_or_fail(os.getenv('PW3_WEBNOSTATSSUMMARY')) or False))
     parser.add_argument('--aes-gcm-keyphrase', help='For encrypting password stored to configDB',
-                        default=os.getenv('PW2_AES_GCM_KEYPHRASE'))
+                        default=os.getenv('PW3_AES_GCM_KEYPHRASE'))
     parser.add_argument('--aes-gcm-keyphrase-file', help='For encrypting password stored to configDB. Read from a file on startup',
-                        default=os.getenv('PW2_AES_GCM_KEYPHRASE_FILE'))
+                        default=os.getenv('PW3_AES_GCM_KEYPHRASE_FILE'))
     parser.add_argument('--datastore', help='In which type of database is metric data stored [postgres]. Default: postgres',
-                        default=(os.getenv('PW2_DATASTORE') or 'postgres'))
+                        default=(os.getenv('PW3_DATASTORE') or 'postgres'))
 
     # Postgres config DB
     parser.add_argument('-H', '--host', help='pgwatch3 Config DB host',
-                        default=(os.getenv('PW2_PGHOST') or 'localhost'))
+                        default=(os.getenv('PW3_PGHOST') or 'localhost'))
     parser.add_argument('-p', '--port', help='pgwatch3 Config DB port',
-                        default=(os.getenv('PW2_PGPORT') or 5432), type=int)
+                        default=(os.getenv('PW3_PGPORT') or 5432), type=int)
     parser.add_argument('-d', '--database', help='pgwatch3 Config DB name',
-                        default=(os.getenv('PW2_PGDATABASE') or 'pgwatch3'))
+                        default=(os.getenv('PW3_PGDATABASE') or 'pgwatch3'))
     parser.add_argument('-U', '--user', help='pgwatch3 Config DB username',
-                        default=(os.getenv('PW2_PGUSER') or 'pgwatch3'))
+                        default=(os.getenv('PW3_PGUSER') or 'pgwatch3'))
     parser.add_argument('--password', help='pgwatch3 Config DB password',
-                        default=(os.getenv('PW2_PGPASSWORD') or 'pgwatch3admin'))
+                        default=(os.getenv('PW3_PGPASSWORD') or 'pgwatch3admin'))
     parser.add_argument('--pg-require-ssl', help='pgwatch3 Config DB SSL connection only', action='store_true',
-                        default=(str_to_bool_or_fail(os.getenv('PW2_PGSSL')) or False))
+                        default=(str_to_bool_or_fail(os.getenv('PW3_PGSSL')) or False))
 
     # Postgres metrics DB
     parser.add_argument('--pg-metric-store-conn-str', help='PG Metric Store connection string',
-                        default=os.getenv('PW2_PG_METRIC_STORE_CONN_STR'))
+                        default=os.getenv('PW3_PG_METRIC_STORE_CONN_STR'))
 
     # Grafana
     parser.add_argument(
-        '--grafana_baseurl', help='For linking to Grafana "Query details" dashboard', default=(os.getenv('PW2_GRAFANA_BASEURL') or 'http://0.0.0.0:3000'))
+        '--grafana_baseurl', help='For linking to Grafana "Query details" dashboard', default=(os.getenv('PW3_GRAFANA_BASEURL') or 'http://0.0.0.0:3000'))
 
     cmd_args = parser.parse_args()
 

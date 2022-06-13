@@ -3,7 +3,7 @@
 mkdir /var/run/grafana && chown grafana /var/run/grafana
 
 if [ ! -f /pgwatch3/persistent-config/self-signed-ssl.key -o ! -f /pgwatch3/persistent-config/self-signed-ssl.pem ] ; then
-    openssl req -x509 -newkey rsa:4096 -keyout /pgwatch3/persistent-config/self-signed-ssl.key -out /pgwatch3/persistent-config/self-signed-ssl.pem -days 3650 -nodes -sha256 -subj '/CN=pw2'
+    openssl req -x509 -newkey rsa:4096 -keyout /pgwatch3/persistent-config/self-signed-ssl.key -out /pgwatch3/persistent-config/self-signed-ssl.pem -days 3650 -nodes -sha256 -subj '/CN=pw3'
     cp /pgwatch3/persistent-config/self-signed-ssl.pem /etc/ssl/certs/ssl-cert-snakeoil.pem
     cp /pgwatch3/persistent-config/self-signed-ssl.key /etc/ssl/private/ssl-cert-snakeoil.key
     chown postgres /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/ssl/private/ssl-cert-snakeoil.key
@@ -17,7 +17,7 @@ if [ ! -f /pgwatch3/persistent-config/default-password-encryption-key.txt ]; the
   chmod 0600 /pgwatch3/persistent-config/default-password-encryption-key.txt
 fi
 
-GRAFANASSL="${PW2_GRAFANASSL,,}"    # to lowercase
+GRAFANASSL="${PW3_GRAFANASSL,,}"    # to lowercase
 if [ "$GRAFANASSL" == "1" ] || [ "${GRAFANASSL:0:1}" == "t" ]; then
     $(grep -q 'protocol = http$' /etc/grafana/grafana.ini)
     if [ "$?" -eq 0 ] ; then
@@ -25,15 +25,15 @@ if [ "$GRAFANASSL" == "1" ] || [ "${GRAFANASSL:0:1}" == "t" ]; then
     fi
 fi
 
-if [ -n "$PW2_GRAFANAUSER" ] ; then
-    sed -i "s/admin_user =.*/admin_user = ${PW2_GRAFANAUSER}/" /etc/grafana/grafana.ini
+if [ -n "$PW3_GRAFANAUSER" ] ; then
+    sed -i "s/admin_user =.*/admin_user = ${PW3_GRAFANAUSER}/" /etc/grafana/grafana.ini
 fi
 
-if [ -n "$PW2_GRAFANAPASSWORD" ] ; then
-    sed -i "s/admin_password =.*/admin_password = ${PW2_GRAFANAPASSWORD}/" /etc/grafana/grafana.ini
+if [ -n "$PW3_GRAFANAPASSWORD" ] ; then
+    sed -i "s/admin_password =.*/admin_password = ${PW3_GRAFANAPASSWORD}/" /etc/grafana/grafana.ini
 fi
 
-if [ -n "$PW2_GRAFANANOANONYMOUS" ] ; then
+if [ -n "$PW3_GRAFANANOANONYMOUS" ] ; then
 CFG=$(cat <<-'HERE'
 [auth.anonymous]
 enabled = false
@@ -65,7 +65,7 @@ su -c "psql -d pgwatch3 -f /pgwatch3/sql/config_store/config_store.sql" postgres
 su -c "psql -d pgwatch3 -f /pgwatch3/sql/config_store/metric_definitions.sql" postgres
 su -c "psql -d pgwatch3_metrics -f /pgwatch3/sql/metric_store/00_schema_base.sql" postgres
 su -c "psql -d pgwatch3_metrics -f /pgwatch3/sql/metric_store/01_old_metrics_cleanup_procedure.sql" postgres
-if [ "$PW2_PG_SCHEMA_TYPE" == "metric-dbname-time" ] ; then
+if [ "$PW3_PG_SCHEMA_TYPE" == "metric-dbname-time" ] ; then
   su -c "psql -d pgwatch3_metrics -f /pgwatch3/sql/metric_store/metric-dbname-time/metric_store_part_dbname_time.sql" postgres
   su -c "psql -d pgwatch3_metrics -f /pgwatch3/sql/metric_store/metric-dbname-time/ensure_partition_metric_dbname_time.sql" postgres
 else
@@ -85,7 +85,7 @@ su -c "psql -d pgwatch3 -f /pgwatch3/metrics/00_helpers/get_psutil_disk/9.1/metr
 su -c "psql -d pgwatch3 -f /pgwatch3/metrics/00_helpers/get_psutil_disk_io_total/9.1/metric.sql" postgres
 su -c "psql -d pgwatch3 -c 'create extension pg_qualstats'" postgres
 
-if [ -n "$PW2_TESTDB" ] ; then
+if [ -n "$PW3_TESTDB" ] ; then
   su -c "psql -d pgwatch3 -f /pgwatch3/bootstrap/insert_test_monitored_db.sql" postgres
 fi
 

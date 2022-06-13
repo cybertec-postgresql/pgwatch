@@ -198,7 +198,7 @@
         <dl>
             <dt>is_instance_level (default: false)</dt>
             <dd>Instance level metrics can be cached and shared between multiple DBs of a single instance to reduce query load on server. Default caching period is 30s,
-                use the --instance-level-cache-max-seconds (PW2_INSTANCE_LEVEL_CACHE_MAX_SECONDS env.) gatherer param to change or set to 0 to disable. Caching will only
+                use the --instance-level-cache-max-seconds (PW3_INSTANCE_LEVEL_CACHE_MAX_SECONDS env.) gatherer param to change or set to 0 to disable. Caching will only
                 be applied to 'continuous' DB types and only if metric interval is bigger than the --instance-level-cache-max-seconds value.</dd>
             <dt>statement_timeout_seconds</dt>
             <dd>Enables to override the default 'per monitored DB' statement timeouts on metric level</dd>

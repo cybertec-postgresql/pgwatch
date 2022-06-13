@@ -29,9 +29,9 @@ services:
   webui:
     image: cybertec/pgwatch3-webui:latest
     environment:
-      PW2_PGHOST: postgres
-      PW2_DATASTORE: postgres
-      PW2_PG_METRIC_STORE_CONN_STR: postgresql://pgwatch3@postgres:5432/pgwatch3_metrics
+      PW3_PGHOST: postgres
+      PW3_DATASTORE: postgres
+      PW3_PG_METRIC_STORE_CONN_STR: postgresql://pgwatch3@postgres:5432/pgwatch3_metrics
     ports:
       - "18080:8080"
     depends_on:
@@ -40,10 +40,10 @@ services:
   pgwatch3-daemon:
     image: cybertec/pgwatch3-daemon:latest
     environment:
-      PW2_PGHOST: postgres
-      PW2_VERBOSE: warn
-      PW2_DATASTORE: postgres
-      PW2_PG_METRIC_STORE_CONN_STR: postgresql://pgwatch3@postgres:5432/pgwatch3_metrics
+      PW3_PGHOST: postgres
+      PW3_VERBOSE: warn
+      PW3_DATASTORE: postgres
+      PW3_PG_METRIC_STORE_CONN_STR: postgresql://pgwatch3@postgres:5432/pgwatch3_metrics
     ports:
       - "18081:8081"
     depends_on:

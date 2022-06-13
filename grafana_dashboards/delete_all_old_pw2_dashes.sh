@@ -8,7 +8,7 @@ export PGUSER=postgres
 export PGDATABASE=pgwatch3_grafana
 
 DRY_RUN=1
-PW2_DASHBOARD_NAMES=`ls -1 postgres/v8/`
+PW3_DASHBOARD_NAMES=`ls -1 postgres/v8/`
 
 if [ "$?" -ne 0 ]; then
   echo "could not list dashboards...are you in the dashboards root dir?"
@@ -17,15 +17,15 @@ fi
 
 if [ -n "$1" ]; then
   DRY_RUN=0
-  echo "deleting ALL pw2 dashboards!"
+  echo "deleting ALL pw3 dashboards!"
   echo "hit ctl+c now if not sure"
   echo "sleeping 5s..."
   sleep 5
 else
-  echo "--dry-run on ALL pw2 dashboards. add any parameter to script call to really delete"
+  echo "--dry-run on ALL pw3 dashboards. add any parameter to script call to really delete"
 fi
 
-for slug in $PW2_DASHBOARD_NAMES ; do
+for slug in $PW3_DASHBOARD_NAMES ; do
   if [ "$DRY_RUN" -eq 0 ]; then
     SQL="delete from dashboard where slug = '$slug'"
     echo "$SQL"
