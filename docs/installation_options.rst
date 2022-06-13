@@ -24,7 +24,7 @@ config file for an example. Note that in this mode you also need to point out th
 when starting the gatherer. Also note that the configuration system also supports multiple YAML files in a folder so that
 you could easily programmatically manage things via *Ansible* for example and you can also use Env. vars in sideYAML files.
 
-Relevant Gatherer env. vars / flags: ``--config, --metrics-folder`` or ``PW2_CONFIG / PW2_METRICS_FOLDER``.
+Relevant Gatherer env. vars / flags: ``--config, --metrics-folder`` or ``PW3_CONFIG / PW3_METRICS_FOLDER``.
 
 .. _adhoc_mode:
 
@@ -46,19 +46,19 @@ NB! When using that mode with the default Docker image, the built-in metric defi
 actually recommended to use the *gatherer only* image named *cybertec/pgwatch3-daemon*.
 
 Relevant Gatherer env. vars / flags: ``--adhoc-conn-str, --adhoc-config, --adhoc-name, --metrics-folder`` or respectively
-``PW2_ADHOC_CONN_STR, PW2_ADHOC_CONFIG, PW2_ADHOC_NAME, PW2_METRICS_FOLDER, PW2_ADHOC_CREATE_HELPERS``.
+``PW3_ADHOC_CONN_STR, PW3_ADHOC_CONFIG, PW3_ADHOC_NAME, PW3_METRICS_FOLDER, PW3_ADHOC_CREATE_HELPERS``.
 
 ::
 
     # launching in ad-hoc / test mode
-    docker run --rm -p 3000:3000 -e PW2_ADHOC_CONN_STR="postgresql://user:pwd@mydb:5432/mydb1" \
-        -e PW2_ADHOC_CONFIG=unprivileged --name pw2 cybertec/pgwatch3
+    docker run --rm -p 3000:3000 -e PW3_ADHOC_CONN_STR="postgresql://user:pwd@mydb:5432/mydb1" \
+        -e PW3_ADHOC_CONFIG=unprivileged --name pw3 cybertec/pgwatch3
 
     # launching in ad-hoc / test mode, creating metrics helpers automatically (requires superuser)
-    docker run --rm -p 3000:3000 -e PW2_ADHOC_CONN_STR="postgresql://user:pwd@mydb:5432/mydb1" \
-        -e PW2_ADHOC_CONFIG=exhaustive -e PW2_ADHOC_CREATE_HELPERS=true --name pw2 cybertec/pgwatch3
+    docker run --rm -p 3000:3000 -e PW3_ADHOC_CONN_STR="postgresql://user:pwd@mydb:5432/mydb1" \
+        -e PW3_ADHOC_CONFIG=exhaustive -e PW3_ADHOC_CREATE_HELPERS=true --name pw3 cybertec/pgwatch3
 
-NB! Using the ``PW2_ADHOC_CREATE_HELPERS`` flag will try to create all metrics fetching helpers automatically if not already
+NB! Using the ``PW3_ADHOC_CREATE_HELPERS`` flag will try to create all metrics fetching helpers automatically if not already
 existing - this assumes superuser privileges though, which is not recommended for long term setups for obvious reasons.
 In case a long term need rises it's recommended to change the monitoring role to an unprivileged *pgwatch3* user, which
 by default gets execute *GRANT*-s to all helper functions. More details on how to deal with *helpers* can be found :ref:`here <helper_functions>`
@@ -68,7 +68,7 @@ Prometheus mode
 ---------------
 
 In v1.6.0 was added support for Prometheus - being one of the most popular modern metrics gathering / alerting solutions.
-When the ``--datastore / PW2_DATASTORE`` parameter is set to *prometheus* then the pgwatch3 metrics collector doesn't do any normal interval-based fetching but
+When the ``--datastore / PW3_DATASTORE`` parameter is set to *prometheus* then the pgwatch3 metrics collector doesn't do any normal interval-based fetching but
 listens on port *9187* (changeable) for scrape requests configured and performed on Prometheus side. Returned metrics belong
 to the "pgwatch3" namespace (a prefix basically) which is changeable via the ``--prometheus-namespace`` flag if needed.
 

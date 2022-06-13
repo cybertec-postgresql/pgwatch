@@ -11,10 +11,10 @@
             "mode": "auto",
             "program": "${workspaceFolder}/src",
             "env": {
-                "PW2_DATASTORE": "postgres",
-                "PW2_PG_METRIC_STORE_CONN_STR": "postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics",
-                "PW2_PG_SCHEMA_TYPE": "metric-time",
-                "PW2_PGPASSWORD": "pgwatch3admin"
+                "PW3_DATASTORE": "postgres",
+                "PW3_PG_METRIC_STORE_CONN_STR": "postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics",
+                "PW3_PG_SCHEMA_TYPE": "metric-time",
+                "PW3_PGPASSWORD": "pgwatch3admin"
             },
             "args": [
                 "--verbose=DEBUG"
@@ -26,11 +26,11 @@
 
 // PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 // HOSTNAME=2ad4f5296c25
-// PW2_TESTDB=true
+// PW3_TESTDB=true
 // GIT_HASH=404d4685e3e2fbaea854bc47de57ad4250fda193
 // GIT_TIME=2022-06-01T15: 44: 34+02: 00
-// PW2_DATASTORE=postgres
-// PW2_PG_METRIC_STORE_CONN_STR=postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
-// PW2_PG_SCHEMA_TYPE=metric-time
-// PW2_AES_GCM_KEYPHRASE_FILE=/pgwatch3/persistent-config/default-password-encryption-key.txt
+// PW3_DATASTORE=postgres
+// PW3_PG_METRIC_STORE_CONN_STR=postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
+// PW3_PG_SCHEMA_TYPE=metric-time
+// PW3_AES_GCM_KEYPHRASE_FILE=/pgwatch3/persistent-config/default-password-encryption-key.txt
 // HOME=/root

@@ -123,7 +123,7 @@ Automatic rollout of helpers
 
 pgwatch3 can roll out *helpers* also automatically on the monitored DB. This requires superuser privileges and a configuration
 attribute for the monitored DB. In YAML config mode it's called *is_superuser*, in Config DB *md_is_superuser*, in the Web UI one
-can tick the "Auto-create helpers" checkbox and for *ad-hoc* mode there are the *--adhoc-create-helpers* / *PW2_ADHOC_CREATE_HELPERS* flags.
+can tick the "Auto-create helpers" checkbox and for *ad-hoc* mode there are the *--adhoc-create-helpers* / *PW3_ADHOC_CREATE_HELPERS* flags.
 
 After the automatic rollout it's still generally recommended to remove the superuser privileges from the monitoring role,
 which now should have GRANT-s to all automatically created helper functions. Note though that all created helpers will not be immediately usable as

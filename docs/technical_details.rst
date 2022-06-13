@@ -16,7 +16,7 @@ or customize it in some way.
 
   * Configurable statement timeouts per DB
 
-  * SSL connections support for safe over-the-internet monitoring (use "-e PW2_WEBSSL=1 -e PW2_GRAFANASSL=1" when launching Docker)
+  * SSL connections support for safe over-the-internet monitoring (use "-e PW3_WEBSSL=1 -e PW3_GRAFANASSL=1" when launching Docker)
 
   * Optional authentication for the Web UI and Grafana (by default freely accessible)
 

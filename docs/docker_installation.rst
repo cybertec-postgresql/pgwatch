@@ -26,7 +26,7 @@ The simplest real-life pgwatch3 setup should look something like that:
 
    ::
 
-     docker run -d --restart=unless-stopped -p 3000:3000 -p 8080:8080 --name pw2 cybertec/pgwatch3:X.Y.Z
+     docker run -d --restart=unless-stopped -p 3000:3000 -p 8080:8080 --name pw3 cybertec/pgwatch3:X.Y.Z
 
    Note that we're setting the container to be automatically restarted in case of a reboot/crash - 
    which is highly recommended if not using some container management framework to run pgwatch3.
@@ -50,13 +50,13 @@ So in short, for plain Docker setups would be best to do something like:
 ::
 
   # let's create volumes for Postgres, Grafana and pgwatch3 marker files / SSL certificates
-  for v in pg  grafana pw2 ; do docker volume create $v ; done
+  for v in pg  grafana pw3 ; do docker volume create $v ; done
 
   # launch pgwatch3 with fully exposed Grafana and Health-check ports
   # and local Postgres and subnet level Web UI ports
-  docker run -d --restart=unless-stopped --name pw2 \
+  docker run -d --restart=unless-stopped --name pw3 \
     -p 3000:3000 -p 8081:8081 -p 127.0.0.1:5432:5432 -p 192.168.1.XYZ:8080:8080 \
-    -v pg:/var/lib/postgresql -v grafana:/var/lib/grafana -v pw2:/pgwatch3/persistent-config \
+    -v pg:/var/lib/postgresql -v grafana:/var/lib/grafana -v pw3:/pgwatch3/persistent-config \
     cybertec/pgwatch3:X.Y.Z
 
 Note that in non-trusted environments it's a good idea to specify more sensitive ports together with some explicit network
@@ -96,14 +96,14 @@ Build scripts used to prepare the public images can be found `here <https://gith
 Interacting with the Docker container
 -------------------------------------
 
-* If to launch with the *PW2_TESTDB=1* env. parameter then the pgwatch3 configuration database running inside Docker
+* If to launch with the *PW3_TESTDB=1* env. parameter then the pgwatch3 configuration database running inside Docker
   is added to the monitoring, so that you should immediately see some metrics at least on the *Health-check* dashboard.
 
 * To add new databases / instances to monitoring open the administration Web interface on port 8080 (or some other port,
   if re-mapped at launch) and go to the */dbs* page. Note that the Web UI is an optional component, and one can managed
   monitoring entries directly in the Postgres Config DB via INSERT-s / UPDATE-s into "pgwatch3.monitored_db" table. Default
   user/password are again *pgwatch3* / *pgwatch3admin*, database name - pgwatch3.
-  In both cases note that it can take up to 2min (default main loop time, changeable via *PW2_SERVERS_REFRESH_LOOP_SECONDS*)
+  In both cases note that it can take up to 2min (default main loop time, changeable via *PW3_SERVERS_REFRESH_LOOP_SECONDS*)
   before you see any metrics for newly inserted databases.
 
 * One can edit existing or create new Grafana dashboards, change Grafana global settings, create users, alerts, etc after

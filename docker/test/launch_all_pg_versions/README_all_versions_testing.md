@@ -50,7 +50,7 @@ for x in {0..6} {10..12} ; do
     ver="${x}"
     pgver="${x}"
   fi
-  echo "docker commit pg${ver} postgres-pw2:${pgver}"
-  docker commit pg${ver} postgres-pw2:${pgver}
+  echo "docker commit pg${ver} postgres-pw3:${pgver}"
+  docker commit pg${ver} postgres-pw3:${pgver}
 done
 ```

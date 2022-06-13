@@ -4855,55 +4855,55 @@ func DoesMetricDefinitionCallHelperFunctions(sqlDefinition string) bool {
 type Options struct {
 	// Slice of bool will append 'true' each time the option
 	// is encountered (can be set multiple times, like -vvv)
-	Verbose              string `short:"v" long:"verbose" description:"Chat level [DEBUG|INFO|WARN]. Default: WARN" env:"PW2_VERBOSE"`
-	Host                 string `long:"host" description:"PG config DB host" default:"localhost" env:"PW2_PGHOST"`
-	Port                 string `short:"p" long:"port" description:"PG config DB port" default:"5432" env:"PW2_PGPORT"`
-	Dbname               string `short:"d" long:"dbname" description:"PG config DB dbname" default:"pgwatch3" env:"PW2_PGDATABASE"`
-	User                 string `short:"u" long:"user" description:"PG config DB user" default:"pgwatch3" env:"PW2_PGUSER"`
-	Password             string `long:"password" description:"PG config DB password" env:"PW2_PGPASSWORD"`
-	PgRequireSSL         string `long:"pg-require-ssl" description:"PG config DB SSL connection only" default:"false" env:"PW2_PGSSL"`
-	Group                string `short:"g" long:"group" description:"Group (or groups, comma separated) for filtering which DBs to monitor. By default all are monitored" env:"PW2_GROUP"`
-	Datastore            string `long:"datastore" description:"[influx|postgres|prometheus|graphite|json]" default:"influx" env:"PW2_DATASTORE"`
-	PGMetricStoreConnStr string `long:"pg-metric-store-conn-str" description:"PG Metric Store" env:"PW2_PG_METRIC_STORE_CONN_STR"`
-	PGRetentionDays      int64  `long:"pg-retention-days" description:"If set, metrics older than that will be deleted" default:"14" env:"PW2_PG_RETENTION_DAYS"`
-	PrometheusPort       int64  `long:"prometheus-port" description:"Prometheus port. Effective with --datastore=prometheus" default:"9187" env:"PW2_PROMETHEUS_PORT"`
-	PrometheusListenAddr string `long:"prometheus-listen-addr" description:"Network interface to listen on" default:"0.0.0.0" env:"PW2_PROMETHEUS_LISTEN_ADDR"`
-	PrometheusNamespace  string `long:"prometheus-namespace" description:"Prefix for all non-process (thus Postgres) metrics" default:"pgwatch3" env:"PW2_PROMETHEUS_NAMESPACE"`
-	PrometheusAsyncMode  string `long:"prometheus-async-mode" description:"Gather in background as with other storage and cache last fetch results in memory" default:"false" env:"PW2_PROMETHEUS_ASYNC_MODE"`
-	GraphiteHost         string `long:"graphite-host" description:"Graphite host" env:"PW2_GRAPHITEHOST"`
-	GraphitePort         string `long:"graphite-port" description:"Graphite port" env:"PW2_GRAPHITEPORT"`
-	JsonStorageFile      string `long:"json-storage-file" description:"Path to file where metrics will be stored when --datastore=json, one metric set per line" env:"PW2_JSON_STORAGE_FILE"`
+	Verbose              string `short:"v" long:"verbose" description:"Chat level [DEBUG|INFO|WARN]. Default: WARN" env:"PW3_VERBOSE"`
+	Host                 string `long:"host" description:"PG config DB host" default:"localhost" env:"PW3_PGHOST"`
+	Port                 string `short:"p" long:"port" description:"PG config DB port" default:"5432" env:"PW3_PGPORT"`
+	Dbname               string `short:"d" long:"dbname" description:"PG config DB dbname" default:"pgwatch3" env:"PW3_PGDATABASE"`
+	User                 string `short:"u" long:"user" description:"PG config DB user" default:"pgwatch3" env:"PW3_PGUSER"`
+	Password             string `long:"password" description:"PG config DB password" env:"PW3_PGPASSWORD"`
+	PgRequireSSL         string `long:"pg-require-ssl" description:"PG config DB SSL connection only" default:"false" env:"PW3_PGSSL"`
+	Group                string `short:"g" long:"group" description:"Group (or groups, comma separated) for filtering which DBs to monitor. By default all are monitored" env:"PW3_GROUP"`
+	Datastore            string `long:"datastore" description:"[influx|postgres|prometheus|graphite|json]" default:"influx" env:"PW3_DATASTORE"`
+	PGMetricStoreConnStr string `long:"pg-metric-store-conn-str" description:"PG Metric Store" env:"PW3_PG_METRIC_STORE_CONN_STR"`
+	PGRetentionDays      int64  `long:"pg-retention-days" description:"If set, metrics older than that will be deleted" default:"14" env:"PW3_PG_RETENTION_DAYS"`
+	PrometheusPort       int64  `long:"prometheus-port" description:"Prometheus port. Effective with --datastore=prometheus" default:"9187" env:"PW3_PROMETHEUS_PORT"`
+	PrometheusListenAddr string `long:"prometheus-listen-addr" description:"Network interface to listen on" default:"0.0.0.0" env:"PW3_PROMETHEUS_LISTEN_ADDR"`
+	PrometheusNamespace  string `long:"prometheus-namespace" description:"Prefix for all non-process (thus Postgres) metrics" default:"pgwatch3" env:"PW3_PROMETHEUS_NAMESPACE"`
+	PrometheusAsyncMode  string `long:"prometheus-async-mode" description:"Gather in background as with other storage and cache last fetch results in memory" default:"false" env:"PW3_PROMETHEUS_ASYNC_MODE"`
+	GraphiteHost         string `long:"graphite-host" description:"Graphite host" env:"PW3_GRAPHITEHOST"`
+	GraphitePort         string `long:"graphite-port" description:"Graphite port" env:"PW3_GRAPHITEPORT"`
+	JsonStorageFile      string `long:"json-storage-file" description:"Path to file where metrics will be stored when --datastore=json, one metric set per line" env:"PW3_JSON_STORAGE_FILE"`
 	// Params for running based on local config files, enabled distributed "push model" based metrics gathering. Metrics are sent directly to Influx/Graphite.
-	Config                  string `short:"c" long:"config" description:"File or folder of YAML files containing info on which DBs to monitor and where to store metrics" env:"PW2_CONFIG"`
-	MetricsFolder           string `short:"m" long:"metrics-folder" description:"Folder of metrics definitions" env:"PW2_METRICS_FOLDER"`
-	BatchingDelayMs         int64  `long:"batching-delay-ms" description:"Max milliseconds to wait for a batched metrics flush. [Default: 250]" default:"250" env:"PW2_BATCHING_MAX_DELAY_MS"`
-	AdHocConnString         string `long:"adhoc-conn-str" description:"Ad-hoc mode: monitor a single Postgres DB specified by a standard Libpq connection string" env:"PW2_ADHOC_CONN_STR"`
-	AdHocDBType             string `long:"adhoc-dbtype" description:"Ad-hoc mode: postgres|postgres-continuous-discovery" default:"postgres" env:"PW2_ADHOC_DBTYPE"`
-	AdHocConfig             string `long:"adhoc-config" description:"Ad-hoc mode: a preset config name or a custom JSON config" env:"PW2_ADHOC_CONFIG"`
-	AdHocCreateHelpers      string `long:"adhoc-create-helpers" description:"Ad-hoc mode: try to auto-create helpers. Needs superuser to succeed [Default: false]" default:"false" env:"PW2_ADHOC_CREATE_HELPERS"`
-	AdHocUniqueName         string `long:"adhoc-name" description:"Ad-hoc mode: Unique 'dbname' for Influx. [Default: adhoc]" default:"adhoc" env:"PW2_ADHOC_NAME"`
-	InternalStatsPort       int64  `long:"internal-stats-port" description:"Port for inquiring monitoring status in JSON format. [Default: 8081]" default:"8081" env:"PW2_INTERNAL_STATS_PORT"`
-	DirectOSStats           string `long:"direct-os-stats" description:"Extract OS related psutil statistics not via PL/Python wrappers but directly on host [Default: off]" default:"off" env:"PW2_DIRECT_OS_STATS"`
-	ConnPooling             string `long:"conn-pooling" description:"Enable re-use of metrics fetching connections [Default: off]" default:"off" env:"PW2_CONN_POOLING"`
-	AesGcmKeyphrase         string `long:"aes-gcm-keyphrase" description:"Decryption key for AES-GCM-256 passwords" env:"PW2_AES_GCM_KEYPHRASE"`
-	AesGcmKeyphraseFile     string `long:"aes-gcm-keyphrase-file" description:"File with decryption key for AES-GCM-256 passwords" env:"PW2_AES_GCM_KEYPHRASE_FILE"`
-	AesGcmPasswordToEncrypt string `long:"aes-gcm-password-to-encrypt" description:"A special mode, returns the encrypted plain-text string and quits. Keyphrase(file) must be set. Useful for YAML mode" env:"PW2_AES_GCM_PASSWORD_TO_ENCRYPT"`
+	Config                  string `short:"c" long:"config" description:"File or folder of YAML files containing info on which DBs to monitor and where to store metrics" env:"PW3_CONFIG"`
+	MetricsFolder           string `short:"m" long:"metrics-folder" description:"Folder of metrics definitions" env:"PW3_METRICS_FOLDER"`
+	BatchingDelayMs         int64  `long:"batching-delay-ms" description:"Max milliseconds to wait for a batched metrics flush. [Default: 250]" default:"250" env:"PW3_BATCHING_MAX_DELAY_MS"`
+	AdHocConnString         string `long:"adhoc-conn-str" description:"Ad-hoc mode: monitor a single Postgres DB specified by a standard Libpq connection string" env:"PW3_ADHOC_CONN_STR"`
+	AdHocDBType             string `long:"adhoc-dbtype" description:"Ad-hoc mode: postgres|postgres-continuous-discovery" default:"postgres" env:"PW3_ADHOC_DBTYPE"`
+	AdHocConfig             string `long:"adhoc-config" description:"Ad-hoc mode: a preset config name or a custom JSON config" env:"PW3_ADHOC_CONFIG"`
+	AdHocCreateHelpers      string `long:"adhoc-create-helpers" description:"Ad-hoc mode: try to auto-create helpers. Needs superuser to succeed [Default: false]" default:"false" env:"PW3_ADHOC_CREATE_HELPERS"`
+	AdHocUniqueName         string `long:"adhoc-name" description:"Ad-hoc mode: Unique 'dbname' for Influx. [Default: adhoc]" default:"adhoc" env:"PW3_ADHOC_NAME"`
+	InternalStatsPort       int64  `long:"internal-stats-port" description:"Port for inquiring monitoring status in JSON format. [Default: 8081]" default:"8081" env:"PW3_INTERNAL_STATS_PORT"`
+	DirectOSStats           string `long:"direct-os-stats" description:"Extract OS related psutil statistics not via PL/Python wrappers but directly on host [Default: off]" default:"off" env:"PW3_DIRECT_OS_STATS"`
+	ConnPooling             string `long:"conn-pooling" description:"Enable re-use of metrics fetching connections [Default: off]" default:"off" env:"PW3_CONN_POOLING"`
+	AesGcmKeyphrase         string `long:"aes-gcm-keyphrase" description:"Decryption key for AES-GCM-256 passwords" env:"PW3_AES_GCM_KEYPHRASE"`
+	AesGcmKeyphraseFile     string `long:"aes-gcm-keyphrase-file" description:"File with decryption key for AES-GCM-256 passwords" env:"PW3_AES_GCM_KEYPHRASE_FILE"`
+	AesGcmPasswordToEncrypt string `long:"aes-gcm-password-to-encrypt" description:"A special mode, returns the encrypted plain-text string and quits. Keyphrase(file) must be set. Useful for YAML mode" env:"PW3_AES_GCM_PASSWORD_TO_ENCRYPT"`
 	// NB! "Test data" mode needs to be combined with "ad-hoc" mode to get an initial set of metrics from a real source
-	TestdataMultiplier           int    `long:"testdata-multiplier" description:"For how many hosts to generate data" env:"PW2_TESTDATA_MULTIPLIER"`
-	TestdataDays                 int    `long:"testdata-days" description:"For how many days to generate data" env:"PW2_TESTDATA_DAYS"`
-	AddRealDbname                string `long:"add-real-dbname" description:"Add real DB name to each captured metric" env:"PW2_ADD_REAL_DBNAME" default:"false"`
-	RealDbnameField              string `long:"real-dbname-field" description:"Tag key for real DB name if --add-real-dbname enabled" env:"PW2_REAL_DBNAME_FIELD" default:"real_dbname"`
-	AddSystemIdentifier          string `long:"add-system-identifier" description:"Add system identifier to each captured metric" env:"PW2_ADD_SYSTEM_IDENTIFIER" default:"false"`
-	SystemIdentifierField        string `long:"system-identifier-field" description:"Tag key for system identifier value if --add-system-identifier" env:"PW2_SYSTEM_IDENTIFIER_FIELD" default:"sys_id"`
-	ServersRefreshLoopSeconds    int    `long:"servers-refresh-loop-seconds" description:"Sleep time for the main loop" env:"PW2_SERVERS_REFRESH_LOOP_SECONDS" default:"120"`
-	InstanceLevelCacheMaxSeconds int64  `long:"instance-level-cache-max-seconds" description:"Max allowed staleness for instance level metric data shared between DBs of an instance. Affects 'continuous' host types only. Set to 0 to disable" env:"PW2_INSTANCE_LEVEL_CACHE_MAX_SECONDS" default:"30"`
-	MinDbSizeMB                  int64  `long:"min-db-size-mb" description:"Smaller size DBs will be ignored and not monitored until they reach the threshold." env:"PW2_MIN_DB_SIZE_MB" default:"0"`
-	MaxParallelConnectionsPerDb  int    `long:"max-parallel-connections-per-db" description:"Max parallel metric fetches per DB. Note the multiplication effect on multi-DB instances" env:"PW2_MAX_PARALLEL_CONNECTIONS_PER_DB" default:"2"`
-	Version                      bool   `long:"version" description:"Show Git build version and exit" env:"PW2_VERSION"`
-	Ping                         bool   `long:"ping" description:"Try to connect to all configured DB-s, report errors and then exit" env:"PW2_PING"`
-	EmergencyPauseTriggerfile    string `long:"emergency-pause-triggerfile" description:"When the file exists no metrics will be temporarily fetched / scraped" env:"PW2_EMERGENCY_PAUSE_TRIGGERFILE" default:"/tmp/pgwatch3-emergency-pause"`
-	NoHelperFunctions            string `long:"no-helper-functions" description:"Ignore metric definitions using helper functions (in form get_smth()) and don't also roll out any helpers automatically" env:"PW2_NO_HELPER_FUNCTIONS" default:"false"`
-	TryCreateListedExtsIfMissing string `long:"try-create-listed-exts-if-missing" description:"Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements" env:"PW2_TRY_CREATE_LISTED_EXTS_IF_MISSING" default:""`
+	TestdataMultiplier           int    `long:"testdata-multiplier" description:"For how many hosts to generate data" env:"PW3_TESTDATA_MULTIPLIER"`
+	TestdataDays                 int    `long:"testdata-days" description:"For how many days to generate data" env:"PW3_TESTDATA_DAYS"`
+	AddRealDbname                string `long:"add-real-dbname" description:"Add real DB name to each captured metric" env:"PW3_ADD_REAL_DBNAME" default:"false"`
+	RealDbnameField              string `long:"real-dbname-field" description:"Tag key for real DB name if --add-real-dbname enabled" env:"PW3_REAL_DBNAME_FIELD" default:"real_dbname"`
+	AddSystemIdentifier          string `long:"add-system-identifier" description:"Add system identifier to each captured metric" env:"PW3_ADD_SYSTEM_IDENTIFIER" default:"false"`
+	SystemIdentifierField        string `long:"system-identifier-field" description:"Tag key for system identifier value if --add-system-identifier" env:"PW3_SYSTEM_IDENTIFIER_FIELD" default:"sys_id"`
+	ServersRefreshLoopSeconds    int    `long:"servers-refresh-loop-seconds" description:"Sleep time for the main loop" env:"PW3_SERVERS_REFRESH_LOOP_SECONDS" default:"120"`
+	InstanceLevelCacheMaxSeconds int64  `long:"instance-level-cache-max-seconds" description:"Max allowed staleness for instance level metric data shared between DBs of an instance. Affects 'continuous' host types only. Set to 0 to disable" env:"PW3_INSTANCE_LEVEL_CACHE_MAX_SECONDS" default:"30"`
+	MinDbSizeMB                  int64  `long:"min-db-size-mb" description:"Smaller size DBs will be ignored and not monitored until they reach the threshold." env:"PW3_MIN_DB_SIZE_MB" default:"0"`
+	MaxParallelConnectionsPerDb  int    `long:"max-parallel-connections-per-db" description:"Max parallel metric fetches per DB. Note the multiplication effect on multi-DB instances" env:"PW3_MAX_PARALLEL_CONNECTIONS_PER_DB" default:"2"`
+	Version                      bool   `long:"version" description:"Show Git build version and exit" env:"PW3_VERSION"`
+	Ping                         bool   `long:"ping" description:"Try to connect to all configured DB-s, report errors and then exit" env:"PW3_PING"`
+	EmergencyPauseTriggerfile    string `long:"emergency-pause-triggerfile" description:"When the file exists no metrics will be temporarily fetched / scraped" env:"PW3_EMERGENCY_PAUSE_TRIGGERFILE" default:"/tmp/pgwatch3-emergency-pause"`
+	NoHelperFunctions            string `long:"no-helper-functions" description:"Ignore metric definitions using helper functions (in form get_smth()) and don't also roll out any helpers automatically" env:"PW3_NO_HELPER_FUNCTIONS" default:"false"`
+	TryCreateListedExtsIfMissing string `long:"try-create-listed-exts-if-missing" description:"Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements" env:"PW3_TRY_CREATE_LISTED_EXTS_IF_MISSING" default:""`
 }
 
 var opts Options
