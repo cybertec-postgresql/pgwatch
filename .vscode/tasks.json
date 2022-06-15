@@ -36,7 +36,7 @@
         {
             "label": "Lint",
             "type": "shell",
-            "command": "golangci-lint run",
+            "command": "cd src && golangci-lint run",
             "problemMatcher": [
                 "$go"
             ],
