@@ -6,7 +6,10 @@
         {
             "label": "Unit Test",
             "type": "shell",
-            "command": "gotest -failfast -timeout=300s -parallel=1 ./${relativeFileDirname}/... -coverprofile='coverage.out' && go tool cover -func='coverage.out'",
+            "options": {
+                "cwd": "${workspaceFolder}/src/"
+            },
+            "command": "gotest -failfast -timeout=300s -parallel=1 ..${pathSeparator}${relativeFileDirname}${pathSeparator}... -coverprofile='coverage.out' && go tool cover -func='coverage.out'",
             "problemMatcher": [
                 "$go"
             ],
@@ -23,7 +26,7 @@
         {
             "label": "Coverage Report",
             "type": "shell",
-            "command": "go tool cover -html='coverage.out'",
+            "command": "cd src && go tool cover -html='coverage.out'",
             "problemMatcher": [
                 "$go"
             ],

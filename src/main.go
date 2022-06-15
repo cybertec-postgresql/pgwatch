@@ -42,6 +42,8 @@ import (
 	"github.com/shopspring/decimal"
 	"golang.org/x/crypto/pbkdf2"
 	"gopkg.in/yaml.v2"
+
+	"github.com/cybertec-postgresql/pgwatch3/webui"
 )
 
 var commit = "" // Git hash. Will be set on build time by build_gatherer.sh / goreleaser
@@ -4909,6 +4911,9 @@ type Options struct {
 var opts Options
 
 func main() {
+
+	_ = webui.Init(":8080")
+
 	var err error
 	parser := flags.NewParser(&opts, flags.Default)
 
