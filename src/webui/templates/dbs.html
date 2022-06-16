@@ -1,0 +1,416 @@
+{{define "title"}}pgwatch3 :: DBs to monitor{{end}}
+
+{{define "body"}}
+
+<div class="container-fluid">
+
+{ if messages %}
+    { for message in messages: %}
+    <div class="row">
+        <div class="col alert alert-warning alert-dismissible fade show" role="alert">
+            { message }
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    </div>
+    { endfor %}
+{ endif %}
+
+<h3>Databases under monitoring</h3>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <td>ID</td>
+                <td title=" Choose a good name as this shouldn't be changed later (cannot easily update InfluxDB data). Will be used as prefix during DB discovery mode">Unique name</td>
+                <td title=" For 'pgbouncer' insert the 'to be monitored' pool name to 'dbname' field or leave it empty to monitor all pools distinguished by the 'database' tag. For 'discovery' DB types one can also specify regex inclusion/exclusion patterns. For 'patroni' host/port are not used as it's read from DCS (specify DCS info under 'Host config')">DB type</td>
+                <td>DB host</td>
+                <td>DB port</td>
+                <td title="If left empty, all non-template DBs found from the cluster will be added to monitoring (if not already monitored), prefixed with the 'Unique name'. For 'pgbouncer' DB type insert the 'pool' name. Not relevant for 'postgres-continuous-discovery'">DB dbname <span class="glyphicon glyphicon-info-sign" title="If left empty, all non-template DBs found from the cluster will be added to monitoring (if not already monitored), prefixed with the 'Unique name'. For 'pgbouncer' DB type insert the 'pool' name. Not relevant for 'discovery' DB types."></span></td>
+                <td title="POSIX regex input. Relevant only for 'discovery' DB types">DB name inclusion pattern<span class="glyphicon glyphicon-info-sign" title="POSIX regex input. Relevant only for 'discovery' DB types"></span></td>
+                <td title="POSIX regex input. Relevant only for 'discovery' DB types">DB name exclusion pattern<span class="glyphicon glyphicon-info-sign" title="POSIX regex input. Relevant only for 'discovery' DB types"></span></td>
+                <td title="The login role for actual metrics fetching from the specified host">DB user</td>
+                <td title=" By default password is stored in plain-text in the database">DB password</td>
+                <td title=" To use, an identical cipher key(file) must be used to launch the Web UI and the Gatherer">Password encryption<span class="glyphicon glyphicon-info-sign" title="To use, an identical cipher key(file) must be used to launch the Web UI and the Gatherer"></span></td>
+                <td title=" If checked the gatherer will automatically try to create the metric fetching helpers (CPU load monitoring, stat_statements, etc) - requires SUPERUSER to succeed">Auto-create helpers?</td>
+                <td title="libpq 'sslmode' parameter. If 'require' or 'verify-ca' or 'verify-full' then no metrics will be gathered if safe connection cannot be established">SSL Mode</td>
+                <td title="Path to Root CA file on the gatherer. Relevant for sslmode-s 'verify-ca' and 'verify-full'">Root CA</td>
+                <td title="Path to Client certificate. Relevant for 'sslmode=verify-full'">Client cert</td>
+                <td title="Path to Client key file. Relevant for 'sslmode=verify-full'">Client key</td>
+                <td title="Group name (e.g. 'prod') for logical distinction of monitored databases. Can be used also to run multiple gatherers (sharding), one for each (or multiple) group(s). Required">Group</td>
+                <td title="Preset config OR custom config needs to be specified">Preset metrics config</td>
+                <td title='{"metric":interval_seconds,...}'>Custom metrics config</td>
+                <td title="Optional alternate preset config for standby state to reduce the amount of gathered data for example">Standby preset config</td>
+                <td title='Optional: {"metric":interval_seconds,...}'>Standby custom config</td>
+                <td title='Used for Patroni only currently. e.g.: {"dcs_type": "etcd|zookeeper|consul", "dcs_endpoints": ["http://127.0.0.1:2379/"], "namespace": "/service/", "scope": "batman"}'>Host config</td>
+                <td title='User defined tags for extra meaning in InfluxDB e.g. {"env": "prod", "app": "xyz"}'>Custom tags</td>
+                <td title='In seconds. Should stay low for critical DBs just in case.  For possibly long-running built-in bloat estimation metrics the timeout will be max(30min,$userInput)'>Statement timeout [seconds]</td>
+                <td title='Fetch metrics only if master / primary '>Master mode only?</td>
+                <td>Last modified</td>
+                <td title="A tip - uncheck when leaving 'dbname' empty to review all found DBs before activation">Enabled?</td>
+                <td></td>
+                <td></td>
+            </tr>
+        </thead>
+        <!-- <tbody>
+            { for row in data: %}
+            <tr>
+                <form action="/dbs" method="post">
+                    <td> jfjfjf <input type="hidden" name="md_id" value="{ row['md_id'] }"></td>
+                    <td><input type="hidden" name="md_unique_name" value="{ row['md_unique_name']|e}}" size="8">{ row['md_unique_name']|e}}</td>
+                    <td>
+                        <select name="md_dbtype">
+                            <option value="postgres" { if row['md_dbtype'] == "postgres" %}selected{ endif %}>postgres</option>
+                            <option value="postgres-continuous-discovery"{ if row['md_dbtype'] == "postgres-continuous-discovery" %}selected{ endif %}>postgres-continuous-discovery</option>
+                            <option value="pgbouncer"{ if row['md_dbtype'] == "pgbouncer" %}selected{ endif %}>pgbouncer</option>
+                            <option value="pgpool"{ if row['md_dbtype'] == "pgpool" %}selected{ endif %}>pgpool</option>
+                            <option value="patroni"{ if row['md_dbtype'] == "patroni" %}selected{ endif %}>patroni</option>
+                            <option value="patroni-continuous-discovery"{ if row['md_dbtype'] == "patroni-continuous-discovery" %}selected{ endif %}>patroni-continuous-discovery</option>
+                            <option value="patroni-namespace-discovery"{ if row['md_dbtype'] == "patroni-namespace-discovery" %}selected{ endif %}>patroni-namespace-discovery</option>
+                        </select>
+                    </td>
+                    <td><input type="text" name="md_hostname" value="{ row['md_hostname']|e}}" size="10"></td>
+                    <td><input type="text" name="md_port" value="{ row['md_port']|e}}" size="5"></td>
+                    <td><input type="text" name="md_dbname" value="{ row['md_dbname']|e}}" size="10"></td>
+                    <td><input type="text" name="md_include_pattern" value="{ row['md_include_pattern']|e}}" size="6"></td>
+                    <td><input type="text" name="md_exclude_pattern" value="{ row['md_exclude_pattern']|e}}" size="6"></td>
+                    <td><input type="text" name="md_user" value="{ row['md_user']|e}}" size="8"></td>
+                    <td><input type="password" name="md_password" value="***" size="6" title="if left to default ***, password will not be changed"></td>
+                    <td>
+                        <select name="md_password_type" title="NO KEY means password encryption cannot be used. Use the --aes-gcm-keyphrase or --aes-gcm-keyphrase-file parameter to set encryption key">
+                            <option value="plain-text" { if row['md_password_type'] == "plain-text" %}selected{ endif %}>plain-text</option>
+                            <option value="aes-gcm-256"{ if row['md_password_type'] == "aes-gcm-256" %}selected{ endif %}>aes-gcm-256{if not aes_gcm_enabled %} [NO KEY]{ endif %}</option>
+                        </select>
+                    </td>
+                    <td><input type="checkbox" name="md_is_superuser" { if row['md_is_superuser'] %}checked{ endif %}></td>
+                    <td>
+                        <select name="md_sslmode">
+                            <option value="disable" { if row['md_sslmode'] == "disable" %}selected{ endif %}>disable</option>
+                            <option value="require"{ if row['md_sslmode'] == "require" %}selected{ endif %}>require</option>
+                            <option value="verify-ca"{ if row['md_sslmode'] == "verify-ca" %}selected{ endif %}>verify-ca</option>
+                            <option value="verify-full"{ if row['md_sslmode'] == "verify-full" %}selected{ endif %}>verify-full</option>
+                        </select>
+                    </td>
+                    <td><input type="text" name="md_root_ca_path" value="{ row['md_root_ca_path']|e}}" size="4"></td>
+                    <td><input type="text" name="md_client_cert_path" value="{ row['md_client_cert_path']|e}}" size="4"></td>
+                    <td><input type="text" name="md_client_key_path" value="{ row['md_client_key_path']|e}}" size="4"></td>
+                    <td><input type="text" name="md_group" value="{ row['md_group']|e}}" size="4"></td>
+                    <td>
+                        <select name="md_preset_config_name">
+                            <option value="" title="Empty. 'Custom config' must be filled" ></option>
+                            { for pc in preset_configs %}
+                            <option value="{ pc['pc_name']|e}}" title="{ pc['pc_description']|e}}" { if pc['pc_name'] == row['md_preset_config_name'] %}selected{ endif %}>{ pc['pc_name']|e}}</option>
+                            { endfor %}
+                        </select>
+                        <br />
+                        <a class="show_metrics" href="/metrics" title="Show preset configs and metric definitions in a new window" target="_blank">show</a>&nbsp;|&nbsp;
+                        <a class="copy_to_custom" href="" title="Copy JSON to 'Custom config' for editing">copy</a>
+                    </td>
+                    <td title='{"metric":interval,...}'><textarea name="md_config" cols="8">{ if row['md_config'] %} { row['md_config']}} { endif %}</textarea></td>
+                    <td>
+                        <select name="md_preset_config_name_standby">
+                            <option value="" title="Main config will be used" ></option>
+                            { for pc in preset_configs %}
+                            <option value="{ pc['pc_name']|e}}" title="{ pc['pc_description']|e}}" { if pc['pc_name'] == row['md_preset_config_name_standby'] %}selected{ endif %}>{ pc['pc_name']|e}}</option>
+                            { endfor %}
+                        </select>
+                        <br />
+                        <a class="show_metrics" href="/metrics" title="Show preset configs and metric definitions in a new window" target="_blank">show</a>&nbsp;|&nbsp;
+                        <a class="copy_to_custom_standby" href="" title="Copy JSON to 'Standby custom config' for editing">copy</a>
+                    </td>
+                    <td title='{"metric":interval,...}'><textarea name="md_config_standby" cols="8">{ if row['md_config_standby'] %} { row['md_config_standby']}} { endif %}</textarea></td>
+                    <td title='Used for Patroni only currently. e.g.: {"dcs_type": "etcd", "dcs_endpoints": ["http://127.0.0.1:2379/"], "namespace": "/service/", "scope": "batman"}'><textarea name="md_host_config" cols="8">{ if row['md_host_config'] %} { row['md_host_config']}} { endif %}</textarea></td>
+                    <td title='{"env": "prod", ...}'><textarea name="md_custom_tags" cols="8">{ if row['md_custom_tags'] %} { row['md_custom_tags']}} { endif %}</textarea></td>
+                    <td title=" For possibly long-running built-in bloat estimation metrics the timeout will be max(30min,$userInput)"><input type="text" name="md_statement_timeout_seconds" value="{ row['md_statement_timeout_seconds']}}" size="2"></td>
+                    <td><input type="checkbox" name="md_only_if_master" { if row['md_only_if_master'] %}checked{ endif %}></td>
+                    <td>{ row['md_last_modified_on']}}</td>
+                    <td><input type="checkbox" name="md_is_enabled" { if row['md_is_enabled'] %}checked{ endif %}></td>
+                    <td><input type="submit" class="save" name="save" value="Save"></td>
+                    <td><input type="submit" class="delete" name="delete" value="Delete"></td>
+                </form>
+            </tr>
+            { endfor %}
+            <tr>
+                <form action="/dbs" method="post">
+                    <td></td>
+                    <td><input type="text" name="md_unique_name" value="" size="8" title=" Choose a good name as this shouldn't be changed later (cannot easily update InfluxDB data)"></td>
+                    <td>
+                        <select name="md_dbtype" id="md_dbtype" title="'postgres': Single Postgres DB monitoring, 'pgbouncer': PgBouncer traffic stats for a single pool, 'postgres-continuous-discovery': Specified PG cluster will be polled for new DBs to be monitored periodically (with optional pattern matching), 'patroni': cluster members will be tracked via DCS. Specify DCS info under 'Host config'">
+                            <option value="postgres">postgres</option>
+                            <option value="postgres-continuous-discovery">postgres-continuous-discovery</option>
+                            <option value="pgbouncer">pgbouncer</option>
+                            <option value="pgpool">pgpool</option>
+                            <option value="patroni">patroni</option>
+                            <option value="patroni-continuous-discovery">patroni-continuous-discovery</option>
+                            <option value="patroni-namespace-discovery">patroni-namespace-discovery</option>
+                        </select>
+                    </td>
+                    <td><input type="text" name="md_hostname" id="md_hostname" value="" size="10"></td>
+                    <td><input type="text" name="md_port" id="md_port" value="5432" size="5"></td>
+                    <td><input type="text" name="md_dbname" value="" size="10"></td>
+                    <td><input type="text" name="md_include_pattern" value="" size="6"></td>
+                    <td><input type="text" name="md_exclude_pattern" value="" size="6"></td>
+                    <td><input type="text" name="md_user" value="" size="8"></td>
+                    <td><input type="password" name="md_password" value="" size="6"></td>
+                    <td>
+                        <select name="md_password_type" title="NO KEY means password encryption cannot be used. Use the --aes-gcm-keyphrase or --aes-gcm-keyphrase-file parameter to set encryption key">
+                            <option value="plain-text">plain-text</option>
+                            <option value="aes-gcm-256">aes-gcm-256{if not aes_gcm_enabled %} [NO KEY]{ endif %}</option>
+                        </select>
+                    </td>
+                    <td><input type="checkbox" name="md_is_superuser"></td>
+                    <td>
+                        <select name="md_sslmode">
+                            <option value="disable">disable</option>
+                            <option value="require">require</option>
+                            <option value="verify-ca">verify-ca</option>
+                            <option value="verify-full">verify-full</option>
+                        </select>
+                    </td>
+                    <td><input type="text" name="md_root_ca_path" value="" size="4"></td>
+                    <td><input type="text" name="md_client_cert_path" value="" size="4"></td>
+                    <td><input type="text" name="md_client_key_path" value="" size="4"></td>
+                    <td><input type="text" name="md_group" value="default" size="4"></td>
+                    <td>
+                        <select name="md_preset_config_name" id="md_preset_config_name">
+                            <option value="" title="Empty. 'Custom config' must be filled" ></option>
+                            { for pc in preset_configs %}
+                            <option value="{ pc['pc_name']|e}}" title="{ pc['pc_description']|e}}">{ pc['pc_name']|e}}</option>
+                            { endfor %}
+                        </select>
+                        <br />
+                        <a class="show_metrics" href="/metrics" title="Show JSON config in a new window" target="_blank">show</a>&nbsp;|&nbsp;
+                        <a class="copy_to_custom" href="" title="Copy JSON to 'Custom config' for editing">copy</a>
+                    </td>
+                    <td title='{"metric":interval,...}'><textarea name="md_config" id="md_config" value="" cols="8"></textarea></td>
+                    <td>
+                        <select name="md_preset_config_name_standby" id="md_preset_config_name_standby">
+                            <option value="" title="Main config will be used" ></option>
+                            { for pc in preset_configs %}
+                            <option value="{ pc['pc_name']|e}}" title="{ pc['pc_description']|e}}">{ pc['pc_name']|e}}</option>
+                            { endfor %}
+                        </select>
+                        <br />
+                        <a class="show_metrics" href="/metrics" title="Show JSON config in a new window" target="_blank">show</a>&nbsp;|&nbsp;
+                        <a class="copy_to_custom_standby" href="" title="Copy JSON to 'Custom config' for editing">copy</a>
+                    </td>
+                    <td title='{"metric":interval,...}'><textarea name="md_config_standby" id="md_config_standby" value="" cols="8"></textarea></td>
+                    <td title='{"dcs_type": "etcd", "dcs_endpoints": ["http://127.0.0.1:2379/"], "namespace": "/service/", "scope": "batman"}'><textarea name="md_host_config" id="md_host_config" value='' cols="8"></textarea></td>
+                    <td title='{"env": "prod", ...}'><textarea name="md_custom_tags" id="md_custom_tags" value="" cols="8"></textarea></td>
+                    <td title=" For possibly long-running built-in bloat estimation metrics the timeout will be max(30min,$userInput)"><input type="text" name="md_statement_timeout_seconds" size="2" value="5"></td>
+                    <td><input type="checkbox" name="md_only_if_master"></td>
+                    <td></td>
+                    <td><input type="checkbox" name="md_is_enabled" checked></td>
+                    <td><input type="submit" class="new" name="new" value="New"></td>
+                    <td></td>
+                </form>
+            </tr>
+        </tbody> -->
+    </table>
+</div>  <!-- table -->
+</div>  <!-- row -->
+
+<div class="row" style="margin-left: 10px">
+    <div class="col">
+    <h3>Bulk database management</h3>
+        <form action="/dbs" method="post">
+        <input type="submit" id="disable_all" name="disable_all" value="Disable all DBs">
+        <input type="submit" id="enable_all" name="enable_all" value="Enable all DBs">
+        <br />
+        <br />
+        <select name="bulk_preset_config_name" id="bulk_preset_config_name">
+            <option value="" title="Empty. 'Custom config' must be filled" ></option>
+            { for pc in preset_configs %}
+            <option value="{ pc['pc_name']|e}}" title="{ pc['pc_description']|e}}">{ pc['pc_name']|e}}</option>
+            { endfor %}
+        </select>
+        <input type="submit" id="set_bulk_config" name="set_bulk_config" value="Set a preset config for all DBs">
+        <br />
+        <br />
+        <input type="text" name="bulk_timeout_seconds" value="" size="10" title="default: 5">
+        <input type="submit" id="set_bulk_timeout" name="set_bulk_timeout" value="Set statement timeout for all DBs (in seconds)">
+        <br />
+        <br />
+        <input type="password" name="bulk_password" value="" size="10">
+        <select name="bulk_password_type" title="NO KEY means password encryption cannot be used. Use the --aes-gcm-keyphrase or --aes-gcm-keyphrase-file parameter to set encryption key">
+            <option value="plain-text">plain-text</option>
+            <option value="aes-gcm-256">aes-gcm-256{if not aes_gcm_enabled %} [NO KEY]{ endif %}</option>
+        </select>
+        <input type="submit" id="set_bulk_password" name="set_bulk_password" value="Set new password for all DBs">
+        </form>
+    </div>
+</div>
+
+<div class="row" style="margin-left: 10px">
+    <div class="col">
+    <h3>Active metrics listing</h3>
+    <ul style="margin-left: 0; padding-left: 0;">
+    { for m in metrics_list: %}
+        <li style="display: inline;"><b>{ m['m_name']}}</b> [ver: { m['versions']}}]</li>
+    { endfor %}
+
+    </ul>
+    </div>
+</div>
+
+<div class="row" style="margin-left: 10px">
+    <div class="col">
+    <h3>Metrics data cleanup ({ datastore}})</h3>
+    <br />
+    <p>Nr. of unique hosts found: { active_dbnames|length}}</p>
+    <form action="/dbs" method="post">
+        <span style="font-weight: bold">DB "Unique name"</span> ( It could take up to 3min for background gatherers to stop so no point to click directly after removing a host from monitoring):
+        <br />
+        <input type="text" name="single_unique_name" id="single_unique_name" list="active_dbnames" autocomplete="off" title="Start typing to get autocomplete">
+        <br />
+        <input type="submit" id="delete_single" name="delete_single" value="Delete single DB metrics">
+        <br />
+        <br />
+        <input type="submit" id="delete_all" name="delete_all" value="Delete all metrics for all non-active DBs">
+        <br />
+        <br />
+        <br />
+    </form>
+
+    <datalist id="active_dbnames">
+      { for db in active_dbnames: %}
+      <option value="{ db}}">
+      { endfor %}
+    </datalist>
+    </div>
+</div>
+
+</div>  <!-- container -->
+
+<script>
+    var preset_configs = { preset_configs_json}};
+
+    $(document).ready(function(){
+        $(".copy_to_custom").click(function(event){
+            event.preventDefault();
+
+            var preset_config_json = preset_configs[$(this).parent().find("[name='md_preset_config_name']").val()];
+            // alert(preset_config_json);
+            $(this).parent().parent().find("[name='md_config']").val(preset_config_json);
+            $(this).parent().find("select").val("");
+            return false;
+        });
+
+        $(".copy_to_custom_standby").click(function(event){
+            event.preventDefault();
+
+            var preset_config_json = preset_configs[$(this).parent().find("[name='md_preset_config_name_standby']").val()];
+            // alert(preset_config_json);
+            $(this).parent().parent().find("[name='md_config_standby']").val(preset_config_json);
+            $(this).parent().find("select").val("");
+            return false;
+        });
+
+        $(".show_metrics").click(function(event){
+            $(this).attr('href', $(this).attr('href') + '#' + $(this).parent().find("select").val());
+        });
+
+        $(".delete").click(function(event){
+            return confirm('Remove DB "' + $(this).parent().parent().find("[name='md_unique_name']").val() + '" from monitoring?  This does not remove gathered metrics data from InfluxDB, see bottom of page for that')
+        });
+
+        $("#delete_all").click(function(event){
+            return confirm('Are you sure you want to delete all gathered metrics data for non-active DB-s defined in the Config DB? Note that any metrics from YAML based definitions (if used) will be also deleted')
+        });
+
+        $("#delete_single").click(function(event){
+            if ($("#single_unique_name").val().trim() == '') {
+                alert("Unique name empty!");
+                return false;
+            }
+            return confirm('Are you sure you want to delete all gathered metrics for DB: "' + $("#single_unique_name").val() + '" ?')
+        });
+
+        $("#disable_all").click(function(event){
+            return confirm('Are you sure you want to disable all DBs and stop metrics gathering?')
+        });
+
+        $("#set_bulk_password").click(function(event){
+            return confirm('Are you sure you want to change all passwords?')
+        });
+
+        $(".save").add('.new').click(function(event){
+            var unique_name = $(this).parent().parent().find("[name='md_unique_name']").val()
+            var dbtype = $(this).parent().parent().find("[name='md_dbtype']").val()
+            var hostname = $(this).parent().parent().find("[name='md_hostname']").val()
+            var port = $(this).parent().parent().find("[name='md_port']").val()
+            var dbname = $(this).parent().parent().find("[name='md_dbname']").val()
+
+            if (unique_name == null || !(unique_name.trim() > '')) {
+                alert("'Unique name' cannot be empty");
+                return false;
+            }
+            if (hostname == null || !(hostname.trim() > '') && !(dbtype == "patroni" || dbtype == "patroni-continuous-discovery" || dbtype == "patroni-namespace-discovery")) {
+                alert("'DB host' cannot be empty");
+                return false;
+            }
+            if (dbname == null || !(dbname.trim() > '') && dbtype == "patroni") {
+                alert("'DB name' cannot be empty for 'patroni'. Use 'patroni-continuous-discovery' (with patterns) if multiple DBs needed");
+                return false;
+            }
+            if (dbname.trim() > '' && dbtype == "patroni-continuous-discovery") {
+                alert("'DB name' cannot be filled for 'patroni-continuous-discovery'. Use regex patterns for limiting DB-s to be monitored");
+                return false;
+            }
+            if (port == null || !(port.trim() > '') && !(dbtype == "patroni"  || dbtype == "patroni-continuous-discovery" || dbtype == "patroni-namespace-discovery")) {
+                alert("'DB port' cannot be empty");
+                return false;
+            }
+            if ($(this).parent().parent().find("[name='md_user']").val() == null || !($(this).parent().parent().find("[name='md_user']").val().trim() > '')) {
+                alert("'DB user' cannot be empty");
+                return false;
+            }
+
+            var custom_config = $(this).parent().parent().find("[name='md_config']").val();
+            var preset_config = $(this).parent().parent().find("[name='md_preset_config_name']").val();
+            if (custom_config.trim() == '' && preset_config == '') {
+                alert('Preset OR custom config needs to be specified, i.e. only one of these fields must be filled!');
+                return false;
+            }
+            var custom_config_standby = $(this).parent().parent().find("[name='md_config_standby']").val();
+            var preset_config_standby = $(this).parent().parent().find("[name='md_preset_config_name_standby']").val();
+            if (custom_config_standby.trim() > '' && preset_config_standby > '') {
+                alert('Standby preset and custom config cannot be both specified!');
+                return false;
+            }
+
+            // check influx identifier policies - only ascii, digits (not as 1st char) and underscores
+            var db_unique = $(this).parent().parent().find("[name='md_unique_name']").val()
+            if (db_unique[0].match(/\d/)) {
+                alert("'Unique name' can only start with a letter or underscore");
+                return false;
+            }
+            if (db_unique.match(/[^\d\w_@]/)) {
+                alert("'Unique name' can only contain letters, digits and underscores");
+                return false;
+            }
+
+        });
+
+        $("#md_dbtype").change(function(event){
+            if ($(this).val() == 'pgbouncer') {
+                $("#md_preset_config_name").val('pgbouncer');
+                alert(' Preset Config set to "pgbouncer"');
+            } else if ($(this).val() == 'postgres' || $(this).val() == 'postgres-continuous-discovery') {
+                $("#md_preset_config_name").val('');
+            } else if ($(this).val() == 'patroni' || $(this).val() == 'patroni-continuous-discovery' || $(this).val() == 'patroni-namespace-discovery') {
+                alert(' "Host config" pre-filled with Etcd localhost values');
+                $("#md_port").val('');
+                $("#md_hostname").val('');
+                $("#md_host_config").val('{"dcs_type": "etcd", "dcs_endpoints": ["http://127.0.0.1:2379/"], "namespace": "/service/", "scope": "batman", "username": "", "password": "", "ca_file": "", "cert_file": "", "key_file": ""}');
+            } else if ($(this).val() == 'pgpool') {
+                $("#md_preset_config_name").val('pgpool');
+                $("#md_port").val('9999');
+                alert(' Preset Config set to "pgpool", port to 9999');
+            }
+        });
+    });
+</script>
+{{end}}

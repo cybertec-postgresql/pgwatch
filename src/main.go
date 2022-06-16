@@ -4912,7 +4912,12 @@ var opts Options
 
 func main() {
 
-	_ = webui.Init(":8080")
+	ui := webui.Init(":8080")
+	fmt.Println("Press the Enter Key to stop anytime")
+	fmt.Scanln()
+	if ui != nil {
+		return
+	}
 
 	var err error
 	parser := flags.NewParser(&opts, flags.Default)
