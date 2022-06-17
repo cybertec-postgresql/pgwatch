@@ -1,18 +1,23 @@
 package webui
 
 import (
+	"embed"
 	"html/template"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 )
 
 type WebUIServer struct {
 	// l        log.Logger
 	http.Server
+	PgWatchVersion  string
+	PostgresVersion string
+	GrafanaVersion  string
 }
+
+//go:embed static/* templates/*
+var assetsFS embed.FS
 
 func Init(addr string) *WebUIServer {
 	s := &WebUIServer{
@@ -24,9 +29,10 @@ func Init(addr string) *WebUIServer {
 			WriteTimeout:   10 * time.Second,
 			MaxHeaderBytes: 1 << 20,
 		},
+		"3.0.0", "14.4", "8.7.0",
 	}
-	fs := http.FileServer(http.Dir("webui/static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	fs := http.FileServer(http.FS(assetsFS))
+	http.Handle("/static/", fs)
 	http.HandleFunc("/versions", s.versionsHandler)
 	http.HandleFunc("/dbs", s.rootHandler)
 	http.HandleFunc("/", s.rootHandler)
@@ -37,29 +43,15 @@ func Init(addr string) *WebUIServer {
 	return s
 }
 
-type Version struct {
-	PgWatchVersion  string
-	PostgresVersion string
-	GrafanaVersion  string
-}
-
 func (Server *WebUIServer) versionsHandler(w http.ResponseWriter, r *http.Request) {
-	lp := filepath.Join("webui/templates", "layout.html")
-	fp := filepath.Join("webui/templates", "versions.html")
-	tmpl, err := template.ParseFiles(lp, fp)
+	tmpl, err := template.ParseFS(assetsFS, "templates/layout.html", "templates/versions.html")
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
 
-	V := Version{
-		PgWatchVersion:  "0.0.1",
-		PostgresVersion: "9.6.11",
-		GrafanaVersion:  "6.6.2",
-	}
-
-	err = tmpl.ExecuteTemplate(w, "layout", V)
+	err = tmpl.ExecuteTemplate(w, "layout", Server)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, http.StatusText(500), 500)
@@ -69,32 +61,7 @@ func (Server *WebUIServer) versionsHandler(w http.ResponseWriter, r *http.Reques
 func (Server *WebUIServer) rootHandler(w http.ResponseWriter, r *http.Request) {
 	// Server.l.Debug("Received / web request")
 
-	// The "/" pattern matches everything, so we need to check
-	// that we're at the root here.
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-
-	lp := filepath.Join("webui/templates", "layout.html")
-	fp := filepath.Join("webui/templates", "dbs.html")
-
-	// Return a 404 if the template doesn't exist
-	info, err := os.Stat(fp)
-	if err != nil {
-		if os.IsNotExist(err) {
-			http.NotFound(w, r)
-			return
-		}
-	}
-
-	// Return a 404 if the request is for a directory
-	if info.IsDir() {
-		http.NotFound(w, r)
-		return
-	}
-
-	tmpl, err := template.ParseFiles(lp, fp)
+	tmpl, err := template.ParseFS(assetsFS, "templates/layout.html", "templates/dbs.html")
 	if err != nil {
 		// Log the detailed error
 		log.Print(err.Error())
