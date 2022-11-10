@@ -10,14 +10,14 @@ require (
 	github.com/lib/pq v1.10.7
 	github.com/marpaia/graphite-golang v0.0.0-20190519024811-caf161d2c2b1
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
-	github.com/prometheus/client_golang v1.13.1
+	github.com/prometheus/client_golang v1.14.0
 	github.com/samuel/go-zookeeper v0.0.0-20201211165307-7117e9ea2414
 	github.com/shirou/gopsutil/v3 v3.22.10
 	github.com/shopspring/decimal v1.3.1
 	github.com/stretchr/testify v1.8.1
 	go.etcd.io/etcd v3.3.27+incompatible
 	go.etcd.io/etcd/client/v2 v2.305.5
-	golang.org/x/crypto v0.1.0
+	golang.org/x/crypto v0.2.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -57,7 +57,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.5 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.5 // indirect
-	golang.org/x/sys v0.1.0 // indirect
+	golang.org/x/sys v0.2.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
