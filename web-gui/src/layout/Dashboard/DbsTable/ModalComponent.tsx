@@ -1,13 +1,13 @@
 import CloseIcon from "@mui/icons-material/Close";
 import DoneIcon from "@mui/icons-material/Done";
 import {
-  Button, Modal, Box, Typography, Backdrop, Fade, TextField,
-  FormControlLabel, Checkbox, SxProps, Theme
+  Backdrop, Box, Button, Checkbox, Fade, FormControlLabel,
+  Modal, SxProps, TextField, Theme, Typography
 } from "@mui/material";
-import { useForm, Controller, SubmitHandler } from "react-hook-form";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import {
-  DbTypeComponent, PasswordEncryptionComponent, SslModeComponent,
-  MetricsConfigComponent, StandbyConfigComponent
+  DbTypeComponent, MetricsConfigComponent, PasswordEncryptionComponent,
+  SslModeComponent, StandbyConfigComponent
 } from "./SelectComponents";
 import { MultilineTextField, SimpleTextField } from "./TextFieldComponents";
 
@@ -67,15 +67,13 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) 
       data = { ...data, ...result };
       // Edit an already existing record
       alert(JSON.stringify(data));
+      handleAlertOpen(true, "Success!");
     } else {
       // Create new record
       alert(JSON.stringify(result));
+      handleAlertOpen(true, "Success!");
     }
-  }
-
-  if(data) {
-    console.log(data["md_unique_name"]);
-  }
+  };
 
   return (
     <Box>
@@ -502,4 +500,4 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) 
       </Modal>
     </Box >
   );
-}
+};

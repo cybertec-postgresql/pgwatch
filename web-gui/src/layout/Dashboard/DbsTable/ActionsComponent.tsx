@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField } from "@mui/material";
 
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
 
 type Params = {
   data: any,
@@ -27,9 +27,15 @@ export const ActionsComponent = ({ data, setModalOpen, setEditData }: Params) =>
 
   return (
     <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-      <Button onClick={() => {setModalOpen(true); setEditData(data)}} sx={{ marginRight: "7.5px", marginLeft: "2.5px" }}
-        size="small" variant="outlined" startIcon={<EditIcon />}>Edit</Button>
-
+      <Button
+        onClick={() => { setModalOpen(true); setEditData(data); }}
+        sx={{ marginRight: "7.5px", marginLeft: "2.5px" }}
+        size="small"
+        variant="outlined"
+        startIcon={<EditIcon />}
+      >
+        Edit
+      </Button>
       <Button onClick={handleDeleteOpen} size="small" variant="contained" startIcon={<DeleteIcon />}>Delete</Button>
       <Dialog open={deleteClicked} onClose={handleDeleteClose}>
         <DialogTitle>Warning</DialogTitle>

@@ -1,5 +1,5 @@
+import { useState } from 'react';
 import { Box, Popover, Typography } from '@mui/material';
-import { useState, useEffect } from 'react';
 
 type Params = {
     value: string
@@ -31,4 +31,4 @@ export const PasswordTypography = ({ value }: Params) => {
             </Popover>
         </Box>
     );
-}
+};

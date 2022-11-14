@@ -1,19 +1,18 @@
-import { Alert, Box, Snackbar, Typography } from "@mui/material";
+import { useState } from "react";
 
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import { Alert, Box, Snackbar, Typography } from "@mui/material";
 import {
   DataGrid,
   GridColDef,
   GridRenderCellParams
 } from "@mui/x-data-grid";
-import { useState } from "react";
 
 import { ActionsComponent } from "./ActionsComponent";
 import { GridToolbarComponent } from "./GridToolbarComponent";
-import { PasswordTypography } from "./PasswordTypographyComponent";
 import { ModalComponent } from "./ModalComponent";
-
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
+import { PasswordTypography } from "./PasswordTypographyComponent";
 
 const mockRows = [
   {
@@ -56,10 +55,10 @@ export const DbsTable = () => {
   const [editData, setEditData] = useState();
 
   const handleAlertOpen = (isOpen: boolean, text: string) => {
-    setAlertText(text)
+    setAlertText(text);
 
-    setAlertOpen(isOpen)
-  }
+    setAlertOpen(isOpen);
+  };
 
   const handleAlertClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
     if (reason === "clickaway") {
@@ -99,7 +98,7 @@ export const DbsTable = () => {
       align: "center",
       headerAlign: "center",
       valueGetter(params) {
-        return(`${params.row.md_hostname}:${params.row.md_port}`)
+        return(`${params.row.md_hostname}:${params.row.md_port}`);
       },
     },
     {
@@ -134,7 +133,7 @@ export const DbsTable = () => {
       field: "md_password",
       headerName: "DB password",
       renderCell: (params: GridRenderCellParams<string>) => (
-        <PasswordTypography value={params.value!}/>
+        <PasswordTypography value={params.value!} />
       ),
       width: 150,
       align: "center",
@@ -154,9 +153,9 @@ export const DbsTable = () => {
       width: 120,
       renderCell: (params: GridRenderCellParams<boolean>) => {
         if(params.value) {
-          return <CheckIcon />
+          return <CheckIcon />;
         } else {
-          return <CloseIcon />
+          return <CloseIcon />;
         }
       },
       align: "center",
@@ -254,9 +253,9 @@ export const DbsTable = () => {
       width: 120,
       renderCell: (params: GridRenderCellParams<boolean>) => {
         if(params.value) {
-          return <CheckIcon />
+          return <CheckIcon />;
         } else {
-          return <CloseIcon />
+          return <CloseIcon />;
         }
       },
       align: "center",
@@ -277,9 +276,9 @@ export const DbsTable = () => {
       width: 120,
       renderCell: (params: GridRenderCellParams<boolean>) => {
         if(params.value) {
-          return <CheckIcon />
+          return <CheckIcon />;
         } else {
-          return <CloseIcon />
+          return <CloseIcon />;
         }
       },
       align: "center",
@@ -291,7 +290,7 @@ export const DbsTable = () => {
       type: "actions",
       width: 200,
       renderCell: (params: GridRenderCellParams<string>) => (
-        <ActionsComponent setModalOpen={setModalOpen} data={params.row} setEditData={setEditData}/>
+        <ActionsComponent setModalOpen={setModalOpen} data={params.row} setEditData={setEditData} />
       )
     }
   ];
@@ -309,7 +308,7 @@ export const DbsTable = () => {
       <DataGrid
         getRowHeight={() => "auto"}
         columns={columns}
-        rows={mockRows}
+        rows={rows}
         autoHeight
         pageSize={5}
         initialState={{
@@ -329,7 +328,7 @@ export const DbsTable = () => {
         components={{ Toolbar: () => GridToolbarComponent(setModalOpen, setEditData) }}
         disableColumnMenu
       />
-      <ModalComponent open={modalOpen} setOpen={setModalOpen} handleAlertOpen={handleAlertOpen} data={editData}/>
+      <ModalComponent open={modalOpen} setOpen={setModalOpen} handleAlertOpen={handleAlertOpen} data={editData} />
     </Box>
   );
 };

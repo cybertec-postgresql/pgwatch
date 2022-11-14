@@ -1,6 +1,6 @@
 import { TextField } from "@mui/material";
 import { ControllerRenderProps, FieldPath } from "react-hook-form";
-import { IFormInput } from "./ModalComponent"
+import { IFormInput } from "./ModalComponent";
 
 type Params = {
   field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
