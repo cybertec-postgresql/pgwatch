@@ -1,8 +1,9 @@
 import { Box, FormControl, InputLabel, Link, MenuItem, Select } from "@mui/material";
 
-import { dbTypeOptions, passwordEncryptionOptions, presetConfigsOptions, sslModeOptions } from "./SelectComponentsOptions";
 import { ControllerRenderProps, FieldPath } from "react-hook-form";
-import { IFormInput } from "./ModalComponent"
+
+import { IFormInput } from "./ModalComponent";
+import { dbTypeOptions, passwordEncryptionOptions, presetConfigsOptions, sslModeOptions } from "./SelectComponentsOptions";
 
 type SelectParams = {
   field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
