@@ -1,9 +1,11 @@
 import CloseIcon from "@mui/icons-material/Close";
 import DoneIcon from "@mui/icons-material/Done";
+import { TabContext, TabList, TabPanel } from "@mui/lab";
 import {
   Backdrop, Box, Button, Checkbox, Fade, FormControlLabel,
-  Modal, SxProps, TextField, Theme, Typography
+  Modal, SxProps, Tab, TextField, Theme, Typography
 } from "@mui/material";
+import { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import {
   DbTypeComponent, MetricsConfigComponent, PasswordEncryptionComponent,
@@ -60,10 +62,11 @@ export interface IFormInput {
 }
 
 export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) => {
+  const [tab, setTab] = useState("Main");
   const { handleSubmit, control, formState: { errors }, setValue } = useForm<IFormInput>();
 
   const onSubmit: SubmitHandler<IFormInput> = result => {
-    if(data) {
+    if (data) {
       data = { ...data, ...result };
       // Edit an already existing record
       alert(JSON.stringify(data));
@@ -73,6 +76,10 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) 
       alert(JSON.stringify(result));
       handleAlertOpen(true, "Success!");
     }
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, value: string) => {
+    setTab(value);
   };
 
   return (
@@ -91,8 +98,116 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) 
               {data ? "Edit database instance" : "Create new database instance"}
             </Typography>
             <form onSubmit={handleSubmit(onSubmit)}>
-              <Box sx={{ display: "grid", rowGap: "15px", marginTop: "15px" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Box sx={{ display: "grid", rowGap: "15px", marginTop: "5px" }}>
+                <TabContext value={tab}>
+                  <TabList onChange={handleTabChange} variant="fullWidth">
+                    <Tab label="Main" value="Main" />
+                    <Tab label="Connection" value="Connection" />
+                    <Tab label="SSL" value="SSL" />
+                    <Tab label="Presets" value="Presets" />
+                  </TabList>
+                  <TabPanel value="Main" sx={{ padding: 0, display: "grid", rowGap: "15px" }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Controller
+                        name="md_unique_name"
+                        control={control}
+                        rules={{
+                          required: "Unique name cannot be empty"
+                        }}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <SimpleTextField
+                            field={{ ...field }}
+                            error={!!errors.md_unique_name}
+                            helperText={errors.md_unique_name?.message}
+                            type="text"
+                            label="Unique name"
+                            title="NB! Choose a good name as this shouldn't be changed later (cannot easily update InfluxDB data). Will be used as prefix during DB discovery mode"
+                          />
+                        )}
+                      />
+                      <Controller
+                        name="md_dbtype"
+                        control={control}
+                        defaultValue="postgres"
+                        render={({ field }) => (
+                          <DbTypeComponent
+                            field={{ ...field }}
+                            label="DB type"
+                            title="NB! For 'pgbouncer' insert the 'to be monitored' pool name to 'dbname' field or leave it empty to monitor all pools distinguished by the 'database' tag. For 'discovery' DB types one can also specify regex inclusion/exclusion patterns. For 'patroni' host/port are not used as it's read from DCS (specify DCS info under 'Host config')"
+                          />
+                        )}
+                      />
+                    </Box>
+                    <Controller
+                      name="md_group"
+                      control={control}
+                      defaultValue="default"
+                      rules={{
+                        required: "Group cannot be empty"
+                      }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          error={!!errors.md_group}
+                          helperText={errors.md_group?.message}
+                          type="text"
+                          label="Group"
+                          fullWidth
+                          title="Group name (e.g. 'prod') for logical distinction of monitored databases. Can be used also to run multiple gatherers (sharding), one for each (or multiple) group(s). Required"
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="md_custom_tags"
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          type="text"
+                          label="Custom tags"
+                          fullWidth
+                          title={"User defined tags for extra meaning in InfluxDB e.g. {\"env\": \"prod\", \"app\": \"xyz\"}"}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="md_is_enabled"
+                      control={control}
+                      defaultValue={true}
+                      render={({ field }) => (
+                        <FormControlLabel
+                          label="Enabled?"
+                          labelPlacement="end"
+                          control={<Checkbox {...field} size="medium" checked={field.value} />}
+                          sx={{ margin: 0 }}
+                          title="A tip - uncheck when leaving 'dbname' empty to review all found DBs before activation"
+                        />
+                      )}
+                    />
+                  </TabPanel>
+                  <TabPanel value="Connection">
+                    <Controller
+                      name="md_hostname"
+                      control={control}
+                      defaultValue=""
+                      rules={{
+                        required: "DB host cannot be empty"
+                      }}
+                      render={({ field }) => (
+                        <SimpleTextField
+                          field={{ ...field }}
+                          error={!!errors.md_hostname}
+                          helperText={errors.md_hostname?.message}
+                          type="text"
+                          label="DB host"
+                        />
+                      )}
+                    />
+                  </TabPanel>
+                </TabContext>
+                {/*<Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Controller
                     name="md_unique_name"
                     control={control}
@@ -488,7 +603,7 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) 
                       />
                     )}
                   />
-                </Box>
+                    </Box>*/}
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Button fullWidth type="submit" size="medium" variant="outlined" startIcon={<DoneIcon />} sx={{ marginRight: "10px" }}>Submit</Button>
                   <Button fullWidth onClick={() => setOpen(false)} size="medium" variant="contained" startIcon={<CloseIcon />}>Cancel</Button>

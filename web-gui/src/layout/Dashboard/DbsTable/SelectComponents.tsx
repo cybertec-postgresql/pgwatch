@@ -18,7 +18,7 @@ type SelectParams = {
 export const DbTypeComponent = ({ field, label, title }: SelectParams) => {
 
   return (
-    <Box sx={{ width: 236 }}>
+    <Box sx={{ width: 248 }}>
       <FormControl fullWidth size="medium">
         <InputLabel>{label}</InputLabel>
         <Select
@@ -44,7 +44,7 @@ export const DbTypeComponent = ({ field, label, title }: SelectParams) => {
 export const PasswordEncryptionComponent = ({ field, label, title }: SelectParams) => {
 
   return (
-    <Box sx={{ width: 236 }}>
+    <Box sx={{ width: 248 }}>
       <FormControl fullWidth size="medium">
         <InputLabel>{label}</InputLabel>
         <Select
@@ -70,7 +70,7 @@ export const PasswordEncryptionComponent = ({ field, label, title }: SelectParam
 export const SslModeComponent = ({ field, label, title }: SelectParams) => {
 
   return (
-    <Box sx={{ width: 236 }}>
+    <Box sx={{ width: 248 }}>
       <FormControl fullWidth size="medium">
         <InputLabel>{label}</InputLabel>
         <Select
@@ -103,7 +103,7 @@ type SelectConfigParams = {
 export const MetricsConfigComponent = ({ field, label, title, onCopyClick }: SelectConfigParams) => {
 
   return (
-    <Box sx={{ width: 236 }}>
+    <Box sx={{ width: 248 }}>
       <FormControl fullWidth size="medium">
         <InputLabel>{label}</InputLabel>
         <Select
@@ -137,7 +137,7 @@ export const MetricsConfigComponent = ({ field, label, title, onCopyClick }: Sel
 export const StandbyConfigComponent = ({ field, label, title, onCopyClick }: SelectConfigParams) => {
 
   return (
-    <Box sx={{ width: 236 }}>
+    <Box sx={{ width: 248 }}>
       <FormControl fullWidth size="medium">
         <InputLabel>{label}</InputLabel>
         <Select

@@ -20,7 +20,7 @@ export const SimpleTextField = ({ field, error, helperText, type, label, title }
       helperText={helperText}
       type={type}
       label={label}
-      sx={{ width: 236 }}
+      sx={{ width: 248 }}
       title={title}
     />
   );
@@ -38,7 +38,7 @@ export const MultilineTextField = ({ field, error, helperText, type, label, titl
       multiline
       minRows={2}
       maxRows={5}
-      sx={{ width: 236 }}
+      sx={{ width: 248 }}
       title={title}
     />
   );
