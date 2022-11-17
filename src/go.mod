@@ -17,7 +17,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	go.etcd.io/etcd v3.3.27+incompatible
 	go.etcd.io/etcd/client/v2 v2.305.5
-	golang.org/x/crypto v0.2.0
+	golang.org/x/crypto v0.3.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
