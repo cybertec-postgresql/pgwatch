@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
-import { Controller,FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
+import { Controller, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 
 import CloseIcon from "@mui/icons-material/Close";
 import DoneIcon from "@mui/icons-material/Done";
 
 import {
-  Box, 
-  Button, 
-  Checkbox, 
-  Dialog, 
-  DialogActions, 
-  DialogContent, 
-  DialogTitle, 
+  Box,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControlLabel,
   Stack,
-  TextField, 
+  TextField,
 } from "@mui/material";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
@@ -59,6 +59,7 @@ export interface IFormInput {
   helpers: boolean;
   md_only_if_master: boolean;
   md_is_enabled: boolean;
+  connection_timeout_seconds: number;
 }
 
 export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) => {
@@ -101,7 +102,7 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) 
 enum Steps {
   main = "Main",
   connection = "Connection",
-  ssk = "SSL",
+  ssl = "SSL",
   presets = "Presets"
 }
 
@@ -109,10 +110,10 @@ type StepType = keyof typeof Steps;
 const defaultStep = Object.keys(Steps)[0] as StepType;
 
 const formErrors = {
-  main: ["md_unique_name"],
-  connection: ["md_hostname"],
+  main: ["md_unique_name", "md_group"],
+  connection: ["md_hostname", "md_port", "md_user", "md_statement_timeout_seconds"],
   // TODO: add other required fields
-  ssk: [],
+  ssl: [],
   presets: [],
 }
 
@@ -125,19 +126,25 @@ const ModalContent = () => {
   const { control, formState: { errors } } = useFormContext();
   const [activeStep, setActiveStep] = useState<StepType>(defaultStep);
 
-  const handleValidate = (val: string) => !!val.trim();
+  const handleValidate = (val: string) => !!val.toString().trim();
+
+  const testConnection = () => {
+    console.log("test connection...")
+  };
 
   const stepContent = {
     main: (
-      <Stack spacing={1}>
+      <Stack spacing={2}>
         <Stack direction="row" spacing={1}>
           <Controller
             name="md_unique_name"
             control={control}
             rules={{
-              required: true,
+              required: {
+                value: true,
+                message: "Unique name is required"
+              },
               validate: handleValidate
-              // message
             }}
             defaultValue=""
             render={({ field, fieldState: { error } }) => (
@@ -169,10 +176,13 @@ const ModalContent = () => {
           control={control}
           defaultValue="default"
           rules={{
-            required: true,
+            required: {
+              value: true,
+              message: "Group is required"
+            },
             validate: handleValidate,
           }}
-          render={({ field, fieldState: {error} }) => (
+          render={({ field, fieldState: { error } }) => (
             <TextField
               {...field}
               error={!!error}
@@ -215,28 +225,171 @@ const ModalContent = () => {
       </Stack>
     ),
     connection: (
-      <Stack>
+      <Stack spacing={2}>
+        <Stack direction="row" spacing={1}>
+          <Controller
+            name="md_hostname"
+            control={control}
+            defaultValue=""
+            rules={{
+              required: {
+                value: true,
+                message: "DB host is required"
+              },
+              validate: handleValidate,
+            }}
+            render={({ field, fieldState: { error } }) => (
+              <SimpleTextField
+                field={{ ...field }}
+                error={!!error}
+                helperText={error?.message}
+                type="text"
+                label="DB host"
+              />
+            )}
+          />
+          <Controller
+            name="md_port"
+            control={control}
+            defaultValue={5432}
+            rules={{
+              required: {
+                value: true,
+                message: "DB port is required"
+              },
+              validate: handleValidate
+            }}
+            render={({ field, fieldState: { error } }) => (
+              <SimpleTextField
+                field={{ ...field }}
+                error={!!error}
+                helperText={error?.message}
+                type="number"
+                label="DB port"
+              />
+            )}
+          />
+        </Stack>
         <Controller
-          name="md_hostname"
+          name="md_dbname"
           control={control}
           defaultValue=""
-          rules={{
-            required: true,
-            validate: handleValidate,
-          }}
-          render={({ field, fieldState: { error } }) => (
-            <SimpleTextField
-              field={{ ...field }}
-              error={!!error}
-              helperText={error?.message}
+          render={({ field }) => (
+            <TextField
+              {...field}
               type="text"
-              label="DB host"
+              label="DB name"
+              size="medium"
+              fullWidth
+              title="If left empty, all non-template DBs found from the cluster will be added to monitoring (if not already monitored), prefixed with the 'Unique name'. For 'pgbouncer' DB type insert the 'pool' name. Not relevant for 'postgres-continuous-discovery'"
             />
           )}
         />
+        <Stack direction="row" spacing={1}>
+          <Controller
+            name="md_include_pattern"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <SimpleTextField
+                field={{ ...field }}
+                type="text"
+                label="DB name inclusion pattern"
+                title="POSIX regex input. Relevant only for 'discovery' DB types"
+              />
+            )}
+          />
+          <Controller
+            name="md_exclude_pattern"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <SimpleTextField
+                field={{ ...field }}
+                type="text"
+                label="DB name exclusion pattern"
+                title="POSIX regex input. Relevant only for 'discovery' DB types"
+              />
+            )}
+          />
+        </Stack>
+        <Stack direction="row" spacing={1}>
+          <Controller
+            name="md_user"
+            control={control}
+            defaultValue=""
+            rules={{
+              required: {
+                value: true,
+                message: "DB user is required"
+              },
+              validate: handleValidate
+            }}
+            render={({ field, fieldState: { error } }) => (
+              <SimpleTextField
+                field={{ ...field }}
+                error={!!error}
+                helperText={error?.message}
+                type="text"
+                label="DB user"
+                title="The login role for actual metrics fetching from the specified host"
+              />
+            )}
+          />
+          <Controller
+            name="md_password"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <SimpleTextField
+                field={{ ...field }}
+                type="password"
+                label="DB password"
+                title="NB! By default password is stored in plain-text in the database"
+              />
+            )}
+          />
+        </Stack>
+        <Stack direction="row" spacing={1}>
+          <Controller
+            name="md_statement_timeout_seconds"
+            control={control}
+            defaultValue={5}
+            rules={{
+              required: {
+                value: true,
+                message: "Statement timeout is required"
+              },
+              validate: handleValidate
+            }}
+            render={({ field, fieldState: { error } }) => (
+              <SimpleTextField
+                field={{ ...field }}
+                error={!!error}
+                helperText={error?.message}
+                type="number"
+                label="Statement timeount [seconds]"
+                title="In seconds. Should stay low for critical DBs just in case. NB! For possibly long-running built-in bloat estimation metrics the timeout will be max(30min,$userInput)"
+              />
+            )}
+          />
+          <Controller
+            name="connection_timeout_seconds"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <SimpleTextField
+                field={{ ...field }}
+                type="number"
+                label="Connection timeount [seconds]"
+              />
+            )}
+          />
+        </Stack>
+        <Button fullWidth variant="contained" onClick={testConnection}>Test connection</Button>
       </Stack>
     ),
-    ssk: (
+    ssl: (
       <Stack /> // TODO: add inputs
     ),
     presets: (
@@ -245,27 +398,27 @@ const ModalContent = () => {
   }
 
   const handleChange = (_ev: any, value?: StepType) => {
-    if(value) {
+    if (value) {
       setActiveStep(value);
     }
   };
 
   const buttons = Object.entries(Steps).map(([val, label]) => (
-    <ToggleButton 
-      fullWidth 
-      key={val} 
+    <ToggleButton
+      fullWidth
+      key={val}
       value={val}
       {...(getStepError(val as StepType, Object.keys(errors ?? {})) && {
         color: "error",
         selected: true,
       })}
     >
-        {label}
-      </ToggleButton>
+      {label}
+    </ToggleButton>
   ));
 
   const content = Object.keys(Steps).map((key) => (
-    <Box 
+    <Box
       key={`Content-${key}`}
       {...(key !== activeStep && {
         height: 0,
@@ -276,7 +429,7 @@ const ModalContent = () => {
     </Box>
   ));
 
-  return(
+  return (
     <>
       <ToggleButtonGroup
         color="primary"
@@ -297,7 +450,7 @@ const ModalContent = () => {
 
 
 
-    {/*<Box sx={{ display: "flex", justifyContent: "space-between" }}>
+      {/*<Box sx={{ display: "flex", justifyContent: "space-between" }}>
       <Controller
         name="md_unique_name"
         control={control}
@@ -694,6 +847,6 @@ const ModalContent = () => {
         )}
       />
         </Box>*/}
-  </>
+    </>
   )
 }
