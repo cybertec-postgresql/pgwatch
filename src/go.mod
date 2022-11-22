@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
-	github.com/hashicorp/consul/api v1.16.0
+	github.com/hashicorp/consul/api v1.17.0
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.7
