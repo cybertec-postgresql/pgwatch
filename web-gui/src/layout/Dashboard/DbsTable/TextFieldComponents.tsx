@@ -8,10 +8,11 @@ type Params = {
   helperText?: string,
   type: "text" | "password" | "number",
   label: string,
-  title?: string
+  title?: string,
+  disabled?: boolean
 }
 
-export const SimpleTextField = ({ field, error, helperText, type, label, title }: Params) => {
+export const SimpleTextField = ({ field, error, helperText, type, label, title, disabled }: Params) => {
 
   return (
     <TextField
@@ -22,6 +23,7 @@ export const SimpleTextField = ({ field, error, helperText, type, label, title }
       label={label}
       sx={{ width: 248 }}
       title={title}
+      disabled={disabled}
     />
   );
 };

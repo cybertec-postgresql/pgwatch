@@ -1,4 +1,4 @@
-import { Box, FormControl, InputLabel, Link, MenuItem, Select } from "@mui/material";
+import { Box, FormControl, InputLabel, Link, MenuItem, Select, SelectChangeEvent } from "@mui/material";
 
 import { ControllerRenderProps, FieldPath } from "react-hook-form";
 
@@ -8,7 +8,8 @@ import { dbTypeOptions, passwordEncryptionOptions, presetConfigsOptions, sslMode
 type SelectParams = {
   field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
   label: string,
-  title?: string
+  title?: string,
+  onChange?: ((event: SelectChangeEvent<string | number | boolean>, child: React.ReactNode) => void)
 }
 
 /*
@@ -67,16 +68,17 @@ export const PasswordEncryptionComponent = ({ field, label, title }: SelectParam
     SSL mode select component
 */
 
-export const SslModeComponent = ({ field, label, title }: SelectParams) => {
+export const SslModeComponent = ({ field, label, title, onChange }: SelectParams) => {
 
   return (
-    <Box sx={{ width: 248 }}>
+    <Box>
       <FormControl fullWidth size="medium">
         <InputLabel>{label}</InputLabel>
         <Select
           {...field}
           label={label}
           title={title}
+          onChange={onChange}
         >
           {sslModeOptions.map((option) => {
             return (

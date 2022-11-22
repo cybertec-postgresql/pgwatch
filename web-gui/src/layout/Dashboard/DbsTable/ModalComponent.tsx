@@ -123,14 +123,29 @@ const getStepError = (step: StepType, errors: string[]): boolean => {
 }
 
 const ModalContent = () => {
-  const { control, formState: { errors } } = useFormContext();
+  const { control, formState: { errors }, getValues, setValue } = useFormContext();
   const [activeStep, setActiveStep] = useState<StepType>(defaultStep);
+  const [isSslDisable, setIsSslDisable] = useState<boolean>(getValues("md_sslmode") === "disable" || getValues("md_sslmode") === undefined);
 
   const handleValidate = (val: string) => !!val.toString().trim();
 
   const testConnection = () => {
     console.log("test connection...")
   };
+
+  const handleSslChange = (value: string | number | boolean) => {
+    switch (value) {
+      case "disable":
+        setIsSslDisable(true);
+        setValue("md_root_ca_path", "");
+        setValue("md_client_cert_path", "");
+        setValue("md_client_key_path", "");
+        break;
+      default:
+        setIsSslDisable(false);
+        break;
+    }
+  }
 
   const stepContent = {
     main: (
@@ -390,7 +405,70 @@ const ModalContent = () => {
       </Stack>
     ),
     ssl: (
-      <Stack /> // TODO: add inputs
+      <Stack spacing={2}>
+        <Controller
+          name="md_sslmode"
+          control={control}
+          defaultValue="disable"
+          render={({ field: { onChange, ...field } }) => (
+            <SslModeComponent
+              field={{ onChange, ...field }}
+              label="SSL Mode"
+              onChange={(e) => {
+                onChange(e.target.value);
+                handleSslChange(e.target.value);
+              }}
+              title="libpq 'sslmode' parameter. If 'require' or 'verify-ca' or 'verify-full' then no metrics will be gathered if safe connection cannot be established"
+            />
+          )}
+        />
+        <Controller
+          name="md_root_ca_path"
+          control={control}
+          defaultValue=""
+          render={({ field }) => (
+            <TextField
+              {...field}
+              type="text"
+              label="Root CA"
+              size="medium"
+              disabled={isSslDisable}
+              fullWidth
+              title="Path to Root CA file on the gatherer. Relevant for sslmode-s 'verify-ca' and 'verify-full'"
+            />
+          )}
+        />
+        <Stack direction="row" spacing={1}>
+          <Controller
+            name="md_client_cert_path"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <SimpleTextField
+                field={{ ...field }}
+                type="text"
+                label="Client cert"
+                disabled={isSslDisable}
+                title="Path to Client certificate. Relevant for 'sslmode=verify-full'"
+              />
+            )}
+          />
+          <Controller
+            name="md_client_key_path"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <SimpleTextField
+                field={{ ...field }}
+                type="text"
+                label="Client key"
+                disabled={isSslDisable}
+                title="Path to Client key file. Relevant for 'sslmode=verify-full'"
+              />
+            )}
+          />
+        </Stack>
+      </Stack>
     ),
     presets: (
       <Stack /> // TODO: add inputs
