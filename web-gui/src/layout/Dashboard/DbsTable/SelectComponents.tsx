@@ -45,7 +45,7 @@ export const DbTypeComponent = ({ field, label, title }: SelectParams) => {
 export const PasswordEncryptionComponent = ({ field, label, title }: SelectParams) => {
 
   return (
-    <Box sx={{ width: 248 }}>
+    <Box>
       <FormControl fullWidth size="medium">
         <InputLabel>{label}</InputLabel>
         <Select
@@ -99,10 +99,11 @@ type SelectConfigParams = {
   field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
   label: string,
   title?: string,
-  onCopyClick: () => void
+  onCopyClick: () => void,
+  onShowClick: () => void
 }
 
-export const MetricsConfigComponent = ({ field, label, title, onCopyClick }: SelectConfigParams) => {
+export const MetricsConfigComponent = ({ field, label, title, onCopyClick, onShowClick }: SelectConfigParams) => {
 
   return (
     <Box sx={{ width: 248 }}>
@@ -120,7 +121,7 @@ export const MetricsConfigComponent = ({ field, label, title, onCopyClick }: Sel
           })}
         </Select>
         <Box sx={{ display: "inline" }}>
-          <Link href="#" underline="hover" sx={{ marginRight: "10px" }}>
+          <Link onClick={onShowClick} href="javascript: void(0)" underline="hover" sx={{ marginRight: "10px" }}>
             show
           </Link>
           <Link onClick={onCopyClick} href="javascript: void(0)" underline="hover">
@@ -136,7 +137,7 @@ export const MetricsConfigComponent = ({ field, label, title, onCopyClick }: Sel
     Standby preset config select component
 */
 
-export const StandbyConfigComponent = ({ field, label, title, onCopyClick }: SelectConfigParams) => {
+export const StandbyConfigComponent = ({ field, label, title, onCopyClick, onShowClick }: SelectConfigParams) => {
 
   return (
     <Box sx={{ width: 248 }}>
@@ -154,7 +155,7 @@ export const StandbyConfigComponent = ({ field, label, title, onCopyClick }: Sel
           })}
         </Select>
         <Box sx={{ display: "inline" }}>
-          <Link href="#" underline="hover" sx={{ marginRight: "10px" }}>
+          <Link onClick={onShowClick} href="javascript: void(0)" underline="hover" sx={{ marginRight: "10px" }}>
             show
           </Link>
           <Link onClick={onCopyClick} href="javascript: void(0)" underline="hover">
