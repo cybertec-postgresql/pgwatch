@@ -83,7 +83,7 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) 
 
   return (
     <Dialog onClose={handleClose} open={open}>
-      <DialogTitle>{data ? "Edit database instance" : "Create new database instance"}</DialogTitle>
+      <DialogTitle>{data ? "Edit monitored database" : "Add new database to monitoring"}</DialogTitle>
       <FormProvider {...methods}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
@@ -91,7 +91,7 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) 
           </DialogContent>
           <DialogActions>
             <Button fullWidth onClick={handleClose} size="medium" variant="outlined" startIcon={<CloseIcon />}>Cancel</Button>
-            <Button fullWidth type="submit" size="medium" variant="contained" startIcon={<DoneIcon />}>Submit</Button>
+            <Button fullWidth type="submit" size="medium" variant="contained" startIcon={<DoneIcon />}>Start monitoring</Button>
           </DialogActions>
         </form>
       </FormProvider>
