@@ -1,9 +1,19 @@
-import { Box, FormControl, InputLabel, Link, MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import CopyIcon from "@mui/icons-material/CopyAllOutlined";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import { 
+  Autocomplete, 
+  AutocompleteRenderInputParams,
+  Box,
+  FormControl, 
+  IconButton,  
+  InputAdornment, 
+  InputLabel, 
+  MenuItem, Select, SelectChangeEvent, TextField, Tooltip } from "@mui/material";
 
 import { ControllerRenderProps, FieldPath } from "react-hook-form";
 
 import { IFormInput } from "./ModalComponent";
-import { dbTypeOptions, passwordEncryptionOptions, presetConfigsOptions, sslModeOptions } from "./SelectComponentsOptions";
+import { dbTypeOptions, passwordEncryptionOptions, sslModeOptions } from "./SelectComponentsOptions";
 
 type SelectParams = {
   field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
@@ -17,24 +27,21 @@ type SelectParams = {
 */
 
 export const DbTypeComponent = ({ field, label, title }: SelectParams) => {
-
   return (
-    <Box sx={{ width: 248 }}>
-      <FormControl fullWidth size="medium">
-        <InputLabel>{label}</InputLabel>
-        <Select
-          {...field}
-          label={label}
-          title={title}
-        >
-          {dbTypeOptions.map((option) => {
-            return (
-              <MenuItem key={option.label} value={option.label}>{option.label}</MenuItem>
-            );
-          })}
-        </Select>
-      </FormControl>
-    </Box>
+    <FormControl fullWidth size="medium">
+      <InputLabel>{label}</InputLabel>
+      <Select
+        {...field}
+        label={label}
+        title={title}
+      >
+        {dbTypeOptions.map((option) => {
+          return (
+            <MenuItem key={option.label} value={option.label}>{option.label}</MenuItem>
+          );
+        })}
+      </Select>
+    </FormControl>
   );
 };
 
@@ -43,6 +50,9 @@ export const DbTypeComponent = ({ field, label, title }: SelectParams) => {
 */
 
 export const PasswordEncryptionComponent = ({ field, label, title }: SelectParams) => {
+  const options = passwordEncryptionOptions.map((option) => (
+    <MenuItem key={option.label} value={option.label}>{option.label}</MenuItem>
+  ));
 
   return (
     <Box>
@@ -53,11 +63,7 @@ export const PasswordEncryptionComponent = ({ field, label, title }: SelectParam
           label={label}
           title={title}
         >
-          {passwordEncryptionOptions.map((option) => {
-            return (
-              <MenuItem key={option.label} value={option.label}>{option.label}</MenuItem>
-            );
-          })}
+          {options}
         </Select>
       </FormControl>
     </Box>
@@ -69,6 +75,9 @@ export const PasswordEncryptionComponent = ({ field, label, title }: SelectParam
 */
 
 export const SslModeComponent = ({ field, label, title, onChange }: SelectParams) => {
+  const opttions = sslModeOptions.map((option) => (
+    <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+  ));
 
   return (
     <Box>
@@ -80,11 +89,7 @@ export const SslModeComponent = ({ field, label, title, onChange }: SelectParams
           title={title}
           onChange={onChange}
         >
-          {sslModeOptions.map((option) => {
-            return (
-              <MenuItem key={option.label} value={option.label}>{option.label}</MenuItem>
-            );
-          })}
+          {opttions}
         </Select>
       </FormControl>
     </Box>
@@ -98,71 +103,69 @@ export const SslModeComponent = ({ field, label, title, onChange }: SelectParams
 type SelectConfigParams = {
   field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
   label: string,
-  title?: string,
+  options: { value: string | number; label: string }[];
   onCopyClick: () => void,
-  onShowClick: () => void
+  onShowClick: () => void,
+  helperText?: string;
 }
 
-export const MetricsConfigComponent = ({ field, label, title, onCopyClick, onShowClick }: SelectConfigParams) => {
-
-  return (
-    <Box sx={{ width: 248 }}>
-      <FormControl fullWidth size="medium">
-        <InputLabel>{label}</InputLabel>
-        <Select
-          {...field}
-          label={label}
-          title={title}
+export const AutocompleteConfigComponent = ({ 
+  field: { value: initialValue, ...field },
+  options, 
+  label,
+  helperText,
+  onCopyClick, 
+  onShowClick 
+}: SelectConfigParams) => {
+  const startAdornment = (
+    <>
+      <Tooltip title="Show">
+        <IconButton
+          onClick={onShowClick}
+          edge="start"
         >
-          {presetConfigsOptions.map((option) => {
-            return (
-              <MenuItem key={option.label} value={option.label}>{option.label}</MenuItem>
-            );
-          })}
-        </Select>
-        <Box sx={{ display: "inline" }}>
-          <Link onClick={onShowClick} href="javascript: void(0)" underline="hover" sx={{ marginRight: "10px" }}>
-            show
-          </Link>
-          <Link onClick={onCopyClick} href="javascript: void(0)" underline="hover">
-            copy
-          </Link>
-        </Box>
-      </FormControl>
-    </Box>
+          <VisibilityIcon />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Copy">
+        <IconButton
+          onClick={onCopyClick}
+        >
+          <CopyIcon />
+        </IconButton>
+      </Tooltip>
+    </>
   );
-};
 
-/*
-    Standby preset config select component
-*/
+  const customInput = (params: AutocompleteRenderInputParams) => (
+    <TextField
+      {...params}
+      label={label}
+      helperText={helperText}
+      fullWidth
+      InputProps= {{
+        ...params.InputProps,
+        startAdornment: (
+          <InputAdornment position="start">
+            {startAdornment}
+            {params.InputProps.startAdornment}
+          </InputAdornment>
+        ),
+      }}
+    />
+  );
 
-export const StandbyConfigComponent = ({ field, label, title, onCopyClick, onShowClick }: SelectConfigParams) => {
+  const value = options.find(o => o.value === initialValue);
 
   return (
-    <Box sx={{ width: 248 }}>
-      <FormControl fullWidth size="medium">
-        <InputLabel>{label}</InputLabel>
-        <Select
-          {...field}
-          label={label}
-          title={title}
-        >
-          {presetConfigsOptions.map((option) => {
-            return (
-              <MenuItem key={option.label} value={option.label}>{option.label}</MenuItem>
-            );
-          })}
-        </Select>
-        <Box sx={{ display: "inline" }}>
-          <Link onClick={onShowClick} href="javascript: void(0)" underline="hover" sx={{ marginRight: "10px" }}>
-            show
-          </Link>
-          <Link onClick={onCopyClick} href="javascript: void(0)" underline="hover">
-            copy
-          </Link>
-        </Box>
-      </FormControl>
-    </Box>
+    <Autocomplete
+      {...field}
+      value={value}
+      options={options}
+      renderInput={customInput}
+      sx={{
+        width: "50%"
+      }}
+    />
   );
 };

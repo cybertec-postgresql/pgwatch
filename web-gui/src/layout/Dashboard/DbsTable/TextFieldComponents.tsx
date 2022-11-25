@@ -40,8 +40,10 @@ export const MultilineTextField = ({ field, error, helperText, type, label, titl
       multiline
       minRows={2}
       maxRows={5}
-      sx={{ width: 248 }}
       title={title}
+      sx={{
+        flex: "1 1 50%"
+      }}
     />
   );
 };

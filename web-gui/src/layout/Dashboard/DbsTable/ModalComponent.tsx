@@ -1,9 +1,6 @@
-import { useEffect, useState } from "react";
-import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
-
+import { Dispatch, SetStateAction, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import DoneIcon from "@mui/icons-material/Done";
-
 import {
   Box,
   Button,
@@ -13,27 +10,31 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  SelectChangeEvent,
   Stack,
   TextField,
 } from "@mui/material";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-
+import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 
 import {
-  DbTypeComponent, MetricsConfigComponent, PasswordEncryptionComponent,
-  SslModeComponent, StandbyConfigComponent
+  AutocompleteConfigComponent, 
+  DbTypeComponent, 
+  PasswordEncryptionComponent,
+  SslModeComponent
 } from "./SelectComponents";
+import { presetConfigsOptions } from "./SelectComponentsOptions";
 import { MultilineTextField, SimpleTextField } from "./TextFieldComponents";
 
 type Props = {
   open: boolean,
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>,
+  setOpen: Dispatch<SetStateAction<boolean>>,
   handleAlertOpen: (isOpen: boolean, text: string) => void,
-  data: any
+  data: Record<string, unknown>[];
 }
 
-export interface IFormInput {
+export type IFormInput = {
   md_unique_name: string;
   md_dbtype: string;
   md_hostname: string;
@@ -82,7 +83,12 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) 
   const handleClose = () => setOpen(false);
 
   return (
-    <Dialog onClose={handleClose} open={open}>
+    <Dialog 
+      onClose={handleClose} 
+      open={open}
+      fullWidth
+      maxWidth="md"
+    >
       <DialogTitle>{data ? "Edit monitored database" : "Add new database to monitoring"}</DialogTitle>
       <FormProvider {...methods}>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -114,35 +120,33 @@ const formErrors = {
   connection: ["md_hostname", "md_port", "md_user", "md_statement_timeout_seconds"],
   ssl: [],
   presets: ["md_host_config"],
-}
+};
 
 const getStepError = (step: StepType, errors: string[]): boolean => {
   const fields: string[] = formErrors[step];
   return errors.some(error => fields.includes(error));
-}
+};
 
 const ModalContent = () => {
-  const { control, formState: { errors }, getValues, setValue } = useFormContext();
+  const { control, formState: { errors }, getValues, setValue, watch } = useFormContext();
   const [activeStep, setActiveStep] = useState<StepType>(defaultStep);
-  const [isSslDisable, setIsSslDisable] = useState<boolean>(getValues("md_sslmode") === "disable" || getValues("md_sslmode") === undefined);
 
   const handleValidate = (val: string) => !!val.toString().trim();
 
   const testConnection = () => {
-    console.log("test connection...")
+    const values = getValues();
+    alert(`test connection...${JSON.stringify(values)}`);
   };
 
-  const handleSslChange = (value: string | number | boolean) => {
-    switch (value) {
-      case "disable":
-        setIsSslDisable(true);
-        setValue("md_root_ca_path", "");
-        setValue("md_client_cert_path", "");
-        setValue("md_client_key_path", "");
-        break;
-      default:
-        setIsSslDisable(false);
-        break;
+  const mdSslmodeVal = watch("md_sslmode");
+  const isSslDisable = !mdSslmodeVal || mdSslmodeVal === "disable";
+
+  const handleSslChange = (cb: (nextValue: string) => void) => ({target: { value: nextValue }}: SelectChangeEvent<string | number | boolean>) => {
+    cb(nextValue as string);
+    if(nextValue === "disable") {
+      for (const inputName of ["md_root_ca_path", "md_client_cert_path", "md_client_key_path"]) {
+        setValue(inputName, "");
+      }
     }
   };
 
@@ -432,10 +436,7 @@ const ModalContent = () => {
             <SslModeComponent
               field={{ onChange, ...field }}
               label="SSL Mode"
-              onChange={(e) => {
-                onChange(e.target.value);
-                handleSslChange(e.target.value);
-              }}
+              onChange={handleSslChange(onChange)}
               title="libpq 'sslmode' parameter. If 'require' or 'verify-ca' or 'verify-full' then no metrics will be gathered if safe connection cannot be established"
             />
           )}
@@ -489,17 +490,18 @@ const ModalContent = () => {
       </Stack>
     ),
     presets: (
-      <Stack spacing={2}>
+      <Stack spacing={2} width="100%">
         <Stack direction="row" spacing={1}>
           <Controller
             name="md_preset_config_name"
             control={control}
             defaultValue=""
             render={({ field }) => (
-              <MetricsConfigComponent
+              <AutocompleteConfigComponent
                 field={{ ...field }}
+                options={presetConfigsOptions}
                 label="Preset metrics config"
-                title="Preset config OR custom config needs to be specified"
+                helperText="Preset config OR custom config needs to be specified"
                 onCopyClick={() => copyPresetConfig("md_config", field.value)}
                 onShowClick={() => showPresetConfig(field.value)}
               />
@@ -525,10 +527,11 @@ const ModalContent = () => {
             control={control}
             defaultValue=""
             render={({ field }) => (
-              <StandbyConfigComponent
+              <AutocompleteConfigComponent
                 field={{ ...field }}
+                options={presetConfigsOptions}
                 label="Standby preset config"
-                title="Optional alternate preset config for standby state to reduce the amount of gathered data for example"
+                helperText="Optional alternate preset config for standby state to reduce the amount of gathered data for example"
                 onCopyClick={() => copyPresetConfig("md_config_standby", field.value)}
                 onShowClick={() => showPresetConfig(field.value)}
               />
@@ -603,7 +606,7 @@ const ModalContent = () => {
         </Stack>
       </Stack>
     ),
-  }
+  };
 
   const handleChange = (_ev: any, value?: StepType) => {
     if (value) {
@@ -649,9 +652,13 @@ const ModalContent = () => {
       >
         {buttons}
       </ToggleButtonGroup>
-      <Box pt={2}>
+      <Box 
+        pt={2}
+        // to prevent form content jumping
+        minHeight="26vh"
+      >
         <>{content}</>
       </Box>
     </>
-  )
-}
+  );
+};

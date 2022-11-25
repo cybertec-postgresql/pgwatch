@@ -1,3 +1,5 @@
+const capitalized = (str: string) => `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
+
 const dbTypeOptions = [
   {
     label: "postgres"
@@ -31,70 +33,16 @@ const passwordEncryptionOptions = [
   }
 ];
 
-const sslModeOptions = [
-  {
-    label: "disable"
-  },
-  {
-    label: "require"
-  },
-  {
-    label: "verify-ca"
-  },
-  {
-    label: "verify-full"
-  }
+const sslMode = ["disable", "require", "verify-ca", "verify-full"];
+
+const sslModeOptions = sslMode.map(mode => ({value: mode, label: capitalized(mode)}));
+
+const presetConfigs = ["aurora", "azure", "basic", "exhaustive", "full", "full_influx", 
+"gce", "minimal", "pgbouncer",  "pgpool",
+"prometheus",
+"prometheus-async", "rds", "standard", "superuser_no_python", "unprivileged"
 ];
 
-const presetConfigsOptions = [
-  {
-    label: "aurora"
-  },
-  {
-    label: "azure"
-  },
-  {
-    label: "basic"
-  },
-  {
-    label: "exhaustive"
-  },
-  {
-    label: "full"
-  },
-  {
-    label: "full_influx"
-  },
-  {
-    label: "gce"
-  },
-  {
-    label: "minimal"
-  },
-  {
-    label: "pgbouncer"
-  },
-  {
-    label: "pgpool"
-  },
-  {
-    label: "prometheus"
-  },
-  {
-    label: "prometheus-async"
-  },
-  {
-    label: "rds"
-  },
-  {
-    label: "standard"
-  },
-  {
-    label: "superuser_no_python"
-  },
-  {
-    label: "unprivileged"
-  }
-];
+const presetConfigsOptions = presetConfigs.map(preset => ({ value: preset, label: preset }));
 
 export { dbTypeOptions, passwordEncryptionOptions, sslModeOptions, presetConfigsOptions };
