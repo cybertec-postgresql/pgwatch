@@ -1,14 +1,15 @@
 import CopyIcon from "@mui/icons-material/CopyAllOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { 
-  Autocomplete, 
+import {
+  Autocomplete,
   AutocompleteRenderInputParams,
   Box,
-  FormControl, 
-  IconButton,  
-  InputAdornment, 
-  InputLabel, 
-  MenuItem, Select, SelectChangeEvent, TextField, Tooltip } from "@mui/material";
+  FormControl,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem, Select, SelectChangeEvent, TextField, Tooltip
+} from "@mui/material";
 
 import { ControllerRenderProps, FieldPath } from "react-hook-form";
 
@@ -103,19 +104,19 @@ export const SslModeComponent = ({ field, label, title, onChange }: SelectParams
 type SelectConfigParams = {
   field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
   label: string,
-  options: { value: string | number; label: string }[];
+  options: { label: string }[];
   onCopyClick: () => void,
   onShowClick: () => void,
   helperText?: string;
 }
 
-export const AutocompleteConfigComponent = ({ 
+export const AutocompleteConfigComponent = ({
   field: { value: initialValue, ...field },
-  options, 
+  options,
   label,
   helperText,
-  onCopyClick, 
-  onShowClick 
+  onCopyClick,
+  onShowClick
 }: SelectConfigParams) => {
   const startAdornment = (
     <>
@@ -143,7 +144,7 @@ export const AutocompleteConfigComponent = ({
       label={label}
       helperText={helperText}
       fullWidth
-      InputProps= {{
+      InputProps={{
         ...params.InputProps,
         startAdornment: (
           <InputAdornment position="start">
@@ -155,7 +156,7 @@ export const AutocompleteConfigComponent = ({
     />
   );
 
-  const value = options.find(o => o.value === initialValue);
+  const value = options.find(option => option.label === initialValue);
 
   return (
     <Autocomplete
@@ -163,6 +164,7 @@ export const AutocompleteConfigComponent = ({
       value={value}
       options={options}
       renderInput={customInput}
+      onChange={(_, data) => field.onChange(data?.label ? data?.label : "")}
       sx={{
         width: "50%"
       }}

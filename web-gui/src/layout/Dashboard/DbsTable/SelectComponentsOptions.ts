@@ -35,14 +35,14 @@ const passwordEncryptionOptions = [
 
 const sslMode = ["disable", "require", "verify-ca", "verify-full"];
 
-const sslModeOptions = sslMode.map(mode => ({value: mode, label: capitalized(mode)}));
+const sslModeOptions = sslMode.map(mode => ({ value: mode, label: capitalized(mode) }));
 
-const presetConfigs = ["aurora", "azure", "basic", "exhaustive", "full", "full_influx", 
-"gce", "minimal", "pgbouncer",  "pgpool",
-"prometheus",
-"prometheus-async", "rds", "standard", "superuser_no_python", "unprivileged"
+const presetConfigs = ["aurora", "azure", "basic", "exhaustive", "full", "full_influx",
+  "gce", "minimal", "pgbouncer", "pgpool",
+  "prometheus",
+  "prometheus-async", "rds", "standard", "superuser_no_python", "unprivileged"
 ];
 
-const presetConfigsOptions = presetConfigs.map(preset => ({ value: preset, label: preset }));
+const presetConfigsOptions = presetConfigs.map(preset => ({ label: preset }));
 
 export { dbTypeOptions, passwordEncryptionOptions, sslModeOptions, presetConfigsOptions };
