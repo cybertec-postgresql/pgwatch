@@ -1,41 +1,14 @@
-const capitalized = (str: string) => `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
+const dbType = ["postgres", "postgres-continuous-discovery", "pgbouncer", "pgpool", "patroni", "patroni-continuous-discovery", "patroni-namespace-discovery"];
 
-const dbTypeOptions = [
-  {
-    label: "postgres"
-  },
-  {
-    label: "postgres-continuous-discovery"
-  },
-  {
-    label: "pgbouncer"
-  },
-  {
-    label: "pgpool"
-  },
-  {
-    label: "patroni"
-  },
-  {
-    label: "patroni-continuous-discovery"
-  },
-  {
-    label: "patroni-namespace-discovery"
-  },
-];
+const dbTypeOptions = dbType.map(type => ({ label: type }));
 
-const passwordEncryptionOptions = [
-  {
-    label: "plain-text"
-  },
-  {
-    label: "aes-gcm-256"
-  }
-];
+const passwordEncryption = ["plain-text", "aes-gcm-256"];
+
+const passwordEncryptionOptions = passwordEncryption.map(option => ({ label: option }));
 
 const sslMode = ["disable", "require", "verify-ca", "verify-full"];
 
-const sslModeOptions = sslMode.map(mode => ({ value: mode, label: capitalized(mode) }));
+const sslModeOptions = sslMode.map(mode => ({ label: mode }));
 
 const presetConfigs = ["aurora", "azure", "basic", "exhaustive", "full", "full_influx",
   "gce", "minimal", "pgbouncer", "pgpool",

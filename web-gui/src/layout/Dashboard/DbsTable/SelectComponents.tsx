@@ -3,108 +3,107 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Autocomplete,
   AutocompleteRenderInputParams,
-  Box,
-  FormControl,
   IconButton,
   InputAdornment,
-  InputLabel,
-  MenuItem, Select, SelectChangeEvent, TextField, Tooltip
+  TextField, Tooltip
 } from "@mui/material";
 
 import { ControllerRenderProps, FieldPath } from "react-hook-form";
 
 import { IFormInput } from "./ModalComponent";
-import { dbTypeOptions, passwordEncryptionOptions, sslModeOptions } from "./SelectComponentsOptions";
 
 type SelectParams = {
   field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
   label: string,
-  title?: string,
-  onChange?: ((event: SelectChangeEvent<string | number | boolean>, child: React.ReactNode) => void)
-}
+  options: { label: string }[],
+  error: boolean,
+  helperText?: string,
+  title: string,
+};
 
-/*
-    DbType select component
-*/
+export const AutocompleteComponent = ({
+  field: { value: initialValue, ...field },
+  label,
+  options,
+  error,
+  helperText,
+  title
+}: SelectParams) => {
+  const customInput = (params: AutocompleteRenderInputParams) => (
+    <TextField
+      {...params}
+      label={label}
+      error={error}
+      helperText={helperText}
+    />
+  );
 
-export const DbTypeComponent = ({ field, label, title }: SelectParams) => {
+  const value = options.find(option => option.label === initialValue);
+
   return (
-    <FormControl fullWidth size="medium">
-      <InputLabel>{label}</InputLabel>
-      <Select
-        {...field}
-        label={label}
-        title={title}
-      >
-        {dbTypeOptions.map((option) => {
-          return (
-            <MenuItem key={option.label} value={option.label}>{option.label}</MenuItem>
-          );
-        })}
-      </Select>
-    </FormControl>
+    <Autocomplete
+      {...field}
+      options={options}
+      value={value}
+      title={title}
+      renderInput={customInput}
+      onChange={(_, data) => field.onChange(data?.label ? data?.label : "")}
+      fullWidth
+    />
   );
 };
 
-/*
-    Password encryption select component
-*/
-
-export const PasswordEncryptionComponent = ({ field, label, title }: SelectParams) => {
-  const options = passwordEncryptionOptions.map((option) => (
-    <MenuItem key={option.label} value={option.label}>{option.label}</MenuItem>
-  ));
-
-  return (
-    <Box>
-      <FormControl fullWidth size="medium">
-        <InputLabel>{label}</InputLabel>
-        <Select
-          {...field}
-          label={label}
-          title={title}
-        >
-          {options}
-        </Select>
-      </FormControl>
-    </Box>
-  );
+type SelectSslModeParams = {
+  field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
+  label: string,
+  options: { label: string }[],
+  error: boolean,
+  helperText?: string,
+  title: string,
+  handleChange: (nextValue?: string) => void
 };
 
-/*
-    SSL mode select component
-*/
+export const AutocompleteSslModeComponent = ({
+  field: { value: initialValue, ...field },
+  label,
+  options,
+  error,
+  helperText,
+  title,
+  handleChange
+}: SelectSslModeParams) => {
+  const customInput = (params: AutocompleteRenderInputParams) => (
+    <TextField
+      {...params}
+      label={label}
+      error={error}
+      helperText={helperText}
+    />
+  );
 
-export const SslModeComponent = ({ field, label, title, onChange }: SelectParams) => {
-  const opttions = sslModeOptions.map((option) => (
-    <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-  ));
+  const value = options.find(option => option.label === initialValue);
 
   return (
-    <Box>
-      <FormControl fullWidth size="medium">
-        <InputLabel>{label}</InputLabel>
-        <Select
-          {...field}
-          label={label}
-          title={title}
-          onChange={onChange}
-        >
-          {opttions}
-        </Select>
-      </FormControl>
-    </Box>
+    <Autocomplete
+      {...field}
+      options={options}
+      value={value}
+      title={title}
+      renderInput={customInput}
+      onChange={(_, data) => {
+        const nextValue = data?.label
+        field.onChange(nextValue ? nextValue : "");
+        handleChange(nextValue);
+      }}
+      fullWidth
+    />
   );
 };
-
-/*
-    Preset metrics config select component
-*/
 
 type SelectConfigParams = {
   field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
   label: string,
-  options: { label: string }[];
+  options: { label: string }[],
   onCopyClick: () => void,
   onShowClick: () => void,
   helperText?: string;

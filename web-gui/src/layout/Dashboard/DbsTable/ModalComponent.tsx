@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
-  SelectChangeEvent,
   Stack,
   TextField,
 } from "@mui/material";
@@ -19,12 +18,10 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 
 import {
-  AutocompleteConfigComponent, 
-  DbTypeComponent, 
-  PasswordEncryptionComponent,
-  SslModeComponent
-} from "./SelectComponents";
-import { presetConfigsOptions } from "./SelectComponentsOptions";
+  AutocompleteComponent,
+  AutocompleteConfigComponent,
+  AutocompleteSslModeComponent} from "./SelectComponents";
+import { dbTypeOptions, passwordEncryptionOptions, presetConfigsOptions, sslModeOptions } from "./SelectComponentsOptions";
 import { MultilineTextField, SimpleTextField } from "./TextFieldComponents";
 
 type Props = {
@@ -65,7 +62,7 @@ export type IFormInput = {
 
 export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) => {
   const methods = useForm<IFormInput>();
-  const { handleSubmit } = methods;
+  const { handleSubmit, setValue } = methods;
 
   const onSubmit: SubmitHandler<IFormInput> = result => {
     if (data) {
@@ -83,8 +80,8 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) 
   const handleClose = () => setOpen(false);
 
   return (
-    <Dialog 
-      onClose={handleClose} 
+    <Dialog
+      onClose={handleClose}
       open={open}
       fullWidth
       maxWidth="md"
@@ -116,9 +113,9 @@ type StepType = keyof typeof Steps;
 const defaultStep = Object.keys(Steps)[0] as StepType;
 
 const formErrors = {
-  main: ["md_unique_name", "md_group"],
+  main: ["md_unique_name", "md_group", "md_dbtype", "md_password_type"],
   connection: ["md_hostname", "md_port", "md_user", "md_statement_timeout_seconds"],
-  ssl: [],
+  ssl: ["md_sslmode"],
   presets: ["md_host_config"],
 };
 
@@ -141,9 +138,8 @@ const ModalContent = () => {
   const mdSslmodeVal = watch("md_sslmode");
   const isSslDisable = !mdSslmodeVal || mdSslmodeVal === "disable";
 
-  const handleSslChange = (cb: (nextValue: string) => void) => ({target: { value: nextValue }}: SelectChangeEvent<string | number | boolean>) => {
-    cb(nextValue as string);
-    if(nextValue === "disable") {
+  const handleSslChange = (nextValue?: string) => {
+    if (nextValue === "disable") {
       for (const inputName of ["md_root_ca_path", "md_client_cert_path", "md_client_key_path"]) {
         setValue(inputName, "");
       }
@@ -188,10 +184,20 @@ const ModalContent = () => {
             name="md_dbtype"
             control={control}
             defaultValue="postgres"
-            render={({ field }) => (
-              <DbTypeComponent
+            rules={{
+              required: {
+                value: true,
+                message: "DB type is required"
+              },
+              validate: handleValidate
+            }}
+            render={({ field, fieldState: { error } }) => (
+              <AutocompleteComponent
                 field={{ ...field }}
                 label="DB type"
+                error={!!error}
+                helperText={error?.message}
+                options={dbTypeOptions}
                 title="NB! For 'pgbouncer' insert the 'to be monitored' pool name to 'dbname' field or leave it empty to monitor all pools distinguished by the 'database' tag. For 'discovery' DB types one can also specify regex inclusion/exclusion patterns. For 'patroni' host/port are not used as it's read from DCS (specify DCS info under 'Host config')"
               />
             )}
@@ -238,10 +244,20 @@ const ModalContent = () => {
           name="md_password_type"
           control={control}
           defaultValue="plain-text"
-          render={({ field }) => (
-            <PasswordEncryptionComponent
+          rules={{
+            required: {
+              value: true,
+              message: "Password encryption is required"
+            },
+            validate: handleValidate
+          }}
+          render={({ field, fieldState: { error } }) => (
+            <AutocompleteComponent
               field={{ ...field }}
               label="Password encryption"
+              error={!!error}
+              helperText={error?.message}
+              options={passwordEncryptionOptions}
               title="The login role for actual metrics fetching from the specified host"
             />
           )}
@@ -432,12 +448,22 @@ const ModalContent = () => {
           name="md_sslmode"
           control={control}
           defaultValue="disable"
-          render={({ field: { onChange, ...field } }) => (
-            <SslModeComponent
-              field={{ onChange, ...field }}
-              label="SSL Mode"
-              onChange={handleSslChange(onChange)}
+          rules={{
+            required: {
+              value: true,
+              message: "SSL mode is required"
+            },
+            validate: handleValidate
+          }}
+          render={({ field, fieldState: { error } }) => (
+            <AutocompleteSslModeComponent
+              field={{ ...field }}
+              label="SSL mode"
+              options={sslModeOptions}
+              error={!!error}
+              helperText={error?.message}
               title="libpq 'sslmode' parameter. If 'require' or 'verify-ca' or 'verify-full' then no metrics will be gathered if safe connection cannot be established"
+              handleChange={handleSslChange}
             />
           )}
         />
@@ -652,7 +678,7 @@ const ModalContent = () => {
       >
         {buttons}
       </ToggleButtonGroup>
-      <Box 
+      <Box
         pt={2}
         // to prevent form content jumping
         minHeight="26vh"
