@@ -21,7 +21,7 @@ export const SimpleTextField = ({ field, error, helperText, type, label, title, 
       helperText={helperText}
       type={type}
       label={label}
-      sx={{ width: 248 }}
+      fullWidth
       title={title}
       disabled={disabled}
     />
