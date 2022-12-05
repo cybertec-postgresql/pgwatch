@@ -91,7 +91,7 @@ export const AutocompleteSslModeComponent = ({
       title={title}
       renderInput={customInput}
       onChange={(_, data) => {
-        const nextValue = data?.label
+        const nextValue = data?.label;
         field.onChange(nextValue ? nextValue : "");
         handleChange(nextValue);
       }}

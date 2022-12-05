@@ -62,7 +62,7 @@ export type IFormInput = {
 
 export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) => {
   const methods = useForm<IFormInput>();
-  const { handleSubmit, setValue } = methods;
+  const { handleSubmit } = methods;
 
   const onSubmit: SubmitHandler<IFormInput> = result => {
     if (data) {
