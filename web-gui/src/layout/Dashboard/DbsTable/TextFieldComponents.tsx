@@ -8,10 +8,11 @@ type Params = {
   helperText?: string,
   type: "text" | "password" | "number",
   label: string,
-  title?: string
+  title?: string,
+  disabled?: boolean
 }
 
-export const SimpleTextField = ({ field, error, helperText, type, label, title }: Params) => {
+export const SimpleTextField = ({ field, error, helperText, type, label, title, disabled }: Params) => {
 
   return (
     <TextField
@@ -20,8 +21,9 @@ export const SimpleTextField = ({ field, error, helperText, type, label, title }
       helperText={helperText}
       type={type}
       label={label}
-      sx={{ width: 236 }}
+      fullWidth
       title={title}
+      disabled={disabled}
     />
   );
 };
@@ -38,8 +40,10 @@ export const MultilineTextField = ({ field, error, helperText, type, label, titl
       multiline
       minRows={2}
       maxRows={5}
-      sx={{ width: 236 }}
       title={title}
+      sx={{
+        flex: "1 1 50%"
+      }}
     />
   );
 };

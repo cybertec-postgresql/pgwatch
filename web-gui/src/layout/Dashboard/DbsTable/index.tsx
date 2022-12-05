@@ -52,7 +52,7 @@ export const DbsTable = () => {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertText, setAlertText] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [editData, setEditData] = useState();
+  const [editData, setEditData] = useState<Record<string, unknown>[]>([]);
 
   const handleAlertOpen = (isOpen: boolean, text: string) => {
     setAlertText(text);
