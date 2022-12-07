@@ -18,15 +18,24 @@ export const AppBar = () => {
       {item.title}
     </Button>
   ));
-  
+
   return (
     <MuiAppBar component="header">
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          pgwatch2
-        </Typography>
-        <Box>
-          {menuLinks}
+        <Box sx={{ display: "flex", width: "100%" }}>
+          <Box sx={{ display: "flex", flexGrow: 1 }}>
+            <a href="https://www.cybertec-postgresql.com/en/">
+              <Box sx={{ display: "flex", width: 150, height: 40, marginRight: 2 }}>
+                <img src="/logo.png" />
+              </Box>
+            </a>
+            <Typography variant="h6" component="div">
+              pgwatch3
+            </Typography>
+          </Box>
+          <Box>
+            {menuLinks}
+          </Box>
         </Box>
       </Toolbar>
     </MuiAppBar>

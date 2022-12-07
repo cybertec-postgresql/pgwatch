@@ -4,7 +4,7 @@ import { StatsSummary } from "./StatsSummary";
 
 export const routes = [
   {
-    title: "DBs",
+    title: "Databases",
     link: "/",
     element: Dashboard,
   },
