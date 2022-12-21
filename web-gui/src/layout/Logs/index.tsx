@@ -1,11 +1,15 @@
 import { Box } from "@mui/material";
 
-import { TopPanel } from "./TopPanel";
+import LogGrid from "./LogGrid";
+import TopPanel from "./TopPanel";
+
+import style from "./style.module.css";
 
 export const Logs = () => {
   return (
-    <Box sx={{ width: "100%", height: 625 }}>
+    <Box className={style.Logs}>
       <TopPanel />
+      <LogGrid />
     </Box>
   );
 };

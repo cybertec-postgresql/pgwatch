@@ -1,5 +1,9 @@
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { Box, Button, FormControlLabel, InputAdornment, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
+
+import style from "../style.module.css";
+
 import { filterEventOptions } from "./FilterEventOptions";
 
 type IFormInput = {
@@ -7,7 +11,7 @@ type IFormInput = {
   event: string;
 }
 
-export const TopPanel = () => {
+export default () => {
   const { control, handleSubmit } = useForm<IFormInput>({
     defaultValues: {
       auto_refresh: 20,
@@ -21,8 +25,8 @@ export const TopPanel = () => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <Box sx={{ width: "100%", minHeight: 50, backgroundColor: "primary.dark", display: "flex", pt: 1, pb: 1, pl: 15, pr: 15 }}>
-        <Box sx={{ display: "flex", flexGrow: 1 }}>
+      <Box className={style.TopPanel}>
+        <Box className={style.Inputs}>
           <Controller
             name="auto_refresh"
             control={control}
@@ -85,8 +89,8 @@ export const TopPanel = () => {
             )}
           />
         </Box>
-        <Box sx={{ display: "flex" }}>
-          <Button type="submit" sx={{ color: "#fff" }} variant="contained" size="large">Refresh</Button>
+        <Box className={style.Submit}>
+          <Button type="submit" sx={{ color: "#fff" }} variant="contained" size="large" startIcon={<RefreshIcon />}>Refresh</Button>
         </Box>
       </Box>
     </form>
