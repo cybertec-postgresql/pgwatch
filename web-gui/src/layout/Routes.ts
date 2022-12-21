@@ -1,4 +1,5 @@
 import Dashboard from "./Dashboard";
+import { Logs } from "./Logs";
 import { MetricDefinitions } from "./MetricDefinitions";
 import { StatsSummary } from "./StatsSummary";
 
@@ -18,4 +19,9 @@ export const routes = [
     link: "/stats_summary",
     element: StatsSummary,
   },
+  {
+    title: "Logs",
+    link: "/logs",
+    element: Logs,
+  }
 ];
