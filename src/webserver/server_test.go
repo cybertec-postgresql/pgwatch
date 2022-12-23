@@ -1,16 +1,17 @@
-package webui_test
+package webserver_test
 
 import (
 	"io"
 	"net/http"
+	"os"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch3/webui"
+	"github.com/cybertec-postgresql/pgwatch3/webserver"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStatus(t *testing.T) {
-	restsrv := webui.Init("127.0.0.1:8080")
+	restsrv := webserver.Init("127.0.0.1:8080", os.DirFS("../webui/build"))
 	assert.NotNil(t, restsrv)
 
 	r, err := http.Get("http://localhost:8080/")

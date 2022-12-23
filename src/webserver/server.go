@@ -1,7 +1,6 @@
-package webui
+package webserver
 
 import (
-	"embed"
 	"fmt"
 	"html/template"
 	"io"
@@ -21,20 +20,11 @@ type WebUIServer struct {
 	PgWatchVersion  string
 	PostgresVersion string
 	GrafanaVersion  string
+	uiFS            fs.FS
 }
 
-//go:embed build
-var UI embed.FS
-var uiFS fs.FS
-
-func Init(addr string) *WebUIServer {
+func Init(addr string, webuifs fs.FS) *WebUIServer {
 	mux := http.NewServeMux()
-	var err error
-	uiFS, err = fs.Sub(UI, "build")
-	if err != nil {
-		log.Fatal("failed to get ui fs", err)
-	}
-
 	s := &WebUIServer{
 		// nil,
 		// logger,
@@ -46,6 +36,7 @@ func Init(addr string) *WebUIServer {
 			Handler:        mux,
 		},
 		"3.0.0", "14.4", "8.7.0",
+		webuifs,
 	}
 
 	mux.HandleFunc("/health", s.handleHealth)
@@ -65,12 +56,12 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	}
 
 	path := r.URL.Path
-	if path == "/" { // Add other paths that you route on the UI-side here
+	if path == "/" {
 		path = "index.html"
 	}
 	path = strings.TrimPrefix(path, "/")
 
-	file, err := uiFS.Open(path)
+	file, err := Server.uiFS.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Println("file", path, "not found:", err)
@@ -119,8 +110,4 @@ func (Server *WebUIServer) handleHealth(w http.ResponseWriter, r *http.Request) 
 		log.Print(err.Error())
 		http.Error(w, http.StatusText(500), 500)
 	}
-}
-
-func (Server *WebUIServer) handleApi(w http.ResponseWriter, r *http.Request) {
-	// TODO
 }

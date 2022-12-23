@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"math"
 	"net"
@@ -43,7 +44,7 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 	"gopkg.in/yaml.v2"
 
-	"github.com/cybertec-postgresql/pgwatch3/webui"
+	webui "github.com/cybertec-postgresql/pgwatch3/webserver"
 )
 
 var commit = "" // Git hash. Will be set on build time by build_gatherer.sh / goreleaser
@@ -291,7 +292,7 @@ var InfluxSkipSSLCertVerify, InfluxSkipSSLCertVerify2 bool
 var fileBasedMetrics = false
 var adHocMode = false
 var preset_metric_def_map map[string]map[string]float64 // read from metrics folder in "file mode"
-/// internal statistics calculation
+// / internal statistics calculation
 var lastSuccessfulDatastoreWriteTimeEpoch int64
 var datastoreWriteFailuresCounter uint64
 var datastoreWriteSuccessCounter uint64
@@ -4912,7 +4913,8 @@ var opts Options
 
 func main() {
 
-	ui := webui.Init(":8080")
+	uifs, _ := fs.Sub(webuifs, "webui/build")
+	ui := webui.Init(":8080", uifs)
 	fmt.Println("Press the Enter Key to stop anytime")
 	fmt.Scanln()
 	if ui != nil {
