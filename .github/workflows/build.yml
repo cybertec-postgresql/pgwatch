@@ -6,7 +6,7 @@ on:
 jobs:
 
   test-postgresql-windows:
-    if: true # false to skip job during debug
+    if: false # false to skip job during debug
     name: Test on Windows
     runs-on: windows-latest
     steps:
@@ -37,7 +37,9 @@ jobs:
 
     - name: Test
       run: |
-        cd src
+        cd src/webui
+        yarn build
+        cd ..
         go build
         go test -v -p 1 -parallel 1 -failfast ./...
 
@@ -45,7 +47,7 @@ jobs:
 
 
   test-postgresql-macos:
-    if: true # false to skip job during debug
+    if: false # false to skip job during debug
     name: Test on MacOS
     runs-on: macos-latest
     steps:
@@ -88,7 +90,9 @@ jobs:
 
     - name: Test
       run: |
-        cd src
+        cd src/webui
+        yarn build
+        cd ..
         go build
         go test -v -p 1 -parallel 1 -failfast ./...
 
@@ -135,7 +139,9 @@ jobs:
         
     - name: Test
       run: |
-        cd src
+        cd src/webui
+        yarn install && yarn build
+        cd ..
         go build
         go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./...
 
@@ -158,7 +164,7 @@ jobs:
     #     args: release --snapshot --skip-publish --rm-dist
 
   test-docker-images:
-    if: true # false to skip job during debug
+    if: false # false to skip job during debug
     name: Test Docker Image on Ubuntu
     runs-on: ubuntu-latest
     steps:

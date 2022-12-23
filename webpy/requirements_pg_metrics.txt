@@ -1,6 +1,0 @@
-cherrypy
-jinja2
-psycopg2-binary
-decorator
-cryptography
-requests
