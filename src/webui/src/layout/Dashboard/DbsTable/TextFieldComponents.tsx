@@ -9,10 +9,11 @@ type Params = {
   type: "text" | "password" | "number",
   label: string,
   title?: string,
-  disabled?: boolean
+  disabled?: boolean,
+  endAdornment?: React.ReactNode
 }
 
-export const SimpleTextField = ({ field, error, helperText, type, label, title, disabled }: Params) => {
+export const SimpleTextField = ({ field, error, helperText, type, label, title, disabled, endAdornment }: Params) => {
 
   return (
     <TextField
@@ -24,6 +25,9 @@ export const SimpleTextField = ({ field, error, helperText, type, label, title, 
       fullWidth
       title={title}
       disabled={disabled}
+      InputProps={{
+        endAdornment
+      }}
     />
   );
 };
