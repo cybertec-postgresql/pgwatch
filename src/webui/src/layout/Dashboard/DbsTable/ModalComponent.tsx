@@ -1,6 +1,8 @@
 import { Dispatch, SetStateAction, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import DoneIcon from "@mui/icons-material/Done";
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
   Box,
   Button,
@@ -10,6 +12,8 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  IconButton,
+  InputAdornment,
   Stack,
   TextField,
 } from "@mui/material";
@@ -20,7 +24,8 @@ import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormCon
 import {
   AutocompleteComponent,
   AutocompleteConfigComponent,
-  AutocompleteSslModeComponent} from "./SelectComponents";
+  AutocompleteSslModeComponent
+} from "./SelectComponents";
 import { dbTypeOptions, passwordEncryptionOptions, presetConfigsOptions, sslModeOptions } from "./SelectComponentsOptions";
 import { MultilineTextField, SimpleTextField } from "./TextFieldComponents";
 
@@ -127,6 +132,9 @@ const getStepError = (step: StepType, errors: string[]): boolean => {
 const ModalContent = () => {
   const { control, formState: { errors }, getValues, setValue, watch } = useFormContext();
   const [activeStep, setActiveStep] = useState<StepType>(defaultStep);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+
+  const handleClickShowPassword = () => setShowPassword((show: boolean) => !show);
 
   const handleValidate = (val: string) => !!val.toString().trim();
 
@@ -396,9 +404,19 @@ const ModalContent = () => {
             render={({ field }) => (
               <SimpleTextField
                 field={{ ...field }}
-                type="password"
+                type={showPassword ? "text" : "password"}
                 label="DB password"
                 title="NB! By default password is stored in plain-text in the database"
+                endAdornment={(
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={handleClickShowPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                )}
               />
             )}
           />

@@ -12,7 +12,6 @@ import {
 import { ActionsComponent } from "./ActionsComponent";
 import { GridToolbarComponent } from "./GridToolbarComponent";
 import { ModalComponent } from "./ModalComponent";
-import { PasswordTypography } from "./PasswordTypographyComponent";
 
 const mockRows = [
   {
@@ -125,16 +124,6 @@ export const DbsTable = () => {
     {
       field: "md_user",
       headerName: "DB user",
-      width: 150,
-      align: "center",
-      headerAlign: "center"
-    },
-    {
-      field: "md_password",
-      headerName: "DB password",
-      renderCell: (params: GridRenderCellParams<string>) => (
-        <PasswordTypography value={params.value!} />
-      ),
       width: 150,
       align: "center",
       headerAlign: "center"
