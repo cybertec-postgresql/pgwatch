@@ -24,6 +24,9 @@ func (Server *WebUIServer) handleDBs(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodDelete:
 		// delete monitored database
+		if err := Server.api.DeleteDatabase(r.URL.Query().Get("id")); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
 
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")

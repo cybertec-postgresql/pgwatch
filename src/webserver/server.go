@@ -16,6 +16,7 @@ import (
 
 type apiHandler interface {
 	GetDatabases() (any, error)
+	DeleteDatabase(database string) error
 }
 
 type WebUIServer struct {
