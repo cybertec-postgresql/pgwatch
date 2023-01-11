@@ -1,13 +1,20 @@
 package webserver
 
 import (
+	"encoding/json"
 	"net/http"
 )
 
-func (Server *WebUIServer) handleApi(w http.ResponseWriter, r *http.Request) {
+func (Server *WebUIServer) handleDBs(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		// return monitored databases
+		dbs, err := Server.api.GetDatabases()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(dbs)
 
 	case http.MethodPost:
 		// add new monitored database

@@ -2648,13 +2648,21 @@ type Options struct {
 
 var opts Options
 
+type uiapihandler struct{}
+
+var uiapi uiapihandler
+
+func (uiapi uiapihandler) GetDatabases() (any, error) {
+	return GetMonitoredDatabasesFromConfigDB()
+}
+
 func main() {
 
 	uifs, _ := fs.Sub(webuifs, "webui/build")
-	ui := webserver.Init(":8080", uifs)
-	fmt.Println("Press the Enter Key to stop anytime")
-	fmt.Scanln()
-	if ui != nil {
+	ui := webserver.Init(":8080", uifs, uiapi)
+	// fmt.Println("Press the Enter Key to stop anytime")
+	// fmt.Scanln()
+	if ui == nil {
 		return
 	}
 

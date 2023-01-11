@@ -14,6 +14,10 @@ import (
 	"time"
 )
 
+type apiHandler interface {
+	GetDatabases() (any, error)
+}
+
 type WebUIServer struct {
 	// l        log.Logger
 	http.Server
@@ -21,9 +25,10 @@ type WebUIServer struct {
 	PostgresVersion string
 	GrafanaVersion  string
 	uiFS            fs.FS
+	api             apiHandler
 }
 
-func Init(addr string, webuifs fs.FS) *WebUIServer {
+func Init(addr string, webuifs fs.FS, api apiHandler) *WebUIServer {
 	mux := http.NewServeMux()
 	s := &WebUIServer{
 		// nil,
@@ -37,10 +42,11 @@ func Init(addr string, webuifs fs.FS) *WebUIServer {
 		},
 		"3.0.0", "14.4", "8.7.0",
 		webuifs,
+		api,
 	}
 
 	mux.HandleFunc("/health", s.handleHealth)
-	mux.HandleFunc("/api", s.handleApi)
+	mux.HandleFunc("/db", s.handleDBs)
 	mux.HandleFunc("/", s.handleStatic)
 
 	if 8080 != 0 {
