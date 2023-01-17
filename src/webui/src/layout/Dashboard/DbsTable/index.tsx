@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import { Alert, Box, Snackbar, Typography } from "@mui/material";
+import { Alert, Box, CircularProgress, Snackbar, Typography } from "@mui/material";
 import {
   DataGrid,
   GridColDef,
@@ -97,7 +97,7 @@ export const DbsTable = () => {
       align: "center",
       headerAlign: "center",
       valueGetter(params) {
-        return(`${params.row.md_hostname}:${params.row.md_port}`);
+        return (`${params.row.md_hostname}:${params.row.md_port}`);
       },
     },
     {
@@ -141,7 +141,7 @@ export const DbsTable = () => {
       type: "boolean",
       width: 120,
       renderCell: (params: GridRenderCellParams<boolean>) => {
-        if(params.value) {
+        if (params.value) {
           return <CheckIcon />;
         } else {
           return <CloseIcon />;
@@ -241,7 +241,7 @@ export const DbsTable = () => {
       type: "boolean",
       width: 120,
       renderCell: (params: GridRenderCellParams<boolean>) => {
-        if(params.value) {
+        if (params.value) {
           return <CheckIcon />;
         } else {
           return <CloseIcon />;
@@ -264,7 +264,7 @@ export const DbsTable = () => {
       type: "boolean",
       width: 120,
       renderCell: (params: GridRenderCellParams<boolean>) => {
-        if(params.value) {
+        if (params.value) {
           return <CheckIcon />;
         } else {
           return <CloseIcon />;
