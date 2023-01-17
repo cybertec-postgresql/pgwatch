@@ -6,6 +6,9 @@ import { Route, Routes } from "react-router-dom";
 
 import { AppBar } from "./layout/AppBar";
 import { routes } from "./layout/Routes";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 const mdTheme = createTheme();
 
@@ -19,23 +22,25 @@ export default function App() {
   );
 
   return (
-    <ThemeProvider theme={mdTheme}>
-      <Box sx={{ display: "flex" }}>
-        <CssBaseline />
-        <AppBar />
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            height: "100vh",
-            overflow: "auto",
-            p: 2,
-          }}
-        >
-          <Toolbar />
-          <Routes>{routesItems}</Routes>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={mdTheme}>
+        <Box sx={{ display: "flex" }}>
+          <CssBaseline />
+          <AppBar />
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              height: "100vh",
+              overflow: "auto",
+              p: 2,
+            }}
+          >
+            <Toolbar />
+            <Routes>{routesItems}</Routes>
+          </Box>
         </Box>
-      </Box>
-    </ThemeProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
