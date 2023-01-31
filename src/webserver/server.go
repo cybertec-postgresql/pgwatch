@@ -17,8 +17,9 @@ import (
 
 type apiHandler interface {
 	GetDatabases() (any, error)
-	DeleteDatabase(database string) error
 	AddDatabase(params url.Values) error
+	DeleteDatabase(id string) error
+	UpdateDatabase(id string, params url.Values) error
 }
 
 type WebUIServer struct {

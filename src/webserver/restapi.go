@@ -18,7 +18,7 @@ func (Server *WebUIServer) handleDBs(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodPost:
 		// add new monitored database
-		if err := r.ParseForm(); err != nil {
+		if err := r.ParseMultipartForm(32 << 20); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -27,6 +27,13 @@ func (Server *WebUIServer) handleDBs(w http.ResponseWriter, r *http.Request) {
 		}
 	case http.MethodPatch:
 		// update monitored database
+		if err := r.ParseMultipartForm(32 << 20); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := Server.api.UpdateDatabase(r.URL.Query().Get("id"), r.PostForm); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
 
 	case http.MethodDelete:
 		// delete monitored database
