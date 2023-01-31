@@ -1,14 +1,16 @@
 import { useMemo } from "react";
+
 import { Box, Toolbar } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
+
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "queryClient";
+
 import { Route, Routes } from "react-router-dom";
 
 import { AppBar } from "./layout/AppBar";
 import { routes } from "./layout/Routes";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-const queryClient = new QueryClient();
 
 const mdTheme = createTheme();
 
