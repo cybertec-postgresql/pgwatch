@@ -8,6 +8,7 @@ import (
 	"log"
 	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,6 +18,7 @@ import (
 type apiHandler interface {
 	GetDatabases() (any, error)
 	DeleteDatabase(database string) error
+	AddDatabase(params url.Values) error
 }
 
 type WebUIServer struct {

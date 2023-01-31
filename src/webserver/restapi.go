@@ -18,7 +18,13 @@ func (Server *WebUIServer) handleDBs(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodPost:
 		// add new monitored database
-
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := Server.api.AddDatabase(r.PostForm); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
 	case http.MethodPatch:
 		// update monitored database
 
