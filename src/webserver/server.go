@@ -16,7 +16,7 @@ import (
 )
 
 type apiHandler interface {
-	GetDatabases() (any, error)
+	GetDatabases() (string, error)
 	AddDatabase(params url.Values) error
 	DeleteDatabase(id string) error
 	UpdateDatabase(id string, params url.Values) error

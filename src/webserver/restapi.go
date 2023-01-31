@@ -1,7 +1,6 @@
 package webserver
 
 import (
-	"encoding/json"
 	"net/http"
 )
 
@@ -14,7 +13,7 @@ func (Server *WebUIServer) handleDBs(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		json.NewEncoder(w).Encode(dbs)
+		_, _ = w.Write([]byte(dbs))
 
 	case http.MethodPost:
 		// add new monitored database

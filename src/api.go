@@ -15,8 +15,10 @@ func get(v url.Values, key string) (res *string) {
 }
 
 // GetDatabases returns the list of monitored databases
-func (uiapi uiapihandler) GetDatabases() (any, error) {
-	return GetMonitoredDatabasesFromConfigDB()
+func (uiapi uiapihandler) GetDatabases() (res string, err error) {
+	sql := `select jsonb_agg(to_jsonb(db)) from monitored_db db`
+	err = configDb.Get(&res, sql)
+	return
 }
 
 // DeleteDatabase removes the database from the list of monitored databases
