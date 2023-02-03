@@ -28,7 +28,7 @@ export const ActionsComponent = ({ data, setModalOpen, setEditData, handleAlertO
     onSuccess: () => {
       setDeleteClicked(false);
       queryClient.invalidateQueries({ queryKey: QueryKeys.db });
-      handleAlertOpen(true, `Monitored DB "${data.DBUniqueName}" has been deleted successfully!`);
+      handleAlertOpen(true, `Monitored DB "${data.md_unique_name}" has been deleted successfully!`);
     }
   });
 
@@ -60,11 +60,11 @@ export const ActionsComponent = ({ data, setModalOpen, setEditData, handleAlertO
         <DialogTitle>Warning</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {`Remove DB "${data.DBUniqueName}" from monitoring? NB! This does not remove gathered metrics data from InfluxDB, see bottom of page for that`}
+            {`Remove DB "${data.md_unique_name}" from monitoring? NB! This does not remove gathered metrics data from InfluxDB, see bottom of page for that`}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => deleteRecord.mutate(data.DBUniqueName)}>Ok</Button>
+          <Button onClick={() => deleteRecord.mutate(data.md_unique_name)}>Ok</Button>
           <Button onClick={handleDeleteClose}>Cancel</Button>
         </DialogActions>
       </Dialog>

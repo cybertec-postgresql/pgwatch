@@ -10,8 +10,9 @@ import {
 } from "@mui/x-data-grid";
 
 import { useQuery } from "@tanstack/react-query";
+import moment from "moment";
 import { QueryKeys } from "queries/queryKeys";
-import { DB } from "queries/types";
+import { Db } from "queries/types";
 import DbService from "services/Db";
 
 import { ActionsComponent } from "./ActionsComponent";
@@ -25,7 +26,7 @@ export const DbsTable = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState<Record<string, unknown>[]>([]);
 
-  const { status, data } = useQuery<DB[]>({
+  const { status, data } = useQuery<Db[]>({
     queryKey: QueryKeys.db,
     queryFn: async () => {
       return await services.getMonitoredDb();
@@ -48,14 +49,22 @@ export const DbsTable = () => {
 
   const columns: GridColDef[] = [
     {
-      field: "DBUniqueName",
+      field: "md_id",
+      headerName: "ID",
+      width: 75,
+      type: "number",
+      align: "center",
+      headerAlign: "center"
+    },
+    {
+      field: "md_unique_name",
       headerName: "Unique name",
       width: 150,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "DBType",
+      field: "md_dbtype",
       headerName: "DB type",
       width: 150,
       align: "center",
@@ -68,39 +77,39 @@ export const DbsTable = () => {
       align: "center",
       headerAlign: "center",
       valueGetter(params) {
-        return (`${params.row.Host}:${params.row.Port}`);
+        return (`${params.row.md_hostname}:${params.row.md_port}`);
       },
     },
     {
-      field: "DBName",
+      field: "md_dbname",
       headerName: "DB dbname",
       width: 150,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "DBNameIncludePattern",
+      field: "md_include_pattern",
       headerName: "DB name inclusion pattern",
       width: 150,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "DBNameExcludePattern",
+      field: "md_exclude_pattern",
       headerName: "DB name exclusion pattern",
       width: 150,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "User",
+      field: "md_user",
       headerName: "DB user",
       width: 150,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "PasswordType",
+      field: "md_password_type",
       headerName: "Password encryption",
       width: 150,
       align: "center",
@@ -122,49 +131,49 @@ export const DbsTable = () => {
       headerAlign: "center"
     },
     {
-      field: "SslMode",
+      field: "md_sslmode",
       headerName: "SSL Mode",
       width: 150,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "SslRootCAPath",
+      field: "md_root_ca_path",
       headerName: "Root CA",
       width: 150,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "SslClientCertPath",
+      field: "md_client_cert_path",
       headerName: "Client cert",
       width: 150,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "SslClientKeyPath",
+      field: "md_client_key_path",
       headerName: "Client key",
       width: 150,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "Group",
+      field: "md_group",
       headerName: "Group",
       width: 150,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "PresetMetrics",
+      field: "md_preset_config_name",
       headerName: "Preset metrics config",
       width: 170,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "Metrics",
+      field: "md_config",
       headerName: "Custom metrics config",
       width: 170,
       align: "center",
@@ -172,14 +181,14 @@ export const DbsTable = () => {
       valueGetter: (params) => JSON.stringify(params.row.Metrics)
     },
     {
-      field: "PresetMetricsStandby",
+      field: "md_preset_config_name_standby",
       headerName: "Standby preset config",
       width: 170,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "MetricsStandby",
+      field: "md_config_standby",
       headerName: "Standby custom config",
       width: 170,
       align: "center",
@@ -187,7 +196,7 @@ export const DbsTable = () => {
       valueGetter: (params) => JSON.stringify(params.row.MetricsStandby)
     },
     {
-      field: "HostConfig",
+      field: "md_host_config",
       headerName: "Host config",
       width: 150,
       align: "center",
@@ -195,7 +204,7 @@ export const DbsTable = () => {
       valueGetter: (params) => JSON.stringify(params.row.HostConfig)
     },
     {
-      field: "CustomTags",
+      field: "md_custom_tags",
       headerName: "Custom tags",
       width: 150,
       align: "center",
@@ -203,7 +212,7 @@ export const DbsTable = () => {
       valueGetter: (params) => JSON.stringify(params.row.CustomTags)
     },
     {
-      field: "StmtTimeout",
+      field: "md_statement_timeout_seconds",
       headerName: "Statement timeout [seconds]",
       type: "number",
       width: 150,
@@ -211,7 +220,7 @@ export const DbsTable = () => {
       headerAlign: "center"
     },
     {
-      field: "OnlyIfMaster",
+      field: "md_only_if_master",
       headerName: "Master mode only?",
       type: "boolean",
       width: 120,
@@ -228,13 +237,20 @@ export const DbsTable = () => {
     {
       field: "md_last_modified_on",
       headerName: "Last modified",
-      type: "dateTime",
+      type: "string",
       width: 150,
+      renderCell: (params) => {
+        return (
+          <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
+            {moment(params.value).format("MMMM Do YYYY hh:mm:ss")}
+          </Box>
+        );
+      },
       align: "center",
-      headerAlign: "center"
+      headerAlign: "center",
     },
     {
-      field: "IsEnabled",
+      field: "md_is_enabled",
       headerName: "Enabled?",
       type: "boolean",
       width: 120,
@@ -268,7 +284,7 @@ export const DbsTable = () => {
   };
 
   if (status === "error") {
-    return(
+    return (
       <Box>
         <Typography>Some error happens</Typography>
       </Box>
@@ -284,21 +300,23 @@ export const DbsTable = () => {
         Databases under monitoring
       </Typography>
       <DataGrid
+        getRowHeight={() => "auto"}
         columns={columns}
         rows={data}
-        getRowId={(row) => row.DBUniqueName}
+        getRowId={(row) => row.md_unique_name}
         autoHeight
         pageSize={5}
         initialState={{
           columns: {
             columnVisibilityModel: {
-              DBType: false,
-              DBName: false,
-              Group: false,
-              PresetMetrics: false,
-              PresetMetricsStandby: false,
-              CustomTags: false,
-              IsEnabled: false
+              md_id: false,
+              md_dbtype: false,
+              md_dbname: false,
+              md_group: false,
+              md_preset_config_name: false,
+              md_preset_config_name_standby: false,
+              md_custom_tags: false,
+              md_is_enabled: false
             },
           },
         }}
