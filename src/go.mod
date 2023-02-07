@@ -12,7 +12,7 @@ require (
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/prometheus/client_golang v1.14.0
 	github.com/samuel/go-zookeeper v0.0.0-20201211165307-7117e9ea2414
-	github.com/shirou/gopsutil/v3 v3.22.12
+	github.com/shirou/gopsutil/v3 v3.23.1
 	github.com/shopspring/decimal v1.3.1
 	github.com/stretchr/testify v1.8.1
 	go.etcd.io/etcd v3.3.27+incompatible
