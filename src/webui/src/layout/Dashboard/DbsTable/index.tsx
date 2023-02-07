@@ -316,7 +316,7 @@ export const DbsTable = () => {
               md_preset_config_name: false,
               md_preset_config_name_standby: false,
               md_custom_tags: false,
-              md_is_enabled: false
+              md_is_enabled: true
             },
           },
         }}
