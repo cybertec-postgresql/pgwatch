@@ -1,6 +1,7 @@
 package webserver
 
 import (
+	"io"
 	"net/http"
 )
 
@@ -17,20 +18,20 @@ func (Server *WebUIServer) handleDBs(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodPost:
 		// add new monitored database
-		if err := r.ParseMultipartForm(32 << 20); err != nil {
+		p, err := io.ReadAll(r.Body)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
 		}
-		if err := Server.api.AddDatabase(r.PostForm); err != nil {
+		if err := Server.api.AddDatabase(p); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	case http.MethodPatch:
 		// update monitored database
-		if err := r.ParseMultipartForm(32 << 20); err != nil {
+		p, err := io.ReadAll(r.Body)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
 		}
-		if err := Server.api.UpdateDatabase(r.URL.Query().Get("id"), r.PostForm); err != nil {
+		if err := Server.api.UpdateDatabase(r.URL.Query().Get("id"), p); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 
