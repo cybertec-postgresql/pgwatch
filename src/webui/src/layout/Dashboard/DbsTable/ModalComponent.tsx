@@ -4,6 +4,7 @@ import DoneIcon from "@mui/icons-material/Done";
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
+  AlertColor,
   Box,
   Button,
   Checkbox,
@@ -19,8 +20,12 @@ import {
 } from "@mui/material";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AxiosResponse } from "axios";
 import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
-
+import { QueryKeys } from "queries/queryKeys";
+import { createDbForm } from "queries/types";
+import DbService from "services/Db";
 import {
   AutocompleteComponent,
   AutocompleteConfigComponent,
@@ -32,8 +37,8 @@ import { MultilineTextField, SimpleTextField } from "./TextFieldComponents";
 type Props = {
   open: boolean,
   setOpen: Dispatch<SetStateAction<boolean>>,
-  handleAlertOpen: (isOpen: boolean, text: string) => void,
-  data: Record<string, unknown>[];
+  handleAlertOpen: (isOpen: boolean, text: string, type: AlertColor) => void,
+  recordData: Record<string, unknown>[];
 }
 
 export type IFormInput = {
@@ -65,21 +70,29 @@ export type IFormInput = {
   connection_timeout_seconds: number;
 }
 
-export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) => {
-  const methods = useForm<IFormInput>();
-  const { handleSubmit } = methods;
+export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData }: Props) => {
+  const services = DbService.getInstance();
+  const queryClient = useQueryClient();
+  const methods = useForm<createDbForm>();
+  const { handleSubmit, reset } = methods;
 
-  const onSubmit: SubmitHandler<IFormInput> = result => {
-    if (data) {
-      data = { ...data, ...result };
-      // Edit an already existing record
-      alert(JSON.stringify(data));
-      handleAlertOpen(true, "Success!");
-    } else {
-      // Create new record
-      alert(JSON.stringify(result));
-      handleAlertOpen(true, "Success!");
+  const addRecord = useMutation({
+    mutationFn: async (data: createDbForm) => {
+      return await services.addMonitoredDb(data);
+    },
+    onSuccess: (data: AxiosResponse<any, any>, variables: createDbForm) => {
+      setOpen(false);
+      queryClient.invalidateQueries({ queryKey: QueryKeys.db });
+      handleAlertOpen(true, `New DB "${variables.md_unique_name}" has been successfully added to monitoring!`, "success");
+      reset();
+    },
+    onError: (error: any) => {
+      handleAlertOpen(true, error.response.data, "error");
     }
+  });
+
+  const onSubmit: SubmitHandler<createDbForm> = (result) => {
+    addRecord.mutate(result);
   };
 
   const handleClose = () => setOpen(false);
@@ -91,7 +104,7 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, data }: Props) 
       fullWidth
       maxWidth="md"
     >
-      <DialogTitle>{data ? "Edit monitored database" : "Add new database to monitoring"}</DialogTitle>
+      <DialogTitle>{recordData ? "Edit monitored database" : "Add new database to monitoring"}</DialogTitle>
       <FormProvider {...methods}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
@@ -119,9 +132,9 @@ const defaultStep = Object.keys(Steps)[0] as StepType;
 
 const formErrors = {
   main: ["md_unique_name", "md_group", "md_dbtype", "md_password_type"],
-  connection: ["md_hostname", "md_port", "md_user", "md_statement_timeout_seconds"],
+  connection: ["md_hostname", "md_port", "md_user", "md_statement_timeout_seconds", "md_dbname"],
   ssl: ["md_sslmode"],
-  presets: ["md_host_config"],
+  presets: []
 };
 
 const getStepError = (step: StepType, errors: string[]): boolean => {
@@ -154,7 +167,7 @@ const ModalContent = () => {
     }
   };
 
-  const copyPresetConfig = (name: FieldPath<IFormInput>, value: string) => {
+  const copyPresetConfig = (name: FieldPath<createDbForm>, value: string) => {
     setValue(name, value);
   };
 
@@ -237,7 +250,7 @@ const ModalContent = () => {
         <Controller
           name="md_custom_tags"
           control={control}
-          defaultValue=""
+          defaultValue={null}
           render={({ field }) => (
             <TextField
               {...field}
@@ -270,19 +283,33 @@ const ModalContent = () => {
             />
           )}
         />
-        <Controller
-          name="md_is_enabled"
-          control={control}
-          defaultValue={true}
-          render={({ field }) => (
-            <FormControlLabel
-              label="Enabled?"
-              labelPlacement="end"
-              control={<Checkbox {...field} size="medium" checked={field.value} />}
-              title="A tip - uncheck when leaving 'dbname' empty to review all found DBs before activation"
-            />
-          )}
-        />
+        <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
+          <Controller
+            name="md_is_enabled"
+            control={control}
+            defaultValue={true}
+            render={({ field }) => (
+              <FormControlLabel
+                label="Enabled?"
+                labelPlacement="end"
+                control={<Checkbox {...field} size="medium" checked={field.value} />}
+                title="A tip - uncheck when leaving 'dbname' empty to review all found DBs before activation"
+              />
+            )}
+          />
+          <Controller
+            name="md_is_superuser"
+            control={control}
+            defaultValue={false}
+            render={({ field }) => (
+              <FormControlLabel
+                label="Super user?"
+                labelPlacement="end"
+                control={<Checkbox {...field} size="medium" checked={field.value} />}
+              />
+            )}
+          />
+        </Stack>
       </Stack>
     ),
     connection: (
@@ -335,9 +362,17 @@ const ModalContent = () => {
           name="md_dbname"
           control={control}
           defaultValue=""
-          render={({ field }) => (
+          rules={{
+            required: {
+              value: true,
+              message: "DB name is required"
+            }
+          }}
+          render={({ field, fieldState: { error } }) => (
             <TextField
               {...field}
+              error={!!error}
+              helperText={error?.message}
               type="text"
               label="DB name"
               size="medium"
@@ -350,7 +385,7 @@ const ModalContent = () => {
           <Controller
             name="md_include_pattern"
             control={control}
-            defaultValue=""
+            defaultValue={null}
             render={({ field }) => (
               <SimpleTextField
                 field={{ ...field }}
@@ -363,7 +398,7 @@ const ModalContent = () => {
           <Controller
             name="md_exclude_pattern"
             control={control}
-            defaultValue=""
+            defaultValue={null}
             render={({ field }) => (
               <SimpleTextField
                 field={{ ...field }}
@@ -539,7 +574,7 @@ const ModalContent = () => {
           <Controller
             name="md_preset_config_name"
             control={control}
-            defaultValue=""
+            defaultValue="basic"
             render={({ field }) => (
               <AutocompleteConfigComponent
                 field={{ ...field }}
@@ -554,7 +589,7 @@ const ModalContent = () => {
           <Controller
             name="md_config"
             control={control}
-            defaultValue=""
+            defaultValue={null}
             render={({ field }) => (
               <MultilineTextField
                 field={{ ...field }}
@@ -569,7 +604,7 @@ const ModalContent = () => {
           <Controller
             name="md_preset_config_name_standby"
             control={control}
-            defaultValue=""
+            defaultValue={null}
             render={({ field }) => (
               <AutocompleteConfigComponent
                 field={{ ...field }}
@@ -584,7 +619,7 @@ const ModalContent = () => {
           <Controller
             name="md_config_standby"
             control={control}
-            defaultValue=""
+            defaultValue={null}
             render={({ field }) => (
               <MultilineTextField
                 field={{ ...field }}
@@ -598,19 +633,10 @@ const ModalContent = () => {
         <Controller
           name="md_host_config"
           control={control}
-          defaultValue=""
-          rules={{
-            required: {
-              value: true,
-              message: "Host config is required"
-            },
-            validate: handleValidate
-          }}
-          render={({ field, fieldState: { error } }) => (
+          defaultValue={null}
+          render={({ field }) => (
             <TextField
               {...field}
-              error={!!error}
-              helperText={error?.message}
               type="text"
               label="Host config"
               multiline
@@ -622,7 +648,7 @@ const ModalContent = () => {
         />
         <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
           <Controller
-            name="helpers"
+            name="md_is_helpers"
             control={control}
             defaultValue={false}
             render={({ field }) => (

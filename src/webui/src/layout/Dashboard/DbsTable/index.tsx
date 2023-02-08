@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import { Alert, Box, CircularProgress, Snackbar, Typography } from "@mui/material";
+import { Alert, AlertColor, Box, CircularProgress, Snackbar, Typography } from "@mui/material";
 import {
   DataGrid,
   GridColDef,
@@ -24,6 +24,7 @@ export const DbsTable = () => {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertText, setAlertText] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [severity, setSeverity] = useState<AlertColor>();
   const [editData, setEditData] = useState<Record<string, unknown>[]>([]);
 
   const { status, data } = useQuery<Db[]>({
@@ -33,9 +34,9 @@ export const DbsTable = () => {
     }
   });
 
-  const handleAlertOpen = (isOpen: boolean, text: string) => {
+  const handleAlertOpen = (isOpen: boolean, text: string, type: AlertColor) => {
+    setSeverity(type);
     setAlertText(text);
-
     setAlertOpen(isOpen);
   };
 
@@ -109,6 +110,21 @@ export const DbsTable = () => {
       headerAlign: "center"
     },
     {
+      field: "md_is_superuser",
+      headerName: "Super user?",
+      width: 120,
+      type: "boolean",
+      renderCell: (params: GridRenderCellParams<boolean>) => {
+        if (params.value) {
+          return <CheckIcon />;
+        } else {
+          return <CloseIcon />;
+        }
+      },
+      align: "center",
+      headerAlign: "center"
+    },
+    {
       field: "md_password_type",
       headerName: "Password encryption",
       width: 150,
@@ -178,7 +194,7 @@ export const DbsTable = () => {
       width: 170,
       align: "center",
       headerAlign: "center",
-      valueGetter: (params) => JSON.stringify(params.row.Metrics)
+      valueGetter: (params) => JSON.stringify(params.value)
     },
     {
       field: "md_preset_config_name_standby",
@@ -193,7 +209,7 @@ export const DbsTable = () => {
       width: 170,
       align: "center",
       headerAlign: "center",
-      valueGetter: (params) => JSON.stringify(params.row.MetricsStandby)
+      valueGetter: (params) => JSON.stringify(params.value)
     },
     {
       field: "md_host_config",
@@ -201,7 +217,7 @@ export const DbsTable = () => {
       width: 150,
       align: "center",
       headerAlign: "center",
-      valueGetter: (params) => JSON.stringify(params.row.HostConfig)
+      valueGetter: (params) => JSON.stringify(params.value)
     },
     {
       field: "md_custom_tags",
@@ -209,7 +225,7 @@ export const DbsTable = () => {
       width: 150,
       align: "center",
       headerAlign: "center",
-      valueGetter: (params) => JSON.stringify(params.row.CustomTags)
+      valueGetter: (params) => JSON.stringify(params.value)
     },
     {
       field: "md_statement_timeout_seconds",
@@ -242,7 +258,7 @@ export const DbsTable = () => {
       renderCell: (params) => {
         return (
           <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
-            {moment(params.value).format("MMMM Do YYYY hh:mm:ss")}
+            {moment(params.value).format("MMMM Do YYYY HH:mm:ss")}
           </Box>
         );
       },
@@ -294,7 +310,7 @@ export const DbsTable = () => {
   return (
     <Box display="flex" flexDirection="column" gap={1}>
       <Snackbar open={alertOpen} autoHideDuration={5000} onClose={handleAlertClose}>
-        <Alert sx={{ width: 500 }} variant="filled" severity="success">{alertText}</Alert>
+        <Alert sx={{ width: "auto" }} variant="filled" severity={severity}>{alertText}</Alert>
       </Snackbar>
       <Typography variant="h5">
         Databases under monitoring
@@ -324,14 +340,14 @@ export const DbsTable = () => {
               md_preset_config_name_standby: false,
               md_config_standby: false,
               md_custom_tags: false,
-              md_is_enabled: true
+              md_is_superuser: false
             },
           },
         }}
         components={{ Toolbar: () => GridToolbarComponent(setModalOpen, setEditData) }}
         disableColumnMenu
       />
-      <ModalComponent open={modalOpen} setOpen={setModalOpen} handleAlertOpen={handleAlertOpen} data={editData} />
+      <ModalComponent open={modalOpen} setOpen={setModalOpen} handleAlertOpen={handleAlertOpen} recordData={editData} />
     </Box>
   );
 };

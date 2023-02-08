@@ -1,4 +1,5 @@
 import axios from "axios";
+import { createDbForm } from "queries/types";
 
 export default class DbService {
   private static _instance: DbService;
@@ -13,7 +14,7 @@ export default class DbService {
 
   public async getMonitoredDb() {
     return await axios.get("/db").
-      then(result => result.data).
+      then(response => response.data).
       catch(error => {
         throw error;
       });
@@ -21,7 +22,15 @@ export default class DbService {
 
   public async deleteMonitoredDb(uniqueName: string) {
     return await axios.delete("/db", { params: { "id": uniqueName } }).
-      then(result => result.data).
+      then(response => response.data).
+      catch(error => {
+        throw error;
+      });
+  };
+
+  public async addMonitoredDb(data: createDbForm) {
+    return await axios.post("/db", data).
+      then(response => response).
       catch(error => {
         throw error;
       });

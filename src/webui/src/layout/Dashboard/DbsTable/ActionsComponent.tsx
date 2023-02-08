@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
+import { AlertColor, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "queries/queryKeys";
@@ -13,7 +13,7 @@ type Params = {
   data: any,
   setModalOpen: any,
   setEditData: any,
-  handleAlertOpen: any
+  handleAlertOpen: (isOpen: boolean, text: string, type: AlertColor) => void
 }
 
 export const ActionsComponent = ({ data, setModalOpen, setEditData, handleAlertOpen }: Params) => {
@@ -28,7 +28,7 @@ export const ActionsComponent = ({ data, setModalOpen, setEditData, handleAlertO
     onSuccess: () => {
       setDeleteClicked(false);
       queryClient.invalidateQueries({ queryKey: QueryKeys.db });
-      handleAlertOpen(true, `Monitored DB "${data.md_unique_name}" has been deleted successfully!`);
+      handleAlertOpen(true, `Monitored DB "${data.md_unique_name}" has been deleted successfully!`, "success");
     }
   });
 
