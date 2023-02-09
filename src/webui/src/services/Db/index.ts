@@ -13,7 +13,7 @@ export default class DbService {
   }
 
   public async getMonitoredDb() {
-    return await axios.get("http://localhost:8080/db").
+    return await axios.get("/db").
       then(response => response.data).
       catch(error => {
         throw error;
@@ -21,7 +21,7 @@ export default class DbService {
   };
 
   public async deleteMonitoredDb(uniqueName: string) {
-    return await axios.delete("http://localhost:8080/db", { params: { "id": uniqueName } }).
+    return await axios.delete("/db", { params: { "id": uniqueName } }).
       then(response => response.data).
       catch(error => {
         throw error;
