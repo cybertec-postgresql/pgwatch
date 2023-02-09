@@ -22,9 +22,9 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosResponse } from "axios";
-import { Controller, FieldName, FieldPath, FieldValue, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
+import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 import { QueryKeys } from "queries/queryKeys";
-import { createDbForm, updateDbForm, Db } from "queries/types";
+import { Db, createDbForm, updateDbForm } from "queries/types";
 import DbService from "services/Db";
 import {
   AutocompleteComponent,
@@ -49,7 +49,7 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData }: P
 
   useEffect(() => {
     if (recordData) {
-      Object.entries(recordData).map(([key, value]) => setValue(key as FieldPath<createDbForm>, value))
+      Object.entries(recordData).map(([key, value]) => setValue(key as FieldPath<createDbForm>, value));
     } else {
       reset();
     }
