@@ -7,13 +7,11 @@ import {
   InputAdornment,
   TextField, Tooltip
 } from "@mui/material";
-
 import { ControllerRenderProps, FieldPath } from "react-hook-form";
-
-import { IFormInput } from "./ModalComponent";
+import { createDbForm } from "queries/types";
 
 type SelectParams = {
-  field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
+  field: ControllerRenderProps<createDbForm, FieldPath<createDbForm>>,
   label: string,
   options: { label: string }[],
   error: boolean,
@@ -54,7 +52,7 @@ export const AutocompleteComponent = ({
 };
 
 type SelectSslModeParams = {
-  field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
+  field: ControllerRenderProps<createDbForm, FieldPath<createDbForm>>,
   label: string,
   options: { label: string }[],
   error: boolean,
@@ -101,7 +99,7 @@ export const AutocompleteSslModeComponent = ({
 };
 
 type SelectConfigParams = {
-  field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
+  field: ControllerRenderProps<createDbForm, FieldPath<createDbForm>>,
   label: string,
   options: { label: string }[],
   onCopyClick: () => void,

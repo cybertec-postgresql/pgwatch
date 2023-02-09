@@ -7,12 +7,13 @@ import { AlertColor, Box, Button, Dialog, DialogActions, DialogContent, DialogCo
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "queries/queryKeys";
 import DbService from "services/Db";
+import { Db } from "queries/types";
 
 
 type Params = {
-  data: any,
-  setModalOpen: any,
-  setEditData: any,
+  data: Db,
+  setModalOpen: React.Dispatch<React.SetStateAction<boolean>>,
+  setEditData: React.Dispatch<React.SetStateAction<Db | undefined>>,
   handleAlertOpen: (isOpen: boolean, text: string, type: AlertColor) => void
 }
 

@@ -25,7 +25,7 @@ export const DbsTable = () => {
   const [alertText, setAlertText] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [severity, setSeverity] = useState<AlertColor>();
-  const [editData, setEditData] = useState<Record<string, unknown>[]>([]);
+  const [editData, setEditData] = useState<Db>();
 
   const { status, data } = useQuery<Db[]>({
     queryKey: QueryKeys.db,

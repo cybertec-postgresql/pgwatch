@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import DoneIcon from "@mui/icons-material/Done";
 import Visibility from '@mui/icons-material/Visibility';
@@ -22,9 +22,9 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosResponse } from "axios";
-import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
+import { Controller, FieldName, FieldPath, FieldValue, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 import { QueryKeys } from "queries/queryKeys";
-import { createDbForm } from "queries/types";
+import { createDbForm, updateDbForm, Db } from "queries/types";
 import DbService from "services/Db";
 import {
   AutocompleteComponent,
@@ -38,50 +38,44 @@ type Props = {
   open: boolean,
   setOpen: Dispatch<SetStateAction<boolean>>,
   handleAlertOpen: (isOpen: boolean, text: string, type: AlertColor) => void,
-  recordData: Record<string, unknown>[];
-}
-
-export type IFormInput = {
-  md_unique_name: string;
-  md_dbtype: string;
-  md_hostname: string;
-  md_port: number;
-  md_dbname: string;
-  md_include_pattern: string;
-  md_exclude_pattern: string;
-  md_user: string;
-  md_password: string;
-  md_password_type: string;
-  md_sslmode: string;
-  md_root_ca_path: string;
-  md_client_cert_path: string;
-  md_client_key_path: string;
-  md_group: string;
-  md_preset_config_name: string;
-  md_config: string;
-  md_preset_config_name_standby: string;
-  md_config_standby: string;
-  md_host_config: string;
-  md_custom_tags: string;
-  md_statement_timeout_seconds: number;
-  helpers: boolean;
-  md_only_if_master: boolean;
-  md_is_enabled: boolean;
-  connection_timeout_seconds: number;
-}
+  recordData: Db | undefined;
+};
 
 export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData }: Props) => {
   const services = DbService.getInstance();
   const queryClient = useQueryClient();
   const methods = useForm<createDbForm>();
-  const { handleSubmit, reset } = methods;
+  const { handleSubmit, reset, setValue } = methods;
+
+  useEffect(() => {
+    if (recordData) {
+      Object.entries(recordData).map(([key, value]) => setValue(key as FieldPath<createDbForm>, value))
+    } else {
+      reset();
+    }
+  }, [recordData]);
+
+  const updateRecord = useMutation({
+    mutationFn: async (data: updateDbForm) => {
+      return await services.editMonitoredDb(data);
+    },
+    onSuccess: (data: AxiosResponse<any, any>, variables: updateDbForm) => {
+      handleClose();
+      queryClient.invalidateQueries({ queryKey: QueryKeys.db });
+      handleAlertOpen(true, `Monitored DB "${variables.md_unique_name}" has been successfully updated!`, "success");
+      reset();
+    },
+    onError: (error: any) => {
+      handleAlertOpen(true, error.response.data, "error");
+    }
+  });
 
   const addRecord = useMutation({
     mutationFn: async (data: createDbForm) => {
       return await services.addMonitoredDb(data);
     },
     onSuccess: (data: AxiosResponse<any, any>, variables: createDbForm) => {
-      setOpen(false);
+      handleClose();
       queryClient.invalidateQueries({ queryKey: QueryKeys.db });
       handleAlertOpen(true, `New DB "${variables.md_unique_name}" has been successfully added to monitoring!`, "success");
       reset();
@@ -92,7 +86,14 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData }: P
   });
 
   const onSubmit: SubmitHandler<createDbForm> = (result) => {
-    addRecord.mutate(result);
+    if (recordData) {
+      updateRecord.mutate({
+        md_unique_name: recordData.md_unique_name,
+        data: result
+      });
+    } else {
+      addRecord.mutate(result);
+    }
   };
 
   const handleClose = () => setOpen(false);
