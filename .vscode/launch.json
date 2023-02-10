@@ -17,7 +17,13 @@
                 "PW3_PGPASSWORD": "pgwatch3admin"
             },
             "args": [
-                "--verbose=DEBUG"
+                "--password=pgwatch3", 
+                "--host=localhost", 
+                "--user=pgwatch3", 
+                "--dbname=pgwatch3", 
+                "--datastore=postgres", 
+                "--pg-metric-store-conn-str=postgresql://pgwatch3:pgwatch3@localhost:5432/pgwatch3_metrics", 
+                "--verbose=info"
             ]
         }
     ]

@@ -1,8 +1,9 @@
 import AddIcon from '@mui/icons-material/Add';
 import { Button } from "@mui/material";
 import { GridToolbarColumnsButton, GridToolbarContainer, GridToolbarFilterButton } from "@mui/x-data-grid";
+import { Db } from 'queries/types';
 
-export const GridToolbarComponent = (setModalOpen: any, setEditData: any) => {
+export const GridToolbarComponent = (setModalOpen: React.Dispatch<React.SetStateAction<boolean>>, setEditData: React.Dispatch<React.SetStateAction<Db | undefined>>) => {
 
     return (
         <GridToolbarContainer>

@@ -2,16 +2,36 @@ import { useState } from "react";
 
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
+import { AlertColor, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { QueryKeys } from "queries/queryKeys";
+import { Db } from "queries/types";
+import DbService from "services/Db";
+
 
 type Params = {
-  data: any,
-  setModalOpen: any,
-  setEditData: any
+  data: Db,
+  setModalOpen: React.Dispatch<React.SetStateAction<boolean>>,
+  setEditData: React.Dispatch<React.SetStateAction<Db | undefined>>,
+  handleAlertOpen: (isOpen: boolean, text: string, type: AlertColor) => void
 }
 
-export const ActionsComponent = ({ data, setModalOpen, setEditData }: Params) => {
+export const ActionsComponent = ({ data, setModalOpen, setEditData, handleAlertOpen }: Params) => {
+  const services = DbService.getInstance();
   const [deleteClicked, setDeleteClicked] = useState(false);
+  const queryClient = useQueryClient();
+
+  const deleteRecord = useMutation({
+    mutationFn: async (uniqueName: string) => {
+      return await services.deleteMonitoredDb(uniqueName);
+    },
+    onSuccess: () => {
+      setDeleteClicked(false);
+      queryClient.invalidateQueries({ queryKey: QueryKeys.db });
+      handleAlertOpen(true, `Monitored DB "${data.md_unique_name}" has been deleted successfully!`, "success");
+    }
+  });
 
   const handleDeleteOpen = () => {
     setDeleteClicked(true);
@@ -41,11 +61,11 @@ export const ActionsComponent = ({ data, setModalOpen, setEditData }: Params) =>
         <DialogTitle>Warning</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {`Remove DB "${data.uniqueName}" from monitoring? NB! This does not remove gathered metrics data from InfluxDB, see bottom of page for that`}
+            {`Remove DB "${data.md_unique_name}" from monitoring? NB! This does not remove gathered metrics data from InfluxDB, see bottom of page for that`}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteClose}>Ok</Button>
+          <Button onClick={() => deleteRecord.mutate(data.md_unique_name)}>Ok</Button>
           <Button onClick={handleDeleteClose}>Cancel</Button>
         </DialogActions>
       </Dialog>

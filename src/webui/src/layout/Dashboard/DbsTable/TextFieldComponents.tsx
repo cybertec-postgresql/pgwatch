@@ -1,9 +1,10 @@
 import { TextField } from "@mui/material";
 import { ControllerRenderProps, FieldPath } from "react-hook-form";
-import { IFormInput } from "./ModalComponent";
+import { createDbForm } from "queries/types";
+
 
 type Params = {
-  field: ControllerRenderProps<IFormInput, FieldPath<IFormInput>>,
+  field: ControllerRenderProps<createDbForm, FieldPath<createDbForm>>,
   error?: boolean,
   helperText?: string,
   type: "text" | "password" | "number",

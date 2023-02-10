@@ -2028,13 +2028,6 @@ func GetGoPsutilDiskPG(dbUnique string) ([]map[string]interface{}, error) {
 }
 
 func SendToPostgres(storeMessages []MetricStoreMessage) error {
-
-	log.Notice(`
-	
-	ENTERING SendToPostgres
-	
-	`)
-
 	if len(storeMessages) == 0 {
 		return nil
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 func TestStatus(t *testing.T) {
-	restsrv := webserver.Init("127.0.0.1:8080", os.DirFS("../webui/build"))
+	restsrv := webserver.Init("127.0.0.1:8080", os.DirFS("../webui/build"), nil)
 	assert.NotNil(t, restsrv)
 
 	r, err := http.Get("http://localhost:8080/")

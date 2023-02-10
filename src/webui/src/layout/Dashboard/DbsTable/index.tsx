@@ -2,60 +2,41 @@ import { useState } from "react";
 
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import { Alert, Box, Snackbar, Typography } from "@mui/material";
+import { Alert, AlertColor, Box, CircularProgress, Snackbar, Typography } from "@mui/material";
 import {
   DataGrid,
   GridColDef,
   GridRenderCellParams
 } from "@mui/x-data-grid";
 
+import { useQuery } from "@tanstack/react-query";
+import moment from "moment";
+import { QueryKeys } from "queries/queryKeys";
+import { Db } from "queries/types";
+import DbService from "services/Db";
+
 import { ActionsComponent } from "./ActionsComponent";
 import { GridToolbarComponent } from "./GridToolbarComponent";
 import { ModalComponent } from "./ModalComponent";
 
-const mockRows = [
-  {
-    id: 1,
-    md_unique_name: "test",
-    md_dbtype: "patroni",
-    md_hostname: "localhost",
-    md_port: 5433,
-    md_dbname: "diploma",
-    md_user: "cybertec-admin",
-    md_password: "cybertec_super_duper_puper_admin",
-    md_last_modified_on: new Date().toUTCString(),
-    md_password_type: "plain-text",
-    helpers: true,
-    md_sslmode: "verify-ca",
-    md_preset_config_name: "exhaustive",
-    md_preset_config_name_standby: "standard"
-  },
-  {
-    id: 2,
-    md_unique_name: "test2",
-    md_dbtype: "pgpool",
-    md_hostname: "192.168.0.1",
-    md_port: 6214,
-    md_dbname: "cybertec_pgwatch2",
-    md_user: "qwertyui12345",
-    md_password: "simple",
-    md_last_modified_on: new Date('2021-08-10T03:24:00').toUTCString(),
-    md_password_type: "aes-gcm-256",
-    md_sslmode: "verify-full",
-    md_preset_config_name: "superuser_no_python",
-    md_preset_config_name_standby: "rds"
-  }
-];
-
 export const DbsTable = () => {
+  const services = DbService.getInstance();
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertText, setAlertText] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [editData, setEditData] = useState<Record<string, unknown>[]>([]);
+  const [severity, setSeverity] = useState<AlertColor>();
+  const [editData, setEditData] = useState<Db>();
 
-  const handleAlertOpen = (isOpen: boolean, text: string) => {
+  const { status, data } = useQuery<Db[]>({
+    queryKey: QueryKeys.db,
+    queryFn: async () => {
+      return await services.getMonitoredDb();
+    }
+  });
+
+  const handleAlertOpen = (isOpen: boolean, text: string, type: AlertColor) => {
+    setSeverity(type);
     setAlertText(text);
-
     setAlertOpen(isOpen);
   };
 
@@ -69,7 +50,7 @@ export const DbsTable = () => {
 
   const columns: GridColDef[] = [
     {
-      field: "id",
+      field: "md_id",
       headerName: "ID",
       width: 75,
       type: "number",
@@ -91,13 +72,13 @@ export const DbsTable = () => {
       headerAlign: "center"
     },
     {
-      field: "connection",
+      field: "Connection",
       headerName: "Connection",
       width: 150,
       align: "center",
       headerAlign: "center",
       valueGetter(params) {
-        return(`${params.row.md_hostname}:${params.row.md_port}`);
+        return (`${params.row.md_hostname}:${params.row.md_port}`);
       },
     },
     {
@@ -129,6 +110,21 @@ export const DbsTable = () => {
       headerAlign: "center"
     },
     {
+      field: "md_is_superuser",
+      headerName: "Super user?",
+      width: 120,
+      type: "boolean",
+      renderCell: (params: GridRenderCellParams<boolean>) => {
+        if (params.value) {
+          return <CheckIcon />;
+        } else {
+          return <CloseIcon />;
+        }
+      },
+      align: "center",
+      headerAlign: "center"
+    },
+    {
       field: "md_password_type",
       headerName: "Password encryption",
       width: 150,
@@ -136,12 +132,12 @@ export const DbsTable = () => {
       headerAlign: "center"
     },
     {
-      field: "helpers",
+      field: "Helpers",
       headerName: "Auto-create helpers?",
       type: "boolean",
       width: 120,
       renderCell: (params: GridRenderCellParams<boolean>) => {
-        if(params.value) {
+        if (params.value) {
           return <CheckIcon />;
         } else {
           return <CloseIcon />;
@@ -197,7 +193,8 @@ export const DbsTable = () => {
       headerName: "Custom metrics config",
       width: 170,
       align: "center",
-      headerAlign: "center"
+      headerAlign: "center",
+      valueGetter: (params) => JSON.stringify(params.value)
     },
     {
       field: "md_preset_config_name_standby",
@@ -211,27 +208,30 @@ export const DbsTable = () => {
       headerName: "Standby custom config",
       width: 170,
       align: "center",
-      headerAlign: "center"
+      headerAlign: "center",
+      valueGetter: (params) => JSON.stringify(params.value)
     },
     {
       field: "md_host_config",
       headerName: "Host config",
       width: 150,
       align: "center",
-      headerAlign: "center"
+      headerAlign: "center",
+      valueGetter: (params) => JSON.stringify(params.value)
     },
     {
       field: "md_custom_tags",
       headerName: "Custom tags",
       width: 150,
       align: "center",
-      headerAlign: "center"
+      headerAlign: "center",
+      valueGetter: (params) => JSON.stringify(params.value)
     },
     {
       field: "md_statement_timeout_seconds",
       headerName: "Statement timeout [seconds]",
       type: "number",
-      width: 150,
+      width: 120,
       align: "center",
       headerAlign: "center"
     },
@@ -241,7 +241,7 @@ export const DbsTable = () => {
       type: "boolean",
       width: 120,
       renderCell: (params: GridRenderCellParams<boolean>) => {
-        if(params.value) {
+        if (params.value) {
           return <CheckIcon />;
         } else {
           return <CloseIcon />;
@@ -253,10 +253,17 @@ export const DbsTable = () => {
     {
       field: "md_last_modified_on",
       headerName: "Last modified",
-      type: "dateTime",
+      type: "string",
       width: 150,
+      renderCell: (params) => {
+        return (
+          <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
+            {moment(params.value).format("MMMM Do YYYY HH:mm:ss")}
+          </Box>
+        );
+      },
       align: "center",
-      headerAlign: "center"
+      headerAlign: "center",
     },
     {
       field: "md_is_enabled",
@@ -264,7 +271,7 @@ export const DbsTable = () => {
       type: "boolean",
       width: 120,
       renderCell: (params: GridRenderCellParams<boolean>) => {
-        if(params.value) {
+        if (params.value) {
           return <CheckIcon />;
         } else {
           return <CloseIcon />;
@@ -279,17 +286,31 @@ export const DbsTable = () => {
       type: "actions",
       width: 200,
       renderCell: (params: GridRenderCellParams<string>) => (
-        <ActionsComponent setModalOpen={setModalOpen} data={params.row} setEditData={setEditData} />
+        <ActionsComponent setModalOpen={setModalOpen} data={params.row} setEditData={setEditData} handleAlertOpen={handleAlertOpen} />
       )
     }
   ];
 
-  const rows = mockRows; // TODO: get this data from the api
+  if (status === "loading") {
+    return (
+      <Box sx={{ width: "100%", height: 500, display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <CircularProgress />
+      </Box>
+    );
+  };
+
+  if (status === "error") {
+    return (
+      <Box>
+        <Typography>Some error happens</Typography>
+      </Box>
+    );
+  };
 
   return (
     <Box display="flex" flexDirection="column" gap={1}>
-      <Snackbar open={alertOpen} autoHideDuration={3000} onClose={handleAlertClose}>
-        <Alert sx={{ width: 500 }} variant="filled" severity="success">{alertText}</Alert>
+      <Snackbar open={alertOpen} autoHideDuration={5000} onClose={handleAlertClose}>
+        <Alert sx={{ width: "auto" }} variant="filled" severity={severity}>{alertText}</Alert>
       </Snackbar>
       <Typography variant="h5">
         Databases under monitoring
@@ -297,27 +318,36 @@ export const DbsTable = () => {
       <DataGrid
         getRowHeight={() => "auto"}
         columns={columns}
-        rows={rows}
+        rows={data}
+        getRowId={(row) => row.md_unique_name}
         autoHeight
         pageSize={5}
         initialState={{
           columns: {
             columnVisibilityModel: {
-              id: false,
+              md_id: false,
               md_dbtype: false,
               md_dbname: false,
+              md_password_type: false,
+              md_include_pattern: false,
+              md_exclude_pattern: false,
+              md_root_ca_path: false,
+              md_client_cert_path: false,
+              md_client_key_path: false,
               md_group: false,
+              md_config: false,
               md_preset_config_name: false,
               md_preset_config_name_standby: false,
+              md_config_standby: false,
               md_custom_tags: false,
-              md_is_enabled: false
+              md_is_superuser: false
             },
           },
         }}
         components={{ Toolbar: () => GridToolbarComponent(setModalOpen, setEditData) }}
         disableColumnMenu
       />
-      <ModalComponent open={modalOpen} setOpen={setModalOpen} handleAlertOpen={handleAlertOpen} data={editData} />
+      <ModalComponent open={modalOpen} setOpen={setModalOpen} handleAlertOpen={handleAlertOpen} recordData={editData} />
     </Box>
   );
 };

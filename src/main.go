@@ -1176,11 +1176,11 @@ send_to_storage_channel:
 		}
 		log.Infof("[%s:%s] loaded %d rows from the instance cache", msg.DBUniqueName, msg.MetricName, len(cachedData))
 		atomic.AddUint64(&totalMetricsReusedFromCacheCounter, uint64(len(cachedData)))
-		return []MetricStoreMessage{MetricStoreMessage{DBUniqueName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
+		return []MetricStoreMessage{{DBUniqueName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
 			MetricDefinitionDetails: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
 	} else {
 		atomic.AddUint64(&totalMetricsFetchedCounter, uint64(len(data)))
-		return []MetricStoreMessage{MetricStoreMessage{DBUniqueName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
+		return []MetricStoreMessage{{DBUniqueName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
 			MetricDefinitionDetails: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
 	}
 }
@@ -2651,10 +2651,10 @@ var opts Options
 func main() {
 
 	uifs, _ := fs.Sub(webuifs, "webui/build")
-	ui := webserver.Init(":8080", uifs)
-	fmt.Println("Press the Enter Key to stop anytime")
-	fmt.Scanln()
-	if ui != nil {
+	ui := webserver.Init(":8080", uifs, uiapi)
+	// fmt.Println("Press the Enter Key to stop anytime")
+	// fmt.Scanln()
+	if ui == nil {
 		return
 	}
 
