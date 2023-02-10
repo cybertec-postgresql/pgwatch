@@ -2432,7 +2432,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_table_bloat_approx',
-9.5,
+11,
 $sql$
 BEGIN;
 
@@ -2495,7 +2495,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_is_helper)
 values (
 'get_table_bloat_approx_sql',
-9.0,
+11,
 $sql$
 -- small modifications to SQL from https://github.com/ioguix/pgsql-bloat-estimation
 -- NB! monitoring user needs SELECT grant on all tables or a SECURITY DEFINER wrapper around that SQL
