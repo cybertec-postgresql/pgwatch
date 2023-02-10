@@ -2298,7 +2298,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'blocking_locks',
-9.2,
+11,
 $sql$
 SELECT
     (extract(epoch from now()) * 1e9)::int8 AS epoch_ns,
