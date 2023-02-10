@@ -31,7 +31,14 @@ export const columns: GridColDef[] = [
         field: "m_is_active",
         headerName: "Enabled?",
         width: 120,
-        type: "boolean",
+        renderCell: (params: GridRenderCellParams<boolean>) => params.value ? <CheckIcon /> : <CloseIcon />,
+        align: "center",
+        headerAlign: "center"
+    },
+    {
+        field: "m_is_helper",
+        headerName: "Helpers?",
+        width: 120,
         renderCell: (params: GridRenderCellParams<boolean>) => params.value ? <CheckIcon /> : <CloseIcon />,
         align: "center",
         headerAlign: "center"
