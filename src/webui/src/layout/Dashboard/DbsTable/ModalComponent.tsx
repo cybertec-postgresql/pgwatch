@@ -52,8 +52,8 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData }: P
       Object.entries(recordData).map(([key, value]) => setValue(key as FieldPath<createDbForm>, value));
     } else {
       reset();
-    }
-  }, [recordData]);
+    };
+  }, [recordData, setValue, reset]);
 
   const updateRecord = useMutation({
     mutationFn: async (data: updateDbForm) => {
@@ -113,7 +113,7 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData }: P
           </DialogContent>
           <DialogActions>
             <Button fullWidth onClick={handleClose} size="medium" variant="outlined" startIcon={<CloseIcon />}>Cancel</Button>
-            <Button fullWidth type="submit" size="medium" variant="contained" startIcon={<DoneIcon />}>Start monitoring</Button>
+            <Button fullWidth type="submit" size="medium" variant="contained" startIcon={<DoneIcon />}>{recordData ? "Submit changes" : "Start monitoring"}</Button>
           </DialogActions>
         </form>
       </FormProvider>
