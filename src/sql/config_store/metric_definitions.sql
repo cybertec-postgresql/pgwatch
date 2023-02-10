@@ -3729,7 +3729,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'psutil_cpu',
-9.1,
+11,
 $sql$
 
 SELECT
@@ -3754,7 +3754,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_psutil_cpu',
-9.1,
+11,
 $sql$
 /*  Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil)
     NB! "psutil" is known to behave differently depending on the used version and operating system, so if getting
@@ -3806,7 +3806,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'psutil_mem',
-9.1,
+11,
 $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -3821,7 +3821,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_psutil_mem',
-9.1,
+11,
 $sql$
 /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
 CREATE EXTENSION IF NOT EXISTS plpython3u; -- NB! "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es
@@ -3849,7 +3849,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'psutil_disk',
-9.1,
+11,
 $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -3865,7 +3865,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_psutil_disk',
-9.1,
+11,
 $sql$
 /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
 CREATE EXTENSION IF NOT EXISTS plpython3u; /* NB! "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
@@ -3937,7 +3937,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'psutil_disk_io_total',
-9.1,
+11,
 $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -3954,7 +3954,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_psutil_disk_io_total',
-9.1,
+11,
 $sql$
 
 /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
