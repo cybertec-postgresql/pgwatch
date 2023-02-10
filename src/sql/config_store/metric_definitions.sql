@@ -2135,7 +2135,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'buffercache_by_db',
-9.2,
+11,
 $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -2156,7 +2156,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'buffercache_by_type',
-9.2,
+11,
 $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
