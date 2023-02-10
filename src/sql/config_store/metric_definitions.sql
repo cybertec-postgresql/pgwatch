@@ -640,11 +640,10 @@ $sql$,
 
 
 /* sproc_stats */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'sproc_stats',
-9.0,
+11,
 $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
