@@ -17,5 +17,12 @@ export const columns: GridColDef[] = [
         valueGetter(params) {
             return(Object.keys(params.value));
         },
+    },
+    {
+        field: "m_comment",
+        headerName: "Comment",
+        width: 150,
+        align: "center",
+        headerAlign: "center"
     }
 ];
