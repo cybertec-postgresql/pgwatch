@@ -7,5 +7,15 @@ export const columns: GridColDef[] = [
         width: 150,
         align: "center",
         headerAlign: "center"
+    },
+    {
+        field: "m_versions",
+        headerName: "PG versions",
+        width: 150,
+        align: "center",
+        headerAlign: "center",
+        valueGetter(params) {
+            return(Object.keys(params.value));
+        },
     }
 ];
