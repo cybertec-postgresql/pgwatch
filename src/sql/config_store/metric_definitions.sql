@@ -2222,7 +2222,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_standby_only, m_sql)
 values (
 'database_conflicts',
-9.2,
+11,
 true,
 $sql$
 SELECT
