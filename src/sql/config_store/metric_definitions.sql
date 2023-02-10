@@ -2241,11 +2241,10 @@ $sql$
 
 
 /* locks - counts only */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'locks',
-9.0,
+11,
 $sql$
 WITH q_locks AS (
   select
@@ -2271,7 +2270,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'locks_mode',
-9.0,
+11,
 $sql$
 WITH q_locks AS (
   select
