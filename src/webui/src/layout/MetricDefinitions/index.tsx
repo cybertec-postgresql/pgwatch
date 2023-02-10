@@ -1,5 +1,10 @@
 import { Box } from "@mui/material";
+import { MetricsTable } from "./MetricsTable";
 
 export const MetricDefinitions = () => {
-  return <Box>Metric Definitions</Box>;
+  return (
+    <Box>
+      <MetricsTable />
+    </Box>
+  );
 };
