@@ -1073,33 +1073,10 @@ $sql$,
 
 
 /* wal */
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'wal',
-9.2,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  case
-    when pg_is_in_recovery() = false then
-      pg_xlog_location_diff(pg_current_xlog_location(), '0/0')::int8
-    else
-      pg_xlog_location_diff(pg_last_xlog_replay_location(), '0/0')::int8
-    end as xlog_location_b,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s;
-$sql$,
-'{"prometheus_gauge_columns": ["in_recovery_int", "postmaster_uptime_s"]}'
-);
-
-
-/* wal */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
 values (
 'wal',
-10,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
