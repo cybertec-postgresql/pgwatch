@@ -2402,7 +2402,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
 values (
 'table_bloat_approx_stattuple',
-9.5,
+11,
 true,
 $sql$
 /* NB! accessing pgstattuple_approx directly requires superuser or pg_stat_scan_tables/pg_monitor builtin roles */
