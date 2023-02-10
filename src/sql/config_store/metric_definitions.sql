@@ -3705,32 +3705,10 @@ true
 );
 
 /* replication slot info */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
 values (
 'replication_slots',
-9.4,
-true,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  slot_name::text as tag_slot_name,
-  coalesce(plugin, 'physical')::text as tag_plugin,
-  active,
-  case when active then 0 else 1 end as non_active_int,
-  pg_xlog_location_diff(pg_current_xlog_location(), restart_lsn)::int8 as restart_lsn_lag_b,
-  greatest(age(xmin), age(catalog_xmin))::int8 as xmin_age_tx
-from
-  pg_replication_slots;
-$sql$,
-'{"prometheus_all_gauge_columns": true}'
-);
-
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
-values (
-'replication_slots',
-10,
+11,
 true,
 $sql$
 select
