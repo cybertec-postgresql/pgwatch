@@ -2095,11 +2095,10 @@ $sql$
 
 
 /* stat_statements_calls - enables to show QPS queries per second. "calls" works without the above wrapper also */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'stat_statements_calls',
-9.2,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
