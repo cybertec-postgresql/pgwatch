@@ -3670,7 +3670,7 @@ false
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_stat_activity',
-9.0,
+11,
 $sql$
 
 DO $OUTER$
