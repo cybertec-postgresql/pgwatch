@@ -93,7 +93,6 @@ $sql$
 );
 
 /* cpu_load */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'cpu_load',
@@ -112,133 +111,10 @@ $sql$,
 
 
 /* db_stats */
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'db_stats',
-9.0,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  numbackends,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  tup_returned,
-  tup_fetched,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
-from
-  pg_stat_database
-where
-  datname = current_database();
-$sql$,
-'{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s"]}'
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'db_stats',
-9.1,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  numbackends,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  tup_returned,
-  tup_fetched,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  conflicts,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
-from
-  pg_stat_database
-where
-  datname = current_database();
-$sql$,
-'{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s"]}'
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'db_stats',
-9.2,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  numbackends,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  tup_returned,
-  tup_fetched,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  conflicts,
-  temp_files,
-  temp_bytes,
-  deadlocks,
-  blk_read_time,
-  blk_write_time,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
-from
-  pg_stat_database
-where
-  datname = current_database();
-$sql$,
-'{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s"]}'
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'db_stats',
-9.3,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  numbackends,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  tup_returned,
-  tup_fetched,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  conflicts,
-  temp_files,
-  temp_bytes,
-  deadlocks,
-  blk_read_time,
-  blk_write_time,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s,
-  extract(epoch from (now() - pg_backup_start_time()))::int8 as backup_duration_s,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
-from
-  pg_stat_database
-where
-  datname = current_database();
-$sql$,
-'{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s", "backup_duration_s"]}'
-);
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
 values (
 'db_stats',
-10,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -449,40 +325,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'db_stats_aurora',
-9.6,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  numbackends,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  tup_returned,
-  tup_fetched,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  conflicts,
-  temp_files,
-  temp_bytes,
-  deadlocks,
-  blk_read_time,
-  blk_write_time,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
-from
-  pg_stat_database
-where
-  datname = current_database();
-$sql$,
-'{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s"]}'
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'db_stats_aurora',
-10,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
