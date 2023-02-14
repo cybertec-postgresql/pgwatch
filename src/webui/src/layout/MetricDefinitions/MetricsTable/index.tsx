@@ -1,5 +1,6 @@
 import { Box, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
+import { GridToolbarComponent } from "./GridToolbarComponent";
 import { columns } from "./metricsTableColumns";
 
 
@@ -46,6 +47,7 @@ export const MetricsTable = () => {
         rows={data}
         autoHeight
         pageSize={5}
+        components={{ Toolbar: () => GridToolbarComponent() }}
         disableColumnMenu
       />
     </Box>
