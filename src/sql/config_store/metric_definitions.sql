@@ -3,253 +3,10 @@
 -- truncate pgwatch3.metric;
 
 /* backends */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
 values (
 'backends',
-9.0,
-$sql$
-with sa_snapshot as (
-  select * from get_stat_activity()
-)
-select
-    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-    (select count(*) from sa_snapshot) as total,
-    (select count(*) from pg_stat_activity where procpid != pg_backend_pid()) as instance_total,
-    current_setting('max_connections')::int as max_connections,
-    (select count(*) from sa_snapshot where current_query != '<IDLE>') as active,
-    (select count(*) from sa_snapshot where current_query = '<IDLE>') as idle,
-    (select count(*) from sa_snapshot where current_query = '<IDLE> in transaction') as idleintransaction,
-    (select count(*) from sa_snapshot where waiting) as waiting,
-    (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where waiting) as longest_waiting_seconds,
-    (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where waiting) as avg_waiting_seconds,
-    (select ceil(extract(epoch from (now() - backend_start)))::int from sa_snapshot order by backend_start limit 1) as longest_session_seconds,
-    (select round(avg(abs(extract(epoch from now() - backend_start)))::numeric, 3)::float from sa_snapshot) as avg_session_seconds,
-    (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where not current_query like 'autovacuum:%' and xact_start is not null order by xact_start limit 1) as longest_tx_seconds,
-    (select round(avg(abs(extract(epoch from now() - xact_start)))::numeric, 3)::float from sa_snapshot where not current_query like 'autovacuum:%' and xact_start is not null) as avg_tx_seconds,
-    (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where current_query like 'autovacuum:%' order by xact_start limit 1) as longest_autovacuum_seconds,
-    (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where not current_query like 'autovacuum:%' and current_query != '<IDLE>') as longest_query_seconds,
-    (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where not current_query like 'autovacuum:%' and current_query != '<IDLE>') as avg_query_seconds,
-    (select count(*) from sa_snapshot where current_query like 'autovacuum:%') as av_workers
-;
-$sql$,
-'{"prometheus_all_gauge_columns": true}',
-$sql$
-with sa_snapshot as (
-  select * from pg_stat_activity
-  where datname = current_database()
-  and procpid != pg_backend_pid()
-)
-select
-    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-    (select count(*) from sa_snapshot) as total,
-    (select count(*) from pg_stat_activity where procpid != pg_backend_pid()) as instance_total,
-    current_setting('max_connections')::int as max_connections,
-    (select count(*) from sa_snapshot where current_query != '<IDLE>') as active,
-    (select count(*) from sa_snapshot where current_query = '<IDLE>') as idle,
-    (select count(*) from sa_snapshot where current_query = '<IDLE> in transaction') as idleintransaction,
-    (select count(*) from sa_snapshot where waiting) as waiting,
-    (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where waiting) as longest_waiting_seconds,
-    (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where waiting) as avg_waiting_seconds,
-    (select ceil(extract(epoch from (now() - backend_start)))::int from sa_snapshot order by backend_start limit 1) as longest_session_seconds,
-    (select round(avg(abs(extract(epoch from now() - backend_start)))::numeric, 3)::float from sa_snapshot) as avg_session_seconds,
-    (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where not current_query like 'autovacuum:%' and xact_start is not null order by xact_start limit 1) as longest_tx_seconds,
-    (select round(avg(abs(extract(epoch from now() - xact_start)))::numeric, 3)::float from sa_snapshot where not current_query like 'autovacuum:%' and xact_start is not null) as avg_tx_seconds,
-    (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where current_query like 'autovacuum:%' order by xact_start limit 1) as longest_autovacuum_seconds,
-    (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where not current_query like 'autovacuum:%' and current_query != '<IDLE>') as longest_query_seconds,
-    (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where not current_query like 'autovacuum:%' and current_query != '<IDLE>') as avg_query_seconds,
-    (select count(*) from sa_snapshot where current_query like 'autovacuum:%') as av_workers
-;
-$sql$
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
-values (
-'backends',
-9.2,
-$sql$
-with sa_snapshot as (
-  select * from get_stat_activity()
-)
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  (select count(*) from sa_snapshot) as total,
-  (select count(*) from pg_stat_activity where pid != pg_backend_pid()) as instance_total,
-  current_setting('max_connections')::int as max_connections,
-  (select count(*) from sa_snapshot where state = 'active') as active,
-  (select count(*) from sa_snapshot where state = 'idle') as idle,
-  (select count(*) from sa_snapshot where state = 'idle in transaction') as idleintransaction,
-  (select count(*) from sa_snapshot where waiting) as waiting,
-  (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where waiting) as longest_waiting_seconds,
-  (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where waiting) as avg_waiting_seconds,
-  (select ceil(extract(epoch from (now() - backend_start)))::int from sa_snapshot order by backend_start limit 1) as longest_session_seconds,
-  (select round(avg(abs(extract(epoch from now() - backend_start)))::numeric, 3)::float from sa_snapshot) as avg_session_seconds,
-  (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where not query like 'autovacuum:%' and xact_start is not null order by xact_start limit 1) as longest_tx_seconds,
-  (select round(avg(abs(extract(epoch from now() - xact_start)))::numeric, 3)::float from sa_snapshot where not query like 'autovacuum:%' and xact_start is not null) as avg_tx_seconds,
-  (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where query like 'autovacuum:%' order by xact_start limit 1) as longest_autovacuum_seconds,
-  (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where not query like 'autovacuum:%' and state = 'active') as longest_query_seconds,
-  (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where not query like 'autovacuum:%' and state = 'active') as avg_query_seconds,
-  (select count(*) from sa_snapshot where query like 'autovacuum:%') as av_workers
-;
-$sql$,
-'{"prometheus_all_gauge_columns": true}',
-$sql$
-with sa_snapshot as (
-  select * from pg_stat_activity
-  where datname = current_database()
-  and pid != pg_backend_pid()
-)
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  (select count(*) from sa_snapshot) as total,
-  (select count(*) from pg_stat_activity where pid != pg_backend_pid()) as instance_total,
-  current_setting('max_connections')::int as max_connections,
-  (select count(*) from sa_snapshot where state = 'active') as active,
-  (select count(*) from sa_snapshot where state = 'idle') as idle,
-  (select count(*) from sa_snapshot where state = 'idle in transaction') as idleintransaction,
-  (select count(*) from sa_snapshot where waiting) as waiting,
-  (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where waiting) as longest_waiting_seconds,
-  (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where waiting) as avg_waiting_seconds,
-  (select ceil(extract(epoch from (now() - backend_start)))::int from sa_snapshot order by backend_start limit 1) as longest_session_seconds,
-  (select round(avg(abs(extract(epoch from now() - backend_start)))::numeric, 3)::float from sa_snapshot) as avg_session_seconds,
-  (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where not query like 'autovacuum:%' and xact_start is not null order by xact_start limit 1) as longest_tx_seconds,
-  (select round(avg(abs(extract(epoch from now() - xact_start)))::numeric, 3)::float from sa_snapshot where not query like 'autovacuum:%' and xact_start is not null) as avg_tx_seconds,
-  (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where query like 'autovacuum:%' order by xact_start limit 1) as longest_autovacuum_seconds,
-  (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where not query like 'autovacuum:%' and state = 'active') as longest_query_seconds,
-  (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where not query like 'autovacuum:%' and state = 'active') as avg_query_seconds,
-  (select count(*) from sa_snapshot where query like 'autovacuum:%') as av_workers
-;
-$sql$
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
-values (
-'backends',
-9.4,
-$sql$
-with sa_snapshot as (
-  select * from get_stat_activity()
-)
-select
-    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-    (select count(*) from sa_snapshot) as total,
-    (select count(*) from pg_stat_activity where pid != pg_backend_pid()) as instance_total,
-    current_setting('max_connections')::int as max_connections,
-    (select count(*) from sa_snapshot where state = 'active') as active,
-    (select count(*) from sa_snapshot where state = 'idle') as idle,
-    (select count(*) from sa_snapshot where state = 'idle in transaction') as idleintransaction,
-    (select count(*) from sa_snapshot where waiting) as waiting,
-    (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where waiting) as longest_waiting_seconds,
-    (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where waiting) as avg_waiting_seconds,
-    (select ceil(extract(epoch from (now() - backend_start)))::int from sa_snapshot order by backend_start limit 1) as longest_session_seconds,
-    (select round(avg(abs(extract(epoch from now() - backend_start)))::numeric, 3)::float from sa_snapshot) as avg_session_seconds,
-    (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where not query like 'autovacuum:%' and xact_start is not null order by xact_start limit 1) as longest_tx_seconds,
-    (select round(avg(abs(extract(epoch from now() - xact_start)))::numeric, 3)::float from sa_snapshot where not query like 'autovacuum:%' and xact_start is not null) as avg_tx_seconds,
-    (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where query like 'autovacuum:%' order by xact_start limit 1) as longest_autovacuum_seconds,
-    (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where not query like 'autovacuum:%' and state = 'active') as longest_query_seconds,
-    (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where not query like 'autovacuum:%' and state = 'active') as avg_query_seconds,
-    (select max(age(backend_xmin))::int8 from sa_snapshot) as max_xmin_age_tx,
-    (select count(*) from sa_snapshot where query like 'autovacuum:%') as av_workers
-;
-$sql$,
-'{"prometheus_all_gauge_columns": true}',
-$sql$
-with sa_snapshot as (
-  select * from pg_stat_activity
-  where datname = current_database()
-  and pid != pg_backend_pid()
-)
-select
-    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-    (select count(*) from sa_snapshot) as total,
-    (select count(*) from pg_stat_activity where pid != pg_backend_pid()) as instance_total,
-    current_setting('max_connections')::int as max_connections,
-    (select count(*) from sa_snapshot where state = 'active') as active,
-    (select count(*) from sa_snapshot where state = 'idle') as idle,
-    (select count(*) from sa_snapshot where state = 'idle in transaction') as idleintransaction,
-    (select count(*) from sa_snapshot where waiting) as waiting,
-    (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where waiting) as longest_waiting_seconds,
-    (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where waiting) as avg_waiting_seconds,
-    (select ceil(extract(epoch from (now() - backend_start)))::int from sa_snapshot order by backend_start limit 1) as longest_session_seconds,
-    (select round(avg(abs(extract(epoch from now() - backend_start)))::numeric, 3)::float from sa_snapshot) as avg_session_seconds,
-    (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where not query like 'autovacuum:%' and xact_start is not null order by xact_start limit 1) as longest_tx_seconds,
-    (select round(avg(abs(extract(epoch from now() - xact_start)))::numeric, 3)::float from sa_snapshot where not query like 'autovacuum:%' and xact_start is not null) as avg_tx_seconds,
-    (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where query like 'autovacuum:%' order by xact_start limit 1) as longest_autovacuum_seconds,
-    (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where not query like 'autovacuum:%' and state = 'active') as longest_query_seconds,
-    (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where not query like 'autovacuum:%' and state = 'active') as avg_query_seconds,
-    (select max(age(backend_xmin))::int8 from sa_snapshot) as max_xmin_age_tx,
-    (select count(*) from sa_snapshot where query like 'autovacuum:%') as av_workers
-;
-$sql$
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
-values (
-'backends',
-9.6,
-$sql$
-with sa_snapshot as (
-  select * from get_stat_activity()
-)
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  (select count(*) from sa_snapshot) as total,
-  (select count(*) from pg_stat_activity where pid != pg_backend_pid()) as instance_total,
-  current_setting('max_connections')::int as max_connections,
-  (select count(*) from sa_snapshot where state = 'active') as active,
-  (select count(*) from sa_snapshot where state = 'idle') as idle,
-  (select count(*) from sa_snapshot where state = 'idle in transaction') as idleintransaction,
-  (select count(*) from sa_snapshot where wait_event_type in ('LWLockNamed', 'Lock', 'BufferPin')) as waiting,
-  (select coalesce(sum(case when coalesce(array_length(pg_blocking_pids(pid), 1), 0) >= 1 then 1 else 0 end), 0) from sa_snapshot where state = 'active') as blocked,
-  (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where wait_event_type in ('LWLockNamed', 'Lock', 'BufferPin')) as longest_waiting_seconds,
-  (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where wait_event_type in ('LWLockNamed', 'Lock', 'BufferPin')) as avg_waiting_seconds,
-  (select ceil(extract(epoch from (now() - backend_start)))::int from sa_snapshot order by backend_start limit 1) as longest_session_seconds,
-  (select round(avg(abs(extract(epoch from now() - backend_start)))::numeric, 3)::float from sa_snapshot) as avg_session_seconds,
-  (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where not query like 'autovacuum:%' and xact_start is not null order by xact_start limit 1) as longest_tx_seconds,
-  (select round(avg(abs(extract(epoch from now() - xact_start)))::numeric, 3)::float from sa_snapshot where not query like 'autovacuum:%' and xact_start is not null) as avg_tx_seconds,
-  (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where query like 'autovacuum:%' order by xact_start limit 1) as longest_autovacuum_seconds,
-  (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where not query like 'autovacuum:%' and state = 'active') as longest_query_seconds,
-  (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where not query like 'autovacuum:%' and state = 'active') as avg_query_seconds,
-  (select max(age(backend_xmin))::int8 from sa_snapshot) as max_xmin_age_tx,
-  (select count(*) from sa_snapshot where query like 'autovacuum:%') as av_workers
-;
-$sql$,
-'{"prometheus_all_gauge_columns": true}',
-$sql$
-with sa_snapshot as (
-  select * from pg_stat_activity
-  where datname = current_database()
-  and pid != pg_backend_pid()
-)
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  (select count(*) from sa_snapshot) as total,
-  (select count(*) from pg_stat_activity where pid != pg_backend_pid()) as instance_total,
-  current_setting('max_connections')::int as max_connections,
-  (select count(*) from sa_snapshot where state = 'active') as active,
-  (select count(*) from sa_snapshot where state = 'idle') as idle,
-  (select count(*) from sa_snapshot where state = 'idle in transaction') as idleintransaction,
-  (select count(*) from sa_snapshot where wait_event_type in ('LWLockNamed', 'Lock', 'BufferPin')) as waiting,
-  (select coalesce(sum(case when coalesce(array_length(pg_blocking_pids(pid), 1), 0) >= 1 then 1 else 0 end), 0) from sa_snapshot where state = 'active') as blocked,
-  (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where wait_event_type in ('LWLockNamed', 'Lock', 'BufferPin')) as longest_waiting_seconds,
-  (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where wait_event_type in ('LWLockNamed', 'Lock', 'BufferPin')) as avg_waiting_seconds,
-  (select ceil(extract(epoch from (now() - backend_start)))::int from sa_snapshot order by backend_start limit 1) as longest_session_seconds,
-  (select round(avg(abs(extract(epoch from now() - backend_start)))::numeric, 3)::float from sa_snapshot) as avg_session_seconds,
-  (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where not query like 'autovacuum:%' and xact_start is not null order by xact_start limit 1) as longest_tx_seconds,
-  (select round(avg(abs(extract(epoch from now() - xact_start)))::numeric, 3)::float from sa_snapshot where not query like 'autovacuum:%' and xact_start is not null) as avg_tx_seconds,
-  (select ceil(extract(epoch from (now() - xact_start)))::int from sa_snapshot where query like 'autovacuum:%' order by xact_start limit 1) as longest_autovacuum_seconds,
-  (select ceil(extract(epoch from max(now() - query_start)))::int from sa_snapshot where not query like 'autovacuum:%' and state = 'active') as longest_query_seconds,
-  (select round(avg(abs(extract(epoch from now() - query_start)))::numeric, 3)::float from sa_snapshot where not query like 'autovacuum:%' and state = 'active') as avg_query_seconds,
-  (select max(age(backend_xmin))::int8 from sa_snapshot) as max_xmin_age_tx,
-  (select count(*) from sa_snapshot where query like 'autovacuum:%') as av_workers
-;
-$sql$
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
-values (
-'backends',
-10,
+11,
 $sql$
 with sa_snapshot as (
   select * from get_stat_activity()
@@ -312,28 +69,6 @@ $sql$
 );
 
 /* bgwriter */
-
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql)
-values (
-'bgwriter',
-9.0,
-true,
-$sql$
-select
-   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-   checkpoints_timed,
-   checkpoints_req,
-   buffers_checkpoint,
-   buffers_clean,
-   maxwritten_clean,
-   buffers_backend,
-   buffers_alloc
- from
-   pg_stat_bgwriter;
-$sql$
-);
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql)
 values (
 'bgwriter',
@@ -358,7 +93,6 @@ $sql$
 );
 
 /* cpu_load */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'cpu_load',
@@ -377,133 +111,10 @@ $sql$,
 
 
 /* db_stats */
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'db_stats',
-9.0,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  numbackends,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  tup_returned,
-  tup_fetched,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
-from
-  pg_stat_database
-where
-  datname = current_database();
-$sql$,
-'{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s"]}'
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'db_stats',
-9.1,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  numbackends,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  tup_returned,
-  tup_fetched,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  conflicts,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
-from
-  pg_stat_database
-where
-  datname = current_database();
-$sql$,
-'{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s"]}'
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'db_stats',
-9.2,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  numbackends,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  tup_returned,
-  tup_fetched,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  conflicts,
-  temp_files,
-  temp_bytes,
-  deadlocks,
-  blk_read_time,
-  blk_write_time,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
-from
-  pg_stat_database
-where
-  datname = current_database();
-$sql$,
-'{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s"]}'
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'db_stats',
-9.3,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  numbackends,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  tup_returned,
-  tup_fetched,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  conflicts,
-  temp_files,
-  temp_bytes,
-  deadlocks,
-  blk_read_time,
-  blk_write_time,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s,
-  extract(epoch from (now() - pg_backup_start_time()))::int8 as backup_duration_s,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
-from
-  pg_stat_database
-where
-  datname = current_database();
-$sql$,
-'{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s", "backup_duration_s"]}'
-);
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
 values (
 'db_stats',
-10,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -714,40 +325,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'db_stats_aurora',
-9.6,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  numbackends,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  tup_returned,
-  tup_fetched,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  conflicts,
-  temp_files,
-  temp_bytes,
-  deadlocks,
-  blk_read_time,
-  blk_write_time,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
-from
-  pg_stat_database
-where
-  datname = current_database();
-$sql$,
-'{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s"]}'
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'db_stats_aurora',
-10,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -779,11 +357,10 @@ $sql$,
 );
 
 /* db_size */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'db_size',
-9.0,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -797,11 +374,10 @@ $sql$,
 );
 
 /* db_size_approx */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'db_size_approx',
-9.1,
+11,
 $sql$
 select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -826,224 +402,10 @@ $sql$,
 );
 
 /* index_stats */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'index_stats',
-9.0,
-$sql$
-/* NB! does not return all index stats but biggest, top scanned and biggest unused ones */
-WITH q_locked_rels AS (
-  select relation from pg_locks where mode = 'AccessExclusiveLock'
-),
-q_index_details AS (
-  select
-    sui.schemaname,
-    sui.indexrelname,
-    sui.relname,
-    sui.indexrelid,
-    coalesce(pg_relation_size(sui.indexrelid), 0) as index_size_b,
-    sui.idx_scan,
-    sui.idx_tup_read,
-    sui.idx_tup_fetch,
-    io.idx_blks_read,
-    io.idx_blks_hit,
-    i.indisvalid,
-    i.indisprimary,
-    i.indisunique
-  from
-    pg_stat_user_indexes sui
-    join pg_statio_user_indexes io on io.indexrelid = sui.indexrelid
-    join pg_index i on i.indexrelid = sui.indexrelid
-  where not sui.schemaname like E'pg\\_temp%'
-  and not exists (select * from q_locked_rels where relation = sui.relid or relation = sui.indexrelid)
-),
-q_top_indexes AS (
-    /* biggest */
-    select *
-    from (
-             select indexrelid
-             from q_index_details
-             where idx_scan > 1
-             order by index_size_b desc
-             limit 200
-         ) x
-    union
-    /* most block traffic */
-    select *
-    from (
-             select indexrelid
-             from q_index_details
-             order by coalesce(idx_blks_read, 0) + coalesce(idx_blks_hit, 0) desc
-             limit 200
-         ) y
-    union
-    /* most scans */
-    select *
-    from (
-             select indexrelid
-             from q_index_details
-             order by idx_scan desc nulls last
-             limit 200
-         ) z
-    union
-    /* biggest unused non-constraint */
-    select *
-    from (
-             select q.indexrelid
-             from q_index_details q
-             where idx_scan = 0
-             and not (indisprimary or indisunique)
-             order by index_size_b desc
-             limit 200
-         ) z
-    union
-    /* all invalid */
-    select *
-    from (
-             select q.indexrelid
-             from q_index_details q
-             where not indisvalid
-         ) zz
-)
-SELECT
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  schemaname::text as tag_schema,
-  indexrelname::text as tag_index_name,
-  quote_ident(schemaname)||'.'||quote_ident(indexrelname) as tag_index_full_name,
-  relname::text as tag_table_name,
-  quote_ident(schemaname)||'.'||quote_ident(relname) as tag_table_full_name,
-  coalesce(idx_scan, 0) as idx_scan,
-  coalesce(idx_tup_read, 0) as idx_tup_read,
-  coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
-  coalesce(index_size_b, 0) as index_size_b,
-  quote_ident(schemaname)||'.'||quote_ident(indexrelname) as index_full_name_val,
-  md5(regexp_replace(regexp_replace(pg_get_indexdef(indexrelid),indexrelname,'X'), '^CREATE UNIQUE','CREATE')) as tag_index_def_hash,
-  regexp_replace(regexp_replace(pg_get_indexdef(indexrelid),indexrelname,'X'), '^CREATE UNIQUE','CREATE') as index_def,
-  case when not indisvalid then 1 else 0 end as is_invalid_int,
-  case when indisprimary then 1 else 0 end as is_pk_int,
-  case when indisunique then 1 else 0 end as is_uq_or_exc
-FROM
-  q_index_details id
-WHERE
-  indexrelid IN (select indexrelid from q_top_indexes)
-ORDER BY
-  id.schemaname, id.relname, id.indexrelname;
-$sql$,
-'{"prometheus_gauge_columns": ["index_size_b", "is_invalid_int", "is_pk_int"]}'
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'index_stats',
-9.1,
-$sql$
-/* NB! does not return all index stats but biggest, top scanned and biggest unused ones */
-WITH q_locked_rels AS (
-  select relation from pg_locks where mode = 'AccessExclusiveLock'
-),
-q_index_details AS (
-  select
-    sui.schemaname,
-    sui.indexrelname,
-    sui.relname,
-    sui.indexrelid,
-    coalesce(pg_relation_size(sui.indexrelid), 0) as index_size_b,
-    sui.idx_scan,
-    sui.idx_tup_read,
-    sui.idx_tup_fetch,
-    io.idx_blks_read,
-    io.idx_blks_hit,
-    i.indisvalid,
-    i.indisprimary,
-    i.indisunique,
-    i.indisexclusion
-  from
-    pg_stat_user_indexes sui
-    join pg_statio_user_indexes io on io.indexrelid = sui.indexrelid
-    join pg_index i on i.indexrelid = sui.indexrelid
-  where not sui.schemaname like E'pg\\_temp%'
-  and not exists (select * from q_locked_rels where relation = sui.relid or relation = sui.indexrelid)
-),
-q_top_indexes AS (
-    /* biggest */
-    select *
-    from (
-             select indexrelid
-             from q_index_details
-             where idx_scan > 1
-             order by index_size_b desc
-             limit 200
-         ) x
-    union
-    /* most block traffic */
-    select *
-    from (
-             select indexrelid
-             from q_index_details
-             order by coalesce(idx_blks_read, 0) + coalesce(idx_blks_hit, 0) desc
-             limit 200
-         ) y
-    union
-    /* most scans */
-    select *
-    from (
-             select indexrelid
-             from q_index_details
-             order by idx_scan desc nulls last
-             limit 200
-         ) z
-    union
-    /* biggest unused non-constraint */
-    select *
-    from (
-             select q.indexrelid
-             from q_index_details q
-             where idx_scan = 0
-             and not (indisprimary or indisunique or indisexclusion)
-             order by index_size_b desc
-             limit 200
-         ) z
-    union
-    /* all invalid */
-    select *
-    from (
-             select q.indexrelid
-             from q_index_details q
-             where not indisvalid
-         ) zz
-)
-SELECT
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  schemaname::text as tag_schema,
-  indexrelname::text as tag_index_name,
-  quote_ident(schemaname)||'.'||quote_ident(indexrelname) as tag_index_full_name,
-  relname::text as tag_table_name,
-  quote_ident(schemaname)||'.'||quote_ident(relname) as tag_table_full_name,
-  coalesce(idx_scan, 0) as idx_scan,
-  coalesce(idx_tup_read, 0) as idx_tup_read,
-  coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
-  coalesce(index_size_b, 0) as index_size_b,
-  quote_ident(schemaname)||'.'||quote_ident(indexrelname) as index_full_name_val,
-  md5(regexp_replace(regexp_replace(pg_get_indexdef(indexrelid),indexrelname,'X'), '^CREATE UNIQUE','CREATE')) as tag_index_def_hash,
-  regexp_replace(regexp_replace(pg_get_indexdef(indexrelid),indexrelname,'X'), '^CREATE UNIQUE','CREATE') as index_def,
-  case when not indisvalid then 1 else 0 end as is_invalid_int,
-  case when indisprimary then 1 else 0 end as is_pk_int,
-  case when indisunique or indisexclusion then 1 else 0 end as is_uq_or_exc
-FROM
-  q_index_details id
-WHERE
-  indexrelid IN (select indexrelid from q_top_indexes)
-ORDER BY
-  id.schemaname, id.relname, id.indexrelname;
-$sql$,
-'{"prometheus_gauge_columns": ["index_size_b", "is_invalid_int", "is_pk_int"]}'
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'index_stats',
-10,
+11,
 $sql$
 /* NB! does not return all index stats but biggest, top scanned and biggest unused ones */
 WITH q_locked_rels AS (
@@ -1151,278 +513,10 @@ $sql$,
 );
 
 /* kpi */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
 values (
 'kpi',
-9.0,
-$sql$
-WITH q_stat_tables AS (
-  SELECT * FROM pg_stat_user_tables t
-  JOIN pg_class c ON c.oid = t.relid
-  WHERE NOT schemaname LIKE E'pg\\_temp%'
-  AND c.relpages > (1e7 / 8)    -- >10MB
-),
-q_stat_activity AS (
-  SELECT * FROM get_stat_activity()
-)
-SELECT
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  numbackends - 1 as numbackends,
-  (select count(*) from q_stat_activity where not current_query in ('<IDLE>', '<IDLE> in transaction')) AS active_backends,
-  (select count(*) from q_stat_activity where waiting) AS blocked_backends,
-  (select round(extract(epoch from now()) - extract(epoch from (select xact_start from q_stat_activity
-    where datid = d.datid and not current_query like 'autovacuum:%' order by xact_start limit 1))))::int AS kpi_oldest_tx_s,
-  xact_commit + xact_rollback AS tps,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  (select sum(seq_scan) from q_stat_tables)::int8 AS seq_scans_on_tbls_gt_10mb,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  (select sum(calls) from pg_stat_user_functions where not schemaname like any(array[E'pg\\_%', 'information_schema']))::int8 AS sproc_calls,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s
-FROM
-  pg_stat_database d
-WHERE
-  datname = current_database();
-$sql$,
-'{"prometheus_gauge_columns": ["numbackends", "active_backends", "blocked_backends", "kpi_oldest_tx_s"]}',
-$sql$
-WITH q_stat_tables AS (
-  SELECT * FROM pg_stat_user_tables t
-  JOIN pg_class c ON c.oid = t.relid
-  WHERE NOT schemaname LIKE E'pg\\_temp%'
-  AND c.relpages > (1e7 / 8)    -- >10MB
-),
-q_stat_activity AS (
-  SELECT * FROM pg_stat_activity WHERE procpid != pg_backend_pid() AND datname = current_database()
-)
-SELECT
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  numbackends - 1 as numbackends,
-  (select count(*) from q_stat_activity where not current_query in ('<IDLE>', '<IDLE> in transaction')) AS active_backends,
-  (select count(*) from q_stat_activity where waiting) AS blocked_backends,
-  (select round(extract(epoch from now()) - extract(epoch from (select xact_start from q_stat_activity
-    where datid = d.datid and not current_query like 'autovacuum:%' order by xact_start limit 1))))::int AS kpi_oldest_tx_s,
-  xact_commit + xact_rollback AS tps,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  (select sum(seq_scan) from q_stat_tables)::int8 AS seq_scans_on_tbls_gt_10mb,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  (select sum(calls) from pg_stat_user_functions where not schemaname like any(array[E'pg\\_%', 'information_schema']))::int8 AS sproc_calls,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s
-FROM
-  pg_stat_database d
-WHERE
-  datname = current_database();
-$sql$
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
-values (
-'kpi',
-9.2,
-$sql$
-WITH q_stat_tables AS (
-  SELECT * FROM pg_stat_user_tables t
-  JOIN pg_class c ON c.oid = t.relid
-  WHERE NOT schemaname LIKE E'pg\\_temp%'
-  AND c.relpages > (1e7 / 8)    -- >10MB
-),
-q_stat_activity AS (
-  SELECT * FROM get_stat_activity()
-)
-SELECT
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  case
-      when pg_is_in_recovery() = false then
-          pg_xlog_location_diff(pg_current_xlog_location(), '0/0')::int8
-      else
-          pg_xlog_location_diff(pg_last_xlog_replay_location(), '0/0')::int8
-      end as wal_location_b,
-  numbackends - 1 as numbackends,
-  (select count(1) from q_stat_activity where state = 'active') AS active_backends,
-  (select count(1) from q_stat_activity where waiting) AS blocked_backends,
-  (select round(extract(epoch from now()) - extract(epoch from (select xact_start from q_stat_activity
-    where datid = d.datid and not query like 'autovacuum:%' order by xact_start limit 1))))::int AS kpi_oldest_tx_s,
-  xact_commit + xact_rollback AS tps,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  temp_bytes,
-  (select sum(seq_scan) from q_stat_tables)::int8 AS seq_scans_on_tbls_gt_10mb,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  (select sum(calls) from pg_stat_user_functions where not schemaname like any(array[E'pg\\_%', 'information_schema']))::int8 AS sproc_calls,
-  blk_read_time,
-  blk_write_time,
-  deadlocks,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s
-FROM
-  pg_stat_database d
-WHERE
-  datname = current_database();
-$sql$,
-'{"prometheus_gauge_columns": ["numbackends", "active_backends", "blocked_backends", "kpi_oldest_tx_s"]}',
-$sql$
-WITH q_stat_tables AS (
-    SELECT * FROM pg_stat_user_tables t
-                      JOIN pg_class c ON c.oid = t.relid
-    WHERE NOT schemaname LIKE E'pg\\_temp%'
-      AND c.relpages > (1e7 / 8)    -- >10MB
-),
-     q_stat_activity AS (
-         SELECT * FROM pg_stat_activity
-         WHERE datname = current_database() AND pid != pg_backend_pid()
-     )
-SELECT
-    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  case
-      when pg_is_in_recovery() = false then
-          pg_xlog_location_diff(pg_current_xlog_location(), '0/0')::int8
-      else
-          pg_xlog_location_diff(pg_last_xlog_replay_location(), '0/0')::int8
-      end as wal_location_b,
-    numbackends - 1 as numbackends,
-    (select count(1) from q_stat_activity where state = 'active') AS active_backends,
-    (select count(1) from q_stat_activity where waiting) AS blocked_backends,
-    (select round(extract(epoch from now()) - extract(epoch from (select xact_start from q_stat_activity
-                                                                  where datid = d.datid and not query like 'autovacuum:%' order by xact_start limit 1))))::int AS kpi_oldest_tx_s,
-    xact_commit + xact_rollback AS tps,
-    xact_commit,
-    xact_rollback,
-    blks_read,
-    blks_hit,
-    temp_bytes,
-    (select sum(seq_scan) from q_stat_tables)::int8 AS seq_scans_on_tbls_gt_10mb,
-    tup_inserted,
-    tup_updated,
-    tup_deleted,
-    (select sum(calls) from pg_stat_user_functions where not schemaname like any(array[E'pg\\_%', 'information_schema']))::int8 AS sproc_calls,
-    blk_read_time,
-    blk_write_time,
-    deadlocks,
-    case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int,
-    extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s
-FROM
-    pg_stat_database d
-WHERE
-    datname = current_database();
-$sql$
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
-values (
-'kpi',
-9.6,
-$sql$
-WITH q_stat_tables AS (
-  SELECT * FROM pg_stat_user_tables t
-  JOIN pg_class c ON c.oid = t.relid
-  WHERE NOT schemaname LIKE E'pg\\_temp%'
-  AND c.relpages > (1e7 / 8)    -- >10MB
-),
-q_stat_activity AS (
-  SELECT * FROM get_stat_activity()
-)
-SELECT
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  case
-    when pg_is_in_recovery() = false then
-      pg_xlog_location_diff(pg_current_xlog_location(), '0/0')::int8
-    else
-      pg_xlog_location_diff(pg_last_xlog_replay_location(), '0/0')::int8
-    end as wal_location_b,
-  numbackends - 1 as numbackends,
-  (select count(1) from q_stat_activity where state = 'active') AS active_backends,
-  (select count(1) from q_stat_activity where wait_event_type is not null) AS blocked_backends,
-  (select round(extract(epoch from now()) - extract(epoch from (select xact_start from q_stat_activity
-    where datid = d.datid and not query like 'autovacuum:%' order by xact_start limit 1))))::int AS kpi_oldest_tx_s,
-  xact_commit + xact_rollback AS tps,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  temp_bytes,
-  (select sum(seq_scan) from q_stat_tables)::int8 AS seq_scans_on_tbls_gt_10mb,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  (select sum(calls) from pg_stat_user_functions where not schemaname like any(array[E'pg\\_%', 'information_schema']))::int8 AS sproc_calls,
-  blk_read_time,
-  blk_write_time,
-  deadlocks,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s
-FROM
-  pg_stat_database d
-WHERE
-  datname = current_database();
-$sql$,
-'{"prometheus_gauge_columns": ["numbackends", "active_backends", "blocked_backends", "kpi_oldest_tx_s"]}',
-$sql$
-WITH q_stat_tables AS (
-  SELECT * FROM pg_stat_user_tables t
-  JOIN pg_class c ON c.oid = t.relid
-  WHERE NOT schemaname LIKE E'pg\\_temp%'
-  AND c.relpages > (1e7 / 8)    -- >10MB
-),
-q_stat_activity AS (
-    SELECT * FROM pg_stat_activity
-    WHERE datname = current_database() AND pid != pg_backend_pid()
-)
-SELECT
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  case
-    when pg_is_in_recovery() = false then
-      pg_xlog_location_diff(pg_current_xlog_location(), '0/0')::int8
-    else
-      pg_xlog_location_diff(pg_last_xlog_replay_location(), '0/0')::int8
-    end as xlog_location_b,
-  numbackends - 1 as numbackends,
-  (select count(*) from q_stat_activity where state in ('active', 'idle in transaction')) AS active_backends,
-  (select count(*) from q_stat_activity where wait_event_type in ('LWLockNamed', 'Lock', 'BufferPin')) AS blocked_backends,
-  (select round(extract(epoch from now()) - extract(epoch from (select xact_start from q_stat_activity
-    where datid = d.datid and not query like 'autovacuum:%' order by xact_start limit 1))))::int AS kpi_oldest_tx_s,
-  xact_commit + xact_rollback AS tps,
-  xact_commit,
-  xact_rollback,
-  blks_read,
-  blks_hit,
-  temp_bytes,
-  (select sum(seq_scan) from q_stat_tables)::int8 AS seq_scans_on_tbls_gt_10mb,
-  tup_inserted,
-  tup_updated,
-  tup_deleted,
-  (select sum(calls) from pg_stat_user_functions where not schemaname like any(array[E'pg\\_%', 'information_schema']))::int8 AS sproc_calls,
-  blk_read_time,
-  blk_write_time,
-  deadlocks,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s
-FROM
-  pg_stat_database d
-WHERE
-  datname = current_database();
-$sql$
-);
-
-/* kpi */
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
-values (
-'kpi',
-10,
+11,
 $sql$
 WITH q_stat_tables AS (
   SELECT * FROM pg_stat_user_tables t
@@ -1517,54 +611,10 @@ $sql$
 
 
 /* replication */
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)
-values (
-'replication',
-9.2,
-$sql$
-SELECT
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  application_name as tag_application_name,
-  concat(coalesce(client_addr::text, client_hostname), '_', client_port::text) as tag_client_info,
-  coalesce(pg_xlog_location_diff(case when pg_is_in_recovery() then pg_last_xlog_receive_location() else pg_current_xlog_location() end, write_location)::int8, 0) as write_lag_b,
-  coalesce(pg_xlog_location_diff(case when pg_is_in_recovery() then pg_last_xlog_receive_location() else pg_current_xlog_location() end, flush_location)::int8, 0) as flush_lag_b,
-  coalesce(pg_xlog_location_diff(case when pg_is_in_recovery() then pg_last_xlog_receive_location() else pg_current_xlog_location() end, replay_location)::int8, 0) as replay_lag_b,
-  state,
-  sync_state,
-  case when sync_state in ('sync', 'quorum') then 1 else 0 end as is_sync_int,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
-from
-  get_stat_replication()
-where
-  coalesce(application_name, '') not in ('pg_basebackup', 'pg_rewind');
-$sql$,
-'{"prometheus_all_gauge_columns": true}',
-$sql$
-SELECT
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  application_name as tag_application_name,
-  concat(coalesce(client_addr::text, client_hostname), '_', client_port::text) as tag_client_info,
-  coalesce(pg_xlog_location_diff(case when pg_is_in_recovery() then pg_last_xlog_receive_location() else pg_current_xlog_location() end, write_location)::int8, 0) as write_lag_b,
-  coalesce(pg_xlog_location_diff(case when pg_is_in_recovery() then pg_last_xlog_receive_location() else pg_current_xlog_location() end, flush_location)::int8, 0) as flush_lag_b,
-  coalesce(pg_xlog_location_diff(case when pg_is_in_recovery() then pg_last_xlog_receive_location() else pg_current_xlog_location() end, replay_location)::int8, 0) as replay_lag_b,
-  state,
-  sync_state,
-  case when sync_state in ('sync', 'quorum') then 1 else 0 end as is_sync_int,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
-from
-  pg_stat_replication
-where
-  coalesce(application_name, '') not in ('pg_basebackup', 'pg_rewind');
-$sql$
-);
-
-/* replication */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'replication',
-10,
+11,
 $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -1590,11 +640,10 @@ $sql$,
 
 
 /* sproc_stats */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'sproc_stats',
-9.0,
+11,
 $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -1617,47 +666,10 @@ $sql$
 );
 
 /* table_io_stats */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'table_io_stats',
-9.0,
-$sql$
-SELECT
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  schemaname::text as tag_schema,
-  relname::text as tag_table_name,
-  quote_ident(schemaname)||'.'||quote_ident(relname) as tag_table_full_name,
-  heap_blks_read,
-  heap_blks_hit,
-  idx_blks_read,
-  idx_blks_hit,
-  toast_blks_read,
-  toast_blks_hit,
-  tidx_blks_read,
-  tidx_blks_hit
-FROM
-  pg_statio_user_tables
-WHERE
-  NOT schemaname LIKE E'pg\\_temp%'
-  AND (heap_blks_read > 0 OR heap_blks_hit > 0 OR idx_blks_read > 0 OR idx_blks_hit > 0 OR tidx_blks_read > 0 OR tidx_blks_hit > 0)
-ORDER BY
-  coalesce(heap_blks_read, 0) +
-  coalesce(heap_blks_hit, 0) +
-  coalesce(idx_blks_read, 0) +
-  coalesce(idx_blks_hit, 0) +
-  coalesce(toast_blks_read, 0) +
-  coalesce(toast_blks_hit, 0) +
-  coalesce(tidx_blks_read, 0) +
-  coalesce(tidx_blks_hit, 0)
-  DESC LIMIT 300;
-$sql$
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
-values (
-'table_io_stats',
-10,
+11,
 $sql$
 select * from (
                   with recursive
@@ -1757,233 +769,10 @@ $sql$
 );
 
 /* table_stats */
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
-values (
-'table_stats',
-9.0,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  quote_ident(schemaname) as tag_schema,
-  quote_ident(ut.relname) as tag_table_name,
-  quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
-  pg_table_size(relid) as table_size_b,
-  abs(greatest(ceil(log((pg_table_size(relid)+1) / 10^6)), 0))::text as tag_table_size_cardinality_mb, -- i.e. 0=<1MB, 1=<10MB, 2=<100MB,..
-  pg_total_relation_size(relid) as total_relation_size_b,
-  case when reltoastrelid != 0 then pg_total_relation_size(reltoastrelid) else 0::int8 end as toast_size_b,
-  (extract(epoch from now() - greatest(last_vacuum, last_autovacuum)))::int8 as seconds_since_last_vacuum,
-  (extract(epoch from now() - greatest(last_analyze, last_autoanalyze)))::int8 as seconds_since_last_analyze,
-  case when 'autovacuum_enabled=off' = ANY(c.reloptions) then 1 else 0 end as no_autovacuum,
-  seq_scan,
-  seq_tup_read,
-  coalesce(idx_scan, 0) as idx_scan,
-  coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
-  n_tup_ins,
-  n_tup_upd,
-  n_tup_del,
-  n_tup_hot_upd,
-  n_live_tup,
-  n_dead_tup,
-  age(relfrozenxid) as tx_freeze_age
-from
-  pg_stat_user_tables ut
-  join
-  pg_class c on c.oid = ut.relid
-where
-  -- leaving out fully locked tables as pg_relation_size also wants a lock and would wait
-  not exists (select 1 from pg_locks where relation = relid and mode = 'AccessExclusiveLock')
-  and not relistemp -- and temp tables
-order by table_size_b desc nulls last limit 300;
-$sql$,
-'{"prometheus_gauge_columns": ["table_size_b", "total_relation_size_b", "toast_size_b", "seconds_since_last_vacuum", "seconds_since_last_analyze", "n_live_tup", "n_dead_tup"]}',
-true
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_standby_only)
-values (
-'table_stats',
-9.0,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  quote_ident(schemaname) as tag_schema,
-  quote_ident(ut.relname) as tag_table_name,
-  quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
-  pg_table_size(relid) as table_size_b,
-  abs(greatest(ceil(log((pg_table_size(relid)+1) / 10^6)), 0))::text as tag_table_size_cardinality_mb, -- i.e. 0=<1MB, 1=<10MB, 2=<100MB,..
-  pg_total_relation_size(relid) as total_relation_size_b,
-  case when reltoastrelid != 0 then pg_total_relation_size(reltoastrelid) else 0::int8 end as toast_size_b,
-  (extract(epoch from now() - greatest(last_vacuum, last_autovacuum)))::int8 as seconds_since_last_vacuum,
-  (extract(epoch from now() - greatest(last_analyze, last_autoanalyze)))::int8 as seconds_since_last_analyze,
-  case when 'autovacuum_enabled=off' = ANY(c.reloptions) then 1 else 0 end as no_autovacuum,
-  seq_scan,
-  seq_tup_read,
-  coalesce(idx_scan, 0) as idx_scan,
-  coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
-  n_tup_ins,
-  n_tup_upd,
-  n_tup_del,
-  n_tup_hot_upd,
-  n_live_tup,
-  n_dead_tup
-from
-  pg_stat_user_tables ut
-  join
-  pg_class c on c.oid = ut.relid
-where
-  -- leaving out fully locked tables as pg_relation_size also wants a lock and would wait
-  not exists (select 1 from pg_locks where relation = relid and mode = 'AccessExclusiveLock')
-  and not relistemp -- and temp tables
-order by table_size_b desc nulls last limit 300;
-$sql$,
-'{"prometheus_gauge_columns": ["table_size_b", "total_relation_size_b", "toast_size_b", "seconds_since_last_vacuum", "seconds_since_last_analyze", "n_live_tup", "n_dead_tup"]}',
-true
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
-values (
-'table_stats',
-9.1,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  quote_ident(schemaname) as tag_schema,
-  quote_ident(ut.relname) as tag_table_name,
-  quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
-  pg_table_size(relid) as table_size_b,
-  abs(greatest(ceil(log((pg_table_size(relid)+1) / 10^6)), 0))::text as tag_table_size_cardinality_mb, -- i.e. 0=<1MB, 1=<10MB, 2=<100MB,..
-  pg_total_relation_size(relid) as total_relation_size_b,
-  case when reltoastrelid != 0 then pg_total_relation_size(reltoastrelid) else 0::int8 end as toast_size_b,
-  (extract(epoch from now() - greatest(last_vacuum, last_autovacuum)))::int8 as seconds_since_last_vacuum,
-  (extract(epoch from now() - greatest(last_analyze, last_autoanalyze)))::int8 as seconds_since_last_analyze,
-  case when 'autovacuum_enabled=off' = ANY(c.reloptions) then 1 else 0 end as no_autovacuum,
-  seq_scan,
-  seq_tup_read,
-  coalesce(idx_scan, 0) as idx_scan,
-  coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
-  n_tup_ins,
-  n_tup_upd,
-  n_tup_del,
-  n_tup_hot_upd,
-  n_live_tup,
-  n_dead_tup,
-  vacuum_count,
-  autovacuum_count,
-  analyze_count,
-  autoanalyze_count,
-  age(relfrozenxid) as tx_freeze_age
-from
-  pg_stat_user_tables ut
-  join
-  pg_class c on c.oid = ut.relid
-where
-  -- leaving out fully locked tables as pg_relation_size also wants a lock and would wait
-  not exists (select 1 from pg_locks where relation = relid and mode = 'AccessExclusiveLock')
-  and c.relpersistence != 't' -- and temp tables
-order by table_size_b desc nulls last limit 300;
-$sql$,
-'{"prometheus_gauge_columns": ["table_size_b", "total_relation_size_b", "toast_size_b", "seconds_since_last_vacuum", "seconds_since_last_analyze", "n_live_tup", "n_dead_tup"]}',
-true
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_standby_only)
-values (
-'table_stats',
-9.1,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  quote_ident(schemaname) as tag_schema,
-  quote_ident(ut.relname) as tag_table_name,
-  quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
-  pg_table_size(relid) as table_size_b,
-  abs(greatest(ceil(log((pg_table_size(relid)+1) / 10^6)), 0))::text as tag_table_size_cardinality_mb, -- i.e. 0=<1MB, 1=<10MB, 2=<100MB,..
-  pg_total_relation_size(relid) as total_relation_size_b,
-  case when reltoastrelid != 0 then pg_total_relation_size(reltoastrelid) else 0::int8 end as toast_size_b,
-  (extract(epoch from now() - greatest(last_vacuum, last_autovacuum)))::int8 as seconds_since_last_vacuum,
-  (extract(epoch from now() - greatest(last_analyze, last_autoanalyze)))::int8 as seconds_since_last_analyze,
-  case when 'autovacuum_enabled=off' = ANY(c.reloptions) then 1 else 0 end as no_autovacuum,
-  seq_scan,
-  seq_tup_read,
-  coalesce(idx_scan, 0) as idx_scan,
-  coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
-  n_tup_ins,
-  n_tup_upd,
-  n_tup_del,
-  n_tup_hot_upd,
-  n_live_tup,
-  n_dead_tup,
-  vacuum_count,
-  autovacuum_count,
-  analyze_count,
-  autoanalyze_count,
-  age(relfrozenxid) as tx_freeze_age
-from
-  pg_stat_user_tables ut
-  join
-  pg_class c on c.oid = ut.relid
-where
-  -- leaving out fully locked tables as pg_relation_size also wants a lock and would wait
-  not exists (select 1 from pg_locks where relation = relid and mode = 'AccessExclusiveLock')
-  and c.relpersistence != 't' -- and temp tables
-order by table_size_b desc nulls last limit 300;
-$sql$,
-'{"prometheus_gauge_columns": ["table_size_b", "total_relation_size_b", "toast_size_b", "seconds_since_last_vacuum", "seconds_since_last_analyze", "n_live_tup", "n_dead_tup"]}',
-true
-);
-
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'table_stats',
-9.2,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  quote_ident(schemaname) as tag_schema,
-  quote_ident(ut.relname) as tag_table_name,
-  quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
-  pg_table_size(relid) as table_size_b,
-  abs(greatest(ceil(log((pg_table_size(relid)+1) / 10^6)), 0))::text as tag_table_size_cardinality_mb, -- i.e. 0=<1MB, 1=<10MB, 2=<100MB,..
-  pg_total_relation_size(relid) as total_relation_size_b,
-  case when reltoastrelid != 0 then pg_total_relation_size(reltoastrelid) else 0::int8 end as toast_size_b,
-  (extract(epoch from now() - greatest(last_vacuum, last_autovacuum)))::int8 as seconds_since_last_vacuum,
-  (extract(epoch from now() - greatest(last_analyze, last_autoanalyze)))::int8 as seconds_since_last_analyze,
-  case when 'autovacuum_enabled=off' = ANY(c.reloptions) then 1 else 0 end as no_autovacuum,
-  seq_scan,
-  seq_tup_read,
-  coalesce(idx_scan, 0) as idx_scan,
-  coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
-  n_tup_ins,
-  n_tup_upd,
-  n_tup_del,
-  n_tup_hot_upd,
-  n_live_tup,
-  n_dead_tup,
-  vacuum_count,
-  autovacuum_count,
-  analyze_count,
-  autoanalyze_count,
-  age(relfrozenxid) as tx_freeze_age
-from
-  pg_stat_user_tables ut
-  join
-  pg_class c on c.oid = ut.relid
-where
-  -- leaving out fully locked tables as pg_relation_size also wants a lock and would wait
-  not exists (select 1 from pg_locks where relation = relid and mode = 'AccessExclusiveLock')
-  and c.relpersistence != 't' -- and temp tables
-order by table_size_b desc nulls last limit 300;
-$sql$,
-'{"prometheus_gauge_columns": ["table_size_b", "total_relation_size_b", "toast_size_b", "seconds_since_last_vacuum", "seconds_since_last_analyze", "n_live_tup", "n_dead_tup"]}'
-);
-
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'table_stats',
-10,
+11,
 $sql$
 with recursive
     q_root_part as (
@@ -2122,326 +911,10 @@ $sql$,
 );
 
 /* table_stats_approx */
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
-values (
-'table_stats_approx',
-9.0,
-$sql$
-with q_tbls_by_total_associated_relpages_approx as (
-  select * from (
-    select
-      c.oid,
-      c.relname,
-      c.relpages,
-      coalesce((select sum(relpages) from pg_class ci join pg_index i on i.indexrelid = ci.oid where i.indrelid = c.oid), 0) as index_relpages,
-      coalesce((select coalesce(ct.relpages, 0) + coalesce(cti.relpages, 0) from pg_class ct left join pg_index ti on ti.indrelid = ct.oid left join pg_class cti on cti.oid = ti.indexrelid where ct.oid = c.reltoastrelid), 0) as toast_relpages,
-      case when 'autovacuum_enabled=off' = ANY(c.reloptions) then 1 else 0 end as no_autovacuum,
-      age(c.relfrozenxid) as tx_freeze_age
-    from
-      pg_class c
-      join pg_namespace n on n.oid = c.relnamespace
-    where
-      not n.nspname like any (array[E'pg\\_%', 'information_schema'])
-      and c.relkind = 'r'
-      and not relistemp -- and temp tables
-  ) x
-  order by relpages + index_relpages + toast_relpages desc limit 300
-), q_block_size as (
-  select current_setting('block_size')::int8 as bs
-)
-select /* pgwatch3_generated */
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
-  bs * relpages as table_size_b,
-  abs(greatest(ceil(log((bs*relpages+1) / 10^6)), 0))::text as tag_table_size_cardinality_mb, -- i.e. 0=<1MB, 1=<10MB, 2=<100MB,..
-  bs * (relpages + index_relpages + toast_relpages) as total_relation_size_b,
-  bs * toast_relpages as toast_size_b,
-  (extract(epoch from now() - greatest(last_vacuum, last_autovacuum)))::int8 as seconds_since_last_vacuum,
-  (extract(epoch from now() - greatest(last_analyze, last_autoanalyze)))::int8 as seconds_since_last_analyze,
-  no_autovacuum,
-  seq_scan,
-  seq_tup_read,
-  coalesce(idx_scan, 0) as idx_scan,
-  coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
-  n_tup_ins,
-  n_tup_upd,
-  n_tup_del,
-  n_tup_hot_upd,
-  n_live_tup,
-  n_dead_tup,
-  tx_freeze_age
-from
-  pg_stat_user_tables ut
-  join q_tbls_by_total_associated_relpages_approx t on t.oid = ut.relid
-  join q_block_size on true
-where
-  -- leaving out fully locked tables as pg_relation_size also wants a lock and would wait
-  not exists (select 1 from pg_locks where relation = relid and mode = 'AccessExclusiveLock');
-$sql$,
-'{"prometheus_gauge_columns": ["table_size_b", "total_relation_size_b", "toast_size_b", "seconds_since_last_vacuum", "seconds_since_last_analyze", "n_live_tup", "n_dead_tup"]}',
-true
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_standby_only)
-values (
-'table_stats_approx',
-9.0,
-$sql$
-with q_tbls_by_total_associated_relpages_approx as (
-  select * from (
-    select
-      c.oid,
-      c.relname,
-      c.relpages,
-      coalesce((select sum(relpages) from pg_class ci join pg_index i on i.indexrelid = ci.oid where i.indrelid = c.oid), 0) as index_relpages,
-      coalesce((select coalesce(ct.relpages, 0) + coalesce(cti.relpages, 0) from pg_class ct left join pg_index ti on ti.indrelid = ct.oid left join pg_class cti on cti.oid = ti.indexrelid where ct.oid = c.reltoastrelid), 0) as toast_relpages,
-      case when 'autovacuum_enabled=off' = ANY(c.reloptions) then 1 else 0 end as no_autovacuum
-    from
-      pg_class c
-      join pg_namespace n on n.oid = c.relnamespace
-    where
-      not n.nspname like any (array[E'pg\\_%', 'information_schema'])
-      and c.relkind = 'r'
-      and not relistemp -- and temp tables
-  ) x
-  order by relpages + index_relpages + toast_relpages desc limit 300
-), q_block_size as (
-  select current_setting('block_size')::int8 as bs
-)
-select /* pgwatch3_generated */
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
-  bs * relpages as table_size_b,
-  abs(greatest(ceil(log((bs*relpages+1) / 10^6)), 0))::text as tag_table_size_cardinality_mb, -- i.e. 0=<1MB, 1=<10MB, 2=<100MB,..
-  bs * (relpages + index_relpages + toast_relpages) as total_relation_size_b,
-  bs * toast_relpages as toast_size_b,
-  (extract(epoch from now() - greatest(last_vacuum, last_autovacuum)))::int8 as seconds_since_last_vacuum,
-  (extract(epoch from now() - greatest(last_analyze, last_autoanalyze)))::int8 as seconds_since_last_analyze,
-  no_autovacuum,
-  seq_scan,
-  seq_tup_read,
-  coalesce(idx_scan, 0) as idx_scan,
-  coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
-  n_tup_ins,
-  n_tup_upd,
-  n_tup_del,
-  n_tup_hot_upd,
-  n_live_tup,
-  n_dead_tup
-from
-  pg_stat_user_tables ut
-  join q_tbls_by_total_associated_relpages_approx t on t.oid = ut.relid
-  join q_block_size on true
-where
-  -- leaving out fully locked tables as pg_relation_size also wants a lock and would wait
-  not exists (select 1 from pg_locks where relation = relid and mode = 'AccessExclusiveLock');
-$sql$,
-'{"prometheus_gauge_columns": ["table_size_b", "total_relation_size_b", "toast_size_b", "seconds_since_last_vacuum", "seconds_since_last_analyze", "n_live_tup", "n_dead_tup"]}',
-true
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
-values (
-'table_stats_approx',
-9.1,
-$sql$
-with q_tbls_by_total_associated_relpages_approx as (
-  select * from (
-    select
-      c.oid,
-      c.relname,
-      c.relpages,
-      coalesce((select sum(relpages) from pg_class ci join pg_index i on i.indexrelid = ci.oid where i.indrelid = c.oid), 0) as index_relpages,
-      coalesce((select coalesce(ct.relpages, 0) + coalesce(cti.relpages, 0) from pg_class ct left join pg_index ti on ti.indrelid = ct.oid left join pg_class cti on cti.oid = ti.indexrelid where ct.oid = c.reltoastrelid), 0) as toast_relpages,
-      case when 'autovacuum_enabled=off' = ANY(c.reloptions) then 1 else 0 end as no_autovacuum,
-      age(c.relfrozenxid) as tx_freeze_age,
-      c.relpersistence
-    from
-      pg_class c
-      join pg_namespace n on n.oid = c.relnamespace
-    where
-      not n.nspname like any (array[E'pg\\_%', 'information_schema'])
-      and c.relkind = 'r'
-      and c.relpersistence != 't'
-  ) x
-  order by relpages + index_relpages + toast_relpages desc limit 300
-), q_block_size as (
-  select current_setting('block_size')::int8 as bs
-)
-select /* pgwatch3_generated */
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
-  bs * relpages as table_size_b,
-  abs(greatest(ceil(log((bs*relpages+1) / 10^6)), 0))::text as tag_table_size_cardinality_mb, -- i.e. 0=<1MB, 1=<10MB, 2=<100MB,..
-  bs * (relpages + index_relpages + toast_relpages) as total_relation_size_b,
-  bs * toast_relpages as toast_size_b,
-  (extract(epoch from now() - greatest(last_vacuum, last_autovacuum)))::int8 as seconds_since_last_vacuum,
-  (extract(epoch from now() - greatest(last_analyze, last_autoanalyze)))::int8 as seconds_since_last_analyze,
-  no_autovacuum,
-  seq_scan,
-  seq_tup_read,
-  coalesce(idx_scan, 0) as idx_scan,
-  coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
-  n_tup_ins,
-  n_tup_upd,
-  n_tup_del,
-  n_tup_hot_upd,
-  n_live_tup,
-  n_dead_tup,
-  vacuum_count,
-  autovacuum_count,
-  analyze_count,
-  autoanalyze_count,
-  tx_freeze_age,
-  relpersistence
-from
-  pg_stat_user_tables ut
-  join q_tbls_by_total_associated_relpages_approx t on t.oid = ut.relid
-  join q_block_size on true
-where
-  -- leaving out fully locked tables as pg_relation_size also wants a lock and would wait
-  not exists (select 1 from pg_locks where relation = relid and mode = 'AccessExclusiveLock');
-$sql$,
-'{"prometheus_gauge_columns": ["table_size_b", "total_relation_size_b", "toast_size_b", "seconds_since_last_vacuum", "seconds_since_last_analyze", "n_live_tup", "n_dead_tup"]}',
-true
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_standby_only)
-values (
-'table_stats_approx',
-9.1,
-$sql$
-with q_tbls_by_total_associated_relpages_approx as (
-  select * from (
-    select
-      c.oid,
-      c.relname,
-      c.relpages,
-      coalesce((select sum(relpages) from pg_class ci join pg_index i on i.indexrelid = ci.oid where i.indrelid = c.oid), 0) as index_relpages,
-      coalesce((select coalesce(ct.relpages, 0) + coalesce(cti.relpages, 0) from pg_class ct left join pg_index ti on ti.indrelid = ct.oid left join pg_class cti on cti.oid = ti.indexrelid where ct.oid = c.reltoastrelid), 0) as toast_relpages,
-      case when 'autovacuum_enabled=off' = ANY(c.reloptions) then 1 else 0 end as no_autovacuum,
-      c.relpersistence
-    from
-      pg_class c
-      join pg_namespace n on n.oid = c.relnamespace
-    where
-      not n.nspname like any (array[E'pg\\_%', 'information_schema'])
-      and c.relkind = 'r'
-      and c.relpersistence != 't'
-  ) x
-  order by relpages + index_relpages + toast_relpages desc limit 300
-), q_block_size as (
-  select current_setting('block_size')::int8 as bs
-)
-select /* pgwatch3_generated */
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
-  bs * relpages as table_size_b,
-  abs(greatest(ceil(log((bs*relpages+1) / 10^6)), 0))::text as tag_table_size_cardinality_mb, -- i.e. 0=<1MB, 1=<10MB, 2=<100MB,..
-  bs * (relpages + index_relpages + toast_relpages) as total_relation_size_b,
-  bs * toast_relpages as toast_size_b,
-  (extract(epoch from now() - greatest(last_vacuum, last_autovacuum)))::int8 as seconds_since_last_vacuum,
-  (extract(epoch from now() - greatest(last_analyze, last_autoanalyze)))::int8 as seconds_since_last_analyze,
-  no_autovacuum,
-  seq_scan,
-  seq_tup_read,
-  coalesce(idx_scan, 0) as idx_scan,
-  coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
-  n_tup_ins,
-  n_tup_upd,
-  n_tup_del,
-  n_tup_hot_upd,
-  n_live_tup,
-  n_dead_tup,
-  vacuum_count,
-  autovacuum_count,
-  analyze_count,
-  autoanalyze_count,
-  relpersistence
-from
-  pg_stat_user_tables ut
-  join q_tbls_by_total_associated_relpages_approx t on t.oid = ut.relid
-  join q_block_size on true
-where
-  -- leaving out fully locked tables as pg_relation_size also wants a lock and would wait
-  not exists (select 1 from pg_locks where relation = relid and mode = 'AccessExclusiveLock');
-$sql$,
-'{"prometheus_gauge_columns": ["table_size_b", "total_relation_size_b", "toast_size_b", "seconds_since_last_vacuum", "seconds_since_last_analyze", "n_live_tup", "n_dead_tup"]}',
-true
-);
-
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'table_stats_approx',
-9.2,
-$sql$
-with q_tbls_by_total_associated_relpages_approx as (
-  select * from (
-    select
-      c.oid,
-      c.relname,
-      c.relpages,
-      coalesce((select sum(relpages) from pg_class ci join pg_index i on i.indexrelid = ci.oid where i.indrelid = c.oid), 0) as index_relpages,
-      coalesce((select coalesce(ct.relpages, 0) + coalesce(cti.relpages, 0) from pg_class ct left join pg_index ti on ti.indrelid = ct.oid left join pg_class cti on cti.oid = ti.indexrelid where ct.oid = c.reltoastrelid), 0) as toast_relpages,
-      case when 'autovacuum_enabled=off' = ANY(c.reloptions) then 1 else 0 end as no_autovacuum,
-      age(c.relfrozenxid) as tx_freeze_age,
-      c.relpersistence
-    from
-      pg_class c
-      join pg_namespace n on n.oid = c.relnamespace
-    where
-      not n.nspname like any (array[E'pg\\_%', 'information_schema'])
-      and c.relkind = 'r'
-      and c.relpersistence != 't'
-  ) x
-  order by relpages + index_relpages + toast_relpages desc limit 300
-), q_block_size as (
-  select current_setting('block_size')::int8 as bs
-)
-select /* pgwatch3_generated */
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
-  bs * relpages as table_size_b,
-  abs(greatest(ceil(log((bs*relpages+1) / 10^6)), 0))::text as tag_table_size_cardinality_mb, -- i.e. 0=<1MB, 1=<10MB, 2=<100MB,..
-  bs * (relpages + index_relpages + toast_relpages) as total_relation_size_b,
-  bs * toast_relpages as toast_size_b,
-  (extract(epoch from now() - greatest(last_vacuum, last_autovacuum)))::int8 as seconds_since_last_vacuum,
-  (extract(epoch from now() - greatest(last_analyze, last_autoanalyze)))::int8 as seconds_since_last_analyze,
-  no_autovacuum,
-  seq_scan,
-  seq_tup_read,
-  coalesce(idx_scan, 0) as idx_scan,
-  coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
-  n_tup_ins,
-  n_tup_upd,
-  n_tup_del,
-  n_tup_hot_upd,
-  n_live_tup,
-  n_dead_tup,
-  vacuum_count,
-  autovacuum_count,
-  analyze_count,
-  autoanalyze_count,
-  tx_freeze_age,
-  relpersistence
-from
-  pg_stat_user_tables ut
-  join q_tbls_by_total_associated_relpages_approx t on t.oid = ut.relid
-  join q_block_size on true
-where
-  -- leaving out fully locked tables as pg_relation_size also wants a lock and would wait
-  not exists (select 1 from pg_locks where relation = relid and mode = 'AccessExclusiveLock');
-$sql$,
-'{"prometheus_gauge_columns": ["table_size_b", "total_relation_size_b", "toast_size_b", "seconds_since_last_vacuum", "seconds_since_last_analyze", "n_live_tup", "n_dead_tup"]}'
-);
-
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'table_stats_approx',
-10,
+11,
 $sql$
 with recursive
     q_root_part as (
@@ -2600,33 +1073,10 @@ $sql$,
 
 
 /* wal */
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'wal',
-9.2,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  case
-    when pg_is_in_recovery() = false then
-      pg_xlog_location_diff(pg_current_xlog_location(), '0/0')::int8
-    else
-      pg_xlog_location_diff(pg_last_xlog_replay_location(), '0/0')::int8
-    end as xlog_location_b,
-  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int,
-  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s;
-$sql$,
-'{"prometheus_gauge_columns": ["in_recovery_int", "postmaster_uptime_s"]}'
-);
-
-
-/* wal */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
 values (
 'wal',
-10,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -2659,289 +1109,10 @@ $sql$,
 );
 
 /* stat_statements */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'stat_statements',
-9.2,
-$sql$
-WITH q_data AS (
-    SELECT
-        (regexp_replace(md5(query::varchar(1000)), E'\\D', '', 'g'))::varchar(10)::text as tag_queryid,
-        max(query::varchar(8000)) AS query,
-        /*
-         NB! if security conscious about exposing query texts replace the below expression with a dash ('-') OR
-         use the stat_statements_no_query_text metric instead, created specifically for this use case.
-         */
-        array_to_string(array_agg(DISTINCT quote_ident(pg_get_userbyid(userid))), ',') AS users,
-        sum(s.calls)::int8 AS calls,
-        round(sum(s.total_time)::numeric, 3)::double precision AS total_time,
-        sum(shared_blks_hit)::int8 AS shared_blks_hit,
-        sum(shared_blks_read)::int8 AS shared_blks_read,
-        sum(shared_blks_written)::int8 AS shared_blks_written,
-        sum(shared_blks_dirtied)::int8 AS shared_blks_dirtied,
-        sum(temp_blks_read)::int8 AS temp_blks_read,
-        sum(temp_blks_written)::int8 AS temp_blks_written,
-        round(sum(blk_read_time)::numeric, 3)::double precision AS blk_read_time,
-        round(sum(blk_write_time)::numeric, 3)::double precision AS blk_write_time
-    FROM
-        get_stat_statements() s
-    WHERE
-        calls > 5
-        AND total_time > 5
-        AND dbid = (
-            SELECT
-                oid
-            FROM
-                pg_database
-            WHERE
-                datname = current_database())
-            AND NOT upper(s.query::varchar(50))
-            LIKE ANY (ARRAY['DEALLOCATE%',
-                'SET %',
-                'RESET %',
-                'BEGIN%',
-                'BEGIN;',
-                'COMMIT%',
-                'END%',
-                'ROLLBACK%',
-                'SHOW%'])
-        GROUP BY
-            tag_queryid
-)
-SELECT (EXTRACT(epoch FROM now()) * 1e9)::int8 AS epoch_ns,
-       b.tag_queryid,
-       b.users,
-       b.calls,
-       b.total_time,
-       b.shared_blks_hit,
-       b.shared_blks_read,
-       b.shared_blks_written,
-       b.shared_blks_dirtied,
-       b.temp_blks_read,
-       b.temp_blks_written,
-       b.blk_read_time,
-       b.blk_write_time,
-       ltrim(regexp_replace(b.query, E'[ \\t\\n\\r]+', ' ', 'g')) tag_query
-FROM (
-    SELECT
-        *
-    FROM (
-        SELECT
-            *
-        FROM
-            q_data
-        WHERE
-            total_time > 0
-        ORDER BY
-            total_time DESC
-        LIMIT 100) a
-UNION
-SELECT
-    *
-FROM (
-    SELECT
-        *
-    FROM
-        q_data
-    ORDER BY
-        calls DESC
-    LIMIT 100) a
-UNION
-SELECT
-    *
-FROM (
-    SELECT
-        *
-    FROM
-        q_data
-    WHERE
-        shared_blks_read > 0
-    ORDER BY
-        shared_blks_read DESC
-    LIMIT 100) a
-UNION
-SELECT
-    *
-FROM (
-    SELECT
-        *
-    FROM
-        q_data
-    WHERE
-        shared_blks_written > 0
-    ORDER BY
-        shared_blks_written DESC
-    LIMIT 100) a
-UNION
-SELECT
-    *
-FROM (
-    SELECT
-        *
-    FROM
-        q_data
-    WHERE
-        temp_blks_read > 0
-    ORDER BY
-        temp_blks_read DESC
-    LIMIT 100) a
-UNION
-SELECT
-    *
-FROM (
-    SELECT
-        *
-    FROM
-        q_data
-    WHERE
-        temp_blks_written > 0
-    ORDER BY
-        temp_blks_written DESC
-    LIMIT 100) a) b;
-$sql$,
-$sql$
-WITH q_data AS (
-    SELECT
-        (regexp_replace(md5(query::varchar(1000)), E'\\D', '', 'g'))::varchar(10)::text as tag_queryid,
-        max(query::varchar(8000)) AS query,
-        /*
-         NB! if security conscious about exposing query texts replace the below expression with a dash ('-') OR
-         use the stat_statements_no_query_text metric instead, created specifically for this use case.
-         */
-        array_to_string(array_agg(DISTINCT quote_ident(pg_get_userbyid(userid))), ',') AS users,
-        sum(s.calls)::int8 AS calls,
-        round(sum(s.total_time)::numeric, 3)::double precision AS total_time,
-        sum(shared_blks_hit)::int8 AS shared_blks_hit,
-        sum(shared_blks_read)::int8 AS shared_blks_read,
-        sum(shared_blks_written)::int8 AS shared_blks_written,
-        sum(shared_blks_dirtied)::int8 AS shared_blks_dirtied,
-        sum(temp_blks_read)::int8 AS temp_blks_read,
-        sum(temp_blks_written)::int8 AS temp_blks_written,
-        round(sum(blk_read_time)::numeric, 3)::double precision AS blk_read_time,
-        round(sum(blk_write_time)::numeric, 3)::double precision AS blk_write_time
-    FROM
-        pg_stat_statements s
-    WHERE
-        calls > 5
-        AND total_time > 5
-        AND dbid = (
-            SELECT
-                oid
-            FROM
-                pg_database
-            WHERE
-                datname = current_database())
-            AND NOT upper(s.query::varchar(50))
-            LIKE ANY (ARRAY['DEALLOCATE%',
-                'SET %',
-                'RESET %',
-                'BEGIN%',
-                'BEGIN;',
-                'COMMIT%',
-                'END%',
-                'ROLLBACK%',
-                'SHOW%'])
-        GROUP BY
-            tag_queryid
-)
-SELECT (EXTRACT(epoch FROM now()) * 1e9)::int8 AS epoch_ns,
-       b.tag_queryid,
-       b.users,
-       b.calls,
-       b.total_time,
-       b.shared_blks_hit,
-       b.shared_blks_read,
-       b.shared_blks_written,
-       b.shared_blks_dirtied,
-       b.temp_blks_read,
-       b.temp_blks_written,
-       b.blk_read_time,
-       b.blk_write_time,
-       ltrim(regexp_replace(b.query, E'[ \\t\\n\\r]+', ' ', 'g')) tag_query
-FROM (
-    SELECT
-        *
-    FROM (
-        SELECT
-            *
-        FROM
-            q_data
-        WHERE
-            total_time > 0
-        ORDER BY
-            total_time DESC
-        LIMIT 100) a
-UNION
-SELECT
-    *
-FROM (
-    SELECT
-        *
-    FROM
-        q_data
-    ORDER BY
-        calls DESC
-    LIMIT 100) a
-UNION
-SELECT
-    *
-FROM (
-    SELECT
-        *
-    FROM
-        q_data
-    WHERE
-        shared_blks_read > 0
-    ORDER BY
-        shared_blks_read DESC
-    LIMIT 100) a
-UNION
-SELECT
-    *
-FROM (
-    SELECT
-        *
-    FROM
-        q_data
-    WHERE
-        shared_blks_written > 0
-    ORDER BY
-        shared_blks_written DESC
-    LIMIT 100) a
-UNION
-SELECT
-    *
-FROM (
-    SELECT
-        *
-    FROM
-        q_data
-    WHERE
-        temp_blks_read > 0
-    ORDER BY
-        temp_blks_read DESC
-    LIMIT 100) a
-UNION
-SELECT
-    *
-FROM (
-    SELECT
-        *
-    FROM
-        q_data
-    WHERE
-        temp_blks_written > 0
-    ORDER BY
-        temp_blks_written DESC
-    LIMIT 100) a) b;
-$sql$
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
-values (
-'stat_statements',
-9.4,
+11,
 $sql$
 WITH q_data AS (
     SELECT
@@ -3511,213 +1682,10 @@ $sql$
 
 
 /* stat_statements_no_query_text - the same as normal ss but leaving out query texts for security */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'stat_statements_no_query_text',
-9.2,
-$sql$
-with q_data as (
-  select
-    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-    (regexp_replace(md5(query), E'\\D', '', 'g'))::varchar(10)::int8 as tag_queryid,
-    '-'::text as tag_query,
-    array_to_string(array_agg(distinct quote_ident(pg_get_userbyid(userid))), ',') as users,
-    sum(s.calls)::int8 as calls,
-    round(sum(s.total_time)::numeric, 3)::double precision as total_time,
-    sum(shared_blks_hit)::int8 as shared_blks_hit,
-    sum(shared_blks_read)::int8 as shared_blks_read,
-    sum(shared_blks_written)::int8 as shared_blks_written,
-    sum(shared_blks_dirtied)::int8 as shared_blks_dirtied,
-    sum(temp_blks_read)::int8 as temp_blks_read,
-    sum(temp_blks_written)::int8 as temp_blks_written,
-    round(sum(blk_read_time)::numeric, 3)::double precision as blk_read_time,
-    round(sum(blk_write_time)::numeric, 3)::double precision as blk_write_time
-  from
-    get_stat_statements() s
-  where
-    calls > 5
-    and total_time > 0
-    and dbid = (select oid from pg_database where datname = current_database())
-    and not upper(s.query) like any (array['DEALLOCATE%', 'SET %', 'RESET %', 'BEGIN%', 'BEGIN;',
-      'COMMIT%', 'END%', 'ROLLBACK%', 'SHOW%'])
-  group by
-    tag_queryid
-)
-select * from (
-  select
-    *
-  from
-    q_data
-  where
-    total_time > 0
-  order by
-    total_time desc
-  limit 100
-) a
-union
-select * from (
-  select
-    *
-  from
-    q_data
-  order by
-    calls desc
-  limit 100
-) a
-union
-select * from (
-  select
-    *
-  from
-    q_data
-  where
-    shared_blks_read > 0
-  order by
-    shared_blks_read desc
-  limit 100
-) a
-union
-select * from (
-  select
-    *
-  from
-    q_data
-  where
-    shared_blks_written > 0
-  order by
-    shared_blks_written desc
-  limit 100
-) a
-union
-select * from (
-  select
-    *
-  from
-    q_data
-  where
-    temp_blks_read > 0
-  order by
-    temp_blks_read desc
-  limit 100
-) a
-union
-select * from (
-  select
-    *
-  from
-    q_data
-  where
-    temp_blks_written > 0
-  order by
-    temp_blks_written desc
-  limit 100
-) a;
-$sql$,
-$sql$
-with q_data as (
-  select
-    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-    (regexp_replace(md5(query), E'\\D', '', 'g'))::varchar(10)::int8 as tag_queryid,
-    '-'::text as tag_query,
-    array_to_string(array_agg(distinct quote_ident(pg_get_userbyid(userid))), ',') as users,
-    sum(s.calls)::int8 as calls,
-    round(sum(s.total_time)::numeric, 3)::double precision as total_time,
-    sum(shared_blks_hit)::int8 as shared_blks_hit,
-    sum(shared_blks_read)::int8 as shared_blks_read,
-    sum(shared_blks_written)::int8 as shared_blks_written,
-    sum(shared_blks_dirtied)::int8 as shared_blks_dirtied,
-    sum(temp_blks_read)::int8 as temp_blks_read,
-    sum(temp_blks_written)::int8 as temp_blks_written,
-    round(sum(blk_read_time)::numeric, 3)::double precision as blk_read_time,
-    round(sum(blk_write_time)::numeric, 3)::double precision as blk_write_time
-  from
-    pg_stat_statements s
-  where
-    calls > 5
-    and total_time > 0
-    and dbid = (select oid from pg_database where datname = current_database())
-    and not upper(s.query) like any (array['DEALLOCATE%', 'SET %', 'RESET %', 'BEGIN%', 'BEGIN;',
-      'COMMIT%', 'END%', 'ROLLBACK%', 'SHOW%'])
-  group by
-    tag_queryid
-)
-select * from (
-  select
-    *
-  from
-    q_data
-  where
-    total_time > 0
-  order by
-    total_time desc
-  limit 100
-) a
-union
-select * from (
-  select
-    *
-  from
-    q_data
-  order by
-    calls desc
-  limit 100
-) a
-union
-select * from (
-  select
-    *
-  from
-    q_data
-  where
-    shared_blks_read > 0
-  order by
-    shared_blks_read desc
-  limit 100
-) a
-union
-select * from (
-  select
-    *
-  from
-    q_data
-  where
-    shared_blks_written > 0
-  order by
-    shared_blks_written desc
-  limit 100
-) a
-union
-select * from (
-  select
-    *
-  from
-    q_data
-  where
-    temp_blks_read > 0
-  order by
-    temp_blks_read desc
-  limit 100
-) a
-union
-select * from (
-  select
-    *
-  from
-    q_data
-  where
-    temp_blks_written > 0
-  order by
-    temp_blks_written desc
-  limit 100
-) a;
-$sql$
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
-values (
-'stat_statements_no_query_text',
-9.4,
+11,
 $sql$
 with q_data as (
   select
@@ -4127,11 +2095,10 @@ $sql$
 
 
 /* stat_statements_calls - enables to show QPS queries per second. "calls" works without the above wrapper also */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'stat_statements_calls',
-9.2,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -4168,7 +2135,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'buffercache_by_db',
-9.2,
+11,
 $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -4189,7 +2156,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'buffercache_by_type',
-9.2,
+11,
 $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -4217,7 +2184,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'stat_ssl',
-9.5,
+11,
 $sql$
 select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -4255,7 +2222,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_standby_only, m_sql)
 values (
 'database_conflicts',
-9.2,
+11,
 true,
 $sql$
 SELECT
@@ -4274,11 +2241,10 @@ $sql$
 
 
 /* locks - counts only */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'locks',
-9.0,
+11,
 $sql$
 WITH q_locks AS (
   select
@@ -4304,7 +2270,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'locks_mode',
-9.0,
+11,
 $sql$
 WITH q_locks AS (
   select
@@ -4332,7 +2298,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'blocking_locks',
-9.2,
+11,
 $sql$
 SELECT
     (extract(epoch from now()) * 1e9)::int8 AS epoch_ns,
@@ -4436,7 +2402,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
 values (
 'table_bloat_approx_stattuple',
-9.5,
+11,
 true,
 $sql$
 /* NB! accessing pgstattuple_approx directly requires superuser or pg_stat_scan_tables/pg_monitor builtin roles */
@@ -4466,7 +2432,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_table_bloat_approx',
-9.5,
+11,
 $sql$
 BEGIN;
 
@@ -4529,7 +2495,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_is_helper)
 values (
 'get_table_bloat_approx_sql',
-9.0,
+11,
 $sql$
 -- small modifications to SQL from https://github.com/ioguix/pgsql-bloat-estimation
 -- NB! monitoring user needs SELECT grant on all tables or a SECURITY DEFINER wrapper around that SQL
@@ -4857,59 +2823,10 @@ true
 );
 
 /* approx. bloat summary */
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs, m_sql_su)
-values (
-'table_bloat_approx_summary',
-9.5,
-true,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  approx_free_percent,
-  approx_free_space as approx_free_space_b,
-  dead_tuple_percent,
-  dead_tuple_len as dead_tuple_len_b
-from
-  get_table_bloat_approx()
-where
-  approx_free_space > 0
-$sql$,
-'{"prometheus_all_gauge_columns": true}',
-$sql$
-with table_bloat_approx as (
-    select
-        avg(approx_free_percent)::double precision as approx_free_percent,
-        sum(approx_free_space)::double precision as approx_free_space,
-        avg(dead_tuple_percent)::double precision as dead_tuple_percent,
-        sum(dead_tuple_len)::double precision as dead_tuple_len
-    from
-        pg_class c
-            join
-        pg_namespace n on n.oid = c.relnamespace
-            join lateral pgstattuple_approx(c.oid) on (c.oid not in (select relation from pg_locks where mode = 'AccessExclusiveLock'))  -- skip locked tables
-    where
-        relkind in ('r', 'm')
-        and c.relpages >= 128 -- tables >1mb
-        and not n.nspname like any (array[E'pg\\_%', 'information_schema'])
-)
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  approx_free_percent,
-  approx_free_space as approx_free_space_b,
-  dead_tuple_percent,
-  dead_tuple_len as dead_tuple_len_b
-from
-  table_bloat_approx
-where
-  approx_free_space > 0;
-$sql$
-);
-
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
 values (
 'table_bloat_approx_summary',
-10,
+11,
 true,
 $sql$
 /* NB! accessing pgstattuple_approx directly requires superuser or pg_stat_scan_tables/pg_monitor builtin roles or
@@ -4950,7 +2867,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs, m_sql_su)
 values (
 'table_bloat_approx_summary_sql',
-9.0,
+11,
 true,
 $sql$
 WITH q_bloat AS (
@@ -5225,7 +3142,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from,m_sql)
 values (
 'change_events',
-9.0,
+11,
 $sql$
 $sql$
 );
@@ -5234,7 +3151,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from,m_sql)
 values (
 'sproc_hashes',
-9.0,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -5254,72 +3171,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'table_hashes',
-9.0,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  quote_ident(table_schema)||'.'||quote_ident(table_name) as tag_table,
-  md5((array_agg((c.*)::text order by ordinal_position))::text)
-from (
-         SELECT current_database()::information_schema.sql_identifier AS table_catalog, nc.nspname::information_schema.sql_identifier AS table_schema, c.relname::information_schema.sql_identifier AS table_name, a.attname::information_schema.sql_identifier AS column_name, a.attnum::information_schema.cardinal_number AS ordinal_position, pg_get_expr(ad.adbin, ad.adrelid)::information_schema.character_data AS column_default,
-                CASE
-                    WHEN a.attnotnull OR t.typtype = 'd'::"char" AND t.typnotnull THEN 'NO'::text
-                    ELSE 'YES'::text
-                    END::information_schema.yes_or_no AS is_nullable,
-                CASE
-                    WHEN t.typtype = 'd'::"char" THEN
-                        CASE
-                            WHEN bt.typelem <> 0::oid AND bt.typlen = (-1) THEN 'ARRAY'::text
-                            WHEN nbt.nspname = 'pg_catalog'::name THEN format_type(t.typbasetype, NULL::integer)
-                            ELSE 'USER-DEFINED'::text
-                            END
-                    ELSE
-                        CASE
-                            WHEN t.typelem <> 0::oid AND t.typlen = (-1) THEN 'ARRAY'::text
-                            WHEN nt.nspname = 'pg_catalog'::name THEN format_type(a.atttypid, NULL::integer)
-                            ELSE 'USER-DEFINED'::text
-                            END
-                    END::information_schema.character_data AS data_type, information_schema._pg_char_max_length(information_schema._pg_truetypid(a.*, t.*), information_schema._pg_truetypmod(a.*, t.*))::information_schema.cardinal_number AS character_maximum_length, information_schema._pg_char_octet_length(information_schema._pg_truetypid(a.*, t.*), information_schema._pg_truetypmod(a.*, t.*))::information_schema.cardinal_number AS character_octet_length, information_schema._pg_numeric_precision(information_schema._pg_truetypid(a.*, t.*), information_schema._pg_truetypmod(a.*, t.*))::information_schema.cardinal_number AS numeric_precision, information_schema._pg_numeric_precision_radix(information_schema._pg_truetypid(a.*, t.*), information_schema._pg_truetypmod(a.*, t.*))::information_schema.cardinal_number AS numeric_precision_radix, information_schema._pg_numeric_scale(information_schema._pg_truetypid(a.*, t.*), information_schema._pg_truetypmod(a.*, t.*))::information_schema.cardinal_number AS numeric_scale, information_schema._pg_datetime_precision(information_schema._pg_truetypid(a.*, t.*), information_schema._pg_truetypmod(a.*, t.*))::information_schema.cardinal_number AS datetime_precision, NULL::character varying::information_schema.character_data AS interval_type, NULL::character varying::information_schema.character_data AS interval_precision, NULL::character varying::information_schema.sql_identifier AS character_set_catalog, NULL::character varying::information_schema.sql_identifier AS character_set_schema, NULL::character varying::information_schema.sql_identifier AS character_set_name, NULL::character varying::information_schema.sql_identifier AS collation_catalog, NULL::character varying::information_schema.sql_identifier AS collation_schema, NULL::character varying::information_schema.sql_identifier AS collation_name,
-                CASE
-                    WHEN t.typtype = 'd'::"char" THEN current_database()
-                    ELSE NULL::name
-                    END::information_schema.sql_identifier AS domain_catalog,
-                CASE
-                    WHEN t.typtype = 'd'::"char" THEN nt.nspname
-                    ELSE NULL::name
-                    END::information_schema.sql_identifier AS domain_schema,
-                CASE
-                    WHEN t.typtype = 'd'::"char" THEN t.typname
-                    ELSE NULL::name
-                    END::information_schema.sql_identifier AS domain_name, current_database()::information_schema.sql_identifier AS udt_catalog, COALESCE(nbt.nspname, nt.nspname)::information_schema.sql_identifier AS udt_schema, COALESCE(bt.typname, t.typname)::information_schema.sql_identifier AS udt_name, NULL::character varying::information_schema.sql_identifier AS scope_catalog, NULL::character varying::information_schema.sql_identifier AS scope_schema, NULL::character varying::information_schema.sql_identifier AS scope_name, NULL::integer::information_schema.cardinal_number AS maximum_cardinality, a.attnum::information_schema.sql_identifier AS dtd_identifier, 'NO'::character varying::information_schema.yes_or_no AS is_self_referencing, 'NO'::character varying::information_schema.yes_or_no AS is_identity, NULL::character varying::information_schema.character_data AS identity_generation, NULL::character varying::information_schema.character_data AS identity_start, NULL::character varying::information_schema.character_data AS identity_increment, NULL::character varying::information_schema.character_data AS identity_maximum, NULL::character varying::information_schema.character_data AS identity_minimum, NULL::character varying::information_schema.yes_or_no AS identity_cycle, 'NEVER'::character varying::information_schema.character_data AS is_generated, NULL::character varying::information_schema.character_data AS generation_expression,
-                CASE
-                    WHEN c.relkind = 'r'::"char" OR c.relkind = 'v'::"char" AND (EXISTS ( SELECT 1
-                                                                                          FROM pg_rewrite
-                                                                                          WHERE pg_rewrite.ev_class = c.oid AND pg_rewrite.ev_type = '2'::"char" AND pg_rewrite.is_instead)) AND (EXISTS ( SELECT 1
-                                                                                                                                                                                                           FROM pg_rewrite
-                                                                                                                                                                                                           WHERE pg_rewrite.ev_class = c.oid AND pg_rewrite.ev_type = '4'::"char" AND pg_rewrite.is_instead)) THEN 'YES'::text
-                    ELSE 'NO'::text
-                    END::information_schema.yes_or_no AS is_updatable
-         FROM pg_attribute a
-                  LEFT JOIN pg_attrdef ad ON a.attrelid = ad.adrelid AND a.attnum = ad.adnum, pg_class c, pg_namespace nc, pg_type t
-                                                                                                                               JOIN pg_namespace nt ON t.typnamespace = nt.oid
-                                                                                                                               LEFT JOIN (pg_type bt
-             JOIN pg_namespace nbt ON bt.typnamespace = nbt.oid) ON t.typtype = 'd'::"char" AND t.typbasetype = bt.oid
-         WHERE a.attrelid = c.oid AND a.atttypid = t.oid AND nc.oid = c.relnamespace AND NOT pg_is_other_temp_schema(nc.oid) AND a.attnum > 0 AND NOT a.attisdropped AND (c.relkind = ANY (ARRAY['r'::"char", 'v'::"char"])) AND (pg_has_role(c.relowner, 'USAGE'::text) OR has_column_privilege(c.oid, a.attnum, 'SELECT, INSERT, UPDATE, REFERENCES'::text))
-) c
-where
-  not table_schema like any (array[E'pg\\_%', 'information_schema'])
-group by
-  table_schema, table_name
-order by
-  table_schema, table_name;
-$sql$
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
-values (
-'table_hashes',
-9.3,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -5428,7 +3280,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from,m_sql)
 values (
 'configuration_hashes',
-9.0,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -5443,7 +3295,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from,m_sql)
 values (
 'index_hashes',
-9.0,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -5468,7 +3320,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment)
 values (
 'privilege_changes',
-9.0,
+11,
 $sql$
 SELECT
     (extract(epoch FROM now()) * 1e9)::int8 AS epoch_ns,
@@ -5492,37 +3344,7 @@ FROM (
                 rolsuper
                 OR oid < 16384)
             AND NOT table_schema IN ('information_schema', 'pg_catalog')
-            /*
-             union all
 
-             select
-             -- quite a heavy query currently, maybe faster directly via pg_attribute + has_column_privilege?
-            'column' AS object_type,
-            grantee::text AS tag_role,
-            quote_ident(table_schema) || '.' || quote_ident(table_name) AS tag_object,
-            privilege_type
-        FROM
-            information_schema.column_privileges cp
-        WHERE
-            NOT table_schema IN ('pg_catalog', 'information_schema')
-            AND NOT grantee = ANY (
-                SELECT
-                    rolname
-                FROM
-                    pg_roles
-                WHERE
-                    rolsuper
-                    OR oid < 16384)
-                AND NOT EXISTS (
-                    SELECT
-                        *
-                    FROM
-                        information_schema.table_privileges
-                    WHERE
-                        table_schema = cp.table_schema
-                        AND table_name = cp.table_name
-                        AND grantee = cp.grantee
-                        AND privilege_type = cp.privilege_type) */
                 UNION ALL
                 SELECT
                     'function' AS object_type,
@@ -5606,7 +3428,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_load_average',
-9.1,
+11,
 $sql$
 BEGIN;
 
@@ -5633,7 +3455,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_load_average_copy',
-9.0,
+11,
 $sql$
 BEGIN;
 
@@ -5697,7 +3519,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_load_average_windows',
-9.0,
+11,
 $sql$
 /*
 
@@ -5768,71 +3590,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_stat_statements',
-9.2,
-$sql$
-BEGIN;
-
-CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
-
-CREATE OR REPLACE FUNCTION get_stat_statements() RETURNS TABLE (
-	queryid int8, query text, calls int8, total_time float8, rows int8, shared_blks_hit int8, shared_blks_read int8,
-	shared_blks_dirtied int8, shared_blks_written int8, local_blks_hit int8, local_blks_read int8, local_blks_dirtied int8,
-	local_blks_written int8, temp_blks_read int8, temp_blks_written int8, blk_read_time float8, blk_write_time float8,
-  userid int8, dbid int8
-) AS
-$$
-  select
-    /* for versions <9.4 we need to spoof the queryid column to make data usable /linkable in Grafana */
-    (regexp_replace(md5(s.query), E'\\D', '', 'g'))::varchar(10)::int8 as queryid,
-  	s.query, s.calls, s.total_time, s.rows, s.shared_blks_hit, s.shared_blks_read, s.shared_blks_dirtied, s.shared_blks_written,
-  	s.local_blks_hit, s.local_blks_read, s.local_blks_dirtied, s.local_blks_written, s.temp_blks_read, s.temp_blks_written,
-  	s.blk_read_time, s.blk_write_time, s.userid::int8, s.dbid::int8
-  from
-    pg_stat_statements s
-    join
-    pg_database d
-      on d.oid = s.dbid and d.datname = current_database()
-$$ LANGUAGE sql VOLATILE SECURITY DEFINER;
-
-GRANT EXECUTE ON FUNCTION get_stat_statements() TO pgwatch3;
-COMMENT ON FUNCTION get_stat_statements() IS 'created for pgwatch3';
-
--- below routine fixes function search_path to only include "more secure" schemas with no "public" CREATE privileges
-DO $_$
-    DECLARE
-        l_secure_schemas_from_search_path text;
-    BEGIN
-        SELECT string_agg(safe_sp, ', ' ORDER BY rank) INTO l_secure_schemas_from_search_path FROM (
-           SELECT quote_ident(nspname) AS safe_sp, rank
-           FROM unnest(regexp_split_to_array(current_setting('search_path'), ',')) WITH ORDINALITY AS csp(schema_name, rank)
-                    JOIN pg_namespace n
-                         ON quote_ident(n.nspname) = CASE WHEN schema_name = '"$user"' THEN quote_ident(user) ELSE trim(schema_name) END
-           WHERE NOT has_schema_privilege('public', n.oid, 'CREATE')
-        ) x;
-
-        IF coalesce(l_secure_schemas_from_search_path, '') = '' THEN
-            RAISE NOTICE 'search_path = %', current_setting('search_path');
-            RAISE EXCEPTION $$get_stat_statements() SECURITY DEFINER helper will not be created as all schemas on search_path are unsecured where all users can create objects -
-              execute 'REVOKE CREATE ON SCHEMA $my_schema FROM public' to tighten security or comment out the DO block to disable the check$$;
-        ELSE
-            RAISE NOTICE '%', format($$ALTER FUNCTION get_stat_statements() SET search_path TO %s$$, l_secure_schemas_from_search_path);
-            EXECUTE format($$ALTER FUNCTION get_stat_statements() SET search_path TO %s$$, l_secure_schemas_from_search_path);
-        END IF;
-    END;
-$_$;
-
-COMMIT;
-$sql$,
-'for internal usage - when connecting user is marked as superuser then the daemon will automatically try to create the needed helpers on the monitored db',
-true
-);
-
-
-/* Stored procedure needed for fetching stat_statements data - needs pg_stat_statements extension enabled on the machine! */
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
-values (
-'get_stat_statements',
-9.4,
+11,
 $sql$
 BEGIN;
 
@@ -5912,7 +3670,7 @@ false
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_stat_activity',
-9.0,
+11,
 $sql$
 
 DO $OUTER$
@@ -5947,32 +3705,10 @@ true
 );
 
 /* replication slot info */
-
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
 values (
 'replication_slots',
-9.4,
-true,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  slot_name::text as tag_slot_name,
-  coalesce(plugin, 'physical')::text as tag_plugin,
-  active,
-  case when active then 0 else 1 end as non_active_int,
-  pg_xlog_location_diff(pg_current_xlog_location(), restart_lsn)::int8 as restart_lsn_lag_b,
-  greatest(age(xmin), age(catalog_xmin))::int8 as xmin_age_tx
-from
-  pg_replication_slots;
-$sql$,
-'{"prometheus_all_gauge_columns": true}'
-);
-
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql, m_column_attrs)
-values (
-'replication_slots',
-10,
+11,
 true,
 $sql$
 select
@@ -5993,7 +3729,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'psutil_cpu',
-9.1,
+11,
 $sql$
 
 SELECT
@@ -6018,7 +3754,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_psutil_cpu',
-9.1,
+11,
 $sql$
 /*  Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil)
     NB! "psutil" is known to behave differently depending on the used version and operating system, so if getting
@@ -6070,7 +3806,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'psutil_mem',
-9.1,
+11,
 $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -6085,7 +3821,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_psutil_mem',
-9.1,
+11,
 $sql$
 /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
 CREATE EXTENSION IF NOT EXISTS plpython3u; -- NB! "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es
@@ -6113,7 +3849,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'psutil_disk',
-9.1,
+11,
 $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -6129,7 +3865,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_psutil_disk',
-9.1,
+11,
 $sql$
 /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
 CREATE EXTENSION IF NOT EXISTS plpython3u; /* NB! "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
@@ -6201,7 +3937,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'psutil_disk_io_total',
-9.1,
+11,
 $sql$
 SELECT
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -6218,7 +3954,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_psutil_disk_io_total',
-9.1,
+11,
 $sql$
 
 /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
