@@ -15,6 +15,12 @@ func (uiapi uiapihandler) GetMetrics() (res string, err error) {
 	return
 }
 
+// DeleteMetric removes the database from the list of monitored databases
+func (uiapi uiapihandler) DeleteMetric(id int) error {
+	_, err := configDb.Exec("DELETE FROM pgwatch3.metric WHERE m_id = $1", id)
+	return err
+}
+
 // GetDatabases returns the list of monitored databases
 func (uiapi uiapihandler) GetDatabases() (res string, err error) {
 	sql := `select coalesce(jsonb_agg(to_jsonb(db)), '[]') from monitored_db db`

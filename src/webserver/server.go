@@ -20,6 +20,7 @@ type apiHandler interface {
 	DeleteDatabase(id string) error
 	UpdateDatabase(id string, params []byte) error
 	GetMetrics() (res string, err error)
+	DeleteMetric(id int) error
 }
 
 type WebUIServer struct {

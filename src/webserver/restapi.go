@@ -3,6 +3,7 @@ package webserver
 import (
 	"io"
 	"net/http"
+	"strconv"
 )
 
 func (Server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request) {
@@ -35,11 +36,16 @@ func (Server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request)
 	// 		http.Error(w, err.Error(), http.StatusBadRequest)
 	// 	}
 
-	// case http.MethodDelete:
-	// 	// delete monitored database
-	// 	if err := Server.api.DeleteDatabase(r.URL.Query().Get("id")); err != nil {
-	// 		http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	}
+	case http.MethodDelete:
+		// delete stored metric
+		id, err := strconv.Atoi(r.URL.Query().Get("id"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := Server.api.DeleteMetric(id); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
 
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
