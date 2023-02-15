@@ -17,15 +17,16 @@ func (Server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request)
 		}
 		_, _ = w.Write([]byte(dbs))
 
-	// case http.MethodPost:
-	// 	// add new monitored database
-	// 	p, err := io.ReadAll(r.Body)
-	// 	if err != nil {
-	// 		http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	}
-	// 	if err := Server.api.AddDatabase(p); err != nil {
-	// 		http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	}
+	case http.MethodPost:
+		// add new stored metric
+		p, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		if err := Server.api.AddMetric(p); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+
 	// case http.MethodPatch:
 	// 	// update monitored database
 	// 	p, err := io.ReadAll(r.Body)
