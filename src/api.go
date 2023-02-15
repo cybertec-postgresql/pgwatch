@@ -8,6 +8,13 @@ type uiapihandler struct{}
 
 var uiapi uiapihandler
 
+// GetMetrics returns the list of monitored databases
+func (uiapi uiapihandler) GetMetrics() (res string, err error) {
+	sql := `select coalesce(jsonb_agg(to_jsonb(m)), '[]') from metric m`
+	err = configDb.Get(&res, sql)
+	return
+}
+
 // GetDatabases returns the list of monitored databases
 func (uiapi uiapihandler) GetDatabases() (res string, err error) {
 	sql := `select coalesce(jsonb_agg(to_jsonb(db)), '[]') from monitored_db db`

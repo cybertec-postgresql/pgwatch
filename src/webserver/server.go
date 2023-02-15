@@ -19,6 +19,7 @@ type apiHandler interface {
 	AddDatabase(params []byte) error
 	DeleteDatabase(id string) error
 	UpdateDatabase(id string, params []byte) error
+	GetMetrics() (res string, err error)
 }
 
 type WebUIServer struct {
@@ -50,6 +51,7 @@ func Init(addr string, webuifs fs.FS, api apiHandler) *WebUIServer {
 
 	mux.HandleFunc("/health", s.handleHealth)
 	mux.HandleFunc("/db", s.handleDBs)
+	mux.HandleFunc("/metric", s.handleMetrics)
 	mux.HandleFunc("/", s.handleStatic)
 
 	if 8080 != 0 {
