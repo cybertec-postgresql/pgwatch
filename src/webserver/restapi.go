@@ -7,46 +7,50 @@ import (
 )
 
 func (Server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request) {
+	var (
+		err    error
+		params []byte
+		res    string
+		id     int
+	)
+
+	defer func() {
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}()
+
 	switch r.Method {
 	case http.MethodGet:
 		// return stored metrics
-		dbs, err := Server.api.GetMetrics()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if res, err = Server.api.GetMetrics(); err != nil {
 			return
 		}
-		_, _ = w.Write([]byte(dbs))
+		_, err = w.Write([]byte(res))
 
 	case http.MethodPost:
 		// add new stored metric
-		p, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		if params, err = io.ReadAll(r.Body); err != nil {
+			return
 		}
-		if err := Server.api.AddMetric(p); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
+		err = Server.api.AddMetric(params)
 
-	// case http.MethodPatch:
-	// 	// update monitored database
-	// 	p, err := io.ReadAll(r.Body)
-	// 	if err != nil {
-	// 		http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	}
-	// 	if err := Server.api.UpdateDatabase(r.URL.Query().Get("id"), p); err != nil {
-	// 		http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	}
+	case http.MethodPatch:
+		// update monitored database
+		if params, err = io.ReadAll(r.Body); err != nil {
+			return
+		}
+		if id, err = strconv.Atoi(r.URL.Query().Get("id")); err != nil {
+			return
+		}
+		err = Server.api.UpdateMetric(id, params)
 
 	case http.MethodDelete:
 		// delete stored metric
-		id, err := strconv.Atoi(r.URL.Query().Get("id"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		if id, err = strconv.Atoi(r.URL.Query().Get("id")); err != nil {
 			return
 		}
-		if err := Server.api.DeleteMetric(id); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
+		err = Server.api.DeleteMetric(id)
 
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
@@ -74,6 +78,7 @@ func (Server *WebUIServer) handleDBs(w http.ResponseWriter, r *http.Request) {
 		p, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 		if err := Server.api.AddDatabase(p); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -83,6 +88,7 @@ func (Server *WebUIServer) handleDBs(w http.ResponseWriter, r *http.Request) {
 		p, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 		if err := Server.api.UpdateDatabase(r.URL.Query().Get("id"), p); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)

@@ -22,6 +22,7 @@ type apiHandler interface {
 	GetMetrics() (res string, err error)
 	AddMetric(params []byte) error
 	DeleteMetric(id int) error
+	UpdateMetric(id int, params []byte) error
 }
 
 type WebUIServer struct {
