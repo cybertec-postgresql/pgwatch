@@ -8,6 +8,54 @@ type uiapihandler struct{}
 
 var uiapi uiapihandler
 
+// GetMetrics returns the list of monitored databases
+func (uiapi uiapihandler) GetMetrics() (res string, err error) {
+	sql := `select coalesce(jsonb_agg(to_jsonb(m)), '[]') from metric m`
+	err = configDb.Get(&res, sql)
+	return
+}
+
+// DeleteMetric removes the database from the list of monitored databases
+func (uiapi uiapihandler) DeleteMetric(id int) error {
+	_, err := configDb.Exec("DELETE FROM pgwatch3.metric WHERE m_id = $1", id)
+	return err
+}
+
+// AddMetric adds the metric to the list of stored metrics
+func (uiapi uiapihandler) AddMetric(params []byte) error {
+	sql := `INSERT INTO pgwatch3.metric(
+m_name, m_pg_version_from, m_sql, m_comment, m_is_active, m_is_helper, 
+m_master_only, m_standby_only, m_column_attrs, m_sql_su)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+	var m map[string]any
+	err := json.Unmarshal(params, &m)
+	if err == nil {
+		_, err = configDb.Exec(sql, m["m_name"], m["m_pg_version_from"],
+			m["m_sql"], m["m_comment"], m["m_is_active"],
+			m["m_is_helper"], m["m_master_only"], m["m_standby_only"],
+			m["m_column_attrs"], m["m_sql_su"])
+	}
+	return err
+}
+
+// UpdateMetric updates the stored metric information
+func (uiapi uiapihandler) UpdateMetric(id int, params []byte) error {
+	sql := `UPDATE pgwatch3.metric(
+m_name, m_pg_version_from, m_sql, m_comment, m_is_active, m_is_helper, 
+m_master_only, m_standby_only, m_column_attrs, m_sql_su)
+= ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+WHERE m_id = $11`
+	var m map[string]any
+	err := json.Unmarshal(params, &m)
+	if err == nil {
+		_, err = configDb.Exec(sql, m["m_name"], m["m_pg_version_from"],
+			m["m_sql"], m["m_comment"], m["m_is_active"],
+			m["m_is_helper"], m["m_master_only"], m["m_standby_only"],
+			m["m_column_attrs"], m["m_sql_su"], id)
+	}
+	return err
+}
+
 // GetDatabases returns the list of monitored databases
 func (uiapi uiapihandler) GetDatabases() (res string, err error) {
 	sql := `select coalesce(jsonb_agg(to_jsonb(db)), '[]') from monitored_db db`
