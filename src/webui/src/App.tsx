@@ -36,6 +36,8 @@ export default function App() {
               height: "100vh",
               overflow: "auto",
               p: 2,
+              flexFlow: "column",
+              display: "flex"
             }}
           >
             <Toolbar />

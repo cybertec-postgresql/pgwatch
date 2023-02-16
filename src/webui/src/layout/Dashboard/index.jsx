@@ -4,7 +4,7 @@ import { DbsTable } from "./DbsTable";
 
 export default function Dashboard() {
   return (
-    <Box>
+    <Box sx={{ flex: "1 1 auto" }}>
       <DbsTable />
     </Box>
   );

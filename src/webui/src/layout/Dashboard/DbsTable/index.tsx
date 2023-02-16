@@ -308,7 +308,7 @@ export const DbsTable = () => {
   };
 
   return (
-    <Box display="flex" flexDirection="column" gap={1}>
+    <Box display="flex" flexDirection="column" gap={1} height="100%">
       <Snackbar open={alertOpen} autoHideDuration={5000} onClose={handleAlertClose}>
         <Alert sx={{ width: "auto" }} variant="filled" severity={severity}>{alertText}</Alert>
       </Snackbar>
@@ -320,8 +320,7 @@ export const DbsTable = () => {
         columns={columns}
         rows={data}
         getRowId={(row) => row.md_unique_name}
-        autoHeight
-        pageSize={5}
+        rowsPerPageOptions={[]}
         initialState={{
           columns: {
             columnVisibilityModel: {

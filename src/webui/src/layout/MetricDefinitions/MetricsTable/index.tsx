@@ -8,7 +8,37 @@ import { GridToolbarComponent } from "./GridToolbarComponent";
 
 export const MetricsTable = () => {
 
+  const data = [
+    {
+      "m_id": 1,
+      "m_name": "wsl",
+      "m_version": 14,
+      "m_comment": "some comment about metric",
+      "m_is_active": true,
+      "m_is_helper": false,
+      "m_last_modified_on": new Date()
+    },
+    {
+      "m_id": 2,
+      "m_name": "backends",
+      "m_version": 10.0,
+      "m_comment": "some comment about metric",
+      "m_is_active": true,
+      "m_is_helper": false,
+      "m_last_modified_on": new Date()
+    }
+  ];
+
   const columns: GridColDef[] = [
+    {
+      field: "m_id",
+      headerName: "ID",
+      width: 75,
+      type: "number",
+      align: "center",
+      headerAlign: "center",
+      hide: true
+    },
     {
       field: "m_name",
       headerName: "Metric name",
@@ -17,14 +47,12 @@ export const MetricsTable = () => {
       headerAlign: "center"
     },
     {
-      field: "m_versions",
-      headerName: "PG versions",
+      field: "m_version",
+      headerName: "PG version",
       width: 150,
+      type: "number",
       align: "center",
-      headerAlign: "center",
-      valueGetter(params) {
-        return (Object.keys(params.value));
-      },
+      headerAlign: "center"
     },
     {
       field: "m_comment",
@@ -64,26 +92,25 @@ export const MetricsTable = () => {
       field: "actions",
       headerName: "Actions",
       type: "actions",
-      width: 350,
-      renderCell: () => (
-        <ActionsComponent />
+      width: 200,
+      renderCell: (params) => (
+        <ActionsComponent data={params.row} />
       ),
       headerAlign: "center"
     }
   ];
 
   return (
-    <Box display="flex" flexDirection="column" gap={1}>
+    <Box display="flex" flexDirection="column" gap={1} height="100%">
       <Typography variant="h5">
         Metrics
       </Typography>
       <DataGrid
         getRowHeight={() => "auto"}
-        getRowId={(row) => row.m_name}
+        getRowId={(row) => row.m_id}
         columns={columns}
-        rows={[]}
-        autoHeight
-        pageSize={5}
+        rows={data}
+        rowsPerPageOptions={[]}
         components={{ Toolbar: () => GridToolbarComponent() }}
         disableColumnMenu
       />
