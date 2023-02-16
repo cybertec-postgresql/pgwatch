@@ -3,7 +3,7 @@ import { MetricsTable } from "./MetricsTable";
 
 export const MetricDefinitions = () => {
   return (
-    <Box>
+    <Box sx={{ flex: "1 1 auto" }}>
       <MetricsTable />
     </Box>
   );
