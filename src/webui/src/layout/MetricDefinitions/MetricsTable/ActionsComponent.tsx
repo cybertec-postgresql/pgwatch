@@ -1,19 +1,16 @@
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { Box, Button } from "@mui/material";
-import { useState } from 'react';
-import { ModalComponent } from './ModalComponent';
 
 type Props = {
   data: any
 };
 
 export const ActionsComponent = ({ data }: Props) => {
-  const [openModal, setOpenModal] = useState(false);
 
-  const handleClose = () => setOpenModal(false);
-
-  const handleOpen = () => setOpenModal(true);
+  const handleClick = () => {
+    alert(JSON.stringify(data));
+  };
 
   return (
     <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
@@ -21,7 +18,7 @@ export const ActionsComponent = ({ data }: Props) => {
         size="small"
         variant="outlined"
         startIcon={<EditIcon />}
-        onClick={handleOpen}
+        onClick={handleClick}
       >
         Edit
       </Button>
