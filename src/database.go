@@ -275,7 +275,7 @@ func DBExecInExplicitTX(conn *sqlx.DB, host_ident, query string, args ...interfa
 	}
 
 	ctx := context.Background()
-	txOpts := sql.TxOptions{}
+	txOpts := sql.TxOptions{ReadOnly: true}
 
 	tx, err := conn.BeginTxx(ctx, &txOpts)
 	if err != nil {
