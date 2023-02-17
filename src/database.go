@@ -318,16 +318,13 @@ func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride i
 	var exists bool
 	var sqlStmtTimeout string
 	var sqlLockTimeout = "SET LOCAL lock_timeout TO '100ms';"
-
 	if strings.TrimSpace(sql) == "" {
 		return nil, errors.New("empty SQL"), duration
 	}
-
 	md, err = GetMonitoredDatabaseByUniqueName(dbUnique)
 	if err != nil {
 		return nil, err, duration
 	}
-
 	monitored_db_conn_cache_lock.RLock()
 	// sqlx.DB itself is parallel safe
 	conn, exists = monitored_db_conn_cache[dbUnique]
@@ -336,7 +333,6 @@ func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride i
 		log.Errorf("SQL connection for dbUnique %s not found or nil", dbUnique) // Should always be initialized in the main loop DB discovery code ...
 		return nil, errors.New("SQL connection not found or nil"), duration
 	}
-
 	if !adHocMode && IsPostgresDBType(md.DBType) {
 		stmtTimeout := md.StmtTimeout
 		if stmtTimeoutOverride > 0 {
@@ -348,31 +344,40 @@ func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride i
 			} else {
 				sqlStmtTimeout = fmt.Sprintf("SET statement_timeout TO '%ds';", stmtTimeout)
 			}
-
 		}
 		if err != nil {
 			atomic.AddUint64(&totalMetricFetchFailuresCounter, 1)
 			return nil, err, duration
 		}
 	}
-
 	if !useConnPooling {
-		sqlLockTimeout = "SET lock_timeout TO '100ms';"
+		if IsPostgresDBType(md.DBType) {
+			sqlLockTimeout = "SET lock_timeout TO '100ms';"
+		} else {
+			sqlLockTimeout = ""
+		}
 	}
-
 	sqlToExec := sqlLockTimeout + sqlStmtTimeout + sql // bundle timeouts with actual SQL to reduce round-trip times
 	//log.Debugf("Executing SQL: %s", sqlToExec)
 	t1 := time.Now()
 	if useConnPooling {
 		data, err = DBExecInExplicitTX(conn, dbUnique, sqlToExec, args...)
 	} else {
-		data, err = DBExecRead(conn, dbUnique, sqlToExec, args...)
+		if IsPostgresDBType(md.DBType) {
+			data, err = DBExecRead(conn, dbUnique, sqlToExec, args...)
+		} else {
+			for _, sql := range strings.Split(sqlToExec, ";") {
+				sql = strings.TrimSpace(sql)
+				if len(sql) > 0 {
+					data, err = DBExecRead(conn, dbUnique, sql, args...)
+				}
+			}
+		}
 	}
 	t2 := time.Now()
 	if err != nil {
 		atomic.AddUint64(&totalMetricFetchFailuresCounter, 1)
 	}
-
 	return data, err, t2.Sub(t1)
 }
 
