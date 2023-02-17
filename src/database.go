@@ -2097,7 +2097,7 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 			}
 
 			if epoch_ns == 0 {
-				if !ts_warning_printed && msg.MetricName != SPECIAL_METRIC_PGBOUNCER_STATS {
+				if !ts_warning_printed && !regexIsPgbouncerMetrics.MatchString(msg.MetricName) {
 					log.Warning("No timestamp_ns found, server time will be used. measurement:", msg.MetricName)
 					ts_warning_printed = true
 				}
