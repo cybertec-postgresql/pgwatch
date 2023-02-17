@@ -6,7 +6,7 @@ import { AlertColor, Box, Button, Dialog, DialogActions, DialogContent, DialogCo
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "queries/queryKeys";
-import { Db } from "queries/types";
+import { Db } from "queries/types/DbTypes";
 import DbService from "services/Db";
 
 

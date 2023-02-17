@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createDbForm, updateDbForm } from "queries/types";
+import { createDbForm, updateDbForm } from "queries/types/DbTypes";
 
 export default class DbService {
   private static _instance: DbService;
@@ -10,7 +10,7 @@ export default class DbService {
     }
 
     return DbService._instance;
-  }
+  };
 
   public async getMonitoredDb() {
     return await axios.get("/db").

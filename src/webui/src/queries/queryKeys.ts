@@ -1,3 +1,4 @@
 export const QueryKeys = {
-  db: ["db"]
+  db: ["db"],
+  metric: ["metric"]
 };
