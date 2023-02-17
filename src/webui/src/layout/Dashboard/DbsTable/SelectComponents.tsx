@@ -8,7 +8,7 @@ import {
   TextField, Tooltip
 } from "@mui/material";
 import { ControllerRenderProps, FieldPath } from "react-hook-form";
-import { createDbForm } from "queries/types";
+import { createDbForm } from "queries/types/DbTypes";
 
 type SelectParams = {
   field: ControllerRenderProps<createDbForm, FieldPath<createDbForm>>,

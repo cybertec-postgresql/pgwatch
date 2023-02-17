@@ -1,8 +1,6 @@
 import { useState } from "react";
 
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
-import { Alert, AlertColor, Box, CircularProgress, Snackbar, Typography } from "@mui/material";
+import { Alert, AlertColor, Box, Checkbox, CircularProgress, Snackbar, Typography } from "@mui/material";
 import {
   DataGrid,
   GridColDef,
@@ -12,7 +10,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
 import { QueryKeys } from "queries/queryKeys";
-import { Db } from "queries/types";
+import { Db } from "queries/types/DbTypes";
 import DbService from "services/Db";
 
 import { ActionsComponent } from "./ActionsComponent";
@@ -114,13 +112,7 @@ export const DbsTable = () => {
       headerName: "Super user?",
       width: 120,
       type: "boolean",
-      renderCell: (params: GridRenderCellParams<boolean>) => {
-        if (params.value) {
-          return <CheckIcon />;
-        } else {
-          return <CloseIcon />;
-        }
-      },
+      renderCell: (params: GridRenderCellParams<boolean>) => <Checkbox checked={params.value} disableRipple />,
       align: "center",
       headerAlign: "center"
     },
@@ -128,21 +120,6 @@ export const DbsTable = () => {
       field: "md_password_type",
       headerName: "Password encryption",
       width: 150,
-      align: "center",
-      headerAlign: "center"
-    },
-    {
-      field: "Helpers",
-      headerName: "Auto-create helpers?",
-      type: "boolean",
-      width: 120,
-      renderCell: (params: GridRenderCellParams<boolean>) => {
-        if (params.value) {
-          return <CheckIcon />;
-        } else {
-          return <CloseIcon />;
-        }
-      },
       align: "center",
       headerAlign: "center"
     },
@@ -240,13 +217,7 @@ export const DbsTable = () => {
       headerName: "Master mode only?",
       type: "boolean",
       width: 120,
-      renderCell: (params: GridRenderCellParams<boolean>) => {
-        if (params.value) {
-          return <CheckIcon />;
-        } else {
-          return <CloseIcon />;
-        }
-      },
+      renderCell: (params: GridRenderCellParams<boolean>) => <Checkbox checked={params.value} disableRipple />,
       align: "center",
       headerAlign: "center"
     },
@@ -270,13 +241,7 @@ export const DbsTable = () => {
       headerName: "Enabled?",
       type: "boolean",
       width: 120,
-      renderCell: (params: GridRenderCellParams<boolean>) => {
-        if (params.value) {
-          return <CheckIcon />;
-        } else {
-          return <CloseIcon />;
-        }
-      },
+      renderCell: (params: GridRenderCellParams<boolean>) => <Checkbox checked={params.value} disableRipple />,
       align: "center",
       headerAlign: "center"
     },

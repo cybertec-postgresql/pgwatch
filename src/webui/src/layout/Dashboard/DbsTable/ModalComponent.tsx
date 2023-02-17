@@ -24,7 +24,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosResponse } from "axios";
 import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 import { QueryKeys } from "queries/queryKeys";
-import { Db, createDbForm, updateDbForm } from "queries/types";
+import { Db, createDbForm, updateDbForm } from "queries/types/DbTypes";
 import DbService from "services/Db";
 import {
   AutocompleteComponent,
