@@ -8,12 +8,15 @@ import { Metric } from 'queries/types/MetricTypes';
 import MetricService from 'services/Metric';
 import { ActionsComponent } from './ActionsComponent';
 import { GridToolbarComponent } from "./GridToolbarComponent";
+import { ModalComponent } from "./ModalComponent";
 
 export const MetricsTable = () => {
   const services = MetricService.getInstance();
   const [alertOpen, setAlertOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [severity, setSeverity] = useState<AlertColor>();
   const [alertText, setAlertText] = useState("");
+  const [editData, setEditData] = useState<Metric>();
 
   const handleAlertOpen = (isOpen: boolean, text: string, type: AlertColor) => {
     setSeverity(type);
@@ -23,6 +26,14 @@ export const MetricsTable = () => {
 
   const handleAlertClose = () => {
     setAlertOpen(false);
+  };
+
+  const handleModalOpen = () => {
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
   };
 
   const { status, data } = useQuery<Metric[]>({
@@ -113,7 +124,7 @@ export const MetricsTable = () => {
       type: "actions",
       width: 200,
       renderCell: (params) => (
-        <ActionsComponent data={params.row} handleAlertOpen={handleAlertOpen} />
+        <ActionsComponent data={params.row} handleAlertOpen={handleAlertOpen} setEditData={setEditData} handleModalOpen={handleModalOpen} />
       ),
       headerAlign: "center"
     }
@@ -149,9 +160,10 @@ export const MetricsTable = () => {
         columns={columns}
         rows={data}
         rowsPerPageOptions={[]}
-        components={{ Toolbar: () => GridToolbarComponent() }}
+        components={{ Toolbar: () => <GridToolbarComponent handleModalOpen={handleModalOpen} setEditData={setEditData} /> }}
         disableColumnMenu
       />
+      <ModalComponent recordData={editData} open={modalOpen} handleClose={handleModalClose} handleAlertOpen={handleAlertOpen} />
     </Box>
   );
 };

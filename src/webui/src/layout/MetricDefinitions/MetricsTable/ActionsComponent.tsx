@@ -8,10 +8,12 @@ import MetricService from 'services/Metric';
 
 type Params = {
   data: Metric,
-  handleAlertOpen: (isOpen: boolean, text: string, type: AlertColor) => void
+  handleAlertOpen: (isOpen: boolean, text: string, type: AlertColor) => void,
+  setEditData: React.Dispatch<React.SetStateAction<Metric | undefined>>,
+  handleModalOpen: () => void
 };
 
-export const ActionsComponent = ({ data, handleAlertOpen }: Params) => {
+export const ActionsComponent = ({ data, handleAlertOpen, setEditData, handleModalOpen }: Params) => {
   const services = MetricService.getInstance();
   const queryClient = useQueryClient();
 
@@ -28,8 +30,13 @@ export const ActionsComponent = ({ data, handleAlertOpen }: Params) => {
     }
   });
 
-  const handleClick = () => {
-    alert(JSON.stringify(data));
+  const handleEditClick = () => {
+    setEditData(data);
+    handleModalOpen();
+  };
+
+  const handleDeleteClick = () => {
+    deleteRecord.mutate(data.m_id);
   };
 
   return (
@@ -38,7 +45,7 @@ export const ActionsComponent = ({ data, handleAlertOpen }: Params) => {
         size="small"
         variant="outlined"
         startIcon={<EditIcon />}
-        onClick={handleClick}
+        onClick={handleEditClick}
       >
         Edit
       </Button>
@@ -46,7 +53,7 @@ export const ActionsComponent = ({ data, handleAlertOpen }: Params) => {
         size="small"
         variant="contained"
         startIcon={<DeleteIcon />}
-        onClick={() => deleteRecord.mutate(data.m_id)}
+        onClick={handleDeleteClick}
       >
         Delete
       </Button>
