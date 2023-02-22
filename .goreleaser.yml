@@ -4,7 +4,6 @@ before:
   hooks:
     # weirdly goreleaser doesn't all to include outside of the Go build "root" so need to copy
     - cp -r grafana_dashboards ./src/
-    - cp -r webpy ./src/
 
 builds:
   - dir: src
@@ -52,7 +51,6 @@ archives:
     # `README*` and `CHANGELOG*` (case-insensitive).
     files:
       - ./grafana_dashboards/**/*
-      - ./webpy/**/*
       - ./src/metrics/**/*
       - ./src/config/**/*
       - ./src/sql/**/*
@@ -135,7 +133,5 @@ nfpms:
         dst: "/etc/pgwatch3/startup-scripts/pgwatch3.service"
       - src: "./grafana_dashboards/*"
         dst: "/etc/pgwatch3/grafana-dashboards"
-      - src: "./pgwatch3/webpy/*"
-        dst: "/etc/pgwatch3/webpy"
       - src: "./README.md"
         dst: "/etc/pgwatch3/README.md"
