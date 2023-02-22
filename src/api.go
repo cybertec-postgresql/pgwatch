@@ -40,8 +40,8 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
 // UpdateMetric updates the stored metric information
 func (uiapi uiapihandler) UpdateMetric(id int, params []byte) error {
-	sql := `UPDATE pgwatch3.metric(
-m_name, m_pg_version_from, m_sql, m_comment, m_is_active, m_is_helper, 
+	sql := `UPDATE pgwatch3.metric SET
+(m_name, m_pg_version_from, m_sql, m_comment, m_is_active, m_is_helper, 
 m_master_only, m_standby_only, m_column_attrs, m_sql_su)
 = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 WHERE m_id = $11`

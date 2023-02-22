@@ -1,4 +1,5 @@
 import axios from "axios";
+import { createMetricForm, updateMetricForm } from "queries/types/MetricTypes";
 
 
 export default class MetricService {
@@ -23,6 +24,22 @@ export default class MetricService {
   public async deleteMetric(m_id: number) {
     return await axios.delete("/metric", { params: { "id": m_id } }).
       then(response => response.data).
+      catch(error => {
+        throw error;
+      });
+  };
+
+  public async addMetric(data: createMetricForm) {
+    return await axios.post("/metric", data).
+      then(response => response).
+      catch(error => {
+        throw error;
+      });
+  };
+
+  public async editMetric(data: updateMetricForm) {
+    return await axios.patch("/metric", data.data, { params: { "id": data.m_id } }).
+      then(response => response).
       catch(error => {
         throw error;
       });

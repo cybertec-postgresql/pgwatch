@@ -8,12 +8,15 @@ import { Metric } from 'queries/types/MetricTypes';
 import MetricService from 'services/Metric';
 import { ActionsComponent } from './ActionsComponent';
 import { GridToolbarComponent } from "./GridToolbarComponent";
+import { ModalComponent } from "./ModalComponent";
 
 export const MetricsTable = () => {
   const services = MetricService.getInstance();
   const [alertOpen, setAlertOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [severity, setSeverity] = useState<AlertColor>();
   const [alertText, setAlertText] = useState("");
+  const [editData, setEditData] = useState<Metric>();
 
   const handleAlertOpen = (isOpen: boolean, text: string, type: AlertColor) => {
     setSeverity(type);
@@ -23,6 +26,14 @@ export const MetricsTable = () => {
 
   const handleAlertClose = () => {
     setAlertOpen(false);
+  };
+
+  const handleModalOpen = () => {
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
   };
 
   const { status, data } = useQuery<Metric[]>({
@@ -99,10 +110,10 @@ export const MetricsTable = () => {
     {
       field: "m_last_modified_on",
       headerName: "Last modified",
-      width: 150,
+      width: 170,
       renderCell: (params) =>
         <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
-          {moment(params.value).format("MMMM Do YYYY HH:mm:ss")}
+          {moment(params.value).format("DD.MM.YYYY HH:mm:ss")}
         </Box>,
       align: "center",
       headerAlign: "center"
@@ -113,7 +124,7 @@ export const MetricsTable = () => {
       type: "actions",
       width: 200,
       renderCell: (params) => (
-        <ActionsComponent data={params.row} handleAlertOpen={handleAlertOpen} />
+        <ActionsComponent data={params.row} handleAlertOpen={handleAlertOpen} setEditData={setEditData} handleModalOpen={handleModalOpen} />
       ),
       headerAlign: "center"
     }
@@ -144,14 +155,14 @@ export const MetricsTable = () => {
         Metrics
       </Typography>
       <DataGrid
-        getRowHeight={() => "auto"}
         getRowId={(row) => row.m_id}
         columns={columns}
         rows={data}
         rowsPerPageOptions={[]}
-        components={{ Toolbar: () => GridToolbarComponent() }}
+        components={{ Toolbar: () => <GridToolbarComponent handleModalOpen={handleModalOpen} setEditData={setEditData} /> }}
         disableColumnMenu
       />
+      <ModalComponent recordData={editData} open={modalOpen} handleClose={handleModalClose} handleAlertOpen={handleAlertOpen} />
     </Box>
   );
 };

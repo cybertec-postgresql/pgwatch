@@ -1,4 +1,4 @@
-import { TextField } from "@mui/material";
+import { FilledInputProps, InputProps, OutlinedInputProps, TextField } from "@mui/material";
 import { ControllerRenderProps, FieldPath } from "react-hook-form";
 import { createDbForm } from "queries/types/DbTypes";
 
@@ -11,10 +11,10 @@ type Params = {
   label: string,
   title?: string,
   disabled?: boolean,
-  endAdornment?: React.ReactNode
+  inputProps?: Partial<InputProps> | Partial<FilledInputProps> | Partial<OutlinedInputProps> | undefined
 }
 
-export const SimpleTextField = ({ field, error, helperText, type, label, title, disabled, endAdornment }: Params) => {
+export const SimpleTextField = ({ field, error, helperText, type, label, title, disabled, inputProps }: Params) => {
 
   return (
     <TextField
@@ -26,9 +26,7 @@ export const SimpleTextField = ({ field, error, helperText, type, label, title, 
       fullWidth
       title={title}
       disabled={disabled}
-      InputProps={{
-        endAdornment
-      }}
+      InputProps={inputProps}
     />
   );
 };

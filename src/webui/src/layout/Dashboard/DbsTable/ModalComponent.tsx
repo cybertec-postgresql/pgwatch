@@ -45,15 +45,24 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData }: P
   const services = DbService.getInstance();
   const queryClient = useQueryClient();
   const methods = useForm<createDbForm>();
-  const { handleSubmit, reset, setValue } = methods;
+  const { handleSubmit, reset, setValue, clearErrors } = methods;
 
   useEffect(() => {
     if (recordData) {
-      Object.entries(recordData).map(([key, value]) => setValue(key as FieldPath<createDbForm>, value));
+      clearErrors();
+      Object.entries(recordData).map(([key, value]) => setValue(key as FieldPath<createDbForm>, convertValue(value)));
     } else {
       reset();
     };
-  }, [recordData, setValue, reset]);
+  }, [recordData, setValue, reset, clearErrors]);
+
+  const convertValue = (value: any): any => {
+    if (typeof value === "object" && value !== null) {
+      return JSON.stringify(value);
+    } else {
+      return value;
+    }
+  };
 
   const updateRecord = useMutation({
     mutationFn: async (data: updateDbForm) => {
@@ -355,6 +364,11 @@ const ModalContent = () => {
                 helperText={error?.message}
                 type="number"
                 label="DB port"
+                inputProps={{
+                  inputProps: {
+                    min: 1
+                  }
+                }}
               />
             )}
           />
@@ -443,16 +457,18 @@ const ModalContent = () => {
                 type={showPassword ? "text" : "password"}
                 label="DB password"
                 title="NB! By default password is stored in plain-text in the database"
-                endAdornment={(
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={handleClickShowPassword}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                )}
+                inputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={handleClickShowPassword}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
               />
             )}
           />
@@ -477,6 +493,11 @@ const ModalContent = () => {
                 type="number"
                 label="Statement timeout [seconds]"
                 title="In seconds. Should stay low for critical DBs just in case. NB! For possibly long-running built-in bloat estimation metrics the timeout will be max(30min,$userInput)"
+                inputProps={{
+                  inputProps: {
+                    min: 1, max: 60
+                  }
+                }}
               />
             )}
           />
@@ -489,6 +510,11 @@ const ModalContent = () => {
                 field={{ ...field }}
                 type="number"
                 label="Connection timeout [seconds]"
+                inputProps={{
+                  inputProps: {
+                    min: 1, max: 60
+                  }
+                }}
               />
             )}
           />
