@@ -225,11 +225,11 @@ export const DbsTable = () => {
       field: "md_last_modified_on",
       headerName: "Last modified",
       type: "string",
-      width: 150,
+      width: 170,
       renderCell: (params) => {
         return (
           <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
-            {moment(params.value).format("MMMM Do YYYY HH:mm:ss")}
+            {moment(params.value).format("DD.MM.YYYY HH:mm:ss")}
           </Box>
         );
       },
@@ -281,7 +281,6 @@ export const DbsTable = () => {
         Databases under monitoring
       </Typography>
       <DataGrid
-        getRowHeight={() => "auto"}
         columns={columns}
         rows={data}
         getRowId={(row) => row.md_unique_name}

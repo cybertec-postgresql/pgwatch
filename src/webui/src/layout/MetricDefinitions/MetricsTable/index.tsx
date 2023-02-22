@@ -110,10 +110,10 @@ export const MetricsTable = () => {
     {
       field: "m_last_modified_on",
       headerName: "Last modified",
-      width: 150,
+      width: 170,
       renderCell: (params) =>
         <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
-          {moment(params.value).format("MMMM Do YYYY HH:mm:ss")}
+          {moment(params.value).format("DD.MM.YYYY HH:mm:ss")}
         </Box>,
       align: "center",
       headerAlign: "center"
@@ -155,7 +155,6 @@ export const MetricsTable = () => {
         Metrics
       </Typography>
       <DataGrid
-        getRowHeight={() => "auto"}
         getRowId={(row) => row.m_id}
         columns={columns}
         rows={data}
