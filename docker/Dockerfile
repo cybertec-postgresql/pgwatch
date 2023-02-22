@@ -1,16 +1,21 @@
-FROM golang:1.18
+# Build web UI
+FROM node:19 AS uibuilder
+ADD src/webui /webui
+RUN cd webui && yarn install && yarn build
 
-# For showing Git version via 'pgwatch3 --version'
+# Build gatherer
+FROM golang:1.20 as builder
 ARG GIT_HASH
 ARG GIT_TIME
 ENV GIT_HASH=${GIT_HASH}
 ENV GIT_TIME=${GIT_TIME}
 
 ADD src /pgwatch3
+COPY --from=uibuilder /webui/build /pgwatch3/webui/build
 RUN cd /pgwatch3 && bash build_gatherer.sh
 
-
-FROM ubuntu:22.04
+# Build the final image
+FROM ubuntu:22.04 AS releaser
 
 RUN apt-get -q update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -qy curl ca-certificates gnupg \
@@ -30,8 +35,7 @@ RUN curl -o grafana.deb https://dl.grafana.com/oss/release/grafana_8.5.4_amd64.d
 # Add pgwatch3 sources
 ADD src /pgwatch3
 # Copy over the compiled gatherer
-COPY --from=0 /pgwatch3/pgwatch3 /pgwatch3
-ADD webpy /pgwatch3/webpy
+COPY --from=builder /pgwatch3/pgwatch3 /pgwatch3
 
 # For showing Git versions via :8080/versions or 'pgwatch3 --version'
 ARG GIT_HASH
@@ -42,10 +46,7 @@ RUN echo "${GIT_HASH} ${GIT_TIME}" > /pgwatch3/build_git_version.txt
 
 # Grafana config customizations, Web UI requirements, compilation of the Go gatherer
 RUN cp /pgwatch3/bootstrap/grafana_custom_config.ini /etc/grafana/grafana.ini \
-    && pip3 install -r /pgwatch3/webpy/requirements_pg_metrics.txt \
-    && pip3 install psutil \
-    && grafana-cli plugins install savantly-heatmap-panel \
-    && pip3 install supervisor pyyaml && mkdir /var/log/supervisor
+    && pip3 install psutil supervisor pyyaml && mkdir /var/log/supervisor
 
 RUN apt-get -q update && DEBIAN_FRONTEND=noninteractive apt-get -qy install postgresql-14-pg-qualstats
 
