@@ -322,7 +322,7 @@ $sql$,
 '{"prometheus_gauge_columns": ["numbackends", "postmaster_uptime_s", "backup_duration_s", "checksum_last_failure_s"]}'
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su, m_column_attrs)
 values (
 'db_stats',
 15,
@@ -1774,7 +1774,7 @@ FROM (
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'stat_statements',
 15,
@@ -2486,7 +2486,7 @@ select * from (
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'stat_statements_no_query_text',
 15,
@@ -5738,7 +5738,7 @@ $sql$
 $sql$
 );
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'subscription_stats',
 15,
@@ -5754,7 +5754,7 @@ $sql$
 );
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'stat_activity',
 11,
