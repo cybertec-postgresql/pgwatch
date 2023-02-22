@@ -152,9 +152,9 @@ func InitAndTestMetricStoreConnection(connStr string, failOnErr bool) error {
 			break
 		}
 	}
-	metricDb.SetMaxIdleConns(1)
+	metricDb.SetMaxIdleConns(2)
 	metricDb.SetMaxOpenConns(2)
-	metricDb.SetConnMaxLifetime(time.Second * time.Duration(PG_CONN_RECYCLE_SECONDS))
+	metricDb.SetConnMaxLifetime(time.Second * 172800) // 2d
 	return nil
 }
 
@@ -275,7 +275,7 @@ func DBExecInExplicitTX(conn *sqlx.DB, host_ident, query string, args ...interfa
 	}
 
 	ctx := context.Background()
-	txOpts := sql.TxOptions{}
+	txOpts := sql.TxOptions{ReadOnly: true}
 
 	tx, err := conn.BeginTxx(ctx, &txOpts)
 	if err != nil {
@@ -318,16 +318,13 @@ func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride i
 	var exists bool
 	var sqlStmtTimeout string
 	var sqlLockTimeout = "SET LOCAL lock_timeout TO '100ms';"
-
 	if strings.TrimSpace(sql) == "" {
 		return nil, errors.New("empty SQL"), duration
 	}
-
 	md, err = GetMonitoredDatabaseByUniqueName(dbUnique)
 	if err != nil {
 		return nil, err, duration
 	}
-
 	monitored_db_conn_cache_lock.RLock()
 	// sqlx.DB itself is parallel safe
 	conn, exists = monitored_db_conn_cache[dbUnique]
@@ -336,7 +333,6 @@ func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride i
 		log.Errorf("SQL connection for dbUnique %s not found or nil", dbUnique) // Should always be initialized in the main loop DB discovery code ...
 		return nil, errors.New("SQL connection not found or nil"), duration
 	}
-
 	if !adHocMode && IsPostgresDBType(md.DBType) {
 		stmtTimeout := md.StmtTimeout
 		if stmtTimeoutOverride > 0 {
@@ -348,31 +344,40 @@ func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride i
 			} else {
 				sqlStmtTimeout = fmt.Sprintf("SET statement_timeout TO '%ds';", stmtTimeout)
 			}
-
 		}
 		if err != nil {
 			atomic.AddUint64(&totalMetricFetchFailuresCounter, 1)
 			return nil, err, duration
 		}
 	}
-
 	if !useConnPooling {
-		sqlLockTimeout = "SET lock_timeout TO '100ms';"
+		if IsPostgresDBType(md.DBType) {
+			sqlLockTimeout = "SET lock_timeout TO '100ms';"
+		} else {
+			sqlLockTimeout = ""
+		}
 	}
-
 	sqlToExec := sqlLockTimeout + sqlStmtTimeout + sql // bundle timeouts with actual SQL to reduce round-trip times
 	//log.Debugf("Executing SQL: %s", sqlToExec)
 	t1 := time.Now()
 	if useConnPooling {
 		data, err = DBExecInExplicitTX(conn, dbUnique, sqlToExec, args...)
 	} else {
-		data, err = DBExecRead(conn, dbUnique, sqlToExec, args...)
+		if IsPostgresDBType(md.DBType) {
+			data, err = DBExecRead(conn, dbUnique, sqlToExec, args...)
+		} else {
+			for _, sql := range strings.Split(sqlToExec, ";") {
+				sql = strings.TrimSpace(sql)
+				if len(sql) > 0 {
+					data, err = DBExecRead(conn, dbUnique, sql, args...)
+				}
+			}
+		}
 	}
 	t2 := time.Now()
 	if err != nil {
 		atomic.AddUint64(&totalMetricFetchFailuresCounter, 1)
 	}
-
 	return data, err, t2.Sub(t1)
 }
 
@@ -640,6 +645,7 @@ func AddDBUniqueMetricToListingTable(db_unique, metric string) error {
 
 func UniqueDbnamesListingMaintainer(daemonMode bool) {
 	// due to metrics deletion the listing can go out of sync (a trigger not really wanted)
+	sql_get_advisory_lock := `SELECT pg_try_advisory_lock(1571543679778230000) AS have_lock` // 1571543679778230000 is just a random bigint
 	sql_top_level_metrics := `SELECT table_name FROM admin.get_top_level_metric_tables()`
 	sql_distinct := `
 	WITH RECURSIVE t(dbname) AS (
@@ -659,6 +665,17 @@ func UniqueDbnamesListingMaintainer(daemonMode bool) {
 	for {
 		if daemonMode {
 			time.Sleep(time.Hour * 24)
+		}
+
+		log.Infof("Trying to get metricsDb listing maintaner advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
+		lock, err := DBExecRead(metricDb, METRICDB_IDENT, sql_get_advisory_lock)
+		if err != nil {
+			log.Error("Getting metricsDb listing maintaner advisory lock failed:", err)
+			continue
+		}
+		if !(lock[0]["have_lock"].(bool)) {
+			log.Info("Skipping admin.all_distinct_dbname_metrics maintenance as another instance has the advisory lock...")
+			continue
 		}
 
 		log.Infof("Refreshing admin.all_distinct_dbname_metrics listing table...")
@@ -2080,7 +2097,7 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 			}
 
 			if epoch_ns == 0 {
-				if !ts_warning_printed && msg.MetricName != SPECIAL_METRIC_PGBOUNCER_STATS {
+				if !ts_warning_printed && !regexIsPgbouncerMetrics.MatchString(msg.MetricName) {
 					log.Warning("No timestamp_ns found, server time will be used. measurement:", msg.MetricName)
 					ts_warning_printed = true
 				}
