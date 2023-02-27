@@ -14,7 +14,7 @@ require (
 	github.com/samuel/go-zookeeper v0.0.0-20201211165307-7117e9ea2414
 	github.com/shirou/gopsutil/v3 v3.23.1
 	github.com/shopspring/decimal v1.3.1
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	go.etcd.io/etcd v3.3.27+incompatible
 	go.etcd.io/etcd/client/v2 v2.305.7
 	golang.org/x/crypto v0.6.0
