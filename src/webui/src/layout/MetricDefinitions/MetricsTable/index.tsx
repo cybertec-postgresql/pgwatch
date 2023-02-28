@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Alert, AlertColor, Box, Checkbox, CircularProgress, Snackbar, Typography } from "@mui/material";
+import { Alert, AlertColor, Box, Checkbox, Snackbar, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { useQuery } from '@tanstack/react-query';
 import moment from 'moment';
+import { ErrorComponent } from "layout/common/ErrorComponent";
+import { GridToolbarComponent } from "layout/common/GridToolbarComponent";
+import { LoadingComponent } from "layout/common/LoadingComponent";
 import { QueryKeys } from 'queries/queryKeys';
 import { Metric } from 'queries/types/MetricTypes';
 import MetricService from 'services/Metric';
 import { ActionsComponent } from './ActionsComponent';
-import { GridToolbarComponent } from "./GridToolbarComponent";
 import { ModalComponent } from "./ModalComponent";
 
 export const MetricsTable = () => {
@@ -36,7 +38,7 @@ export const MetricsTable = () => {
     setModalOpen(false);
   };
 
-  const { status, data } = useQuery<Metric[]>({
+  const { status, data, error } = useQuery<Metric[]>({
     queryKey: QueryKeys.metric,
     queryFn: async () => {
       return await services.getMetrics();
@@ -132,17 +134,13 @@ export const MetricsTable = () => {
 
   if (status === "loading") {
     return (
-      <Box sx={{ width: "100%", height: 500, display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <CircularProgress />
-      </Box>
+      <LoadingComponent />
     );
   };
 
   if (status === "error") {
     return (
-      <Box>
-        <Typography>Some error happens</Typography>
-      </Box>
+      <ErrorComponent errorMessage={String(error)} />
     );
   };
 
