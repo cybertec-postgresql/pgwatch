@@ -1,11 +1,10 @@
 import AddIcon from '@mui/icons-material/Add';
 import { Button } from "@mui/material";
 import { GridToolbarColumnsButton, GridToolbarContainer, GridToolbarFilterButton } from "@mui/x-data-grid";
-import { Metric } from 'queries/types/MetricTypes';
 
 type Props = {
   handleModalOpen: () => void,
-  setEditData: React.Dispatch<React.SetStateAction<Metric | undefined>>
+  setEditData: React.Dispatch<React.SetStateAction<any>>
 }
 
 export const GridToolbarComponent = ({ handleModalOpen, setEditData }: Props) => {
