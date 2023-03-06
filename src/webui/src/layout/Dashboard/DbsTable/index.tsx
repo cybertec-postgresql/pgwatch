@@ -40,8 +40,8 @@ export const DbsTable = () => {
       queryClient.invalidateQueries({ queryKey: QueryKeys.db });
       handleAlertOpen("Monitored DB has been deleted successfully!", "success");
     },
-    onError: (error: any) => {
-      handleAlertOpen(error.response.data, "error");
+    onError: (resultError: any) => {
+      handleAlertOpen(resultError.response.data, "error");
     }
   });
 

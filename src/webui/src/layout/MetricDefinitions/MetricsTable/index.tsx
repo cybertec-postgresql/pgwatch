@@ -40,8 +40,8 @@ export const MetricsTable = () => {
       queryClient.invalidateQueries({ queryKey: QueryKeys.metric });
       handleAlertOpen("Metric has been deleted successfully!", "success");
     },
-    onError: (error: any) => {
-      handleAlertOpen(error.response.data, "error");
+    onError: (resultError: any) => {
+      handleAlertOpen(resultError.response.data, "error");
     }
   });
 
