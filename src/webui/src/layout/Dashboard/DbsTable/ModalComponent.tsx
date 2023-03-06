@@ -37,7 +37,7 @@ import { MultilineTextField, SimpleTextField } from "./TextFieldComponents";
 type Props = {
   open: boolean,
   setOpen: Dispatch<SetStateAction<boolean>>,
-  handleAlertOpen: (isOpen: boolean, text: string, type: AlertColor) => void,
+  handleAlertOpen: (text: string, type: AlertColor) => void,
   recordData: Db | undefined;
 };
 
@@ -71,11 +71,11 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData }: P
     onSuccess: (data: AxiosResponse<any, any>, variables: updateDbForm) => {
       handleClose();
       queryClient.invalidateQueries({ queryKey: QueryKeys.db });
-      handleAlertOpen(true, `Monitored DB "${variables.md_unique_name}" has been successfully updated!`, "success");
+      handleAlertOpen(`Monitored DB "${variables.md_unique_name}" has been successfully updated!`, "success");
       reset();
     },
     onError: (error: any) => {
-      handleAlertOpen(true, error.response.data, "error");
+      handleAlertOpen(error.response.data, "error");
     }
   });
 
@@ -86,11 +86,11 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData }: P
     onSuccess: (data: AxiosResponse<any, any>, variables: createDbForm) => {
       handleClose();
       queryClient.invalidateQueries({ queryKey: QueryKeys.db });
-      handleAlertOpen(true, `New DB "${variables.md_unique_name}" has been successfully added to monitoring!`, "success");
+      handleAlertOpen(`New DB "${variables.md_unique_name}" has been successfully added to monitoring!`, "success");
       reset();
     },
     onError: (error: any) => {
-      handleAlertOpen(true, error.response.data, "error");
+      handleAlertOpen(error.response.data, "error");
     }
   });
 

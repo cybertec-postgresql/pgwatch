@@ -13,7 +13,7 @@ type Params = {
   recordData: Metric | undefined,
   open: boolean,
   handleClose: () => void,
-  handleAlertOpen: (isOpen: boolean, text: string, type: AlertColor) => void
+  handleAlertOpen: (text: string, type: AlertColor) => void
 }
 
 export const ModalComponent = ({ recordData, open, handleClose, handleAlertOpen }: Params) => {
@@ -46,11 +46,11 @@ export const ModalComponent = ({ recordData, open, handleClose, handleAlertOpen 
     onSuccess: (data, variables) => {
       handleClose();
       queryClient.invalidateQueries({ queryKey: QueryKeys.metric });
-      handleAlertOpen(true, `New metric "${variables.m_name}" has been successfully added!`, "success");
+      handleAlertOpen(`New metric "${variables.m_name}" has been successfully added!`, "success");
       reset();
     },
     onError: (error: any) => {
-      handleAlertOpen(true, error.response.data, "error");
+      handleAlertOpen(error.response.data, "error");
     }
   });
 
@@ -61,11 +61,11 @@ export const ModalComponent = ({ recordData, open, handleClose, handleAlertOpen 
     onSuccess: (data, variables) => {
       handleClose();
       queryClient.invalidateQueries({ queryKey: QueryKeys.metric });
-      handleAlertOpen(true, `New metric "${variables.data.m_name}" has been successfully updated!`, "success");
+      handleAlertOpen(`New metric "${variables.data.m_name}" has been successfully updated!`, "success");
       reset();
     },
     onError: (error: any) => {
-      handleAlertOpen(true, error.response.data, "error");
+      handleAlertOpen(error.response.data, "error");
     }
   });
 
