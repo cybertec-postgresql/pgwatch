@@ -1,16 +1,21 @@
-import { Alert, AlertColor, Box, Snackbar } from "@mui/material";
-import Typography from "@mui/material/Typography";
+import { useState } from "react";
+
+import { Alert, AlertColor, Box, Snackbar, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
+
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "queryClient";
+
 import { ErrorComponent } from "layout/common/ErrorComponent";
 import { presetsColumns } from "layout/common/Grid/GridColumns";
 import { GridToolbarComponent } from "layout/common/Grid/GridToolbarComponent";
 import { LoadingComponent } from "layout/common/LoadingComponent";
+
 import { QueryKeys } from "queries/queryKeys";
 import { Preset } from "queries/types/PresetTypes";
-import { queryClient } from "queryClient";
-import { useState } from "react";
 import PresetService from "services/Preset";
+
+import { ModalComponent } from "./ModalComponent";
 
 
 export const ConfigsTable = () => {
@@ -95,6 +100,7 @@ export const ConfigsTable = () => {
         components={{ Toolbar: () => <GridToolbarComponent handleModalOpen={handleModalOpen} setEditData={setEditData} /> }}
         disableColumnMenu
       />
+      <ModalComponent open={modalOpen} handleClose={handleModalClose} recordData={editData} />
     </Box>
-  )
+  );
 };
