@@ -7,6 +7,7 @@ import moment from "moment";
 
 import { Db } from "queries/types/DbTypes";
 import { Metric } from "queries/types/MetricTypes";
+import { Preset } from "queries/types/PresetTypes";
 import { GridActionsComponent } from "./GridActionsComponent";
 
 type metricsColumnsProps = {
@@ -358,4 +359,73 @@ export const databasesColumns = ({
       )
     }
   ];
+};
+
+type presetsColumnsProps = {
+  setEditData: React.Dispatch<React.SetStateAction<Preset | undefined>>,
+  handleModalOpen: () => void,
+  deleteRecord: UseMutationResult<any, any, any, unknown>
+};
+
+export const presetsColumns = ({
+  setEditData,
+  handleModalOpen,
+  deleteRecord
+}: presetsColumnsProps): GridColDef[] => {
+  return (
+    [
+      {
+        field: "pc_name",
+        headerName: "Config name",
+        width: 150,
+        align: "center",
+        headerAlign: "center"
+      },
+      {
+        field: "pc_description",
+        headerName: "Config description",
+        width: 300,
+        align: "center",
+        headerAlign: "center"
+      },
+      {
+        field: "pc_config",
+        headerName: "Config",
+        width: 300,
+        align: "center",
+        headerAlign: "center",
+        valueGetter: (params) => {
+          return (JSON.stringify(params.value));
+        }
+      },
+      {
+        field: "pc_last_modified_on",
+        headerName: "Last modified",
+        width: 170,
+        renderCell: (params) =>
+          <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
+            {moment(params.value).format("DD.MM.YYYY HH:mm:ss")}
+          </Box>,
+        align: "center",
+        headerAlign: "center"
+      },
+      {
+        field: "actions",
+        headerName: "Actions",
+        type: "actions",
+        width: 200,
+        renderCell: (params) => (
+          <GridActionsComponent
+            data={params.row}
+            setEditData={setEditData}
+            handleModalOpen={handleModalOpen}
+            deleteRecord={deleteRecord}
+            deleteParameter={params.row.pc_name}
+            warningMessage={`Are you sure you want to delete preset named "${params.row.pc_name}"`}
+          />
+        ),
+        headerAlign: "center"
+      }
+    ]
+  );
 };
