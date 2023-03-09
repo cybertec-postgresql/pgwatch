@@ -23,6 +23,7 @@ type apiHandler interface {
 	AddMetric(params []byte) error
 	DeleteMetric(id int) error
 	UpdateMetric(id int, params []byte) error
+	GetPresets() (res string, err error)
 }
 
 type WebUIServer struct {
@@ -55,6 +56,7 @@ func Init(addr string, webuifs fs.FS, api apiHandler) *WebUIServer {
 	mux.HandleFunc("/health", s.handleHealth)
 	mux.HandleFunc("/db", s.handleDBs)
 	mux.HandleFunc("/metric", s.handleMetrics)
+	mux.HandleFunc("/preset", s.handlePresets)
 	mux.HandleFunc("/", s.handleStatic)
 
 	if 8080 != 0 {

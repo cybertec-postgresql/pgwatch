@@ -6,6 +6,62 @@ import (
 	"strconv"
 )
 
+func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request) {
+	var (
+		err error
+		// params []byte
+		res string
+		// id     int
+	)
+
+	defer func() {
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}()
+
+	switch r.Method {
+	case http.MethodGet:
+		// return stored Presets
+		if res, err = Server.api.GetPresets(); err != nil {
+			return
+		}
+		_, err = w.Write([]byte(res))
+
+	// case http.MethodPost:
+	// 	// add new stored Preset
+	// 	if params, err = io.ReadAll(r.Body); err != nil {
+	// 		return
+	// 	}
+	// 	err = Server.api.AddPreset(params)
+
+	// case http.MethodPatch:
+	// 	// update monitored database
+	// 	if params, err = io.ReadAll(r.Body); err != nil {
+	// 		return
+	// 	}
+	// 	if id, err = strconv.Atoi(r.URL.Query().Get("id")); err != nil {
+	// 		return
+	// 	}
+	// 	err = Server.api.UpdatePreset(id, params)
+
+	// case http.MethodDelete:
+	// 	// delete stored Preset
+	// 	if id, err = strconv.Atoi(r.URL.Query().Get("id")); err != nil {
+	// 		return
+	// 	}
+	// 	err = Server.api.DeletePreset(id)
+
+	case http.MethodOptions:
+		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
+		w.WriteHeader(http.StatusNoContent)
+
+	default:
+		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
 func (Server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	var (
 		err    error
