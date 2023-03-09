@@ -1,4 +1,5 @@
 export const QueryKeys = {
   db: ["db"],
-  metric: ["metric"]
+  metric: ["metric"],
+  preset: ["preset"],
 };
