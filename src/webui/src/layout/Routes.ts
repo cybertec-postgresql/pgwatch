@@ -1,6 +1,7 @@
 import Dashboard from "./Dashboard";
 import { Logs } from "./Logs";
 import { MetricDefinitions } from "./MetricDefinitions";
+import { PresetConfigs } from "./PresetConfigs";
 import { StatsSummary } from "./StatsSummary";
 
 export const routes = [
@@ -13,6 +14,11 @@ export const routes = [
     title: "Metric definitions",
     link: "/metrics",
     element: MetricDefinitions,
+  },
+  {
+    title: "Preset configs",
+    link: "/presets",
+    element: PresetConfigs,
   },
   {
     title: "Stats summary",
