@@ -15,6 +15,12 @@ func (uiapi uiapihandler) GetPresets() (res string, err error) {
 	return
 }
 
+// DeletePreset removes the database from the list of monitored databases
+func (uiapi uiapihandler) DeletePreset(name string) error {
+	_, err := configDb.Exec("DELETE FROM pgwatch3.preset_config WHERE pc_name = $1", name)
+	return err
+}
+
 // GetMetrics returns the list of monitored databases
 func (uiapi uiapihandler) GetMetrics() (res string, err error) {
 	sql := `select coalesce(jsonb_agg(to_jsonb(m)), '[]') from metric m`
