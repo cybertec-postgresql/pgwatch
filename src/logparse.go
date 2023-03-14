@@ -143,7 +143,7 @@ func logparseLoop(dbUniqueName, metricName string, config_map map[string]float64
 			}
 		}
 
-		if lastConfigRefreshTime.IsZero() || lastConfigRefreshTime.Add(time.Second*time.Duration(opts.ServersRefreshLoopSeconds)).Before(time.Now()) {
+		if lastConfigRefreshTime.IsZero() || lastConfigRefreshTime.Add(time.Second*time.Duration(opts.Connection.ServersRefreshLoopSeconds)).Before(time.Now()) {
 			mdb, err = GetMonitoredDatabaseByUniqueName(dbUniqueName)
 			if err != nil {
 				log.Errorf("[%s] Failed to refresh monitored DBs info: %s", dbUniqueName, err)
@@ -257,7 +257,7 @@ func logparseLoop(dbUniqueName, metricName string, config_map map[string]float64
 		readLoopStart := time.Now()
 
 		for {
-			if readLoopStart.Add(time.Second * time.Duration(opts.ServersRefreshLoopSeconds)).Before(time.Now()) {
+			if readLoopStart.Add(time.Second * time.Duration(opts.Connection.ServersRefreshLoopSeconds)).Before(time.Now()) {
 				break // refresh config
 			}
 			line, err := reader.ReadString('\n')
