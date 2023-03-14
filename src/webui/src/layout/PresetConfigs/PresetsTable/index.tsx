@@ -18,7 +18,7 @@ import PresetService from "services/Preset";
 import { ModalComponent } from "./ModalComponent";
 
 
-export const ConfigsTable = () => {
+export const PresetsTable = () => {
   const services = PresetService.getInstance();
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState<Preset>();
