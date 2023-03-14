@@ -26,17 +26,17 @@ const PROM_SCRAPING_STALENESS_HARD_DROP_LIMIT = time.Minute * time.Duration(10)
 func NewExporter() (*Exporter, error) {
 	return &Exporter{
 		lastScrapeErrors: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: opts.PrometheusNamespace,
+			Namespace: opts.Metric.PrometheusNamespace,
 			Name:      "exporter_last_scrape_errors",
 			Help:      "Last scrape error count for all monitored hosts / metrics",
 		}),
 		totalScrapes: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: opts.PrometheusNamespace,
+			Namespace: opts.Metric.PrometheusNamespace,
 			Name:      "exporter_total_scrapes",
 			Help:      "Total scrape attempts.",
 		}),
 		totalScrapeFailures: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: opts.PrometheusNamespace,
+			Namespace: opts.Metric.PrometheusNamespace,
 			Name:      "exporter_total_scrape_failures",
 			Help:      "Number of errors while executing metric queries",
 		}),
@@ -88,7 +88,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 				var err error
 				var ok bool
 
-				if promAsyncMode {
+				if opts.Metric.PrometheusAsyncMode {
 					promAsyncMetricCacheLock.RLock()
 					metricStoreMessages, ok = promAsyncMetricCache[md.DBUniqueName][metric]
 					promAsyncMetricCacheLock.RUnlock()
@@ -132,7 +132,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 				}
 			}
 		}
-		if promAsyncMode {
+		if opts.Metric.PrometheusAsyncMode {
 			log.Infof("[%s] rowcounts fetched from the prom cache on scrape request: %+v", md.DBUniqueName, fetchedFromCacheCounts)
 		}
 	}
@@ -146,7 +146,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 func setInstanceUpDownState(ch chan<- prometheus.Metric, md MonitoredDatabase) {
 	log.Debugf("checking availability of configured DB [%s:%s]...", md.DBUniqueName, PROM_INSTANCE_UP_STATE_METRIC)
-	vme, err := DBGetPGVersion(md.DBUniqueName, md.DBType, !promAsyncMode) // NB! in async mode 2min cache can mask smaller downtimes!
+	vme, err := DBGetPGVersion(md.DBUniqueName, md.DBType, !opts.Metric.PrometheusAsyncMode) // NB! in async mode 2min cache can mask smaller downtimes!
 	data := make(map[string]interface{})
 	if err != nil {
 		data[PROM_INSTANCE_UP_STATE_METRIC] = 0
@@ -208,7 +208,7 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 	} else {
 		epoch_time = time.Unix(0, epoch_ns)
 
-		if promAsyncMode && epoch_time.Before(epoch_now.Add(-1*PROM_SCRAPING_STALENESS_HARD_DROP_LIMIT)) {
+		if opts.Metric.PrometheusAsyncMode && epoch_time.Before(epoch_now.Add(-1*PROM_SCRAPING_STALENESS_HARD_DROP_LIMIT)) {
 			log.Warningf("[%s][%s] Dropping metric set due to staleness (>%v) ...", msg.DBUniqueName, msg.MetricName, PROM_SCRAPING_STALENESS_HARD_DROP_LIMIT)
 			PurgeMetricsFromPromAsyncCacheIfAny(msg.DBUniqueName, msg.MetricName)
 			return promMetrics
@@ -254,10 +254,10 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 			}
 		}
 
-		if addRealDbname && opts.RealDbnameField != "" && msg.RealDbname != "" {
+		if opts.AddRealDbname && opts.RealDbnameField != "" && msg.RealDbname != "" {
 			labels[opts.RealDbnameField] = msg.RealDbname
 		}
-		if addSystemIdentifier && opts.SystemIdentifierField != "" && msg.SystemIdentifier != "" {
+		if opts.AddSystemIdentifier && opts.SystemIdentifierField != "" && msg.SystemIdentifier != "" {
 			labels[opts.SystemIdentifierField] = msg.SystemIdentifier
 		}
 
@@ -296,12 +296,12 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 				continue
 			}
 			var desc *prometheus.Desc
-			if opts.PrometheusNamespace != "" {
+			if opts.Metric.PrometheusNamespace != "" {
 				if msg.MetricName == PROM_INSTANCE_UP_STATE_METRIC { // handle the special "instance_up" check
-					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s", opts.PrometheusNamespace, msg.MetricName),
+					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s", opts.Metric.PrometheusNamespace, msg.MetricName),
 						msg.MetricName, label_keys, nil)
 				} else {
-					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s_%s", opts.PrometheusNamespace, msg.MetricName, field),
+					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s_%s", opts.Metric.PrometheusNamespace, msg.MetricName, field),
 						msg.MetricName, label_keys, nil)
 				}
 			} else {
@@ -327,10 +327,10 @@ func StartPrometheusExporter() {
 
 	prometheus.MustRegister(promExporter)
 
-	var promServer = &http.Server{Addr: fmt.Sprintf("%s:%d", opts.PrometheusListenAddr, opts.PrometheusPort), Handler: promhttp.Handler()}
+	var promServer = &http.Server{Addr: fmt.Sprintf("%s:%d", opts.Metric.PrometheusListenAddr, opts.Metric.PrometheusPort), Handler: promhttp.Handler()}
 
 	for { // ListenAndServe call should not normally return, but looping just in case
-		log.Infof("starting Prometheus exporter on %s:%d ...", opts.PrometheusListenAddr, opts.PrometheusPort)
+		log.Infof("starting Prometheus exporter on %s:%d ...", opts.Metric.PrometheusListenAddr, opts.Metric.PrometheusPort)
 		err = promServer.ListenAndServe()
 		if listenLoops == 0 {
 			log.Fatal("Prometheus listener failure:", err)

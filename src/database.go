@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/shirou/gopsutil/v3/disk"
@@ -23,7 +24,7 @@ var configDb *sqlx.DB
 var metricDb *sqlx.DB
 var monitored_db_conn_cache map[string]*sqlx.DB = make(map[string]*sqlx.DB)
 
-func GetPostgresDBConnection(libPqConnString, host, port, dbname, user, password, sslmode, sslrootcert, sslcert, sslkey string) (*sqlx.DB, error) {
+func GetPostgresDBConnection(ctx context.Context, libPqConnString, host, port, dbname, user, password, sslmode, sslrootcert, sslcert, sslkey string) (*sqlx.DB, error) {
 	var connStr string
 
 	//log.Debug("Connecting to: ", host, port, dbname, user, password)
@@ -59,21 +60,21 @@ func GetPostgresDBConnection(libPqConnString, host, port, dbname, user, password
 		}
 	}
 
-	return sqlx.Open("postgres", connStr)
+	return sqlx.ConnectContext(ctx, "postgres", connStr)
 }
 
-func InitAndTestConfigStoreConnection(host, port, dbname, user, password, requireSSL string, failOnErr bool) error {
+func InitAndTestConfigStoreConnection(ctx context.Context, host, port, dbname, user, password string, requireSSL, failOnErr bool) error {
 	var err error
 	SSLMode := "disable"
 	var retries = 3 // ~15s
 
-	if StringToBoolOrFail(requireSSL, "--pg-require-ssl") {
+	if requireSSL {
 		SSLMode = "require"
 	}
 
 	for i := 0; i <= retries; i++ {
 		// configDb is used by the main thread only. no verify-ca/verify-full support currently
-		configDb, err = GetPostgresDBConnection("", host, port, dbname, user, password, SSLMode, "", "", "")
+		configDb, err = GetPostgresDBConnection(context.Background(), "", host, port, dbname, user, password, SSLMode, "", "", "")
 		if err != nil {
 			if i < retries {
 				log.Errorf("could not open metricDb connection. retrying in 5s. %d retries left. err: %v", retries-i, err)
@@ -119,7 +120,7 @@ func InitAndTestMetricStoreConnection(connStr string, failOnErr bool) error {
 
 	for i := 0; i <= retries; i++ {
 
-		metricDb, err = GetPostgresDBConnection(connStr, "", "", "", "", "", "", "", "", "")
+		metricDb, err = GetPostgresDBConnection(context.Background(), connStr, "", "", "", "", "", "", "", "", "")
 		if err != nil {
 			if i < retries {
 				log.Errorf("could not open metricDb connection. retrying in 5s. %d retries left. err: %v", retries-i, err)
@@ -159,7 +160,7 @@ func InitAndTestMetricStoreConnection(connStr string, failOnErr bool) error {
 }
 
 func IsPostgresDBType(dbType string) bool {
-	if dbType == DBTYPE_BOUNCER || dbType == DBTYPE_PGPOOL {
+	if dbType == config.DBTYPE_BOUNCER || dbType == config.DBTYPE_PGPOOL {
 		return false
 	}
 	return true
@@ -175,17 +176,17 @@ func InitSqlConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
 		return nil
 	}
 
-	if md.DBType == DBTYPE_BOUNCER {
+	if md.DBType == config.DBTYPE_BOUNCER {
 		md.DBName = "pgbouncer"
 	}
 
-	conn, err := GetPostgresDBConnection(md.LibPQConnStr, md.Host, md.Port, md.DBName, md.User, md.Password,
+	conn, err := GetPostgresDBConnection(context.Background(), md.LibPQConnStr, md.Host, md.Port, md.DBName, md.User, md.Password,
 		md.SslMode, md.SslRootCAPath, md.SslClientCertPath, md.SslClientKeyPath)
 	if err != nil {
 		return err
 	}
 
-	if useConnPooling {
+	if opts.UseConnPooling {
 		conn.SetMaxIdleConns(opts.MaxParallelConnectionsPerDb)
 	} else {
 		conn.SetMaxIdleConns(0)
@@ -195,7 +196,7 @@ func InitSqlConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
 	conn.SetConnMaxLifetime(time.Second * time.Duration(PG_CONN_RECYCLE_SECONDS))
 
 	monitored_db_conn_cache[md.DBUniqueName] = conn
-	log.Debugf("[%s] Connection pool initialized with max %d parallel connections. Conn pooling: %v", md.DBUniqueName, opts.MaxParallelConnectionsPerDb, useConnPooling)
+	log.Debugf("[%s] Connection pool initialized with max %d parallel connections. Conn pooling: %v", md.DBUniqueName, opts.MaxParallelConnectionsPerDb, opts.UseConnPooling)
 
 	return nil
 }
@@ -211,7 +212,7 @@ func CloseOrLimitSqlConnPoolForMonitoredDBIfAny(dbUnique string) {
 
 	if IsDBUndersized(dbUnique) || IsDBIgnoredBasedOnRecoveryState(dbUnique) {
 
-		if useConnPooling {
+		if opts.UseConnPooling {
 			s := conn.Stats()
 			if s.MaxOpenConnections > 1 {
 				log.Debugf("[%s] Limiting SQL connection pool to max 1 connection due to dormant state ...", dbUnique)
@@ -333,13 +334,13 @@ func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride i
 		log.Errorf("SQL connection for dbUnique %s not found or nil", dbUnique) // Should always be initialized in the main loop DB discovery code ...
 		return nil, errors.New("SQL connection not found or nil"), duration
 	}
-	if !adHocMode && IsPostgresDBType(md.DBType) {
+	if !opts.IsAdHocMode() && IsPostgresDBType(md.DBType) {
 		stmtTimeout := md.StmtTimeout
 		if stmtTimeoutOverride > 0 {
 			stmtTimeout = stmtTimeoutOverride
 		}
 		if stmtTimeout > 0 { // 0 = don't change, use DB level settings
-			if useConnPooling {
+			if opts.UseConnPooling {
 				sqlStmtTimeout = fmt.Sprintf("SET LOCAL statement_timeout TO '%ds';", stmtTimeout)
 			} else {
 				sqlStmtTimeout = fmt.Sprintf("SET statement_timeout TO '%ds';", stmtTimeout)
@@ -350,7 +351,7 @@ func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride i
 			return nil, err, duration
 		}
 	}
-	if !useConnPooling {
+	if !opts.UseConnPooling {
 		if IsPostgresDBType(md.DBType) {
 			sqlLockTimeout = "SET lock_timeout TO '100ms';"
 		} else {
@@ -360,7 +361,7 @@ func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride i
 	sqlToExec := sqlLockTimeout + sqlStmtTimeout + sql // bundle timeouts with actual SQL to reduce round-trip times
 	//log.Debugf("Executing SQL: %s", sqlToExec)
 	t1 := time.Now()
-	if useConnPooling {
+	if opts.UseConnPooling {
 		data, err = DBExecInExplicitTX(conn, dbUnique, sqlToExec, args...)
 	} else {
 		if IsPostgresDBType(md.DBType) {
@@ -734,7 +735,7 @@ func UniqueDbnamesListingMaintainer(daemonMode bool) {
 }
 
 func EnsureMetricDummy(metric string) {
-	if opts.Datastore != DATASTORE_POSTGRES {
+	if opts.Metric.Datastore != DATASTORE_POSTGRES {
 		return
 	}
 	sql_ensure := `
@@ -902,7 +903,7 @@ func DBGetSizeMB(dbUnique string) (int64, error) {
 	lastDBSizeCheckLock.RUnlock()
 
 	if !ok || lastDBSizeCheckTime.Add(DB_SIZE_CACHING_INTERVAL).Before(time.Now()) {
-		ver, err := DBGetPGVersion(dbUnique, DBTYPE_PG, false)
+		ver, err := DBGetPGVersion(dbUnique, config.DBTYPE_PG, false)
 		if err != nil || (ver.ExecEnv != EXEC_ENV_AZURE_SINGLE) || (ver.ExecEnv == EXEC_ENV_AZURE_SINGLE && ver.ApproxDBSizeB < 1e12) {
 			log.Debugf("[%s] determining DB size ...", dbUnique)
 
@@ -1001,7 +1002,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 			verNew.Extensions = make(map[string]decimal.Decimal)
 		}
 
-		if dbType == DBTYPE_BOUNCER {
+		if dbType == config.DBTYPE_BOUNCER {
 			data, err, _ := DBExecReadByDbUniqueName(dbUnique, "", 0, "show version")
 			if err != nil {
 				return verNew, err
@@ -1019,7 +1020,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 				verNew.VersionStr = matches[0]
 				verNew.Version, _ = decimal.NewFromString(matches[0])
 			}
-		} else if dbType == DBTYPE_PGPOOL {
+		} else if dbType == config.DBTYPE_PGPOOL {
 			data, err, _ := DBExecReadByDbUniqueName(dbUnique, "", 0, pgpool_version)
 			if err != nil {
 				return verNew, err
@@ -1051,7 +1052,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 			verNew.IsInRecovery = data[0]["pg_is_in_recovery"].(bool)
 			verNew.RealDbname = data[0]["current_database"].(string)
 
-			if verNew.Version.GreaterThanOrEqual(decimal.NewFromFloat(10)) && addSystemIdentifier {
+			if verNew.Version.GreaterThanOrEqual(decimal.NewFromFloat(10)) && opts.AddSystemIdentifier {
 				log.Debugf("[%s] determining system identifier version (pg ver: %v)", dbUnique, verNew.VersionStr)
 				data, err, _ := DBExecReadByDbUniqueName(dbUnique, "", 0, sql_sysid)
 				if err == nil && len(data) > 0 {
@@ -1193,7 +1194,7 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storage_ch chan<
 	if len(detected_changes) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storage_ch <- []MetricStoreMessage{MetricStoreMessage{DBUniqueName: dbUnique, MetricName: "sproc_changes", Data: detected_changes, CustomTags: md.CustomTags}}
-	} else if opts.Datastore == DATASTORE_POSTGRES && first_run {
+	} else if opts.Metric.Datastore == DATASTORE_POSTGRES && first_run {
 		EnsureMetricDummy("sproc_changes")
 	}
 
@@ -1279,7 +1280,7 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storage_ch chan<
 	if len(detected_changes) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storage_ch <- []MetricStoreMessage{MetricStoreMessage{DBUniqueName: dbUnique, MetricName: "table_changes", Data: detected_changes, CustomTags: md.CustomTags}}
-	} else if opts.Datastore == DATASTORE_POSTGRES && first_run {
+	} else if opts.Metric.Datastore == DATASTORE_POSTGRES && first_run {
 		EnsureMetricDummy("table_changes")
 	}
 
@@ -1363,7 +1364,7 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storage_ch chan<
 	if len(detected_changes) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storage_ch <- []MetricStoreMessage{MetricStoreMessage{DBUniqueName: dbUnique, MetricName: "index_changes", Data: detected_changes, CustomTags: md.CustomTags}}
-	} else if opts.Datastore == DATASTORE_POSTGRES && first_run {
+	} else if opts.Metric.Datastore == DATASTORE_POSTGRES && first_run {
 		EnsureMetricDummy("index_changes")
 	}
 
@@ -1437,7 +1438,7 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storage_ch c
 		}
 	}
 
-	if opts.Datastore == DATASTORE_POSTGRES && first_run {
+	if opts.Metric.Datastore == DATASTORE_POSTGRES && first_run {
 		EnsureMetricDummy("privilege_changes")
 	}
 	log.Debugf("[%s][%s] detected %d object privilege changes...", dbUnique, SPECIAL_METRIC_CHANGE_EVENTS, len(detected_changes))
@@ -1503,7 +1504,7 @@ func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storage_
 	if len(detected_changes) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storage_ch <- []MetricStoreMessage{MetricStoreMessage{DBUniqueName: dbUnique, MetricName: "configuration_changes", Data: detected_changes, CustomTags: md.CustomTags}}
-	} else if opts.Datastore == DATASTORE_POSTGRES {
+	} else if opts.Metric.Datastore == DATASTORE_POSTGRES {
 		EnsureMetricDummy("configuration_changes")
 	}
 
@@ -1517,7 +1518,7 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 	conf_counts := DetectConfigurationChanges(dbUnique, vme, storage_ch, host_state)
 	priv_change_counts := DetectPrivilegeChanges(dbUnique, vme, storage_ch, host_state)
 
-	if opts.Datastore == DATASTORE_POSTGRES {
+	if opts.Metric.Datastore == DATASTORE_POSTGRES {
 		EnsureMetricDummy("object_changes")
 	}
 
@@ -1772,19 +1773,19 @@ func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existi
 
 // Called once on daemon startup to try to create "metric fething helper" functions automatically
 func TryCreateMetricsFetchingHelpers(dbUnique string) error {
-	db_pg_version, err := DBGetPGVersion(dbUnique, DBTYPE_PG, false)
+	db_pg_version, err := DBGetPGVersion(dbUnique, config.DBTYPE_PG, false)
 	if err != nil {
 		log.Errorf("Failed to fetch pg version for \"%s\": %s", dbUnique, err)
 		return err
 	}
 
 	if fileBasedMetrics {
-		helpers, err := ReadMetricsFromFolder(path.Join(opts.MetricsFolder, FILE_BASED_METRIC_HELPERS_DIR), false)
+		helpers, err := ReadMetricsFromFolder(path.Join(opts.Metric.MetricsFolder, FILE_BASED_METRIC_HELPERS_DIR), false)
 		if err != nil {
-			log.Errorf("Failed to fetch helpers from \"%s\": %s", path.Join(opts.MetricsFolder, FILE_BASED_METRIC_HELPERS_DIR), err)
+			log.Errorf("Failed to fetch helpers from \"%s\": %s", path.Join(opts.Metric.MetricsFolder, FILE_BASED_METRIC_HELPERS_DIR), err)
 			return err
 		}
-		log.Debug("%d helper definitions found from \"%s\"...", len(helpers), path.Join(opts.MetricsFolder, FILE_BASED_METRIC_HELPERS_DIR))
+		log.Debug("%d helper definitions found from \"%s\"...", len(helpers), path.Join(opts.Metric.MetricsFolder, FILE_BASED_METRIC_HELPERS_DIR))
 
 		for helperName := range helpers {
 			if strings.Contains(helperName, "windows") {
@@ -1854,7 +1855,7 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 	templateDBsToTry := []string{"template1", "postgres", "defaultdb"}
 
 	for _, templateDB := range templateDBsToTry {
-		c, err = GetPostgresDBConnection(ce.LibPQConnStr, ce.Host, ce.Port, templateDB, ce.User, ce.Password,
+		c, err = GetPostgresDBConnection(context.Background(), ce.LibPQConnStr, ce.Host, ce.Port, templateDB, ce.User, ce.Password,
 			ce.SslMode, ce.SslRootCAPath, ce.SslClientCertPath, ce.SslClientKeyPath)
 		if err != nil {
 			return md, err

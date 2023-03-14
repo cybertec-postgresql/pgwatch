@@ -10,12 +10,12 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/src",
-            "env": {
-                "PW3_DATASTORE": "postgres",
-                "PW3_PG_METRIC_STORE_CONN_STR": "postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics",
-                "PW3_PG_SCHEMA_TYPE": "metric-time",
-                "PW3_PGPASSWORD": "pgwatch3admin"
-            },
+            // "env": {
+            //     "PW3_DATASTORE": "postgres",
+            //     "PW3_PG_METRIC_STORE_CONN_STR": "postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics",
+            //     "PW3_PG_SCHEMA_TYPE": "metric-time",
+            //     "PW3_PGPASSWORD": "pgwatch3admin"
+            // },
             "args": [
                 "--password=pgwatch3", 
                 "--host=localhost", 

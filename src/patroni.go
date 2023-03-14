@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch3/config"
 	consul_api "github.com/hashicorp/consul/api"
 	"github.com/samuel/go-zookeeper/zk"
 	client "go.etcd.io/etcd/client/v2"
@@ -133,7 +134,7 @@ func EtcdGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, 
 	}
 	kapi := client.NewKeysAPI(c)
 
-	if database.DBType == DBTYPE_PATRONI_NAMESPACE_DISCOVERY { // all scopes, all DBs (regex filtering applies if defined)
+	if database.DBType == config.DBTYPE_PATRONI_NAMESPACE_DISCOVERY { // all scopes, all DBs (regex filtering applies if defined)
 		if len(database.DBName) > 0 {
 			log.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName)
 			return ret, errors.New(fmt.Sprintf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName))
@@ -251,7 +252,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 	var ok bool
 	var dbUnique string
 
-	if ce.DBType == DBTYPE_PATRONI_NAMESPACE_DISCOVERY && ce.HostConfig.DcsType != DCS_TYPE_ETCD {
+	if ce.DBType == config.DBTYPE_PATRONI_NAMESPACE_DISCOVERY && ce.HostConfig.DcsType != DCS_TYPE_ETCD {
 		log.Warningf("Skipping Patroni monitoring entry \"%s\" as currently only ETCD namespace scanning is supported...", ce.DBUniqueName)
 		return md, nil
 	}
@@ -294,7 +295,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 		}
 		if ce.OnlyIfMaster {
 			dbUnique = ce.DBUniqueName
-			if ce.DBType == DBTYPE_PATRONI_NAMESPACE_DISCOVERY {
+			if ce.DBType == config.DBTYPE_PATRONI_NAMESPACE_DISCOVERY {
 				dbUnique = ce.DBUniqueName + "_" + m.Scope
 			}
 		} else {
@@ -323,7 +324,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 				DBType:            "postgres"})
 			continue
 		} else {
-			c, err := GetPostgresDBConnection("", host, port, "template1", ce.User, ce.Password,
+			c, err := GetPostgresDBConnection(context.Background(), "", host, port, "template1", ce.User, ce.Password,
 				ce.SslMode, ce.SslRootCAPath, ce.SslClientCertPath, ce.SslClientKeyPath)
 			if err != nil {
 				log.Errorf("Could not contact Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
