@@ -3224,7 +3224,12 @@ func main() {
 		prevLoopMonitoredDBs = monitored_dbs
 
 		log.Debugf("main sleeping %ds...", opts.Connection.ServersRefreshLoopSeconds)
-		time.Sleep(time.Second * time.Duration(opts.Connection.ServersRefreshLoopSeconds))
+		select {
+		case <-time.After(time.Second * time.Duration(opts.Connection.ServersRefreshLoopSeconds)):
+			// pass
+		case <-ctx.Done():
+			return
+		}
 	}
 
 }
