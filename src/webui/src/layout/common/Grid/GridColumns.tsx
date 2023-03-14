@@ -1,5 +1,9 @@
-import { Box, Checkbox } from "@mui/material";
-import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import { useState } from 'react';
+
+import CloseIcon from "@mui/icons-material/Close";
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, IconButton, Tooltip, Typography } from "@mui/material";
+import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
 import { UseMutationResult } from "@tanstack/react-query";
 
@@ -7,7 +11,8 @@ import moment from "moment";
 
 import { Db } from "queries/types/DbTypes";
 import { Metric } from "queries/types/MetricTypes";
-import { Preset } from "queries/types/PresetTypes";
+import { Preset, PresetConfigRows } from "queries/types/PresetTypes";
+
 import { GridActionsComponent } from "./GridActionsComponent";
 
 type metricsColumnsProps = {
@@ -391,11 +396,15 @@ export const presetsColumns = ({
       {
         field: "pc_config",
         headerName: "Config",
-        width: 300,
+        width: 220,
         align: "center",
         headerAlign: "center",
-        valueGetter: (params) => {
-          return (JSON.stringify(params.value));
+        renderCell: (params) => {
+          const configRows: PresetConfigRows[] = [];
+
+          Object.entries(params.value).map(([key, value]) => configRows.push({ id: key, key: key.toUpperCase(), value: Number(value) }));
+
+          return PcConfig(configRows);
         }
       },
       {
@@ -427,5 +436,62 @@ export const presetsColumns = ({
         headerAlign: "center"
       }
     ]
+  );
+};
+
+const pcConfigColumns = (): GridColDef[] => {
+  return (
+    [
+      {
+        field: "id",
+        headerName: "Id",
+        hide: true
+      },
+      {
+        field: "key",
+        headerName: "Key",
+        flex: 1,
+        align: "center",
+        headerAlign: "center"
+      },
+      {
+        field: "value",
+        headerName: "Value",
+        flex: 1,
+        align: "center",
+        headerAlign: "center"
+      }
+    ]
+  );
+};
+
+function PcConfig(configRows: PresetConfigRows[]) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  return (
+    <Box width="100%" height="100%" display="flex" alignItems="center" justifyContent="space-around">
+      <Typography>{`params quantity: ${configRows.length}`}</Typography>
+      <Tooltip title="Details">
+        <IconButton
+          onClick={() => setDialogOpen(true)}
+        >
+          <VisibilityIcon />
+        </IconButton>
+      </Tooltip>
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+        <DialogContent sx={{ maxHeight: 450, width: 600 }}>
+          <DataGrid
+            columns={pcConfigColumns()}
+            rows={configRows}
+            rowsPerPageOptions={[]}
+            disableColumnMenu
+            autoHeight
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)} size="large" variant="contained" endIcon={<CloseIcon />}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
