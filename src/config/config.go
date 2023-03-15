@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	flags "github.com/jessevdk/go-flags"
@@ -104,7 +103,7 @@ func NewConfig(writer io.Writer) (*CmdOptions, error) {
 }
 
 func checkFolderExistsAndReadable(path string) bool {
-	_, err := ioutil.ReadDir(path)
+	_, err := os.ReadDir(path)
 	return err == nil
 }
 
@@ -155,7 +154,7 @@ func validateAesGcmConfig(conf *CmdOptions) error {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("Failed to read aes_gcm_keyphrase_file at %s, thus cannot monitor hosts with encrypted passwords", conf.AesGcmKeyphraseFile)
 		} else {
-			keyBytes, err := ioutil.ReadFile(conf.AesGcmKeyphraseFile)
+			keyBytes, err := os.ReadFile(conf.AesGcmKeyphraseFile)
 			if err != nil {
 				return err
 			}
