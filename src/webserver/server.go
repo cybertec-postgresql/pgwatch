@@ -24,6 +24,7 @@ type apiHandler interface {
 	DeleteMetric(id int) error
 	UpdateMetric(id int, params []byte) error
 	GetPresets() (res string, err error)
+	DeletePreset(name string) error
 }
 
 type WebUIServer struct {

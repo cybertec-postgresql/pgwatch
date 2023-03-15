@@ -1,5 +1,9 @@
-import { Box, Checkbox } from "@mui/material";
-import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import { useState } from 'react';
+
+import CloseIcon from "@mui/icons-material/Close";
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, IconButton, Tooltip, Typography } from "@mui/material";
+import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
 import { UseMutationResult } from "@tanstack/react-query";
 
@@ -7,6 +11,8 @@ import moment from "moment";
 
 import { Db } from "queries/types/DbTypes";
 import { Metric } from "queries/types/MetricTypes";
+import { Preset, PresetConfigRows } from "queries/types/PresetTypes";
+
 import { GridActionsComponent } from "./GridActionsComponent";
 
 type metricsColumnsProps = {
@@ -358,4 +364,134 @@ export const databasesColumns = ({
       )
     }
   ];
+};
+
+type presetsColumnsProps = {
+  setEditData: React.Dispatch<React.SetStateAction<Preset | undefined>>,
+  handleModalOpen: () => void,
+  deleteRecord: UseMutationResult<any, any, any, unknown>
+};
+
+export const presetsColumns = ({
+  setEditData,
+  handleModalOpen,
+  deleteRecord
+}: presetsColumnsProps): GridColDef[] => {
+  return (
+    [
+      {
+        field: "pc_name",
+        headerName: "Config name",
+        width: 150,
+        align: "center",
+        headerAlign: "center"
+      },
+      {
+        field: "pc_description",
+        headerName: "Config description",
+        width: 300,
+        align: "center",
+        headerAlign: "center"
+      },
+      {
+        field: "pc_config",
+        headerName: "Config",
+        width: 220,
+        align: "center",
+        headerAlign: "center",
+        renderCell: (params) => {
+          const configRows: PresetConfigRows[] = [];
+
+          Object.entries(params.value).map(([key, value]) => configRows.push({ id: key, key: key.toUpperCase(), value: Number(value) }));
+
+          return PcConfig(configRows);
+        }
+      },
+      {
+        field: "pc_last_modified_on",
+        headerName: "Last modified",
+        width: 170,
+        renderCell: (params) =>
+          <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
+            {moment(params.value).format("DD.MM.YYYY HH:mm:ss")}
+          </Box>,
+        align: "center",
+        headerAlign: "center"
+      },
+      {
+        field: "actions",
+        headerName: "Actions",
+        type: "actions",
+        width: 200,
+        renderCell: (params) => (
+          <GridActionsComponent
+            data={params.row}
+            setEditData={setEditData}
+            handleModalOpen={handleModalOpen}
+            deleteRecord={deleteRecord}
+            deleteParameter={params.row.pc_name}
+            warningMessage={`Are you sure you want to delete preset named "${params.row.pc_name}"`}
+          />
+        ),
+        headerAlign: "center"
+      }
+    ]
+  );
+};
+
+const pcConfigColumns = (): GridColDef[] => {
+  return (
+    [
+      {
+        field: "id",
+        headerName: "Id",
+        hide: true
+      },
+      {
+        field: "key",
+        headerName: "Key",
+        flex: 1,
+        align: "center",
+        headerAlign: "center"
+      },
+      {
+        field: "value",
+        headerName: "Value",
+        flex: 1,
+        align: "center",
+        headerAlign: "center"
+      }
+    ]
+  );
+};
+
+function PcConfig(configRows: PresetConfigRows[]) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  return (
+    <Box width="100%" height="100%" display="flex" alignItems="center" justifyContent="space-around">
+      <Typography>{`params quantity: ${configRows.length}`}</Typography>
+      <Tooltip title="Details">
+        <IconButton
+          onClick={() => setDialogOpen(true)}
+        >
+          <VisibilityIcon />
+        </IconButton>
+      </Tooltip>
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+        <DialogContent sx={{ maxHeight: 450, width: 600 }}>
+          <DataGrid
+            columns={pcConfigColumns()}
+            rows={configRows}
+            rowsPerPageOptions={[]}
+            disableColumnMenu
+            autoHeight
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)} size="large" variant="contained" endIcon={<CloseIcon />}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
 };
