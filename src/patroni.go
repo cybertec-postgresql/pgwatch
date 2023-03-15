@@ -246,8 +246,8 @@ func ZookeeperGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMem
 }
 
 func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, error) {
-	md := make([]MonitoredDatabase, 0)
-	cm := make([]PatroniClusterMember, 0)
+	var md []MonitoredDatabase
+	var cm []PatroniClusterMember
 	var err error
 	var ok bool
 	var dbUnique string
