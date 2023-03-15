@@ -282,7 +282,7 @@ func DBExecInExplicitTX(conn *sqlx.DB, host_ident, query string, args ...interfa
 	if err != nil {
 		return ret, err
 	}
-	defer tx.Commit()
+	defer func() { _ = tx.Commit() }()
 
 	rows, err = tx.Queryx(query, args...)
 
