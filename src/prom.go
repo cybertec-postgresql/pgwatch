@@ -193,7 +193,7 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 
 	var epoch_time time.Time
 	var epoch_ns int64
-	var epoch_now time.Time = time.Now()
+	var epoch_now = time.Now()
 
 	if len(msg.Data) == 0 {
 		return promMetrics
