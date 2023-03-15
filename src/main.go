@@ -265,7 +265,7 @@ var metric_def_map_lock = sync.RWMutex{}
 var host_metric_interval_map = make(map[string]float64) // [db1_metric] = 30
 var db_pg_version_map = make(map[string]DBVersionMapEntry)
 var db_pg_version_map_lock = sync.RWMutex{}
-var db_get_pg_version_map_lock = make(map[string]sync.RWMutex) // synchronize initial PG version detection to 1 instance for each defined host
+var db_get_pg_version_map_lock = make(map[string]*sync.RWMutex) // synchronize initial PG version detection to 1 instance for each defined host
 var monitored_db_cache map[string]MonitoredDatabase
 var monitored_db_cache_lock sync.RWMutex
 
@@ -355,7 +355,7 @@ func RestoreSqlConnPoolLimitsForPreviouslyDormantDB(dbUnique string) {
 func InitPGVersionInfoFetchingLockIfNil(md MonitoredDatabase) {
 	db_pg_version_map_lock.Lock()
 	if _, ok := db_get_pg_version_map_lock[md.DBUniqueName]; !ok {
-		db_get_pg_version_map_lock[md.DBUniqueName] = sync.RWMutex{}
+		db_get_pg_version_map_lock[md.DBUniqueName] = &sync.RWMutex{}
 	}
 	db_pg_version_map_lock.Unlock()
 }

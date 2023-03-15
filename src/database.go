@@ -984,7 +984,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 	db_pg_version_map_lock.Lock()
 	get_ver_lock, ok := db_get_pg_version_map_lock[dbUnique]
 	if !ok {
-		db_get_pg_version_map_lock[dbUnique] = sync.RWMutex{}
+		db_get_pg_version_map_lock[dbUnique] = &sync.RWMutex{}
 		get_ver_lock = db_get_pg_version_map_lock[dbUnique]
 	}
 	ver, ok = db_pg_version_map[dbUnique]
@@ -1193,7 +1193,7 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storage_ch chan<
 	log.Debugf("[%s][%s] detected %d sproc changes", dbUnique, SPECIAL_METRIC_CHANGE_EVENTS, len(detected_changes))
 	if len(detected_changes) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storage_ch <- []MetricStoreMessage{MetricStoreMessage{DBUniqueName: dbUnique, MetricName: "sproc_changes", Data: detected_changes, CustomTags: md.CustomTags}}
+		storage_ch <- []MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "sproc_changes", Data: detected_changes, CustomTags: md.CustomTags}}
 	} else if opts.Metric.Datastore == DATASTORE_POSTGRES && first_run {
 		EnsureMetricDummy("sproc_changes")
 	}
@@ -1279,7 +1279,7 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storage_ch chan<
 	log.Debugf("[%s][%s] detected %d table changes", dbUnique, SPECIAL_METRIC_CHANGE_EVENTS, len(detected_changes))
 	if len(detected_changes) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storage_ch <- []MetricStoreMessage{MetricStoreMessage{DBUniqueName: dbUnique, MetricName: "table_changes", Data: detected_changes, CustomTags: md.CustomTags}}
+		storage_ch <- []MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "table_changes", Data: detected_changes, CustomTags: md.CustomTags}}
 	} else if opts.Metric.Datastore == DATASTORE_POSTGRES && first_run {
 		EnsureMetricDummy("table_changes")
 	}
@@ -1363,7 +1363,7 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storage_ch chan<
 	log.Debugf("[%s][%s] detected %d index changes", dbUnique, SPECIAL_METRIC_CHANGE_EVENTS, len(detected_changes))
 	if len(detected_changes) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storage_ch <- []MetricStoreMessage{MetricStoreMessage{DBUniqueName: dbUnique, MetricName: "index_changes", Data: detected_changes, CustomTags: md.CustomTags}}
+		storage_ch <- []MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "index_changes", Data: detected_changes, CustomTags: md.CustomTags}}
 	} else if opts.Metric.Datastore == DATASTORE_POSTGRES && first_run {
 		EnsureMetricDummy("index_changes")
 	}
@@ -1444,7 +1444,13 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storage_ch c
 	log.Debugf("[%s][%s] detected %d object privilege changes...", dbUnique, SPECIAL_METRIC_CHANGE_EVENTS, len(detected_changes))
 	if len(detected_changes) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storage_ch <- []MetricStoreMessage{MetricStoreMessage{DBUniqueName: dbUnique, MetricName: "privilege_changes", Data: detected_changes, CustomTags: md.CustomTags}}
+		storage_ch <- []MetricStoreMessage{
+			{
+				DBUniqueName: dbUnique,
+				MetricName:   "privilege_changes",
+				Data:         detected_changes,
+				CustomTags:   md.CustomTags,
+			}}
 	}
 
 	return change_counts
@@ -1503,7 +1509,12 @@ func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storage_
 	log.Debugf("[%s][%s] detected %d configuration changes", dbUnique, SPECIAL_METRIC_CHANGE_EVENTS, len(detected_changes))
 	if len(detected_changes) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storage_ch <- []MetricStoreMessage{MetricStoreMessage{DBUniqueName: dbUnique, MetricName: "configuration_changes", Data: detected_changes, CustomTags: md.CustomTags}}
+		storage_ch <- []MetricStoreMessage{{
+			DBUniqueName: dbUnique,
+			MetricName:   "configuration_changes",
+			Data:         detected_changes,
+			CustomTags:   md.CustomTags,
+		}}
 	} else if opts.Metric.Datastore == DATASTORE_POSTGRES {
 		EnsureMetricDummy("configuration_changes")
 	}
@@ -1549,7 +1560,13 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 		influx_entry["epoch_ns"] = time.Now().UnixNano()
 		detected_changes_summary = append(detected_changes_summary, influx_entry)
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storage_ch <- []MetricStoreMessage{MetricStoreMessage{DBUniqueName: dbUnique, DBType: md.DBType, MetricName: "object_changes", Data: detected_changes_summary, CustomTags: md.CustomTags}}
+		storage_ch <- []MetricStoreMessage{{DBUniqueName: dbUnique,
+			DBType:     md.DBType,
+			MetricName: "object_changes",
+			Data:       detected_changes_summary,
+			CustomTags: md.CustomTags,
+		}}
+
 	}
 }
 
