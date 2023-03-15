@@ -106,7 +106,7 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 		MetricName: SPECIAL_METRIC_SERVER_LOG_EVENT_COUNTS, Data: data, CustomTags: mdb.CustomTags}}
 }
 
-func logparseLoop(dbUniqueName, metricName string, config_map map[string]float64, control_ch <-chan ControlMessage, store_ch chan<- []MetricStoreMessage) {
+func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, store_ch chan<- []MetricStoreMessage) {
 
 	var latest, previous, realDbname, serverMessagesLang string
 	var latestHandle *os.File
@@ -119,7 +119,7 @@ func logparseLoop(dbUniqueName, metricName string, config_map map[string]float64
 	var eventCountsTotal = make(map[string]int64) // for the whole instance
 	var mdb MonitoredDatabase
 	var hostConfig HostConfigAttrs
-	var config = config_map
+	var config = configMap
 	var interval float64
 	var err error
 	var firstRun = true
@@ -127,7 +127,7 @@ func logparseLoop(dbUniqueName, metricName string, config_map map[string]float64
 
 	for { // re-try loop. re-start in case of FS errors or just to refresh host config
 		select {
-		case msg := <-control_ch:
+		case msg := <-controlCh:
 			log.Debug("got control msg", dbUniqueName, metricName, msg)
 			if msg.Action == GATHERER_STATUS_START {
 				config = msg.Config
@@ -309,26 +309,26 @@ func logparseLoop(dbUniqueName, metricName string, config_map map[string]float64
 
 				result := RegexMatchesToMap(csvlogRegex, matches)
 				//log.Debugf("RegexMatchesToMap: %+v", result)
-				error_severity, ok := result["error_severity"]
+				errorSeverity, ok := result["error_severity"]
 				if !ok {
 					log.Error("error_severity group must be defined in parse regex:", csvlogRegex)
 					time.Sleep(time.Minute)
 					break
 				}
 				if serverMessagesLang != "en" {
-					error_severity = severityToEnglish(serverMessagesLang, error_severity)
+					errorSeverity = severityToEnglish(serverMessagesLang, errorSeverity)
 				}
 
-				database_name, ok := result["database_name"]
+				databaseName, ok := result["database_name"]
 				if !ok {
 					log.Error("database_name group must be defined in parse regex:", csvlogRegex)
 					time.Sleep(time.Minute)
 					break
 				}
-				if realDbname == database_name {
-					eventCounts[error_severity]++
+				if realDbname == databaseName {
+					eventCounts[errorSeverity]++
 				}
-				eventCountsTotal[error_severity]++
+				eventCountsTotal[errorSeverity]++
 			}
 
 		send_to_storage_if_needed:
