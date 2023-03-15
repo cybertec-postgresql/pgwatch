@@ -85,14 +85,14 @@ func NewCmdOptions(args ...string) *CmdOptions {
 	return cmdOpts
 }
 
-var nonOptionArgs []string
+// var nonOptionArgs []string
 
 // Parse will parse command line arguments and initialize pgengine
 func Parse(writer io.Writer) (*flags.Parser, error) {
 	cmdOpts := new(CmdOptions)
 	parser := flags.NewParser(cmdOpts, flags.PrintErrors)
 	var err error
-	if nonOptionArgs, err = parser.Parse(); err != nil {
+	if _, err = parser.Parse(); err != nil {
 		if !flags.WroteHelp(err) {
 			parser.WriteHelp(writer)
 			return nil, err
