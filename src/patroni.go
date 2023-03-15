@@ -137,11 +137,11 @@ func EtcdGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, 
 	if database.DBType == config.DBTYPE_PATRONI_NAMESPACE_DISCOVERY { // all scopes, all DBs (regex filtering applies if defined)
 		if len(database.DBName) > 0 {
 			log.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName)
-			return ret, errors.New(fmt.Sprintf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName))
+			return ret, fmt.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName)
 		}
 		if database.HostConfig.Namespace == "" {
 			log.Errorf("Skipping Patroni entry %s - search 'namespace' not specified", database.DBUniqueName)
-			return ret, errors.New(fmt.Sprintf("Skipping Patroni entry %s - search 'namespace' not specified", database.DBUniqueName))
+			return ret, fmt.Errorf("Skipping Patroni entry %s - search 'namespace' not specified", database.DBUniqueName)
 		}
 		log.Errorf("Scanning ETCD namespace %s for clusters to track...", database.HostConfig.Namespace)
 		resp, err := kapi.Get(context.Background(), database.HostConfig.Namespace, &client.GetOptions{Recursive: true})
