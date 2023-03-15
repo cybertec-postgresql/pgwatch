@@ -22,7 +22,7 @@ import (
 
 var configDb *sqlx.DB
 var metricDb *sqlx.DB
-var monitored_db_conn_cache map[string]*sqlx.DB = make(map[string]*sqlx.DB)
+var monitoredDbConnCache map[string]*sqlx.DB = make(map[string]*sqlx.DB)
 
 func GetPostgresDBConnection(ctx context.Context, libPqConnString, host, port, dbname, user, password, sslmode, sslrootcert, sslcert, sslkey string) (*sqlx.DB, error) {
 	var connStr string
@@ -171,7 +171,7 @@ func InitSqlConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
 	monitored_db_conn_cache_lock.Lock()
 	defer monitored_db_conn_cache_lock.Unlock()
 
-	conn, ok := monitored_db_conn_cache[md.DBUniqueName]
+	conn, ok := monitoredDbConnCache[md.DBUniqueName]
 	if ok && conn != nil {
 		return nil
 	}
@@ -195,7 +195,7 @@ func InitSqlConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
 	// recycling periodically makes sense as long sessions might bloat memory or maybe conn info (password) was changed
 	conn.SetConnMaxLifetime(time.Second * time.Duration(PG_CONN_RECYCLE_SECONDS))
 
-	monitored_db_conn_cache[md.DBUniqueName] = conn
+	monitoredDbConnCache[md.DBUniqueName] = conn
 	log.Debugf("[%s] Connection pool initialized with max %d parallel connections. Conn pooling: %v", md.DBUniqueName, opts.MaxParallelConnectionsPerDb, opts.UseConnPooling)
 
 	return nil
@@ -205,7 +205,7 @@ func CloseOrLimitSqlConnPoolForMonitoredDBIfAny(dbUnique string) {
 	monitored_db_conn_cache_lock.Lock()
 	defer monitored_db_conn_cache_lock.Unlock()
 
-	conn, ok := monitored_db_conn_cache[dbUnique]
+	conn, ok := monitoredDbConnCache[dbUnique]
 	if !ok || conn == nil {
 		return
 	}
@@ -227,7 +227,7 @@ func CloseOrLimitSqlConnPoolForMonitoredDBIfAny(dbUnique string) {
 		if err != nil {
 			log.Error("[%s] Failed to close connection pool to %s nicely. Err: %v", dbUnique, err)
 		}
-		delete(monitored_db_conn_cache, dbUnique)
+		delete(monitoredDbConnCache, dbUnique)
 	}
 }
 
@@ -328,7 +328,7 @@ func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride i
 	}
 	monitored_db_conn_cache_lock.RLock()
 	// sqlx.DB itself is parallel safe
-	conn, exists = monitored_db_conn_cache[dbUnique]
+	conn, exists = monitoredDbConnCache[dbUnique]
 	monitored_db_conn_cache_lock.RUnlock()
 	if !exists || conn == nil {
 		log.Errorf("SQL connection for dbUnique %s not found or nil", dbUnique) // Should always be initialized in the main loop DB discovery code ...

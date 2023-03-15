@@ -339,7 +339,7 @@ func RestoreSqlConnPoolLimitsForPreviouslyDormantDB(dbUnique string) {
 	monitored_db_conn_cache_lock.Lock()
 	defer monitored_db_conn_cache_lock.Unlock()
 
-	conn, ok := monitored_db_conn_cache[dbUnique]
+	conn, ok := monitoredDbConnCache[dbUnique]
 	if !ok || conn == nil {
 		log.Error("DB conn to re-instate pool limits not found, should not happen")
 		return
