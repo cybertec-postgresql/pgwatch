@@ -179,7 +179,7 @@ func validateAdHocConfig(conf *CmdOptions) error {
 			return errors.New("Conflicting flags! --adhoc-conn-str and --config cannot be both set")
 		}
 		if conf.Metric.MetricsFolder > "" && !checkFolderExistsAndReadable(conf.Metric.MetricsFolder) {
-			return fmt.Errorf("--metrics-folder \"%s\" not readable, trying 1st default paths and then Config DB to fetch metric definitions...", conf.Metric.MetricsFolder)
+			return fmt.Errorf("--metrics-folder \"%s\" not readable, trying 1st default paths and then Config DB to fetch metric definitions", conf.Metric.MetricsFolder)
 		}
 		if conf.Connection.User > "" && conf.Connection.Password > "" {
 			return errors.New("Conflicting flags! --adhoc-conn-str and --user/--password cannot be both set")
