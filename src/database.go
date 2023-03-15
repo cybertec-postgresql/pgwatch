@@ -167,7 +167,7 @@ func IsPostgresDBType(dbType string) bool {
 }
 
 // every DB under monitoring should have exactly 1 sql.DB connection assigned, that will internally limit parallel access
-func InitSqlConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
+func InitSQLConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
 	monitored_db_conn_cache_lock.Lock()
 	defer monitored_db_conn_cache_lock.Unlock()
 

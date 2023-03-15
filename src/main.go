@@ -2953,7 +2953,7 @@ func main() {
 				log.Warningf("Encrypted password type found for host \"%s\", but no decryption keyphrase specified. Use --aes-gcm-keyphrase or --aes-gcm-keyphrase-file params", db_unique)
 			}
 
-			err := InitSqlConnPoolForMonitoredDBIfNil(host)
+			err := InitSQLConnPoolForMonitoredDBIfNil(host)
 			if err != nil {
 				log.Warningf("Could not init SQL connection pool for %s, retrying on next main loop. Err: %v", db_unique, err)
 				continue
