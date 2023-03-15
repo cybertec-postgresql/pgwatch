@@ -191,24 +191,24 @@ func getMonitoredDatabasesSnapshot() map[string]MonitoredDatabase {
 func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric {
 	promMetrics := make([]prometheus.Metric, 0)
 
-	var epoch_time time.Time
-	var epoch_ns int64
-	var epoch_now = time.Now()
+	var epochTime time.Time
+	var epochNs int64
+	var epochNow = time.Now()
 
 	if len(msg.Data) == 0 {
 		return promMetrics
 	}
 
-	epoch_ns, ok := (msg.Data[0][EPOCH_COLUMN_NAME]).(int64)
+	epochNs, ok := (msg.Data[0][EPOCH_COLUMN_NAME]).(int64)
 	if !ok {
 		if msg.MetricName != "pgbouncer_stats" {
 			log.Warning("No timestamp_ns found, (gatherer) server time will be used. measurement:", msg.MetricName)
 		}
-		epoch_time = time.Now()
+		epochTime = time.Now()
 	} else {
-		epoch_time = time.Unix(0, epoch_ns)
+		epochTime = time.Unix(0, epochNs)
 
-		if opts.Metric.PrometheusAsyncMode && epoch_time.Before(epoch_now.Add(-1*PROM_SCRAPING_STALENESS_HARD_DROP_LIMIT)) {
+		if opts.Metric.PrometheusAsyncMode && epochTime.Before(epochNow.Add(-1*PROM_SCRAPING_STALENESS_HARD_DROP_LIMIT)) {
 			log.Warningf("[%s][%s] Dropping metric set due to staleness (>%v) ...", msg.DBUniqueName, msg.MetricName, PROM_SCRAPING_STALENESS_HARD_DROP_LIMIT)
 			PurgeMetricsFromPromAsyncCacheIfAny(msg.DBUniqueName, msg.MetricName)
 			return promMetrics
@@ -261,11 +261,11 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 			labels[opts.SystemIdentifierField] = msg.SystemIdentifier
 		}
 
-		label_keys := make([]string, 0)
-		label_values := make([]string, 0)
+		labelKeys := make([]string, 0)
+		labelValues := make([]string, 0)
 		for k, v := range labels {
-			label_keys = append(label_keys, k)
-			label_values = append(label_values, v)
+			labelKeys = append(labelKeys, k)
+			labelValues = append(labelValues, v)
 		}
 
 		for field, value := range fields {
@@ -299,20 +299,20 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 			if opts.Metric.PrometheusNamespace != "" {
 				if msg.MetricName == PROM_INSTANCE_UP_STATE_METRIC { // handle the special "instance_up" check
 					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s", opts.Metric.PrometheusNamespace, msg.MetricName),
-						msg.MetricName, label_keys, nil)
+						msg.MetricName, labelKeys, nil)
 				} else {
 					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s_%s", opts.Metric.PrometheusNamespace, msg.MetricName, field),
-						msg.MetricName, label_keys, nil)
+						msg.MetricName, labelKeys, nil)
 				}
 			} else {
 				if msg.MetricName == PROM_INSTANCE_UP_STATE_METRIC { // handle the special "instance_up" check
-					desc = prometheus.NewDesc(fmt.Sprintf("%s", field), msg.MetricName, label_keys, nil)
+					desc = prometheus.NewDesc(fmt.Sprintf("%s", field), msg.MetricName, labelKeys, nil)
 				} else {
-					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s", msg.MetricName, field), msg.MetricName, label_keys, nil)
+					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s", msg.MetricName, field), msg.MetricName, labelKeys, nil)
 				}
 			}
-			m := prometheus.MustNewConstMetric(desc, fieldPromDataType, value, label_values...)
-			promMetrics = append(promMetrics, prometheus.NewMetricWithTimestamp(epoch_time, m))
+			m := prometheus.MustNewConstMetric(desc, fieldPromDataType, value, labelValues...)
+			promMetrics = append(promMetrics, prometheus.NewMetricWithTimestamp(epochTime, m))
 		}
 	}
 	return promMetrics
