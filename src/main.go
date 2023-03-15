@@ -382,7 +382,7 @@ func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
 				}
 			}
 			if !matched {
-				skippedEntries += 1
+				skippedEntries++
 				continue
 			}
 		}
@@ -1408,7 +1408,7 @@ func MetricGathererLoop(dbUniqueName, dbUniqueNameOrig, dbType, metricName strin
 			}
 
 			if err != nil {
-				failed_fetches += 1
+				failed_fetches++
 				// complain only 1x per 10min per host/metric...
 				if last_error_notification_time.IsZero() || last_error_notification_time.Add(time.Second*time.Duration(600)).Before(time.Now()) {
 					log.Errorf("Failed to fetch metric data for [%s:%s]: %v", dbUniqueName, metricName, err)

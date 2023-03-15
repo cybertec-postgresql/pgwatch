@@ -1146,14 +1146,14 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storage_ch chan<
 				dr["event"] = "alter"
 				detected_changes = append(detected_changes, dr)
 				host_state["sproc_hashes"][obj_ident] = dr["md5"].(string)
-				change_counts.Altered += 1
+				change_counts.Altered++
 			}
 		} else { // check for new / delete
 			if !first_run {
 				log.Info("detected new sproc:", dr["tag_sproc"], ", oid:", dr["tag_oid"])
 				dr["event"] = "create"
 				detected_changes = append(detected_changes, dr)
-				change_counts.Created += 1
+				change_counts.Created++
 			}
 			host_state["sproc_hashes"][obj_ident] = dr["md5"].(string)
 		}
@@ -1182,7 +1182,7 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storage_ch chan<
 				}
 				detected_changes = append(detected_changes, influx_entry)
 				deleted_sprocs = append(deleted_sprocs, sproc_ident)
-				change_counts.Dropped += 1
+				change_counts.Dropped++
 			}
 		}
 		for _, deleted_sproc := range deleted_sprocs {
@@ -1233,14 +1233,14 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storage_ch chan<
 				dr["event"] = "alter"
 				detected_changes = append(detected_changes, dr)
 				host_state["table_hashes"][obj_ident] = dr["md5"].(string)
-				change_counts.Altered += 1
+				change_counts.Altered++
 			}
 		} else { // check for new / delete
 			if !first_run {
 				log.Info("detected new table:", dr["tag_table"])
 				dr["event"] = "create"
 				detected_changes = append(detected_changes, dr)
-				change_counts.Created += 1
+				change_counts.Created++
 			}
 			host_state["table_hashes"][obj_ident] = dr["md5"].(string)
 		}
@@ -1267,7 +1267,7 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storage_ch chan<
 				}
 				detected_changes = append(detected_changes, influx_entry)
 				deleted_tables = append(deleted_tables, table)
-				change_counts.Dropped += 1
+				change_counts.Dropped++
 			}
 		}
 		for _, deleted_table := range deleted_tables {
@@ -1318,14 +1318,14 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storage_ch chan<
 				dr["event"] = "alter"
 				detected_changes = append(detected_changes, dr)
 				host_state["index_hashes"][obj_ident] = dr["md5"].(string) + dr["is_valid"].(string)
-				change_counts.Altered += 1
+				change_counts.Altered++
 			}
 		} else { // check for new / delete
 			if !first_run {
 				log.Info("detected new index:", dr["tag_index"])
 				dr["event"] = "create"
 				detected_changes = append(detected_changes, dr)
-				change_counts.Created += 1
+				change_counts.Created++
 			}
 			host_state["index_hashes"][obj_ident] = dr["md5"].(string) + dr["is_valid"].(string)
 		}
@@ -1352,7 +1352,7 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storage_ch chan<
 				}
 				detected_changes = append(detected_changes, influx_entry)
 				deleted_indexes = append(deleted_indexes, index_name)
-				change_counts.Dropped += 1
+				change_counts.Dropped++
 			}
 		}
 		for _, deleted_index := range deleted_indexes {
@@ -1406,7 +1406,7 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storage_ch c
 					dbUnique, SPECIAL_METRIC_CHANGE_EVENTS, dr["tag_role"], dr["object_type"], dr["tag_object"], dr["privilege_type"])
 				dr["event"] = "GRANT"
 				detected_changes = append(detected_changes, dr)
-				change_counts.Created += 1
+				change_counts.Created++
 				host_state["object_privileges"][obj_ident] = ""
 			}
 			current_state[obj_ident] = true
@@ -1431,7 +1431,7 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storage_ch c
 				revoke_entry["privilege_type"] = splits[3]
 				revoke_entry["event"] = "REVOKE"
 				detected_changes = append(detected_changes, revoke_entry)
-				change_counts.Dropped += 1
+				change_counts.Dropped++
 				delete(host_state["object_privileges"], obj_prev_run)
 			}
 		}
@@ -1492,14 +1492,14 @@ func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storage_
 				dr["event"] = "alter"
 				detected_changes = append(detected_changes, dr)
 				host_state["configuration_hashes"][obj_ident] = obj_value
-				change_counts.Altered += 1
+				change_counts.Altered++
 			}
 		} else { // check for new, delete not relevant here (pg_upgrade)
 			if !first_run {
 				log.Warningf("[%s][%s] detected new setting: %s", dbUnique, SPECIAL_METRIC_CHANGE_EVENTS, obj_ident)
 				dr["event"] = "create"
 				detected_changes = append(detected_changes, dr)
-				change_counts.Created += 1
+				change_counts.Created++
 			}
 			host_state["configuration_hashes"][obj_ident] = obj_value
 		}
@@ -2091,7 +2091,7 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 			tags := make(map[string]interface{})
 			fields := make(map[string]interface{})
 
-			total_rows += 1
+			total_rows++
 
 			if msg.CustomTags != nil {
 				for k, v := range msg.CustomTags {
@@ -2141,7 +2141,7 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 				Metric: msg.MetricName, Data: fields, TagData: tags})
 			metricsToStorePerMetric[metricNameTemp] = metricsArr
 
-			rows_batched += 1
+			rows_batched++
 
 			if PGSchemaType == "metric" || PGSchemaType == "metric-time" || PGSchemaType == "timescale" {
 				// set min/max timestamps to check/create partitions
