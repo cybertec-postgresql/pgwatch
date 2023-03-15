@@ -2465,7 +2465,7 @@ func ControlChannelsMapToList(control_channels map[string]chan ControlMessage) [
 
 func DoCloseResourcesForRemovedMonitoredDBIfAny(dbUnique string) {
 
-	CloseOrLimitSqlConnPoolForMonitoredDBIfAny(dbUnique)
+	CloseOrLimitSQLConnPoolForMonitoredDBIfAny(dbUnique)
 
 	PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, "")
 }

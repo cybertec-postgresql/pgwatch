@@ -201,7 +201,7 @@ func InitSQLConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
 	return nil
 }
 
-func CloseOrLimitSqlConnPoolForMonitoredDBIfAny(dbUnique string) {
+func CloseOrLimitSQLConnPoolForMonitoredDBIfAny(dbUnique string) {
 	monitored_db_conn_cache_lock.Lock()
 	defer monitored_db_conn_cache_lock.Unlock()
 
