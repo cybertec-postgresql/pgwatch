@@ -1064,9 +1064,9 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 	if msg.MetricName == SPECIAL_METRIC_CHANGE_EVENTS && context != CONTEXT_PROMETHEUS_SCRAPE { // special handling, multiple queries + stateful
 		CheckForPGObjectChangesAndStore(msg.DBUniqueName, vme, storage_ch, host_state) // TODO no host_state for Prometheus currently
 	} else if msg.MetricName == RECO_METRIC_NAME && context != CONTEXT_PROMETHEUS_SCRAPE {
-		data, _, duration = GetRecommendations(msg.DBUniqueName, vme)
+		data, _, _ = GetRecommendations(msg.DBUniqueName, vme)
 	} else if msg.DBType == config.DBTYPE_PGPOOL {
-		data, _, duration = FetchMetricsPgpool(msg, vme, mvp)
+		data, _, _ = FetchMetricsPgpool(msg, vme, mvp)
 	} else {
 		data, err, duration = DBExecReadByDbUniqueName(msg.DBUniqueName, msg.MetricName, mvp.MetricAttrs.StatementTimeoutSeconds, sql)
 
