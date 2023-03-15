@@ -99,7 +99,7 @@ type HostConfigPerMetricDisabledTimes struct { // metric gathering override per 
 type PatroniClusterMember struct {
 	Scope   string
 	Name    string
-	ConnUrl string `yaml:"conn_url"`
+	ConnURL string `yaml:"conn_url"`
 	Role    string
 }
 

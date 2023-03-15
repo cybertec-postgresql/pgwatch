@@ -66,7 +66,7 @@ func ConsulGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember
 		role := nodeData["role"]
 		connUrl := nodeData["conn_url"]
 
-		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnUrl: connUrl, Role: role, Name: name})
+		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnURL: connUrl, Role: role, Name: name})
 	}
 
 	return ret, nil
@@ -198,7 +198,7 @@ func extractEtcdScopeMembers(database MonitoredDatabase, scope string, kapi clie
 			name = path.Base(node.Key)
 		}
 
-		ret = append(ret, PatroniClusterMember{Scope: scope, ConnUrl: connUrl, Role: role, Name: name})
+		ret = append(ret, PatroniClusterMember{Scope: scope, ConnURL: connUrl, Role: role, Name: name})
 	}
 	return ret, nil
 }
@@ -239,7 +239,7 @@ func ZookeeperGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMem
 		connUrl := nodeData["conn_url"]
 		name := path.Base(member)
 
-		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnUrl: connUrl, Role: role, Name: name})
+		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnURL: connUrl, Role: role, Name: name})
 	}
 
 	return ret, nil
@@ -288,9 +288,9 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 			log.Infof("Skipping over Patroni cluster member [%s:%s] as not a master", ce.DBUniqueName, m.Name)
 			continue
 		}
-		host, port, err := ParseHostAndPortFromJdbcConnStr(m.ConnUrl)
+		host, port, err := ParseHostAndPortFromJdbcConnStr(m.ConnURL)
 		if err != nil {
-			log.Errorf("Could not parse Patroni conn str \"%s\" [%s:%s]: %v", m.ConnUrl, ce.DBUniqueName, m.Scope, err)
+			log.Errorf("Could not parse Patroni conn str \"%s\" [%s:%s]: %v", m.ConnURL, ce.DBUniqueName, m.Scope, err)
 			continue
 		}
 		if ce.OnlyIfMaster {
