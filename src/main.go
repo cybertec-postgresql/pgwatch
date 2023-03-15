@@ -758,7 +758,7 @@ func MetricsPersister(data_store string, storage_ch <-chan []MetricStoreMessage)
 							}
 						}
 					} else if data_store == DATASTORE_JSON {
-						err = WriteMetricsToJsonFile(msg_arr, opts.Metric.JsonStorageFile)
+						err = WriteMetricsToJsonFile(msg_arr, opts.Metric.JSONStorageFile)
 					} else {
 						log.Fatal("Invalid datastore:", data_store)
 					}
@@ -2762,10 +2762,10 @@ func main() {
 			log.Info("starting GraphitePersister...")
 			go MetricsPersister(DATASTORE_GRAPHITE, persist_ch)
 		} else if opts.Metric.Datastore == DATASTORE_JSON {
-			if len(opts.Metric.JsonStorageFile) == 0 {
+			if len(opts.Metric.JSONStorageFile) == 0 {
 				log.Fatal("--datastore=json requires --json-storage-file to be set")
 			}
-			jsonOutFile, err := os.Create(opts.Metric.JsonStorageFile) // test file path writeability
+			jsonOutFile, err := os.Create(opts.Metric.JSONStorageFile) // test file path writeability
 			if err != nil {
 				log.Fatalf("Could not create JSON storage file: %s", err)
 			}
@@ -2773,7 +2773,7 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			log.Warningf("In JSON output mode. Gathered metrics will be written to \"%s\"...", opts.Metric.JsonStorageFile)
+			log.Warningf("In JSON output mode. Gathered metrics will be written to \"%s\"...", opts.Metric.JSONStorageFile)
 			go MetricsPersister(DATASTORE_JSON, persist_ch)
 		} else if opts.Metric.Datastore == DATASTORE_POSTGRES {
 			if len(opts.Metric.PGMetricStoreConnStr) == 0 {
@@ -3015,7 +3015,7 @@ func main() {
 				var DBSizeMB int64
 
 				if opts.MinDbSizeMB >= 8 { // an empty DB is a bit less than 8MB
-					DBSizeMB, _ = DBGetSizeMB(db_unique) // ignore errors, i.e. only remove from montoring when we're certain it's under the threshold
+					DBSizeMB, _ = DBGetSizeMB(db_unique) // ignore errors, i.e. only remove from monitoring when we're certain it's under the threshold
 					if DBSizeMB != 0 {
 						if DBSizeMB < opts.MinDbSizeMB {
 							log.Infof("[%s] DB will be ignored due to the --min-db-size-mb filter. Current (up to %v cached) DB size = %d MB", db_unique, DB_SIZE_CACHING_INTERVAL, DBSizeMB)

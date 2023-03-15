@@ -1,7 +1,10 @@
 linters:
   enable:
+    - revive
+    - misspell 
+  disable:
     - gocyclo
-    - misspell  
+
     
 linters-settings:
   gocyclo:
@@ -14,4 +17,5 @@ issues:
   # it can be disabled by `exclude-use-default: false`. To list all
   # excluded by default patterns execute `golangci-lint run --help`
   exclude:
-    - SA5008 # ignore staticcheck for go-flags  
+    - SA5008 # ignore staticcheck for go-flags
+    - ALL_CAPS # ignore ALL_CAPS (revive)

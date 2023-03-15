@@ -32,7 +32,7 @@ type MetricOpts struct {
 	PrometheusAsyncMode  bool   `long:"prometheus-async-mode" mapstructure:"prometheus-async-mode" description:"Gather in background as with other storage and cache last fetch results in memory" env:"PW3_PROMETHEUS_ASYNC_MODE"`
 	GraphiteHost         string `long:"graphite-host" mapstructure:"graphite-host" description:"Graphite host" env:"PW3_GRAPHITEHOST"`
 	GraphitePort         string `long:"graphite-port" mapstructure:"graphite-port" description:"Graphite port" env:"PW3_GRAPHITEPORT"`
-	JsonStorageFile      string `long:"json-storage-file" mapstructure:"json-storage-file" description:"Path to file where metrics will be stored when --datastore=json, one metric set per line" env:"PW3_JSON_STORAGE_FILE"`
+	JSONStorageFile      string `long:"json-storage-file" mapstructure:"json-storage-file" description:"Path to file where metrics will be stored when --datastore=json, one metric set per line" env:"PW3_JSON_STORAGE_FILE"`
 }
 
 type CmdOptions struct {
