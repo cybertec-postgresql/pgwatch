@@ -157,9 +157,7 @@ func EtcdGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, 
 			if err != nil {
 				continue
 			}
-			for _, sm := range scopeMembers {
-				ret = append(ret, sm)
-			}
+			ret = append(ret, scopeMembers...)
 		}
 	} else {
 		ret, err = extractEtcdScopeMembers(database, database.HostConfig.Scope, kapi, false)
