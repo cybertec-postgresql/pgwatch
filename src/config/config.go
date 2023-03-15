@@ -153,16 +153,15 @@ func validateAesGcmConfig(conf *CmdOptions) error {
 		_, err := os.Stat(conf.AesGcmKeyphraseFile)
 		if os.IsNotExist(err) {
 			return fmt.Errorf("Failed to read aes_gcm_keyphrase_file at %s, thus cannot monitor hosts with encrypted passwords", conf.AesGcmKeyphraseFile)
+		}
+		keyBytes, err := os.ReadFile(conf.AesGcmKeyphraseFile)
+		if err != nil {
+			return err
+		}
+		if keyBytes[len(keyBytes)-1] == 10 {
+			conf.AesGcmKeyphrase = string(keyBytes[:len(keyBytes)-1]) // remove line feed
 		} else {
-			keyBytes, err := os.ReadFile(conf.AesGcmKeyphraseFile)
-			if err != nil {
-				return err
-			}
-			if keyBytes[len(keyBytes)-1] == 10 {
-				conf.AesGcmKeyphrase = string(keyBytes[:len(keyBytes)-1]) // remove line feed
-			} else {
-				conf.AesGcmKeyphrase = string(keyBytes)
-			}
+			conf.AesGcmKeyphrase = string(keyBytes)
 		}
 	}
 	if conf.AesGcmPasswordToEncrypt > "" && conf.AesGcmKeyphrase == "" { // special flag - encrypt and exit
