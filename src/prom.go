@@ -306,7 +306,7 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 				}
 			} else {
 				if msg.MetricName == PROM_INSTANCE_UP_STATE_METRIC { // handle the special "instance_up" check
-					desc = prometheus.NewDesc(fmt.Sprintf("%s", field), msg.MetricName, labelKeys, nil)
+					desc = prometheus.NewDesc(field, msg.MetricName, labelKeys, nil)
 				} else {
 					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s", msg.MetricName, field), msg.MetricName, labelKeys, nil)
 				}
