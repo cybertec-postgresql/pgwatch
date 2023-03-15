@@ -1963,7 +1963,7 @@ func GetGoPsutilDiskPG(dbUnique string) ([]map[string]interface{}, error) {
 	dd["percent"] = math.Round(100*ddUsage.UsedPercent) / 100
 	retRows = append(retRows, dd)
 
-	ddDevice, err = getPathUnderlyingDeviceId(dataDirPath)
+	ddDevice, err = getPathUnderlyingDeviceID(dataDirPath)
 	if err != nil {
 		log.Errorf("Could not determine disk device ID of data_directory %v: %v", dataDirPath, err)
 	}
@@ -1973,7 +1973,7 @@ func GetGoPsutilDiskPG(dbUnique string) ([]map[string]interface{}, error) {
 		logDirPath = path.Join(dataDirPath, logDirPath)
 	}
 	if len(logDirPath) > 0 && CheckFolderExistsAndReadable(logDirPath) { // syslog etc considered out of scope
-		ldDevice, err = getPathUnderlyingDeviceId(logDirPath)
+		ldDevice, err = getPathUnderlyingDeviceID(logDirPath)
 		if err != nil {
 			log.Infof("Could not determine disk device ID of log_directory %v: %v", logDirPath, err)
 		}
@@ -2003,7 +2003,7 @@ func GetGoPsutilDiskPG(dbUnique string) ([]map[string]interface{}, error) {
 	}
 
 	if len(walDirPath) > 0 {
-		walDevice, err = getPathUnderlyingDeviceId(walDirPath)
+		walDevice, err = getPathUnderlyingDeviceID(walDirPath)
 		if err != nil {
 			log.Infof("Could not determine disk device ID of WAL directory %v: %v", walDirPath, err) // storing anyways
 		}
@@ -2034,7 +2034,7 @@ func GetGoPsutilDiskPG(dbUnique string) ([]map[string]interface{}, error) {
 			tsPath := row["location"].(string)
 			tsName := row["name"].(string)
 
-			tsDevice, err := getPathUnderlyingDeviceId(tsPath)
+			tsDevice, err := getPathUnderlyingDeviceID(tsPath)
 			if err != nil {
 				log.Errorf("Could not determine disk device ID of tablespace %s (%s): %v", tsName, tsPath, err)
 				continue
