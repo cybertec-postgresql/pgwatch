@@ -119,7 +119,7 @@ func logparseLoop(dbUniqueName, metricName string, config_map map[string]float64
 	var eventCountsTotal = make(map[string]int64) // for the whole instance
 	var mdb MonitoredDatabase
 	var hostConfig HostConfigAttrs
-	var config map[string]float64 = config_map
+	var config = config_map
 	var interval float64
 	var err error
 	var firstRun = true
