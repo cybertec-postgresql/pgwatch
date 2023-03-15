@@ -746,16 +746,15 @@ func EnsureMetricDummy(metric string) {
 	lastEnsureCall, ok := PGDummyMetricTables[metric]
 	if ok && lastEnsureCall.After(time.Now().Add(-1*time.Hour)) {
 		return
+	}
+	ret, err := DBExecRead(metricDb, METRICDB_IDENT, sql_ensure, metric)
+	if err != nil {
+		log.Errorf("Failed to create dummy partition of metric '%s': %v", metric, err)
 	} else {
-		ret, err := DBExecRead(metricDb, METRICDB_IDENT, sql_ensure, metric)
-		if err != nil {
-			log.Errorf("Failed to create dummy partition of metric '%s': %v", metric, err)
-		} else {
-			if ret[0]["created"].(bool) {
-				log.Infof("Created a dummy partition of metric '%s'", metric)
-			}
-			PGDummyMetricTables[metric] = time.Now()
+		if ret[0]["created"].(bool) {
+			log.Infof("Created a dummy partition of metric '%s'", metric)
 		}
+		PGDummyMetricTables[metric] = time.Now()
 	}
 }
 
@@ -993,125 +992,125 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 	if !noCache && ok && ver.LastCheckedOn.After(time.Now().Add(time.Minute*-2)) { // use cached version for 2 min
 		//log.Debugf("using cached postgres version %s for %s", ver.Version.String(), dbUnique)
 		return ver, nil
-	} else {
-		get_ver_lock.Lock() // limit to 1 concurrent version info fetch per DB
-		defer get_ver_lock.Unlock()
-		log.Debugf("[%s][%s] determining DB version and recovery status...", dbUnique, dbType)
-
-		if verNew.Extensions == nil {
-			verNew.Extensions = make(map[string]decimal.Decimal)
-		}
-
-		if dbType == config.DBTYPE_BOUNCER {
-			data, err, _ := DBExecReadByDbUniqueName(dbUnique, "", 0, "show version")
-			if err != nil {
-				return verNew, err
-			}
-			if len(data) == 0 {
-				// surprisingly pgbouncer 'show version' outputs in pre v1.12 is emitted as 'NOTICE' which cannot be accessed from Go lib/pg
-				verNew.Version, _ = decimal.NewFromString("0")
-				verNew.VersionStr = "0"
-			} else {
-				matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(data[0]["version"].(string))
-				if len(matches) != 1 {
-					log.Errorf("[%s] Unexpected PgBouncer version input: %s", dbUnique, data[0]["version"].(string))
-					return ver, fmt.Errorf("Unexpected PgBouncer version input: %s", data[0]["version"].(string))
-				}
-				verNew.VersionStr = matches[0]
-				verNew.Version, _ = decimal.NewFromString(matches[0])
-			}
-		} else if dbType == config.DBTYPE_PGPOOL {
-			data, err, _ := DBExecReadByDbUniqueName(dbUnique, "", 0, pgpool_version)
-			if err != nil {
-				return verNew, err
-			}
-			if len(data) == 0 {
-				verNew.Version, _ = decimal.NewFromString("3.0")
-				verNew.VersionStr = "3.0"
-			} else {
-				matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(string(data[0]["pool_version"].([]byte)))
-				if len(matches) != 1 {
-					log.Errorf("[%s] Unexpected PgPool version input: %s", dbUnique, data[0]["pool_version"].([]byte))
-					return ver, fmt.Errorf("Unexpected PgPool version input: %s", data[0]["pool_version"].([]byte))
-				}
-				verNew.VersionStr = matches[0]
-				verNew.Version, _ = decimal.NewFromString(matches[0])
-			}
-		} else {
-			data, err, _ := DBExecReadByDbUniqueName(dbUnique, "", 0, sql)
-			if err != nil {
-				if noCache {
-					return ver, err
-				} else {
-					log.Infof("[%s] DBGetPGVersion failed, using old cached value. err: %v", dbUnique, err)
-					return ver, nil
-				}
-			}
-			verNew.Version, _ = decimal.NewFromString(data[0]["ver"].(string))
-			verNew.VersionStr = data[0]["ver"].(string)
-			verNew.IsInRecovery = data[0]["pg_is_in_recovery"].(bool)
-			verNew.RealDbname = data[0]["current_database"].(string)
-
-			if verNew.Version.GreaterThanOrEqual(decimal.NewFromFloat(10)) && opts.AddSystemIdentifier {
-				log.Debugf("[%s] determining system identifier version (pg ver: %v)", dbUnique, verNew.VersionStr)
-				data, err, _ := DBExecReadByDbUniqueName(dbUnique, "", 0, sql_sysid)
-				if err == nil && len(data) > 0 {
-					verNew.SystemIdentifier = data[0]["system_identifier"].(string)
-				}
-			}
-
-			if ver.ExecEnv != "" {
-				verNew.ExecEnv = ver.ExecEnv // carry over as not likely to change ever
-			} else {
-				log.Debugf("[%s] determining the execution env...", dbUnique)
-				execEnv := TryDiscoverExecutionEnv(dbUnique)
-				if execEnv != "" {
-					log.Debugf("[%s] running on execution env: %s", dbUnique, execEnv)
-					verNew.ExecEnv = execEnv
-				}
-			}
-
-			// to work around poor Azure Single Server FS functions performance for some metrics + the --min-db-size-mb filter
-			if verNew.ExecEnv == EXEC_ENV_AZURE_SINGLE {
-				approxSize, err := GetDBTotalApproxSize(dbUnique)
-				if err == nil {
-					verNew.ApproxDBSizeB = approxSize
-				} else {
-					verNew.ApproxDBSizeB = ver.ApproxDBSizeB
-				}
-			}
-
-			log.Debugf("[%s] determining if monitoring user is a superuser...", dbUnique)
-			data, err, _ = DBExecReadByDbUniqueName(dbUnique, "", 0, sql_su)
-			if err == nil {
-				verNew.IsSuperuser = data[0]["rolsuper"].(bool)
-			}
-			log.Debugf("[%s] superuser=%v", dbUnique, verNew.IsSuperuser)
-
-			if verNew.Version.GreaterThanOrEqual(MinExtensionInfoAvailable) {
-				//log.Debugf("[%s] determining installed extensions info...", dbUnique)
-				data, err, _ = DBExecReadByDbUniqueName(dbUnique, "", 0, sql_extensions)
-				if err != nil {
-					log.Errorf("[%s] failed to determine installed extensions info: %v", dbUnique, err)
-				} else {
-					for _, dr := range data {
-						extver, err := decimal.NewFromString(dr["extversion"].(string))
-						if err != nil {
-							log.Errorf("[%s] failed to determine extension version info for extension %s: %v", dbUnique, dr["extname"], err)
-							continue
-						}
-						verNew.Extensions[dr["extname"].(string)] = extver
-					}
-					log.Debugf("[%s] installed extensions: %+v", dbUnique, verNew.Extensions)
-				}
-			}
-		}
-
-		verNew.LastCheckedOn = time.Now()
-		db_pg_version_map_lock.Lock()
-		db_pg_version_map[dbUnique] = verNew
-		db_pg_version_map_lock.Unlock()
 	}
+	get_ver_lock.Lock() // limit to 1 concurrent version info fetch per DB
+	defer get_ver_lock.Unlock()
+	log.Debugf("[%s][%s] determining DB version and recovery status...", dbUnique, dbType)
+
+	if verNew.Extensions == nil {
+		verNew.Extensions = make(map[string]decimal.Decimal)
+	}
+
+	if dbType == config.DBTYPE_BOUNCER {
+		data, err, _ := DBExecReadByDbUniqueName(dbUnique, "", 0, "show version")
+		if err != nil {
+			return verNew, err
+		}
+		if len(data) == 0 {
+			// surprisingly pgbouncer 'show version' outputs in pre v1.12 is emitted as 'NOTICE' which cannot be accessed from Go lib/pg
+			verNew.Version, _ = decimal.NewFromString("0")
+			verNew.VersionStr = "0"
+		} else {
+			matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(data[0]["version"].(string))
+			if len(matches) != 1 {
+				log.Errorf("[%s] Unexpected PgBouncer version input: %s", dbUnique, data[0]["version"].(string))
+				return ver, fmt.Errorf("Unexpected PgBouncer version input: %s", data[0]["version"].(string))
+			}
+			verNew.VersionStr = matches[0]
+			verNew.Version, _ = decimal.NewFromString(matches[0])
+		}
+	} else if dbType == config.DBTYPE_PGPOOL {
+		data, err, _ := DBExecReadByDbUniqueName(dbUnique, "", 0, pgpool_version)
+		if err != nil {
+			return verNew, err
+		}
+		if len(data) == 0 {
+			verNew.Version, _ = decimal.NewFromString("3.0")
+			verNew.VersionStr = "3.0"
+		} else {
+			matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(string(data[0]["pool_version"].([]byte)))
+			if len(matches) != 1 {
+				log.Errorf("[%s] Unexpected PgPool version input: %s", dbUnique, data[0]["pool_version"].([]byte))
+				return ver, fmt.Errorf("Unexpected PgPool version input: %s", data[0]["pool_version"].([]byte))
+			}
+			verNew.VersionStr = matches[0]
+			verNew.Version, _ = decimal.NewFromString(matches[0])
+		}
+	} else {
+		data, err, _ := DBExecReadByDbUniqueName(dbUnique, "", 0, sql)
+		if err != nil {
+			if noCache {
+				return ver, err
+			}
+			log.Infof("[%s] DBGetPGVersion failed, using old cached value. err: %v", dbUnique, err)
+			return ver, nil
+
+		}
+		verNew.Version, _ = decimal.NewFromString(data[0]["ver"].(string))
+		verNew.VersionStr = data[0]["ver"].(string)
+		verNew.IsInRecovery = data[0]["pg_is_in_recovery"].(bool)
+		verNew.RealDbname = data[0]["current_database"].(string)
+
+		if verNew.Version.GreaterThanOrEqual(decimal.NewFromFloat(10)) && opts.AddSystemIdentifier {
+			log.Debugf("[%s] determining system identifier version (pg ver: %v)", dbUnique, verNew.VersionStr)
+			data, err, _ := DBExecReadByDbUniqueName(dbUnique, "", 0, sql_sysid)
+			if err == nil && len(data) > 0 {
+				verNew.SystemIdentifier = data[0]["system_identifier"].(string)
+			}
+		}
+
+		if ver.ExecEnv != "" {
+			verNew.ExecEnv = ver.ExecEnv // carry over as not likely to change ever
+		} else {
+			log.Debugf("[%s] determining the execution env...", dbUnique)
+			execEnv := TryDiscoverExecutionEnv(dbUnique)
+			if execEnv != "" {
+				log.Debugf("[%s] running on execution env: %s", dbUnique, execEnv)
+				verNew.ExecEnv = execEnv
+			}
+		}
+
+		// to work around poor Azure Single Server FS functions performance for some metrics + the --min-db-size-mb filter
+		if verNew.ExecEnv == EXEC_ENV_AZURE_SINGLE {
+			approxSize, err := GetDBTotalApproxSize(dbUnique)
+			if err == nil {
+				verNew.ApproxDBSizeB = approxSize
+			} else {
+				verNew.ApproxDBSizeB = ver.ApproxDBSizeB
+			}
+		}
+
+		log.Debugf("[%s] determining if monitoring user is a superuser...", dbUnique)
+		data, err, _ = DBExecReadByDbUniqueName(dbUnique, "", 0, sql_su)
+		if err == nil {
+			verNew.IsSuperuser = data[0]["rolsuper"].(bool)
+		}
+		log.Debugf("[%s] superuser=%v", dbUnique, verNew.IsSuperuser)
+
+		if verNew.Version.GreaterThanOrEqual(MinExtensionInfoAvailable) {
+			//log.Debugf("[%s] determining installed extensions info...", dbUnique)
+			data, err, _ = DBExecReadByDbUniqueName(dbUnique, "", 0, sql_extensions)
+			if err != nil {
+				log.Errorf("[%s] failed to determine installed extensions info: %v", dbUnique, err)
+			} else {
+				for _, dr := range data {
+					extver, err := decimal.NewFromString(dr["extversion"].(string))
+					if err != nil {
+						log.Errorf("[%s] failed to determine extension version info for extension %s: %v", dbUnique, dr["extname"], err)
+						continue
+					}
+					verNew.Extensions[dr["extname"].(string)] = extver
+				}
+				log.Debugf("[%s] installed extensions: %+v", dbUnique, verNew.Extensions)
+			}
+		}
+	}
+
+	verNew.LastCheckedOn = time.Now()
+	db_pg_version_map_lock.Lock()
+	db_pg_version_map[dbUnique] = verNew
+	db_pg_version_map_lock.Unlock()
+
 	return verNew, nil
 }
 
