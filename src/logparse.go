@@ -292,8 +292,6 @@ func logparseLoop(dbUniqueName, metricName string, config_map map[string]float64
 					log.Infof("[%s] Switching to new logfile: %s", dbUniqueName, file)
 					linesRead = 0
 					break
-				} else {
-					//log.Debugf("[%s] No newer logfiles found. Sleeping %v ms...", dbUniqueName, eofSleepMillis)
 				}
 			} else {
 				eofSleepMillis = 0
