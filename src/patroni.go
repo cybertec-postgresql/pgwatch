@@ -64,9 +64,9 @@ func ConsulGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember
 			continue
 		}
 		role := nodeData["role"]
-		connUrl := nodeData["conn_url"]
+		connURL := nodeData["conn_url"]
 
-		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnURL: connUrl, Role: role, Name: name})
+		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnURL: connURL, Role: role, Name: name})
 	}
 
 	return ret, nil
@@ -191,14 +191,14 @@ func extractEtcdScopeMembers(database MonitoredDatabase, scope string, kapi clie
 			continue
 		}
 		role := nodeData["role"]
-		connUrl := nodeData["conn_url"]
+		connURL := nodeData["conn_url"]
 		if addScopeToName {
 			name = scope + "_" + path.Base(node.Key)
 		} else {
 			name = path.Base(node.Key)
 		}
 
-		ret = append(ret, PatroniClusterMember{Scope: scope, ConnURL: connUrl, Role: role, Name: name})
+		ret = append(ret, PatroniClusterMember{Scope: scope, ConnURL: connURL, Role: role, Name: name})
 	}
 	return ret, nil
 }
@@ -236,10 +236,10 @@ func ZookeeperGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMem
 			continue
 		}
 		role := nodeData["role"]
-		connUrl := nodeData["conn_url"]
+		connURL := nodeData["conn_url"]
 		name := path.Base(member)
 
-		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnURL: connUrl, Role: role, Name: name})
+		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnURL: connURL, Role: role, Name: name})
 	}
 
 	return ret, nil
