@@ -125,13 +125,13 @@ func validateConfig(conf *CmdOptions) error {
 
 	if conf.TestdataDays > 0 || conf.TestdataMultiplier > 0 {
 		if conf.AdHocConnString == "" {
-			return errors.New("Test mode requires --adhoc-conn-str!")
+			return errors.New("test mode requires --adhoc-conn-str!")
 		}
 		if conf.TestdataMultiplier == 0 {
-			return errors.New("Test mode requires --testdata-multiplier!")
+			return errors.New("test mode requires --testdata-multiplier!")
 		}
 		if conf.TestdataDays == 0 {
-			return errors.New("Test mode requires --testdata-days!")
+			return errors.New("test mode requires --testdata-days!")
 		}
 	}
 	if conf.AddRealDbname && conf.RealDbnameField == "" {
