@@ -231,7 +231,7 @@ func CloseOrLimitSQLConnPoolForMonitoredDBIfAny(dbUnique string) {
 	}
 }
 
-func DBExecRead(conn *sqlx.DB, host_ident, sql string, args ...interface{}) ([](map[string]interface{}), error) {
+func DBExecRead(conn *sqlx.DB, hostIdent, sql string, args ...interface{}) ([](map[string]interface{}), error) {
 	ret := make([]map[string]interface{}, 0)
 	var rows *sqlx.Rows
 	var err error
@@ -244,7 +244,7 @@ func DBExecRead(conn *sqlx.DB, host_ident, sql string, args ...interface{}) ([](
 
 	if err != nil {
 		// connection problems or bad queries etc are quite common so caller should decide if to output something
-		log.Debug("failed to query", host_ident, "sql:", sql, "err:", err)
+		log.Debug("failed to query", hostIdent, "sql:", sql, "err:", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -253,7 +253,7 @@ func DBExecRead(conn *sqlx.DB, host_ident, sql string, args ...interface{}) ([](
 		row := make(map[string]interface{})
 		err = rows.MapScan(row)
 		if err != nil {
-			log.Error("failed to MapScan a result row", host_ident, err)
+			log.Error("failed to MapScan a result row", hostIdent, err)
 			return nil, err
 		}
 		ret = append(ret, row)
@@ -261,12 +261,12 @@ func DBExecRead(conn *sqlx.DB, host_ident, sql string, args ...interface{}) ([](
 
 	err = rows.Err()
 	if err != nil {
-		log.Error("failed to fully process resultset for", host_ident, "sql:", sql, "err:", err)
+		log.Error("failed to fully process resultset for", hostIdent, "sql:", sql, "err:", err)
 	}
 	return ret, err
 }
 
-func DBExecInExplicitTX(conn *sqlx.DB, host_ident, query string, args ...interface{}) ([](map[string]interface{}), error) {
+func DBExecInExplicitTX(conn *sqlx.DB, hostIdent, query string, args ...interface{}) ([](map[string]interface{}), error) {
 	ret := make([]map[string]interface{}, 0)
 	var rows *sqlx.Rows
 	var err error
@@ -288,7 +288,7 @@ func DBExecInExplicitTX(conn *sqlx.DB, host_ident, query string, args ...interfa
 
 	if err != nil {
 		// connection problems or bad queries etc are quite common so caller should decide if to output something
-		log.Debug("failed to query", host_ident, "sql:", query, "err:", err)
+		log.Debug("failed to query", hostIdent, "sql:", query, "err:", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -297,7 +297,7 @@ func DBExecInExplicitTX(conn *sqlx.DB, host_ident, query string, args ...interfa
 		row := make(map[string]interface{})
 		err = rows.MapScan(row)
 		if err != nil {
-			log.Error("failed to MapScan a result row", host_ident, err)
+			log.Error("failed to MapScan a result row", hostIdent, err)
 			return nil, err
 		}
 		ret = append(ret, row)
@@ -305,7 +305,7 @@ func DBExecInExplicitTX(conn *sqlx.DB, host_ident, query string, args ...interfa
 
 	err = rows.Err()
 	if err != nil {
-		log.Error("failed to fully process resultset for", host_ident, "sql:", query, "err:", err)
+		log.Error("failed to fully process resultset for", hostIdent, "sql:", query, "err:", err)
 	}
 	return ret, err
 }
@@ -383,7 +383,7 @@ func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride i
 }
 
 func GetAllActiveHostsFromConfigDB() ([](map[string]interface{}), error) {
-	sql_latest := `
+	sqlLatest := `
 		select /* pgwatch3_generated */
 		  md_unique_name, md_group, md_dbtype, md_hostname, md_port, md_dbname, md_user, coalesce(md_password, '') as md_password,
 		  coalesce(p.pc_config, md_config)::text as md_config, coalesce(s.pc_config, md_config_standby, '{}'::jsonb)::text as md_config_standby,
@@ -400,7 +400,7 @@ func GetAllActiveHostsFromConfigDB() ([](map[string]interface{}), error) {
 		where
 		  md_is_enabled
 	`
-	sql_prev := `
+	sqlPrev := `
 		select /* pgwatch3_generated */
 		  md_unique_name, md_group, md_dbtype, md_hostname, md_port, md_dbname, md_user, coalesce(md_password, '') as md_password,
 		  coalesce(pc_config, md_config)::text as md_config, md_statement_timeout_seconds, md_sslmode, md_is_superuser,
@@ -414,11 +414,11 @@ func GetAllActiveHostsFromConfigDB() ([](map[string]interface{}), error) {
 		where
 		  md_is_enabled
 	`
-	data, err := DBExecRead(configDb, CONFIGDB_IDENT, sql_latest)
+	data, err := DBExecRead(configDb, CONFIGDB_IDENT, sqlLatest)
 	if err != nil {
 		err1 := err
 		log.Debugf("Failed to query the monitored DB-s config with latest SQL: %v ", err1)
-		data, err = DBExecRead(configDb, CONFIGDB_IDENT, sql_prev)
+		data, err = DBExecRead(configDb, CONFIGDB_IDENT, sqlPrev)
 		if err == nil {
 			log.Warning("Fetching monitored DB-s config succeeded with SQL from previous schema version - gatherer update required!")
 		} else {
@@ -443,13 +443,13 @@ func OldPostgresMetricsDeleter(metricAgeDaysThreshold int64, schemaType string) 
 	for {
 		// metric|metric-time|metric-dbname-time|custom
 		if schemaType == "metric" {
-			rows_deleted, err := DeleteOldPostgresMetrics(metricAgeDaysThreshold)
+			rowsDeleted, err := DeleteOldPostgresMetrics(metricAgeDaysThreshold)
 			if err != nil {
 				log.Errorf("Failed to delete old (>%d days) metrics from Postgres: %v", metricAgeDaysThreshold, err)
 				time.Sleep(time.Second * 300)
 				continue
 			}
-			log.Infof("Deleted %d old metrics rows...", rows_deleted)
+			log.Infof("Deleted %d old metrics rows...", rowsDeleted)
 		} else if schemaType == "timescale" || (!oldPartListingFuncExists && (schemaType == "metric-time" || schemaType == "metric-dbname-time")) {
 			parts_dropped, err := DropOldTimePartitions(metricAgeDaysThreshold)
 
@@ -489,8 +489,8 @@ func OldPostgresMetricsDeleter(metricAgeDaysThreshold int64, schemaType string) 
 
 func DeleteOldPostgresMetrics(metricAgeDaysThreshold int64) (int64, error) {
 	// for 'metric' schema i.e. no time partitions
-	var total_dropped int64
-	get_top_lvl_tables_sql := `
+	var totalDropped int64
+	sqlGetTopLevelTables := `
 	select 'public.' || quote_ident(c.relname) as table_full_name
 	from pg_class c
 	join pg_namespace n on n.oid = c.relnamespace
@@ -517,9 +517,9 @@ func DeleteOldPostgresMetrics(metricAgeDaysThreshold int64) (int64, error) {
 	select count(*) from q_deleted;
 	`
 
-	top_lvl_tables, err := DBExecRead(metricDb, METRICDB_IDENT, get_top_lvl_tables_sql)
+	top_lvl_tables, err := DBExecRead(metricDb, METRICDB_IDENT, sqlGetTopLevelTables)
 	if err != nil {
-		return total_dropped, err
+		return totalDropped, err
 	}
 
 	for _, dr := range top_lvl_tables {
@@ -530,32 +530,32 @@ func DeleteOldPostgresMetrics(metricAgeDaysThreshold int64) (int64, error) {
 		for {
 			ret, err := DBExecRead(metricDb, METRICDB_IDENT, sql)
 			if err != nil {
-				return total_dropped, err
+				return totalDropped, err
 			}
 			if ret[0]["count"].(int64) == 0 {
 				break
 			}
-			total_dropped += ret[0]["count"].(int64)
+			totalDropped += ret[0]["count"].(int64)
 			log.Debugf("Dropped %d rows from %v, sleeping 100ms...", ret[0]["count"].(int64), dr["table_full_name"])
 			time.Sleep(time.Millisecond * 500)
 		}
 	}
-	return total_dropped, nil
+	return totalDropped, nil
 }
 
 func DropOldTimePartitions(metricAgeDaysThreshold int64) (int, error) {
-	parts_dropped := 0
+	partsDropped := 0
 	var err error
-	sql_old_part := `select admin.drop_old_time_partitions($1, $2)`
+	sqlOldPart := `select admin.drop_old_time_partitions($1, $2)`
 
-	ret, err := DBExecRead(metricDb, METRICDB_IDENT, sql_old_part, metricAgeDaysThreshold, false)
+	ret, err := DBExecRead(metricDb, METRICDB_IDENT, sqlOldPart, metricAgeDaysThreshold, false)
 	if err != nil {
 		log.Error("Failed to drop old time partitions from Postgres metricDB:", err)
-		return parts_dropped, err
+		return partsDropped, err
 	}
-	parts_dropped = int(ret[0]["drop_old_time_partitions"].(int64))
+	partsDropped = int(ret[0]["drop_old_time_partitions"].(int64))
 
-	return parts_dropped, err
+	return partsDropped, err
 }
 
 func GetOldTimePartitions(metricAgeDaysThreshold int64) ([]string, error) {
@@ -579,8 +579,8 @@ func CheckIfPGSchemaInitializedOrFail() string {
 	var partFuncSignature string
 	var pgSchemaType string
 
-	schema_type_sql := `select schema_type from admin.storage_schema_type`
-	ret, err := DBExecRead(metricDb, METRICDB_IDENT, schema_type_sql)
+	sqlSchemaType := `select schema_type from admin.storage_schema_type`
+	ret, err := DBExecRead(metricDb, METRICDB_IDENT, sqlSchemaType)
 	if err != nil {
 		log.Fatal("have you initialized the metrics schema, including a row in 'storage_schema_type' table, from schema_base.sql?", err)
 	}
@@ -634,30 +634,30 @@ func CheckIfPGSchemaInitializedOrFail() string {
 	return pgSchemaType
 }
 
-func AddDBUniqueMetricToListingTable(db_unique, metric string) error {
+func AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
 	sql := `insert into admin.all_distinct_dbname_metrics
 			select $1, $2
 			where not exists (
 				select * from admin.all_distinct_dbname_metrics where dbname = $1 and metric = $2
 			)`
-	_, err := DBExecRead(metricDb, METRICDB_IDENT, sql, db_unique, metric)
+	_, err := DBExecRead(metricDb, METRICDB_IDENT, sql, dbUnique, metric)
 	return err
 }
 
 func UniqueDbnamesListingMaintainer(daemonMode bool) {
 	// due to metrics deletion the listing can go out of sync (a trigger not really wanted)
-	sql_get_advisory_lock := `SELECT pg_try_advisory_lock(1571543679778230000) AS have_lock` // 1571543679778230000 is just a random bigint
-	sql_top_level_metrics := `SELECT table_name FROM admin.get_top_level_metric_tables()`
-	sql_distinct := `
+	sqlGetAdvisoryLock := `SELECT pg_try_advisory_lock(1571543679778230000) AS have_lock` // 1571543679778230000 is just a random bigint
+	sqlTopLevelMetrics := `SELECT table_name FROM admin.get_top_level_metric_tables()`
+	sqlDistinct := `
 	WITH RECURSIVE t(dbname) AS (
 		SELECT MIN(dbname) AS dbname FROM %s
 		UNION
 		SELECT (SELECT MIN(dbname) FROM %s WHERE dbname > t.dbname) FROM t )
 	SELECT dbname FROM t WHERE dbname NOTNULL ORDER BY 1
 	`
-	sql_delete := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT dbname = ANY($1) and metric = $2 RETURNING *`
-	sql_delete_all := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric = $1 RETURNING *`
-	sql_add := `
+	sqlDelete := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT dbname = ANY($1) and metric = $2 RETURNING *`
+	sqlDeleteAll := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric = $1 RETURNING *`
+	sqlAdd := `
 		INSERT INTO admin.all_distinct_dbname_metrics SELECT u, $2 FROM (select unnest($1::text[]) as u) x
 		WHERE NOT EXISTS (select * from admin.all_distinct_dbname_metrics where dbname = u and metric = $2)
 		RETURNING *;
@@ -669,7 +669,7 @@ func UniqueDbnamesListingMaintainer(daemonMode bool) {
 		}
 
 		log.Infof("Trying to get metricsDb listing maintaner advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
-		lock, err := DBExecRead(metricDb, METRICDB_IDENT, sql_get_advisory_lock)
+		lock, err := DBExecRead(metricDb, METRICDB_IDENT, sqlGetAdvisoryLock)
 		if err != nil {
 			log.Error("Getting metricsDb listing maintaner advisory lock failed:", err)
 			continue
@@ -680,48 +680,48 @@ func UniqueDbnamesListingMaintainer(daemonMode bool) {
 		}
 
 		log.Infof("Refreshing admin.all_distinct_dbname_metrics listing table...")
-		all_distinct_metric_tables, err := DBExecRead(metricDb, METRICDB_IDENT, sql_top_level_metrics)
+		all_distinct_metric_tables, err := DBExecRead(metricDb, METRICDB_IDENT, sqlTopLevelMetrics)
 		if err != nil {
 			log.Error("Could not refresh Postgres dbnames listing table:", err)
 		} else {
 			for _, dr := range all_distinct_metric_tables {
-				found_dbnames_map := make(map[string]bool)
-				found_dbnames_arr := make([]string, 0)
-				metric_name := strings.Replace(dr["table_name"].(string), "public.", "", 1)
+				foundDbnamesMap := make(map[string]bool)
+				foundDbnamesArr := make([]string, 0)
+				metricName := strings.Replace(dr["table_name"].(string), "public.", "", 1)
 
-				log.Debugf("Refreshing all_distinct_dbname_metrics listing for metric: %s", metric_name)
-				ret, err := DBExecRead(metricDb, METRICDB_IDENT, fmt.Sprintf(sql_distinct, dr["table_name"], dr["table_name"]))
+				log.Debugf("Refreshing all_distinct_dbname_metrics listing for metric: %s", metricName)
+				ret, err := DBExecRead(metricDb, METRICDB_IDENT, fmt.Sprintf(sqlDistinct, dr["table_name"], dr["table_name"]))
 				if err != nil {
-					log.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for '%s': %s", metric_name, err)
+					log.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for '%s': %s", metricName, err)
 					break
 				}
 				for _, dr_dbname := range ret {
-					found_dbnames_map[dr_dbname["dbname"].(string)] = true // "set" behaviour, don't want duplicates
+					foundDbnamesMap[dr_dbname["dbname"].(string)] = true // "set" behaviour, don't want duplicates
 				}
 
 				// delete all that are not known and add all that are not there
-				for k := range found_dbnames_map {
-					found_dbnames_arr = append(found_dbnames_arr, k)
+				for k := range foundDbnamesMap {
+					foundDbnamesArr = append(foundDbnamesArr, k)
 				}
-				if len(found_dbnames_arr) == 0 { // delete all entries for given metric
-					log.Debugf("Deleting Postgres all_distinct_dbname_metrics listing table entries for metric '%s':", metric_name)
-					_, err = DBExecRead(metricDb, METRICDB_IDENT, sql_delete_all, metric_name)
+				if len(foundDbnamesArr) == 0 { // delete all entries for given metric
+					log.Debugf("Deleting Postgres all_distinct_dbname_metrics listing table entries for metric '%s':", metricName)
+					_, err = DBExecRead(metricDb, METRICDB_IDENT, sqlDeleteAll, metricName)
 					if err != nil {
-						log.Errorf("Could not delete Postgres all_distinct_dbname_metrics listing table entries for metric '%s': %s", metric_name, err)
+						log.Errorf("Could not delete Postgres all_distinct_dbname_metrics listing table entries for metric '%s': %s", metricName, err)
 					}
 					continue
 				}
-				ret, err = DBExecRead(metricDb, METRICDB_IDENT, sql_delete, pq.Array(found_dbnames_arr), metric_name)
+				ret, err = DBExecRead(metricDb, METRICDB_IDENT, sqlDelete, pq.Array(foundDbnamesArr), metricName)
 				if err != nil {
-					log.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metric_name, err)
+					log.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
 				} else if len(ret) > 0 {
-					log.Infof("Removed %d stale entries from all_distinct_dbname_metrics listing table for metric: %s", len(ret), metric_name)
+					log.Infof("Removed %d stale entries from all_distinct_dbname_metrics listing table for metric: %s", len(ret), metricName)
 				}
-				ret, err = DBExecRead(metricDb, METRICDB_IDENT, sql_add, pq.Array(found_dbnames_arr), metric_name)
+				ret, err = DBExecRead(metricDb, METRICDB_IDENT, sqlAdd, pq.Array(foundDbnamesArr), metricName)
 				if err != nil {
-					log.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metric_name, err)
+					log.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
 				} else if len(ret) > 0 {
-					log.Infof("Added %d entry to the Postgres all_distinct_dbname_metrics listing table for metric: %s", len(ret), metric_name)
+					log.Infof("Added %d entry to the Postgres all_distinct_dbname_metrics listing table for metric: %s", len(ret), metricName)
 				}
 				if daemonMode {
 					time.Sleep(time.Minute)
