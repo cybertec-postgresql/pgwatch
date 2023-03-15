@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"math"
 	"net"
 	"net/http"
@@ -1794,7 +1793,7 @@ func ReadPresetMetricsConfigFromFolder(folder string, failOnError bool) (map[str
 	pmm := make(map[string]map[string]float64)
 
 	log.Infof("Reading preset metric config from path %s ...", path.Join(folder, PRESET_CONFIG_YAML_FILE))
-	preset_metrics, err := ioutil.ReadFile(path.Join(folder, PRESET_CONFIG_YAML_FILE))
+	preset_metrics, err := os.ReadFile(path.Join(folder, PRESET_CONFIG_YAML_FILE))
 	if err != nil {
 		log.Errorf("Failed to read preset metric config definition at: %s", folder)
 		return pmm, err
@@ -1815,7 +1814,7 @@ func ReadPresetMetricsConfigFromFolder(folder string, failOnError bool) (map[str
 func ParseMetricColumnAttrsFromYAML(yamlPath string) MetricColumnAttrs {
 	c := MetricColumnAttrs{}
 
-	yamlFile, err := ioutil.ReadFile(yamlPath)
+	yamlFile, err := os.ReadFile(yamlPath)
 	if err != nil {
 		log.Errorf("Error reading file %s: %s", yamlFile, err)
 		return c
@@ -1831,7 +1830,7 @@ func ParseMetricColumnAttrsFromYAML(yamlPath string) MetricColumnAttrs {
 func ParseMetricAttrsFromYAML(yamlPath string) MetricAttrs {
 	c := MetricAttrs{}
 
-	yamlFile, err := ioutil.ReadFile(yamlPath)
+	yamlFile, err := os.ReadFile(yamlPath)
 	if err != nil {
 		log.Errorf("Error reading file %s: %s", yamlFile, err)
 		return c
@@ -1873,7 +1872,7 @@ func ReadMetricsFromFolder(folder string, failOnError bool) (map[string]map[deci
 	rMetricNameFilter := regexp.MustCompile(metricNamePattern)
 
 	log.Infof("Searching for metrics from path %s ...", folder)
-	metric_folders, err := ioutil.ReadDir(folder)
+	metric_folders, err := os.ReadDir(folder)
 	if err != nil {
 		if failOnError {
 			log.Fatalf("Could not read path %s: %s", folder, err)
@@ -1892,7 +1891,7 @@ func ReadMetricsFromFolder(folder string, failOnError bool) (map[string]map[deci
 				continue
 			}
 			//log.Debugf("Processing metric: %s", f.Name())
-			pgVers, err := ioutil.ReadDir(path.Join(folder, f.Name()))
+			pgVers, err := os.ReadDir(path.Join(folder, f.Name()))
 			if err != nil {
 				log.Error(err)
 				return metrics_map, err
@@ -1928,7 +1927,7 @@ func ReadMetricsFromFolder(folder string, failOnError bool) (map[string]map[deci
 				}
 				//log.Debugf("Found %s", pgVer.Name())
 
-				metricDefs, err := ioutil.ReadDir(path.Join(folder, f.Name(), pgVer.Name()))
+				metricDefs, err := os.ReadDir(path.Join(folder, f.Name(), pgVer.Name()))
 				if err != nil {
 					log.Error(err)
 					continue
@@ -1938,7 +1937,7 @@ func ReadMetricsFromFolder(folder string, failOnError bool) (map[string]map[deci
 				for _, md := range metricDefs {
 					if strings.HasPrefix(md.Name(), "metric") && strings.HasSuffix(md.Name(), ".sql") {
 						p := path.Join(folder, f.Name(), pgVer.Name(), md.Name())
-						metric_sql, err := ioutil.ReadFile(p)
+						metric_sql, err := os.ReadFile(p)
 						if err != nil {
 							log.Errorf("Failed to read metric definition at: %s", p)
 							continue
@@ -2038,7 +2037,7 @@ func ConfigFileToMonitoredDatabases(configFilePath string) ([]MonitoredDatabase,
 	hostList := make([]MonitoredDatabase, 0)
 
 	log.Debugf("Converting monitoring YAML config to MonitoredDatabase from path %s ...", configFilePath)
-	yamlFile, err := ioutil.ReadFile(configFilePath)
+	yamlFile, err := os.ReadFile(configFilePath)
 	if err != nil {
 		log.Errorf("Error reading file %s: %s", configFilePath, err)
 		return hostList, err
@@ -2321,7 +2320,7 @@ func SyncMonitoredDBsToDatastore(monitored_dbs []MonitoredDatabase, persistence_
 }
 
 func CheckFolderExistsAndReadable(path string) bool {
-	if _, err := ioutil.ReadDir(path); err != nil {
+	if _, err := os.ReadDir(path); err != nil {
 		return false
 	}
 	return true
@@ -2680,12 +2679,12 @@ func main() {
 			}
 			switch mode := fi.Mode(); {
 			case mode.IsDir():
-				_, err := ioutil.ReadDir(opts.Config)
+				_, err := os.ReadDir(opts.Config)
 				if err != nil {
 					log.Fatalf("Could not read path %s: %s", opts.Config, err)
 				}
 			case mode.IsRegular():
-				_, err := ioutil.ReadFile(opts.Config)
+				_, err := os.ReadFile(opts.Config)
 				if err != nil {
 					log.Fatalf("Could not read path %s: %s", opts.Config, err)
 				}
