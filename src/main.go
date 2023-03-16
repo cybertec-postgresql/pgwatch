@@ -30,15 +30,12 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
+	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/cybertec-postgresql/pgwatch3/webserver"
-	"github.com/shirou/gopsutil/v3/disk"
-	"github.com/shirou/gopsutil/v3/mem"
 
 	"github.com/coreos/go-systemd/daemon"
 	"github.com/marpaia/graphite-golang"
 	"github.com/op/go-logging"
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/load"
 	"github.com/shopspring/decimal"
 	"golang.org/x/crypto/pbkdf2"
 	"gopkg.in/yaml.v2"
@@ -147,7 +144,7 @@ type MetricStoreMessage struct {
 	DBType                  string
 	MetricName              string
 	CustomTags              map[string]string
-	Data                    [](map[string]interface{})
+	Data                    [](map[string]any)
 	MetricDefinitionDetails MetricVersionProperties
 	RealDbname              string
 	SystemIdentifier        string
@@ -157,8 +154,8 @@ type MetricStoreMessagePostgres struct {
 	Time    time.Time
 	DBName  string
 	Metric  string
-	Data    map[string]interface{}
-	TagData map[string]interface{}
+	Data    map[string]any
+	TagData map[string]any
 }
 
 type ChangeDetectionResults struct { // for passing around DDL/index/config change detection results
@@ -295,7 +292,7 @@ var PGSchemaType string
 var failedInitialConnectHosts = make(map[string]bool) // hosts that couldn't be connected to even once
 var forceRecreatePGMetricPartitions = false           // to signal override PG metrics storage cache
 var lastMonitoredDBsUpdate time.Time
-var instanceMetricCache = make(map[string]([]map[string]interface{})) // [dbUnique+metric]lastly_fetched_data
+var instanceMetricCache = make(map[string]([]map[string]any)) // [dbUnique+metric]lastly_fetched_data
 var instanceMetricCacheLock = sync.RWMutex{}
 var instanceMetricCacheTimestamp = make(map[string]time.Time) // [dbUnique+metric]last_fetch_time
 var instanceMetricCacheTimestampLock = sync.RWMutex{}
@@ -306,10 +303,6 @@ var regexIsPgbouncerMetrics = regexp.MustCompile(specialMetricPgbouncer)
 var unreachableDBsLock sync.RWMutex
 var unreachableDB = make(map[string]time.Time)
 var pgBouncerNumericCountersStartVersion decimal.Decimal // pgBouncer changed internal counters data type in v1.12
-// "cache" of last CPU utilization stats for GetGoPsutilCPU to get more exact results and not having to sleep
-var prevCPULoadTimeStatsLock sync.RWMutex
-var prevCPULoadTimeStats cpu.TimesStat
-var prevCPULoadTimestamp time.Time
 
 // Async Prom cache
 var promAsyncMetricCache = make(map[string]map[string][]MetricStoreMessage) // [dbUnique][metric]lastly_fetched_data
@@ -487,7 +480,7 @@ func InitGraphiteConnection(host string, port int) {
 	log.Debug("OK")
 }
 
-func SendToGraphite(dbname, measurement string, data [](map[string]interface{})) error {
+func SendToGraphite(dbname, measurement string, data [](map[string]any)) error {
 	if len(data) == 0 {
 		log.Warning("No data passed to SendToGraphite call")
 		return nil
@@ -673,7 +666,7 @@ func WriteMetricsToJSONFile(msgArr []MetricStoreMessage, jsonPath string) error 
 	log.Infof("Writing %d metric sets to JSON file at \"%s\"...", len(msgArr), jsonPath)
 	enc := json.NewEncoder(jsonOutFile)
 	for _, msg := range msgArr {
-		dataRow := map[string]interface{}{"metric": msg.MetricName, "data": msg.Data, "dbname": msg.DBUniqueName, "custom_tags": msg.CustomTags}
+		dataRow := map[string]any{"metric": msg.MetricName, "data": msg.Data, "dbname": msg.DBUniqueName, "custom_tags": msg.CustomTags}
 		if opts.AddRealDbname && msg.RealDbname != "" {
 			dataRow[opts.RealDbnameField] = msg.RealDbname
 		}
@@ -892,8 +885,8 @@ func GetAllRecoMetricsForVersion(vme DBVersionMapEntry) map[string]MetricVersion
 	return mvpMap
 }
 
-func GetRecommendations(dbUnique string, vme DBVersionMapEntry) ([]map[string]interface{}, time.Duration, error) {
-	retData := make([]map[string]interface{}, 0)
+func GetRecommendations(dbUnique string, vme DBVersionMapEntry) ([]map[string]any, time.Duration, error) {
+	retData := make([]map[string]any, 0)
 	var totalDuration time.Duration
 	startTimeEpochNs := time.Now().UnixNano()
 
@@ -918,7 +911,7 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) ([]map[string]in
 		}
 	}
 	if len(retData) == 0 { // insert a dummy entry minimally so that Grafana can show at least a dropdown
-		dummy := make(map[string]interface{})
+		dummy := make(map[string]any)
 		dummy["tag_reco_topic"] = "dummy"
 		dummy["tag_object_name"] = "-"
 		dummy["recommendation"] = "no recommendations"
@@ -937,8 +930,8 @@ func PgVersionDecimalToMajorVerFloat(dbUnique string, pgVer decimal.Decimal) flo
 	return verFloat
 }
 
-func FilterPgbouncerData(data []map[string]interface{}, databaseToKeep string, vme DBVersionMapEntry) []map[string]interface{} {
-	filteredData := make([]map[string]interface{}, 0)
+func FilterPgbouncerData(data []map[string]any, databaseToKeep string, vme DBVersionMapEntry) []map[string]any {
+	filteredData := make([]map[string]any, 0)
 
 	for _, dr := range data {
 		//log.Debugf("bouncer dr: %+v", dr)
@@ -979,7 +972,7 @@ func FetchMetrics(msg MetricFetchMessage, hostState map[string]map[string]string
 	var err, firstErr error
 	var sql string
 	var retryWithSuperuserSQL = true
-	var data, cachedData []map[string]interface{}
+	var data, cachedData []map[string]any
 	var duration time.Duration
 	var md MonitoredDatabase
 	var fromCache, isCacheable bool
@@ -1075,8 +1068,8 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 
 			if msg.MetricName == specialMetricInstanceUp {
 				log.Debugf("[%s:%s] failed to fetch metrics. marking instance as not up: %s", msg.DBUniqueName, msg.MetricName, err)
-				data = make([]map[string]interface{}, 1)
-				data[0] = map[string]interface{}{"epoch_ns": time.Now().UnixNano(), "is_up": 0} // NB! should be updated if the "instance_up" metric definition is changed
+				data = make([]map[string]any, 1)
+				data[0] = map[string]any{"epoch_ns": time.Now().UnixNano(), "is_up": 0} // NB! should be updated if the "instance_up" metric definition is changed
 				goto send_to_storageChannel
 			}
 
@@ -1172,8 +1165,8 @@ func PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, metric string) {
 	}
 }
 
-func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchMessage, maxAgeSeconds int64) []map[string]interface{} {
-	var clonedData []map[string]interface{}
+func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchMessage, maxAgeSeconds int64) []map[string]any {
+	var clonedData []map[string]any
 	instanceMetricCacheTimestampLock.RLock()
 	instanceMetricTS, ok := instanceMetricCacheTimestamp[msg.DBUniqueNameOrig+msg.MetricName]
 	instanceMetricCacheTimestampLock.RUnlock()
@@ -1200,7 +1193,7 @@ func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchMessage, maxAgeSec
 	return clonedData
 }
 
-func PutToInstanceCache(msg MetricFetchMessage, data []map[string]interface{}) {
+func PutToInstanceCache(msg MetricFetchMessage, data []map[string]any) {
 	if len(data) == 0 {
 		return
 	}
@@ -1222,8 +1215,8 @@ func IsCacheableMetric(msg MetricFetchMessage, mvp MetricVersionProperties) bool
 	return mvp.MetricAttrs.IsInstanceLevel
 }
 
-func AddDbnameSysinfoIfNotExistsToQueryResultData(msg MetricFetchMessage, data []map[string]interface{}, ver DBVersionMapEntry) []map[string]interface{} {
-	enrichedData := make([]map[string]interface{}, 0)
+func AddDbnameSysinfoIfNotExistsToQueryResultData(msg MetricFetchMessage, data []map[string]any, ver DBVersionMapEntry) []map[string]any {
+	enrichedData := make([]map[string]any, 0)
 
 	log.Debugf("Enriching all rows of [%s:%s] with sysinfo (%s) / real dbname (%s) if set. ", msg.DBUniqueName, msg.MetricName, ver.SystemIdentifier, ver.RealDbname)
 	for _, dr := range data {
@@ -1258,9 +1251,9 @@ func StoreMetrics(metrics []MetricStoreMessage, storageCh chan<- []MetricStoreMe
 func deepCopyMetricStoreMessages(metricStoreMessages []MetricStoreMessage) []MetricStoreMessage {
 	new := make([]MetricStoreMessage, 0)
 	for _, msm := range metricStoreMessages {
-		dataNew := make([]map[string]interface{}, 0)
+		dataNew := make([]map[string]any, 0)
 		for _, dr := range msm.Data {
-			drNew := make(map[string]interface{})
+			drNew := make(map[string]any)
 			for k, v := range dr {
 				drNew[k] = v
 			}
@@ -1278,11 +1271,11 @@ func deepCopyMetricStoreMessages(metricStoreMessages []MetricStoreMessage) []Met
 	return new
 }
 
-func deepCopyMetricData(data []map[string]interface{}) []map[string]interface{} {
-	newData := make([]map[string]interface{}, len(data))
+func deepCopyMetricData(data []map[string]any) []map[string]any {
+	newData := make([]map[string]any, len(data))
 
 	for i, dr := range data {
-		newRow := make(map[string]interface{})
+		newRow := make(map[string]any)
 		for k, v := range dr {
 			newRow[k] = v
 		}
@@ -1422,8 +1415,8 @@ func MetricGathererLoop(dbUniqueName, dbUniqueNameOrig, dbType, metricName strin
 								if postmasterUptimeS.(int64) < lastUptimeS { // restart (or possibly also failover when host is routed) happened
 									message := "Detected server restart (or failover) of \"" + dbUniqueName + "\""
 									log.Warning(message)
-									detectedChangesSummary := make([](map[string]interface{}), 0)
-									entry := map[string]interface{}{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
+									detectedChangesSummary := make([](map[string]any), 0)
+									entry := map[string]any{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
 									detectedChangesSummary = append(detectedChangesSummary, entry)
 									metricStoreMessages = append(metricStoreMessages,
 										MetricStoreMessage{DBUniqueName: dbUniqueName, DBType: dbType,
@@ -1501,19 +1494,19 @@ func MetricGathererLoop(dbUniqueName, dbUniqueNameOrig, dbType, metricName strin
 }
 
 func FetchStatsDirectlyFromOS(msg MetricFetchMessage, vme DBVersionMapEntry, mvp MetricVersionProperties) ([]MetricStoreMessage, error) {
-	var data []map[string]interface{}
+	var data []map[string]any
 	var err error
 
 	if msg.MetricName == metricCPULoad { // could function pointers work here?
-		data, err = GetLoadAvgLocal()
+		data, err = psutil.GetLoadAvgLocal()
 	} else if msg.MetricName == metricPsutilCPU {
-		data, err = GetGoPsutilCPU(msg.Interval)
+		data, err = psutil.GetGoPsutilCPU(msg.Interval)
 	} else if msg.MetricName == metricPsutilDisk {
 		data, err = GetGoPsutilDiskPG(msg.DBUniqueName)
 	} else if msg.MetricName == metricPsutilDiskIoTotal {
-		data, err = GetGoPsutilDiskTotals()
+		data, err = psutil.GetGoPsutilDiskTotals()
 	} else if msg.MetricName == metricPsutilMem {
-		data, err = GetGoPsutilMem()
+		data, err = psutil.GetGoPsutilMem()
 	}
 	if err != nil {
 		return nil, err
@@ -1524,7 +1517,7 @@ func FetchStatsDirectlyFromOS(msg MetricFetchMessage, vme DBVersionMapEntry, mvp
 }
 
 // data + custom tags + counters
-func DatarowsToMetricstoreMessage(data []map[string]interface{}, msg MetricFetchMessage, vme DBVersionMapEntry, mvp MetricVersionProperties) MetricStoreMessage {
+func DatarowsToMetricstoreMessage(data []map[string]any, msg MetricFetchMessage, vme DBVersionMapEntry, mvp MetricVersionProperties) MetricStoreMessage {
 	md, err := GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
 	if err != nil {
 		log.Errorf("Could not resolve DBUniqueName %s, cannot set custom attributes for gathered data: %v", msg.DBUniqueName, err)
@@ -1750,7 +1743,7 @@ func jsonTextToMap(jsonText string) (map[string]float64, error) {
 	if jsonText == "" {
 		return retmap, nil
 	}
-	var hostConfig map[string]interface{}
+	var hostConfig map[string]any
 	if err := json.Unmarshal([]byte(jsonText), &hostConfig); err != nil {
 		return nil, err
 	}
@@ -1765,7 +1758,7 @@ func jsonTextToStringMap(jsonText string) (map[string]string, error) {
 	if jsonText == "" {
 		return retmap, nil
 	}
-	var iMap map[string]interface{}
+	var iMap map[string]any
 	if err := json.Unmarshal([]byte(jsonText), &iMap); err != nil {
 		return nil, err
 	}
@@ -2290,7 +2283,7 @@ func SyncMonitoredDBsToDatastore(monitoredDbs []MonitoredDatabase, persistenceCh
 		now := time.Now()
 
 		for _, mdb := range monitoredDbs {
-			var db = make(map[string]interface{})
+			var db = make(map[string]any)
 			db["tag_group"] = mdb.Group
 			db["master_only"] = mdb.OnlyIfMaster
 			db["epoch_ns"] = now.UnixNano()
@@ -2298,7 +2291,7 @@ func SyncMonitoredDBsToDatastore(monitoredDbs []MonitoredDatabase, persistenceCh
 			for k, v := range mdb.CustomTags {
 				db["tag_"+k] = v
 			}
-			var data = [](map[string]interface{}){db}
+			var data = [](map[string]any){db}
 			msms = append(msms, MetricStoreMessage{DBUniqueName: mdb.DBUniqueName, MetricName: monitoredDbsDatastoreSyncMetricName,
 				Data: data})
 		}
@@ -2311,128 +2304,6 @@ func CheckFolderExistsAndReadable(path string) bool {
 		return false
 	}
 	return true
-}
-
-func goPsutilCalcCPUUtilization(probe0, probe1 cpu.TimesStat) float64 {
-	return 100 - (100.0 * (probe1.Idle - probe0.Idle + probe1.Iowait - probe0.Iowait + probe1.Steal - probe0.Steal) / (probe1.Total() - probe0.Total()))
-}
-
-// Simulates "psutil" metric output. Assumes the result from last call as input, otherwise uses a 1s measurement
-// https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/metrics/psutil_cpu/9.0/metric.sql
-func GetGoPsutilCPU(interval time.Duration) ([]map[string]interface{}, error) {
-	prevCPULoadTimeStatsLock.RLock()
-	prevTime := prevCPULoadTimestamp
-	prevTimeStat := prevCPULoadTimeStats
-	prevCPULoadTimeStatsLock.RUnlock()
-
-	if prevTime.IsZero() || (time.Now().UnixNano()-prevTime.UnixNano()) < 1e9 { // give "short" stats on first run, based on a 1s probe
-		probe0, err := cpu.Times(false)
-		if err != nil {
-			return nil, err
-		}
-		prevTimeStat = probe0[0]
-		time.Sleep(1e9)
-	}
-
-	curCallStats, err := cpu.Times(false)
-	if err != nil {
-		return nil, err
-	}
-	if prevTime.IsZero() || time.Now().UnixNano()-prevTime.UnixNano() < 1e9 || time.Now().Unix()-prevTime.Unix() >= int64(interval.Seconds()) {
-		prevCPULoadTimeStatsLock.Lock() // update the cache
-		prevCPULoadTimeStats = curCallStats[0]
-		prevCPULoadTimestamp = time.Now()
-		prevCPULoadTimeStatsLock.Unlock()
-	}
-
-	la, err := load.Avg()
-	if err != nil {
-		return nil, err
-	}
-
-	cpus, err := cpu.Counts(true)
-	if err != nil {
-		return nil, err
-	}
-
-	retMap := make(map[string]interface{})
-	retMap["epoch_ns"] = time.Now().UnixNano()
-	retMap["cpu_utilization"] = math.Round(100*goPsutilCalcCPUUtilization(prevTimeStat, curCallStats[0])) / 100
-	retMap["load_1m_norm"] = math.Round(100*la.Load1/float64(cpus)) / 100
-	retMap["load_1m"] = math.Round(100*la.Load1) / 100
-	retMap["load_5m_norm"] = math.Round(100*la.Load5/float64(cpus)) / 100
-	retMap["load_5m"] = math.Round(100*la.Load5) / 100
-	retMap["user"] = math.Round(10000.0*(curCallStats[0].User-prevTimeStat.User)/(curCallStats[0].Total()-prevTimeStat.Total())) / 100
-	retMap["system"] = math.Round(10000.0*(curCallStats[0].System-prevTimeStat.System)/(curCallStats[0].Total()-prevTimeStat.Total())) / 100
-	retMap["idle"] = math.Round(10000.0*(curCallStats[0].Idle-prevTimeStat.Idle)/(curCallStats[0].Total()-prevTimeStat.Total())) / 100
-	retMap["iowait"] = math.Round(10000.0*(curCallStats[0].Iowait-prevTimeStat.Iowait)/(curCallStats[0].Total()-prevTimeStat.Total())) / 100
-	retMap["irqs"] = math.Round(10000.0*(curCallStats[0].Irq-prevTimeStat.Irq+curCallStats[0].Softirq-prevTimeStat.Softirq)/(curCallStats[0].Total()-prevTimeStat.Total())) / 100
-	retMap["other"] = math.Round(10000.0*(curCallStats[0].Steal-prevTimeStat.Steal+curCallStats[0].Guest-prevTimeStat.Guest+curCallStats[0].GuestNice-prevTimeStat.GuestNice)/(curCallStats[0].Total()-prevTimeStat.Total())) / 100
-
-	return []map[string]interface{}{retMap}, nil
-}
-
-func GetGoPsutilMem() ([]map[string]interface{}, error) {
-	vm, err := mem.VirtualMemory()
-	if err != nil {
-		return nil, err
-	}
-
-	retMap := make(map[string]interface{})
-	retMap["epoch_ns"] = time.Now().UnixNano()
-	retMap["total"] = int64(vm.Total)
-	retMap["used"] = int64(vm.Used)
-	retMap["free"] = int64(vm.Free)
-	retMap["buff_cache"] = int64(vm.Buffers)
-	retMap["available"] = int64(vm.Available)
-	retMap["percent"] = math.Round(100*vm.UsedPercent) / 100
-	retMap["swap_total"] = int64(vm.SwapTotal)
-	retMap["swap_used"] = int64(vm.SwapCached)
-	retMap["swap_free"] = int64(vm.SwapFree)
-	retMap["swap_percent"] = math.Round(100*float64(vm.SwapCached)/float64(vm.SwapTotal)) / 100
-
-	return []map[string]interface{}{retMap}, nil
-}
-
-func GetGoPsutilDiskTotals() ([]map[string]interface{}, error) {
-	d, err := disk.IOCounters()
-	if err != nil {
-		return nil, err
-	}
-
-	retMap := make(map[string]interface{})
-	var readBytes, writeBytes, reads, writes float64
-
-	retMap["epoch_ns"] = time.Now().UnixNano()
-	for _, v := range d { // summarize all disk devices
-		readBytes += float64(v.ReadBytes) // datatype float is just an oversight in the original psutil helper
-		// but can't change it without causing problems on storage level (InfluxDB)
-		writeBytes += float64(v.WriteBytes)
-		reads += float64(v.ReadCount)
-		writes += float64(v.WriteCount)
-	}
-	retMap["read_bytes"] = readBytes
-	retMap["write_bytes"] = writeBytes
-	retMap["read_count"] = reads
-	retMap["write_count"] = writes
-
-	return []map[string]interface{}{retMap}, nil
-}
-
-func GetLoadAvgLocal() ([]map[string]interface{}, error) {
-	la, err := load.Avg()
-	if err != nil {
-		log.Errorf("Could not inquiry local system load average: %v", err)
-		return nil, err
-	}
-
-	row := make(map[string]interface{})
-	row["epoch_ns"] = time.Now().UnixNano()
-	row["load_1min"] = la.Load1
-	row["load_5min"] = la.Load5
-	row["load_15min"] = la.Load15
-
-	return []map[string]interface{}{row}, nil
 }
 
 func shouldDbBeMonitoredBasedOnCurrentState(md MonitoredDatabase) bool {

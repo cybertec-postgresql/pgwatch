@@ -147,7 +147,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 func setInstanceUpDownState(ch chan<- prometheus.Metric, md MonitoredDatabase) {
 	log.Debugf("checking availability of configured DB [%s:%s]...", md.DBUniqueName, promInstanceUpStateMetric)
 	vme, err := DBGetPGVersion(md.DBUniqueName, md.DBType, !opts.Metric.PrometheusAsyncMode) // NB! in async mode 2min cache can mask smaller downtimes!
-	data := make(map[string]interface{})
+	data := make(map[string]any)
 	if err != nil {
 		data[promInstanceUpStateMetric] = 0
 		log.Errorf("[%s:%s] could not determine instance version, reporting as 'down': %v", md.DBUniqueName, promInstanceUpStateMetric, err)
@@ -161,7 +161,7 @@ func setInstanceUpDownState(ch chan<- prometheus.Metric, md MonitoredDatabase) {
 		DBType:           md.DBType,
 		MetricName:       promInstanceUpStateMetric,
 		CustomTags:       md.CustomTags,
-		Data:             []map[string]interface{}{data},
+		Data:             []map[string]any{data},
 		RealDbname:       vme.RealDbname,
 		SystemIdentifier: vme.SystemIdentifier,
 	})
