@@ -288,7 +288,7 @@ var totalMetricsReusedFromCacheCounter uint64
 var totalMetricsDroppedCounter uint64
 var totalDatasetsFetchedCounter uint64
 var metricPointsPerMinuteLast5MinAvg int64 = -1 // -1 means the summarization ticker has not yet run
-var gathererStartTime time.Time = time.Now()
+var gathererStartTime = time.Now()
 var partitionMapMetric = make(map[string]ExistingPartitionInfo)                  // metric = min/max bounds
 var partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo) // metric[dbname = min/max bounds]
 var testDataGenerationModeWG sync.WaitGroup
@@ -630,8 +630,8 @@ func MetricsBatcher(batchingMaxDelayMillis int64, buffered_storage_ch <-chan []M
 	if batchingMaxDelayMillis <= 0 {
 		log.Fatalf("Check --batching-delay-ms, zero/negative batching delay:", batchingMaxDelayMillis)
 	}
-	var datapointCounter int = 0
-	var maxBatchSize int = 1000            // flush on maxBatchSize metric points or batchingMaxDelayMillis passed
+	var datapointCounter int
+	var maxBatchSize = 1000                // flush on maxBatchSize metric points or batchingMaxDelayMillis passed
 	batch := make([]MetricStoreMessage, 0) // no size limit here as limited in persister already
 	ticker := time.NewTicker(time.Millisecond * time.Duration(batchingMaxDelayMillis))
 
@@ -1983,7 +1983,7 @@ func ReadMetricsFromFolder(folder string, failOnError bool) (map[string]map[deci
 }
 
 func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md MonitoredDatabase) (MonitoredDatabase, int) {
-	var changed int = 0
+	var changed int
 
 	if strings.HasPrefix(md.DBName, "$") {
 		md.DBName = os.ExpandEnv(md.DBName)
@@ -2238,7 +2238,7 @@ func StatsSummarizer() {
 	var prevMetricsCounterValue uint64
 	var currentMetricsCounterValue uint64
 	ticker := time.NewTicker(time.Minute * 5)
-	var lastSummarization time.Time = gathererStartTime
+	lastSummarization := gathererStartTime
 	for now := range ticker.C {
 		currentMetricsCounterValue = atomic.LoadUint64(&totalMetricsFetchedCounter)
 		atomic.StoreInt64(&metricPointsPerMinuteLast5MinAvg, int64(math.Round(float64(currentMetricsCounterValue-prevMetricsCounterValue)*60/now.Sub(lastSummarization).Seconds())))
@@ -3083,7 +3083,7 @@ func main() {
 					metric_def_map_lock.RUnlock()
 				}
 
-				var db_metric string = db_unique + DB_METRIC_JOIN_STR + metric
+				db_metric := db_unique + DB_METRIC_JOIN_STR + metric
 				_, ch_ok := control_channels[db_metric]
 
 				if metric_def_ok && !ch_ok { // initialize a new per db/per metric control channel
