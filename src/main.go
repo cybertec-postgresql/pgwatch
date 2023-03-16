@@ -476,8 +476,6 @@ func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
 		} else {
 			monitoredDBs = append(monitoredDBs, md)
 		}
-
-		monitoredDBs = append(monitoredDBs)
 	}
 	return monitoredDBs, err
 }
