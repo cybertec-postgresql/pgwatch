@@ -32,7 +32,7 @@ type MetricOpts struct {
 	PrometheusAsyncMode  bool   `long:"prometheus-async-mode" mapstructure:"prometheus-async-mode" description:"Gather in background as with other storage and cache last fetch results in memory" env:"PW3_PROMETHEUS_ASYNC_MODE"`
 	GraphiteHost         string `long:"graphite-host" mapstructure:"graphite-host" description:"Graphite host" env:"PW3_GRAPHITEHOST"`
 	GraphitePort         string `long:"graphite-port" mapstructure:"graphite-port" description:"Graphite port" env:"PW3_GRAPHITEPORT"`
-	JsonStorageFile      string `long:"json-storage-file" mapstructure:"json-storage-file" description:"Path to file where metrics will be stored when --datastore=json, one metric set per line" env:"PW3_JSON_STORAGE_FILE"`
+	JSONStorageFile      string `long:"json-storage-file" mapstructure:"json-storage-file" description:"Path to file where metrics will be stored when --datastore=json, one metric set per line" env:"PW3_JSON_STORAGE_FILE"`
 }
 
 type CmdOptions struct {
@@ -85,14 +85,14 @@ func NewCmdOptions(args ...string) *CmdOptions {
 	return cmdOpts
 }
 
-var nonOptionArgs []string
+// var nonOptionArgs []string
 
 // Parse will parse command line arguments and initialize pgengine
 func Parse(writer io.Writer) (*flags.Parser, error) {
 	cmdOpts := new(CmdOptions)
 	parser := flags.NewParser(cmdOpts, flags.PrintErrors)
 	var err error
-	if nonOptionArgs, err = parser.Parse(); err != nil {
+	if _, err = parser.Parse(); err != nil {
 		if !flags.WroteHelp(err) {
 			parser.WriteHelp(writer)
 			return nil, err

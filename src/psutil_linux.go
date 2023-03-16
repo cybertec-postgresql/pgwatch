@@ -5,7 +5,7 @@ import (
 	"syscall"
 )
 
-func getPathUnderlyingDeviceId(path string) (uint64, error) {
+func getPathUnderlyingDeviceID(path string) (uint64, error) {
 	fp, err := os.Open(path)
 	if err != nil {
 		return 0, err

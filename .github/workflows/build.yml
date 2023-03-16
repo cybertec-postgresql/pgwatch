@@ -132,11 +132,6 @@ jobs:
         go mod download
         go version
 
-    # - name: GolangCI-Lint
-    #   uses: golangci/golangci-lint-action@v3
-    #   with:
-    #     version: latest
-        
     - name: Test
       run: |
         cd src/webui
@@ -144,6 +139,12 @@ jobs:
         cd ..
         go build
         go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./...
+
+    - name: GolangCI-Lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        working-directory: src
 
     # - name: Convert coverage to lcov
     #   uses: jandelgado/gcov2lcov-action@v1.0.8

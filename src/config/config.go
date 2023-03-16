@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	flags "github.com/jessevdk/go-flags"
@@ -104,7 +103,7 @@ func NewConfig(writer io.Writer) (*CmdOptions, error) {
 }
 
 func checkFolderExistsAndReadable(path string) bool {
-	_, err := ioutil.ReadDir(path)
+	_, err := os.ReadDir(path)
 	return err == nil
 }
 
@@ -126,13 +125,13 @@ func validateConfig(conf *CmdOptions) error {
 
 	if conf.TestdataDays > 0 || conf.TestdataMultiplier > 0 {
 		if conf.AdHocConnString == "" {
-			return errors.New("Test mode requires --adhoc-conn-str!")
+			return errors.New("test mode requires --adhoc-conn-str")
 		}
 		if conf.TestdataMultiplier == 0 {
-			return errors.New("Test mode requires --testdata-multiplier!")
+			return errors.New("test mode requires --testdata-multiplier")
 		}
 		if conf.TestdataDays == 0 {
-			return errors.New("Test mode requires --testdata-days!")
+			return errors.New("test mode requires --testdata-days")
 		}
 	}
 	if conf.AddRealDbname && conf.RealDbnameField == "" {
@@ -154,16 +153,15 @@ func validateAesGcmConfig(conf *CmdOptions) error {
 		_, err := os.Stat(conf.AesGcmKeyphraseFile)
 		if os.IsNotExist(err) {
 			return fmt.Errorf("Failed to read aes_gcm_keyphrase_file at %s, thus cannot monitor hosts with encrypted passwords", conf.AesGcmKeyphraseFile)
+		}
+		keyBytes, err := os.ReadFile(conf.AesGcmKeyphraseFile)
+		if err != nil {
+			return err
+		}
+		if keyBytes[len(keyBytes)-1] == 10 {
+			conf.AesGcmKeyphrase = string(keyBytes[:len(keyBytes)-1]) // remove line feed
 		} else {
-			keyBytes, err := ioutil.ReadFile(conf.AesGcmKeyphraseFile)
-			if err != nil {
-				return err
-			}
-			if keyBytes[len(keyBytes)-1] == 10 {
-				conf.AesGcmKeyphrase = string(keyBytes[:len(keyBytes)-1]) // remove line feed
-			} else {
-				conf.AesGcmKeyphrase = string(keyBytes)
-			}
+			conf.AesGcmKeyphrase = string(keyBytes)
 		}
 	}
 	if conf.AesGcmPasswordToEncrypt > "" && conf.AesGcmKeyphrase == "" { // special flag - encrypt and exit
@@ -181,13 +179,13 @@ func validateAdHocConfig(conf *CmdOptions) error {
 			return errors.New("Conflicting flags! --adhoc-conn-str and --config cannot be both set")
 		}
 		if conf.Metric.MetricsFolder > "" && !checkFolderExistsAndReadable(conf.Metric.MetricsFolder) {
-			return fmt.Errorf("--metrics-folder \"%s\" not readable, trying 1st default paths and then Config DB to fetch metric definitions...", conf.Metric.MetricsFolder)
+			return fmt.Errorf("--metrics-folder \"%s\" not readable, trying 1st default paths and then Config DB to fetch metric definitions", conf.Metric.MetricsFolder)
 		}
 		if conf.Connection.User > "" && conf.Connection.Password > "" {
 			return errors.New("Conflicting flags! --adhoc-conn-str and --user/--password cannot be both set")
 		}
-		if conf.AdHocDBType != DBTYPE_PG && conf.AdHocDBType != DBTYPE_PG_CONT {
-			return fmt.Errorf("--adhoc-dbtype can be of: [ %s (single DB) | %s (all non-template DB-s on an instance) ]. Default: %s", DBTYPE_PG, DBTYPE_PG_CONT, DBTYPE_PG)
+		if conf.AdHocDBType != DbTypePg && conf.AdHocDBType != DbTypePgCont {
+			return fmt.Errorf("--adhoc-dbtype can be of: [ %s (single DB) | %s (all non-template DB-s on an instance) ]. Default: %s", DbTypePg, DbTypePgCont, DbTypePg)
 		}
 	}
 	return nil

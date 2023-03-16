@@ -64,9 +64,9 @@ func ConsulGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember
 			continue
 		}
 		role := nodeData["role"]
-		connUrl := nodeData["conn_url"]
+		connURL := nodeData["conn_url"]
 
-		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnUrl: connUrl, Role: role, Name: name})
+		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnURL: connURL, Role: role, Name: name})
 	}
 
 	return ret, nil
@@ -134,14 +134,14 @@ func EtcdGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, 
 	}
 	kapi := client.NewKeysAPI(c)
 
-	if database.DBType == config.DBTYPE_PATRONI_NAMESPACE_DISCOVERY { // all scopes, all DBs (regex filtering applies if defined)
+	if database.DBType == config.DbTypePatroniNamespaceDiscovery { // all scopes, all DBs (regex filtering applies if defined)
 		if len(database.DBName) > 0 {
 			log.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName)
-			return ret, errors.New(fmt.Sprintf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName))
+			return ret, fmt.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName)
 		}
 		if database.HostConfig.Namespace == "" {
 			log.Errorf("Skipping Patroni entry %s - search 'namespace' not specified", database.DBUniqueName)
-			return ret, errors.New(fmt.Sprintf("Skipping Patroni entry %s - search 'namespace' not specified", database.DBUniqueName))
+			return ret, fmt.Errorf("Skipping Patroni entry %s - search 'namespace' not specified", database.DBUniqueName)
 		}
 		log.Errorf("Scanning ETCD namespace %s for clusters to track...", database.HostConfig.Namespace)
 		resp, err := kapi.Get(context.Background(), database.HostConfig.Namespace, &client.GetOptions{Recursive: true})
@@ -157,9 +157,7 @@ func EtcdGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, 
 			if err != nil {
 				continue
 			}
-			for _, sm := range scopeMembers {
-				ret = append(ret, sm)
-			}
+			ret = append(ret, scopeMembers...)
 		}
 	} else {
 		ret, err = extractEtcdScopeMembers(database, database.HostConfig.Scope, kapi, false)
@@ -191,14 +189,14 @@ func extractEtcdScopeMembers(database MonitoredDatabase, scope string, kapi clie
 			continue
 		}
 		role := nodeData["role"]
-		connUrl := nodeData["conn_url"]
+		connURL := nodeData["conn_url"]
 		if addScopeToName {
 			name = scope + "_" + path.Base(node.Key)
 		} else {
 			name = path.Base(node.Key)
 		}
 
-		ret = append(ret, PatroniClusterMember{Scope: scope, ConnUrl: connUrl, Role: role, Name: name})
+		ret = append(ret, PatroniClusterMember{Scope: scope, ConnURL: connURL, Role: role, Name: name})
 	}
 	return ret, nil
 }
@@ -236,32 +234,32 @@ func ZookeeperGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMem
 			continue
 		}
 		role := nodeData["role"]
-		connUrl := nodeData["conn_url"]
+		connURL := nodeData["conn_url"]
 		name := path.Base(member)
 
-		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnUrl: connUrl, Role: role, Name: name})
+		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnURL: connURL, Role: role, Name: name})
 	}
 
 	return ret, nil
 }
 
 func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, error) {
-	md := make([]MonitoredDatabase, 0)
-	cm := make([]PatroniClusterMember, 0)
+	var md []MonitoredDatabase
+	var cm []PatroniClusterMember
 	var err error
 	var ok bool
 	var dbUnique string
 
-	if ce.DBType == config.DBTYPE_PATRONI_NAMESPACE_DISCOVERY && ce.HostConfig.DcsType != DCS_TYPE_ETCD {
+	if ce.DBType == config.DbTypePatroniNamespaceDiscovery && ce.HostConfig.DcsType != dcsTypeEtcd {
 		log.Warningf("Skipping Patroni monitoring entry \"%s\" as currently only ETCD namespace scanning is supported...", ce.DBUniqueName)
 		return md, nil
 	}
 	log.Debugf("Resolving Patroni nodes for \"%s\" from HostConfig: %+v", ce.DBUniqueName, ce.HostConfig)
-	if ce.HostConfig.DcsType == DCS_TYPE_ETCD {
+	if ce.HostConfig.DcsType == dcsTypeEtcd {
 		cm, err = EtcdGetClusterMembers(ce)
-	} else if ce.HostConfig.DcsType == DCS_TYPE_ZOOKEEPER {
+	} else if ce.HostConfig.DcsType == dcsTypeZookeeper {
 		cm, err = ZookeeperGetClusterMembers(ce)
-	} else if ce.HostConfig.DcsType == DCS_TYPE_CONSUL {
+	} else if ce.HostConfig.DcsType == dcsTypeConsul {
 		cm, err = ConsulGetClusterMembers(ce)
 	} else {
 		log.Error("unknown DCS", ce.HostConfig.DcsType)
@@ -288,14 +286,14 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 			log.Infof("Skipping over Patroni cluster member [%s:%s] as not a master", ce.DBUniqueName, m.Name)
 			continue
 		}
-		host, port, err := ParseHostAndPortFromJdbcConnStr(m.ConnUrl)
+		host, port, err := ParseHostAndPortFromJdbcConnStr(m.ConnURL)
 		if err != nil {
-			log.Errorf("Could not parse Patroni conn str \"%s\" [%s:%s]: %v", m.ConnUrl, ce.DBUniqueName, m.Scope, err)
+			log.Errorf("Could not parse Patroni conn str \"%s\" [%s:%s]: %v", m.ConnURL, ce.DBUniqueName, m.Scope, err)
 			continue
 		}
 		if ce.OnlyIfMaster {
 			dbUnique = ce.DBUniqueName
-			if ce.DBType == config.DBTYPE_PATRONI_NAMESPACE_DISCOVERY {
+			if ce.DBType == config.DbTypePatroniNamespaceDiscovery {
 				dbUnique = ce.DBUniqueName + "_" + m.Scope
 			}
 		} else {
