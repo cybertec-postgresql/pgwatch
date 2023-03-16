@@ -5,9 +5,6 @@ if [ -z "$go_on_path" ] ; then
     export PATH=$PATH:/usr/local/go/bin
 fi
 
-# not needed since switching to "Go modules"
-#./get_dependencies.sh
-
 echo "running 'go build' ..."
 
 if [ -n "$GIT_TIME" -a -n "$GIT_HASH" ] ; then

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
+	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/shirou/gopsutil/v3/disk"
@@ -1963,7 +1964,7 @@ func GetGoPsutilDiskPG(dbUnique string) ([]map[string]any, error) {
 	dd["percent"] = math.Round(100*ddUsage.UsedPercent) / 100
 	retRows = append(retRows, dd)
 
-	ddDevice, err = getPathUnderlyingDeviceID(dataDirPath)
+	ddDevice, err = psutil.GetPathUnderlyingDeviceID(dataDirPath)
 	if err != nil {
 		log.Errorf("Could not determine disk device ID of data_directory %v: %v", dataDirPath, err)
 	}
@@ -1973,7 +1974,7 @@ func GetGoPsutilDiskPG(dbUnique string) ([]map[string]any, error) {
 		logDirPath = path.Join(dataDirPath, logDirPath)
 	}
 	if len(logDirPath) > 0 && CheckFolderExistsAndReadable(logDirPath) { // syslog etc considered out of scope
-		ldDevice, err = getPathUnderlyingDeviceID(logDirPath)
+		ldDevice, err = psutil.GetPathUnderlyingDeviceID(logDirPath)
 		if err != nil {
 			log.Infof("Could not determine disk device ID of log_directory %v: %v", logDirPath, err)
 		}
@@ -2003,7 +2004,7 @@ func GetGoPsutilDiskPG(dbUnique string) ([]map[string]any, error) {
 	}
 
 	if len(walDirPath) > 0 {
-		walDevice, err = getPathUnderlyingDeviceID(walDirPath)
+		walDevice, err = psutil.GetPathUnderlyingDeviceID(walDirPath)
 		if err != nil {
 			log.Infof("Could not determine disk device ID of WAL directory %v: %v", walDirPath, err) // storing anyways
 		}
@@ -2034,7 +2035,7 @@ func GetGoPsutilDiskPG(dbUnique string) ([]map[string]any, error) {
 			tsPath := row["location"].(string)
 			tsName := row["name"].(string)
 
-			tsDevice, err := getPathUnderlyingDeviceID(tsPath)
+			tsDevice, err := psutil.GetPathUnderlyingDeviceID(tsPath)
 			if err != nil {
 				log.Errorf("Could not determine disk device ID of tablespace %s (%s): %v", tsName, tsPath, err)
 				continue
