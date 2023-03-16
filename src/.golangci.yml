@@ -20,5 +20,4 @@ issues:
     - SA5008 # ignore staticcheck for go-flags
     - ALL_CAPS # ignore ALL_CAPS (revive)
     - CPUTimesStat # SA1019: CPUTimesStat is deprecated
-    - var-naming
     - error-return

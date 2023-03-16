@@ -106,7 +106,7 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 		MetricName: SPECIAL_METRIC_SERVER_LOG_EVENT_COUNTS, Data: data, CustomTags: mdb.CustomTags}}
 }
 
-func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, store_ch chan<- []MetricStoreMessage) {
+func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []MetricStoreMessage) {
 
 	var latest, previous, realDbname, serverMessagesLang string
 	var latestHandle *os.File
@@ -154,9 +154,9 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 			log.Debugf("[%s] Refreshed hostConfig: %+v", dbUniqueName, hostConfig)
 		}
 
-		db_pg_version_map_lock.RLock()
-		realDbname = db_pg_version_map[dbUniqueName].RealDbname // to manage 2 sets of event counts - monitored DB + global
-		db_pg_version_map_lock.RUnlock()
+		dbPgVersionMapLock.RLock()
+		realDbname = dbPgVersionMap[dbUniqueName].RealDbname // to manage 2 sets of event counts - monitored DB + global
+		dbPgVersionMapLock.RUnlock()
 
 		if hostConfig.LogsMatchRegex != "" {
 			logsMatchRegex = hostConfig.LogsMatchRegex
@@ -335,7 +335,7 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-1*time.Second*time.Duration(interval))) {
 				log.Debugf("[%s] Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v", dbUniqueName, eventCounts, eventCountsTotal)
 				metricStoreMessages := eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
-				store_ch <- metricStoreMessages
+				storeCh <- metricStoreMessages
 				ZeroEventCounts(eventCounts)
 				ZeroEventCounts(eventCountsTotal)
 				lastSendTime = time.Now()

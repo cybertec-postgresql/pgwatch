@@ -176,11 +176,11 @@ func setInstanceUpDownState(ch chan<- prometheus.Metric, md MonitoredDatabase) {
 func getMonitoredDatabasesSnapshot() map[string]MonitoredDatabase {
 	mdSnap := make(map[string]MonitoredDatabase)
 
-	if monitored_db_cache != nil {
-		monitored_db_cache_lock.RLock()
-		defer monitored_db_cache_lock.RUnlock()
+	if monitoredDbCache != nil {
+		monitoredDbCacheLock.RLock()
+		defer monitoredDbCacheLock.RUnlock()
 
-		for _, row := range monitored_db_cache {
+		for _, row := range monitoredDbCache {
 			mdSnap[row.DBUniqueName] = row
 		}
 	}
