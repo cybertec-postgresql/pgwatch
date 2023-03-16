@@ -233,8 +233,8 @@ func CloseOrLimitSQLConnPoolForMonitoredDBIfAny(dbUnique string) {
 	}
 }
 
-func DBExecRead(conn *sqlx.DB, hostIdent, sql string, args ...any) ([](map[string]any), error) {
-	ret := make([]map[string]any, 0)
+func DBExecRead(conn *sqlx.DB, hostIdent, sql string, args ...any) (MetricData, error) {
+	ret := make(MetricData, 0)
 	var rows *sqlx.Rows
 	var err error
 
@@ -252,7 +252,7 @@ func DBExecRead(conn *sqlx.DB, hostIdent, sql string, args ...any) ([](map[strin
 	defer rows.Close()
 
 	for rows.Next() {
-		row := make(map[string]any)
+		row := make(MetricEntry)
 		err = rows.MapScan(row)
 		if err != nil {
 			log.Error("failed to MapScan a result row", hostIdent, err)
@@ -268,8 +268,8 @@ func DBExecRead(conn *sqlx.DB, hostIdent, sql string, args ...any) ([](map[strin
 	return ret, err
 }
 
-func DBExecInExplicitTX(conn *sqlx.DB, hostIdent, query string, args ...any) ([](map[string]any), error) {
-	ret := make([]map[string]any, 0)
+func DBExecInExplicitTX(conn *sqlx.DB, hostIdent, query string, args ...any) (MetricData, error) {
+	ret := make(MetricData, 0)
 	var rows *sqlx.Rows
 	var err error
 
@@ -296,7 +296,7 @@ func DBExecInExplicitTX(conn *sqlx.DB, hostIdent, query string, args ...any) ([]
 	defer rows.Close()
 
 	for rows.Next() {
-		row := make(map[string]any)
+		row := make(MetricEntry)
 		err = rows.MapScan(row)
 		if err != nil {
 			log.Error("failed to MapScan a result row", hostIdent, err)
@@ -312,10 +312,10 @@ func DBExecInExplicitTX(conn *sqlx.DB, hostIdent, query string, args ...any) ([]
 	return ret, err
 }
 
-func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride int64, sql string, args ...any) ([](map[string]any), time.Duration, error) {
+func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride int64, sql string, args ...any) (MetricData, time.Duration, error) {
 	var conn *sqlx.DB
 	var md MonitoredDatabase
-	var data [](map[string]any)
+	var data MetricData
 	var err error
 	var duration time.Duration
 	var exists bool
@@ -384,7 +384,7 @@ func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride i
 	return data, t2.Sub(t1), err
 }
 
-func GetAllActiveHostsFromConfigDB() ([](map[string]any), error) {
+func GetAllActiveHostsFromConfigDB() (MetricData, error) {
 	sqlLatest := `
 		select /* pgwatch3_generated */
 		  md_unique_name, md_group, md_dbtype, md_hostname, md_port, md_dbname, md_user, coalesce(md_password, '') as md_password,
@@ -1117,7 +1117,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 }
 
 func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
-	detectedChanges := make([](map[string]any), 0)
+	detectedChanges := make(MetricData, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
@@ -1173,7 +1173,7 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 			if !ok {
 				splits := strings.Split(sprocIdent, dbMetricJoinStr)
 				log.Info("detected delete of sproc:", splits[0], ", oid:", splits[1])
-				influxEntry := make(map[string]any)
+				influxEntry := make(MetricEntry)
 				influxEntry["event"] = "drop"
 				influxEntry["tag_sproc"] = splits[0]
 				influxEntry["tag_oid"] = splits[1]
@@ -1203,7 +1203,7 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 }
 
 func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
-	detectedChanges := make([](map[string]any), 0)
+	detectedChanges := make(MetricData, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
@@ -1259,7 +1259,7 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 			_, ok := currentTableMap[table]
 			if !ok {
 				log.Info("detected drop of table:", table)
-				influxEntry := make(map[string]any)
+				influxEntry := make(MetricEntry)
 				influxEntry["event"] = "drop"
 				influxEntry["tag_table"] = table
 				if len(data) > 0 {
@@ -1289,7 +1289,7 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 }
 
 func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
-	detectedChanges := make([](map[string]any), 0)
+	detectedChanges := make(MetricData, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
@@ -1344,7 +1344,7 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 			_, ok := currentIndexMap[indexName]
 			if !ok {
 				log.Info("detected drop of index_name:", indexName)
-				influxEntry := make(map[string]any)
+				influxEntry := make(MetricEntry)
 				influxEntry["event"] = "drop"
 				influxEntry["tag_index"] = indexName
 				if len(data) > 0 {
@@ -1373,7 +1373,7 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 }
 
 func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
-	detectedChanges := make([](map[string]any), 0)
+	detectedChanges := make(MetricData, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
@@ -1421,7 +1421,7 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storageCh ch
 				splits := strings.Split(objPrevRun, "#:#")
 				log.Infof("[%s][%s] detected removed object privileges: role=%s, object_type=%s, object=%s, privilege_type=%s",
 					dbUnique, specialMetricChangeEvents, splits[1], splits[0], splits[2], splits[3])
-				revokeEntry := make(map[string]any)
+				revokeEntry := make(MetricEntry)
 				if epochNs, ok := data[0]["epoch_ns"]; ok {
 					revokeEntry["epoch_ns"] = epochNs
 				} else {
@@ -1458,7 +1458,7 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storageCh ch
 }
 
 func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
-	detectedChanges := make([](map[string]any), 0)
+	detectedChanges := make(MetricData, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
@@ -1555,8 +1555,8 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 	if message > "" {
 		message = "Detected changes for \"" + dbUnique + "\" [Created/Altered/Dropped]:" + message
 		log.Info(message)
-		detectedChangesSummary := make([](map[string]any), 0)
-		influxEntry := make(map[string]any)
+		detectedChangesSummary := make(MetricData, 0)
+		influxEntry := make(MetricEntry)
 		influxEntry["details"] = message
 		influxEntry["epoch_ns"] = time.Now().UnixNano()
 		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
@@ -1572,8 +1572,8 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 }
 
 // some extra work needed as pgpool SHOW commands don't specify the return data types for some reason
-func FetchMetricsPgpool(msg MetricFetchMessage, vme DBVersionMapEntry, mvp MetricVersionProperties) ([]map[string]any, time.Duration, error) {
-	var retData = make([]map[string]any, 0)
+func FetchMetricsPgpool(msg MetricFetchMessage, vme DBVersionMapEntry, mvp MetricVersionProperties) (MetricData, time.Duration, error) {
+	var retData = make(MetricData, 0)
 	var duration time.Duration
 	epochNs := time.Now().UnixNano()
 
@@ -1589,7 +1589,7 @@ func FetchMetricsPgpool(msg MetricFetchMessage, vme DBVersionMapEntry, mvp Metri
 			}
 
 			for _, row := range data {
-				retRow := make(map[string]any)
+				retRow := make(MetricEntry)
 				retRow[epochColumnName] = epochNs
 				for k, v := range row {
 					vs := string(v.([]byte))
@@ -1934,7 +1934,7 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 }
 
 // connects actually to the instance to determine PG relevant disk paths / mounts
-func GetGoPsutilDiskPG(dbUnique string) ([]map[string]any, error) {
+func GetGoPsutilDiskPG(dbUnique string) (MetricData, error) {
 	sql := `select current_setting('data_directory') as dd, current_setting('log_directory') as ld, current_setting('server_version_num')::int as pgver`
 	sqlTS := `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E'pg\\_%'])`
 	var ddDevice, ldDevice, walDevice uint64
@@ -1952,9 +1952,9 @@ func GetGoPsutilDiskPG(dbUnique string) ([]map[string]any, error) {
 		return nil, err
 	}
 
-	retRows := make([]map[string]any, 0)
+	retRows := make(MetricData, 0)
 	epochNs := time.Now().UnixNano()
-	dd := make(map[string]any)
+	dd := make(MetricEntry)
 	dd["epoch_ns"] = epochNs
 	dd["tag_dir_or_tablespace"] = "data_directory"
 	dd["tag_path"] = dataDirPath
@@ -1979,7 +1979,7 @@ func GetGoPsutilDiskPG(dbUnique string) ([]map[string]any, error) {
 			log.Infof("Could not determine disk device ID of log_directory %v: %v", logDirPath, err)
 		}
 		if err != nil || ldDevice != ddDevice { // no point to report same data in case of single folder configuration
-			ld := make(map[string]any)
+			ld := make(MetricEntry)
 			ldUsage, err := disk.Usage(logDirPath)
 			if err != nil {
 				log.Infof("Could not determine disk usage for path %v: %v", logDirPath, err)
@@ -2014,7 +2014,7 @@ func GetGoPsutilDiskPG(dbUnique string) ([]map[string]any, error) {
 			if err != nil {
 				log.Errorf("Could not determine disk usage for WAL directory %v: %v", walDirPath, err)
 			} else {
-				wd := make(map[string]any)
+				wd := make(MetricEntry)
 				wd["epoch_ns"] = epochNs
 				wd["tag_dir_or_tablespace"] = "pg_wal"
 				wd["tag_path"] = walDirPath
@@ -2048,7 +2048,7 @@ func GetGoPsutilDiskPG(dbUnique string) ([]map[string]any, error) {
 			if err != nil {
 				log.Errorf("Could not determine disk usage for tablespace %s, directory %s: %v", row["name"].(string), row["location"].(string), err)
 			}
-			ts := make(map[string]any)
+			ts := make(MetricEntry)
 			ts["epoch_ns"] = epochNs
 			ts["tag_dir_or_tablespace"] = tsName
 			ts["tag_path"] = tsPath

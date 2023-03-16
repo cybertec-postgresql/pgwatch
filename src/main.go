@@ -139,12 +139,15 @@ type MetricFetchMessage struct {
 	StmtTimeoutOverride int64
 }
 
+type MetricEntry map[string]any
+type MetricData []map[string]any
+
 type MetricStoreMessage struct {
 	DBUniqueName            string
 	DBType                  string
 	MetricName              string
 	CustomTags              map[string]string
-	Data                    [](map[string]any)
+	Data                    MetricData
 	MetricDefinitionDetails MetricVersionProperties
 	RealDbname              string
 	SystemIdentifier        string
@@ -292,7 +295,7 @@ var PGSchemaType string
 var failedInitialConnectHosts = make(map[string]bool) // hosts that couldn't be connected to even once
 var forceRecreatePGMetricPartitions = false           // to signal override PG metrics storage cache
 var lastMonitoredDBsUpdate time.Time
-var instanceMetricCache = make(map[string]([]map[string]any)) // [dbUnique+metric]lastly_fetched_data
+var instanceMetricCache = make(map[string](MetricData)) // [dbUnique+metric]lastly_fetched_data
 var instanceMetricCacheLock = sync.RWMutex{}
 var instanceMetricCacheTimestamp = make(map[string]time.Time) // [dbUnique+metric]last_fetch_time
 var instanceMetricCacheTimestampLock = sync.RWMutex{}
@@ -480,7 +483,7 @@ func InitGraphiteConnection(host string, port int) {
 	log.Debug("OK")
 }
 
-func SendToGraphite(dbname, measurement string, data [](map[string]any)) error {
+func SendToGraphite(dbname, measurement string, data MetricData) error {
 	if len(data) == 0 {
 		log.Warning("No data passed to SendToGraphite call")
 		return nil
@@ -885,8 +888,8 @@ func GetAllRecoMetricsForVersion(vme DBVersionMapEntry) map[string]MetricVersion
 	return mvpMap
 }
 
-func GetRecommendations(dbUnique string, vme DBVersionMapEntry) ([]map[string]any, time.Duration, error) {
-	retData := make([]map[string]any, 0)
+func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (MetricData, time.Duration, error) {
+	retData := make(MetricData, 0)
 	var totalDuration time.Duration
 	startTimeEpochNs := time.Now().UnixNano()
 
@@ -911,7 +914,7 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) ([]map[string]an
 		}
 	}
 	if len(retData) == 0 { // insert a dummy entry minimally so that Grafana can show at least a dropdown
-		dummy := make(map[string]any)
+		dummy := make(MetricEntry)
 		dummy["tag_reco_topic"] = "dummy"
 		dummy["tag_object_name"] = "-"
 		dummy["recommendation"] = "no recommendations"
@@ -930,8 +933,8 @@ func PgVersionDecimalToMajorVerFloat(dbUnique string, pgVer decimal.Decimal) flo
 	return verFloat
 }
 
-func FilterPgbouncerData(data []map[string]any, databaseToKeep string, vme DBVersionMapEntry) []map[string]any {
-	filteredData := make([]map[string]any, 0)
+func FilterPgbouncerData(data MetricData, databaseToKeep string, vme DBVersionMapEntry) MetricData {
+	filteredData := make(MetricData, 0)
 
 	for _, dr := range data {
 		//log.Debugf("bouncer dr: %+v", dr)
@@ -972,7 +975,7 @@ func FetchMetrics(msg MetricFetchMessage, hostState map[string]map[string]string
 	var err, firstErr error
 	var sql string
 	var retryWithSuperuserSQL = true
-	var data, cachedData []map[string]any
+	var data, cachedData MetricData
 	var duration time.Duration
 	var md MonitoredDatabase
 	var fromCache, isCacheable bool
@@ -1068,8 +1071,8 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 
 			if msg.MetricName == specialMetricInstanceUp {
 				log.Debugf("[%s:%s] failed to fetch metrics. marking instance as not up: %s", msg.DBUniqueName, msg.MetricName, err)
-				data = make([]map[string]any, 1)
-				data[0] = map[string]any{"epoch_ns": time.Now().UnixNano(), "is_up": 0} // NB! should be updated if the "instance_up" metric definition is changed
+				data = make(MetricData, 1)
+				data[0] = MetricEntry{"epoch_ns": time.Now().UnixNano(), "is_up": 0} // NB! should be updated if the "instance_up" metric definition is changed
 				goto send_to_storageChannel
 			}
 
@@ -1165,8 +1168,8 @@ func PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, metric string) {
 	}
 }
 
-func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchMessage, maxAgeSeconds int64) []map[string]any {
-	var clonedData []map[string]any
+func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchMessage, maxAgeSeconds int64) MetricData {
+	var clonedData MetricData
 	instanceMetricCacheTimestampLock.RLock()
 	instanceMetricTS, ok := instanceMetricCacheTimestamp[msg.DBUniqueNameOrig+msg.MetricName]
 	instanceMetricCacheTimestampLock.RUnlock()
@@ -1193,7 +1196,7 @@ func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchMessage, maxAgeSec
 	return clonedData
 }
 
-func PutToInstanceCache(msg MetricFetchMessage, data []map[string]any) {
+func PutToInstanceCache(msg MetricFetchMessage, data MetricData) {
 	if len(data) == 0 {
 		return
 	}
@@ -1215,8 +1218,8 @@ func IsCacheableMetric(msg MetricFetchMessage, mvp MetricVersionProperties) bool
 	return mvp.MetricAttrs.IsInstanceLevel
 }
 
-func AddDbnameSysinfoIfNotExistsToQueryResultData(msg MetricFetchMessage, data []map[string]any, ver DBVersionMapEntry) []map[string]any {
-	enrichedData := make([]map[string]any, 0)
+func AddDbnameSysinfoIfNotExistsToQueryResultData(msg MetricFetchMessage, data MetricData, ver DBVersionMapEntry) MetricData {
+	enrichedData := make(MetricData, 0)
 
 	log.Debugf("Enriching all rows of [%s:%s] with sysinfo (%s) / real dbname (%s) if set. ", msg.DBUniqueName, msg.MetricName, ver.SystemIdentifier, ver.RealDbname)
 	for _, dr := range data {
@@ -1251,7 +1254,7 @@ func StoreMetrics(metrics []MetricStoreMessage, storageCh chan<- []MetricStoreMe
 func deepCopyMetricStoreMessages(metricStoreMessages []MetricStoreMessage) []MetricStoreMessage {
 	new := make([]MetricStoreMessage, 0)
 	for _, msm := range metricStoreMessages {
-		dataNew := make([]map[string]any, 0)
+		dataNew := make(MetricData, 0)
 		for _, dr := range msm.Data {
 			drNew := make(map[string]any)
 			for k, v := range dr {
@@ -1271,8 +1274,8 @@ func deepCopyMetricStoreMessages(metricStoreMessages []MetricStoreMessage) []Met
 	return new
 }
 
-func deepCopyMetricData(data []map[string]any) []map[string]any {
-	newData := make([]map[string]any, len(data))
+func deepCopyMetricData(data MetricData) MetricData {
+	newData := make(MetricData, len(data))
 
 	for i, dr := range data {
 		newRow := make(map[string]any)
@@ -1415,8 +1418,8 @@ func MetricGathererLoop(dbUniqueName, dbUniqueNameOrig, dbType, metricName strin
 								if postmasterUptimeS.(int64) < lastUptimeS { // restart (or possibly also failover when host is routed) happened
 									message := "Detected server restart (or failover) of \"" + dbUniqueName + "\""
 									log.Warning(message)
-									detectedChangesSummary := make([](map[string]any), 0)
-									entry := map[string]any{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
+									detectedChangesSummary := make(MetricData, 0)
+									entry := MetricEntry{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
 									detectedChangesSummary = append(detectedChangesSummary, entry)
 									metricStoreMessages = append(metricStoreMessages,
 										MetricStoreMessage{DBUniqueName: dbUniqueName, DBType: dbType,
@@ -1517,7 +1520,7 @@ func FetchStatsDirectlyFromOS(msg MetricFetchMessage, vme DBVersionMapEntry, mvp
 }
 
 // data + custom tags + counters
-func DatarowsToMetricstoreMessage(data []map[string]any, msg MetricFetchMessage, vme DBVersionMapEntry, mvp MetricVersionProperties) MetricStoreMessage {
+func DatarowsToMetricstoreMessage(data MetricData, msg MetricFetchMessage, vme DBVersionMapEntry, mvp MetricVersionProperties) MetricStoreMessage {
 	md, err := GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
 	if err != nil {
 		log.Errorf("Could not resolve DBUniqueName %s, cannot set custom attributes for gathered data: %v", msg.DBUniqueName, err)
@@ -2283,7 +2286,7 @@ func SyncMonitoredDBsToDatastore(monitoredDbs []MonitoredDatabase, persistenceCh
 		now := time.Now()
 
 		for _, mdb := range monitoredDbs {
-			var db = make(map[string]any)
+			var db = make(MetricEntry)
 			db["tag_group"] = mdb.Group
 			db["master_only"] = mdb.OnlyIfMaster
 			db["epoch_ns"] = now.UnixNano()
@@ -2291,7 +2294,7 @@ func SyncMonitoredDBsToDatastore(monitoredDbs []MonitoredDatabase, persistenceCh
 			for k, v := range mdb.CustomTags {
 				db["tag_"+k] = v
 			}
-			var data = [](map[string]any){db}
+			var data = MetricData{db}
 			msms = append(msms, MetricStoreMessage{DBUniqueName: mdb.DBUniqueName, MetricName: monitoredDbsDatastoreSyncMetricName,
 				Data: data})
 		}
