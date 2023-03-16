@@ -18,10 +18,10 @@ type Exporter struct {
 	totalScrapes, totalScrapeFailures prometheus.Counter
 }
 
-const PROM_INSTANCE_UP_STATE_METRIC = "instance_up"
+const promInstanceUpStateMetric = "instance_up"
 
 // timestamps older than that will be ignored on the Prom scraper side anyways, so better don't emit at all and just log a notice
-const PROM_SCRAPING_STALENESS_HARD_DROP_LIMIT = time.Minute * time.Duration(10)
+const promScrapingStalenessHardDropLimit = time.Minute * time.Duration(10)
 
 func NewExporter() (*Exporter, error) {
 	return &Exporter{
@@ -76,11 +76,11 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		fetchedFromCacheCounts := make(map[string]int)
 
 		for metric, interval := range md.Metrics {
-			if metric == SPECIAL_METRIC_CHANGE_EVENTS {
+			if metric == specialMetricChangeEvents {
 				log.Infof("[%s] Skipping change_events metric as host state is not supported for Prometheus currently", md.DBUniqueName)
 				continue
 			}
-			if metric == PROM_INSTANCE_UP_STATE_METRIC {
+			if metric == promInstanceUpStateMetric {
 				continue // always included in Prometheus case
 			}
 			if interval > 0 {
@@ -116,7 +116,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 						MetricFetchMessage{DBUniqueName: name, DBUniqueNameOrig: md.DBUniqueNameOrig, MetricName: metric, DBType: md.DBType, Interval: time.Second * time.Duration(interval)},
 						nil,
 						nil,
-						CONTEXT_PROMETHEUS_SCRAPE)
+						contextPrometheusScrape)
 					if err != nil {
 						log.Errorf("failed to scrape [%s:%s]: %v", name, metric, err)
 						e.totalScrapeFailures.Add(1)
@@ -145,21 +145,21 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 }
 
 func setInstanceUpDownState(ch chan<- prometheus.Metric, md MonitoredDatabase) {
-	log.Debugf("checking availability of configured DB [%s:%s]...", md.DBUniqueName, PROM_INSTANCE_UP_STATE_METRIC)
+	log.Debugf("checking availability of configured DB [%s:%s]...", md.DBUniqueName, promInstanceUpStateMetric)
 	vme, err := DBGetPGVersion(md.DBUniqueName, md.DBType, !opts.Metric.PrometheusAsyncMode) // NB! in async mode 2min cache can mask smaller downtimes!
 	data := make(map[string]interface{})
 	if err != nil {
-		data[PROM_INSTANCE_UP_STATE_METRIC] = 0
-		log.Errorf("[%s:%s] could not determine instance version, reporting as 'down': %v", md.DBUniqueName, PROM_INSTANCE_UP_STATE_METRIC, err)
+		data[promInstanceUpStateMetric] = 0
+		log.Errorf("[%s:%s] could not determine instance version, reporting as 'down': %v", md.DBUniqueName, promInstanceUpStateMetric, err)
 	} else {
-		data[PROM_INSTANCE_UP_STATE_METRIC] = 1
+		data[promInstanceUpStateMetric] = 1
 	}
-	data[EPOCH_COLUMN_NAME] = time.Now().UnixNano()
+	data[epochColumnName] = time.Now().UnixNano()
 
 	pm := MetricStoreMessageToPromMetrics(MetricStoreMessage{
 		DBUniqueName:     md.DBUniqueName,
 		DBType:           md.DBType,
-		MetricName:       PROM_INSTANCE_UP_STATE_METRIC,
+		MetricName:       promInstanceUpStateMetric,
 		CustomTags:       md.CustomTags,
 		Data:             []map[string]interface{}{data},
 		RealDbname:       vme.RealDbname,
@@ -199,7 +199,7 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 		return promMetrics
 	}
 
-	epochNs, ok := (msg.Data[0][EPOCH_COLUMN_NAME]).(int64)
+	epochNs, ok := (msg.Data[0][epochColumnName]).(int64)
 	if !ok {
 		if msg.MetricName != "pgbouncer_stats" {
 			log.Warning("No timestamp_ns found, (gatherer) server time will be used. measurement:", msg.MetricName)
@@ -208,8 +208,8 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 	} else {
 		epochTime = time.Unix(0, epochNs)
 
-		if opts.Metric.PrometheusAsyncMode && epochTime.Before(epochNow.Add(-1*PROM_SCRAPING_STALENESS_HARD_DROP_LIMIT)) {
-			log.Warningf("[%s][%s] Dropping metric set due to staleness (>%v) ...", msg.DBUniqueName, msg.MetricName, PROM_SCRAPING_STALENESS_HARD_DROP_LIMIT)
+		if opts.Metric.PrometheusAsyncMode && epochTime.Before(epochNow.Add(-1*promScrapingStalenessHardDropLimit)) {
+			log.Warningf("[%s][%s] Dropping metric set due to staleness (>%v) ...", msg.DBUniqueName, msg.MetricName, promScrapingStalenessHardDropLimit)
 			PurgeMetricsFromPromAsyncCacheIfAny(msg.DBUniqueName, msg.MetricName)
 			return promMetrics
 		}
@@ -221,7 +221,7 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 		labels["dbname"] = msg.DBUniqueName
 
 		for k, v := range dr {
-			if v == nil || v == "" || k == EPOCH_COLUMN_NAME {
+			if v == nil || v == "" || k == epochColumnName {
 				continue // not storing NULLs. epoch checked/assigned once
 			}
 
@@ -282,7 +282,7 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 					}
 				}
 			}
-			if msg.MetricName == PROM_INSTANCE_UP_STATE_METRIC {
+			if msg.MetricName == promInstanceUpStateMetric {
 				fieldPromDataType = prometheus.GaugeValue
 			}
 
@@ -297,7 +297,7 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 			}
 			var desc *prometheus.Desc
 			if opts.Metric.PrometheusNamespace != "" {
-				if msg.MetricName == PROM_INSTANCE_UP_STATE_METRIC { // handle the special "instance_up" check
+				if msg.MetricName == promInstanceUpStateMetric { // handle the special "instance_up" check
 					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s", opts.Metric.PrometheusNamespace, msg.MetricName),
 						msg.MetricName, labelKeys, nil)
 				} else {
@@ -305,7 +305,7 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 						msg.MetricName, labelKeys, nil)
 				}
 			} else {
-				if msg.MetricName == PROM_INSTANCE_UP_STATE_METRIC { // handle the special "instance_up" check
+				if msg.MetricName == promInstanceUpStateMetric { // handle the special "instance_up" check
 					desc = prometheus.NewDesc(field, msg.MetricName, labelKeys, nil)
 				} else {
 					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s", msg.MetricName, field), msg.MetricName, labelKeys, nil)

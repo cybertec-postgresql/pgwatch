@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-var PG_SEVERITIES = [...]string{"DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "LOG", "FATAL", "PANIC"}
-var PG_SEVERITIES_LOCALE = map[string]map[string]string{
+var PgSeverities = [...]string{"DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "LOG", "FATAL", "PANIC"}
+var PgSeveritiesLocale = map[string]map[string]string{
 	"C.": {"DEBUG": "DEBUG", "LOG": "LOG", "INFO": "INFO", "NOTICE": "NOTICE", "WARNING": "WARNING", "ERROR": "ERROR", "FATAL": "FATAL", "PANIC": "PANIC"},
 	"de": {"DEBUG": "DEBUG", "LOG": "LOG", "INFO": "INFO", "HINWEIS": "NOTICE", "WARNUNG": "WARNING", "FEHLER": "ERROR", "FATAL": "FATAL", "PANIK": "PANIC"},
 	"fr": {"DEBUG": "DEBUG", "LOG": "LOG", "INFO": "INFO", "NOTICE": "NOTICE", "ATTENTION": "WARNING", "ERREUR": "ERROR", "FATAL": "FATAL", "PANIK": "PANIC"},
@@ -25,8 +25,8 @@ var PG_SEVERITIES_LOCALE = map[string]map[string]string{
 	"zh": {"调试": "DEBUG", "日志": "LOG", "信息": "INFO", "注意": "NOTICE", "警告": "WARNING", "错误": "ERROR", "致命错误": "FATAL", "比致命错误还过分的错误": "PANIC"},
 }
 
-const CSVLOG_DEFAULT_REGEX = `^^(?P<log_time>.*?),"?(?P<user_name>.*?)"?,"?(?P<database_name>.*?)"?,(?P<process_id>\d+),"?(?P<connection_from>.*?)"?,(?P<session_id>.*?),(?P<session_line_num>\d+),"?(?P<command_tag>.*?)"?,(?P<session_start_time>.*?),(?P<virtual_transaction_id>.*?),(?P<transaction_id>.*?),(?P<error_severity>\w+),`
-const CSVLOG_DEFAULT_GLOB_SUFFIX = "*.csv"
+const CSVLogDefaultRegEx = `^^(?P<log_time>.*?),"?(?P<user_name>.*?)"?,"?(?P<database_name>.*?)"?,(?P<process_id>\d+),"?(?P<connection_from>.*?)"?,(?P<session_id>.*?),(?P<session_line_num>\d+),"?(?P<command_tag>.*?)"?,(?P<session_start_time>.*?),(?P<virtual_transaction_id>.*?),(?P<transaction_id>.*?),(?P<error_severity>\w+),`
+const CSVLogDefaultGlobSuffix = "*.csv"
 
 func getFileWithLatestTimestamp(files []string) (string, time.Time) {
 	var maxDate time.Time
@@ -85,7 +85,7 @@ func getFileWithNextModTimestamp(dbUniqueName, logsGlobPath, currentFile string)
 func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb MonitoredDatabase) []MetricStoreMessage {
 	allSeverityCounts := make(map[string]interface{})
 
-	for _, s := range PG_SEVERITIES {
+	for _, s := range PgSeverities {
 		parsedCount, ok := eventCounts[s]
 		if ok {
 			allSeverityCounts[strings.ToLower(s)] = parsedCount
@@ -103,7 +103,7 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 	var data []map[string]interface{}
 	data = append(data, allSeverityCounts)
 	return []MetricStoreMessage{{DBUniqueName: mdb.DBUniqueName, DBType: mdb.DBType,
-		MetricName: SPECIAL_METRIC_SERVER_LOG_EVENT_COUNTS, Data: data, CustomTags: mdb.CustomTags}}
+		MetricName: specialMetricServerLogEventCounts, Data: data, CustomTags: mdb.CustomTags}}
 }
 
 func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []MetricStoreMessage) {
@@ -129,11 +129,11 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 		select {
 		case msg := <-controlCh:
 			log.Debug("got control msg", dbUniqueName, metricName, msg)
-			if msg.Action == GATHERER_STATUS_START {
+			if msg.Action == gathererStatusStart {
 				config = msg.Config
 				interval = config[metricName]
 				log.Debug("started MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
-			} else if msg.Action == GATHERER_STATUS_STOP {
+			} else if msg.Action == gathererStatusStop {
 				log.Debug("exiting MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
 				return
 			}
@@ -163,7 +163,7 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 		}
 		if logsMatchRegex == "" {
 			log.Debugf("[%s] Log parsing enabled with default CSVLOG regex", dbUniqueName)
-			logsMatchRegex = CSVLOG_DEFAULT_REGEX
+			logsMatchRegex = CSVLogDefaultRegEx
 		}
 		if hostConfig.LogsGlobPath != "" {
 			logsGlobPath = hostConfig.LogsGlobPath
@@ -351,7 +351,7 @@ func severityToEnglish(serverLang, errorSeverity string) string {
 	if serverLang == "en" {
 		return errorSeverity
 	}
-	severityMap := PG_SEVERITIES_LOCALE[serverLang]
+	severityMap := PgSeveritiesLocale[serverLang]
 	severityEn, ok := severityMap[errorSeverity]
 	if !ok {
 		log.Warningf("Failed to map severity '%s' to english from language '%s'", errorSeverity, serverLang)
@@ -361,7 +361,7 @@ func severityToEnglish(serverLang, errorSeverity string) string {
 }
 
 func ZeroEventCounts(eventCounts map[string]int64) {
-	for _, severity := range PG_SEVERITIES {
+	for _, severity := range PgSeverities {
 		eventCounts[severity] = 0
 	}
 }
@@ -370,7 +370,7 @@ func tryDetermineLogFolder(mdb MonitoredDatabase) string {
 	sql := `select current_setting('data_directory') as dd, current_setting('log_directory') as ld`
 
 	log.Infof("[%s] Trying to determine server logs folder via SQL as host_config.logs_glob_path not specified...", mdb.DBUniqueName)
-	data, err, _ := DBExecReadByDbUniqueName(mdb.DBUniqueName, "", 0, sql)
+	data, _, err := DBExecReadByDbUniqueName(mdb.DBUniqueName, "", 0, sql)
 	if err != nil {
 		log.Errorf("[%s] Failed to query data_directory and log_directory settings...are you superuser or have pg_monitor grant?", mdb.DBUniqueName)
 		return ""
@@ -379,16 +379,16 @@ func tryDetermineLogFolder(mdb MonitoredDatabase) string {
 	dd := data[0]["dd"].(string)
 	if strings.HasPrefix(ld, "/") {
 		// we have a full path we can use
-		return path.Join(ld, CSVLOG_DEFAULT_GLOB_SUFFIX)
+		return path.Join(ld, CSVLogDefaultGlobSuffix)
 	}
-	return path.Join(dd, ld, CSVLOG_DEFAULT_GLOB_SUFFIX)
+	return path.Join(dd, ld, CSVLogDefaultGlobSuffix)
 }
 
 func tryDetermineLogMessagesLanguage(mdb MonitoredDatabase) string {
 	sql := `select current_setting('lc_messages')::varchar(2) as lc_messages;`
 
 	log.Debugf("[%s] Trying to determine server log messages language...", mdb.DBUniqueName)
-	data, err, _ := DBExecReadByDbUniqueName(mdb.DBUniqueName, "", 0, sql)
+	data, _, err := DBExecReadByDbUniqueName(mdb.DBUniqueName, "", 0, sql)
 	if err != nil {
 		log.Errorf("[%s] Failed to lc_messages settings: %s", mdb.DBUniqueName, err)
 		return ""
@@ -397,9 +397,9 @@ func tryDetermineLogMessagesLanguage(mdb MonitoredDatabase) string {
 	if lang == "en" {
 		return lang
 	}
-	_, ok := PG_SEVERITIES_LOCALE[lang]
+	_, ok := PgSeveritiesLocale[lang]
 	if !ok {
-		log.Warningf("[%s] Server log language '%s' is not yet mapped, assuming severities in english: %+v", mdb.DBUniqueName, lang, PG_SEVERITIES)
+		log.Warningf("[%s] Server log language '%s' is not yet mapped, assuming severities in english: %+v", mdb.DBUniqueName, lang, PgSeverities)
 		return "en"
 	}
 	return lang

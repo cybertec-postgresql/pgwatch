@@ -184,8 +184,8 @@ func validateAdHocConfig(conf *CmdOptions) error {
 		if conf.Connection.User > "" && conf.Connection.Password > "" {
 			return errors.New("Conflicting flags! --adhoc-conn-str and --user/--password cannot be both set")
 		}
-		if conf.AdHocDBType != DBTYPE_PG && conf.AdHocDBType != DBTYPE_PG_CONT {
-			return fmt.Errorf("--adhoc-dbtype can be of: [ %s (single DB) | %s (all non-template DB-s on an instance) ]. Default: %s", DBTYPE_PG, DBTYPE_PG_CONT, DBTYPE_PG)
+		if conf.AdHocDBType != DbTypePg && conf.AdHocDBType != DbTypePgCont {
+			return fmt.Errorf("--adhoc-dbtype can be of: [ %s (single DB) | %s (all non-template DB-s on an instance) ]. Default: %s", DbTypePg, DbTypePgCont, DbTypePg)
 		}
 	}
 	return nil

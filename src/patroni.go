@@ -134,7 +134,7 @@ func EtcdGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, 
 	}
 	kapi := client.NewKeysAPI(c)
 
-	if database.DBType == config.DBTYPE_PATRONI_NAMESPACE_DISCOVERY { // all scopes, all DBs (regex filtering applies if defined)
+	if database.DBType == config.DbTypePatroniNamespaceDiscovery { // all scopes, all DBs (regex filtering applies if defined)
 		if len(database.DBName) > 0 {
 			log.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName)
 			return ret, fmt.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName)
@@ -250,16 +250,16 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 	var ok bool
 	var dbUnique string
 
-	if ce.DBType == config.DBTYPE_PATRONI_NAMESPACE_DISCOVERY && ce.HostConfig.DcsType != DCS_TYPE_ETCD {
+	if ce.DBType == config.DbTypePatroniNamespaceDiscovery && ce.HostConfig.DcsType != dcsTypeEtcd {
 		log.Warningf("Skipping Patroni monitoring entry \"%s\" as currently only ETCD namespace scanning is supported...", ce.DBUniqueName)
 		return md, nil
 	}
 	log.Debugf("Resolving Patroni nodes for \"%s\" from HostConfig: %+v", ce.DBUniqueName, ce.HostConfig)
-	if ce.HostConfig.DcsType == DCS_TYPE_ETCD {
+	if ce.HostConfig.DcsType == dcsTypeEtcd {
 		cm, err = EtcdGetClusterMembers(ce)
-	} else if ce.HostConfig.DcsType == DCS_TYPE_ZOOKEEPER {
+	} else if ce.HostConfig.DcsType == dcsTypeZookeeper {
 		cm, err = ZookeeperGetClusterMembers(ce)
-	} else if ce.HostConfig.DcsType == DCS_TYPE_CONSUL {
+	} else if ce.HostConfig.DcsType == dcsTypeConsul {
 		cm, err = ConsulGetClusterMembers(ce)
 	} else {
 		log.Error("unknown DCS", ce.HostConfig.DcsType)
@@ -293,7 +293,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 		}
 		if ce.OnlyIfMaster {
 			dbUnique = ce.DBUniqueName
-			if ce.DBType == config.DBTYPE_PATRONI_NAMESPACE_DISCOVERY {
+			if ce.DBType == config.DbTypePatroniNamespaceDiscovery {
 				dbUnique = ce.DBUniqueName + "_" + m.Scope
 			}
 		} else {
