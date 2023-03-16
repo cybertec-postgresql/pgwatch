@@ -95,13 +95,6 @@ type HostConfigPerMetricDisabledTimes struct { // metric gathering override per 
 	DisabledDays  string   `yaml:"disabled_days"`
 }
 
-type PatroniClusterMember struct {
-	Scope   string
-	Name    string
-	ConnURL string `yaml:"conn_url"`
-	Role    string
-}
-
 type PresetConfig struct {
 	Name        string
 	Description string

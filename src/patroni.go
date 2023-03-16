@@ -16,10 +16,17 @@ import (
 	"go.etcd.io/etcd/pkg/transport"
 )
 
+type PatroniClusterMember struct {
+	Scope   string
+	Name    string
+	ConnURL string `yaml:"conn_url"`
+	Role    string
+}
+
 var lastFoundClusterMembers = make(map[string][]PatroniClusterMember) // needed for cases where DCS is temporarily down
 // don't want to immediately remove monitoring of DBs
 
-func ParseHostAndPortFromJdbcConnStr(connStr string) (string, string, error) {
+func parseHostAndPortFromJdbcConnStr(connStr string) (string, string, error) {
 	r := regexp.MustCompile(`postgres://(.*)+:([0-9]+)/`)
 	matches := r.FindStringSubmatch(connStr)
 	if len(matches) != 3 {
@@ -29,7 +36,7 @@ func ParseHostAndPortFromJdbcConnStr(connStr string) (string, string, error) {
 	return matches[1], matches[2], nil
 }
 
-func ConsulGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, error) {
+func getConsulClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, error) {
 	var ret []PatroniClusterMember
 
 	if len(database.HostConfig.DcsEndpoints) == 0 {
@@ -72,7 +79,7 @@ func ConsulGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember
 	return ret, nil
 }
 
-func EtcdGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, error) {
+func getEtcdClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var cfg client.Config
 	var CAFile = database.HostConfig.CAFile
@@ -201,7 +208,7 @@ func extractEtcdScopeMembers(database MonitoredDatabase, scope string, kapi clie
 	return ret, nil
 }
 
-func ZookeeperGetClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, error) {
+func getZookeeperClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, error) {
 	var ret []PatroniClusterMember
 
 	if len(database.HostConfig.DcsEndpoints) == 0 {
@@ -256,11 +263,11 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 	}
 	log.Debugf("Resolving Patroni nodes for \"%s\" from HostConfig: %+v", ce.DBUniqueName, ce.HostConfig)
 	if ce.HostConfig.DcsType == dcsTypeEtcd {
-		cm, err = EtcdGetClusterMembers(ce)
+		cm, err = getEtcdClusterMembers(ce)
 	} else if ce.HostConfig.DcsType == dcsTypeZookeeper {
-		cm, err = ZookeeperGetClusterMembers(ce)
+		cm, err = getZookeeperClusterMembers(ce)
 	} else if ce.HostConfig.DcsType == dcsTypeConsul {
-		cm, err = ConsulGetClusterMembers(ce)
+		cm, err = getConsulClusterMembers(ce)
 	} else {
 		log.Error("unknown DCS", ce.HostConfig.DcsType)
 		return md, errors.New("unknown DCS")
@@ -286,7 +293,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 			log.Infof("Skipping over Patroni cluster member [%s:%s] as not a master", ce.DBUniqueName, m.Name)
 			continue
 		}
-		host, port, err := ParseHostAndPortFromJdbcConnStr(m.ConnURL)
+		host, port, err := parseHostAndPortFromJdbcConnStr(m.ConnURL)
 		if err != nil {
 			log.Errorf("Could not parse Patroni conn str \"%s\" [%s:%s]: %v", m.ConnURL, ce.DBUniqueName, m.Scope, err)
 			continue
