@@ -937,12 +937,10 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) ([]map[string]in
 
 func PgVersionDecimalToMajorVerFloat(dbUnique string, pgVer decimal.Decimal) float64 {
 	ver_float, _ := pgVer.Float64()
-
 	if ver_float >= 10 {
 		return math.Floor(ver_float)
-	} else {
-		return ver_float
 	}
+	return ver_float
 }
 
 func FilterPgbouncerData(data []map[string]interface{}, databaseToKeep string, vme DBVersionMapEntry) []map[string]interface{} {
@@ -1100,25 +1098,25 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 				if firstErr != nil {
 					log.Infof("[%s:%s] failed to fetch metrics also with SU SQL so initial error will be returned. Current err: %s", msg.DBUniqueName, msg.MetricName, err)
 					return nil, firstErr // returning the initial error
-				} else {
-					log.Infof("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
 				}
+				log.Infof("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
+
 			}
 			return nil, err
-		} else {
-			md, err = GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
-			if err != nil {
-				log.Errorf("[%s:%s] could not get monitored DB details", msg.DBUniqueName, err)
-				return nil, err
-			}
-
-			log.Infof("[%s:%s] fetched %d rows in %.1f ms", msg.DBUniqueName, msg.MetricName, len(data), float64(duration.Nanoseconds())/1000000)
-			if regexIsPgbouncerMetrics.MatchString(msg.MetricName) { // clean unwanted pgbouncer pool stats here as not possible in SQL
-				data = FilterPgbouncerData(data, md.DBName, vme)
-			}
-
-			ClearDBUnreachableStateIfAny(msg.DBUniqueName)
 		}
+		md, err = GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
+		if err != nil {
+			log.Errorf("[%s:%s] could not get monitored DB details", msg.DBUniqueName, err)
+			return nil, err
+		}
+
+		log.Infof("[%s:%s] fetched %d rows in %.1f ms", msg.DBUniqueName, msg.MetricName, len(data), float64(duration.Nanoseconds())/1000000)
+		if regexIsPgbouncerMetrics.MatchString(msg.MetricName) { // clean unwanted pgbouncer pool stats here as not possible in SQL
+			data = FilterPgbouncerData(data, md.DBName, vme)
+		}
+
+		ClearDBUnreachableStateIfAny(msg.DBUniqueName)
+
 	}
 
 	if isCacheable && opts.InstanceLevelCacheMaxSeconds > 0 && msg.Interval.Seconds() > float64(opts.InstanceLevelCacheMaxSeconds) {
