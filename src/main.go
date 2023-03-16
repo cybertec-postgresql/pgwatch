@@ -272,7 +272,7 @@ var monitored_db_conn_cache_lock = sync.RWMutex{}
 var last_sql_fetch_error sync.Map
 var influx_host_count = 1
 var influxConnectStrings [2]string // Max. 2 Influx metrics stores currently supported
-var influxSkipSSLCertVerify, influxSkipSSLCertVerify2 bool
+var influxSkipSSLCertVerify2 bool
 
 // secondary Influx meant for HA or Grafana load balancing for 100+ instances with lots of alerts
 var fileBasedMetrics = false
