@@ -83,7 +83,7 @@ func getFileWithNextModTimestamp(dbUniqueName, logsGlobPath, currentFile string)
 
 // 1. add zero counts for severity levels that didn't have any occurrences in the log
 func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb MonitoredDatabase) []MetricStoreMessage {
-	allSeverityCounts := make(map[string]interface{})
+	allSeverityCounts := make(map[string]any)
 
 	for _, s := range PgSeverities {
 		parsedCount, ok := eventCounts[s]
@@ -100,7 +100,7 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 		}
 	}
 	allSeverityCounts["epoch_ns"] = time.Now().UnixNano()
-	var data []map[string]interface{}
+	var data []map[string]any
 	data = append(data, allSeverityCounts)
 	return []MetricStoreMessage{{DBUniqueName: mdb.DBUniqueName, DBType: mdb.DBType,
 		MetricName: specialMetricServerLogEventCounts, Data: data, CustomTags: mdb.CustomTags}}
