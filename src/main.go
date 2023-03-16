@@ -271,8 +271,8 @@ var monitored_db_cache_lock sync.RWMutex
 var monitored_db_conn_cache_lock = sync.RWMutex{}
 var last_sql_fetch_error sync.Map
 var influx_host_count = 1
-var InfluxConnectStrings [2]string // Max. 2 Influx metrics stores currently supported
-var InfluxSkipSSLCertVerify, InfluxSkipSSLCertVerify2 bool
+var influxConnectStrings [2]string // Max. 2 Influx metrics stores currently supported
+var influxSkipSSLCertVerify, influxSkipSSLCertVerify2 bool
 
 // secondary Influx meant for HA or Grafana load balancing for 100+ instances with lots of alerts
 var fileBasedMetrics = false
@@ -773,7 +773,7 @@ func MetricsPersister(data_store string, storage_ch <-chan []MetricStoreMessage)
 		default:
 			for i, retry_queue := range retry_queues {
 				if retry_queue.Len() > 0 && (!in_error[i] || last_try[i].Before(time.Now().Add(time.Second*-10))) {
-					err := ProcessRetryQueue(data_store, InfluxConnectStrings[i], strconv.Itoa(i), retry_queue, 100)
+					err := ProcessRetryQueue(data_store, influxConnectStrings[i], strconv.Itoa(i), retry_queue, 100)
 					if err != nil {
 						log.Error("Error processing retry queue", i, ":", err)
 						in_error[i] = true
