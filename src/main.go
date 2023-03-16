@@ -1144,11 +1144,11 @@ send_to_storage_channel:
 		atomic.AddUint64(&totalMetricsReusedFromCacheCounter, uint64(len(cachedData)))
 		return []MetricStoreMessage{{DBUniqueName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
 			MetricDefinitionDetails: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
-	} else {
-		atomic.AddUint64(&totalMetricsFetchedCounter, uint64(len(data)))
-		return []MetricStoreMessage{{DBUniqueName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
-			MetricDefinitionDetails: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
 	}
+	atomic.AddUint64(&totalMetricsFetchedCounter, uint64(len(data)))
+	return []MetricStoreMessage{{DBUniqueName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
+		MetricDefinitionDetails: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
+
 }
 
 func SetDBUnreachableState(dbUnique string) {
@@ -1471,9 +1471,8 @@ func MetricGathererLoop(dbUniqueName, dbUniqueNameOrig, dbType, metricName strin
 							metricName, test_metrics_stored, opts.TestdataMultiplier)
 						testDataGenerationModeWG.Done()
 						return
-					} else {
-						_, _ = StoreMetrics(metricStoreMessages, store_ch)
 					}
+					_, _ = StoreMetrics(metricStoreMessages, store_ch)
 				}
 			}
 
