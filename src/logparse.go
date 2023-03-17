@@ -35,7 +35,7 @@ func getFileWithLatestTimestamp(files []string) (string, time.Time) {
 	for _, f := range files {
 		fi, err := os.Stat(f)
 		if err != nil {
-			log.Errorf("Failed to stat() file %s: %s", f, err)
+			logger.Errorf("Failed to stat() file %s: %s", f, err)
 			continue
 		}
 		if fi.ModTime().After(maxDate) {
@@ -52,13 +52,13 @@ func getFileWithNextModTimestamp(dbUniqueName, logsGlobPath, currentFile string)
 
 	files, err := filepath.Glob(logsGlobPath)
 	if err != nil {
-		log.Error("[%s] Error globbing \"%s\"...", dbUniqueName, logsGlobPath)
+		logger.Error("[%s] Error globbing \"%s\"...", dbUniqueName, logsGlobPath)
 		return "", time.Now()
 	}
 
 	fiCurrent, err := os.Stat(currentFile)
 	if err != nil {
-		log.Errorf("Failed to stat() currentFile %s: %s", currentFile, err)
+		logger.Errorf("Failed to stat() currentFile %s: %s", currentFile, err)
 		return "", time.Now()
 	}
 	//log.Debugf("Stat().ModTime() for %s: %v", currentFile, fiCurrent.ModTime())
@@ -69,7 +69,7 @@ func getFileWithNextModTimestamp(dbUniqueName, logsGlobPath, currentFile string)
 		}
 		fi, err := os.Stat(f)
 		if err != nil {
-			log.Errorf("Failed to stat() currentFile %s: %s", f, err)
+			logger.Errorf("Failed to stat() currentFile %s: %s", f, err)
 			continue
 		}
 		//log.Debugf("Stat().ModTime() for %s: %v", f, fi.ModTime())
@@ -125,13 +125,13 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 	for { // re-try loop. re-start in case of FS errors or just to refresh host config
 		select {
 		case msg := <-controlCh:
-			log.Debug("got control msg", dbUniqueName, metricName, msg)
+			logger.Debug("got control msg", dbUniqueName, metricName, msg)
 			if msg.Action == gathererStatusStart {
 				config = msg.Config
 				interval = config[metricName]
-				log.Debug("started MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
+				logger.Debug("started MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
 			} else if msg.Action == gathererStatusStop {
-				log.Debug("exiting MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
+				logger.Debug("exiting MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
 				return
 			}
 		default:
@@ -143,12 +143,12 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 		if lastConfigRefreshTime.IsZero() || lastConfigRefreshTime.Add(time.Second*time.Duration(opts.Connection.ServersRefreshLoopSeconds)).Before(time.Now()) {
 			mdb, err = GetMonitoredDatabaseByUniqueName(dbUniqueName)
 			if err != nil {
-				log.Errorf("[%s] Failed to refresh monitored DBs info: %s", dbUniqueName, err)
+				logger.Errorf("[%s] Failed to refresh monitored DBs info: %s", dbUniqueName, err)
 				time.Sleep(60 * time.Second)
 				continue
 			}
 			hostConfig = mdb.HostConfig
-			log.Debugf("[%s] Refreshed hostConfig: %+v", dbUniqueName, hostConfig)
+			logger.Debugf("[%s] Refreshed hostConfig: %+v", dbUniqueName, hostConfig)
 		}
 
 		dbPgVersionMapLock.RLock()
@@ -159,7 +159,7 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 			logsMatchRegex = hostConfig.LogsMatchRegex
 		}
 		if logsMatchRegex == "" {
-			log.Debugf("[%s] Log parsing enabled with default CSVLOG regex", dbUniqueName)
+			logger.Debugf("[%s] Log parsing enabled with default CSVLOG regex", dbUniqueName)
 			logsMatchRegex = CSVLogDefaultRegEx
 		}
 		if hostConfig.LogsGlobPath != "" {
@@ -168,14 +168,14 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 		if logsGlobPath == "" {
 			logsGlobPath = tryDetermineLogFolder(mdb)
 			if logsGlobPath == "" {
-				log.Warningf("[%s] Could not determine Postgres logs parsing folder. Configured logs_glob_path = %s", dbUniqueName, logsGlobPath)
+				logger.Warningf("[%s] Could not determine Postgres logs parsing folder. Configured logs_glob_path = %s", dbUniqueName, logsGlobPath)
 				time.Sleep(60 * time.Second)
 				continue
 			}
 		}
 		serverMessagesLang = tryDetermineLogMessagesLanguage(mdb)
 		if serverMessagesLang == "" {
-			log.Warningf("[%s] Could not determine language (lc_collate) used for server logs, cannot parse logs...", dbUniqueName)
+			logger.Warningf("[%s] Could not determine language (lc_collate) used for server logs, cannot parse logs...", dbUniqueName)
 			time.Sleep(60 * time.Second)
 			continue
 		}
@@ -183,32 +183,32 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 		if logsMatchRegexPrev != logsMatchRegex { // avoid regex recompile if no changes
 			csvlogRegex, err = regexp.Compile(logsMatchRegex)
 			if err != nil {
-				log.Errorf("[%s] Invalid regex: %s", dbUniqueName, logsMatchRegex)
+				logger.Errorf("[%s] Invalid regex: %s", dbUniqueName, logsMatchRegex)
 				time.Sleep(60 * time.Second)
 				continue
 			} else {
-				log.Infof("[%s] Changing logs parsing regex to: %s", dbUniqueName, logsMatchRegex)
+				logger.Infof("[%s] Changing logs parsing regex to: %s", dbUniqueName, logsMatchRegex)
 				logsMatchRegexPrev = logsMatchRegex
 			}
 		}
 
-		log.Debugf("[%s] Considering log files determined by glob pattern: %s", dbUniqueName, logsGlobPath)
+		logger.Debugf("[%s] Considering log files determined by glob pattern: %s", dbUniqueName, logsGlobPath)
 
 		if latest == "" || firstRun {
 
 			globMatches, err := filepath.Glob(logsGlobPath)
 			if err != nil || len(globMatches) == 0 {
-				log.Infof("[%s] No logfiles found to parse from glob '%s'. Sleeping 60s...", dbUniqueName, logsGlobPath)
+				logger.Infof("[%s] No logfiles found to parse from glob '%s'. Sleeping 60s...", dbUniqueName, logsGlobPath)
 				time.Sleep(60 * time.Second)
 				continue
 			}
 
-			log.Debugf("[%s] Found %v logfiles from glob pattern, picking the latest", dbUniqueName, len(globMatches))
+			logger.Debugf("[%s] Found %v logfiles from glob pattern, picking the latest", dbUniqueName, len(globMatches))
 			if len(globMatches) > 1 {
 				// find latest timestamp
 				latest, _ = getFileWithLatestTimestamp(globMatches)
 				if latest == "" {
-					log.Warningf("[%s] Could not determine the latest logfile. Sleeping 60s...", dbUniqueName)
+					logger.Warningf("[%s] Could not determine the latest logfile. Sleeping 60s...", dbUniqueName)
 					time.Sleep(60 * time.Second)
 					continue
 				}
@@ -216,13 +216,13 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 			} else if len(globMatches) == 1 {
 				latest = globMatches[0]
 			}
-			log.Infof("[%s] Starting to parse logfile: %s ", dbUniqueName, latest)
+			logger.Infof("[%s] Starting to parse logfile: %s ", dbUniqueName, latest)
 		}
 
 		if latestHandle == nil {
 			latestHandle, err = os.Open(latest)
 			if err != nil {
-				log.Warningf("[%s] Failed to open logfile %s: %s. Sleeping 60s...", dbUniqueName, latest, err)
+				logger.Warningf("[%s] Failed to open logfile %s: %s. Sleeping 60s...", dbUniqueName, latest, err)
 				time.Sleep(60 * time.Second)
 				continue
 			}
@@ -232,18 +232,18 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 				for i <= linesRead {
 					_, err = reader.ReadString('\n')
 					if err == io.EOF && i < linesRead {
-						log.Warningf("[%s] Failed to open logfile %s: %s. Sleeping 60s...", dbUniqueName, latest, err)
+						logger.Warningf("[%s] Failed to open logfile %s: %s. Sleeping 60s...", dbUniqueName, latest, err)
 						linesRead = 0
 						break
 					} else if err != nil {
-						log.Warningf("[%s] Failed to skip %d logfile lines for %s, there might be duplicates reported. Error: %s", dbUniqueName, linesRead, latest, err)
+						logger.Warningf("[%s] Failed to skip %d logfile lines for %s, there might be duplicates reported. Error: %s", dbUniqueName, linesRead, latest, err)
 						time.Sleep(60 * time.Second)
 						linesRead = i
 						break
 					}
 					i++
 				}
-				log.Debug("[%s] Skipped %d already processed lines from %s", dbUniqueName, linesRead, latest)
+				logger.Debug("[%s] Skipped %d already processed lines from %s", dbUniqueName, linesRead, latest)
 			} else if firstRun { // seek to end
 				_, _ = latestHandle.Seek(0, 2)
 				firstRun = false
@@ -259,10 +259,10 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 			}
 			line, err := reader.ReadString('\n')
 			if err != nil && err != io.EOF {
-				log.Warningf("[%s] Failed to read logfile %s: %s. Sleeping 60s...", dbUniqueName, latest, err)
+				logger.Warningf("[%s] Failed to read logfile %s: %s. Sleeping 60s...", dbUniqueName, latest, err)
 				err = latestHandle.Close()
 				if err != nil {
-					log.Warningf("[%s] Failed to close logfile %s properly: %s", dbUniqueName, latest, err)
+					logger.Warningf("[%s] Failed to close logfile %s properly: %s", dbUniqueName, latest, err)
 				}
 				latestHandle = nil
 				time.Sleep(60 * time.Second)
@@ -284,9 +284,9 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 					err = latestHandle.Close()
 					latestHandle = nil
 					if err != nil {
-						log.Warningf("[%s] Failed to close logfile %s properly: %s", dbUniqueName, latest, err)
+						logger.Warningf("[%s] Failed to close logfile %s properly: %s", dbUniqueName, latest, err)
 					}
-					log.Infof("[%s] Switching to new logfile: %s", dbUniqueName, file)
+					logger.Infof("[%s] Switching to new logfile: %s", dbUniqueName, file)
 					linesRead = 0
 					break
 				}
@@ -308,7 +308,7 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 				//log.Debugf("RegexMatchesToMap: %+v", result)
 				errorSeverity, ok := result["error_severity"]
 				if !ok {
-					log.Error("error_severity group must be defined in parse regex:", csvlogRegex)
+					logger.Error("error_severity group must be defined in parse regex:", csvlogRegex)
 					time.Sleep(time.Minute)
 					break
 				}
@@ -318,7 +318,7 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 
 				databaseName, ok := result["database_name"]
 				if !ok {
-					log.Error("database_name group must be defined in parse regex:", csvlogRegex)
+					logger.Error("database_name group must be defined in parse regex:", csvlogRegex)
 					time.Sleep(time.Minute)
 					break
 				}
@@ -330,7 +330,7 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 
 		send_to_storage_if_needed:
 			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-1*time.Second*time.Duration(interval))) {
-				log.Debugf("[%s] Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v", dbUniqueName, eventCounts, eventCountsTotal)
+				logger.Debugf("[%s] Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v", dbUniqueName, eventCounts, eventCountsTotal)
 				metricStoreMessages := eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
 				storeCh <- metricStoreMessages
 				ZeroEventCounts(eventCounts)
@@ -351,7 +351,7 @@ func severityToEnglish(serverLang, errorSeverity string) string {
 	severityMap := PgSeveritiesLocale[serverLang]
 	severityEn, ok := severityMap[errorSeverity]
 	if !ok {
-		log.Warningf("Failed to map severity '%s' to english from language '%s'", errorSeverity, serverLang)
+		logger.Warningf("Failed to map severity '%s' to english from language '%s'", errorSeverity, serverLang)
 		return errorSeverity
 	}
 	return severityEn
@@ -366,10 +366,10 @@ func ZeroEventCounts(eventCounts map[string]int64) {
 func tryDetermineLogFolder(mdb MonitoredDatabase) string {
 	sql := `select current_setting('data_directory') as dd, current_setting('log_directory') as ld`
 
-	log.Infof("[%s] Trying to determine server logs folder via SQL as host_config.logs_glob_path not specified...", mdb.DBUniqueName)
+	logger.Infof("[%s] Trying to determine server logs folder via SQL as host_config.logs_glob_path not specified...", mdb.DBUniqueName)
 	data, _, err := DBExecReadByDbUniqueName(mdb.DBUniqueName, "", 0, sql)
 	if err != nil {
-		log.Errorf("[%s] Failed to query data_directory and log_directory settings...are you superuser or have pg_monitor grant?", mdb.DBUniqueName)
+		logger.Errorf("[%s] Failed to query data_directory and log_directory settings...are you superuser or have pg_monitor grant?", mdb.DBUniqueName)
 		return ""
 	}
 	ld := data[0]["ld"].(string)
@@ -384,10 +384,10 @@ func tryDetermineLogFolder(mdb MonitoredDatabase) string {
 func tryDetermineLogMessagesLanguage(mdb MonitoredDatabase) string {
 	sql := `select current_setting('lc_messages')::varchar(2) as lc_messages;`
 
-	log.Debugf("[%s] Trying to determine server log messages language...", mdb.DBUniqueName)
+	logger.Debugf("[%s] Trying to determine server log messages language...", mdb.DBUniqueName)
 	data, _, err := DBExecReadByDbUniqueName(mdb.DBUniqueName, "", 0, sql)
 	if err != nil {
-		log.Errorf("[%s] Failed to lc_messages settings: %s", mdb.DBUniqueName, err)
+		logger.Errorf("[%s] Failed to lc_messages settings: %s", mdb.DBUniqueName, err)
 		return ""
 	}
 	lang := data[0]["lc_messages"].(string)
@@ -396,7 +396,7 @@ func tryDetermineLogMessagesLanguage(mdb MonitoredDatabase) string {
 	}
 	_, ok := PgSeveritiesLocale[lang]
 	if !ok {
-		log.Warningf("[%s] Server log language '%s' is not yet mapped, assuming severities in english: %+v", mdb.DBUniqueName, lang, PgSeverities)
+		logger.Warningf("[%s] Server log language '%s' is not yet mapped, assuming severities in english: %+v", mdb.DBUniqueName, lang, PgSeverities)
 		return "en"
 	}
 	return lang
