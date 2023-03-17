@@ -2491,21 +2491,6 @@ func main() {
 		return
 	}
 
-	if strings.ToUpper(opts.Verbose) == "DEBUG" {
-		logging.SetLevel(logging.DEBUG, "main")
-	} else if strings.ToUpper(opts.Verbose) == "INFO" {
-		logging.SetLevel(logging.INFO, "main")
-	} else if strings.HasPrefix(strings.ToUpper(opts.Verbose), "WARN") {
-		logging.SetLevel(logging.WARNING, "main")
-	} else {
-		if len(opts.Verbose) >= 2 {
-			logging.SetLevel(logging.DEBUG, "main")
-		} else if len(opts.Verbose) == 1 {
-			logging.SetLevel(logging.INFO, "main")
-		} else {
-			logging.SetLevel(logging.WARNING, "main")
-		}
-	}
 	logging.SetFormatter(logging.MustStringFormatter(`%{level:.4s} %{shortfunc}: %{message}`))
 
 	log.Debugf("opts: %+v", opts)
