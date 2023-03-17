@@ -1,5 +1,5 @@
 # Binaries for programs and plugins
-pg_timetable
+pgwatch3
 *.exe
 *.exe~
 *.dll
