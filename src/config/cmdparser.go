@@ -35,10 +35,23 @@ type MetricOpts struct {
 	JSONStorageFile      string `long:"json-storage-file" mapstructure:"json-storage-file" description:"Path to file where metrics will be stored when --datastore=json, one metric set per line" env:"PW3_JSON_STORAGE_FILE"`
 }
 
+// LoggingOpts specifies the logging configuration
+type LoggingOpts struct {
+	// LogDBLevel    string `long:"log-database-level" mapstructure:"log-database-level" description:"Verbosity level for database storing" choice:"debug" choice:"info" choice:"error" choice:"none" default:"info"`
+	LogLevel      string `short:"v" long:"log-level" mapstructure:"log-level" description:"Verbosity level for stdout and log file" choice:"debug" choice:"info" choice:"error" default:"info"`
+	LogFile       string `long:"log-file" mapstructure:"log-file" description:"File name to store logs"`
+	LogFileFormat string `long:"log-file-format" mapstructure:"log-file-format" description:"Format of file logs" choice:"json" choice:"text" default:"json"`
+	LogFileRotate bool   `long:"log-file-rotate" mapstructure:"log-file-rotate" description:"Rotate log files"`
+	LogFileSize   int    `long:"log-file-size" mapstructure:"log-file-size" description:"Maximum size in MB of the log file before it gets rotated" default:"100"`
+	LogFileAge    int    `long:"log-file-age" mapstructure:"log-file-age" description:"Number of days to retain old log files, 0 means forever" default:"0"`
+	LogFileNumber int    `long:"log-file-number" mapstructure:"log-file-number" description:"Maximum number of old log files to retain, 0 to retain all" default:"0"`
+}
+
 type CmdOptions struct {
 	Connection ConnectionOpts `group:"Connection" mapstructure:"Connection"`
 	Metric     MetricOpts     `group:"Metric" mapstructure:"Metric"`
-	Verbose    string         `short:"v" long:"verbose" mapstructure:"verbose" description:"Chat level [DEBUG|INFO|WARN]. Default: WARN" env:"PW3_VERBOSE"`
+	Logging    LoggingOpts    `group:"Logging" mapstructure:"Logging"`
+	// Verbose    string         `short:"v" long:"verbose" mapstructure:"verbose" description:"Chat level [DEBUG|INFO|WARN]. Default: WARN" env:"PW3_VERBOSE"`
 	// Params for running based on local config files, enabled distributed "push model" based metrics gathering. Metrics are sent directly to Influx/Graphite.
 	Config                  string `short:"c" long:"config" mapstructure:"config" description:"File or folder of YAML files containing info on which DBs to monitor and where to store metrics" env:"PW3_CONFIG"`
 	BatchingDelayMs         int64  `long:"batching-delay-ms" mapstructure:"batching-delay-ms" description:"Max milliseconds to wait for a batched metrics flush. [Default: 250]" default:"250" env:"PW3_BATCHING_MAX_DELAY_MS"`
@@ -67,6 +80,11 @@ type CmdOptions struct {
 	Ping                         bool   `long:"ping" mapstructure:"ping" description:"Try to connect to all configured DB-s, report errors and then exit" env:"PW3_PING"`
 	EmergencyPauseTriggerfile    string `long:"emergency-pause-triggerfile" mapstructure:"emergency-pause-triggerfile" description:"When the file exists no metrics will be temporarily fetched / scraped" env:"PW3_EMERGENCY_PAUSE_TRIGGERFILE" default:"/tmp/pgwatch3-emergency-pause"`
 	TryCreateListedExtsIfMissing string `long:"try-create-listed-exts-if-missing" mapstructure:"try-create-listed-exts-if-missing" description:"Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements" env:"PW3_TRY_CREATE_LISTED_EXTS_IF_MISSING" default:""`
+}
+
+// Verbose returns true if the debug log is enabled
+func (c CmdOptions) Verbose() bool {
+	return c.Logging.LogLevel == "debug"
 }
 
 func (c CmdOptions) IsAdHocMode() bool {

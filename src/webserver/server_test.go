@@ -6,12 +6,13 @@ import (
 	"os"
 	"testing"
 
+	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/webserver"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStatus(t *testing.T) {
-	restsrv := webserver.Init("127.0.0.1:8080", os.DirFS("../webui/build"), nil)
+	restsrv := webserver.Init("127.0.0.1:8080", os.DirFS("../webui/build"), nil, log.FallbackLogger)
 	assert.NotNil(t, restsrv)
 
 	r, err := http.Get("http://localhost:8080/")

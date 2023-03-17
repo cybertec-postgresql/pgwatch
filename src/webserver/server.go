@@ -5,13 +5,14 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
-	"log"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/cybertec-postgresql/pgwatch3/log"
 )
 
 type apiHandler interface {
@@ -28,7 +29,7 @@ type apiHandler interface {
 }
 
 type WebUIServer struct {
-	// l        log.Logger
+	l log.LoggerIface
 	http.Server
 	PgWatchVersion  string
 	PostgresVersion string
@@ -37,11 +38,11 @@ type WebUIServer struct {
 	api             apiHandler
 }
 
-func Init(addr string, webuifs fs.FS, api apiHandler) *WebUIServer {
+func Init(addr string, webuifs fs.FS, api apiHandler, logger log.LoggerIface) *WebUIServer {
 	mux := http.NewServeMux()
 	s := &WebUIServer{
 		// nil,
-		// logger,
+		logger,
 		http.Server{
 			Addr:           addr,
 			ReadTimeout:    10 * time.Second,
@@ -81,11 +82,11 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	file, err := Server.uiFS.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Println("file", path, "not found:", err)
+			Server.l.Println("file", path, "not found:", err)
 			http.NotFound(w, r)
 			return
 		}
-		log.Println("file", path, "cannot be read:", err)
+		Server.l.Println("file", path, "cannot be read:", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -101,7 +102,7 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	}
 
 	n, _ := io.Copy(w, file)
-	log.Println("file", path, "copied", n, "bytes")
+	Server.l.Println("file", path, "copied", n, "bytes")
 }
 
 func (Server *WebUIServer) handleHealth(w http.ResponseWriter, r *http.Request) {
@@ -117,14 +118,14 @@ func (Server *WebUIServer) handleHealth(w http.ResponseWriter, r *http.Request) 
 </html>`)
 
 	if err != nil {
-		log.Print(err.Error())
+		Server.l.Print(err.Error())
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
 
 	err = tmpl.ExecuteTemplate(w, "versions", Server)
 	if err != nil {
-		log.Print(err.Error())
+		Server.l.Print(err.Error())
 		http.Error(w, http.StatusText(500), 500)
 	}
 }
