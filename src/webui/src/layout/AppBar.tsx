@@ -22,18 +22,18 @@ export const AppBar = () => {
   return (
     <MuiAppBar component="header">
       <Toolbar>
-        <Box sx={{ display: "flex", width: "100%" }}>
-          <Box sx={{ display: "flex", flexGrow: 1 }}>
+        <Box sx={{ display: "flex", width: "100%", height: 40 }}>
+          <Box sx={{ display: "flex", flexGrow: 1, gap: 1.5 }}>
             <a href="https://www.cybertec-postgresql.com/en/">
-              <Box sx={{ display: "flex", width: 150, height: 40, marginRight: 2 }}>
-                <img src="/logo.png" />
+              <Box sx={{ display: "flex", width: 230, height: 40 }}>
+                <img src="/logoWhite.png" />
               </Box>
             </a>
             <Typography variant="h6" component="div">
               pgwatch3
             </Typography>
           </Box>
-          <Box>
+          <Box sx={{ display: "flex", height: "100%", alignItems: "center" }}>
             {menuLinks}
           </Box>
         </Box>
