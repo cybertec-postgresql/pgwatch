@@ -1,4 +1,4 @@
-import { Backdrop, Box, CircularProgress } from "@mui/material";
+import { Box } from "@mui/material";
 
 import style from "./style.module.css";
 
