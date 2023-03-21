@@ -44,7 +44,7 @@ func NewExporter() (*Exporter, error) {
 }
 
 // Not really needed for scraping to work
-func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
+func (e *Exporter) Describe(_ chan<- *prometheus.Desc) {
 }
 
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {

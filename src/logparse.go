@@ -186,10 +186,9 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 				logger.Errorf("[%s] Invalid regex: %s", dbUniqueName, logsMatchRegex)
 				time.Sleep(60 * time.Second)
 				continue
-			} else {
-				logger.Infof("[%s] Changing logs parsing regex to: %s", dbUniqueName, logsMatchRegex)
-				logsMatchRegexPrev = logsMatchRegex
 			}
+			logger.Infof("[%s] Changing logs parsing regex to: %s", dbUniqueName, logsMatchRegex)
+			logsMatchRegexPrev = logsMatchRegex
 		}
 
 		logger.Debugf("[%s] Considering log files determined by glob pattern: %s", dbUniqueName, logsGlobPath)

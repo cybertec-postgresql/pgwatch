@@ -518,30 +518,30 @@ func SendToGraphite(dbname, measurement string, data MetricData) error {
 			}
 			if k == epochColumnName {
 				continue
-			} else {
-				var metric graphite.Metric
-
-				if strings.HasPrefix(k, tagPrefix) { // ignore tags for Graphite
-					metric.Name = metricBasePrefix + k[4:]
-				} else {
-					metric.Name = metricBasePrefix + k
-				}
-				switch t := v.(type) {
-				case int:
-					metric.Value = fmt.Sprintf("%d", v)
-				case int32:
-					metric.Value = fmt.Sprintf("%d", v)
-				case int64:
-					metric.Value = fmt.Sprintf("%d", v)
-				case float64:
-					metric.Value = fmt.Sprintf("%f", v)
-				default:
-					logger.Infof("Invalid (non-numeric) column type ignored: metric %s, column: %v, return type: %T", measurement, k, t)
-					continue
-				}
-				metric.Timestamp = epochS
-				metrics = append(metrics, metric)
 			}
+			var metric graphite.Metric
+
+			if strings.HasPrefix(k, tagPrefix) { // ignore tags for Graphite
+				metric.Name = metricBasePrefix + k[4:]
+			} else {
+				metric.Name = metricBasePrefix + k
+			}
+			switch t := v.(type) {
+			case int:
+				metric.Value = fmt.Sprintf("%d", v)
+			case int32:
+				metric.Value = fmt.Sprintf("%d", v)
+			case int64:
+				metric.Value = fmt.Sprintf("%d", v)
+			case float64:
+				metric.Value = fmt.Sprintf("%f", v)
+			default:
+				logger.Infof("Invalid (non-numeric) column type ignored: metric %s, column: %v, return type: %T", measurement, k, t)
+				continue
+			}
+			metric.Timestamp = epochS
+			metrics = append(metrics, metric)
+
 		}
 	} // dr
 
@@ -584,7 +584,7 @@ func UpdateMonitoredDBCache(data []MonitoredDatabase) {
 	monitoredDbCacheLock.Unlock()
 }
 
-func ProcessRetryQueue(dataSource, connStr, connIdent string, retryQueue *list.List, limit int) error {
+func ProcessRetryQueue(dataSource, _, connIdent string, retryQueue *list.List, limit int) error {
 	var err error
 	iterationsDone := 0
 
@@ -924,7 +924,7 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (MetricData, tim
 	return retData, totalDuration, nil
 }
 
-func PgVersionDecimalToMajorVerFloat(dbUnique string, pgVer decimal.Decimal) float64 {
+func PgVersionDecimalToMajorVerFloat(_ string, pgVer decimal.Decimal) float64 {
 	verFloat, _ := pgVer.Float64()
 	if verFloat >= 10 {
 		return math.Floor(verFloat)
@@ -1083,14 +1083,13 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 				firstErr = err
 				logger.Infof("[%s:%s] Normal fetch failed, re-trying to fetch with SU SQL", msg.DBUniqueName, msg.MetricName)
 				goto retry_with_superuser_sql
-			} else {
-				if firstErr != nil {
-					logger.Infof("[%s:%s] failed to fetch metrics also with SU SQL so initial error will be returned. Current err: %s", msg.DBUniqueName, msg.MetricName, err)
-					return nil, firstErr // returning the initial error
-				}
-				logger.Infof("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
-
 			}
+			if firstErr != nil {
+				logger.Infof("[%s:%s] failed to fetch metrics also with SU SQL so initial error will be returned. Current err: %s", msg.DBUniqueName, msg.MetricName, err)
+				return nil, firstErr // returning the initial error
+			}
+			logger.Infof("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
+
 			return nil, err
 		}
 		md, err = GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
@@ -1251,7 +1250,7 @@ func StoreMetrics(metrics []MetricStoreMessage, storageCh chan<- []MetricStoreMe
 }
 
 func deepCopyMetricStoreMessages(metricStoreMessages []MetricStoreMessage) []MetricStoreMessage {
-	new := make([]MetricStoreMessage, 0)
+	newMsgs := make([]MetricStoreMessage, 0)
 	for _, msm := range metricStoreMessages {
 		dataNew := make(MetricData, 0)
 		for _, dr := range msm.Data {
@@ -1268,9 +1267,9 @@ func deepCopyMetricStoreMessages(metricStoreMessages []MetricStoreMessage) []Met
 
 		m := MetricStoreMessage{DBUniqueName: msm.DBUniqueName, MetricName: msm.MetricName, DBType: msm.DBType,
 			Data: dataNew, CustomTags: tagDataNew}
-		new = append(new, m)
+		newMsgs = append(newMsgs, m)
 	}
-	return new
+	return newMsgs
 }
 
 func deepCopyMetricData(data MetricData) MetricData {
@@ -1596,7 +1595,7 @@ func IsMetricCurrentlyDisabledForHost(metricName string, vme DBVersionMapEntry, 
 }
 
 // days: 0 = Sun, ranges allowed
-func IsInDaySpan(locTime time.Time, days, metric, dbUnique string) bool {
+func IsInDaySpan(locTime time.Time, days, _, _ string) bool {
 	//log.Debug("IsInDaySpan", locTime, days, metric, dbUnique)
 	if days == "" {
 		return false
@@ -1771,7 +1770,7 @@ func jsonTextToStringMap(jsonText string) (map[string]string, error) {
 }
 
 // Expects "preset metrics" definition file named preset-config.yaml to be present in provided --metrics folder
-func ReadPresetMetricsConfigFromFolder(folder string, failOnError bool) (map[string]map[string]float64, error) {
+func ReadPresetMetricsConfigFromFolder(folder string, _ bool) (map[string]map[string]float64, error) {
 	pmm := make(map[string]map[string]float64)
 
 	logger.Infof("Reading preset metric config from path %s ...", path.Join(folder, presetConfigYAMLFile))
@@ -2157,7 +2156,7 @@ func GetMonitoredDatabasesFromMonitoringConfig(mc []MonitoredDatabase) []Monitor
 	return md
 }
 
-func StatsServerHandler(w http.ResponseWriter, req *http.Request) {
+func StatsServerHandler(w http.ResponseWriter, _ *http.Request) {
 	jsonResponseTemplate := `
 {
 	"secondsFromLastSuccessfulDatastoreWrite": %d,
@@ -2348,7 +2347,7 @@ func CloseResourcesForRemovedMonitoredDBs(currentDBs, prevLoopDBs []MonitoredDat
 	}
 }
 
-func PromAsyncCacheInitIfRequired(dbUnique, metric string) { // cache structure: [dbUnique][metric]lastly_fetched_data
+func PromAsyncCacheInitIfRequired(dbUnique, _ string) { // cache structure: [dbUnique][metric]lastly_fetched_data
 	if opts.Metric.Datastore == datastorePrometheus && opts.Metric.PrometheusAsyncMode {
 		promAsyncMetricCacheLock.Lock()
 		defer promAsyncMetricCacheLock.Unlock()
@@ -2828,20 +2827,19 @@ func main() {
 					}
 					failedInitialConnectHosts[dbUnique] = true
 					continue
-				} else {
-					logger.Infof("Connect OK. [%s] is on version %s (in recovery: %v)", dbUnique, ver.VersionStr, ver.IsInRecovery)
-					if connectFailedSoFar {
-						delete(failedInitialConnectHosts, dbUnique)
-					}
-					if ver.IsInRecovery && host.OnlyIfMaster {
-						logger.Infof("[%s] not added to monitoring due to 'master only' property", dbUnique)
-						continue
-					}
-					metricConfig = host.Metrics
-					hostLastKnownStatusInRecovery[dbUnique] = ver.IsInRecovery
-					if ver.IsInRecovery && len(host.MetricsStandby) > 0 {
-						metricConfig = host.MetricsStandby
-					}
+				}
+				logger.Infof("Connect OK. [%s] is on version %s (in recovery: %v)", dbUnique, ver.VersionStr, ver.IsInRecovery)
+				if connectFailedSoFar {
+					delete(failedInitialConnectHosts, dbUnique)
+				}
+				if ver.IsInRecovery && host.OnlyIfMaster {
+					logger.Infof("[%s] not added to monitoring due to 'master only' property", dbUnique)
+					continue
+				}
+				metricConfig = host.Metrics
+				hostLastKnownStatusInRecovery[dbUnique] = ver.IsInRecovery
+				if ver.IsInRecovery && len(host.MetricsStandby) > 0 {
+					metricConfig = host.MetricsStandby
 				}
 
 				if !opts.Ping && (host.IsSuperuser || opts.IsAdHocMode() && opts.AdHocCreateHelpers) && IsPostgresDBType(dbType) && !ver.IsInRecovery {
@@ -2869,9 +2867,8 @@ func main() {
 							hostsToShutDownDueToRoleChange[dbUnique] = true // for the case when DB size was previosly above the threshold
 							SetUndersizedDBState(dbUnique, true)
 							continue
-						} else {
-							SetUndersizedDBState(dbUnique, false)
 						}
+						SetUndersizedDBState(dbUnique, false)
 					}
 				}
 				ver, err := DBGetPGVersion(dbUnique, host.DBType, false)

@@ -328,15 +328,15 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 				HostConfig:        ce.HostConfig,
 				DBType:            "postgres"})
 			continue
-		} else {
-			c, err := GetPostgresDBConnection(context.Background(), "", host, port, "template1", ce.User, ce.Password,
-				ce.SslMode, ce.SslRootCAPath, ce.SslClientCertPath, ce.SslClientKeyPath)
-			if err != nil {
-				logger.Errorf("Could not contact Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
-				continue
-			}
-			defer c.Close()
-			sql := `select datname::text as datname,
+		}
+		c, err := GetPostgresDBConnection(context.Background(), "", host, port, "template1", ce.User, ce.Password,
+			ce.SslMode, ce.SslRootCAPath, ce.SslClientCertPath, ce.SslClientKeyPath)
+		if err != nil {
+			logger.Errorf("Could not contact Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
+			continue
+		}
+		defer c.Close()
+		sql := `select datname::text as datname,
 					quote_ident(datname)::text as datname_escaped
 					from pg_database
 					where not datistemplate
@@ -345,34 +345,33 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 					and case when length(trim($1)) > 0 then datname ~ $2 else true end
 					and case when length(trim($3)) > 0 then not datname ~ $4 else true end`
 
-			data, err := DBExecRead(c, ce.DBUniqueName, sql, ce.DBNameIncludePattern, ce.DBNameIncludePattern, ce.DBNameExcludePattern, ce.DBNameExcludePattern)
-			if err != nil {
-				logger.Errorf("Could not get DB name listing from Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
-				continue
-			}
+		data, err := DBExecRead(c, ce.DBUniqueName, sql, ce.DBNameIncludePattern, ce.DBNameIncludePattern, ce.DBNameExcludePattern, ce.DBNameExcludePattern)
+		if err != nil {
+			logger.Errorf("Could not get DB name listing from Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
+			continue
+		}
 
-			for _, d := range data {
-				md = append(md, MonitoredDatabase{
-					DBUniqueName:      dbUnique + "_" + d["datname_escaped"].(string),
-					DBUniqueNameOrig:  dbUnique,
-					DBName:            d["datname"].(string),
-					Host:              host,
-					Port:              port,
-					User:              ce.User,
-					Password:          ce.Password,
-					PasswordType:      ce.PasswordType,
-					SslMode:           ce.SslMode,
-					SslRootCAPath:     ce.SslRootCAPath,
-					SslClientCertPath: ce.SslClientCertPath,
-					SslClientKeyPath:  ce.SslClientKeyPath,
-					StmtTimeout:       ce.StmtTimeout,
-					Metrics:           ce.Metrics,
-					PresetMetrics:     ce.PresetMetrics,
-					IsSuperuser:       ce.IsSuperuser,
-					CustomTags:        ce.CustomTags,
-					HostConfig:        ce.HostConfig,
-					DBType:            "postgres"})
-			}
+		for _, d := range data {
+			md = append(md, MonitoredDatabase{
+				DBUniqueName:      dbUnique + "_" + d["datname_escaped"].(string),
+				DBUniqueNameOrig:  dbUnique,
+				DBName:            d["datname"].(string),
+				Host:              host,
+				Port:              port,
+				User:              ce.User,
+				Password:          ce.Password,
+				PasswordType:      ce.PasswordType,
+				SslMode:           ce.SslMode,
+				SslRootCAPath:     ce.SslRootCAPath,
+				SslClientCertPath: ce.SslClientCertPath,
+				SslClientKeyPath:  ce.SslClientKeyPath,
+				StmtTimeout:       ce.StmtTimeout,
+				Metrics:           ce.Metrics,
+				PresetMetrics:     ce.PresetMetrics,
+				IsSuperuser:       ce.IsSuperuser,
+				CustomTags:        ce.CustomTags,
+				HostConfig:        ce.HostConfig,
+				DBType:            "postgres"})
 		}
 
 	}
