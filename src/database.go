@@ -1881,9 +1881,8 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 		err = c.Ping()
 		if err == nil {
 			break
-		} else {
-			c.Close()
 		}
+		c.Close()
 	}
 	if err != nil {
 		return md, fmt.Errorf("Failed to connect to any of the template DBs: %v", templateDBsToTry)
