@@ -1083,14 +1083,13 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 				firstErr = err
 				logger.Infof("[%s:%s] Normal fetch failed, re-trying to fetch with SU SQL", msg.DBUniqueName, msg.MetricName)
 				goto retry_with_superuser_sql
-			} else {
-				if firstErr != nil {
-					logger.Infof("[%s:%s] failed to fetch metrics also with SU SQL so initial error will be returned. Current err: %s", msg.DBUniqueName, msg.MetricName, err)
-					return nil, firstErr // returning the initial error
-				}
-				logger.Infof("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
-
 			}
+			if firstErr != nil {
+				logger.Infof("[%s:%s] failed to fetch metrics also with SU SQL so initial error will be returned. Current err: %s", msg.DBUniqueName, msg.MetricName, err)
+				return nil, firstErr // returning the initial error
+			}
+			logger.Infof("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
+
 			return nil, err
 		}
 		md, err = GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
