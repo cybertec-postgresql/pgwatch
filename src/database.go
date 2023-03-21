@@ -76,7 +76,7 @@ func InitAndTestConfigStoreConnection(ctx context.Context, host, port, dbname, u
 
 	for i := 0; i <= retries; i++ {
 		// configDb is used by the main thread only. no verify-ca/verify-full support currently
-		configDb, err = GetPostgresDBConnection(context.Background(), "", host, port, dbname, user, password, SSLMode, "", "", "")
+		configDb, err = GetPostgresDBConnection(ctx, "", host, port, dbname, user, password, SSLMode, "", "", "")
 		if err != nil {
 			if i < retries {
 				logger.Errorf("could not open metricDb connection. retrying in 5s. %d retries left. err: %v", retries-i, err)
@@ -312,7 +312,7 @@ func DBExecInExplicitTX(conn *sqlx.DB, hostIdent, query string, args ...any) (Me
 	return ret, err
 }
 
-func DBExecReadByDbUniqueName(dbUnique, metricName string, stmtTimeoutOverride int64, sql string, args ...any) (MetricData, time.Duration, error) {
+func DBExecReadByDbUniqueName(dbUnique, _ string, stmtTimeoutOverride int64, sql string, args ...any) (MetricData, time.Duration, error) {
 	var conn *sqlx.DB
 	var md MonitoredDatabase
 	var data MetricData
@@ -1572,7 +1572,7 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 }
 
 // some extra work needed as pgpool SHOW commands don't specify the return data types for some reason
-func FetchMetricsPgpool(msg MetricFetchMessage, vme DBVersionMapEntry, mvp MetricVersionProperties) (MetricData, time.Duration, error) {
+func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp MetricVersionProperties) (MetricData, time.Duration, error) {
 	var retData = make(MetricData, 0)
 	var duration time.Duration
 	epochNs := time.Now().UnixNano()
