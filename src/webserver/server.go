@@ -105,7 +105,7 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	Server.l.Println("file", path, "copied", n, "bytes")
 }
 
-func (Server *WebUIServer) handleHealth(w http.ResponseWriter, r *http.Request) {
+func (Server *WebUIServer) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	tmpl, err := template.New("versions").Parse(`{{define "title"}}Versions{{end}}
 <html>
 <body>
