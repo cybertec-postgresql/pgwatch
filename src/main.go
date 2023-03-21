@@ -584,7 +584,7 @@ func UpdateMonitoredDBCache(data []MonitoredDatabase) {
 	monitoredDbCacheLock.Unlock()
 }
 
-func ProcessRetryQueue(dataSource, connStr, connIdent string, retryQueue *list.List, limit int) error {
+func ProcessRetryQueue(dataSource, _, connIdent string, retryQueue *list.List, limit int) error {
 	var err error
 	iterationsDone := 0
 
@@ -924,7 +924,7 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (MetricData, tim
 	return retData, totalDuration, nil
 }
 
-func PgVersionDecimalToMajorVerFloat(dbUnique string, pgVer decimal.Decimal) float64 {
+func PgVersionDecimalToMajorVerFloat(_ string, pgVer decimal.Decimal) float64 {
 	verFloat, _ := pgVer.Float64()
 	if verFloat >= 10 {
 		return math.Floor(verFloat)
@@ -1595,7 +1595,7 @@ func IsMetricCurrentlyDisabledForHost(metricName string, vme DBVersionMapEntry, 
 }
 
 // days: 0 = Sun, ranges allowed
-func IsInDaySpan(locTime time.Time, days, metric, dbUnique string) bool {
+func IsInDaySpan(locTime time.Time, days, _, dbUnique string) bool {
 	//log.Debug("IsInDaySpan", locTime, days, metric, dbUnique)
 	if days == "" {
 		return false
@@ -1770,7 +1770,7 @@ func jsonTextToStringMap(jsonText string) (map[string]string, error) {
 }
 
 // Expects "preset metrics" definition file named preset-config.yaml to be present in provided --metrics folder
-func ReadPresetMetricsConfigFromFolder(folder string, failOnError bool) (map[string]map[string]float64, error) {
+func ReadPresetMetricsConfigFromFolder(folder string, _ bool) (map[string]map[string]float64, error) {
 	pmm := make(map[string]map[string]float64)
 
 	logger.Infof("Reading preset metric config from path %s ...", path.Join(folder, presetConfigYAMLFile))
@@ -2156,7 +2156,7 @@ func GetMonitoredDatabasesFromMonitoringConfig(mc []MonitoredDatabase) []Monitor
 	return md
 }
 
-func StatsServerHandler(w http.ResponseWriter, req *http.Request) {
+func StatsServerHandler(w http.ResponseWriter, _ *http.Request) {
 	jsonResponseTemplate := `
 {
 	"secondsFromLastSuccessfulDatastoreWrite": %d,
@@ -2347,7 +2347,7 @@ func CloseResourcesForRemovedMonitoredDBs(currentDBs, prevLoopDBs []MonitoredDat
 	}
 }
 
-func PromAsyncCacheInitIfRequired(dbUnique, metric string) { // cache structure: [dbUnique][metric]lastly_fetched_data
+func PromAsyncCacheInitIfRequired(dbUnique, _ string) { // cache structure: [dbUnique][metric]lastly_fetched_data
 	if opts.Metric.Datastore == datastorePrometheus && opts.Metric.PrometheusAsyncMode {
 		promAsyncMetricCacheLock.Lock()
 		defer promAsyncMetricCacheLock.Unlock()
