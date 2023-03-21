@@ -1595,7 +1595,7 @@ func IsMetricCurrentlyDisabledForHost(metricName string, vme DBVersionMapEntry, 
 }
 
 // days: 0 = Sun, ranges allowed
-func IsInDaySpan(locTime time.Time, days, _, dbUnique string) bool {
+func IsInDaySpan(locTime time.Time, days, _, _ string) bool {
 	//log.Debug("IsInDaySpan", locTime, days, metric, dbUnique)
 	if days == "" {
 		return false
@@ -2827,20 +2827,19 @@ func main() {
 					}
 					failedInitialConnectHosts[dbUnique] = true
 					continue
-				} else {
-					logger.Infof("Connect OK. [%s] is on version %s (in recovery: %v)", dbUnique, ver.VersionStr, ver.IsInRecovery)
-					if connectFailedSoFar {
-						delete(failedInitialConnectHosts, dbUnique)
-					}
-					if ver.IsInRecovery && host.OnlyIfMaster {
-						logger.Infof("[%s] not added to monitoring due to 'master only' property", dbUnique)
-						continue
-					}
-					metricConfig = host.Metrics
-					hostLastKnownStatusInRecovery[dbUnique] = ver.IsInRecovery
-					if ver.IsInRecovery && len(host.MetricsStandby) > 0 {
-						metricConfig = host.MetricsStandby
-					}
+				}
+				logger.Infof("Connect OK. [%s] is on version %s (in recovery: %v)", dbUnique, ver.VersionStr, ver.IsInRecovery)
+				if connectFailedSoFar {
+					delete(failedInitialConnectHosts, dbUnique)
+				}
+				if ver.IsInRecovery && host.OnlyIfMaster {
+					logger.Infof("[%s] not added to monitoring due to 'master only' property", dbUnique)
+					continue
+				}
+				metricConfig = host.Metrics
+				hostLastKnownStatusInRecovery[dbUnique] = ver.IsInRecovery
+				if ver.IsInRecovery && len(host.MetricsStandby) > 0 {
+					metricConfig = host.MetricsStandby
 				}
 
 				if !opts.Ping && (host.IsSuperuser || opts.IsAdHocMode() && opts.AdHocCreateHelpers) && IsPostgresDBType(dbType) && !ver.IsInRecovery {
@@ -2868,9 +2867,8 @@ func main() {
 							hostsToShutDownDueToRoleChange[dbUnique] = true // for the case when DB size was previosly above the threshold
 							SetUndersizedDBState(dbUnique, true)
 							continue
-						} else {
-							SetUndersizedDBState(dbUnique, false)
 						}
+						SetUndersizedDBState(dbUnique, false)
 					}
 				}
 				ver, err := DBGetPGVersion(dbUnique, host.DBType, false)
