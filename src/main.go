@@ -518,30 +518,30 @@ func SendToGraphite(dbname, measurement string, data MetricData) error {
 			}
 			if k == epochColumnName {
 				continue
-			} else {
-				var metric graphite.Metric
-
-				if strings.HasPrefix(k, tagPrefix) { // ignore tags for Graphite
-					metric.Name = metricBasePrefix + k[4:]
-				} else {
-					metric.Name = metricBasePrefix + k
-				}
-				switch t := v.(type) {
-				case int:
-					metric.Value = fmt.Sprintf("%d", v)
-				case int32:
-					metric.Value = fmt.Sprintf("%d", v)
-				case int64:
-					metric.Value = fmt.Sprintf("%d", v)
-				case float64:
-					metric.Value = fmt.Sprintf("%f", v)
-				default:
-					logger.Infof("Invalid (non-numeric) column type ignored: metric %s, column: %v, return type: %T", measurement, k, t)
-					continue
-				}
-				metric.Timestamp = epochS
-				metrics = append(metrics, metric)
 			}
+			var metric graphite.Metric
+
+			if strings.HasPrefix(k, tagPrefix) { // ignore tags for Graphite
+				metric.Name = metricBasePrefix + k[4:]
+			} else {
+				metric.Name = metricBasePrefix + k
+			}
+			switch t := v.(type) {
+			case int:
+				metric.Value = fmt.Sprintf("%d", v)
+			case int32:
+				metric.Value = fmt.Sprintf("%d", v)
+			case int64:
+				metric.Value = fmt.Sprintf("%d", v)
+			case float64:
+				metric.Value = fmt.Sprintf("%f", v)
+			default:
+				logger.Infof("Invalid (non-numeric) column type ignored: metric %s, column: %v, return type: %T", measurement, k, t)
+				continue
+			}
+			metric.Timestamp = epochS
+			metrics = append(metrics, metric)
+
 		}
 	} // dr
 
