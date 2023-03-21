@@ -26,7 +26,7 @@ export const AppBar = () => {
           <Box sx={{ display: "flex", flexGrow: 1, gap: 1.5 }}>
             <a href="https://www.cybertec-postgresql.com/en/">
               <Box sx={{ display: "flex", width: 230, height: 40 }}>
-                <img src="/logoWhite.png" />
+                <img src="/logo.png" />
               </Box>
             </a>
             <Typography variant="h6" component="div">
