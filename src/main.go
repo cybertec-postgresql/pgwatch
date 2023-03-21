@@ -1251,7 +1251,7 @@ func StoreMetrics(metrics []MetricStoreMessage, storageCh chan<- []MetricStoreMe
 }
 
 func deepCopyMetricStoreMessages(metricStoreMessages []MetricStoreMessage) []MetricStoreMessage {
-	new := make([]MetricStoreMessage, 0)
+	newMsgs := make([]MetricStoreMessage, 0)
 	for _, msm := range metricStoreMessages {
 		dataNew := make(MetricData, 0)
 		for _, dr := range msm.Data {
@@ -1268,9 +1268,9 @@ func deepCopyMetricStoreMessages(metricStoreMessages []MetricStoreMessage) []Met
 
 		m := MetricStoreMessage{DBUniqueName: msm.DBUniqueName, MetricName: msm.MetricName, DBType: msm.DBType,
 			Data: dataNew, CustomTags: tagDataNew}
-		new = append(new, m)
+		newMsgs = append(newMsgs, m)
 	}
-	return new
+	return newMsgs
 }
 
 func deepCopyMetricData(data MetricData) MetricData {
