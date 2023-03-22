@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, IconButton, Tooltip, Typography } from "@mui/material";
@@ -105,7 +106,7 @@ export const metricsColumns = ({
       field: "m_actions",
       headerName: "Actions",
       type: "actions",
-      width: 200,
+      width: 300,
       renderCell: (params) => (
         <GridActionsComponent
           data={params.row}
@@ -114,7 +115,13 @@ export const metricsColumns = ({
           deleteRecord={deleteRecord}
           deleteParameter={params.row.m_id}
           warningMessage={`Are you sure you want to delete metric named "${params.row.m_name}", version: ${params.row.m_pg_version_from}`}
-        />
+        >
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<ContentCopyIcon />}
+          >Clone</Button>
+        </GridActionsComponent>
       ),
       headerAlign: "center"
     }

@@ -13,28 +13,20 @@ type Props = {
   handleModalOpen: () => void,
   deleteRecord: UseMutationResult<any, any, any, unknown>,
   deleteParameter: number | string,
-  warningMessage: string
+  warningMessage: string,
+  children?: JSX.Element
 }
 
-export const GridActionsComponent = (
-  {
-    data,
-    setEditData,
-    handleModalOpen,
-    deleteRecord,
-    deleteParameter,
-    warningMessage
-  }: Props
-) => {
+export const GridActionsComponent = (props: Props) => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleEditClick = () => {
-    setEditData(data);
-    handleModalOpen();
+    props.setEditData(props.data);
+    props.handleModalOpen();
   };
 
   const handleDeleteClick = () => {
-    deleteRecord.mutate(deleteParameter);
+    props.deleteRecord.mutate(props.deleteParameter);
   };
 
   const handleDialogOpen = () => {
@@ -55,6 +47,7 @@ export const GridActionsComponent = (
       >
         Edit
       </Button>
+      {props.children}
       <Button
         size="small"
         variant="contained"
@@ -67,7 +60,7 @@ export const GridActionsComponent = (
         <DialogTitle>Warning</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {warningMessage}
+            {props.warningMessage}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
