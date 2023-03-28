@@ -389,20 +389,20 @@ export const presetsColumns = ({
       {
         field: "pc_description",
         headerName: "Config description",
-        width: 300,
+        width: 400,
         align: "center",
         headerAlign: "center"
       },
       {
         field: "pc_config",
-        headerName: "Config",
-        width: 220,
+        headerName: "Metrics",
+        width: 120,
         align: "center",
         headerAlign: "center",
         renderCell: (params) => {
           const configRows: PresetConfigRows[] = [];
 
-          Object.entries(params.value).map(([key, value]) => configRows.push({ id: key, key: key.toUpperCase(), value: Number(value) }));
+          Object.entries(params.value).map(([key, value]) => configRows.push({ id: key, metric: key.toUpperCase(), interval: Number(value) }));
 
           return PcConfig(configRows);
         }
@@ -448,15 +448,15 @@ const pcConfigColumns = (): GridColDef[] => {
         hide: true
       },
       {
-        field: "key",
-        headerName: "Key",
+        field: "metric",
+        headerName: "Metric",
         flex: 1,
         align: "center",
         headerAlign: "center"
       },
       {
-        field: "value",
-        headerName: "Value",
+        field: "interval",
+        headerName: "Update interval",
         flex: 1,
         align: "center",
         headerAlign: "center"
@@ -470,7 +470,7 @@ function PcConfig(configRows: PresetConfigRows[]) {
 
   return (
     <Box width="100%" height="100%" display="flex" alignItems="center" justifyContent="space-around">
-      <Typography>{`params quantity: ${configRows.length}`}</Typography>
+      <Typography>{configRows.length}</Typography>
       <Tooltip title="Details">
         <IconButton
           onClick={() => setDialogOpen(true)}
@@ -489,7 +489,7 @@ function PcConfig(configRows: PresetConfigRows[]) {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} size="large" variant="contained" endIcon={<CloseIcon />}>Close</Button>
+          <Button onClick={() => setDialogOpen(false)} size="large" variant="contained" startIcon={<CloseIcon />}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
