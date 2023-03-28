@@ -115,13 +115,7 @@ export const metricsColumns = ({
           deleteRecord={deleteRecord}
           deleteParameter={params.row.m_id}
           warningMessage={`Are you sure you want to delete metric named "${params.row.m_name}", version: ${params.row.m_pg_version_from}`}
-        >
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<ContentCopyIcon />}
-          >Clone</Button>
-        </GridActionsComponent>
+        />
       ),
       headerAlign: "center"
     }
