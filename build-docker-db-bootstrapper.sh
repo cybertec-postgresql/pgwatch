@@ -1,4 +1,4 @@
 #!/bin/bash
-docker build --no-cache \
+docker build \
  -t cybertec/pgwatch3-db-bootstrapper:latest \
  -f docker/Dockerfile-db-bootstrapper .
