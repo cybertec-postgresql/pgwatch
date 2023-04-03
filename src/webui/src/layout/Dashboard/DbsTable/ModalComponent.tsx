@@ -38,23 +38,31 @@ type Props = {
   open: boolean,
   setOpen: Dispatch<SetStateAction<boolean>>,
   handleAlertOpen: (text: string, type: AlertColor) => void,
-  recordData: Db | undefined;
+  recordData: Db | undefined,
+  action: "NEW" | "EDIT" | "DUPLICATE"
 };
 
-export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData }: Props) => {
+export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData, action }: Props) => {
   const services = DbService.getInstance();
   const queryClient = useQueryClient();
   const methods = useForm<createDbForm>();
-  const { handleSubmit, reset, setValue, clearErrors } = methods;
+  const { handleSubmit, reset, setValue } = methods;
 
   useEffect(() => {
-    if (recordData) {
-      clearErrors();
-      Object.entries(recordData).map(([key, value]) => setValue(key as FieldPath<createDbForm>, convertValue(value)));
-    } else {
-      reset();
-    };
-  }, [recordData, setValue, reset, clearErrors]);
+    switch (action) {
+      case "NEW":
+        reset();
+        break;
+      case "EDIT":
+        reset();
+        Object.entries(recordData!).map(([key, value]) => setValue(key as FieldPath<createDbForm>, convertValue(value)));
+        break;
+      case "DUPLICATE":
+        reset();
+        Object.entries(recordData!).map(([key, value]) => setValue(key as FieldPath<createDbForm>, key === "md_unique_name" ? "" : convertValue(value)));
+        break;
+    }
+  }, [action, recordData, reset, setValue]);
 
   const convertValue = (value: any): any => {
     if (typeof value === "object" && value !== null) {
@@ -95,9 +103,9 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData }: P
   });
 
   const onSubmit: SubmitHandler<createDbForm> = (result) => {
-    if (recordData) {
+    if (action === "EDIT") {
       updateRecord.mutate({
-        md_unique_name: recordData.md_unique_name,
+        md_unique_name: recordData!.md_unique_name,
         data: result
       });
     } else {
@@ -114,7 +122,7 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData }: P
       fullWidth
       maxWidth="md"
     >
-      <DialogTitle>{recordData ? "Edit monitored database" : "Add new database to monitoring"}</DialogTitle>
+      <DialogTitle>{action === "EDIT" ? "Edit monitored database" : "Add new database to monitoring"}</DialogTitle>
       <FormProvider {...methods}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
@@ -122,7 +130,7 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData }: P
           </DialogContent>
           <DialogActions>
             <Button fullWidth onClick={handleClose} size="medium" variant="outlined" startIcon={<CloseIcon />}>Cancel</Button>
-            <Button fullWidth type="submit" size="medium" variant="contained" startIcon={<DoneIcon />}>{recordData ? "Submit changes" : "Start monitoring"}</Button>
+            <Button fullWidth type="submit" size="medium" variant="contained" startIcon={<DoneIcon />}>{action === "EDIT" ? "Submit changes" : "Start monitoring"}</Button>
           </DialogActions>
         </form>
       </FormProvider>
