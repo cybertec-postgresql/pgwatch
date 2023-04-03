@@ -54,12 +54,12 @@ ADD grafana_dashboards /pgwatch3/grafana_dashboards
 
 
 # Set up supervisord [https://docs.docker.com/engine/admin/using_supervisord/]
-COPY supervisord-postgres.conf /etc/supervisor/supervisord.conf
+COPY docker/supervisord-postgres.conf /etc/supervisor/supervisord.conf
 
 # NB! When security is a concern one should definitely alter "pgwatch3" password in change_pw.sql and maybe modify pg_hba.conf accordingly
-COPY postgresql.conf /etc/postgresql/14/main/pgwatch_postgresql.conf
-COPY pg_hba.conf /etc/postgresql/14/main/pg_hba.conf
-COPY docker-launcher-postgres.sh postgresql.conf pg_hba.conf /pgwatch3/
+COPY docker/postgresql.conf /etc/postgresql/14/main/pgwatch_postgresql.conf
+COPY docker/pg_hba.conf /etc/postgresql/14/main/pg_hba.conf
+COPY docker/docker-launcher-postgres.sh docker/postgresql.conf docker/pg_hba.conf /pgwatch3/
 
 ENV PW3_DATASTORE postgres
 ENV PW3_PG_METRIC_STORE_CONN_STR postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
