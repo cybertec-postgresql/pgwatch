@@ -52,9 +52,7 @@ function start_pg {
   # postgresql.conf changes
   echo "shared_preload_libraries='pg_stat_statements'" | sudo tee -a $MASTER_VOL_PATH/postgresql.conf
   echo "track_functions='pl'" | sudo tee -a $MASTER_VOL_PATH/postgresql.conf
-  if (( $(echo "$full_ver > 9.1" |bc -l) )); then
-    echo "track_io_timing='on'" | sudo tee -a $MASTER_VOL_PATH/postgresql.conf
-  fi
+  echo "track_io_timing='on'" | sudo tee -a $MASTER_VOL_PATH/postgresql.conf
 
   PW3_USER=$(psql -U postgres -h localhost -p $port -XAtc "select count(*) from pg_roles where rolname = 'pgwatch3'")
   if [ $? -ne 0 ] || [ "$PW3_USER" -ne 1 ]; then
@@ -99,21 +97,15 @@ function start_pg {
   fi
 }
 
-PGVERS="0 1 2 3 4 5 6 10 11 12"
+PGVERS="11 12 13 14 15"
 
 if [ -n "$1" ]; then
   PGVERS="$1"
 fi
 
 for x in $PGVERS ; do
-
-  if [ ${x} -lt 10 ]; then
-    ver="9${x}"
-    full_ver="9.${x}"
-  else
-    ver=${x}
-    full_ver=${x}
-  fi
+  ver=${x}
+  full_ver=${x}
   port="543${ver}"
 
   master_running=$(docker ps -q --filter "name=pg${ver}")

@@ -1,3 +1,8 @@
+# Build web UI
+FROM node:19 AS uibuilder
+ADD src/webui /webui
+RUN cd webui && yarn install && yarn build
+
 FROM golang:alpine AS builder
 
 # For showing Git version via 'pgwatch3 --version'
@@ -26,6 +31,7 @@ RUN go mod download
 
 # Copy the code into the container
 COPY src/. .
+COPY --from=uibuilder /webui/build webui/build
 RUN sh build_gatherer.sh
 
 FROM alpine

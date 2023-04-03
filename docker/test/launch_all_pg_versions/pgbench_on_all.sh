@@ -5,7 +5,7 @@ RATE=0.1
 SCALE=1
 DB=postgres
 
-for ver in 9{0..6} {10..12} ; do
+for ver in {11..15} ; do
 
   echo "doing pgbench init for ${ver} ..."
   pgbench -h localhost -U postgres -p "543${ver}" -i $DB
