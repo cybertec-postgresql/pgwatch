@@ -10,7 +10,7 @@ import { UseMutationResult } from "@tanstack/react-query";
 type Props = {
   data: any,
   setEditData: React.Dispatch<React.SetStateAction<any>>
-  handleModalOpen: () => void,
+  handleModalOpen: (state: "NEW" | "EDIT" | "DUPLICATE") => void,
   deleteRecord: UseMutationResult<any, any, any, unknown>,
   deleteParameter: number | string,
   warningMessage: string,
@@ -22,7 +22,7 @@ export const GridActionsComponent = (props: Props) => {
 
   const handleEditClick = () => {
     props.setEditData(props.data);
-    props.handleModalOpen();
+    props.handleModalOpen("EDIT");
   };
 
   const handleDeleteClick = () => {
