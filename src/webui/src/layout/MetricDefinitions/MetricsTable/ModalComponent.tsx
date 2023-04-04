@@ -149,6 +149,7 @@ const ModalContent = () => {
                 helperText={error?.message}
                 type="text"
                 label="Name"
+                title="Metric name. Lowercase alphanumerics and underscores allowed."
                 fullWidth
               />
             )}
@@ -177,6 +178,7 @@ const ModalContent = () => {
                     step: "0.1"
                   }
                 }}
+                title="Version from"
                 fullWidth
               />
             )}
@@ -192,6 +194,7 @@ const ModalContent = () => {
                 {...field}
                 type="text"
                 label="Comment"
+                title="Comment"
                 fullWidth
               />
             )}
@@ -205,6 +208,7 @@ const ModalContent = () => {
                 {...field}
                 type="text"
                 label="Column attributes"
+                title="Column attributes. Use to specify Prometheus Gauge type columns. 'Gauge' means non-cumulative columns."
                 fullWidth
               />
             )}
@@ -309,6 +313,7 @@ const ModalContent = () => {
               multiline
               minRows={5}
               maxRows={5}
+              title="SQL for metric"
               fullWidth
             />
           )}
@@ -325,6 +330,7 @@ const ModalContent = () => {
               multiline
               minRows={5}
               maxRows={5}
+              title="Privileged (superuser or pg_monitor grant) SQL for metric"
               fullWidth
             />
           )}

@@ -24,6 +24,7 @@ export const DbsTable = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [severity, setSeverity] = useState<AlertColor>();
   const [editData, setEditData] = useState<Db>();
+  const [action, setAction] = useState<"NEW" | "EDIT" | "DUPLICATE">("NEW");
 
   const { status, data, error } = useQuery<Db[]>({
     queryKey: QueryKeys.db,
@@ -59,7 +60,8 @@ export const DbsTable = () => {
     setAlertOpen(false);
   };
 
-  const handleModalOpen = () => {
+  const handleModalOpen = (state: "NEW" | "EDIT" | "DUPLICATE") => {
+    setAction(state);
     setModalOpen(true);
   };
 
@@ -99,7 +101,7 @@ export const DbsTable = () => {
         components={{ Toolbar: () => <GridToolbarComponent handleModalOpen={handleModalOpen} setEditData={setEditData} /> }}
         disableColumnMenu
       />
-      <ModalComponent open={modalOpen} setOpen={setModalOpen} handleAlertOpen={handleAlertOpen} recordData={editData} />
+      <ModalComponent open={modalOpen} setOpen={setModalOpen} handleAlertOpen={handleAlertOpen} recordData={editData} action={action} />
     </Box>
   );
 };

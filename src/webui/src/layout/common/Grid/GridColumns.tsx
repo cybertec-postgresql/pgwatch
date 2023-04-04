@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import CloseIcon from "@mui/icons-material/Close";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, IconButton, Tooltip, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
@@ -123,7 +124,7 @@ export const metricsColumns = ({
 
 type databasesColumnsProps = {
   setEditData: React.Dispatch<React.SetStateAction<Db | undefined>>,
-  handleModalOpen: () => void,
+  handleModalOpen: (state: "NEW" | "EDIT" | "DUPLICATE") => void,
   deleteRecord: UseMutationResult<any, any, any, unknown>
 };
 
@@ -351,7 +352,7 @@ export const databasesColumns = ({
       field: "md_actions",
       headerName: "Actions",
       type: "actions",
-      width: 200,
+      width: 330,
       renderCell: (params: GridRenderCellParams<string>) => (
         <GridActionsComponent
           data={params.row}
@@ -360,7 +361,19 @@ export const databasesColumns = ({
           deleteRecord={deleteRecord}
           deleteParameter={params.row.md_unique_name}
           warningMessage={`Remove DB "${params.row.md_unique_name}" from monitoring? NB! This does not remove gathered metrics data from InfluxDB, see bottom of page for that`}
-        />
+        >
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<ContentCopyIcon />}
+            onClick={() => {
+              setEditData(params.row);
+              handleModalOpen("DUPLICATE");
+            }}
+          >
+            Duplicate
+          </Button>
+        </GridActionsComponent>
       )
     }
   ];

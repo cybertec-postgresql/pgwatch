@@ -3,14 +3,14 @@ import { Button } from "@mui/material";
 import { GridToolbarColumnsButton, GridToolbarContainer, GridToolbarFilterButton } from "@mui/x-data-grid";
 
 type Props = {
-  handleModalOpen: () => void,
+  handleModalOpen: (state: "NEW" | "EDIT" | "DUPLICATE") => void,
   setEditData: React.Dispatch<React.SetStateAction<any>>
 }
 
 export const GridToolbarComponent = ({ handleModalOpen, setEditData }: Props) => {
 
   const handleNewClick = () => {
-    handleModalOpen();
+    handleModalOpen("NEW");
     setEditData(undefined);
   };
 
