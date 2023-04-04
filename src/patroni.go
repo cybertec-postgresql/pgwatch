@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"os"
@@ -12,8 +14,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/config"
 	consul_api "github.com/hashicorp/consul/api"
 	"github.com/samuel/go-zookeeper/zk"
-	client "go.etcd.io/etcd/client/v2"
-	"go.etcd.io/etcd/pkg/transport"
+	client "go.etcd.io/etcd/client/v3"
 )
 
 type PatroniClusterMember struct {
@@ -79,59 +80,62 @@ func getConsulClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember
 	return ret, nil
 }
 
+func getTransport(conf HostConfigAttrs) (*tls.Config, error) {
+	var caCertPool *x509.CertPool
+
+	// create valid CertPool only if the ca certificate file exists
+	if conf.CAFile != "" {
+		caCert, err := os.ReadFile(conf.CAFile)
+		if err != nil {
+			return nil, fmt.Errorf("cannot load CA file: %s", err)
+		}
+
+		caCertPool = x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+	}
+
+	var certificates []tls.Certificate
+
+	// create valid []Certificate only if the client cert and key files exists
+	if conf.CertFile != "" && conf.KeyFile != "" {
+		cert, err := tls.LoadX509KeyPair(conf.CertFile, conf.KeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("cannot load client cert or key file: %s", err)
+		}
+
+		certificates = []tls.Certificate{cert}
+	}
+
+	tlsClientConfig := new(tls.Config)
+
+	if caCertPool != nil {
+		tlsClientConfig.RootCAs = caCertPool
+		if certificates != nil {
+			tlsClientConfig.Certificates = certificates
+		}
+	}
+
+	return tlsClientConfig, nil
+}
+
 func getEtcdClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var cfg client.Config
-	var CAFile = database.HostConfig.CAFile
-	var CertFile = database.HostConfig.CertFile
-	var KeyFile = database.HostConfig.KeyFile
 
 	if len(database.HostConfig.DcsEndpoints) == 0 {
 		return ret, errors.New("Missing ETCD connect info, make sure host config has a 'dcs_endpoints' key")
 	}
 
-	if database.HostConfig.CAFile != "" || database.HostConfig.KeyFile != "" || database.HostConfig.CertFile != "" {
-		if database.HostConfig.CAFile != "" {
-			if _, err := os.Stat(database.HostConfig.CAFile); os.IsNotExist(err) {
-				logger.Warningf("Configured CAFile for Patroni cluster '%s' not found, ignoring the file: %s", database.DBUniqueName, database.HostConfig.CAFile)
-				CAFile = ""
-			}
-		}
-		if database.HostConfig.CertFile != "" {
-			if _, err := os.Stat(database.HostConfig.CertFile); os.IsNotExist(err) {
-				logger.Warningf("Configured CertFile for Patroni cluster '%s' not found, ignoring the file: %s", database.DBUniqueName, database.HostConfig.CertFile)
-				CertFile = ""
-			}
-		}
-		if database.HostConfig.KeyFile != "" {
-			if _, err := os.Stat(database.HostConfig.KeyFile); os.IsNotExist(err) {
-				logger.Warningf("Configured KeyFile for Patroni cluster '%s' not found, ignoring the file: %s", database.DBUniqueName, database.HostConfig.KeyFile)
-				KeyFile = ""
-			}
-		}
-		tls := transport.TLSInfo{
-			TrustedCAFile: CAFile,
-			CertFile:      CertFile,
-			KeyFile:       KeyFile,
-		}
-		//log.Debugf("Setting ETCD TLS config for %s: %+v", database.DBUniqueName, tls)
-		dialTimeout := 10 * time.Second
-		etcdTransport, _ := transport.NewTransport(tls, dialTimeout)
-		cfg = client.Config{
-			Endpoints:               database.HostConfig.DcsEndpoints,
-			Transport:               etcdTransport,
-			HeaderTimeoutPerRequest: time.Second,
-			Username:                database.HostConfig.Username,
-			Password:                database.HostConfig.Password,
-		}
-	} else {
-		cfg = client.Config{
-			Endpoints:               database.HostConfig.DcsEndpoints,
-			Transport:               client.DefaultTransport,
-			HeaderTimeoutPerRequest: time.Second,
-			Username:                database.HostConfig.Username,
-			Password:                database.HostConfig.Password,
-		}
+	tlsConfig, err := getTransport(database.HostConfig)
+	if err != nil {
+		return nil, err
+	}
+	cfg = client.Config{
+		Endpoints:            database.HostConfig.DcsEndpoints,
+		TLS:                  tlsConfig,
+		DialKeepAliveTimeout: time.Second,
+		Username:             database.HostConfig.Username,
+		Password:             database.HostConfig.Password,
 	}
 
 	c, err := client.New(cfg)
@@ -139,27 +143,22 @@ func getEtcdClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, 
 		logger.Errorf("[%s ]Could not connect to ETCD: %v", database.DBUniqueName, err)
 		return ret, err
 	}
-	kapi := client.NewKeysAPI(c)
+	kapi := c.KV
 
 	if database.DBType == config.DbTypePatroniNamespaceDiscovery { // all scopes, all DBs (regex filtering applies if defined)
 		if len(database.DBName) > 0 {
-			logger.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName)
 			return ret, fmt.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName)
 		}
 		if database.HostConfig.Namespace == "" {
-			logger.Errorf("Skipping Patroni entry %s - search 'namespace' not specified", database.DBUniqueName)
 			return ret, fmt.Errorf("Skipping Patroni entry %s - search 'namespace' not specified", database.DBUniqueName)
 		}
-		logger.Errorf("Scanning ETCD namespace %s for clusters to track...", database.HostConfig.Namespace)
-		resp, err := kapi.Get(context.Background(), database.HostConfig.Namespace, &client.GetOptions{Recursive: true})
+		resp, err := kapi.Get(context.Background(), database.HostConfig.Namespace)
 		if err != nil {
-			logger.Error("Could not read Patroni scopes from ETCD:", err)
 			return ret, err
 		}
 
-		for _, node := range resp.Node.Nodes {
-			logger.Errorf("[%s] Patroni namespace discovery - found a scope from etcd: %+v", database.DBUniqueName, node.Key)
-			scope := path.Base(node.Key) // Key="/service/batman"
+		for _, node := range resp.Kvs {
+			scope := path.Base(string(node.Key)) // Key="/service/batman"
 			scopeMembers, err := extractEtcdScopeMembers(database, scope, kapi, true)
 			if err != nil {
 				continue
@@ -176,21 +175,20 @@ func getEtcdClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, 
 	return ret, nil
 }
 
-func extractEtcdScopeMembers(database MonitoredDatabase, scope string, kapi client.KeysAPI, addScopeToName bool) ([]PatroniClusterMember, error) {
+func extractEtcdScopeMembers(database MonitoredDatabase, scope string, kapi client.KV, addScopeToName bool) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var name string
 	membersPath := path.Join(database.HostConfig.Namespace, scope, "members")
 
-	resp, err := kapi.Get(context.Background(), membersPath, &client.GetOptions{Recursive: true})
+	resp, err := kapi.Get(context.Background(), membersPath)
 	if err != nil {
-		logger.Errorf("Could not read Patroni members from ETCD for %s scope %s: %v", database.DBUniqueName, scope, err)
 		return nil, err
 	}
 	logger.Debugf("ETCD response for %s scope %s: %+v", database.DBUniqueName, scope, resp)
 
-	for _, node := range resp.Node.Nodes {
+	for _, node := range resp.Kvs {
 		logger.Debugf("Found a cluster member from etcd [%s:%s]: %+v", database.DBUniqueName, scope, node.Value)
-		nodeData, err := jsonTextToStringMap(node.Value)
+		nodeData, err := jsonTextToStringMap(string(node.Value))
 		if err != nil {
 			logger.Errorf("Could not parse ETCD node data for node \"%s\": %s", node, err)
 			continue
@@ -198,9 +196,9 @@ func extractEtcdScopeMembers(database MonitoredDatabase, scope string, kapi clie
 		role := nodeData["role"]
 		connURL := nodeData["conn_url"]
 		if addScopeToName {
-			name = scope + "_" + path.Base(node.Key)
+			name = scope + "_" + path.Base(string(node.Key))
 		} else {
-			name = path.Base(node.Key)
+			name = path.Base(string(node.Key))
 		}
 
 		ret = append(ret, PatroniClusterMember{Scope: scope, ConnURL: connURL, Role: role, Name: name})
@@ -217,14 +215,12 @@ func getZookeeperClusterMembers(database MonitoredDatabase) ([]PatroniClusterMem
 
 	c, _, err := zk.Connect(database.HostConfig.DcsEndpoints, time.Second, zk.WithLogInfo(false))
 	if err != nil {
-		logger.Error("Could not connect to Zookeeper", err)
 		return ret, err
 	}
 	defer c.Close()
 
 	members, _, err := c.Children(path.Join(database.HostConfig.Namespace, database.HostConfig.Scope, "members"))
 	if err != nil {
-		logger.Error("Could not read Patroni members from Zookeeper:", err)
 		return ret, err
 	}
 

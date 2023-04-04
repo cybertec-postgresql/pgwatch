@@ -90,7 +90,7 @@ export const PresetsTable = () => {
         <Alert sx={{ width: "auto" }} variant="filled" severity={severity}>{alertText}</Alert>
       </Snackbar>
       <Typography variant="h5">
-        Configs
+        Preset configs
       </Typography>
       <DataGrid
         getRowId={(row) => row.pc_name}

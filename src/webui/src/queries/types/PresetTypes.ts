@@ -7,6 +7,6 @@ export type Preset = {
 
 export type PresetConfigRows = {
   id: string,
-  key: string,
-  value: number
+  metric: string,
+  interval: number
 };
