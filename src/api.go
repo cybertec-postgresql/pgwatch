@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 )
 
 type uiapihandler struct{}
@@ -51,24 +53,6 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 	return err
 }
 
-// UpdateMetric updates the stored metric information
-func (uiapi uiapihandler) UpdateMetric(id int, params []byte) error {
-	sql := `UPDATE pgwatch3.metric SET
-(m_name, m_pg_version_from, m_sql, m_comment, m_is_active, m_is_helper, 
-m_master_only, m_standby_only, m_column_attrs, m_sql_su)
-= ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-WHERE m_id = $11`
-	var m map[string]any
-	err := json.Unmarshal(params, &m)
-	if err == nil {
-		_, err = configDb.Exec(sql, m["m_name"], m["m_pg_version_from"],
-			m["m_sql"], m["m_comment"], m["m_is_active"],
-			m["m_is_helper"], m["m_master_only"], m["m_standby_only"],
-			m["m_column_attrs"], m["m_sql_su"], id)
-	}
-	return err
-}
-
 // GetDatabases returns the list of monitored databases
 func (uiapi uiapihandler) GetDatabases() (res string, err error) {
 	sql := `select coalesce(jsonb_agg(to_jsonb(db)), '[]') from monitored_db db`
@@ -99,20 +83,46 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 	return err
 }
 
+// UpdateMetric updates the stored metric information
+func (uiapi uiapihandler) UpdateMetric(id int, params []byte) error {
+	fields, values, err := paramsToFieldValues(params)
+	if err != nil {
+		return err
+	}
+	sql := fmt.Sprintf(`UPDATE pgwatch3.metric SET %s WHERE m_id = $1`, strings.Join(fields, ","))
+	values = append([]any{id}, values...)
+	_, err = configDb.Exec(sql, values...)
+	return err
+}
+
 // UpdateDatabase updates the monitored database information
 func (uiapi uiapihandler) UpdateDatabase(database string, params []byte) error {
-	sql := `UPDATE pgwatch3.monitored_db SET
-md_unique_name = $1, md_preset_config_name = $2, md_config = $3, md_hostname = $4, 
-md_port = $5, md_dbname = $6, md_user = $7, md_password = $8, md_is_superuser = $9,
-md_is_enabled = $10
-WHERE md_unique_name = $11`
-	var m map[string]any
-	err := json.Unmarshal(params, &m)
-	if err == nil {
-		_, err = configDb.Exec(sql,
-			m["md_unique_name"], m["md_preset_config_name"], m["md_config"],
-			m["md_hostname"], m["md_port"], m["md_dbname"], m["md_user"],
-			m["md_password"], m["md_is_superuser"], m["md_is_enabled"], database)
+	fields, values, err := paramsToFieldValues(params)
+	if err != nil {
+		return err
 	}
+	sql := fmt.Sprintf(`UPDATE pgwatch3.monitored_db SET %s WHERE md_unique_name = $1`, strings.Join(fields, ","))
+	values = append([]any{database}, values...)
+	_, err = configDb.Exec(sql, values...)
 	return err
+}
+
+// paramsToFieldValues tranforms JSON body into arrays to be used in UPDATE statement
+func paramsToFieldValues(params []byte) (fields []string, values []any, err error) {
+	var paramsMap map[string]any
+	err = json.Unmarshal(params, &paramsMap)
+	if err != nil {
+		return
+	}
+	i := 2 // start with the second parameter number, first is reserved for WHERE key value
+	for k, v := range paramsMap {
+		fields = append(fields, fmt.Sprintf("%s = $%d", quoteIdent(k), i))
+		values = append(values, v)
+		i++
+	}
+	return
+}
+
+func quoteIdent(s string) string {
+	return `"` + strings.Replace(s, `"`, `""`, -1) + `"`
 }

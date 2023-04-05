@@ -8,12 +8,15 @@ import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
 import { UseMutationResult } from "@tanstack/react-query";
 
+import { AxiosResponse } from 'axios';
+
 import moment from "moment";
 
-import { Db } from "queries/types/DbTypes";
+import { Db, updateEnabledDbForm } from "queries/types/DbTypes";
 import { Metric } from "queries/types/MetricTypes";
 import { Preset, PresetConfigRows } from "queries/types/PresetTypes";
 
+import { DbEnableSwitchComponent } from '../DbEnableSwitchComponent';
 import { GridActionsComponent } from "./GridActionsComponent";
 
 type metricsColumnsProps = {
@@ -125,13 +128,15 @@ export const metricsColumns = ({
 type databasesColumnsProps = {
   setEditData: React.Dispatch<React.SetStateAction<Db | undefined>>,
   handleModalOpen: (state: "NEW" | "EDIT" | "DUPLICATE") => void,
-  deleteRecord: UseMutationResult<any, any, any, unknown>
+  deleteRecord: UseMutationResult<any, any, any, unknown>,
+  editEnable: UseMutationResult<AxiosResponse<any, any>, any, updateEnabledDbForm, unknown>
 };
 
 export const databasesColumns = ({
   setEditData,
   handleModalOpen,
-  deleteRecord
+  deleteRecord,
+  editEnable
 }: databasesColumnsProps): GridColDef[] => {
   return [
     {
@@ -344,7 +349,7 @@ export const databasesColumns = ({
       headerName: "Enabled?",
       type: "boolean",
       width: 120,
-      renderCell: (params: GridRenderCellParams<boolean>) => <Checkbox checked={params.value} disableRipple />,
+      renderCell: (params: GridRenderCellParams<boolean>) => <DbEnableSwitchComponent id={params.row.md_unique_name} value={params.value!} editEnable={editEnable} />,
       align: "center",
       headerAlign: "center"
     },

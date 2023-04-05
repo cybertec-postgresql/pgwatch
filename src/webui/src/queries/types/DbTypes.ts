@@ -62,3 +62,10 @@ export type updateDbForm = {
   md_unique_name: string,
   data: createDbForm
 };
+
+export type updateEnabledDbForm = {
+  md_unique_name: string,
+  data: {
+    md_is_enabled: boolean
+  }
+};

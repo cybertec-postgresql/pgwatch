@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createDbForm, updateDbForm } from "queries/types/DbTypes";
+import { createDbForm, updateDbForm, updateEnabledDbForm } from "queries/types/DbTypes";
 
 export default class DbService {
   private static _instance: DbService;
@@ -37,6 +37,14 @@ export default class DbService {
   };
 
   public async editMonitoredDb(data: updateDbForm) {
+    return await axios.patch("/db", data.data, { params: { "id": data.md_unique_name } }).
+      then(response => response).
+      catch(error => {
+        throw error;
+      });
+  };
+
+  public async editEnabledDb(data: updateEnabledDbForm) {
     return await axios.patch("/db", data.data, { params: { "id": data.md_unique_name } }).
       then(response => response).
       catch(error => {

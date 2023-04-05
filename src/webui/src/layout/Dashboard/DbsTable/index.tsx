@@ -12,7 +12,7 @@ import { GridToolbarComponent } from "layout/common/Grid/GridToolbarComponent";
 import { LoadingComponent } from "layout/common/LoadingComponent";
 
 import { QueryKeys } from "queries/queryKeys";
-import { Db } from "queries/types/DbTypes";
+import { Db, updateEnabledDbForm } from "queries/types/DbTypes";
 import DbService from "services/Db";
 
 import { ModalComponent } from "./ModalComponent";
@@ -46,6 +46,23 @@ export const DbsTable = () => {
     }
   });
 
+  const editEnable = useMutation({
+    mutationFn: async (updatedData: updateEnabledDbForm) => {
+      return await services.editEnabledDb(updatedData);
+    },
+    onSuccess: (_response, variables: updateEnabledDbForm) => {
+      queryClient.invalidateQueries({ queryKey: QueryKeys.db });
+      handleAlertOpen(
+        variables.data.md_is_enabled ?
+          `'${variables.md_unique_name}' database monitoring enabled successfully!` : `'${variables.md_unique_name}' database monitoring disabled successfully!`,
+        "success"
+      );
+    },
+    onError: (resultError: any) => {
+      handleAlertOpen(resultError.response.data, "error");
+    }
+  });
+
   const handleAlertOpen = (text: string, type: AlertColor) => {
     setSeverity(type);
     setAlertText(text);
@@ -69,7 +86,8 @@ export const DbsTable = () => {
     {
       setEditData,
       handleModalOpen,
-      deleteRecord
+      deleteRecord,
+      editEnable
     }
   );
 
@@ -100,6 +118,11 @@ export const DbsTable = () => {
         rowsPerPageOptions={[]}
         components={{ Toolbar: () => <GridToolbarComponent handleModalOpen={handleModalOpen} setEditData={setEditData} /> }}
         disableColumnMenu
+        initialState={{
+          sorting: {
+            sortModel: [{ field: "md_unique_name", sort: "asc" }]
+          }
+        }}
       />
       <ModalComponent open={modalOpen} setOpen={setModalOpen} handleAlertOpen={handleAlertOpen} recordData={editData} action={action} />
     </Box>
