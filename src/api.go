@@ -12,7 +12,7 @@ var uiapi uiapihandler
 
 // GetPresets returns the list of monitored databases
 func (uiapi uiapihandler) GetPresets() (res string, err error) {
-	sql := `select coalesce(jsonb_agg(to_jsonb(p)), '[]') from preset_config p`
+	sql := `select coalesce(jsonb_agg(to_jsonb(p)), '[]') from pgwatch3.preset_config p`
 	err = configDb.Get(&res, sql)
 	return
 }
