@@ -1,8 +1,9 @@
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Autocomplete, AutocompleteRenderInputParams, Box, Button, IconButton, InputAdornment, Stack, TextField, Tooltip } from "@mui/material";
+import { Box, Button, IconButton, InputAdornment, Stack, TextField, Tooltip } from "@mui/material";
 
-import { Control, Controller, ControllerRenderProps, FieldPath, useFieldArray } from "react-hook-form";
+import { Control, Controller, useFieldArray } from "react-hook-form";
 
+import { AutocompleteComponent } from 'layout/common/AutocompleteComponent';
 import { ErrorComponent } from "layout/common/ErrorComponent";
 
 import { useUniqueMetrics } from "queries/Metric";
@@ -112,50 +113,5 @@ export const AddMetric = ({ control, handleValidate }: Props) => {
       ))}
       <Button variant="outlined" onClick={() => append({ metric: "", update_interval: 10 })}>Add metric</Button>
     </Stack>
-  );
-};
-
-type AutocompleteProps = {
-  field: ControllerRenderProps<CreatePresetConfigForm, FieldPath<CreatePresetConfigForm>>;
-  label: string;
-  options: { label: string }[];
-  error: boolean;
-  helperText?: string;
-  loading: boolean;
-};
-
-const AutocompleteComponent = ({
-  field: { value: initialValue, ...field },
-  label,
-  options,
-  error,
-  helperText,
-  loading
-}: AutocompleteProps) => {
-  const customInput = (params: AutocompleteRenderInputParams) => (
-    <TextField
-      {...params}
-      label={label}
-      error={error}
-      helperText={helperText}
-    />
-  );
-
-  let value = options.find(option => option.label === initialValue);
-
-  if (!value) {
-    value = { label: "" };
-  }
-
-  return (
-    <Autocomplete
-      {...field}
-      options={options}
-      value={value}
-      renderInput={customInput}
-      onChange={(_, data) => field.onChange(data?.label ? data.label : "")}
-      fullWidth
-      loading={loading}
-    />
   );
 };
