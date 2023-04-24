@@ -193,7 +193,7 @@ type ExtensionOverrides struct {
 
 type ExtensionInfo struct {
 	ExtName       string `yaml:"ext_name"`
-	ExtMinVersion uint   `yaml:"ext_min_version"`
+	ExtMinVersion string `yaml:"ext_min_version"`
 }
 
 const (
@@ -865,7 +865,7 @@ func GetMetricVersionProperties(metric string, vme DBVersionMapEntry, metricDefM
 				var matching = true
 				for _, extVer := range extOverride.ExpectedExtensionVersions { // "natural" sorting of metric definition assumed
 					installedExtVer, ok := vme.Extensions[extVer.ExtName]
-					if !ok || installedExtVer < extVer.ExtMinVersion {
+					if !ok || installedExtVer < VersionToInt(extVer.ExtMinVersion) {
 						matching = false
 					}
 				}
