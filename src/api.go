@@ -16,7 +16,8 @@ func (uiapi uiapihandler) AddPreset(params []byte) error {
 	var m map[string]any
 	err := json.Unmarshal(params, &m)
 	if err == nil {
-		_, err = configDb.Exec(sql, m["pc_name"], m["pc_description"], m["pc_config"])
+		config, _ := json.Marshal(m["pc_config"])
+		_, err = configDb.Exec(sql, m["pc_name"], m["pc_description"], config)
 	}
 	return err
 }
