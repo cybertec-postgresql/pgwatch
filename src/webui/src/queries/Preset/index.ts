@@ -6,7 +6,7 @@ import { queryClient } from "queryClient";
 import { UseFormReset } from "react-hook-form";
 
 import { QueryKeys } from "queries/queryKeys";
-import { CreatePresetConfigForm } from "queries/types/PresetTypes";
+import { CreatePresetConfigForm, CreatePresetConfigRequestForm } from "queries/types/PresetTypes";
 
 import PresetService from "services/Preset";
 
@@ -17,7 +17,7 @@ export const useAddPreset = (
   handleClose: () => void,
   reset: UseFormReset<CreatePresetConfigForm>
 ) => useMutation({
-  mutationFn: async (data: CreatePresetConfigForm) => await services.addPreset(data),
+  mutationFn: async (data: CreatePresetConfigRequestForm) => await services.addPreset(data),
   onSuccess: (_data, variables) => {
     handleClose();
     queryClient.invalidateQueries({ queryKey: QueryKeys.preset });
