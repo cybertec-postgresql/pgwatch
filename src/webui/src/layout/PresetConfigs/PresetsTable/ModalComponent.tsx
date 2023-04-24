@@ -7,7 +7,7 @@ import { AlertColor, Box, Button, Dialog, DialogActions, DialogContent, DialogTi
 import { Controller, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 
 import { useAddPreset } from "queries/Preset";
-import { CreatePresetConfigForm, Preset } from "queries/types/PresetTypes";
+import { CreatePresetConfigForm, CreatePresetConfigRequestForm, Preset } from "queries/types/PresetTypes";
 
 import { AddMetric } from "./AddMetric";
 
@@ -28,8 +28,14 @@ export const ModalComponent = ({ open, handleClose, recordData, handleAlertOpen 
   const { handleSubmit, reset } = methods;
   const addPreset = useAddPreset(handleAlertOpen, handleClose, reset);
 
+  const requestedForm = (result: CreatePresetConfigForm): CreatePresetConfigRequestForm => {
+    const config: Record<string, number> = {};
+    result.pc_config.map(({ metric, update_interval }) => config[metric] = update_interval);
+    return { ...result, pc_config: config };
+  };
+
   const onSubmit: SubmitHandler<CreatePresetConfigForm> = (result) => {
-    addPreset.mutate(result);
+    addPreset.mutate(requestedForm(result));
   };
 
   return (
