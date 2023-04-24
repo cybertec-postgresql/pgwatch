@@ -1,5 +1,5 @@
 import axios from "axios";
-import { CreatePresetConfigForm } from "queries/types/PresetTypes";
+import { CreatePresetConfigRequestForm } from "queries/types/PresetTypes";
 
 
 export default class PresetService {
@@ -29,7 +29,7 @@ export default class PresetService {
       });
   };
 
-  public async addPreset(data: CreatePresetConfigForm) {
+  public async addPreset(data: CreatePresetConfigRequestForm) {
     return await axios.post("/preset", data).
       then(response => response).
       catch(error => {
