@@ -33,10 +33,11 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/cybertec-postgresql/pgwatch3/webserver"
+	"github.com/shopspring/decimal"
 
 	"github.com/coreos/go-systemd/daemon"
 	"github.com/marpaia/graphite-golang"
-	"github.com/shopspring/decimal"
+
 	"golang.org/x/crypto/pbkdf2"
 	"gopkg.in/yaml.v2"
 )
@@ -170,12 +171,12 @@ type ChangeDetectionResults struct { // for passing around DDL/index/config chan
 type DBVersionMapEntry struct {
 	LastCheckedOn    time.Time
 	IsInRecovery     bool
-	Version          decimal.Decimal
+	Version          uint
 	VersionStr       string
 	RealDbname       string
 	SystemIdentifier string
 	IsSuperuser      bool // if true and no helpers are installed, use superuser SQL version of metric if available
-	Extensions       map[string]decimal.Decimal
+	Extensions       map[string]uint
 	ExecEnv          string
 	ApproxDBSizeB    int64
 }
@@ -191,8 +192,8 @@ type ExtensionOverrides struct {
 }
 
 type ExtensionInfo struct {
-	ExtName       string          `yaml:"ext_name"`
-	ExtMinVersion decimal.Decimal `yaml:"ext_min_version"`
+	ExtName       string `yaml:"ext_name"`
+	ExtMinVersion uint   `yaml:"ext_min_version"`
 }
 
 const (
@@ -256,7 +257,7 @@ var directlyFetchableOSMetrics = map[string]bool{metricPsutilCPU: true, metricPs
 var graphiteConnection *graphite.Graphite
 var graphiteHost string
 var graphitePort int
-var metricDefinitionMap map[string]map[decimal.Decimal]MetricVersionProperties
+var metricDefinitionMap map[string]map[uint]MetricVersionProperties
 var metricDefMapLock = sync.RWMutex{}
 var hostMetricIntervalMap = make(map[string]float64) // [db1_metric] = 30
 var dbPgVersionMap = make(map[string]DBVersionMapEntry)
@@ -298,13 +299,13 @@ var instanceMetricCache = make(map[string](MetricData)) // [dbUnique+metric]last
 var instanceMetricCacheLock = sync.RWMutex{}
 var instanceMetricCacheTimestamp = make(map[string]time.Time) // [dbUnique+metric]last_fetch_time
 var instanceMetricCacheTimestampLock = sync.RWMutex{}
-var MinExtensionInfoAvailable, _ = decimal.NewFromString("9.1")
+var MinExtensionInfoAvailable uint = 901
 var regexIsAlpha = regexp.MustCompile("^[a-zA-Z]+$")
 var rBouncerAndPgpoolVerMatch = regexp.MustCompile(`\d+\.+\d+`) // extract $major.minor from "4.1.2 (karasukiboshi)" or "PgBouncer 1.12.0"
 var regexIsPgbouncerMetrics = regexp.MustCompile(specialMetricPgbouncer)
 var unreachableDBsLock sync.RWMutex
 var unreachableDB = make(map[string]time.Time)
-var pgBouncerNumericCountersStartVersion decimal.Decimal // pgBouncer changed internal counters data type in v1.12
+var pgBouncerNumericCountersStartVersion uint // pgBouncer changed internal counters data type in v1.12
 
 // Async Prom cache
 var promAsyncMetricCache = make(map[string]map[string][]MetricStoreMessage) // [dbUnique][metric]lastly_fetched_data
@@ -324,6 +325,30 @@ var metricNameRemaps = make(map[string]string)
 var metricNameRemapLock = sync.RWMutex{}
 
 var logger log.LoggerHookerIface
+
+// VersionToInt parses a given version and returns an integer  or
+// an error if unable to parse the version. Only parses valid semantic versions.
+// Performs checking that can find errors within the version.
+// Examples: v1.2 -> 0102, v9.6.3 -> 0906, v11 -> 1100
+func VersionToInt(v string) uint {
+	if len(v) == 0 {
+		return 0
+	}
+	var major int
+	var minor int
+
+	matches := regexp.MustCompile(`(\d+).?(\d*)`).FindStringSubmatch(v)
+	if len(matches) == 0 {
+		return 0
+	}
+	if len(matches) > 1 {
+		major, _ = strconv.Atoi(matches[1])
+		if len(matches) > 2 {
+			minor, _ = strconv.Atoi(matches[2])
+		}
+	}
+	return uint(major*100 + minor)
+}
 
 func RestoreSQLConnPoolLimitsForPreviouslyDormantDB(dbUnique string) {
 	if !opts.UseConnPooling {
@@ -779,17 +804,16 @@ func MetricsPersister(dataStore string, storageCh <-chan []MetricStoreMessage) {
 	}
 }
 
-// Need to define a sort interface as Go doesn't have support for Numeric/Decimal
-type Decimal []decimal.Decimal
+type UIntSlice []uint
 
-func (a Decimal) Len() int           { return len(a) }
-func (a Decimal) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a Decimal) Less(i, j int) bool { return a[i].LessThan(a[j]) }
+func (x UIntSlice) Len() int           { return len(x) }
+func (x UIntSlice) Less(i, j int) bool { return x[i] < x[j] }
+func (x UIntSlice) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
 
 // assumes upwards compatibility for versions
-func GetMetricVersionProperties(metric string, vme DBVersionMapEntry, metricDefMap map[string]map[decimal.Decimal]MetricVersionProperties) (MetricVersionProperties, error) {
-	var keys []decimal.Decimal
-	var mdm map[string]map[decimal.Decimal]MetricVersionProperties
+func GetMetricVersionProperties(metric string, vme DBVersionMapEntry, metricDefMap map[string]map[uint]MetricVersionProperties) (MetricVersionProperties, error) {
+	var keys UIntSlice
+	var mdm map[string]map[uint]MetricVersionProperties
 
 	if metricDefMap != nil {
 		mdm = metricDefMap
@@ -809,24 +833,24 @@ func GetMetricVersionProperties(metric string, vme DBVersionMapEntry, metricDefM
 		keys = append(keys, k)
 	}
 
-	sort.Sort(Decimal(keys))
+	sort.Sort(keys)
 
-	var bestVer decimal.Decimal
-	var minVer decimal.Decimal
+	var bestVer uint
+	var minVer uint
 	var found bool
 	for _, ver := range keys {
-		if vme.Version.GreaterThanOrEqual(ver) {
+		if vme.Version >= ver {
 			bestVer = ver
 			found = true
 		}
-		if minVer.IsZero() || ver.LessThan(minVer) {
+		if minVer == 0 || ver < minVer {
 			minVer = ver
 		}
 	}
 
 	if !found {
-		if vme.Version.LessThan(minVer) { // metric not yet available for given PG ver
-			return MetricVersionProperties{}, fmt.Errorf("no suitable SQL found for metric \"%s\", server version \"%s\" too old. min defined SQL ver: %s", metric, vme.VersionStr, minVer.String())
+		if vme.Version < minVer { // metric not yet available for given PG ver
+			return MetricVersionProperties{}, fmt.Errorf("no suitable SQL found for metric \"%s\", server version \"%s\" too old. min defined SQL ver: %d", metric, vme.VersionStr, minVer)
 		}
 		return MetricVersionProperties{}, fmt.Errorf("no suitable SQL found for metric \"%s\", version \"%s\"", metric, vme.VersionStr)
 	}
@@ -841,7 +865,7 @@ func GetMetricVersionProperties(metric string, vme DBVersionMapEntry, metricDefM
 				var matching = true
 				for _, extVer := range extOverride.ExpectedExtensionVersions { // "natural" sorting of metric definition assumed
 					installedExtVer, ok := vme.Extensions[extVer.ExtName]
-					if !ok || !installedExtVer.GreaterThanOrEqual(extVer.ExtMinVersion) {
+					if !ok || installedExtVer < extVer.ExtMinVersion {
 						matching = false
 					}
 				}
@@ -908,7 +932,7 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (MetricData, tim
 		}
 		for _, d := range data {
 			d[epochColumnName] = startTimeEpochNs
-			d["major_ver"] = PgVersionDecimalToMajorVerFloat(dbUnique, vme.Version)
+			d["major_ver"] = vme.Version / 10
 			retData = append(retData, d)
 		}
 	}
@@ -918,18 +942,10 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (MetricData, tim
 		dummy["tag_object_name"] = "-"
 		dummy["recommendation"] = "no recommendations"
 		dummy[epochColumnName] = startTimeEpochNs
-		dummy["major_ver"] = PgVersionDecimalToMajorVerFloat(dbUnique, vme.Version)
+		dummy["major_ver"] = vme.Version / 10
 		retData = append(retData, dummy)
 	}
 	return retData, totalDuration, nil
-}
-
-func PgVersionDecimalToMajorVerFloat(_ string, pgVer decimal.Decimal) float64 {
-	verFloat, _ := pgVer.Float64()
-	if verFloat >= 10 {
-		return math.Floor(verFloat)
-	}
-	return verFloat
 }
 
 func FilterPgbouncerData(data MetricData, databaseToKeep string, vme DBVersionMapEntry) MetricData {
@@ -949,7 +965,7 @@ func FilterPgbouncerData(data MetricData, databaseToKeep string, vme DBVersionMa
 		dr["tag_database"] = dr["database"] // support multiple databases / pools via tags if DbName left empty
 		delete(dr, "database")              // remove the original pool name
 
-		if vme.Version.GreaterThanOrEqual(pgBouncerNumericCountersStartVersion) { // v1.12 counters are of type numeric instead of int64
+		if vme.Version >= pgBouncerNumericCountersStartVersion { // v1.12 counters are of type numeric instead of int64
 			for k, v := range dr {
 				if k == "tag_database" {
 					continue
@@ -970,7 +986,7 @@ func FilterPgbouncerData(data MetricData, databaseToKeep string, vme DBVersionMa
 
 func FetchMetrics(msg MetricFetchMessage, hostState map[string]map[string]string, storageCh chan<- []MetricStoreMessage, context string) ([]MetricStoreMessage, error) {
 	var vme DBVersionMapEntry
-	var dbpgVersion decimal.Decimal
+	var dbpgVersion uint
 	var err, firstErr error
 	var sql string
 	var retryWithSuperuserSQL = true
@@ -997,15 +1013,15 @@ func FetchMetrics(msg MetricFetchMessage, hostState map[string]map[string]string
 	dbpgVersion = vme.Version
 
 	if msg.DBType == config.DbTypeBouncer {
-		dbpgVersion = decimal.Decimal{} // version is 0.0 for all pgbouncer sql per convention
+		dbpgVersion = 0 // version is 0.0 for all pgbouncer sql per convention
 	}
 
 	mvp, err := GetMetricVersionProperties(msg.MetricName, vme, nil)
 	if err != nil && msg.MetricName != recoMetricName {
-		epoch, ok := lastSQLFetchError.Load(msg.MetricName + dbMetricJoinStr + dbpgVersion.String())
+		epoch, ok := lastSQLFetchError.Load(msg.MetricName + dbMetricJoinStr + fmt.Sprintf("%v", dbpgVersion))
 		if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) { // complain only 1x per hour
 			logger.Infof("Failed to get SQL for metric '%s', version '%s': %v", msg.MetricName, vme.VersionStr, err)
-			lastSQLFetchError.Store(msg.MetricName+dbMetricJoinStr+dbpgVersion.String(), time.Now().Unix())
+			lastSQLFetchError.Store(msg.MetricName+dbMetricJoinStr+fmt.Sprintf("%v", dbpgVersion), time.Now().Unix())
 		}
 		if strings.Contains(err.Error(), "too old") {
 			return nil, nil
@@ -1286,11 +1302,11 @@ func deepCopyMetricData(data MetricData) MetricData {
 	return newData
 }
 
-func deepCopyMetricDefinitionMap(mdm map[string]map[decimal.Decimal]MetricVersionProperties) map[string]map[decimal.Decimal]MetricVersionProperties {
-	newMdm := make(map[string]map[decimal.Decimal]MetricVersionProperties)
+func deepCopyMetricDefinitionMap(mdm map[string]map[uint]MetricVersionProperties) map[string]map[uint]MetricVersionProperties {
+	newMdm := make(map[string]map[uint]MetricVersionProperties)
 
 	for metric, verMap := range mdm {
-		newMdm[metric] = make(map[decimal.Decimal]MetricVersionProperties)
+		newMdm[metric] = make(map[uint]MetricVersionProperties)
 		for ver, mvp := range verMap {
 			newMdm[metric][ver] = mvp
 		}
@@ -1731,7 +1747,7 @@ func IsInDisabledTimeDayRange(localTime time.Time, metricAttrsDisabledDays strin
 	return false
 }
 
-func UpdateMetricDefinitionMap(newMetrics map[string]map[decimal.Decimal]MetricVersionProperties) {
+func UpdateMetricDefinitionMap(newMetrics map[string]map[uint]MetricVersionProperties) {
 	metricDefMapLock.Lock()
 	metricDefinitionMap = newMetrics
 	metricDefMapLock.Unlock()
@@ -1845,8 +1861,8 @@ func ParseMetricAttrsFromString(jsonAttrs string) MetricAttrs {
 }
 
 // expected is following structure: metric_name/pg_ver/metric(_master|standby).sql
-func ReadMetricsFromFolder(folder string, failOnError bool) (map[string]map[decimal.Decimal]MetricVersionProperties, error) {
-	metricsMap := make(map[string]map[decimal.Decimal]MetricVersionProperties)
+func ReadMetricsFromFolder(folder string, failOnError bool) (map[string]map[uint]MetricVersionProperties, error) {
+	metricsMap := make(map[string]map[uint]MetricVersionProperties)
 	metricNameRemapsNew := make(map[string]string)
 	rIsDigitOrPunctuation := regexp.MustCompile(`^[\d\.]+$`)
 	metricNamePattern := `^[a-z0-9_\.]+$`
@@ -1901,12 +1917,11 @@ func ReadMetricsFromFolder(folder string, failOnError bool) (map[string]map[deci
 					logger.Warningf("Invalid metric structure - version folder names should consist of only numerics/dots, found: %s", pgVer.Name())
 					continue
 				}
-				dirName, err := decimal.NewFromString(pgVer.Name())
-				if err != nil {
-					logger.Errorf("Could not parse \"%s\" to Decimal: %s", pgVer.Name(), err)
+				dirName := VersionToInt(pgVer.Name())
+				if dirName == 0 {
+					logger.Errorf("Could not parse \"%s\" to Decimal", pgVer.Name())
 					continue
 				}
-				//log.Debugf("Found %s", pgVer.Name())
 
 				metricDefs, err := os.ReadDir(path.Join(folder, f.Name(), pgVer.Name()))
 				if err != nil {
@@ -1933,7 +1948,7 @@ func ReadMetricsFromFolder(folder string, failOnError bool) (map[string]map[deci
 						mvpVer, ok := metricsMap[f.Name()]
 						var mvp MetricVersionProperties
 						if !ok {
-							metricsMap[f.Name()] = make(map[decimal.Decimal]MetricVersionProperties)
+							metricsMap[f.Name()] = make(map[uint]MetricVersionProperties)
 						}
 						mvp, ok = mvpVer[dirName]
 						if !ok {
@@ -2562,7 +2577,7 @@ func main() {
 			opts.Connection.PgRequireSSL, true)
 	}
 
-	pgBouncerNumericCountersStartVersion, _ = decimal.NewFromString("1.12")
+	pgBouncerNumericCountersStartVersion = VersionToInt("1.12")
 
 	if opts.InternalStatsPort > 0 && !opts.Ping {
 		l, err := net.Listen("tcp", fmt.Sprintf(":%d", opts.InternalStatsPort))
@@ -2659,7 +2674,7 @@ func main() {
 	mainLoopCount := 0
 	var monitoredDbs []MonitoredDatabase
 	var lastMetricsRefreshTime int64
-	var metrics map[string]map[decimal.Decimal]MetricVersionProperties
+	var metrics map[string]map[uint]MetricVersionProperties
 	var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 	var metricConfig map[string]float64                       // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 

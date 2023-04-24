@@ -19,7 +19,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/shirou/gopsutil/v3/disk"
-	"github.com/shopspring/decimal"
 )
 
 var configDb *sqlx.DB
@@ -1000,7 +999,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 	logger.Debugf("[%s][%s] determining DB version and recovery status...", dbUnique, dbType)
 
 	if verNew.Extensions == nil {
-		verNew.Extensions = make(map[string]decimal.Decimal)
+		verNew.Extensions = make(map[string]uint)
 	}
 
 	if dbType == config.DbTypeBouncer {
@@ -1010,7 +1009,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 		}
 		if len(data) == 0 {
 			// surprisingly pgbouncer 'show version' outputs in pre v1.12 is emitted as 'NOTICE' which cannot be accessed from Go lib/pg
-			verNew.Version, _ = decimal.NewFromString("0")
+			verNew.Version = 0
 			verNew.VersionStr = "0"
 		} else {
 			matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(data[0]["version"].(string))
@@ -1019,7 +1018,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 				return ver, fmt.Errorf("Unexpected PgBouncer version input: %s", data[0]["version"].(string))
 			}
 			verNew.VersionStr = matches[0]
-			verNew.Version, _ = decimal.NewFromString(matches[0])
+			verNew.Version = VersionToInt(matches[0])
 		}
 	} else if dbType == config.DbTypePgPOOL {
 		data, _, err := DBExecReadByDbUniqueName(dbUnique, "", 0, pgpoolVersion)
@@ -1027,7 +1026,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 			return verNew, err
 		}
 		if len(data) == 0 {
-			verNew.Version, _ = decimal.NewFromString("3.0")
+			verNew.Version = VersionToInt("3.0")
 			verNew.VersionStr = "3.0"
 		} else {
 			matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(string(data[0]["pool_version"].([]byte)))
@@ -1036,7 +1035,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 				return ver, fmt.Errorf("Unexpected PgPool version input: %s", data[0]["pool_version"].([]byte))
 			}
 			verNew.VersionStr = matches[0]
-			verNew.Version, _ = decimal.NewFromString(matches[0])
+			verNew.Version = VersionToInt(matches[0])
 		}
 	} else {
 		data, _, err := DBExecReadByDbUniqueName(dbUnique, "", 0, sql)
@@ -1048,12 +1047,12 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 			return ver, nil
 
 		}
-		verNew.Version, _ = decimal.NewFromString(data[0]["ver"].(string))
+		verNew.Version = VersionToInt(data[0]["ver"].(string))
 		verNew.VersionStr = data[0]["ver"].(string)
 		verNew.IsInRecovery = data[0]["pg_is_in_recovery"].(bool)
 		verNew.RealDbname = data[0]["current_database"].(string)
 
-		if verNew.Version.GreaterThanOrEqual(decimal.NewFromFloat(10)) && opts.AddSystemIdentifier {
+		if verNew.Version > VersionToInt("10.0") && opts.AddSystemIdentifier {
 			logger.Debugf("[%s] determining system identifier version (pg ver: %v)", dbUnique, verNew.VersionStr)
 			data, _, err := DBExecReadByDbUniqueName(dbUnique, "", 0, sqlSysid)
 			if err == nil && len(data) > 0 {
@@ -1089,16 +1088,16 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 		}
 		logger.Debugf("[%s] superuser=%v", dbUnique, verNew.IsSuperuser)
 
-		if verNew.Version.GreaterThanOrEqual(MinExtensionInfoAvailable) {
+		if verNew.Version >= MinExtensionInfoAvailable {
 			//log.Debugf("[%s] determining installed extensions info...", dbUnique)
 			data, _, err = DBExecReadByDbUniqueName(dbUnique, "", 0, sqlExtensions)
 			if err != nil {
 				logger.Errorf("[%s] failed to determine installed extensions info: %v", dbUnique, err)
 			} else {
 				for _, dr := range data {
-					extver, err := decimal.NewFromString(dr["extversion"].(string))
-					if err != nil {
-						logger.Errorf("[%s] failed to determine extension version info for extension %s: %v", dbUnique, dr["extname"], err)
+					extver := VersionToInt(dr["extversion"].(string))
+					if extver == 0 {
+						logger.Error("[%s] failed to determine extension version info for extension %s: %v", dbUnique, dr["extname"])
 						continue
 					}
 					verNew.Extensions[dr["extname"].(string)] = extver
@@ -1669,8 +1668,8 @@ func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp MetricV
 	return retData, duration, nil
 }
 
-func ReadMetricDefinitionMapFromPostgres(failOnError bool) (map[string]map[decimal.Decimal]MetricVersionProperties, error) {
-	metricDefMapNew := make(map[string]map[decimal.Decimal]MetricVersionProperties)
+func ReadMetricDefinitionMapFromPostgres(failOnError bool) (map[string]map[uint]MetricVersionProperties, error) {
+	metricDefMapNew := make(map[string]map[uint]MetricVersionProperties)
 	metricNameRemapsNew := make(map[string]string)
 	sql := `select /* pgwatch3_generated */ m_name, m_pg_version_from::text, m_sql, m_master_only, m_standby_only,
 			  coalesce(m_column_attrs::text, '') as m_column_attrs, coalesce(m_column_attrs::text, '') as m_column_attrs,
@@ -1703,9 +1702,9 @@ func ReadMetricDefinitionMapFromPostgres(failOnError bool) (map[string]map[decim
 	for _, row := range data {
 		_, ok := metricDefMapNew[row["m_name"].(string)]
 		if !ok {
-			metricDefMapNew[row["m_name"].(string)] = make(map[decimal.Decimal]MetricVersionProperties)
+			metricDefMapNew[row["m_name"].(string)] = make(map[uint]MetricVersionProperties)
 		}
-		d, _ := decimal.NewFromString(row["m_pg_version_from"].(string))
+		d := VersionToInt(row["m_pg_version_from"].(string))
 		ca := MetricColumnAttrs{}
 		if row["m_column_attrs"].(string) != "" {
 			ca = ParseMetricColumnAttrsFromString(row["m_column_attrs"].(string))
@@ -1753,7 +1752,7 @@ func DoesFunctionExists(dbUnique, functionName string) bool {
 // Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
 // NB! With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific
 // whitelisting or "trusted extensions" (a feature from v13). Ignores errors.
-func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existingExtensions map[string]decimal.Decimal) []string {
+func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existingExtensions map[string]uint) []string {
 	sqlAvailable := `select name::text from pg_available_extensions`
 	extsCreated := make([]string, 0)
 
