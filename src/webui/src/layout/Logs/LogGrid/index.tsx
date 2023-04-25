@@ -28,7 +28,7 @@ export default () => {
 2022-12-15 10:31:22,588 INFO 84 172.17.0.1 - - [15/Dec/2022:10:31:22] "GET /static/jquery-3.5.1.min.js HTTP/1.1" 200 89476 "http://localhost:8080/dbs" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
 2022-12-15 10:31:22,591 INFO 84 172.17.0.1 - - [15/Dec/2022:10:31:22] "GET /static/logo.png HTTP/1.1" 200 5325 "http://localhost:8080/dbs" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
 2022-12-15 10:31:22,739 INFO 84 172.17.0.1 - - [15/Dec/2022:10:31:22] "GET /favicon.ico HTTP/1.1" 200 1406 "http://localhost:8080/dbs" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
-2022-12-15 10:31:27,457 INFO 84 172.17.0.1 - - [15/Dec/2022:10:31:27] "GET /logs/pgwatch2/200 HTTP/1.1" 200 - "http://localhost:8080/dbs" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"`
+2022-12-15 10:31:27,457 INFO 84 172.17.0.1 - - [15/Dec/2022:10:31:27] "GET /logs/pgwatch3/200 HTTP/1.1" 200 - "http://localhost:8080/dbs" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"`
         }
       </pre>
     </Box>

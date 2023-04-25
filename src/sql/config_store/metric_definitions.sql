@@ -5743,7 +5743,7 @@ values (
 'subscription_stats',
 15,
 $sql$
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   subname::text as tag_subname,
   apply_error_count,
@@ -5759,7 +5759,7 @@ values (
 'stat_activity',
 11,
 $sql$
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   s.query as query,
   count(*) as count
@@ -5772,7 +5772,7 @@ where s.datname = current_database()
 group by s.query;
 $sql$,
 $sql$
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
   s.query as query,
   count(*) as count
