@@ -1,7 +1,7 @@
 # Build web UI
 FROM node:19 AS uibuilder
 ADD src/webui /webui
-RUN cd webui && yarn install && yarn build
+RUN cd webui && yarn install --network-timeout 100000 && yarn build
 
 FROM golang:alpine AS builder
 

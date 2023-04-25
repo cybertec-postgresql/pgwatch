@@ -15,20 +15,21 @@ COPY --from=uibuilder /webui/build /pgwatch3/webui/build
 RUN cd /pgwatch3 && bash build_gatherer.sh
 
 # Build the final image
-FROM ubuntu:22.04 AS releaser
+FROM ubuntu:22.04
 
 RUN apt-get -q update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -qy curl ca-certificates gnupg \
-    && echo "deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
-    && curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && apt-get -q update \
-    && DEBIAN_FRONTEND=noninteractive apt-get -qy install postgresql-14 \
-       postgresql-plpython3-14 libfontconfig python3-pip libssl-dev libpq-dev \
-    && pip3 install -U pip \
-    && locale-gen "en_US.UTF-8" && apt autoremove -y \
-    && pg_dropcluster 14 main ; pg_createcluster --locale en_US.UTF-8 14 main \
-    && echo "include = 'pgwatch_postgresql.conf'" >> /etc/postgresql/14/main/postgresql.conf
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qy curl wget apt-transport-https vim git postgresql-common gnupg2 python3-pip \
+    && sh /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qy postgresql-15 postgresql-plpython3-15 python3-psutil \
+    && echo "deb https://packagecloud.io/timescale/timescaledb/ubuntu/ jammy main" | tee /etc/apt/sources.list.d/timescaledb.list \
+    && wget --quiet -O - https://packagecloud.io/timescale/timescaledb/gpgkey | apt-key add - \
+    && apt update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qy timescaledb-2-postgresql-15 postgresql-15-pg-qualstats \
+    && echo "include = 'pgwatch_postgresql.conf'" >> /etc/postgresql/15/main/postgresql.conf
 
-RUN curl -o grafana.deb https://dl.grafana.com/oss/release/grafana_8.5.4_amd64.deb \
+RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qy libfontconfig1 \
+    && wget -q -O grafana.deb "https://dl.grafana.com/oss/release/grafana_8.5.20_${arch}.deb" \
     && dpkg -i grafana.deb && rm grafana.deb
 
 
@@ -44,26 +45,25 @@ ENV GIT_HASH=${GIT_HASH}
 ENV GIT_TIME=${GIT_TIME}
 RUN echo "${GIT_HASH} ${GIT_TIME}" > /pgwatch3/build_git_version.txt
 
-# Grafana config customizations, Web UI requirements, compilation of the Go gatherer
-RUN cp /pgwatch3/bootstrap/grafana_custom_config.ini /etc/grafana/grafana.ini \
-    && pip3 install psutil supervisor pyyaml && mkdir /var/log/supervisor
 
-RUN apt-get -q update && DEBIAN_FRONTEND=noninteractive apt-get -qy install postgresql-14-pg-qualstats
+# Grafana config customizations, Python requirements
+RUN cp /pgwatch3/bootstrap/grafana_custom_config.ini /etc/grafana/grafana.ini \
+    && pip3 install psutil supervisor pyyaml && mkdir /var/log/supervisor    
 
 ADD grafana_dashboards /pgwatch3/grafana_dashboards
 
 
 # Set up supervisord [https://docs.docker.com/engine/admin/using_supervisord/]
-COPY docker/supervisord-postgres.conf /etc/supervisor/supervisord.conf
+COPY docker/supervisord-timescale.conf /etc/supervisor/supervisord.conf
 
 # NB! When security is a concern one should definitely alter "pgwatch3" password in change_pw.sql and maybe modify pg_hba.conf accordingly
-COPY docker/postgresql.conf /etc/postgresql/14/main/pgwatch_postgresql.conf
-COPY docker/pg_hba.conf /etc/postgresql/14/main/pg_hba.conf
-COPY docker/docker-launcher-postgres.sh docker/postgresql.conf docker/pg_hba.conf /pgwatch3/
+COPY docker/postgresql_timescale.conf /etc/postgresql/15/main/pgwatch_postgresql.conf
+COPY docker/pg_hba.conf /etc/postgresql/15/main/pg_hba.conf
+COPY docker/docker-launcher-timescale.sh docker/pg_hba.conf /pgwatch3/
 
 ENV PW3_DATASTORE postgres
 ENV PW3_PG_METRIC_STORE_CONN_STR postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
-ENV PW3_PG_SCHEMA_TYPE metric-time
+ENV PW3_PG_SCHEMA_TYPE timescale
 ENV PW3_AES_GCM_KEYPHRASE_FILE /pgwatch3/persistent-config/default-password-encryption-key.txt
 
 # Admin UI for configuring servers to be monitored
@@ -85,4 +85,4 @@ VOLUME /pgwatch3/persistent-config
 VOLUME /var/lib/postgresql
 VOLUME /var/lib/grafana
 
-CMD ["/pgwatch3/docker-launcher-postgres.sh"]
+CMD ["/pgwatch3/docker-launcher-timescale.sh"]
