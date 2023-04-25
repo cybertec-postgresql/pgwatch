@@ -10,3 +10,20 @@ export type PresetConfigRows = {
   metric: string,
   interval: number
 };
+
+export type CreatePresetConfigForm = {
+  pc_name: string,
+  pc_description: string,
+  pc_config: {
+    metric: string,
+    update_interval: number
+  }[]
+};
+
+export type CreatePresetConfigRequestForm = {
+  pc_name: string,
+  pc_description: string,
+  pc_config: {
+    [key: string] : number
+  }
+}

@@ -8,9 +8,9 @@ import (
 
 func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request) {
 	var (
-		err error
-		// params []byte
-		res string
+		err    error
+		params []byte
+		res    string
 		// id     int
 	)
 
@@ -28,12 +28,12 @@ func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 		}
 		_, err = w.Write([]byte(res))
 
-	// case http.MethodPost:
-	// 	// add new stored Preset
-	// 	if params, err = io.ReadAll(r.Body); err != nil {
-	// 		return
-	// 	}
-	// 	err = Server.api.AddPreset(params)
+	case http.MethodPost:
+		// add new stored Preset
+		if params, err = io.ReadAll(r.Body); err != nil {
+			return
+		}
+		err = Server.api.AddPreset(params)
 
 	// case http.MethodPatch:
 	// 	// update monitored database

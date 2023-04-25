@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, IconButton, Tooltip, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
@@ -399,14 +399,14 @@ export const presetsColumns = ({
     [
       {
         field: "pc_name",
-        headerName: "Config name",
+        headerName: "Name",
         width: 150,
         align: "center",
         headerAlign: "center"
       },
       {
         field: "pc_description",
-        headerName: "Config description",
+        headerName: "Description",
         width: 400,
         align: "center",
         headerAlign: "center"
@@ -420,7 +420,7 @@ export const presetsColumns = ({
         renderCell: (params) => {
           const configRows: PresetConfigRows[] = [];
 
-          Object.entries(params.value).map(([key, value]) => configRows.push({ id: key, metric: key.toUpperCase(), interval: Number(value) }));
+          Object.entries(params.value).map(([key, value]) => configRows.push({ id: key, metric: key, interval: Number(value) }));
 
           return PcConfig(configRows);
         }
@@ -493,7 +493,7 @@ function PcConfig(configRows: PresetConfigRows[]) {
         <IconButton
           onClick={() => setDialogOpen(true)}
         >
-          <VisibilityIcon />
+          <OpenInFullIcon />
         </IconButton>
       </Tooltip>
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
@@ -507,7 +507,7 @@ function PcConfig(configRows: PresetConfigRows[]) {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} size="large" variant="contained" startIcon={<CloseIcon />}>Close</Button>
+          <Button fullWidth onClick={() => setDialogOpen(false)} variant="contained" startIcon={<CloseIcon />}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>

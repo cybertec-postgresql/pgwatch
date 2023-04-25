@@ -10,27 +10,39 @@ type uiapihandler struct{}
 
 var uiapi uiapihandler
 
-// GetPresets returns the list of monitored databases
+// AddPreset adds the preset to the list of available presets
+func (uiapi uiapihandler) AddPreset(params []byte) error {
+	sql := `INSERT INTO pgwatch3.preset_config(pc_name, pc_description, pc_config) VALUES ($1, $2, $3)`
+	var m map[string]any
+	err := json.Unmarshal(params, &m)
+	if err == nil {
+		config, _ := json.Marshal(m["pc_config"])
+		_, err = configDb.Exec(sql, m["pc_name"], m["pc_description"], config)
+	}
+	return err
+}
+
+// GetPresets returns the list of available presets
 func (uiapi uiapihandler) GetPresets() (res string, err error) {
 	sql := `select coalesce(jsonb_agg(to_jsonb(p)), '[]') from pgwatch3.preset_config p`
 	err = configDb.Get(&res, sql)
 	return
 }
 
-// DeletePreset removes the database from the list of monitored databases
+// DeletePreset removes the preset from the configuration
 func (uiapi uiapihandler) DeletePreset(name string) error {
 	_, err := configDb.Exec("DELETE FROM pgwatch3.preset_config WHERE pc_name = $1", name)
 	return err
 }
 
-// GetMetrics returns the list of monitored databases
+// GetMetrics returns the list of metrics
 func (uiapi uiapihandler) GetMetrics() (res string, err error) {
 	sql := `select coalesce(jsonb_agg(to_jsonb(m)), '[]') from metric m`
 	err = configDb.Get(&res, sql)
 	return
 }
 
-// DeleteMetric removes the database from the list of monitored databases
+// DeleteMetric removes the metric from the configuration
 func (uiapi uiapihandler) DeleteMetric(id int) error {
 	_, err := configDb.Exec("DELETE FROM pgwatch3.metric WHERE m_id = $1", id)
 	return err

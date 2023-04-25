@@ -100,7 +100,7 @@ export const PresetsTable = () => {
         components={{ Toolbar: () => <GridToolbarComponent handleModalOpen={handleModalOpen} setEditData={setEditData} /> }}
         disableColumnMenu
       />
-      <ModalComponent open={modalOpen} handleClose={handleModalClose} recordData={editData} />
+      <ModalComponent open={modalOpen} handleClose={handleModalClose} recordData={editData} handleAlertOpen={handleAlertOpen} />
     </Box>
   );
 };

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createMetricForm, updateMetricForm } from "queries/types/MetricTypes";
+import { Metric, createMetricForm, updateMetricForm } from "queries/types/MetricTypes";
 
 
 export default class MetricService {
@@ -13,7 +13,7 @@ export default class MetricService {
     return MetricService._instance;
   };
 
-  public async getMetrics() {
+  public async getMetrics(): Promise<Metric[]> {
     return await axios.get("/metric").
       then(response => response.data).
       catch(error => {
