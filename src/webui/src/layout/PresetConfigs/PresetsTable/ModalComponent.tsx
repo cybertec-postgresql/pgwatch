@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import CloseIcon from "@mui/icons-material/Close";
 import DoneIcon from "@mui/icons-material/Done";
 import { AlertColor, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, ToggleButton, ToggleButtonGroup } from "@mui/material";
 
-import { Controller, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
+import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 
-import { useAddPreset } from "queries/Preset";
+import { useAddPreset, useEditPreset } from "queries/Preset";
 import { CreatePresetConfigForm, CreatePresetConfigRequestForm, Preset } from "queries/types/PresetTypes";
 
 import { AddMetric } from "./AddMetric";
@@ -25,8 +25,24 @@ export const ModalComponent = ({ open, handleClose, recordData, handleAlertOpen 
       pc_config: [{ metric: "", update_interval: 10 }]
     }
   });
-  const { handleSubmit, reset } = methods;
-  const addPreset = useAddPreset(handleAlertOpen, handleClose, reset);
+  const { handleSubmit, reset, setValue } = methods;
+  const addPreset = useAddPreset({ handleAlertOpen, handleClose, reset });
+  const editPreset = useEditPreset({ handleAlertOpen, handleClose, reset });
+
+  useEffect(() => {
+    if (recordData) {
+      const data = presetForm(recordData);
+      Object.entries(data).map(([key, value]) => setValue(key as FieldPath<CreatePresetConfigForm>, value));
+    } else {
+      reset();
+    }
+  }, [recordData, reset, setValue]);
+
+  const presetForm = (data: Preset): CreatePresetConfigForm => {
+    const config: { metric: string, update_interval: number }[] = [];
+    Object.entries(data.pc_config).map(([key, value]) => config.push({ metric: key, update_interval: value }));
+    return { ...data, pc_config: config };
+  };
 
   const requestedForm = (result: CreatePresetConfigForm): CreatePresetConfigRequestForm => {
     const config: Record<string, number> = {};
@@ -35,7 +51,15 @@ export const ModalComponent = ({ open, handleClose, recordData, handleAlertOpen 
   };
 
   const onSubmit: SubmitHandler<CreatePresetConfigForm> = (result) => {
-    addPreset.mutate(requestedForm(result));
+    const requestForm: CreatePresetConfigRequestForm = requestedForm(result);
+    if (recordData) {
+      editPreset.mutate({
+        pc_name: recordData.pc_name,
+        data: requestForm
+      });
+    } else {
+      addPreset.mutate(requestForm);
+    }
   };
 
   return (
