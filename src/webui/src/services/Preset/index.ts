@@ -1,5 +1,5 @@
 import axios from "axios";
-import { CreatePresetConfigRequestForm } from "queries/types/PresetTypes";
+import { CreatePresetConfigRequestForm, UpdatePresetConfigRequestForm } from "queries/types/PresetTypes";
 
 
 export default class PresetService {
@@ -36,4 +36,12 @@ export default class PresetService {
         throw error;
       });
   };
-}
+
+  public async editPreset(data: UpdatePresetConfigRequestForm) {
+    return await axios.patch("/preset", data.data, { params: { "id": data.pc_name } }).
+      then(response => response).
+      catch(error => {
+        throw error;
+      });
+  };
+};
