@@ -36,6 +36,15 @@ export const AddMetric = ({ control, handleValidate }: Props) => {
     metricsOptions = data.map(name => ({ label: name }));
   }
 
+  const isOptionExist = (initialValue: string) => {
+    const value = metricsOptions.find(option => option.label === initialValue);
+    if (!value) {
+      return ("This option doesn't exist");
+    } else {
+      return;
+    }
+  };
+
   return (
     <Stack spacing={2}>
       {fields.map((arrayField, index) => (
@@ -48,7 +57,7 @@ export const AddMetric = ({ control, handleValidate }: Props) => {
                 value: true,
                 message: "Set metric or delete it"
               },
-              validate: handleValidate
+              validate: isOptionExist
             }}
             defaultValue=""
             render={({ field, fieldState }) => (
