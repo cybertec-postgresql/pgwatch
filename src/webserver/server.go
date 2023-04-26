@@ -27,6 +27,7 @@ type apiHandler interface {
 	GetPresets() (res string, err error)
 	AddPreset(params []byte) error
 	DeletePreset(name string) error
+	UpdatePreset(id int, params []byte) error
 }
 
 type WebUIServer struct {

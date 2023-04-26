@@ -95,6 +95,17 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 	return err
 }
 
+func (uiapi uiapihandler) UpdatePreset(id int, params []byte) error {
+	fields, values, err := paramsToFieldValues(params)
+	if err != nil {
+		return err
+	}
+	sql := fmt.Sprintf(`UPDATE pgwatch3.preset_config SET %s WHERE pc_id = $1`, strings.Join(fields, ","))
+	values = append([]any{id}, values...)
+	_, err = configDb.Exec(sql, values...)
+	return err
+}
+
 // UpdateMetric updates the stored metric information
 func (uiapi uiapihandler) UpdateMetric(id int, params []byte) error {
 	fields, values, err := paramsToFieldValues(params)
