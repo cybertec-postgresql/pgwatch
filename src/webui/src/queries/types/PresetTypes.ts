@@ -1,6 +1,8 @@
 export type Preset = {
   pc_name: string,
-  pc_config: Object,
+  pc_config: {
+    [key: string]: number
+  },
   pc_description: string,
   pc_last_modified_on: string
 };
@@ -24,6 +26,11 @@ export type CreatePresetConfigRequestForm = {
   pc_name: string,
   pc_description: string,
   pc_config: {
-    [key: string] : number
+    [key: string]: number
   }
-}
+};
+
+export type UpdatePresetConfigRequestForm = {
+  pc_name: string,
+  data: CreatePresetConfigRequestForm
+};
