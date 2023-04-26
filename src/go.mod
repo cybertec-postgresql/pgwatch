@@ -8,7 +8,7 @@ require (
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/lib/pq v1.10.8
+	github.com/lib/pq v1.10.9
 	github.com/marpaia/graphite-golang v0.0.0-20190519024811-caf161d2c2b1
 	github.com/prometheus/client_golang v1.15.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
