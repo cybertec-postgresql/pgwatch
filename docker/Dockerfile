@@ -18,7 +18,7 @@ RUN cd /pgwatch3 && bash build_gatherer.sh
 FROM ubuntu:22.04 AS releaser
 
 RUN apt-get -q update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -qy curl ca-certificates gnupg libfontconfig1 \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qy curl wget ca-certificates gnupg libfontconfig1 \
     && echo "deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && apt-get -q update \
     && DEBIAN_FRONTEND=noninteractive apt-get -qy install postgresql-14 \
