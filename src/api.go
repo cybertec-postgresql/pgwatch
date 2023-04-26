@@ -95,7 +95,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 	return err
 }
 
-func (uiapi uiapihandler) UpdatePreset(id int, params []byte) error {
+func (uiapi uiapihandler) UpdatePreset(id string, params []byte) error {
 	fields, values, err := paramsToFieldValues(params)
 	if err != nil {
 		return err

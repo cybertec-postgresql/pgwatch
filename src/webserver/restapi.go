@@ -11,7 +11,6 @@ func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 		err    error
 		params []byte
 		res    string
-		id     int
 	)
 
 	defer func() {
@@ -40,10 +39,7 @@ func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		if id, err = strconv.Atoi(r.URL.Query().Get("id")); err != nil {
-			return
-		}
-		err = Server.api.UpdatePreset(id, params)
+		err = Server.api.UpdatePreset(r.URL.Query().Get("id"), params)
 
 	case http.MethodDelete:
 		// delete stored Preset
