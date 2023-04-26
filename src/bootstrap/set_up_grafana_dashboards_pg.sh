@@ -1,65 +1,94 @@
-#! /bin/bash
+#!/bin/bash
 
-# Used with the default Docker image to load Grafana datasource (local Influxdb) and default Dashboard
-
-export PGUSER=postgres
-
-while true ; do
-
-  # It will take some time for Postgres to start and Grafana to do schema initialization
-  sleep 3
-
-  DB_OK=$(psql -qXAt -c "select count(1) from dashboard" pgwatch3_grafana)
-
-  if [[ $? -ne 0 ]] ; then
-    continue
-  elif [[ $DB_OK -gt 0 ]] ; then
-    exit 0
-  elif [[ $DB_OK == 0 ]] ; then
-    sleep 5 # give Grafana some more time to bootstrap the schema if maybe on some weak cloud instance
-    break
-  fi
-
-done
-
-GRAFANA_MAJOR_VER=$(grafana-server -v | egrep -o [0-9]{1} | head -1)
-
-psql -h /var/run/postgresql -f /pgwatch3/bootstrap/grafana_datasource_pg.sql pgwatch3_grafana
-
-for slug in $(ls --hide='*.md' /pgwatch3/grafana_dashboards/postgres/v${GRAFANA_MAJOR_VER}) ; do
-
-echo "inserting dashboard: $slug"
-TITLE=$(cat /pgwatch3/grafana_dashboards/postgres/v${GRAFANA_MAJOR_VER}/${slug}/title.txt)
-JSON=$(cat /pgwatch3/grafana_dashboards/postgres/v${GRAFANA_MAJOR_VER}/${slug}/dashboard.json)
-
-# in Grafana 5 "uid" column was introduced that is normally filled by the app
-if [ "$GRAFANA_MAJOR_VER" -gt 4 ] ; then
-
-SQL='insert into dashboard (version, org_id, created, updated, updated_by, created_by, gnet_id, slug, title, data, uid) values (1, 1, now(), now(), 1, 1, 0'
-for d in "$slug" "$TITLE" "$JSON" "$slug" ; do
-  SQL+=",\$SQL\$${d}\$SQL\$"
-done
-
-else
-
-SQL='insert into dashboard (version, org_id, created, updated, updated_by, created_by, gnet_id, slug, title, data) values (1, 1, now(), now(), 1, 1, 0'
-for d in "$slug" "$TITLE" "$JSON" ; do
-SQL+=",\$SQL\$${d}\$SQL\$"
-done
-
+if [[ -f /pgwatch3/persistent-config/grafana-bootstrap-done-marker ]]; then
+  exit 0
 fi
 
-SQL+=")"
-
-echo "$SQL" | psql -h /var/run/postgresql pgwatch3_grafana
-
+declare -i attempts=$(( 60 / 5 ))
+while [[ "$(curl -X GET -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health)" != "200" ]]; do
+  echo "grafana server is not available"
+  if (( $((attempts -= 1)) == 0 )); then
+    exit 1
+  fi
+  sleep 5
 done
 
-psql -h /var/run/postgresql -d pgwatch3_grafana -c "insert into public.dashboard_tag(dashboard_id, term) select id, 'pgwatch3' from public.dashboard on conflict do nothing"
+timescaledb_value="false"
+if [[ "${PW2_PG_SCHEMA_TYPE}" == "timescale" ]]; then
+  timescaledb_value="true"
+fi
 
-HEALTHCHECK_STAR="INSERT INTO star (user_id, dashboard_id) SELECT 1, id FROM dashboard WHERE slug = 'health-check'"
-psql -h /var/run/postgresql -c "$HEALTHCHECK_STAR" pgwatch3_grafana
-HOME_DASH="INSERT INTO preferences (org_id, user_id, version, home_dashboard_id, timezone, theme, created, updated, team_id) SELECT 1, 0, 0, id, '', '', now(), now(), 0 FROM dashboard WHERE slug = 'health-check'"
-psql -h /var/run/postgresql -c "$HOME_DASH" pgwatch3_grafana
+# Create datasource
+echo "creating datasource: pg-metrics"
+echo "{
+    \"orgId\": 1,
+    \"name\": \"PG metrics\",
+    \"uid\": \"pg-metrics\",
+    \"type\": \"postgres\",
+    \"access\": \"proxy\",
+    \"url\": \"localhost:5432\",
+    \"user\": \"pgwatch3\",
+    \"database\": \"pgwatch3_metrics\",
+    \"basicAuth\": false,
+    \"isDefault\": true,
+    \"jsonData\": {
+        \"postgresVersion\": 1400,
+        \"sslmode\": \"disable\",
+        \"timescaledb\": ${timescaledb_value}
+    },
+    \"secureJsonData\": {
+        \"password\": \"pgwatch3admin\"
+    },
+    \"version\": 0,
+    \"readOnly\": false
+}" | \
+curl -X POST -s -w "%{http_code}" \
+  -H 'Accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -u "${PW2_GRAFANAUSER:-admin}":"${PW2_GRAFANAPASSWORD:-pgwatch3admin}" \
+  -d @- \
+  'http://localhost:3000/api/datasources'
+
+# Create dashboards
+GRAFANA_MAJOR_VER=$(grafana-server -v | grep -o -E '[0-9]{1}' | head -1)
+
+for dashboard_json in $(find /pgwatch3/grafana_dashboards/postgres/v"${GRAFANA_MAJOR_VER}" -name "*.json" | sort); do
+  echo
+  echo "creating dashboard: ${dashboard_json}"
+  echo "{
+      \"dashboard\": $(cat "${dashboard_json}"),
+      \"message\": \"Bootstrap dashboard\",
+      \"overwrite\": false,
+      \"inputs\": [{
+              \"name\": \"DS_PG_METRICS\",
+              \"type\": \"datasource\",
+              \"pluginId\": \"postgres\",
+              \"value\": \"pg-metrics\"
+    }]
+  }" | \
+  curl -X POST -s -w "%{http_code}" \
+    -H 'Accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -u "${PW2_GRAFANAUSER:-admin}":"${PW2_GRAFANAPASSWORD:-pgwatch3admin}" \
+    -d @- \
+    'http://localhost:3000/api/dashboards/import'
+done
+
+# Set home dashboard
+# Let's make the assumption that due to the loading of dashboards in previous step in alphabetical order,
+# the "Global DB overview" dashboard will always be under id=1.
+# Otherwise, we can install the jq and get the identifier through the api:
+#   curl -H 'Accept: application/json' 'http://localhost:3000/api/dashboards/uid/global-db-overview' | jq '.dashboard.id'
+echo
+echo "set global-db-overview as home page"
+echo "{\"homeDashboardId\": 1}" | \
+curl -X PATCH -s -w "%{http_code}" \
+  -H 'Accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -u "${PW2_GRAFANAUSER:-admin}":"${PW2_GRAFANAPASSWORD:-pgwatch3admin}" \
+  -d @- \
+  'http://localhost:3000/api/org/preferences'
+
+touch /pgwatch3/persistent-config/grafana-bootstrap-done-marker
 
 exit 0
