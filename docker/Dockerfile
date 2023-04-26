@@ -18,7 +18,7 @@ RUN cd /pgwatch3 && bash build_gatherer.sh
 FROM ubuntu:22.04 AS releaser
 
 RUN apt-get -q update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -qy curl ca-certificates gnupg \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qy curl ca-certificates gnupg libfontconfig1 \
     && echo "deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && apt-get -q update \
     && DEBIAN_FRONTEND=noninteractive apt-get -qy install postgresql-14 \
@@ -28,7 +28,8 @@ RUN apt-get -q update \
     && pg_dropcluster 14 main ; pg_createcluster --locale en_US.UTF-8 14 main \
     && echo "include = 'pgwatch_postgresql.conf'" >> /etc/postgresql/14/main/postgresql.conf
 
-RUN curl -o grafana.deb https://dl.grafana.com/oss/release/grafana_8.5.4_amd64.deb \
+RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
+    && wget -q -O grafana.deb "https://dl.grafana.com/oss/release/grafana_9.4.7_${arch}.deb" \
     && dpkg -i grafana.deb && rm grafana.deb
 
 
