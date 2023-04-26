@@ -30,7 +30,7 @@ export const AutocompleteComponent = ({
   let value = options.find(option => option.label === String(initialValue));
 
   if (!value) {
-    value = { label: "" };
+    value = { label: initialValue };
   }
 
   return (
