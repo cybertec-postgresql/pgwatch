@@ -189,16 +189,16 @@ func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]an
 			ldUsage, err := disk.Usage(logDirPath)
 			if err != nil {
 				return nil, err
-			} else {
-				ld["epoch_ns"] = epochNs
-				ld["tag_dir_or_tablespace"] = "log_directory"
-				ld["tag_path"] = logDirPath
-				ld["total"] = float64(ldUsage.Total)
-				ld["used"] = float64(ldUsage.Used)
-				ld["free"] = float64(ldUsage.Free)
-				ld["percent"] = math.Round(100*ldUsage.UsedPercent) / 100
-				retRows = append(retRows, ld)
 			}
+
+			ld["epoch_ns"] = epochNs
+			ld["tag_dir_or_tablespace"] = "log_directory"
+			ld["tag_path"] = logDirPath
+			ld["total"] = float64(ldUsage.Total)
+			ld["used"] = float64(ldUsage.Used)
+			ld["free"] = float64(ldUsage.Free)
+			ld["percent"] = math.Round(100*ldUsage.UsedPercent) / 100
+			retRows = append(retRows, ld)
 		}
 	}
 
@@ -219,17 +219,17 @@ func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]an
 			walUsage, err := disk.Usage(walDirPath)
 			if err != nil {
 				return nil, err
-			} else {
-				wd := make(map[string]any)
-				wd["epoch_ns"] = epochNs
-				wd["tag_dir_or_tablespace"] = "pg_wal"
-				wd["tag_path"] = walDirPath
-				wd["total"] = float64(walUsage.Total)
-				wd["used"] = float64(walUsage.Used)
-				wd["free"] = float64(walUsage.Free)
-				wd["percent"] = math.Round(100*walUsage.UsedPercent) / 100
-				retRows = append(retRows, wd)
 			}
+
+			wd := make(map[string]any)
+			wd["epoch_ns"] = epochNs
+			wd["tag_dir_or_tablespace"] = "pg_wal"
+			wd["tag_path"] = walDirPath
+			wd["total"] = float64(walUsage.Total)
+			wd["used"] = float64(walUsage.Used)
+			wd["free"] = float64(walUsage.Free)
+			wd["percent"] = math.Round(100*walUsage.UsedPercent) / 100
+			retRows = append(retRows, wd)
 		}
 	}
 
