@@ -23,7 +23,7 @@ type MetricOpts struct {
 	Group                string `short:"g" long:"group" mapstructure:"group" description:"Group (or groups, comma separated) for filtering which DBs to monitor. By default all are monitored" env:"PW3_GROUP"`
 	MetricsFolder        string `short:"m" long:"metrics-folder" mapstructure:"metrics-folder" description:"Folder of metrics definitions" env:"PW3_METRICS_FOLDER"`
 	NoHelperFunctions    bool   `long:"no-helper-functions" mapstructure:"no-helper-functions" description:"Ignore metric definitions using helper functions (in form get_smth()) and don't also roll out any helpers automatically" env:"PW3_NO_HELPER_FUNCTIONS"`
-	Datastore            string `long:"datastore" mapstructure:"datastore" description:"[postgres|prometheus|graphite|json]" default:"influx" env:"PW3_DATASTORE"`
+	Datastore            string `long:"datastore" mapstructure:"datastore" choice:"postgres" choice:"prometheus" choice:"graphite" choice:"json" default:"postgres" env:"PW3_DATASTORE"`
 	PGMetricStoreConnStr string `long:"pg-metric-store-conn-str" mapstructure:"pg-metric-store-conn-str" description:"PG Metric Store" env:"PW3_PG_METRIC_STORE_CONN_STR"`
 	PGRetentionDays      int64  `long:"pg-retention-days" mapstructure:"pg-retention-days" description:"If set, metrics older than that will be deleted" default:"14" env:"PW3_PG_RETENTION_DAYS"`
 	PrometheusPort       int64  `long:"prometheus-port" mapstructure:"prometheus-port" description:"Prometheus port. Effective with --datastore=prometheus" default:"9187" env:"PW3_PROMETHEUS_PORT"`

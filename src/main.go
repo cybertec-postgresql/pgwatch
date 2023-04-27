@@ -2436,7 +2436,7 @@ func DoesMetricDefinitionCallHelperFunctions(sqlDefinition string) bool {
 	return regexSQLHelperFunctionCalled.MatchString(sqlDefinition)
 }
 
-var opts config.CmdOptions
+var opts *config.CmdOptions
 
 // version output variables
 var (
@@ -2480,13 +2480,14 @@ const (
 var exitCode = ExitCodeOK
 
 func main() {
+	var err error
 	defer func() { os.Exit(exitCode) }()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	SetupCloseHandler(cancel)
 	defer cancel()
 
-	opts, err := config.NewConfig(os.Stdout)
+	opts, err = config.NewConfig(os.Stdout)
 	if err != nil {
 		if opts != nil && opts.VersionOnly() {
 			printVersion()
