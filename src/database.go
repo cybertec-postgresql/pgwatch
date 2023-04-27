@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"path"
 	"strconv"
 	"strings"
@@ -18,7 +17,6 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/shirou/gopsutil/v3/disk"
 )
 
 var configDb *sqlx.DB
@@ -1935,130 +1933,16 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 func GetGoPsutilDiskPG(dbUnique string) (MetricData, error) {
 	sql := `select current_setting('data_directory') as dd, current_setting('log_directory') as ld, current_setting('server_version_num')::int as pgver`
 	sqlTS := `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E'pg\\_%'])`
-	var ddDevice, ldDevice, walDevice uint64
-
 	data, _, err := DBExecReadByDbUniqueName(dbUnique, "", 0, sql)
 	if err != nil || len(data) == 0 {
 		logger.Errorf("Failed to determine relevant PG disk paths via SQL: %v", err)
 		return nil, err
 	}
-
-	dataDirPath := data[0]["dd"].(string)
-	ddUsage, err := disk.Usage(dataDirPath)
-	if err != nil {
-		logger.Errorf("Could not determine disk usage for path %v: %v", dataDirPath, err)
-		return nil, err
-	}
-
-	retRows := make(MetricData, 0)
-	epochNs := time.Now().UnixNano()
-	dd := make(MetricEntry)
-	dd["epoch_ns"] = epochNs
-	dd["tag_dir_or_tablespace"] = "data_directory"
-	dd["tag_path"] = dataDirPath
-	dd["total"] = float64(ddUsage.Total)
-	dd["used"] = float64(ddUsage.Used)
-	dd["free"] = float64(ddUsage.Free)
-	dd["percent"] = math.Round(100*ddUsage.UsedPercent) / 100
-	retRows = append(retRows, dd)
-
-	ddDevice, err = psutil.GetPathUnderlyingDeviceID(dataDirPath)
-	if err != nil {
-		logger.Errorf("Could not determine disk device ID of data_directory %v: %v", dataDirPath, err)
-	}
-
-	logDirPath := data[0]["ld"].(string)
-	if !strings.HasPrefix(logDirPath, "/") {
-		logDirPath = path.Join(dataDirPath, logDirPath)
-	}
-	if len(logDirPath) > 0 && CheckFolderExistsAndReadable(logDirPath) { // syslog etc considered out of scope
-		ldDevice, err = psutil.GetPathUnderlyingDeviceID(logDirPath)
-		if err != nil {
-			logger.Infof("Could not determine disk device ID of log_directory %v: %v", logDirPath, err)
-		}
-		if err != nil || ldDevice != ddDevice { // no point to report same data in case of single folder configuration
-			ld := make(MetricEntry)
-			ldUsage, err := disk.Usage(logDirPath)
-			if err != nil {
-				logger.Infof("Could not determine disk usage for path %v: %v", logDirPath, err)
-			} else {
-				ld["epoch_ns"] = epochNs
-				ld["tag_dir_or_tablespace"] = "log_directory"
-				ld["tag_path"] = logDirPath
-				ld["total"] = float64(ldUsage.Total)
-				ld["used"] = float64(ldUsage.Used)
-				ld["free"] = float64(ldUsage.Free)
-				ld["percent"] = math.Round(100*ldUsage.UsedPercent) / 100
-				retRows = append(retRows, ld)
-			}
-		}
-	}
-
-	var walDirPath string
-	if CheckFolderExistsAndReadable(path.Join(dataDirPath, "pg_wal")) {
-		walDirPath = path.Join(dataDirPath, "pg_wal")
-	} else if CheckFolderExistsAndReadable(path.Join(dataDirPath, "pg_xlog")) {
-		walDirPath = path.Join(dataDirPath, "pg_xlog") // < v10
-	}
-
-	if len(walDirPath) > 0 {
-		walDevice, err = psutil.GetPathUnderlyingDeviceID(walDirPath)
-		if err != nil {
-			logger.Infof("Could not determine disk device ID of WAL directory %v: %v", walDirPath, err) // storing anyways
-		}
-
-		if err != nil || walDevice != ddDevice || walDevice != ldDevice { // no point to report same data in case of single folder configuration
-			walUsage, err := disk.Usage(walDirPath)
-			if err != nil {
-				logger.Errorf("Could not determine disk usage for WAL directory %v: %v", walDirPath, err)
-			} else {
-				wd := make(MetricEntry)
-				wd["epoch_ns"] = epochNs
-				wd["tag_dir_or_tablespace"] = "pg_wal"
-				wd["tag_path"] = walDirPath
-				wd["total"] = float64(walUsage.Total)
-				wd["used"] = float64(walUsage.Used)
-				wd["free"] = float64(walUsage.Free)
-				wd["percent"] = math.Round(100*walUsage.UsedPercent) / 100
-				retRows = append(retRows, wd)
-			}
-		}
-	}
-
-	data, _, err = DBExecReadByDbUniqueName(dbUnique, "", 0, sqlTS)
+	dataTblsp, _, err := DBExecReadByDbUniqueName(dbUnique, "", 0, sqlTS)
 	if err != nil {
 		logger.Infof("Failed to determine relevant PG tablespace paths via SQL: %v", err)
-	} else if len(data) > 0 {
-		for _, row := range data {
-			tsPath := row["location"].(string)
-			tsName := row["name"].(string)
-
-			tsDevice, err := psutil.GetPathUnderlyingDeviceID(tsPath)
-			if err != nil {
-				logger.Errorf("Could not determine disk device ID of tablespace %s (%s): %v", tsName, tsPath, err)
-				continue
-			}
-
-			if tsDevice == ddDevice || tsDevice == ldDevice || tsDevice == walDevice {
-				continue
-			}
-			tsUsage, err := disk.Usage(tsPath)
-			if err != nil {
-				logger.Errorf("Could not determine disk usage for tablespace %s, directory %s: %v", row["name"].(string), row["location"].(string), err)
-			}
-			ts := make(MetricEntry)
-			ts["epoch_ns"] = epochNs
-			ts["tag_dir_or_tablespace"] = tsName
-			ts["tag_path"] = tsPath
-			ts["total"] = float64(tsUsage.Total)
-			ts["used"] = float64(tsUsage.Used)
-			ts["free"] = float64(tsUsage.Free)
-			ts["percent"] = math.Round(100*tsUsage.UsedPercent) / 100
-			retRows = append(retRows, ts)
-		}
 	}
-
-	return retRows, nil
+	return psutil.GetGoPsutilDiskPG(data, dataTblsp)
 }
 
 func SendToPostgres(storeMessages []MetricStoreMessage) error {

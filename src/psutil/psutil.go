@@ -2,6 +2,9 @@ package psutil
 
 import (
 	"math"
+	"os"
+	"path"
+	"strings"
 	"sync"
 	"time"
 
@@ -135,4 +138,130 @@ func GetLoadAvgLocal() ([]map[string]any, error) {
 	row["load_15min"] = la.Load15
 
 	return []map[string]any{row}, nil
+}
+
+func CheckFolderExistsAndReadable(path string) bool {
+	if _, err := os.ReadDir(path); err != nil {
+		return false
+	}
+	return true
+}
+
+func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]any, error) {
+	var ddDevice, ldDevice, walDevice uint64
+
+	data := DataDirs
+
+	dataDirPath := data[0]["dd"].(string)
+	ddUsage, err := disk.Usage(dataDirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	retRows := make([]map[string]any, 0)
+	epochNs := time.Now().UnixNano()
+	dd := make(map[string]any)
+	dd["epoch_ns"] = epochNs
+	dd["tag_dir_or_tablespace"] = "data_directory"
+	dd["tag_path"] = dataDirPath
+	dd["total"] = float64(ddUsage.Total)
+	dd["used"] = float64(ddUsage.Used)
+	dd["free"] = float64(ddUsage.Free)
+	dd["percent"] = math.Round(100*ddUsage.UsedPercent) / 100
+	retRows = append(retRows, dd)
+
+	ddDevice, err = GetPathUnderlyingDeviceID(dataDirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	logDirPath := data[0]["ld"].(string)
+	if !strings.HasPrefix(logDirPath, "/") {
+		logDirPath = path.Join(dataDirPath, logDirPath)
+	}
+	if len(logDirPath) > 0 && CheckFolderExistsAndReadable(logDirPath) { // syslog etc considered out of scope
+		ldDevice, err = GetPathUnderlyingDeviceID(logDirPath)
+		if err != nil {
+			return nil, err
+		}
+		if err != nil || ldDevice != ddDevice { // no point to report same data in case of single folder configuration
+			ld := make(map[string]any)
+			ldUsage, err := disk.Usage(logDirPath)
+			if err != nil {
+				return nil, err
+			} else {
+				ld["epoch_ns"] = epochNs
+				ld["tag_dir_or_tablespace"] = "log_directory"
+				ld["tag_path"] = logDirPath
+				ld["total"] = float64(ldUsage.Total)
+				ld["used"] = float64(ldUsage.Used)
+				ld["free"] = float64(ldUsage.Free)
+				ld["percent"] = math.Round(100*ldUsage.UsedPercent) / 100
+				retRows = append(retRows, ld)
+			}
+		}
+	}
+
+	var walDirPath string
+	if CheckFolderExistsAndReadable(path.Join(dataDirPath, "pg_wal")) {
+		walDirPath = path.Join(dataDirPath, "pg_wal")
+	} else if CheckFolderExistsAndReadable(path.Join(dataDirPath, "pg_xlog")) {
+		walDirPath = path.Join(dataDirPath, "pg_xlog") // < v10
+	}
+
+	if len(walDirPath) > 0 {
+		walDevice, err = GetPathUnderlyingDeviceID(walDirPath)
+		if err != nil {
+			return nil, err
+		}
+
+		if err != nil || walDevice != ddDevice || walDevice != ldDevice { // no point to report same data in case of single folder configuration
+			walUsage, err := disk.Usage(walDirPath)
+			if err != nil {
+				return nil, err
+			} else {
+				wd := make(map[string]any)
+				wd["epoch_ns"] = epochNs
+				wd["tag_dir_or_tablespace"] = "pg_wal"
+				wd["tag_path"] = walDirPath
+				wd["total"] = float64(walUsage.Total)
+				wd["used"] = float64(walUsage.Used)
+				wd["free"] = float64(walUsage.Free)
+				wd["percent"] = math.Round(100*walUsage.UsedPercent) / 100
+				retRows = append(retRows, wd)
+			}
+		}
+	}
+
+	data = TblspaceDirs
+	if len(data) > 0 {
+		for _, row := range data {
+			tsPath := row["location"].(string)
+			tsName := row["name"].(string)
+
+			tsDevice, err := GetPathUnderlyingDeviceID(tsPath)
+			if err != nil {
+				return nil, err
+			}
+
+			if tsDevice == ddDevice || tsDevice == ldDevice || tsDevice == walDevice {
+				continue
+			}
+			tsUsage, err := disk.Usage(tsPath)
+			if err != nil {
+				return nil, err
+			}
+			ts := make(map[string]any)
+			ts["epoch_ns"] = epochNs
+			ts["tag_dir_or_tablespace"] = tsName
+			ts["tag_path"] = tsPath
+			ts["total"] = float64(tsUsage.Total)
+			ts["used"] = float64(tsUsage.Used)
+			ts["free"] = float64(tsUsage.Free)
+			ts["percent"] = math.Round(100*tsUsage.UsedPercent) / 100
+			retRows = append(retRows, ts)
+		}
+	}
+
+	return retRows, nil
 }
