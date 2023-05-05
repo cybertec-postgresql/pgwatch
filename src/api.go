@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -22,7 +23,20 @@ func (uiapi uiapihandler) AddPreset(params []byte) error {
 	return err
 }
 
-// GetPresets returns the list of available presets
+// UpdatePreset updates the stored preset
+func (uiapi uiapihandler) UpdatePreset(id string, params []byte) error {
+	fields, values, err := paramsToFieldValues(params)
+	if err != nil {
+		return err
+	}
+	sql := fmt.Sprintf(`UPDATE pgwatch3.preset_config SET %s WHERE pc_name = $1`,
+		strings.Join(fields, ","))
+	values = append([]any{id}, values...)
+	_, err = configDb.Exec(sql, values...)
+	return err
+}
+
+// GetPresets ret	urns the list of available presets
 func (uiapi uiapihandler) GetPresets() (res string, err error) {
 	sql := `select coalesce(jsonb_agg(to_jsonb(p)), '[]') from pgwatch3.preset_config p`
 	err = configDb.Get(&res, sql)
@@ -129,6 +143,9 @@ func paramsToFieldValues(params []byte) (fields []string, values []any, err erro
 	i := 2 // start with the second parameter number, first is reserved for WHERE key value
 	for k, v := range paramsMap {
 		fields = append(fields, fmt.Sprintf("%s = $%d", quoteIdent(k), i))
+		if reflect.ValueOf(v).Kind() == reflect.Map { // transform into json key-value
+			v, _ = json.Marshal(v)
+		}
 		values = append(values, v)
 		i++
 	}

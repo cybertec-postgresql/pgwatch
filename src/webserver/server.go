@@ -27,6 +27,7 @@ type apiHandler interface {
 	GetPresets() (res string, err error)
 	AddPreset(params []byte) error
 	DeletePreset(name string) error
+	UpdatePreset(id string, params []byte) error
 }
 
 type WebUIServer struct {
@@ -103,7 +104,7 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	}
 
 	n, _ := io.Copy(w, file)
-	Server.l.Println("file", path, "copied", n, "bytes")
+	Server.l.Debug("file", path, "copied", n, "bytes")
 }
 
 func (Server *WebUIServer) handleHealth(w http.ResponseWriter, _ *http.Request) {
