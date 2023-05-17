@@ -1,14 +1,9 @@
 import { Box } from "@mui/material";
-
-import LogGrid from "./LogGrid";
-import TopPanel from "./TopPanel";
-
-import style from "./style.module.css";
+import { LogGrid } from "./LogGrid";
 
 export const Logs = () => {
   return (
-    <Box className={style.Logs}>
-      <TopPanel />
+    <Box sx={{ flex: "1 1 auto" }}>
       <LogGrid />
     </Box>
   );
