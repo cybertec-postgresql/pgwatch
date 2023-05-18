@@ -2,21 +2,21 @@ import { Box, Typography } from "@mui/material";
 import { AppBar as MuiAppBar } from "@mui/material";
 import Button from "@mui/material/Button";
 import Toolbar from "@mui/material/Toolbar";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 
 import { routes } from "./Routes";
 
 export const AppBar = () => {
   const menuLinks = routes.map((item) => (
-    <Button
+    <NavLink
       key={item.link}
       to={item.link}
-      component={Link}
-      sx={{ color: "#fff" }}
     >
-      {item.title}
-    </Button>
+      {({ isActive }) => (
+        <Button variant={isActive ? "contained" : "text"} sx={{ color: "white" }} fullWidth>{item.title}</Button>
+      )}
+    </NavLink>
   ));
 
   return (
