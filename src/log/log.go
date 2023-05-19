@@ -18,10 +18,17 @@ type (
 	LoggerHookerIface interface {
 		LoggerIface
 		AddHook(hook logrus.Hook)
+		AddSubscriber(msgCh MessageChanType)
+		RemoveSubscriber(msgCh MessageChanType)
 	}
 
 	loggerKey struct{}
 )
+
+type logger struct {
+	*logrus.Logger
+	*BrokerHook
+}
 
 func getLogFileWriter(opts config.LoggingOpts) any {
 	if opts.LogFileRotate {
@@ -45,7 +52,8 @@ func getLogFileFormatter(opts config.LoggingOpts) logrus.Formatter {
 // Init creates logging facilities for the application
 func Init(opts config.LoggingOpts) LoggerHookerIface {
 	var err error
-	l := logrus.New()
+	l := logger{logrus.New(), NewHook(context.Background(), opts.LogLevel)}
+	l.AddHook(l.BrokerHook)
 	l.Out = os.Stdout
 	if opts.LogFile > "" {
 		l.AddHook(lfshook.NewHook(getLogFileWriter(opts), getLogFileFormatter(opts)))
@@ -60,6 +68,7 @@ func Init(opts config.LoggingOpts) LoggerHookerIface {
 		TimestampFormat: "2006-01-02 15:04:05.000",
 		ShowFullLevel:   true,
 	})
+	l.SetBrokerFormatter(l.Formatter)
 	l.SetReportCaller(l.Level > logrus.InfoLevel)
 	return l
 }
