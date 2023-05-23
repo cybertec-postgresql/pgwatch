@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,16 +13,19 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
+	"github.com/cybertec-postgresql/pgwatch3/db"
+	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
-	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/tracelog"
 )
 
-var configDb *sqlx.DB
-var metricDb *sqlx.DB
-var monitoredDbConnCache map[string]*sqlx.DB = make(map[string]*sqlx.DB)
+var configDb db.PgxPoolIface
+var metricDb db.PgxPoolIface
+var monitoredDbConnCache map[string]db.PgxPoolIface = make(map[string]db.PgxPoolIface)
 
-func GetPostgresDBConnection(ctx context.Context, libPqConnString, host, port, dbname, user, password, sslmode, sslrootcert, sslcert, sslkey string) (*sqlx.DB, error) {
+func GetPostgresDBConnection(ctx context.Context, libPqConnString, host, port, dbname, user, password, sslmode, sslrootcert, sslcert, sslkey string) (db.PgxPoolIface, error) {
 	var connStr string
 
 	//log.Debug("Connecting to: ", host, port, dbname, user, password)
@@ -59,7 +61,19 @@ func GetPostgresDBConnection(ctx context.Context, libPqConnString, host, port, d
 		}
 	}
 
-	return sqlx.ConnectContext(ctx, "postgres", connStr)
+	connConfig, err := pgxpool.ParseConfig(connStr)
+	if err != nil {
+		return nil, err
+	}
+	connConfig.MaxConns = 2
+	connConfig.MaxConnIdleTime = 15 * time.Second
+	connConfig.MaxConnLifetime = pgConnRecycleSeconds * time.Second
+	tracelogger := &tracelog.TraceLog{
+		Logger:   log.NewPgxLogger(log.GetLogger(ctx)),
+		LogLevel: tracelog.LogLevelDebug, //map[bool]tracelog.LogLevel{false: tracelog.LogLevelWarn, true: tracelog.LogLevelDebug}[true],
+	}
+	connConfig.ConnConfig.Tracer = tracelogger
+	return pgxpool.NewWithConfig(ctx, connConfig)
 }
 
 func InitAndTestConfigStoreConnection(ctx context.Context, host, port, dbname, user, password string, requireSSL, failOnErr bool) error {
@@ -88,7 +102,7 @@ func InitAndTestConfigStoreConnection(ctx context.Context, host, port, dbname, u
 			}
 		}
 
-		err = configDb.Ping()
+		err = configDb.Ping(ctx)
 
 		if err != nil {
 			if i < retries {
@@ -107,19 +121,16 @@ func InitAndTestConfigStoreConnection(ctx context.Context, host, port, dbname, u
 			break
 		}
 	}
-	configDb.SetMaxIdleConns(1)
-	configDb.SetMaxOpenConns(2)
-	configDb.SetConnMaxLifetime(time.Second * time.Duration(pgConnRecycleSeconds))
 	return nil
 }
 
-func InitAndTestMetricStoreConnection(connStr string, failOnErr bool) error {
+func InitAndTestMetricStoreConnection(ctx context.Context, connStr string, failOnErr bool) error {
 	var err error
 	var retries = 3 // ~15s
 
 	for i := 0; i <= retries; i++ {
 
-		metricDb, err = GetPostgresDBConnection(context.Background(), connStr, "", "", "", "", "", "", "", "", "")
+		metricDb, err = GetPostgresDBConnection(ctx, connStr, "", "", "", "", "", "", "", "", "")
 		if err != nil {
 			if i < retries {
 				logger.Errorf("could not open metricDb connection. retrying in 5s. %d retries left. err: %v", retries-i, err)
@@ -134,7 +145,7 @@ func InitAndTestMetricStoreConnection(connStr string, failOnErr bool) error {
 			}
 		}
 
-		err = metricDb.Ping()
+		err = metricDb.Ping(context.TODO())
 
 		if err != nil {
 			if i < retries {
@@ -152,9 +163,6 @@ func InitAndTestMetricStoreConnection(connStr string, failOnErr bool) error {
 			break
 		}
 	}
-	metricDb.SetMaxIdleConns(2)
-	metricDb.SetMaxOpenConns(2)
-	metricDb.SetConnMaxLifetime(time.Second * 172800) // 2d
 	return nil
 }
 
@@ -179,20 +187,11 @@ func InitSQLConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
 		md.DBName = "pgbouncer"
 	}
 
-	conn, err := GetPostgresDBConnection(context.Background(), md.LibPQConnStr, md.Host, md.Port, md.DBName, md.User, md.Password,
+	conn, err := GetPostgresDBConnection(log.WithLogger(context.TODO(), logger), md.LibPQConnStr, md.Host, md.Port, md.DBName, md.User, md.Password,
 		md.SslMode, md.SslRootCAPath, md.SslClientCertPath, md.SslClientKeyPath)
 	if err != nil {
 		return err
 	}
-
-	if opts.UseConnPooling {
-		conn.SetMaxIdleConns(opts.MaxParallelConnectionsPerDb)
-	} else {
-		conn.SetMaxIdleConns(0)
-	}
-	conn.SetMaxOpenConns(opts.MaxParallelConnectionsPerDb)
-	// recycling periodically makes sense as long sessions might bloat memory or maybe conn info (password) was changed
-	conn.SetConnMaxLifetime(time.Second * time.Duration(pgConnRecycleSeconds))
 
 	monitoredDbConnCache[md.DBUniqueName] = conn
 	logger.Debugf("[%s] Connection pool initialized with max %d parallel connections. Conn pooling: %v", md.DBUniqueName, opts.MaxParallelConnectionsPerDb, opts.UseConnPooling)
@@ -212,105 +211,43 @@ func CloseOrLimitSQLConnPoolForMonitoredDBIfAny(dbUnique string) {
 	if IsDBUndersized(dbUnique) || IsDBIgnoredBasedOnRecoveryState(dbUnique) {
 
 		if opts.UseConnPooling {
-			s := conn.Stats()
-			if s.MaxOpenConnections > 1 {
-				logger.Debugf("[%s] Limiting SQL connection pool to max 1 connection due to dormant state ...", dbUnique)
-				conn.SetMaxIdleConns(1)
-				conn.SetMaxOpenConns(1)
-			}
+			// s := conn.Stats()
+			// if s.MaxOpenConnections > 1 {
+			// 	logger.Debugf("[%s] Limiting SQL connection pool to max 1 connection due to dormant state ...", dbUnique)
+			// 	conn.SetMaxIdleConns(1)
+			// 	conn.SetMaxOpenConns(1)
+			// }
 		}
 
 	} else { // removed from config
 		logger.Debugf("[%s] Closing SQL connection pool ...", dbUnique)
-		err := conn.Close()
-		if err != nil {
-			logger.Error("[%s] Failed to close connection pool to %s nicely. Err: %v", dbUnique, err)
-		}
+		conn.Close()
 		delete(monitoredDbConnCache, dbUnique)
 	}
 }
 
-func DBExecRead(conn *sqlx.DB, hostIdent, sql string, args ...any) (MetricData, error) {
-	ret := make(MetricData, 0)
-	var rows *sqlx.Rows
-	var err error
-
-	if conn == nil {
-		return nil, errors.New("nil connection")
+func DBExecRead(conn db.PgxPoolIface, hostIdent, sql string, args ...any) (MetricData, error) {
+	rows, err := conn.Query(context.TODO(), sql, args...)
+	if err == nil {
+		return pgx.CollectRows(rows, pgx.RowToMap)
 	}
-
-	rows, err = conn.Queryx(sql, args...)
-
-	if err != nil {
-		// connection problems or bad queries etc are quite common so caller should decide if to output something
-		logger.Debug("failed to query", hostIdent, "sql:", sql, "err:", err)
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		row := make(MetricEntry)
-		err = rows.MapScan(row)
-		if err != nil {
-			logger.Error("failed to MapScan a result row", hostIdent, err)
-			return nil, err
-		}
-		ret = append(ret, row)
-	}
-
-	err = rows.Err()
-	if err != nil {
-		logger.Error("failed to fully process resultset for", hostIdent, "sql:", sql, "err:", err)
-	}
-	return ret, err
+	return nil, err
 }
 
-func DBExecInExplicitTX(conn *sqlx.DB, hostIdent, query string, args ...any) (MetricData, error) {
-	ret := make(MetricData, 0)
-	var rows *sqlx.Rows
-	var err error
-
-	if conn == nil {
-		return nil, errors.New("nil connection")
-	}
-
-	ctx := context.Background()
-	txOpts := sql.TxOptions{ReadOnly: true}
-
-	tx, err := conn.BeginTxx(ctx, &txOpts)
-	if err != nil {
-		return ret, err
-	}
-	defer func() { _ = tx.Commit() }()
-
-	rows, err = tx.Queryx(query, args...)
-
-	if err != nil {
-		// connection problems or bad queries etc are quite common so caller should decide if to output something
-		logger.Debug("failed to query", hostIdent, "sql:", query, "err:", err)
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		row := make(MetricEntry)
-		err = rows.MapScan(row)
-		if err != nil {
-			logger.Error("failed to MapScan a result row", hostIdent, err)
-			return nil, err
+func DBExecInExplicitTX(conn db.PgxPoolIface, hostIdent, sql string, args ...any) (MetricData, error) {
+	tx, err := conn.BeginTx(context.TODO(), pgx.TxOptions{AccessMode: pgx.ReadOnly})
+	if err == nil {
+		defer func() { _ = tx.Commit(context.TODO()) }()
+		rows, err := tx.Query(context.TODO(), sql, args...)
+		if err == nil {
+			return pgx.CollectRows(rows, pgx.RowToMap)
 		}
-		ret = append(ret, row)
 	}
-
-	err = rows.Err()
-	if err != nil {
-		logger.Error("failed to fully process resultset for", hostIdent, "sql:", query, "err:", err)
-	}
-	return ret, err
+	return nil, err
 }
 
 func DBExecReadByDbUniqueName(dbUnique, _ string, stmtTimeoutOverride int64, sql string, args ...any) (MetricData, time.Duration, error) {
-	var conn *sqlx.DB
+	var conn db.PgxPoolIface
 	var md MonitoredDatabase
 	var data MetricData
 	var err error
@@ -427,7 +364,7 @@ func GetAllActiveHostsFromConfigDB() (MetricData, error) {
 	return data, err
 }
 
-func OldPostgresMetricsDeleter(metricAgeDaysThreshold int64, schemaType string) {
+func OldPostgresMetricsDeleter(ctx context.Context, metricAgeDaysThreshold int64, schemaType string) {
 	sqlDoesOldPartListingFuncExist := `SELECT count(*) FROM information_schema.routines WHERE routine_schema = 'admin' AND routine_name = 'get_old_time_partitions'`
 	oldPartListingFuncExists := false // if func existing (>v1.8.1) then use it to drop old partitions in smaller batches
 	// as for large setup (50+ DBs) one could reach the default "max_locks_per_transaction" otherwise
@@ -437,7 +374,12 @@ func OldPostgresMetricsDeleter(metricAgeDaysThreshold int64, schemaType string) 
 		oldPartListingFuncExists = true
 	}
 
-	time.Sleep(time.Hour * 1) // to reduce distracting log messages at startup
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(time.Hour):
+		// to reduce distracting log messages at startup
+	}
 
 	for {
 		// metric|metric-time|metric-dbname-time|custom
@@ -482,7 +424,12 @@ func OldPostgresMetricsDeleter(metricAgeDaysThreshold int64, schemaType string) 
 				logger.Infof("No old metric partitions found to drop...")
 			}
 		}
-		time.Sleep(time.Hour * 12)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Hour * 12):
+			// every 12 hours
+		}
 	}
 }
 
@@ -643,7 +590,7 @@ func AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
 	return err
 }
 
-func UniqueDbnamesListingMaintainer(daemonMode bool) {
+func UniqueDbnamesListingMaintainer(ctx context.Context, daemonMode bool) {
 	// due to metrics deletion the listing can go out of sync (a trigger not really wanted)
 	sqlGetAdvisoryLock := `SELECT pg_try_advisory_lock(1571543679778230000) AS have_lock` // 1571543679778230000 is just a random bigint
 	sqlTopLevelMetrics := `SELECT table_name FROM admin.get_top_level_metric_tables()`
@@ -664,7 +611,12 @@ func UniqueDbnamesListingMaintainer(daemonMode bool) {
 
 	for {
 		if daemonMode {
-			time.Sleep(time.Hour * 24)
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(time.Hour * 24):
+				// go for it
+			}
 		}
 
 		logger.Infof("Trying to get metricsDb listing maintaner advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
@@ -710,13 +662,13 @@ func UniqueDbnamesListingMaintainer(daemonMode bool) {
 					}
 					continue
 				}
-				ret, err = DBExecRead(metricDb, metricdbIdent, sqlDelete, pq.Array(foundDbnamesArr), metricName)
+				ret, err = DBExecRead(metricDb, metricdbIdent, sqlDelete, foundDbnamesArr, metricName)
 				if err != nil {
 					logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
 				} else if len(ret) > 0 {
 					logger.Infof("Removed %d stale entries from all_distinct_dbname_metrics listing table for metric: %s", len(ret), metricName)
 				}
-				ret, err = DBExecRead(metricDb, metricdbIdent, sqlAdd, pq.Array(foundDbnamesArr), metricName)
+				ret, err = DBExecRead(metricDb, metricdbIdent, sqlAdd, foundDbnamesArr, metricName)
 				if err != nil {
 					logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
 				} else if len(ret) > 0 {
@@ -994,7 +946,8 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 	}
 	getVerLock.Lock() // limit to 1 concurrent version info fetch per DB
 	defer getVerLock.Unlock()
-	logger.Debugf("[%s][%s] determining DB version and recovery status...", dbUnique, dbType)
+	logger.WithField("database", dbUnique).
+		WithField("type", dbType).Debug("determining DB version and recovery status...")
 
 	if verNew.Extensions == nil {
 		verNew.Extensions = make(map[string]uint)
@@ -1696,7 +1649,7 @@ func ReadMetricDefinitionMapFromPostgres(failOnError bool) (map[string]map[uint]
 		return metricDefMapNew, err
 	}
 
-	logger.Debug(len(data), "active metrics found from config db (pgwatch3.metric)")
+	logger.WithField("metrics", len(data)).Debug("Active metrics found in config database (pgwatch3.metric)")
 	for _, row := range data {
 		_, ok := metricDefMapNew[row["m_name"].(string)]
 		if !ok {
@@ -1862,7 +1815,7 @@ func TryCreateMetricsFetchingHelpers(dbUnique string) error {
 
 // "resolving" reads all the DB names from the given host/port, additionally matching/not matching specified regex patterns
 func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase, error) {
-	var c *sqlx.DB
+	var c db.PgxPoolIface
 	var err error
 	md := make([]MonitoredDatabase, 0)
 
@@ -1870,12 +1823,12 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 	templateDBsToTry := []string{"template1", "postgres", "defaultdb"}
 
 	for _, templateDB := range templateDBsToTry {
-		c, err = GetPostgresDBConnection(context.Background(), ce.LibPQConnStr, ce.Host, ce.Port, templateDB, ce.User, ce.Password,
+		c, err = GetPostgresDBConnection(log.WithLogger(context.TODO(), logger), ce.LibPQConnStr, ce.Host, ce.Port, templateDB, ce.User, ce.Password,
 			ce.SslMode, ce.SslRootCAPath, ce.SslClientCertPath, ce.SslClientKeyPath)
 		if err != nil {
 			return md, err
 		}
-		err = c.Ping()
+		err = c.Ping(context.TODO())
 		if err == nil {
 			break
 		}
@@ -2079,47 +2032,24 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 	logger.Debugf("COPY-ing %d metrics to Postgres metricsDB...", rowsBatched)
 	t1 := time.Now()
 
-	txn, err := metricDb.Begin()
-	if err != nil {
-		logger.Error("Could not start Postgres metricsDB transaction:", err)
-		atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-		return err
-	}
-	defer func() {
-		if err == nil {
-			txErr := txn.Commit()
-			if txErr != nil {
-				logger.Debug("COPY Commit to Postgres failed:", txErr)
-			}
-		} else {
-			txErr := txn.Rollback()
-			if txErr != nil {
-				logger.Debug("COPY Rollback to Postgres failed:", txErr)
-			}
-		}
-	}()
-
 	for metricName, metrics := range metricsToStorePerMetric {
-		var stmt *sql.Stmt
 
-		if PGSchemaType == "custom" {
-			stmt, err = txn.Prepare(pq.CopyIn("metrics", "time", "dbname", "metric", "data", "tag_data"))
-			if err != nil {
-				logger.Error("Could not prepare COPY to 'metrics' table:", err)
-				atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-				return err
+		getTargetTable := func() pgx.Identifier {
+			if PGSchemaType == "custom" {
+				return pgx.Identifier{"metrics"}
 			}
-		} else {
-			logger.Debugf("COPY-ing %d rows into '%s'...", len(metrics), metricName)
-			stmt, err = txn.Prepare(pq.CopyIn(metricName, "time", "dbname", "data", "tag_data"))
-			if err != nil {
-				logger.Errorf("Could not prepare COPY to '%s' table: %v", metricName, err)
-				atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-				return err
+			return pgx.Identifier{metricName}
+		}
+
+		getTargetColumns := func() []string {
+			if PGSchemaType == "custom" {
+				return []string{"time", "dbname", "metric", "data", "tag_data"}
 			}
+			return []string{"time", "dbname", "data", "tag_data"}
 		}
 
 		for _, m := range metrics {
+			l := logger.WithField("db", m.DBName).WithField("metric", m.Metric)
 			jsonBytes, err := json.Marshal(m.Data)
 			if err != nil {
 				logger.Errorf("Skipping 1 metric for [%s:%s] due to JSON conversion error: %s", m.DBName, m.Metric, err)
@@ -2130,47 +2060,27 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 			if len(m.TagData) > 0 {
 				jsonBytesTags, err := json.Marshal(m.TagData)
 				if err != nil {
-					logger.Errorf("Skipping 1 metric for [%s:%s] due to JSON conversion error: %s", m.DBName, m.Metric, err)
+					l.Error(err)
 					atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-					goto stmt_close
+					continue
 				}
-				if PGSchemaType == "custom" {
-					_, err = stmt.Exec(m.Time, m.DBName, m.Metric, string(jsonBytes), string(jsonBytesTags))
-				} else {
-					_, err = stmt.Exec(m.Time, m.DBName, string(jsonBytes), string(jsonBytesTags))
-				}
-				if err != nil {
-					logger.Errorf("Formatting metric %s data to COPY format failed for %s: %v ", m.Metric, m.DBName, err)
-					atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-					goto stmt_close
-				}
-			} else {
-				if PGSchemaType == "custom" {
-					_, err = stmt.Exec(m.Time, m.DBName, m.Metric, string(jsonBytes), nil)
-				} else {
-					_, err = stmt.Exec(m.Time, m.DBName, string(jsonBytes), nil)
-				}
-				if err != nil {
-					logger.Errorf("Formatting metric %s data to COPY format failed for %s: %v ", m.Metric, m.DBName, err)
-					atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-					goto stmt_close
-				}
-			}
-		}
 
-		_, err = stmt.Exec()
-		if err != nil {
-			logger.Error("COPY to Postgres failed:", err)
-			atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-			if strings.Contains(err.Error(), "no partition") {
-				logger.Warning("Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run")
-				forceRecreatePGMetricPartitions = true
+				var rows [][]any
+				if PGSchemaType == "custom" {
+					rows = [][]any{{m.Time, m.DBName, m.Metric, string(jsonBytes), string(jsonBytesTags)}}
+				} else {
+					rows = [][]any{{m.Time, m.DBName, string(jsonBytes), string(jsonBytesTags)}}
+				}
+
+				if _, err = metricDb.CopyFrom(context.Background(), getTargetTable(), getTargetColumns(), pgx.CopyFromRows(rows)); err != nil {
+					l.Error(err)
+					atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
+					forceRecreatePGMetricPartitions = strings.Contains(err.Error(), "no partition")
+					if forceRecreatePGMetricPartitions {
+						logger.Warning("Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run")
+					}
+				}
 			}
-		}
-	stmt_close:
-		err = stmt.Close()
-		if err != nil {
-			logger.Error("stmt.Close() failed:", err)
 		}
 	}
 

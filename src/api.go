@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -18,7 +19,7 @@ func (uiapi uiapihandler) AddPreset(params []byte) error {
 	err := json.Unmarshal(params, &m)
 	if err == nil {
 		config, _ := json.Marshal(m["pc_config"])
-		_, err = configDb.Exec(sql, m["pc_name"], m["pc_description"], config)
+		_, err = configDb.Exec(context.TODO(), sql, m["pc_name"], m["pc_description"], config)
 	}
 	return err
 }
@@ -32,33 +33,33 @@ func (uiapi uiapihandler) UpdatePreset(id string, params []byte) error {
 	sql := fmt.Sprintf(`UPDATE pgwatch3.preset_config SET %s WHERE pc_name = $1`,
 		strings.Join(fields, ","))
 	values = append([]any{id}, values...)
-	_, err = configDb.Exec(sql, values...)
+	_, err = configDb.Exec(context.TODO(), sql, values...)
 	return err
 }
 
 // GetPresets ret	urns the list of available presets
 func (uiapi uiapihandler) GetPresets() (res string, err error) {
 	sql := `select coalesce(jsonb_agg(to_jsonb(p)), '[]') from pgwatch3.preset_config p`
-	err = configDb.Get(&res, sql)
+	err = configDb.QueryRow(context.TODO(), sql).Scan(&res)
 	return
 }
 
 // DeletePreset removes the preset from the configuration
 func (uiapi uiapihandler) DeletePreset(name string) error {
-	_, err := configDb.Exec("DELETE FROM pgwatch3.preset_config WHERE pc_name = $1", name)
+	_, err := configDb.Exec(context.TODO(), "DELETE FROM pgwatch3.preset_config WHERE pc_name = $1", name)
 	return err
 }
 
 // GetMetrics returns the list of metrics
 func (uiapi uiapihandler) GetMetrics() (res string, err error) {
 	sql := `select coalesce(jsonb_agg(to_jsonb(m)), '[]') from metric m`
-	err = configDb.Get(&res, sql)
+	err = configDb.QueryRow(context.TODO(), sql).Scan(&res)
 	return
 }
 
 // DeleteMetric removes the metric from the configuration
 func (uiapi uiapihandler) DeleteMetric(id int) error {
-	_, err := configDb.Exec("DELETE FROM pgwatch3.metric WHERE m_id = $1", id)
+	_, err := configDb.Exec(context.TODO(), "DELETE FROM pgwatch3.metric WHERE m_id = $1", id)
 	return err
 }
 
@@ -71,7 +72,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 	var m map[string]any
 	err := json.Unmarshal(params, &m)
 	if err == nil {
-		_, err = configDb.Exec(sql, m["m_name"], m["m_pg_version_from"],
+		_, err = configDb.Exec(context.TODO(), sql, m["m_name"], m["m_pg_version_from"],
 			m["m_sql"], m["m_comment"], m["m_is_active"],
 			m["m_is_helper"], m["m_master_only"], m["m_standby_only"],
 			m["m_column_attrs"], m["m_sql_su"])
@@ -82,13 +83,13 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 // GetDatabases returns the list of monitored databases
 func (uiapi uiapihandler) GetDatabases() (res string, err error) {
 	sql := `select coalesce(jsonb_agg(to_jsonb(db)), '[]') from monitored_db db`
-	err = configDb.Get(&res, sql)
+	err = configDb.QueryRow(context.TODO(), sql).Scan(&res)
 	return
 }
 
 // DeleteDatabase removes the database from the list of monitored databases
 func (uiapi uiapihandler) DeleteDatabase(database string) error {
-	_, err := configDb.Exec("DELETE FROM pgwatch3.monitored_db WHERE md_unique_name = $1", database)
+	_, err := configDb.Exec(context.TODO(), "DELETE FROM pgwatch3.monitored_db WHERE md_unique_name = $1", database)
 	return err
 }
 
@@ -101,7 +102,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 	var m map[string]any
 	err := json.Unmarshal(params, &m)
 	if err == nil {
-		_, err = configDb.Exec(sql, m["md_unique_name"], m["md_preset_config_name"],
+		_, err = configDb.Exec(context.TODO(), sql, m["md_unique_name"], m["md_preset_config_name"],
 			m["md_config"], m["md_hostname"], m["md_port"],
 			m["md_dbname"], m["md_user"], m["md_password"],
 			m["md_is_superuser"], m["md_is_enabled"])
@@ -117,7 +118,7 @@ func (uiapi uiapihandler) UpdateMetric(id int, params []byte) error {
 	}
 	sql := fmt.Sprintf(`UPDATE pgwatch3.metric SET %s WHERE m_id = $1`, strings.Join(fields, ","))
 	values = append([]any{id}, values...)
-	_, err = configDb.Exec(sql, values...)
+	_, err = configDb.Exec(context.TODO(), sql, values...)
 	return err
 }
 
@@ -129,7 +130,7 @@ func (uiapi uiapihandler) UpdateDatabase(database string, params []byte) error {
 	}
 	sql := fmt.Sprintf(`UPDATE pgwatch3.monitored_db SET %s WHERE md_unique_name = $1`, strings.Join(fields, ","))
 	values = append([]any{database}, values...)
-	_, err = configDb.Exec(sql, values...)
+	_, err = configDb.Exec(context.TODO(), sql, values...)
 	return err
 }
 

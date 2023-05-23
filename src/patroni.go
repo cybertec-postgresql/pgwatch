@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
+	"github.com/cybertec-postgresql/pgwatch3/log"
 	consul_api "github.com/hashicorp/consul/api"
 	"github.com/samuel/go-zookeeper/zk"
 	client "go.etcd.io/etcd/client/v3"
@@ -325,7 +326,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 				DBType:            "postgres"})
 			continue
 		}
-		c, err := GetPostgresDBConnection(context.Background(), "", host, port, "template1", ce.User, ce.Password,
+		c, err := GetPostgresDBConnection(log.WithLogger(context.TODO(), logger), "", host, port, "template1", ce.User, ce.Password,
 			ce.SslMode, ce.SslRootCAPath, ce.SslClientCertPath, ce.SslClientKeyPath)
 		if err != nil {
 			logger.Errorf("Could not contact Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
