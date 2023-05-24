@@ -29,5 +29,6 @@ type PgxConnIface interface {
 type PgxPoolIface interface {
 	PgxIface
 	Acquire(ctx context.Context) (*pgxpool.Conn, error)
+	Stat() *pgxpool.Stat
 	Close()
 }

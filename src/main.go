@@ -672,7 +672,7 @@ func MetricsBatcher(ctx context.Context, batchingMaxDelayMillis int64, bufferedS
 				if datapointCounter > maxBatchSize { // flush. also set some last_sent_timestamp so that ticker would pass a round?
 					flushed := make([]MetricStoreMessage, len(batch))
 					copy(flushed, batch)
-					logger.WithField("datasets", len(batch)).Debugf("Flushing metrics due to maxBatchSize limit of %d datapoints", len(batch), maxBatchSize)
+					logger.WithField("datasets", len(batch)).Debugf("Flushing metrics due to maxBatchSize limit of %d datapoints", maxBatchSize)
 					storageCh <- flushed
 					batch = make([]MetricStoreMessage, 0)
 					datapointCounter = 0
@@ -924,7 +924,7 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (MetricData, tim
 	logger.Debugf("Processing %d recommendation metrics for \"%s\"", len(recoMetrics), dbUnique)
 
 	for m, mvp := range recoMetrics {
-		data, duration, err := DBExecReadByDbUniqueName(dbUnique, m, mvp.MetricAttrs.StatementTimeoutSeconds, mvp.SQL)
+		data, duration, err := DBExecReadByDbUniqueName(dbUnique, mvp.MetricAttrs.StatementTimeoutSeconds, mvp.SQL)
 		totalDuration += duration
 		if err != nil {
 			if strings.Contains(err.Error(), "does not exist") { // some more exotic extensions missing is expected, don't pollute the error log
@@ -1074,7 +1074,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 	} else if msg.DBType == config.DbTypePgPOOL {
 		data, _, _ = FetchMetricsPgpool(msg, vme, mvp)
 	} else {
-		data, duration, err = DBExecReadByDbUniqueName(msg.DBUniqueName, msg.MetricName, mvp.MetricAttrs.StatementTimeoutSeconds, sql)
+		data, duration, err = DBExecReadByDbUniqueName(msg.DBUniqueName, mvp.MetricAttrs.StatementTimeoutSeconds, sql)
 
 		if err != nil {
 			// let's soften errors to "info" from functions that expect the server to be a primary to reduce noise
