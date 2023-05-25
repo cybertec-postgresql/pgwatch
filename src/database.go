@@ -257,7 +257,7 @@ func DBExecReadByDbUniqueName(dbUnique string, stmtTimeoutOverride int64, sql st
 		return nil, errors.New("SQL connection not found or nil")
 	}
 	tx, err := conn.Begin(ctx)
-	defer tx.Commit(ctx)
+	defer func() { _ = tx.Commit(ctx) }()
 	if !opts.IsAdHocMode() && IsPostgresDBType(md.DBType) {
 		stmtTimeout := md.StmtTimeout
 		if stmtTimeoutOverride > 0 {
