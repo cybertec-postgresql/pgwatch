@@ -2018,28 +2018,32 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 				continue
 			}
 
-			if len(m.TagData) > 0 {
-				jsonBytesTags, err := json.Marshal(m.TagData)
-				if err != nil {
-					l.Error(err)
-					atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-					continue
-				}
-
-				var rows [][]any
-				if PGSchemaType == "custom" {
-					rows = [][]any{{m.Time, m.DBName, m.Metric, string(jsonBytes), string(jsonBytesTags)}}
-				} else {
-					rows = [][]any{{m.Time, m.DBName, string(jsonBytes), string(jsonBytesTags)}}
-				}
-
-				if _, err = metricDb.CopyFrom(context.Background(), getTargetTable(), getTargetColumns(), pgx.CopyFromRows(rows)); err != nil {
-					l.Error(err)
-					atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-					forceRecreatePGMetricPartitions = strings.Contains(err.Error(), "no partition")
-					if forceRecreatePGMetricPartitions {
-						logger.Warning("Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run")
+			getTagData := func() any {
+				if len(m.TagData) > 0 {
+					jsonBytesTags, err := json.Marshal(m.TagData)
+					if err != nil {
+						l.Error(err)
+						atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
+						return nil
 					}
+					return string(jsonBytesTags)
+				}
+				return nil
+			}
+
+			var rows [][]any
+			if PGSchemaType == "custom" {
+				rows = [][]any{{m.Time, m.DBName, m.Metric, string(jsonBytes), getTagData()}}
+			} else {
+				rows = [][]any{{m.Time, m.DBName, string(jsonBytes), getTagData()}}
+			}
+
+			if _, err = metricDb.CopyFrom(context.Background(), getTargetTable(), getTargetColumns(), pgx.CopyFromRows(rows)); err != nil {
+				l.Error(err)
+				atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
+				forceRecreatePGMetricPartitions = strings.Contains(err.Error(), "no partition")
+				if forceRecreatePGMetricPartitions {
+					logger.Warning("Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run")
 				}
 			}
 		}
