@@ -61,6 +61,7 @@ func Init(addr string, webuifs fs.FS, api apiHandler, logger log.LoggerIface) *W
 	mux.HandleFunc("/db", s.handleDBs)
 	mux.HandleFunc("/metric", s.handleMetrics)
 	mux.HandleFunc("/preset", s.handlePresets)
+	mux.HandleFunc("/log", s.serveWsLog)
 	mux.HandleFunc("/", s.handleStatic)
 
 	if 8080 != 0 {
