@@ -923,7 +923,7 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (MetricData, err
 	logger.Debugf("Processing %d recommendation metrics for \"%s\"", len(recoMetrics), dbUnique)
 
 	for m, mvp := range recoMetrics {
-		data, err := DBExecReadByDbUniqueName(dbUnique, mvp.MetricAttrs.StatementTimeoutSeconds, mvp.SQL)
+		data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.MetricAttrs.StatementTimeoutSeconds, mvp.SQL)
 		if err != nil {
 			if strings.Contains(err.Error(), "does not exist") { // some more exotic extensions missing is expected, don't pollute the error log
 				logger.Infof("[%s:%s] Could not execute recommendations SQL: %v", dbUnique, m, err)
@@ -1076,7 +1076,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 			return nil, err
 		}
 	} else {
-		data, err = DBExecReadByDbUniqueName(msg.DBUniqueName, mvp.MetricAttrs.StatementTimeoutSeconds, sql)
+		data, err = DBExecReadByDbUniqueName(mainContext, msg.DBUniqueName, mvp.MetricAttrs.StatementTimeoutSeconds, sql)
 
 		if err != nil {
 			// let's soften errors to "info" from functions that expect the server to be a primary to reduce noise
@@ -1505,7 +1505,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 				if ticker != nil {
 					ticker.Stop()
 				}
-				ticker = time.NewTicker(time.Millisecond * time.Duration(interval*1000))
+				ticker = time.NewTicker(time.Second * time.Duration(interval))
 				logger.Debug("started MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
 			} else if msg.Action == gathererStatusStop {
 				logger.Debug("exiting MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
@@ -2494,22 +2494,23 @@ const (
 
 var exitCode = ExitCodeOK
 
+var mainContext context.Context
+
 func main() {
 	var (
 		err    error
-		ctx    context.Context
 		cancel context.CancelFunc
 	)
 
 	defer func() {
 		if err := recover(); err != nil {
 			exitCode = ExitCodeFatalError
-			log.GetLogger(ctx).WithField("callstack", string(debug.Stack())).Error(err)
+			log.GetLogger(mainContext).WithField("callstack", string(debug.Stack())).Error(err)
 		}
 		os.Exit(exitCode)
 	}()
 
-	ctx, cancel = context.WithCancel(context.Background())
+	mainContext, cancel = context.WithCancel(context.Background())
 	SetupCloseHandler(cancel)
 	defer cancel()
 
@@ -2525,7 +2526,7 @@ func main() {
 	}
 
 	logger = log.Init(opts.Logging)
-	ctx = log.WithLogger(ctx, logger)
+	mainContext = log.WithLogger(mainContext, logger)
 
 	uifs, _ := fs.Sub(webuifs, "webui/build")
 	ui := webserver.Init(":8080", uifs, uiapi, logger)
@@ -2600,7 +2601,7 @@ func main() {
 			return
 		}
 
-		_ = InitAndTestConfigStoreConnection(ctx, opts.Connection.Host,
+		_ = InitAndTestConfigStoreConnection(mainContext, opts.Connection.Host,
 			opts.Connection.Port, opts.Connection.Dbname, opts.Connection.User, opts.Connection.Password,
 			opts.Connection.PgRequireSSL, true)
 	}
@@ -2617,7 +2618,7 @@ func main() {
 			logger.Fatalf("Could not cleanly stop the temporary listener on port %d: %v", opts.InternalStatsPort, err)
 		}
 		logger.Infof("Starting the internal statistics interface on port %d...", opts.InternalStatsPort)
-		go StatsSummarizer(ctx)
+		go StatsSummarizer(mainContext)
 	}
 
 	if opts.Metric.PrometheusAsyncMode {
@@ -2633,7 +2634,7 @@ func main() {
 		if opts.BatchingDelayMs > 0 && opts.Metric.Datastore != datastorePrometheus {
 			bufferedPersistCh = make(chan []MetricStoreMessage, 10000) // "staging area" for metric storage batching, when enabled
 			logger.Info("starting MetricsBatcher...")
-			go MetricsBatcher(ctx, opts.BatchingDelayMs, bufferedPersistCh, persistCh)
+			go MetricsBatcher(mainContext, opts.BatchingDelayMs, bufferedPersistCh, persistCh)
 		}
 
 		if opts.Metric.Datastore == datastoreGraphite {
@@ -2645,7 +2646,7 @@ func main() {
 			graphitePort = int(port)
 			InitGraphiteConnection(graphiteHost, graphitePort)
 			logger.Info("starting GraphitePersister...")
-			go MetricsPersister(ctx, datastoreGraphite, persistCh)
+			go MetricsPersister(mainContext, datastoreGraphite, persistCh)
 		} else if opts.Metric.Datastore == datastoreJSON {
 			if len(opts.Metric.JSONStorageFile) == 0 {
 				logger.Fatal("--datastore=json requires --json-storage-file to be set")
@@ -2659,25 +2660,25 @@ func main() {
 				logger.Fatal(err)
 			}
 			logger.Warningf("In JSON output mode. Gathered metrics will be written to \"%s\"...", opts.Metric.JSONStorageFile)
-			go MetricsPersister(ctx, datastoreJSON, persistCh)
+			go MetricsPersister(mainContext, datastoreJSON, persistCh)
 		} else if opts.Metric.Datastore == datastorePostgres {
 			if len(opts.Metric.PGMetricStoreConnStr) == 0 {
 				logger.Fatal("--datastore=postgres requires --pg-metric-store-conn-str to be set")
 			}
 
-			_ = InitAndTestMetricStoreConnection(ctx, opts.Metric.PGMetricStoreConnStr, true)
+			_ = InitAndTestMetricStoreConnection(mainContext, opts.Metric.PGMetricStoreConnStr, true)
 
 			PGSchemaType = CheckIfPGSchemaInitializedOrFail()
 
 			logger.Info("starting PostgresPersister...")
-			go MetricsPersister(ctx, datastorePostgres, persistCh)
+			go MetricsPersister(mainContext, datastorePostgres, persistCh)
 
 			logger.Info("starting UniqueDbnamesListingMaintainer...")
-			go UniqueDbnamesListingMaintainer(ctx, true)
+			go UniqueDbnamesListingMaintainer(mainContext, true)
 
 			if opts.Metric.PGRetentionDays > 0 && PGSchemaType != "custom" && opts.TestdataDays == 0 {
 				logger.Info("starting old Postgres metrics cleanup job...")
-				go OldPostgresMetricsDeleter(ctx, opts.Metric.PGRetentionDays, PGSchemaType)
+				go OldPostgresMetricsDeleter(mainContext, opts.Metric.PGRetentionDays, PGSchemaType)
 			}
 
 		} else if opts.Metric.Datastore == datastorePrometheus {
@@ -2687,9 +2688,9 @@ func main() {
 
 			if opts.Metric.PrometheusAsyncMode {
 				logger.Info("starting Prometheus Cache Persister...")
-				go MetricsPersister(ctx, datastorePrometheus, persistCh)
+				go MetricsPersister(mainContext, datastorePrometheus, persistCh)
 			}
-			go StartPrometheusExporter(ctx)
+			go StartPrometheusExporter(mainContext)
 		} else {
 			logger.Fatal("Unknown datastore. Check the --datastore param")
 		}
@@ -2807,9 +2808,9 @@ func main() {
 			monitoredDbsCopy := make([]MonitoredDatabase, len(monitoredDbs))
 			copy(monitoredDbsCopy, monitoredDbs)
 			if opts.BatchingDelayMs > 0 {
-				go SyncMonitoredDBsToDatastore(ctx, monitoredDbsCopy, bufferedPersistCh)
+				go SyncMonitoredDBsToDatastore(mainContext, monitoredDbsCopy, bufferedPersistCh)
 			} else {
-				go SyncMonitoredDBsToDatastore(ctx, monitoredDbsCopy, persistCh)
+				go SyncMonitoredDBsToDatastore(mainContext, monitoredDbsCopy, persistCh)
 			}
 			lastMonitoredDBsUpdate = time.Now()
 		}
@@ -2982,9 +2983,9 @@ func main() {
 						controlChannels[dbMetric] = make(chan ControlMessage, 1)
 						PromAsyncCacheInitIfRequired(dbUnique, metric)
 						if opts.BatchingDelayMs > 0 {
-							go MetricGathererLoop(ctx, dbUnique, dbUniqueOrig, dbType, metric, metricConfig, controlChannels[dbMetric], bufferedPersistCh)
+							go MetricGathererLoop(mainContext, dbUnique, dbUniqueOrig, dbType, metric, metricConfig, controlChannels[dbMetric], bufferedPersistCh)
 						} else {
-							go MetricGathererLoop(ctx, dbUnique, dbUniqueOrig, dbType, metric, metricConfig, controlChannels[dbMetric], persistCh)
+							go MetricGathererLoop(mainContext, dbUnique, dbUniqueOrig, dbType, metric, metricConfig, controlChannels[dbMetric], persistCh)
 						}
 					}
 				} else if (!metricDefOk && chOk) || interval <= 0 {
@@ -3028,7 +3029,7 @@ func main() {
 				pqlen := len(persistCh)
 				if pqlen == 0 {
 					if opts.Metric.Datastore == datastorePostgres {
-						UniqueDbnamesListingMaintainer(ctx, false) // refresh Grafana listing table
+						UniqueDbnamesListingMaintainer(mainContext, false) // refresh Grafana listing table
 					}
 					logger.Warning("All generators have exited and data stored. Exit")
 					os.Exit(0)
@@ -3089,7 +3090,7 @@ func main() {
 				}
 			}
 
-			if ctx.Err() != nil || wholeDbShutDownDueToRoleChange || dbRemovedFromConfig || singleMetricDisabled {
+			if mainContext.Err() != nil || wholeDbShutDownDueToRoleChange || dbRemovedFromConfig || singleMetricDisabled {
 				logger.Infof("shutting down gatherer for [%s:%s] ...", db, metric)
 				controlChannels[dbMetric] <- ControlMessage{Action: gathererStatusStop}
 				delete(controlChannels, dbMetric)
@@ -3101,7 +3102,7 @@ func main() {
 		}
 
 		if gatherersShutDown > 0 {
-			logger.Warningf("sent STOP message to %d gatherers (it might take some minutes for them to stop though)", gatherersShutDown)
+			logger.Warningf("sent STOP message to %d gatherers (it might take some time for them to stop though)", gatherersShutDown)
 		}
 
 		// Destroy conn pools, Prom async cache
@@ -3115,7 +3116,7 @@ func main() {
 		select {
 		case <-time.After(time.Second * time.Duration(opts.Connection.ServersRefreshLoopSeconds)):
 			// pass
-		case <-ctx.Done():
+		case <-mainContext.Done():
 			return
 		}
 	}

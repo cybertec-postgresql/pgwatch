@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
-	"github.com/cybertec-postgresql/pgwatch3/log"
 	consul_api "github.com/hashicorp/consul/api"
 	"github.com/samuel/go-zookeeper/zk"
 	client "go.etcd.io/etcd/client/v3"
@@ -326,7 +325,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 				DBType:            "postgres"})
 			continue
 		}
-		c, err := GetPostgresDBConnection(log.WithLogger(context.TODO(), logger), "", host, port, "template1", ce.User, ce.Password,
+		c, err := GetPostgresDBConnection(mainContext, "", host, port, "template1", ce.User, ce.Password,
 			ce.SslMode, ce.SslRootCAPath, ce.SslClientCertPath, ce.SslClientKeyPath)
 		if err != nil {
 			logger.Errorf("Could not contact Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
@@ -342,7 +341,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 					and case when length(trim($1)) > 0 then datname ~ $2 else true end
 					and case when length(trim($3)) > 0 then not datname ~ $4 else true end`
 
-		data, err := DBExecRead(c, sql, ce.DBNameIncludePattern, ce.DBNameIncludePattern, ce.DBNameExcludePattern, ce.DBNameExcludePattern)
+		data, err := DBExecRead(mainContext, c, sql, ce.DBNameIncludePattern, ce.DBNameIncludePattern, ce.DBNameExcludePattern, ce.DBNameExcludePattern)
 		if err != nil {
 			logger.Errorf("Could not get DB name listing from Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
 			continue
