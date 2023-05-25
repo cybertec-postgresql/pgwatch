@@ -915,17 +915,15 @@ func GetAllRecoMetricsForVersion(vme DBVersionMapEntry) map[string]MetricVersion
 	return mvpMap
 }
 
-func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (MetricData, time.Duration, error) {
+func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (MetricData, error) {
 	retData := make(MetricData, 0)
-	var totalDuration time.Duration
 	startTimeEpochNs := time.Now().UnixNano()
 
 	recoMetrics := GetAllRecoMetricsForVersion(vme)
 	logger.Debugf("Processing %d recommendation metrics for \"%s\"", len(recoMetrics), dbUnique)
 
 	for m, mvp := range recoMetrics {
-		data, duration, err := DBExecReadByDbUniqueName(dbUnique, mvp.MetricAttrs.StatementTimeoutSeconds, mvp.SQL)
-		totalDuration += duration
+		data, err := DBExecReadByDbUniqueName(dbUnique, mvp.MetricAttrs.StatementTimeoutSeconds, mvp.SQL)
 		if err != nil {
 			if strings.Contains(err.Error(), "does not exist") { // some more exotic extensions missing is expected, don't pollute the error log
 				logger.Infof("[%s:%s] Could not execute recommendations SQL: %v", dbUnique, m, err)
@@ -949,7 +947,7 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (MetricData, tim
 		dummy["major_ver"] = vme.Version / 10
 		retData = append(retData, dummy)
 	}
-	return retData, totalDuration, nil
+	return retData, nil
 }
 
 func FilterPgbouncerData(data MetricData, databaseToKeep string, vme DBVersionMapEntry) MetricData {
@@ -1070,11 +1068,11 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 	if msg.MetricName == specialMetricChangeEvents && context != contextPrometheusScrape { // special handling, multiple queries + stateful
 		CheckForPGObjectChangesAndStore(msg.DBUniqueName, vme, storageCh, hostState) // TODO no hostState for Prometheus currently
 	} else if msg.MetricName == recoMetricName && context != contextPrometheusScrape {
-		data, _, _ = GetRecommendations(msg.DBUniqueName, vme)
+		data, err = GetRecommendations(msg.DBUniqueName, vme)
 	} else if msg.DBType == config.DbTypePgPOOL {
-		data, _, _ = FetchMetricsPgpool(msg, vme, mvp)
+		data, err = FetchMetricsPgpool(msg, vme, mvp)
 	} else {
-		data, duration, err = DBExecReadByDbUniqueName(msg.DBUniqueName, mvp.MetricAttrs.StatementTimeoutSeconds, sql)
+		data, err = DBExecReadByDbUniqueName(msg.DBUniqueName, mvp.MetricAttrs.StatementTimeoutSeconds, sql)
 
 		if err != nil {
 			// let's soften errors to "info" from functions that expect the server to be a primary to reduce noise
@@ -3087,7 +3085,7 @@ func main() {
 				}
 			}
 
-			if wholeDbShutDownDueToRoleChange || dbRemovedFromConfig || singleMetricDisabled {
+			if ctx.Err() != nil || wholeDbShutDownDueToRoleChange || dbRemovedFromConfig || singleMetricDisabled {
 				logger.Infof("shutting down gatherer for [%s:%s] ...", db, metric)
 				controlChannels[dbMetric] <- ControlMessage{Action: gathererStatusStop}
 				delete(controlChannels, dbMetric)
@@ -3114,7 +3112,7 @@ func main() {
 		case <-time.After(time.Second * time.Duration(opts.Connection.ServersRefreshLoopSeconds)):
 			// pass
 		case <-ctx.Done():
-			break
+			return
 		}
 	}
 }
