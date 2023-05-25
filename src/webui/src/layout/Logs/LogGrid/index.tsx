@@ -3,9 +3,8 @@ import { Alert, AlertColor, Box, Snackbar } from "@mui/material";
 import { ReadyState } from "react-use-websocket/dist/lib/constants";
 import { LoadingComponent } from "layout/common/LoadingComponent";
 import { useLogs } from "queries/Log";
-
 import style from "../style.module.css";
-
+import { logOutput } from "./logOutput";
 
 export const LogGrid = () => {
   const [alertOpen, setAlertOpen] = useState(false);
@@ -62,9 +61,7 @@ export const LogGrid = () => {
         }
         <pre className={style.LogGrid}>
           {
-            logsHistory.map((log, index) => (
-              <p key={index}>{log.data}</p>
-            ))
+            [...logsHistory].reverse().map(logOutput)
           }
         </pre>
       </Box>
