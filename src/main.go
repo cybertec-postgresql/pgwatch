@@ -985,7 +985,7 @@ func FilterPgbouncerData(data MetricData, databaseToKeep string, vme DBVersionMa
 	return filteredData
 }
 
-func FetchMetrics(msg MetricFetchMessage, hostState map[string]map[string]string, storageCh chan<- []MetricStoreMessage, context string) ([]MetricStoreMessage, error) {
+func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[string]map[string]string, storageCh chan<- []MetricStoreMessage, context string) ([]MetricStoreMessage, error) {
 	var vme DBVersionMapEntry
 	var dbpgVersion uint
 	var err, firstErr error
@@ -996,7 +996,7 @@ func FetchMetrics(msg MetricFetchMessage, hostState map[string]map[string]string
 	var md MonitoredDatabase
 	var fromCache, isCacheable bool
 
-	vme, err = DBGetPGVersion(msg.DBUniqueName, msg.DBType, false)
+	vme, err = DBGetPGVersion(ctx, msg.DBUniqueName, msg.DBType, false)
 	if err != nil {
 		logger.Error("failed to fetch pg version for ", msg.DBUniqueName, msg.MetricName, err)
 		return nil, err
@@ -1090,7 +1090,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 			}
 
 			if msg.MetricName == specialMetricInstanceUp {
-				logger.Debugf("[%s:%s] failed to fetch metrics. marking instance as not up: %s", msg.DBUniqueName, msg.MetricName, err)
+				logger.WithError(err).Debugf("[%s:%s] failed to fetch metrics. marking instance as not up", msg.DBUniqueName, msg.MetricName)
 				data = make(MetricData, 1)
 				data[0] = MetricEntry{"epoch_ns": time.Now().UnixNano(), "is_up": 0} // NB! should be updated if the "instance_up" metric definition is changed
 				goto send_to_storageChannel
@@ -1106,7 +1106,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 				goto retry_with_superuser_sql
 			}
 			if firstErr != nil {
-				logger.Infof("[%s:%s] failed to fetch metrics also with SU SQL so initial error will be returned. Current err: %s", msg.DBUniqueName, msg.MetricName, err)
+				logger.WithError(err).Infof("[%s:%s] failed to fetch metrics also with SU SQL so initial error will be returned", msg.DBUniqueName, msg.MetricName)
 				return nil, firstErr // returning the initial error
 			}
 			logger.Infof("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
@@ -1343,7 +1343,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 	}
 	if opts.Metric.Datastore == datastorePostgres && opts.TestdataDays == 0 {
 		if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
-			vme, err := DBGetPGVersion(dbUniqueName, dbType, false)
+			vme, err := DBGetPGVersion(ctx, dbUniqueName, dbType, false)
 			if err != nil {
 				logger.Warningf("[%s][%s] Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts", dbUniqueName, metricName)
 			} else {
@@ -1371,7 +1371,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 
 	for {
 		if lastDBVersionFetchTime.Add(time.Minute * time.Duration(5)).Before(time.Now()) {
-			vme, err = DBGetPGVersion(dbUniqueName, dbType, false) // in case of errors just ignore metric "disabled" time ranges
+			vme, err = DBGetPGVersion(ctx, dbUniqueName, dbType, false) // in case of errors just ignore metric "disabled" time ranges
 			if err != nil {
 				lastDBVersionFetchTime = time.Now()
 			}
@@ -1401,7 +1401,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 			}
 			t1 := time.Now()
 			if metricStoreMessages == nil {
-				metricStoreMessages, err = FetchMetrics(
+				metricStoreMessages, err = FetchMetrics(ctx,
 					mfm,
 					hostState,
 					storeCh,
@@ -2608,7 +2608,7 @@ func main() {
 	pgBouncerNumericCountersStartVersion = VersionToInt("1.12")
 
 	if !opts.Ping {
-		go StatsSummarizer()
+		go StatsSummarizer(mainContext)
 	}
 
 	if opts.Metric.PrometheusAsyncMode {
@@ -2854,7 +2854,7 @@ func main() {
 					logger.Infof("new host \"%s\" found, checking connectivity...", dbUnique)
 				}
 
-				ver, err = DBGetPGVersion(dbUnique, dbType, true)
+				ver, err = DBGetPGVersion(mainContext, dbUnique, dbType, true)
 				if err != nil {
 					logger.Errorf("could not start metric gathering for DB \"%s\" due to connection problem: %s", dbUnique, err)
 					if opts.AdHocConnString != "" {
@@ -2906,7 +2906,7 @@ func main() {
 						SetUndersizedDBState(dbUnique, false)
 					}
 				}
-				ver, err := DBGetPGVersion(dbUnique, host.DBType, false)
+				ver, err := DBGetPGVersion(mainContext, dbUnique, host.DBType, false)
 				if err == nil { // ok to ignore error, re-tried on next loop
 					lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[dbUnique]
 					if ver.IsInRecovery && host.OnlyIfMaster {

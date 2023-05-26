@@ -113,7 +113,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 					}
 				} else {
 					logger.Debugf("scraping [%s:%s]...", md.DBUniqueName, metric)
-					metricStoreMessages, err = FetchMetrics(
+					metricStoreMessages, err = FetchMetrics(mainContext,
 						MetricFetchMessage{DBUniqueName: name, DBUniqueNameOrig: md.DBUniqueNameOrig, MetricName: metric, DBType: md.DBType, Interval: time.Second * time.Duration(interval)},
 						nil,
 						nil,
@@ -147,7 +147,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 func setInstanceUpDownState(ch chan<- prometheus.Metric, md MonitoredDatabase) {
 	logger.Debugf("checking availability of configured DB [%s:%s]...", md.DBUniqueName, promInstanceUpStateMetric)
-	vme, err := DBGetPGVersion(md.DBUniqueName, md.DBType, !opts.Metric.PrometheusAsyncMode) // NB! in async mode 2min cache can mask smaller downtimes!
+	vme, err := DBGetPGVersion(mainContext, md.DBUniqueName, md.DBType, !opts.Metric.PrometheusAsyncMode) // NB! in async mode 2min cache can mask smaller downtimes!
 	data := make(MetricEntry)
 	if err != nil {
 		data[promInstanceUpStateMetric] = 0

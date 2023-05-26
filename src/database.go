@@ -640,24 +640,19 @@ func EnsureMetricDummy(metric string) {
 	if opts.Metric.Datastore != datastorePostgres {
 		return
 	}
-	sqlEnsure := `
-	select admin.ensure_dummy_metrics_table($1) as created
-	`
+	sqlEnsure := "select admin.ensure_dummy_metrics_table($1) as created"
 	PGDummyMetricTablesLock.Lock()
 	defer PGDummyMetricTablesLock.Unlock()
 	lastEnsureCall, ok := PGDummyMetricTables[metric]
 	if ok && lastEnsureCall.After(time.Now().Add(-1*time.Hour)) {
 		return
 	}
-	ret, err := DBExecRead(mainContext, metricDb, sqlEnsure, metric)
-	if err != nil {
-		logger.Errorf("Failed to create dummy partition of metric '%s': %v", metric, err)
-	} else {
-		if ret[0]["created"].(bool) {
-			logger.Infof("Created a dummy partition of metric '%s'", metric)
-		}
-		PGDummyMetricTables[metric] = time.Now()
+	if err := metricDb.QueryRow(mainContext, sqlEnsure, metric).Scan(&ok); err != nil || !ok {
+		logger.Error(err)
+		return
 	}
+	logger.WithField("metric", metric).Info("Created a dummy partition of metric")
+	PGDummyMetricTables[metric] = time.Now()
 }
 
 func EnsureMetric(pgPartBounds map[string]ExistingPartitionInfo, force bool) error {
@@ -804,7 +799,7 @@ func DBGetSizeMB(dbUnique string) (int64, error) {
 	lastDBSizeCheckLock.RUnlock()
 
 	if !ok || lastDBSizeCheckTime.Add(dbSizeCachingInterval).Before(time.Now()) {
-		ver, err := DBGetPGVersion(dbUnique, config.DbTypePg, false)
+		ver, err := DBGetPGVersion(mainContext, dbUnique, config.DbTypePg, false)
 		if err != nil || (ver.ExecEnv != execEnvAzureSingle) || (ver.ExecEnv == execEnvAzureSingle && ver.ApproxDBSizeB < 1e12) {
 			logger.Debugf("[%s] determining DB size ...", dbUnique)
 
@@ -866,7 +861,7 @@ func GetDBTotalApproxSize(dbUnique string) (int64, error) {
 	return data[0]["db_size_approx"].(int64), nil
 }
 
-func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapEntry, error) {
+func DBGetPGVersion(ctx context.Context, dbUnique string, dbType string, noCache bool) (DBVersionMapEntry, error) {
 	var ver DBVersionMapEntry
 	var verNew DBVersionMapEntry
 	var ok bool
@@ -905,7 +900,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 	}
 
 	if dbType == config.DbTypeBouncer {
-		data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 0, "show version")
+		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, 0, "show version")
 		if err != nil {
 			return verNew, err
 		}
@@ -923,7 +918,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 			verNew.Version = VersionToInt(matches[0])
 		}
 	} else if dbType == config.DbTypePgPOOL {
-		data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 0, pgpoolVersion)
+		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, 0, pgpoolVersion)
 		if err != nil {
 			return verNew, err
 		}
@@ -940,7 +935,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 			verNew.Version = VersionToInt(matches[0])
 		}
 	} else {
-		data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 0, sql)
+		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, 0, sql)
 		if err != nil {
 			if noCache {
 				return ver, err
@@ -956,7 +951,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 
 		if verNew.Version > VersionToInt("10.0") && opts.AddSystemIdentifier {
 			logger.Debugf("[%s] determining system identifier version (pg ver: %v)", dbUnique, verNew.VersionStr)
-			data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 0, sqlSysid)
+			data, err := DBExecReadByDbUniqueName(ctx, dbUnique, 0, sqlSysid)
 			if err == nil && len(data) > 0 {
 				verNew.SystemIdentifier = data[0]["system_identifier"].(string)
 			}
@@ -984,7 +979,7 @@ func DBGetPGVersion(dbUnique string, dbType string, noCache bool) (DBVersionMapE
 		}
 
 		logger.Debugf("[%s] determining if monitoring user is a superuser...", dbUnique)
-		data, err = DBExecReadByDbUniqueName(mainContext, dbUnique, 0, sqlSu)
+		data, err = DBExecReadByDbUniqueName(ctx, dbUnique, 0, sqlSu)
 		if err == nil {
 			verNew.IsSuperuser = data[0]["rolsuper"].(bool)
 		}
@@ -1687,7 +1682,7 @@ func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existi
 
 // Called once on daemon startup to try to create "metric fething helper" functions automatically
 func TryCreateMetricsFetchingHelpers(dbUnique string) error {
-	dbPgVersion, err := DBGetPGVersion(dbUnique, config.DbTypePg, false)
+	dbPgVersion, err := DBGetPGVersion(mainContext, dbUnique, config.DbTypePg, false)
 	if err != nil {
 		logger.Errorf("Failed to fetch pg version for \"%s\": %s", dbUnique, err)
 		return err
