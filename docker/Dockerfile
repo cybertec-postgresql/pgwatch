@@ -29,7 +29,7 @@ RUN apt-get -q update \
     && echo "include = 'pgwatch_postgresql.conf'" >> /etc/postgresql/14/main/postgresql.conf
 
 RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
-    && wget -q -O grafana.deb "https://dl.grafana.com/oss/release/grafana_9.4.7_${arch}.deb" \
+    && wget -q -O grafana.deb "https://dl.grafana.com/oss/release/grafana_9.5.2_${arch}.deb" \
     && dpkg -i grafana.deb && rm grafana.deb
 
 
