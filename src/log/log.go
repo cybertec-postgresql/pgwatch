@@ -62,13 +62,8 @@ func Init(opts config.LoggingOpts) LoggerHookerIface {
 	if err != nil {
 		l.Level = logrus.InfoLevel
 	}
-	l.SetFormatter(&Formatter{
-		HideKeys:        false,
-		FieldsOrder:     []string{"database", "metric", "sql", "params"},
-		TimestampFormat: "2006-01-02 15:04:05.000",
-		ShowFullLevel:   true,
-	})
-	l.SetBrokerFormatter(l.Formatter)
+	l.SetFormatter(newFormatter())
+	l.SetBrokerFormatter(newFormatter())
 	l.SetReportCaller(l.Level > logrus.InfoLevel)
 	return l
 }

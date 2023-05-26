@@ -77,47 +77,30 @@ func GetPostgresDBConnection(ctx context.Context, libPqConnString, host, port, d
 
 func InitAndTestConfigStoreConnection(ctx context.Context, host, port, dbname, user, password string, requireSSL, failOnErr bool) error {
 	var err error
-	SSLMode := "disable"
+	SSLMode := map[bool]string{false: "disable", true: "require"}[requireSSL]
 	var retries = 3 // ~15s
-
-	if requireSSL {
-		SSLMode = "require"
-	}
-
+	defer func() {
+		if err != nil && failOnErr {
+			logger.Fatal("could not ping configDb! exit.", err)
+		}
+	}()
 	for i := 0; i <= retries; i++ {
 		// configDb is used by the main thread only. no verify-ca/verify-full support currently
-		configDb, err = GetPostgresDBConnection(ctx, "", host, port, dbname, user, password, SSLMode, "", "", "")
-		if err != nil {
-			if i < retries {
-				logger.Errorf("could not open metricDb connection. retrying in 5s. %d retries left. err: %v", retries-i, err)
-				time.Sleep(time.Second * 5)
-				continue
-			}
-			if failOnErr {
-				logger.Fatal("could not open configDb connection! exit.")
-			} else {
-				logger.Error("could not open configDb connection!")
-				return err
-			}
+		if configDb, err = GetPostgresDBConnection(ctx, "", host, port, dbname, user, password, SSLMode, "", "", ""); err != nil {
+			return err
 		}
-
-		err = configDb.Ping(ctx)
-
-		if err != nil {
-			if i < retries {
-				logger.Errorf("could not ping configDb! retrying in 5s. %d retries left. err: %v", retries-i, err)
-				time.Sleep(time.Second * 5)
+		if err = configDb.Ping(ctx); err == nil {
+			logger.Info("connect to configDb OK!")
+			return nil
+		}
+		if i < retries {
+			logger.Errorf("could not ping configDb! retrying in 5s. %d retries left. err: %v", retries-i, err)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(time.Second * 5):
 				continue
 			}
-			if failOnErr {
-				logger.Fatal("could not ping configDb! exit.", err)
-			} else {
-				logger.Error("could not ping configDb!", err)
-				return err
-			}
-		} else {
-			logger.Info("connect to configDb OK!")
-			break
 		}
 	}
 	return nil
