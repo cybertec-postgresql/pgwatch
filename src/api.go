@@ -6,11 +6,70 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync/atomic"
+	"time"
 )
 
 type uiapihandler struct{}
 
 var uiapi uiapihandler
+
+// GetStats
+func (uiapi uiapihandler) GetStats() string {
+	jsonResponseTemplate := `
+{
+	"version": %s, "dbSchema": %s, "commit": %s, "built": %s,
+	"secondsFromLastSuccessfulDatastoreWrite": %d,
+	"totalMetricsFetchedCounter": %d,
+	"totalMetricsReusedFromCacheCounter": %d,
+	"totalDatasetsFetchedCounter": %d,
+	"metricPointsPerMinuteLast5MinAvg": %v,
+	"metricsDropped": %d,
+	"totalMetricFetchFailuresCounter": %d,
+	"datastoreWriteFailuresCounter": %d,
+	"datastoreSuccessfulWritesCounter": %d,
+	"datastoreAvgSuccessfulWriteTimeMillis": %.1f,
+	"databasesMonitored": %d,
+	"databasesConfigured": %d,
+	"unreachableDBs": %d,
+	"gathererUptimeSeconds": %d
+}
+`
+	secondsFromLastSuccessfulDatastoreWrite := atomic.LoadInt64(&lastSuccessfulDatastoreWriteTimeEpoch)
+	totalMetrics := atomic.LoadUint64(&totalMetricsFetchedCounter)
+	cacheMetrics := atomic.LoadUint64(&totalMetricsReusedFromCacheCounter)
+	totalDatasets := atomic.LoadUint64(&totalDatasetsFetchedCounter)
+	metricsDropped := atomic.LoadUint64(&totalMetricsDroppedCounter)
+	metricFetchFailuresCounter := atomic.LoadUint64(&totalMetricFetchFailuresCounter)
+	datastoreFailures := atomic.LoadUint64(&datastoreWriteFailuresCounter)
+	datastoreSuccess := atomic.LoadUint64(&datastoreWriteSuccessCounter)
+	datastoreTotalTimeMicros := atomic.LoadUint64(&datastoreTotalWriteTimeMicroseconds) // successful writes only
+	datastoreAvgSuccessfulWriteTimeMillis := float64(datastoreTotalTimeMicros) / float64(datastoreSuccess) / 1000.0
+	gathererUptimeSeconds := uint64(time.Now().Sub(gathererStartTime).Seconds())
+	metricPointsPerMinute := atomic.LoadInt64(&metricPointsPerMinuteLast5MinAvg)
+	if metricPointsPerMinute == -1 { // calculate avg. on the fly if 1st summarization hasn't happened yet
+		metricPointsPerMinute = int64((totalMetrics * 60) / gathererUptimeSeconds)
+	}
+	monitoredDbs := getMonitoredDatabasesSnapshot()
+	databasesConfigured := len(monitoredDbs) // including replicas
+	databasesMonitored := 0
+	for _, md := range monitoredDbs {
+		if shouldDbBeMonitoredBasedOnCurrentState(md) {
+			databasesMonitored++
+		}
+	}
+	unreachableDBsLock.RLock()
+	unreachableDBs := len(unreachableDB)
+	unreachableDBsLock.RUnlock()
+	return fmt.Sprintf(jsonResponseTemplate, version, dbapi, commit, date,
+		time.Now().Unix()-secondsFromLastSuccessfulDatastoreWrite,
+		totalMetrics, cacheMetrics, totalDatasets, metricPointsPerMinute,
+		metricsDropped, metricFetchFailuresCounter, datastoreFailures,
+		datastoreSuccess, datastoreAvgSuccessfulWriteTimeMillis,
+		databasesMonitored, databasesConfigured, unreachableDBs,
+		gathererUptimeSeconds)
+
+}
 
 // AddPreset adds the preset to the list of available presets
 func (uiapi uiapihandler) AddPreset(params []byte) error {
