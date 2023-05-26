@@ -6,6 +6,22 @@ import (
 	"strconv"
 )
 
+type apiHandler interface {
+	GetDatabases() (string, error)
+	AddDatabase(params []byte) error
+	DeleteDatabase(id string) error
+	UpdateDatabase(id string, params []byte) error
+	GetMetrics() (res string, err error)
+	AddMetric(params []byte) error
+	DeleteMetric(id int) error
+	UpdateMetric(id int, params []byte) error
+	GetPresets() (res string, err error)
+	AddPreset(params []byte) error
+	DeletePreset(name string) error
+	UpdatePreset(id string, params []byte) error
+	GetStats() string
+}
+
 func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request) {
 	var (
 		err    error
@@ -153,6 +169,16 @@ func (Server *WebUIServer) handleDBs(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
 		w.WriteHeader(http.StatusNoContent)
 
+	default:
+		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (Server *WebUIServer) handleStats(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		_, _ = w.Write([]byte(Server.api.GetStats()))
 	default:
 		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
