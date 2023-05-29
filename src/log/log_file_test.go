@@ -17,5 +17,5 @@ func TestGetLogFileWriter(t *testing.T) {
 func TestGetLogFileFormatter(t *testing.T) {
 	assert.IsType(t, getLogFileFormatter(config.LoggingOpts{LogFileFormat: "json"}), &logrus.JSONFormatter{})
 	assert.IsType(t, getLogFileFormatter(config.LoggingOpts{LogFileFormat: "blah"}), &logrus.JSONFormatter{})
-	assert.IsType(t, getLogFileFormatter(config.LoggingOpts{LogFileFormat: "text"}), &logrus.TextFormatter{})
+	assert.IsType(t, getLogFileFormatter(config.LoggingOpts{LogFileFormat: "text"}), &Formatter{})
 }

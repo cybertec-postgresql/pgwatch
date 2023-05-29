@@ -325,7 +325,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 				DBType:            "postgres"})
 			continue
 		}
-		c, err := GetPostgresDBConnection(context.Background(), "", host, port, "template1", ce.User, ce.Password,
+		c, err := GetPostgresDBConnection(mainContext, "", host, port, "template1", ce.User, ce.Password,
 			ce.SslMode, ce.SslRootCAPath, ce.SslClientCertPath, ce.SslClientKeyPath)
 		if err != nil {
 			logger.Errorf("Could not contact Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
@@ -341,7 +341,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 					and case when length(trim($1)) > 0 then datname ~ $2 else true end
 					and case when length(trim($3)) > 0 then not datname ~ $4 else true end`
 
-		data, err := DBExecRead(c, ce.DBUniqueName, sql, ce.DBNameIncludePattern, ce.DBNameIncludePattern, ce.DBNameExcludePattern, ce.DBNameExcludePattern)
+		data, err := DBExecRead(mainContext, c, sql, ce.DBNameIncludePattern, ce.DBNameIncludePattern, ce.DBNameExcludePattern, ce.DBNameExcludePattern)
 		if err != nil {
 			logger.Errorf("Could not get DB name listing from Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
 			continue

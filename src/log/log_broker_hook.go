@@ -69,16 +69,10 @@ func (hook *BrokerHook) SetBrokerFormatter(formatter logrus.Formatter) {
 	hook.mu.Lock()
 	defer hook.mu.Unlock()
 	if formatter == nil {
-		formatter = defaultFormatter
+		hook.formatter = defaultFormatter
 	} else {
-		switch l := formatter.(type) {
-		case *logrus.TextFormatter:
-			l.DisableColors = true
-		case *Formatter:
-			l.NoColors = true
-		}
+		hook.formatter = formatter
 	}
-	hook.formatter = formatter
 }
 
 // Fire adds logrus log message to the internal queue for processing

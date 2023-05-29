@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -23,7 +24,7 @@ const promInstanceUpStateMetric = "instance_up"
 // timestamps older than that will be ignored on the Prom scraper side anyways, so better don't emit at all and just log a notice
 const promScrapingStalenessHardDropLimit = time.Minute * time.Duration(10)
 
-func NewExporter() (*Exporter, error) {
+func NewExporter() *Exporter {
 	return &Exporter{
 		lastScrapeErrors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: opts.Metric.PrometheusNamespace,
@@ -40,7 +41,7 @@ func NewExporter() (*Exporter, error) {
 			Name:      "exporter_total_scrape_failures",
 			Help:      "Number of errors while executing metric queries",
 		}),
-	}, nil
+	}
 }
 
 // Not really needed for scraping to work
@@ -112,7 +113,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 					}
 				} else {
 					logger.Debugf("scraping [%s:%s]...", md.DBUniqueName, metric)
-					metricStoreMessages, err = FetchMetrics(
+					metricStoreMessages, err = FetchMetrics(mainContext,
 						MetricFetchMessage{DBUniqueName: name, DBUniqueNameOrig: md.DBUniqueNameOrig, MetricName: metric, DBType: md.DBType, Interval: time.Second * time.Duration(interval)},
 						nil,
 						nil,
@@ -146,7 +147,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 func setInstanceUpDownState(ch chan<- prometheus.Metric, md MonitoredDatabase) {
 	logger.Debugf("checking availability of configured DB [%s:%s]...", md.DBUniqueName, promInstanceUpStateMetric)
-	vme, err := DBGetPGVersion(md.DBUniqueName, md.DBType, !opts.Metric.PrometheusAsyncMode) // NB! in async mode 2min cache can mask smaller downtimes!
+	vme, err := DBGetPGVersion(mainContext, md.DBUniqueName, md.DBType, !opts.Metric.PrometheusAsyncMode) // NB! in async mode 2min cache can mask smaller downtimes!
 	data := make(MetricEntry)
 	if err != nil {
 		data[promInstanceUpStateMetric] = 0
@@ -318,25 +319,15 @@ func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric
 	return promMetrics
 }
 
-func StartPrometheusExporter() {
-	listenLoops := 0
-	promExporter, err := NewExporter()
-	if err != nil {
-		logger.Fatal(err)
-	}
-
+func StartPrometheusExporter(ctx context.Context) {
+	promExporter := NewExporter()
 	prometheus.MustRegister(promExporter)
-
-	var promServer = &http.Server{Addr: fmt.Sprintf("%s:%d", opts.Metric.PrometheusListenAddr, opts.Metric.PrometheusPort), Handler: promhttp.Handler()}
-
-	for { // ListenAndServe call should not normally return, but looping just in case
-		logger.Infof("starting Prometheus exporter on %s:%d ...", opts.Metric.PrometheusListenAddr, opts.Metric.PrometheusPort)
-		err = promServer.ListenAndServe()
-		if listenLoops == 0 {
-			logger.Fatal("Prometheus listener failure:", err)
-		} else {
-			logger.Error("Prometheus listener failure:", err)
-		}
-		time.Sleep(time.Second * 5)
+	promServer := &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", opts.Metric.PrometheusListenAddr, opts.Metric.PrometheusPort),
+		Handler: promhttp.Handler(),
 	}
+	logger.Infof("starting Prometheus exporter on %s:%d ...", opts.Metric.PrometheusListenAddr, opts.Metric.PrometheusPort)
+	go logger.Error(promServer.ListenAndServe())
+	<-ctx.Done()
+	_ = promServer.Close()
 }
