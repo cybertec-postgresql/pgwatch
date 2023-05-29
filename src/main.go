@@ -728,9 +728,6 @@ func MetricsPersister(ctx context.Context, dataStore string, storageCh <-chan []
 		case <-ctx.Done():
 			return
 		case msgArr := <-storageCh:
-
-			logger.Debug("Metric Storage Messages:", msgArr)
-
 			for i, retryQueue := range retryQueues {
 
 				retryQueueLength := retryQueue.Len()
@@ -1323,7 +1320,6 @@ func deepCopyMetricDefinitionMap(mdm map[string]map[uint]MetricVersionProperties
 func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbType, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []MetricStoreMessage) {
 	config := configMap
 	interval := config[metricName]
-	ticker := time.NewTicker(time.Millisecond * time.Duration(interval*1000))
 	hostState := make(map[string]map[string]string)
 	var lastUptimeS int64 = -1 // used for "server restarted" event detection
 	var lastErrorNotificationTime time.Time
@@ -1501,16 +1497,12 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 			if msg.Action == gathererStatusStart {
 				config = msg.Config
 				interval = config[metricName]
-				if ticker != nil {
-					ticker.Stop()
-				}
-				ticker = time.NewTicker(time.Second * time.Duration(interval))
 				logger.Debug("started MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
 			} else if msg.Action == gathererStatusStop {
 				logger.Debug("exiting MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
 				return
 			}
-		case <-ticker.C:
+		case <-time.After(time.Second * time.Duration(interval)):
 			logger.Debugf("MetricGathererLoop for [%s:%s] slept for %s", dbUniqueName, metricName, time.Second*time.Duration(interval))
 		}
 
@@ -2477,12 +2469,12 @@ func SetupCloseHandler(cancel context.CancelFunc) {
 		<-c
 		logger.Debug("SetupCloseHandler received an interrupt from OS. Closing session...")
 		cancel()
-		exitCode = ExitCodeUserCancel
+		exitCode.Store(ExitCodeUserCancel)
 	}()
 }
 
 const (
-	ExitCodeOK int = iota
+	ExitCodeOK int32 = iota
 	ExitCodeConfigError
 	ExitCodeWebUIError
 	ExitCodeUpgradeError
@@ -2491,7 +2483,7 @@ const (
 	ExitCodeFatalError
 )
 
-var exitCode = ExitCodeOK
+var exitCode atomic.Int32
 
 var mainContext context.Context
 
@@ -2500,13 +2492,13 @@ func main() {
 		err    error
 		cancel context.CancelFunc
 	)
-
+	exitCode.Store(ExitCodeOK)
 	defer func() {
 		if err := recover(); err != nil {
-			exitCode = ExitCodeFatalError
+			exitCode.Store(ExitCodeFatalError)
 			log.GetLogger(mainContext).WithField("callstack", string(debug.Stack())).Error(err)
 		}
-		os.Exit(exitCode)
+		os.Exit(int(exitCode.Load()))
 	}()
 
 	mainContext, cancel = context.WithCancel(context.Background())
@@ -2520,7 +2512,7 @@ func main() {
 			return
 		}
 		fmt.Println("Configuration error: ", err)
-		exitCode = ExitCodeConfigError
+		exitCode.Store(ExitCodeConfigError)
 		return
 	}
 
@@ -2530,7 +2522,7 @@ func main() {
 	uifs, _ := fs.Sub(webuifs, "webui/build")
 	ui := webserver.Init(":8080", uifs, uiapi, logger)
 	if ui == nil {
-		exitCode = ExitCodeWebUIError
+		exitCode.Store(ExitCodeWebUIError)
 		return
 	}
 
