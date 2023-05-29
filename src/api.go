@@ -45,7 +45,7 @@ func (uiapi uiapihandler) GetStats() string {
 	datastoreSuccess := atomic.LoadUint64(&datastoreWriteSuccessCounter)
 	datastoreTotalTimeMicros := atomic.LoadUint64(&datastoreTotalWriteTimeMicroseconds) // successful writes only
 	datastoreAvgSuccessfulWriteTimeMillis := float64(datastoreTotalTimeMicros) / float64(datastoreSuccess) / 1000.0
-	gathererUptimeSeconds := uint64(time.Now().Sub(gathererStartTime).Seconds())
+	gathererUptimeSeconds := uint64(time.Since(gathererStartTime).Seconds())
 	metricPointsPerMinute := atomic.LoadInt64(&metricPointsPerMinuteLast5MinAvg)
 	if metricPointsPerMinute == -1 { // calculate avg. on the fly if 1st summarization hasn't happened yet
 		metricPointsPerMinute = int64((totalMetrics * 60) / gathererUptimeSeconds)
