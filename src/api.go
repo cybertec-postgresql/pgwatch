@@ -15,24 +15,21 @@ var uiapi uiapihandler
 
 // GetStats
 func (uiapi uiapihandler) GetStats() string {
-	jsonResponseTemplate := `
-{
-	"version": %s, "dbSchema": %s, "commit": %s, "built": %s,
-	"secondsFromLastSuccessfulDatastoreWrite": %d,
-	"totalMetricsFetchedCounter": %d,
-	"totalMetricsReusedFromCacheCounter": %d,
-	"totalDatasetsFetchedCounter": %d,
-	"metricPointsPerMinuteLast5MinAvg": %v,
-	"metricsDropped": %d,
-	"totalMetricFetchFailuresCounter": %d,
-	"datastoreWriteFailuresCounter": %d,
-	"datastoreSuccessfulWritesCounter": %d,
-	"datastoreAvgSuccessfulWriteTimeMillis": %.1f,
-	"databasesMonitored": %d,
-	"databasesConfigured": %d,
-	"unreachableDBs": %d,
-	"gathererUptimeSeconds": %d
-}
+	jsonResponseTemplate := `{"version": "%s", "dbSchema": "%s", "commit": "%s", "built": "%s",
+"secondsFromLastSuccessfulDatastoreWrite": %d,
+"totalMetricsFetchedCounter": %d,
+"totalMetricsReusedFromCacheCounter": %d,
+"totalDatasetsFetchedCounter": %d,
+"metricPointsPerMinuteLast5MinAvg": %v,
+"metricsDropped": %d,
+"totalMetricFetchFailuresCounter": %d,
+"datastoreWriteFailuresCounter": %d,
+"datastoreSuccessfulWritesCounter": %d,
+"datastoreAvgSuccessfulWriteTimeMillis": %.1f,
+"databasesMonitored": %d,
+"databasesConfigured": %d,
+"unreachableDBs": %d,
+"gathererUptimeSeconds": %d}
 `
 	secondsFromLastSuccessfulDatastoreWrite := atomic.LoadInt64(&lastSuccessfulDatastoreWriteTimeEpoch)
 	totalMetrics := atomic.LoadUint64(&totalMetricsFetchedCounter)
