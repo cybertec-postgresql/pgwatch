@@ -263,7 +263,7 @@ func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, stmtTimeoutO
 			return nil, err
 		}
 	}
-	if data, err = DBExecRead(ctx, conn, sql, args...); err != nil {
+	if data, err = DBExecRead(ctx, tx, sql, args...); err != nil {
 		atomic.AddUint64(&totalMetricFetchFailuresCounter, 1)
 	}
 	return data, err
