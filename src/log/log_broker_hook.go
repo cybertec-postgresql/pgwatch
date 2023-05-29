@@ -69,7 +69,7 @@ func (hook *BrokerHook) SetBrokerFormatter(formatter logrus.Formatter) {
 	hook.mu.Lock()
 	defer hook.mu.Unlock()
 	if formatter == nil {
-		formatter = defaultFormatter
+		hook.formatter = defaultFormatter
 	} else {
 		hook.formatter = formatter
 	}
