@@ -9,6 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
+            "console": "integratedTerminal",
             "program": "${workspaceFolder}/src",
             // "env": {
             //     "PW3_DATASTORE": "postgres",

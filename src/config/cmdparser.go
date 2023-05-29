@@ -60,7 +60,6 @@ type CmdOptions struct {
 	AdHocConfig             string `long:"adhoc-config" mapstructure:"adhoc-config" description:"Ad-hoc mode: a preset config name or a custom JSON config" env:"PW3_ADHOC_CONFIG"`
 	AdHocCreateHelpers      bool   `long:"adhoc-create-helpers" mapstructure:"adhoc-create-helpers" description:"Ad-hoc mode: try to auto-create helpers. Needs superuser to succeed" env:"PW3_ADHOC_CREATE_HELPERS"`
 	AdHocUniqueName         string `long:"adhoc-name" mapstructure:"adhoc-name" description:"Ad-hoc mode: Unique 'dbname' for Influx" default:"adhoc" env:"PW3_ADHOC_NAME"`
-	InternalStatsPort       int64  `long:"internal-stats-port" mapstructure:"internal-stats-port" description:"Port for inquiring monitoring status in JSON format" default:"8081" env:"PW3_INTERNAL_STATS_PORT"`
 	DirectOSStats           bool   `long:"direct-os-stats" mapstructure:"direct-os-stats" description:"Extract OS related psutil statistics not via PL/Python wrappers but directly on host" env:"PW3_DIRECT_OS_STATS"`
 	UseConnPooling          bool   `long:"use-conn-pooling" mapstructure:"use-conn-pooling" description:"Enable re-use of metrics fetching connections" env:"PW3_USE_CONN_POOLING"`
 	AesGcmKeyphrase         string `long:"aes-gcm-keyphrase" mapstructure:"aes-gcm-keyphrase" description:"Decryption key for AES-GCM-256 passwords" env:"PW3_AES_GCM_KEYPHRASE"`
