@@ -1860,7 +1860,7 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 		if msg.Data == nil || len(msg.Data) == 0 {
 			continue
 		}
-		logger.Debug("SendToPG data[0] of ", len(msg.Data), ":", msg.Data[0])
+		logger.WithField("data", msg.Data).WithField("len", len(msg.Data)).Debug("Sending To Postgres")
 
 		for _, dr := range msg.Data {
 			var epochTime time.Time
