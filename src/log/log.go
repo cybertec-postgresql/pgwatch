@@ -42,9 +42,14 @@ func getLogFileWriter(opts config.LoggingOpts) any {
 	return opts.LogFile
 }
 
+const (
+	disableColors = true
+	enableColors  = false
+)
+
 func getLogFileFormatter(opts config.LoggingOpts) logrus.Formatter {
 	if opts.LogFileFormat == "text" {
-		return &logrus.TextFormatter{}
+		return newFormatter(disableColors)
 	}
 	return &logrus.JSONFormatter{}
 }
@@ -62,8 +67,8 @@ func Init(opts config.LoggingOpts) LoggerHookerIface {
 	if err != nil {
 		l.Level = logrus.InfoLevel
 	}
-	l.SetFormatter(newFormatter())
-	l.SetBrokerFormatter(newFormatter())
+	l.SetFormatter(newFormatter(enableColors))
+	l.SetBrokerFormatter(newFormatter(disableColors))
 	l.SetReportCaller(l.Level > logrus.InfoLevel)
 	return l
 }
