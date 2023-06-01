@@ -44,7 +44,7 @@ func (uiapi uiapihandler) GetStats() string {
 			"gathererUptimeSeconds": %d
 		}
 	}`
-  
+
 	secondsFromLastSuccessfulDatastoreWrite := atomic.LoadInt64(&lastSuccessfulDatastoreWriteTimeEpoch)
 	totalMetrics := atomic.LoadUint64(&totalMetricsFetchedCounter)
 	cacheMetrics := atomic.LoadUint64(&totalMetricsReusedFromCacheCounter)
@@ -72,13 +72,11 @@ func (uiapi uiapihandler) GetStats() string {
 	unreachableDBs := len(unreachableDB)
 	unreachableDBsLock.RUnlock()
 	return fmt.Sprintf(jsonResponseTemplate, version, dbapi, commit, date,
-		time.Now().Unix()-secondsFromLastSuccessfulDatastoreWrite,
-		totalMetrics, cacheMetrics, totalDatasets, metricPointsPerMinute,
-		metricsDropped, metricFetchFailuresCounter, datastoreFailures,
-		datastoreSuccess, datastoreAvgSuccessfulWriteTimeMillis,
-		databasesMonitored, databasesConfigured, unreachableDBs,
+		totalMetrics, cacheMetrics, metricPointsPerMinute, metricsDropped,
+		metricFetchFailuresCounter, time.Now().Unix()-secondsFromLastSuccessfulDatastoreWrite,
+		datastoreFailures, datastoreSuccess, datastoreAvgSuccessfulWriteTimeMillis,
+		totalDatasets, databasesMonitored, databasesConfigured, unreachableDBs,
 		gathererUptimeSeconds)
-
 }
 
 // AddPreset adds the preset to the list of available presets
