@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/gorilla/websocket v1.5.0
-	github.com/hashicorp/consul/api v1.20.0
+	github.com/hashicorp/consul/api v1.21.0
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/marpaia/graphite-golang v0.0.0-20190519024811-caf161d2c2b1
