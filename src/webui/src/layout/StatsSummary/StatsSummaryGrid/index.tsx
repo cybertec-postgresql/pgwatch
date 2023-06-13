@@ -1,4 +1,4 @@
-import { Box, Grid, Typography } from "@mui/material";
+import { Box, Grid, Tooltip, Typography } from "@mui/material";
 import { ErrorComponent } from "layout/common/ErrorComponent";
 import { LoadingComponent } from "layout/common/LoadingComponent";
 import { useStatsSummary } from "queries/StatsSummary";
@@ -66,14 +66,17 @@ export const StatsSummaryGrid = () => {
               >
                 {prettifyString(key)}
               </Typography>
-              <Typography
-                sx={{
-                  fontWeight: "bold"
-                }}
-                variant="h6"
-              >
-                {value}
-              </Typography>
+              <Tooltip title={value} placement="bottom-start">
+                <Typography
+                  sx={{
+                    fontWeight: "bold"
+                  }}
+                  variant="h6"
+                  noWrap
+                >
+                  {value}
+                </Typography>
+              </Tooltip>
             </Box>
           ))
         }
@@ -93,7 +96,7 @@ export const StatsSummaryGrid = () => {
                 gap: 1
               }}
             >
-              <Typography variant="h5" fontWeight="bold" sx={{width: "100%"}}>{prettifyString(key)}</Typography>
+              <Typography variant="h5" fontWeight="bold" sx={{ width: "100%" }}>{prettifyString(key)}</Typography>
               <Grid
                 container
                 sx={{
@@ -121,7 +124,13 @@ export const StatsSummaryGrid = () => {
                         borderColor: "lightgray"
                       }}
                     >
-                      <Box sx={{ display: "flex", height: "100%", width: "75%", alignItems: "center" }}>{prettifyString(dataSetKey)}</Box>
+                      <Box sx={{ display: "flex", height: "100%", width: "75%", alignItems: "center" }}>
+                        <Tooltip title={prettifyString(dataSetKey)} placement="bottom-start">
+                          <Typography noWrap>
+                            {prettifyString(dataSetKey)}
+                          </Typography>
+                        </Tooltip>
+                      </Box>
                       <Box sx={{ display: "flex", height: "100%", width: "25%", alignItems: "center", justifyContent: "right" }}>{dataSetValue}</Box>
                     </Grid>
                   ))
