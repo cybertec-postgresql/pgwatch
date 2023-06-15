@@ -65,7 +65,7 @@ type CmdOptions struct {
 	AesGcmKeyphrase         string `long:"aes-gcm-keyphrase" mapstructure:"aes-gcm-keyphrase" description:"Decryption key for AES-GCM-256 passwords" env:"PW3_AES_GCM_KEYPHRASE"`
 	AesGcmKeyphraseFile     string `long:"aes-gcm-keyphrase-file" mapstructure:"aes-gcm-keyphrase-file" description:"File with decryption key for AES-GCM-256 passwords" env:"PW3_AES_GCM_KEYPHRASE_FILE"`
 	AesGcmPasswordToEncrypt string `long:"aes-gcm-password-to-encrypt" mapstructure:"aes-gcm-password-to-encrypt" description:"A special mode, returns the encrypted plain-text string and quits. Keyphrase(file) must be set. Useful for YAML mode" env:"PW3_AES_GCM_PASSWORD_TO_ENCRYPT"`
-	// NB! "Test data" mode needs to be combined with "ad-hoc" mode to get an initial set of metrics from a real source
+	// "Test data" mode needs to be combined with "ad-hoc" mode to get an initial set of metrics from a real source
 	TestdataMultiplier           int    `long:"testdata-multiplier" mapstructure:"testdata-multiplier" description:"For how many hosts to generate data" env:"PW3_TESTDATA_MULTIPLIER"`
 	TestdataDays                 int    `long:"testdata-days" mapstructure:"testdata-days" description:"For how many days to generate data" env:"PW3_TESTDATA_DAYS"`
 	AddRealDbname                bool   `long:"add-real-dbname" mapstructure:"add-real-dbname" description:"Add real DB name to each captured metric" env:"PW3_ADD_REAL_DBNAME"`

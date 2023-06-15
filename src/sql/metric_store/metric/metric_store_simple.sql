@@ -1,8 +1,8 @@
 /*
-  NB! When possible the partitioned versions ("metric_store_part_time.sql"
+  When possible the partitioned versions ("metric_store_part_time.sql"
   or "metric_store_part_dbname_time.sql") (assuming PG11+) should be used
   as much less IO would be then performed when removing old data.
-  NB! A fresh separate DB, only for pgwatch3 metrics storage purposes, is assumed.
+  A fresh separate DB, only for pgwatch3 metrics storage purposes, is assumed.
 */
 
 CREATE EXTENSION IF NOT EXISTS btree_gin;

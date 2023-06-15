@@ -1,5 +1,5 @@
 /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
-CREATE EXTENSION IF NOT EXISTS plpython3u; /* NB! "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
+CREATE EXTENSION IF NOT EXISTS plpython3u; /* "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
 
 CREATE OR REPLACE FUNCTION get_psutil_disk(
 	OUT dir_or_tablespace text, OUT path text, OUT total float8, OUT used float8, OUT free float8, OUT percent float8

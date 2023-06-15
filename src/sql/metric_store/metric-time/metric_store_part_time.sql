@@ -1,7 +1,7 @@
 /* 
-   NB! PG 11+ only (for lesser PG versions see "metric_store_simple.sql")
+   PG 11+ only (for lesser PG versions see "metric_store_simple.sql")
    This schema is recommended for <25 monitored DBs (see "metric_store_part_dbname_time.sql" for 25+).
-   NB! A fresh separate DB, only for pgwatch3 metrics storage purposes, is assumed.
+   A fresh separate DB, only for pgwatch3 metrics storage purposes, is assumed.
 */
 
 CREATE SCHEMA IF NOT EXISTS subpartitions AUTHORIZATION pgwatch3;
@@ -61,5 +61,5 @@ create index on admin.metrics_template_realtime (dbname, time);
 
 RESET ROLE;
 
--- NB! default (for the Docker image)
+-- default (for the Docker image)
 insert into admin.storage_schema_type select 'metric-time';

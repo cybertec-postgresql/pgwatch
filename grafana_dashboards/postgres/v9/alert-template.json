@@ -217,7 +217,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n time,\n dbname,\n /* NB! the selected $__timeFilter should be greater than the 'settings' metric's interval, i.e. 2h+ when using some default preset config */\n 100.0 * max_total_sessions / (select coalesce((data->'max_connections')::int, 1) from settings where dbname = x.dbname and $__timeFilter(time) order by time desc limit 1) as pct_used\nFROM (\nSELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  max((data->'instance_total')::int) as max_total_sessions\nFROM\n  backends\nWHERE\n  $__timeFilter(time)\nGROUP BY 1, 2\nORDER BY 1, 2\n) x\nORDER BY 1, 2\n",
+          "rawSql": "SELECT\n time,\n dbname,\n /* the selected $__timeFilter should be greater than the 'settings' metric's interval, i.e. 2h+ when using some default preset config */\n 100.0 * max_total_sessions / (select coalesce((data->'max_connections')::int, 1) from settings where dbname = x.dbname and $__timeFilter(time) order by time desc limit 1) as pct_used\nFROM (\nSELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  max((data->'instance_total')::int) as max_total_sessions\nFROM\n  backends\nWHERE\n  $__timeFilter(time)\nGROUP BY 1, 2\nORDER BY 1, 2\n) x\nORDER BY 1, 2\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [

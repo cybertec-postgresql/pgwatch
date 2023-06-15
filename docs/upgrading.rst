@@ -148,4 +148,4 @@ it's simple enough though - just delete all old ones and re-insert everything fr
    psql  -c "truncate pgwatch3.metric" pgwatch3
    psql -f /etc/pgwatch3/sql/config_store/metric_definitions.sql pgwatch3
 
-**NB! If you have added some own custom metrics be sure not to delete or truncate them!**
+**If you have added some own custom metrics be sure not to delete or truncate them!**

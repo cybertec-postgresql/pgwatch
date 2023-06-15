@@ -2,7 +2,7 @@ CREATE EXTENSION IF NOT EXISTS plpython3u;
 
 /*
   A wrapper around smartmontools to verify disk SMART health for all disk devices. 0 = SMART check PASSED.
-  NB! This helper is always meant to be tested / adjusted to make sure all disk are detected etc.
+  This helper is always meant to be tested / adjusted to make sure all disk are detected etc.
   Most likely smartctl privileges must be escalated to give postgres access: sudo chmod u+s /usr/local/sbin/smartctl
 */
 CREATE OR REPLACE FUNCTION get_smart_health_per_device(OUT device text, OUT retcode int) RETURNS SETOF record AS

@@ -42,7 +42,7 @@ the metrics gathering load and is more fault-tolerant. The only critical compone
 can be well solved with a HA solution like Patroni for example.
 
 Main benefit - in this mode there is no need for the central Postgres "config DB" nor any YAML config files.
-NB! When using that mode with the default Docker image, the built-in metric definitions can't be changed via the Web UI and it's
+When using that mode with the default Docker image, the built-in metric definitions can't be changed via the Web UI and it's
 actually recommended to use the *gatherer only* image named *cybertec/pgwatch3-daemon*.
 
 Relevant Gatherer env. vars / flags: ``--adhoc-conn-str, --adhoc-config, --adhoc-name, --metrics-folder`` or respectively
@@ -58,7 +58,7 @@ Relevant Gatherer env. vars / flags: ``--adhoc-conn-str, --adhoc-config, --adhoc
     docker run --rm -p 3000:3000 -e PW3_ADHOC_CONN_STR="postgresql://user:pwd@mydb:5432/mydb1" \
         -e PW3_ADHOC_CONFIG=exhaustive -e PW3_ADHOC_CREATE_HELPERS=true --name pw3 cybertec/pgwatch3
 
-NB! Using the ``PW3_ADHOC_CREATE_HELPERS`` flag will try to create all metrics fetching helpers automatically if not already
+Using the ``PW3_ADHOC_CREATE_HELPERS`` flag will try to create all metrics fetching helpers automatically if not already
 existing - this assumes superuser privileges though, which is not recommended for long term setups for obvious reasons.
 In case a long term need rises it's recommended to change the monitoring role to an unprivileged *pgwatch3* user, which
 by default gets execute *GRANT*-s to all helper functions. More details on how to deal with *helpers* can be found :ref:`here <helper_functions>`

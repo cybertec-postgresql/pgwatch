@@ -1,3 +1,3 @@
 #disabled_days: "1-5"
-#disabled_times: # NB! in timezone of pgwatch3 server
+#disabled_times: # in timezone of pgwatch3 server
 # - "09:00-18:00"

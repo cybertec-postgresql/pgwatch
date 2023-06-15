@@ -20,7 +20,7 @@
   "panels": [
     {
       "datasource": null,
-      "description": "Please adjust the markers as needed! NB! Also the default query assumes that all DBs are separate instances. If not so change the query to add some filters or groupings based on the wal.sys_id column for example or the configured_dbs.continuous_discovery_prefix if using the DB auto-discovery modes. The same applies also for the below \"top\" table panels.",
+      "description": "Please adjust the markers as needed! Also the default query assumes that all DBs are separate instances. If not so change the query to add some filters or groupings based on the wal.sys_id column for example or the configured_dbs.continuous_discovery_prefix if using the DB auto-discovery modes. The same applies also for the below \"top\" table panels.",
       "gridPos": {
         "h": 7,
         "w": 8,
@@ -118,7 +118,7 @@
     },
     {
       "datasource": null,
-      "description": "Please adjust the markers as needed! NB! Also the default query assumes that all DBs are separate instances. If not so change the query to add some filters or groupings based on the wal.sys_id column for example or the configured_dbs.continuous_discovery_prefix if using the DB auto-discovery modes. The same applies also for the below \"top\" table panels.",
+      "description": "Please adjust the markers as needed! Also the default query assumes that all DBs are separate instances. If not so change the query to add some filters or groupings based on the wal.sys_id column for example or the configured_dbs.continuous_discovery_prefix if using the DB auto-discovery modes. The same applies also for the below \"top\" table panels.",
       "gridPos": {
         "h": 7,
         "w": 8,

@@ -365,7 +365,7 @@ export const databasesColumns = ({
           handleModalOpen={handleModalOpen}
           deleteRecord={deleteRecord}
           deleteParameter={params.row.md_unique_name}
-          warningMessage={`Remove DB "${params.row.md_unique_name}" from monitoring? NB! This does not remove gathered metrics data from InfluxDB, see bottom of page for that`}
+          warningMessage={`Remove DB "${params.row.md_unique_name}" from monitoring? This does not remove gathered metrics data from InfluxDB, see bottom of page for that`}
         >
           <Button
             size="small"

@@ -471,7 +471,7 @@
       "dashes": false,
       "datasource": null,
       "decimals": 1,
-      "description": "NB! Doesn't have to necessarily equal 100%  to values reported by the \"free\" command - see [here](https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory) for more",
+      "description": "Doesn't have to necessarily equal 100%  to values reported by the \"free\" command - see [here](https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory) for more",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -610,7 +610,7 @@
       "dashes": false,
       "datasource": null,
       "decimals": 1,
-      "description": "NB! Doesn't have to necessarily equal 100%  to values reported by the \"free\" command - see [here](https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory) for more",
+      "description": "Doesn't have to necessarily equal 100%  to values reported by the \"free\" command - see [here](https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory) for more",
       "fill": 1,
       "gridPos": {
         "h": 6,
@@ -749,7 +749,7 @@
       "dashes": false,
       "datasource": null,
       "decimals": 1,
-      "description": "NB! For all disks on the host, not only Postgres related",
+      "description": "For all disks on the host, not only Postgres related",
       "fill": 1,
       "gridPos": {
         "h": 6,

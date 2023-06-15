@@ -612,7 +612,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
-      "description": "NB! Reads could still be served by the Linux file system cache so they don't necessarily have to come from disk",
+      "description": "Reads could still be served by the Linux file system cache so they don't necessarily have to come from disk",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {

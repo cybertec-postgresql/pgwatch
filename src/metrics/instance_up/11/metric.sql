@@ -1,4 +1,4 @@
-/* NB! This metric has some special handling attached to it - it will store a 0 value if the DB is not accessible.
+/* This metric has some special handling attached to it - it will store a 0 value if the DB is not accessible.
    Thus it can be used to for example calculate some percentual "uptime" indicator.
 */
 select /* pgwatch3_generated */

@@ -21,7 +21,7 @@
     {
       "columns": [],
       "datasource": null,
-      "description": "NB! Most views here assume that there was no stats reset in the selected time range!",
+      "description": "Most views here assume that there was no stats reset in the selected time range!",
       "fontSize": "100%",
       "gridPos": {
         "h": 7,
@@ -1223,7 +1223,7 @@
     {
       "columns": [],
       "datasource": null,
-      "description": "Based on pg_statio_user_tables. NB! Assumes  8KB page size (change the query if not so). Also note that due to OS file system cache only some reads will hit the disk",
+      "description": "Based on pg_statio_user_tables. Assumes  8KB page size (change the query if not so). Also note that due to OS file system cache only some reads will hit the disk",
       "fontSize": "100%",
       "gridPos": {
         "h": 7,

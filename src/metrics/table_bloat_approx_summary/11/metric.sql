@@ -1,4 +1,4 @@
-/* NB! accessing pgstattuple_approx directly requires superuser or pg_stat_scan_tables/pg_monitor builtin roles or
+/* accessing pgstattuple_approx directly requires superuser or pg_stat_scan_tables/pg_monitor builtin roles or
    execute grant on pgstattuple_approx(regclass)
 */
 with table_bloat_approx as (

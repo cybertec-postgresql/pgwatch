@@ -343,7 +343,7 @@
     },
     {
       "datasource": null,
-      "description": "Blocks read from file system. NB! Note that some of those reads come from the kernel buffercache still.",
+      "description": "Blocks read from file system. Note that some of those reads come from the kernel buffercache still.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -424,7 +424,7 @@
     },
     {
       "datasource": null,
-      "description": "Blocks read from file system. NB! Note that some of those reads come from the kernel buffercache still.",
+      "description": "Blocks read from file system. Note that some of those reads come from the kernel buffercache still.",
       "fieldConfig": {
         "defaults": {
           "color": {

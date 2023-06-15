@@ -28,7 +28,7 @@ docker run -d --restart=unless-stopped --name pw3 \
 After some minutes you could open the ["db-overview"](http://127.0.0.1:3000/dashboard/db/db-overview) dashboard and start
 looking at metrics. For defining your own dashboards you need to log in as admin (admin/pgwatch3admin).
 
-NB! If you don't want to add the "test" database (the pgwatch3 configuration db) for monitoring, remove the NOTESTDB=1 env
+If you don't want to add the "test" database (the pgwatch3 configuration db) for monitoring, remove the NOTESTDB=1 env
 parameter when launching the container.
 
 The behaviour of the Docker images can be customized in many ways - for a complete list of all supported Docker environment
@@ -86,12 +86,12 @@ in case an unpriveleged monitoring account is used.  More documentation on that 
 
 ```sql
 CREATE ROLE pgwatch3 WITH LOGIN PASSWORD 'secret';
--- NB! For very important databases it might make sense to ensure that the user
+-- For very important databases it might make sense to ensure that the user
 -- account used for monitoring can only open a limited number of connections (there are according checks in code also though)
 ALTER ROLE pgwatch3 CONNECTION LIMIT 3;
 GRANT pg_monitor TO pgwatch3;   -- system role available for v10+ servers to reduce superuser usage
 GRANT CONNECT ON DATABASE mydb TO pgwatch3;
-GRANT USAGE ON SCHEMA public TO pgwatch3; -- NB! pgwatch doesn't necessarily require using the public schema though!
+GRANT USAGE ON SCHEMA public TO pgwatch3; -- pgwatch doesn't necessarily require using the public schema though!
 ```
 
 Additionally, for extra insights on "to be monitored" databases, it's recommended to install and activate the [pg_stat_statement](https://www.postgresql.org/docs/12/pgstatstatements.html)
@@ -114,7 +114,7 @@ psql -h mydb.com -U superuser -f /etc/pgwatch3/metrics/00_helpers/get_stat_state
 psql -h mydb.com -U superuser -f /etc/pgwatch3/metrics/00_helpers/get_stat_replication/$pgver/metric.sql mydb
 ```
 
-NB! By default the "helpers" assume that a role called "pgwatch3" will be used for metrics gathering. If not so, you need
+By default the "helpers" assume that a role called "pgwatch3" will be used for metrics gathering. If not so, you need
 to change the SQL definitions. Also note that some helper scripts can refuse to install if the security of the target
 schema is too "open" for everyone (i.e. to the built-in "public" meta-role) and thus there's potential for misuse.
 
@@ -196,7 +196,7 @@ There's also a separate "Preset Config" named "prometheus". More [details](https
 Cloud deployments of pgwatch3 should be no problem - there are some simple deployment templates provided and also some
 Helm charts in the "openshift_k8s" [folder](https://github.com/cybertec-postgresql/pgwatch3/tree/master/openshift_k8s).
 
-NB! Helm setup values should always be reviewed / edited as the defaults are rather for testing purposes. Installation
+Helm setup values should always be reviewed / edited as the defaults are rather for testing purposes. Installation
 is done by the following command:
 
 ```shell script

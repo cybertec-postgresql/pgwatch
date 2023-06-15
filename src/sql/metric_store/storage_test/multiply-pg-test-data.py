@@ -3,7 +3,7 @@
 
 """This script doubles the existing PG metrics data with each call, using
 intervals found found for each metrics.
-NB! Doubling could meana a lot of data so start conservatively
+Doubling could meana a lot of data so start conservatively
 """
 
 import psycopg2

@@ -4983,7 +4983,7 @@
       "type": "text"
     },
     {
-      "content": "<br/><h3>NB! The preset threshold values (green / yellow / red) should be reviewed / adjusted!</h3>",
+      "content": "<br/><h3>The preset threshold values (green / yellow / red) should be reviewed / adjusted!</h3>",
       "gridPos": {
         "h": 4,
         "w": 12,

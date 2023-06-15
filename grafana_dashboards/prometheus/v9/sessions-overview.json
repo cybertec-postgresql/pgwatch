@@ -25,7 +25,7 @@
       "dashes": false,
       "datasource": null,
       "decimals": 1,
-      "description": "NB! QPS is an approximation. Requires pg_stat_statements to be installed",
+      "description": "QPS is an approximation. Requires pg_stat_statements to be installed",
       "fieldConfig": {
         "defaults": {},
         "overrides": []

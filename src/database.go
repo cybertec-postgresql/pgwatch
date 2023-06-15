@@ -851,7 +851,7 @@ func GetDBTotalApproxSize(dbUnique string) (int64, error) {
 		current_setting('block_size')::int8 * sum(relpages) as db_size_approx
 	from
 		pg_class c
-	where	/* NB! works only for v9.1+*/
+	where	/* works only for v9.1+*/
 		c.relpersistence != 't';
 	`
 	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 0, sqlApproxDBSize)
@@ -1642,7 +1642,7 @@ func DoesFunctionExists(dbUnique, functionName string) bool {
 }
 
 // Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
-// NB! With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific
+// With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific
 // whitelisting or "trusted extensions" (a feature from v13). Ignores errors.
 func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existingExtensions map[string]uint) []string {
 	sqlAvailable := `select name::text from pg_available_extensions`

@@ -26,7 +26,7 @@
         "rgba(241, 255, 0, 1)",
         "#508642"
       ],
-      "description": "NB! Depends on the \"Heatmap\" plugin.\nFYI - shown sizes are in MB i.e. 10^6, Postgres 'psql' client reports them in MiB (1048576 B)",
+      "description": "Depends on the \"Heatmap\" plugin.\nFYI - shown sizes are in MB i.e. 10^6, Postgres 'psql' client reports them in MiB (1048576 B)",
       "format": "none",
       "gridPos": {
         "h": 7,
@@ -135,7 +135,7 @@
         "rgba(241, 255, 0, 1)",
         "#3f6833"
       ],
-      "description": "NB! Depends on the \"Heatmap\" plugin.\nFYI - shown sizes are in MB i.e. 10^6, Postgres 'psql' client reports them in MiB (1048576 B)",
+      "description": "Depends on the \"Heatmap\" plugin.\nFYI - shown sizes are in MB i.e. 10^6, Postgres 'psql' client reports them in MiB (1048576 B)",
       "format": "none",
       "gridPos": {
         "h": 7,
@@ -256,7 +256,7 @@
         "rgba(241, 255, 0, 1)",
         "#508642"
       ],
-      "description": "NB! Depends on the \"Heatmap\" plugin.\nFYI - shown sizes are in MB i.e. 10^6, Postgres 'psql' client reports them in MiB (1048576 B)",
+      "description": "Depends on the \"Heatmap\" plugin.\nFYI - shown sizes are in MB i.e. 10^6, Postgres 'psql' client reports them in MiB (1048576 B)",
       "format": "none",
       "gridPos": {
         "h": 7,

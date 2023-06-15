@@ -45,7 +45,7 @@ Main changes:
 * K8s / Openshift - Helm chart deployment template corrections. Thanks @pmpetit
 * Docker - component update to InfluxDB 1.8.5, Grafana 6.7.5, Go 1.16.3.
 
-NB! If upgrading from an older TimescaleDB storage based setup you should additionally re-roll out the [following file](https://github.com/cybertec-postgresql/pgwatch2/blob/master/pgwatch2/sql/metric_store/01_old_metrics_cleanup_procedure.sql)
+If upgrading from an older TimescaleDB storage based setup you should additionally re-roll out the [following file](https://github.com/cybertec-postgresql/pgwatch2/blob/master/pgwatch2/sql/metric_store/01_old_metrics_cleanup_procedure.sql)
 on the Metrics DB to make pgwatch2 honor the --pg-retention-days parameter.
 
 ## v1.8.4 [2021-02-12]
@@ -80,7 +80,7 @@ Main changes:
 
 * Gatherer fix - avoid unnecessary internal restarts of metrics gathering introduced in v1.8.1. Was causing much bigger metric volumes than usual.
 * Metrics fix - remove "spill_bytes" from v13 "replication" metric as it didn't make it into the final Postgres release.
-* New feature - support automatic monitoring of whole Patroni "namespaces" with DB type "patroni-namespace-discovery". NB! Only when "etcd" is used as DCS.
+* New feature - support automatic monitoring of whole Patroni "namespaces" with DB type "patroni-namespace-discovery". Only when "etcd" is used as DCS.
 * New dashboard - "Table details time lag" to visually compare table access pattern from two time ranges.
 * Gatherer improvement - do not connect to config DB in adhoc mode as it's not really not needed.
 * Gatherer improvement - add "totalMetricFetchFailuresCounter" to the Stats / Health-check port output.
@@ -120,7 +120,7 @@ Main changes:
 * Docker component update - Influx 1.8.3, Go 1.15.3.
 * Code - switch to Go Modules (@pashagolub).
 
-NB! When migrating existing "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
+When migrating existing "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
 applied first from the "pgwatch2/sql/config_store/migrations/" (or /etc/pgwatch2/sql/config_store/migrations/ if using
 ther pre-built packages) folder. Also it is highly recommended to refresh all the metric definitions as they're constantly improved.
 For that there's also a refresh_metrics_from_github.sh script provided. YAML based setups don't need any extra actions besides
@@ -149,7 +149,7 @@ https://github.com/cybertec-postgresql/pgwatch2/blob/master/pgwatch2/sql/config_
 * Docker images - make deployments more secure by generating a random AES-GCM passphrase for protecting DB passwords if not set by user.
 * Docker component update - Influx 1.8.0, Grafana 6.7.4, Go 1.14.4.
 
-NB! When migrating existing "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
+When migrating existing "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
 applied first from the "pgwatch2/sql/config_store/migrations/" (or /etc/pgwatch2/sql/config_store/migrations/ if using
 ther pre-built packages) folder. Also it is highly recommended to refresh all the metric definitions as they're constantly improved.
 For that there's also a refresh_metrics_from_github.sh script provided. YAML based setups don't need any extra actions besides
@@ -179,7 +179,7 @@ refreshing from Git or installing the new RPM / DEB / Tar packages.
 * Docker component update - Influx 1.8.0, Grafana 6.7.3, Go 1.14.2.
 * Docker - add scripts to build and launch all 'latest' images.
 
-NB! No config DB migrations are needed for this minor release if updating from v1.7.1.
+No config DB migrations are needed for this minor release if updating from v1.7.1.
 
 ## v1.7.1 [2020-03-13]
 
@@ -201,7 +201,7 @@ NB! No config DB migrations are needed for this minor release if updating from v
 * SystemD template - sync paths with those used by DEB/RPM/tar builds
 * Docker component update - Influx 1.7.10, Grafana 6.6.2, Go 1.14.
 
-NB! When migrating existing "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
+When migrating existing "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
 applied first from the "pgwatch2/sql/config_store/migrations/" (or /etc/pgwatch2/sql/config_store/migrations/ if using
 ther pre-built packages) folder. Also it is recommended to refresh all the metric definitions as they're constantly improved.
 For that there's also a refresh_metrics_from_github.sh script provided. YAML based setups don't need any extra actions besides
@@ -236,7 +236,7 @@ refreshing from Git or installing the new RPM / DEB / Tar packages.
 * Infra - RPM / DEB / Tar buils now also include Grafana dashboards + import scripts so all batteries are now included.
 * Documentation - many smaller README corrections, custom installs, backups, Patroni, etc.
 
-NB! When migrating old "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
+When migrating old "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
 applied first from the "pgwatch2/sql/config_store/migrations/" (or /etc/pgwatch2/sql/config_store/migrations/ if using
 ther pre-built packages) folder.
 
@@ -265,7 +265,7 @@ ther pre-built packages) folder.
 * Docker - make "Health-check" the default dashboard / splash screen
 * Docker component update: Influx 1.7.8, Grafana 6.3.6, Go 1.12.10
 
-NB! When migrating old "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
+When migrating old "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
 applied first from the "pgwatch2/sql/config_store/migrations/" (or /etc/pgwatch2/sql/config_store/migrations/ if using
 ther pre-built packages) folder.
 
@@ -319,7 +319,7 @@ ther pre-built packages) folder.
 * Web UI - external component update + according HTML / CSS changes: Bootstrap 3 -> 4, jQuery 3.1 -> 3.4
 * Docker components update -  Grafana 6.2.4, Go 1.12.6, Influx 1.7.6
 
-NB! When migrating old "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
+When migrating old "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
 applied first from the "pgwatch2/sql/config_store/migrations/" folder.
 
 ## v1.5.1 [2019-02-11]
@@ -336,7 +336,7 @@ applied first from the "pgwatch2/sql/config_store/migrations/" folder.
 * Docker image with Postgres metrics storage - possible to enable also the "metric-dbname-time" storage model via PW2_PG_SCHEMA_TYPE env. var
 * Readme - explanations to available "DB type" options
 
-NB! When migrating old "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
+When migrating old "config DB" based setups, all previous schema migration diffs with bigger version numbers need to be
 applied first from the "pgwatch2/sql/config_store/migrations/" folder.
 
 ## v1.5.0 [2019-01-24]
@@ -367,7 +367,7 @@ applied first from the "pgwatch2/sql/config_store/migrations/" folder.
 * Docker - new image with Postgres for metrics storage (cybertec/pgwatch2-postgres-storage)  
 * Docker component update - InfluxDB 1.7.3, Grafana 5.4.3, Go 1.11.4
 
-NB! When migrating old "config DB" based setups, v1.5.0* schema migration
+When migrating old "config DB" based setups, v1.5.0* schema migration
 diffs need to be applied first from the "pgwatch2/sql/migrations/" folder.
 
 
@@ -428,7 +428,7 @@ diffs need to be applied first from the "pgwatch2/sql/migrations/" folder.
 * Docker - Grafana updated to 5.2.2
 * Docker - Influx updated to 1.6.1
 
-NB! To migrate from older installations it's also needed to execute v1.4.0 SQL-s from the "pgwatch2/sql/datastore_setup/migrations" folder on the config DB. 
+To migrate from older installations it's also needed to execute v1.4.0 SQL-s from the "pgwatch2/sql/datastore_setup/migrations" folder on the config DB. 
 
 ## v1.3.7 [2018-06-10]
 
@@ -464,7 +464,7 @@ NB! To migrate from older installations it's also needed to execute v1.4.0 SQL-s
 * Improvement - 'Stat statements top' dasboard compatibility for older Influx versions (@dankasak)
 * Metric improvement - "backends" now has separate parallel query workers counter for PG10+
 * Metric/dash improvement - "Sproc details" now based on fully qualified procedure names
-* Minor dashboard improvements - "Table details" and "Overview" adjusted for less jumpy graphs on default settings. NB! If migrating an existing setup it is highly recommended to re-import the following dashboards: "Table details", "Overview", "Sproc details"
+* Minor dashboard improvements - "Table details" and "Overview" adjusted for less jumpy graphs on default settings. If migrating an existing setup it is highly recommended to re-import the following dashboards: "Table details", "Overview", "Sproc details"
 * Web UI Improvement - showing a warning on "DBs" page if changing the connect string but can't actually connect using it
 * README improvements - info on "track_io_timing", component diagram added, new screenshots, project background
 * Logging improvement - in some case root cause errors were masked in logs. Better "empty metric SQL" messages
@@ -481,9 +481,9 @@ NB! To migrate from older installations it's also needed to execute v1.4.0 SQL-s
 * Added Dockerfiles for deploying components separately. See the "docker" folder for details
 * Grafana security - possible to control anon. access and admin user/passord via env. variables
 * New dashboard - AWS CloudWatch overview. One can now easily monitor/alert on on-prem and cloud DBs
-* New dashboard and datasource type for PgBouncer stats. Visualizes pgbouncer "SHOW STATS" commands. NB! Requires config DB schema
+* New dashboard and datasource type for PgBouncer stats. Visualizes pgbouncer "SHOW STATS" commands. Requires config DB schema
  change for existing setups, DB-diff file [here](https://github.com/cybertec-postgresql/pgwatch2/blob/master/pgwatch2/sql/datastore_setup/migrations/v1.3.0_monitored_db_dbtype.sql)
-* New dashboard for "Top N" time consuming/frequent/slowest/IO-hungry queries added. Base on pg_stat_statements info. NB! When no
+* New dashboard for "Top N" time consuming/frequent/slowest/IO-hungry queries added. Base on pg_stat_statements info. When no
  SQL info should be leaked, dashboard should be deleted after image start as it shows (parametrized) queries!
 * New dashboard - "Biggest relations treemap". Helps to visually detect biggest tables/indexes
 * Dashboard chage to "Single query details" - add IO time percentage graph of total time to determine if query is IO or CPU bound. Also

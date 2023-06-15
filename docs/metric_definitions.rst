@@ -85,7 +85,7 @@ For defining metrics definitions you should adhere to a couple of basic concepts
   Collector columns are cumulative), but when this is not the case and the column is a "Gauge" then according column
   attributes should be declared. See below section on column attributes for details.
 
-* NB! For Prometheus all text fields will be turned into tags / labels as only floats can be stored!
+* For Prometheus all text fields will be turned into tags / labels as only floats can be stored!
 
 **Adding and using a custom metric:**
 
@@ -105,7 +105,7 @@ For *YAML* based setups:
      wisely.
 
   #. Create a new subfolder for each "minimally supported Postgres version* and insert the metric's SQL definition into a
-     file named "metric.sql". NB! Note the "minimally supported" part - i.e. if your query will work from version v9.0 to
+     file named "metric.sql". Note the "minimally supported" part - i.e. if your query will work from version v9.0 to
      v13 then you only need one folder called "9.0". If there was a breaking change in the internal catalogs at v9.6 so
      that the query stopped working, you need a new folder named "9.6" that will be used for all versions above v9.5.
 
@@ -153,7 +153,7 @@ Currently supported attributes:
 *disabled_times*
   Enables to "pause" metric gathering on specified time intervals. e.g. "09:00-17:00" for business hours.
   Note that if time zone is not specified the server time of the gather daemon is used.
-  NB! disabled_days / disabled_times can also be defined both on metric and host (host_attrs) level.
+  disabled_days / disabled_times can also be defined both on metric and host (host_attrs) level.
 
 For a sample definition see `here <https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/metrics/wal/metric_attrs.yaml>`_.
 

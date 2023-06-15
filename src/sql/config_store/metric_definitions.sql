@@ -486,7 +486,7 @@ values (
 'index_stats',
 11,
 $sql$
-/* NB! does not return all index stats but biggest, top scanned and biggest unused ones */
+/* does not return all index stats but biggest, top scanned and biggest unused ones */
 WITH q_locked_rels AS (
   select relation from pg_locks where mode = 'AccessExclusiveLock'
 ),
@@ -710,7 +710,7 @@ SELECT
   case when sync_state in ('sync', 'quorum') then 1 else 0 end as is_sync_int,
   case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
 from
-  /* NB! when the query fails, grant "pg_monitor" system role (exposing all stats) to the monitoring user
+  /* when the query fails, grant "pg_monitor" system role (exposing all stats) to the monitoring user
      or create specifically the "get_stat_replication" helper and use that instead of pg_stat_replication
   */
   pg_stat_replication
@@ -1212,7 +1212,7 @@ WITH q_data AS (
     SELECT
         coalesce(queryid::text, 'insufficient-privileges-total') as tag_queryid,
         /*
-         NB! if security conscious about exposing query texts replace the below expression with a dash ('-') OR
+         if security conscious about exposing query texts replace the below expression with a dash ('-') OR
          use the stat_statements_no_query_text metric instead, created specifically for this use case.
          */
         array_to_string(array_agg(DISTINCT quote_ident(pg_get_userbyid(userid))), ',') AS users,
@@ -1348,7 +1348,7 @@ WITH q_data AS (
     SELECT
         coalesce(queryid::text, 'insufficient-privileges-total') as tag_queryid,
         /*
-         NB! if security conscious about exposing query texts replace the below expression with a dash ('-') OR
+         if security conscious about exposing query texts replace the below expression with a dash ('-') OR
          use the stat_statements_no_query_text metric instead, created specifically for this use case.
          */
         array_to_string(array_agg(DISTINCT quote_ident(pg_get_userbyid(userid))), ',') AS users,
@@ -1491,7 +1491,7 @@ WITH q_data AS (
     SELECT
         coalesce(queryid::text, 'insufficient-privileges-total') as tag_queryid,
         /*
-         NB! if security conscious about exposing query texts replace the below expression with a dash ('-') OR
+         if security conscious about exposing query texts replace the below expression with a dash ('-') OR
          use the stat_statements_no_query_text metric instead, created specifically for this use case.
          */
         array_to_string(array_agg(DISTINCT quote_ident(pg_get_userbyid(userid))), ',') AS users,
@@ -1634,7 +1634,7 @@ WITH q_data AS (
     SELECT
         coalesce(queryid::text, 'insufficient-privileges-total') as tag_queryid,
         /*
-         NB! if security conscious about exposing query texts replace the below expression with a dash ('-') OR
+         if security conscious about exposing query texts replace the below expression with a dash ('-') OR
          use the stat_statements_no_query_text metric instead, created specifically for this use case.
          */
         array_to_string(array_agg(DISTINCT quote_ident(pg_get_userbyid(userid))), ',') AS users,
@@ -1783,7 +1783,7 @@ WITH q_data AS (
     SELECT
         queryid::text AS tag_queryid,
         /*
-         NB! if security conscious about exposing query texts replace the below expression with a dash ('-') OR
+         if security conscious about exposing query texts replace the below expression with a dash ('-') OR
          use the stat_statements_no_query_text metric instead, created specifically for this use case.
          */
         array_to_string(array_agg(DISTINCT quote_ident(pg_get_userbyid(userid))), ',') AS users,
@@ -1930,7 +1930,7 @@ WITH q_data AS (
     SELECT
         queryid::text AS tag_queryid,
         /*
-         NB! if security conscious about exposing query texts replace the below expression with a dash ('-') OR
+         if security conscious about exposing query texts replace the below expression with a dash ('-') OR
          use the stat_statements_no_query_text metric instead, created specifically for this use case.
          */
         array_to_string(array_agg(DISTINCT quote_ident(pg_get_userbyid(userid))), ',') AS users,
@@ -3010,7 +3010,7 @@ values (
 11,
 true,
 $sql$
-/* NB! accessing pgstattuple_approx directly requires superuser or pg_stat_scan_tables/pg_monitor builtin roles */
+/* accessing pgstattuple_approx directly requires superuser or pg_stat_scan_tables/pg_monitor builtin roles */
 select
   (extract(epoch from now()) * 1e9)::int8 AS epoch_ns,
   quote_ident(n.nspname)||'.'||quote_ident(c.relname) as tag_full_table_name,
@@ -3032,7 +3032,7 @@ $sql$,
 );
 
 /* Stored procedure needed for fetching stat_statements data - needs pg_stat_statements extension enabled on the machine!
- NB! approx_free_percent is just an average. more exact way would be to calculate a weighed average in Go
+ approx_free_percent is just an average. more exact way would be to calculate a weighed average in Go
 */
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
@@ -3103,7 +3103,7 @@ values (
 11,
 $sql$
 -- small modifications to SQL from https://github.com/ioguix/pgsql-bloat-estimation
--- NB! monitoring user needs SELECT grant on all tables or a SECURITY DEFINER wrapper around that SQL
+-- monitoring user needs SELECT grant on all tables or a SECURITY DEFINER wrapper around that SQL
 
 BEGIN;
 
@@ -3268,7 +3268,7 @@ values (
 12,
 $sql$
 -- small modifications to SQL from https://github.com/ioguix/pgsql-bloat-estimation
--- NB! monitoring user needs SELECT grant on all tables or a SECURITY DEFINER wrapper around that SQL
+-- monitoring user needs SELECT grant on all tables or a SECURITY DEFINER wrapper around that SQL
 
 BEGIN;
 
@@ -3434,7 +3434,7 @@ values (
 11,
 true,
 $sql$
-/* NB! accessing pgstattuple_approx directly requires superuser or pg_stat_scan_tables/pg_monitor builtin roles or
+/* accessing pgstattuple_approx directly requires superuser or pg_stat_scan_tables/pg_monitor builtin roles or
    execute grant on pgstattuple_approx(regclass)
 */
 with table_bloat_approx as (
@@ -4362,10 +4362,10 @@ values (
 11,
 $sql$
 /*  Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil)
-    NB! "psutil" is known to behave differently depending on the used version and operating system, so if getting
+    "psutil" is known to behave differently depending on the used version and operating system, so if getting
     errors please adjust to your needs. "psutil" documentation here: https://psutil.readthedocs.io/en/latest/
 */
-CREATE EXTENSION IF NOT EXISTS plpython3u; /* NB! "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
+CREATE EXTENSION IF NOT EXISTS plpython3u; /* "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
 
 CREATE OR REPLACE FUNCTION get_psutil_cpu(
 	OUT cpu_utilization float8, OUT load_1m_norm float8, OUT load_1m float8, OUT load_5m_norm float8, OUT load_5m float8,
@@ -4429,7 +4429,7 @@ values (
 11,
 $sql$
 /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
-CREATE EXTENSION IF NOT EXISTS plpython3u; -- NB! "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es
+CREATE EXTENSION IF NOT EXISTS plpython3u; -- "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es
 
 CREATE OR REPLACE FUNCTION get_psutil_mem(
 	OUT total float8, OUT used float8, OUT free float8, OUT buff_cache float8, OUT available float8, OUT percent float8,
@@ -4473,7 +4473,7 @@ values (
 11,
 $sql$
 /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
-CREATE EXTENSION IF NOT EXISTS plpython3u; /* NB! "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
+CREATE EXTENSION IF NOT EXISTS plpython3u; /* "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
 
 CREATE OR REPLACE FUNCTION get_psutil_disk(
 	OUT dir_or_tablespace text, OUT path text, OUT total float8, OUT used float8, OUT free float8, OUT percent float8
@@ -4563,7 +4563,7 @@ values (
 $sql$
 
 /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
-CREATE EXTENSION IF NOT EXISTS plpython3u; /* NB! "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
+CREATE EXTENSION IF NOT EXISTS plpython3u; /* "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
 
 CREATE OR REPLACE FUNCTION get_psutil_disk_io_total(
 	OUT read_count float8, OUT write_count float8, OUT read_bytes float8, OUT write_bytes float8
@@ -4672,7 +4672,7 @@ select
 $sql$,
 '{"prometheus_all_gauge_columns": true}',
 $sql$
-/* NB! If using not a real superuser but a role with "pg_monitor" grant then below execute grant is needed:
+/* If using not a real superuser but a role with "pg_monitor" grant then below execute grant is needed:
   GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch3;
 */
 select
@@ -4963,7 +4963,7 @@ SELECT
   recommendation,
   case when exists (select * from pg_inherits
                     where inhrelid = regclass(tag_object_name)
-                    ) then 'NB! Partitioned table, create the index on parent' else extra_info
+                    ) then 'Partitioned table, create the index on parent' else extra_info
   end as extra_info
 FROM (
          SELECT (extract(epoch from now()) * 1e9)::int8    as epoch_ns,
@@ -5013,7 +5013,7 @@ select
   'drop_index'::text as tag_reco_topic,
   quote_ident(schemaname)||'.'||quote_ident(indexrelname) as tag_object_name,
   ('DROP INDEX ' || quote_ident(schemaname)||'.'||quote_ident(indexrelname) || ';')::text as recommendation,
-  'NB! Before dropping make sure to also check replica pg_stat_user_indexes.idx_scan count if using them for queries'::text as extra_info
+  'Before dropping make sure to also check replica pg_stat_user_indexes.idx_scan count if using them for queries'::text as extra_info
 from
   pg_stat_user_indexes
   join
@@ -5039,7 +5039,7 @@ select
   'drop_index'::text as tag_reco_topic,
   quote_ident(schemaname)||'.'||quote_ident(indexrelname) as tag_object_name,
   ('DROP INDEX ' || quote_ident(schemaname)||'.'||quote_ident(indexrelname) || ';')::text as recommendation,
-  'NB! Make sure to also check replica pg_stat_user_indexes.idx_scan count if using them for queries'::text as extra_info
+  'Make sure to also check replica pg_stat_user_indexes.idx_scan count if using them for queries'::text as extra_info
 from
   pg_stat_user_indexes
   join
@@ -5318,7 +5318,7 @@ $sql$
 CREATE EXTENSION IF NOT EXISTS plpython3u;
 /*
   A wrapper around smartmontools to verify disk SMART health for all disk devices. 0 = SMART check PASSED.
-  NB! This helper is always meant to be tested / adjusted to make sure all disk are detected etc.
+  This helper is always meant to be tested / adjusted to make sure all disk are detected etc.
   Most likely smartctl privileges must be escalated to give postgres access: sudo chmod u+s /usr/local/sbin/smartctl
 */
 CREATE OR REPLACE FUNCTION get_smart_health_per_device(OUT device text, OUT retcode int) RETURNS SETOF record AS
@@ -5547,10 +5547,10 @@ values (
 $sql$
 /*
   vmstat + some extra infos like CPU count, 1m/5m/15m load avg. and total memory
-  NB! Memory and disk info returned in bytes!
+  Memory and disk info returned in bytes!
 */
 
-CREATE EXTENSION IF NOT EXISTS plpython3u; /* NB! "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
+CREATE EXTENSION IF NOT EXISTS plpython3u; /* "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
 
 -- DROP FUNCTION get_vmstat(int);
 
@@ -5623,7 +5623,7 @@ select
     1::int as is_up
 ;
 $sql$,
-'NB! This metric has some special handling attached to it - it will store a 0 value if the DB is not accessible.
+'This metric has some special handling attached to it - it will store a 0 value if the DB is not accessible.
 Thus it can be used to for example calculate some percentual "uptime" indicator.'
 );
 

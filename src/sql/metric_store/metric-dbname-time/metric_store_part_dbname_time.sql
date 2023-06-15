@@ -1,7 +1,7 @@
-/* NB! PG 11+ only, for lesser PG versions see "metric_store_simple.sql"
+/* PG 11+ only, for lesser PG versions see "metric_store_simple.sql"
    This schema is recommended for 25+ monitored DBs or for short intervals /
    long retention periods i.e. gigs and gigs of data.
-   NB! A fresh separate DB, only for pgwatch3 metrics storage purposes, is assumed.
+   A fresh separate DB, only for pgwatch3 metrics storage purposes, is assumed.
 */
 
 CREATE SCHEMA IF NOT EXISTS subpartitions AUTHORIZATION pgwatch3;

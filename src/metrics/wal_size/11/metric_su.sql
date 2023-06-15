@@ -1,4 +1,4 @@
-/* NB! If using not a real superuser but a role with "pg_monitor" grant then below execute grant is needed:
+/* If using not a real superuser but a role with "pg_monitor" grant then below execute grant is needed:
   GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch3;
 */
 select /* pgwatch3_generated */

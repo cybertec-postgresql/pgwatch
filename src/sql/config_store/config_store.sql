@@ -4,7 +4,7 @@ set search_path to pgwatch3, public;
 
 alter database pgwatch3 set search_path to public, pgwatch3;
 
-set role to pgwatch3; -- NB! Role/db create script is in bootstrap/create_db_pgwatch.sql
+set role to pgwatch3; -- Role/db create script is in bootstrap/create_db_pgwatch.sql
 
 -- drop table if exists preset_config cascade;
 
@@ -270,7 +270,7 @@ insert into pgwatch3.preset_config (pc_name, pc_description, pc_config)
     "wal": 1,
     "wal_receiver": 1
     }'),
-    ('prometheus-async', 'tuned for the new async (background collection) Prom feature. NB! Prom tolerates max. 10min time lag, so intervals should be smaller than 600',
+    ('prometheus-async', 'tuned for the new async (background collection) Prom feature. Prom tolerates max. 10min time lag, so intervals should be smaller than 600',
     '{
     "archiver": 60,
     "backends": 60,

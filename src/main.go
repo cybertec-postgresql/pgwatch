@@ -1089,7 +1089,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 			if msg.MetricName == specialMetricInstanceUp {
 				logger.WithError(err).Debugf("[%s:%s] failed to fetch metrics. marking instance as not up", msg.DBUniqueName, msg.MetricName)
 				data = make(MetricData, 1)
-				data[0] = MetricEntry{"epoch_ns": time.Now().UnixNano(), "is_up": 0} // NB! should be updated if the "instance_up" metric definition is changed
+				data[0] = MetricEntry{"epoch_ns": time.Now().UnixNano(), "is_up": 0} // should be updated if the "instance_up" metric definition is changed
 				goto send_to_storageChannel
 			}
 
@@ -2425,7 +2425,7 @@ func DoesEmergencyTriggerfileExist() bool {
 	// Main idea of the feature is to be able to quickly free monitored DBs / network of any extra "monitoring effect" load.
 	// In highly automated K8s / IaC environments such a temporary change might involve pull requests, peer reviews, CI/CD etc
 	// which can all take too long vs "exec -it pgwatch3-pod -- touch /tmp/pgwatch3-emergency-pause".
-	// NB! After creating the file it can still take up to --servers-refresh-loop-seconds (2min def.) for change to take effect!
+	// After creating the file it can still take up to --servers-refresh-loop-seconds (2min def.) for change to take effect!
 	if opts.EmergencyPauseTriggerfile == "" {
 		return false
 	}

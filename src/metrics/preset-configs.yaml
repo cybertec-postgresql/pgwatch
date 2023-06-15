@@ -178,7 +178,7 @@
     wal_receiver: 1
 
 - name: prometheus-async
-  description: tuned for the new async (background collection) Prom feature. NB! Prom tolerates max. 10min time lag, so intervals should be smaller than 600
+  description: tuned for the new async (background collection) Prom feature. Prom tolerates max. 10min time lag, so intervals should be smaller than 600
   metrics:
     backends: 30
     bgwriter: 60

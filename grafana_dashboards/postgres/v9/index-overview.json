@@ -186,7 +186,7 @@
     {
       "columns": [],
       "datasource": null,
-      "description": "NB! Before dropping indexes make sure they are not used on replicas, if having any. FYI - one could also adjust the default 0 threshold so that \"little used\" indexes are shown",
+      "description": "Before dropping indexes make sure they are not used on replicas, if having any. FYI - one could also adjust the default 0 threshold so that \"little used\" indexes are shown",
       "fontSize": "100%",
       "gridPos": {
         "h": 5,
