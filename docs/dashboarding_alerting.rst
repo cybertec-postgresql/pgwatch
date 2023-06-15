@@ -15,7 +15,7 @@ Currently there are around 30 preset dashboards available for PostgreSQL data so
 nowadays, if metric gathering volumes are not a problem, we recommend using Postgres storage for most users.
 
 Note though that most users will probably want to always adjust the built-in dashboards slightly (colors, roundings, etc)
-, so that they should be taken only as examples to quickly get started. NB! Also note that in case of changes it's not
+, so that they should be taken only as examples to quickly get started. Also note that in case of changes it's not
 recommended to change the built-in ones, but use the *Save as* features - this will allow later to easily update all the
 dashboards *en masse* per script, without losing any custom user changes.
 

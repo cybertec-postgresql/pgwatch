@@ -2,7 +2,7 @@ WITH q_data AS (
     SELECT
         coalesce(queryid::text, 'insufficient-privileges-total') as tag_queryid,
         /*
-         NB! if security conscious about exposing query texts replace the below expression with a dash ('-') OR
+         if security conscious about exposing query texts replace the below expression with a dash ('-') OR
          use the stat_statements_no_query_text metric instead, created specifically for this use case.
          */
         array_to_string(array_agg(DISTINCT quote_ident(pg_get_userbyid(userid))), ',') AS users,

@@ -45,7 +45,7 @@ though it can be enabled:
     Note that standard *LibPQ .pgpass files* can also be used so there's no requirement to store any passwords in pgwatch3
     config DB. Also note that when enabling password encryption, the same key needs to be presented also for the gatherer.
 
-NB! For security sensitive environments make sure to always deploy password protection together with SSL, as it uses
+For security sensitive environments make sure to always deploy password protection together with SSL, as it uses
 a standard cookie based techniques vulnerable to snooping / MITM attacks.
 
 Exposing the component logs

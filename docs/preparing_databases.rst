@@ -30,13 +30,13 @@ SQL scripts (see below for explanation) accordingly, as in those by default the 
 .. code-block:: sql
 
   CREATE ROLE pgwatch3 WITH LOGIN PASSWORD 'secret';
-  -- NB! For critical databases it might make sense to ensure that the user account
+  -- For critical databases it might make sense to ensure that the user account
   -- used for monitoring can only open a limited number of connections
   -- (there are according checks in code, but multiple instances might be launched)
   ALTER ROLE pgwatch3 CONNECTION LIMIT 3;
   GRANT pg_monitor TO pgwatch3;   // v10+
   GRANT CONNECT ON DATABASE mydb TO pgwatch3;
-  GRANT USAGE ON SCHEMA public TO pgwatch3; -- NB! pgwatch doesn't necessarily require using the public schema though!
+  GRANT USAGE ON SCHEMA public TO pgwatch3; -- pgwatch doesn't necessarily require using the public schema though!
   GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch3; -- needed by the wal_size metric
 
 For most monitored databases it's extremely beneficial (to troubleshooting performance issues) to also activate the
@@ -83,7 +83,7 @@ database to get maximum value out of pgwatch3 in the long run. Without these add
 10-15% of built-in metrics, which might not be too tragical nevertheless. For that use case there's also a *preset config*
 named "unprivileged".
 
-NB! When monitoring v10+ servers then the built-in **pg_monitor** system role is recommended for the monitoring user, which
+When monitoring v10+ servers then the built-in **pg_monitor** system role is recommended for the monitoring user, which
 almost substitutes superuser privileges for monitoring purposes in a safe way.
 
 **Rolling out common helpers**
@@ -100,10 +100,10 @@ For completely unprivileged monitoring users the following *helpers* are recomme
   psql -f /etc/pgwatch3/metrics/00_helpers/get_stat_statements/$pgver/metric.sql mydb
   psql -f /etc/pgwatch3/metrics/00_helpers/get_sequences/$pgver/metric.sql mydb
 
-NB! Note that there might not be an exact Postgres version match for helper definitions - then replace *$pgver* with the previous
+Note that there might not be an exact Postgres version match for helper definitions - then replace *$pgver* with the previous
 available version number below your server's Postgres version number.
 
-NB! Also note that as of v1.8.1 some helpers definition SQL-s scripts (like for "get_stat_statements") will inspect also
+Also note that as of v1.8.1 some helpers definition SQL-s scripts (like for "get_stat_statements") will inspect also
 the "search_path" and by default **will not install into schemas that have PUBLIC CREATE privileges**, like the "public"
 schema by default has!
 
@@ -239,5 +239,5 @@ When adding a new "to be monitored" entry a *DB type* needs to be selected. Foll
   Similar to *patroni-continuous-discovery* but all Patroni scopes (clusters) of an ETCD namespace are automatically monitored.
   Optionally regexes on database names still apply if provided.
 
-NB! All "continuous" modes expect access to "template1" or "postgres" databasess of the specified cluster to determine
+All "continuous" modes expect access to "template1" or "postgres" databasess of the specified cluster to determine
 the database names residing there.

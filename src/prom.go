@@ -147,7 +147,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 func setInstanceUpDownState(ch chan<- prometheus.Metric, md MonitoredDatabase) {
 	logger.Debugf("checking availability of configured DB [%s:%s]...", md.DBUniqueName, promInstanceUpStateMetric)
-	vme, err := DBGetPGVersion(mainContext, md.DBUniqueName, md.DBType, !opts.Metric.PrometheusAsyncMode) // NB! in async mode 2min cache can mask smaller downtimes!
+	vme, err := DBGetPGVersion(mainContext, md.DBUniqueName, md.DBType, !opts.Metric.PrometheusAsyncMode) // in async mode 2min cache can mask smaller downtimes!
 	data := make(MetricEntry)
 	if err != nil {
 		data[promInstanceUpStateMetric] = 0

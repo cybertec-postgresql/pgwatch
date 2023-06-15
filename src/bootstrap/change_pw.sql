@@ -1,1 +1,1 @@
-CREATE ROLE pgwatch3 WITH LOGIN PASSWORD 'pgwatch3admin';  -- NB! change the pw for production
+CREATE ROLE pgwatch3 WITH LOGIN PASSWORD 'pgwatch3admin';  -- change the pw for production

@@ -51,7 +51,7 @@ know the query language:
 
     Though Prometheus is not a traditional database system, it's a good choice for monitoring Cloud-like environments as the
     monitoring targets don't need to know too much about how actual monitoring will be carried out later and also Prometheus
-    has a nice fault-tolerant alerting system for enterprise needs. NB! By default Prometheus is not set up for long term
+    has a nice fault-tolerant alerting system for enterprise needs. By default Prometheus is not set up for long term
     metrics storage!
 
   - `Graphite <https://graphiteapp.org/>`_ Time Series DB
@@ -71,7 +71,7 @@ of the monitoring configuration like which databases should be monitored, with w
 are some basic overview tables to analyze the gathered data and also possibilities to delete unneeded metric data (when removing
 a test host for example).
 
-NB! Note that the Web UI can only be used if storing the configuration in the database (Postgres).
+Note that the Web UI can only be used if storing the configuration in the database (Postgres).
 
 Metrics representation
 ----------------------
@@ -127,7 +127,7 @@ and run additionally just the pgwatch3 collector.
   3. If using the Web UI also set the datastore parameters ``--datastore`` and ``--pg-metric-store-conn-str`` if wanting to
      have an option to be able to clean up data also via the UI in a more targeted way.
 
-  NB! When using Postgres metrics storage, the schema rollout script activates "asynchronous commiting" feature for the
+  When using Postgres metrics storage, the schema rollout script activates "asynchronous commiting" feature for the
   *pgwatch3* role in the metrics storage DB by default! If this is not wanted (no metrics can be lost in case of a crash),
   then re-enstate normal (synchronous) commiting with below query and restart the pgwatch3 agent:
 

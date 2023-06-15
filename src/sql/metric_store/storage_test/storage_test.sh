@@ -2,7 +2,7 @@
 ### The "test data" mode can be used to quickly generate test data
 ### for your chosen data model and planned host count to evaluate I/O
 ### capacity and query speed for your hardware.
-### NB! Test mode does not change the metrics counters, just multiplies data,
+### Test mode does not change the metrics counters, just multiplies data,
 ### so Grafana dashboards will not be realistic, only "interaction speed"
 ###
 

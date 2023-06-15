@@ -1,6 +1,6 @@
 # Available env. variables by components
 
-NB! Some variables influence multiple components. Command line parameters override env. variables (when doing custom deployments).
+Some variables influence multiple components. Command line parameters override env. variables (when doing custom deployments).
 
 ## Docker image specific
 

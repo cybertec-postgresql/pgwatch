@@ -29,7 +29,7 @@ Google Cloud SQL for PostgreSQL
 
 * Documentation: https://cloud.google.com/sql/docs/postgres
 
-NB! To get most out pgwatch3 on GCE you need some additional clicks in the GUI / Cloud Console "Flags" section to enable
+To get most out pgwatch3 on GCE you need some additional clicks in the GUI / Cloud Console "Flags" section to enable
 some common PostgreSQL monitoring parameters like *track_io_timing* and *track_functions*.
 
 
@@ -47,7 +47,7 @@ Amazon RDS for PostgreSQL
     https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html
     https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.AuroraPostgreSQL.html
 
-NB! Note that the AWS Aurora PostgreSQL-compatible engine is missing some additional metrics compared to normal RDS.
+Note that the AWS Aurora PostgreSQL-compatible engine is missing some additional metrics compared to normal RDS.
 
 
 Azure Database for PostgreSQL
@@ -61,7 +61,7 @@ Azure Database for PostgreSQL
 
 * Documentation: https://docs.microsoft.com/en-us/azure/postgresql/
 
-NB! Surprisingly on Azure some file access functions are whitelisted, thus one can for example use the "wal_size" metrics.
+Surprisingly on Azure some file access functions are whitelisted, thus one can for example use the "wal_size" metrics.
 
 NB2! By default Azure has **pg_stat_statements** not fully activated by default, so you need to enable it manually or via
 the API. Documentation link `here <https://docs.microsoft.com/en-us/azure/postgresql/howto-optimize-query-stats-collection>`_.

@@ -215,7 +215,7 @@ const ModalContent = () => {
                 helperText={error?.message}
                 type="text"
                 label="Unique name"
-                title="NB! Choose a good name as this shouldn't be changed later (cannot easily update InfluxDB data). Will be used as prefix during DB discovery mode"
+                title="Choose a good name as this shouldn't be changed later (cannot easily update InfluxDB data). Will be used as prefix during DB discovery mode"
               />
             )}
           />
@@ -237,7 +237,7 @@ const ModalContent = () => {
                 error={!!error}
                 helperText={error?.message}
                 options={dbTypeOptions}
-                title="NB! For 'pgbouncer' insert the 'to be monitored' pool name to 'dbname' field or leave it empty to monitor all pools distinguished by the 'database' tag. For 'discovery' DB types one can also specify regex inclusion/exclusion patterns. For 'patroni' host/port are not used as it's read from DCS (specify DCS info under 'Host config')"
+                title="For 'pgbouncer' insert the 'to be monitored' pool name to 'dbname' field or leave it empty to monitor all pools distinguished by the 'database' tag. For 'discovery' DB types one can also specify regex inclusion/exclusion patterns. For 'patroni' host/port are not used as it's read from DCS (specify DCS info under 'Host config')"
               />
             )}
           />
@@ -464,7 +464,7 @@ const ModalContent = () => {
                 field={{ ...field }}
                 type={showPassword ? "text" : "password"}
                 label="DB password"
-                title="NB! By default password is stored in plain-text in the database"
+                title="By default password is stored in plain-text in the database"
                 inputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -500,7 +500,7 @@ const ModalContent = () => {
                 helperText={error?.message}
                 type="number"
                 label="Statement timeout [seconds]"
-                title="In seconds. Should stay low for critical DBs just in case. NB! For possibly long-running built-in bloat estimation metrics the timeout will be max(30min,$userInput)"
+                title="In seconds. Should stay low for critical DBs just in case. For possibly long-running built-in bloat estimation metrics the timeout will be max(30min,$userInput)"
                 inputProps={{
                   inputProps: {
                     min: 1, max: 60
@@ -691,7 +691,7 @@ const ModalContent = () => {
                 label="Auto-create helpers?"
                 labelPlacement="end"
                 control={<Checkbox {...field} size="medium" />}
-                title="NB! If checked the gatherer will automatically try to create the metric fetching helpers (CPU load monitoring, stat_statements, etc) - requires SUPERUSER to succeed"
+                title="If checked the gatherer will automatically try to create the metric fetching helpers (CPU load monitoring, stat_statements, etc) - requires SUPERUSER to succeed"
               />
             )}
           />

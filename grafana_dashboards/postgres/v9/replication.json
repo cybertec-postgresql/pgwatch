@@ -285,7 +285,7 @@
       ],
       "datasource": null,
       "decimals": 0,
-      "description": "NB! Data is available  only on connected replicas. No thresholds by default",
+      "description": "Data is available  only on connected replicas. No thresholds by default",
       "format": "short",
       "gauge": {
         "maxValue": 100,
@@ -419,7 +419,7 @@
       ],
       "datasource": null,
       "decimals": 0,
-      "description": "NB! Data is available  only on connected replicas. No thresholds by default",
+      "description": "Data is available  only on connected replicas. No thresholds by default",
       "format": "short",
       "gauge": {
         "maxValue": 100,
@@ -681,7 +681,7 @@
       ],
       "datasource": null,
       "decimals": 1,
-      "description": "NB! Data is available  only on connected replicas! Based on last 5m data.",
+      "description": "Data is available  only on connected replicas! Based on last 5m data.",
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -815,7 +815,7 @@
       ],
       "datasource": null,
       "decimals": 1,
-      "description": "NB! Data is available  only on connected replicas! Based on last 5m data.",
+      "description": "Data is available  only on connected replicas! Based on last 5m data.",
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -949,7 +949,7 @@
       ],
       "datasource": null,
       "decimals": 1,
-      "description": "NB! Data is available  only on connected replicas! Based on last 5m data.",
+      "description": "Data is available  only on connected replicas! Based on last 5m data.",
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -1228,7 +1228,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
-      "description": "Based on pg_stat_replication on primaries. NB! Data is available  only on connected replicas!",
+      "description": "Based on pg_stat_replication on primaries. Data is available  only on connected replicas!",
       "fill": 1,
       "gridPos": {
         "h": 4,
@@ -1384,7 +1384,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
-      "description": "Based on pg_stat_replication on primaries. NB! Data is available  only on connected replicas!",
+      "description": "Based on pg_stat_replication on primaries. Data is available  only on connected replicas!",
       "fill": 1,
       "gridPos": {
         "h": 4,

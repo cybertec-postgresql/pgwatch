@@ -6,7 +6,7 @@ select /* pgwatch3_generated */
   recommendation,
   case when exists (select * from pg_inherits
                     where inhrelid = regclass(tag_object_name)
-                    ) then 'NB! Partitioned table, create the index on parent' else extra_info
+                    ) then 'Partitioned table, create the index on parent' else extra_info
   end as extra_info
 FROM (
          SELECT (extract(epoch from now()) * 1e9)::int8    as epoch_ns,

@@ -57,7 +57,7 @@ ADD grafana_dashboards /pgwatch3/grafana_dashboards
 # Set up supervisord [https://docs.docker.com/engine/admin/using_supervisord/]
 COPY docker/supervisord-postgres.conf /etc/supervisor/supervisord.conf
 
-# NB! When security is a concern one should definitely alter "pgwatch3" password in change_pw.sql and maybe modify pg_hba.conf accordingly
+# When security is a concern one should definitely alter "pgwatch3" password in change_pw.sql and maybe modify pg_hba.conf accordingly
 COPY docker/postgresql.conf /etc/postgresql/14/main/pgwatch_postgresql.conf
 COPY docker/pg_hba.conf /etc/postgresql/14/main/pg_hba.conf
 COPY docker/docker-launcher-postgres.sh docker/postgresql.conf docker/pg_hba.conf /pgwatch3/
@@ -79,7 +79,7 @@ EXPOSE 3000
 EXPOSE 9187
 
 ### Volumes for easier updating to newer to newer pgwatch3 containers
-### NB! Backwards compatibility is not 100% guaranteed so a backup
+### Backwards compatibility is not 100% guaranteed so a backup
 ### using traditional means is still recommended before updating - see "Updating to a newer Docker version" from README
 
 VOLUME /pgwatch3/persistent-config

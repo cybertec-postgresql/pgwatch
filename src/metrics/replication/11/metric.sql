@@ -13,7 +13,7 @@ select /* pgwatch3_generated */
   case when sync_state in ('sync', 'quorum') then 1 else 0 end as is_sync_int,
   case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
 from
-  /* NB! when the query fails, grant "pg_monitor" system role (exposing all stats) to the monitoring user
+  /* when the query fails, grant "pg_monitor" system role (exposing all stats) to the monitoring user
      or create specifically the "get_stat_replication" helper and use that instead of pg_stat_replication
   */
   --

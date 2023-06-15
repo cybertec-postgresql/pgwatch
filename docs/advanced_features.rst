@@ -28,7 +28,7 @@ type and scope (cluster name) information. A sample config (for Config DB based 
 
 For YAML based setups an example can be found from the `instances.yaml <https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/config/instances.yaml#L34>`_ file.
 
-NB! If Patroni is powered by *etcd*, then also username, password, ca_file, cert_file, key_file optional security parameters can be defined - other DCS systems
+If Patroni is powered by *etcd*, then also username, password, ca_file, cert_file, key_file optional security parameters can be defined - other DCS systems
 are currently only supported without authentication.
 
 Also if you don't use the standby nodes actively for queries then it might make sense to decrease the volume of gathered
@@ -45,7 +45,7 @@ to parse the database server logs for errors. Out-of-the-box it will though only
 formats user needs to specify a regex that parses out named groups of following fields: *database_name*, *error_severity*.
 See `here <https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/logparse.go#L27>`__ for an example regex.
 
-NB! Note that only the event counts are stored, no error texts, usernames or other infos! Errors are grouped by severity for the monitored DB and for the whole instance. The metric name to enable log parsing is "server_log_event_counts". Also note that for auto-detection
+Note that only the event counts are stored, no error texts, usernames or other infos! Errors are grouped by severity for the monitored DB and for the whole instance. The metric name to enable log parsing is "server_log_event_counts". Also note that for auto-detection
 of log destination / setting to work, the monitoring user needs superuser / pg_monitor privileges - if this is not possible
 then log settings need to be specified manually under "Host config" as seen for example `here <https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/config/instances.yaml>`__.
 
@@ -66,7 +66,7 @@ YAML config (recommended when "pushing" metrics from DB nodes to a central metri
     # logs_glob_path:
     logs_match_regex: '^(?P<log_time>.*) \[(?P<process_id>\d+)\] (?P<user_name>.*)@(?P<database_name>.*?) (?P<error_severity>.*?): '
 
-NB! For log parsing to work the metric **server_log_event_counts** needs to be enabled or a *preset config* including it used - like the
+For log parsing to work the metric **server_log_event_counts** needs to be enabled or a *preset config* including it used - like the
 "full" preset.
 
 PgBouncer support
@@ -112,7 +112,7 @@ To enable the scraping endpoint set ``--datastore=prometheus`` and optionally al
 ``--prometheus-listen-addr``. Additionally note that you still need to specify some metrics config as usually - only metrics with
 interval values bigger than zero will be populated on scraping.
 
-NB! Currently a few built-in metrics that require some state to be stored between scrapes, e.g. the
+Currently a few built-in metrics that require some state to be stored between scrapes, e.g. the
 "change_events" metric, will currently be ignored. Also non-numeric data columns will be ignored! Tag columns will be preserved though
 as Prometheus "labels".
 

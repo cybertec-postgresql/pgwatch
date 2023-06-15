@@ -1,5 +1,5 @@
 -- small modifications to SQL from https://github.com/ioguix/pgsql-bloat-estimation
--- NB! monitoring user needs SELECT grant on all tables or a SECURITY DEFINER wrapper around that SQL
+-- monitoring user needs SELECT grant on all tables or a SECURITY DEFINER wrapper around that SQL
 
 BEGIN;
 

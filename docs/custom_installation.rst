@@ -127,7 +127,7 @@ All examples here assume Ubuntu as OS - but it's basically the same for RedHat f
         cd /etc/pgwatch3/sql/metric_store
         psql -f roll_out_metric_time.psql pgwatch3_metrics
 
-      **NB! Default retention for Postgres storage is 2 weeks!** To change, use the ``--pg-retention-days / PW3_PG_RETENTION_DAYS`` gatherer parameter.
+      **Default retention for Postgres storage is 2 weeks!** To change, use the ``--pg-retention-days / PW3_PG_RETENTION_DAYS`` gatherer parameter.
 
 #. **Prepare the "to-be-monitored" databases for metrics collection**
 
@@ -136,12 +136,12 @@ All examples here assume Ubuntu as OS - but it's basically the same for RedHat f
    environments it can make the initial preparation (automatic *helper* rollouts) a bit easier still, given superuser privileges
    are later stripped.
 
-   NB! To get most out of your metrics some *SECURITY DEFINER* wrappers functions called "helpers" are recommended on the DB-s under monitoring.
+   To get most out of your metrics some *SECURITY DEFINER* wrappers functions called "helpers" are recommended on the DB-s under monitoring.
    See the detailed chapter on the "preparation" topic :ref:`here <helper_functions>` for more details.
 
 #. **Install Python 3 and start the Web UI (optional)**
 
-   NB! The Web UI is not strictly required but makes life a lot easier for *Config DB* based setups. Technically it would be fine also to manage connection
+   The Web UI is not strictly required but makes life a lot easier for *Config DB* based setups. Technically it would be fine also to manage connection
    strings of the monitored DB-s directly in the "pgwatch3.monitored_db" table and add/adjust metrics in the "pgwatch3.metric" table,
    and *Preset Configs* in the "pgwatch3.preset_config" table.
 
@@ -164,7 +164,7 @@ All examples here assume Ubuntu as OS - but it's basically the same for RedHat f
 
       ::
 
-        # NB! The defaults assume a local Config DB named pgwatch3, DB user pgwatch3
+        # The defaults assume a local Config DB named pgwatch3, DB user pgwatch3
         python3 web.py --datastore=postgres --pg-metric-store-conn-str="dbname=pgwatch3_metrics user=pgwatch3"
 
       Default port for the Web UI: **8080**. See ``web.py --help`` for all options.
@@ -213,7 +213,7 @@ All examples here assume Ubuntu as OS - but it's basically the same for RedHat f
       then there are usually still some errors though, due to the fact that some more extensions or privileges are missing
       on the monitored database side. See the according chapter :ref:`here <preparing_databases>`.
 
-   NB! When you're compiling your own gatherer then the executable file will be named just *pgwatch3* instead of *pgwatch3-daemon*
+   When you're compiling your own gatherer then the executable file will be named just *pgwatch3* instead of *pgwatch3-daemon*
    to avoid mixups.
 
 .. _custom_install_grafana:
@@ -314,4 +314,4 @@ Relevant gatherer parameters / env. vars: ``--config / PW3_CONFIG`` and ``--metr
 
 For details on individual steps like installing pgwatch3 see the above paragraph.
 
-NB! The Web UI component cannot be used in file based mode.
+The Web UI component cannot be used in file based mode.

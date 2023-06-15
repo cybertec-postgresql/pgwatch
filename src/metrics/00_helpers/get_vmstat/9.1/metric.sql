@@ -1,9 +1,9 @@
 /*
   vmstat + some extra infos like CPU count, 1m/5m/15m load avg. and total memory
-  NB! Memory and disk info returned in bytes!
+  Memory and disk info returned in bytes!
 */
 
-CREATE EXTENSION IF NOT EXISTS plpython3u; /* NB! "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
+CREATE EXTENSION IF NOT EXISTS plpython3u; /* "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
 
 -- DROP FUNCTION get_vmstat(int);
 

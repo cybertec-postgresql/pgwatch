@@ -25,7 +25,7 @@ After some minutes you could for example open the `"DB overview" <http://127.0.0
 looking at metrics in Grafana. For defining your own dashboards or making changes you need to log in as admin (default
 user/password: admin/pgwatch3admin).
 
-NB! If you don't want to add the "test" database (the pgwatch3 configuration DB holding connection strings to monitored DBs
+If you don't want to add the "test" database (the pgwatch3 configuration DB holding connection strings to monitored DBs
 and metric definitions) to monitoring, remove the PW3_TESTDB env variable.
 
 Also note that for long term production usage with Docker it's highly recommended to use separate *volumes* for each
