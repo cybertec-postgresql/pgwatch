@@ -14,139 +14,13 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
-	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/tracelog"
 )
 
 var configDb db.PgxPoolIface
 var metricDb db.PgxPoolIface
 var monitoredDbConnCache map[string]db.PgxPoolIface = make(map[string]db.PgxPoolIface)
-
-func GetPostgresDBConnection(ctx context.Context, libPqConnString, host, port, dbname, user, password, sslmode, sslrootcert, sslcert, sslkey string) (db.PgxPoolIface, error) {
-	var connStr string
-
-	//log.Debug("Connecting to: ", host, port, dbname, user, password)
-	if len(libPqConnString) > 0 {
-		connStr = libPqConnString
-		if !strings.Contains(strings.ToLower(connStr), "sslmode") {
-			if strings.Contains(connStr, "postgresql://") || strings.Contains(connStr, "postgres://") { // JDBC style
-				if strings.Contains(connStr, "?") { // has some extra params already
-					connStr += "&sslmode=disable" // defaulting to "disable" as Go driver doesn't support "prefer"
-				} else {
-					connStr += "?sslmode=disable"
-				}
-			} else { // LibPQ style
-				connStr += " sslmode=disable"
-			}
-		}
-		if !strings.Contains(strings.ToLower(connStr), "connect_timeout") {
-			if strings.Contains(connStr, "postgresql://") || strings.Contains(connStr, "postgres://") { // JDBC style
-				if strings.Contains(connStr, "?") { // has some extra params already
-					connStr += "&connect_timeout=5" // 5 seconds
-				} else {
-					connStr += "?connect_timeout=5"
-				}
-			} else { // LibPQ style
-				connStr += " connect_timeout=5"
-			}
-		}
-	} else {
-		connStr = fmt.Sprintf("host=%s port=%s dbname='%s' sslmode=%s user=%s application_name=%s sslrootcert='%s' sslcert='%s' sslkey='%s' connect_timeout=5",
-			host, port, dbname, sslmode, user, applicationName, sslrootcert, sslcert, sslkey)
-		if password != "" { // having empty string as password effectively disables .pgpass so include only if password given
-			connStr += fmt.Sprintf(" password='%s'", password)
-		}
-	}
-
-	connConfig, err := pgxpool.ParseConfig(connStr)
-	if err != nil {
-		return nil, err
-	}
-	connConfig.MaxConnIdleTime = 15 * time.Second
-	connConfig.MaxConnLifetime = pgConnRecycleSeconds * time.Second
-	tracelogger := &tracelog.TraceLog{
-		Logger:   log.NewPgxLogger(log.GetLogger(ctx)),
-		LogLevel: tracelog.LogLevelDebug, //map[bool]tracelog.LogLevel{false: tracelog.LogLevelWarn, true: tracelog.LogLevelDebug}[true],
-	}
-	connConfig.ConnConfig.Tracer = tracelogger
-	return pgxpool.NewWithConfig(ctx, connConfig)
-}
-
-func InitAndTestConfigStoreConnection(ctx context.Context, host, port, dbname, user, password string, requireSSL, failOnErr bool) error {
-	var err error
-	SSLMode := map[bool]string{false: "disable", true: "require"}[requireSSL]
-	var retries = 3 // ~15s
-	defer func() {
-		if err != nil && failOnErr {
-			logger.Fatal("could not ping configDb! exit.", err)
-		}
-	}()
-	for i := 0; i <= retries; i++ {
-		// configDb is used by the main thread only. no verify-ca/verify-full support currently
-		if configDb, err = GetPostgresDBConnection(ctx, "", host, port, dbname, user, password, SSLMode, "", "", ""); err != nil {
-			return err
-		}
-		if err = configDb.Ping(ctx); err == nil {
-			logger.Info("connect to configDb OK!")
-			return nil
-		}
-		if i < retries {
-			logger.Errorf("could not ping configDb! retrying in 5s. %d retries left. err: %v", retries-i, err)
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(time.Second * 5):
-				continue
-			}
-		}
-	}
-	return nil
-}
-
-func InitAndTestMetricStoreConnection(ctx context.Context, connStr string, failOnErr bool) error {
-	var err error
-	var retries = 3 // ~15s
-
-	for i := 0; i <= retries; i++ {
-
-		metricDb, err = GetPostgresDBConnection(ctx, connStr, "", "", "", "", "", "", "", "", "")
-		if err != nil {
-			if i < retries {
-				logger.Errorf("could not open metricDb connection. retrying in 5s. %d retries left. err: %v", retries-i, err)
-				time.Sleep(time.Second * 5)
-				continue
-			}
-			if failOnErr {
-				logger.Fatal("could not open metricDb connection! exit. err:", err)
-			} else {
-				logger.Error("could not open metricDb connection:", err)
-				return err
-			}
-		}
-
-		err = metricDb.Ping(ctx)
-
-		if err != nil {
-			if i < retries {
-				logger.Errorf("could not ping metricDb! retrying in 5s. %d retries left. err: %v", retries-i, err)
-				time.Sleep(time.Second * 5)
-				continue
-			}
-			if failOnErr {
-				logger.Fatal("could not ping metricDb! exit.", err)
-			} else {
-				return err
-			}
-		} else {
-			logger.Info("connect to metricDb OK!")
-			break
-		}
-	}
-	return nil
-}
 
 func IsPostgresDBType(dbType string) bool {
 	if dbType == config.DbTypeBouncer || dbType == config.DbTypePgPOOL {
@@ -169,7 +43,7 @@ func InitSQLConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
 		md.DBName = "pgbouncer"
 	}
 
-	conn, err := GetPostgresDBConnection(mainContext, md.LibPQConnStr, md.Host, md.Port, md.DBName, md.User, md.Password,
+	conn, err := db.GetPostgresDBConnection(mainContext, md.LibPQConnStr, md.Host, md.Port, md.DBName, md.User, md.Password,
 		md.SslMode, md.SslRootCAPath, md.SslClientCertPath, md.SslClientKeyPath)
 	if err != nil {
 		return err
@@ -1764,7 +1638,7 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 	templateDBsToTry := []string{"template1", "postgres", "defaultdb"}
 
 	for _, templateDB := range templateDBsToTry {
-		c, err = GetPostgresDBConnection(mainContext, ce.LibPQConnStr, ce.Host, ce.Port, templateDB, ce.User, ce.Password,
+		c, err = db.GetPostgresDBConnection(mainContext, ce.LibPQConnStr, ce.Host, ce.Port, templateDB, ce.User, ce.Password,
 			ce.SslMode, ce.SslRootCAPath, ce.SslClientCertPath, ce.SslClientKeyPath)
 		if err != nil {
 			return md, err

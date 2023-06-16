@@ -16,6 +16,7 @@ type ConnectionOpts struct {
 	Password                  string `long:"password" mapstructure:"password" description:"PG config DB password" env:"PW3_PGPASSWORD"`
 	PgRequireSSL              bool   `long:"pg-require-ssl" mapstructure:"pg-require-ssl" description:"PG config DB SSL connection only" env:"PW3_PGSSL"`
 	ServersRefreshLoopSeconds int    `long:"servers-refresh-loop-seconds" mapstructure:"servers-refresh-loop-seconds" description:"Sleep time for the main loop" env:"PW3_SERVERS_REFRESH_LOOP_SECONDS" default:"120"`
+	Init                      bool   `long:"init" description:"Initialize database schema to the latest version and exit. Can be used with --upgrade"`
 }
 
 // MetricStoreOpts specifies the storage configuration to store metrics data
@@ -47,11 +48,18 @@ type LoggingOpts struct {
 	LogFileNumber int    `long:"log-file-number" mapstructure:"log-file-number" description:"Maximum number of old log files to retain, 0 to retain all" default:"0"`
 }
 
+// StartOpts specifies the application startup options
+type StartOpts struct {
+	// File    string `short:"f" long:"file" description:"SQL script file to execute during startup"`
+	// Upgrade bool   `long:"upgrade" description:"Upgrade database to the latest version"`
+	// Debug   bool   `long:"debug" description:"Run in debug mode. Only asynchronous chains will be executed"`
+}
+
 type CmdOptions struct {
 	Connection ConnectionOpts `group:"Connection" mapstructure:"Connection"`
 	Metric     MetricOpts     `group:"Metric" mapstructure:"Metric"`
 	Logging    LoggingOpts    `group:"Logging" mapstructure:"Logging"`
-	// Verbose    string         `short:"v" long:"verbose" mapstructure:"verbose" description:"Chat level [DEBUG|INFO|WARN]. Default: WARN" env:"PW3_VERBOSE"`
+	Start      StartOpts      `group:"Start" mapstructure:"Start"`
 	// Params for running based on local config files, enabled distributed "push model" based metrics gathering. Metrics are sent directly to Influx/Graphite.
 	Config                  string `short:"c" long:"config" mapstructure:"config" description:"File or folder of YAML files containing info on which DBs to monitor and where to store metrics" env:"PW3_CONFIG"`
 	BatchingDelayMs         int64  `long:"batching-delay-ms" mapstructure:"batching-delay-ms" description:"Max milliseconds to wait for a batched metrics flush. [Default: 250]" default:"250" env:"PW3_BATCHING_MAX_DELAY_MS"`

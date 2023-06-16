@@ -14,16 +14,6 @@ find . -name '*.sql' -exec sed -i 's/pgwatch3;/pgwatch3_owner;/g' {} \;
 
 # Schema types
 
-## metric
-
-A single / separate table for each distinct metric in the "public" schema. No partitioning. Works on all PG versions. Suitable for up to ~25 monitored DBs.
-
-## metric-time
-
-A single top-level table for each distinct metric in the "public" schema + weekly partitions in the "subpartitions" schema.
-Works on PG 11+ versions. Suitable for up to ~50 monitored DBs. Reduced IO compared to "metric" as old data partitions will be dropped, not deleted.
-
-Default storage schema for the "pgwatch3" Docker image.
 
 ## metric-dbname-time
 
@@ -36,9 +26,23 @@ postgresql.conf parameter on the metrics DB for automatic old partition dropping
 data partitions with some custom script / Cron when increasing "max_locks_per_transaction" is not wanted, and actually this
 kind of approach is also working behind the scenes for versions above v1.8.1.
 
-## custom
+Something like below will be done by the gatherer AUTOMATICALLY:
+```sql
+create table public."mymetric"
+  (LIKE admin.metrics_template)
+  PARTITION BY LIST (dbname);
+COMMENT ON TABLE public."mymetric" IS 'pgwatch3-generated-metric-lvl';
 
-For cases where the available presets are not satisfactory / applicable. All data inserted into "public.metrics" table and the user is responsible for re-routing with a trigger and possible partition management. In that case all table creations and data cleanup must be performed by the user.
+create table subpartitions."mymetric_mydbname"
+  PARTITION OF public."mymetric"
+  FOR VALUES IN ('my-dbname') PARTITION BY RANGE (time);
+COMMENT ON TABLE subpartitions."mymetric_mydbname" IS 'pgwatch3-generated-metric-dbname-lvl';
+
+create table subpartitions."mymetric_mydbname_y2019w01" -- month calculated dynamically of course
+  PARTITION OF subpartitions."mymetric_mydbname"
+  FOR VALUES FROM ('2019-01-01') TO ('2019-01-07');
+COMMENT ON TABLE subpartitions."mymetric_mydbname_y2019w01" IS 'pgwatch3-generated-metric-dbname-time-lvl';
+```
 
 ## timescale
 
@@ -52,6 +56,35 @@ admin.timescale_change_chunk_interval() and admin.timescale_change_compress_inte
 
 Note that if wanting to store a deeper history of 6 months or a year then additionally using [Continous Aggregates](https://docs.timescale.com/latest/using-timescaledb/continuous-aggregates)
 might be a good idea. This will though also require modifying the Grafana dashboards, so it's out of scope for pgwatch3.
+
+Something like below will be done by the gatherer AUTOMATICALLY via the `admin.ensure_partition_timescale()` function:
+```sql
+CREATE TABLE public."some_metric"
+  (LIKE admin.metrics_template INCLUDING INDEXES);
+COMMENT ON TABLE public."some_metric" IS 'pgwatch3-generated-metric-lvl';
+
+ALTER TABLE some_metric SET (
+  timescaledb.compress,
+  timescaledb.compress_segmentby = 'dbname'
+);
+
+SELECT add_compression_policy('some_metric', INTERVAL '1 day');
+```
+
+## metric (DEPRECATED)
+
+A single / separate table for each distinct metric in the "public" schema. No partitioning. Works on all PG versions. Suitable for up to ~25 monitored DBs.
+
+## metric-time (DEPRECATED)
+
+A single top-level table for each distinct metric in the "public" schema + weekly partitions in the "subpartitions" schema.
+Works on PG 11+ versions. Suitable for up to ~50 monitored DBs. Reduced IO compared to "metric" as old data partitions will be dropped, not deleted.
+
+Default storage schema for the "pgwatch3" Docker image.
+
+## custom (DEPRECATED)
+
+For cases where the available presets are not satisfactory / applicable. All data inserted into "public.metrics" table and the user is responsible for re-routing with a trigger and possible partition management. In that case all table creations and data cleanup must be performed by the user.
 
 # Data size considerations
 

@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
+	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/cybertec-postgresql/pgwatch3/webserver"
@@ -213,16 +214,15 @@ const (
 	datastorePrometheus       = "prometheus"
 	presetConfigYAMLFile      = "preset-configs.yaml"
 	fileBasedMetricHelpersDir = "00_helpers"
-	pgConnRecycleSeconds      = 1800       // applies for monitored nodes
-	applicationName           = "pgwatch3" // will be set on all opened PG connections for informative purposes
-	gathererStatusStart       = "START"
-	gathererStatusStop        = "STOP"
-	metricdbIdent             = "metricDb"
-	configdbIdent             = "configDb"
-	contextPrometheusScrape   = "prometheus-scrape"
-	dcsTypeEtcd               = "etcd"
-	dcsTypeZookeeper          = "zookeeper"
-	dcsTypeConsul             = "consul"
+
+	gathererStatusStart     = "START"
+	gathererStatusStop      = "STOP"
+	metricdbIdent           = "metricDb"
+	configdbIdent           = "configDb"
+	contextPrometheusScrape = "prometheus-scrape"
+	dcsTypeEtcd             = "etcd"
+	dcsTypeZookeeper        = "zookeeper"
+	dcsTypeConsul           = "consul"
 
 	monitoredDbsDatastoreSyncIntervalSeconds = 600              // write actively monitored DBs listing to metrics store after so many seconds
 	monitoredDbsDatastoreSyncMetricName      = "configured_dbs" // FYI - for Postgres datastore there's also the admin.all_unique_dbnames table with all recent DB unique names with some metric data
@@ -2592,7 +2592,7 @@ func main() {
 			return
 		}
 
-		_ = InitAndTestConfigStoreConnection(mainContext, opts.Connection.Host,
+		configDb, _ = db.InitAndTestConfigStoreConnection(mainContext, opts.Connection.Host,
 			opts.Connection.Port, opts.Connection.Dbname, opts.Connection.User, opts.Connection.Password,
 			opts.Connection.PgRequireSSL, true)
 	}
@@ -2648,7 +2648,7 @@ func main() {
 				logger.Fatal("--datastore=postgres requires --pg-metric-store-conn-str to be set")
 			}
 
-			_ = InitAndTestMetricStoreConnection(mainContext, opts.Metric.PGMetricStoreConnStr, true)
+			metricDb, _ = db.InitAndTestMetricStoreConnection(mainContext, opts.Metric.PGMetricStoreConnStr, true)
 
 			PGSchemaType = CheckIfPGSchemaInitializedOrFail()
 
