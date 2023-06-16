@@ -9,6 +9,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
+	retry "github.com/sethvargo/go-retry"
 )
 
 const (
@@ -66,98 +67,97 @@ func GetPostgresDBConnection(ctx context.Context, libPqConnString, host, port, d
 	return pgxpool.NewWithConfig(ctx, connConfig)
 }
 
-func InitAndTestConfigStoreConnection(ctx context.Context, host, port, dbname, user, password string, requireSSL, failOnErr bool) (configDb PgxPoolIface, err error) {
+var backoff = retry.WithMaxRetries(3, retry.NewConstant(1*time.Second))
+
+func InitAndTestConfigStoreConnection(ctx context.Context, host, port, dbname, user, password string, requireSSL bool) (configDb PgxPoolIface, err error) {
 	logger := log.GetLogger(ctx)
 	SSLMode := map[bool]string{false: "disable", true: "require"}[requireSSL]
-	var retries = 3 // ~15s
-	defer func() {
-		if err != nil && failOnErr {
-			logger.Fatal("could not ping configDb! exit.", err)
+	if err = retry.Do(ctx, backoff, func(ctx context.Context) error {
+		if configDb, err = GetPostgresDBConnection(ctx, "", host, port, dbname, user, password, SSLMode, "", "", ""); err == nil {
+			err = configDb.Ping(ctx)
 		}
-	}()
-	for i := 0; i <= retries; i++ {
-		// configDb is used by the main thread only. no verify-ca/verify-full support currently
-		if configDb, err = GetPostgresDBConnection(ctx, "", host, port, dbname, user, password, SSLMode, "", "", ""); err != nil {
-			return
+		if err != nil {
+			logger.WithError(err).Error("Connection failed")
+			logger.Info("Sleeping before reconnecting...")
+			return retry.RetryableError(err)
 		}
-		if err = configDb.Ping(ctx); err == nil {
-			logger.Info("connect to configDb OK!")
-			return
-		}
-		if i < retries {
-			logger.Errorf("could not ping configDb! retrying in 5s. %d retries left. err: %v", retries-i, err)
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(time.Second * 5):
-				continue
-			}
-		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
+	err = ExecuteConfigSchemaScripts(ctx, configDb)
 	return
 }
 
-func InitAndTestMetricStoreConnection(ctx context.Context, connStr string, failOnErr bool) (metricDb PgxPoolIface, err error) {
+func InitAndTestMetricStoreConnection(ctx context.Context, connStr string) (metricDb PgxPoolIface, err error) {
 	logger := log.GetLogger(ctx)
-	var retries = 3 // ~15s
-	for i := 0; i <= retries; i++ {
-		metricDb, err = GetPostgresDBConnection(ctx, connStr, "", "", "", "", "", "", "", "", "")
-		if err != nil {
-			if i < retries {
-				logger.Errorf("could not open metricDb connection. retrying in 5s. %d retries left. err: %v", retries-i, err)
-				time.Sleep(time.Second * 5)
-				continue
-			}
-			if failOnErr {
-				logger.Fatal("could not open metricDb connection! exit. err:", err)
-			} else {
-				logger.Error("could not open metricDb connection:", err)
-				return
-			}
+	if err = retry.Do(ctx, backoff, func(ctx context.Context) error {
+		if metricDb, err = GetPostgresDBConnection(ctx, connStr, "", "", "", "", "", "", "", "", ""); err == nil {
+			err = metricDb.Ping(ctx)
 		}
-
-		err = metricDb.Ping(ctx)
-
 		if err != nil {
-			if i < retries {
-				logger.Errorf("could not ping metricDb! retrying in 5s. %d retries left. err: %v", retries-i, err)
-				time.Sleep(time.Second * 5)
-				continue
-			}
-			if failOnErr {
-				logger.Fatal("could not ping metricDb! exit.", err)
-			} else {
-				return
-			}
-		} else {
-			logger.Info("connect to metricDb OK!")
-			break
+			logger.WithError(err).Error("Connection failed")
+			logger.Info("Sleeping before reconnecting...")
+			return retry.RetryableError(err)
 		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
+	err = ExecuteMetricSchemaScripts(ctx, metricDb)
 	return
 }
 
 var (
-	sqlInit          = "create schema ..."
-	MetricSchemaSQLs = map[string]string{"Schema Init": sqlInit}
+	configSchemaSQLs = []string{
+		sqlConfigSchema,
+		sqlConfigDefinitions,
+	}
+	metricSchemaSQLs = []string{
+		sqlMetricAdminSchema,
+		sqlMetricAdminFunctions,
+		sqlMetricEnsurePartitionPostgres,
+		sqlMetricEnsurePartitionTimescale,
+		sqlMetricChangeChunkIntervalTimescale,
+		sqlMetricChangeCompressionIntervalTimescale,
+	}
 )
 
-// ExecuteSchemaScripts executes initial schema scripts
-func ExecuteSchemaScripts(ctx context.Context, conn PgxIface, sqls map[string]string) (err error) {
-	logger := log.GetLogger(ctx)
-	for sqlName, sql := range sqls {
-		logger.Info("Executing script: ", sqlName)
+func ExecuteConfigSchemaScripts(ctx context.Context, conn PgxIface) error {
+	log.GetLogger(ctx).Info("Executing configuration schema scripts: ", len(configSchemaSQLs))
+	return executeSchemaScripts(ctx, conn, "pgwatch3", configSchemaSQLs)
+}
+
+func ExecuteMetricSchemaScripts(ctx context.Context, conn PgxIface) error {
+	log.GetLogger(ctx).Info("Executing metric storage schema scripts: ", len(metricSchemaSQLs))
+	return executeSchemaScripts(ctx, conn, "admin", metricSchemaSQLs)
+}
+
+// executeSchemaScripts executes initial schema scripts
+func executeSchemaScripts(ctx context.Context, conn PgxIface, schema string, sqls []string) (err error) {
+	var exists bool
+	err = conn.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = $1)", schema).Scan(&exists)
+	if err != nil || exists {
+		return
+	}
+	for _, sql := range sqls {
 		if _, err = conn.Exec(ctx, sql); err != nil {
-			logger.WithError(err).Error("Script execution failed")
-			logger.Warn("Dropping \"timetable\" schema...")
-			_, err = conn.Exec(ctx, "DROP SCHEMA IF EXISTS timetable CASCADE")
-			if err != nil {
-				logger.WithError(err).Error("Schema dropping failed")
-			}
 			return err
 		}
-		logger.Info("Schema file executed: " + sqlName)
 	}
-	logger.Info("Configuration schema created...")
 	return nil
+}
+
+type MetricSchemaType int
+
+const (
+	MetricSchemaPostgres MetricSchemaType = iota
+	MetricSchemaTimescale
+)
+
+func GetMetricSchemaType(ctx context.Context, conn PgxIface) (metricSchema MetricSchemaType, err error) {
+	// return 1 (MetricSchemaTimescale) if the extension present
+	sqlSchemaType := `select count(*) from pg_catalog.pg_extension where extname = 'timescaledb'`
+	err = conn.QueryRow(ctx, sqlSchemaType).Scan(&metricSchema)
+	return
 }

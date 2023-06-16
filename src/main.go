@@ -291,7 +291,6 @@ var partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo)
 var testDataGenerationModeWG sync.WaitGroup
 var PGDummyMetricTables = make(map[string]time.Time)
 var PGDummyMetricTablesLock = sync.RWMutex{}
-var PGSchemaType string
 var failedInitialConnectHosts = make(map[string]bool) // hosts that couldn't be connected to even once
 var forceRecreatePGMetricPartitions = false           // to signal override PG metrics storage cache
 var lastMonitoredDBsUpdate time.Time
@@ -323,6 +322,8 @@ var recoveryIgnoredDBsLock = sync.RWMutex{}
 var regexSQLHelperFunctionCalled = regexp.MustCompile(`(?si)^\s*(select|with).*\s+get_\w+\(\)[\s,$]+`) // SQL helpers expected to follow get_smth() naming
 var metricNameRemaps = make(map[string]string)
 var metricNameRemapLock = sync.RWMutex{}
+
+var MetricSchema db.MetricSchemaType
 
 var logger log.LoggerHookerIface
 
@@ -2592,9 +2593,12 @@ func main() {
 			return
 		}
 
-		configDb, _ = db.InitAndTestConfigStoreConnection(mainContext, opts.Connection.Host,
+		configDb, err = db.InitAndTestConfigStoreConnection(mainContext, opts.Connection.Host,
 			opts.Connection.Port, opts.Connection.Dbname, opts.Connection.User, opts.Connection.Password,
-			opts.Connection.PgRequireSSL, true)
+			opts.Connection.PgRequireSSL)
+		if err != nil {
+			logger.WithError(err).Fatal("Could not connect to configuration database")
+		}
 	}
 
 	pgBouncerNumericCountersStartVersion = VersionToInt("1.12")
@@ -2644,13 +2648,13 @@ func main() {
 			logger.Warningf("In JSON output mode. Gathered metrics will be written to \"%s\"...", opts.Metric.JSONStorageFile)
 			go MetricsPersister(mainContext, datastoreJSON, persistCh)
 		} else if opts.Metric.Datastore == datastorePostgres {
-			if len(opts.Metric.PGMetricStoreConnStr) == 0 {
-				logger.Fatal("--datastore=postgres requires --pg-metric-store-conn-str to be set")
+
+			metricDb, err = db.InitAndTestMetricStoreConnection(mainContext, opts.Metric.PGMetricStoreConnStr)
+			if err != nil {
+				logger.WithError(err).Fatal("Could not connect to metric database")
 			}
 
-			metricDb, _ = db.InitAndTestMetricStoreConnection(mainContext, opts.Metric.PGMetricStoreConnStr, true)
-
-			PGSchemaType = CheckIfPGSchemaInitializedOrFail()
+			MetricSchema, _ = db.GetMetricSchemaType(mainContext, metricDb)
 
 			logger.Info("starting PostgresPersister...")
 			go MetricsPersister(mainContext, datastorePostgres, persistCh)
@@ -2658,9 +2662,9 @@ func main() {
 			logger.Info("starting UniqueDbnamesListingMaintainer...")
 			go UniqueDbnamesListingMaintainer(mainContext, true)
 
-			if opts.Metric.PGRetentionDays > 0 && PGSchemaType != "custom" && opts.TestdataDays == 0 {
+			if opts.Metric.PGRetentionDays > 0 && opts.TestdataDays == 0 {
 				logger.Info("starting old Postgres metrics cleanup job...")
-				go OldPostgresMetricsDeleter(mainContext, opts.Metric.PGRetentionDays, PGSchemaType)
+				go OldPostgresMetricsDeleter(mainContext, opts.Metric.PGRetentionDays, MetricSchema)
 			}
 
 		} else if opts.Metric.Datastore == datastorePrometheus {
@@ -2680,6 +2684,9 @@ func main() {
 		_, _ = daemon.SdNotify(false, "READY=1") // Notify systemd, does nothing outside of systemd
 	}
 
+	if opts.Connection.Init {
+		return
+	}
 	firstLoop := true
 	mainLoopCount := 0
 	var monitoredDbs []MonitoredDatabase
