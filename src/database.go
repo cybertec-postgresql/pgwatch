@@ -14,139 +14,13 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
-	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/tracelog"
 )
 
 var configDb db.PgxPoolIface
 var metricDb db.PgxPoolIface
 var monitoredDbConnCache map[string]db.PgxPoolIface = make(map[string]db.PgxPoolIface)
-
-func GetPostgresDBConnection(ctx context.Context, libPqConnString, host, port, dbname, user, password, sslmode, sslrootcert, sslcert, sslkey string) (db.PgxPoolIface, error) {
-	var connStr string
-
-	//log.Debug("Connecting to: ", host, port, dbname, user, password)
-	if len(libPqConnString) > 0 {
-		connStr = libPqConnString
-		if !strings.Contains(strings.ToLower(connStr), "sslmode") {
-			if strings.Contains(connStr, "postgresql://") || strings.Contains(connStr, "postgres://") { // JDBC style
-				if strings.Contains(connStr, "?") { // has some extra params already
-					connStr += "&sslmode=disable" // defaulting to "disable" as Go driver doesn't support "prefer"
-				} else {
-					connStr += "?sslmode=disable"
-				}
-			} else { // LibPQ style
-				connStr += " sslmode=disable"
-			}
-		}
-		if !strings.Contains(strings.ToLower(connStr), "connect_timeout") {
-			if strings.Contains(connStr, "postgresql://") || strings.Contains(connStr, "postgres://") { // JDBC style
-				if strings.Contains(connStr, "?") { // has some extra params already
-					connStr += "&connect_timeout=5" // 5 seconds
-				} else {
-					connStr += "?connect_timeout=5"
-				}
-			} else { // LibPQ style
-				connStr += " connect_timeout=5"
-			}
-		}
-	} else {
-		connStr = fmt.Sprintf("host=%s port=%s dbname='%s' sslmode=%s user=%s application_name=%s sslrootcert='%s' sslcert='%s' sslkey='%s' connect_timeout=5",
-			host, port, dbname, sslmode, user, applicationName, sslrootcert, sslcert, sslkey)
-		if password != "" { // having empty string as password effectively disables .pgpass so include only if password given
-			connStr += fmt.Sprintf(" password='%s'", password)
-		}
-	}
-
-	connConfig, err := pgxpool.ParseConfig(connStr)
-	if err != nil {
-		return nil, err
-	}
-	connConfig.MaxConnIdleTime = 15 * time.Second
-	connConfig.MaxConnLifetime = pgConnRecycleSeconds * time.Second
-	tracelogger := &tracelog.TraceLog{
-		Logger:   log.NewPgxLogger(log.GetLogger(ctx)),
-		LogLevel: tracelog.LogLevelDebug, //map[bool]tracelog.LogLevel{false: tracelog.LogLevelWarn, true: tracelog.LogLevelDebug}[true],
-	}
-	connConfig.ConnConfig.Tracer = tracelogger
-	return pgxpool.NewWithConfig(ctx, connConfig)
-}
-
-func InitAndTestConfigStoreConnection(ctx context.Context, host, port, dbname, user, password string, requireSSL, failOnErr bool) error {
-	var err error
-	SSLMode := map[bool]string{false: "disable", true: "require"}[requireSSL]
-	var retries = 3 // ~15s
-	defer func() {
-		if err != nil && failOnErr {
-			logger.Fatal("could not ping configDb! exit.", err)
-		}
-	}()
-	for i := 0; i <= retries; i++ {
-		// configDb is used by the main thread only. no verify-ca/verify-full support currently
-		if configDb, err = GetPostgresDBConnection(ctx, "", host, port, dbname, user, password, SSLMode, "", "", ""); err != nil {
-			return err
-		}
-		if err = configDb.Ping(ctx); err == nil {
-			logger.Info("connect to configDb OK!")
-			return nil
-		}
-		if i < retries {
-			logger.Errorf("could not ping configDb! retrying in 5s. %d retries left. err: %v", retries-i, err)
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(time.Second * 5):
-				continue
-			}
-		}
-	}
-	return nil
-}
-
-func InitAndTestMetricStoreConnection(ctx context.Context, connStr string, failOnErr bool) error {
-	var err error
-	var retries = 3 // ~15s
-
-	for i := 0; i <= retries; i++ {
-
-		metricDb, err = GetPostgresDBConnection(ctx, connStr, "", "", "", "", "", "", "", "", "")
-		if err != nil {
-			if i < retries {
-				logger.Errorf("could not open metricDb connection. retrying in 5s. %d retries left. err: %v", retries-i, err)
-				time.Sleep(time.Second * 5)
-				continue
-			}
-			if failOnErr {
-				logger.Fatal("could not open metricDb connection! exit. err:", err)
-			} else {
-				logger.Error("could not open metricDb connection:", err)
-				return err
-			}
-		}
-
-		err = metricDb.Ping(ctx)
-
-		if err != nil {
-			if i < retries {
-				logger.Errorf("could not ping metricDb! retrying in 5s. %d retries left. err: %v", retries-i, err)
-				time.Sleep(time.Second * 5)
-				continue
-			}
-			if failOnErr {
-				logger.Fatal("could not ping metricDb! exit.", err)
-			} else {
-				return err
-			}
-		} else {
-			logger.Info("connect to metricDb OK!")
-			break
-		}
-	}
-	return nil
-}
 
 func IsPostgresDBType(dbType string) bool {
 	if dbType == config.DbTypeBouncer || dbType == config.DbTypePgPOOL {
@@ -169,7 +43,7 @@ func InitSQLConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
 		md.DBName = "pgbouncer"
 	}
 
-	conn, err := GetPostgresDBConnection(mainContext, md.LibPQConnStr, md.Host, md.Port, md.DBName, md.User, md.Password,
+	conn, err := db.GetPostgresDBConnection(mainContext, md.LibPQConnStr, md.Host, md.Port, md.DBName, md.User, md.Password,
 		md.SslMode, md.SslRootCAPath, md.SslClientCertPath, md.SslClientKeyPath)
 	if err != nil {
 		return err
@@ -315,7 +189,7 @@ func GetAllActiveHostsFromConfigDB() (MetricData, error) {
 	return data, err
 }
 
-func OldPostgresMetricsDeleter(ctx context.Context, metricAgeDaysThreshold int64, schemaType string) {
+func OldPostgresMetricsDeleter(ctx context.Context, metricAgeDaysThreshold int64, schemaType db.MetricSchemaType) {
 	sqlDoesOldPartListingFuncExist := `SELECT count(*) FROM information_schema.routines WHERE routine_schema = 'admin' AND routine_name = 'get_old_time_partitions'`
 	oldPartListingFuncExists := false // if func existing (>v1.8.1) then use it to drop old partitions in smaller batches
 	// as for large setup (50+ DBs) one could reach the default "max_locks_per_transaction" otherwise
@@ -334,15 +208,7 @@ func OldPostgresMetricsDeleter(ctx context.Context, metricAgeDaysThreshold int64
 
 	for {
 		// metric|metric-time|metric-dbname-time|custom
-		if schemaType == "metric" {
-			rowsDeleted, err := DeleteOldPostgresMetrics(metricAgeDaysThreshold)
-			if err != nil {
-				logger.Errorf("Failed to delete old (>%d days) metrics from Postgres: %v", metricAgeDaysThreshold, err)
-				time.Sleep(time.Second * 300)
-				continue
-			}
-			logger.Infof("Deleted %d old metrics rows...", rowsDeleted)
-		} else if schemaType == "timescale" || (!oldPartListingFuncExists && (schemaType == "metric-time" || schemaType == "metric-dbname-time")) {
+		if schemaType == db.MetricSchemaTimescale || (!oldPartListingFuncExists && schemaType == db.MetricSchemaPostgres) {
 			partsDropped, err := DropOldTimePartitions(metricAgeDaysThreshold)
 
 			if err != nil {
@@ -351,7 +217,7 @@ func OldPostgresMetricsDeleter(ctx context.Context, metricAgeDaysThreshold int64
 				continue
 			}
 			logger.Infof("Dropped %d old metric partitions...", partsDropped)
-		} else if oldPartListingFuncExists && (schemaType == "metric-time" || schemaType == "metric-dbname-time") {
+		} else if oldPartListingFuncExists && schemaType == db.MetricSchemaPostgres {
 			partsToDrop, err := GetOldTimePartitions(metricAgeDaysThreshold)
 			if err != nil {
 				logger.Errorf("Failed to get a listing of old (>%d days) time partitions from Postgres metrics DB - check that the admin.get_old_time_partitions() function is rolled out: %v", metricAgeDaysThreshold, err)
@@ -384,62 +250,6 @@ func OldPostgresMetricsDeleter(ctx context.Context, metricAgeDaysThreshold int64
 	}
 }
 
-func DeleteOldPostgresMetrics(metricAgeDaysThreshold int64) (int64, error) {
-	// for 'metric' schema i.e. no time partitions
-	var totalDropped int64
-	sqlGetTopLevelTables := `
-	select 'public.' || quote_ident(c.relname) as table_full_name
-	from pg_class c
-	join pg_namespace n on n.oid = c.relnamespace
-	where relkind in ('r', 'p') and nspname = 'public'
-	and exists (select 1 from pg_attribute where attrelid = c.oid and attname = 'time')
-	and pg_catalog.obj_description(c.oid, 'pg_class') = 'pgwatch3-generated-metric-lvl'
-	order by 1
-	`
-	sqlDelete := `
-	with q_blocks_range as (
-		select min(ctid), max(ctid) from (
-		  select ctid from %s
-			where time < (now() - '1day'::interval * %d)
-			order by ctid
-		  limit 5000
-	    ) x
-    ),
-	q_deleted as (
-	  delete from %s
-	  where ctid between (select min from q_blocks_range) and (select max from q_blocks_range)
-	  and time < (now() - '1day'::interval * %d)
-	  returning *
-	)
-	select count(*) from q_deleted;
-	`
-
-	topLevelTables, err := DBExecRead(mainContext, metricDb, sqlGetTopLevelTables)
-	if err != nil {
-		return totalDropped, err
-	}
-
-	for _, dr := range topLevelTables {
-
-		logger.Debugf("Dropping one chunk (max 5000 rows) of old data (if any found) from %v", dr["table_full_name"])
-		sql := fmt.Sprintf(sqlDelete, dr["table_full_name"].(string), metricAgeDaysThreshold, dr["table_full_name"].(string), metricAgeDaysThreshold)
-
-		for {
-			ret, err := DBExecRead(mainContext, metricDb, sql)
-			if err != nil {
-				return totalDropped, err
-			}
-			if ret[0]["count"].(int64) == 0 {
-				break
-			}
-			totalDropped += ret[0]["count"].(int64)
-			logger.Debugf("Dropped %d rows from %v, sleeping 100ms...", ret[0]["count"].(int64), dr["table_full_name"])
-			time.Sleep(time.Millisecond * 500)
-		}
-	}
-	return totalDropped, nil
-}
-
 func DropOldTimePartitions(metricAgeDaysThreshold int64) (int, error) {
 	partsDropped := 0
 	var err error
@@ -470,65 +280,6 @@ func GetOldTimePartitions(metricAgeDaysThreshold int64) ([]string, error) {
 	}
 
 	return partsToDrop, nil
-}
-
-func CheckIfPGSchemaInitializedOrFail() string {
-	var partFuncSignature string
-	var pgSchemaType string
-
-	sqlSchemaType := `select schema_type from admin.storage_schema_type`
-	ret, err := DBExecRead(mainContext, metricDb, sqlSchemaType)
-	if err != nil {
-		logger.Fatal("have you initialized the metrics schema, including a row in 'storage_schema_type' table, from schema_base.sql?", err)
-	}
-	if err == nil && len(ret) == 0 {
-		logger.Fatal("no metric schema selected, no row in table 'storage_schema_type'. see the README from the 'pgwatch3/sql/metric_store' folder on choosing a schema")
-	}
-	pgSchemaType = ret[0]["schema_type"].(string)
-	if !(pgSchemaType == "metric" || pgSchemaType == "metric-time" || pgSchemaType == "metric-dbname-time" || pgSchemaType == "custom" || pgSchemaType == "timescale") {
-		logger.Fatalf("Unknow Postgres schema type found from Metrics DB: %s", pgSchemaType)
-	}
-
-	if pgSchemaType == "custom" {
-		sql := `
-		SELECT has_table_privilege(session_user, 'public.metrics', 'INSERT') ok;
-		`
-		ret, err := DBExecRead(mainContext, metricDb, sql)
-		if err != nil || (err == nil && !ret[0]["ok"].(bool)) {
-			logger.Fatal("public.metrics table not existing or no INSERT privileges")
-		}
-	} else {
-		sql := `
-		SELECT has_table_privilege(session_user, 'admin.metrics_template', 'INSERT') ok;
-		`
-		ret, err := DBExecRead(mainContext, metricDb, sql)
-		if err != nil || (err == nil && !ret[0]["ok"].(bool)) {
-			logger.Fatal("admin.metrics_template table not existing or no INSERT privileges")
-		}
-	}
-
-	if pgSchemaType == "metric" {
-		partFuncSignature = "admin.ensure_partition_metric(text)"
-	} else if pgSchemaType == "metric-time" {
-		partFuncSignature = "admin.ensure_partition_metric_time(text,timestamp with time zone,integer)"
-	} else if pgSchemaType == "metric-dbname-time" {
-		partFuncSignature = "admin.ensure_partition_metric_dbname_time(text,text,timestamp with time zone,integer)"
-	} else if pgSchemaType == "timescale" {
-		partFuncSignature = "admin.ensure_partition_timescale(text)"
-	}
-
-	if partFuncSignature != "" {
-		sql := `
-			SELECT has_function_privilege(session_user,
-				'%s',
-				'execute') ok;
-			`
-		ret, err := DBExecRead(mainContext, metricDb, fmt.Sprintf(sql, partFuncSignature))
-		if err != nil || (err == nil && !ret[0]["ok"].(bool)) {
-			logger.Fatalf("%s function not existing or no EXECUTE privileges. Have you rolled out the schema correctly from pgwatch3/sql/metric_store?", partFuncSignature)
-		}
-	}
-	return pgSchemaType
 }
 
 func AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
@@ -1764,7 +1515,7 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 	templateDBsToTry := []string{"template1", "postgres", "defaultdb"}
 
 	for _, templateDB := range templateDBsToTry {
-		c, err = GetPostgresDBConnection(mainContext, ce.LibPQConnStr, ce.Host, ce.Port, templateDB, ce.User, ce.Password,
+		c, err = db.GetPostgresDBConnection(mainContext, ce.LibPQConnStr, ce.Host, ce.Port, templateDB, ce.User, ce.Password,
 			ce.SslMode, ce.SslRootCAPath, ce.SslClientCertPath, ce.SslClientKeyPath)
 		if err != nil {
 			return md, err
@@ -1851,11 +1602,6 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 	pgPartBoundsDbName := make(map[string]map[string]ExistingPartitionInfo) // metric=[dbname=min/max]
 	var err error
 
-	if PGSchemaType == "custom" {
-		metricsToStorePerMetric["metrics"] = make([]MetricStoreMessagePostgres, 0) // everything inserted into "metrics".
-		// TODO  warn about collision if someone really names some new metric "metrics"
-	}
-
 	for _, msg := range storeMessages {
 		if msg.Data == nil || len(msg.Data) == 0 {
 			continue
@@ -1903,13 +1649,8 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 
 			var metricsArr []MetricStoreMessagePostgres
 			var ok bool
-			var metricNameTemp string
 
-			if PGSchemaType == "custom" {
-				metricNameTemp = "metrics"
-			} else {
-				metricNameTemp = msg.MetricName
-			}
+			metricNameTemp := msg.MetricName
 
 			metricsArr, ok = metricsToStorePerMetric[metricNameTemp]
 			if !ok {
@@ -1921,7 +1662,7 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 
 			rowsBatched++
 
-			if PGSchemaType == "metric" || PGSchemaType == "metric-time" || PGSchemaType == "timescale" {
+			if MetricSchema == db.MetricSchemaTimescale {
 				// set min/max timestamps to check/create partitions
 				bounds, ok := pgPartBounds[msg.MetricName]
 				if !ok || (ok && epochTime.Before(bounds.StartTime)) {
@@ -1932,7 +1673,7 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 					bounds.EndTime = epochTime
 					pgPartBounds[msg.MetricName] = bounds
 				}
-			} else if PGSchemaType == "metric-dbname-time" {
+			} else if MetricSchema == db.MetricSchemaPostgres {
 				_, ok := pgPartBoundsDbName[msg.MetricName]
 				if !ok {
 					pgPartBoundsDbName[msg.MetricName] = make(map[string]ExistingPartitionInfo)
@@ -1950,13 +1691,9 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 		}
 	}
 
-	if PGSchemaType == "metric" {
-		err = EnsureMetric(pgPartBounds, forceRecreatePGMetricPartitions)
-	} else if PGSchemaType == "metric-time" {
-		err = EnsureMetricTime(pgPartBounds, forceRecreatePGMetricPartitions, false)
-	} else if PGSchemaType == "metric-dbname-time" {
+	if MetricSchema == db.MetricSchemaPostgres {
 		err = EnsureMetricDbnameTime(pgPartBoundsDbName, forceRecreatePGMetricPartitions)
-	} else if PGSchemaType == "timescale" {
+	} else if MetricSchema == db.MetricSchemaTimescale {
 		err = EnsureMetricTimescale(pgPartBounds, forceRecreatePGMetricPartitions)
 	} else {
 		logger.Fatal("should never happen...")
@@ -1976,16 +1713,10 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 	for metricName, metrics := range metricsToStorePerMetric {
 
 		getTargetTable := func() pgx.Identifier {
-			if PGSchemaType == "custom" {
-				return pgx.Identifier{"metrics"}
-			}
 			return pgx.Identifier{metricName}
 		}
 
 		getTargetColumns := func() []string {
-			if PGSchemaType == "custom" {
-				return []string{"time", "dbname", "metric", "data", "tag_data"}
-			}
 			return []string{"time", "dbname", "data", "tag_data"}
 		}
 
@@ -2011,12 +1742,7 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 				return nil
 			}
 
-			var rows [][]any
-			if PGSchemaType == "custom" {
-				rows = [][]any{{m.Time, m.DBName, m.Metric, string(jsonBytes), getTagData()}}
-			} else {
-				rows = [][]any{{m.Time, m.DBName, string(jsonBytes), getTagData()}}
-			}
+			rows := [][]any{{m.Time, m.DBName, string(jsonBytes), getTagData()}}
 
 			if _, err = metricDb.CopyFrom(context.Background(), getTargetTable(), getTargetColumns(), pgx.CopyFromRows(rows)); err != nil {
 				l.Error(err)

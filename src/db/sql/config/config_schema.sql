@@ -2,8 +2,6 @@ create schema if not exists pgwatch3 authorization pgwatch3;
 
 set search_path to pgwatch3, public;
 
-alter database pgwatch3 set search_path to public, pgwatch3;
-
 set role to pgwatch3; -- Role/db create script is in bootstrap/create_db_pgwatch.sql
 
 -- drop table if exists preset_config cascade;

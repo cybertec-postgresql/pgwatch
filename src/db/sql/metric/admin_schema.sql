@@ -4,7 +4,10 @@
  "subpartitions" schema - subpartitions of "public" schema top level metric tables (if using time / dbname-time partitioning)
 */
 
-CREATE SCHEMA IF NOT EXISTS admin AUTHORIZATION pgwatch3;
+CREATE SCHEMA "admin" AUTHORIZATION pgwatch3;
+CREATE SCHEMA "subpartitions" AUTHORIZATION pgwatch3;
+
+CREATE EXTENSION IF NOT EXISTS btree_gin;
 
 GRANT ALL ON SCHEMA public TO pgwatch3;
 
@@ -18,7 +21,7 @@ $SQL$;
 
 SET ROLE TO pgwatch3;
 
--- drop table if exists public.storage_schema_type;
+
 
 /* although the gather has a "--pg-storage-type" param, the WebUI might not know about it in a custom setup */
 create table admin.storage_schema_type (
@@ -119,5 +122,31 @@ $SQL$ LANGUAGE plpgsql;
 GRANT EXECUTE ON FUNCTION admin.ensure_dummy_metrics_table(text) TO pgwatch3;
 
 
+CREATE TABLE admin.metrics_template (
+  time timestamptz not null default now(),
+  dbname text not null,
+  data jsonb not null,
+  tag_data jsonb,
+  CHECK (false)
+);
+
+COMMENT ON TABLE admin.metrics_template IS 'used as a template for all new metric definitions';
+
+CREATE INDEX ON admin.metrics_template (dbname, time);
+-- create index on admin.metrics_template using brin (dbname, time);  /* consider BRIN instead for large data amounts */
+-- create index on admin.metrics_template using gin (tag_data) where tag_data notnull;
+
+CREATE UNLOGGED TABLE admin.metrics_template_realtime (
+    time timestamptz not null default now(),
+    dbname text not null,
+    data jsonb not null,
+    tag_data jsonb,
+    CHECK (false)
+);
+
+COMMENT ON TABLE admin.metrics_template_realtime IS 'used as a template for all new realtime metric definitions';
+
+-- create index on admin.metrics_template using brin (dbname, time) with (pages_per_range=32);  /* consider BRIN instead for large data amounts */
+CREATE INDEX ON admin.metrics_template_realtime (dbname, time);
 
 RESET ROLE;

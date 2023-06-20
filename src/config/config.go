@@ -145,6 +145,10 @@ func validateConfig(conf *CmdOptions) error {
 		return errors.New("--batching-delay-ms must be between 0 and 3600000")
 	}
 
+	if conf.Metric.Datastore == "postgres" && len(conf.Metric.PGMetricStoreConnStr) == 0 {
+		return errors.New("--datastore=postgres requires --pg-metric-store-conn-str to be set")
+	}
+
 	return nil
 }
 
