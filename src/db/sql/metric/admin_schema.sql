@@ -4,7 +4,10 @@
  "subpartitions" schema - subpartitions of "public" schema top level metric tables (if using time / dbname-time partitioning)
 */
 
-CREATE SCHEMA IF NOT EXISTS admin AUTHORIZATION pgwatch3;
+CREATE SCHEMA "admin" AUTHORIZATION pgwatch3;
+CREATE SCHEMA "subpartitions" AUTHORIZATION pgwatch3;
+
+CREATE EXTENSION IF NOT EXISTS btree_gin;
 
 GRANT ALL ON SCHEMA public TO pgwatch3;
 
