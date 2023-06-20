@@ -1649,9 +1649,8 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 
 			var metricsArr []MetricStoreMessagePostgres
 			var ok bool
-			var metricNameTemp string
 
-			metricNameTemp = msg.MetricName
+			metricNameTemp := msg.MetricName
 
 			metricsArr, ok = metricsToStorePerMetric[metricNameTemp]
 			if !ok {
