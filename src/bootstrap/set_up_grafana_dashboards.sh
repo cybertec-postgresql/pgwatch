@@ -14,7 +14,7 @@ while [[ "$(curl -X GET -s -o /dev/null -w "%{http_code}" http://localhost:3000/
 done
 
 timescaledb_value="false"
-if [[ "${PW2_PG_SCHEMA_TYPE}" == "timescale" ]]; then
+if [[ "${PW3_PG_SCHEMA_TYPE}" == "timescale" ]]; then
   timescaledb_value="true"
 fi
 
@@ -45,7 +45,7 @@ echo "{
 curl -X POST -s -w "%{http_code}" \
   -H 'Accept: application/json' \
   -H 'Content-Type: application/json' \
-  -u "${PW2_GRAFANAUSER:-admin}":"${PW2_GRAFANAPASSWORD:-pgwatch3admin}" \
+  -u "${PW3_GRAFANAUSER:-admin}":"${PW3_GRAFANAPASSWORD:-pgwatch3admin}" \
   -d @- \
   'http://localhost:3000/api/datasources'
 
@@ -69,7 +69,7 @@ for dashboard_json in $(find /pgwatch3/grafana_dashboards/postgres/v"${GRAFANA_M
   curl -X POST -s -w "%{http_code}" \
     -H 'Accept: application/json' \
     -H 'Content-Type: application/json' \
-    -u "${PW2_GRAFANAUSER:-admin}":"${PW2_GRAFANAPASSWORD:-pgwatch3admin}" \
+    -u "${PW3_GRAFANAUSER:-admin}":"${PW3_GRAFANAPASSWORD:-pgwatch3admin}" \
     -d @- \
     'http://localhost:3000/api/dashboards/import'
 done
@@ -85,7 +85,7 @@ echo "{\"homeDashboardId\": 1}" | \
 curl -X PATCH -s -w "%{http_code}" \
   -H 'Accept: application/json' \
   -H 'Content-Type: application/json' \
-  -u "${PW2_GRAFANAUSER:-admin}":"${PW2_GRAFANAPASSWORD:-pgwatch3admin}" \
+  -u "${PW3_GRAFANAUSER:-admin}":"${PW3_GRAFANAPASSWORD:-pgwatch3admin}" \
   -d @- \
   'http://localhost:3000/api/org/preferences'
 
