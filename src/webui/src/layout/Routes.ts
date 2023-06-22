@@ -1,3 +1,4 @@
+import { Authentication } from "./Authentication";
 import Dashboard from "./Dashboard";
 import { Logs } from "./Logs";
 import { MetricDefinitions } from "./MetricDefinitions";
@@ -29,5 +30,15 @@ export const routes = [
     title: "Logs",
     link: "/logs",
     element: Logs,
+  },
+  {
+    title: "Sing up",
+    link: "/sign_up",
+    element: () => Authentication({action: "SIGN_UP"})
+  },
+  {
+    title: "Sign in",
+    link: "/sign_in",
+    element: () => Authentication({action: "SIGN_IN"})
   }
 ];
