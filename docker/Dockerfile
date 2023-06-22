@@ -15,57 +15,46 @@ COPY --from=uibuilder /webui/build /pgwatch3/webui/build
 RUN cd /pgwatch3 && bash build_gatherer.sh
 
 # Build the final image
-FROM ubuntu:22.04 AS releaser
+FROM postgres:15-bullseye AS releaser
 
 RUN apt-get -q update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -qy curl wget ca-certificates gnupg libfontconfig1 \
-    && echo "deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
-    && curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && apt-get -q update \
-    && DEBIAN_FRONTEND=noninteractive apt-get -qy install postgresql-14 \
-       postgresql-plpython3-14 libfontconfig python3-pip libssl-dev libpq-dev \
-    && pip3 install -U pip \
-    && locale-gen "en_US.UTF-8" && apt autoremove -y \
-    && pg_dropcluster 14 main ; pg_createcluster --locale en_US.UTF-8 14 main \
-    && echo "include = 'pgwatch_postgresql.conf'" >> /etc/postgresql/14/main/postgresql.conf
+    && DEBIAN_FRONTEND=noninteractive apt-get -qy install \
+        wget postgresql-plpython3-15 postgresql-15-pg-qualstats supervisor python3-psutil libfontconfig1 \
+    && apt-get purge -y --auto-remove \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
-    && wget -q -O grafana.deb "https://dl.grafana.com/oss/release/grafana_9.5.2_${arch}.deb" \
+    && wget -q -O grafana.deb "https://dl.grafana.com/oss/release/grafana_9.5.3_${arch}.deb" \
     && dpkg -i grafana.deb && rm grafana.deb
 
 
-# Add pgwatch3 sources
-ADD src /pgwatch3
 # Copy over the compiled gatherer
-COPY --from=builder /pgwatch3/pgwatch3 /pgwatch3
-
-# For showing Git versions via :8080/versions or 'pgwatch3 --version'
-ARG GIT_HASH
-ARG GIT_TIME
-ENV GIT_HASH=${GIT_HASH}
-ENV GIT_TIME=${GIT_TIME}
-RUN echo "${GIT_HASH} ${GIT_TIME}" > /pgwatch3/build_git_version.txt
-
-# Grafana config customizations, Web UI requirements, compilation of the Go gatherer
-RUN cp /pgwatch3/bootstrap/grafana_custom_config.ini /etc/grafana/grafana.ini \
-    && pip3 install psutil supervisor pyyaml && mkdir /var/log/supervisor
-
-RUN apt-get -q update && DEBIAN_FRONTEND=noninteractive apt-get -qy install postgresql-14-pg-qualstats
-
-ADD grafana_dashboards /pgwatch3/grafana_dashboards
-
+COPY --from=builder /pgwatch3/pgwatch3 /pgwatch3/pgwatch3
+ADD  grafana_dashboards /pgwatch3/grafana_dashboards
+COPY grafana_dashboards/grafana_custom_config.ini /etc/grafana/grafana.ini
 
 # Set up supervisord [https://docs.docker.com/engine/admin/using_supervisord/]
 COPY docker/supervisord-postgres.conf /etc/supervisor/supervisord.conf
 
-# When security is a concern one should definitely alter "pgwatch3" password in change_pw.sql and maybe modify pg_hba.conf accordingly
-COPY docker/postgresql.conf /etc/postgresql/14/main/pgwatch_postgresql.conf
-COPY docker/pg_hba.conf /etc/postgresql/14/main/pg_hba.conf
-COPY docker/docker-launcher-postgres.sh docker/postgresql.conf docker/pg_hba.conf /pgwatch3/
+COPY src/bootstrap/init_persistent_config.sh \
+     src/bootstrap/set_up_grafana_dashboards.sh \
+     src/bootstrap/init_supervisor.sh \
+        /pgwatch3/bootstrap/
+
+RUN  mkdir -p /docker-entrypoint-initdb.d
+COPY src/bootstrap/1_create_role_db.sql \
+     src/bootstrap/2_init_pgwatch_db.sh \
+        /docker-entrypoint-initdb.d/
+
+# NB! When security is a concern one should definitely alter "pgwatch3" password in change_pw.sql and maybe modify pg_hba.conf accordingly
+RUN  echo "include = 'pgwatch_postgresql.conf'" >> /etc/postgresql/postgresql.conf
+COPY docker/postgresql.conf /etc/postgresql/pgwatch_postgresql.conf
 
 ENV PW3_DATASTORE postgres
 ENV PW3_PG_METRIC_STORE_CONN_STR postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
 ENV PW3_PG_SCHEMA_TYPE metric-time
 ENV PW3_AES_GCM_KEYPHRASE_FILE /pgwatch3/persistent-config/default-password-encryption-key.txt
+ENV POSTGRES_PASSWORD=mysecretpassword
 
 # Admin UI for configuring servers to be monitored
 EXPOSE 8080
@@ -86,4 +75,5 @@ VOLUME /pgwatch3/persistent-config
 VOLUME /var/lib/postgresql
 VOLUME /var/lib/grafana
 
-CMD ["/pgwatch3/docker-launcher-postgres.sh"]
+
+CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisor/supervisord.conf", "--nodaemon"]
