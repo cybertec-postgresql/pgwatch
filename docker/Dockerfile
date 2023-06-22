@@ -25,25 +25,24 @@ FROM postgres:15-bullseye AS releaser
 
 # Copy over the compiled gatherer
 COPY --from=builder /pgwatch3/pgwatch3 /pgwatch3/
-COPY src/metrics /pgwatch3/
+COPY src/metrics /pgwatch3/metrics
 
 # Install dependancies
 RUN apt-get -q update \
     && DEBIAN_FRONTEND=noninteractive apt-get -qy install \
-        wget postgresql-plpython3-15 postgresql-15-pg-qualstats supervisor python3-psutil libfontconfig1 \
+        curl postgresql-plpython3-15 postgresql-15-pg-qualstats supervisor python3-psutil libfontconfig1 \
     && apt-get purge -y --auto-remove \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Grafana
 RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
-    && wget -q -O grafana.deb "https://dl.grafana.com/oss/release/grafana_9.5.3_${arch}.deb" \
+    && curl "https://dl.grafana.com/oss/release/grafana_9.5.3_${arch}.deb" --output grafana.deb \
     && dpkg -i grafana.deb && rm grafana.deb
 ADD  grafana_dashboards /pgwatch3/grafana_dashboards
 COPY grafana_dashboards/grafana_custom_config.ini /etc/grafana/grafana.ini
 
 # Set up supervisord [https://docs.docker.com/engine/admin/using_supervisord/]
-COPY docker/supervisord-postgres.conf 
-        /etc/supervisor/supervisord.conf
+COPY docker/supervisord-postgres.conf /etc/supervisor/supervisord.conf
 COPY src/bootstrap/init_persistent_config.sh \
      src/bootstrap/set_up_grafana_dashboards.sh \
      src/bootstrap/init_supervisor.sh \
@@ -61,7 +60,7 @@ COPY docker/postgresql.conf /etc/postgresql/pgwatch_postgresql.conf
 
 ENV PW3_DATASTORE postgres
 ENV PW3_PG_METRIC_STORE_CONN_STR postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
-ENV PW3_PG_SCHEMA_TYPE metric-time
+ENV PW3_PG_SCHEMA_TYPE metric-dbname-time
 ENV PW3_AES_GCM_KEYPHRASE_FILE /pgwatch3/persistent-config/default-password-encryption-key.txt
 ENV POSTGRES_PASSWORD=mysecretpassword
 
