@@ -272,7 +272,7 @@ All examples here assume Ubuntu as OS - but it's basically the same for RedHat f
 
    #. Add pgwatch3 predefined dashboards to Grafana
 
-      This could be done by importing the pgwatch3 dashboard definition JSON-s manually, one by one, from the "grafana_dashboards" folder
+      This could be done by importing the pgwatch3 dashboard definition JSON-s manually, one by one, from the "grafana" folder
       ("Import Dashboard" from the Grafana top menu) or via as small helper script located at */etc/pgwatch3/grafana-dashboards/import_all.sh*.
       The script needs some adjustment for metrics storage type, connect data and file paths.
 

@@ -471,7 +471,7 @@ To migrate from older installations it's also needed to execute v1.4.0 SQL-s fro
 * Logging improvement - remove duplicate event times and milliseconds
 * Openshift template - added missing PW2_IRETENTIONDAYS to env vars
 * InfluxDB 1.5.0
-* Grafana 5.0.4 - old v4 dashboards are now in a separate folder (./grafana_dashboards/v4)
+* Grafana 5.0.4 - old v4 dashboards are now in a separate folder (./grafana/v4)
 * Go 1.10.1
 
 ## v1.3.0 [2018-01-26]
