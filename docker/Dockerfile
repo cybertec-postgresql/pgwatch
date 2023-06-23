@@ -27,31 +27,39 @@ FROM postgres:15-bullseye AS releaser
 COPY --from=builder /pgwatch3/pgwatch3 /pgwatch3/
 COPY src/metrics /pgwatch3/metrics
 
-# Install dependancies
-RUN apt-get -q update \
-    && DEBIAN_FRONTEND=noninteractive apt-get -qy install \
-        curl postgresql-plpython3-15 postgresql-15-pg-qualstats supervisor python3-psutil libfontconfig1 \
+# Install dependencies
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update \
+    && apt-get -qy install curl gnupg postgresql-common apt-transport-https lsb-release \
+    && sh /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
+    && echo "deb https://packagecloud.io/timescale/timescaledb/debian/ $(lsb_release -c -s) main" | tee /etc/apt/sources.list.d/timescaledb.list \
+    && curl -L "https://packagecloud.io/timescale/timescaledb/gpgkey" | apt-key add - \
+    && curl -L "https://www.postgresql.org/media/keys/ACCC4CF8.asc" | apt-key add - \
+    && apt-get update \
+    && apt-get -qy install \
+        timescaledb-2-postgresql-15 postgresql-plpython3-15 postgresql-15-pg-qualstats \
+        supervisor python3-psutil libfontconfig1 \
     && apt-get purge -y --auto-remove \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Grafana
 RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
-    && curl "https://dl.grafana.com/oss/release/grafana_9.5.3_${arch}.deb" --output grafana.deb \
+    && curl "https://dl.grafana.com/oss/release/grafana_9.5.5_${arch}.deb" --output grafana.deb \
     && dpkg -i grafana.deb && rm grafana.deb
-ADD  grafana_dashboards /pgwatch3/grafana_dashboards
-COPY grafana_dashboards/grafana_custom_config.ini /etc/grafana/grafana.ini
+ADD  grafana /pgwatch3/grafana
+COPY grafana/grafana_custom_config.ini /etc/grafana/grafana.ini
 
 # Set up supervisord [https://docs.docker.com/engine/admin/using_supervisord/]
-COPY docker/supervisord-postgres.conf /etc/supervisor/supervisord.conf
-COPY src/bootstrap/init_persistent_config.sh \
-     src/bootstrap/set_up_grafana_dashboards.sh \
-     src/bootstrap/init_supervisor.sh \
+COPY docker/supervisord.conf /etc/supervisor/
+COPY docker/bootstrap/init_persistent_config.sh \
+     docker/bootstrap/set_up_grafana_dashboards.sh \
+     docker/bootstrap/init_supervisor.sh \
         /pgwatch3/bootstrap/
 
 # Set up PostgreSQL initialization scripts
 RUN  mkdir -p /docker-entrypoint-initdb.d
-COPY src/bootstrap/1_create_role_db.sql \
-     src/bootstrap/2_init_pgwatch_db.sh \
+COPY docker/bootstrap/1_create_role_db.sql \
+     docker/bootstrap/2_init_pgwatch_db.sh \
         /docker-entrypoint-initdb.d/
 
 # Apply PostgreSQL configuration
@@ -60,7 +68,7 @@ COPY docker/postgresql.conf /etc/postgresql/pgwatch_postgresql.conf
 
 ENV PW3_DATASTORE postgres
 ENV PW3_PG_METRIC_STORE_CONN_STR postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
-ENV PW3_PG_SCHEMA_TYPE metric-dbname-time
+ENV PW3_PG_SCHEMA_TYPE timescale
 ENV PW3_AES_GCM_KEYPHRASE_FILE /pgwatch3/persistent-config/default-password-encryption-key.txt
 ENV POSTGRES_PASSWORD=mysecretpassword
 
