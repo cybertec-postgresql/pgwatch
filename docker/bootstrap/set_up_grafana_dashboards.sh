@@ -52,7 +52,7 @@ curl -X POST -s -w "%{http_code}" \
 # Create dashboards
 GRAFANA_MAJOR_VER=$(grafana-server -v | grep -o -E '[0-9]{1}' | head -1)
 
-for dashboard_json in $(find /pgwatch3/grafana_dashboards/postgres/v"${GRAFANA_MAJOR_VER}" -name "*.json" | sort); do
+for dashboard_json in $(find /pgwatch3/grafana/postgres/v"${GRAFANA_MAJOR_VER}" -name "*.json" | sort); do
   echo
   echo "creating dashboard: ${dashboard_json}"
   echo "{
