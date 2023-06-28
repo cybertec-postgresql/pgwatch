@@ -3,7 +3,7 @@
 before:
   hooks:
     # weirdly goreleaser doesn't all to include outside of the Go build "root" so need to copy
-    - cp -r grafana_dashboards ./src/
+    - cp -r grafana ./src/
 
 builds:
   - dir: src
@@ -50,7 +50,7 @@ archives:
     # Defaults are any files matching `LICENCE*`, `LICENSE*`,
     # `README*` and `CHANGELOG*` (case-insensitive).
     files:
-      - ./grafana_dashboards/**/*
+      - ./grafana/**/*
       - ./src/metrics/**/*
       - ./src/config/**/*
       - ./src/sql/**/*
@@ -131,7 +131,7 @@ nfpms:
         dst: "/etc/pgwatch3/bootstrap"
       - src: "./pgwatch3/startup-scripts/pgwatch3.service"
         dst: "/etc/pgwatch3/startup-scripts/pgwatch3.service"
-      - src: "./grafana_dashboards/*"
-        dst: "/etc/pgwatch3/grafana-dashboards"
+      - src: "./grafana/*"
+        dst: "/etc/pgwatch3/grafana"
       - src: "./README.md"
         dst: "/etc/pgwatch3/README.md"
