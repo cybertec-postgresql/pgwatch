@@ -1,1 +1,0 @@
-CREATE DATABASE pgwatch3 OWNER pgwatch3;
