@@ -8,17 +8,35 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "queryClient";
 
 import { Route, Routes } from "react-router-dom";
+import { PrivateRoute } from "layout/PrivateRoute";
+import { privateRoutes, publicRoutes } from "layout/Routes";
 
 import { AppBar } from "./layout/AppBar";
-import { routes } from "./layout/Routes";
+//import { routes } from "./layout/Routes";
 
 const mdTheme = createTheme();
 
 export default function App() {
-  const routesItems = useMemo(
+  /*const routesItems = useMemo(
     () =>
       routes.map((route) => (
-        <Route key={route.link} path={route.link} element={route.element()} />
+        <Route key={route.link} path={route.link} element={<route.element />} />
+      )),
+    []
+  );*/
+
+  const publicRoutesItems = useMemo(
+    () =>
+      publicRoutes.map((route) => (
+        <Route key={route.link} path={route.link} element={<route.element />} />
+      )),
+    []
+  );
+
+  const privateRoutesItems = useMemo(
+    () =>
+      privateRoutes.map((route) => (
+        <Route key={route.link} path={route.link} element={<PrivateRoute><route.element /></PrivateRoute>} />
       )),
     []
   );
@@ -41,7 +59,11 @@ export default function App() {
             }}
           >
             <Toolbar />
-            <Routes>{routesItems}</Routes>
+            <Routes>
+              {/*routesItems*/}
+              {publicRoutesItems}
+              {privateRoutesItems}
+            </Routes>
           </Box>
         </Box>
       </ThemeProvider>
