@@ -1,14 +1,17 @@
-import { Box, Typography } from "@mui/material";
-import { AppBar as MuiAppBar } from "@mui/material";
-import Button from "@mui/material/Button";
-import Toolbar from "@mui/material/Toolbar";
-import { NavLink } from "react-router-dom";
+import LogoutIcon from '@mui/icons-material/Logout';
+import { Box, Button, AppBar as MuiAppBar, Toolbar, Typography } from "@mui/material";
+import { NavLink, useNavigate } from "react-router-dom";
+import { getToken, removeToken } from "services/Token";
+import { privateRoutes } from "./Routes";
 
 
-import { routes } from "./Routes";
+//import { routes } from "./Routes";
 
 export const AppBar = () => {
-  const menuLinks = routes.map((item) => (
+  const navigate = useNavigate();
+  const token = getToken();
+
+  const menuLinks = privateRoutes.map((item) => (
     <NavLink
       key={item.link}
       to={item.link}
@@ -18,6 +21,11 @@ export const AppBar = () => {
       )}
     </NavLink>
   ));
+
+  const imitateLogout = () => {
+    removeToken();
+    navigate("/");
+  };
 
   return (
     <MuiAppBar component="header">
@@ -35,6 +43,12 @@ export const AppBar = () => {
           </Box>
           <Box sx={{ display: "flex", height: "100%", alignItems: "center" }}>
             {menuLinks}
+            {
+              token &&
+              <Button sx={{ color: "white", border: 0, }} title="Logout" onClick={imitateLogout} >
+                <LogoutIcon />
+              </Button>
+            }
           </Box>
         </Box>
       </Toolbar>
