@@ -44,7 +44,7 @@ RUN apt-get update \
 
 # Install Grafana
 RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
-    && curl "https://dl.grafana.com/oss/release/grafana_9.5.5_${arch}.deb" --output grafana.deb \
+    && curl "https://dl.grafana.com/oss/release/grafana_10.0.1_${arch}.deb" --output grafana.deb \
     && dpkg -i grafana.deb && rm grafana.deb
 ADD  grafana /pgwatch3/grafana
 COPY grafana/grafana_custom_config.ini /etc/grafana/grafana.ini
