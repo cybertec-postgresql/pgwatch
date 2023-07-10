@@ -50,7 +50,7 @@ curl -X POST -s -w "%{http_code}" \
   'http://localhost:3000/api/datasources'
 
 # Create dashboards
-GRAFANA_MAJOR_VER=$(grafana-server -v | grep -o -E '[0-9]{1}' | head -1)
+GRAFANA_MAJOR_VER=$(grafana-server -v | grep -o -E '[0-9]{2}' | head -1)
 
 for dashboard_json in $(find /pgwatch3/grafana/postgres/v"${GRAFANA_MAJOR_VER}" -name "*.json" | sort); do
   echo
