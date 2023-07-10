@@ -9,7 +9,7 @@ until pg_isready ; do sleep 10 ; done
 for prog in grafana grafana_dashboard_setup pgwatch3 ; do
   echo "supervisorctl start $prog ..."'1' 
   supervisorctl start $prog
-  echo "sleep 5"
+  echo "sleep 10"
   sleep 5
 done
 
