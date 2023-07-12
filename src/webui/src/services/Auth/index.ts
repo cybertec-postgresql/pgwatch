@@ -1,15 +1,5 @@
 import axios from "axios";
 import { AuthForm } from "queries/types/AuthTypes";
-//import { getToken } from "services/Token";
-
-/*const axiosInstance = axios.create({
-  baseURL: "http://localhost:8080/",
-  headers: {
-    Authorization: getToken(),
-    "Content-Type": "application/json",
-    
-  }
-});*/
 
 export default class AuthService {
   private static _instance: AuthService;
