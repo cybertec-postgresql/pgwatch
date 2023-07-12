@@ -14,6 +14,14 @@ type uiapihandler struct{}
 
 var uiapi uiapihandler
 
+func (uiapi uiapihandler) IsCorrectPassword(user, password string) bool {
+	// store all user
+	var userMap = map[string]string{
+		"admin": "admin",
+	}
+	return userMap[user] != "" && userMap[user] == password
+}
+
 // GetStats
 func (uiapi uiapihandler) GetStats() string {
 	jsonResponseTemplate := `{
