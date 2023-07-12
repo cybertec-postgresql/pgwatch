@@ -1,5 +1,4 @@
 import { SignIn } from "./Authentication/SignIn";
-import { SignUp } from "./Authentication/SignUp";
 import Dashboard from "./Dashboard";
 import { Logs } from "./Logs";
 import { MetricDefinitions } from "./MetricDefinitions";
@@ -49,11 +48,6 @@ export const publicRoutes = [
     title: "Sign in",
     link: "/",
     element: SignIn
-  },
-  {
-    title: "Sign up",
-    link: "/sign_up",
-    element: SignUp
   }
 ];
 
