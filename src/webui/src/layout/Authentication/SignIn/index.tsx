@@ -1,6 +1,7 @@
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { AlertComponent } from "layout/common/AlertComponent";
 import { useLogin } from "queries/Auth";
 import { AuthForm } from "queries/types/AuthTypes";
 
@@ -20,6 +21,9 @@ export const SignIn = () => {
 
   return (
     <Box sx={{ flex: "1 1 auto", display: "flex", justifyContent: "center", alignItems: "center" }}>
+      {
+        login.isError && <AlertComponent severity="error" message="Can not authenticate this user" />
+      }
       <Box
         sx={{
           width: "30%",
