@@ -20,7 +20,6 @@ type apiHandler interface {
 	DeletePreset(name string) error
 	UpdatePreset(id string, params []byte) error
 	GetStats() string
-	IsCorrectPassword(user, password string) bool
 }
 
 func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request) {

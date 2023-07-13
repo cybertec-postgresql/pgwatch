@@ -15,6 +15,10 @@ type loginReq struct {
 	Password string `json:"password"`
 }
 
+func (Server *WebUIServer) IsCorrectPassword(user, password string) bool {
+	return Server.WebUser == user && Server.WebPassword == password
+}
+
 func (Server *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var (
 		err   error
@@ -33,7 +37,7 @@ func (Server *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 		if err = json.NewDecoder(r.Body).Decode(&l); err != nil {
 			return
 		}
-		if !Server.api.IsCorrectPassword(l.Username, l.Password) {
+		if !Server.IsCorrectPassword(l.Username, l.Password) {
 			http.Error(w, "can not authenticate this user", http.StatusUnauthorized)
 			return
 		}
