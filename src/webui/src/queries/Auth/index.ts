@@ -8,6 +8,6 @@ const services = AuthService.getInstance();
 export const useLogin = () => useMutation({
   mutationFn: async(data: AuthForm) => await services.login(data),
   onSuccess: (data) => {
-    setToken(data.accessToken);
+    setToken(data);
   }
 });
