@@ -1,5 +1,6 @@
 import axios from "axios";
 import { createDbForm, updateDbForm, updateEnabledDbForm } from "queries/types/DbTypes";
+import { getToken } from "services/Token";
 
 export default class DbService {
   private static _instance: DbService;
@@ -13,7 +14,7 @@ export default class DbService {
   };
 
   public async getMonitoredDb() {
-    return await axios.get("/db").
+    return await axios.get("/db", { headers: { "Token": getToken() } }).
       then(response => response.data).
       catch(error => {
         throw error;
