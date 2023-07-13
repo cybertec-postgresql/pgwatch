@@ -97,7 +97,7 @@ func validateToken(r *http.Request) (err error) {
 	if !ok {
 		return errors.New("cannot parse token claims")
 	}
-	if claims.VerifyExpiresAt(time.Now().Local().Unix(), true) {
+	if !claims.VerifyExpiresAt(time.Now().Local().Unix(), true) {
 		return errors.New("token expired")
 	}
 	return nil
