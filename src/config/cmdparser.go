@@ -55,10 +55,18 @@ type StartOpts struct {
 	// Debug   bool   `long:"debug" description:"Run in debug mode. Only asynchronous chains will be executed"`
 }
 
+// WebUIOpts specifies the internal web UI server options
+type WebUIOpts struct {
+	WebAddr     string `long:"web-addr" mapstructure:"web-addr" description:"TCP address in the form 'host:port' to listen on" default:":8080" env:"PW3_WEBADDR"`
+	WebUser     string `long:"web-user" mapstructure:"web-user" description:"Admin login" env:"PW3_WEBUSER"`
+	WebPassword string `long:"web-password" mapstructure:"web-password" description:"Admin password" env:"PW3_WEBPASSWORD"`
+}
+
 type CmdOptions struct {
 	Connection ConnectionOpts `group:"Connection" mapstructure:"Connection"`
 	Metric     MetricOpts     `group:"Metric" mapstructure:"Metric"`
 	Logging    LoggingOpts    `group:"Logging" mapstructure:"Logging"`
+	WebUI      WebUIOpts      `group:"WebUI" mapstructure:"WebUI"`
 	Start      StartOpts      `group:"Start" mapstructure:"Start"`
 	// Params for running based on local config files, enabled distributed "push model" based metrics gathering. Metrics are sent directly to Influx/Graphite.
 	Config                  string `short:"c" long:"config" mapstructure:"config" description:"File or folder of YAML files containing info on which DBs to monitor and where to store metrics" env:"PW3_CONFIG"`

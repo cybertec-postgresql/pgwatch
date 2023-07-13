@@ -11,27 +11,30 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 )
 
 type WebUIServer struct {
 	l log.LoggerIface
 	http.Server
+	config.WebUIOpts
 	uiFS fs.FS
 	api  apiHandler
 }
 
-func Init(addr string, webuifs fs.FS, api apiHandler, logger log.LoggerIface) *WebUIServer {
+func Init(opts config.WebUIOpts, webuifs fs.FS, api apiHandler, logger log.LoggerIface) *WebUIServer {
 	mux := http.NewServeMux()
 	s := &WebUIServer{
 		logger,
 		http.Server{
-			Addr:           addr,
+			Addr:           opts.WebAddr,
 			ReadTimeout:    10 * time.Second,
 			WriteTimeout:   10 * time.Second,
 			MaxHeaderBytes: 1 << 20,
 			Handler:        mux,
 		},
+		opts,
 		webuifs,
 		api,
 	}

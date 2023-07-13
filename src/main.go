@@ -2521,7 +2521,7 @@ func main() {
 	mainContext = log.WithLogger(mainContext, logger)
 
 	uifs, _ := fs.Sub(webuifs, "webui/build")
-	ui := webserver.Init(":8080", uifs, uiapi, logger)
+	ui := webserver.Init(opts.WebUI, uifs, uiapi, logger)
 	if ui == nil {
 		exitCode.Store(ExitCodeWebUIError)
 		return
