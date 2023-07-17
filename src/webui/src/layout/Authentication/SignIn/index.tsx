@@ -26,8 +26,8 @@ export const SignIn = () => {
       }
       <Box
         sx={{
-          width: "30%",
-          height: "40%",
+          width: "25%",
+          height: "auto",
           display: "flex",
           alignItems: "center",
           gap: 3,
