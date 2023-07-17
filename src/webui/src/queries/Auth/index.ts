@@ -1,7 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
+import { NavigateFunction } from "react-router-dom";
 import { AuthForm } from "queries/types/AuthTypes";
 import AuthService from "services/Auth";
-import { setToken } from "services/Token";
+import { removeToken, setToken } from "services/Token";
 
 const services = AuthService.getInstance();
 
@@ -11,3 +12,8 @@ export const useLogin = () => useMutation({
     setToken(data);
   }
 });
+
+export const logout = (navigate: NavigateFunction) => {
+  removeToken();
+  navigate("/");
+};
