@@ -1,29 +1,23 @@
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { AlertComponent } from "layout/common/AlertComponent";
 import { useLogin } from "queries/Auth";
 import { AuthForm } from "queries/types/AuthTypes";
+import { useAlert } from "utils/AlertContext";
 
 
 export const SignIn = () => {
+  const { callAlert } = useAlert();
   const { handleSubmit, control } = useForm<AuthForm>();
-  const login = useLogin();
   const navigate = useNavigate();
+  const login = useLogin(callAlert, navigate);
 
   const onSubmit: SubmitHandler<AuthForm> = (result) => {
     login.mutate(result);
   };
 
-  if (login.isSuccess) {
-    navigate("/dashboard", { replace: true });
-  }
-
   return (
     <Box sx={{ flex: "1 1 auto", display: "flex", justifyContent: "center", alignItems: "center" }}>
-      {
-        login.isError && <AlertComponent severity="error" message="Can not authenticate this user" />
-      }
       <Box
         sx={{
           width: "25%",
