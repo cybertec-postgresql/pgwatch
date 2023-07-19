@@ -1,21 +1,12 @@
-import { useState } from "react";
-import { Alert, AlertColor, Snackbar } from "@mui/material";
+import { Alert, Snackbar } from "@mui/material";
+import { useAlert } from "utils/AlertContext";
 
-type Props = {
-  severity: AlertColor,
-  message: string
-};
-
-export const AlertComponent = ({ severity, message }: Props) => {
-  const [open, setOpen] = useState(true);
-
-  const handleClose = () => {
-    setOpen(false);
-  };
+export const AlertComponent = () => {
+  const { open, severity, message, closeAlert } = useAlert();
 
   return (
-    <Snackbar open={open} autoHideDuration={5000} onClose={handleClose}>
-      <Alert sx={{ width: "auto" }} variant="filled" severity={severity}>{message}</Alert>
+    <Snackbar open={open} autoHideDuration={3000} onClose={closeAlert}>
+      <Alert sx={{ minWidth: 400 }} variant="filled" severity={severity}>{message}</Alert>
     </Snackbar>
   );
 };
