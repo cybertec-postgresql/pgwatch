@@ -1,12 +1,12 @@
 import { createContext, useContext, useState } from "react";
-import { AlertColor } from "@mui/material";
+import { AlertColor, SnackbarCloseReason } from "@mui/material";
 
 export type AlertContextType = {
   open: boolean;
   severity: AlertColor;
   message: string;
   callAlert: (alertSeverity: AlertColor, alertMessage: string) => void;
-  closeAlert: () => void;
+  closeAlert: (event: Event | React.SyntheticEvent<any, Event>, reason: SnackbarCloseReason) => void;
 };
 
 type AlertProviderProps = {
@@ -26,7 +26,10 @@ export const AlertProvider = ({ children }: AlertProviderProps) => {
     setOpen(true);
   };
 
-  const closeAlert = () => {
+  const closeAlert = (_event: Event | React.SyntheticEvent<any, Event>, reason: SnackbarCloseReason) => {
+    if (reason === "clickaway" || reason === "escapeKeyDown") {
+      return;
+    }
     setOpen(false);
   };
 
