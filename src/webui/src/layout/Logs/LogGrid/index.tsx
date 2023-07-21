@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
-import { Alert, AlertColor, Box, Snackbar } from "@mui/material";
+import { Box } from "@mui/material";
 import { ReadyState } from "react-use-websocket/dist/lib/constants";
 import { LoadingComponent } from "layout/common/LoadingComponent";
 import { useLogs } from "queries/Log";
+import { useAlert } from "utils/AlertContext";
 import style from "../style.module.css";
 import { logOutput } from "./logOutput";
 
 export const LogGrid = () => {
-  const [alertOpen, setAlertOpen] = useState(false);
-  const [alertSeverity, setAlertSeverity] = useState<AlertColor>();
-  const [alertText, setAlertText] = useState("");
+  const { callAlert } = useAlert();
   const [logsHistory, setLogsHistory] = useState<MessageEvent<any>[]>([]);
   const { lastMessage, readyState } = useLogs();
 
@@ -19,29 +18,19 @@ export const LogGrid = () => {
     }
   }, [lastMessage]);
 
-  const handleAlertOpen = (text: string, type: AlertColor) => {
-    setAlertSeverity(type);
-    setAlertText(text);
-    setAlertOpen(true);
-  };
-
-  const handleAlertClose = () => {
-    setAlertOpen(false);
-  };
-
   useEffect(() => {
     switch (readyState) {
       case ReadyState.OPEN:
-        handleAlertOpen("Connection successfully established", "success");
+        callAlert("success", "Connection established");
         break;
       case ReadyState.CLOSED:
-        handleAlertOpen("Connection is closed", "error");
+        callAlert("error", "Connection closed");
         break;
       case ReadyState.UNINSTANTIATED:
-        handleAlertOpen("Connection isn't instantiated", "error");
+        callAlert("error", "Connection uninstantiated");
         break;
     }
-  }, [readyState]);
+  }, [readyState, callAlert]);
 
   return (
     <Box display="flex" flexDirection="column" height="100%">
@@ -65,9 +54,6 @@ export const LogGrid = () => {
           }
         </pre>
       </Box>
-      <Snackbar open={alertOpen} autoHideDuration={5000} onClose={handleAlertClose}>
-        <Alert sx={{ width: "auto" }} variant="filled" severity={alertSeverity}>{alertText}</Alert>
-      </Snackbar>
     </Box>
   );
 };
