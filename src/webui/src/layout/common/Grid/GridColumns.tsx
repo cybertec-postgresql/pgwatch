@@ -8,11 +8,9 @@ import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
 import { UseMutationResult } from "@tanstack/react-query";
 
-import { AxiosResponse } from 'axios';
-
 import moment from "moment";
 
-import { Db, updateEnabledDbForm } from "queries/types/DbTypes";
+import { Db } from "queries/types/DbTypes";
 import { Metric } from "queries/types/MetricTypes";
 import { Preset, PresetConfigRows } from "queries/types/PresetTypes";
 
@@ -128,15 +126,13 @@ export const metricsColumns = ({
 type databasesColumnsProps = {
   setEditData: React.Dispatch<React.SetStateAction<Db | undefined>>,
   handleModalOpen: (state: "NEW" | "EDIT" | "DUPLICATE") => void,
-  deleteRecord: UseMutationResult<any, any, any, unknown>,
-  editEnable: UseMutationResult<AxiosResponse<any, any>, any, updateEnabledDbForm, unknown>
+  deleteRecord: UseMutationResult<any, any, any, unknown>
 };
 
 export const databasesColumns = ({
   setEditData,
   handleModalOpen,
-  deleteRecord,
-  editEnable
+  deleteRecord
 }: databasesColumnsProps): GridColDef[] => {
   return [
     {
@@ -349,7 +345,7 @@ export const databasesColumns = ({
       headerName: "Enabled?",
       type: "boolean",
       width: 120,
-      renderCell: (params: GridRenderCellParams<boolean>) => <DbEnableSwitchComponent id={params.row.md_unique_name} value={params.value!} editEnable={editEnable} />,
+      renderCell: (params: GridRenderCellParams<boolean>) => <DbEnableSwitchComponent id={params.row.md_unique_name} value={params.value!} />,
       align: "center",
       headerAlign: "center"
     },
