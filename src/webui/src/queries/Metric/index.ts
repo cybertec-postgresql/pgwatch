@@ -23,14 +23,6 @@ export const useMetrics = (callAlert: (severity: AlertColor, message: string) =>
   }
 });
 
-export const useUniqueMetrics = () => useQuery({
-  queryKey: QueryKeys.metricUnique,
-  queryFn: async () => {
-    const data = await services.getMetrics();
-    return ([...new Set(data.map(metric => metric.m_name))]);
-  }
-});
-
 export const useDeleteMetric = (callAlert: (severity: AlertColor, message: string) => void, navigate: NavigateFunction) => useMutation<any, AxiosError, number, unknown>({
   mutationFn: async (data) => await services.deleteMetric(data),
   onSuccess: () => {
