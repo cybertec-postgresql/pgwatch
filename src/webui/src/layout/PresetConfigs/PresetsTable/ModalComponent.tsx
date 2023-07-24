@@ -2,12 +2,16 @@ import { useEffect, useState } from "react";
 
 import CloseIcon from "@mui/icons-material/Close";
 import DoneIcon from "@mui/icons-material/Done";
-import { AlertColor, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, ToggleButton, ToggleButtonGroup } from "@mui/material";
 
 import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 
+import { useNavigate } from "react-router-dom";
+
 import { useAddPreset, useEditPreset } from "queries/Preset";
 import { CreatePresetConfigForm, CreatePresetConfigRequestForm, Preset } from "queries/types/PresetTypes";
+
+import { useAlert } from "utils/AlertContext";
 
 import { AddMetric } from "./AddMetric";
 
@@ -16,18 +20,21 @@ type Props = {
   open: boolean;
   handleClose: () => void;
   recordData: Preset | undefined;
-  handleAlertOpen: (text: string, type: AlertColor) => void;
 };
 
-export const ModalComponent = ({ open, handleClose, recordData, handleAlertOpen }: Props) => {
+export const ModalComponent = ({ open, handleClose, recordData }: Props) => {
+  const { callAlert } = useAlert();
+  const navigate = useNavigate();
   const methods = useForm<CreatePresetConfigForm>({
     defaultValues: {
       pc_config: [{ metric: "", update_interval: 10 }]
     }
   });
   const { handleSubmit, reset, setValue } = methods;
-  const addPreset = useAddPreset({ handleAlertOpen, handleClose, reset });
-  const editPreset = useEditPreset({ handleAlertOpen, handleClose, reset });
+
+  const addPreset = useAddPreset(callAlert, navigate, handleClose, reset);
+
+  const editPreset = useEditPreset(callAlert, navigate, handleClose, reset);
 
   useEffect(() => {
     if (recordData) {
