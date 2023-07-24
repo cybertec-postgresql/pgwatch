@@ -1,53 +1,83 @@
 import { AlertColor } from "@mui/material";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+import { isUnauthorized } from "axiosInstance";
 import { queryClient } from "queryClient";
 
 import { UseFormReset } from "react-hook-form";
 
+import { NavigateFunction } from "react-router-dom";
 import { QueryKeys } from "queries/queryKeys";
-import { CreatePresetConfigForm, CreatePresetConfigRequestForm, UpdatePresetConfigRequestForm } from "queries/types/PresetTypes";
+import { CreatePresetConfigForm, CreatePresetConfigRequestForm, Preset, UpdatePresetConfigRequestForm } from "queries/types/PresetTypes";
 
 import PresetService from "services/Preset";
 
 const services = PresetService.getInstance();
 
-type mutationProps = {
-  handleAlertOpen: (text: string, type: AlertColor) => void;
-  handleClose: () => void;
-  reset: UseFormReset<CreatePresetConfigForm>
-}
-
-export const useAddPreset = ({
-  handleAlertOpen,
-  handleClose,
-  reset
-}: mutationProps) => useMutation({
-  mutationFn: async (data: CreatePresetConfigRequestForm) => await services.addPreset(data),
-  onSuccess: (_data, variables) => {
-    handleClose();
-    queryClient.invalidateQueries({ queryKey: QueryKeys.preset });
-    handleAlertOpen(`New preset config "${variables.pc_name}" has been successfully added!`, "success");
-    reset();
-  },
-  onError: (error: any) => {
-    handleAlertOpen(error.response.data, "error");
+export const usePresets = (callAlert: (severity: AlertColor, message: string) => void, navigate: NavigateFunction) => useQuery<Preset[], AxiosError>({
+  queryKey: QueryKeys.preset,
+  queryFn: async () => await services.getPresets(),
+  onError: (error) => {
+    if (isUnauthorized(error)) {
+      callAlert("error", `${error.response?.data}`);
+      navigate("/");
+    }
   }
 });
 
-export const useEditPreset = ({
-  handleAlertOpen,
-  handleClose,
-  reset
-}: mutationProps) => useMutation({
-  mutationFn: async (data: UpdatePresetConfigRequestForm) => await services.editPreset(data),
+export const useDeletePreset = (callAlert: (severity: AlertColor, message: string) => void, navigate: NavigateFunction) => useMutation<any, AxiosError, string, unknown>({
+  mutationFn: async (data) => await services.deletePreset(data),
   onSuccess: (_data, variables) => {
-    handleClose();
+    callAlert("success", `${variables} preset deleted`);
     queryClient.invalidateQueries({ queryKey: QueryKeys.preset });
-    handleAlertOpen(`Preset config ${variables.pc_name} has been successfully edited`, "success");
-    reset();
   },
-  onError: (error: any) => {
-    handleAlertOpen(error.response.data, "error");
+  onError: (error) => {
+    callAlert("error", `${error.response?.data}`);
+    if (isUnauthorized(error)) {
+      navigate("/");
+    }
+  }
+});
+
+export const useEditPreset = (
+  callAlert: (severity: AlertColor, message: string) => void,
+  navigate: NavigateFunction,
+  modalClose: () => void,
+  reset: UseFormReset<CreatePresetConfigForm>
+) => useMutation<any, AxiosError, UpdatePresetConfigRequestForm, unknown>({
+  mutationFn: async (data) => await services.editPreset(data),
+  onSuccess: (_data, variables) => {
+    callAlert("success", `${variables.pc_name} preset updated`);
+    modalClose();
+    reset();
+    queryClient.invalidateQueries({ queryKey: QueryKeys.preset });
+  },
+  onError: (error) => {
+    callAlert("error", `${error.response?.data}`);
+    if (isUnauthorized(error)) {
+      navigate("/");
+    }
+  }
+});
+
+export const useAddPreset = (
+  callAlert: (severity: AlertColor, message: string) => void,
+  navigate: NavigateFunction,
+  modalClose: () => void,
+  reset: UseFormReset<CreatePresetConfigForm>
+) => useMutation<any, AxiosError, CreatePresetConfigRequestForm, unknown>({
+  mutationFn: async (data) => await services.addPreset(data),
+  onSuccess: (_data, variables) => {
+    callAlert("success", `${variables.pc_name} preset added`);
+    modalClose();
+    reset();
+    queryClient.invalidateQueries({ queryKey: QueryKeys.preset });
+  },
+  onError: (error) => {
+    callAlert("error", `${error.response?.data}`);
+    if (isUnauthorized(error)) {
+      navigate("/");
+    }
   }
 });
