@@ -1,12 +1,22 @@
+import { AlertColor } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+import { isUnauthorized } from "axiosInstance";
 import { QueryKeys } from "queries/queryKeys";
 import { StatsSummary } from "queries/types/StatsSummaryTypes";
+import { NavigateFunction } from "react-router-dom";
 import StatsSummaryService from "services/StatsSummary";
 
 
 const services = StatsSummaryService.getInstance();
 
-export const useStatsSummary = () => useQuery<StatsSummary>({
+export const useStatsSummary = (callAlert: (severity: AlertColor, message: string) => void, navigate: NavigateFunction) => useQuery<StatsSummary, AxiosError>({
   queryKey: QueryKeys.statsSummary,
-  queryFn: async () => await services.getStatsSummary()
+  queryFn: async () => await services.getStatsSummary(),
+  onError: (error) => {
+    if (isUnauthorized(error)) {
+      callAlert("error", `${error.response?.data}`);
+      navigate("/");
+    }
+  }
 });
