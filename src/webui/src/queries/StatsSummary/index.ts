@@ -2,9 +2,9 @@ import { AlertColor } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { isUnauthorized } from "axiosInstance";
+import { NavigateFunction } from "react-router-dom";
 import { QueryKeys } from "queries/queryKeys";
 import { StatsSummary } from "queries/types/StatsSummaryTypes";
-import { NavigateFunction } from "react-router-dom";
 import StatsSummaryService from "services/StatsSummary";
 
 
