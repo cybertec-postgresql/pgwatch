@@ -1,4 +1,4 @@
-import axios from "axios";
+import { axiosInstance } from "axiosInstance";
 import { AuthForm } from "queries/types/AuthTypes";
 
 export default class AuthService {
@@ -13,7 +13,7 @@ export default class AuthService {
   };
 
   public async login(data: AuthForm) {
-    return await axios.post("/login", data).
+    return await axiosInstance.post("login", data).
       then(response => response.data);
   };
 }

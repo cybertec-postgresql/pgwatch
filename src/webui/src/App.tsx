@@ -11,19 +11,12 @@ import { Route, Routes } from "react-router-dom";
 import { PrivateRoute } from "layout/PrivateRoute";
 import { privateRoutes, publicRoutes } from "layout/Routes";
 
+import { AlertComponent } from "layout/common/AlertComponent";
 import { AppBar } from "./layout/AppBar";
-//import { routes } from "./layout/Routes";
 
 const mdTheme = createTheme();
 
 export default function App() {
-  /*const routesItems = useMemo(
-    () =>
-      routes.map((route) => (
-        <Route key={route.link} path={route.link} element={<route.element />} />
-      )),
-    []
-  );*/
 
   const publicRoutesItems = useMemo(
     () =>
@@ -64,6 +57,7 @@ export default function App() {
               {publicRoutesItems}
               {privateRoutesItems}
             </Routes>
+            <AlertComponent />
           </Box>
         </Box>
       </ThemeProvider>

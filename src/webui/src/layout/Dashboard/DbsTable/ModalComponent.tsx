@@ -4,7 +4,6 @@ import DoneIcon from "@mui/icons-material/Done";
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
-  AlertColor,
   Box,
   Button,
   Checkbox,
@@ -20,12 +19,11 @@ import {
 } from "@mui/material";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AxiosResponse } from "axios";
 import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
-import { QueryKeys } from "queries/queryKeys";
-import { Db, createDbForm, updateDbForm } from "queries/types/DbTypes";
-import DbService from "services/Db";
+import { useNavigate } from "react-router-dom";
+import { useAddDb, useEditDb } from "queries/Dashboard";
+import { Db, createDbForm } from "queries/types/DbTypes";
+import { useAlert } from "utils/AlertContext";
 import {
   AutocompleteComponent,
   AutocompleteConfigComponent,
@@ -37,14 +35,13 @@ import { MultilineTextField, SimpleTextField } from "./TextFieldComponents";
 type Props = {
   open: boolean,
   setOpen: Dispatch<SetStateAction<boolean>>,
-  handleAlertOpen: (text: string, type: AlertColor) => void,
   recordData: Db | undefined,
   action: "NEW" | "EDIT" | "DUPLICATE"
 };
 
-export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData, action }: Props) => {
-  const services = DbService.getInstance();
-  const queryClient = useQueryClient();
+export const ModalComponent = ({ open, setOpen, recordData, action }: Props) => {
+  const {callAlert} = useAlert();
+  const navigate = useNavigate();
   const methods = useForm<createDbForm>();
   const { handleSubmit, reset, setValue } = methods;
 
@@ -72,48 +69,22 @@ export const ModalComponent = ({ open, setOpen, handleAlertOpen, recordData, act
     }
   };
 
-  const updateRecord = useMutation({
-    mutationFn: async (data: updateDbForm) => {
-      return await services.editMonitoredDb(data);
-    },
-    onSuccess: (data: AxiosResponse<any, any>, variables: updateDbForm) => {
-      handleClose();
-      queryClient.invalidateQueries({ queryKey: QueryKeys.db });
-      handleAlertOpen(`Monitored DB "${variables.md_unique_name}" has been successfully updated!`, "success");
-      reset();
-    },
-    onError: (error: any) => {
-      handleAlertOpen(error.response.data, "error");
-    }
-  });
+  const handleClose = () => setOpen(false);
 
-  const addRecord = useMutation({
-    mutationFn: async (data: createDbForm) => {
-      return await services.addMonitoredDb(data);
-    },
-    onSuccess: (data: AxiosResponse<any, any>, variables: createDbForm) => {
-      handleClose();
-      queryClient.invalidateQueries({ queryKey: QueryKeys.db });
-      handleAlertOpen(`New DB "${variables.md_unique_name}" has been successfully added to monitoring!`, "success");
-      reset();
-    },
-    onError: (error: any) => {
-      handleAlertOpen(error.response.data, "error");
-    }
-  });
-
+  const editDb = useEditDb(callAlert, navigate, handleClose, reset);
+  
+  const addDb = useAddDb(callAlert, navigate, handleClose, reset);
+  
   const onSubmit: SubmitHandler<createDbForm> = (result) => {
     if (action === "EDIT") {
-      updateRecord.mutate({
+      editDb.mutate({
         md_unique_name: recordData!.md_unique_name,
         data: result
       });
     } else {
-      addRecord.mutate(result);
+      addDb.mutate(result);
     }
   };
-
-  const handleClose = () => setOpen(false);
 
   return (
     <Dialog

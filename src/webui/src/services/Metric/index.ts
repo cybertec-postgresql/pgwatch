@@ -1,4 +1,4 @@
-import axios from "axios";
+import { axiosInstance } from "axiosInstance";
 import { Metric, createMetricForm, updateMetricForm } from "queries/types/MetricTypes";
 
 
@@ -14,34 +14,22 @@ export default class MetricService {
   };
 
   public async getMetrics(): Promise<Metric[]> {
-    return await axios.get("/metric").
-      then(response => response.data).
-      catch(error => {
-        throw error;
-      });
+    return await axiosInstance.get("metric").
+      then(response => response.data);
   };
 
   public async deleteMetric(m_id: number) {
-    return await axios.delete("/metric", { params: { "id": m_id } }).
-      then(response => response.data).
-      catch(error => {
-        throw error;
-      });
+    return await axiosInstance.delete("metric", { params: { "id": m_id } }).
+      then(response => response.data);
   };
 
   public async addMetric(data: createMetricForm) {
-    return await axios.post("/metric", data).
-      then(response => response).
-      catch(error => {
-        throw error;
-      });
+    return await axiosInstance.post("metric", data).
+      then(response => response);
   };
 
   public async editMetric(data: updateMetricForm) {
-    return await axios.patch("/metric", data.data, { params: { "id": data.m_id } }).
-      then(response => response).
-      catch(error => {
-        throw error;
-      });
+    return await axiosInstance.patch("metric", data.data, { params: { "id": data.m_id } }).
+      then(response => response);
   };
 }
