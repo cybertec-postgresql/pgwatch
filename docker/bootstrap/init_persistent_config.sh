@@ -11,7 +11,6 @@ if [ ! -f /pgwatch3/persistent-config/self-signed-ssl.key -o ! -f /pgwatch3/pers
     chmod -R o+rx /pgwatch3/persistent-config
 fi
 
-# enable password encryption by default from v1.8.0
 if [ ! -f /pgwatch3/persistent-config/default-password-encryption-key.txt ]; then
   echo -n "${RANDOM}${RANDOM}${RANDOM}${RANDOM}" > /pgwatch3/persistent-config/default-password-encryption-key.txt
   chown postgres /pgwatch3/persistent-config/default-password-encryption-key.txt

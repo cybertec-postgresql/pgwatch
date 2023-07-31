@@ -1,0 +1,55 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - ./docker/bootstrap/1_create_role_db.sql:/docker-entrypoint-initdb.d/1_create_role_db.sql
+      # - ./docker/bootstrap/2_init_pgwatch_db.sh:/docker-entrypoint-initdb.d/2_init_pgwatch_db.sh
+      # - ./src/metrics/00_helpers:/pgwatch3/metrics/00_helpers
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  grafana:
+    image: grafana/grafana:latest
+    user: "0:0"
+    environment:
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: postgres:5432
+      GF_DATABASE_NAME: pgwatch3_grafana
+      GF_DATABASE_USER: pgwatch3
+      GF_DATABASE_PASSWORD: pgwatch3admin
+      GF_DATABASE_SSL_MODE: disable
+      GF_AUTH_ANONYMOUS_ENABLED: true  
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    volumes:
+      - ./grafana/postgres_datasource.yml:/etc/grafana/provisioning/datasources/pg_ds.yml
+      - ./grafana/postgres_dashboard.yml:/etc/grafana/provisioning/dashboards/pg_db.yml
+      - ./grafana/postgres/v10:/var/lib/grafana/dashboards
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  pgwatch3:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    environment:
+      PW3_PGHOST: postgres
+      PW3_PGUSER: pgwatch3
+      PW3_PGDATABASE: pgwatch3
+      PW3_DATASTORE: postgres
+      PW3_PG_METRIC_STORE_CONN_STR: postgresql://pgwatch3@postgres:5432/pgwatch3_metrics
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
