@@ -12,8 +12,6 @@ import { useNavigate } from "react-router-dom";
 import { useAddMetric, useEditMetric } from "queries/Metric";
 import { Metric, createMetricForm } from "queries/types/MetricTypes";
 
-import { useAlert } from "utils/AlertContext";
-
 type Params = {
   recordData: Metric | undefined,
   open: boolean,
@@ -21,7 +19,6 @@ type Params = {
 }
 
 export const ModalComponent = ({ recordData, open, handleClose }: Params) => {
-  const { callAlert } = useAlert();
   const navigate = useNavigate();
   const methods = useForm<createMetricForm>();
   const { handleSubmit, reset, setValue, clearErrors } = methods;
@@ -43,9 +40,9 @@ export const ModalComponent = ({ recordData, open, handleClose }: Params) => {
     }
   };
 
-  const addMetric = useAddMetric(callAlert, navigate, handleClose, reset);
+  const addMetric = useAddMetric(handleClose, reset);
 
-  const editMetric = useEditMetric(callAlert, navigate, handleClose, reset);
+  const editMetric = useEditMetric(handleClose, reset);
 
   const onSubmit: SubmitHandler<createMetricForm> = (result) => {
     if (recordData) {

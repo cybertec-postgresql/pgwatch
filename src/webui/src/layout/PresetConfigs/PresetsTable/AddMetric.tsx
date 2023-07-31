@@ -4,16 +4,12 @@ import { Box, Button, IconButton, InputAdornment, Stack, TextField, Tooltip } fr
 
 import { Control, Controller, useFieldArray } from "react-hook-form";
 
-import { useNavigate } from 'react-router-dom';
-
 import { AutocompleteComponent } from 'layout/common/AutocompleteComponent';
 import { ErrorComponent } from "layout/common/ErrorComponent";
 import { LoadingComponent } from 'layout/common/LoadingComponent';
 
 import { useMetrics } from "queries/Metric";
 import { CreatePresetConfigForm } from "queries/types/PresetTypes";
-
-import { useAlert } from 'utils/AlertContext';
 
 
 type Props = {
@@ -22,15 +18,13 @@ type Props = {
 };
 
 export const AddMetric = ({ control, handleValidate }: Props) => {
-  const { callAlert } = useAlert();
-  const navigate = useNavigate();
   const { fields, append, remove } = useFieldArray({
     name: "pc_config",
     control
   });
   const [metricOptions, setMetricOptions] = useState<{ label: string }[]>([]);
 
-  const { data, status, error } = useMetrics(callAlert, navigate);
+  const { data, status, error } = useMetrics();
 
   useEffect(() => {
     if (data) {

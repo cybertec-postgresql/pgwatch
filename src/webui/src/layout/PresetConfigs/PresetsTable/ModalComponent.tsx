@@ -6,12 +6,8 @@ import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, 
 
 import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 
-import { useNavigate } from "react-router-dom";
-
 import { useAddPreset, useEditPreset } from "queries/Preset";
 import { CreatePresetConfigForm, CreatePresetConfigRequestForm, Preset } from "queries/types/PresetTypes";
-
-import { useAlert } from "utils/AlertContext";
 
 import { AddMetric } from "./AddMetric";
 
@@ -23,8 +19,6 @@ type Props = {
 };
 
 export const ModalComponent = ({ open, handleClose, recordData }: Props) => {
-  const { callAlert } = useAlert();
-  const navigate = useNavigate();
   const methods = useForm<CreatePresetConfigForm>({
     defaultValues: {
       pc_config: [{ metric: "", update_interval: 10 }]
@@ -32,9 +26,9 @@ export const ModalComponent = ({ open, handleClose, recordData }: Props) => {
   });
   const { handleSubmit, reset, setValue } = methods;
 
-  const addPreset = useAddPreset(callAlert, navigate, handleClose, reset);
+  const addPreset = useAddPreset(handleClose, reset);
 
-  const editPreset = useEditPreset(callAlert, navigate, handleClose, reset);
+  const editPreset = useEditPreset(handleClose, reset);
 
   useEffect(() => {
     if (recordData) {

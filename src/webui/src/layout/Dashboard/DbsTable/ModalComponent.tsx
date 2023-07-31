@@ -20,10 +20,8 @@ import {
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import { useAddDb, useEditDb } from "queries/Dashboard";
 import { Db, createDbForm } from "queries/types/DbTypes";
-import { useAlert } from "utils/AlertContext";
 import {
   AutocompleteComponent,
   AutocompleteConfigComponent,
@@ -40,8 +38,6 @@ type Props = {
 };
 
 export const ModalComponent = ({ open, setOpen, recordData, action }: Props) => {
-  const {callAlert} = useAlert();
-  const navigate = useNavigate();
   const methods = useForm<createDbForm>();
   const { handleSubmit, reset, setValue } = methods;
 
@@ -71,9 +67,9 @@ export const ModalComponent = ({ open, setOpen, recordData, action }: Props) => 
 
   const handleClose = () => setOpen(false);
 
-  const editDb = useEditDb(callAlert, navigate, handleClose, reset);
+  const editDb = useEditDb(handleClose, reset);
   
-  const addDb = useAddDb(callAlert, navigate, handleClose, reset);
+  const addDb = useAddDb(handleClose, reset);
   
   const onSubmit: SubmitHandler<createDbForm> = (result) => {
     if (action === "EDIT") {

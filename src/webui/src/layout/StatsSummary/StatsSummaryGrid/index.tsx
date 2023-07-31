@@ -1,15 +1,10 @@
 import { Box, Grid, Tooltip, Typography } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import { ErrorComponent } from "layout/common/ErrorComponent";
 import { LoadingComponent } from "layout/common/LoadingComponent";
 import { useStatsSummary } from "queries/StatsSummary";
-import { useAlert } from "utils/AlertContext";
-
 
 export const StatsSummaryGrid = () => {
-  const { callAlert } = useAlert();
-  const navigate = useNavigate();
-  const { status, data, error } = useStatsSummary(callAlert, navigate);
+  const { status, data, error } = useStatsSummary();
 
   if (status === "loading") {
     return (

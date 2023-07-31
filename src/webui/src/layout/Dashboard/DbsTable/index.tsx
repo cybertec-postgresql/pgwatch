@@ -3,8 +3,6 @@ import { useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
-import { useNavigate } from "react-router-dom";
-
 import { ErrorComponent } from "layout/common/ErrorComponent";
 import { databasesColumns } from "layout/common/Grid/GridColumns";
 import { GridToolbarComponent } from "layout/common/Grid/GridToolbarComponent";
@@ -13,8 +11,6 @@ import { LoadingComponent } from "layout/common/LoadingComponent";
 import { useDbs, useDeleteDb } from "queries/Dashboard";
 import { Db } from "queries/types/DbTypes";
 
-import { useAlert } from "utils/AlertContext";
-
 import { ModalComponent } from "./ModalComponent";
 
 export const DbsTable = () => {
@@ -22,12 +18,9 @@ export const DbsTable = () => {
   const [editData, setEditData] = useState<Db>();
   const [action, setAction] = useState<"NEW" | "EDIT" | "DUPLICATE">("NEW");
 
-  const { callAlert } = useAlert();
-  const navigate = useNavigate();
+  const { status, data, error } = useDbs();
 
-  const { status, data, error } = useDbs(callAlert, navigate);
-
-  const deleteRecord = useDeleteDb(callAlert, navigate);
+  const deleteRecord = useDeleteDb();
 
   const handleModalOpen = (state: "NEW" | "EDIT" | "DUPLICATE") => {
     setAction(state);

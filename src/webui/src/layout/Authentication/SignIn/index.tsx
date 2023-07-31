@@ -3,14 +3,12 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useLogin } from "queries/Auth";
 import { AuthForm } from "queries/types/AuthTypes";
-import { useAlert } from "utils/AlertContext";
 
 
 export const SignIn = () => {
-  const { callAlert } = useAlert();
   const { handleSubmit, control } = useForm<AuthForm>();
   const navigate = useNavigate();
-  const login = useLogin(callAlert, navigate);
+  const login = useLogin(navigate);
 
   const onSubmit: SubmitHandler<AuthForm> = (result) => {
     login.mutate(result);

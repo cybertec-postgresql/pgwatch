@@ -1,9 +1,7 @@
 import { useState } from "react";
 
 import { Switch } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import { useEditEnableDb } from "queries/Dashboard";
-import { useAlert } from "utils/AlertContext";
 
 
 type Props = {
@@ -13,10 +11,8 @@ type Props = {
 
 export const DbEnableSwitchComponent = ({ id, value }: Props) => {
   const [checked, setChecked] = useState(value);
-  const { callAlert } = useAlert();
-  const navigate = useNavigate();
 
-  const editEnable = useEditEnableDb(callAlert, navigate);
+  const editEnable = useEditEnableDb();
 
   const handleChange = (_event: React.ChangeEvent<HTMLInputElement>, changedValue: boolean) => {
     setChecked(changedValue);

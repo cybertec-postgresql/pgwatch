@@ -13,19 +13,15 @@ import { LoadingComponent } from "layout/common/LoadingComponent";
 import { useDeleteMetric, useMetrics } from "queries/Metric";
 import { Metric } from 'queries/types/MetricTypes';
 
-import { useAlert } from "utils/AlertContext";
-
 import { ModalComponent } from "./ModalComponent";
 
 export const MetricsTable = () => {
-  const { callAlert } = useAlert();
-  const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState<Metric>();
 
-  const { status, data, error } = useMetrics(callAlert, navigate);
+  const { status, data, error } = useMetrics();
 
-  const deleteRecord = useDeleteMetric(callAlert, navigate);
+  const deleteRecord = useDeleteMetric();
 
   const handleModalOpen = () => {
     setModalOpen(true);
