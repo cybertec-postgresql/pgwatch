@@ -1,4 +1,4 @@
-import { MutationCache, QueryCache, QueryClient, QueryClientProvider as ClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider as ClientProvider, MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { isUnauthorized } from "axiosInstance";
 import { useNavigate } from "react-router-dom";

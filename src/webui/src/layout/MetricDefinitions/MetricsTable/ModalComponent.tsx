@@ -7,8 +7,6 @@ import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitl
 
 import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 
-import { useNavigate } from "react-router-dom";
-
 import { useAddMetric, useEditMetric } from "queries/Metric";
 import { Metric, createMetricForm } from "queries/types/MetricTypes";
 
@@ -19,7 +17,6 @@ type Params = {
 }
 
 export const ModalComponent = ({ recordData, open, handleClose }: Params) => {
-  const navigate = useNavigate();
   const methods = useForm<createMetricForm>();
   const { handleSubmit, reset, setValue, clearErrors } = methods;
 

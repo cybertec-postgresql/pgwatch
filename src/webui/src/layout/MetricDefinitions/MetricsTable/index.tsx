@@ -3,8 +3,6 @@ import { useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
-import { useNavigate } from "react-router-dom";
-
 import { ErrorComponent } from "layout/common/ErrorComponent";
 import { metricsColumns } from "layout/common/Grid/GridColumns";
 import { GridToolbarComponent } from "layout/common/Grid/GridToolbarComponent";
