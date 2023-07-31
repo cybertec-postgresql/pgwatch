@@ -16,7 +16,7 @@ type loginReq struct {
 }
 
 func (Server *WebUIServer) IsCorrectPassword(user, password string) bool {
-	return Server.WebUser == user && Server.WebPassword == password
+	return (Server.WebUser == "" && Server.WebPassword == "") || (Server.WebUser == user && Server.WebPassword == password)
 }
 
 func (Server *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
