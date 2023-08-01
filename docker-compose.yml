@@ -36,17 +36,19 @@ services:
       - "3000:3000"
     restart: unless-stopped
     volumes:
-      - ./grafana/postgres_datasource.yml:/etc/grafana/provisioning/datasources/pg_ds.yml
-      - ./grafana/postgres_dashboard.yml:/etc/grafana/provisioning/dashboards/pg_db.yml
-      - ./grafana/postgres/v10:/var/lib/grafana/dashboards
+      - "./grafana/postgres_datasource.yml:/etc/grafana/provisioning/datasources/pg_ds.yml"
+      - "./grafana/postgres_dashboard.yml:/etc/grafana/provisioning/dashboards/pg_db.yml"
+      - "./grafana/postgres/v10:/var/lib/grafana/dashboards"
     depends_on:
       postgres:
         condition: service_healthy
 
   pgwatch3:
+    # uncomment build section below for dev experience
     build:
       context: .
       dockerfile: ./docker/Dockerfile
+    image: cybertecpostgresql/pgwatch3:latest
     environment:
       PW3_PGHOST: postgres
       PW3_PGUSER: pgwatch3
@@ -58,3 +60,42 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  add-test-db:
+    image: *pgimage
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres # we need superuser to create extensions
+      PGDATABASE: pgwatch3
+    command: >
+      psql -v ON_ERROR_STOP=1
+        -f /tmp/00_helpers/get_stat_statements/9.4/metric.sql
+        -f /tmp/00_helpers/get_stat_activity/9.2/metric.sql
+        -f /tmp/00_helpers/get_stat_replication/9.2/metric.sql
+        -f /tmp/00_helpers/get_table_bloat_approx/9.5/metric.sql
+        -f /tmp/00_helpers/get_table_bloat_approx_sql/12/metric.sql
+        -f /tmp/00_helpers/get_wal_size/10/metric.sql      
+        -c "INSERT INTO pgwatch3.monitored_db (md_unique_name, md_preset_config_name, md_config, md_hostname, md_port, md_dbname, md_user, md_password)
+          SELECT 'test', 'exhaustive', null, 'postgres', '5432', 'pgwatch3', 'pgwatch3', 'pgwatch3admin'
+          WHERE NOT EXISTS (SELECT * FROM pgwatch3.monitored_db WHERE (md_unique_name, md_hostname, md_dbname) = ('test', 'localhost', 'pgwatch3'))"
+    volumes:
+      - "./src/metrics/00_helpers:/tmp/00_helpers"
+    depends_on:
+      - pgwatch3
+    profiles:
+      - add-test-db
+
+  pgbench:
+    image: *pgimage
+    environment:
+      PGHOST: postgres
+      PGUSER: pgwatch3
+      PGDATABASE: pgwatch3
+    command: >
+      sh -c "pgbench --initialize --scale=50 && 
+        pgbench --progress=5 --client=10 --jobs=2 --transactions=10000 && 
+        pgbench --initialize --init-steps=d"
+    depends_on:
+      - pgwatch3
+    profiles:
+      - pgbench
