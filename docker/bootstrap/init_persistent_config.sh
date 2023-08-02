@@ -33,6 +33,9 @@ if [ -n "$PW3_GRAFANAPASSWORD" ] ; then
     sed -i "s/admin_password =.*/admin_password = ${PW3_GRAFANAPASSWORD}/" /etc/grafana/grafana.ini
 fi
 
+# replace docker compose "postgres" host name to localhost
+sed -i 's/url: postgres/url: localhost/' /etc/grafana/provisioning/datasources/pg_ds.yml
+
 if [ -n "$PW3_GRAFANANOANONYMOUS" ] ; then
 CFG=$(cat <<-'HERE'
 [auth.anonymous]

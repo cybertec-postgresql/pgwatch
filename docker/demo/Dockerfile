@@ -46,20 +46,23 @@ RUN apt-get update \
 RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
     && curl "https://dl.grafana.com/oss/release/grafana_10.0.1_${arch}.deb" --output grafana.deb \
     && dpkg -i grafana.deb && rm grafana.deb
-ADD  grafana /pgwatch3/grafana
-COPY docker/demo/grafana_custom_config.ini /etc/grafana/grafana.ini
+COPY docker/demo/grafana.ini /etc/grafana/grafana.ini
+COPY grafana/postgres_datasource.yml /etc/grafana/provisioning/datasources/pg_ds.yml
+COPY grafana/postgres_dashboard.yml /etc/grafana/provisioning/dashboards/pg_db.yml
+ADD grafana/postgres/v10/ /var/lib/grafana/dashboards/
+
 
 # Set up supervisord [https://docs.docker.com/engine/admin/using_supervisord/]
 COPY docker/demo/supervisord.conf /etc/supervisor/
 COPY docker/bootstrap/init_persistent_config.sh \
-     docker/bootstrap/set_up_grafana_dashboards.sh \
      docker/bootstrap/init_supervisor.sh \
+     docker/bootstrap/init_test_monitored_db.sh\
         /pgwatch3/bootstrap/
 
 # Set up PostgreSQL initialization scripts
 RUN  mkdir -p /docker-entrypoint-initdb.d
-COPY docker/bootstrap/1_create_role_db.sql \
-     docker/bootstrap/2_init_pgwatch_db.sh \
+COPY docker/bootstrap/create_role_db.sql \
+     docker/bootstrap/init_dbs.sh \
         /docker-entrypoint-initdb.d/
 
 # Apply PostgreSQL configuration
