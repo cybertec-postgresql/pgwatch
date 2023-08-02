@@ -4,6 +4,7 @@ services:
   postgres:
     # if you want vanilla experience use "postgres:latest" image and remove "timescaledb" from shared_preload_libraries
     image: &pgimage timescale/timescaledb:latest-pg15
+    user: postgres
     command:
       - "-cshared_preload_libraries=pg_stat_statements,timescaledb"
       - "-cpg_stat_statements.track=all"
