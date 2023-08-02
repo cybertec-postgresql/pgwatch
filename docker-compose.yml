@@ -15,7 +15,7 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
-      - "./docker/bootstrap/1_create_role_db.sql:/docker-entrypoint-initdb.d/1_create_role_db.sql"
+      - "./docker/bootstrap/create_role_db.sql:/docker-entrypoint-initdb.d/create_role_db.sql"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready"]
       interval: 10s
@@ -32,7 +32,8 @@ services:
       GF_DATABASE_USER: pgwatch3
       GF_DATABASE_PASSWORD: pgwatch3admin
       GF_DATABASE_SSL_MODE: disable
-      GF_AUTH_ANONYMOUS_ENABLED: true  
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/1-global-db-overview.json
     ports:
       - "3000:3000"
     restart: unless-stopped
