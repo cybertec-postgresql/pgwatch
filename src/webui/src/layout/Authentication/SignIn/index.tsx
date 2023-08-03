@@ -32,12 +32,6 @@ export const SignIn = () => {
             <Controller
               name="user"
               control={control}
-              rules={{
-                required: {
-                  value: true,
-                  message: "User name is required"
-                }
-              }}
               defaultValue=""
               render={({ field, fieldState: { error } }) => (
                 <TextField
@@ -53,12 +47,6 @@ export const SignIn = () => {
             <Controller
               name="password"
               control={control}
-              rules={{
-                required: {
-                  value: true,
-                  message: "Password is required"
-                }
-              }}
               defaultValue=""
               render={({ field, fieldState: { error } }) => (
                 <TextField
