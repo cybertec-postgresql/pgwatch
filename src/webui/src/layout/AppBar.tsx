@@ -5,9 +5,6 @@ import { logout } from 'queries/Auth';
 import { getToken } from "services/Token";
 import { privateRoutes } from "./Routes";
 
-
-//import { routes } from "./Routes";
-
 export const AppBar = () => {
   const navigate = useNavigate();
   const token = getToken();
