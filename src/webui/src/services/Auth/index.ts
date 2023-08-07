@@ -16,4 +16,9 @@ export default class AuthService {
     return await axiosInstance.post("login", data).
       then(response => response.data);
   };
+
+  public async loginDefault() {
+    return await axiosInstance.post("login", { user: "", password: "" }).
+      then(response => response.data);
+  };
 }
