@@ -1,14 +1,17 @@
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { useLogin } from "queries/Auth";
+import { useLogin, useLoginDefault } from "queries/Auth";
 import { AuthForm } from "queries/types/AuthTypes";
+import { useAlert } from "utils/AlertContext";
 
 
 export const SignIn = () => {
+  const { callAlert } = useAlert();
   const { handleSubmit, control } = useForm<AuthForm>();
   const navigate = useNavigate();
   const login = useLogin(navigate);
+  useLoginDefault(navigate, callAlert);
 
   const onSubmit: SubmitHandler<AuthForm> = (result) => {
     login.mutate(result);
@@ -32,6 +35,9 @@ export const SignIn = () => {
             <Controller
               name="user"
               control={control}
+              rules={{
+                required: true
+              }}
               defaultValue=""
               render={({ field, fieldState: { error } }) => (
                 <TextField
@@ -47,6 +53,9 @@ export const SignIn = () => {
             <Controller
               name="password"
               control={control}
+              rules={{
+                required: true
+              }}
               defaultValue=""
               render={({ field, fieldState: { error } }) => (
                 <TextField
