@@ -84,14 +84,13 @@ create table if not exists metric (
     check (m_name ~ E'^[a-z0-9_\\.]+$')
 );
 
-create table metric_attribute (
+create table if not exists metric_attribute (
     ma_metric_name          text not null primary key,
     ma_last_modified_on     timestamptz not null default now(),
     ma_metric_attrs    jsonb not null,
 
     check (ma_metric_name ~ E'^[a-z0-9_\\.]+$')
 );
-
 
 /* this should allow auto-rollout of schema changes for future (1.6+) releases. currently only informative */
 create table if not exists schema_version (

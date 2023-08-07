@@ -1,0 +1,103 @@
+version: "3.9"
+
+services:
+  postgres:
+    # if you want vanilla experience use "postgres:latest" image and remove "timescaledb" from shared_preload_libraries
+    image: &pgimage timescale/timescaledb:latest-pg15
+    user: postgres
+    command:
+      - "-cshared_preload_libraries=pg_stat_statements,timescaledb"
+      - "-cpg_stat_statements.track=all"
+      - "-ctrack_io_timing=on"
+      - "-ctrack_functions=pl"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - "./docker/bootstrap/create_role_db.sql:/docker-entrypoint-initdb.d/create_role_db.sql"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  grafana:
+    image: grafana/grafana:latest
+    user: "0:0"
+    environment:
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: postgres:5432
+      GF_DATABASE_NAME: pgwatch3_grafana
+      GF_DATABASE_USER: pgwatch3
+      GF_DATABASE_PASSWORD: pgwatch3admin
+      GF_DATABASE_SSL_MODE: disable
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/1-global-db-overview.json
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    volumes:
+      - "./grafana/postgres_datasource.yml:/etc/grafana/provisioning/datasources/pg_ds.yml"
+      - "./grafana/postgres_dashboard.yml:/etc/grafana/provisioning/dashboards/pg_db.yml"
+      - "./grafana/postgres/v10:/var/lib/grafana/dashboards"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  pgwatch3:
+    # uncomment build section below for dev experience
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    image: cybertecpostgresql/pgwatch3:latest
+    environment:
+      PW3_PGHOST: postgres
+      PW3_PGUSER: pgwatch3
+      PW3_PGDATABASE: pgwatch3
+      PW3_DATASTORE: postgres
+      PW3_PG_METRIC_STORE_CONN_STR: postgresql://pgwatch3@postgres:5432/pgwatch3_metrics
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  add-test-db:
+    image: *pgimage
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres # we need superuser to create extensions
+      PGDATABASE: pgwatch3
+    command: >
+      psql -v ON_ERROR_STOP=1
+        -f /tmp/00_helpers/get_stat_statements/9.4/metric.sql
+        -f /tmp/00_helpers/get_stat_activity/9.2/metric.sql
+        -f /tmp/00_helpers/get_stat_replication/9.2/metric.sql
+        -f /tmp/00_helpers/get_table_bloat_approx/9.5/metric.sql
+        -f /tmp/00_helpers/get_table_bloat_approx_sql/12/metric.sql
+        -f /tmp/00_helpers/get_wal_size/10/metric.sql      
+        -c "INSERT INTO pgwatch3.monitored_db (md_unique_name, md_preset_config_name, md_config, md_hostname, md_port, md_dbname, md_user, md_password)
+          SELECT 'test', 'exhaustive', null, 'postgres', '5432', 'pgwatch3', 'pgwatch3', 'pgwatch3admin'
+          WHERE NOT EXISTS (SELECT * FROM pgwatch3.monitored_db WHERE (md_unique_name, md_hostname, md_dbname) = ('test', 'localhost', 'pgwatch3'))"
+    volumes:
+      - "./src/metrics/00_helpers:/tmp/00_helpers"
+    depends_on:
+      - pgwatch3
+    profiles:
+      - add-test-db
+
+  pgbench:
+    image: *pgimage
+    environment:
+      PGHOST: postgres
+      PGUSER: pgwatch3
+      PGDATABASE: pgwatch3
+    command: >
+      sh -c "pgbench --initialize --scale=50 && 
+        pgbench --progress=5 --client=10 --jobs=2 --transactions=10000 && 
+        pgbench --initialize --init-steps=d"
+    depends_on:
+      - pgwatch3
+    profiles:
+      - pgbench
