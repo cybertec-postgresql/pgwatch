@@ -2,7 +2,7 @@ import { QueryClientProvider as ClientProvider, MutationCache, QueryCache, Query
 import axios from "axios";
 import { isUnauthorized } from "axiosInstance";
 import { useNavigate } from "react-router-dom";
-import { removeToken } from "services/Token";
+import { logout } from "queries/Auth";
 import { useAlert } from "utils/AlertContext";
 
 type Props = {
@@ -18,9 +18,8 @@ export const QueryClientProvider = ({ children }: Props) => {
       onError: (error) => {
         if (axios.isAxiosError(error)) {
           if (isUnauthorized(error)) {
-            removeToken();
             callAlert("error", `${error.response?.data}`);
-            navigate("/");
+            logout(navigate);
           }
         }
       }
@@ -36,8 +35,7 @@ export const QueryClientProvider = ({ children }: Props) => {
         if (axios.isAxiosError(error)) {
           callAlert("error", `${error.response?.data}`);
           if (isUnauthorized(error)) {
-            removeToken();
-            navigate("/");
+            logout(navigate);
           }
         }
       }
