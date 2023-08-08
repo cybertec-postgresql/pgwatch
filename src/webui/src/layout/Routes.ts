@@ -1,5 +1,5 @@
 import { SignIn } from "./Authentication/SignIn";
-import Dashboard from "./Dashboard";
+import { Dashboard } from "./Dashboard";
 import { Logs } from "./Logs";
 import { MetricDefinitions } from "./MetricDefinitions";
 import { PresetConfigs } from "./PresetConfigs";
