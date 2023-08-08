@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import CloseIcon from "@mui/icons-material/Close";
 import DoneIcon from "@mui/icons-material/Done";
-import { AlertColor, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, ToggleButton, ToggleButtonGroup } from "@mui/material";
 
 import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 
@@ -16,18 +16,19 @@ type Props = {
   open: boolean;
   handleClose: () => void;
   recordData: Preset | undefined;
-  handleAlertOpen: (text: string, type: AlertColor) => void;
 };
 
-export const ModalComponent = ({ open, handleClose, recordData, handleAlertOpen }: Props) => {
+export const ModalComponent = ({ open, handleClose, recordData }: Props) => {
   const methods = useForm<CreatePresetConfigForm>({
     defaultValues: {
       pc_config: [{ metric: "", update_interval: 10 }]
     }
   });
   const { handleSubmit, reset, setValue } = methods;
-  const addPreset = useAddPreset({ handleAlertOpen, handleClose, reset });
-  const editPreset = useEditPreset({ handleAlertOpen, handleClose, reset });
+
+  const addPreset = useAddPreset(handleClose, reset);
+
+  const editPreset = useEditPreset(handleClose, reset);
 
   useEffect(() => {
     if (recordData) {

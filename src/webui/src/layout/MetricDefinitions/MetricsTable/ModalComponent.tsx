@@ -1,24 +1,22 @@
 import { useEffect, useState } from "react";
+
 import CloseIcon from "@mui/icons-material/Close";
 import DoneIcon from "@mui/icons-material/Done";
 import { ToggleButton } from "@mui/lab";
-import { AlertColor, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Stack, TextField, ToggleButtonGroup } from "@mui/material";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Stack, TextField, ToggleButtonGroup } from "@mui/material";
+
 import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
-import { QueryKeys } from "queries/queryKeys";
-import { Metric, createMetricForm, updateMetricForm } from "queries/types/MetricTypes";
-import MetricService from "services/Metric";
+
+import { useAddMetric, useEditMetric } from "queries/Metric";
+import { Metric, createMetricForm } from "queries/types/MetricTypes";
 
 type Params = {
   recordData: Metric | undefined,
   open: boolean,
-  handleClose: () => void,
-  handleAlertOpen: (text: string, type: AlertColor) => void
+  handleClose: () => void
 }
 
-export const ModalComponent = ({ recordData, open, handleClose, handleAlertOpen }: Params) => {
-  const services = MetricService.getInstance();
-  const queryClient = useQueryClient();
+export const ModalComponent = ({ recordData, open, handleClose }: Params) => {
   const methods = useForm<createMetricForm>();
   const { handleSubmit, reset, setValue, clearErrors } = methods;
 
@@ -39,44 +37,18 @@ export const ModalComponent = ({ recordData, open, handleClose, handleAlertOpen 
     }
   };
 
-  const addRecord = useMutation({
-    mutationFn: async (data: createMetricForm) => {
-      return await services.addMetric(data);
-    },
-    onSuccess: (data, variables) => {
-      handleClose();
-      queryClient.invalidateQueries({ queryKey: QueryKeys.metric });
-      handleAlertOpen(`New metric "${variables.m_name}" has been successfully added!`, "success");
-      reset();
-    },
-    onError: (error: any) => {
-      handleAlertOpen(error.response.data, "error");
-    }
-  });
+  const addMetric = useAddMetric(handleClose, reset);
 
-  const updateRecord = useMutation({
-    mutationFn: async (data: updateMetricForm) => {
-      return await services.editMetric(data);
-    },
-    onSuccess: (data, variables) => {
-      handleClose();
-      queryClient.invalidateQueries({ queryKey: QueryKeys.metric });
-      handleAlertOpen(`New metric "${variables.data.m_name}" has been successfully updated!`, "success");
-      reset();
-    },
-    onError: (error: any) => {
-      handleAlertOpen(error.response.data, "error");
-    }
-  });
+  const editMetric = useEditMetric(handleClose, reset);
 
   const onSubmit: SubmitHandler<createMetricForm> = (result) => {
     if (recordData) {
-      updateRecord.mutate({
+      editMetric.mutate({
         m_id: recordData.m_id,
         data: result
       });
     } else {
-      addRecord.mutate(result);
+      addMetric.mutate(result);
     }
   };
 

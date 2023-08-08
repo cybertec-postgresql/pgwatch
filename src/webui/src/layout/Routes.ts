@@ -1,14 +1,23 @@
-import Dashboard from "./Dashboard";
+import { SignIn } from "./Authentication/SignIn";
+import { Dashboard } from "./Dashboard";
 import { Logs } from "./Logs";
 import { MetricDefinitions } from "./MetricDefinitions";
 import { PresetConfigs } from "./PresetConfigs";
 import { StatsSummary } from "./StatsSummary";
 
-export const routes = [
+export const publicRoutes = [
   {
-    title: "Databases",
+    title: "Sign in",
     link: "/",
-    element: Dashboard,
+    element: SignIn
+  }
+];
+
+export const privateRoutes = [
+  {
+    title: "Dashboard",
+    link: "/dashboard",
+    element: Dashboard
   },
   {
     title: "Metric definitions",
@@ -29,5 +38,5 @@ export const routes = [
     title: "Logs",
     link: "/logs",
     element: Logs,
-  }
+  },
 ];

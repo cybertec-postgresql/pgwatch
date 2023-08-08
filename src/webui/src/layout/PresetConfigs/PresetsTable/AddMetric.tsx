@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Box, Button, IconButton, InputAdornment, Stack, TextField, Tooltip } from "@mui/material";
 
@@ -5,8 +6,9 @@ import { Control, Controller, useFieldArray } from "react-hook-form";
 
 import { AutocompleteComponent } from 'layout/common/AutocompleteComponent';
 import { ErrorComponent } from "layout/common/ErrorComponent";
+import { LoadingComponent } from 'layout/common/LoadingComponent';
 
-import { useUniqueMetrics } from "queries/Metric";
+import { useMetrics } from "queries/Metric";
 import { CreatePresetConfigForm } from "queries/types/PresetTypes";
 
 
@@ -20,24 +22,32 @@ export const AddMetric = ({ control, handleValidate }: Props) => {
     name: "pc_config",
     control
   });
-  let metricsOptions: { label: string }[] = [];
+  const [metricOptions, setMetricOptions] = useState<{ label: string }[]>([]);
 
-  const { data, isSuccess, isLoading, isError, error } = useUniqueMetrics();
+  const { data, status, error } = useMetrics();
 
-  if (isError) {
+  useEffect(() => {
+    if (data) {
+      setMetricOptions([...new Set(data.map(metric => metric.m_name))].map(metric => ({ label: metric })));
+    }
+  }, [data]);
+
+  if (status === "error") {
     return (
       <Box display="flex" justifyContent="center" minHeight={151} maxHeight={151}>
-        <ErrorComponent errorMessage={String(error)} />
+        <ErrorComponent errorMessage={`${error.response?.data}`} />
       </Box>
     );
   }
 
-  if (isSuccess) {
-    metricsOptions = data.map(name => ({ label: name }));
+  if (status === "loading") {
+    return (
+      <LoadingComponent />
+    );
   }
 
   const isOptionExist = (initialValue: string) => {
-    const value = metricsOptions.find(option => option.label === initialValue);
+    const value = data.find(option => option.m_name === initialValue);
     if (!value) {
       return ("This option doesn't exist");
     } else {
@@ -66,8 +76,7 @@ export const AddMetric = ({ control, handleValidate }: Props) => {
                 label="Metric name"
                 error={!!fieldState.error}
                 helperText={fieldState.error?.message}
-                options={metricsOptions}
-                loading={isLoading}
+                options={metricOptions}
               />
             )}
           />

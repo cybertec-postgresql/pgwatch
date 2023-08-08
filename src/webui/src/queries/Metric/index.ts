@@ -1,20 +1,42 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+import { UseFormReset } from "react-hook-form";
 import { QueryKeys } from "queries/queryKeys";
 import MetricService from "services/Metric";
-import { Metric } from "../types/MetricTypes";
-
+import { Metric, createMetricForm, updateMetricForm } from "../types/MetricTypes";
 
 const services = MetricService.getInstance();
 
-export const useMetrics = () => useQuery<Metric[]>({
+export const useMetrics = () => useQuery<Metric[], AxiosError>({
   queryKey: QueryKeys.metric,
   queryFn: async () => await services.getMetrics()
 });
 
-export const useUniqueMetrics = () => useQuery({
-  queryKey: QueryKeys.metric,
-  queryFn: async () => {
-    const data = await services.getMetrics();
-    return ([...new Set(data.map(metric => metric.m_name))]);
+export const useDeleteMetric = () => useMutation({
+  mutationKey: QueryKeys.metric,
+  mutationFn: async (data: number) => await services.deleteMetric(data)
+});
+
+export const useEditMetric = (
+  handleClose: () => void,
+  reset: UseFormReset<createMetricForm>
+) => useMutation({
+  mutationKey: QueryKeys.metric,
+  mutationFn: async (data: updateMetricForm) => await services.editMetric(data),
+  onSuccess: () => {
+    handleClose();
+    reset();
+  }
+});
+
+export const useAddMetric = (
+  handleClose: () => void,
+  reset: UseFormReset<createMetricForm>
+) => useMutation({
+  mutationKey: QueryKeys.metric,
+  mutationFn: async (data: createMetricForm) => await services.addMetric(data),
+  onSuccess: () => {
+    handleClose();
+    reset();
   }
 });

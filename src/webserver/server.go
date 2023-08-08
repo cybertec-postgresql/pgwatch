@@ -39,11 +39,12 @@ func Init(opts config.WebUIOpts, webuifs fs.FS, api apiHandler, logger log.Logge
 		api,
 	}
 
-	mux.HandleFunc("/db", s.handleDBs)
-	mux.HandleFunc("/metric", s.handleMetrics)
-	mux.HandleFunc("/preset", s.handlePresets)
-	mux.HandleFunc("/stats", s.handleStats)
-	mux.HandleFunc("/log", s.serveWsLog)
+	mux.Handle("/db", NewEnsureAuth(s.handleDBs))
+	mux.Handle("/metric", NewEnsureAuth(s.handleMetrics))
+	mux.Handle("/preset", NewEnsureAuth(s.handlePresets))
+	mux.Handle("/stats", NewEnsureAuth(s.handleStats))
+	mux.Handle("/log", NewEnsureAuth(s.serveWsLog))
+	mux.HandleFunc("/login", s.handleLogin)
 	mux.HandleFunc("/", s.handleStatic)
 
 	go func() { panic(s.ListenAndServe()) }()

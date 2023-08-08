@@ -3,7 +3,6 @@ import { ErrorComponent } from "layout/common/ErrorComponent";
 import { LoadingComponent } from "layout/common/LoadingComponent";
 import { useStatsSummary } from "queries/StatsSummary";
 
-
 export const StatsSummaryGrid = () => {
   const { status, data, error } = useStatsSummary();
 

@@ -1,4 +1,4 @@
-import axios from "axios";
+import { axiosInstance } from "axiosInstance";
 import { StatsSummary } from "queries/types/StatsSummaryTypes";
 
 
@@ -14,10 +14,7 @@ export default class StatsSummaryService {
   };
 
   public async getStatsSummary(): Promise<StatsSummary> {
-    return await axios.get("/stats")
-      .then(response => response.data)
-      .catch(error => {
-        throw error;
-      });
+    return await axiosInstance.get("stats")
+      .then(response => response.data);
   };
 };

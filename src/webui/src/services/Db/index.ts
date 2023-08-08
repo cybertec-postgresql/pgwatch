@@ -1,4 +1,4 @@
-import axios from "axios";
+import { axiosInstance } from "axiosInstance";
 import { createDbForm, updateDbForm, updateEnabledDbForm } from "queries/types/DbTypes";
 
 export default class DbService {
@@ -13,42 +13,27 @@ export default class DbService {
   };
 
   public async getMonitoredDb() {
-    return await axios.get("/db").
-      then(response => response.data).
-      catch(error => {
-        throw error;
-      });
+    return await axiosInstance.get("db").
+      then(response => response.data);
   };
 
   public async deleteMonitoredDb(uniqueName: string) {
-    return await axios.delete("/db", { params: { "id": uniqueName } }).
-      then(response => response.data).
-      catch(error => {
-        throw error;
-      });
+    return await axiosInstance.delete("db", { params: { "id": uniqueName } }).
+      then(response => response.data);
   };
 
   public async addMonitoredDb(data: createDbForm) {
-    return await axios.post("/db", data).
-      then(response => response).
-      catch(error => {
-        throw error;
-      });
+    return await axiosInstance.post("db", data).
+      then(response => response);
   };
 
   public async editMonitoredDb(data: updateDbForm) {
-    return await axios.patch("/db", data.data, { params: { "id": data.md_unique_name } }).
-      then(response => response).
-      catch(error => {
-        throw error;
-      });
+    return await axiosInstance.patch("db", data.data, { params: { "id": data.md_unique_name } }).
+      then(response => response);
   };
 
   public async editEnabledDb(data: updateEnabledDbForm) {
-    return await axios.patch("/db", data.data, { params: { "id": data.md_unique_name } }).
-      then(response => response).
-      catch(error => {
-        throw error;
-      });
+    return await axiosInstance.patch("db", data.data, { params: { "id": data.md_unique_name } }).
+      then(response => response);
   };
 }
