@@ -156,8 +156,11 @@ const (
 )
 
 func GetMetricSchemaType(ctx context.Context, conn PgxIface) (metricSchema MetricSchemaType, err error) {
-	// return 1 (MetricSchemaTimescale) if the extension present
-	sqlSchemaType := `select count(*) from pg_catalog.pg_extension where extname = 'timescaledb'`
-	err = conn.QueryRow(ctx, sqlSchemaType).Scan(&metricSchema)
+	var isTs bool
+	metricSchema = MetricSchemaPostgres
+	sqlSchemaType := `select schema_type = 'timescale' from admin.storage_schema_type`
+	if err = conn.QueryRow(ctx, sqlSchemaType).Scan(&isTs); err == nil && isTs {
+		metricSchema = MetricSchemaTimescale
+	}
 	return
 }

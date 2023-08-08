@@ -76,14 +76,16 @@ services:
         -f /tmp/00_helpers/get_stat_replication/9.2/metric.sql
         -f /tmp/00_helpers/get_table_bloat_approx/9.5/metric.sql
         -f /tmp/00_helpers/get_table_bloat_approx_sql/12/metric.sql
-        -f /tmp/00_helpers/get_wal_size/10/metric.sql      
+        -f /tmp/00_helpers/get_wal_size/10/metric.sql
+        -f /tmp/00_helpers/get_sequences/10/metric.sql 
         -c "INSERT INTO pgwatch3.monitored_db (md_unique_name, md_preset_config_name, md_config, md_hostname, md_port, md_dbname, md_user, md_password)
           SELECT 'test', 'exhaustive', null, 'postgres', '5432', 'pgwatch3', 'pgwatch3', 'pgwatch3admin'
           WHERE NOT EXISTS (SELECT * FROM pgwatch3.monitored_db WHERE (md_unique_name, md_hostname, md_dbname) = ('test', 'localhost', 'pgwatch3'))"
     volumes:
       - "./src/metrics/00_helpers:/tmp/00_helpers"
     depends_on:
-      - pgwatch3
+      postgres:
+        condition: service_healthy
     profiles:
       - add-test-db
 
@@ -98,6 +100,7 @@ services:
         pgbench --progress=5 --client=10 --jobs=2 --transactions=10000 && 
         pgbench --initialize --init-steps=d"
     depends_on:
-      - pgwatch3
+      postgres:
+        condition: service_healthy
     profiles:
       - pgbench
