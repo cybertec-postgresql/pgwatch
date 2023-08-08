@@ -77,7 +77,7 @@ DECLARE
 BEGIN
   SELECT schema_type INTO l_schema_type FROM admin.storage_schema_type;
   
-  IF l_schema_type IN ('metric', 'metric-time', 'timescale') THEN
+  IF l_schema_type = 'timescale' THEN
     FOR r IN select * from admin.get_top_level_metric_tables()
     LOOP
       raise notice 'deleting data for %', r.table_name;
@@ -85,9 +85,9 @@ BEGIN
       GET DIAGNOSTICS j = ROW_COUNT;
       i := i + j;
     END LOOP;
-  ELSIF l_schema_type = 'metric-dbname-time' THEN
+  ELSIF l_schema_type = 'postgres' THEN
     FOR r IN (
- select 'subpartitions.'|| quote_ident(c.relname) as table_name
+            select 'subpartitions.'|| quote_ident(c.relname) as table_name
                  from pg_class c
                 join pg_namespace n on n.oid = c.relnamespace
                 join pg_inherits i ON c.oid=i.inhrelid                
@@ -132,7 +132,7 @@ BEGIN
   END IF;
 
 
-  IF schema_type IN ('metric-time', 'metric-dbname-time') THEN
+  IF schema_type = 'postgres' THEN
 
     FOR r IN (
       SELECT time_partition_name FROM (
@@ -216,7 +216,7 @@ BEGIN
         end if;
 
         -- as timescale doesn't support unlogged tables we need to use still PG native partitions for realtime metrics
-        PERFORM admin.drop_old_time_partitions(older_than_days, dry_run, 'metric-time');
+        PERFORM admin.drop_old_time_partitions(older_than_days, dry_run, 'postgres');
 
   ELSE
     raise warning 'unsupported schema type: %', l_schema_type;
@@ -238,7 +238,7 @@ BEGIN
         SELECT st.schema_type INTO schema_type FROM admin.storage_schema_type st;
     END IF;
 
-    IF schema_type IN ('metric-time', 'metric-dbname-time') THEN
+    IF schema_type = 'postgres' THEN
 
         RETURN QUERY
             SELECT time_partition_name FROM (
@@ -266,7 +266,7 @@ BEGIN
             WHERE is_old
             ORDER BY 1;
     ELSE
-        RAISE EXCEPTION 'only metric-time and metric-dbname-time partitioning schemas supported currently!';
+        RAISE EXCEPTION 'only postgres partitioning schemas supported currently!';
     END IF;
 
 END;

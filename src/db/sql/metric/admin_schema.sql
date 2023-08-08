@@ -4,31 +4,42 @@
  "subpartitions" schema - subpartitions of "public" schema top level metric tables (if using time / dbname-time partitioning)
 */
 
-CREATE SCHEMA "admin" AUTHORIZATION pgwatch3;
-CREATE SCHEMA "subpartitions" AUTHORIZATION pgwatch3;
+create schema "admin" authorization pgwatch3;
+create schema "subpartitions" authorization pgwatch3;
 
-CREATE EXTENSION IF NOT EXISTS btree_gin;
+create extension if not exists btree_gin;
 
-GRANT ALL ON SCHEMA public TO pgwatch3;
+grant all on schema public to pgwatch3;
 
-DO $SQL$
-BEGIN
-  EXECUTE format($$ALTER ROLE pgwatch3 IN DATABASE %s SET statement_timeout TO '5min'$$, current_database());
-  RAISE WARNING 'Enabling asynchronous commit for pgwatch3 role - revert if possible data loss on crash is not acceptable!';
-  EXECUTE format($$ALTER ROLE pgwatch3 IN DATABASE %s SET synchronous_commit TO off$$, current_database());
-END
-$SQL$;
+do $sql$
+begin
+  execute format($$alter role pgwatch3 in database %s set statement_timeout to '5min'$$, current_database());
+  raise warning 'Enabling asynchronous commit for pgwatch3 role - revert if possible data loss on crash is not acceptable!';
+  execute format($$alter role pgwatch3 in database %s set synchronous_commit to off$$, current_database());
+end
+$sql$;
 
-SET ROLE TO pgwatch3;
+set role to pgwatch3;
 
 
+create function admin.get_default_storage_type() returns text as
+$$
+ select case 
+  when exists(select 1 from pg_extension where extname = 'timescaledb') then
+    'timescale' 
+  else 
+    'postgres' 
+  end;
+$$
+language sql;
 
-/* although the gather has a "--pg-storage-type" param, the WebUI might not know about it in a custom setup */
 create table admin.storage_schema_type (
-  schema_type text not null,
+  schema_type text not null default admin.get_default_storage_type(),
   initialized_on timestamptz not null default now(),
-  check (schema_type in ('metric', 'metric-time', 'metric-dbname-time', 'custom', 'timescale'))
+  check (schema_type in ('postgres', 'timescale'))
 );
+
+insert into admin.storage_schema_type default values;
 
 comment on table admin.storage_schema_type is 'identifies storage schema for other pgwatch3 components';
 
@@ -70,7 +81,7 @@ for each row execute function trg_config_modified();
 
 -- DROP FUNCTION IF EXISTS admin.ensure_dummy_metrics_table(text);
 -- select * from admin.ensure_dummy_metrics_table('wal');
-CREATE OR REPLACE FUNCTION admin.ensure_dummy_metrics_table(
+create or replace function admin.ensure_dummy_metrics_table(
     metric text
 )
 RETURNS boolean AS
@@ -86,35 +97,28 @@ DECLARE
 BEGIN
   SELECT schema_type INTO l_schema_type FROM admin.storage_schema_type;
 
-    IF NOT EXISTS (SELECT 1
-                    FROM pg_tables
-                    WHERE tablename = metric
-                      AND schemaname = 'public')
-    THEN
-      IF metric ~ 'realtime' THEN
-          l_template_table := 'admin.metrics_template_realtime';
-          l_unlogged := 'UNLOGGED';
-      END IF;
-
-      IF l_schema_type = 'metric' THEN
-        EXECUTE format($$CREATE %s TABLE public."%s" (LIKE %s INCLUDING INDEXES)$$, l_unlogged, metric, l_template_table);
-      ELSIF l_schema_type = 'metric-time' THEN
-        EXECUTE format($$CREATE %s TABLE public."%s" (LIKE %s INCLUDING INDEXES) PARTITION BY RANGE (time)$$, l_unlogged, metric, l_template_table);
-      ELSIF l_schema_type = 'metric-dbname-time' THEN
-        EXECUTE format($$CREATE %s TABLE public."%s" (LIKE %s INCLUDING INDEXES) PARTITION BY LIST (dbname)$$, l_unlogged, metric, l_template_table);
-      ELSIF l_schema_type = 'timescale' THEN
-          IF metric ~ 'realtime' THEN
-              EXECUTE format($$CREATE TABLE public."%s" (LIKE %s INCLUDING INDEXES) PARTITION BY RANGE (time)$$, metric, l_template_table);
-          ELSE
-              PERFORM admin.ensure_partition_timescale(metric);
-          END IF;
-      END IF;
-
-      EXECUTE format($$COMMENT ON TABLE public."%s" IS 'pgwatch3-generated-metric-lvl'$$, metric);
-
-      RETURN true;
-
+  IF to_regclass(format('public.%I', metric)) is null
+  THEN
+    IF metric ~ 'realtime' THEN
+        l_template_table := 'admin.metrics_template_realtime';
+        l_unlogged := 'UNLOGGED';
     END IF;
+
+    IF l_schema_type = 'postgres' THEN
+      EXECUTE format($$CREATE %s TABLE public."%s" (LIKE %s INCLUDING INDEXES) PARTITION BY LIST (dbname)$$, l_unlogged, metric, l_template_table);
+    ELSIF l_schema_type = 'timescale' THEN
+        IF metric ~ 'realtime' THEN
+            EXECUTE format($$CREATE TABLE public."%s" (LIKE %s INCLUDING INDEXES) PARTITION BY RANGE (time)$$, metric, l_template_table);
+        ELSE
+            PERFORM admin.ensure_partition_timescale(metric);
+        END IF;
+    END IF;
+
+    EXECUTE format($$COMMENT ON TABLE public."%s" IS 'pgwatch3-generated-metric-lvl'$$, metric);
+
+    RETURN true;
+
+  END IF;
 
   RETURN false;
 END;
@@ -150,3 +154,4 @@ COMMENT ON TABLE admin.metrics_template_realtime IS 'used as a template for all 
 CREATE INDEX ON admin.metrics_template_realtime (dbname, time);
 
 RESET ROLE;
+
