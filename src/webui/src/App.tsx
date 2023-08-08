@@ -52,7 +52,6 @@ export default function App() {
           >
             <Toolbar />
             <Routes>
-              {/*routesItems*/}
               {publicRoutesItems}
               {privateRoutesItems}
             </Routes>
