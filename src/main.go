@@ -990,7 +990,6 @@ func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[str
 	var sql string
 	var retryWithSuperuserSQL = true
 	var data, cachedData MetricData
-	var duration time.Duration
 	var md MonitoredDatabase
 	var fromCache, isCacheable bool
 
@@ -1117,7 +1116,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 			return nil, err
 		}
 
-		logger.Infof("[%s:%s] fetched %d rows in %.1f ms", msg.DBUniqueName, msg.MetricName, len(data), float64(duration.Nanoseconds())/1000000)
+		logger.WithFields(map[string]any{"database": msg.DBUniqueName, "metric": msg.MetricName, "rows": len(data)}).Info("measurements fetched")
 		if regexIsPgbouncerMetrics.MatchString(msg.MetricName) { // clean unwanted pgbouncer pool stats here as not possible in SQL
 			data = FilterPgbouncerData(data, md.DBName, vme)
 		}
@@ -1332,6 +1331,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 	lastDBVersionFetchTime := time.Unix(0, 0) // check DB ver. ev. 5 min
 	var stmtTimeoutOverride int64
 
+	l := logger.WithField("database", dbUniqueName).WithField("metric", metricName)
 	if opts.TestdataDays != 0 {
 		if metricName == specialMetricServerLogEventCounts || metricName == specialMetricChangeEvents {
 			return
@@ -1342,11 +1342,11 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 		if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
 			vme, err := DBGetPGVersion(ctx, dbUniqueName, dbType, false)
 			if err != nil {
-				logger.Warningf("[%s][%s] Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts", dbUniqueName, metricName)
+				l.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
 			} else {
 				mvp, err := GetMetricVersionProperties(metricName, vme, nil)
 				if err != nil && !strings.Contains(err.Error(), "too old") {
-					logger.Warningf("[%s][%s] Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts", dbUniqueName, metricName)
+					l.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
 				} else if mvp.MetricAttrs.MetricStorageName != "" {
 					metricNameForStorage = mvp.MetricAttrs.MetricStorageName
 				}
@@ -1355,7 +1355,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 
 		err := AddDBUniqueMetricToListingTable(dbUniqueName, metricNameForStorage)
 		if err != nil {
-			logger.Errorf("Could not add newly found gatherer [%s:%s] to the 'all_distinct_dbname_metrics' listing table: %v", dbUniqueName, metricName, err)
+			l.WithError(err).Error("Could not add newly found gatherer")
 		}
 
 		EnsureMetricDummy(metricNameForStorage) // ensure that there is at least an empty top-level table not to get ugly Grafana notifications
@@ -1383,7 +1383,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 
 		metricCurrentlyDisabled := IsMetricCurrentlyDisabledForHost(metricName, vme, dbUniqueName)
 		if metricCurrentlyDisabled && opts.TestdataDays == 0 {
-			logger.Debugf("[%s][%s] Ignoring fetch as metric disabled for current time range", dbUniqueName, metricName)
+			l.Debugf("Ignoring fetch as metric disabled for current time range")
 		} else {
 			var metricStoreMessages []MetricStoreMessage
 			var err error
@@ -1393,30 +1393,26 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 			if opts.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
 				metricStoreMessages, err = FetchStatsDirectlyFromOS(mfm, vme, mvp)
 				if err != nil {
-					logger.Errorf("[%s][%s] Could not reader metric directly from OS: %v", dbUniqueName, metricName, err)
+					l.WithError(err).Errorf("Could not reader metric directly from OS")
 				}
 			}
 			t1 := time.Now()
 			if metricStoreMessages == nil {
-				metricStoreMessages, err = FetchMetrics(ctx,
-					mfm,
-					hostState,
-					storeCh,
-					"")
+				metricStoreMessages, err = FetchMetrics(ctx, mfm, hostState, storeCh, "")
 			}
 			t2 := time.Now()
 
 			if t2.Sub(t1) > (time.Second * time.Duration(interval)) {
-				logger.Warningf("Total fetching time of %vs bigger than %vs interval for [%s:%s]", t2.Sub(t1).Truncate(time.Millisecond*100).Seconds(), interval, dbUniqueName, metricName)
+				l.Warningf("Total fetching time of %vs bigger than %vs interval", t2.Sub(t1).Truncate(time.Millisecond*100).Seconds(), interval)
 			}
 
 			if err != nil {
 				failedFetches++
 				// complain only 1x per 10min per host/metric...
 				if lastErrorNotificationTime.IsZero() || lastErrorNotificationTime.Add(time.Second*time.Duration(600)).Before(time.Now()) {
-					logger.Errorf("Failed to fetch metric data for [%s:%s]: %v", dbUniqueName, metricName, err)
+					l.WithError(err).Error("failed to fetch metric data")
 					if failedFetches > 1 {
-						logger.Errorf("Total failed fetches for [%s:%s]: %d", dbUniqueName, metricName, failedFetches)
+						l.Errorf("Total failed fetches: %d", failedFetches)
 					}
 					lastErrorNotificationTime = time.Now()
 				}
@@ -1433,7 +1429,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 							if lastUptimeS != -1 {
 								if postmasterUptimeS.(int64) < lastUptimeS { // restart (or possibly also failover when host is routed) happened
 									message := "Detected server restart (or failover) of \"" + dbUniqueName + "\""
-									logger.Warning(message)
+									l.Warning(message)
 									detectedChangesSummary := make(MetricData, 0)
 									entry := MetricEntry{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
 									detectedChangesSummary = append(detectedChangesSummary, entry)
@@ -1448,7 +1444,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 
 					if opts.TestdataDays != 0 {
 						origMsgs := deepCopyMetricStoreMessages(metricStoreMessages)
-						logger.Warningf("Generating %d days of data for [%s:%s]", opts.TestdataDays, dbUniqueName, metricName)
+						l.Warningf("Generating %d days of data", opts.TestdataDays)
 						testMetricsStored := 0
 						simulatedTime := t1
 						endTime := t1.Add(time.Hour * time.Duration(opts.TestdataDays*24))
@@ -1458,7 +1454,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 						}
 
 						for simulatedTime.Before(endTime) {
-							logger.Debugf("Metric [%s], simulating time: %v", metricName, simulatedTime)
+							l.Debugf("simulating time: %v", simulatedTime)
 							for hostNr := 1; hostNr <= opts.TestdataMultiplier; hostNr++ {
 								fakeDbName := fmt.Sprintf("%s-%d", dbUniqueName, hostNr)
 								msgsCopyTmp := deepCopyMetricStoreMessages(origMsgs)
@@ -1475,8 +1471,8 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 							// would generate more metrics than persister can write and eat up RAM
 							simulatedTime = simulatedTime.Add(time.Second * time.Duration(interval))
 						}
-						logger.Warningf("exiting MetricGathererLoop for [%s], %d total data points generated for %d hosts",
-							metricName, testMetricsStored, opts.TestdataMultiplier)
+						l.Warningf("exiting MetricGathererLoop, %d total data points generated for %d hosts",
+							testMetricsStored, opts.TestdataMultiplier)
 						testDataGenerationModeWG.Done()
 						return
 					}
@@ -1494,17 +1490,17 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 		case <-ctx.Done():
 			return
 		case msg := <-controlCh:
-			logger.Debug("got control msg", dbUniqueName, metricName, msg)
+			l.Debug("got control msg", msg)
 			if msg.Action == gathererStatusStart {
 				config = msg.Config
 				interval = config[metricName]
-				logger.Debug("started MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
+				l.Debug("started MetricGathererLoop with interval:", interval)
 			} else if msg.Action == gathererStatusStop {
-				logger.Debug("exiting MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
+				l.Debug("exiting MetricGathererLoop with interval:", interval)
 				return
 			}
 		case <-time.After(time.Second * time.Duration(interval)):
-			logger.Debugf("MetricGathererLoop for [%s:%s] slept for %s", dbUniqueName, metricName, time.Second*time.Duration(interval))
+			l.Debugf("MetricGathererLoop slept for %s", time.Second*time.Duration(interval))
 		}
 
 	}
@@ -2654,7 +2650,9 @@ func main() {
 				logger.WithError(err).Fatal("Could not connect to metric database")
 			}
 
-			MetricSchema, _ = db.GetMetricSchemaType(mainContext, metricDb)
+			if MetricSchema, err = db.GetMetricSchemaType(mainContext, metricDb); err != nil {
+				logger.Fatal(err)
+			}
 
 			logger.Info("starting PostgresPersister...")
 			go MetricsPersister(mainContext, datastorePostgres, persistCh)
@@ -2968,7 +2966,7 @@ func main() {
 				if metricDefOk && !chOk { // initialize a new per db/per metric control channel
 					if interval > 0 {
 						hostMetricIntervalMap[dbMetric] = interval
-						logger.Infof("starting gatherer for [%s:%s] with interval %v s", dbUnique, metric, interval)
+						logger.WithField("database", dbUnique).WithField("metric", metric).WithField("interval", interval).Info("starting gatherer")
 						controlChannels[dbMetric] = make(chan ControlMessage, 1)
 						PromAsyncCacheInitIfRequired(dbUnique, metric)
 						if opts.BatchingDelayMs > 0 {
