@@ -207,7 +207,6 @@ func OldPostgresMetricsDeleter(ctx context.Context, metricAgeDaysThreshold int64
 	}
 
 	for {
-		// metric|metric-time|metric-dbname-time|custom
 		if schemaType == db.MetricSchemaTimescale || (!oldPartListingFuncExists && schemaType == db.MetricSchemaPostgres) {
 			partsDropped, err := DropOldTimePartitions(metricAgeDaysThreshold)
 
@@ -398,12 +397,14 @@ func EnsureMetricDummy(metric string) {
 	if ok && lastEnsureCall.After(time.Now().Add(-1*time.Hour)) {
 		return
 	}
-	if err := metricDb.QueryRow(mainContext, sqlEnsure, metric).Scan(&ok); err != nil || !ok {
+	if err := metricDb.QueryRow(mainContext, sqlEnsure, metric).Scan(&ok); err != nil {
 		logger.Error(err)
 		return
 	}
-	logger.WithField("metric", metric).Info("Created a dummy partition of metric")
-	PGDummyMetricTables[metric] = time.Now()
+	if ok {
+		logger.WithField("metric", metric).Info("Created a dummy partition of metric")
+		PGDummyMetricTables[metric] = time.Now()
+	}
 }
 
 func EnsureMetric(pgPartBounds map[string]ExistingPartitionInfo, force bool) error {
