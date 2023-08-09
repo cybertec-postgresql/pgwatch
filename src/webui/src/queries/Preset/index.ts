@@ -1,5 +1,4 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AxiosError } from "axios";
 
 import { UseFormReset } from "react-hook-form";
 
@@ -10,7 +9,7 @@ import PresetService from "services/Preset";
 
 const services = PresetService.getInstance();
 
-export const usePresets = () => useQuery<Preset[], AxiosError>({
+export const usePresets = () => useQuery<Preset[]>({
   queryKey: QueryKeys.preset,
   queryFn: async () => await services.getPresets()
 });

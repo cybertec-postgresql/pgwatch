@@ -1,5 +1,4 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AxiosError } from "axios";
 import { UseFormReset } from "react-hook-form";
 import { QueryKeys } from "queries/queryKeys";
 import MetricService from "services/Metric";
@@ -7,7 +6,7 @@ import { Metric, createMetricForm, updateMetricForm } from "../types/MetricTypes
 
 const services = MetricService.getInstance();
 
-export const useMetrics = () => useQuery<Metric[], AxiosError>({
+export const useMetrics = () => useQuery<Metric[]>({
   queryKey: QueryKeys.metric,
   queryFn: async () => await services.getMetrics()
 });
