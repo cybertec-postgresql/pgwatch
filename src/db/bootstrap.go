@@ -171,12 +171,3 @@ func GetMetricSchemaType(ctx context.Context, conn PgxIface) (metricSchema Metri
 	}
 	return
 }
-
-func GetTableColumns(ctx context.Context, conn PgxIface, table string) (cols []string, err error) {
-	sql := `SELECT attname FROM pg_attribute a WHERE a.attrelid = to_regclass($1) and a.attnum > 0 and not a.attisdropped`
-	r, err := conn.Query(ctx, sql, table)
-	if err != nil {
-		return
-	}
-	return pgx.CollectRows(r, pgx.RowTo[string])
-}

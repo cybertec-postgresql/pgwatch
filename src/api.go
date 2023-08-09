@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/db"
-	"golang.org/x/exp/slices"
 )
 
 type uiapihandler struct{}
@@ -35,7 +34,7 @@ func (uiapi uiapihandler) AddPreset(params []byte) error {
 
 // UpdatePreset updates the stored preset
 func (uiapi uiapihandler) UpdatePreset(id string, params []byte) error {
-	fields, values, err := paramsToFieldValues("pgwatch3.preset_config", params)
+	fields, values, err := paramsToFieldValues(params)
 	if err != nil {
 		return err
 	}
@@ -121,7 +120,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
 // UpdateMetric updates the stored metric information
 func (uiapi uiapihandler) UpdateMetric(id int, params []byte) error {
-	fields, values, err := paramsToFieldValues("pgwatch3.metric", params)
+	fields, values, err := paramsToFieldValues(params)
 	if err != nil {
 		return err
 	}
@@ -133,7 +132,7 @@ func (uiapi uiapihandler) UpdateMetric(id int, params []byte) error {
 
 // UpdateDatabase updates the monitored database information
 func (uiapi uiapihandler) UpdateDatabase(database string, params []byte) error {
-	fields, values, err := paramsToFieldValues("pgwatch3.monitored_db", params)
+	fields, values, err := paramsToFieldValues(params)
 	if err != nil {
 		return err
 	}
@@ -144,22 +143,14 @@ func (uiapi uiapihandler) UpdateDatabase(database string, params []byte) error {
 }
 
 // paramsToFieldValues tranforms JSON body into arrays to be used in UPDATE statement
-func paramsToFieldValues(table string, params []byte) (fields []string, values []any, err error) {
-	var (
-		paramsMap map[string]any
-		cols      []string
-	)
-	if err = json.Unmarshal(params, &paramsMap); err != nil {
-		return
-	}
-	if cols, err = db.GetTableColumns(context.TODO(), configDb, table); err != nil {
+func paramsToFieldValues(params []byte) (fields []string, values []any, err error) {
+	var paramsMap map[string]any
+	err = json.Unmarshal(params, &paramsMap)
+	if err != nil {
 		return
 	}
 	i := 2 // start with the second parameter number, first is reserved for WHERE key value
 	for k, v := range paramsMap {
-		if slices.Index[string](cols, k) == -1 {
-			continue
-		}
 		fields = append(fields, fmt.Sprintf("%s = $%d", quoteIdent(k), i))
 		if reflect.ValueOf(v).Kind() == reflect.Map { // transform into json key-value
 			v, _ = json.Marshal(v)
