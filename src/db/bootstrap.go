@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/log"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
 	retry "github.com/sethvargo/go-retry"
