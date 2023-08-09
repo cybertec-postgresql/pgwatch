@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/cybertec-postgresql/pgwatch3/db"
 )
 
 type uiapihandler struct{}
@@ -77,6 +79,18 @@ func (uiapi uiapihandler) GetStats() string {
 		datastoreFailures, datastoreSuccess, datastoreAvgSuccessfulWriteTimeMillis,
 		totalDatasets, databasesMonitored, databasesConfigured, unreachableDBs,
 		gathererUptimeSeconds)
+}
+
+func (uiapi uiapihandler) TryConnectToDB(params []byte) (err error) {
+	var m map[string]any
+	var sb strings.Builder
+	if err = json.Unmarshal(params, &m); err == nil {
+		for k, v := range m {
+			fmt.Fprintf(&sb, "%s=%v ", k, v)
+		}
+		return db.TryDatabaseConnection(context.TODO(), sb.String())
+	}
+	return err
 }
 
 // AddPreset adds the preset to the list of available presets

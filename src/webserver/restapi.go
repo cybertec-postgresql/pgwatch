@@ -20,6 +20,25 @@ type apiHandler interface {
 	DeletePreset(name string) error
 	UpdatePreset(id string, params []byte) error
 	GetStats() string
+	TryConnectToDB(params []byte) error
+}
+
+func (Server *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		// test database connection
+		p, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := Server.api.TryConnectToDB(p); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	default:
+		w.Header().Set("Allow", "POST")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request) {

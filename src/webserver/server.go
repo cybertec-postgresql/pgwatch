@@ -40,6 +40,7 @@ func Init(opts config.WebUIOpts, webuifs fs.FS, api apiHandler, logger log.Logge
 	}
 
 	mux.Handle("/db", NewEnsureAuth(s.handleDBs))
+	mux.Handle("/test-connect", NewEnsureAuth(s.handleTestConnect))
 	mux.Handle("/metric", NewEnsureAuth(s.handleMetrics))
 	mux.Handle("/preset", NewEnsureAuth(s.handlePresets))
 	mux.Handle("/stats", NewEnsureAuth(s.handleStats))

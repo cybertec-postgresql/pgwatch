@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/log"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
 	retry "github.com/sethvargo/go-retry"
@@ -16,6 +17,12 @@ const (
 	pgConnRecycleSeconds = 1800       // applies for monitored nodes
 	applicationName      = "pgwatch3" // will be set on all opened PG connections for informative purposes
 )
+
+func TryDatabaseConnection(ctx context.Context, connStr string) (err error) {
+	c, err := pgx.Connect(ctx, connStr)
+	_ = c.Close(ctx)
+	return
+}
 
 func GetPostgresDBConnection(ctx context.Context, libPqConnString, host, port, dbname, user, password, sslmode, sslrootcert, sslcert, sslkey string) (PgxPoolIface, error) {
 	var connStr string
