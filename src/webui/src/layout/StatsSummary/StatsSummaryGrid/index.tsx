@@ -13,8 +13,9 @@ export const StatsSummaryGrid = () => {
   }
 
   if (status === "error") {
+    const err = error as Error;
     return (
-      <ErrorComponent errorMessage={String(error)} />
+      <ErrorComponent errorMessage={err.message} />
     );
   }
 

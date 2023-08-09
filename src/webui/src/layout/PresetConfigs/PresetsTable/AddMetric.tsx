@@ -33,9 +33,10 @@ export const AddMetric = ({ control, handleValidate }: Props) => {
   }, [data]);
 
   if (status === "error") {
+    const err = error as Error;
     return (
       <Box display="flex" justifyContent="center" minHeight={151} maxHeight={151}>
-        <ErrorComponent errorMessage={`${error.response?.data}`} />
+        <ErrorComponent errorMessage={err.message} />
       </Box>
     );
   }

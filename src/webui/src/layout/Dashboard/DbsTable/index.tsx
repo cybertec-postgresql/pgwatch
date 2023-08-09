@@ -42,8 +42,9 @@ export const DbsTable = () => {
   };
 
   if (status === "error") {
-    return (
-      <ErrorComponent errorMessage={String(error)} />
+    const err = error as Error;
+    return(
+      <ErrorComponent errorMessage={err.message} />
     );
   };
 
