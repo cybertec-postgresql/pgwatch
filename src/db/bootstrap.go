@@ -18,10 +18,12 @@ const (
 	applicationName      = "pgwatch3" // will be set on all opened PG connections for informative purposes
 )
 
-func TryDatabaseConnection(ctx context.Context, connStr string) (err error) {
+func TryDatabaseConnection(ctx context.Context, connStr string) error {
 	c, err := pgx.Connect(ctx, connStr)
-	_ = c.Close(ctx)
-	return
+	if c != nil {
+		_ = c.Close(ctx)
+	}
+	return err
 }
 
 func GetPostgresDBConnection(ctx context.Context, libPqConnString, host, port, dbname, user, password, sslmode, sslrootcert, sslcert, sslkey string) (PgxPoolIface, error) {
