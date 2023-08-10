@@ -15,6 +15,23 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/log"
 )
 
+type apiHandler interface {
+	GetDatabases() (string, error)
+	AddDatabase(params []byte) error
+	DeleteDatabase(id string) error
+	UpdateDatabase(id string, params []byte) error
+	GetMetrics() (res string, err error)
+	AddMetric(params []byte) error
+	DeleteMetric(id int) error
+	UpdateMetric(id int, params []byte) error
+	GetPresets() (res string, err error)
+	AddPreset(params []byte) error
+	DeletePreset(name string) error
+	UpdatePreset(id string, params []byte) error
+	GetStats() string
+	TryConnectToDB(params []byte) error
+}
+
 type WebUIServer struct {
 	l log.LoggerIface
 	http.Server

@@ -6,23 +6,6 @@ import (
 	"strconv"
 )
 
-type apiHandler interface {
-	GetDatabases() (string, error)
-	AddDatabase(params []byte) error
-	DeleteDatabase(id string) error
-	UpdateDatabase(id string, params []byte) error
-	GetMetrics() (res string, err error)
-	AddMetric(params []byte) error
-	DeleteMetric(id int) error
-	UpdateMetric(id int, params []byte) error
-	GetPresets() (res string, err error)
-	AddPreset(params []byte) error
-	DeletePreset(name string) error
-	UpdatePreset(id string, params []byte) error
-	GetStats() string
-	TryConnectToDB(params []byte) error
-}
-
 func (Server *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
