@@ -15,14 +15,14 @@ type loginReq struct {
 	Password string `json:"password"`
 }
 
-func (Server *WebUIServer) IsCorrectPassword(lr loginReq) bool {
-	return Server.WebUser == lr.Username && Server.WebPassword == lr.Password
+func (Server *WebUIServer) IsCorrectPassword(user, password string) bool {
+	return (Server.WebUser == "" && Server.WebPassword == "") || (Server.WebUser == user && Server.WebPassword == password)
 }
 
 func (Server *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var (
 		err   error
-		lr     loginReq
+		l     loginReq
 		token string
 	)
 
@@ -34,14 +34,14 @@ func (Server *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "POST":
-		if err = json.NewDecoder(r.Body).Decode(&lr); err != nil {
+		if err = json.NewDecoder(r.Body).Decode(&l); err != nil {
 			return
 		}
-		if !Server.IsCorrectPassword(lr) {
+		if !Server.IsCorrectPassword(l.Username, l.Password) {
 			http.Error(w, "can not authenticate this user", http.StatusUnauthorized)
 			return
 		}
-		if token, err = generateJWT(lr.Username); err != nil {
+		if token, err = generateJWT(l.Username); err != nil {
 			return
 		}
 		_, err = w.Write([]byte(token))
