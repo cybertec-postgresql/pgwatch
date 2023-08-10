@@ -650,7 +650,7 @@ const ModalContent = () => {
         />
         <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
           <Controller
-            name="md_is_helpers"
+            name="md_is_superuser"
             control={control}
             defaultValue={false}
             render={({ field }) => (
