@@ -107,3 +107,13 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	n, _ := io.Copy(w, file)
 	Server.l.Debug("file", path, "copied", n, "bytes")
 }
+
+func (Server *WebUIServer) handleStats(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		_, _ = w.Write([]byte(Server.api.GetStats()))
+	default:
+		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}

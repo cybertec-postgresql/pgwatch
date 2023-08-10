@@ -176,13 +176,3 @@ func (Server *WebUIServer) handleDBs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
-
-func (Server *WebUIServer) handleStats(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		_, _ = w.Write([]byte(Server.api.GetStats()))
-	default:
-		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-	}
-}
