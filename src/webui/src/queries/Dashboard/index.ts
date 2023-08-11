@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { UseFormReset } from "react-hook-form";
 import { QueryKeys } from "queries/queryKeys";
-import { Db, createDbForm, updateDbForm, updateEnabledDbForm } from "queries/types/DbTypes";
+import { Db, TestConnection, createDbForm, updateDbForm, updateEnabledDbForm } from "queries/types/DbTypes";
 import DbService from "services/Db";
 
 const services = DbService.getInstance();
@@ -43,4 +43,8 @@ export const useAddDb = (
     handleClose();
     reset();
   }
+});
+
+export const useTestConnection = () => useMutation({
+  mutationFn: async (data: TestConnection) => await services.testDbConnection(data)
 });
