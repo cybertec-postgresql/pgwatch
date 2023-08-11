@@ -7,6 +7,7 @@ import {
   Box,
   Button,
   Checkbox,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -498,7 +499,14 @@ const ModalContent = () => {
             )}
           />
         </Stack>
-        <Button fullWidth variant="contained" onClick={handleTestConnection}>Test connection</Button>
+        <Button fullWidth variant="contained" onClick={handleTestConnection}>
+          {
+            testConnection.isLoading ?
+              (<CircularProgress size={25} sx={{ color: "white" }} />)
+              :
+              "Test connection"
+          }
+        </Button>
       </Stack>
     ),
     ssl: (
