@@ -15,6 +15,23 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/log"
 )
 
+type apiHandler interface {
+	GetDatabases() (string, error)
+	AddDatabase(params []byte) error
+	DeleteDatabase(id string) error
+	UpdateDatabase(id string, params []byte) error
+	GetMetrics() (res string, err error)
+	AddMetric(params []byte) error
+	DeleteMetric(id int) error
+	UpdateMetric(id int, params []byte) error
+	GetPresets() (res string, err error)
+	AddPreset(params []byte) error
+	DeletePreset(name string) error
+	UpdatePreset(id string, params []byte) error
+	GetStats() string
+	TryConnectToDB(params []byte) error
+}
+
 type WebUIServer struct {
 	l log.LoggerIface
 	http.Server
@@ -40,6 +57,7 @@ func Init(opts config.WebUIOpts, webuifs fs.FS, api apiHandler, logger log.Logge
 	}
 
 	mux.Handle("/db", NewEnsureAuth(s.handleDBs))
+	mux.Handle("/test-connect", NewEnsureAuth(s.handleTestConnect))
 	mux.Handle("/metric", NewEnsureAuth(s.handleMetrics))
 	mux.Handle("/preset", NewEnsureAuth(s.handlePresets))
 	mux.Handle("/stats", NewEnsureAuth(s.handleStats))
@@ -88,4 +106,32 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 
 	n, _ := io.Copy(w, file)
 	Server.l.Debug("file", path, "copied", n, "bytes")
+}
+
+func (Server *WebUIServer) handleStats(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		_, _ = w.Write([]byte(Server.api.GetStats()))
+	default:
+		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (Server *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		// test database connection
+		p, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := Server.api.TryConnectToDB(p); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	default:
+		w.Header().Set("Allow", "POST")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
 }

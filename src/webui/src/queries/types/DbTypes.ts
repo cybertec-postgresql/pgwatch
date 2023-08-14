@@ -44,7 +44,7 @@ export type createDbForm = {
   md_user: string,
   md_password: string,
   md_statement_timeout_seconds: number,
-  connection_timeout_seconds: number,
+  connection_timeout: number,
   md_sslmode: string,
   md_root_ca_path: string,
   md_client_cert_path: string,
@@ -54,7 +54,6 @@ export type createDbForm = {
   md_preset_config_name_standby: string | null,
   md_config_standby: string | null,
   md_host_config: string | null,
-  md_is_helpers: boolean,
   md_only_if_master: boolean
 };
 
@@ -68,4 +67,16 @@ export type updateEnabledDbForm = {
   data: {
     md_is_enabled: boolean
   }
+};
+
+export type TestConnection = {
+  host: string;
+  port: string;
+  dbname: string;
+  user: string;
+  password: string;
+  connect_timeout: string;
+  sslmode: string;
+  sslcert: string;
+  sslkey: string;
 };

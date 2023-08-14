@@ -7,6 +7,7 @@ import {
   Box,
   Button,
   Checkbox,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -20,8 +21,8 @@ import {
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
-import { useAddDb, useEditDb } from "queries/Dashboard";
-import { Db, createDbForm } from "queries/types/DbTypes";
+import { useAddDb, useEditDb, useTestConnection } from "queries/Dashboard";
+import { Db, TestConnection, createDbForm } from "queries/types/DbTypes";
 import {
   AutocompleteComponent,
   AutocompleteConfigComponent,
@@ -68,9 +69,9 @@ export const ModalComponent = ({ open, setOpen, recordData, action }: Props) => 
   const handleClose = () => setOpen(false);
 
   const editDb = useEditDb(handleClose, reset);
-  
+
   const addDb = useAddDb(handleClose, reset);
-  
+
   const onSubmit: SubmitHandler<createDbForm> = (result) => {
     if (action === "EDIT") {
       editDb.mutate({
@@ -116,8 +117,8 @@ type StepType = keyof typeof Steps;
 const defaultStep = Object.keys(Steps)[0] as StepType;
 
 const formErrors = {
-  main: ["md_unique_name", "md_group", "md_dbtype", "md_password_type"],
-  connection: ["md_hostname", "md_port", "md_user", "md_statement_timeout_seconds", "md_dbname"],
+  main: ["md_unique_name", "md_group", "md_dbtype"],
+  connection: ["md_hostname", "md_port", "md_user", "md_statement_timeout_seconds", "md_dbname", "md_password_type"],
   ssl: ["md_sslmode"],
   presets: []
 };
@@ -132,13 +133,25 @@ const ModalContent = () => {
   const [activeStep, setActiveStep] = useState<StepType>(defaultStep);
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
+  const testConnection = useTestConnection();
+
   const handleClickShowPassword = () => setShowPassword((show: boolean) => !show);
 
   const handleValidate = (val: string) => !!val.toString().trim();
 
-  const testConnection = () => {
-    const values = getValues();
-    alert(`test connection...${JSON.stringify(values)}`);
+  const handleTestConnection = () => {
+    const data: TestConnection = {
+      host: getValues("md_hostname"),
+      port: getValues("md_port"),
+      dbname: getValues("md_dbname"),
+      user: getValues("md_user"),
+      password: getValues("md_password"),
+      connect_timeout: getValues("connection_timeout"),
+      sslmode: getValues("md_sslmode"),
+      sslcert: getValues("md_client_cert_path"),
+      sslkey: getValues("md_client_key_path")
+    };
+    testConnection.mutate(data);
   };
 
   const mdSslmodeVal = watch("md_sslmode");
@@ -209,65 +222,45 @@ const ModalContent = () => {
             )}
           />
         </Stack>
-        <Controller
-          name="md_group"
-          control={control}
-          defaultValue="default"
-          rules={{
-            required: {
-              value: true,
-              message: "Group is required"
-            },
-            validate: handleValidate,
-          }}
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              error={!!error}
-              helperText={error?.message}
-              type="text"
-              label="Group"
-              fullWidth
-              title="Group name (e.g. 'prod') for logical distinction of monitored databases. Can be used also to run multiple gatherers (sharding), one for each (or multiple) group(s). Required"
-            />
-          )}
-        />
-        <Controller
-          name="md_custom_tags"
-          control={control}
-          defaultValue={null}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              type="text"
-              label="Custom tags"
-              fullWidth
-              title={"User defined tags for extra meaning in InfluxDB e.g. {\"env\": \"prod\", \"app\": \"xyz\"}"}
-            />
-          )}
-        />
-        <Controller
-          name="md_password_type"
-          control={control}
-          defaultValue="plain-text"
-          rules={{
-            required: {
-              value: true,
-              message: "Password encryption is required"
-            },
-            validate: handleValidate
-          }}
-          render={({ field, fieldState: { error } }) => (
-            <AutocompleteComponent
-              field={{ ...field }}
-              label="Password encryption"
-              error={!!error}
-              helperText={error?.message}
-              options={passwordEncryptionOptions}
-              title="The login role for actual metrics fetching from the specified host"
-            />
-          )}
-        />
+        <Stack direction="row" spacing={1}>
+          <Controller
+            name="md_group"
+            control={control}
+            defaultValue="default"
+            rules={{
+              required: {
+                value: true,
+                message: "Group is required"
+              },
+              validate: handleValidate,
+            }}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                error={!!error}
+                helperText={error?.message}
+                type="text"
+                label="Group"
+                fullWidth
+                title="Group name (e.g. 'prod') for logical distinction of monitored databases. Can be used also to run multiple gatherers (sharding), one for each (or multiple) group(s). Required"
+              />
+            )}
+          />
+          <Controller
+            name="md_custom_tags"
+            control={control}
+            defaultValue={null}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                type="text"
+                label="Custom tags"
+                fullWidth
+                title={"User defined tags for extra meaning in InfluxDB e.g. {\"env\": \"prod\", \"app\": \"xyz\"}"}
+              />
+            )}
+          />
+        </Stack>
         <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
           <Controller
             name="md_is_enabled"
@@ -279,18 +272,6 @@ const ModalContent = () => {
                 labelPlacement="end"
                 control={<Checkbox {...field} size="medium" checked={field.value} />}
                 title="A tip - uncheck when leaving 'dbname' empty to review all found DBs before activation"
-              />
-            )}
-          />
-          <Controller
-            name="md_is_superuser"
-            control={control}
-            defaultValue={false}
-            render={({ field }) => (
-              <FormControlLabel
-                label="Super user?"
-                labelPlacement="end"
-                control={<Checkbox {...field} size="medium" checked={field.value} />}
               />
             )}
           />
@@ -348,29 +329,53 @@ const ModalContent = () => {
             )}
           />
         </Stack>
-        <Controller
-          name="md_dbname"
-          control={control}
-          defaultValue=""
-          rules={{
-            required: {
-              value: true,
-              message: "DB name is required"
-            }
-          }}
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              error={!!error}
-              helperText={error?.message}
-              type="text"
-              label="DB name"
-              size="medium"
-              fullWidth
-              title="If left empty, all non-template DBs found from the cluster will be added to monitoring (if not already monitored), prefixed with the 'Unique name'. For 'pgbouncer' DB type insert the 'pool' name. Not relevant for 'postgres-continuous-discovery'"
-            />
-          )}
-        />
+        <Stack direction="row" spacing={1}>
+          <Controller
+            name="md_dbname"
+            control={control}
+            defaultValue=""
+            rules={{
+              required: {
+                value: true,
+                message: "DB name is required"
+              }
+            }}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                error={!!error}
+                helperText={error?.message}
+                type="text"
+                label="DB name"
+                size="medium"
+                fullWidth
+                title="If left empty, all non-template DBs found from the cluster will be added to monitoring (if not already monitored), prefixed with the 'Unique name'. For 'pgbouncer' DB type insert the 'pool' name. Not relevant for 'postgres-continuous-discovery'"
+              />
+            )}
+          />
+          <Controller
+            name="md_password_type"
+            control={control}
+            defaultValue="plain-text"
+            rules={{
+              required: {
+                value: true,
+                message: "Password encryption is required"
+              },
+              validate: handleValidate
+            }}
+            render={({ field, fieldState: { error } }) => (
+              <AutocompleteComponent
+                field={{ ...field }}
+                label="Password encryption"
+                error={!!error}
+                helperText={error?.message}
+                options={passwordEncryptionOptions}
+                title="The login role for actual metrics fetching from the specified host"
+              />
+            )}
+          />
+        </Stack>
         <Stack direction="row" spacing={1}>
           <Controller
             name="md_include_pattern"
@@ -477,7 +482,7 @@ const ModalContent = () => {
             )}
           />
           <Controller
-            name="connection_timeout_seconds"
+            name="connection_timeout"
             control={control}
             defaultValue=""
             render={({ field }) => (
@@ -494,7 +499,14 @@ const ModalContent = () => {
             )}
           />
         </Stack>
-        <Button fullWidth variant="contained" onClick={testConnection}>Test connection</Button>
+        <Button fullWidth variant="contained" onClick={handleTestConnection}>
+          {
+            testConnection.isLoading ?
+              (<CircularProgress size={25} sx={{ color: "white" }} />)
+              :
+              "Test connection"
+          }
+        </Button>
       </Stack>
     ),
     ssl: (
@@ -650,12 +662,12 @@ const ModalContent = () => {
         />
         <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
           <Controller
-            name="md_is_helpers"
+            name="md_is_superuser"
             control={control}
             defaultValue={false}
             render={({ field }) => (
               <FormControlLabel
-                label="Auto-create helpers?"
+                label="Is superuser?"
                 labelPlacement="end"
                 control={<Checkbox {...field} size="medium" />}
                 title="If checked the gatherer will automatically try to create the metric fetching helpers (CPU load monitoring, stat_statements, etc) - requires SUPERUSER to succeed"

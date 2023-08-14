@@ -16,13 +16,14 @@ type loginReq struct {
 }
 
 func (Server *WebUIServer) IsCorrectPassword(lr loginReq) bool {
-	return Server.WebUser == lr.Username && Server.WebPassword == lr.Password
+	return (Server.WebUser+Server.WebPassword == "") ||
+		(Server.WebUser == lr.Username && Server.WebPassword == lr.Password)
 }
 
 func (Server *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var (
 		err   error
-		lr     loginReq
+		lr    loginReq
 		token string
 	)
 
