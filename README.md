@@ -10,15 +10,17 @@ This is the next generation of [pgwatch2](https://github.com/cybertec-postgresql
 For the fastest development experience Docker compose file is provided:
 
 ```shell
-$ git clone https://github.com/cybertec-postgresql/pgwatch3.git && cd pgwatch3
+git clone https://github.com/cybertec-postgresql/pgwatch3.git && cd pgwatch3
 
-$ docker-compose up --detach
-...
+docker-compose up --detach
+```
+<pre>
  ✔ Network pgwatch3_default       Created
  ✔ Container pgwatch3-postgres-1  Healthy
  ✔ Container pgwatch3-pgwatch3-1  Started
  ✔ Container pgwatch3-grafana-1   Started
-```
+</pre>
+
 These commands will build and start services listed in the compose file:
 - configuration and metric database;
 - pgwatch3 monitoring agent with WebUI;
@@ -33,7 +35,8 @@ If you want to add a test database under monitoring, you can use [built-in WebUI
 execute from command line:
 ```shell
 $ docker-compose up add-test-db
-docker-compose up add-test-db
+```
+<pre>
 [+] Running 2/0
  ✔ Container pgwatch3-postgres-1     Running                                                                       0.0s
  ✔ Container pgwatch3-add-test-db-1  Created                                                                       0.0s
@@ -44,14 +47,15 @@ pgwatch3-add-test-db-1  | GRANT
 pgwatch3-add-test-db-1  | COMMENT
 pgwatch3-add-test-db-1  | INSERT 0 1
 pgwatch3-add-test-db-1 exited with code 0
-```
+</pre>
 
 ## Produce Workload
 
 To emulate workload for added test database execute:
 ```
 $ docker-compose up pgbench
-docker-compose up pgbench
+```
+<pre>
 [+] Running 2/2
  ✔ Container pgwatch3-postgres-1  Running                                                                          0.0s
  ✔ Container pgwatch3-pgbench-1   Created                                                                          0.1s
@@ -95,8 +99,7 @@ pgwatch3-pgbench-1  | tps = 534.261013 (without initial connection time)
 pgwatch3-pgbench-1  | dropping old tables...
 pgwatch3-pgbench-1  | done in 0.45 s (drop tables 0.45 s).
 pgwatch3-pgbench-1 exited with code 0
-
-```
+</pre>
 
 ## Development
 
@@ -115,7 +118,7 @@ If you are running containers in detached mode you still can follow the logs:
 $ docker compose logs --follow
 ```
 
-Or you may check the log or a particular service:
+Or you may check the log of a particular service:
 ```shell
 $ docker compose logs pgwatch3 --follow
 ```
