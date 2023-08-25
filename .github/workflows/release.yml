@@ -49,6 +49,12 @@ jobs:
         echo "RELEASE_VERSION=$(echo "$GITHUB_REF_NAME#${GITHUB_SHA:0:6}")" >> $GITHUB_OUTPUT
         echo "RELEASE_TIME=$(git show -s --format=%cI HEAD)" >> $GITHUB_OUTPUT
 
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2  
+
     - name: Publish beta version to Registry
       if: ${{ contains(github.ref_name, 'beta') }}
       uses: elgohr/Publish-Docker-Github-Action@v5
@@ -62,9 +68,10 @@ jobs:
         dockerfile: docker/${{ matrix.image.file }}
         buildargs: GIT_HASH,GIT_TIME
         tags: ${{ github.ref_name }}${{ matrix.image.tag }}
+        platforms: linux/amd64,linux/arm64
 
     - name: Publish "latest" tag to Registry
-      if: ${{ !contains(github.ref_name, 'beta') }}
+      if: ${{ !contains(github.ref_name, 'beta') && matrix.image.tag == '-demo' }}
       uses: elgohr/Publish-Docker-Github-Action@v5
       env:
         GIT_HASH: ${{ steps.version.outputs.RELEASE_VERSION }}
@@ -76,6 +83,7 @@ jobs:
         dockerfile: docker/${{ matrix.image.file }}
         buildargs: GIT_HASH,GIT_TIME
         tags: latest${{ matrix.image.tag }}
+        platforms: linux/amd64,linux/arm64
 
     - name: Publish "X.X.X, X.X, X" tags to Registry
       if: ${{ !contains(github.ref_name, 'beta') && matrix.image.tag == '' }}
@@ -89,4 +97,5 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile: docker/${{ matrix.image.file }}
         buildargs: GIT_HASH,GIT_TIME
-        tag_semver: true        
+        tag_semver: true
+        platforms: linux/amd64,linux/arm64      
