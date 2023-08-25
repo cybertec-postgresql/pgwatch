@@ -158,11 +158,11 @@ jobs:
     #     github-token: ${{ secrets.GITHUB_TOKEN }}
     #     path-to-lcov: coverage.lcov
 
-    # - name: Run GoReleaser
-    #   uses: goreleaser/goreleaser-action@v2
-    #   with:
-    #     version: latest
-    #     args: release --snapshot --skip-publish --rm-dist
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v2
+      with:
+        version: latest
+        args: release --snapshot --skip-publish --rm-dist
 
   test-docker-images:
     if: false # false to skip job during debug
