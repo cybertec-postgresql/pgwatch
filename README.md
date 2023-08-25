@@ -1,4 +1,4 @@
-# pgwatch3 WIP. Do not use in production!
+# pgwatch3 WIP. Please do not use it in production!
 
 This is the next generation of [pgwatch2](https://github.com/cybertec-postgresql/pgwatch2/). 
 
@@ -7,7 +7,7 @@ This is the next generation of [pgwatch2](https://github.com/cybertec-postgresql
 
 ## Quick Start
 
-For the fastest development experience Docker compose file is provided:
+For the fastest development experience the Docker compose file is provided:
 
 ```shell
 git clone https://github.com/cybertec-postgresql/pgwatch3.git && cd pgwatch3
@@ -28,10 +28,10 @@ These commands will build and start services listed in the compose file:
 
 ## Monitor Database
 
-After start you could open the [monitoring dashboard](http://localhost:3000/) and start
-looking at metrics. You may log in as admin (`admin`/`admin`) to apply changes to dashboards or to create new one.
+After start, you could open the [monitoring dashboard](http://localhost:3000/) and start
+looking at metrics. You may log in as admin (`admin`/`admin`) to apply changes to dashboards or create new ones.
 
-If you want to add a test database under monitoring, you can use [built-in WebUI](http://localhost:8080/). Or simply
+To add a test database under monitoring, you can use [built-in WebUI](http://localhost:8080/). Or simply
 execute from command line:
 ```shell
 $ docker-compose up add-test-db
@@ -109,11 +109,11 @@ If you apply any changes to the source code and want to restart the agent, it's 
 $ docker-compose up pgwatch3 --build --force-recreate --detach
 ```
 
-This will rebuild `pgwatch3` agent from sources and relaunch the container.
+The command above will rebuild the `pgwatch3` agent from sources and relaunch the container.
 
 ## Logs
 
-If you are running containers in detached mode you still can follow the logs:
+If you are running containers in detached mode, you still can follow the logs:
 ```shell
 $ docker compose logs --follow
 ```
@@ -125,4 +125,4 @@ $ docker compose logs pgwatch3 --follow
 
 # Contributing
 
-Feedback, suggestions, problem reports and pull requests are very much appreciated.
+Feedback, suggestions, problem reports, and pull requests are very much appreciated.
