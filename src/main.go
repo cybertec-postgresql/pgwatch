@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime/debug"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -1551,19 +1552,8 @@ func DatarowsToMetricstoreMessage(data MetricData, msg MetricFetchMessage, vme D
 }
 
 func IsDirectlyFetchableMetric(metric string) bool {
-	if _, ok := directlyFetchableOSMetrics[metric]; ok {
-		return true
-	}
-	return false
-}
-
-func IsStringInSlice(target string, slice []string) bool {
-	for _, s := range slice {
-		if target == s {
-			return true
-		}
-	}
-	return false
+	_, ok := directlyFetchableOSMetrics[metric]
+	return ok
 }
 
 func IsMetricCurrentlyDisabledForHost(metricName string, vme DBVersionMapEntry, dbUniqueName string) bool {
@@ -1592,7 +1582,7 @@ func IsMetricCurrentlyDisabledForHost(metricName string, vme DBVersionMapEntry, 
 	metricHasOverrides := false
 	if md.HostConfig.PerMetricDisabledTimes != nil {
 		for _, hcdt := range md.HostConfig.PerMetricDisabledTimes {
-			if IsStringInSlice(metricName, hcdt.Metrics) && (hcdt.DisabledDays != "" || len(hcdt.DisabledTimes) > 0) {
+			if slices.Index(hcdt.Metrics, metricName) > -1 && (hcdt.DisabledDays != "" || len(hcdt.DisabledTimes) > 0) {
 				metricHasOverrides = true
 				break
 			}
@@ -1707,7 +1697,7 @@ func IsInDisabledTimeDayRange(localTime time.Time, metricAttrsDisabledDays strin
 	for _, hcdi := range hostConfigPerMetricDisabledTimes { // host config takes precedence when both specified
 		dayMatchFound := false
 		timeMatchFound := false
-		if IsStringInSlice(metric, hcdi.Metrics) {
+		if slices.Index(hcdi.Metrics, metric) > -1 {
 			hostConfigMetricMatch = true
 			if !dayMatchFound && hcdi.DisabledDays != "" && IsInDaySpan(localTime, hcdi.DisabledDays, metric, dbUnique) {
 				dayMatchFound = true
