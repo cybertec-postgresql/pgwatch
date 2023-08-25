@@ -78,7 +78,7 @@ jobs:
         tags: latest${{ matrix.image.tag }}
 
     - name: Publish "X.X.X, X.X, X" tags to Registry
-      if: ${{ !contains(github.ref_name, 'beta') }} && ${{ matrix.image.tag == '' }}
+      if: ${{ !contains(github.ref_name, 'beta') && matrix.image.tag == '' }}
       uses: elgohr/Publish-Docker-Github-Action@v5
       env:
         GIT_HASH: ${{ steps.version.outputs.RELEASE_VERSION }}
