@@ -3,6 +3,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   test-postgresql-windows:
@@ -162,10 +166,10 @@ jobs:
       uses: goreleaser/goreleaser-action@v4
       with:
         version: latest
-        args: release --snapshot --skip-publish --rm-dist
+        args: release --snapshot --skip-publish --clean
 
   test-docker-images:
-    if: false # false to skip job during debug
+    if: true # false to skip job during debug
     name: Test Docker Image on Ubuntu
     runs-on: ubuntu-latest
     steps:
@@ -176,11 +180,4 @@ jobs:
     - name: Build Docker Image
       shell: bash
       run: |
-        ./build-docker-demo.sh
-        ./build-docker.sh 
-
-    # - name: Smoke Test Docker Image
-    #   timeout-minutes: 10
-    #   shell: bash
-    #   run: |        
-    #     docker/test/smoke_test_docker_image.sh cybertec/pgwatch3:latest     
+        ./build-docker.sh     
