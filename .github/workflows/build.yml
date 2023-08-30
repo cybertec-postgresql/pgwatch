@@ -169,7 +169,7 @@ jobs:
         args: release --snapshot --skip-publish --clean
 
   test-docker-images:
-    if: false # false to skip job during debug
+    if: true # false to skip job during debug
     name: Test Docker Image on Ubuntu
     runs-on: ubuntu-latest
     steps:
