@@ -161,32 +161,7 @@ func GetAllActiveHostsFromConfigDB() (MetricData, error) {
 		where
 		  md_is_enabled
 	`
-	sqlPrev := `
-		select /* pgwatch3_generated */
-		  md_unique_name, md_group, md_dbtype, md_hostname, md_port, md_dbname, md_user, coalesce(md_password, '') as md_password,
-		  coalesce(pc_config, md_config)::text as md_config, md_statement_timeout_seconds, md_sslmode, md_is_superuser,
-		  coalesce(md_include_pattern, '') as md_include_pattern, coalesce(md_exclude_pattern, '') as md_exclude_pattern,
-		  coalesce(md_custom_tags::text, '{}') as md_custom_tags, md_root_ca_path, md_client_cert_path, md_client_key_path,
-		  md_password_type, coalesce(md_host_config, '{}')::text as md_host_config, md_only_if_master
-		from
-		  pgwatch3.monitored_db
-	          left join
-		  pgwatch3.preset_config on pc_name = md_preset_config_name
-		where
-		  md_is_enabled
-	`
-	data, err := DBExecRead(mainContext, configDb, sqlLatest)
-	if err != nil {
-		err1 := err
-		logger.Debugf("Failed to query the monitored DB-s config with latest SQL: %v ", err1)
-		data, err = DBExecRead(mainContext, configDb, sqlPrev)
-		if err == nil {
-			logger.Warning("Fetching monitored DB-s config succeeded with SQL from previous schema version - gatherer update required!")
-		} else {
-			logger.Errorf("Failed to query the monitored DB-s config: %v", err1) // show the original error
-		}
-	}
-	return data, err
+	return DBExecRead(mainContext, configDb, sqlLatest)
 }
 
 func OldPostgresMetricsDeleter(ctx context.Context, metricAgeDaysThreshold int64, schemaType db.MetricSchemaType) {
