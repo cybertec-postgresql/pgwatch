@@ -147,7 +147,8 @@ jobs:
     - name: Coveralls
       uses: shogo82148/actions-goveralls@v1
       with:
-        path-to-profile: src/profile.cov 
+        working-directory: src
+        path-to-profile: profile.cov 
 
     - name: GolangCI-Lint
       uses: golangci/golangci-lint-action@v3
