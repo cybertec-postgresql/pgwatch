@@ -1,3 +1,8 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Go Build & Test](https://github.com/cybertec-postgresql/pgwatch3/actions/workflows/build.yml/badge.svg)](https://github.com/cybertec-postgresql/pgwatch3/actions/workflows/build.yml)
+[![Coverage Status](https://coveralls.io/repos/github/cybertec-postgresql/pgwatch3/badge.svg?branch=master&service=github)](https://coveralls.io/github/cybertec-postgresql/pgwatch3?branch=master)
+
+
 # pgwatch3 WIP. Please do not use it in production!
 
 This is the next generation of [pgwatch2](https://github.com/cybertec-postgresql/pgwatch2/). 

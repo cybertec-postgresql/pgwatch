@@ -123,7 +123,7 @@ jobs:
     #     PGPASSWORD=somestrong psql --username=scheduler --host=localhost --list timetable
 
     - name: Check out code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Golang
       uses: actions/setup-go@v4
@@ -144,23 +144,17 @@ jobs:
         go build
         go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./...
 
+    - name: Coveralls
+      uses: shogo82148/actions-goveralls@v1
+      with:
+        working-directory: src
+        path-to-profile: profile.cov 
+
     - name: GolangCI-Lint
       uses: golangci/golangci-lint-action@v3
       with:
         version: latest
         working-directory: src
-
-    # - name: Convert coverage to lcov
-    #   uses: jandelgado/gcov2lcov-action@v1.0.8
-    #   with:
-    #       infile: profile.cov
-    #       outfile: coverage.lcov
-
-    # - name: Coveralls
-    #   uses: coverallsapp/github-action@master
-    #   with:
-    #     github-token: ${{ secrets.GITHUB_TOKEN }}
-    #     path-to-lcov: coverage.lcov
 
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v4
