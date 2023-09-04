@@ -1,7 +1,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Go Build & Test](https://github.com/cybertec-postgresql/pgwatch3/actions/workflows/build.yml/badge.svg)](https://github.com/cybertec-postgresql/pgwatch3/actions/workflows/build.yml)
 [![Coverage Status](https://coveralls.io/repos/github/cybertec-postgresql/pgwatch3/badge.svg?branch=master&service=github)](https://coveralls.io/github/cybertec-postgresql/pgwatch3?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/cybertec-postgresql/pgwatch3)](https://goreportcard.com/report/github.com/cybertec-postgresql/pgwatch3)
 
 
 # pgwatch3 WIP. Please do not use it in production!
