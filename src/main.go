@@ -38,8 +38,6 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/coreos/go-systemd/daemon"
-	"github.com/marpaia/graphite-golang"
-
 	"golang.org/x/crypto/pbkdf2"
 	"gopkg.in/yaml.v2"
 )
@@ -69,7 +67,7 @@ type MonitoredDatabase struct {
 	PresetMetricsStandby string            `yaml:"preset_metrics_standby"`
 	IsSuperuser          bool              `yaml:"is_superuser"`
 	IsEnabled            bool              `yaml:"is_enabled"`
-	CustomTags           map[string]string `yaml:"custom_tags"` // ignored on graphite
+	CustomTags           map[string]string `yaml:"custom_tags"`
 	HostConfig           HostConfigAttrs   `yaml:"host_config"`
 	OnlyIfMaster         bool              `yaml:"only_if_master"`
 }
@@ -201,15 +199,13 @@ type ExtensionInfo struct {
 const (
 	epochColumnName             string = "epoch_ns" // this column (epoch in nanoseconds) is expected in every metric query
 	tagPrefix                   string = "tag_"
-	metricDefinitionRefreshTime int64  = 120 // min time before checking for new/changed metric definitions
-	graphiteMetricsPrefix       string = "pgwatch3"
+	metricDefinitionRefreshTime int64  = 120   // min time before checking for new/changed metric definitions
 	persistQueueMaxSize                = 10000 // storage queue max elements. when reaching the limit, older metrics will be dropped.
 )
 
 // actual requirements depend a lot of metric type and nr. of obects in schemas,
 // but 100k should be enough for 24h, assuming 5 hosts monitored with "exhaustive" preset config. this would also require ~2 GB RAM per one Influx host
 const (
-	datastoreGraphite         = "graphite"
 	datastoreJSON             = "json"
 	datastorePostgres         = "postgres"
 	datastorePrometheus       = "prometheus"
@@ -255,9 +251,6 @@ var dbTypeMap = map[string]bool{config.DbTypePg: true, config.DbTypePgCont: true
 var dbTypes = []string{config.DbTypePg, config.DbTypePgCont, config.DbTypeBouncer, config.DbTypePatroni, config.DbTypePatroniCont, config.DbTypePatroniNamespaceDiscovery} // used for informational purposes
 var specialMetrics = map[string]bool{recoMetricName: true, specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 var directlyFetchableOSMetrics = map[string]bool{metricPsutilCPU: true, metricPsutilDisk: true, metricPsutilDiskIoTotal: true, metricPsutilMem: true, metricCPULoad: true}
-var graphiteConnection *graphite.Graphite
-var graphiteHost string
-var graphitePort int
 var metricDefinitionMap map[string]map[uint]MetricVersionProperties
 var metricDefMapLock = sync.RWMutex{}
 var hostMetricIntervalMap = make(map[string]float64) // [db1_metric] = 30
@@ -501,94 +494,6 @@ func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
 	return monitoredDBs, err
 }
 
-func InitGraphiteConnection(host string, port int) {
-	var err error
-	logger.Debug("Connecting to Graphite...")
-	graphiteConnection, err = graphite.NewGraphite(host, port)
-	if err != nil {
-		logger.Fatal("could not connect to Graphite:", err)
-	}
-	logger.Debug("OK")
-}
-
-func SendToGraphite(dbname, measurement string, data MetricData) error {
-	if len(data) == 0 {
-		logger.Warning("No data passed to SendToGraphite call")
-		return nil
-	}
-	logger.Debugf("Writing %d rows to Graphite", len(data))
-
-	metricBasePrefix := graphiteMetricsPrefix + "." + measurement + "." + dbname + "."
-	metrics := make([]graphite.Metric, 0, len(data)*len(data[0]))
-
-	for _, dr := range data {
-		var epochS int64
-
-		// we loop over columns the first time just to find the timestamp
-		for k, v := range dr {
-			if v == nil || v == "" {
-				continue // not storing NULLs
-			} else if k == epochColumnName {
-				epochS = v.(int64) / 1e9
-				break
-			}
-		}
-
-		if epochS == 0 {
-			logger.Warning("No timestamp_ns found, server time will be used. measurement:", measurement)
-			epochS = time.Now().Unix()
-		}
-
-		for k, v := range dr {
-			if v == nil || v == "" {
-				continue // not storing NULLs
-			}
-			if k == epochColumnName {
-				continue
-			}
-			var metric graphite.Metric
-
-			if strings.HasPrefix(k, tagPrefix) { // ignore tags for Graphite
-				metric.Name = metricBasePrefix + k[4:]
-			} else {
-				metric.Name = metricBasePrefix + k
-			}
-			switch t := v.(type) {
-			case int:
-				metric.Value = fmt.Sprintf("%d", v)
-			case int32:
-				metric.Value = fmt.Sprintf("%d", v)
-			case int64:
-				metric.Value = fmt.Sprintf("%d", v)
-			case float64:
-				metric.Value = fmt.Sprintf("%f", v)
-			default:
-				logger.Infof("Invalid (non-numeric) column type ignored: metric %s, column: %v, return type: %T", measurement, k, t)
-				continue
-			}
-			metric.Timestamp = epochS
-			metrics = append(metrics, metric)
-
-		}
-	} // dr
-
-	logger.Debug("Sending", len(metrics), "metric points to Graphite...")
-	t1 := time.Now()
-	err := graphiteConnection.SendMetrics(metrics)
-	diff := time.Since(t1)
-	if err != nil {
-		atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-		logger.Error("could not send metric to Graphite:", err)
-	} else {
-		atomic.StoreInt64(&lastSuccessfulDatastoreWriteTimeEpoch, t1.Unix())
-		atomic.AddUint64(&datastoreTotalWriteTimeMicroseconds, uint64(diff.Microseconds()))
-		atomic.AddUint64(&datastoreWriteSuccessCounter, 1)
-		logger.Debug("Sent in ", diff.Microseconds(), "us")
-	}
-
-	return err
-}
-
 func GetMonitoredDatabaseByUniqueName(name string) (MonitoredDatabase, error) {
 	monitoredDbCacheLock.RLock()
 	defer monitoredDbCacheLock.RUnlock()
@@ -621,14 +526,6 @@ func ProcessRetryQueue(dataSource, _, connIdent string, retryQueue *list.List, l
 
 		if dataSource == datastorePostgres {
 			err = SendToPostgres(msg)
-		} else if dataSource == datastoreGraphite {
-			for _, m := range msg {
-				err = SendToGraphite(m.DBUniqueName, m.MetricName, m.Data) // TODO add baching
-				if err != nil {
-					logger.Info("Reconnect to graphite")
-					InitGraphiteConnection(graphiteHost, graphitePort)
-				}
-			}
 		} else {
 			logger.Fatal("Invalid datastore:", dataSource)
 		}
@@ -765,13 +662,6 @@ func MetricsPersister(ctx context.Context, dataStore string, storageCh <-chan []
 							logger.Warning("re-initializing metric partition cache due to possible external data cleanup...")
 							partitionMapMetric = make(map[string]ExistingPartitionInfo)
 							partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo)
-						}
-					} else if dataStore == datastoreGraphite {
-						for _, m := range msgArr {
-							err = SendToGraphite(m.DBUniqueName, m.MetricName, m.Data) // TODO does Graphite library support batching?
-							if err != nil {
-								atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-							}
 						}
 					} else if dataStore == datastoreJSON {
 						err = WriteMetricsToJSONFile(msgArr, opts.Metric.JSONStorageFile)
@@ -2609,17 +2499,7 @@ func main() {
 			go MetricsBatcher(mainContext, opts.BatchingDelayMs, bufferedPersistCh, persistCh)
 		}
 
-		if opts.Metric.Datastore == datastoreGraphite {
-			if opts.Metric.GraphiteHost == "" || opts.Metric.GraphitePort == "" {
-				logger.Fatal("--graphite-host/port needed!")
-			}
-			port, _ := strconv.ParseInt(opts.Metric.GraphitePort, 10, 32)
-			graphiteHost = opts.Metric.GraphiteHost
-			graphitePort = int(port)
-			InitGraphiteConnection(graphiteHost, graphitePort)
-			logger.Info("starting GraphitePersister...")
-			go MetricsPersister(mainContext, datastoreGraphite, persistCh)
-		} else if opts.Metric.Datastore == datastoreJSON {
+		if opts.Metric.Datastore == datastoreJSON {
 			if len(opts.Metric.JSONStorageFile) == 0 {
 				logger.Fatal("--datastore=json requires --json-storage-file to be set")
 			}
