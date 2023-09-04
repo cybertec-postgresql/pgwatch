@@ -24,15 +24,13 @@ type MetricOpts struct {
 	Group                string `short:"g" long:"group" mapstructure:"group" description:"Group (or groups, comma separated) for filtering which DBs to monitor. By default all are monitored" env:"PW3_GROUP"`
 	MetricsFolder        string `short:"m" long:"metrics-folder" mapstructure:"metrics-folder" description:"Folder of metrics definitions" env:"PW3_METRICS_FOLDER"`
 	NoHelperFunctions    bool   `long:"no-helper-functions" mapstructure:"no-helper-functions" description:"Ignore metric definitions using helper functions (in form get_smth()) and don't also roll out any helpers automatically" env:"PW3_NO_HELPER_FUNCTIONS"`
-	Datastore            string `long:"datastore" mapstructure:"datastore" choice:"postgres" choice:"prometheus" choice:"graphite" choice:"json" default:"postgres" env:"PW3_DATASTORE"`
+	Datastore            string `long:"datastore" mapstructure:"datastore" choice:"postgres" choice:"prometheus" choice:"json" default:"postgres" env:"PW3_DATASTORE"`
 	PGMetricStoreConnStr string `long:"pg-metric-store-conn-str" mapstructure:"pg-metric-store-conn-str" description:"PG Metric Store" env:"PW3_PG_METRIC_STORE_CONN_STR"`
 	PGRetentionDays      int64  `long:"pg-retention-days" mapstructure:"pg-retention-days" description:"If set, metrics older than that will be deleted" default:"14" env:"PW3_PG_RETENTION_DAYS"`
 	PrometheusPort       int64  `long:"prometheus-port" mapstructure:"prometheus-port" description:"Prometheus port. Effective with --datastore=prometheus" default:"9187" env:"PW3_PROMETHEUS_PORT"`
 	PrometheusListenAddr string `long:"prometheus-listen-addr" mapstructure:"prometheus-listen-addr" description:"Network interface to listen on" default:"0.0.0.0" env:"PW3_PROMETHEUS_LISTEN_ADDR"`
 	PrometheusNamespace  string `long:"prometheus-namespace" mapstructure:"prometheus-namespace" description:"Prefix for all non-process (thus Postgres) metrics" default:"pgwatch3" env:"PW3_PROMETHEUS_NAMESPACE"`
 	PrometheusAsyncMode  bool   `long:"prometheus-async-mode" mapstructure:"prometheus-async-mode" description:"Gather in background as with other storage and cache last fetch results in memory" env:"PW3_PROMETHEUS_ASYNC_MODE"`
-	GraphiteHost         string `long:"graphite-host" mapstructure:"graphite-host" description:"Graphite host" env:"PW3_GRAPHITEHOST"`
-	GraphitePort         string `long:"graphite-port" mapstructure:"graphite-port" description:"Graphite port" env:"PW3_GRAPHITEPORT"`
 	JSONStorageFile      string `long:"json-storage-file" mapstructure:"json-storage-file" description:"Path to file where metrics will be stored when --datastore=json, one metric set per line" env:"PW3_JSON_STORAGE_FILE"`
 }
 
@@ -63,24 +61,23 @@ type WebUIOpts struct {
 }
 
 type CmdOptions struct {
-	Connection ConnectionOpts `group:"Connection" mapstructure:"Connection"`
-	Metric     MetricOpts     `group:"Metric" mapstructure:"Metric"`
-	Logging    LoggingOpts    `group:"Logging" mapstructure:"Logging"`
-	WebUI      WebUIOpts      `group:"WebUI" mapstructure:"WebUI"`
-	Start      StartOpts      `group:"Start" mapstructure:"Start"`
-	// Params for running based on local config files, enabled distributed "push model" based metrics gathering. Metrics are sent directly to Influx/Graphite.
-	Config                  string `short:"c" long:"config" mapstructure:"config" description:"File or folder of YAML files containing info on which DBs to monitor and where to store metrics" env:"PW3_CONFIG"`
-	BatchingDelayMs         int64  `long:"batching-delay-ms" mapstructure:"batching-delay-ms" description:"Max milliseconds to wait for a batched metrics flush. [Default: 250]" default:"250" env:"PW3_BATCHING_MAX_DELAY_MS"`
-	AdHocConnString         string `long:"adhoc-conn-str" mapstructure:"adhoc-conn-str" description:"Ad-hoc mode: monitor a single Postgres DB specified by a standard Libpq connection string" env:"PW3_ADHOC_CONN_STR"`
-	AdHocDBType             string `long:"adhoc-dbtype" mapstructure:"adhoc-dbtype" description:"Ad-hoc mode: postgres|postgres-continuous-discovery" default:"postgres" env:"PW3_ADHOC_DBTYPE"`
-	AdHocConfig             string `long:"adhoc-config" mapstructure:"adhoc-config" description:"Ad-hoc mode: a preset config name or a custom JSON config" env:"PW3_ADHOC_CONFIG"`
-	AdHocCreateHelpers      bool   `long:"adhoc-create-helpers" mapstructure:"adhoc-create-helpers" description:"Ad-hoc mode: try to auto-create helpers. Needs superuser to succeed" env:"PW3_ADHOC_CREATE_HELPERS"`
-	AdHocUniqueName         string `long:"adhoc-name" mapstructure:"adhoc-name" description:"Ad-hoc mode: Unique 'dbname' for Influx" default:"adhoc" env:"PW3_ADHOC_NAME"`
-	DirectOSStats           bool   `long:"direct-os-stats" mapstructure:"direct-os-stats" description:"Extract OS related psutil statistics not via PL/Python wrappers but directly on host" env:"PW3_DIRECT_OS_STATS"`
-	UseConnPooling          bool   `long:"use-conn-pooling" mapstructure:"use-conn-pooling" description:"Enable re-use of metrics fetching connections" env:"PW3_USE_CONN_POOLING"`
-	AesGcmKeyphrase         string `long:"aes-gcm-keyphrase" mapstructure:"aes-gcm-keyphrase" description:"Decryption key for AES-GCM-256 passwords" env:"PW3_AES_GCM_KEYPHRASE"`
-	AesGcmKeyphraseFile     string `long:"aes-gcm-keyphrase-file" mapstructure:"aes-gcm-keyphrase-file" description:"File with decryption key for AES-GCM-256 passwords" env:"PW3_AES_GCM_KEYPHRASE_FILE"`
-	AesGcmPasswordToEncrypt string `long:"aes-gcm-password-to-encrypt" mapstructure:"aes-gcm-password-to-encrypt" description:"A special mode, returns the encrypted plain-text string and quits. Keyphrase(file) must be set. Useful for YAML mode" env:"PW3_AES_GCM_PASSWORD_TO_ENCRYPT"`
+	Connection              ConnectionOpts `group:"Connection" mapstructure:"Connection"`
+	Metric                  MetricOpts     `group:"Metric" mapstructure:"Metric"`
+	Logging                 LoggingOpts    `group:"Logging" mapstructure:"Logging"`
+	WebUI                   WebUIOpts      `group:"WebUI" mapstructure:"WebUI"`
+	Start                   StartOpts      `group:"Start" mapstructure:"Start"`
+	Config                  string         `short:"c" long:"config" mapstructure:"config" description:"File or folder of YAML files containing info on which DBs to monitor and where to store metrics" env:"PW3_CONFIG"`
+	BatchingDelayMs         int64          `long:"batching-delay-ms" mapstructure:"batching-delay-ms" description:"Max milliseconds to wait for a batched metrics flush. [Default: 250]" default:"250" env:"PW3_BATCHING_MAX_DELAY_MS"`
+	AdHocConnString         string         `long:"adhoc-conn-str" mapstructure:"adhoc-conn-str" description:"Ad-hoc mode: monitor a single Postgres DB specified by a standard Libpq connection string" env:"PW3_ADHOC_CONN_STR"`
+	AdHocDBType             string         `long:"adhoc-dbtype" mapstructure:"adhoc-dbtype" description:"Ad-hoc mode: postgres|postgres-continuous-discovery" default:"postgres" env:"PW3_ADHOC_DBTYPE"`
+	AdHocConfig             string         `long:"adhoc-config" mapstructure:"adhoc-config" description:"Ad-hoc mode: a preset config name or a custom JSON config" env:"PW3_ADHOC_CONFIG"`
+	AdHocCreateHelpers      bool           `long:"adhoc-create-helpers" mapstructure:"adhoc-create-helpers" description:"Ad-hoc mode: try to auto-create helpers. Needs superuser to succeed" env:"PW3_ADHOC_CREATE_HELPERS"`
+	AdHocUniqueName         string         `long:"adhoc-name" mapstructure:"adhoc-name" description:"Ad-hoc mode: Unique 'dbname' for Influx" default:"adhoc" env:"PW3_ADHOC_NAME"`
+	DirectOSStats           bool           `long:"direct-os-stats" mapstructure:"direct-os-stats" description:"Extract OS related psutil statistics not via PL/Python wrappers but directly on host" env:"PW3_DIRECT_OS_STATS"`
+	UseConnPooling          bool           `long:"use-conn-pooling" mapstructure:"use-conn-pooling" description:"Enable re-use of metrics fetching connections" env:"PW3_USE_CONN_POOLING"`
+	AesGcmKeyphrase         string         `long:"aes-gcm-keyphrase" mapstructure:"aes-gcm-keyphrase" description:"Decryption key for AES-GCM-256 passwords" env:"PW3_AES_GCM_KEYPHRASE"`
+	AesGcmKeyphraseFile     string         `long:"aes-gcm-keyphrase-file" mapstructure:"aes-gcm-keyphrase-file" description:"File with decryption key for AES-GCM-256 passwords" env:"PW3_AES_GCM_KEYPHRASE_FILE"`
+	AesGcmPasswordToEncrypt string         `long:"aes-gcm-password-to-encrypt" mapstructure:"aes-gcm-password-to-encrypt" description:"A special mode, returns the encrypted plain-text string and quits. Keyphrase(file) must be set. Useful for YAML mode" env:"PW3_AES_GCM_PASSWORD_TO_ENCRYPT"`
 	// "Test data" mode needs to be combined with "ad-hoc" mode to get an initial set of metrics from a real source
 	TestdataMultiplier           int    `long:"testdata-multiplier" mapstructure:"testdata-multiplier" description:"For how many hosts to generate data" env:"PW3_TESTDATA_MULTIPLIER"`
 	TestdataDays                 int    `long:"testdata-days" mapstructure:"testdata-days" description:"For how many days to generate data" env:"PW3_TESTDATA_DAYS"`

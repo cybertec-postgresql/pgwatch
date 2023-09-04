@@ -16,12 +16,10 @@ Some variables influence multiple components. Command line parameters override e
 - **PW3_PGPASSWORD** Config DB password. Default: pgwatch3admin
 - **PW3_PGSSL** Config DB SSL connection only. Default: False
 - **PW3_GROUP** Logical grouping/sharding key to monitor a subset of configured hosts. Default: -
-- **PW3_DATASTORE** Backend for metric storage - [postgres|prometheus|graphite|json]. Default: postgres
+- **PW3_DATASTORE** Backend for metric storage - [postgres|prometheus|json]. Default: postgres
 - **PW3_VERBOSE** Logging vebosity. By default warning and errors are logged. Use [-v|-vv] to include [info|debug]. Default: -
 - **PW3_PG_METRIC_STORE_CONN_STR** Postgres metric store connection string. Required when PW3_DATASTORE=postgres. Default: -
 - **PW3_PG_RETENTION_DAYS** Effective when PW3_DATASTORE=postgres. Default: 14
-- **PW3_GRAPHITEHOST** Graphite host. Default: -
-- **PW3_GRAPHITEPORT** Graphite port. Default: -
 - **PW3_CONFIG** File mode. File or folder of YAML (.yaml/.yml) files containing info on which DBs to monitor and where to store metrics
 - **PW3_METRICS_FOLDER** File mode. Folder of metrics definitions
 - **PW3_BATCHING_MAX_DELAY_MS** Max milliseconds to wait for a batched metrics flush. Default: 250
@@ -78,7 +76,6 @@ Some variables influence multiple components. Command line parameters override e
 - **PW3_GRAFANA_BASEURL** For linking to Grafana "Query details" dashboard from "Stat_stmt. overview". Default: http://0.0.0.0:3000
 - **PW3_AES_GCM_KEYPHRASE** Keyphrase for encryption/decpyption of connect string passwords.
 - **PW3_AES_GCM_KEYPHRASE_FILE** File containing a keyphrase for encryption/decpyption of connect string passwords.
-- **PW3_DATASTORE** Backend for metric storage - [postgres|graphite]. Default: postgres
 - **PW3_PG_METRIC_STORE_CONN_STR** Postgres metric store connection string. Required when PW3_DATASTORE=postgres. Default: -
 
 
