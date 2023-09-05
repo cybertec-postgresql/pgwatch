@@ -33,8 +33,6 @@ Some variables influence multiple components. Command line parameters override e
 - **PW3_AES_GCM_KEYPHRASE** Keyphrase for encryption/decpyption of connect string passwords.
 - **PW3_AES_GCM_KEYPHRASE_FILE** File containing a keyphrase for encryption/decpyption of connect string passwords.
 - **PW3_AES_GCM_PASSWORD_TO_ENCRYPT** A special mode, returns the encrypted plain-text string and quits. Keyphrase(file) must be set
-- **PW3_TESTDATA_DAYS** For how many days to generate data. Requires Ad-hoc params to be set also.
-- **PW3_TESTDATA_MULTIPLIER** For how many hosts to generate data. Requires Ad-hoc params to be set also.
 - **PW3_PROMETHEUS_PORT** Prometheus port. Effective with --datastore=prometheus. Default: 9187
 - **PW3_PROMETHEUS_LISTEN_ADDR** Network interface to listen on. Default: "0.0.0.0"
 - **PW3_PROMETHEUS_NAMESPACE** Prefix for all non-process (thus Postgres) metrics. Default: "pgwatch3"
