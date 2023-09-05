@@ -122,18 +122,6 @@ func validateConfig(conf *CmdOptions) error {
 	if err := validateAdHocConfig(conf); err != nil {
 		return err
 	}
-
-	if conf.TestdataDays > 0 || conf.TestdataMultiplier > 0 {
-		if conf.AdHocConnString == "" {
-			return errors.New("test mode requires --adhoc-conn-str")
-		}
-		if conf.TestdataMultiplier == 0 {
-			return errors.New("test mode requires --testdata-multiplier")
-		}
-		if conf.TestdataDays == 0 {
-			return errors.New("test mode requires --testdata-days")
-		}
-	}
 	if conf.AddRealDbname && conf.RealDbnameField == "" {
 		return errors.New("--real-dbname-field cannot be empty when --add-real-dbname enabled")
 	}

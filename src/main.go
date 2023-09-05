@@ -282,7 +282,7 @@ var metricPointsPerMinuteLast5MinAvg int64 = -1 // -1 means the summarization ti
 var gathererStartTime = time.Now()
 var partitionMapMetric = make(map[string]ExistingPartitionInfo)                  // metric = min/max bounds
 var partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo) // metric[dbname = min/max bounds]
-var testDataGenerationModeWG sync.WaitGroup
+
 var PGDummyMetricTables = make(map[string]time.Time)
 var PGDummyMetricTablesLock = sync.RWMutex{}
 var failedInitialConnectHosts = make(map[string]bool) // hosts that couldn't be connected to even once
@@ -1158,29 +1158,6 @@ func StoreMetrics(metrics []MetricStoreMessage, storageCh chan<- []MetricStoreMe
 	return 0, nil
 }
 
-func deepCopyMetricStoreMessages(metricStoreMessages []MetricStoreMessage) []MetricStoreMessage {
-	newMsgs := make([]MetricStoreMessage, 0)
-	for _, msm := range metricStoreMessages {
-		dataNew := make(MetricData, 0)
-		for _, dr := range msm.Data {
-			drNew := make(map[string]any)
-			for k, v := range dr {
-				drNew[k] = v
-			}
-			dataNew = append(dataNew, drNew)
-		}
-		tagDataNew := make(map[string]string)
-		for k, v := range msm.CustomTags {
-			tagDataNew[k] = v
-		}
-
-		m := MetricStoreMessage{DBUniqueName: msm.DBUniqueName, MetricName: msm.MetricName, DBType: msm.DBType,
-			Data: dataNew, CustomTags: tagDataNew}
-		newMsgs = append(newMsgs, m)
-	}
-	return newMsgs
-}
-
 func deepCopyMetricData(data MetricData) MetricData {
 	newData := make(MetricData, len(data))
 
@@ -1223,13 +1200,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 	var stmtTimeoutOverride int64
 
 	l := logger.WithField("database", dbUniqueName).WithField("metric", metricName)
-	if opts.TestdataDays != 0 {
-		if metricName == specialMetricServerLogEventCounts || metricName == specialMetricChangeEvents {
-			return
-		}
-		testDataGenerationModeWG.Add(1)
-	}
-	if opts.Metric.Datastore == datastorePostgres && opts.TestdataDays == 0 {
+	if opts.Metric.Datastore == datastorePostgres {
 		if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
 			vme, err := DBGetPGVersion(ctx, dbUniqueName, dbType, false)
 			if err != nil {
@@ -1272,111 +1243,71 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 			}
 		}
 
-		metricCurrentlyDisabled := IsMetricCurrentlyDisabledForHost(metricName, vme, dbUniqueName)
-		if metricCurrentlyDisabled && opts.TestdataDays == 0 {
+		if IsMetricCurrentlyDisabledForHost(metricName, vme, dbUniqueName) {
 			l.Debugf("Ignoring fetch as metric disabled for current time range")
-		} else {
-			var metricStoreMessages []MetricStoreMessage
-			var err error
-			mfm := MetricFetchMessage{DBUniqueName: dbUniqueName, DBUniqueNameOrig: dbUniqueNameOrig, MetricName: metricName, DBType: dbType, Interval: time.Second * time.Duration(interval), StmtTimeoutOverride: stmtTimeoutOverride}
-
-			// 1st try local overrides for some metrics if operating in push mode
-			if opts.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
-				metricStoreMessages, err = FetchStatsDirectlyFromOS(mfm, vme, mvp)
-				if err != nil {
-					l.WithError(err).Errorf("Could not reader metric directly from OS")
-				}
-			}
-			t1 := time.Now()
-			if metricStoreMessages == nil {
-				metricStoreMessages, err = FetchMetrics(ctx, mfm, hostState, storeCh, "")
-			}
-			t2 := time.Now()
-
-			if t2.Sub(t1) > (time.Second * time.Duration(interval)) {
-				l.Warningf("Total fetching time of %vs bigger than %vs interval", t2.Sub(t1).Truncate(time.Millisecond*100).Seconds(), interval)
-			}
-
-			if err != nil {
-				failedFetches++
-				// complain only 1x per 10min per host/metric...
-				if lastErrorNotificationTime.IsZero() || lastErrorNotificationTime.Add(time.Second*time.Duration(600)).Before(time.Now()) {
-					l.WithError(err).Error("failed to fetch metric data")
-					if failedFetches > 1 {
-						l.Errorf("Total failed fetches: %d", failedFetches)
-					}
-					lastErrorNotificationTime = time.Now()
-				}
-			} else if metricStoreMessages != nil {
-				if opts.Metric.Datastore == datastorePrometheus && opts.Metric.PrometheusAsyncMode && len(metricStoreMessages[0].Data) == 0 {
-					PurgeMetricsFromPromAsyncCacheIfAny(dbUniqueName, metricName)
-				}
-				if len(metricStoreMessages[0].Data) > 0 {
-
-					// pick up "server restarted" events here to avoid doing extra selects from CheckForPGObjectChangesAndStore code
-					if metricName == "db_stats" {
-						postmasterUptimeS, ok := (metricStoreMessages[0].Data)[0]["postmaster_uptime_s"]
-						if ok {
-							if lastUptimeS != -1 {
-								if postmasterUptimeS.(int64) < lastUptimeS { // restart (or possibly also failover when host is routed) happened
-									message := "Detected server restart (or failover) of \"" + dbUniqueName + "\""
-									l.Warning(message)
-									detectedChangesSummary := make(MetricData, 0)
-									entry := MetricEntry{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
-									detectedChangesSummary = append(detectedChangesSummary, entry)
-									metricStoreMessages = append(metricStoreMessages,
-										MetricStoreMessage{DBUniqueName: dbUniqueName, DBType: dbType,
-											MetricName: "object_changes", Data: detectedChangesSummary, CustomTags: metricStoreMessages[0].CustomTags})
-								}
-							}
-							lastUptimeS = postmasterUptimeS.(int64)
-						}
-					}
-
-					if opts.TestdataDays != 0 {
-						origMsgs := deepCopyMetricStoreMessages(metricStoreMessages)
-						l.Warningf("Generating %d days of data", opts.TestdataDays)
-						testMetricsStored := 0
-						simulatedTime := t1
-						endTime := t1.Add(time.Hour * time.Duration(opts.TestdataDays*24))
-
-						if opts.TestdataDays < 0 {
-							simulatedTime, endTime = endTime, simulatedTime
-						}
-
-						for simulatedTime.Before(endTime) {
-							l.Debugf("simulating time: %v", simulatedTime)
-							for hostNr := 1; hostNr <= opts.TestdataMultiplier; hostNr++ {
-								fakeDbName := fmt.Sprintf("%s-%d", dbUniqueName, hostNr)
-								msgsCopyTmp := deepCopyMetricStoreMessages(origMsgs)
-
-								for i := 0; i < len(msgsCopyTmp[0].Data); i++ {
-									(msgsCopyTmp[0].Data)[i][epochColumnName] = (simulatedTime.UnixNano() + int64(1000*i))
-								}
-								msgsCopyTmp[0].DBUniqueName = fakeDbName
-								//log.Debugf("fake data for [%s:%s]: %v", metricName, fake_dbname, msgs_copy_tmp[0].Data)
-								_, _ = StoreMetrics(msgsCopyTmp, storeCh)
-								testMetricsStored += len(msgsCopyTmp[0].Data)
-							}
-							time.Sleep(time.Duration(opts.TestdataMultiplier * 10000000)) // 10ms * multiplier (in nanosec).
-							// would generate more metrics than persister can write and eat up RAM
-							simulatedTime = simulatedTime.Add(time.Second * time.Duration(interval))
-						}
-						l.Warningf("exiting MetricGathererLoop, %d total data points generated for %d hosts",
-							testMetricsStored, opts.TestdataMultiplier)
-						testDataGenerationModeWG.Done()
-						return
-					}
-					_, _ = StoreMetrics(metricStoreMessages, storeCh)
-				}
-			}
-
-			if opts.TestdataDays != 0 { // covers errors & no data
-				testDataGenerationModeWG.Done()
-				return
-			}
-
+			continue
 		}
+		var metricStoreMessages []MetricStoreMessage
+		var err error
+		mfm := MetricFetchMessage{DBUniqueName: dbUniqueName, DBUniqueNameOrig: dbUniqueNameOrig, MetricName: metricName, DBType: dbType, Interval: time.Second * time.Duration(interval), StmtTimeoutOverride: stmtTimeoutOverride}
+
+		// 1st try local overrides for some metrics if operating in push mode
+		if opts.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
+			metricStoreMessages, err = FetchStatsDirectlyFromOS(mfm, vme, mvp)
+			if err != nil {
+				l.WithError(err).Errorf("Could not reader metric directly from OS")
+			}
+		}
+		t1 := time.Now()
+		if metricStoreMessages == nil {
+			metricStoreMessages, err = FetchMetrics(ctx, mfm, hostState, storeCh, "")
+		}
+		t2 := time.Now()
+
+		if t2.Sub(t1) > (time.Second * time.Duration(interval)) {
+			l.Warningf("Total fetching time of %vs bigger than %vs interval", t2.Sub(t1).Truncate(time.Millisecond*100).Seconds(), interval)
+		}
+
+		if err != nil {
+			failedFetches++
+			// complain only 1x per 10min per host/metric...
+			if lastErrorNotificationTime.IsZero() || lastErrorNotificationTime.Add(time.Second*time.Duration(600)).Before(time.Now()) {
+				l.WithError(err).Error("failed to fetch metric data")
+				if failedFetches > 1 {
+					l.Errorf("Total failed fetches: %d", failedFetches)
+				}
+				lastErrorNotificationTime = time.Now()
+			}
+		} else if metricStoreMessages != nil {
+			if opts.Metric.Datastore == datastorePrometheus && opts.Metric.PrometheusAsyncMode && len(metricStoreMessages[0].Data) == 0 {
+				PurgeMetricsFromPromAsyncCacheIfAny(dbUniqueName, metricName)
+			}
+			if len(metricStoreMessages[0].Data) > 0 {
+
+				// pick up "server restarted" events here to avoid doing extra selects from CheckForPGObjectChangesAndStore code
+				if metricName == "db_stats" {
+					postmasterUptimeS, ok := (metricStoreMessages[0].Data)[0]["postmaster_uptime_s"]
+					if ok {
+						if lastUptimeS != -1 {
+							if postmasterUptimeS.(int64) < lastUptimeS { // restart (or possibly also failover when host is routed) happened
+								message := "Detected server restart (or failover) of \"" + dbUniqueName + "\""
+								l.Warning(message)
+								detectedChangesSummary := make(MetricData, 0)
+								entry := MetricEntry{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
+								detectedChangesSummary = append(detectedChangesSummary, entry)
+								metricStoreMessages = append(metricStoreMessages,
+									MetricStoreMessage{DBUniqueName: dbUniqueName, DBType: dbType,
+										MetricName: "object_changes", Data: detectedChangesSummary, CustomTags: metricStoreMessages[0].CustomTags})
+							}
+						}
+						lastUptimeS = postmasterUptimeS.(int64)
+					}
+				}
+
+				_, _ = StoreMetrics(metricStoreMessages, storeCh)
+			}
+		}
+
 		select {
 		case <-ctx.Done():
 			return
@@ -2530,16 +2461,12 @@ func main() {
 			logger.Info("starting UniqueDbnamesListingMaintainer...")
 			go UniqueDbnamesListingMaintainer(mainContext, true)
 
-			if opts.Metric.PGRetentionDays > 0 && opts.TestdataDays == 0 {
+			if opts.Metric.PGRetentionDays > 0 {
 				logger.Info("starting old Postgres metrics cleanup job...")
 				go OldPostgresMetricsDeleter(mainContext, opts.Metric.PGRetentionDays, MetricSchema)
 			}
 
 		} else if opts.Metric.Datastore == datastorePrometheus {
-			if opts.TestdataDays != 0 || opts.TestdataMultiplier > 0 {
-				logger.Fatal("Test data generation mode cannot be used with Prometheus data store")
-			}
-
 			if opts.Metric.PrometheusAsyncMode {
 				logger.Info("starting Prometheus Cache Persister...")
 				go MetricsPersister(mainContext, datastorePrometheus, persistCh)
@@ -2876,24 +2803,6 @@ func main() {
 			}
 			logger.Infof("All configured %d DB hosts were reachable", len(monitoredDbs))
 			os.Exit(0)
-		}
-
-		if opts.TestdataDays != 0 {
-			logger.Info("Waiting for all metrics generation goroutines to stop ...")
-			time.Sleep(time.Second * 10) // with that time all different metric fetchers should have started
-			testDataGenerationModeWG.Wait()
-			for {
-				pqlen := len(persistCh)
-				if pqlen == 0 {
-					if opts.Metric.Datastore == datastorePostgres {
-						UniqueDbnamesListingMaintainer(mainContext, false) // refresh Grafana listing table
-					}
-					logger.Warning("All generators have exited and data stored. Exit")
-					os.Exit(0)
-				}
-				logger.Infof("Waiting for generated metrics to be stored (%d still in queue) ...", pqlen)
-				time.Sleep(time.Second * 1)
-			}
 		}
 
 		if mainLoopCount == 0 {
