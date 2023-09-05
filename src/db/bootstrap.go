@@ -145,7 +145,8 @@ func ExecuteMetricSchemaScripts(ctx context.Context, conn PgxIface) error {
 // executeSchemaScripts executes initial schema scripts
 func executeSchemaScripts(ctx context.Context, conn PgxIface, schema string, sqls []string) (err error) {
 	var exists bool
-	err = conn.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = $1)", schema).Scan(&exists)
+	sqlSchemaExists := "SELECT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = $1)"
+	err = conn.QueryRow(ctx, sqlSchemaExists, schema).Scan(&exists)
 	if err != nil || exists {
 		return
 	}
@@ -167,7 +168,7 @@ const (
 func GetMetricSchemaType(ctx context.Context, conn PgxIface) (metricSchema MetricSchemaType, err error) {
 	var isTs bool
 	metricSchema = MetricSchemaPostgres
-	sqlSchemaType := `select schema_type = 'timescale' from admin.storage_schema_type`
+	sqlSchemaType := `SELECT schema_type = 'timescale' FROM admin.storage_schema_type`
 	if err = conn.QueryRow(ctx, sqlSchemaType).Scan(&isTs); err == nil && isTs {
 		metricSchema = MetricSchemaTimescale
 	}
