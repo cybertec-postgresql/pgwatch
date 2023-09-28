@@ -8,7 +8,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	os.Args = []string{0: "config_test", "--config=instances.yaml"}
+	os.Args = []string{0: "config_test", "--config=sample.config.yaml"}
 	_, err := NewConfig(nil)
 	assert.NoError(t, err)
 
@@ -25,7 +25,7 @@ func TestConfig(t *testing.T) {
 	assert.Error(t, err)
 
 	os.Args = []string{0: "config_test"} // clientname arg is missing, but set PGTT_CLIENTNAME
-	assert.NoError(t, os.Setenv("PGTT_CLIENTNAME", "worker001"))
+	assert.NoError(t, os.Setenv("PW3_PG_METRIC_STORE_CONN_STR", "postgresql://foo:baz@bar/test"))
 	_, err = NewConfig(nil)
 	assert.NoError(t, err)
 }
