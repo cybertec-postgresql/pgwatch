@@ -157,7 +157,7 @@ func paramsToFieldValues(table string, params []byte) (fields []string, values [
 	}
 	i := 2 // start with the second parameter number, first is reserved for WHERE key value
 	for k, v := range paramsMap {
-		if slices.Index[string](cols, k) == -1 {
+		if slices.Index(cols, k) == -1 {
 			continue
 		}
 		fields = append(fields, fmt.Sprintf("%s = $%d", quoteIdent(k), i))
