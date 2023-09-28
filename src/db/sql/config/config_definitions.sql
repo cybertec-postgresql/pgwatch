@@ -1,6 +1,4 @@
-/* METRIC DEFINITIONS + METRIC ATTRIBUTES below */
-
--- truncate pgwatch3.metric;
+-- metric definitions
 
 /* backends */
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_sql_su)

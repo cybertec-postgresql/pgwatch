@@ -86,6 +86,7 @@ func NewConfig(writer io.Writer) (*CmdOptions, error) {
 	if err = v.BindFlagValues(flagSet); err != nil {
 		return nil, fmt.Errorf("cannot bind command-line flag values with viper: %w", err)
 	}
+	// v.WriteConfigAs("debug.yml")
 	flagSet.setDefaults(v)
 	if v.IsSet("config") {
 		v.SetConfigFile(v.GetString("config"))
