@@ -24,8 +24,9 @@ DECLARE
   l_part_end date;
   l_sql text;
   ideal_length int;
-  l_template_table text := 'admin.metrics_template';
   l_unlogged text := '';
+  l_template_table text := 'admin.metrics_template';
+  MAX_IDENT_LEN CONSTANT integer := current_setting('max_identifier_length')::int;
 BEGIN
 
   PERFORM pg_advisory_xact_lock(regexp_replace( md5(metric) , E'\\D', '', 'g')::varchar(10)::int8);
@@ -51,9 +52,9 @@ BEGIN
 
   l_part_name_2nd := metric || '_' || dbname;
 
-  IF char_length(l_part_name_2nd) > 63     -- use "dbname" hash instead of name for overly long ones
+  IF char_length(l_part_name_2nd) > MAX_IDENT_LEN     -- use "dbname" hash instead of name for overly long ones
   THEN
-    ideal_length = 63 - char_length(format('%s_', metric));
+    ideal_length = MAX_IDENT_LEN - char_length(format('%s_', metric));
     l_part_name_2nd := metric || '_' || substring(md5(dbname) from 1 for ideal_length);
   END IF;
 
@@ -88,9 +89,9 @@ BEGIN
 
       l_part_name_3rd := format('%s_%s_y%sd%s', metric, dbname, l_year, to_char(l_doy, 'fm000' ));
 
-      IF char_length(l_part_name_3rd) > 63     -- use "dbname" hash instead of name for overly long ones
+      IF char_length(l_part_name_3rd) > MAX_IDENT_LEN     -- use "dbname" hash instead of name for overly long ones
       THEN
-          ideal_length = 63 - char_length(format('%s__y%sd%s', metric, l_year, to_char(l_doy, 'fm000')));
+          ideal_length = MAX_IDENT_LEN - char_length(format('%s__y%sd%s', metric, l_year, to_char(l_doy, 'fm000')));
           l_part_name_3rd := format('%s_%s_y%sd%s', metric, substring(md5(dbname) from 1 for ideal_length), l_year, to_char(l_doy, 'fm000' ));
       END IF;
   ELSE
@@ -110,9 +111,9 @@ BEGIN
 
       l_part_name_3rd := format('%s_%s_y%sw%s', metric, dbname, l_year, to_char(l_week, 'fm00' ));
 
-      IF char_length(l_part_name_3rd) > 63     -- use "dbname" hash instead of name for overly long ones
+      IF char_length(l_part_name_3rd) > MAX_IDENT_LEN     -- use "dbname" hash instead of name for overly long ones
       THEN
-          ideal_length = 63 - char_length(format('%s__y%sw%s', metric, l_year, to_char(l_week, 'fm00')));
+          ideal_length = MAX_IDENT_LEN - char_length(format('%s__y%sw%s', metric, l_year, to_char(l_week, 'fm00')));
           l_part_name_3rd := format('%s_%s_y%sw%s', metric, substring(md5(dbname) from 1 for ideal_length), l_year, to_char(l_week, 'fm00' ));
       END IF;
   END IF;
