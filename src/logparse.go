@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/cybertec-postgresql/pgwatch3/metrics"
 )
 
 var PgSeverities = [...]string{"DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "LOG", "FATAL", "PANIC"}
@@ -82,8 +84,8 @@ func getFileWithNextModTimestamp(dbUniqueName, logsGlobPath, currentFile string)
 }
 
 // 1. add zero counts for severity levels that didn't have any occurrences in the log
-func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb MonitoredDatabase) []MetricStoreMessage {
-	allSeverityCounts := make(MetricEntry)
+func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb MonitoredDatabase) []metrics.MetricStoreMessage {
+	allSeverityCounts := make(metrics.MetricEntry)
 	for _, s := range PgSeverities {
 		parsedCount, ok := eventCounts[s]
 		if ok {
@@ -99,11 +101,11 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 		}
 	}
 	allSeverityCounts["epoch_ns"] = time.Now().UnixNano()
-	return []MetricStoreMessage{{DBUniqueName: mdb.DBUniqueName, DBType: mdb.DBType,
-		MetricName: specialMetricServerLogEventCounts, Data: MetricData{allSeverityCounts}, CustomTags: mdb.CustomTags}}
+	return []metrics.MetricStoreMessage{{DBUniqueName: mdb.DBUniqueName, DBType: mdb.DBType,
+		MetricName: specialMetricServerLogEventCounts, Data: metrics.MetricData{allSeverityCounts}, CustomTags: mdb.CustomTags}}
 }
 
-func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []MetricStoreMessage) {
+func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []metrics.MetricStoreMessage) {
 
 	var latest, previous, realDbname, serverMessagesLang string
 	var latestHandle *os.File

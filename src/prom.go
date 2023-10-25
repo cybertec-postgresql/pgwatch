@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -85,7 +86,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 				continue // always included in Prometheus case
 			}
 			if interval > 0 {
-				var metricStoreMessages []MetricStoreMessage
+				var metricStoreMessages []metrics.MetricStoreMessage
 				var err error
 				var ok bool
 
@@ -148,7 +149,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 func setInstanceUpDownState(ch chan<- prometheus.Metric, md MonitoredDatabase) {
 	logger.Debugf("checking availability of configured DB [%s:%s]...", md.DBUniqueName, promInstanceUpStateMetric)
 	vme, err := DBGetPGVersion(mainContext, md.DBUniqueName, md.DBType, !opts.Metric.PrometheusAsyncMode) // in async mode 2min cache can mask smaller downtimes!
-	data := make(MetricEntry)
+	data := make(metrics.MetricEntry)
 	if err != nil {
 		data[promInstanceUpStateMetric] = 0
 		logger.Errorf("[%s:%s] could not determine instance version, reporting as 'down': %v", md.DBUniqueName, promInstanceUpStateMetric, err)
@@ -157,12 +158,12 @@ func setInstanceUpDownState(ch chan<- prometheus.Metric, md MonitoredDatabase) {
 	}
 	data[epochColumnName] = time.Now().UnixNano()
 
-	pm := MetricStoreMessageToPromMetrics(MetricStoreMessage{
+	pm := MetricStoreMessageToPromMetrics(metrics.MetricStoreMessage{
 		DBUniqueName:     md.DBUniqueName,
 		DBType:           md.DBType,
 		MetricName:       promInstanceUpStateMetric,
 		CustomTags:       md.CustomTags,
-		Data:             MetricData{data},
+		Data:             metrics.MetricData{data},
 		RealDbname:       vme.RealDbname,
 		SystemIdentifier: vme.SystemIdentifier,
 	})
@@ -189,7 +190,7 @@ func getMonitoredDatabasesSnapshot() map[string]MonitoredDatabase {
 	return mdSnap
 }
 
-func MetricStoreMessageToPromMetrics(msg MetricStoreMessage) []prometheus.Metric {
+func MetricStoreMessageToPromMetrics(msg metrics.MetricStoreMessage) []prometheus.Metric {
 	promMetrics := make([]prometheus.Metric, 0)
 
 	var epochTime time.Time
