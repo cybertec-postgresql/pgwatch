@@ -14,6 +14,7 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
+	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/jackc/pgx/v5"
 )
@@ -82,7 +83,7 @@ func CloseOrLimitSQLConnPoolForMonitoredDBIfAny(dbUnique string) {
 	}
 }
 
-func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) (MetricData, error) {
+func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) (metrics.MetricData, error) {
 	rows, err := conn.Query(ctx, sql, args...)
 	if err == nil {
 		return pgx.CollectRows(rows, pgx.RowToMap)
@@ -90,10 +91,10 @@ func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) 
 	return nil, err
 }
 
-func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, stmtTimeoutOverride int64, sql string, args ...any) (MetricData, error) {
+func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, stmtTimeoutOverride int64, sql string, args ...any) (metrics.MetricData, error) {
 	var conn db.PgxIface
 	var md MonitoredDatabase
-	var data MetricData
+	var data metrics.MetricData
 	var err error
 	var tx pgx.Tx
 	var exists bool
@@ -143,7 +144,7 @@ func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, stmtTimeoutO
 	return data, err
 }
 
-func GetAllActiveHostsFromConfigDB() (MetricData, error) {
+func GetAllActiveHostsFromConfigDB() (metrics.MetricData, error) {
 	sqlLatest := `
 		select /* pgwatch3_generated */
 		  md_unique_name, md_group, md_dbtype, md_hostname, md_port, md_dbname, md_user, coalesce(md_password, '') as md_password,
@@ -739,8 +740,8 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, dbType string, noCache
 	return verNew, nil
 }
 
-func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
-	detectedChanges := make(MetricData, 0)
+func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []metrics.MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
+	detectedChanges := make(metrics.MetricData, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
@@ -796,7 +797,7 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 			if !ok {
 				splits := strings.Split(sprocIdent, dbMetricJoinStr)
 				logger.Info("detected delete of sproc:", splits[0], ", oid:", splits[1])
-				influxEntry := make(MetricEntry)
+				influxEntry := make(metrics.MetricEntry)
 				influxEntry["event"] = "drop"
 				influxEntry["tag_sproc"] = splits[0]
 				influxEntry["tag_oid"] = splits[1]
@@ -817,7 +818,7 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	logger.Debugf("[%s][%s] detected %d sproc changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "sproc_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "sproc_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
 	} else if opts.Metric.Datastore == datastorePostgres && firstRun {
 		EnsureMetricDummy("sproc_changes")
 	}
@@ -825,8 +826,8 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	return changeCounts
 }
 
-func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
-	detectedChanges := make(MetricData, 0)
+func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []metrics.MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
+	detectedChanges := make(metrics.MetricData, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
@@ -882,7 +883,7 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 			_, ok := currentTableMap[table]
 			if !ok {
 				logger.Info("detected drop of table:", table)
-				influxEntry := make(MetricEntry)
+				influxEntry := make(metrics.MetricEntry)
 				influxEntry["event"] = "drop"
 				influxEntry["tag_table"] = table
 				if len(data) > 0 {
@@ -903,7 +904,7 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	logger.Debugf("[%s][%s] detected %d table changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "table_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "table_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
 	} else if opts.Metric.Datastore == datastorePostgres && firstRun {
 		EnsureMetricDummy("table_changes")
 	}
@@ -911,8 +912,8 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	return changeCounts
 }
 
-func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
-	detectedChanges := make(MetricData, 0)
+func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []metrics.MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
+	detectedChanges := make(metrics.MetricData, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
@@ -967,7 +968,7 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 			_, ok := currentIndexMap[indexName]
 			if !ok {
 				logger.Info("detected drop of index_name:", indexName)
-				influxEntry := make(MetricEntry)
+				influxEntry := make(metrics.MetricEntry)
 				influxEntry["event"] = "drop"
 				influxEntry["tag_index"] = indexName
 				if len(data) > 0 {
@@ -987,7 +988,7 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	logger.Debugf("[%s][%s] detected %d index changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "index_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "index_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
 	} else if opts.Metric.Datastore == datastorePostgres && firstRun {
 		EnsureMetricDummy("index_changes")
 	}
@@ -995,8 +996,8 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	return changeCounts
 }
 
-func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
-	detectedChanges := make(MetricData, 0)
+func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []metrics.MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
+	detectedChanges := make(metrics.MetricData, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
@@ -1044,7 +1045,7 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storageCh ch
 				splits := strings.Split(objPrevRun, "#:#")
 				logger.Infof("[%s][%s] detected removed object privileges: role=%s, object_type=%s, object=%s, privilege_type=%s",
 					dbUnique, specialMetricChangeEvents, splits[1], splits[0], splits[2], splits[3])
-				revokeEntry := make(MetricEntry)
+				revokeEntry := make(metrics.MetricEntry)
 				if epochNs, ok := data[0]["epoch_ns"]; ok {
 					revokeEntry["epoch_ns"] = epochNs
 				} else {
@@ -1068,7 +1069,7 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storageCh ch
 	logger.Debugf("[%s][%s] detected %d object privilege changes...", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []MetricStoreMessage{
+		storageCh <- []metrics.MetricStoreMessage{
 			{
 				DBUniqueName: dbUnique,
 				MetricName:   "privilege_changes",
@@ -1080,8 +1081,8 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storageCh ch
 	return changeCounts
 }
 
-func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
-	detectedChanges := make(MetricData, 0)
+func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []metrics.MetricStoreMessage, hostState map[string]map[string]string) ChangeDetectionResults {
+	detectedChanges := make(metrics.MetricData, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
@@ -1133,7 +1134,7 @@ func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storageC
 	logger.Debugf("[%s][%s] detected %d configuration changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []MetricStoreMessage{{
+		storageCh <- []metrics.MetricStoreMessage{{
 			DBUniqueName: dbUnique,
 			MetricName:   "configuration_changes",
 			Data:         detectedChanges,
@@ -1146,7 +1147,7 @@ func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storageC
 	return changeCounts
 }
 
-func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []MetricStoreMessage, hostState map[string]map[string]string) {
+func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []metrics.MetricStoreMessage, hostState map[string]map[string]string) {
 	sprocСounts := DetectSprocChanges(dbUnique, vme, storageCh, hostState) // TODO some of Detect*() code could be unified...
 	tableСounts := DetectTableChanges(dbUnique, vme, storageCh, hostState)
 	indexСounts := DetectIndexChanges(dbUnique, vme, storageCh, hostState)
@@ -1178,13 +1179,13 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 	if message > "" {
 		message = "Detected changes for \"" + dbUnique + "\" [Created/Altered/Dropped]:" + message
 		logger.Info(message)
-		detectedChangesSummary := make(MetricData, 0)
-		influxEntry := make(MetricEntry)
+		detectedChangesSummary := make(metrics.MetricData, 0)
+		influxEntry := make(metrics.MetricEntry)
 		influxEntry["details"] = message
 		influxEntry["epoch_ns"] = time.Now().UnixNano()
 		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []MetricStoreMessage{{DBUniqueName: dbUnique,
+		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique,
 			DBType:     md.DBType,
 			MetricName: "object_changes",
 			Data:       detectedChangesSummary,
@@ -1195,8 +1196,8 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 }
 
 // some extra work needed as pgpool SHOW commands don't specify the return data types for some reason
-func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp MetricVersionProperties) (MetricData, error) {
-	var retData = make(MetricData, 0)
+func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp metrics.MetricProperties) (metrics.MetricData, error) {
+	var retData = make(metrics.MetricData, 0)
 	epochNs := time.Now().UnixNano()
 
 	sqlLines := strings.Split(strings.ToUpper(mvp.SQL), "\n")
@@ -1210,7 +1211,7 @@ func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp MetricV
 			}
 
 			for _, row := range data {
-				retRow := make(MetricEntry)
+				retRow := make(metrics.MetricEntry)
 				retRow[epochColumnName] = epochNs
 				for k, v := range row {
 					vs := string(v.([]byte))
@@ -1287,72 +1288,6 @@ func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp MetricV
 	return retData, nil
 }
 
-func ReadMetricDefinitionMapFromPostgres(failOnError bool) (map[string]map[uint]MetricVersionProperties, error) {
-	metricDefMapNew := make(map[string]map[uint]MetricVersionProperties)
-	metricNameRemapsNew := make(map[string]string)
-	sql := `select /* pgwatch3_generated */ m_name, m_pg_version_from::text, m_sql, m_master_only, m_standby_only,
-			  coalesce(m_column_attrs::text, '') as m_column_attrs, coalesce(m_column_attrs::text, '') as m_column_attrs,
-			  coalesce(ma_metric_attrs::text, '') as ma_metric_attrs, m_sql_su
-			from
-              pgwatch3.metric
-              left join
-              pgwatch3.metric_attribute on (ma_metric_name = m_name)
-			where
-              m_is_active
-		    order by
-		      1, 2`
-
-	logger.Info("updating metrics definitons from ConfigDB...")
-	data, err := DBExecRead(mainContext, configDb, sql)
-	if err != nil {
-		if failOnError {
-			logger.Fatal(err)
-		} else {
-			logger.Error(err)
-			return metricDefinitionMap, err
-		}
-	}
-	if len(data) == 0 {
-		logger.Warning("no active metric definitions found from config DB")
-		return metricDefMapNew, err
-	}
-
-	logger.WithField("metrics", len(data)).Debug("Active metrics found in config database (pgwatch3.metric)")
-	for _, row := range data {
-		_, ok := metricDefMapNew[row["m_name"].(string)]
-		if !ok {
-			metricDefMapNew[row["m_name"].(string)] = make(map[uint]MetricVersionProperties)
-		}
-		d := VersionToInt(row["m_pg_version_from"].(string))
-		ca := MetricColumnAttrs{}
-		if row["m_column_attrs"].(string) != "" {
-			ca = ParseMetricColumnAttrsFromString(row["m_column_attrs"].(string))
-		}
-		ma := MetricAttrs{}
-		if row["ma_metric_attrs"].(string) != "" {
-			ma = ParseMetricAttrsFromString(row["ma_metric_attrs"].(string))
-			if ma.MetricStorageName != "" {
-				metricNameRemapsNew[row["m_name"].(string)] = ma.MetricStorageName
-			}
-		}
-		metricDefMapNew[row["m_name"].(string)][d] = MetricVersionProperties{
-			SQL:                  row["m_sql"].(string),
-			SQLSU:                row["m_sql_su"].(string),
-			MasterOnly:           row["m_master_only"].(bool),
-			StandbyOnly:          row["m_standby_only"].(bool),
-			ColumnAttrs:          ca,
-			MetricAttrs:          ma,
-			CallsHelperFunctions: DoesMetricDefinitionCallHelperFunctions(row["m_sql"].(string)),
-		}
-	}
-
-	metricNameRemapLock.Lock()
-	metricNameRemaps = metricNameRemapsNew
-	metricNameRemapLock.Unlock()
-
-	return metricDefMapNew, err
-}
-
 func DoesFunctionExists(dbUnique, functionName string) bool {
 	logger.Debug("Checking for function existence", dbUnique, functionName)
 	sql := fmt.Sprintf("select /* pgwatch3_generated */ 1 from pg_proc join pg_namespace n on pronamespace = n.oid where proname = '%s' and n.nspname = 'public'", functionName)
@@ -1416,12 +1351,12 @@ func TryCreateMetricsFetchingHelpers(dbUnique string) error {
 	}
 
 	if fileBasedMetrics {
-		helpers, err := ReadMetricsFromFolder(path.Join(opts.Metric.MetricsFolder, fileBasedMetricHelpersDir), false)
+		helpers, _, err := metrics.ReadMetricsFromFolder(mainContext, logger, path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir))
 		if err != nil {
-			logger.Errorf("Failed to fetch helpers from \"%s\": %s", path.Join(opts.Metric.MetricsFolder, fileBasedMetricHelpersDir), err)
+			logger.Errorf("Failed to fetch helpers from \"%s\": %s", path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir), err)
 			return err
 		}
-		logger.Debug("%d helper definitions found from \"%s\"...", len(helpers), path.Join(opts.Metric.MetricsFolder, fileBasedMetricHelpersDir))
+		logger.Debug("%d helper definitions found from \"%s\"...", len(helpers), path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir))
 
 		for helperName := range helpers {
 			if strings.Contains(helperName, "windows") {
@@ -1551,7 +1486,7 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 }
 
 // connects actually to the instance to determine PG relevant disk paths / mounts
-func GetGoPsutilDiskPG(dbUnique string) (MetricData, error) {
+func GetGoPsutilDiskPG(dbUnique string) (metrics.MetricData, error) {
 	sql := `select current_setting('data_directory') as dd, current_setting('log_directory') as ld, current_setting('server_version_num')::int as pgver`
 	sqlTS := `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E'pg\\_%'])`
 	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 0, sql)
@@ -1566,12 +1501,12 @@ func GetGoPsutilDiskPG(dbUnique string) (MetricData, error) {
 	return psutil.GetGoPsutilDiskPG(data, dataTblsp)
 }
 
-func SendToPostgres(storeMessages []MetricStoreMessage) error {
+func SendToPostgres(storeMessages []metrics.MetricStoreMessage) error {
 	if len(storeMessages) == 0 {
 		return nil
 	}
 	tsWarningPrinted := false
-	metricsToStorePerMetric := make(map[string][]MetricStoreMessagePostgres)
+	metricsToStorePerMetric := make(map[string][]metrics.MetricStoreMessagePostgres)
 	rowsBatched := 0
 	totalRows := 0
 	pgPartBounds := make(map[string]ExistingPartitionInfo)                  // metric=min/max
@@ -1623,16 +1558,16 @@ func SendToPostgres(storeMessages []MetricStoreMessage) error {
 				epochTime = time.Unix(0, epochNs)
 			}
 
-			var metricsArr []MetricStoreMessagePostgres
+			var metricsArr []metrics.MetricStoreMessagePostgres
 			var ok bool
 
 			metricNameTemp := msg.MetricName
 
 			metricsArr, ok = metricsToStorePerMetric[metricNameTemp]
 			if !ok {
-				metricsToStorePerMetric[metricNameTemp] = make([]MetricStoreMessagePostgres, 0)
+				metricsToStorePerMetric[metricNameTemp] = make([]metrics.MetricStoreMessagePostgres, 0)
 			}
-			metricsArr = append(metricsArr, MetricStoreMessagePostgres{Time: epochTime, DBName: msg.DBUniqueName,
+			metricsArr = append(metricsArr, metrics.MetricStoreMessagePostgres{Time: epochTime, DBName: msg.DBUniqueName,
 				Metric: msg.MetricName, Data: fields, TagData: tags})
 			metricsToStorePerMetric[metricNameTemp] = metricsArr
 
