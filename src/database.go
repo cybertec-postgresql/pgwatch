@@ -1288,9 +1288,11 @@ func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp metrics
 	return retData, nil
 }
 
-func ReadMetricDefinitionMapFromPostgres(failOnError bool) (map[string]map[uint]metrics.MetricVersionProperties, error) {
-	metricDefMapNew := make(map[string]map[uint]metrics.MetricVersionProperties)
-	metricNameRemapsNew := make(map[string]string)
+func ReadMetricDefinitionMapFromPostgres() (
+	metricDefMapNew map[string]map[uint]metrics.MetricVersionProperties,
+	metricNameRemapsNew map[string]string,
+	err error) {
+
 	sql := `select /* pgwatch3_generated */ m_name, m_pg_version_from::text, m_sql, m_master_only, m_standby_only,
 			  coalesce(m_column_attrs::text, '') as m_column_attrs, coalesce(m_column_attrs::text, '') as m_column_attrs,
 			  coalesce(ma_metric_attrs::text, '') as ma_metric_attrs, m_sql_su
@@ -1306,16 +1308,11 @@ func ReadMetricDefinitionMapFromPostgres(failOnError bool) (map[string]map[uint]
 	logger.Info("updating metrics definitons from ConfigDB...")
 	data, err := DBExecRead(mainContext, configDb, sql)
 	if err != nil {
-		if failOnError {
-			logger.Fatal(err)
-		} else {
-			logger.Error(err)
-			return metricDefinitionMap, err
-		}
+		return
 	}
 	if len(data) == 0 {
 		logger.Warning("no active metric definitions found from config DB")
-		return metricDefMapNew, err
+		return
 	}
 
 	logger.WithField("metrics", len(data)).Debug("Active metrics found in config database (pgwatch3.metric)")
@@ -1343,7 +1340,7 @@ func ReadMetricDefinitionMapFromPostgres(failOnError bool) (map[string]map[uint]
 			StandbyOnly:          row["m_standby_only"].(bool),
 			ColumnAttrs:          ca,
 			MetricAttrs:          ma,
-			CallsHelperFunctions: DoesMetricDefinitionCallHelperFunctions(row["m_sql"].(string)),
+			CallsHelperFunctions: metrics.DoesMetricDefinitionCallHelperFunctions(row["m_sql"].(string)),
 		}
 	}
 
@@ -1351,7 +1348,7 @@ func ReadMetricDefinitionMapFromPostgres(failOnError bool) (map[string]map[uint]
 	metricNameRemaps = metricNameRemapsNew
 	metricNameRemapLock.Unlock()
 
-	return metricDefMapNew, err
+	return
 }
 
 func DoesFunctionExists(dbUnique, functionName string) bool {
@@ -1417,12 +1414,12 @@ func TryCreateMetricsFetchingHelpers(dbUnique string) error {
 	}
 
 	if fileBasedMetrics {
-		helpers, err := ReadMetricsFromFolder(path.Join(opts.Metric.MetricsFolder, fileBasedMetricHelpersDir), false)
+		helpers, _, err := metrics.ReadMetricsFromFolder(logger, path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir))
 		if err != nil {
-			logger.Errorf("Failed to fetch helpers from \"%s\": %s", path.Join(opts.Metric.MetricsFolder, fileBasedMetricHelpersDir), err)
+			logger.Errorf("Failed to fetch helpers from \"%s\": %s", path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir), err)
 			return err
 		}
-		logger.Debug("%d helper definitions found from \"%s\"...", len(helpers), path.Join(opts.Metric.MetricsFolder, fileBasedMetricHelpersDir))
+		logger.Debug("%d helper definitions found from \"%s\"...", len(helpers), path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir))
 
 		for helperName := range helpers {
 			if strings.Contains(helperName, "windows") {

@@ -149,11 +149,10 @@ const (
 // actual requirements depend a lot of metric type and nr. of obects in schemas,
 // but 100k should be enough for 24h, assuming 5 hosts monitored with "exhaustive" preset config. this would also require ~2 GB RAM per one Influx host
 const (
-	datastoreJSON             = "json"
-	datastorePostgres         = "postgres"
-	datastorePrometheus       = "prometheus"
-	presetConfigYAMLFile      = "preset-configs.yaml"
-	fileBasedMetricHelpersDir = "00_helpers"
+	datastoreJSON        = "json"
+	datastorePostgres    = "postgres"
+	datastorePrometheus  = "prometheus"
+	presetConfigYAMLFile = "preset-configs.yaml"
 
 	gathererStatusStart     = "START"
 	gathererStatusStop      = "STOP"
@@ -256,7 +255,6 @@ var undersizedDBs = make(map[string]bool)    // DBs below the --min-db-size-mb l
 var undersizedDBsLock = sync.RWMutex{}
 var recoveryIgnoredDBs = make(map[string]bool) // DBs in recovery state and OnlyIfMaster specified in config
 var recoveryIgnoredDBsLock = sync.RWMutex{}
-var regexSQLHelperFunctionCalled = regexp.MustCompile(`(?si)^\s*(select|with).*\s+get_\w+\(\)[\s,$]+`) // SQL helpers expected to follow get_smth() naming
 var metricNameRemaps = make(map[string]string)
 var metricNameRemapLock = sync.RWMutex{}
 
@@ -1558,38 +1556,6 @@ func ReadPresetMetricsConfigFromFolder(folder string, _ bool) (map[string]map[st
 	return pmm, err
 }
 
-func ParseMetricColumnAttrsFromYAML(yamlPath string) metrics.MetricColumnAttrs {
-	c := metrics.MetricColumnAttrs{}
-
-	yamlFile, err := os.ReadFile(yamlPath)
-	if err != nil {
-		logger.Errorf("Error reading file %s: %s", yamlFile, err)
-		return c
-	}
-
-	err = yaml.Unmarshal(yamlFile, &c)
-	if err != nil {
-		logger.Errorf("Unmarshaling error: %v", err)
-	}
-	return c
-}
-
-func ParseMetricAttrsFromYAML(yamlPath string) metrics.MetricAttrs {
-	c := metrics.MetricAttrs{}
-
-	yamlFile, err := os.ReadFile(yamlPath)
-	if err != nil {
-		logger.Errorf("Error reading file %s: %s", yamlFile, err)
-		return c
-	}
-
-	err = yaml.Unmarshal(yamlFile, &c)
-	if err != nil {
-		logger.Errorf("Unmarshaling error: %v", err)
-	}
-	return c
-}
-
 func ParseMetricColumnAttrsFromString(jsonAttrs string) metrics.MetricColumnAttrs {
 	c := metrics.MetricColumnAttrs{}
 
@@ -1608,124 +1574,6 @@ func ParseMetricAttrsFromString(jsonAttrs string) metrics.MetricAttrs {
 		logger.Errorf("Unmarshaling error: %v", err)
 	}
 	return c
-}
-
-// expected is following structure: metric_name/pg_ver/metric(_master|standby).sql
-func ReadMetricsFromFolder(folder string, failOnError bool) (map[string]map[uint]metrics.MetricVersionProperties, error) {
-	metricsMap := make(map[string]map[uint]metrics.MetricVersionProperties)
-	metricNameRemapsNew := make(map[string]string)
-	rIsDigitOrPunctuation := regexp.MustCompile(`^[\d\.]+$`)
-	metricNamePattern := `^[a-z0-9_\.]+$`
-	rMetricNameFilter := regexp.MustCompile(metricNamePattern)
-
-	logger.Infof("Searching for metrics from path %s ...", folder)
-	metricFolders, err := os.ReadDir(folder)
-	if err != nil {
-		if failOnError {
-			logger.Fatalf("Could not read path %s: %s", folder, err)
-		}
-		logger.Error(err)
-		return metricsMap, err
-	}
-
-	for _, f := range metricFolders {
-		if f.IsDir() {
-			if f.Name() == fileBasedMetricHelpersDir {
-				continue // helpers are pulled in when needed
-			}
-			if !rMetricNameFilter.MatchString(f.Name()) {
-				logger.Warningf("Ignoring metric '%s' as name not fitting pattern: %s", f.Name(), metricNamePattern)
-				continue
-			}
-			//log.Debugf("Processing metric: %s", f.Name())
-			pgVers, err := os.ReadDir(path.Join(folder, f.Name()))
-			if err != nil {
-				logger.Error(err)
-				return metricsMap, err
-			}
-
-			var MetricAttrs metrics.MetricAttrs
-			if _, err = os.Stat(path.Join(folder, f.Name(), "metric_attrs.yaml")); err == nil {
-				MetricAttrs = ParseMetricAttrsFromYAML(path.Join(folder, f.Name(), "metric_attrs.yaml"))
-				//log.Debugf("Discovered following metric attributes for metric %s: %v", f.Name(), metrics.MetricAttrs)
-				if MetricAttrs.MetricStorageName != "" {
-					metricNameRemapsNew[f.Name()] = MetricAttrs.MetricStorageName
-				}
-			}
-
-			var metricColumnAttrs metrics.MetricColumnAttrs
-			if _, err = os.Stat(path.Join(folder, f.Name(), "column_attrs.yaml")); err == nil {
-				metricColumnAttrs = ParseMetricColumnAttrsFromYAML(path.Join(folder, f.Name(), "column_attrs.yaml"))
-				//log.Debugf("Discovered following column attributes for metric %s: %v", f.Name(), metricColumnAttrs)
-			}
-
-			for _, pgVer := range pgVers {
-				if strings.HasSuffix(pgVer.Name(), ".md") || pgVer.Name() == "column_attrs.yaml" || pgVer.Name() == "metric_attrs.yaml" {
-					continue
-				}
-				if !rIsDigitOrPunctuation.MatchString(pgVer.Name()) {
-					logger.Warningf("Invalid metric structure - version folder names should consist of only numerics/dots, found: %s", pgVer.Name())
-					continue
-				}
-				dirName := VersionToInt(pgVer.Name())
-				if dirName == 0 {
-					logger.Errorf("Could not parse \"%s\" to Decimal", pgVer.Name())
-					continue
-				}
-
-				metricDefs, err := os.ReadDir(path.Join(folder, f.Name(), pgVer.Name()))
-				if err != nil {
-					logger.Error(err)
-					continue
-				}
-
-				foundMetricDefFiles := make(map[string]bool) // to warn on accidental duplicates
-				for _, md := range metricDefs {
-					if strings.HasPrefix(md.Name(), "metric") && strings.HasSuffix(md.Name(), ".sql") {
-						p := path.Join(folder, f.Name(), pgVer.Name(), md.Name())
-						metricSQL, err := os.ReadFile(p)
-						if err != nil {
-							logger.Errorf("Failed to read metric definition at: %s", p)
-							continue
-						}
-						_, exists := foundMetricDefFiles[md.Name()]
-						if exists {
-							logger.Warningf("Multiple definitions found for metric [%s:%s], using the last one (%s)...", f.Name(), pgVer.Name(), md.Name())
-						}
-						foundMetricDefFiles[md.Name()] = true
-
-						//log.Debugf("Metric definition for \"%s\" ver %s: %s", f.Name(), pgVer.Name(), metric_sql)
-						mvpVer, ok := metricsMap[f.Name()]
-						var mvp metrics.MetricVersionProperties
-						if !ok {
-							metricsMap[f.Name()] = make(map[uint]metrics.MetricVersionProperties)
-						}
-						mvp, ok = mvpVer[dirName]
-						if !ok {
-							mvp = metrics.MetricVersionProperties{SQL: string(metricSQL[:]), ColumnAttrs: metricColumnAttrs, MetricAttrs: MetricAttrs}
-						}
-						mvp.CallsHelperFunctions = DoesMetricDefinitionCallHelperFunctions(mvp.SQL)
-						if strings.Contains(md.Name(), "_master") {
-							mvp.MasterOnly = true
-						}
-						if strings.Contains(md.Name(), "_standby") {
-							mvp.StandbyOnly = true
-						}
-						if strings.Contains(md.Name(), "_su") {
-							mvp.SQLSU = string(metricSQL[:])
-						}
-						metricsMap[f.Name()][dirName] = mvp
-					}
-				}
-			}
-		}
-	}
-
-	metricNameRemapLock.Lock()
-	metricNameRemaps = metricNameRemapsNew
-	metricNameRemapLock.Unlock()
-
-	return metricsMap, nil
 }
 
 func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md MonitoredDatabase) (MonitoredDatabase, int) {
@@ -2184,13 +2032,6 @@ func DoesEmergencyTriggerfileExist() bool {
 	return err == nil
 }
 
-func DoesMetricDefinitionCallHelperFunctions(sqlDefinition string) bool {
-	if !opts.Metric.NoHelperFunctions { // save on regex matching --no-helper-functions param not set, information will not be used then anyways
-		return false
-	}
-	return regexSQLHelperFunctionCalled.MatchString(sqlDefinition)
-}
-
 var opts *config.CmdOptions
 
 // version output variables
@@ -2429,7 +2270,7 @@ func main() {
 	mainLoopCount := 0
 	var monitoredDbs []MonitoredDatabase
 	var lastMetricsRefreshTime int64
-	var metrics map[string]map[uint]metrics.MetricVersionProperties
+	var metricDefs map[string]map[uint]metrics.MetricVersionProperties
 	var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 	var metricConfig map[string]float64                       // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 
@@ -2441,14 +2282,20 @@ func main() {
 		if time.Now().Unix()-lastMetricsRefreshTime > metricDefinitionRefreshTime {
 			//metrics
 			if fileBasedMetrics {
-				metrics, err = ReadMetricsFromFolder(opts.Metric.MetricsFolder, firstLoop)
+				metricDefs, metricNameRemaps, err = metrics.ReadMetricsFromFolder(logger, opts.Metric.MetricsFolder)
+				if err != nil {
+					logger.Error(err)
+				}
 			} else {
-				metrics, err = ReadMetricDefinitionMapFromPostgres(firstLoop)
+				metricDefs, metricNameRemaps, err = ReadMetricDefinitionMapFromPostgres()
 			}
 			if err == nil {
-				UpdateMetricDefinitionMap(metrics)
+				UpdateMetricDefinitionMap(metricDefs)
 				lastMetricsRefreshTime = time.Now().Unix()
 			} else {
+				if firstLoop {
+					logger.Fatal(err)
+				}
 				logger.Errorf("Could not refresh metric definitions: %s", err)
 			}
 		}
