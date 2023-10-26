@@ -158,23 +158,6 @@ func executeSchemaScripts(ctx context.Context, conn PgxIface, schema string, sql
 	return nil
 }
 
-type MetricSchemaType int
-
-const (
-	MetricSchemaPostgres MetricSchemaType = iota
-	MetricSchemaTimescale
-)
-
-func GetMetricSchemaType(ctx context.Context, conn PgxIface) (metricSchema MetricSchemaType, err error) {
-	var isTs bool
-	metricSchema = MetricSchemaPostgres
-	sqlSchemaType := `SELECT schema_type = 'timescale' FROM admin.storage_schema_type`
-	if err = conn.QueryRow(ctx, sqlSchemaType).Scan(&isTs); err == nil && isTs {
-		metricSchema = MetricSchemaTimescale
-	}
-	return
-}
-
 func GetTableColumns(ctx context.Context, conn PgxIface, table string) (cols []string, err error) {
 	sql := `SELECT attname FROM pg_attribute a WHERE a.attrelid = to_regclass($1) and a.attnum > 0 and not a.attisdropped`
 	r, err := conn.Query(ctx, sql, table)

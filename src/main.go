@@ -37,6 +37,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/cybertec-postgresql/pgwatch3/webserver"
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
 
 	"github.com/coreos/go-systemd/daemon"
 	"golang.org/x/crypto/pbkdf2"
@@ -193,7 +194,7 @@ var dbTypeMap = map[string]bool{config.DbTypePg: true, config.DbTypePgCont: true
 var dbTypes = []string{config.DbTypePg, config.DbTypePgCont, config.DbTypeBouncer, config.DbTypePatroni, config.DbTypePatroniCont, config.DbTypePatroniNamespaceDiscovery} // used for informational purposes
 var specialMetrics = map[string]bool{recoMetricName: true, specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 var directlyFetchableOSMetrics = map[string]bool{metricPsutilCPU: true, metricPsutilDisk: true, metricPsutilDiskIoTotal: true, metricPsutilMem: true, metricCPULoad: true}
-var metricDefinitionMap map[string]map[uint]metrics.MetricVersionProperties
+var metricDefinitionMap map[string]map[uint]metrics.MetricProperties
 var metricDefMapLock = sync.RWMutex{}
 var hostMetricIntervalMap = make(map[string]float64) // [db1_metric] = 30
 var dbPgVersionMap = make(map[string]DBVersionMapEntry)
@@ -644,9 +645,9 @@ func (x UIntSlice) Less(i, j int) bool { return x[i] < x[j] }
 func (x UIntSlice) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
 
 // assumes upwards compatibility for versions
-func GetMetricVersionProperties(metric string, vme DBVersionMapEntry, metricDefMap map[string]map[uint]metrics.MetricVersionProperties) (metrics.MetricVersionProperties, error) {
+func GetMetricVersionProperties(metric string, vme DBVersionMapEntry, metricDefMap map[string]map[uint]metrics.MetricProperties) (metrics.MetricProperties, error) {
 	var keys UIntSlice
-	var mdm map[string]map[uint]metrics.MetricVersionProperties
+	var mdm map[string]map[uint]metrics.MetricProperties
 
 	if metricDefMap != nil {
 		mdm = metricDefMap
@@ -659,7 +660,7 @@ func GetMetricVersionProperties(metric string, vme DBVersionMapEntry, metricDefM
 	_, ok := mdm[metric]
 	if !ok || len(mdm[metric]) == 0 {
 		logger.Debug("metric", metric, "not found")
-		return metrics.MetricVersionProperties{}, errors.New("metric SQL not found")
+		return metrics.MetricProperties{}, errors.New("metric SQL not found")
 	}
 
 	for k := range mdm[metric] {
@@ -683,9 +684,9 @@ func GetMetricVersionProperties(metric string, vme DBVersionMapEntry, metricDefM
 
 	if !found {
 		if vme.Version < minVer { // metric not yet available for given PG ver
-			return metrics.MetricVersionProperties{}, fmt.Errorf("no suitable SQL found for metric \"%s\", server version \"%s\" too old. min defined SQL ver: %d", metric, vme.VersionStr, minVer)
+			return metrics.MetricProperties{}, fmt.Errorf("no suitable SQL found for metric \"%s\", server version \"%s\" too old. min defined SQL ver: %d", metric, vme.VersionStr, minVer)
 		}
-		return metrics.MetricVersionProperties{}, fmt.Errorf("no suitable SQL found for metric \"%s\", version \"%s\"", metric, vme.VersionStr)
+		return metrics.MetricProperties{}, fmt.Errorf("no suitable SQL found for metric \"%s\", version \"%s\"", metric, vme.VersionStr)
 	}
 
 	ret := mdm[metric][bestVer]
@@ -727,8 +728,8 @@ func GetMetricVersionProperties(metric string, vme DBVersionMapEntry, metricDefM
 	return ret, nil
 }
 
-func GetAllRecoMetricsForVersion(vme DBVersionMapEntry) map[string]metrics.MetricVersionProperties {
-	mvpMap := make(map[string]metrics.MetricVersionProperties)
+func GetAllRecoMetricsForVersion(vme DBVersionMapEntry) map[string]metrics.MetricProperties {
+	mvpMap := make(map[string]metrics.MetricProperties)
 	metricDefMapLock.RLock()
 	defer metricDefMapLock.RUnlock()
 	for m := range metricDefinitionMap {
@@ -1059,7 +1060,7 @@ func PutToInstanceCache(msg MetricFetchMessage, data metrics.MetricData) {
 	instanceMetricCacheTimestampLock.Unlock()
 }
 
-func IsCacheableMetric(msg MetricFetchMessage, mvp metrics.MetricVersionProperties) bool {
+func IsCacheableMetric(msg MetricFetchMessage, mvp metrics.MetricProperties) bool {
 	if !(msg.DBType == config.DbTypePgCont || msg.DBType == config.DbTypePatroniCont) {
 		return false
 	}
@@ -1113,11 +1114,11 @@ func deepCopyMetricData(data metrics.MetricData) metrics.MetricData {
 	return newData
 }
 
-func deepCopyMetricDefinitionMap(mdm map[string]map[uint]metrics.MetricVersionProperties) map[string]map[uint]metrics.MetricVersionProperties {
-	newMdm := make(map[string]map[uint]metrics.MetricVersionProperties)
+func deepCopyMetricDefinitionMap(mdm map[string]map[uint]metrics.MetricProperties) map[string]map[uint]metrics.MetricProperties {
+	newMdm := make(map[string]map[uint]metrics.MetricProperties)
 
 	for metric, verMap := range mdm {
-		newMdm[metric] = make(map[uint]metrics.MetricVersionProperties)
+		newMdm[metric] = make(map[uint]metrics.MetricProperties)
 		for ver, mvp := range verMap {
 			newMdm[metric][ver] = mvp
 		}
@@ -1133,7 +1134,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 	var lastUptimeS int64 = -1 // used for "server restarted" event detection
 	var lastErrorNotificationTime time.Time
 	var vme DBVersionMapEntry
-	var mvp metrics.MetricVersionProperties
+	var mvp metrics.MetricProperties
 	var err error
 	failedFetches := 0
 	metricNameForStorage := metricName
@@ -1269,7 +1270,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 	}
 }
 
-func FetchStatsDirectlyFromOS(msg MetricFetchMessage, vme DBVersionMapEntry, mvp metrics.MetricVersionProperties) ([]metrics.MetricStoreMessage, error) {
+func FetchStatsDirectlyFromOS(msg MetricFetchMessage, vme DBVersionMapEntry, mvp metrics.MetricProperties) ([]metrics.MetricStoreMessage, error) {
 	var data []map[string]any
 	var err error
 
@@ -1293,7 +1294,7 @@ func FetchStatsDirectlyFromOS(msg MetricFetchMessage, vme DBVersionMapEntry, mvp
 }
 
 // data + custom tags + counters
-func DatarowsToMetricstoreMessage(data metrics.MetricData, msg MetricFetchMessage, vme DBVersionMapEntry, mvp metrics.MetricVersionProperties) metrics.MetricStoreMessage {
+func DatarowsToMetricstoreMessage(data metrics.MetricData, msg MetricFetchMessage, vme DBVersionMapEntry, mvp metrics.MetricProperties) metrics.MetricStoreMessage {
 	md, err := GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
 	if err != nil {
 		logger.Errorf("Could not resolve DBUniqueName %s, cannot set custom attributes for gathered data: %v", msg.DBUniqueName, err)
@@ -1495,11 +1496,13 @@ func IsInDisabledTimeDayRange(localTime time.Time, metricAttrsDisabledDays strin
 	return false
 }
 
-func UpdateMetricDefinitionMap(newMetrics map[string]map[uint]metrics.MetricVersionProperties) {
+func UpdateMetricDefinitions(newMetrics map[string]map[uint]metrics.MetricProperties, newRenamings map[string]string) {
 	metricDefMapLock.Lock()
 	metricDefinitionMap = newMetrics
 	metricDefMapLock.Unlock()
-	//log.Debug("metric_def_map:", metric_def_map)
+	metricNameRemapLock.Lock()
+	metricNameRemaps = newRenamings
+	metricNameRemapLock.Unlock()
 	logger.Debug("metrics definitions refreshed - nr. found:", len(newMetrics))
 }
 
@@ -1554,26 +1557,6 @@ func ReadPresetMetricsConfigFromFolder(folder string, _ bool) (map[string]map[st
 	}
 	logger.Infof("%d preset metric definitions found", len(pcs))
 	return pmm, err
-}
-
-func ParseMetricColumnAttrsFromString(jsonAttrs string) metrics.MetricColumnAttrs {
-	c := metrics.MetricColumnAttrs{}
-
-	err := yaml.Unmarshal([]byte(jsonAttrs), &c)
-	if err != nil {
-		logger.Errorf("Unmarshaling error: %v", err)
-	}
-	return c
-}
-
-func ParseMetricAttrsFromString(jsonAttrs string) metrics.MetricAttrs {
-	c := metrics.MetricAttrs{}
-
-	err := yaml.Unmarshal([]byte(jsonAttrs), &c)
-	if err != nil {
-		logger.Errorf("Unmarshaling error: %v", err)
-	}
-	return c
 }
 
 func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md MonitoredDatabase) (MonitoredDatabase, int) {
@@ -2270,7 +2253,8 @@ func main() {
 	mainLoopCount := 0
 	var monitoredDbs []MonitoredDatabase
 	var lastMetricsRefreshTime int64
-	var metricDefs map[string]map[uint]metrics.MetricVersionProperties
+	var metricDefs map[string]map[uint]metrics.MetricProperties
+	var renamingDefs map[string]string
 	var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 	var metricConfig map[string]float64                       // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 
@@ -2280,23 +2264,19 @@ func main() {
 		gatherersShutDown := 0
 
 		if time.Now().Unix()-lastMetricsRefreshTime > metricDefinitionRefreshTime {
-			//metrics
 			if fileBasedMetrics {
-				metricDefs, metricNameRemaps, err = metrics.ReadMetricsFromFolder(logger, opts.Metric.MetricsFolder)
-				if err != nil {
-					logger.Error(err)
-				}
+				metricDefs, renamingDefs, err = metrics.ReadMetricsFromFolder(mainContext, logger, opts.Metric.MetricsFolder)
 			} else {
-				metricDefs, metricNameRemaps, err = ReadMetricDefinitionMapFromPostgres()
+				metricDefs, renamingDefs, err = db.ReadMetricsFromPostgres(mainContext, logger, configDb)
 			}
 			if err == nil {
-				UpdateMetricDefinitionMap(metricDefs)
+				UpdateMetricDefinitions(metricDefs, renamingDefs)
 				lastMetricsRefreshTime = time.Now().Unix()
 			} else {
 				if firstLoop {
 					logger.Fatal(err)
 				}
-				logger.Errorf("Could not refresh metric definitions: %s", err)
+				logger.Errorf("Could not refresh metric definitions: %w", err)
 			}
 		}
 
@@ -2388,6 +2368,16 @@ func main() {
 			}
 			lastMonitoredDBsUpdate = time.Now()
 		}
+
+		logger.
+			WithField("databases", len(monitoredDbs)).
+			WithField("metrics", len(metricDefinitionMap)).
+			Log(func() logrus.Level {
+				if firstLoop && len(monitoredDbs)*len(metricDefinitionMap) == 0 {
+					return logrus.WarnLevel
+				}
+				return logrus.InfoLevel
+			}(), "host info refreshed")
 
 		if firstLoop && (len(monitoredDbs) == 0 || len(metricDefinitionMap) == 0) {
 			logger.WithField("databases", len(monitoredDbs)).

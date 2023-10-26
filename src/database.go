@@ -1196,7 +1196,7 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 }
 
 // some extra work needed as pgpool SHOW commands don't specify the return data types for some reason
-func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp metrics.MetricVersionProperties) (metrics.MetricData, error) {
+func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp metrics.MetricProperties) (metrics.MetricData, error) {
 	var retData = make(metrics.MetricData, 0)
 	epochNs := time.Now().UnixNano()
 
@@ -1288,69 +1288,6 @@ func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp metrics
 	return retData, nil
 }
 
-func ReadMetricDefinitionMapFromPostgres() (
-	metricDefMapNew map[string]map[uint]metrics.MetricVersionProperties,
-	metricNameRemapsNew map[string]string,
-	err error) {
-
-	sql := `select /* pgwatch3_generated */ m_name, m_pg_version_from::text, m_sql, m_master_only, m_standby_only,
-			  coalesce(m_column_attrs::text, '') as m_column_attrs, coalesce(m_column_attrs::text, '') as m_column_attrs,
-			  coalesce(ma_metric_attrs::text, '') as ma_metric_attrs, m_sql_su
-			from
-              pgwatch3.metric
-              left join
-              pgwatch3.metric_attribute on (ma_metric_name = m_name)
-			where
-              m_is_active
-		    order by
-		      1, 2`
-
-	logger.Info("updating metrics definitons from ConfigDB...")
-	data, err := DBExecRead(mainContext, configDb, sql)
-	if err != nil {
-		return
-	}
-	if len(data) == 0 {
-		logger.Warning("no active metric definitions found from config DB")
-		return
-	}
-
-	logger.WithField("metrics", len(data)).Debug("Active metrics found in config database (pgwatch3.metric)")
-	for _, row := range data {
-		_, ok := metricDefMapNew[row["m_name"].(string)]
-		if !ok {
-			metricDefMapNew[row["m_name"].(string)] = make(map[uint]metrics.MetricVersionProperties)
-		}
-		d := VersionToInt(row["m_pg_version_from"].(string))
-		ca := metrics.MetricColumnAttrs{}
-		if row["m_column_attrs"].(string) != "" {
-			ca = ParseMetricColumnAttrsFromString(row["m_column_attrs"].(string))
-		}
-		ma := metrics.MetricAttrs{}
-		if row["ma_metric_attrs"].(string) != "" {
-			ma = ParseMetricAttrsFromString(row["ma_metric_attrs"].(string))
-			if ma.MetricStorageName != "" {
-				metricNameRemapsNew[row["m_name"].(string)] = ma.MetricStorageName
-			}
-		}
-		metricDefMapNew[row["m_name"].(string)][d] = metrics.MetricVersionProperties{
-			SQL:                  row["m_sql"].(string),
-			SQLSU:                row["m_sql_su"].(string),
-			MasterOnly:           row["m_master_only"].(bool),
-			StandbyOnly:          row["m_standby_only"].(bool),
-			ColumnAttrs:          ca,
-			MetricAttrs:          ma,
-			CallsHelperFunctions: metrics.DoesMetricDefinitionCallHelperFunctions(row["m_sql"].(string)),
-		}
-	}
-
-	metricNameRemapLock.Lock()
-	metricNameRemaps = metricNameRemapsNew
-	metricNameRemapLock.Unlock()
-
-	return
-}
-
 func DoesFunctionExists(dbUnique, functionName string) bool {
 	logger.Debug("Checking for function existence", dbUnique, functionName)
 	sql := fmt.Sprintf("select /* pgwatch3_generated */ 1 from pg_proc join pg_namespace n on pronamespace = n.oid where proname = '%s' and n.nspname = 'public'", functionName)
@@ -1414,7 +1351,7 @@ func TryCreateMetricsFetchingHelpers(dbUnique string) error {
 	}
 
 	if fileBasedMetrics {
-		helpers, _, err := metrics.ReadMetricsFromFolder(logger, path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir))
+		helpers, _, err := metrics.ReadMetricsFromFolder(mainContext, logger, path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir))
 		if err != nil {
 			logger.Errorf("Failed to fetch helpers from \"%s\": %s", path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir), err)
 			return err
