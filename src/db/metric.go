@@ -28,14 +28,6 @@ func GetMetricSchemaType(ctx context.Context, conn PgxIface) (metricSchema Metri
 	return
 }
 
-func dbExecRead(ctx context.Context, conn PgxIface, sql string, args ...any) (metrics.MetricData, error) {
-	rows, err := conn.Query(ctx, sql, args...)
-	if err == nil {
-		return pgx.CollectRows(rows, pgx.RowToMap)
-	}
-	return nil, err
-}
-
 func versionToInt(v string) uint {
 	if len(v) == 0 {
 		return 0
@@ -85,7 +77,6 @@ func ReadMetricsFromPostgres(ctx context.Context, logger log.LoggerIface, conn P
 	if err != nil {
 		return
 	}
-	// data, err := dbExecRead(ctx, conn, sql)
 	if len(data) == 0 {
 		logger.Warning("no active metric definitions found from config DB")
 		return
