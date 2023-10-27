@@ -16,3 +16,6 @@ dist
 
 # delve debugger file
 debug
+
+# VS Code settings
+.vscode/
