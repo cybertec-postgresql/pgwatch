@@ -4,20 +4,20 @@ import (
 	"time"
 )
 
-type MetricColumnAttrs struct {
+type MetricPrometheusAttrs struct {
 	PrometheusGaugeColumns    []string `yaml:"prometheus_gauge_columns"`
 	PrometheusIgnoredColumns  []string `yaml:"prometheus_ignored_columns"` // for cases where we don't want some columns to be exposed in Prom mode
 	PrometheusAllGaugeColumns bool     `yaml:"prometheus_all_gauge_columns"`
 }
 
-type ExtensionOverrides struct {
-	TargetMetric              string          `yaml:"target_metric"`
-	ExpectedExtensionVersions []ExtensionInfo `yaml:"expected_extension_versions"`
-}
-
 type ExtensionInfo struct {
 	ExtName       string `yaml:"ext_name"`
 	ExtMinVersion string `yaml:"ext_min_version"`
+}
+
+type ExtensionOverrides struct {
+	TargetMetric              string          `yaml:"target_metric"`
+	ExpectedExtensionVersions []ExtensionInfo `yaml:"expected_extension_versions"`
 }
 
 type MetricAttrs struct {
@@ -35,7 +35,7 @@ type MetricProperties struct {
 	SQLSU                string
 	MasterOnly           bool
 	StandbyOnly          bool
-	ColumnAttrs          MetricColumnAttrs // Prometheus Metric Type (Counter is default) and ignore list
+	PrometheusAttrs      MetricPrometheusAttrs // Prometheus Metric Type (Counter is default) and ignore list
 	MetricAttrs          MetricAttrs
 	CallsHelperFunctions bool
 }

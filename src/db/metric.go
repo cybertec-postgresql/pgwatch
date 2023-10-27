@@ -90,7 +90,7 @@ func ReadMetricsFromPostgres(ctx context.Context, conn PgxIface) (
 			metricDefMapNew[row["m_name"].(string)] = make(map[uint]metrics.MetricProperties)
 		}
 		d := versionToInt(row["m_pg_version_from"].(string))
-		ca := metrics.MetricColumnAttrs{}
+		ca := metrics.MetricPrometheusAttrs{}
 		if row["m_column_attrs"].(string) != "" {
 			_ = yaml.Unmarshal([]byte(row["m_column_attrs"].(string)), &ca)
 		}
@@ -106,7 +106,7 @@ func ReadMetricsFromPostgres(ctx context.Context, conn PgxIface) (
 			SQLSU:                row["m_sql_su"].(string),
 			MasterOnly:           row["m_master_only"].(bool),
 			StandbyOnly:          row["m_standby_only"].(bool),
-			ColumnAttrs:          ca,
+			PrometheusAttrs:      ca,
 			MetricAttrs:          ma,
 			CallsHelperFunctions: metrics.DoesMetricDefinitionCallHelperFunctions(row["m_sql"].(string)),
 		}
