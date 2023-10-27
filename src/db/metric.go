@@ -48,7 +48,7 @@ func versionToInt(v string) uint {
 	return uint(major*100 + minor)
 }
 
-func ReadMetricsFromPostgres(ctx context.Context, logger log.LoggerIface, conn PgxIface) (
+func ReadMetricsFromPostgres(ctx context.Context, conn PgxIface) (
 	metricDefMapNew map[string]map[uint]metrics.MetricProperties,
 	metricNameRemapsNew map[string]string,
 	err error) {
@@ -64,7 +64,7 @@ func ReadMetricsFromPostgres(ctx context.Context, logger log.LoggerIface, conn P
               m_is_active
 		    order by
 		      1, 2`
-
+	logger := log.GetLogger(ctx)
 	logger.Info("updating metrics definitons from ConfigDB...")
 
 	var (

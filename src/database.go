@@ -1351,7 +1351,7 @@ func TryCreateMetricsFetchingHelpers(dbUnique string) error {
 	}
 
 	if fileBasedMetrics {
-		helpers, _, err := metrics.ReadMetricsFromFolder(mainContext, logger, path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir))
+		helpers, _, err := metrics.ReadMetricsFromFolder(mainContext, path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir))
 		if err != nil {
 			logger.Errorf("Failed to fetch helpers from \"%s\": %s", path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir), err)
 			return err
