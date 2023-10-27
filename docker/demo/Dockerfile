@@ -25,7 +25,7 @@ FROM postgres:15-bullseye AS releaser
 
 # Copy over the compiled gatherer
 COPY --from=builder /pgwatch3/pgwatch3 /pgwatch3/
-COPY src/metrics /pgwatch3/metrics
+COPY src/metrics/sql /pgwatch3/metrics
 
 # Install dependencies
 ENV DEBIAN_FRONTEND noninteractive
