@@ -82,7 +82,7 @@ services:
           SELECT 'test', 'exhaustive', null, 'postgres', '5432', 'pgwatch3', 'pgwatch3', 'pgwatch3admin'
           WHERE NOT EXISTS (SELECT * FROM pgwatch3.monitored_db WHERE (md_unique_name, md_hostname, md_dbname) = ('test', 'localhost', 'pgwatch3'))"
     volumes:
-      - "./src/metrics/00_helpers:/tmp/00_helpers"
+      - "./src/metrics/sql/00_helpers:/tmp/00_helpers"
     depends_on:
       postgres:
         condition: service_healthy
