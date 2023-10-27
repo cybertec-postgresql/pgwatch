@@ -148,7 +148,7 @@ const (
 )
 
 // actual requirements depend a lot of metric type and nr. of obects in schemas,
-// but 100k should be enough for 24h, assuming 5 hosts monitored with "exhaustive" preset config. this would also require ~2 GB RAM per one Influx host
+// but 100k should be enough for 24h, assuming 5 hosts monitored with "exhaustive" preset config
 const (
 	datastoreJSON        = "json"
 	datastorePostgres    = "postgres"
@@ -205,10 +205,7 @@ var monitoredDbCacheLock sync.RWMutex
 
 var monitoredDbConnCacheLock = sync.RWMutex{}
 var lastSQLFetchError sync.Map
-var influxHostCount = 1
-var influxConnectStrings [2]string // Max. 2 Influx metrics stores currently supported
 
-// secondary Influx meant for HA or Grafana load balancing for 100+ instances with lots of alerts
 var fileBasedMetrics = false
 var presetMetricDefMap map[string]map[string]float64 // read from metrics folder in "file mode"
 // / internal statistics calculation
@@ -516,122 +513,6 @@ func MetricsBatcher(ctx context.Context, batchingMaxDelayMillis int64, bufferedS
 					storageCh <- flushed
 					batch = make([]metrics.MetricStoreMessage, 0)
 					datapointCounter = 0
-				}
-			}
-		}
-	}
-}
-
-func WriteMetricsToJSONFile(msgArr []metrics.MetricStoreMessage, jsonPath string) error {
-	if len(msgArr) == 0 {
-		return nil
-	}
-
-	jsonOutFile, err := os.OpenFile(jsonPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
-	if err != nil {
-		atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-		return err
-	}
-	defer jsonOutFile.Close()
-
-	logger.Infof("Writing %d metric sets to JSON file at \"%s\"...", len(msgArr), jsonPath)
-	enc := json.NewEncoder(jsonOutFile)
-	for _, msg := range msgArr {
-		dataRow := map[string]any{"metric": msg.MetricName, "data": msg.Data, "dbname": msg.DBUniqueName, "custom_tags": msg.CustomTags}
-		if opts.AddRealDbname && msg.RealDbname != "" {
-			dataRow[opts.RealDbnameField] = msg.RealDbname
-		}
-		if opts.AddSystemIdentifier && msg.SystemIdentifier != "" {
-			dataRow[opts.SystemIdentifierField] = msg.SystemIdentifier
-		}
-		err = enc.Encode(dataRow)
-		if err != nil {
-			atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-			return err
-		}
-	}
-	return nil
-}
-
-func MetricsPersister(ctx context.Context, dataStore string, storageCh <-chan []metrics.MetricStoreMessage) {
-	var lastЕry = make([]time.Time, influxHostCount)         // if Influx errors out, don't retry before 10s
-	var lastDropWarning = make([]time.Time, influxHostCount) // log metric points drops every 10s to not overflow logs in case Influx is down for longer
-	var retryQueues = make([]*list.List, influxHostCount)    // separate queues for all Influx hosts
-	var inError = make([]bool, influxHostCount)
-	var err error
-
-	for i := 0; i < influxHostCount; i++ {
-		retryQueues[i] = list.New()
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case msgArr := <-storageCh:
-			for i, retryQueue := range retryQueues {
-
-				retryQueueLength := retryQueue.Len()
-
-				if retryQueueLength > 0 {
-					if retryQueueLength == persistQueueMaxSize {
-						droppedMsgs := retryQueue.Remove(retryQueue.Back())
-						datasetsDropped := len(droppedMsgs.([]metrics.MetricStoreMessage))
-						datapointsDropped := 0
-						for _, msg := range droppedMsgs.([]metrics.MetricStoreMessage) {
-							datapointsDropped += len(msg.Data)
-						}
-						atomic.AddUint64(&totalMetricsDroppedCounter, uint64(datapointsDropped))
-						if lastDropWarning[i].IsZero() || lastDropWarning[i].Before(time.Now().Add(time.Second*-10)) {
-							logger.Warningf("Dropped %d oldest data sets with %d data points from queue %d as PERSIST_QUEUE_MAX_SIZE = %d exceeded",
-								datasetsDropped, datapointsDropped, i, persistQueueMaxSize)
-							lastDropWarning[i] = time.Now()
-						}
-					}
-					retryQueue.PushFront(msgArr)
-				} else {
-					if dataStore == datastorePrometheus && opts.Metric.PrometheusAsyncMode {
-						if len(msgArr) == 0 || len(msgArr[0].Data) == 0 { // no batching in async prom mode, so using 0 indexing ok
-							continue
-						}
-						msg := msgArr[0]
-						PromAsyncCacheAddMetricData(msg.DBUniqueName, msg.MetricName, msgArr)
-						logger.Infof("[%s:%s] Added %d rows to Prom cache", msg.DBUniqueName, msg.MetricName, len(msg.Data))
-					} else if dataStore == datastorePostgres {
-						err = SendToPostgres(msgArr)
-						if err != nil && strings.Contains(err.Error(), "does not exist") {
-							// in case data was cleaned by user externally
-							logger.Warning("re-initializing metric partition cache due to possible external data cleanup...")
-							partitionMapMetric = make(map[string]ExistingPartitionInfo)
-							partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo)
-						}
-					} else if dataStore == datastoreJSON {
-						err = WriteMetricsToJSONFile(msgArr, opts.Metric.JSONStorageFile)
-					} else {
-						logger.Fatal("Invalid datastore:", dataStore)
-					}
-					lastЕry[i] = time.Now()
-
-					if err != nil {
-						logger.Errorf("Failed to write into datastore %d: %s", i, err)
-						inError[i] = true
-						retryQueue.PushFront(msgArr)
-					}
-				}
-			}
-		default:
-			for i, retryQueue := range retryQueues {
-				if retryQueue.Len() > 0 && (!inError[i] || lastЕry[i].Before(time.Now().Add(time.Second*-10))) {
-					err := ProcessRetryQueue(dataStore, influxConnectStrings[i], strconv.Itoa(i), retryQueue, 100)
-					if err != nil {
-						logger.Error("Error processing retry queue", i, ":", err)
-						inError[i] = true
-					} else {
-						inError[i] = false
-					}
-					lastЕry[i] = time.Now()
-				} else {
-					time.Sleep(time.Millisecond * 100) // nothing in queue nor in channel
 				}
 			}
 		}
@@ -2197,21 +2078,17 @@ func main() {
 			go MetricsBatcher(mainContext, opts.BatchingDelayMs, bufferedPersistCh, persistCh)
 		}
 
+		metricsWriter := metrics.MultiWriter{}
 		if opts.Metric.Datastore == datastoreJSON {
-			if len(opts.Metric.JSONStorageFile) == 0 {
-				logger.Fatal("--datastore=json requires --json-storage-file to be set")
-			}
-			jsonOutFile, err := os.Create(opts.Metric.JSONStorageFile) // test file path writeability
-			if err != nil {
-				logger.Fatalf("Could not create JSON storage file: %s", err)
-			}
-			err = jsonOutFile.Close()
+			jw, err := metrics.NewJSONWriter(mainContext, opts.Metric.JSONStorageFile)
 			if err != nil {
 				logger.Fatal(err)
 			}
-			logger.Warningf("In JSON output mode. Gathered metrics will be written to \"%s\"...", opts.Metric.JSONStorageFile)
-			go MetricsPersister(mainContext, datastoreJSON, persistCh)
-		} else if opts.Metric.Datastore == datastorePostgres {
+			metricsWriter.AddWriter(jw)
+			logger.Infof(`In JSON output mode. Gathered metrics will be written to "%s"`, opts.Metric.JSONStorageFile)
+		}
+
+		if opts.Metric.Datastore == datastorePostgres {
 
 			metricDb, err = db.InitAndTestMetricStoreConnection(mainContext, opts.Metric.PGMetricStoreConnStr)
 			if err != nil {
@@ -2223,7 +2100,7 @@ func main() {
 			}
 
 			logger.Info("starting PostgresPersister...")
-			go MetricsPersister(mainContext, datastorePostgres, persistCh)
+			go metricsWriter.WriteMetrics(mainContext, persistCh)
 
 			logger.Info("starting UniqueDbnamesListingMaintainer...")
 			go UniqueDbnamesListingMaintainer(mainContext, true)
@@ -2236,12 +2113,12 @@ func main() {
 		} else if opts.Metric.Datastore == datastorePrometheus {
 			if opts.Metric.PrometheusAsyncMode {
 				logger.Info("starting Prometheus Cache Persister...")
-				go MetricsPersister(mainContext, datastorePrometheus, persistCh)
+				go metricsWriter.WriteMetrics(mainContext, persistCh)
 			}
 			go StartPrometheusExporter(mainContext)
-		} else {
-			logger.Fatal("Unknown datastore. Check the --datastore param")
 		}
+
+		go metricsWriter.WriteMetrics(mainContext, persistCh)
 
 		_, _ = daemon.SdNotify(false, "READY=1") // Notify systemd, does nothing outside of systemd
 	}
@@ -2265,9 +2142,9 @@ func main() {
 
 		if time.Now().Unix()-lastMetricsRefreshTime > metricDefinitionRefreshTime {
 			if fileBasedMetrics {
-				metricDefs, renamingDefs, err = metrics.ReadMetricsFromFolder(mainContext, logger, opts.Metric.MetricsFolder)
+				metricDefs, renamingDefs, err = metrics.ReadMetricsFromFolder(mainContext, opts.Metric.MetricsFolder)
 			} else {
-				metricDefs, renamingDefs, err = db.ReadMetricsFromPostgres(mainContext, logger, configDb)
+				metricDefs, renamingDefs, err = db.ReadMetricsFromPostgres(mainContext, configDb)
 			}
 			if err == nil {
 				UpdateMetricDefinitions(metricDefs, renamingDefs)
@@ -2378,16 +2255,6 @@ func main() {
 				}
 				return logrus.InfoLevel
 			}(), "host info refreshed")
-
-		if firstLoop && (len(monitoredDbs) == 0 || len(metricDefinitionMap) == 0) {
-			logger.WithField("databases", len(monitoredDbs)).
-				WithField("metrics", len(metricDefinitionMap)).
-				Warning("host info refreshed")
-		} else {
-			logger.WithField("databases", len(monitoredDbs)).
-				WithField("metrics", len(metricDefinitionMap)).
-				Info("host info refreshed")
-		}
 
 		firstLoop = false // only used for failing when 1st config reading fails
 

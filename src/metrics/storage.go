@@ -2,23 +2,123 @@ package metrics
 
 import (
 	"context"
+	"encoding/json"
 	"io/fs"
 	"os"
 	"path"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"gopkg.in/yaml.v2"
 )
 
-type MetricWriter interface {
-	WriteMetric(m MetricData) (n int, err error)
+var (
+	totalMetricsDroppedCounter    uint64
+	datastoreWriteFailuresCounter uint64
+)
+
+const (
+	datastoreJSON       = "json"
+	datastorePostgres   = "postgres"
+	datastorePrometheus = "prometheus"
+)
+
+// Writer is an interface that writes metrics values
+type Writer interface {
+	Write(msgs []MetricStoreMessage) error
+}
+
+type MultiWriter struct {
+	writers []Writer
+	sync.Mutex
+}
+
+func (mw *MultiWriter) AddWriter(w Writer) {
+	mw.Lock()
+	mw.writers = append(mw.writers, w)
+	mw.Unlock()
+}
+
+func (mw *MultiWriter) WriteMetrics(ctx context.Context, storageCh <-chan []MetricStoreMessage) {
+	var err error
+	logger := log.GetLogger(ctx)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case msg := <-storageCh:
+			for _, w := range mw.writers {
+				err = w.Write(msg)
+				if err != nil {
+					logger.Error(err)
+				}
+			}
+		}
+	}
+}
+
+type JSONWriter struct {
+	filename              string
+	ctx                   context.Context
+	RealDbnameField       string
+	SystemIdentifierField string
+}
+
+func NewJSONWriter(ctx context.Context, fname string) (*JSONWriter, error) {
+	if jf, err := os.Create(fname); err != nil {
+		return nil, err
+	} else if err = jf.Close(); err != nil {
+		return nil, err
+	}
+	return &JSONWriter{
+		filename:              fname,
+		ctx:                   ctx,
+		RealDbnameField:       "real_dbname",
+		SystemIdentifierField: "sys_id",
+	}, nil
+}
+
+func (jw *JSONWriter) Write(msgs []MetricStoreMessage) error {
+	if len(msgs) == 0 {
+		return nil
+	}
+	logger := log.GetLogger(jw.ctx)
+	jsonOutFile, err := os.OpenFile(jw.filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
+	if err != nil {
+		atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
+		return err
+	}
+	defer func() { _ = jsonOutFile.Close() }()
+	logger.Infof("Writing %d metric sets to JSON file at \"%s\"...", len(msgs), jw.filename)
+	enc := json.NewEncoder(jsonOutFile)
+	for _, msg := range msgs {
+		dataRow := map[string]any{
+			"metric":      msg.MetricName,
+			"data":        msg.Data,
+			"dbname":      msg.DBUniqueName,
+			"custom_tags": msg.CustomTags,
+		}
+		if jw.RealDbnameField != "" && msg.RealDbname != "" {
+			dataRow[jw.RealDbnameField] = msg.RealDbname
+		}
+		if jw.SystemIdentifierField != "" && msg.SystemIdentifier != "" {
+			dataRow[jw.SystemIdentifierField] = msg.SystemIdentifier
+		}
+		err = enc.Encode(dataRow)
+		if err != nil {
+			atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
+			return err
+		}
+	}
+	return nil
 }
 
 // expected is following structure: metric_name/pg_ver/metric(_master|standby).sql
-func ReadMetricsFromFolder(ctx context.Context, logger log.LoggerIface, folder string) (
+func ReadMetricsFromFolder(ctx context.Context, folder string) (
 	metricsMap map[string]map[uint]MetricProperties,
 	metricNameRemapsNew map[string]string,
 	err error) {
@@ -27,6 +127,7 @@ func ReadMetricsFromFolder(ctx context.Context, logger log.LoggerIface, folder s
 	regexMetricNameFilter := regexp.MustCompile(metricNamePattern)
 	regexIsDigitOrPunctuation := regexp.MustCompile(`^[\d\.]+$`)
 
+	logger := log.GetLogger(ctx)
 	logger.Infof("Searching for metrics from path %s ...", folder)
 	metricFolders, err := os.ReadDir(folder)
 	if err != nil {
