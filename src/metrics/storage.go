@@ -163,9 +163,9 @@ func ReadMetricsFromFolder(ctx context.Context, folder string) (
 				}
 			}
 
-			var metricColumnAttrs MetricColumnAttrs
+			var metricPrometheusAttrs MetricPrometheusAttrs
 			if _, err = os.Stat(path.Join(folder, f.Name(), "column_attrs.yaml")); err == nil {
-				if metricColumnAttrs, err = ParseMetricColumnAttrsFromYAML(path.Join(folder, f.Name(), "column_attrs.yaml")); err != nil {
+				if metricPrometheusAttrs, err = ParseMetricPrometheusAttrsFromYAML(path.Join(folder, f.Name(), "column_attrs.yaml")); err != nil {
 					return
 				}
 			}
@@ -212,7 +212,7 @@ func ReadMetricsFromFolder(ctx context.Context, folder string) (
 						}
 						mvp, ok = mvpVer[dirName]
 						if !ok {
-							mvp = MetricProperties{SQL: string(metricSQL[:]), ColumnAttrs: metricColumnAttrs, MetricAttrs: MetricAttrs}
+							mvp = MetricProperties{SQL: string(metricSQL[:]), PrometheusAttrs: metricPrometheusAttrs, MetricAttrs: MetricAttrs}
 						}
 						mvp.CallsHelperFunctions = DoesMetricDefinitionCallHelperFunctions(mvp.SQL)
 						if strings.Contains(md.Name(), "_master") {
@@ -239,7 +239,7 @@ func DoesMetricDefinitionCallHelperFunctions(sqlDefinition string) bool {
 	return regexSQLHelperFunctionCalled.MatchString(sqlDefinition)
 }
 
-func ParseMetricColumnAttrsFromYAML(path string) (c MetricColumnAttrs, err error) {
+func ParseMetricPrometheusAttrsFromYAML(path string) (c MetricPrometheusAttrs, err error) {
 	var val []byte
 	if val, err = os.ReadFile(path); err == nil {
 		err = yaml.Unmarshal(val, &c)

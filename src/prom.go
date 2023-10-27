@@ -274,10 +274,10 @@ func MetricStoreMessageToPromMetrics(msg metrics.MetricStoreMessage) []prometheu
 			skip := false
 			fieldPromDataType := prometheus.CounterValue
 
-			if msg.MetricDefinitionDetails.ColumnAttrs.PrometheusAllGaugeColumns {
+			if msg.MetricDefinitionDetails.PrometheusAttrs.PrometheusAllGaugeColumns {
 				fieldPromDataType = prometheus.GaugeValue
 			} else {
-				for _, gaugeColumns := range msg.MetricDefinitionDetails.ColumnAttrs.PrometheusGaugeColumns {
+				for _, gaugeColumns := range msg.MetricDefinitionDetails.PrometheusAttrs.PrometheusGaugeColumns {
 					if gaugeColumns == field {
 						fieldPromDataType = prometheus.GaugeValue
 						break
@@ -288,7 +288,7 @@ func MetricStoreMessageToPromMetrics(msg metrics.MetricStoreMessage) []prometheu
 				fieldPromDataType = prometheus.GaugeValue
 			}
 
-			for _, ignoredColumns := range msg.MetricDefinitionDetails.ColumnAttrs.PrometheusIgnoredColumns {
+			for _, ignoredColumns := range msg.MetricDefinitionDetails.PrometheusAttrs.PrometheusIgnoredColumns {
 				if ignoredColumns == field {
 					skip = true
 					break
