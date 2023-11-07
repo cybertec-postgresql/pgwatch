@@ -26,7 +26,7 @@ type MetricOpts struct {
 	NoHelperFunctions    bool   `long:"no-helper-functions" mapstructure:"no-helper-functions" description:"Ignore metric definitions using helper functions (in form get_smth()) and don't also roll out any helpers automatically" env:"PW3_NO_HELPER_FUNCTIONS"`
 	Datastore            string `long:"datastore" mapstructure:"datastore" choice:"postgres" choice:"prometheus" choice:"json" default:"postgres" env:"PW3_DATASTORE"`
 	PGMetricStoreConnStr string `long:"pg-metric-store-conn-str" mapstructure:"pg-metric-store-conn-str" description:"PG Metric Store" env:"PW3_PG_METRIC_STORE_CONN_STR"`
-	PGRetentionDays      int64  `long:"pg-retention-days" mapstructure:"pg-retention-days" description:"If set, metrics older than that will be deleted" default:"14" env:"PW3_PG_RETENTION_DAYS"`
+	PGRetentionDays      int    `long:"pg-retention-days" mapstructure:"pg-retention-days" description:"If set, metrics older than that will be deleted" default:"14" env:"PW3_PG_RETENTION_DAYS"`
 	PrometheusPort       int64  `long:"prometheus-port" mapstructure:"prometheus-port" description:"Prometheus port. Effective with --datastore=prometheus" default:"9187" env:"PW3_PROMETHEUS_PORT"`
 	PrometheusListenAddr string `long:"prometheus-listen-addr" mapstructure:"prometheus-listen-addr" description:"Network interface to listen on" default:"0.0.0.0" env:"PW3_PROMETHEUS_LISTEN_ADDR"`
 	PrometheusNamespace  string `long:"prometheus-namespace" mapstructure:"prometheus-namespace" description:"Prefix for all non-process (thus Postgres) metrics" default:"pgwatch3" env:"PW3_PROMETHEUS_NAMESPACE"`

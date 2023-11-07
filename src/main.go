@@ -1,7 +1,6 @@
 package main
 
 import (
-	"container/list"
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
@@ -34,6 +33,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
+	"github.com/cybertec-postgresql/pgwatch3/metrics/sinks"
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/cybertec-postgresql/pgwatch3/webserver"
 	"github.com/shopspring/decimal"
@@ -220,13 +220,11 @@ var totalMetricsDroppedCounter uint64
 var totalDatasetsFetchedCounter uint64
 var metricPointsPerMinuteLast5MinAvg int64 = -1 // -1 means the summarization ticker has not yet run
 var gathererStartTime = time.Now()
-var partitionMapMetric = make(map[string]ExistingPartitionInfo)                  // metric = min/max bounds
-var partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo) // metric[dbname = min/max bounds]
 
 var PGDummyMetricTables = make(map[string]time.Time)
 var PGDummyMetricTablesLock = sync.RWMutex{}
 var failedInitialConnectHosts = make(map[string]bool) // hosts that couldn't be connected to even once
-var forceRecreatePGMetricPartitions = false           // to signal override PG metrics storage cache
+
 var lastMonitoredDBsUpdate time.Time
 var instanceMetricCache = make(map[string](metrics.MetricData)) // [dbUnique+metric]lastly_fetched_data
 var instanceMetricCacheLock = sync.RWMutex{}
@@ -453,32 +451,6 @@ func UpdateMonitoredDBCache(data []MonitoredDatabase) {
 	monitoredDbCacheLock.Lock()
 	monitoredDbCache = monitoredDbCacheNew
 	monitoredDbCacheLock.Unlock()
-}
-
-func ProcessRetryQueue(dataSource, _, connIdent string, retryQueue *list.List, limit int) error {
-	var err error
-	iterationsDone := 0
-
-	for retryQueue.Len() > 0 { // send over the whole re-try queue at once if connection works
-		logger.Debug("Processing retry_queue", connIdent, ". Items in retry_queue: ", retryQueue.Len())
-		msg := retryQueue.Back().Value.([]metrics.MetricStoreMessage)
-
-		if dataSource == datastorePostgres {
-			err = SendToPostgres(msg)
-		} else {
-			logger.Fatal("Invalid datastore:", dataSource)
-		}
-		if err != nil {
-			return err // still gone, retry later
-		}
-		retryQueue.Remove(retryQueue.Back())
-		iterationsDone++
-		if limit > 0 && limit == iterationsDone {
-			return nil
-		}
-	}
-
-	return nil
 }
 
 func MetricsBatcher(ctx context.Context, batchingMaxDelayMillis int64, bufferedStorageCh <-chan []metrics.MetricStoreMessage, storageCh chan<- []metrics.MetricStoreMessage) {
@@ -2080,37 +2052,26 @@ func main() {
 
 		metricsWriter := metrics.MultiWriter{}
 		if opts.Metric.Datastore == datastoreJSON {
-			jw, err := metrics.NewJSONWriter(mainContext, opts.Metric.JSONStorageFile)
+			jw, err := sinks.NewJSONWriter(mainContext, opts.Metric.JSONStorageFile)
 			if err != nil {
 				logger.Fatal(err)
 			}
 			metricsWriter.AddWriter(jw)
-			logger.Infof(`In JSON output mode. Gathered metrics will be written to "%s"`, opts.Metric.JSONStorageFile)
+			logger.WithField("file", opts.Metric.JSONStorageFile).Info(`JSON output enabled`)
 		}
 
 		if opts.Metric.Datastore == datastorePostgres {
-
-			metricDb, err = db.InitAndTestMetricStoreConnection(mainContext, opts.Metric.PGMetricStoreConnStr)
+			pgw, err := sinks.NewPostgresWriter(mainContext, opts)
 			if err != nil {
-				logger.WithError(err).Fatal("Could not connect to metric database")
-			}
-
-			if MetricSchema, err = db.GetMetricSchemaType(mainContext, metricDb); err != nil {
 				logger.Fatal(err)
 			}
-
-			logger.Info("starting PostgresPersister...")
-			go metricsWriter.WriteMetrics(mainContext, persistCh)
-
-			logger.Info("starting UniqueDbnamesListingMaintainer...")
+			metricsWriter.AddWriter(pgw)
+			metricDb = pgw.MetricDb
+			logger.WithField("connstr", opts.Metric.PGMetricStoreConnStr).Info(`PostgreSQL output enabled`)
 			go UniqueDbnamesListingMaintainer(mainContext, true)
+		}
 
-			if opts.Metric.PGRetentionDays > 0 {
-				logger.Info("starting old Postgres metrics cleanup job...")
-				go OldPostgresMetricsDeleter(mainContext, opts.Metric.PGRetentionDays, MetricSchema)
-			}
-
-		} else if opts.Metric.Datastore == datastorePrometheus {
+		if opts.Metric.Datastore == datastorePrometheus {
 			if opts.Metric.PrometheusAsyncMode {
 				logger.Info("starting Prometheus Cache Persister...")
 				go metricsWriter.WriteMetrics(mainContext, persistCh)
