@@ -990,34 +990,11 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 	var mvp metrics.MetricProperties
 	var err error
 	failedFetches := 0
-	metricNameForStorage := metricName
+	// metricNameForStorage := metricName
 	lastDBVersionFetchTime := time.Unix(0, 0) // check DB ver. ev. 5 min
 	var stmtTimeoutOverride int64
 
 	l := logger.WithField("database", dbUniqueName).WithField("metric", metricName)
-	if opts.Metric.Datastore == datastorePostgres {
-		if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
-			vme, err := DBGetPGVersion(ctx, dbUniqueName, dbType, false)
-			if err != nil {
-				l.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
-			} else {
-				mvp, err := GetMetricVersionProperties(metricName, vme, nil)
-				if err != nil && !strings.Contains(err.Error(), "too old") {
-					l.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
-				} else if mvp.MetricAttrs.MetricStorageName != "" {
-					metricNameForStorage = mvp.MetricAttrs.MetricStorageName
-				}
-			}
-		}
-
-		err := AddDBUniqueMetricToListingTable(dbUniqueName, metricNameForStorage)
-		if err != nil {
-			l.WithError(err).Error("Could not add newly found gatherer")
-		}
-
-		EnsureMetricDummy(metricNameForStorage) // ensure that there is at least an empty top-level table not to get ugly Grafana notifications
-	}
-
 	if metricName == specialMetricServerLogEventCounts {
 		logparseLoop(dbUniqueName, metricName, configMap, controlCh, storeCh) // no return
 		return
@@ -1044,7 +1021,14 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 		}
 		var metricStoreMessages []metrics.MetricStoreMessage
 		var err error
-		mfm := MetricFetchMessage{DBUniqueName: dbUniqueName, DBUniqueNameOrig: dbUniqueNameOrig, MetricName: metricName, DBType: dbType, Interval: time.Second * time.Duration(interval), StmtTimeoutOverride: stmtTimeoutOverride}
+		mfm := MetricFetchMessage{
+			DBUniqueName:        dbUniqueName,
+			DBUniqueNameOrig:    dbUniqueNameOrig,
+			MetricName:          metricName,
+			DBType:              dbType,
+			Interval:            time.Second * time.Duration(interval),
+			StmtTimeoutOverride: stmtTimeoutOverride,
+		}
 
 		// 1st try local overrides for some metrics if operating in push mode
 		if opts.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
@@ -1917,8 +1901,9 @@ var mainContext context.Context
 
 func main() {
 	var (
-		err    error
-		cancel context.CancelFunc
+		err           error
+		cancel        context.CancelFunc
+		metricsWriter = metrics.MultiWriter{}
 	)
 	exitCode.Store(ExitCodeOK)
 	defer func() {
@@ -2066,9 +2051,7 @@ func main() {
 				logger.Fatal(err)
 			}
 			metricsWriter.AddWriter(pgw)
-			metricDb = pgw.MetricDb
 			logger.WithField("connstr", opts.Metric.PGMetricStoreConnStr).Info(`PostgreSQL output enabled`)
-			go UniqueDbnamesListingMaintainer(mainContext, true)
 		}
 
 		if opts.Metric.Datastore == datastorePrometheus {
@@ -2345,7 +2328,7 @@ func main() {
 				continue // don't launch metric fetching threads
 			}
 
-			for metricName := range metricConfig {
+			for metricName, interval := range metricConfig {
 				if opts.Metric.Datastore == datastorePrometheus && !opts.Metric.PrometheusAsyncMode {
 					continue // normal (non-async, no background fetching) Prom mode means only per-scrape fetching
 				}
@@ -2355,7 +2338,7 @@ func main() {
 				if strings.HasPrefix(metric, recoPrefix) {
 					metric = recoMetricName
 				}
-				interval := metricConfig[metric]
+				// interval := metricConfig[metric]
 
 				if metric == recoMetricName {
 					metricDefOk = true
@@ -2374,6 +2357,26 @@ func main() {
 						logger.WithField("database", dbUnique).WithField("metric", metric).WithField("interval", interval).Info("starting gatherer")
 						controlChannels[dbMetric] = make(chan ControlMessage, 1)
 						PromAsyncCacheInitIfRequired(dbUnique, metric)
+
+						metricNameForStorage := metricName
+						if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
+							vme, err := DBGetPGVersion(mainContext, dbUnique, dbType, false)
+							if err != nil {
+								logger.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
+							} else {
+								mvp, err := GetMetricVersionProperties(metricName, vme, nil)
+								if err != nil && !strings.Contains(err.Error(), "too old") {
+									logger.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
+								} else if mvp.MetricAttrs.MetricStorageName != "" {
+									metricNameForStorage = mvp.MetricAttrs.MetricStorageName
+								}
+							}
+						}
+
+						if err := metricsWriter.SyncMetrics(dbUnique, metricNameForStorage); err != nil {
+							logger.Error(err)
+						}
+
 						if opts.BatchingDelayMs > 0 {
 							go MetricGathererLoop(mainContext, dbUnique, dbUniqueOrig, dbType, metric, metricConfig, controlChannels[dbMetric], bufferedPersistCh)
 						} else {
