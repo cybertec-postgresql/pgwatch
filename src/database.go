@@ -19,7 +19,6 @@ import (
 )
 
 var configDb db.PgxPoolIface
-var metricDb db.PgxPoolIface
 var monitoredDbConnCache map[string]db.PgxPoolIface = make(map[string]db.PgxPoolIface)
 
 func IsPostgresDBType(dbType string) bool {
@@ -162,132 +161,6 @@ func GetAllActiveHostsFromConfigDB() (metrics.MetricData, error) {
 		  md_is_enabled
 	`
 	return DBExecRead(mainContext, configDb, sqlLatest)
-}
-
-func AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
-	sql := `insert into admin.all_distinct_dbname_metrics
-			select $1, $2
-			where not exists (
-				select * from admin.all_distinct_dbname_metrics where dbname = $1 and metric = $2
-			)`
-	_, err := DBExecRead(mainContext, metricDb, sql, dbUnique, metric)
-	return err
-}
-
-func UniqueDbnamesListingMaintainer(ctx context.Context, daemonMode bool) {
-	// due to metrics deletion the listing can go out of sync (a trigger not really wanted)
-	sqlGetAdvisoryLock := `SELECT pg_try_advisory_lock(1571543679778230000) AS have_lock` // 1571543679778230000 is just a random bigint
-	sqlTopLevelMetrics := `SELECT table_name FROM admin.get_top_level_metric_tables()`
-	sqlDistinct := `
-	WITH RECURSIVE t(dbname) AS (
-		SELECT MIN(dbname) AS dbname FROM %s
-		UNION
-		SELECT (SELECT MIN(dbname) FROM %s WHERE dbname > t.dbname) FROM t )
-	SELECT dbname FROM t WHERE dbname NOTNULL ORDER BY 1
-	`
-	sqlDelete := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT dbname = ANY($1) and metric = $2 RETURNING *`
-	sqlDeleteAll := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric = $1 RETURNING *`
-	sqlAdd := `
-		INSERT INTO admin.all_distinct_dbname_metrics SELECT u, $2 FROM (select unnest($1::text[]) as u) x
-		WHERE NOT EXISTS (select * from admin.all_distinct_dbname_metrics where dbname = u and metric = $2)
-		RETURNING *;
-	`
-
-	for {
-		if daemonMode {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(time.Hour * 24):
-				// go for it
-			}
-		}
-
-		logger.Infof("Trying to get metricsDb listing maintaner advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
-		lock, err := DBExecRead(mainContext, metricDb, sqlGetAdvisoryLock)
-		if err != nil {
-			logger.Error("Getting metricsDb listing maintaner advisory lock failed:", err)
-			continue
-		}
-		if !(lock[0]["have_lock"].(bool)) {
-			logger.Info("Skipping admin.all_distinct_dbname_metrics maintenance as another instance has the advisory lock...")
-			continue
-		}
-
-		logger.Infof("Refreshing admin.all_distinct_dbname_metrics listing table...")
-		allDistinctMetricTables, err := DBExecRead(mainContext, metricDb, sqlTopLevelMetrics)
-		if err != nil {
-			logger.Error("Could not refresh Postgres dbnames listing table:", err)
-		} else {
-			for _, dr := range allDistinctMetricTables {
-				foundDbnamesMap := make(map[string]bool)
-				foundDbnamesArr := make([]string, 0)
-				metricName := strings.Replace(dr["table_name"].(string), "public.", "", 1)
-
-				logger.Debugf("Refreshing all_distinct_dbname_metrics listing for metric: %s", metricName)
-				ret, err := DBExecRead(mainContext, metricDb, fmt.Sprintf(sqlDistinct, dr["table_name"], dr["table_name"]))
-				if err != nil {
-					logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for '%s': %s", metricName, err)
-					break
-				}
-				for _, drDbname := range ret {
-					foundDbnamesMap[drDbname["dbname"].(string)] = true // "set" behaviour, don't want duplicates
-				}
-
-				// delete all that are not known and add all that are not there
-				for k := range foundDbnamesMap {
-					foundDbnamesArr = append(foundDbnamesArr, k)
-				}
-				if len(foundDbnamesArr) == 0 { // delete all entries for given metric
-					logger.Debugf("Deleting Postgres all_distinct_dbname_metrics listing table entries for metric '%s':", metricName)
-					_, err = DBExecRead(mainContext, metricDb, sqlDeleteAll, metricName)
-					if err != nil {
-						logger.Errorf("Could not delete Postgres all_distinct_dbname_metrics listing table entries for metric '%s': %s", metricName, err)
-					}
-					continue
-				}
-				ret, err = DBExecRead(mainContext, metricDb, sqlDelete, foundDbnamesArr, metricName)
-				if err != nil {
-					logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
-				} else if len(ret) > 0 {
-					logger.Infof("Removed %d stale entries from all_distinct_dbname_metrics listing table for metric: %s", len(ret), metricName)
-				}
-				ret, err = DBExecRead(mainContext, metricDb, sqlAdd, foundDbnamesArr, metricName)
-				if err != nil {
-					logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
-				} else if len(ret) > 0 {
-					logger.Infof("Added %d entry to the Postgres all_distinct_dbname_metrics listing table for metric: %s", len(ret), metricName)
-				}
-				if daemonMode {
-					time.Sleep(time.Minute)
-				}
-			}
-		}
-		if !daemonMode {
-			return
-		}
-	}
-}
-
-func EnsureMetricDummy(metric string) {
-	if opts.Metric.Datastore != datastorePostgres {
-		return
-	}
-	sqlEnsure := "select admin.ensure_dummy_metrics_table($1) as created"
-	PGDummyMetricTablesLock.Lock()
-	defer PGDummyMetricTablesLock.Unlock()
-	lastEnsureCall, ok := PGDummyMetricTables[metric]
-	if ok && lastEnsureCall.After(time.Now().Add(-1*time.Hour)) {
-		return
-	}
-	if err := metricDb.QueryRow(mainContext, sqlEnsure, metric).Scan(&ok); err != nil {
-		logger.Error(err)
-		return
-	}
-	if ok {
-		logger.WithField("metric", metric).Info("Created a dummy partition of metric")
-		PGDummyMetricTables[metric] = time.Now()
-	}
 }
 
 func DBGetSizeMB(dbUnique string) (int64, error) {
@@ -592,8 +465,6 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "sproc_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
-	} else if opts.Metric.Datastore == datastorePostgres && firstRun {
-		EnsureMetricDummy("sproc_changes")
 	}
 
 	return changeCounts
@@ -678,8 +549,6 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "table_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
-	} else if opts.Metric.Datastore == datastorePostgres && firstRun {
-		EnsureMetricDummy("table_changes")
 	}
 
 	return changeCounts
@@ -762,8 +631,6 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "index_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
-	} else if opts.Metric.Datastore == datastorePostgres && firstRun {
-		EnsureMetricDummy("index_changes")
 	}
 
 	return changeCounts
@@ -836,9 +703,6 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storageCh ch
 		}
 	}
 
-	if opts.Metric.Datastore == datastorePostgres && firstRun {
-		EnsureMetricDummy("privilege_changes")
-	}
 	logger.Debugf("[%s][%s] detected %d object privilege changes...", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
@@ -913,8 +777,6 @@ func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storageC
 			Data:         detectedChanges,
 			CustomTags:   md.CustomTags,
 		}}
-	} else if opts.Metric.Datastore == datastorePostgres {
-		EnsureMetricDummy("configuration_changes")
 	}
 
 	return changeCounts
@@ -926,10 +788,6 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 	indexСounts := DetectIndexChanges(dbUnique, vme, storageCh, hostState)
 	confСounts := DetectConfigurationChanges(dbUnique, vme, storageCh, hostState)
 	privСhangeCounts := DetectPrivilegeChanges(dbUnique, vme, storageCh, hostState)
-
-	if opts.Metric.Datastore == datastorePostgres {
-		EnsureMetricDummy("object_changes")
-	}
 
 	// need to send info on all object changes as one message as Grafana applies "last wins" for annotations with similar timestamp
 	message := ""

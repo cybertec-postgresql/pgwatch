@@ -70,3 +70,8 @@ func (jw *JSONWriter) Write(msgs []metrics.MetricStoreMessage) error {
 	}
 	return nil
 }
+
+func (jw *JSONWriter) SyncMetric(_, _ string) error {
+	// do nothing, we don't care
+	return nil
+}
