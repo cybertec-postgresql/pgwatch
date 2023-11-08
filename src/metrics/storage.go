@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 	"os"
 	"path"
@@ -22,6 +23,7 @@ const (
 
 // Writer is an interface that writes metrics values
 type Writer interface {
+	SyncMetric(dbUnique, metricName string) error
 	Write(msgs []MetricStoreMessage) error
 }
 
@@ -34,6 +36,13 @@ func (mw *MultiWriter) AddWriter(w Writer) {
 	mw.Lock()
 	mw.writers = append(mw.writers, w)
 	mw.Unlock()
+}
+
+func (mw *MultiWriter) SyncMetrics(dbUnique, metricName string) (err error) {
+	for _, w := range mw.writers {
+		err = errors.Join(err, w.SyncMetric(dbUnique, metricName))
+	}
+	return
 }
 
 func (mw *MultiWriter) WriteMetrics(ctx context.Context, storageCh <-chan []MetricStoreMessage) {

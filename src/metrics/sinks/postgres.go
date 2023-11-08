@@ -3,6 +3,7 @@ package sinks
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -23,13 +24,17 @@ func NewPostgresWriter(ctx context.Context, opts *config.CmdOptions) (pgw *Postg
 		SystemIdentifierField: opts.SystemIdentifierField,
 	}
 	if pgw.MetricDb, err = db.InitAndTestMetricStoreConnection(ctx, opts.Metric.PGMetricStoreConnStr); err != nil {
-		return nil, err
+		return
 	}
 	if pgw.MetricSchema, err = db.GetMetricSchemaType(ctx, pgw.MetricDb); err != nil {
 		pgw.MetricDb.Close()
-		return nil, err
+		return
+	}
+	if err = pgw.EnsureBuiltinMetricDummies(); err != nil {
+		return
 	}
 	go pgw.OldPostgresMetricsDeleter(opts.Metric.PGRetentionDays)
+	go pgw.UniqueDbnamesListingMaintainer()
 	return
 }
 
@@ -61,6 +66,26 @@ var (
 	partitionMapMetric              = make(map[string]ExistingPartitionInfo)            // metric = min/max bounds
 	partitionMapMetricDbname        = make(map[string]map[string]ExistingPartitionInfo) // metric[dbname = min/max bounds]
 )
+
+func (pgw *PostgresWriter) SyncMetric(dbUnique, metricName string) error {
+	return errors.Join(
+		pgw.AddDBUniqueMetricToListingTable(dbUnique, metricName),
+		pgw.EnsureMetricDummy(metricName), // ensure that there is at least an empty top-level table not to get ugly Grafana notifications
+	)
+}
+
+func (pgw *PostgresWriter) EnsureBuiltinMetricDummies() (err error) {
+	names := []string{"sproc_changes", "table_changes", "index_changes", "privilege_changes", "object_changes", "configuration_changes"}
+	for _, name := range names {
+		err = errors.Join(err, pgw.EnsureMetricDummy(name))
+	}
+	return
+}
+
+func (pgw *PostgresWriter) EnsureMetricDummy(metric string) (err error) {
+	_, err = pgw.MetricDb.Exec(pgw.ctx, "select admin.ensure_dummy_metrics_table($1)", metric)
+	return
+}
 
 func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
 	if len(msgs) == 0 {
@@ -399,6 +424,97 @@ func (pgw *PostgresWriter) OldPostgresMetricsDeleter(metricAgeDaysThreshold int)
 	}
 }
 
+func (pgw *PostgresWriter) UniqueDbnamesListingMaintainer() {
+	logger := log.GetLogger(pgw.ctx)
+	// due to metrics deletion the listing can go out of sync (a trigger not really wanted)
+	sqlGetAdvisoryLock := `SELECT pg_try_advisory_lock(1571543679778230000) AS have_lock` // 1571543679778230000 is just a random bigint
+	sqlTopLevelMetrics := `SELECT table_name FROM admin.get_top_level_metric_tables()`
+	sqlDistinct := `
+	WITH RECURSIVE t(dbname) AS (
+		SELECT MIN(dbname) AS dbname FROM %s
+		UNION
+		SELECT (SELECT MIN(dbname) FROM %s WHERE dbname > t.dbname) FROM t )
+	SELECT dbname FROM t WHERE dbname NOTNULL ORDER BY 1`
+	sqlDelete := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT dbname = ANY($1) and metric = $2 RETURNING *`
+	sqlDeleteAll := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric = $1 RETURNING *`
+	sqlAdd := `
+		INSERT INTO admin.all_distinct_dbname_metrics SELECT u, $2 FROM (select unnest($1::text[]) as u) x
+		WHERE NOT EXISTS (select * from admin.all_distinct_dbname_metrics where dbname = u and metric = $2)
+		RETURNING *`
+
+	for {
+		select {
+		case <-pgw.ctx.Done():
+			return
+		case <-time.After(time.Hour * 24):
+		}
+		var lock bool
+		logger.Infof("Trying to get metricsDb listing maintaner advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
+		if err := pgw.MetricDb.QueryRow(pgw.ctx, sqlGetAdvisoryLock).Scan(&lock); err != nil {
+			logger.Error("Getting metricsDb listing maintaner advisory lock failed:", err)
+			continue
+		}
+		if !lock {
+			logger.Info("Skipping admin.all_distinct_dbname_metrics maintenance as another instance has the advisory lock...")
+			continue
+		}
+
+		logger.Info("Refreshing admin.all_distinct_dbname_metrics listing table...")
+		rows, _ := pgw.MetricDb.Query(pgw.ctx, sqlTopLevelMetrics)
+		allDistinctMetricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
+		if err != nil {
+			logger.Error(err)
+			continue
+		}
+
+		for _, tableName := range allDistinctMetricTables {
+			foundDbnamesMap := make(map[string]bool)
+			foundDbnamesArr := make([]string, 0)
+			metricName := strings.Replace(tableName, "public.", "", 1)
+
+			logger.Debugf("Refreshing all_distinct_dbname_metrics listing for metric: %s", metricName)
+			rows, _ := pgw.MetricDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, tableName, tableName))
+			ret, err := pgx.CollectRows(rows, pgx.RowTo[string])
+			// ret, err := DBExecRead(mainContext, metricDb, fmt.Sprintf(sqlDistinct, tableName, tableName))
+			if err != nil {
+				logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for '%s': %s", metricName, err)
+				break
+			}
+			for _, drDbname := range ret {
+				foundDbnamesMap[drDbname] = true // "set" behaviour, don't want duplicates
+			}
+
+			// delete all that are not known and add all that are not there
+			for k := range foundDbnamesMap {
+				foundDbnamesArr = append(foundDbnamesArr, k)
+			}
+			if len(foundDbnamesArr) == 0 { // delete all entries for given metric
+				logger.Debugf("Deleting Postgres all_distinct_dbname_metrics listing table entries for metric '%s':", metricName)
+
+				_, err = pgw.MetricDb.Exec(pgw.ctx, sqlDeleteAll, metricName)
+				if err != nil {
+					logger.Errorf("Could not delete Postgres all_distinct_dbname_metrics listing table entries for metric '%s': %s", metricName, err)
+				}
+				continue
+			}
+			cmdTag, err := pgw.MetricDb.Exec(pgw.ctx, sqlDelete, foundDbnamesArr, metricName)
+			if err != nil {
+				logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
+			} else if cmdTag.RowsAffected() > 0 {
+				logger.Infof("Removed %d stale entries from all_distinct_dbname_metrics listing table for metric: %s", cmdTag.RowsAffected(), metricName)
+			}
+			cmdTag, err = pgw.MetricDb.Exec(pgw.ctx, sqlAdd, foundDbnamesArr, metricName)
+			if err != nil {
+				logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
+			} else if cmdTag.RowsAffected() > 0 {
+				logger.Infof("Added %d entry to the Postgres all_distinct_dbname_metrics listing table for metric: %s", cmdTag.RowsAffected(), metricName)
+			}
+			time.Sleep(time.Minute)
+		}
+
+	}
+}
+
 func (pgw *PostgresWriter) DropOldTimePartitions(metricAgeDaysThreshold int) (res int, err error) {
 	sqlOldPart := `select admin.drop_old_time_partitions($1, $2)`
 	err = pgw.MetricDb.QueryRow(pgw.ctx, sqlOldPart, metricAgeDaysThreshold, false).Scan(&res)
@@ -412,4 +528,14 @@ func (pgw *PostgresWriter) GetOldTimePartitions(metricAgeDaysThreshold int) ([]s
 		return pgx.CollectRows(rows, pgx.RowTo[string])
 	}
 	return nil, err
+}
+
+func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
+	sql := `insert into admin.all_distinct_dbname_metrics
+			select $1, $2
+			where not exists (
+				select * from admin.all_distinct_dbname_metrics where dbname = $1 and metric = $2
+			)`
+	_, err := pgw.MetricDb.Exec(pgw.ctx, sql, dbUnique, metric)
+	return err
 }
