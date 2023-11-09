@@ -15,12 +15,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const (
-	datastoreJSON       = "json"
-	datastorePostgres   = "postgres"
-	datastorePrometheus = "prometheus"
-)
-
 // Writer is an interface that writes metrics values
 type Writer interface {
 	SyncMetric(dbUnique, metricName string) error
