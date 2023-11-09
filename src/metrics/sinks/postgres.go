@@ -67,11 +67,14 @@ var (
 	partitionMapMetricDbname        = make(map[string]map[string]ExistingPartitionInfo) // metric[dbname = min/max bounds]
 )
 
-func (pgw *PostgresWriter) SyncMetric(dbUnique, metricName string) error {
-	return errors.Join(
-		pgw.AddDBUniqueMetricToListingTable(dbUnique, metricName),
-		pgw.EnsureMetricDummy(metricName), // ensure that there is at least an empty top-level table not to get ugly Grafana notifications
-	)
+func (pgw *PostgresWriter) SyncMetric(dbUnique, metricName, op string) error {
+	if op == "add" {
+		return errors.Join(
+			pgw.AddDBUniqueMetricToListingTable(dbUnique, metricName),
+			pgw.EnsureMetricDummy(metricName), // ensure that there is at least an empty top-level table not to get ugly Grafana notifications
+		)
+	}
+	return nil
 }
 
 func (pgw *PostgresWriter) EnsureBuiltinMetricDummies() (err error) {

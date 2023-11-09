@@ -150,9 +150,6 @@ const (
 // actual requirements depend a lot of metric type and nr. of obects in schemas,
 // but 100k should be enough for 24h, assuming 5 hosts monitored with "exhaustive" preset config
 const (
-	datastoreJSON        = "json"
-	datastorePostgres    = "postgres"
-	datastorePrometheus  = "prometheus"
 	presetConfigYAMLFile = "preset-configs.yaml"
 
 	gathererStatusStart     = "START"
@@ -238,9 +235,6 @@ var unreachableDBsLock sync.RWMutex
 var unreachableDB = make(map[string]time.Time)
 var pgBouncerNumericCountersStartVersion uint // pgBouncer changed internal counters data type in v1.12
 
-// Async Prom cache
-var promAsyncMetricCache = make(map[string]map[string][]metrics.MetricStoreMessage) // [dbUnique][metric]lastly_fetched_data
-var promAsyncMetricCacheLock = sync.RWMutex{}
 var lastDBSizeMB = make(map[string]int64)
 var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHING_INTERVAL
 var lastDBSizeCheckLock sync.RWMutex
@@ -251,8 +245,6 @@ var undersizedDBs = make(map[string]bool)    // DBs below the --min-db-size-mb l
 var undersizedDBsLock = sync.RWMutex{}
 var recoveryIgnoredDBs = make(map[string]bool) // DBs in recovery state and OnlyIfMaster specified in config
 var recoveryIgnoredDBsLock = sync.RWMutex{}
-var metricNameRemaps = make(map[string]string)
-var metricNameRemapLock = sync.RWMutex{}
 
 var MetricSchema db.MetricSchemaType
 
@@ -857,19 +849,6 @@ func ClearDBUnreachableStateIfAny(dbUnique string) {
 	unreachableDBsLock.Unlock()
 }
 
-func PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, metric string) {
-	if opts.Metric.PrometheusAsyncMode {
-		promAsyncMetricCacheLock.Lock()
-		defer promAsyncMetricCacheLock.Unlock()
-
-		if metric == "" {
-			delete(promAsyncMetricCache, dbUnique) // whole host removed from config
-		} else {
-			delete(promAsyncMetricCache[dbUnique], metric)
-		}
-	}
-}
-
 func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchMessage, maxAgeSeconds int64) metrics.MetricData {
 	var clonedData metrics.MetricData
 	instanceMetricCacheTimestampLock.RLock()
@@ -1058,9 +1037,6 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 				lastErrorNotificationTime = time.Now()
 			}
 		} else if metricStoreMessages != nil {
-			if opts.Metric.Datastore == datastorePrometheus && opts.Metric.PrometheusAsyncMode && len(metricStoreMessages[0].Data) == 0 {
-				PurgeMetricsFromPromAsyncCacheIfAny(dbUniqueName, metricName)
-			}
 			if len(metricStoreMessages[0].Data) > 0 {
 
 				// pick up "server restarted" events here to avoid doing extra selects from CheckForPGObjectChangesAndStore code
@@ -1333,13 +1309,10 @@ func IsInDisabledTimeDayRange(localTime time.Time, metricAttrsDisabledDays strin
 	return false
 }
 
-func UpdateMetricDefinitions(newMetrics map[string]map[uint]metrics.MetricProperties, newRenamings map[string]string) {
+func UpdateMetricDefinitions(newMetrics map[string]map[uint]metrics.MetricProperties, _ map[string]string) {
 	metricDefMapLock.Lock()
 	metricDefinitionMap = newMetrics
 	metricDefMapLock.Unlock()
-	metricNameRemapLock.Lock()
-	metricNameRemaps = newRenamings
-	metricNameRemapLock.Unlock()
 	logger.Debug("metrics definitions refreshed - nr. found:", len(newMetrics))
 }
 
@@ -1589,6 +1562,21 @@ func GetMonitoredDatabasesFromMonitoringConfig(mc []MonitoredDatabase) []Monitor
 	return md
 }
 
+func getMonitoredDatabasesSnapshot() map[string]MonitoredDatabase {
+	mdSnap := make(map[string]MonitoredDatabase)
+
+	if monitoredDbCache != nil {
+		monitoredDbCacheLock.RLock()
+		defer monitoredDbCacheLock.RUnlock()
+
+		for _, row := range monitoredDbCache {
+			mdSnap[row.DBUniqueName] = row
+		}
+	}
+
+	return mdSnap
+}
+
 func StatsServerHandler(w http.ResponseWriter, _ *http.Request) {
 	jsonResponseTemplate := `
 {
@@ -1759,14 +1747,7 @@ func ControlChannelsMapToList(controlChannels map[string]chan ControlMessage) []
 	return controlChannelList
 }
 
-func DoCloseResourcesForRemovedMonitoredDBIfAny(dbUnique string) {
-
-	CloseOrLimitSQLConnPoolForMonitoredDBIfAny(dbUnique)
-
-	PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, "")
-}
-
-func CloseResourcesForRemovedMonitoredDBs(currentDBs, prevLoopDBs []MonitoredDatabase, shutDownDueToRoleChange map[string]bool) {
+func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, currentDBs, prevLoopDBs []MonitoredDatabase, shutDownDueToRoleChange map[string]bool) {
 	var curDBsMap = make(map[string]bool)
 
 	for _, curDB := range currentDBs {
@@ -1775,32 +1756,15 @@ func CloseResourcesForRemovedMonitoredDBs(currentDBs, prevLoopDBs []MonitoredDat
 
 	for _, prevDB := range prevLoopDBs {
 		if _, ok := curDBsMap[prevDB.DBUniqueName]; !ok { // removed from config
-			DoCloseResourcesForRemovedMonitoredDBIfAny(prevDB.DBUniqueName)
+			CloseOrLimitSQLConnPoolForMonitoredDBIfAny(prevDB.DBUniqueName)
+			_ = metricsWriter.SyncMetrics(prevDB.DBUniqueName, "", "remove")
 		}
 	}
 
 	// or to be ignored due to current instance state
 	for roleChangedDB := range shutDownDueToRoleChange {
-		DoCloseResourcesForRemovedMonitoredDBIfAny(roleChangedDB)
-	}
-}
-
-func PromAsyncCacheInitIfRequired(dbUnique, _ string) { // cache structure: [dbUnique][metric]lastly_fetched_data
-	if opts.Metric.Datastore == datastorePrometheus && opts.Metric.PrometheusAsyncMode {
-		promAsyncMetricCacheLock.Lock()
-		defer promAsyncMetricCacheLock.Unlock()
-		if _, ok := promAsyncMetricCache[dbUnique]; !ok {
-			metricMap := make(map[string][]metrics.MetricStoreMessage)
-			promAsyncMetricCache[dbUnique] = metricMap
-		}
-	}
-}
-
-func PromAsyncCacheAddMetricData(dbUnique, metric string, msgArr []metrics.MetricStoreMessage) { // cache structure: [dbUnique][metric]lastly_fetched_data
-	promAsyncMetricCacheLock.Lock()
-	defer promAsyncMetricCacheLock.Unlock()
-	if _, ok := promAsyncMetricCache[dbUnique]; ok {
-		promAsyncMetricCache[dbUnique][metric] = msgArr
+		CloseOrLimitSQLConnPoolForMonitoredDBIfAny(roleChangedDB)
+		_ = metricsWriter.SyncMetrics(roleChangedDB, "", "remove")
 	}
 }
 
@@ -1903,7 +1867,7 @@ func main() {
 	var (
 		err           error
 		cancel        context.CancelFunc
-		metricsWriter = metrics.MultiWriter{}
+		metricsWriter *sinks.MultiWriter
 	)
 	exitCode.Store(ExitCodeOK)
 	defer func() {
@@ -2029,39 +1993,16 @@ func main() {
 
 	if !opts.Ping {
 
-		if opts.BatchingDelayMs > 0 && opts.Metric.Datastore != datastorePrometheus {
+		if opts.BatchingDelayMs > 0 && opts.Metric.Datastore != sinks.DSprometheus {
 			bufferedPersistCh = make(chan []metrics.MetricStoreMessage, 10000) // "staging area" for metric storage batching, when enabled
 			logger.Info("starting MetricsBatcher...")
 			go MetricsBatcher(mainContext, opts.BatchingDelayMs, bufferedPersistCh, persistCh)
 		}
 
-		metricsWriter := metrics.MultiWriter{}
-		if opts.Metric.Datastore == datastoreJSON {
-			jw, err := sinks.NewJSONWriter(mainContext, opts.Metric.JSONStorageFile)
-			if err != nil {
-				logger.Fatal(err)
-			}
-			metricsWriter.AddWriter(jw)
-			logger.WithField("file", opts.Metric.JSONStorageFile).Info(`JSON output enabled`)
+		metricsWriter, err = sinks.NewMultiWriter(mainContext, opts)
+		if err != nil {
+			logger.Fatal(err)
 		}
-
-		if opts.Metric.Datastore == datastorePostgres {
-			pgw, err := sinks.NewPostgresWriter(mainContext, opts)
-			if err != nil {
-				logger.Fatal(err)
-			}
-			metricsWriter.AddWriter(pgw)
-			logger.WithField("connstr", opts.Metric.PGMetricStoreConnStr).Info(`PostgreSQL output enabled`)
-		}
-
-		if opts.Metric.Datastore == datastorePrometheus {
-			if opts.Metric.PrometheusAsyncMode {
-				logger.Info("starting Prometheus Cache Persister...")
-				go metricsWriter.WriteMetrics(mainContext, persistCh)
-			}
-			go StartPrometheusExporter(mainContext)
-		}
-
 		go metricsWriter.WriteMetrics(mainContext, persistCh)
 
 		_, _ = daemon.SdNotify(false, "READY=1") // Notify systemd, does nothing outside of systemd
@@ -2271,7 +2212,7 @@ func main() {
 					}
 				}
 
-				if !(opts.Ping || (opts.Metric.Datastore == datastorePrometheus && !opts.Metric.PrometheusAsyncMode)) {
+				if !(opts.Ping || (opts.Metric.Datastore == sinks.DSprometheus && !opts.Metric.PrometheusAsyncMode)) {
 					time.Sleep(time.Millisecond * 100) // not to cause a huge load spike when starting the daemon with 100+ monitored DBs
 				}
 			}
@@ -2329,7 +2270,7 @@ func main() {
 			}
 
 			for metricName, interval := range metricConfig {
-				if opts.Metric.Datastore == datastorePrometheus && !opts.Metric.PrometheusAsyncMode {
+				if opts.Metric.Datastore == sinks.DSprometheus && !opts.Metric.PrometheusAsyncMode {
 					continue // normal (non-async, no background fetching) Prom mode means only per-scrape fetching
 				}
 				metric := metricName
@@ -2356,7 +2297,6 @@ func main() {
 						hostMetricIntervalMap[dbMetric] = interval
 						logger.WithField("database", dbUnique).WithField("metric", metric).WithField("interval", interval).Info("starting gatherer")
 						controlChannels[dbMetric] = make(chan ControlMessage, 1)
-						PromAsyncCacheInitIfRequired(dbUnique, metric)
 
 						metricNameForStorage := metricName
 						if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
@@ -2373,7 +2313,7 @@ func main() {
 							}
 						}
 
-						if err := metricsWriter.SyncMetrics(dbUnique, metricNameForStorage); err != nil {
+						if err := metricsWriter.SyncMetrics(dbUnique, metricNameForStorage, "add"); err != nil {
 							logger.Error(err)
 						}
 
@@ -2474,7 +2414,9 @@ func main() {
 				logger.Debugf("control channel for [%s:%s] deleted", db, metric)
 				gatherersShutDown++
 				ClearDBUnreachableStateIfAny(db)
-				PurgeMetricsFromPromAsyncCacheIfAny(db, metric)
+				if err := metricsWriter.SyncMetrics(db, metric, "remove"); err != nil {
+					logger.Error(err)
+				}
 			}
 		}
 
@@ -2483,7 +2425,7 @@ func main() {
 		}
 
 		// Destroy conn pools, Prom async cache
-		CloseResourcesForRemovedMonitoredDBs(monitoredDbs, prevLoopMonitoredDBs, hostsToShutDownDueToRoleChange)
+		CloseResourcesForRemovedMonitoredDBs(metricsWriter, monitoredDbs, prevLoopMonitoredDBs, hostsToShutDownDueToRoleChange)
 
 	MainLoopSleep:
 		mainLoopCount++
