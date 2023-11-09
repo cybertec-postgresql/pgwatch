@@ -246,9 +246,6 @@ var undersizedDBsLock = sync.RWMutex{}
 var recoveryIgnoredDBs = make(map[string]bool) // DBs in recovery state and OnlyIfMaster specified in config
 var recoveryIgnoredDBsLock = sync.RWMutex{}
 
-var metricNameRemaps map[string]string
-var metricNameRemapLock = sync.RWMutex{}
-
 var MetricSchema db.MetricSchemaType
 
 var logger log.LoggerHookerIface
@@ -1312,13 +1309,10 @@ func IsInDisabledTimeDayRange(localTime time.Time, metricAttrsDisabledDays strin
 	return false
 }
 
-func UpdateMetricDefinitions(newMetrics map[string]map[uint]metrics.MetricProperties, newRenamings map[string]string) {
+func UpdateMetricDefinitions(newMetrics map[string]map[uint]metrics.MetricProperties, _ map[string]string) {
 	metricDefMapLock.Lock()
 	metricDefinitionMap = newMetrics
 	metricDefMapLock.Unlock()
-	metricNameRemapLock.Lock()
-	metricNameRemaps = newRenamings
-	metricNameRemapLock.Unlock()
 	logger.Debug("metrics definitions refreshed - nr. found:", len(newMetrics))
 }
 
