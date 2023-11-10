@@ -10,20 +10,19 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/jackc/pgx/v5"
 )
 
-func NewPostgresWriter(ctx context.Context, opts *config.CmdOptions) (pgw *PostgresWriter, err error) {
+func NewPostgresWriter(ctx context.Context, connstr string, fieldDB string, fieldSysID string, retention int) (pgw *PostgresWriter, err error) {
 	pgw = &PostgresWriter{
 		ctx:                   ctx,
-		RealDbnameField:       opts.RealDbnameField,
-		SystemIdentifierField: opts.SystemIdentifierField,
+		RealDbnameField:       fieldDB,
+		SystemIdentifierField: fieldSysID,
 	}
-	if pgw.MetricDb, err = db.InitAndTestMetricStoreConnection(ctx, opts.Metric.PGMetricStoreConnStr); err != nil {
+	if pgw.MetricDb, err = db.InitAndTestMetricStoreConnection(ctx, connstr); err != nil {
 		return
 	}
 	if pgw.MetricSchema, err = db.GetMetricSchemaType(ctx, pgw.MetricDb); err != nil {
@@ -33,7 +32,7 @@ func NewPostgresWriter(ctx context.Context, opts *config.CmdOptions) (pgw *Postg
 	if err = pgw.EnsureBuiltinMetricDummies(); err != nil {
 		return
 	}
-	go pgw.OldPostgresMetricsDeleter(opts.Metric.PGRetentionDays)
+	go pgw.OldPostgresMetricsDeleter(retention)
 	go pgw.UniqueDbnamesListingMaintainer()
 	return
 }
