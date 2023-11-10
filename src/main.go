@@ -809,7 +809,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 
 send_to_storageChannel:
 
-	if (opts.AddRealDbname || opts.AddSystemIdentifier) && msg.DBType == config.DbTypePg {
+	if (opts.Metric.RealDbnameField > "" || opts.Metric.SystemIdentifierField > "") && msg.DBType == config.DbTypePg {
 		dbPgVersionMapLock.RLock()
 		ver := dbPgVersionMap[msg.DBUniqueName]
 		dbPgVersionMapLock.RUnlock()
@@ -904,16 +904,16 @@ func AddDbnameSysinfoIfNotExistsToQueryResultData(msg MetricFetchMessage, data m
 
 	logger.Debugf("Enriching all rows of [%s:%s] with sysinfo (%s) / real dbname (%s) if set. ", msg.DBUniqueName, msg.MetricName, ver.SystemIdentifier, ver.RealDbname)
 	for _, dr := range data {
-		if opts.AddRealDbname && ver.RealDbname != "" {
-			old, ok := dr[tagPrefix+opts.RealDbnameField]
+		if opts.Metric.RealDbnameField > "" && ver.RealDbname > "" {
+			old, ok := dr[tagPrefix+opts.Metric.RealDbnameField]
 			if !ok || old == "" {
-				dr[tagPrefix+opts.RealDbnameField] = ver.RealDbname
+				dr[tagPrefix+opts.Metric.RealDbnameField] = ver.RealDbname
 			}
 		}
-		if opts.AddSystemIdentifier && ver.SystemIdentifier != "" {
-			old, ok := dr[tagPrefix+opts.SystemIdentifierField]
+		if opts.Metric.SystemIdentifierField > "" && ver.SystemIdentifier > "" {
+			old, ok := dr[tagPrefix+opts.Metric.SystemIdentifierField]
 			if !ok || old == "" {
-				dr[tagPrefix+opts.SystemIdentifierField] = ver.SystemIdentifier
+				dr[tagPrefix+opts.Metric.SystemIdentifierField] = ver.SystemIdentifier
 			}
 		}
 		enrichedData = append(enrichedData, dr)
@@ -1983,17 +1983,13 @@ func main() {
 		go StatsSummarizer(mainContext)
 	}
 
-	if opts.Metric.PrometheusAsyncMode {
-		opts.BatchingDelayMs = 0 // using internal cache, no batching for storage smoothing needed
-	}
-
 	controlChannels := make(map[string](chan ControlMessage)) // [db1+metric1]=chan
 	persistCh := make(chan []metrics.MetricStoreMessage, 10000)
 	var bufferedPersistCh chan []metrics.MetricStoreMessage
 
 	if !opts.Ping {
 
-		if opts.BatchingDelayMs > 0 && opts.Metric.Datastore != sinks.DSprometheus {
+		if opts.BatchingDelayMs > 0 {
 			bufferedPersistCh = make(chan []metrics.MetricStoreMessage, 10000) // "staging area" for metric storage batching, when enabled
 			logger.Info("starting MetricsBatcher...")
 			go MetricsBatcher(mainContext, opts.BatchingDelayMs, bufferedPersistCh, persistCh)
@@ -2212,9 +2208,6 @@ func main() {
 					}
 				}
 
-				if !(opts.Ping || (opts.Metric.Datastore == sinks.DSprometheus && !opts.Metric.PrometheusAsyncMode)) {
-					time.Sleep(time.Millisecond * 100) // not to cause a huge load spike when starting the daemon with 100+ monitored DBs
-				}
 			}
 
 			if IsPostgresDBType(host.DBType) {
@@ -2270,9 +2263,6 @@ func main() {
 			}
 
 			for metricName, interval := range metricConfig {
-				if opts.Metric.Datastore == sinks.DSprometheus && !opts.Metric.PrometheusAsyncMode {
-					continue // normal (non-async, no background fetching) Prom mode means only per-scrape fetching
-				}
 				metric := metricName
 				metricDefOk := false
 

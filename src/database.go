@@ -323,7 +323,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, dbType string, noCache
 		verNew.IsInRecovery = data[0]["pg_is_in_recovery"].(bool)
 		verNew.RealDbname = data[0]["current_database"].(string)
 
-		if verNew.Version > VersionToInt("10.0") && opts.AddSystemIdentifier {
+		if verNew.Version > VersionToInt("10.0") && opts.Metric.SystemIdentifierField > "" {
 			logger.Debugf("[%s] determining system identifier version (pg ver: %v)", dbUnique, verNew.VersionStr)
 			data, err := DBExecReadByDbUniqueName(ctx, dbUnique, 0, sqlSysid)
 			if err == nil && len(data) > 0 {

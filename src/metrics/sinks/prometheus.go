@@ -37,11 +37,8 @@ const promScrapingStalenessHardDropLimit = time.Minute * time.Duration(10)
 func NewPrometheusWriter(ctx context.Context, opts *config.CmdOptions) (promw *PrometheusWriter, err error) {
 	promw = &PrometheusWriter{
 		ctx:                   ctx,
-		AddRealDbname:         opts.AddRealDbname,
-		RealDbnameField:       opts.RealDbnameField,
-		AddSystemIdentifier:   opts.AddSystemIdentifier,
-		SystemIdentifierField: opts.SystemIdentifierField,
-		asyncMode:             opts.Metric.PrometheusAsyncMode,
+		RealDbnameField:       opts.Metric.RealDbnameField,
+		SystemIdentifierField: opts.Metric.SystemIdentifierField,
 		PrometheusNamespace:   opts.Metric.PrometheusNamespace,
 		lastScrapeErrors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: opts.Metric.PrometheusNamespace,

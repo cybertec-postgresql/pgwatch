@@ -30,31 +30,37 @@ type MultiWriter struct {
 func NewMultiWriter(ctx context.Context, opts *config.CmdOptions) (*MultiWriter, error) {
 	logger := log.GetLogger(ctx)
 	mw := &MultiWriter{}
-	if opts.Metric.Datastore == DSjson {
-		jw, err := NewJSONWriter(ctx, opts)
+	for _, f := range opts.Metric.JSONStorageFile {
+		jw, err := NewJSONWriter(ctx, f, opts.Metric.RealDbnameField, opts.Metric.SystemIdentifierField)
 		if err != nil {
 			return nil, err
 		}
 		mw.AddWriter(jw)
-		logger.WithField("file", opts.Metric.JSONStorageFile).Info(`JSON output enabled`)
+		logger.WithField("file", f).Info(`JSON output enabled`)
 	}
 
-	if opts.Metric.Datastore == DSpostgres {
-		pgw, err := NewPostgresWriter(ctx, opts)
+	for _, connstr := range opts.Metric.PGMetricStoreConnStr {
+		pgw, err := NewPostgresWriter(ctx, connstr,
+			opts.Metric.RealDbnameField,
+			opts.Metric.SystemIdentifierField,
+			opts.Metric.PGRetentionDays)
 		if err != nil {
 			return nil, err
 		}
 		mw.AddWriter(pgw)
-		logger.WithField("connstr", opts.Metric.PGMetricStoreConnStr).Info(`PostgreSQL output enabled`)
+		logger.WithField("connstr", connstr).Info(`PostgreSQL output enabled`)
 	}
 
-	if opts.Metric.Datastore == DSprometheus {
+	if opts.Metric.PrometheusListenAddr > "" {
 		promw, err := NewPrometheusWriter(ctx, opts)
 		if err != nil {
 			return nil, err
 		}
 		mw.AddWriter(promw)
-		logger.WithField("connstr", opts.Metric.PrometheusListenAddr).Info(`Prometheus output enabled`)
+		logger.WithField("listen", opts.Metric.PrometheusListenAddr).Info(`Prometheus output enabled`)
+	}
+	if len(mw.writers) == 0 {
+		return nil, errors.New("no storages specified for metrics")
 	}
 	return mw, nil
 }

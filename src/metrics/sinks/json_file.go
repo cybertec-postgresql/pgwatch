@@ -6,7 +6,6 @@ import (
 	"os"
 	"sync/atomic"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 )
@@ -23,17 +22,17 @@ type JSONWriter struct {
 	filename              string
 }
 
-func NewJSONWriter(ctx context.Context, opts *config.CmdOptions) (*JSONWriter, error) {
-	if jf, err := os.Create(opts.Metric.JSONStorageFile); err != nil {
+func NewJSONWriter(ctx context.Context, fname, fieldDB, fieldSysID string) (*JSONWriter, error) {
+	if jf, err := os.Create(fname); err != nil {
 		return nil, err
 	} else if err = jf.Close(); err != nil {
 		return nil, err
 	}
 	return &JSONWriter{
 		ctx:                   ctx,
-		filename:              opts.Metric.JSONStorageFile,
-		RealDbnameField:       opts.RealDbnameField,
-		SystemIdentifierField: opts.SystemIdentifierField,
+		filename:              fname,
+		RealDbnameField:       fieldDB,
+		SystemIdentifierField: fieldSysID,
 	}, nil
 }
 
