@@ -781,7 +781,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 				goto retry_with_superuser_sql
 			}
 			if firstErr != nil {
-				logger.WithError(err).Infof("[%s:%s] failed to fetch metrics also with SU SQL so initial error will be returned", msg.DBUniqueName, msg.MetricName)
+				logger.WithField("database", msg.DBUniqueName).WithField("metric", msg.MetricName).Error(err)
 				return nil, firstErr // returning the initial error
 			}
 			logger.Infof("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
@@ -2414,7 +2414,7 @@ func main() {
 			logger.Warningf("sent STOP message to %d gatherers (it might take some time for them to stop though)", gatherersShutDown)
 		}
 
-		// Destroy conn pools, Prom async cache
+		// Destroy conn pools and metric writers
 		CloseResourcesForRemovedMonitoredDBs(metricsWriter, monitoredDbs, prevLoopMonitoredDBs, hostsToShutDownDueToRoleChange)
 
 	MainLoopSleep:

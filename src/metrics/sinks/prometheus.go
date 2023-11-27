@@ -19,7 +19,6 @@ import (
 
 type PrometheusWriter struct {
 	ctx                               context.Context
-	asyncMode                         bool
 	lastScrapeErrors                  prometheus.Gauge
 	totalScrapes, totalScrapeFailures prometheus.Counter
 	AddRealDbname                     bool
@@ -92,33 +91,26 @@ func (promw *PrometheusWriter) PromAsyncCacheAddMetricData(dbUnique, metric stri
 }
 
 func (promw *PrometheusWriter) PromAsyncCacheInitIfRequired(dbUnique, _ string) { // cache structure: [dbUnique][metric]lastly_fetched_data
-	if promw.asyncMode {
-		promAsyncMetricCacheLock.Lock()
-		defer promAsyncMetricCacheLock.Unlock()
-		if _, ok := promAsyncMetricCache[dbUnique]; !ok {
-			metricMap := make(map[string][]metrics.MetricStoreMessage)
-			promAsyncMetricCache[dbUnique] = metricMap
-		}
+	promAsyncMetricCacheLock.Lock()
+	defer promAsyncMetricCacheLock.Unlock()
+	if _, ok := promAsyncMetricCache[dbUnique]; !ok {
+		metricMap := make(map[string][]metrics.MetricStoreMessage)
+		promAsyncMetricCache[dbUnique] = metricMap
 	}
 }
 
 func (promw *PrometheusWriter) PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, metric string) {
-	if promw.asyncMode {
-		promAsyncMetricCacheLock.Lock()
-		defer promAsyncMetricCacheLock.Unlock()
+	promAsyncMetricCacheLock.Lock()
+	defer promAsyncMetricCacheLock.Unlock()
 
-		if metric == "" {
-			delete(promAsyncMetricCache, dbUnique) // whole host removed from config
-		} else {
-			delete(promAsyncMetricCache[dbUnique], metric)
-		}
+	if metric == "" {
+		delete(promAsyncMetricCache, dbUnique) // whole host removed from config
+	} else {
+		delete(promAsyncMetricCache[dbUnique], metric)
 	}
 }
 
 func (promw *PrometheusWriter) SyncMetric(dbUnique, metricName, op string) error {
-	if !promw.asyncMode {
-		return nil
-	}
 	switch op {
 	case "remove":
 		promw.PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, metricName)
@@ -218,7 +210,7 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Metri
 	} else {
 		epochTime = time.Unix(0, epochNs)
 
-		if promw.asyncMode && epochTime.Before(epochNow.Add(-1*promScrapingStalenessHardDropLimit)) {
+		if epochTime.Before(epochNow.Add(-1 * promScrapingStalenessHardDropLimit)) {
 			logger.Warningf("[%s][%s] Dropping metric set due to staleness (>%v) ...", msg.DBUniqueName, msg.MetricName, promScrapingStalenessHardDropLimit)
 			promw.PurgeMetricsFromPromAsyncCacheIfAny(msg.DBUniqueName, msg.MetricName)
 			return promMetrics

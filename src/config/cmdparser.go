@@ -48,7 +48,7 @@ type LoggingOpts struct {
 type StartOpts struct {
 	// File    string `short:"f" long:"file" description:"SQL script file to execute during startup"`
 	// Upgrade bool   `long:"upgrade" description:"Upgrade database to the latest version"`
-	// Debug   bool   `long:"debug" description:"Run in debug mode. Only asynchronous chains will be executed"`
+	// Debug   bool   `long:"debug" description:"Run in debug mode"`
 }
 
 // WebUIOpts specifies the internal web UI server options
