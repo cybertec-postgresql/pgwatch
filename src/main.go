@@ -1,7 +1,6 @@
 package main
 
 import (
-	"container/list"
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
@@ -34,6 +33,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
+	"github.com/cybertec-postgresql/pgwatch3/metrics/sinks"
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/cybertec-postgresql/pgwatch3/webserver"
 	"github.com/shopspring/decimal"
@@ -148,11 +148,8 @@ const (
 )
 
 // actual requirements depend a lot of metric type and nr. of obects in schemas,
-// but 100k should be enough for 24h, assuming 5 hosts monitored with "exhaustive" preset config. this would also require ~2 GB RAM per one Influx host
+// but 100k should be enough for 24h, assuming 5 hosts monitored with "exhaustive" preset config
 const (
-	datastoreJSON        = "json"
-	datastorePostgres    = "postgres"
-	datastorePrometheus  = "prometheus"
 	presetConfigYAMLFile = "preset-configs.yaml"
 
 	gathererStatusStart     = "START"
@@ -205,10 +202,7 @@ var monitoredDbCacheLock sync.RWMutex
 
 var monitoredDbConnCacheLock = sync.RWMutex{}
 var lastSQLFetchError sync.Map
-var influxHostCount = 1
-var influxConnectStrings [2]string // Max. 2 Influx metrics stores currently supported
 
-// secondary Influx meant for HA or Grafana load balancing for 100+ instances with lots of alerts
 var fileBasedMetrics = false
 var presetMetricDefMap map[string]map[string]float64 // read from metrics folder in "file mode"
 // / internal statistics calculation
@@ -223,13 +217,11 @@ var totalMetricsDroppedCounter uint64
 var totalDatasetsFetchedCounter uint64
 var metricPointsPerMinuteLast5MinAvg int64 = -1 // -1 means the summarization ticker has not yet run
 var gathererStartTime = time.Now()
-var partitionMapMetric = make(map[string]ExistingPartitionInfo)                  // metric = min/max bounds
-var partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo) // metric[dbname = min/max bounds]
 
 var PGDummyMetricTables = make(map[string]time.Time)
 var PGDummyMetricTablesLock = sync.RWMutex{}
 var failedInitialConnectHosts = make(map[string]bool) // hosts that couldn't be connected to even once
-var forceRecreatePGMetricPartitions = false           // to signal override PG metrics storage cache
+
 var lastMonitoredDBsUpdate time.Time
 var instanceMetricCache = make(map[string](metrics.MetricData)) // [dbUnique+metric]lastly_fetched_data
 var instanceMetricCacheLock = sync.RWMutex{}
@@ -243,9 +235,6 @@ var unreachableDBsLock sync.RWMutex
 var unreachableDB = make(map[string]time.Time)
 var pgBouncerNumericCountersStartVersion uint // pgBouncer changed internal counters data type in v1.12
 
-// Async Prom cache
-var promAsyncMetricCache = make(map[string]map[string][]metrics.MetricStoreMessage) // [dbUnique][metric]lastly_fetched_data
-var promAsyncMetricCacheLock = sync.RWMutex{}
 var lastDBSizeMB = make(map[string]int64)
 var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHING_INTERVAL
 var lastDBSizeCheckLock sync.RWMutex
@@ -256,8 +245,6 @@ var undersizedDBs = make(map[string]bool)    // DBs below the --min-db-size-mb l
 var undersizedDBsLock = sync.RWMutex{}
 var recoveryIgnoredDBs = make(map[string]bool) // DBs in recovery state and OnlyIfMaster specified in config
 var recoveryIgnoredDBsLock = sync.RWMutex{}
-var metricNameRemaps = make(map[string]string)
-var metricNameRemapLock = sync.RWMutex{}
 
 var MetricSchema db.MetricSchemaType
 
@@ -458,32 +445,6 @@ func UpdateMonitoredDBCache(data []MonitoredDatabase) {
 	monitoredDbCacheLock.Unlock()
 }
 
-func ProcessRetryQueue(dataSource, _, connIdent string, retryQueue *list.List, limit int) error {
-	var err error
-	iterationsDone := 0
-
-	for retryQueue.Len() > 0 { // send over the whole re-try queue at once if connection works
-		logger.Debug("Processing retry_queue", connIdent, ". Items in retry_queue: ", retryQueue.Len())
-		msg := retryQueue.Back().Value.([]metrics.MetricStoreMessage)
-
-		if dataSource == datastorePostgres {
-			err = SendToPostgres(msg)
-		} else {
-			logger.Fatal("Invalid datastore:", dataSource)
-		}
-		if err != nil {
-			return err // still gone, retry later
-		}
-		retryQueue.Remove(retryQueue.Back())
-		iterationsDone++
-		if limit > 0 && limit == iterationsDone {
-			return nil
-		}
-	}
-
-	return nil
-}
-
 func MetricsBatcher(ctx context.Context, batchingMaxDelayMillis int64, bufferedStorageCh <-chan []metrics.MetricStoreMessage, storageCh chan<- []metrics.MetricStoreMessage) {
 	if batchingMaxDelayMillis <= 0 {
 		logger.Fatalf("Check --batching-delay-ms, zero/negative batching delay:", batchingMaxDelayMillis)
@@ -516,122 +477,6 @@ func MetricsBatcher(ctx context.Context, batchingMaxDelayMillis int64, bufferedS
 					storageCh <- flushed
 					batch = make([]metrics.MetricStoreMessage, 0)
 					datapointCounter = 0
-				}
-			}
-		}
-	}
-}
-
-func WriteMetricsToJSONFile(msgArr []metrics.MetricStoreMessage, jsonPath string) error {
-	if len(msgArr) == 0 {
-		return nil
-	}
-
-	jsonOutFile, err := os.OpenFile(jsonPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
-	if err != nil {
-		atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-		return err
-	}
-	defer jsonOutFile.Close()
-
-	logger.Infof("Writing %d metric sets to JSON file at \"%s\"...", len(msgArr), jsonPath)
-	enc := json.NewEncoder(jsonOutFile)
-	for _, msg := range msgArr {
-		dataRow := map[string]any{"metric": msg.MetricName, "data": msg.Data, "dbname": msg.DBUniqueName, "custom_tags": msg.CustomTags}
-		if opts.AddRealDbname && msg.RealDbname != "" {
-			dataRow[opts.RealDbnameField] = msg.RealDbname
-		}
-		if opts.AddSystemIdentifier && msg.SystemIdentifier != "" {
-			dataRow[opts.SystemIdentifierField] = msg.SystemIdentifier
-		}
-		err = enc.Encode(dataRow)
-		if err != nil {
-			atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-			return err
-		}
-	}
-	return nil
-}
-
-func MetricsPersister(ctx context.Context, dataStore string, storageCh <-chan []metrics.MetricStoreMessage) {
-	var lastЕry = make([]time.Time, influxHostCount)         // if Influx errors out, don't retry before 10s
-	var lastDropWarning = make([]time.Time, influxHostCount) // log metric points drops every 10s to not overflow logs in case Influx is down for longer
-	var retryQueues = make([]*list.List, influxHostCount)    // separate queues for all Influx hosts
-	var inError = make([]bool, influxHostCount)
-	var err error
-
-	for i := 0; i < influxHostCount; i++ {
-		retryQueues[i] = list.New()
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case msgArr := <-storageCh:
-			for i, retryQueue := range retryQueues {
-
-				retryQueueLength := retryQueue.Len()
-
-				if retryQueueLength > 0 {
-					if retryQueueLength == persistQueueMaxSize {
-						droppedMsgs := retryQueue.Remove(retryQueue.Back())
-						datasetsDropped := len(droppedMsgs.([]metrics.MetricStoreMessage))
-						datapointsDropped := 0
-						for _, msg := range droppedMsgs.([]metrics.MetricStoreMessage) {
-							datapointsDropped += len(msg.Data)
-						}
-						atomic.AddUint64(&totalMetricsDroppedCounter, uint64(datapointsDropped))
-						if lastDropWarning[i].IsZero() || lastDropWarning[i].Before(time.Now().Add(time.Second*-10)) {
-							logger.Warningf("Dropped %d oldest data sets with %d data points from queue %d as PERSIST_QUEUE_MAX_SIZE = %d exceeded",
-								datasetsDropped, datapointsDropped, i, persistQueueMaxSize)
-							lastDropWarning[i] = time.Now()
-						}
-					}
-					retryQueue.PushFront(msgArr)
-				} else {
-					if dataStore == datastorePrometheus && opts.Metric.PrometheusAsyncMode {
-						if len(msgArr) == 0 || len(msgArr[0].Data) == 0 { // no batching in async prom mode, so using 0 indexing ok
-							continue
-						}
-						msg := msgArr[0]
-						PromAsyncCacheAddMetricData(msg.DBUniqueName, msg.MetricName, msgArr)
-						logger.Infof("[%s:%s] Added %d rows to Prom cache", msg.DBUniqueName, msg.MetricName, len(msg.Data))
-					} else if dataStore == datastorePostgres {
-						err = SendToPostgres(msgArr)
-						if err != nil && strings.Contains(err.Error(), "does not exist") {
-							// in case data was cleaned by user externally
-							logger.Warning("re-initializing metric partition cache due to possible external data cleanup...")
-							partitionMapMetric = make(map[string]ExistingPartitionInfo)
-							partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo)
-						}
-					} else if dataStore == datastoreJSON {
-						err = WriteMetricsToJSONFile(msgArr, opts.Metric.JSONStorageFile)
-					} else {
-						logger.Fatal("Invalid datastore:", dataStore)
-					}
-					lastЕry[i] = time.Now()
-
-					if err != nil {
-						logger.Errorf("Failed to write into datastore %d: %s", i, err)
-						inError[i] = true
-						retryQueue.PushFront(msgArr)
-					}
-				}
-			}
-		default:
-			for i, retryQueue := range retryQueues {
-				if retryQueue.Len() > 0 && (!inError[i] || lastЕry[i].Before(time.Now().Add(time.Second*-10))) {
-					err := ProcessRetryQueue(dataStore, influxConnectStrings[i], strconv.Itoa(i), retryQueue, 100)
-					if err != nil {
-						logger.Error("Error processing retry queue", i, ":", err)
-						inError[i] = true
-					} else {
-						inError[i] = false
-					}
-					lastЕry[i] = time.Now()
-				} else {
-					time.Sleep(time.Millisecond * 100) // nothing in queue nor in channel
 				}
 			}
 		}
@@ -936,7 +781,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 				goto retry_with_superuser_sql
 			}
 			if firstErr != nil {
-				logger.WithError(err).Infof("[%s:%s] failed to fetch metrics also with SU SQL so initial error will be returned", msg.DBUniqueName, msg.MetricName)
+				logger.WithField("database", msg.DBUniqueName).WithField("metric", msg.MetricName).Error(err)
 				return nil, firstErr // returning the initial error
 			}
 			logger.Infof("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
@@ -964,7 +809,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 
 send_to_storageChannel:
 
-	if (opts.AddRealDbname || opts.AddSystemIdentifier) && msg.DBType == config.DbTypePg {
+	if (opts.Metric.RealDbnameField > "" || opts.Metric.SystemIdentifierField > "") && msg.DBType == config.DbTypePg {
 		dbPgVersionMapLock.RLock()
 		ver := dbPgVersionMap[msg.DBUniqueName]
 		dbPgVersionMapLock.RUnlock()
@@ -1002,19 +847,6 @@ func ClearDBUnreachableStateIfAny(dbUnique string) {
 	unreachableDBsLock.Lock()
 	delete(unreachableDB, dbUnique)
 	unreachableDBsLock.Unlock()
-}
-
-func PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, metric string) {
-	if opts.Metric.PrometheusAsyncMode {
-		promAsyncMetricCacheLock.Lock()
-		defer promAsyncMetricCacheLock.Unlock()
-
-		if metric == "" {
-			delete(promAsyncMetricCache, dbUnique) // whole host removed from config
-		} else {
-			delete(promAsyncMetricCache[dbUnique], metric)
-		}
-	}
 }
 
 func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchMessage, maxAgeSeconds int64) metrics.MetricData {
@@ -1072,16 +904,16 @@ func AddDbnameSysinfoIfNotExistsToQueryResultData(msg MetricFetchMessage, data m
 
 	logger.Debugf("Enriching all rows of [%s:%s] with sysinfo (%s) / real dbname (%s) if set. ", msg.DBUniqueName, msg.MetricName, ver.SystemIdentifier, ver.RealDbname)
 	for _, dr := range data {
-		if opts.AddRealDbname && ver.RealDbname != "" {
-			old, ok := dr[tagPrefix+opts.RealDbnameField]
+		if opts.Metric.RealDbnameField > "" && ver.RealDbname > "" {
+			old, ok := dr[tagPrefix+opts.Metric.RealDbnameField]
 			if !ok || old == "" {
-				dr[tagPrefix+opts.RealDbnameField] = ver.RealDbname
+				dr[tagPrefix+opts.Metric.RealDbnameField] = ver.RealDbname
 			}
 		}
-		if opts.AddSystemIdentifier && ver.SystemIdentifier != "" {
-			old, ok := dr[tagPrefix+opts.SystemIdentifierField]
+		if opts.Metric.SystemIdentifierField > "" && ver.SystemIdentifier > "" {
+			old, ok := dr[tagPrefix+opts.Metric.SystemIdentifierField]
 			if !ok || old == "" {
-				dr[tagPrefix+opts.SystemIdentifierField] = ver.SystemIdentifier
+				dr[tagPrefix+opts.Metric.SystemIdentifierField] = ver.SystemIdentifier
 			}
 		}
 		enrichedData = append(enrichedData, dr)
@@ -1137,34 +969,11 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 	var mvp metrics.MetricProperties
 	var err error
 	failedFetches := 0
-	metricNameForStorage := metricName
+	// metricNameForStorage := metricName
 	lastDBVersionFetchTime := time.Unix(0, 0) // check DB ver. ev. 5 min
 	var stmtTimeoutOverride int64
 
 	l := logger.WithField("database", dbUniqueName).WithField("metric", metricName)
-	if opts.Metric.Datastore == datastorePostgres {
-		if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
-			vme, err := DBGetPGVersion(ctx, dbUniqueName, dbType, false)
-			if err != nil {
-				l.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
-			} else {
-				mvp, err := GetMetricVersionProperties(metricName, vme, nil)
-				if err != nil && !strings.Contains(err.Error(), "too old") {
-					l.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
-				} else if mvp.MetricAttrs.MetricStorageName != "" {
-					metricNameForStorage = mvp.MetricAttrs.MetricStorageName
-				}
-			}
-		}
-
-		err := AddDBUniqueMetricToListingTable(dbUniqueName, metricNameForStorage)
-		if err != nil {
-			l.WithError(err).Error("Could not add newly found gatherer")
-		}
-
-		EnsureMetricDummy(metricNameForStorage) // ensure that there is at least an empty top-level table not to get ugly Grafana notifications
-	}
-
 	if metricName == specialMetricServerLogEventCounts {
 		logparseLoop(dbUniqueName, metricName, configMap, controlCh, storeCh) // no return
 		return
@@ -1191,7 +1000,14 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 		}
 		var metricStoreMessages []metrics.MetricStoreMessage
 		var err error
-		mfm := MetricFetchMessage{DBUniqueName: dbUniqueName, DBUniqueNameOrig: dbUniqueNameOrig, MetricName: metricName, DBType: dbType, Interval: time.Second * time.Duration(interval), StmtTimeoutOverride: stmtTimeoutOverride}
+		mfm := MetricFetchMessage{
+			DBUniqueName:        dbUniqueName,
+			DBUniqueNameOrig:    dbUniqueNameOrig,
+			MetricName:          metricName,
+			DBType:              dbType,
+			Interval:            time.Second * time.Duration(interval),
+			StmtTimeoutOverride: stmtTimeoutOverride,
+		}
 
 		// 1st try local overrides for some metrics if operating in push mode
 		if opts.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
@@ -1221,9 +1037,6 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 				lastErrorNotificationTime = time.Now()
 			}
 		} else if metricStoreMessages != nil {
-			if opts.Metric.Datastore == datastorePrometheus && opts.Metric.PrometheusAsyncMode && len(metricStoreMessages[0].Data) == 0 {
-				PurgeMetricsFromPromAsyncCacheIfAny(dbUniqueName, metricName)
-			}
 			if len(metricStoreMessages[0].Data) > 0 {
 
 				// pick up "server restarted" events here to avoid doing extra selects from CheckForPGObjectChangesAndStore code
@@ -1496,13 +1309,10 @@ func IsInDisabledTimeDayRange(localTime time.Time, metricAttrsDisabledDays strin
 	return false
 }
 
-func UpdateMetricDefinitions(newMetrics map[string]map[uint]metrics.MetricProperties, newRenamings map[string]string) {
+func UpdateMetricDefinitions(newMetrics map[string]map[uint]metrics.MetricProperties, _ map[string]string) {
 	metricDefMapLock.Lock()
 	metricDefinitionMap = newMetrics
 	metricDefMapLock.Unlock()
-	metricNameRemapLock.Lock()
-	metricNameRemaps = newRenamings
-	metricNameRemapLock.Unlock()
 	logger.Debug("metrics definitions refreshed - nr. found:", len(newMetrics))
 }
 
@@ -1752,6 +1562,21 @@ func GetMonitoredDatabasesFromMonitoringConfig(mc []MonitoredDatabase) []Monitor
 	return md
 }
 
+func getMonitoredDatabasesSnapshot() map[string]MonitoredDatabase {
+	mdSnap := make(map[string]MonitoredDatabase)
+
+	if monitoredDbCache != nil {
+		monitoredDbCacheLock.RLock()
+		defer monitoredDbCacheLock.RUnlock()
+
+		for _, row := range monitoredDbCache {
+			mdSnap[row.DBUniqueName] = row
+		}
+	}
+
+	return mdSnap
+}
+
 func StatsServerHandler(w http.ResponseWriter, _ *http.Request) {
 	jsonResponseTemplate := `
 {
@@ -1922,14 +1747,7 @@ func ControlChannelsMapToList(controlChannels map[string]chan ControlMessage) []
 	return controlChannelList
 }
 
-func DoCloseResourcesForRemovedMonitoredDBIfAny(dbUnique string) {
-
-	CloseOrLimitSQLConnPoolForMonitoredDBIfAny(dbUnique)
-
-	PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, "")
-}
-
-func CloseResourcesForRemovedMonitoredDBs(currentDBs, prevLoopDBs []MonitoredDatabase, shutDownDueToRoleChange map[string]bool) {
+func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, currentDBs, prevLoopDBs []MonitoredDatabase, shutDownDueToRoleChange map[string]bool) {
 	var curDBsMap = make(map[string]bool)
 
 	for _, curDB := range currentDBs {
@@ -1938,32 +1756,15 @@ func CloseResourcesForRemovedMonitoredDBs(currentDBs, prevLoopDBs []MonitoredDat
 
 	for _, prevDB := range prevLoopDBs {
 		if _, ok := curDBsMap[prevDB.DBUniqueName]; !ok { // removed from config
-			DoCloseResourcesForRemovedMonitoredDBIfAny(prevDB.DBUniqueName)
+			CloseOrLimitSQLConnPoolForMonitoredDBIfAny(prevDB.DBUniqueName)
+			_ = metricsWriter.SyncMetrics(prevDB.DBUniqueName, "", "remove")
 		}
 	}
 
 	// or to be ignored due to current instance state
 	for roleChangedDB := range shutDownDueToRoleChange {
-		DoCloseResourcesForRemovedMonitoredDBIfAny(roleChangedDB)
-	}
-}
-
-func PromAsyncCacheInitIfRequired(dbUnique, _ string) { // cache structure: [dbUnique][metric]lastly_fetched_data
-	if opts.Metric.Datastore == datastorePrometheus && opts.Metric.PrometheusAsyncMode {
-		promAsyncMetricCacheLock.Lock()
-		defer promAsyncMetricCacheLock.Unlock()
-		if _, ok := promAsyncMetricCache[dbUnique]; !ok {
-			metricMap := make(map[string][]metrics.MetricStoreMessage)
-			promAsyncMetricCache[dbUnique] = metricMap
-		}
-	}
-}
-
-func PromAsyncCacheAddMetricData(dbUnique, metric string, msgArr []metrics.MetricStoreMessage) { // cache structure: [dbUnique][metric]lastly_fetched_data
-	promAsyncMetricCacheLock.Lock()
-	defer promAsyncMetricCacheLock.Unlock()
-	if _, ok := promAsyncMetricCache[dbUnique]; ok {
-		promAsyncMetricCache[dbUnique][metric] = msgArr
+		CloseOrLimitSQLConnPoolForMonitoredDBIfAny(roleChangedDB)
+		_ = metricsWriter.SyncMetrics(roleChangedDB, "", "remove")
 	}
 }
 
@@ -2064,8 +1865,9 @@ var mainContext context.Context
 
 func main() {
 	var (
-		err    error
-		cancel context.CancelFunc
+		err           error
+		cancel        context.CancelFunc
+		metricsWriter *sinks.MultiWriter
 	)
 	exitCode.Store(ExitCodeOK)
 	defer func() {
@@ -2181,67 +1983,23 @@ func main() {
 		go StatsSummarizer(mainContext)
 	}
 
-	if opts.Metric.PrometheusAsyncMode {
-		opts.BatchingDelayMs = 0 // using internal cache, no batching for storage smoothing needed
-	}
-
 	controlChannels := make(map[string](chan ControlMessage)) // [db1+metric1]=chan
 	persistCh := make(chan []metrics.MetricStoreMessage, 10000)
 	var bufferedPersistCh chan []metrics.MetricStoreMessage
 
 	if !opts.Ping {
 
-		if opts.BatchingDelayMs > 0 && opts.Metric.Datastore != datastorePrometheus {
+		if opts.BatchingDelayMs > 0 {
 			bufferedPersistCh = make(chan []metrics.MetricStoreMessage, 10000) // "staging area" for metric storage batching, when enabled
 			logger.Info("starting MetricsBatcher...")
 			go MetricsBatcher(mainContext, opts.BatchingDelayMs, bufferedPersistCh, persistCh)
 		}
 
-		if opts.Metric.Datastore == datastoreJSON {
-			if len(opts.Metric.JSONStorageFile) == 0 {
-				logger.Fatal("--datastore=json requires --json-storage-file to be set")
-			}
-			jsonOutFile, err := os.Create(opts.Metric.JSONStorageFile) // test file path writeability
-			if err != nil {
-				logger.Fatalf("Could not create JSON storage file: %s", err)
-			}
-			err = jsonOutFile.Close()
-			if err != nil {
-				logger.Fatal(err)
-			}
-			logger.Warningf("In JSON output mode. Gathered metrics will be written to \"%s\"...", opts.Metric.JSONStorageFile)
-			go MetricsPersister(mainContext, datastoreJSON, persistCh)
-		} else if opts.Metric.Datastore == datastorePostgres {
-
-			metricDb, err = db.InitAndTestMetricStoreConnection(mainContext, opts.Metric.PGMetricStoreConnStr)
-			if err != nil {
-				logger.WithError(err).Fatal("Could not connect to metric database")
-			}
-
-			if MetricSchema, err = db.GetMetricSchemaType(mainContext, metricDb); err != nil {
-				logger.Fatal(err)
-			}
-
-			logger.Info("starting PostgresPersister...")
-			go MetricsPersister(mainContext, datastorePostgres, persistCh)
-
-			logger.Info("starting UniqueDbnamesListingMaintainer...")
-			go UniqueDbnamesListingMaintainer(mainContext, true)
-
-			if opts.Metric.PGRetentionDays > 0 {
-				logger.Info("starting old Postgres metrics cleanup job...")
-				go OldPostgresMetricsDeleter(mainContext, opts.Metric.PGRetentionDays, MetricSchema)
-			}
-
-		} else if opts.Metric.Datastore == datastorePrometheus {
-			if opts.Metric.PrometheusAsyncMode {
-				logger.Info("starting Prometheus Cache Persister...")
-				go MetricsPersister(mainContext, datastorePrometheus, persistCh)
-			}
-			go StartPrometheusExporter(mainContext)
-		} else {
-			logger.Fatal("Unknown datastore. Check the --datastore param")
+		metricsWriter, err = sinks.NewMultiWriter(mainContext, opts)
+		if err != nil {
+			logger.Fatal(err)
 		}
+		go metricsWriter.WriteMetrics(mainContext, persistCh)
 
 		_, _ = daemon.SdNotify(false, "READY=1") // Notify systemd, does nothing outside of systemd
 	}
@@ -2265,9 +2023,9 @@ func main() {
 
 		if time.Now().Unix()-lastMetricsRefreshTime > metricDefinitionRefreshTime {
 			if fileBasedMetrics {
-				metricDefs, renamingDefs, err = metrics.ReadMetricsFromFolder(mainContext, logger, opts.Metric.MetricsFolder)
+				metricDefs, renamingDefs, err = metrics.ReadMetricsFromFolder(mainContext, opts.Metric.MetricsFolder)
 			} else {
-				metricDefs, renamingDefs, err = db.ReadMetricsFromPostgres(mainContext, logger, configDb)
+				metricDefs, renamingDefs, err = db.ReadMetricsFromPostgres(mainContext, configDb)
 			}
 			if err == nil {
 				UpdateMetricDefinitions(metricDefs, renamingDefs)
@@ -2379,16 +2137,6 @@ func main() {
 				return logrus.InfoLevel
 			}(), "host info refreshed")
 
-		if firstLoop && (len(monitoredDbs) == 0 || len(metricDefinitionMap) == 0) {
-			logger.WithField("databases", len(monitoredDbs)).
-				WithField("metrics", len(metricDefinitionMap)).
-				Warning("host info refreshed")
-		} else {
-			logger.WithField("databases", len(monitoredDbs)).
-				WithField("metrics", len(metricDefinitionMap)).
-				Info("host info refreshed")
-		}
-
 		firstLoop = false // only used for failing when 1st config reading fails
 
 		for _, host := range monitoredDbs {
@@ -2460,9 +2208,6 @@ func main() {
 					}
 				}
 
-				if !(opts.Ping || (opts.Metric.Datastore == datastorePrometheus && !opts.Metric.PrometheusAsyncMode)) {
-					time.Sleep(time.Millisecond * 100) // not to cause a huge load spike when starting the daemon with 100+ monitored DBs
-				}
 			}
 
 			if IsPostgresDBType(host.DBType) {
@@ -2517,17 +2262,14 @@ func main() {
 				continue // don't launch metric fetching threads
 			}
 
-			for metricName := range metricConfig {
-				if opts.Metric.Datastore == datastorePrometheus && !opts.Metric.PrometheusAsyncMode {
-					continue // normal (non-async, no background fetching) Prom mode means only per-scrape fetching
-				}
+			for metricName, interval := range metricConfig {
 				metric := metricName
 				metricDefOk := false
 
 				if strings.HasPrefix(metric, recoPrefix) {
 					metric = recoMetricName
 				}
-				interval := metricConfig[metric]
+				// interval := metricConfig[metric]
 
 				if metric == recoMetricName {
 					metricDefOk = true
@@ -2545,7 +2287,26 @@ func main() {
 						hostMetricIntervalMap[dbMetric] = interval
 						logger.WithField("database", dbUnique).WithField("metric", metric).WithField("interval", interval).Info("starting gatherer")
 						controlChannels[dbMetric] = make(chan ControlMessage, 1)
-						PromAsyncCacheInitIfRequired(dbUnique, metric)
+
+						metricNameForStorage := metricName
+						if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
+							vme, err := DBGetPGVersion(mainContext, dbUnique, dbType, false)
+							if err != nil {
+								logger.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
+							} else {
+								mvp, err := GetMetricVersionProperties(metricName, vme, nil)
+								if err != nil && !strings.Contains(err.Error(), "too old") {
+									logger.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
+								} else if mvp.MetricAttrs.MetricStorageName != "" {
+									metricNameForStorage = mvp.MetricAttrs.MetricStorageName
+								}
+							}
+						}
+
+						if err := metricsWriter.SyncMetrics(dbUnique, metricNameForStorage, "add"); err != nil {
+							logger.Error(err)
+						}
+
 						if opts.BatchingDelayMs > 0 {
 							go MetricGathererLoop(mainContext, dbUnique, dbUniqueOrig, dbType, metric, metricConfig, controlChannels[dbMetric], bufferedPersistCh)
 						} else {
@@ -2643,7 +2404,9 @@ func main() {
 				logger.Debugf("control channel for [%s:%s] deleted", db, metric)
 				gatherersShutDown++
 				ClearDBUnreachableStateIfAny(db)
-				PurgeMetricsFromPromAsyncCacheIfAny(db, metric)
+				if err := metricsWriter.SyncMetrics(db, metric, "remove"); err != nil {
+					logger.Error(err)
+				}
 			}
 		}
 
@@ -2651,8 +2414,8 @@ func main() {
 			logger.Warningf("sent STOP message to %d gatherers (it might take some time for them to stop though)", gatherersShutDown)
 		}
 
-		// Destroy conn pools, Prom async cache
-		CloseResourcesForRemovedMonitoredDBs(monitoredDbs, prevLoopMonitoredDBs, hostsToShutDownDueToRoleChange)
+		// Destroy conn pools and metric writers
+		CloseResourcesForRemovedMonitoredDBs(metricsWriter, monitoredDbs, prevLoopMonitoredDBs, hostsToShutDownDueToRoleChange)
 
 	MainLoopSleep:
 		mainLoopCount++

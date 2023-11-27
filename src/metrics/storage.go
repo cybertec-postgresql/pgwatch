@@ -2,23 +2,63 @@ package metrics
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 	"os"
 	"path"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"gopkg.in/yaml.v2"
 )
 
-type MetricWriter interface {
-	WriteMetric(m MetricData) (n int, err error)
+// Writer is an interface that writes metrics values
+type Writer interface {
+	SyncMetric(dbUnique, metricName, op string) error
+	Write(msgs []MetricStoreMessage) error
+}
+
+type MultiWriter struct {
+	writers []Writer
+	sync.Mutex
+}
+
+func (mw *MultiWriter) AddWriter(w Writer) {
+	mw.Lock()
+	mw.writers = append(mw.writers, w)
+	mw.Unlock()
+}
+
+func (mw *MultiWriter) SyncMetrics(dbUnique, metricName, op string) (err error) {
+	for _, w := range mw.writers {
+		err = errors.Join(err, w.SyncMetric(dbUnique, metricName, op))
+	}
+	return
+}
+
+func (mw *MultiWriter) WriteMetrics(ctx context.Context, storageCh <-chan []MetricStoreMessage) {
+	var err error
+	logger := log.GetLogger(ctx)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case msg := <-storageCh:
+			for _, w := range mw.writers {
+				err = w.Write(msg)
+				if err != nil {
+					logger.Error(err)
+				}
+			}
+		}
+	}
 }
 
 // expected is following structure: metric_name/pg_ver/metric(_master|standby).sql
-func ReadMetricsFromFolder(ctx context.Context, logger log.LoggerIface, folder string) (
+func ReadMetricsFromFolder(ctx context.Context, folder string) (
 	metricsMap map[string]map[uint]MetricProperties,
 	metricNameRemapsNew map[string]string,
 	err error) {
@@ -27,6 +67,7 @@ func ReadMetricsFromFolder(ctx context.Context, logger log.LoggerIface, folder s
 	regexMetricNameFilter := regexp.MustCompile(metricNamePattern)
 	regexIsDigitOrPunctuation := regexp.MustCompile(`^[\d\.]+$`)
 
+	logger := log.GetLogger(ctx)
 	logger.Infof("Searching for metrics from path %s ...", folder)
 	metricFolders, err := os.ReadDir(folder)
 	if err != nil {
@@ -62,9 +103,9 @@ func ReadMetricsFromFolder(ctx context.Context, logger log.LoggerIface, folder s
 				}
 			}
 
-			var metricColumnAttrs MetricColumnAttrs
+			var metricPrometheusAttrs MetricPrometheusAttrs
 			if _, err = os.Stat(path.Join(folder, f.Name(), "column_attrs.yaml")); err == nil {
-				if metricColumnAttrs, err = ParseMetricColumnAttrsFromYAML(path.Join(folder, f.Name(), "column_attrs.yaml")); err != nil {
+				if metricPrometheusAttrs, err = ParseMetricPrometheusAttrsFromYAML(path.Join(folder, f.Name(), "column_attrs.yaml")); err != nil {
 					return
 				}
 			}
@@ -111,7 +152,7 @@ func ReadMetricsFromFolder(ctx context.Context, logger log.LoggerIface, folder s
 						}
 						mvp, ok = mvpVer[dirName]
 						if !ok {
-							mvp = MetricProperties{SQL: string(metricSQL[:]), ColumnAttrs: metricColumnAttrs, MetricAttrs: MetricAttrs}
+							mvp = MetricProperties{SQL: string(metricSQL[:]), PrometheusAttrs: metricPrometheusAttrs, MetricAttrs: MetricAttrs}
 						}
 						mvp.CallsHelperFunctions = DoesMetricDefinitionCallHelperFunctions(mvp.SQL)
 						if strings.Contains(md.Name(), "_master") {
@@ -138,7 +179,7 @@ func DoesMetricDefinitionCallHelperFunctions(sqlDefinition string) bool {
 	return regexSQLHelperFunctionCalled.MatchString(sqlDefinition)
 }
 
-func ParseMetricColumnAttrsFromYAML(path string) (c MetricColumnAttrs, err error) {
+func ParseMetricPrometheusAttrsFromYAML(path string) (c MetricPrometheusAttrs, err error) {
 	var val []byte
 	if val, err = os.ReadFile(path); err == nil {
 		err = yaml.Unmarshal(val, &c)

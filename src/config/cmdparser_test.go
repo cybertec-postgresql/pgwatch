@@ -14,7 +14,7 @@ func TestParseFail(t *testing.T) {
 	}
 	for _, d := range tests {
 		os.Args = d
-		_, err := Parse(nil)
+		_, err := NewConfig(nil)
 		assert.Error(t, err)
 	}
 }
@@ -25,7 +25,7 @@ func TestParseSuccess(t *testing.T) {
 	}
 	for _, d := range tests {
 		os.Args = d
-		_, err := Parse(nil)
+		_, err := NewConfig(nil)
 		assert.NoError(t, err)
 	}
 }

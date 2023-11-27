@@ -48,7 +48,7 @@ func versionToInt(v string) uint {
 	return uint(major*100 + minor)
 }
 
-func ReadMetricsFromPostgres(ctx context.Context, logger log.LoggerIface, conn PgxIface) (
+func ReadMetricsFromPostgres(ctx context.Context, conn PgxIface) (
 	metricDefMapNew map[string]map[uint]metrics.MetricProperties,
 	metricNameRemapsNew map[string]string,
 	err error) {
@@ -64,7 +64,7 @@ func ReadMetricsFromPostgres(ctx context.Context, logger log.LoggerIface, conn P
               m_is_active
 		    order by
 		      1, 2`
-
+	logger := log.GetLogger(ctx)
 	logger.Info("updating metrics definitons from ConfigDB...")
 
 	var (
@@ -90,7 +90,7 @@ func ReadMetricsFromPostgres(ctx context.Context, logger log.LoggerIface, conn P
 			metricDefMapNew[row["m_name"].(string)] = make(map[uint]metrics.MetricProperties)
 		}
 		d := versionToInt(row["m_pg_version_from"].(string))
-		ca := metrics.MetricColumnAttrs{}
+		ca := metrics.MetricPrometheusAttrs{}
 		if row["m_column_attrs"].(string) != "" {
 			_ = yaml.Unmarshal([]byte(row["m_column_attrs"].(string)), &ca)
 		}
@@ -106,7 +106,7 @@ func ReadMetricsFromPostgres(ctx context.Context, logger log.LoggerIface, conn P
 			SQLSU:                row["m_sql_su"].(string),
 			MasterOnly:           row["m_master_only"].(bool),
 			StandbyOnly:          row["m_standby_only"].(bool),
-			ColumnAttrs:          ca,
+			PrometheusAttrs:      ca,
 			MetricAttrs:          ma,
 			CallsHelperFunctions: metrics.DoesMetricDefinitionCallHelperFunctions(row["m_sql"].(string)),
 		}

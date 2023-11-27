@@ -25,7 +25,7 @@ FROM alpine
 
 # Copy over the compiled gatherer
 COPY --from=builder /pgwatch3/pgwatch3 /pgwatch3/
-COPY src/metrics /pgwatch3/metrics
+COPY src/metrics/sql /pgwatch3/metrics
 
 # Admin UI for configuring servers to be monitored
 EXPOSE 8080

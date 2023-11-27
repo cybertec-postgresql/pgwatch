@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io"
 	"os"
 
 	flags "github.com/jessevdk/go-flags"
@@ -21,22 +20,21 @@ type ConnectionOpts struct {
 
 // MetricStoreOpts specifies the storage configuration to store metrics data
 type MetricOpts struct {
-	Group                string `short:"g" long:"group" mapstructure:"group" description:"Group (or groups, comma separated) for filtering which DBs to monitor. By default all are monitored" env:"PW3_GROUP"`
-	MetricsFolder        string `short:"m" long:"metrics-folder" mapstructure:"metrics-folder" description:"Folder of metrics definitions" env:"PW3_METRICS_FOLDER"`
-	NoHelperFunctions    bool   `long:"no-helper-functions" mapstructure:"no-helper-functions" description:"Ignore metric definitions using helper functions (in form get_smth()) and don't also roll out any helpers automatically" env:"PW3_NO_HELPER_FUNCTIONS"`
-	Datastore            string `long:"datastore" mapstructure:"datastore" choice:"postgres" choice:"prometheus" choice:"json" default:"postgres" env:"PW3_DATASTORE"`
-	PGMetricStoreConnStr string `long:"pg-metric-store-conn-str" mapstructure:"pg-metric-store-conn-str" description:"PG Metric Store" env:"PW3_PG_METRIC_STORE_CONN_STR"`
-	PGRetentionDays      int64  `long:"pg-retention-days" mapstructure:"pg-retention-days" description:"If set, metrics older than that will be deleted" default:"14" env:"PW3_PG_RETENTION_DAYS"`
-	PrometheusPort       int64  `long:"prometheus-port" mapstructure:"prometheus-port" description:"Prometheus port. Effective with --datastore=prometheus" default:"9187" env:"PW3_PROMETHEUS_PORT"`
-	PrometheusListenAddr string `long:"prometheus-listen-addr" mapstructure:"prometheus-listen-addr" description:"Network interface to listen on" default:"0.0.0.0" env:"PW3_PROMETHEUS_LISTEN_ADDR"`
-	PrometheusNamespace  string `long:"prometheus-namespace" mapstructure:"prometheus-namespace" description:"Prefix for all non-process (thus Postgres) metrics" default:"pgwatch3" env:"PW3_PROMETHEUS_NAMESPACE"`
-	PrometheusAsyncMode  bool   `long:"prometheus-async-mode" mapstructure:"prometheus-async-mode" description:"Gather in background as with other storage and cache last fetch results in memory" env:"PW3_PROMETHEUS_ASYNC_MODE"`
-	JSONStorageFile      string `long:"json-storage-file" mapstructure:"json-storage-file" description:"Path to file where metrics will be stored when --datastore=json, one metric set per line" env:"PW3_JSON_STORAGE_FILE"`
+	Group                 string   `short:"g" long:"group" mapstructure:"group" description:"Group (or groups, comma separated) for filtering which DBs to monitor. By default all are monitored" env:"PW3_GROUP"`
+	RealDbnameField       string   `long:"real-dbname-field" mapstructure:"real-dbname-field" description:"Tag key for real DB name if --add-real-dbname enabled" env:"PW3_REAL_DBNAME_FIELD" default:"real_dbname"`
+	SystemIdentifierField string   `long:"system-identifier-field" mapstructure:"system-identifier-field" description:"Tag key for system identifier value if --add-system-identifier" env:"PW3_SYSTEM_IDENTIFIER_FIELD" default:"sys_id"`
+	MetricsFolder         string   `short:"m" long:"metrics-folder" mapstructure:"metrics-folder" description:"Folder of metrics definitions" env:"PW3_METRICS_FOLDER"`
+	NoHelperFunctions     bool     `long:"no-helper-functions" mapstructure:"no-helper-functions" description:"Ignore metric definitions using helper functions (in form get_smth()) and don't also roll out any helpers automatically" env:"PW3_NO_HELPER_FUNCTIONS"`
+	PGMetricStoreConnStr  []string `long:"pg-metric-store-conn-str" mapstructure:"pg-metric-store-conn-str" description:"PG Metric Store" env:"PW3_PG_METRIC_STORE_CONN_STR"`
+	PGRetentionDays       int      `long:"pg-retention-days" mapstructure:"pg-retention-days" description:"If set, metrics older than that will be deleted" default:"14" env:"PW3_PG_RETENTION_DAYS"`
+	PrometheusPort        int64    `long:"prometheus-port" mapstructure:"prometheus-port" description:"Prometheus port. Effective with --datastore=prometheus" default:"9187" env:"PW3_PROMETHEUS_PORT"`
+	PrometheusListenAddr  string   `long:"prometheus-listen-addr" mapstructure:"prometheus-listen-addr" description:"Network interface to listen on" default:"0.0.0.0" env:"PW3_PROMETHEUS_LISTEN_ADDR"`
+	PrometheusNamespace   string   `long:"prometheus-namespace" mapstructure:"prometheus-namespace" description:"Prefix for all non-process (thus Postgres) metrics" default:"pgwatch3" env:"PW3_PROMETHEUS_NAMESPACE"`
+	JSONStorageFile       []string `long:"json-storage-file" mapstructure:"json-storage-file" description:"Path to file where metrics will be stored one metric set per line" env:"PW3_JSON_STORAGE_FILE"`
 }
 
 // LoggingOpts specifies the logging configuration
 type LoggingOpts struct {
-	// LogDBLevel    string `long:"log-database-level" mapstructure:"log-database-level" description:"Verbosity level for database storing" choice:"debug" choice:"info" choice:"error" choice:"none" default:"info"`
 	LogLevel      string `short:"v" long:"log-level" mapstructure:"log-level" description:"Verbosity level for stdout and log file" choice:"debug" choice:"info" choice:"error" default:"info"`
 	LogFile       string `long:"log-file" mapstructure:"log-file" description:"File name to store logs"`
 	LogFileFormat string `long:"log-file-format" mapstructure:"log-file-format" description:"Format of file logs" choice:"json" choice:"text" default:"json"`
@@ -50,7 +48,7 @@ type LoggingOpts struct {
 type StartOpts struct {
 	// File    string `short:"f" long:"file" description:"SQL script file to execute during startup"`
 	// Upgrade bool   `long:"upgrade" description:"Upgrade database to the latest version"`
-	// Debug   bool   `long:"debug" description:"Run in debug mode. Only asynchronous chains will be executed"`
+	// Debug   bool   `long:"debug" description:"Run in debug mode"`
 }
 
 // WebUIOpts specifies the internal web UI server options
@@ -78,10 +76,6 @@ type CmdOptions struct {
 	AesGcmKeyphrase              string         `long:"aes-gcm-keyphrase" mapstructure:"aes-gcm-keyphrase" description:"Decryption key for AES-GCM-256 passwords" env:"PW3_AES_GCM_KEYPHRASE"`
 	AesGcmKeyphraseFile          string         `long:"aes-gcm-keyphrase-file" mapstructure:"aes-gcm-keyphrase-file" description:"File with decryption key for AES-GCM-256 passwords" env:"PW3_AES_GCM_KEYPHRASE_FILE"`
 	AesGcmPasswordToEncrypt      string         `long:"aes-gcm-password-to-encrypt" mapstructure:"aes-gcm-password-to-encrypt" description:"A special mode, returns the encrypted plain-text string and quits. Keyphrase(file) must be set. Useful for YAML mode" env:"PW3_AES_GCM_PASSWORD_TO_ENCRYPT"`
-	AddRealDbname                bool           `long:"add-real-dbname" mapstructure:"add-real-dbname" description:"Add real DB name to each captured metric" env:"PW3_ADD_REAL_DBNAME"`
-	RealDbnameField              string         `long:"real-dbname-field" mapstructure:"real-dbname-field" description:"Tag key for real DB name if --add-real-dbname enabled" env:"PW3_REAL_DBNAME_FIELD" default:"real_dbname"`
-	AddSystemIdentifier          bool           `long:"add-system-identifier" mapstructure:"add-system-identifier" description:"Add system identifier to each captured metric" env:"PW3_ADD_SYSTEM_IDENTIFIER"`
-	SystemIdentifierField        string         `long:"system-identifier-field" mapstructure:"system-identifier-field" description:"Tag key for system identifier value if --add-system-identifier" env:"PW3_SYSTEM_IDENTIFIER_FIELD" default:"sys_id"`
 	InstanceLevelCacheMaxSeconds int64          `long:"instance-level-cache-max-seconds" mapstructure:"instance-level-cache-max-seconds" description:"Max allowed staleness for instance level metric data shared between DBs of an instance. Affects 'continuous' host types only. Set to 0 to disable" env:"PW3_INSTANCE_LEVEL_CACHE_MAX_SECONDS" default:"30"`
 	MinDbSizeMB                  int64          `long:"min-db-size-mb" mapstructure:"min-db-size-mb" description:"Smaller size DBs will be ignored and not monitored until they reach the threshold." env:"PW3_MIN_DB_SIZE_MB" default:"0"`
 	MaxParallelConnectionsPerDb  int            `long:"max-parallel-connections-per-db" mapstructure:"max-parallel-connections-per-db" description:"Max parallel metric fetches per DB. Note the multiplication effect on multi-DB instances" env:"PW3_MAX_PARALLEL_CONNECTIONS_PER_DB" default:"2"`
@@ -110,29 +104,4 @@ func NewCmdOptions(args ...string) *CmdOptions {
 	cmdOpts := new(CmdOptions)
 	_, _ = flags.NewParser(cmdOpts, flags.PrintErrors).ParseArgs(args)
 	return cmdOpts
-}
-
-// var nonOptionArgs []string
-
-// Parse will parse command line arguments and initialize pgengine
-func Parse(writer io.Writer) (*flags.Parser, error) {
-	cmdOpts := new(CmdOptions)
-	parser := flags.NewParser(cmdOpts, flags.PrintErrors)
-	var err error
-	if _, err = parser.Parse(); err != nil {
-		if !flags.WroteHelp(err) {
-			parser.WriteHelp(writer)
-			return nil, err
-		}
-	}
-	// if cmdOpts.Config != "" {
-	// 	if _, err := os.Stat(cmdOpts.Config); os.IsNotExist(err) {
-	// 		return nil, err
-	// 	}
-	// }
-	//non-option arguments
-	// if len(nonOptionArgs) > 0 && cmdOpts.Connection.PgURL == "" {
-	// 	cmdOpts.Connection.PgURL = nonOptionArgs[0]
-	// }
-	return parser, nil
 }

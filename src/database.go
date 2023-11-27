@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"path"
@@ -20,7 +19,6 @@ import (
 )
 
 var configDb db.PgxPoolIface
-var metricDb db.PgxPoolIface
 var monitoredDbConnCache map[string]db.PgxPoolIface = make(map[string]db.PgxPoolIface)
 
 func IsPostgresDBType(dbType string) bool {
@@ -163,358 +161,6 @@ func GetAllActiveHostsFromConfigDB() (metrics.MetricData, error) {
 		  md_is_enabled
 	`
 	return DBExecRead(mainContext, configDb, sqlLatest)
-}
-
-func OldPostgresMetricsDeleter(ctx context.Context, metricAgeDaysThreshold int64, schemaType db.MetricSchemaType) {
-	sqlDoesOldPartListingFuncExist := `SELECT count(*) FROM information_schema.routines WHERE routine_schema = 'admin' AND routine_name = 'get_old_time_partitions'`
-	oldPartListingFuncExists := false // if func existing (>v1.8.1) then use it to drop old partitions in smaller batches
-	// as for large setup (50+ DBs) one could reach the default "max_locks_per_transaction" otherwise
-
-	ret, err := DBExecRead(mainContext, metricDb, sqlDoesOldPartListingFuncExist)
-	if err == nil && len(ret) > 0 && ret[0]["count"].(int64) > 0 {
-		oldPartListingFuncExists = true
-	}
-
-	select {
-	case <-ctx.Done():
-		return
-	case <-time.After(time.Hour):
-		// to reduce distracting log messages at startup
-	}
-
-	for {
-		if schemaType == db.MetricSchemaTimescale || (!oldPartListingFuncExists && schemaType == db.MetricSchemaPostgres) {
-			partsDropped, err := DropOldTimePartitions(metricAgeDaysThreshold)
-
-			if err != nil {
-				logger.Errorf("Failed to drop old partitions (>%d days) from Postgres: %v", metricAgeDaysThreshold, err)
-				time.Sleep(time.Second * 300)
-				continue
-			}
-			logger.Infof("Dropped %d old metric partitions...", partsDropped)
-		} else if oldPartListingFuncExists && schemaType == db.MetricSchemaPostgres {
-			partsToDrop, err := GetOldTimePartitions(metricAgeDaysThreshold)
-			if err != nil {
-				logger.Errorf("Failed to get a listing of old (>%d days) time partitions from Postgres metrics DB - check that the admin.get_old_time_partitions() function is rolled out: %v", metricAgeDaysThreshold, err)
-				time.Sleep(time.Second * 300)
-				continue
-			}
-			if len(partsToDrop) > 0 {
-				logger.Infof("Dropping %d old metric partitions one by one...", len(partsToDrop))
-				for _, toDrop := range partsToDrop {
-					sqlDropTable := fmt.Sprintf(`DROP TABLE IF EXISTS %s`, toDrop)
-					logger.Debugf("Dropping old metric data partition: %s", toDrop)
-					_, err := DBExecRead(mainContext, metricDb, sqlDropTable)
-					if err != nil {
-						logger.Errorf("Failed to drop old partition %s from Postgres metrics DB: %v", toDrop, err)
-						time.Sleep(time.Second * 300)
-					} else {
-						time.Sleep(time.Second * 5)
-					}
-				}
-			} else {
-				logger.Infof("No old metric partitions found to drop...")
-			}
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(time.Hour * 12):
-			// every 12 hours
-		}
-	}
-}
-
-func DropOldTimePartitions(metricAgeDaysThreshold int64) (int, error) {
-	partsDropped := 0
-	var err error
-	sqlOldPart := `select admin.drop_old_time_partitions($1, $2)`
-
-	ret, err := DBExecRead(mainContext, metricDb, sqlOldPart, metricAgeDaysThreshold, false)
-	if err != nil {
-		logger.Error("Failed to drop old time partitions from Postgres metricDB:", err)
-		return partsDropped, err
-	}
-	partsDropped = int(ret[0]["drop_old_time_partitions"].(int64))
-
-	return partsDropped, err
-}
-
-func GetOldTimePartitions(metricAgeDaysThreshold int64) ([]string, error) {
-	partsToDrop := make([]string, 0)
-	var err error
-	sqlGetOldParts := `select admin.get_old_time_partitions($1)`
-
-	ret, err := DBExecRead(mainContext, metricDb, sqlGetOldParts, metricAgeDaysThreshold)
-	if err != nil {
-		logger.Error("Failed to get a listing of old time partitions from Postgres metricDB:", err)
-		return partsToDrop, err
-	}
-	for _, row := range ret {
-		partsToDrop = append(partsToDrop, row["get_old_time_partitions"].(string))
-	}
-
-	return partsToDrop, nil
-}
-
-func AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
-	sql := `insert into admin.all_distinct_dbname_metrics
-			select $1, $2
-			where not exists (
-				select * from admin.all_distinct_dbname_metrics where dbname = $1 and metric = $2
-			)`
-	_, err := DBExecRead(mainContext, metricDb, sql, dbUnique, metric)
-	return err
-}
-
-func UniqueDbnamesListingMaintainer(ctx context.Context, daemonMode bool) {
-	// due to metrics deletion the listing can go out of sync (a trigger not really wanted)
-	sqlGetAdvisoryLock := `SELECT pg_try_advisory_lock(1571543679778230000) AS have_lock` // 1571543679778230000 is just a random bigint
-	sqlTopLevelMetrics := `SELECT table_name FROM admin.get_top_level_metric_tables()`
-	sqlDistinct := `
-	WITH RECURSIVE t(dbname) AS (
-		SELECT MIN(dbname) AS dbname FROM %s
-		UNION
-		SELECT (SELECT MIN(dbname) FROM %s WHERE dbname > t.dbname) FROM t )
-	SELECT dbname FROM t WHERE dbname NOTNULL ORDER BY 1
-	`
-	sqlDelete := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT dbname = ANY($1) and metric = $2 RETURNING *`
-	sqlDeleteAll := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric = $1 RETURNING *`
-	sqlAdd := `
-		INSERT INTO admin.all_distinct_dbname_metrics SELECT u, $2 FROM (select unnest($1::text[]) as u) x
-		WHERE NOT EXISTS (select * from admin.all_distinct_dbname_metrics where dbname = u and metric = $2)
-		RETURNING *;
-	`
-
-	for {
-		if daemonMode {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(time.Hour * 24):
-				// go for it
-			}
-		}
-
-		logger.Infof("Trying to get metricsDb listing maintaner advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
-		lock, err := DBExecRead(mainContext, metricDb, sqlGetAdvisoryLock)
-		if err != nil {
-			logger.Error("Getting metricsDb listing maintaner advisory lock failed:", err)
-			continue
-		}
-		if !(lock[0]["have_lock"].(bool)) {
-			logger.Info("Skipping admin.all_distinct_dbname_metrics maintenance as another instance has the advisory lock...")
-			continue
-		}
-
-		logger.Infof("Refreshing admin.all_distinct_dbname_metrics listing table...")
-		allDistinctMetricTables, err := DBExecRead(mainContext, metricDb, sqlTopLevelMetrics)
-		if err != nil {
-			logger.Error("Could not refresh Postgres dbnames listing table:", err)
-		} else {
-			for _, dr := range allDistinctMetricTables {
-				foundDbnamesMap := make(map[string]bool)
-				foundDbnamesArr := make([]string, 0)
-				metricName := strings.Replace(dr["table_name"].(string), "public.", "", 1)
-
-				logger.Debugf("Refreshing all_distinct_dbname_metrics listing for metric: %s", metricName)
-				ret, err := DBExecRead(mainContext, metricDb, fmt.Sprintf(sqlDistinct, dr["table_name"], dr["table_name"]))
-				if err != nil {
-					logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for '%s': %s", metricName, err)
-					break
-				}
-				for _, drDbname := range ret {
-					foundDbnamesMap[drDbname["dbname"].(string)] = true // "set" behaviour, don't want duplicates
-				}
-
-				// delete all that are not known and add all that are not there
-				for k := range foundDbnamesMap {
-					foundDbnamesArr = append(foundDbnamesArr, k)
-				}
-				if len(foundDbnamesArr) == 0 { // delete all entries for given metric
-					logger.Debugf("Deleting Postgres all_distinct_dbname_metrics listing table entries for metric '%s':", metricName)
-					_, err = DBExecRead(mainContext, metricDb, sqlDeleteAll, metricName)
-					if err != nil {
-						logger.Errorf("Could not delete Postgres all_distinct_dbname_metrics listing table entries for metric '%s': %s", metricName, err)
-					}
-					continue
-				}
-				ret, err = DBExecRead(mainContext, metricDb, sqlDelete, foundDbnamesArr, metricName)
-				if err != nil {
-					logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
-				} else if len(ret) > 0 {
-					logger.Infof("Removed %d stale entries from all_distinct_dbname_metrics listing table for metric: %s", len(ret), metricName)
-				}
-				ret, err = DBExecRead(mainContext, metricDb, sqlAdd, foundDbnamesArr, metricName)
-				if err != nil {
-					logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
-				} else if len(ret) > 0 {
-					logger.Infof("Added %d entry to the Postgres all_distinct_dbname_metrics listing table for metric: %s", len(ret), metricName)
-				}
-				if daemonMode {
-					time.Sleep(time.Minute)
-				}
-			}
-		}
-		if !daemonMode {
-			return
-		}
-	}
-}
-
-func EnsureMetricDummy(metric string) {
-	if opts.Metric.Datastore != datastorePostgres {
-		return
-	}
-	sqlEnsure := "select admin.ensure_dummy_metrics_table($1) as created"
-	PGDummyMetricTablesLock.Lock()
-	defer PGDummyMetricTablesLock.Unlock()
-	lastEnsureCall, ok := PGDummyMetricTables[metric]
-	if ok && lastEnsureCall.After(time.Now().Add(-1*time.Hour)) {
-		return
-	}
-	if err := metricDb.QueryRow(mainContext, sqlEnsure, metric).Scan(&ok); err != nil {
-		logger.Error(err)
-		return
-	}
-	if ok {
-		logger.WithField("metric", metric).Info("Created a dummy partition of metric")
-		PGDummyMetricTables[metric] = time.Now()
-	}
-}
-
-func EnsureMetric(pgPartBounds map[string]ExistingPartitionInfo, force bool) error {
-
-	sqlEnsure := `
-	select * from admin.ensure_partition_metric($1)
-	`
-	for metric := range pgPartBounds {
-
-		_, ok := partitionMapMetric[metric] // sequential access currently so no lock needed
-		if !ok || force {
-			_, err := DBExecRead(mainContext, metricDb, sqlEnsure, metric)
-			if err != nil {
-				logger.Errorf("Failed to create partition on metric '%s': %v", metric, err)
-				return err
-			}
-			partitionMapMetric[metric] = ExistingPartitionInfo{}
-		}
-	}
-	return nil
-}
-
-func EnsureMetricTimescale(pgPartBounds map[string]ExistingPartitionInfo, force bool) error {
-	var err error
-	sqlEnsure := `
-	select * from admin.ensure_partition_timescale($1)
-	`
-	for metric := range pgPartBounds {
-		if strings.HasSuffix(metric, "_realtime") {
-			continue
-		}
-		_, ok := partitionMapMetric[metric]
-		if !ok {
-			_, err = DBExecRead(mainContext, metricDb, sqlEnsure, metric)
-			if err != nil {
-				logger.Errorf("Failed to create a TimescaleDB table for metric '%s': %v", metric, err)
-				return err
-			}
-			partitionMapMetric[metric] = ExistingPartitionInfo{}
-		}
-	}
-
-	err = EnsureMetricTime(pgPartBounds, force, true)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func EnsureMetricTime(pgPartBounds map[string]ExistingPartitionInfo, force bool, realtimeOnly bool) error {
-	// TODO if less < 1d to part. end, precreate ?
-	sqlEnsure := `
-	select * from admin.ensure_partition_metric_time($1, $2)
-	`
-
-	for metric, pb := range pgPartBounds {
-		if realtimeOnly && !strings.HasSuffix(metric, "_realtime") {
-			continue
-		}
-		if pb.StartTime.IsZero() || pb.EndTime.IsZero() {
-			return fmt.Errorf("zero StartTime/EndTime in partitioning request: [%s:%v]", metric, pb)
-		}
-
-		partInfo, ok := partitionMapMetric[metric]
-		if !ok || (ok && (pb.StartTime.Before(partInfo.StartTime))) || force {
-			ret, err := DBExecRead(mainContext, metricDb, sqlEnsure, metric, pb.StartTime)
-			if err != nil {
-				logger.Error("Failed to create partition on 'metrics':", err)
-				return err
-			}
-			if !ok {
-				partInfo = ExistingPartitionInfo{}
-			}
-			partInfo.StartTime = ret[0]["part_available_from"].(time.Time)
-			partInfo.EndTime = ret[0]["part_available_to"].(time.Time)
-			partitionMapMetric[metric] = partInfo
-		}
-		if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || force {
-			ret, err := DBExecRead(mainContext, metricDb, sqlEnsure, metric, pb.EndTime)
-			if err != nil {
-				logger.Error("Failed to create partition on 'metrics':", err)
-				return err
-			}
-			partInfo.EndTime = ret[0]["part_available_to"].(time.Time)
-			partitionMapMetric[metric] = partInfo
-		}
-	}
-	return nil
-}
-
-func EnsureMetricDbnameTime(metricDbnamePartBounds map[string]map[string]ExistingPartitionInfo, force bool) error {
-	// TODO if less < 1d to part. end, precreate ?
-	sqlEnsure := `
-	select * from admin.ensure_partition_metric_dbname_time($1, $2, $3)
-	`
-
-	for metric, dbnameTimestampMap := range metricDbnamePartBounds {
-		_, ok := partitionMapMetricDbname[metric]
-		if !ok {
-			partitionMapMetricDbname[metric] = make(map[string]ExistingPartitionInfo)
-		}
-
-		for dbname, pb := range dbnameTimestampMap {
-
-			if pb.StartTime.IsZero() || pb.EndTime.IsZero() {
-				return fmt.Errorf("zero StartTime/EndTime in partitioning request: [%s:%v]", metric, pb)
-			}
-
-			partInfo, ok := partitionMapMetricDbname[metric][dbname]
-			if !ok || (ok && (pb.StartTime.Before(partInfo.StartTime))) || force {
-				ret, err := DBExecRead(mainContext, metricDb, sqlEnsure, metric, dbname, pb.StartTime)
-				if err != nil {
-					logger.Errorf("Failed to create partition for [%s:%s]: %v", metric, dbname, err)
-					return err
-				}
-				if !ok {
-					partInfo = ExistingPartitionInfo{}
-				}
-				partInfo.StartTime = ret[0]["part_available_from"].(time.Time)
-				partInfo.EndTime = ret[0]["part_available_to"].(time.Time)
-				partitionMapMetricDbname[metric][dbname] = partInfo
-			}
-			if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || force {
-				ret, err := DBExecRead(mainContext, metricDb, sqlEnsure, metric, dbname, pb.EndTime)
-				if err != nil {
-					logger.Errorf("Failed to create partition for [%s:%s]: %v", metric, dbname, err)
-					return err
-				}
-				partInfo.EndTime = ret[0]["part_available_to"].(time.Time)
-				partitionMapMetricDbname[metric][dbname] = partInfo
-			}
-		}
-	}
-	return nil
 }
 
 func DBGetSizeMB(dbUnique string) (int64, error) {
@@ -677,7 +323,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, dbType string, noCache
 		verNew.IsInRecovery = data[0]["pg_is_in_recovery"].(bool)
 		verNew.RealDbname = data[0]["current_database"].(string)
 
-		if verNew.Version > VersionToInt("10.0") && opts.AddSystemIdentifier {
+		if verNew.Version > VersionToInt("10.0") && opts.Metric.SystemIdentifierField > "" {
 			logger.Debugf("[%s] determining system identifier version (pg ver: %v)", dbUnique, verNew.VersionStr)
 			data, err := DBExecReadByDbUniqueName(ctx, dbUnique, 0, sqlSysid)
 			if err == nil && len(data) > 0 {
@@ -819,8 +465,6 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "sproc_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
-	} else if opts.Metric.Datastore == datastorePostgres && firstRun {
-		EnsureMetricDummy("sproc_changes")
 	}
 
 	return changeCounts
@@ -905,8 +549,6 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "table_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
-	} else if opts.Metric.Datastore == datastorePostgres && firstRun {
-		EnsureMetricDummy("table_changes")
 	}
 
 	return changeCounts
@@ -989,8 +631,6 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "index_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
-	} else if opts.Metric.Datastore == datastorePostgres && firstRun {
-		EnsureMetricDummy("index_changes")
 	}
 
 	return changeCounts
@@ -1063,9 +703,6 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storageCh ch
 		}
 	}
 
-	if opts.Metric.Datastore == datastorePostgres && firstRun {
-		EnsureMetricDummy("privilege_changes")
-	}
 	logger.Debugf("[%s][%s] detected %d object privilege changes...", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
@@ -1140,8 +777,6 @@ func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storageC
 			Data:         detectedChanges,
 			CustomTags:   md.CustomTags,
 		}}
-	} else if opts.Metric.Datastore == datastorePostgres {
-		EnsureMetricDummy("configuration_changes")
 	}
 
 	return changeCounts
@@ -1153,10 +788,6 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 	indexСounts := DetectIndexChanges(dbUnique, vme, storageCh, hostState)
 	confСounts := DetectConfigurationChanges(dbUnique, vme, storageCh, hostState)
 	privСhangeCounts := DetectPrivilegeChanges(dbUnique, vme, storageCh, hostState)
-
-	if opts.Metric.Datastore == datastorePostgres {
-		EnsureMetricDummy("object_changes")
-	}
 
 	// need to send info on all object changes as one message as Grafana applies "last wins" for annotations with similar timestamp
 	message := ""
@@ -1351,7 +982,7 @@ func TryCreateMetricsFetchingHelpers(dbUnique string) error {
 	}
 
 	if fileBasedMetrics {
-		helpers, _, err := metrics.ReadMetricsFromFolder(mainContext, logger, path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir))
+		helpers, _, err := metrics.ReadMetricsFromFolder(mainContext, path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir))
 		if err != nil {
 			logger.Errorf("Failed to fetch helpers from \"%s\": %s", path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir), err)
 			return err
@@ -1499,185 +1130,4 @@ func GetGoPsutilDiskPG(dbUnique string) (metrics.MetricData, error) {
 		logger.Infof("Failed to determine relevant PG tablespace paths via SQL: %v", err)
 	}
 	return psutil.GetGoPsutilDiskPG(data, dataTblsp)
-}
-
-func SendToPostgres(storeMessages []metrics.MetricStoreMessage) error {
-	if len(storeMessages) == 0 {
-		return nil
-	}
-	tsWarningPrinted := false
-	metricsToStorePerMetric := make(map[string][]metrics.MetricStoreMessagePostgres)
-	rowsBatched := 0
-	totalRows := 0
-	pgPartBounds := make(map[string]ExistingPartitionInfo)                  // metric=min/max
-	pgPartBoundsDbName := make(map[string]map[string]ExistingPartitionInfo) // metric=[dbname=min/max]
-	var err error
-
-	for _, msg := range storeMessages {
-		if msg.Data == nil || len(msg.Data) == 0 {
-			continue
-		}
-		logger.WithField("data", msg.Data).WithField("len", len(msg.Data)).Debug("Sending To Postgres")
-
-		for _, dr := range msg.Data {
-			var epochTime time.Time
-			var epochNs int64
-
-			tags := make(map[string]any)
-			fields := make(map[string]any)
-
-			totalRows++
-
-			if msg.CustomTags != nil {
-				for k, v := range msg.CustomTags {
-					tags[k] = fmt.Sprintf("%v", v)
-				}
-			}
-
-			for k, v := range dr {
-				if v == nil || v == "" {
-					continue // not storing NULLs
-				}
-				if k == epochColumnName {
-					epochNs = v.(int64)
-				} else if strings.HasPrefix(k, tagPrefix) {
-					tag := k[4:]
-					tags[tag] = fmt.Sprintf("%v", v)
-				} else {
-					fields[k] = v
-				}
-			}
-
-			if epochNs == 0 {
-				if !tsWarningPrinted && !regexIsPgbouncerMetrics.MatchString(msg.MetricName) {
-					logger.Warning("No timestamp_ns found, server time will be used. measurement:", msg.MetricName)
-					tsWarningPrinted = true
-				}
-				epochTime = time.Now()
-			} else {
-				epochTime = time.Unix(0, epochNs)
-			}
-
-			var metricsArr []metrics.MetricStoreMessagePostgres
-			var ok bool
-
-			metricNameTemp := msg.MetricName
-
-			metricsArr, ok = metricsToStorePerMetric[metricNameTemp]
-			if !ok {
-				metricsToStorePerMetric[metricNameTemp] = make([]metrics.MetricStoreMessagePostgres, 0)
-			}
-			metricsArr = append(metricsArr, metrics.MetricStoreMessagePostgres{Time: epochTime, DBName: msg.DBUniqueName,
-				Metric: msg.MetricName, Data: fields, TagData: tags})
-			metricsToStorePerMetric[metricNameTemp] = metricsArr
-
-			rowsBatched++
-
-			if MetricSchema == db.MetricSchemaTimescale {
-				// set min/max timestamps to check/create partitions
-				bounds, ok := pgPartBounds[msg.MetricName]
-				if !ok || (ok && epochTime.Before(bounds.StartTime)) {
-					bounds.StartTime = epochTime
-					pgPartBounds[msg.MetricName] = bounds
-				}
-				if !ok || (ok && epochTime.After(bounds.EndTime)) {
-					bounds.EndTime = epochTime
-					pgPartBounds[msg.MetricName] = bounds
-				}
-			} else if MetricSchema == db.MetricSchemaPostgres {
-				_, ok := pgPartBoundsDbName[msg.MetricName]
-				if !ok {
-					pgPartBoundsDbName[msg.MetricName] = make(map[string]ExistingPartitionInfo)
-				}
-				bounds, ok := pgPartBoundsDbName[msg.MetricName][msg.DBUniqueName]
-				if !ok || (ok && epochTime.Before(bounds.StartTime)) {
-					bounds.StartTime = epochTime
-					pgPartBoundsDbName[msg.MetricName][msg.DBUniqueName] = bounds
-				}
-				if !ok || (ok && epochTime.After(bounds.EndTime)) {
-					bounds.EndTime = epochTime
-					pgPartBoundsDbName[msg.MetricName][msg.DBUniqueName] = bounds
-				}
-			}
-		}
-	}
-
-	if MetricSchema == db.MetricSchemaPostgres {
-		err = EnsureMetricDbnameTime(pgPartBoundsDbName, forceRecreatePGMetricPartitions)
-	} else if MetricSchema == db.MetricSchemaTimescale {
-		err = EnsureMetricTimescale(pgPartBounds, forceRecreatePGMetricPartitions)
-	} else {
-		logger.Fatal("should never happen...")
-	}
-	if forceRecreatePGMetricPartitions {
-		forceRecreatePGMetricPartitions = false
-	}
-	if err != nil {
-		atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-		return err
-	}
-
-	// send data to PG, with a separate COPY for all metrics
-	logger.Debugf("COPY-ing %d metrics to Postgres metricsDB...", rowsBatched)
-	t1 := time.Now()
-
-	for metricName, metrics := range metricsToStorePerMetric {
-
-		getTargetTable := func() pgx.Identifier {
-			return pgx.Identifier{metricName}
-		}
-
-		getTargetColumns := func() []string {
-			return []string{"time", "dbname", "data", "tag_data"}
-		}
-
-		for _, m := range metrics {
-			l := logger.WithField("db", m.DBName).WithField("metric", m.Metric)
-			jsonBytes, err := json.Marshal(m.Data)
-			if err != nil {
-				logger.Errorf("Skipping 1 metric for [%s:%s] due to JSON conversion error: %s", m.DBName, m.Metric, err)
-				atomic.AddUint64(&totalMetricsDroppedCounter, 1)
-				continue
-			}
-
-			getTagData := func() any {
-				if len(m.TagData) > 0 {
-					jsonBytesTags, err := json.Marshal(m.TagData)
-					if err != nil {
-						l.Error(err)
-						atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-						return nil
-					}
-					return string(jsonBytesTags)
-				}
-				return nil
-			}
-
-			rows := [][]any{{m.Time, m.DBName, string(jsonBytes), getTagData()}}
-
-			if _, err = metricDb.CopyFrom(context.Background(), getTargetTable(), getTargetColumns(), pgx.CopyFromRows(rows)); err != nil {
-				l.Error(err)
-				atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-				forceRecreatePGMetricPartitions = strings.Contains(err.Error(), "no partition")
-				if forceRecreatePGMetricPartitions {
-					logger.Warning("Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run")
-				}
-			}
-		}
-	}
-
-	diff := time.Since(t1)
-	if err == nil {
-		if len(storeMessages) == 1 {
-			logger.Infof("wrote %d/%d rows to Postgres for [%s:%s] in %.1f ms", rowsBatched, totalRows,
-				storeMessages[0].DBUniqueName, storeMessages[0].MetricName, float64(diff.Nanoseconds())/1000000)
-		} else {
-			logger.Infof("wrote %d/%d rows from %d metric sets to Postgres in %.1f ms", rowsBatched, totalRows,
-				len(storeMessages), float64(diff.Nanoseconds())/1000000)
-		}
-		atomic.StoreInt64(&lastSuccessfulDatastoreWriteTimeEpoch, t1.Unix())
-		atomic.AddUint64(&datastoreTotalWriteTimeMicroseconds, uint64(diff.Microseconds()))
-		atomic.AddUint64(&datastoreWriteSuccessCounter, 1)
-	}
-	return err
 }
