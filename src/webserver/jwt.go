@@ -83,10 +83,16 @@ func generateJWT(username string) (string, error) {
 }
 
 func validateToken(r *http.Request) (err error) {
+	var t string
 	if r.Header["Token"] == nil {
+		t = r.URL.Query().Get("Token")
+	} else {
+		t = r.Header["Token"][0]
+	}
+	if t == "" {
 		return errors.New("can not find token in header")
 	}
-	token, err := jwt.Parse(r.Header["Token"][0], func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(t, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("there was an error in parsing")
 		}
