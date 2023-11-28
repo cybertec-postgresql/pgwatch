@@ -64,7 +64,7 @@ with recursive /* pgwatch3_generated */
                     The general idea is to reduce filesystem "stat"-ing on tables that won't make it to final output anyways based on approximate size */
     )
 
-select /* pgwatch2_generated */
+select /* pgwatch3_generated */
     epoch_ns,
     tag_schema,
     tag_table_name,

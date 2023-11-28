@@ -6147,7 +6147,7 @@ GROUP BY
 $sql$);
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'unused_indexes',
 11,
@@ -6176,7 +6176,7 @@ limit 25;
 $sql$);
 
 
-insert into pgwatch2.metric(m_name, m_pg_version_from, m_sql)
+insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'invalid_indexes',
 11,
