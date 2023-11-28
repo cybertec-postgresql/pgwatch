@@ -70,9 +70,7 @@ func writer(ws *websocket.Conn, l log.LoggerHookerIface) {
 func (Server *WebUIServer) serveWsLog(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		if _, ok := err.(websocket.HandshakeError); !ok {
-			Server.l.Error(err)
-		}
+		Server.l.Error(err)
 		return
 	}
 	Server.l.WithField("reguest", r.URL.String()).Debugf("established websocket connection")
