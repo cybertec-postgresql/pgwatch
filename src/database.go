@@ -42,8 +42,7 @@ func InitSQLConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
 		md.DBName = "pgbouncer"
 	}
 
-	conn, err := db.GetPostgresDBConnection(mainContext, md.LibPQConnStr, md.Host, md.Port, md.DBName, md.User, md.Password,
-		md.SslMode, md.SslRootCAPath, md.SslClientCertPath, md.SslClientKeyPath)
+	conn, err := db.GetPostgresDBConnection(mainContext, md.LibPQConnStr)
 	if err != nil {
 		return err
 	}
@@ -1053,23 +1052,9 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 	var err error
 	md := make([]MonitoredDatabase, 0)
 
-	// some cloud providers limit access to template1 for some reason, so try with postgres and defaultdb (Aiven)
-	templateDBsToTry := []string{"template1", "postgres", "defaultdb"}
-
-	for _, templateDB := range templateDBsToTry {
-		c, err = db.GetPostgresDBConnection(mainContext, ce.LibPQConnStr, ce.Host, ce.Port, templateDB, ce.User, ce.Password,
-			ce.SslMode, ce.SslRootCAPath, ce.SslClientCertPath, ce.SslClientKeyPath)
-		if err != nil {
-			return md, err
-		}
-		err = c.Ping(mainContext)
-		if err == nil {
-			break
-		}
-		c.Close()
-	}
+	c, err = db.GetPostgresDBConnection(mainContext, ce.LibPQConnStr)
 	if err != nil {
-		return md, fmt.Errorf("Failed to connect to any of the template DBs: %v", templateDBsToTry)
+		return md, err
 	}
 	defer c.Close()
 

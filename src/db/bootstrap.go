@@ -2,8 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/log"
@@ -26,45 +24,20 @@ func TryDatabaseConnection(ctx context.Context, connStr string) error {
 	return err
 }
 
-func GetPostgresDBConnection(ctx context.Context, libPqConnString, host, port, dbname, user, password, sslmode, sslrootcert, sslcert, sslkey string) (PgxPoolIface, error) {
-	var connStr string
+type ConnConfigCallback = func(*pgx.ConnConfig) error
 
-	//log.Debug("Connecting to: ", host, port, dbname, user, password)
-	if len(libPqConnString) > 0 {
-		connStr = libPqConnString
-		if !strings.Contains(strings.ToLower(connStr), "sslmode") {
-			if strings.Contains(connStr, "postgresql://") || strings.Contains(connStr, "postgres://") { // JDBC style
-				if strings.Contains(connStr, "?") { // has some extra params already
-					connStr += "&sslmode=disable" // defaulting to "disable" as Go driver doesn't support "prefer"
-				} else {
-					connStr += "?sslmode=disable"
-				}
-			} else { // LibPQ style
-				connStr += " sslmode=disable"
-			}
-		}
-		if !strings.Contains(strings.ToLower(connStr), "connect_timeout") {
-			if strings.Contains(connStr, "postgresql://") || strings.Contains(connStr, "postgres://") { // JDBC style
-				if strings.Contains(connStr, "?") { // has some extra params already
-					connStr += "&connect_timeout=5" // 5 seconds
-				} else {
-					connStr += "?connect_timeout=5"
-				}
-			} else { // LibPQ style
-				connStr += " connect_timeout=5"
-			}
-		}
-	} else {
-		connStr = fmt.Sprintf("host=%s port=%s dbname='%s' sslmode=%s user=%s application_name=%s sslrootcert='%s' sslcert='%s' sslkey='%s' connect_timeout=5",
-			host, port, dbname, sslmode, user, applicationName, sslrootcert, sslcert, sslkey)
-		if password != "" { // having empty string as password effectively disables .pgpass so include only if password given
-			connStr += fmt.Sprintf(" password='%s'", password)
-		}
-	}
-
+func GetPostgresDBConnection(ctx context.Context, connStr string, callbacks ...ConnConfigCallback) (PgxPoolIface, error) {
 	connConfig, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
 		return nil, err
+	}
+	for _, f := range callbacks {
+		if err = f(connConfig.ConnConfig); err != nil {
+			return nil, err
+		}
+	}
+	if connConfig.ConnConfig.ConnectTimeout == 0 {
+		connConfig.ConnConfig.ConnectTimeout = time.Second * 5
 	}
 	connConfig.MaxConnIdleTime = 15 * time.Second
 	connConfig.MaxConnLifetime = pgConnRecycleSeconds * time.Second
@@ -78,11 +51,10 @@ func GetPostgresDBConnection(ctx context.Context, libPqConnString, host, port, d
 
 var backoff = retry.WithMaxRetries(3, retry.NewConstant(1*time.Second))
 
-func InitAndTestConfigStoreConnection(ctx context.Context, host, port, dbname, user, password string, requireSSL bool) (configDb PgxPoolIface, err error) {
+func InitAndTestConfigStoreConnection(ctx context.Context, connStr string) (configDb PgxPoolIface, err error) {
 	logger := log.GetLogger(ctx)
-	SSLMode := map[bool]string{false: "disable", true: "require"}[requireSSL]
 	if err = retry.Do(ctx, backoff, func(ctx context.Context) error {
-		if configDb, err = GetPostgresDBConnection(ctx, "", host, port, dbname, user, password, SSLMode, "", "", ""); err == nil {
+		if configDb, err = GetPostgresDBConnection(ctx, connStr); err == nil {
 			err = configDb.Ping(ctx)
 		}
 		if err != nil {
@@ -101,7 +73,7 @@ func InitAndTestConfigStoreConnection(ctx context.Context, host, port, dbname, u
 func InitAndTestMetricStoreConnection(ctx context.Context, connStr string) (metricDb PgxPoolIface, err error) {
 	logger := log.GetLogger(ctx)
 	if err = retry.Do(ctx, backoff, func(ctx context.Context) error {
-		if metricDb, err = GetPostgresDBConnection(ctx, connStr, "", "", "", "", "", "", "", "", ""); err == nil {
+		if metricDb, err = GetPostgresDBConnection(ctx, connStr); err == nil {
 			err = metricDb.Ping(ctx)
 		}
 		if err != nil {

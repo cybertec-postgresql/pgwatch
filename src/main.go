@@ -177,14 +177,13 @@ const (
 	metricPsutilDisk                         = "psutil_disk"
 	metricPsutilDiskIoTotal                  = "psutil_disk_io_total"
 	metricPsutilMem                          = "psutil_mem"
-	defaultMetricsDefinitionPathPkg          = "/etc/pgwatch3/metrics" // prebuilt packages / Docker default location
-	defaultMetricsDefinitionPathDocker       = "/pgwatch3/metrics"     // prebuilt packages / Docker default location
-	dbSizeCachingInterval                    = 30 * time.Minute
-	dbMetricJoinStr                          = "¤¤¤" // just some unlikely string for a DB name to avoid using maps of maps for DB+metric data
-	execEnvUnknown                           = "UNKNOWN"
-	execEnvAzureSingle                       = "AZURE_SINGLE"
-	execEnvAzureFlexible                     = "AZURE_FLEXIBLE"
-	execEnvGoogle                            = "GOOGLE"
+
+	dbSizeCachingInterval = 30 * time.Minute
+	dbMetricJoinStr       = "¤¤¤" // just some unlikely string for a DB name to avoid using maps of maps for DB+metric data
+	execEnvUnknown        = "UNKNOWN"
+	execEnvAzureSingle    = "AZURE_SINGLE"
+	execEnvAzureFlexible  = "AZURE_FLEXIBLE"
+	execEnvGoogle         = "GOOGLE"
 )
 
 var dbTypeMap = map[string]bool{config.DbTypePg: true, config.DbTypePgCont: true, config.DbTypeBouncer: true, config.DbTypePatroni: true, config.DbTypePatroniCont: true, config.DbTypePgPOOL: true, config.DbTypePatroniNamespaceDiscovery: true}
@@ -1726,13 +1725,6 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []MonitoredDa
 	}
 }
 
-func CheckFolderExistsAndReadable(path string) bool {
-	if _, err := os.ReadDir(path); err != nil {
-		return false
-	}
-	return true
-}
-
 func shouldDbBeMonitoredBasedOnCurrentState(md MonitoredDatabase) bool {
 	return !IsDBDormant(md.DBUniqueName)
 }
@@ -1915,64 +1907,14 @@ func main() {
 	}
 
 	// running in config file based mode?
-	if len(opts.Config) > 0 {
-		if opts.Metric.MetricsFolder == "" && CheckFolderExistsAndReadable(defaultMetricsDefinitionPathPkg) {
-			opts.Metric.MetricsFolder = defaultMetricsDefinitionPathPkg
-			logger.Warningf("--metrics-folder path not specified, using %s", opts.Metric.MetricsFolder)
-		} else if opts.Metric.MetricsFolder == "" && CheckFolderExistsAndReadable(defaultMetricsDefinitionPathDocker) {
-			opts.Metric.MetricsFolder = defaultMetricsDefinitionPathDocker
-			logger.Warningf("--metrics-folder path not specified, using %s", opts.Metric.MetricsFolder)
-		} else {
-			if !CheckFolderExistsAndReadable(opts.Metric.MetricsFolder) {
-				logger.Fatalf("Could not read --metrics-folder path %s", opts.Metric.MetricsFolder)
-			}
-		}
-
-		if !opts.IsAdHocMode() {
-			fi, err := os.Stat(opts.Config)
-			if err != nil {
-				logger.Fatalf("Could not Stat() path %s: %s", opts.Config, err)
-			}
-			switch mode := fi.Mode(); {
-			case mode.IsDir():
-				_, err := os.ReadDir(opts.Config)
-				if err != nil {
-					logger.Fatalf("Could not read path %s: %s", opts.Config, err)
-				}
-			case mode.IsRegular():
-				_, err := os.ReadFile(opts.Config)
-				if err != nil {
-					logger.Fatalf("Could not read path %s: %s", opts.Config, err)
-				}
-			}
-		}
-
+	configKind, err := opts.GetConfigKind()
+	switch {
+	case err != nil:
+		logger.Fatal(err)
+	case configKind == config.ConfigFile || configKind == config.ConfigFolder:
 		fileBasedMetrics = true
-	} else if opts.IsAdHocMode() && opts.Metric.MetricsFolder != "" && CheckFolderExistsAndReadable(opts.Metric.MetricsFolder) {
-		// don't need the Config DB connection actually for ad-hoc mode if metric definitions are there
-		fileBasedMetrics = true
-	} else if opts.IsAdHocMode() && opts.Metric.MetricsFolder == "" && (CheckFolderExistsAndReadable(defaultMetricsDefinitionPathPkg) || CheckFolderExistsAndReadable(defaultMetricsDefinitionPathDocker)) {
-		if CheckFolderExistsAndReadable(defaultMetricsDefinitionPathPkg) {
-			opts.Metric.MetricsFolder = defaultMetricsDefinitionPathPkg
-		} else if CheckFolderExistsAndReadable(defaultMetricsDefinitionPathDocker) {
-			opts.Metric.MetricsFolder = defaultMetricsDefinitionPathDocker
-		}
-		logger.Warningf("--metrics-folder path not specified, using %s", opts.Metric.MetricsFolder)
-		fileBasedMetrics = true
-	} else { // normal "Config DB" mode
-		// make sure all PG params are there
-		if opts.Connection.User == "" {
-			opts.Connection.User = os.Getenv("USER")
-		}
-		if opts.Connection.Host == "" || opts.Connection.Port == "" || opts.Connection.Dbname == "" || opts.Connection.User == "" {
-			fmt.Println("Check config DB parameters")
-			return
-		}
-
-		configDb, err = db.InitAndTestConfigStoreConnection(mainContext, opts.Connection.Host,
-			opts.Connection.Port, opts.Connection.Dbname, opts.Connection.User, opts.Connection.Password,
-			opts.Connection.PgRequireSSL)
-		if err != nil {
+	case configKind == config.ConfigPgURL:
+		if configDb, err = db.InitAndTestConfigStoreConnection(mainContext, opts.Connection.Config); err != nil {
 			logger.WithError(err).Fatal("Could not connect to configuration database")
 		}
 	}
@@ -1995,8 +1937,7 @@ func main() {
 			go MetricsBatcher(mainContext, opts.BatchingDelayMs, bufferedPersistCh, persistCh)
 		}
 
-		metricsWriter, err = sinks.NewMultiWriter(mainContext, opts)
-		if err != nil {
+		if metricsWriter, err = sinks.NewMultiWriter(mainContext, opts); err != nil {
 			logger.Fatal(err)
 		}
 		go metricsWriter.WriteMetrics(mainContext, persistCh)
@@ -2007,6 +1948,7 @@ func main() {
 	if opts.Connection.Init {
 		return
 	}
+
 	firstLoop := true
 	mainLoopCount := 0
 	var monitoredDbs []MonitoredDatabase
@@ -2076,7 +2018,7 @@ func main() {
 					}
 				}
 			} else {
-				mc, err := ReadMonitoringConfigFromFileOrFolder(opts.Config)
+				mc, err := ReadMonitoringConfigFromFileOrFolder(opts.Connection.Config)
 				if err == nil {
 					logger.Debugf("Found %d monitoring config entries", len(mc))
 					if len(opts.Metric.Group) > 0 {
@@ -2088,9 +2030,9 @@ func main() {
 					logger.Debugf("Found %d databases to monitor from %d config items...", len(monitoredDbs), len(mc))
 				} else {
 					if firstLoop {
-						logger.Fatalf("Could not read/parse monitoring config from path: %s. err: %v", opts.Config, err)
+						logger.Fatalf("Could not read/parse monitoring config from path: %s. err: %v", opts.Connection.Config, err)
 					} else {
-						logger.Errorf("Could not read/parse monitoring config from path: %s. using last valid config data. err: %v", opts.Config, err)
+						logger.Errorf("Could not read/parse monitoring config from path: %s. using last valid config data. err: %v", opts.Connection.Config, err)
 					}
 					time.Sleep(time.Second * time.Duration(opts.Connection.ServersRefreshLoopSeconds))
 					continue

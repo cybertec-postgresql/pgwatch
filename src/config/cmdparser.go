@@ -3,19 +3,24 @@ package config
 import (
 	"os"
 
+	"github.com/jackc/pgx/v5"
 	flags "github.com/jessevdk/go-flags"
+)
+
+type Kind int
+
+const (
+	ConfigPgURL Kind = iota
+	ConfigFile
+	ConfigFolder
+	ConfigError
 )
 
 // ConnectionOpts specifies the database connection options
 type ConnectionOpts struct {
-	Host                      string `long:"host" mapstructure:"host" description:"PG config DB host" default:"localhost" env:"PW3_PGHOST"`
-	Port                      string `short:"p" long:"port" mapstructure:"port" description:"PG config DB port" default:"5432" env:"PW3_PGPORT"`
-	Dbname                    string `short:"d" long:"dbname" mapstructure:"dbname" description:"PG config DB dbname" default:"pgwatch3" env:"PW3_PGDATABASE"`
-	User                      string `short:"u" long:"user" mapstructure:"user" description:"PG config DB user" default:"pgwatch3" env:"PW3_PGUSER"`
-	Password                  string `long:"password" mapstructure:"password" description:"PG config DB password" env:"PW3_PGPASSWORD"`
-	PgRequireSSL              bool   `long:"pg-require-ssl" mapstructure:"pg-require-ssl" description:"PG config DB SSL connection only" env:"PW3_PGSSL"`
+	Config                    string `short:"c" long:"config" mapstructure:"config" description:"File or folder of YAML files containing info on which DBs to monitor and where to store metrics" env:"PW3_CONFIG"`
 	ServersRefreshLoopSeconds int    `long:"servers-refresh-loop-seconds" mapstructure:"servers-refresh-loop-seconds" description:"Sleep time for the main loop" env:"PW3_SERVERS_REFRESH_LOOP_SECONDS" default:"120"`
-	Init                      bool   `long:"init" description:"Initialize database schema to the latest version and exit. Can be used with --upgrade"`
+	Init                      bool   `long:"init" description:"Initialize configuration database schema to the latest version and exit. Can be used with --upgrade"`
 }
 
 // MetricStoreOpts specifies the storage configuration to store metrics data
@@ -64,7 +69,6 @@ type CmdOptions struct {
 	Logging                      LoggingOpts    `group:"Logging" mapstructure:"Logging"`
 	WebUI                        WebUIOpts      `group:"WebUI" mapstructure:"WebUI"`
 	Start                        StartOpts      `group:"Start" mapstructure:"Start"`
-	Config                       string         `short:"c" long:"config" mapstructure:"config" description:"File or folder of YAML files containing info on which DBs to monitor and where to store metrics" env:"PW3_CONFIG"`
 	BatchingDelayMs              int64          `long:"batching-delay-ms" mapstructure:"batching-delay-ms" description:"Max milliseconds to wait for a batched metrics flush. [Default: 250]" default:"250" env:"PW3_BATCHING_MAX_DELAY_MS"`
 	AdHocConnString              string         `long:"adhoc-conn-str" mapstructure:"adhoc-conn-str" description:"Ad-hoc mode: monitor a single Postgres DB specified by a standard Libpq connection string" env:"PW3_ADHOC_CONN_STR"`
 	AdHocDBType                  string         `long:"adhoc-dbtype" mapstructure:"adhoc-dbtype" description:"Ad-hoc mode: postgres|postgres-continuous-discovery" default:"postgres" env:"PW3_ADHOC_DBTYPE"`
@@ -97,6 +101,20 @@ func (c CmdOptions) IsAdHocMode() bool {
 // VersionOnly returns true if the `--version` is the only argument
 func (c CmdOptions) VersionOnly() bool {
 	return len(os.Args) == 2 && c.Version
+}
+
+func (c CmdOptions) GetConfigKind() (_ Kind, err error) {
+	if _, err := pgx.ParseConfig(c.Connection.Config); err == nil {
+		return Kind(ConfigPgURL), nil
+	}
+	var fi os.FileInfo
+	if fi, err = os.Stat(c.Connection.Config); err == nil {
+		if fi.IsDir() {
+			return Kind(ConfigFolder), nil
+		}
+		return Kind(ConfigFile), nil
+	}
+	return Kind(ConfigError), err
 }
 
 // NewCmdOptions returns a new instance of CmdOptions with default values

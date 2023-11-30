@@ -9,11 +9,13 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	consul_api "github.com/hashicorp/consul/api"
+	"github.com/jackc/pgx/v5"
 	"github.com/samuel/go-zookeeper/zk"
 	client "go.etcd.io/etcd/client/v3"
 )
@@ -307,6 +309,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 			md = append(md, MonitoredDatabase{
 				DBUniqueName:      dbUnique,
 				DBUniqueNameOrig:  ce.DBUniqueName,
+				LibPQConnStr:      ce.LibPQConnStr,
 				DBName:            ce.DBName,
 				Host:              host,
 				Port:              port,
@@ -326,8 +329,14 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 				DBType:            "postgres"})
 			continue
 		}
-		c, err := db.GetPostgresDBConnection(mainContext, "", host, port, "template1", ce.User, ce.Password,
-			ce.SslMode, ce.SslRootCAPath, ce.SslClientCertPath, ce.SslClientKeyPath)
+		c, err := db.GetPostgresDBConnection(mainContext, ce.LibPQConnStr,
+			func(c *pgx.ConnConfig) error {
+				c.Host = host
+				c.Database = "template1"
+				i, err := strconv.Atoi(port)
+				c.Port = uint16(i)
+				return err
+			})
 		if err != nil {
 			logger.Errorf("Could not contact Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
 			continue
