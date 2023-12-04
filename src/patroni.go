@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path"
 	"regexp"
@@ -149,7 +150,7 @@ func getEtcdClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, 
 	kapi := c.KV
 
 	if database.DBType == config.DbTypePatroniNamespaceDiscovery { // all scopes, all DBs (regex filtering applies if defined)
-		if len(database.DBName) > 0 {
+		if len(database.GetDatabaseName()) > 0 {
 			return ret, fmt.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName)
 		}
 		if database.HostConfig.Namespace == "" {
@@ -305,36 +306,27 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 		} else {
 			dbUnique = ce.DBUniqueName + "_" + m.Name
 		}
-		if ce.DBName != "" {
+		if ce.GetDatabaseName() != "" {
 			md = append(md, MonitoredDatabase{
-				DBUniqueName:      dbUnique,
-				DBUniqueNameOrig:  ce.DBUniqueName,
-				LibPQConnStr:      ce.LibPQConnStr,
-				DBName:            ce.DBName,
-				Host:              host,
-				Port:              port,
-				User:              ce.User,
-				Password:          ce.Password,
-				PasswordType:      ce.PasswordType,
-				SslMode:           ce.SslMode,
-				SslRootCAPath:     ce.SslRootCAPath,
-				SslClientCertPath: ce.SslClientCertPath,
-				SslClientKeyPath:  ce.SslClientKeyPath,
-				StmtTimeout:       ce.StmtTimeout,
-				Metrics:           ce.Metrics,
-				PresetMetrics:     ce.PresetMetrics,
-				IsSuperuser:       ce.IsSuperuser,
-				CustomTags:        ce.CustomTags,
-				HostConfig:        ce.HostConfig,
-				DBType:            "postgres"})
+				DBUniqueName:     dbUnique,
+				DBUniqueNameOrig: ce.DBUniqueName,
+				ConnStr:          ce.ConnStr,
+				Encryption:       ce.Encryption,
+				Metrics:          ce.Metrics,
+				PresetMetrics:    ce.PresetMetrics,
+				IsSuperuser:      ce.IsSuperuser,
+				CustomTags:       ce.CustomTags,
+				HostConfig:       ce.HostConfig,
+				DBType:           "postgres"})
 			continue
 		}
-		c, err := db.GetPostgresDBConnection(mainContext, ce.LibPQConnStr,
+		c, err := db.GetPostgresDBConnection(mainContext, ce.ConnStr,
 			func(c *pgx.ConnConfig) error {
 				c.Host = host
 				c.Database = "template1"
 				i, err := strconv.Atoi(port)
 				c.Port = uint16(i)
+				md[len(md)].ConnStr = c.ConnString()
 				return err
 			})
 		if err != nil {
@@ -358,26 +350,23 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 		}
 
 		for _, d := range data {
+			connURL, err := url.Parse(ce.ConnStr)
+			if err != nil {
+				continue
+			}
+			connURL.Host = host + ":" + port
+			connURL.Path = d["datname"].(string)
 			md = append(md, MonitoredDatabase{
-				DBUniqueName:      dbUnique + "_" + d["datname_escaped"].(string),
-				DBUniqueNameOrig:  dbUnique,
-				DBName:            d["datname"].(string),
-				Host:              host,
-				Port:              port,
-				User:              ce.User,
-				Password:          ce.Password,
-				PasswordType:      ce.PasswordType,
-				SslMode:           ce.SslMode,
-				SslRootCAPath:     ce.SslRootCAPath,
-				SslClientCertPath: ce.SslClientCertPath,
-				SslClientKeyPath:  ce.SslClientKeyPath,
-				StmtTimeout:       ce.StmtTimeout,
-				Metrics:           ce.Metrics,
-				PresetMetrics:     ce.PresetMetrics,
-				IsSuperuser:       ce.IsSuperuser,
-				CustomTags:        ce.CustomTags,
-				HostConfig:        ce.HostConfig,
-				DBType:            "postgres"})
+				DBUniqueName:     dbUnique + "_" + d["datname_escaped"].(string),
+				DBUniqueNameOrig: dbUnique,
+				ConnStr:          connURL.String(),
+				Encryption:       ce.Encryption,
+				Metrics:          ce.Metrics,
+				PresetMetrics:    ce.PresetMetrics,
+				IsSuperuser:      ce.IsSuperuser,
+				CustomTags:       ce.CustomTags,
+				HostConfig:       ce.HostConfig,
+				DBType:           "postgres"})
 		}
 
 	}

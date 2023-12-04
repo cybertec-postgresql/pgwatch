@@ -101,7 +101,7 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 		}
 	}
 	allSeverityCounts["epoch_ns"] = time.Now().UnixNano()
-	return []metrics.MetricStoreMessage{{DBUniqueName: mdb.DBUniqueName, DBType: mdb.DBType,
+	return []metrics.MetricStoreMessage{{DBName: mdb.DBUniqueName, DBType: mdb.DBType,
 		MetricName: specialMetricServerLogEventCounts, Data: metrics.MetricData{allSeverityCounts}, CustomTags: mdb.CustomTags}}
 }
 
@@ -368,7 +368,7 @@ func tryDetermineLogFolder(mdb MonitoredDatabase) string {
 	sql := `select current_setting('data_directory') as dd, current_setting('log_directory') as ld`
 
 	logger.Infof("[%s] Trying to determine server logs folder via SQL as host_config.logs_glob_path not specified...", mdb.DBUniqueName)
-	data, err := DBExecReadByDbUniqueName(mainContext, mdb.DBUniqueName, 0, sql)
+	data, err := DBExecReadByDbUniqueName(mainContext, mdb.DBUniqueName, sql)
 	if err != nil {
 		logger.Errorf("[%s] Failed to query data_directory and log_directory settings...are you superuser or have pg_monitor grant?", mdb.DBUniqueName)
 		return ""
@@ -386,7 +386,7 @@ func tryDetermineLogMessagesLanguage(mdb MonitoredDatabase) string {
 	sql := `select current_setting('lc_messages')::varchar(2) as lc_messages;`
 
 	logger.Debugf("[%s] Trying to determine server log messages language...", mdb.DBUniqueName)
-	data, err := DBExecReadByDbUniqueName(mainContext, mdb.DBUniqueName, 0, sql)
+	data, err := DBExecReadByDbUniqueName(mainContext, mdb.DBUniqueName, sql)
 	if err != nil {
 		logger.Errorf("[%s] Failed to lc_messages settings: %s", mdb.DBUniqueName, err)
 		return ""

@@ -38,11 +38,7 @@ func InitSQLConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
 		return nil
 	}
 
-	if md.DBType == config.DbTypeBouncer {
-		md.DBName = "pgbouncer"
-	}
-
-	conn, err := db.GetPostgresDBConnection(mainContext, md.LibPQConnStr)
+	conn, err := db.GetPostgresDBConnection(mainContext, md.ConnStr)
 	if err != nil {
 		return err
 	}
@@ -88,7 +84,7 @@ func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) 
 	return nil, err
 }
 
-func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, stmtTimeoutOverride int64, sql string, args ...any) (metrics.MetricData, error) {
+func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, sql string, args ...any) (metrics.MetricData, error) {
 	var conn db.PgxIface
 	var md MonitoredDatabase
 	var data metrics.MetricData
@@ -115,19 +111,6 @@ func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, stmtTimeoutO
 		return nil, err
 	}
 	defer func() { _ = tx.Commit(ctx) }()
-	if !opts.IsAdHocMode() && IsPostgresDBType(md.DBType) {
-		stmtTimeout := md.StmtTimeout
-		if stmtTimeoutOverride > 0 {
-			stmtTimeout = stmtTimeoutOverride
-		}
-		if stmtTimeout > 0 { // 0 = don't change, use DB level settings
-			_, err = tx.Exec(ctx, fmt.Sprintf("SET LOCAL statement_timeout TO '%ds'", stmtTimeout))
-		}
-		if err != nil {
-			atomic.AddUint64(&totalMetricFetchFailuresCounter, 1)
-			return nil, err
-		}
-	}
 	if IsPostgresDBType(md.DBType) {
 		_, err = tx.Exec(ctx, "SET LOCAL lock_timeout TO '100ms'")
 		if err != nil {
@@ -144,12 +127,12 @@ func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, stmtTimeoutO
 func GetAllActiveHostsFromConfigDB() (metrics.MetricData, error) {
 	sqlLatest := `
 		select /* pgwatch3_generated */
-		  md_unique_name, md_group, md_dbtype, md_hostname, md_port, md_dbname, md_user, coalesce(md_password, '') as md_password,
+		  md_name, md_group, md_dbtype, md_connstr,
 		  coalesce(p.pc_config, md_config)::text as md_config, coalesce(s.pc_config, md_config_standby, '{}'::jsonb)::text as md_config_standby,
-		  md_statement_timeout_seconds, md_sslmode, md_is_superuser,
+		  md_is_superuser,
 		  coalesce(md_include_pattern, '') as md_include_pattern, coalesce(md_exclude_pattern, '') as md_exclude_pattern,
-		  coalesce(md_custom_tags::text, '{}') as md_custom_tags, md_root_ca_path, md_client_cert_path, md_client_key_path,
-		  md_password_type, coalesce(md_host_config, '{}')::text as md_host_config, md_only_if_master
+		  coalesce(md_custom_tags::text, '{}') as md_custom_tags, 
+		  md_encryption, coalesce(md_host_config, '{}')::text as md_host_config, md_only_if_master
 		from
 		  pgwatch3.monitored_db
 	          left join
@@ -176,7 +159,7 @@ func DBGetSizeMB(dbUnique string) (int64, error) {
 		if err != nil || (ver.ExecEnv != execEnvAzureSingle) || (ver.ExecEnv == execEnvAzureSingle && ver.ApproxDBSizeB < 1e12) {
 			logger.Debugf("[%s] determining DB size ...", dbUnique)
 
-			data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 300, sqlDbSize) // can take some time on ancient FS, use 300s stmt timeout
+			data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, sqlDbSize) // can take some time on ancient FS, use 300s stmt timeout
 			if err != nil {
 				logger.Errorf("[%s] failed to determine DB size...cannot apply --min-db-size-mb flag. err: %v ...", dbUnique, err)
 				return 0, err
@@ -211,7 +194,7 @@ func TryDiscoverExecutionEnv(dbUnique string) string {
 	  'UNKNOWN'
 	end as exec_env;
   `
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 0, sqlPGExecEnv)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, sqlPGExecEnv)
 	if err != nil {
 		return ""
 	}
@@ -227,7 +210,7 @@ func GetDBTotalApproxSize(dbUnique string) (int64, error) {
 	where	/* works only for v9.1+*/
 		c.relpersistence != 't';
 	`
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 0, sqlApproxDBSize)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, sqlApproxDBSize)
 	if err != nil {
 		return 0, err
 	}
@@ -273,7 +256,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, dbType string, noCache
 	}
 
 	if dbType == config.DbTypeBouncer {
-		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, 0, "show version")
+		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, "show version")
 		if err != nil {
 			return verNew, err
 		}
@@ -291,7 +274,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, dbType string, noCache
 			verNew.Version = VersionToInt(matches[0])
 		}
 	} else if dbType == config.DbTypePgPOOL {
-		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, 0, pgpoolVersion)
+		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, pgpoolVersion)
 		if err != nil {
 			return verNew, err
 		}
@@ -308,7 +291,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, dbType string, noCache
 			verNew.Version = VersionToInt(matches[0])
 		}
 	} else {
-		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, 0, sql)
+		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, sql)
 		if err != nil {
 			if noCache {
 				return ver, err
@@ -324,7 +307,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, dbType string, noCache
 
 		if verNew.Version > VersionToInt("10.0") && opts.Metric.SystemIdentifierField > "" {
 			logger.Debugf("[%s] determining system identifier version (pg ver: %v)", dbUnique, verNew.VersionStr)
-			data, err := DBExecReadByDbUniqueName(ctx, dbUnique, 0, sqlSysid)
+			data, err := DBExecReadByDbUniqueName(ctx, dbUnique, sqlSysid)
 			if err == nil && len(data) > 0 {
 				verNew.SystemIdentifier = data[0]["system_identifier"].(string)
 			}
@@ -352,7 +335,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, dbType string, noCache
 		}
 
 		logger.Debugf("[%s] determining if monitoring user is a superuser...", dbUnique)
-		data, err = DBExecReadByDbUniqueName(ctx, dbUnique, 0, sqlSu)
+		data, err = DBExecReadByDbUniqueName(ctx, dbUnique, sqlSu)
 		if err == nil {
 			verNew.IsSuperuser = data[0]["rolsuper"].(bool)
 		}
@@ -360,7 +343,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, dbType string, noCache
 
 		if verNew.Version >= MinExtensionInfoAvailable {
 			//log.Debugf("[%s] determining installed extensions info...", dbUnique)
-			data, err = DBExecReadByDbUniqueName(mainContext, dbUnique, 0, sqlExtensions)
+			data, err = DBExecReadByDbUniqueName(mainContext, dbUnique, sqlExtensions)
 			if err != nil {
 				logger.Errorf("[%s] failed to determine installed extensions info: %v", dbUnique, err)
 			} else {
@@ -402,7 +385,7 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 		return changeCounts
 	}
 
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.MetricAttrs.StatementTimeoutSeconds, mvp.SQL)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
 	if err != nil {
 		logger.Error("could not read sproc_hashes from monitored host: ", dbUnique, ", err:", err)
 		return changeCounts
@@ -463,7 +446,7 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	logger.Debugf("[%s][%s] detected %d sproc changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "sproc_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- []metrics.MetricStoreMessage{{DBName: dbUnique, MetricName: "sproc_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
 	}
 
 	return changeCounts
@@ -486,7 +469,7 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 		return changeCounts
 	}
 
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.MetricAttrs.StatementTimeoutSeconds, mvp.SQL)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
 	if err != nil {
 		logger.Error("could not read table_hashes from monitored host:", dbUnique, ", err:", err)
 		return changeCounts
@@ -547,7 +530,7 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	logger.Debugf("[%s][%s] detected %d table changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "table_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- []metrics.MetricStoreMessage{{DBName: dbUnique, MetricName: "table_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
 	}
 
 	return changeCounts
@@ -570,7 +553,7 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 		return changeCounts
 	}
 
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.MetricAttrs.StatementTimeoutSeconds, mvp.SQL)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
 	if err != nil {
 		logger.Error("could not read index_hashes from monitored host:", dbUnique, ", err:", err)
 		return changeCounts
@@ -629,7 +612,7 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 	logger.Debugf("[%s][%s] detected %d index changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique, MetricName: "index_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- []metrics.MetricStoreMessage{{DBName: dbUnique, MetricName: "index_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
 	}
 
 	return changeCounts
@@ -653,7 +636,7 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storageCh ch
 	}
 
 	// returns rows of: object_type, tag_role, tag_object, privilege_type
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.MetricAttrs.StatementTimeoutSeconds, mvp.SQL)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
 	if err != nil {
 		logger.Errorf("[%s][%s] failed to fetch object privileges info: %v", dbUnique, specialMetricChangeEvents, err)
 		return changeCounts
@@ -707,10 +690,10 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storageCh ch
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storageCh <- []metrics.MetricStoreMessage{
 			{
-				DBUniqueName: dbUnique,
-				MetricName:   "privilege_changes",
-				Data:         detectedChanges,
-				CustomTags:   md.CustomTags,
+				DBName:     dbUnique,
+				MetricName: "privilege_changes",
+				Data:       detectedChanges,
+				CustomTags: md.CustomTags,
 			}}
 	}
 
@@ -734,7 +717,7 @@ func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storageC
 		return changeCounts
 	}
 
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.MetricAttrs.StatementTimeoutSeconds, mvp.SQL)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
 	if err != nil {
 		logger.Errorf("[%s][%s] could not read configuration_hashes from monitored host: %v", dbUnique, specialMetricChangeEvents, err)
 		return changeCounts
@@ -771,10 +754,10 @@ func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storageC
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storageCh <- []metrics.MetricStoreMessage{{
-			DBUniqueName: dbUnique,
-			MetricName:   "configuration_changes",
-			Data:         detectedChanges,
-			CustomTags:   md.CustomTags,
+			DBName:     dbUnique,
+			MetricName: "configuration_changes",
+			Data:       detectedChanges,
+			CustomTags: md.CustomTags,
 		}}
 	}
 
@@ -815,7 +798,7 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 		influxEntry["epoch_ns"] = time.Now().UnixNano()
 		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []metrics.MetricStoreMessage{{DBUniqueName: dbUnique,
+		storageCh <- []metrics.MetricStoreMessage{{DBName: dbUnique,
 			DBType:     md.DBType,
 			MetricName: "object_changes",
 			Data:       detectedChangesSummary,
@@ -834,7 +817,7 @@ func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp metrics
 
 	for _, sql := range sqlLines {
 		if strings.HasPrefix(sql, "SHOW POOL_NODES") {
-			data, err := DBExecReadByDbUniqueName(mainContext, msg.DBUniqueName, 0, sql)
+			data, err := DBExecReadByDbUniqueName(mainContext, msg.DBUniqueName, sql)
 			if err != nil {
 				logger.Errorf("[%s][%s] Could not fetch PgPool statistics: %v", msg.DBUniqueName, msg.MetricName, err)
 				return data, err
@@ -888,7 +871,7 @@ func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp metrics
 				continue
 			}
 
-			data, err := DBExecReadByDbUniqueName(mainContext, msg.DBUniqueName, 0, sql)
+			data, err := DBExecReadByDbUniqueName(mainContext, msg.DBUniqueName, sql)
 			if err != nil {
 				logger.Errorf("[%s][%s] Could not fetch PgPool statistics: %v", msg.DBUniqueName, msg.MetricName, err)
 				continue
@@ -921,7 +904,7 @@ func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp metrics
 func DoesFunctionExists(dbUnique, functionName string) bool {
 	logger.Debug("Checking for function existence", dbUnique, functionName)
 	sql := fmt.Sprintf("select /* pgwatch3_generated */ 1 from pg_proc join pg_namespace n on pronamespace = n.oid where proname = '%s' and n.nspname = 'public'", functionName)
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 0, sql)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, sql)
 	if err != nil {
 		logger.Error("Failed to check for function existence", dbUnique, functionName, err)
 		return false
@@ -941,7 +924,7 @@ func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existi
 	extsCreated := make([]string, 0)
 
 	// For security reasons don't allow to execute random strings but check that it's an existing extension
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 0, sqlAvailable)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, sqlAvailable)
 	if err != nil {
 		logger.Infof("[%s] Failed to get a list of available extensions: %v", dbUnique, err)
 		return extsCreated
@@ -961,7 +944,7 @@ func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existi
 			logger.Errorf("[%s] Requested extension %s not available on instance, cannot try to create...", dbUnique, extToCreate)
 		} else {
 			sqlCreateExt := `create extension ` + extToCreate
-			_, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 0, sqlCreateExt)
+			_, err := DBExecReadByDbUniqueName(mainContext, dbUnique, sqlCreateExt)
 			if err != nil {
 				logger.Errorf("[%s] Failed to create extension %s (based on --try-create-listed-exts-if-missing input): %v", dbUnique, extToCreate, err)
 			}
@@ -1001,7 +984,7 @@ func TryCreateMetricsFetchingHelpers(dbUnique string) error {
 					logger.Warning("Could not find query text for", dbUnique, helperName)
 					continue
 				}
-				_, err = DBExecReadByDbUniqueName(mainContext, dbUnique, 0, mvp.SQL)
+				_, err = DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
 				if err != nil {
 					logger.Warning("Failed to create a metric fetching helper for", dbUnique, helperName)
 					logger.Warning(err)
@@ -1033,7 +1016,7 @@ func TryCreateMetricsFetchingHelpers(dbUnique string) error {
 					logger.Warning("Could not find query text for", dbUnique, metric)
 					continue
 				}
-				_, err = DBExecReadByDbUniqueName(mainContext, dbUnique, 0, mvp.SQL)
+				_, err = DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
 				if err != nil {
 					logger.Warning("Failed to create a metric fetching helper for", dbUnique, metric)
 					logger.Warning(err)
@@ -1052,7 +1035,7 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 	var err error
 	md := make([]MonitoredDatabase, 0)
 
-	c, err = db.GetPostgresDBConnection(mainContext, ce.LibPQConnStr)
+	c, err = db.GetPostgresDBConnection(mainContext, ce.ConnStr)
 	if err != nil {
 		return md, err
 	}
@@ -1076,17 +1059,8 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 		md = append(md, MonitoredDatabase{
 			DBUniqueName:         ce.DBUniqueName + "_" + d["datname_escaped"].(string),
 			DBUniqueNameOrig:     ce.DBUniqueName,
-			DBName:               d["datname"].(string),
-			Host:                 ce.Host,
-			Port:                 ce.Port,
-			User:                 ce.User,
-			Password:             ce.Password,
-			PasswordType:         ce.PasswordType,
-			SslMode:              ce.SslMode,
-			SslRootCAPath:        ce.SslRootCAPath,
-			SslClientCertPath:    ce.SslClientCertPath,
-			SslClientKeyPath:     ce.SslClientKeyPath,
-			StmtTimeout:          ce.StmtTimeout,
+			ConnStr:              ce.ConnStr,
+			Encryption:           ce.Encryption,
 			Metrics:              ce.Metrics,
 			MetricsStandby:       ce.MetricsStandby,
 			PresetMetrics:        ce.PresetMetrics,
@@ -1105,12 +1079,12 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 func GetGoPsutilDiskPG(dbUnique string) (metrics.MetricData, error) {
 	sql := `select current_setting('data_directory') as dd, current_setting('log_directory') as ld, current_setting('server_version_num')::int as pgver`
 	sqlTS := `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E'pg\\_%'])`
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 0, sql)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, sql)
 	if err != nil || len(data) == 0 {
 		logger.Errorf("Failed to determine relevant PG disk paths via SQL: %v", err)
 		return nil, err
 	}
-	dataTblsp, err := DBExecReadByDbUniqueName(mainContext, dbUnique, 0, sqlTS)
+	dataTblsp, err := DBExecReadByDbUniqueName(mainContext, dbUnique, sqlTS)
 	if err != nil {
 		logger.Infof("Failed to determine relevant PG tablespace paths via SQL: %v", err)
 	}

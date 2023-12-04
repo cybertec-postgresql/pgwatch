@@ -156,7 +156,7 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
 			if !ok {
 				metricsToStorePerMetric[metricNameTemp] = make([]metrics.MetricStoreMessagePostgres, 0)
 			}
-			metricsArr = append(metricsArr, metrics.MetricStoreMessagePostgres{Time: epochTime, DBName: msg.DBUniqueName,
+			metricsArr = append(metricsArr, metrics.MetricStoreMessagePostgres{Time: epochTime, DBName: msg.DBName,
 				Metric: msg.MetricName, Data: fields, TagData: tags})
 			metricsToStorePerMetric[metricNameTemp] = metricsArr
 
@@ -178,14 +178,14 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
 				if !ok {
 					pgPartBoundsDbName[msg.MetricName] = make(map[string]ExistingPartitionInfo)
 				}
-				bounds, ok := pgPartBoundsDbName[msg.MetricName][msg.DBUniqueName]
+				bounds, ok := pgPartBoundsDbName[msg.MetricName][msg.DBName]
 				if !ok || (ok && epochTime.Before(bounds.StartTime)) {
 					bounds.StartTime = epochTime
-					pgPartBoundsDbName[msg.MetricName][msg.DBUniqueName] = bounds
+					pgPartBoundsDbName[msg.MetricName][msg.DBName] = bounds
 				}
 				if !ok || (ok && epochTime.After(bounds.EndTime)) {
 					bounds.EndTime = epochTime
-					pgPartBoundsDbName[msg.MetricName][msg.DBUniqueName] = bounds
+					pgPartBoundsDbName[msg.MetricName][msg.DBName] = bounds
 				}
 			}
 		}
@@ -259,7 +259,7 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
 	if err == nil {
 		if len(msgs) == 1 {
 			logger.Infof("wrote %d/%d rows to Postgres for [%s:%s] in %.1f ms", rowsBatched, totalRows,
-				msgs[0].DBUniqueName, msgs[0].MetricName, float64(diff.Nanoseconds())/1000000)
+				msgs[0].DBName, msgs[0].MetricName, float64(diff.Nanoseconds())/1000000)
 		} else {
 			logger.Infof("wrote %d/%d rows from %d metric sets to Postgres in %.1f ms", rowsBatched, totalRows,
 				len(msgs), float64(diff.Nanoseconds())/1000000)

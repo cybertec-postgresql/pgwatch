@@ -44,7 +44,7 @@ type MetricEntry map[string]any
 type MetricData []map[string]any
 
 type MetricStoreMessage struct {
-	DBUniqueName            string
+	DBName                  string
 	DBType                  string
 	MetricName              string
 	CustomTags              map[string]string
