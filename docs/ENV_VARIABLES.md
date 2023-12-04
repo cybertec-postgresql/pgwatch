@@ -9,18 +9,11 @@ Some variables influence multiple components. Command line parameters override e
 
 ## Gatherer daemon
 
-- **PW3_PGHOST** Config DB host. Default: localhost
-- **PW3_PGPORT** Config DB port. Default: 5432
-- **PW3_PGDATABASE** Config DB name. Default: pgwatch3
-- **PW3_PGUSER** Config DB user. Default: pgwatch3
-- **PW3_PGPASSWORD** Config DB password. Default: pgwatch3admin
-- **PW3_PGSSL** Config DB SSL connection only. Default: False
 - **PW3_GROUP** Logical grouping/sharding key to monitor a subset of configured hosts. Default: -
-- **PW3_DATASTORE** Backend for metric storage - [postgres|prometheus|json]. Default: postgres
-- **PW3_VERBOSE** Logging vebosity. By default warning and errors are logged. Use [-v|-vv] to include [info|debug]. Default: -
-- **PW3_PG_METRIC_STORE_CONN_STR** Postgres metric store connection string. Required when PW3_DATASTORE=postgres. Default: -
+- **PW3_PG_METRIC_STORE_CONN_STR** Postgres metric store connection string. Default: -
+- **PW3_JSON_STORAGE_FILE** File to store metric values. Default: -
 - **PW3_PG_RETENTION_DAYS** Effective when PW3_DATASTORE=postgres. Default: 14
-- **PW3_CONFIG** File mode. File or folder of YAML (.yaml/.yml) files containing info on which DBs to monitor and where to store metrics
+- **PW3_CONFIG** Connection string (`postgresql://user:pwd@host/db`), file or folder of YAML (.yaml/.yml) files containing info on which DBs to monitor and where to store metrics
 - **PW3_METRICS_FOLDER** File mode. Folder of metrics definitions
 - **PW3_BATCHING_MAX_DELAY_MS** Max milliseconds to wait for a batched metrics flush. Default: 250
 - **PW3_ADHOC_CONN_STR** Ad-hoc mode. Monitor a single Postgres DB / instance specified by a standard Libpq connection string
@@ -49,33 +42,6 @@ Some variables influence multiple components. Command line parameters override e
 - **PW3_EMERGENCY_PAUSE_TRIGGERFILE** When the file exists no metrics will be temporarily fetched / scraped. Default: /tmp/pgwatch3-emergency-pause
 - **PW3_NO_HELPER_FUNCTIONS** Ignore metric definitions using helper functions (in form get_smth()) and don't also roll out any helpers automatically. Default: false
 - **PW3_TRY_CREATE_LISTED_EXTS_IF_MISSING** Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements. Default: ""
-
-
-## Web UI
-
-- **PW3_WEBHOST** Network interface to listen on. Default: 0.0.0.0
-- **PW3_WEBPORT** Port. Default: 8080
-- **PW3_WEBSSL** Use HTTPS with self-signed certificates, Default: False
-- **PW3_WEBCERT** Enables use of own certificates for custom deployments. Default: '/pgwatch3/persistent-config/self-signed-ssl.pem'
-- **PW3_WEBKEY** Enables use of own certificates for custom deployments. Default: '/pgwatch3/persistent-config/self-signed-ssl.key'
-- **PW3_WEBCERTCHAIN** Path to certificate chain file for custom deployments. Default: -
-- **PW3_WEBNOANONYMOUS** Require user/password to edit data. Default: False
-- **PW3_WEBUSER** Admin login. Default: pgwatch3
-- **PW3_WEBPASSWORD** Admin password. Default: pgwatch3admin
-- **PW3_WEBNOCOMPONENTLOGS** Don't expose Docker component logs. Default: False
-- **PW3_WEBNOSTATSSUMMARY** Don't expose summary metrics and "top queries" on monitored DBs. Default: False
-- **PW3_VERBOSE** Logging vebosity. By default warning and errors are logged. Use [-v|-vv] to include [info|debug]. Default: -
-- **PW3_PGHOST** Config DB host. Default: localhost
-- **PW3_PGPORT** Config DB port. Default: 5432
-- **PW3_PGDATABASE** Config DB name. Default: pgwatch3
-- **PW3_PGUSER** Config DB user. Default: pgwatch3
-- **PW3_PGPASSWORD** Config DB password. Default: pgwatch3admin
-- **PW3_PGSSL** Config DB SSL connection only. Default: False
-- **PW3_GRAFANA_BASEURL** For linking to Grafana "Query details" dashboard from "Stat_stmt. overview". Default: http://0.0.0.0:3000
-- **PW3_AES_GCM_KEYPHRASE** Keyphrase for encryption/decpyption of connect string passwords.
-- **PW3_AES_GCM_KEYPHRASE_FILE** File containing a keyphrase for encryption/decpyption of connect string passwords.
-- **PW3_PG_METRIC_STORE_CONN_STR** Postgres metric store connection string. Required when PW3_DATASTORE=postgres. Default: -
-
 
 ## Grafana
 
