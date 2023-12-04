@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -75,12 +76,13 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
-
+	routes := []string{"/", "/dashboard", "/metrics", "/presets", "/stats_summary", "/logs"}
 	path := r.URL.Path
-	if path == "/" {
+	if slices.Contains(routes, path) {
 		path = "index.html"
+	} else {
+		path = strings.TrimPrefix(path, "/")
 	}
-	path = strings.TrimPrefix(path, "/")
 
 	file, err := Server.uiFS.Open(path)
 	if err != nil {
