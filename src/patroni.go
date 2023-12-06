@@ -16,7 +16,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	consul_api "github.com/hashicorp/consul/api"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samuel/go-zookeeper/zk"
 	client "go.etcd.io/etcd/client/v3"
 )
@@ -321,11 +321,11 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 			continue
 		}
 		c, err := db.GetPostgresDBConnection(mainContext, ce.ConnStr,
-			func(c *pgx.ConnConfig) error {
-				c.Host = host
-				c.Database = "template1"
+			func(c *pgxpool.Config) error {
+				c.ConnConfig.Host = host
+				c.ConnConfig.Database = "template1"
 				i, err := strconv.Atoi(port)
-				c.Port = uint16(i)
+				c.ConnConfig.Port = uint16(i)
 				md[len(md)].ConnStr = c.ConnString()
 				return err
 			})
