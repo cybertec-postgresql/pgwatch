@@ -98,23 +98,20 @@ func (uiapi uiapihandler) GetDatabases() (res string, err error) {
 
 // DeleteDatabase removes the database from the list of monitored databases
 func (uiapi uiapihandler) DeleteDatabase(database string) error {
-	_, err := configDb.Exec(context.TODO(), "DELETE FROM pgwatch3.monitored_db WHERE md_unique_name = $1", database)
+	_, err := configDb.Exec(context.TODO(), "DELETE FROM pgwatch3.monitored_db WHERE md_name = $1", database)
 	return err
 }
 
 // AddDatabase adds the database to the list of monitored databases
 func (uiapi uiapihandler) AddDatabase(params []byte) error {
 	sql := `INSERT INTO pgwatch3.monitored_db(
-md_unique_name, md_preset_config_name, md_config, md_hostname, 
-md_port, md_dbname, md_user, md_password, md_is_superuser, md_is_enabled)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+		md_name, md_connstr, md_preset_config_name, md_config, md_is_superuser, md_is_enabled)
+		VALUES ($1, $2, $3, $4, $5, $6)`
 	var m map[string]any
 	err := json.Unmarshal(params, &m)
 	if err == nil {
-		_, err = configDb.Exec(context.TODO(), sql, m["md_unique_name"], m["md_preset_config_name"],
-			m["md_config"], m["md_hostname"], m["md_port"],
-			m["md_dbname"], m["md_user"], m["md_password"],
-			m["md_is_superuser"], m["md_is_enabled"])
+		_, err = configDb.Exec(context.TODO(), sql, m["md_name"], m["md_connstr"],
+			m["md_preset_config_name"], m["md_config"], m["md_is_superuser"], m["md_is_enabled"])
 	}
 	return err
 }
@@ -137,7 +134,7 @@ func (uiapi uiapihandler) UpdateDatabase(database string, params []byte) error {
 	if err != nil {
 		return err
 	}
-	sql := fmt.Sprintf(`UPDATE pgwatch3.monitored_db SET %s WHERE md_unique_name = $1`, strings.Join(fields, ","))
+	sql := fmt.Sprintf(`UPDATE pgwatch3.monitored_db SET %s WHERE md_name = $1`, strings.Join(fields, ","))
 	values = append([]any{database}, values...)
 	_, err = configDb.Exec(context.TODO(), sql, values...)
 	return err

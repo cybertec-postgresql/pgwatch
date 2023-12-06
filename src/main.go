@@ -36,6 +36,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/metrics/sinks"
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/cybertec-postgresql/pgwatch3/webserver"
+	"github.com/jackc/pgx/v5"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 
@@ -48,20 +49,10 @@ type MonitoredDatabase struct {
 	DBUniqueName         string `yaml:"unique_name"`
 	DBUniqueNameOrig     string // to preserve belonging to a specific instance for continuous modes where DBUniqueName will be dynamic
 	Group                string
-	Host                 string
-	Port                 string
-	DBName               string
-	User                 string
-	Password             string
-	PasswordType         string `yaml:"password_type"`
-	LibPQConnStr         string `yaml:"libpq_conn_str"`
-	SslMode              string
-	SslRootCAPath        string             `yaml:"sslrootcert"`
-	SslClientCertPath    string             `yaml:"sslcert"`
-	SslClientKeyPath     string             `yaml:"sslkey"`
+	Encryption           string             `yaml:"encryption"`
+	ConnStr              string             `yaml:"conn_str"`
 	Metrics              map[string]float64 `yaml:"custom_metrics"`
 	MetricsStandby       map[string]float64 `yaml:"custom_metrics_standby"`
-	StmtTimeout          int64              `yaml:"stmt_timeout"`
 	DBType               string
 	DBNameIncludePattern string            `yaml:"dbname_include_pattern"`
 	DBNameExcludePattern string            `yaml:"dbname_exclude_pattern"`
@@ -72,6 +63,13 @@ type MonitoredDatabase struct {
 	CustomTags           map[string]string `yaml:"custom_tags"`
 	HostConfig           HostConfigAttrs   `yaml:"host_config"`
 	OnlyIfMaster         bool              `yaml:"only_if_master"`
+}
+
+func (md MonitoredDatabase) GetDatabaseName() string {
+	if conf, err := pgx.ParseConfig(md.ConnStr); err == nil {
+		return conf.Database
+	}
+	return ""
 }
 
 type HostConfigAttrs struct {
@@ -177,14 +175,13 @@ const (
 	metricPsutilDisk                         = "psutil_disk"
 	metricPsutilDiskIoTotal                  = "psutil_disk_io_total"
 	metricPsutilMem                          = "psutil_mem"
-	defaultMetricsDefinitionPathPkg          = "/etc/pgwatch3/metrics" // prebuilt packages / Docker default location
-	defaultMetricsDefinitionPathDocker       = "/pgwatch3/metrics"     // prebuilt packages / Docker default location
-	dbSizeCachingInterval                    = 30 * time.Minute
-	dbMetricJoinStr                          = "¤¤¤" // just some unlikely string for a DB name to avoid using maps of maps for DB+metric data
-	execEnvUnknown                           = "UNKNOWN"
-	execEnvAzureSingle                       = "AZURE_SINGLE"
-	execEnvAzureFlexible                     = "AZURE_FLEXIBLE"
-	execEnvGoogle                            = "GOOGLE"
+
+	dbSizeCachingInterval = 30 * time.Minute
+	dbMetricJoinStr       = "¤¤¤" // just some unlikely string for a DB name to avoid using maps of maps for DB+metric data
+	execEnvUnknown        = "UNKNOWN"
+	execEnvAzureSingle    = "AZURE_SINGLE"
+	execEnvAzureFlexible  = "AZURE_FLEXIBLE"
+	execEnvGoogle         = "GOOGLE"
 )
 
 var dbTypeMap = map[string]bool{config.DbTypePg: true, config.DbTypePgCont: true, config.DbTypeBouncer: true, config.DbTypePatroni: true, config.DbTypePatroniCont: true, config.DbTypePgPOOL: true, config.DbTypePatroniNamespaceDiscovery: true}
@@ -334,42 +331,33 @@ func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
 
 		metricConfig, err := jsonTextToMap(row["md_config"].(string))
 		if err != nil {
-			logger.Warningf("Cannot parse metrics JSON config for \"%s\": %v", row["md_unique_name"].(string), err)
+			logger.Warningf("Cannot parse metrics JSON config for \"%s\": %v", row["md_name"].(string), err)
 			continue
 		}
 		metricConfigStandby := make(map[string]float64)
 		if configStandby, ok := row["md_config_standby"]; ok {
 			metricConfigStandby, err = jsonTextToMap(configStandby.(string))
 			if err != nil {
-				logger.Warningf("Cannot parse standby metrics JSON config for \"%s\". Ignoring standby config: %v", row["md_unique_name"].(string), err)
+				logger.Warningf("Cannot parse standby metrics JSON config for \"%s\". Ignoring standby config: %v", row["md_name"].(string), err)
 			}
 		}
 		customTags, err := jsonTextToStringMap(row["md_custom_tags"].(string))
 		if err != nil {
-			logger.Warningf("Cannot parse custom tags JSON for \"%s\". Ignoring custom tags. Error: %v", row["md_unique_name"].(string), err)
+			logger.Warningf("Cannot parse custom tags JSON for \"%s\". Ignoring custom tags. Error: %v", row["md_name"].(string), err)
 			customTags = nil
 		}
 		hostConfigAttrs := HostConfigAttrs{}
 		err = yaml.Unmarshal([]byte(row["md_host_config"].(string)), &hostConfigAttrs)
 		if err != nil {
-			logger.Warningf("Cannot parse host config JSON for \"%s\". Ignoring host config. Error: %v", row["md_unique_name"].(string), err)
+			logger.Warningf("Cannot parse host config JSON for \"%s\". Ignoring host config. Error: %v", row["md_name"].(string), err)
 		}
 
 		md := MonitoredDatabase{
-			DBUniqueName:         row["md_unique_name"].(string),
-			DBUniqueNameOrig:     row["md_unique_name"].(string),
-			Host:                 row["md_hostname"].(string),
-			Port:                 row["md_port"].(string),
-			DBName:               row["md_dbname"].(string),
-			User:                 row["md_user"].(string),
+			DBUniqueName:         row["md_name"].(string),
+			DBUniqueNameOrig:     row["md_name"].(string),
 			IsSuperuser:          row["md_is_superuser"].(bool),
-			Password:             row["md_password"].(string),
-			PasswordType:         row["md_password_type"].(string),
-			SslMode:              row["md_sslmode"].(string),
-			SslRootCAPath:        row["md_root_ca_path"].(string),
-			SslClientCertPath:    row["md_client_cert_path"].(string),
-			SslClientKeyPath:     row["md_client_key_path"].(string),
-			StmtTimeout:          int64(row["md_statement_timeout_seconds"].(int32)),
+			ConnStr:              row["md_connstr"].(string),
+			Encryption:           row["md_encryption"].(string),
 			Metrics:              metricConfig,
 			MetricsStandby:       metricConfigStandby,
 			DBType:               row["md_dbtype"].(string),
@@ -385,15 +373,15 @@ func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
 			continue
 		}
 
-		if md.PasswordType == "aes-gcm-256" && opts.AesGcmKeyphrase != "" {
-			md.Password = decrypt(md.DBUniqueName, opts.AesGcmKeyphrase, md.Password)
+		if md.Encryption == "aes-gcm-256" && opts.AesGcmKeyphrase != "" {
+			md.ConnStr = decrypt(md.DBUniqueName, opts.AesGcmKeyphrase, md.ConnStr)
 		}
 
 		if md.DBType == config.DbTypePgCont {
 			resolved, err := ResolveDatabasesFromConfigEntry(md)
 			if err != nil {
 				logger.Errorf("Failed to resolve DBs for \"%s\": %s", md.DBUniqueName, err)
-				if md.PasswordType == "aes-gcm-256" && opts.AesGcmKeyphrase == "" {
+				if md.Encryption == "aes-gcm-256" && opts.AesGcmKeyphrase == "" {
 					logger.Errorf("No decryption key set. Use the --aes-gcm-keyphrase or --aes-gcm-keyphrase params to set")
 				}
 				continue
@@ -401,7 +389,7 @@ func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
 			tempArr := make([]string, 0)
 			for _, rdb := range resolved {
 				monitoredDBs = append(monitoredDBs, rdb)
-				tempArr = append(tempArr, rdb.DBName)
+				tempArr = append(tempArr, rdb.ConnStr)
 			}
 			logger.Debugf("Resolved %d DBs with prefix \"%s\": [%s]", len(resolved), md.DBUniqueName, strings.Join(tempArr, ", "))
 		} else if md.DBType == config.DbTypePatroni || md.DBType == config.DbTypePatroniCont || md.DBType == config.DbTypePatroniNamespaceDiscovery {
@@ -413,7 +401,7 @@ func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
 			tempArr := make([]string, 0)
 			for _, rdb := range resolved {
 				monitoredDBs = append(monitoredDBs, rdb)
-				tempArr = append(tempArr, rdb.DBName)
+				tempArr = append(tempArr, rdb.ConnStr)
 			}
 			logger.Debugf("Resolved %d DBs with prefix \"%s\": [%s]", len(resolved), md.DBUniqueName, strings.Join(tempArr, ", "))
 		} else {
@@ -598,7 +586,7 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (metrics.MetricD
 	logger.Debugf("Processing %d recommendation metrics for \"%s\"", len(recoMetrics), dbUnique)
 
 	for m, mvp := range recoMetrics {
-		data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.MetricAttrs.StatementTimeoutSeconds, mvp.SQL)
+		data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
 		if err != nil {
 			if strings.Contains(err.Error(), "does not exist") { // some more exotic extensions missing is expected, don't pollute the error log
 				logger.Infof("[%s:%s] Could not execute recommendations SQL: %v", dbUnique, m, err)
@@ -750,7 +738,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 			return nil, err
 		}
 	} else {
-		data, err = DBExecReadByDbUniqueName(mainContext, msg.DBUniqueName, mvp.MetricAttrs.StatementTimeoutSeconds, sql)
+		data, err = DBExecReadByDbUniqueName(mainContext, msg.DBUniqueName, sql)
 
 		if err != nil {
 			// let's soften errors to "info" from functions that expect the server to be a primary to reduce noise
@@ -796,7 +784,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 
 		logger.WithFields(map[string]any{"database": msg.DBUniqueName, "metric": msg.MetricName, "rows": len(data)}).Info("measurements fetched")
 		if regexIsPgbouncerMetrics.MatchString(msg.MetricName) { // clean unwanted pgbouncer pool stats here as not possible in SQL
-			data = FilterPgbouncerData(data, md.DBName, vme)
+			data = FilterPgbouncerData(data, md.GetDatabaseName(), vme)
 		}
 
 		ClearDBUnreachableStateIfAny(msg.DBUniqueName)
@@ -828,11 +816,11 @@ send_to_storageChannel:
 		}
 		logger.Infof("[%s:%s] loaded %d rows from the instance cache", msg.DBUniqueName, msg.MetricName, len(cachedData))
 		atomic.AddUint64(&totalMetricsReusedFromCacheCounter, uint64(len(cachedData)))
-		return []metrics.MetricStoreMessage{{DBUniqueName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
+		return []metrics.MetricStoreMessage{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
 			MetricDefinitionDetails: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
 	}
 	atomic.AddUint64(&totalMetricsFetchedCounter, uint64(len(data)))
-	return []metrics.MetricStoreMessage{{DBUniqueName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
+	return []metrics.MetricStoreMessage{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
 		MetricDefinitionDetails: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
 
 }
@@ -1051,7 +1039,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 								entry := metrics.MetricEntry{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
 								detectedChangesSummary = append(detectedChangesSummary, entry)
 								metricStoreMessages = append(metricStoreMessages,
-									metrics.MetricStoreMessage{DBUniqueName: dbUniqueName, DBType: dbType,
+									metrics.MetricStoreMessage{DBName: dbUniqueName, DBType: dbType,
 										MetricName: "object_changes", Data: detectedChangesSummary, CustomTags: metricStoreMessages[0].CustomTags})
 							}
 						}
@@ -1116,7 +1104,7 @@ func DatarowsToMetricstoreMessage(data metrics.MetricData, msg MetricFetchMessag
 	atomic.AddUint64(&totalMetricsFetchedCounter, uint64(len(data)))
 
 	return metrics.MetricStoreMessage{
-		DBUniqueName:            msg.DBUniqueName,
+		DBName:                  msg.DBUniqueName,
 		DBType:                  msg.DBType,
 		MetricName:              msg.MetricName,
 		CustomTags:              md.CustomTags,
@@ -1372,20 +1360,8 @@ func ReadPresetMetricsConfigFromFolder(folder string, _ bool) (map[string]map[st
 func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md MonitoredDatabase) (MonitoredDatabase, int) {
 	var changed int
 
-	if strings.HasPrefix(md.DBName, "$") {
-		md.DBName = os.ExpandEnv(md.DBName)
-		changed++
-	}
-	if strings.HasPrefix(md.User, "$") {
-		md.User = os.ExpandEnv(md.User)
-		changed++
-	}
-	if strings.HasPrefix(md.Password, "$") {
-		md.Password = os.ExpandEnv(md.Password)
-		changed++
-	}
-	if strings.HasPrefix(md.PasswordType, "$") {
-		md.PasswordType = os.ExpandEnv(md.PasswordType)
+	if strings.HasPrefix(md.Encryption, "$") {
+		md.Encryption = os.ExpandEnv(md.Encryption)
 		changed++
 	}
 	if strings.HasPrefix(md.DBType, "$") {
@@ -1394,10 +1370,6 @@ func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md MonitoredDatabase) (Monito
 	}
 	if strings.HasPrefix(md.DBUniqueName, "$") {
 		md.DBUniqueName = os.ExpandEnv(md.DBUniqueName)
-		changed++
-	}
-	if strings.HasPrefix(md.SslMode, "$") {
-		md.SslMode = os.ExpandEnv(md.SslMode)
 		changed++
 	}
 	if strings.HasPrefix(md.DBNameIncludePattern, "$") {
@@ -1438,9 +1410,6 @@ func ConfigFileToMonitoredDatabases(configFilePath string) ([]MonitoredDatabase,
 		return hostList, err
 	}
 	for _, v := range c {
-		if v.Port == "" {
-			v.Port = "5432"
-		}
 		if v.DBType == "" {
 			v.DBType = config.DbTypePg
 		}
@@ -1448,9 +1417,6 @@ func ConfigFileToMonitoredDatabases(configFilePath string) ([]MonitoredDatabase,
 			logger.Debugf("Found active monitoring config entry: %#v", v)
 			if v.Group == "" {
 				v.Group = "default"
-			}
-			if v.StmtTimeout == 0 {
-				v.StmtTimeout = 5
 			}
 			vExp, changed := ExpandEnvVarsForConfigEntryIfStartsWithDollar(v)
 			if changed > 0 {
@@ -1522,20 +1488,20 @@ func GetMonitoredDatabasesFromMonitoringConfig(mc []MonitoredDatabase) []Monitor
 			logger.Warningf("Ignoring host \"%s\" - unknown dbtype: %s. Expected one of: %+v", e.DBUniqueName, e.DBType, dbTypes)
 			continue
 		}
-		if e.IsEnabled && e.PasswordType == "aes-gcm-256" && opts.AesGcmKeyphrase != "" {
-			e.Password = decrypt(e.DBUniqueName, opts.AesGcmKeyphrase, e.Password)
+		if e.IsEnabled && e.Encryption == "aes-gcm-256" && opts.AesGcmKeyphrase != "" {
+			e.ConnStr = decrypt(e.DBUniqueName, opts.AesGcmKeyphrase, e.ConnStr)
 		}
-		if e.DBType == config.DbTypePatroni && e.DBName == "" {
+		if e.DBType == config.DbTypePatroni && e.GetDatabaseName() == "" {
 			logger.Warningf("Ignoring host \"%s\" as \"dbname\" attribute not specified but required by dbtype=patroni", e.DBUniqueName)
 			continue
 		}
-		if e.DBType == config.DbTypePg && e.DBName == "" {
+		if e.DBType == config.DbTypePg && e.GetDatabaseName() == "" {
 			logger.Warningf("Ignoring host \"%s\" as \"dbname\" attribute not specified but required by dbtype=postgres", e.DBUniqueName)
 			continue
 		}
-		if len(e.DBName) == 0 || e.DBType == config.DbTypePgCont || e.DBType == config.DbTypePatroni || e.DBType == config.DbTypePatroniCont || e.DBType == config.DbTypePatroniNamespaceDiscovery {
+		if len(e.GetDatabaseName()) == 0 || e.DBType == config.DbTypePgCont || e.DBType == config.DbTypePatroni || e.DBType == config.DbTypePatroniCont || e.DBType == config.DbTypePatroniNamespaceDiscovery {
 			if e.DBType == config.DbTypePgCont {
-				logger.Debugf("Adding \"%s\" (host=%s, port=%s) to continuous monitoring ...", e.DBUniqueName, e.Host, e.Port)
+				logger.Debugf("Adding \"%s\" (host=%s, port=%s) to continuous monitoring ...", e.DBUniqueName, e.ConnStr)
 			}
 			var foundDbs []MonitoredDatabase
 			var err error
@@ -1552,7 +1518,7 @@ func GetMonitoredDatabasesFromMonitoringConfig(mc []MonitoredDatabase) []Monitor
 			tempArr := make([]string, 0)
 			for _, r := range foundDbs {
 				md = append(md, r)
-				tempArr = append(tempArr, r.DBName)
+				tempArr = append(tempArr, r.GetDatabaseName())
 			}
 			logger.Debugf("Resolved %d DBs with prefix \"%s\": [%s]", len(foundDbs), e.DBUniqueName, strings.Join(tempArr, ", "))
 		} else {
@@ -1712,9 +1678,9 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []MonitoredDa
 				db["tag_"+k] = v
 			}
 			msms = append(msms, metrics.MetricStoreMessage{
-				DBUniqueName: mdb.DBUniqueName,
-				MetricName:   monitoredDbsDatastoreSyncMetricName,
-				Data:         metrics.MetricData{db},
+				DBName:     mdb.DBUniqueName,
+				MetricName: monitoredDbsDatastoreSyncMetricName,
+				Data:       metrics.MetricData{db},
 			})
 		}
 		select {
@@ -1724,13 +1690,6 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []MonitoredDa
 			return
 		}
 	}
-}
-
-func CheckFolderExistsAndReadable(path string) bool {
-	if _, err := os.ReadDir(path); err != nil {
-		return false
-	}
-	return true
 }
 
 func shouldDbBeMonitoredBasedOnCurrentState(md MonitoredDatabase) bool {
@@ -1915,66 +1874,20 @@ func main() {
 	}
 
 	// running in config file based mode?
-	if len(opts.Config) > 0 {
-		if opts.Metric.MetricsFolder == "" && CheckFolderExistsAndReadable(defaultMetricsDefinitionPathPkg) {
-			opts.Metric.MetricsFolder = defaultMetricsDefinitionPathPkg
-			logger.Warningf("--metrics-folder path not specified, using %s", opts.Metric.MetricsFolder)
-		} else if opts.Metric.MetricsFolder == "" && CheckFolderExistsAndReadable(defaultMetricsDefinitionPathDocker) {
-			opts.Metric.MetricsFolder = defaultMetricsDefinitionPathDocker
-			logger.Warningf("--metrics-folder path not specified, using %s", opts.Metric.MetricsFolder)
-		} else {
-			if !CheckFolderExistsAndReadable(opts.Metric.MetricsFolder) {
-				logger.Fatalf("Could not read --metrics-folder path %s", opts.Metric.MetricsFolder)
-			}
-		}
-
-		if !opts.IsAdHocMode() {
-			fi, err := os.Stat(opts.Config)
-			if err != nil {
-				logger.Fatalf("Could not Stat() path %s: %s", opts.Config, err)
-			}
-			switch mode := fi.Mode(); {
-			case mode.IsDir():
-				_, err := os.ReadDir(opts.Config)
-				if err != nil {
-					logger.Fatalf("Could not read path %s: %s", opts.Config, err)
-				}
-			case mode.IsRegular():
-				_, err := os.ReadFile(opts.Config)
-				if err != nil {
-					logger.Fatalf("Could not read path %s: %s", opts.Config, err)
-				}
-			}
-		}
-
+	configKind, err := opts.GetConfigKind()
+	switch {
+	case err != nil:
+		logger.Fatal(err)
+	case configKind == config.ConfigFile || configKind == config.ConfigFolder:
 		fileBasedMetrics = true
-	} else if opts.IsAdHocMode() && opts.Metric.MetricsFolder != "" && CheckFolderExistsAndReadable(opts.Metric.MetricsFolder) {
-		// don't need the Config DB connection actually for ad-hoc mode if metric definitions are there
-		fileBasedMetrics = true
-	} else if opts.IsAdHocMode() && opts.Metric.MetricsFolder == "" && (CheckFolderExistsAndReadable(defaultMetricsDefinitionPathPkg) || CheckFolderExistsAndReadable(defaultMetricsDefinitionPathDocker)) {
-		if CheckFolderExistsAndReadable(defaultMetricsDefinitionPathPkg) {
-			opts.Metric.MetricsFolder = defaultMetricsDefinitionPathPkg
-		} else if CheckFolderExistsAndReadable(defaultMetricsDefinitionPathDocker) {
-			opts.Metric.MetricsFolder = defaultMetricsDefinitionPathDocker
-		}
-		logger.Warningf("--metrics-folder path not specified, using %s", opts.Metric.MetricsFolder)
-		fileBasedMetrics = true
-	} else { // normal "Config DB" mode
-		// make sure all PG params are there
-		if opts.Connection.User == "" {
-			opts.Connection.User = os.Getenv("USER")
-		}
-		if opts.Connection.Host == "" || opts.Connection.Port == "" || opts.Connection.Dbname == "" || opts.Connection.User == "" {
-			fmt.Println("Check config DB parameters")
-			return
-		}
-
-		configDb, err = db.InitAndTestConfigStoreConnection(mainContext, opts.Connection.Host,
-			opts.Connection.Port, opts.Connection.Dbname, opts.Connection.User, opts.Connection.Password,
-			opts.Connection.PgRequireSSL)
-		if err != nil {
+	case configKind == config.ConfigPgURL:
+		if configDb, err = db.InitAndTestConfigStoreConnection(mainContext, opts.Connection.Config); err != nil {
 			logger.WithError(err).Fatal("Could not connect to configuration database")
 		}
+	}
+
+	if opts.Connection.Init {
+		return
 	}
 
 	pgBouncerNumericCountersStartVersion = VersionToInt("1.12")
@@ -1995,8 +1908,7 @@ func main() {
 			go MetricsBatcher(mainContext, opts.BatchingDelayMs, bufferedPersistCh, persistCh)
 		}
 
-		metricsWriter, err = sinks.NewMultiWriter(mainContext, opts)
-		if err != nil {
+		if metricsWriter, err = sinks.NewMultiWriter(mainContext, opts); err != nil {
 			logger.Fatal(err)
 		}
 		go metricsWriter.WriteMetrics(mainContext, persistCh)
@@ -2004,9 +1916,6 @@ func main() {
 		_, _ = daemon.SdNotify(false, "READY=1") // Notify systemd, does nothing outside of systemd
 	}
 
-	if opts.Connection.Init {
-		return
-	}
 	firstLoop := true
 	mainLoopCount := 0
 	var monitoredDbs []MonitoredDatabase
@@ -2060,7 +1969,7 @@ func main() {
 						logger.Fatalf("Could not parse --adhoc-config(%s): %v", opts.AdHocConfig, err)
 					}
 				}
-				md := MonitoredDatabase{DBUniqueName: opts.AdHocUniqueName, DBType: opts.AdHocDBType, Metrics: adhocconfig, LibPQConnStr: opts.AdHocConnString}
+				md := MonitoredDatabase{DBUniqueName: opts.AdHocUniqueName, DBType: opts.AdHocDBType, Metrics: adhocconfig, ConnStr: opts.AdHocConnString}
 				if opts.AdHocDBType == config.DbTypePg {
 					monitoredDbs = []MonitoredDatabase{md}
 				} else {
@@ -2076,7 +1985,7 @@ func main() {
 					}
 				}
 			} else {
-				mc, err := ReadMonitoringConfigFromFileOrFolder(opts.Config)
+				mc, err := ReadMonitoringConfigFromFileOrFolder(opts.Connection.Config)
 				if err == nil {
 					logger.Debugf("Found %d monitoring config entries", len(mc))
 					if len(opts.Metric.Group) > 0 {
@@ -2088,9 +1997,9 @@ func main() {
 					logger.Debugf("Found %d databases to monitor from %d config items...", len(monitoredDbs), len(mc))
 				} else {
 					if firstLoop {
-						logger.Fatalf("Could not read/parse monitoring config from path: %s. err: %v", opts.Config, err)
+						logger.Fatalf("Could not read/parse monitoring config from path: %s. err: %v", opts.Connection.Config, err)
 					} else {
-						logger.Errorf("Could not read/parse monitoring config from path: %s. using last valid config data. err: %v", opts.Config, err)
+						logger.Errorf("Could not read/parse monitoring config from path: %s. using last valid config data. err: %v", opts.Connection.Config, err)
 					}
 					time.Sleep(time.Second * time.Duration(opts.Connection.ServersRefreshLoopSeconds))
 					continue
@@ -2151,7 +2060,7 @@ func main() {
 			metricConfig = host.Metrics
 			wasInstancePreviouslyDormant := IsDBDormant(dbUnique)
 
-			if host.PasswordType == "aes-gcm-256" && len(opts.AesGcmKeyphrase) == 0 && len(opts.AesGcmKeyphraseFile) == 0 {
+			if host.Encryption == "aes-gcm-256" && len(opts.AesGcmKeyphrase) == 0 && len(opts.AesGcmKeyphraseFile) == 0 {
 				// Warn if any encrypted hosts found but no keyphrase given
 				logger.Warningf("Encrypted password type found for host \"%s\", but no decryption keyphrase specified. Use --aes-gcm-keyphrase or --aes-gcm-keyphrase-file params", dbUnique)
 			}

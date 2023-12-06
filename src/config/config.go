@@ -28,12 +28,21 @@ func checkFolderExistsAndReadable(path string) bool {
 	return err == nil
 }
 
+const (
+	defaultMetricsDefinitionPathPkg    = "/etc/pgwatch3/metrics" // prebuilt packages / Docker default location
+	defaultMetricsDefinitionPathDocker = "/pgwatch3/metrics"     // prebuilt packages / Docker default location
+)
+
 func validateConfig(conf *CmdOptions) error {
 	if conf.Connection.ServersRefreshLoopSeconds <= 1 {
 		return errors.New("--servers-refresh-loop-seconds must be greater than 1")
 	}
 	if conf.MaxParallelConnectionsPerDb < 1 {
 		return errors.New("--max-parallel-connections-per-db must be >= 1")
+	}
+
+	if conf.Metric.MetricsFolder > "" && !checkFolderExistsAndReadable(conf.Metric.MetricsFolder) {
+		return fmt.Errorf("Could not read --metrics-folder path %s", conf.Metric.MetricsFolder)
 	}
 
 	if err := validateAesGcmConfig(conf); err != nil {
@@ -78,14 +87,17 @@ func validateAdHocConfig(conf *CmdOptions) error {
 		if len(conf.AdHocConnString)*len(conf.AdHocConfig) == 0 {
 			return errors.New("--adhoc-conn-str and --adhoc-config params both need to be specified for Ad-hoc mode to work")
 		}
-		if conf.Config > "" {
+		if len(conf.Connection.Config) > 0 {
 			return errors.New("Conflicting flags! --adhoc-conn-str and --config cannot be both set")
 		}
-		if conf.Metric.MetricsFolder > "" && !checkFolderExistsAndReadable(conf.Metric.MetricsFolder) {
-			return fmt.Errorf("--metrics-folder \"%s\" not readable, trying 1st default paths and then Config DB to fetch metric definitions", conf.Metric.MetricsFolder)
-		}
-		if conf.Connection.User > "" && conf.Connection.Password > "" {
-			return errors.New("Conflicting flags! --adhoc-conn-str and --user/--password cannot be both set")
+		if conf.Metric.MetricsFolder == "" {
+			if checkFolderExistsAndReadable(defaultMetricsDefinitionPathPkg) {
+				conf.Metric.MetricsFolder = defaultMetricsDefinitionPathPkg
+			} else if checkFolderExistsAndReadable(defaultMetricsDefinitionPathDocker) {
+				conf.Metric.MetricsFolder = defaultMetricsDefinitionPathDocker
+			} else {
+				return errors.New("--adhoc-conn-str requires --metrics-folder")
+			}
 		}
 		if conf.AdHocDBType != DbTypePg && conf.AdHocDBType != DbTypePgCont {
 			return fmt.Errorf("--adhoc-dbtype can be of: [ %s (single DB) | %s (all non-template DB-s on an instance) ]. Default: %s", DbTypePg, DbTypePgCont, DbTypePg)

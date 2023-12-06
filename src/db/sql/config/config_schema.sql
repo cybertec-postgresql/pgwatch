@@ -17,45 +17,29 @@ create table if not exists pgwatch3.preset_config (
 -- drop table if exists pgwatch3.monitored_db;
 
 create table if not exists pgwatch3.monitored_db (
-    md_id serial not null primary key,
-    md_unique_name text not null,
-    md_hostname text not null,
-    md_port text not null default 5432,
-    md_dbname text not null,
-    md_user text not null,
-    md_password text,
-    md_is_superuser boolean not null default false,
-    md_sslmode text not null default 'disable',  -- set to 'require' for to force SSL
-    md_preset_config_name text references pgwatch3.preset_config(pc_name) default 'basic',
-    md_config jsonb,
-    md_is_enabled boolean not null default 't',
-    md_last_modified_on timestamptz not null default now(),
-    md_statement_timeout_seconds int not null default 5,   -- metrics queries will be canceled after so many seconds
-    md_dbtype text not null default 'postgres',
-    md_include_pattern text,    -- valid regex expected. relevant for 'postgres-continuous-discovery'
-    md_exclude_pattern text,    -- valid regex expected. relevant for 'postgres-continuous-discovery'
-    md_custom_tags jsonb,
-    md_group text not null default 'default',
-    md_root_ca_path text not null default '',      -- relevant for 'verify-ca', 'verify-full'
-    md_client_cert_path text not null default '',  -- relevant for 'verify-full'
-    md_client_key_path text not null default '',   -- relevant for 'verify-full'
-    md_password_type text not null default 'plain-text',
-    md_host_config jsonb,
-    md_only_if_master bool not null default false,
-    md_preset_config_name_standby text references pgwatch3.preset_config(pc_name),
-    md_config_standby jsonb,
+    md_name                       text        not null primary key,
+    md_connstr                    text        not null,
+    md_is_superuser               boolean     not null default false,
+    md_preset_config_name         text        references pgwatch3.preset_config(pc_name) default 'basic',
+    md_config                     jsonb,
+    md_is_enabled                 boolean     not null default 't',
+    md_last_modified_on           timestamptz not null default now(),
+    md_dbtype                     text        not null default 'postgres',
+    md_include_pattern            text,               -- valid regex expected. relevant for 'postgres-continuous-discovery'
+    md_exclude_pattern            text,               -- valid regex expected. relevant for 'postgres-continuous-discovery'
+    md_custom_tags                jsonb,
+    md_group                      text        not null default 'default',
+    md_encryption                 text        not null default 'plain-text',
+    md_host_config                jsonb,
+    md_only_if_master             bool        not null default false,
+    md_preset_config_name_standby text        references pgwatch3.preset_config(pc_name),
+    md_config_standby             jsonb,
 
-    UNIQUE (md_unique_name),
-    CONSTRAINT no_colon_on_unique_name CHECK (md_unique_name !~ ':'),
-    CHECK (md_sslmode in ('disable', 'require', 'verify-ca', 'verify-full')),
+    CONSTRAINT no_colon_on_unique_name CHECK (md_name !~ ':'),
     CHECK (md_dbtype in ('postgres', 'pgbouncer', 'postgres-continuous-discovery', 'patroni', 'patroni-continuous-discovery', 'patroni-namespace-discovery', 'pgpool')),
     CHECK (md_group ~ E'\\w+'),
-    CHECK (md_password_type in ('plain-text', 'aes-gcm-256'))
+    CHECK (md_encryption in ('plain-text', 'aes-gcm-256'))
 );
-
--- prevent multiple active workers for the same db
-create unique index if not exists monitored_db_md_hostname_md_port_md_dbname_md_is_enabled_idx on monitored_db(md_hostname, md_port, md_dbname, md_is_enabled) where not md_dbtype ~ 'patroni';
-
 
 alter table pgwatch3.monitored_db add constraint preset_or_custom_config check
     ((not (md_preset_config_name is null and md_config is null))
@@ -87,7 +71,7 @@ create table if not exists metric (
 create table if not exists metric_attribute (
     ma_metric_name          text not null primary key,
     ma_last_modified_on     timestamptz not null default now(),
-    ma_metric_attrs    jsonb not null,
+    ma_metric_attrs         jsonb not null,
 
     check (ma_metric_name ~ E'^[a-z0-9_\\.]+$')
 );
@@ -409,5 +393,5 @@ insert into pgwatch3.preset_config (pc_name, pc_description, pc_config)
      }');
 
 /* one host for demo purposes, so that "docker run" could immediately show some graphs */
---insert into pgwatch3.monitored_db (md_unique_name, md_preset_config_name, md_config, md_hostname, md_port, md_dbname, md_user, md_password)
+--insert into pgwatch3.monitored_db (md_name, md_preset_config_name, md_config, md_hostname, md_port, md_dbname, md_user, md_password)
 --    values ('test', 'exhaustive', null, 'localhost', '5432', 'pgwatch3', 'pgwatch3', 'pgwatch3admin');

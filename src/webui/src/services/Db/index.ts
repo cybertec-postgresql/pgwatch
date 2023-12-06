@@ -1,5 +1,5 @@
 import { axiosInstance } from "axiosInstance";
-import { TestConnection, createDbForm, updateDbForm, updateEnabledDbForm } from "queries/types/DbTypes";
+import { createDbForm, updateDbForm, updateEnabledDbForm } from "queries/types/DbTypes";
 
 export default class DbService {
   private static _instance: DbService;
@@ -37,12 +37,7 @@ export default class DbService {
       then(response => response);
   };
 
-  public async testDbConnection(data: TestConnection) {
-    const connectionString = Object.entries(data).
-      filter(([_key, value]) => value !== "").
-      map(([key, value]) => `${key}=${value}`).
-      toString().
-      replaceAll(",", " ");
-    return await axiosInstance.post("test-connect", connectionString);
+  public async testDbConnection(data: string) {
+    return await axiosInstance.post("test-connect", data);
   };
 }

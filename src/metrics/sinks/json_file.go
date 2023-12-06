@@ -53,7 +53,7 @@ func (jw *JSONWriter) Write(msgs []metrics.MetricStoreMessage) error {
 		dataRow := map[string]any{
 			"metric":      msg.MetricName,
 			"data":        msg.Data,
-			"dbname":      msg.DBUniqueName,
+			"dbname":      msg.DBName,
 			"custom_tags": msg.CustomTags,
 		}
 		if jw.RealDbnameField != "" && msg.RealDbname != "" {

@@ -1,8 +1,6 @@
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import DoneIcon from "@mui/icons-material/Done";
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
   Box,
   Button,
@@ -13,8 +11,6 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
-  IconButton,
-  InputAdornment,
   Stack,
   TextField,
 } from "@mui/material";
@@ -22,13 +18,12 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 import { useAddDb, useEditDb, useTestConnection } from "queries/Dashboard";
-import { Db, TestConnection, createDbForm } from "queries/types/DbTypes";
+import { Db, createDbForm } from "queries/types/DbTypes";
 import {
   AutocompleteComponent,
-  AutocompleteConfigComponent,
-  AutocompleteSslModeComponent
+  AutocompleteConfigComponent
 } from "./SelectComponents";
-import { dbTypeOptions, passwordEncryptionOptions, presetConfigsOptions, sslModeOptions } from "./SelectComponentsOptions";
+import { dbTypeOptions, passwordEncryptionOptions, presetConfigsOptions } from "./SelectComponentsOptions";
 import { MultilineTextField, SimpleTextField } from "./TextFieldComponents";
 
 type Props = {
@@ -53,7 +48,7 @@ export const ModalComponent = ({ open, setOpen, recordData, action }: Props) => 
         break;
       case "DUPLICATE":
         reset();
-        Object.entries(recordData!).map(([key, value]) => setValue(key as FieldPath<createDbForm>, key === "md_unique_name" ? "" : convertValue(value)));
+        Object.entries(recordData!).map(([key, value]) => setValue(key as FieldPath<createDbForm>, key === "md_name" ? "" : convertValue(value)));
         break;
     }
   }, [action, recordData, reset, setValue]);
@@ -75,7 +70,7 @@ export const ModalComponent = ({ open, setOpen, recordData, action }: Props) => 
   const onSubmit: SubmitHandler<createDbForm> = (result) => {
     if (action === "EDIT") {
       editDb.mutate({
-        md_unique_name: recordData!.md_unique_name,
+        md_unique_name: recordData!.md_name,
         data: result
       });
     } else {
@@ -109,7 +104,6 @@ export const ModalComponent = ({ open, setOpen, recordData, action }: Props) => 
 enum Steps {
   main = "Main",
   connection = "Connection",
-  ssl = "SSL",
   presets = "Presets"
 }
 
@@ -117,9 +111,8 @@ type StepType = keyof typeof Steps;
 const defaultStep = Object.keys(Steps)[0] as StepType;
 
 const formErrors = {
-  main: ["md_unique_name", "md_group", "md_dbtype"],
-  connection: ["md_hostname", "md_port", "md_user", "md_statement_timeout_seconds", "md_dbname", "md_password_type"],
-  ssl: ["md_sslmode"],
+  main: ["md_name", "md_group", "md_dbtype"],
+  connection: ["md_connstr", "md_encryption"],
   presets: []
 };
 
@@ -129,40 +122,15 @@ const getStepError = (step: StepType, errors: string[]): boolean => {
 };
 
 const ModalContent = () => {
-  const { control, formState: { errors }, getValues, setValue, watch } = useFormContext();
+  const { control, formState: { errors }, getValues, setValue } = useFormContext();
   const [activeStep, setActiveStep] = useState<StepType>(defaultStep);
-  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const testConnection = useTestConnection();
-
-  const handleClickShowPassword = () => setShowPassword((show: boolean) => !show);
 
   const handleValidate = (val: string) => !!val.toString().trim();
 
   const handleTestConnection = () => {
-    const data: TestConnection = {
-      host: getValues("md_hostname"),
-      port: getValues("md_port"),
-      dbname: getValues("md_dbname"),
-      user: getValues("md_user"),
-      password: getValues("md_password"),
-      connect_timeout: getValues("connection_timeout"),
-      sslmode: getValues("md_sslmode"),
-      sslcert: getValues("md_client_cert_path"),
-      sslkey: getValues("md_client_key_path")
-    };
-    testConnection.mutate(data);
-  };
-
-  const mdSslmodeVal = watch("md_sslmode");
-  const isSslDisable = !mdSslmodeVal || mdSslmodeVal === "disable";
-
-  const handleSslChange = (nextValue?: string) => {
-    if (nextValue === "disable") {
-      for (const inputName of ["md_root_ca_path", "md_client_cert_path", "md_client_key_path"]) {
-        setValue(inputName, "");
-      }
-    }
+    testConnection.mutate(getValues("md_connstr"));
   };
 
   const copyPresetConfig = (name: FieldPath<createDbForm>, value: string) => {
@@ -178,7 +146,7 @@ const ModalContent = () => {
       <Stack spacing={2}>
         <Stack direction="row" spacing={1}>
           <Controller
-            name="md_unique_name"
+            name="md_name"
             control={control}
             rules={{
               required: {
@@ -280,225 +248,77 @@ const ModalContent = () => {
     ),
     connection: (
       <Stack spacing={2}>
-        <Stack direction="row" spacing={1}>
-          <Controller
-            name="md_hostname"
-            control={control}
-            defaultValue=""
-            rules={{
-              required: {
-                value: true,
-                message: "DB host is required"
-              },
-              validate: handleValidate,
-            }}
-            render={({ field, fieldState: { error } }) => (
-              <SimpleTextField
-                field={{ ...field }}
-                error={!!error}
-                helperText={error?.message}
-                type="text"
-                label="DB host"
-              />
-            )}
-          />
-          <Controller
-            name="md_port"
-            control={control}
-            defaultValue={5432}
-            rules={{
-              required: {
-                value: true,
-                message: "DB port is required"
-              },
-              validate: handleValidate
-            }}
-            render={({ field, fieldState: { error } }) => (
-              <SimpleTextField
-                field={{ ...field }}
-                error={!!error}
-                helperText={error?.message}
-                type="number"
-                label="DB port"
-                inputProps={{
-                  inputProps: {
-                    min: 1
-                  }
-                }}
-              />
-            )}
-          />
-        </Stack>
-        <Stack direction="row" spacing={1}>
-          <Controller
-            name="md_dbname"
-            control={control}
-            defaultValue=""
-            rules={{
-              required: {
-                value: true,
-                message: "DB name is required"
-              }
-            }}
-            render={({ field, fieldState: { error } }) => (
-              <TextField
-                {...field}
-                error={!!error}
-                helperText={error?.message}
-                type="text"
-                label="DB name"
-                size="medium"
-                fullWidth
-                title="If left empty, all non-template DBs found from the cluster will be added to monitoring (if not already monitored), prefixed with the 'Unique name'. For 'pgbouncer' DB type insert the 'pool' name. Not relevant for 'postgres-continuous-discovery'"
-              />
-            )}
-          />
-          <Controller
-            name="md_password_type"
-            control={control}
-            defaultValue="plain-text"
-            rules={{
-              required: {
-                value: true,
-                message: "Password encryption is required"
-              },
-              validate: handleValidate
-            }}
-            render={({ field, fieldState: { error } }) => (
-              <AutocompleteComponent
-                field={{ ...field }}
-                label="Password encryption"
-                error={!!error}
-                helperText={error?.message}
-                options={passwordEncryptionOptions}
-                title="The login role for actual metrics fetching from the specified host"
-              />
-            )}
-          />
-        </Stack>
-        <Stack direction="row" spacing={1}>
-          <Controller
-            name="md_include_pattern"
-            control={control}
-            defaultValue={null}
-            render={({ field }) => (
-              <SimpleTextField
-                field={{ ...field }}
-                type="text"
-                label="DB name inclusion pattern"
-                title="POSIX regex input. Relevant only for 'discovery' DB types"
-              />
-            )}
-          />
-          <Controller
-            name="md_exclude_pattern"
-            control={control}
-            defaultValue={null}
-            render={({ field }) => (
-              <SimpleTextField
-                field={{ ...field }}
-                type="text"
-                label="DB name exclusion pattern"
-                title="POSIX regex input. Relevant only for 'discovery' DB types"
-              />
-            )}
-          />
-        </Stack>
-        <Stack direction="row" spacing={1}>
-          <Controller
-            name="md_user"
-            control={control}
-            defaultValue=""
-            rules={{
-              required: {
-                value: true,
-                message: "DB user is required"
-              },
-              validate: handleValidate
-            }}
-            render={({ field, fieldState: { error } }) => (
-              <SimpleTextField
-                field={{ ...field }}
-                error={!!error}
-                helperText={error?.message}
-                type="text"
-                label="DB user"
-                title="The login role for actual metrics fetching from the specified host"
-              />
-            )}
-          />
-          <Controller
-            name="md_password"
-            control={control}
-            defaultValue=""
-            render={({ field }) => (
-              <SimpleTextField
-                field={{ ...field }}
-                type={showPassword ? "text" : "password"}
-                label="DB password"
-                title="By default password is stored in plain-text in the database"
-                inputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={handleClickShowPassword}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }}
-              />
-            )}
-          />
-        </Stack>
-        <Stack direction="row" spacing={1}>
-          <Controller
-            name="md_statement_timeout_seconds"
-            control={control}
-            defaultValue={5}
-            rules={{
-              required: {
-                value: true,
-                message: "Statement timeout is required"
-              },
-              validate: handleValidate
-            }}
-            render={({ field, fieldState: { error } }) => (
-              <SimpleTextField
-                field={{ ...field }}
-                error={!!error}
-                helperText={error?.message}
-                type="number"
-                label="Statement timeout [seconds]"
-                title="In seconds. Should stay low for critical DBs just in case. For possibly long-running built-in bloat estimation metrics the timeout will be max(30min,$userInput)"
-                inputProps={{
-                  inputProps: {
-                    min: 1, max: 60
-                  }
-                }}
-              />
-            )}
-          />
-          <Controller
-            name="connection_timeout"
-            control={control}
-            defaultValue=""
-            render={({ field }) => (
-              <SimpleTextField
-                field={{ ...field }}
-                type="number"
-                label="Connection timeout [seconds]"
-                inputProps={{
-                  inputProps: {
-                    min: 1, max: 60
-                  }
-                }}
-              />
-            )}
-          />
-        </Stack>
+        <Controller
+          name="md_connstr"
+          control={control}
+          defaultValue=""
+          rules={{
+            required: {
+              value: true,
+              message: "Connection string is required"
+            }
+          }}
+          render={({ field, fieldState: { error } }) => (
+            <TextField
+              {...field}
+              type="text"
+              label="Connection string"
+              error={!!error}
+              helperText={error?.message}
+              multiline
+              maxRows={3}
+              fullWidth
+            />
+          )}
+        />
+        <Controller
+          name="md_encryption"
+          control={control}
+          defaultValue="plain-text"
+          rules={{
+            required: {
+              value: true,
+              message: "Encryption is required"
+            },
+            validate: handleValidate
+          }}
+          render={({ field, fieldState: { error } }) => (
+            <AutocompleteComponent
+              field={{ ...field }}
+              label="Encryption"
+              error={!!error}
+              helperText={error?.message}
+              options={passwordEncryptionOptions}
+              title="The login role for actual metrics fetching from the specified host"
+            />
+          )}
+        />
+        <Controller
+          name="md_include_pattern"
+          control={control}
+          defaultValue={null}
+          render={({ field }) => (
+            <SimpleTextField
+              field={{ ...field }}
+              type="text"
+              label="DB name inclusion pattern"
+              title="POSIX regex input. Relevant only for 'discovery' DB types"
+            />
+          )}
+        />
+        <Controller
+          name="md_exclude_pattern"
+          control={control}
+          defaultValue={null}
+          render={({ field }) => (
+            <SimpleTextField
+              field={{ ...field }}
+              type="text"
+              label="DB name exclusion pattern"
+              title="POSIX regex input. Relevant only for 'discovery' DB types"
+            />
+          )}
+        />
         <Button fullWidth variant="contained" onClick={handleTestConnection}>
           {
             testConnection.isLoading ?
@@ -507,79 +327,6 @@ const ModalContent = () => {
               "Test connection"
           }
         </Button>
-      </Stack>
-    ),
-    ssl: (
-      <Stack spacing={2}>
-        <Controller
-          name="md_sslmode"
-          control={control}
-          defaultValue="disable"
-          rules={{
-            required: {
-              value: true,
-              message: "SSL mode is required"
-            },
-            validate: handleValidate
-          }}
-          render={({ field, fieldState: { error } }) => (
-            <AutocompleteSslModeComponent
-              field={{ ...field }}
-              label="SSL mode"
-              options={sslModeOptions}
-              error={!!error}
-              helperText={error?.message}
-              title="libpq 'sslmode' parameter. If 'require' or 'verify-ca' or 'verify-full' then no metrics will be gathered if safe connection cannot be established"
-              handleChange={handleSslChange}
-            />
-          )}
-        />
-        <Controller
-          name="md_root_ca_path"
-          control={control}
-          defaultValue=""
-          render={({ field }) => (
-            <TextField
-              {...field}
-              type="text"
-              label="Root CA"
-              size="medium"
-              disabled={isSslDisable}
-              fullWidth
-              title="Path to Root CA file on the gatherer. Relevant for sslmode-s 'verify-ca' and 'verify-full'"
-            />
-          )}
-        />
-        <Stack direction="row" spacing={1}>
-          <Controller
-            name="md_client_cert_path"
-            control={control}
-            defaultValue=""
-            render={({ field }) => (
-              <SimpleTextField
-                field={{ ...field }}
-                type="text"
-                label="Client cert"
-                disabled={isSslDisable}
-                title="Path to Client certificate. Relevant for 'sslmode=verify-full'"
-              />
-            )}
-          />
-          <Controller
-            name="md_client_key_path"
-            control={control}
-            defaultValue=""
-            render={({ field }) => (
-              <SimpleTextField
-                field={{ ...field }}
-                type="text"
-                label="Client key"
-                disabled={isSslDisable}
-                title="Path to Client key file. Relevant for 'sslmode=verify-full'"
-              />
-            )}
-          />
-        </Stack>
       </Stack>
     ),
     presets: (

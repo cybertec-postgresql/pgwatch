@@ -136,16 +136,7 @@ export const databasesColumns = ({
 }: databasesColumnsProps): GridColDef[] => {
   return [
     {
-      field: "md_id",
-      headerName: "ID",
-      width: 75,
-      type: "number",
-      align: "center",
-      headerAlign: "center",
-      hide: true
-    },
-    {
-      field: "md_unique_name",
+      field: "md_name",
       headerName: "Unique name",
       width: 150,
       align: "center",
@@ -160,22 +151,11 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_connection",
+      field: "md_connstr",
       headerName: "Connection",
       width: 150,
       align: "center",
       headerAlign: "center",
-      valueGetter(params) {
-        return (`${params.row.md_hostname}:${params.row.md_port}`);
-      },
-    },
-    {
-      field: "md_dbname",
-      headerName: "DB dbname",
-      width: 150,
-      align: "center",
-      headerAlign: "center",
-      hide: true
     },
     {
       field: "md_include_pattern",
@@ -194,13 +174,6 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_user",
-      headerName: "DB user",
-      width: 150,
-      align: "center",
-      headerAlign: "center"
-    },
-    {
       field: "md_is_superuser",
       headerName: "Super user?",
       width: 120,
@@ -211,39 +184,8 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_password_type",
-      headerName: "Password encryption",
-      width: 150,
-      align: "center",
-      headerAlign: "center",
-      hide: true
-    },
-    {
-      field: "md_sslmode",
-      headerName: "SSL Mode",
-      width: 150,
-      align: "center",
-      headerAlign: "center"
-    },
-    {
-      field: "md_root_ca_path",
-      headerName: "Root CA",
-      width: 150,
-      align: "center",
-      headerAlign: "center",
-      hide: true
-    },
-    {
-      field: "md_client_cert_path",
-      headerName: "Client cert",
-      width: 150,
-      align: "center",
-      headerAlign: "center",
-      hide: true
-    },
-    {
-      field: "md_client_key_path",
-      headerName: "Client key",
+      field: "md_encryption",
+      headerName: "Encryption",
       width: 150,
       align: "center",
       headerAlign: "center",
@@ -309,14 +251,6 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_statement_timeout_seconds",
-      headerName: "Statement timeout [seconds]",
-      type: "number",
-      width: 120,
-      align: "center",
-      headerAlign: "center"
-    },
-    {
       field: "md_only_if_master",
       headerName: "Master mode only?",
       type: "boolean",
@@ -360,8 +294,8 @@ export const databasesColumns = ({
           setEditData={setEditData}
           handleModalOpen={handleModalOpen}
           deleteRecord={deleteRecord}
-          deleteParameter={params.row.md_unique_name}
-          warningMessage={`Remove DB "${params.row.md_unique_name}" from monitoring? This does not remove gathered metrics data from InfluxDB, see bottom of page for that`}
+          deleteParameter={params.row.md_name}
+          warningMessage={`Remove DB "${params.row.md_name}" from monitoring? This does not remove gathered metrics data from InfluxDB, see bottom of page for that`}
         >
           <Button
             size="small"

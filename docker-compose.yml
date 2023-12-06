@@ -52,10 +52,7 @@ services:
       dockerfile: ./docker/Dockerfile
     image: cybertecpostgresql/pgwatch3:latest
     environment:
-      PW3_PGHOST: postgres
-      PW3_PGUSER: pgwatch3
-      PW3_PGDATABASE: pgwatch3
-      PW3_DATASTORE: postgres
+      PW3_CONFIG: postgresql://pgwatch3@postgres:5432/pgwatch3
       PW3_PG_METRIC_STORE_CONN_STR: postgresql://pgwatch3@postgres:5432/pgwatch3_metrics
     ports:
       - "8080:8080"
@@ -88,9 +85,9 @@ services:
         -f /tmp/00_helpers/get_table_bloat_approx_sql/12/metric.sql
         -f /tmp/00_helpers/get_wal_size/10/metric.sql
         -f /tmp/00_helpers/get_sequences/10/metric.sql 
-        -c "INSERT INTO pgwatch3.monitored_db (md_unique_name, md_preset_config_name, md_config, md_hostname, md_port, md_dbname, md_user, md_password)
-          SELECT 'test', 'exhaustive', null, 'postgres', '5432', 'pgwatch3', 'pgwatch3', 'pgwatch3admin'
-          WHERE NOT EXISTS (SELECT * FROM pgwatch3.monitored_db WHERE (md_unique_name, md_hostname, md_dbname) = ('test', 'localhost', 'pgwatch3'))"
+        -c "INSERT INTO pgwatch3.monitored_db (md_name, md_preset_config_name, md_connstr)
+          SELECT 'test', 'exhaustive', 'postgresql://pgwatch3:pgwatch3admin@localhost/pgwatch3'
+          WHERE NOT EXISTS (SELECT * FROM pgwatch3.monitored_db WHERE md_name = 'test')"
     volumes:
       - "./src/metrics/sql/00_helpers:/tmp/00_helpers"
     depends_on:

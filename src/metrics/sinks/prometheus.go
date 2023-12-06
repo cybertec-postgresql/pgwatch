@@ -74,7 +74,7 @@ func (promw *PrometheusWriter) Write(msgs []metrics.MetricStoreMessage) error {
 		return nil
 	}
 	msg := msgs[0]
-	promw.PromAsyncCacheAddMetricData(msg.DBUniqueName, msg.MetricName, msgs)
+	promw.PromAsyncCacheAddMetricData(msg.DBName, msg.MetricName, msgs)
 	return nil
 }
 
@@ -174,7 +174,7 @@ func (promw *PrometheusWriter) setInstanceUpDownState(ch chan<- prometheus.Metri
 	data[epochColumnName] = time.Now().UnixNano()
 
 	pm := promw.MetricStoreMessageToPromMetrics(metrics.MetricStoreMessage{
-		DBUniqueName:     dbName,
+		DBName:           dbName,
 		DBType:           "postgres", //md.DBType,
 		MetricName:       promInstanceUpStateMetric,
 		CustomTags:       nil, //md.CustomTags,
@@ -211,8 +211,8 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Metri
 		epochTime = time.Unix(0, epochNs)
 
 		if epochTime.Before(epochNow.Add(-1 * promScrapingStalenessHardDropLimit)) {
-			logger.Warningf("[%s][%s] Dropping metric set due to staleness (>%v) ...", msg.DBUniqueName, msg.MetricName, promScrapingStalenessHardDropLimit)
-			promw.PurgeMetricsFromPromAsyncCacheIfAny(msg.DBUniqueName, msg.MetricName)
+			logger.Warningf("[%s][%s] Dropping metric set due to staleness (>%v) ...", msg.DBName, msg.MetricName, promScrapingStalenessHardDropLimit)
+			promw.PurgeMetricsFromPromAsyncCacheIfAny(msg.DBName, msg.MetricName)
 			return promMetrics
 		}
 	}
@@ -220,7 +220,7 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Metri
 	for _, dr := range msg.Data {
 		labels := make(map[string]string)
 		fields := make(map[string]float64)
-		labels["dbname"] = msg.DBUniqueName
+		labels["dbname"] = msg.DBName
 
 		for k, v := range dr {
 			if v == nil || v == "" || k == epochColumnName {
@@ -235,7 +235,7 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Metri
 				if dataType == "float64" || dataType == "float32" || dataType == "int64" || dataType == "int32" || dataType == "int" {
 					f, err := strconv.ParseFloat(fmt.Sprintf("%v", v), 64)
 					if err != nil {
-						logger.Debugf("Skipping scraping column %s of [%s:%s]: %v", k, msg.DBUniqueName, msg.MetricName, err)
+						logger.Debugf("Skipping scraping column %s of [%s:%s]: %v", k, msg.DBName, msg.MetricName, err)
 					}
 					fields[k] = f
 				} else if dataType == "bool" {
@@ -245,7 +245,7 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Metri
 						fields[k] = 0
 					}
 				} else {
-					logger.Debugf("Skipping scraping column %s of [%s:%s], unsupported datatype: %s", k, msg.DBUniqueName, msg.MetricName, dataType)
+					logger.Debugf("Skipping scraping column %s of [%s:%s], unsupported datatype: %s", k, msg.DBName, msg.MetricName, dataType)
 					continue
 				}
 			}
