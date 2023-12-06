@@ -248,78 +248,77 @@ const ModalContent = () => {
     ),
     connection: (
       <Stack spacing={2}>
-        <Stack direction="row" spacing={1}>
-          <Controller
-            name="md_connstr"
-            control={control}
-            defaultValue=""
-            rules={{
-              required: {
-                value: true,
-                message: "Connection string is required"
-              }
-            }}
-            render={({ field, fieldState: { error } }) => (
-              <SimpleTextField
-                field={{ ...field }}
-                type="text"
-                label="Connection string"
-                error={!!error}
-                helperText={error?.message}
-              />
-            )}
-          />
-          <Controller
-            name="md_encryption"
-            control={control}
-            defaultValue="plain-text"
-            rules={{
-              required: {
-                value: true,
-                message: "Encryption is required"
-              },
-              validate: handleValidate
-            }}
-            render={({ field, fieldState: { error } }) => (
-              <AutocompleteComponent
-                field={{ ...field }}
-                label="Encryption"
-                error={!!error}
-                helperText={error?.message}
-                options={passwordEncryptionOptions}
-                title="The login role for actual metrics fetching from the specified host"
-              />
-            )}
-          />
-        </Stack>
-        <Stack direction="row" spacing={1}>
-          <Controller
-            name="md_include_pattern"
-            control={control}
-            defaultValue={null}
-            render={({ field }) => (
-              <SimpleTextField
-                field={{ ...field }}
-                type="text"
-                label="DB name inclusion pattern"
-                title="POSIX regex input. Relevant only for 'discovery' DB types"
-              />
-            )}
-          />
-          <Controller
-            name="md_exclude_pattern"
-            control={control}
-            defaultValue={null}
-            render={({ field }) => (
-              <SimpleTextField
-                field={{ ...field }}
-                type="text"
-                label="DB name exclusion pattern"
-                title="POSIX regex input. Relevant only for 'discovery' DB types"
-              />
-            )}
-          />
-        </Stack>
+        <Controller
+          name="md_connstr"
+          control={control}
+          defaultValue=""
+          rules={{
+            required: {
+              value: true,
+              message: "Connection string is required"
+            }
+          }}
+          render={({ field, fieldState: { error } }) => (
+            <TextField
+              {...field}
+              type="text"
+              label="Connection string"
+              error={!!error}
+              helperText={error?.message}
+              multiline
+              maxRows={3}
+              fullWidth
+            />
+          )}
+        />
+        <Controller
+          name="md_encryption"
+          control={control}
+          defaultValue="plain-text"
+          rules={{
+            required: {
+              value: true,
+              message: "Encryption is required"
+            },
+            validate: handleValidate
+          }}
+          render={({ field, fieldState: { error } }) => (
+            <AutocompleteComponent
+              field={{ ...field }}
+              label="Encryption"
+              error={!!error}
+              helperText={error?.message}
+              options={passwordEncryptionOptions}
+              title="The login role for actual metrics fetching from the specified host"
+            />
+          )}
+        />
+        <Controller
+          name="md_include_pattern"
+          control={control}
+          defaultValue={null}
+          render={({ field }) => (
+            <SimpleTextField
+              field={{ ...field }}
+              type="text"
+              label="DB name inclusion pattern"
+              title="POSIX regex input. Relevant only for 'discovery' DB types"
+            />
+          )}
+        />
+        <Controller
+          name="md_exclude_pattern"
+          control={control}
+          defaultValue={null}
+          render={({ field }) => (
+            <SimpleTextField
+              field={{ ...field }}
+              type="text"
+              label="DB name exclusion pattern"
+              title="POSIX regex input. Relevant only for 'discovery' DB types"
+            />
+          )}
+        />
         <Button fullWidth variant="contained" onClick={handleTestConnection}>
           {
             testConnection.isLoading ?
