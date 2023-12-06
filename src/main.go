@@ -1775,7 +1775,7 @@ func DoesEmergencyTriggerfileExist() bool {
 	return err == nil
 }
 
-var opts *config.CmdOptions
+var opts *config.Options
 
 // version output variables
 var (

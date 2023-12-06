@@ -6,12 +6,13 @@ import (
 	"io"
 	"os"
 
+	"github.com/jackc/pgx/v5"
 	flags "github.com/jessevdk/go-flags"
 )
 
 // NewConfig returns a new instance of CmdOptions
-func NewConfig(writer io.Writer) (*CmdOptions, error) {
-	cmdOpts := new(CmdOptions)
+func NewConfig(writer io.Writer) (*Options, error) {
+	cmdOpts := new(Options)
 	parser := flags.NewParser(cmdOpts, flags.PrintErrors)
 	var err error
 	if _, err = parser.Parse(); err != nil {
@@ -33,73 +34,101 @@ const (
 	defaultMetricsDefinitionPathDocker = "/pgwatch3/metrics"     // prebuilt packages / Docker default location
 )
 
-func validateConfig(conf *CmdOptions) error {
-	if conf.Connection.ServersRefreshLoopSeconds <= 1 {
+// Verbose returns true if the debug log is enabled
+func (c Options) Verbose() bool {
+	return c.Logging.LogLevel == "debug"
+}
+
+func (c Options) IsAdHocMode() bool {
+	return len(c.AdHocConnString)+len(c.AdHocConfig) > 0
+}
+
+// VersionOnly returns true if the `--version` is the only argument
+func (c Options) VersionOnly() bool {
+	return len(os.Args) == 2 && c.Version
+}
+
+func (c Options) GetConfigKind() (_ Kind, err error) {
+	if _, err := pgx.ParseConfig(c.Connection.Config); err == nil {
+		return Kind(ConfigPgURL), nil
+	}
+	var fi os.FileInfo
+	if fi, err = os.Stat(c.Connection.Config); err == nil {
+		if fi.IsDir() {
+			return Kind(ConfigFolder), nil
+		}
+		return Kind(ConfigFile), nil
+	}
+	return Kind(ConfigError), err
+}
+
+func validateConfig(c *Options) error {
+	if c.Connection.ServersRefreshLoopSeconds <= 1 {
 		return errors.New("--servers-refresh-loop-seconds must be greater than 1")
 	}
-	if conf.MaxParallelConnectionsPerDb < 1 {
+	if c.MaxParallelConnectionsPerDb < 1 {
 		return errors.New("--max-parallel-connections-per-db must be >= 1")
 	}
 
-	if conf.Metric.MetricsFolder > "" && !checkFolderExistsAndReadable(conf.Metric.MetricsFolder) {
-		return fmt.Errorf("Could not read --metrics-folder path %s", conf.Metric.MetricsFolder)
+	if c.Metric.MetricsFolder > "" && !checkFolderExistsAndReadable(c.Metric.MetricsFolder) {
+		return fmt.Errorf("Could not read --metrics-folder path %s", c.Metric.MetricsFolder)
 	}
 
-	if err := validateAesGcmConfig(conf); err != nil {
+	if err := validateAesGcmConfig(c); err != nil {
 		return err
 	}
 
-	if err := validateAdHocConfig(conf); err != nil {
+	if err := validateAdHocConfig(c); err != nil {
 		return err
 	}
 	// validate that input is boolean is set
-	if conf.BatchingDelayMs < 0 || conf.BatchingDelayMs > 3600000 {
+	if c.BatchingDelayMs < 0 || c.BatchingDelayMs > 3600000 {
 		return errors.New("--batching-delay-ms must be between 0 and 3600000")
 	}
 
 	return nil
 }
 
-func validateAesGcmConfig(conf *CmdOptions) error {
-	if conf.AesGcmKeyphraseFile > "" {
-		_, err := os.Stat(conf.AesGcmKeyphraseFile)
+func validateAesGcmConfig(c *Options) error {
+	if c.AesGcmKeyphraseFile > "" {
+		_, err := os.Stat(c.AesGcmKeyphraseFile)
 		if os.IsNotExist(err) {
-			return fmt.Errorf("Failed to read aes_gcm_keyphrase_file at %s, thus cannot monitor hosts with encrypted passwords", conf.AesGcmKeyphraseFile)
+			return fmt.Errorf("Failed to read aes_gcm_keyphrase_file at %s, thus cannot monitor hosts with encrypted passwords", c.AesGcmKeyphraseFile)
 		}
-		keyBytes, err := os.ReadFile(conf.AesGcmKeyphraseFile)
+		keyBytes, err := os.ReadFile(c.AesGcmKeyphraseFile)
 		if err != nil {
 			return err
 		}
 		if keyBytes[len(keyBytes)-1] == 10 {
-			conf.AesGcmKeyphrase = string(keyBytes[:len(keyBytes)-1]) // remove line feed
+			c.AesGcmKeyphrase = string(keyBytes[:len(keyBytes)-1]) // remove line feed
 		} else {
-			conf.AesGcmKeyphrase = string(keyBytes)
+			c.AesGcmKeyphrase = string(keyBytes)
 		}
 	}
-	if conf.AesGcmPasswordToEncrypt > "" && conf.AesGcmKeyphrase == "" { // special flag - encrypt and exit
+	if c.AesGcmPasswordToEncrypt > "" && c.AesGcmKeyphrase == "" { // special flag - encrypt and exit
 		return errors.New("--aes-gcm-password-to-encrypt requires --aes-gcm-keyphrase(-file)")
 	}
 	return nil
 }
 
-func validateAdHocConfig(conf *CmdOptions) error {
-	if conf.AdHocConnString > "" || conf.AdHocConfig > "" {
-		if len(conf.AdHocConnString)*len(conf.AdHocConfig) == 0 {
+func validateAdHocConfig(c *Options) error {
+	if c.AdHocConnString > "" || c.AdHocConfig > "" {
+		if len(c.AdHocConnString)*len(c.AdHocConfig) == 0 {
 			return errors.New("--adhoc-conn-str and --adhoc-config params both need to be specified for Ad-hoc mode to work")
 		}
-		if len(conf.Connection.Config) > 0 {
+		if len(c.Connection.Config) > 0 {
 			return errors.New("Conflicting flags! --adhoc-conn-str and --config cannot be both set")
 		}
-		if conf.Metric.MetricsFolder == "" {
+		if c.Metric.MetricsFolder == "" {
 			if checkFolderExistsAndReadable(defaultMetricsDefinitionPathPkg) {
-				conf.Metric.MetricsFolder = defaultMetricsDefinitionPathPkg
+				c.Metric.MetricsFolder = defaultMetricsDefinitionPathPkg
 			} else if checkFolderExistsAndReadable(defaultMetricsDefinitionPathDocker) {
-				conf.Metric.MetricsFolder = defaultMetricsDefinitionPathDocker
+				c.Metric.MetricsFolder = defaultMetricsDefinitionPathDocker
 			} else {
 				return errors.New("--adhoc-conn-str requires --metrics-folder")
 			}
 		}
-		if conf.AdHocDBType != DbTypePg && conf.AdHocDBType != DbTypePgCont {
+		if c.AdHocDBType != DbTypePg && c.AdHocDBType != DbTypePgCont {
 			return fmt.Errorf("--adhoc-dbtype can be of: [ %s (single DB) | %s (all non-template DB-s on an instance) ]. Default: %s", DbTypePg, DbTypePgCont, DbTypePg)
 		}
 	}
