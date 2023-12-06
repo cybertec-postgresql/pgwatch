@@ -49,15 +49,3 @@ export type updateEnabledDbForm = {
     md_is_enabled: boolean
   }
 };
-
-export type TestConnection = {
-  host: string;
-  port: string;
-  dbname: string;
-  user: string;
-  password: string;
-  connect_timeout: string;
-  sslmode: string;
-  sslcert: string;
-  sslkey: string;
-};
