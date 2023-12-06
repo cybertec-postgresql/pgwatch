@@ -324,7 +324,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 			func(c *pgxpool.Config) error {
 				c.ConnConfig.Host = host
 				c.ConnConfig.Database = "template1"
-				i, err := strconv.Atoi(port)
+				i, err := strconv.ParseUint(port, 10, 16)
 				c.ConnConfig.Port = uint16(i)
 				md[len(md)].ConnStr = c.ConnString()
 				return err
