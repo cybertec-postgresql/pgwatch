@@ -43,7 +43,7 @@ export const DbsTable = () => {
 
   if (status === "error") {
     const err = error as Error;
-    return(
+    return (
       <ErrorComponent errorMessage={err.message} />
     );
   };
@@ -55,14 +55,14 @@ export const DbsTable = () => {
       </Typography>
       <DataGrid
         columns={columns}
-        rows={data!}
-        getRowId={(row) => row.md_unique_name}
+        rows={data}
+        getRowId={(row) => row.md_name}
         rowsPerPageOptions={[]}
         components={{ Toolbar: () => <GridToolbarComponent handleModalOpen={handleModalOpen} setEditData={setEditData} /> }}
         disableColumnMenu
         initialState={{
           sorting: {
-            sortModel: [{ field: "md_unique_name", sort: "asc" }]
+            sortModel: [{ field: "md_name", sort: "asc" }]
           }
         }}
       />
