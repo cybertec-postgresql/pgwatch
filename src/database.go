@@ -16,6 +16,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var configDb db.PgxPoolIface
@@ -38,7 +39,10 @@ func InitSQLConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
 		return nil
 	}
 
-	conn, err := db.GetPostgresDBConnection(mainContext, md.ConnStr)
+	conn, err := db.GetPostgresDBConnection(mainContext, md.ConnStr, func(conf *pgxpool.Config) error {
+		conf.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
+		return nil
+	})
 	if err != nil {
 		return err
 	}

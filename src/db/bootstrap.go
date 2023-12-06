@@ -24,7 +24,7 @@ func TryDatabaseConnection(ctx context.Context, connStr string) error {
 	return err
 }
 
-type ConnConfigCallback = func(*pgx.ConnConfig) error
+type ConnConfigCallback = func(*pgxpool.Config) error
 
 func GetPostgresDBConnection(ctx context.Context, connStr string, callbacks ...ConnConfigCallback) (PgxPoolIface, error) {
 	connConfig, err := pgxpool.ParseConfig(connStr)
@@ -32,7 +32,7 @@ func GetPostgresDBConnection(ctx context.Context, connStr string, callbacks ...C
 		return nil, err
 	}
 	for _, f := range callbacks {
-		if err = f(connConfig.ConnConfig); err != nil {
+		if err = f(connConfig); err != nil {
 			return nil, err
 		}
 	}
