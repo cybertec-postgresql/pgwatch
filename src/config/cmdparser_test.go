@@ -31,17 +31,17 @@ func TestParseSuccess(t *testing.T) {
 }
 
 func TestLogLevel(t *testing.T) {
-	c := &CmdOptions{Logging: LoggingOpts{LogLevel: "debug"}}
+	c := &Options{Logging: LoggingOpts{LogLevel: "debug"}}
 	assert.True(t, c.Verbose())
-	c = &CmdOptions{Logging: LoggingOpts{LogLevel: "info"}}
+	c = &Options{Logging: LoggingOpts{LogLevel: "info"}}
 	assert.False(t, c.Verbose())
 }
 
 func TestVersionOnly(t *testing.T) {
-	c := &CmdOptions{Version: true}
+	c := &Options{Version: true}
 	os.Args = []string{0: "go-test", "-v"}
 	assert.True(t, c.VersionOnly())
-	c = &CmdOptions{Version: false}
+	c = &Options{Version: false}
 	assert.False(t, c.VersionOnly())
 }
 

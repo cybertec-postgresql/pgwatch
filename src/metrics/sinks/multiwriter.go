@@ -27,7 +27,7 @@ type MultiWriter struct {
 	sync.Mutex
 }
 
-func NewMultiWriter(ctx context.Context, opts *config.CmdOptions) (*MultiWriter, error) {
+func NewMultiWriter(ctx context.Context, opts *config.Options) (*MultiWriter, error) {
 	logger := log.GetLogger(ctx)
 	mw := &MultiWriter{}
 	for _, f := range opts.Metric.JSONStorageFile {

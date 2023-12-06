@@ -1,9 +1,6 @@
 package config
 
 import (
-	"os"
-
-	"github.com/jackc/pgx/v5"
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -63,7 +60,7 @@ type WebUIOpts struct {
 	WebPassword string `long:"web-password" mapstructure:"web-password" description:"Admin password" env:"PW3_WEBPASSWORD"`
 }
 
-type CmdOptions struct {
+type Options struct {
 	Connection                   ConnectionOpts `group:"Connection" mapstructure:"Connection"`
 	Metric                       MetricOpts     `group:"Metric" mapstructure:"Metric"`
 	Logging                      LoggingOpts    `group:"Logging" mapstructure:"Logging"`
@@ -89,37 +86,9 @@ type CmdOptions struct {
 	TryCreateListedExtsIfMissing string         `long:"try-create-listed-exts-if-missing" mapstructure:"try-create-listed-exts-if-missing" description:"Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements" env:"PW3_TRY_CREATE_LISTED_EXTS_IF_MISSING" default:""`
 }
 
-// Verbose returns true if the debug log is enabled
-func (c CmdOptions) Verbose() bool {
-	return c.Logging.LogLevel == "debug"
-}
-
-func (c CmdOptions) IsAdHocMode() bool {
-	return len(c.AdHocConnString)+len(c.AdHocConfig) > 0
-}
-
-// VersionOnly returns true if the `--version` is the only argument
-func (c CmdOptions) VersionOnly() bool {
-	return len(os.Args) == 2 && c.Version
-}
-
-func (c CmdOptions) GetConfigKind() (_ Kind, err error) {
-	if _, err := pgx.ParseConfig(c.Connection.Config); err == nil {
-		return Kind(ConfigPgURL), nil
-	}
-	var fi os.FileInfo
-	if fi, err = os.Stat(c.Connection.Config); err == nil {
-		if fi.IsDir() {
-			return Kind(ConfigFolder), nil
-		}
-		return Kind(ConfigFile), nil
-	}
-	return Kind(ConfigError), err
-}
-
 // NewCmdOptions returns a new instance of CmdOptions with default values
-func NewCmdOptions(args ...string) *CmdOptions {
-	cmdOpts := new(CmdOptions)
+func NewCmdOptions(args ...string) *Options {
+	cmdOpts := new(Options)
 	_, _ = flags.NewParser(cmdOpts, flags.PrintErrors).ParseArgs(args)
 	return cmdOpts
 }

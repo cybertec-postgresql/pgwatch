@@ -33,7 +33,7 @@ const promInstanceUpStateMetric = "instance_up"
 // timestamps older than that will be ignored on the Prom scraper side anyways, so better don't emit at all and just log a notice
 const promScrapingStalenessHardDropLimit = time.Minute * time.Duration(10)
 
-func NewPrometheusWriter(ctx context.Context, opts *config.CmdOptions) (promw *PrometheusWriter, err error) {
+func NewPrometheusWriter(ctx context.Context, opts *config.Options) (promw *PrometheusWriter, err error) {
 	promw = &PrometheusWriter{
 		ctx:                   ctx,
 		RealDbnameField:       opts.Metric.RealDbnameField,
