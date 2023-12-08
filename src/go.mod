@@ -18,7 +18,7 @@ require (
 	github.com/shopspring/decimal v1.3.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
-	go.etcd.io/etcd/client/v3 v3.5.10
+	go.etcd.io/etcd/client/v3 v3.5.11
 	golang.org/x/crypto v0.16.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -62,8 +62,8 @@ require (
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
-	go.etcd.io/etcd/api/v3 v3.5.10 // indirect
-	go.etcd.io/etcd/client/pkg/v3 v3.5.10 // indirect
+	go.etcd.io/etcd/api/v3 v3.5.11 // indirect
+	go.etcd.io/etcd/client/pkg/v3 v3.5.11 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
@@ -73,7 +73,7 @@ require (
 	google.golang.org/genproto v0.0.0-20230920204549-e6e6cdab5c13 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230920204549-e6e6cdab5c13 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230920204549-e6e6cdab5c13 // indirect
-	google.golang.org/grpc v1.58.3 // indirect
+	google.golang.org/grpc v1.59.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
