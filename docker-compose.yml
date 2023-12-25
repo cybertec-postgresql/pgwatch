@@ -34,6 +34,7 @@ services:
       GF_DATABASE_SSL_MODE: disable
       GF_AUTH_ANONYMOUS_ENABLED: true
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/1-global-db-overview.json
+      GF_INSTALL_PLUGINS: marcusolsson-treemap-panel
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -60,15 +61,6 @@ services:
       postgres:
         condition: service_healthy
 
-  prometheus:
-    image: prom/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-    ports:
-      - 9090:9090
-    restart: unless-stopped
-    volumes:
-      - "./docker/prometheus.yml:/etc/prometheus/prometheus.yml"
 
   add-test-db:
     image: *pgimage
@@ -86,7 +78,7 @@ services:
         -f /tmp/00_helpers/get_wal_size/10/metric.sql
         -f /tmp/00_helpers/get_sequences/10/metric.sql 
         -c "INSERT INTO pgwatch3.monitored_db (md_name, md_preset_config_name, md_connstr)
-          SELECT 'test', 'exhaustive', 'postgresql://pgwatch3:pgwatch3admin@localhost/pgwatch3'
+          SELECT 'test', 'exhaustive', 'postgresql://pgwatch3:pgwatch3admin@postgres/pgwatch3'
           WHERE NOT EXISTS (SELECT * FROM pgwatch3.monitored_db WHERE md_name = 'test')"
     volumes:
       - "./src/metrics/sql/00_helpers:/tmp/00_helpers"
@@ -111,3 +103,13 @@ services:
         condition: service_healthy
     profiles:
       - pgbench
+
+  # prometheus:
+  #   image: prom/prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #   ports:
+  #     - 9090:9090
+  #   restart: unless-stopped
+  #   volumes:
+  #     - "./docker/prometheus.yml:/etc/prometheus/prometheus.yml"
