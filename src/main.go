@@ -1820,6 +1820,34 @@ var exitCode atomic.Int32
 
 var mainContext context.Context
 
+func LoadMetricDefs(ctx context.Context) (err error) {
+	var metricDefs metrics.MetricVersionDefs
+	var renamingDefs map[string]string
+	if fileBasedMetrics {
+		metricDefs, renamingDefs, err = metrics.ReadMetricsFromFolder(ctx, opts.Metric.MetricsFolder)
+	} else {
+		metricDefs, renamingDefs, err = metrics.ReadMetricsFromPostgres(ctx, configDb)
+	}
+	if err == nil {
+		UpdateMetricDefinitions(metricDefs, renamingDefs)
+	}
+	return
+}
+
+func SyncMetricDefs(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(metricDefinitionRefreshInterval):
+			// reread metric definitions
+		}
+		if err := LoadMetricDefs(ctx); err != nil {
+			logger.Errorf("Could not refresh metric definitions: %w", err)
+		}
+	}
+}
+
 func main() {
 	var (
 		err           error
@@ -1899,9 +1927,15 @@ func main() {
 	var bufferedPersistCh chan []metrics.MetricStoreMessage
 
 	var monitoredDbs []MonitoredDatabase
-	var lastMetricsRefreshTime time.Time
 	var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 	var metricConfig map[string]float64                       // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
+
+	if err = LoadMetricDefs(mainContext); err != nil {
+		logger.Errorf("Could not load metric definitions: %w", err)
+		os.Exit(int(ExitCodeConfigError))
+	}
+	go SyncMetricDefs(mainContext)
+
 	if !opts.Ping {
 		if opts.BatchingDelayMs > 0 {
 			bufferedPersistCh = make(chan []metrics.MetricStoreMessage, 10000) // "staging area" for metric storage batching, when enabled
@@ -1921,25 +1955,6 @@ func main() {
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
 		var controlChannelNameList []string
 		gatherersShutDown := 0
-
-		if lastMetricsRefreshTime.Add(metricDefinitionRefreshInterval).After(time.Now()) {
-			var metricDefs metrics.MetricVersionDefs
-			var renamingDefs map[string]string
-			if fileBasedMetrics {
-				metricDefs, renamingDefs, err = metrics.ReadMetricsFromFolder(mainContext, opts.Metric.MetricsFolder)
-			} else {
-				metricDefs, renamingDefs, err = metrics.ReadMetricsFromPostgres(mainContext, configDb)
-			}
-			if err == nil {
-				UpdateMetricDefinitions(metricDefs, renamingDefs)
-				lastMetricsRefreshTime = time.Now()
-			} else {
-				if firstLoop {
-					logger.Fatal(err)
-				}
-				logger.Errorf("Could not refresh metric definitions: %w", err)
-			}
-		}
 
 		if fileBasedMetrics {
 			pmc, err := ReadPresetMetricsConfigFromFolder(opts.Metric.MetricsFolder, false)
