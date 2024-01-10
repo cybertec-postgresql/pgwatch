@@ -40,7 +40,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 
-	"github.com/coreos/go-systemd/daemon"
 	"golang.org/x/crypto/pbkdf2"
 	"gopkg.in/yaml.v2"
 )
@@ -139,10 +138,10 @@ type ExistingPartitionInfo struct {
 }
 
 const (
-	epochColumnName             string = "epoch_ns" // this column (epoch in nanoseconds) is expected in every metric query
-	tagPrefix                   string = "tag_"
-	metricDefinitionRefreshTime int64  = 120   // min time before checking for new/changed metric definitions
-	persistQueueMaxSize                = 10000 // storage queue max elements. when reaching the limit, older metrics will be dropped.
+	epochColumnName                 string        = "epoch_ns" // this column (epoch in nanoseconds) is expected in every metric query
+	tagPrefix                       string        = "tag_"
+	metricDefinitionRefreshInterval time.Duration = time.Minute * 2 // min time before checking for new/changed metric definitions
+	persistQueueMaxSize                           = 10000           // storage queue max elements. when reaching the limit, older metrics will be dropped.
 )
 
 // actual requirements depend a lot of metric type and nr. of obects in schemas,
@@ -188,7 +187,7 @@ var dbTypeMap = map[string]bool{config.DbTypePg: true, config.DbTypePgCont: true
 var dbTypes = []string{config.DbTypePg, config.DbTypePgCont, config.DbTypeBouncer, config.DbTypePatroni, config.DbTypePatroniCont, config.DbTypePatroniNamespaceDiscovery} // used for informational purposes
 var specialMetrics = map[string]bool{recoMetricName: true, specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 var directlyFetchableOSMetrics = map[string]bool{metricPsutilCPU: true, metricPsutilDisk: true, metricPsutilDiskIoTotal: true, metricPsutilMem: true, metricCPULoad: true}
-var metricDefinitionMap map[string]map[uint]metrics.MetricProperties
+var metricDefinitionMap metrics.MetricVersionDefs
 var metricDefMapLock = sync.RWMutex{}
 var hostMetricIntervalMap = make(map[string]float64) // [db1_metric] = 30
 var dbPgVersionMap = make(map[string]DBVersionMapEntry)
@@ -235,7 +234,6 @@ var pgBouncerNumericCountersStartVersion uint // pgBouncer changed internal coun
 var lastDBSizeMB = make(map[string]int64)
 var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHING_INTERVAL
 var lastDBSizeCheckLock sync.RWMutex
-var mainLoopInitialized int32 // 0/1
 
 var prevLoopMonitoredDBs []MonitoredDatabase // to be able to detect DBs removed from config
 var undersizedDBs = make(map[string]bool)    // DBs below the --min-db-size-mb limit, if set
@@ -480,7 +478,7 @@ func (x UIntSlice) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
 // assumes upwards compatibility for versions
 func GetMetricVersionProperties(metric string, vme DBVersionMapEntry, metricDefMap map[string]map[uint]metrics.MetricProperties) (metrics.MetricProperties, error) {
 	var keys UIntSlice
-	var mdm map[string]map[uint]metrics.MetricProperties
+	var mdm metrics.MetricVersionDefs
 
 	if metricDefMap != nil {
 		mdm = metricDefMap
@@ -1900,37 +1898,33 @@ func main() {
 	persistCh := make(chan []metrics.MetricStoreMessage, 10000)
 	var bufferedPersistCh chan []metrics.MetricStoreMessage
 
+	var monitoredDbs []MonitoredDatabase
+	var lastMetricsRefreshTime time.Time
+	var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
+	var metricConfig map[string]float64                       // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 	if !opts.Ping {
-
 		if opts.BatchingDelayMs > 0 {
 			bufferedPersistCh = make(chan []metrics.MetricStoreMessage, 10000) // "staging area" for metric storage batching, when enabled
 			logger.Info("starting MetricsBatcher...")
 			go MetricsBatcher(mainContext, opts.BatchingDelayMs, bufferedPersistCh, persistCh)
 		}
-
-		if metricsWriter, err = sinks.NewMultiWriter(mainContext, opts); err != nil {
+		if metricsWriter, err = sinks.NewMultiWriter(mainContext, opts, &metricDefinitionMap); err != nil {
 			logger.Fatal(err)
 		}
 		go metricsWriter.WriteMetrics(mainContext, persistCh)
-
-		_, _ = daemon.SdNotify(false, "READY=1") // Notify systemd, does nothing outside of systemd
 	}
 
 	firstLoop := true
 	mainLoopCount := 0
-	var monitoredDbs []MonitoredDatabase
-	var lastMetricsRefreshTime int64
-	var metricDefs map[string]map[uint]metrics.MetricProperties
-	var renamingDefs map[string]string
-	var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
-	var metricConfig map[string]float64                       // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 
 	for { //main loop
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
 		var controlChannelNameList []string
 		gatherersShutDown := 0
 
-		if time.Now().Unix()-lastMetricsRefreshTime > metricDefinitionRefreshTime {
+		if lastMetricsRefreshTime.Add(metricDefinitionRefreshInterval).After(time.Now()) {
+			var metricDefs metrics.MetricVersionDefs
+			var renamingDefs map[string]string
 			if fileBasedMetrics {
 				metricDefs, renamingDefs, err = metrics.ReadMetricsFromFolder(mainContext, opts.Metric.MetricsFolder)
 			} else {
@@ -1938,7 +1932,7 @@ func main() {
 			}
 			if err == nil {
 				UpdateMetricDefinitions(metricDefs, renamingDefs)
-				lastMetricsRefreshTime = time.Now().Unix()
+				lastMetricsRefreshTime = time.Now()
 			} else {
 				if firstLoop {
 					logger.Fatal(err)
@@ -2243,8 +2237,6 @@ func main() {
 				}
 			}
 		}
-
-		atomic.StoreInt32(&mainLoopInitialized, 1) // to hold off scraping until metric fetching runners have been initialized
 
 		if opts.Ping {
 			if len(failedInitialConnectHosts) > 0 {

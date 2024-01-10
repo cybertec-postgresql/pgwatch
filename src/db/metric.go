@@ -48,10 +48,7 @@ func versionToInt(v string) uint {
 	return uint(major*100 + minor)
 }
 
-func ReadMetricsFromPostgres(ctx context.Context, conn PgxIface) (
-	metricDefMapNew map[string]map[uint]metrics.MetricProperties,
-	metricNameRemapsNew map[string]string,
-	err error) {
+func ReadMetricsFromPostgres(ctx context.Context, conn PgxIface) (metricDefMapNew metrics.MetricVersionDefs, metricNameRemapsNew map[string]string, err error) {
 
 	sql := `select /* pgwatch3_generated */ m_name, m_pg_version_from::text, m_sql, m_master_only, m_standby_only,
 			  coalesce(m_column_attrs::text, '') as m_column_attrs, coalesce(m_column_attrs::text, '') as m_column_attrs,
@@ -81,7 +78,7 @@ func ReadMetricsFromPostgres(ctx context.Context, conn PgxIface) (
 		logger.Warning("no active metric definitions found from config DB")
 		return
 	}
-	metricDefMapNew = make(map[string]map[uint]metrics.MetricProperties)
+	metricDefMapNew = make(metrics.MetricVersionDefs)
 	metricNameRemapsNew = make(map[string]string)
 	logger.WithField("metrics", len(data)).Debug("Active metrics found in config database (pgwatch3.metric)")
 	for _, row := range data {

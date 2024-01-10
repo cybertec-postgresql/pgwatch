@@ -10,39 +10,39 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/jackc/pgx/v5"
 )
 
-func NewPostgresWriter(ctx context.Context, connstr string, fieldDB string, fieldSysID string, retention int) (pgw *PostgresWriter, err error) {
+func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options, metricDefs *metrics.MetricVersionDefs) (pgw *PostgresWriter, err error) {
 	pgw = &PostgresWriter{
-		ctx:                   ctx,
-		RealDbnameField:       fieldDB,
-		SystemIdentifierField: fieldSysID,
+		ctx:        ctx,
+		MetricDefs: metricDefs,
 	}
-	if pgw.MetricDb, err = db.InitAndTestMetricStoreConnection(ctx, connstr); err != nil {
+	if pgw.SinkDb, err = db.InitAndTestMetricStoreConnection(ctx, connstr); err != nil {
 		return
 	}
-	if pgw.MetricSchema, err = db.GetMetricSchemaType(ctx, pgw.MetricDb); err != nil {
-		pgw.MetricDb.Close()
+	if pgw.MetricSchema, err = db.GetMetricSchemaType(ctx, pgw.SinkDb); err != nil {
+		pgw.SinkDb.Close()
 		return
 	}
 	if err = pgw.EnsureBuiltinMetricDummies(); err != nil {
 		return
 	}
-	go pgw.OldPostgresMetricsDeleter(retention)
+	go pgw.OldPostgresMetricsDeleter(opts.Metric.PGRetentionDays)
 	go pgw.UniqueDbnamesListingMaintainer()
 	return
 }
 
 type PostgresWriter struct {
-	MetricDb              db.PgxPoolIface
-	ctx                   context.Context
-	RealDbnameField       string
-	SystemIdentifierField string
-	MetricSchema          db.MetricSchemaType
+	ctx          context.Context
+	SinkDb       db.PgxPoolIface
+	MetricSchema db.MetricSchemaType
+	MetricDefs   *metrics.MetricVersionDefs
+	opts         *config.Options
 }
 
 type ExistingPartitionInfo struct {
@@ -51,10 +51,8 @@ type ExistingPartitionInfo struct {
 }
 
 const (
-	epochColumnName             string = "epoch_ns" // this column (epoch in nanoseconds) is expected in every metric query
-	tagPrefix                   string = "tag_"
-	metricDefinitionRefreshTime int64  = 120   // min time before checking for new/changed metric definitions
-	persistQueueMaxSize                = 10000 // storage queue max elements. when reaching the limit, older metrics will be dropped.
+	epochColumnName string = "epoch_ns" // this column (epoch in nanoseconds) is expected in every metric query
+	tagPrefix       string = "tag_"
 )
 
 const specialMetricPgbouncer = "^pgbouncer_(stats|pools)$"
@@ -85,7 +83,7 @@ func (pgw *PostgresWriter) EnsureBuiltinMetricDummies() (err error) {
 }
 
 func (pgw *PostgresWriter) EnsureMetricDummy(metric string) (err error) {
-	_, err = pgw.MetricDb.Exec(pgw.ctx, "select admin.ensure_dummy_metrics_table($1)", metric)
+	_, err = pgw.SinkDb.Exec(pgw.ctx, "select admin.ensure_dummy_metrics_table($1)", metric)
 	return
 }
 
@@ -108,7 +106,7 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
 		}
 		logger.WithField("data", msg.Data).WithField("len", len(msg.Data)).Debug("Sending To Postgres")
 
-		for _, dr := range msg.Data {
+		for _, dataRow := range msg.Data {
 			var epochTime time.Time
 			var epochNs int64
 
@@ -123,7 +121,7 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
 				}
 			}
 
-			for k, v := range dr {
+			for k, v := range dataRow {
 				if v == nil || v == "" {
 					continue // not storing NULLs
 				}
@@ -244,7 +242,7 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
 
 			rows := [][]any{{m.Time, m.DBName, string(jsonBytes), getTagData()}}
 
-			if _, err = pgw.MetricDb.CopyFrom(context.Background(), getTargetTable(), getTargetColumns(), pgx.CopyFromRows(rows)); err != nil {
+			if _, err = pgw.SinkDb.CopyFrom(context.Background(), getTargetTable(), getTargetColumns(), pgx.CopyFromRows(rows)); err != nil {
 				l.Error(err)
 				atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
 				forceRecreatePGMetricPartitions = strings.Contains(err.Error(), "no partition")
@@ -276,7 +274,7 @@ func (pgw *PostgresWriter) EnsureMetric(pgPartBounds map[string]ExistingPartitio
 	sqlEnsure := `select * from admin.ensure_partition_metric($1)`
 	for metric := range pgPartBounds {
 		if _, ok := partitionMapMetric[metric]; !ok || force {
-			if _, err = pgw.MetricDb.Exec(pgw.ctx, sqlEnsure, metric); err != nil {
+			if _, err = pgw.SinkDb.Exec(pgw.ctx, sqlEnsure, metric); err != nil {
 				logger.Errorf("Failed to create partition on metric '%s': %w", metric, err)
 				return err
 			}
@@ -300,7 +298,7 @@ func (pgw *PostgresWriter) EnsureMetricTime(pgPartBounds map[string]ExistingPart
 
 		partInfo, ok := partitionMapMetric[metric]
 		if !ok || (ok && (pb.StartTime.Before(partInfo.StartTime))) || force {
-			err := pgw.MetricDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.StartTime).Scan(&partInfo)
+			err := pgw.SinkDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.StartTime).Scan(&partInfo)
 			if err != nil {
 				logger.Error("Failed to create partition on 'metrics':", err)
 				return err
@@ -308,7 +306,7 @@ func (pgw *PostgresWriter) EnsureMetricTime(pgPartBounds map[string]ExistingPart
 			partitionMapMetric[metric] = partInfo
 		}
 		if pb.EndTime.After(partInfo.EndTime) || force {
-			err := pgw.MetricDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.EndTime).Scan(&partInfo.EndTime)
+			err := pgw.SinkDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.EndTime).Scan(&partInfo.EndTime)
 			if err != nil {
 				logger.Error("Failed to create partition on 'metrics':", err)
 				return err
@@ -327,7 +325,7 @@ func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]Existin
 			continue
 		}
 		if _, ok := partitionMapMetric[metric]; !ok {
-			if _, err = pgw.MetricDb.Exec(pgw.ctx, sqlEnsure, metric); err != nil {
+			if _, err = pgw.SinkDb.Exec(pgw.ctx, sqlEnsure, metric); err != nil {
 				logger.Errorf("Failed to create a TimescaleDB table for metric '%s': %v", metric, err)
 				return err
 			}
@@ -352,7 +350,7 @@ func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[str
 			}
 			partInfo, ok := partitionMapMetricDbname[metric][dbname]
 			if !ok || (ok && (pb.StartTime.Before(partInfo.StartTime))) || force {
-				if rows, err = pgw.MetricDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.StartTime); err != nil {
+				if rows, err = pgw.SinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.StartTime); err != nil {
 					return
 				}
 				if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
@@ -361,7 +359,7 @@ func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[str
 				partitionMapMetricDbname[metric][dbname] = partInfo
 			}
 			if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || force {
-				if rows, err = pgw.MetricDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.StartTime); err != nil {
+				if rows, err = pgw.SinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.StartTime); err != nil {
 					return
 				}
 				if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
@@ -407,7 +405,7 @@ func (pgw *PostgresWriter) OldPostgresMetricsDeleter(metricAgeDaysThreshold int)
 					sqlDropTable := `DROP TABLE IF EXISTS ` + pgx.Identifier{toDrop}.Sanitize()
 					logger.Debugf("Dropping old metric data partition: %s", toDrop)
 
-					if _, err := pgw.MetricDb.Exec(pgw.ctx, sqlDropTable); err != nil {
+					if _, err := pgw.SinkDb.Exec(pgw.ctx, sqlDropTable); err != nil {
 						logger.Errorf("Failed to drop old partition %s from Postgres metrics DB: %w", toDrop, err)
 						time.Sleep(time.Second * 300)
 					} else {
@@ -452,7 +450,7 @@ func (pgw *PostgresWriter) UniqueDbnamesListingMaintainer() {
 		}
 		var lock bool
 		logger.Infof("Trying to get metricsDb listing maintaner advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
-		if err := pgw.MetricDb.QueryRow(pgw.ctx, sqlGetAdvisoryLock).Scan(&lock); err != nil {
+		if err := pgw.SinkDb.QueryRow(pgw.ctx, sqlGetAdvisoryLock).Scan(&lock); err != nil {
 			logger.Error("Getting metricsDb listing maintaner advisory lock failed:", err)
 			continue
 		}
@@ -462,7 +460,7 @@ func (pgw *PostgresWriter) UniqueDbnamesListingMaintainer() {
 		}
 
 		logger.Info("Refreshing admin.all_distinct_dbname_metrics listing table...")
-		rows, _ := pgw.MetricDb.Query(pgw.ctx, sqlTopLevelMetrics)
+		rows, _ := pgw.SinkDb.Query(pgw.ctx, sqlTopLevelMetrics)
 		allDistinctMetricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
 		if err != nil {
 			logger.Error(err)
@@ -475,7 +473,7 @@ func (pgw *PostgresWriter) UniqueDbnamesListingMaintainer() {
 			metricName := strings.Replace(tableName, "public.", "", 1)
 
 			logger.Debugf("Refreshing all_distinct_dbname_metrics listing for metric: %s", metricName)
-			rows, _ := pgw.MetricDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, tableName, tableName))
+			rows, _ := pgw.SinkDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, tableName, tableName))
 			ret, err := pgx.CollectRows(rows, pgx.RowTo[string])
 			// ret, err := DBExecRead(mainContext, metricDb, fmt.Sprintf(sqlDistinct, tableName, tableName))
 			if err != nil {
@@ -493,19 +491,19 @@ func (pgw *PostgresWriter) UniqueDbnamesListingMaintainer() {
 			if len(foundDbnamesArr) == 0 { // delete all entries for given metric
 				logger.Debugf("Deleting Postgres all_distinct_dbname_metrics listing table entries for metric '%s':", metricName)
 
-				_, err = pgw.MetricDb.Exec(pgw.ctx, sqlDeleteAll, metricName)
+				_, err = pgw.SinkDb.Exec(pgw.ctx, sqlDeleteAll, metricName)
 				if err != nil {
 					logger.Errorf("Could not delete Postgres all_distinct_dbname_metrics listing table entries for metric '%s': %s", metricName, err)
 				}
 				continue
 			}
-			cmdTag, err := pgw.MetricDb.Exec(pgw.ctx, sqlDelete, foundDbnamesArr, metricName)
+			cmdTag, err := pgw.SinkDb.Exec(pgw.ctx, sqlDelete, foundDbnamesArr, metricName)
 			if err != nil {
 				logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
 			} else if cmdTag.RowsAffected() > 0 {
 				logger.Infof("Removed %d stale entries from all_distinct_dbname_metrics listing table for metric: %s", cmdTag.RowsAffected(), metricName)
 			}
-			cmdTag, err = pgw.MetricDb.Exec(pgw.ctx, sqlAdd, foundDbnamesArr, metricName)
+			cmdTag, err = pgw.SinkDb.Exec(pgw.ctx, sqlAdd, foundDbnamesArr, metricName)
 			if err != nil {
 				logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
 			} else if cmdTag.RowsAffected() > 0 {
@@ -519,13 +517,13 @@ func (pgw *PostgresWriter) UniqueDbnamesListingMaintainer() {
 
 func (pgw *PostgresWriter) DropOldTimePartitions(metricAgeDaysThreshold int) (res int, err error) {
 	sqlOldPart := `select admin.drop_old_time_partitions($1, $2)`
-	err = pgw.MetricDb.QueryRow(pgw.ctx, sqlOldPart, metricAgeDaysThreshold, false).Scan(&res)
+	err = pgw.SinkDb.QueryRow(pgw.ctx, sqlOldPart, metricAgeDaysThreshold, false).Scan(&res)
 	return
 }
 
 func (pgw *PostgresWriter) GetOldTimePartitions(metricAgeDaysThreshold int) ([]string, error) {
 	sqlGetOldParts := `select admin.get_old_time_partitions($1)`
-	rows, err := pgw.MetricDb.Query(pgw.ctx, sqlGetOldParts, metricAgeDaysThreshold)
+	rows, err := pgw.SinkDb.Query(pgw.ctx, sqlGetOldParts, metricAgeDaysThreshold)
 	if err == nil {
 		return pgx.CollectRows(rows, pgx.RowTo[string])
 	}
@@ -538,6 +536,6 @@ func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric stri
 			where not exists (
 				select * from admin.all_distinct_dbname_metrics where dbname = $1 and metric = $2
 			)`
-	_, err := pgw.MetricDb.Exec(pgw.ctx, sql, dbUnique, metric)
+	_, err := pgw.SinkDb.Exec(pgw.ctx, sql, dbUnique, metric)
 	return err
 }

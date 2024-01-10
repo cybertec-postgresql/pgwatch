@@ -21,9 +21,7 @@ type PrometheusWriter struct {
 	ctx                               context.Context
 	lastScrapeErrors                  prometheus.Gauge
 	totalScrapes, totalScrapeFailures prometheus.Counter
-	AddRealDbname                     bool
 	RealDbnameField                   string
-	AddSystemIdentifier               bool
 	SystemIdentifierField             string
 	PrometheusNamespace               string
 }
@@ -256,10 +254,10 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Metri
 			}
 		}
 
-		if promw.AddRealDbname && promw.RealDbnameField != "" && msg.RealDbname != "" {
+		if promw.RealDbnameField != "" && msg.RealDbname != "" {
 			labels[promw.RealDbnameField] = msg.RealDbname
 		}
-		if promw.AddSystemIdentifier && promw.SystemIdentifierField != "" && msg.SystemIdentifier != "" {
+		if promw.SystemIdentifierField != "" && msg.SystemIdentifier != "" {
 			labels[promw.SystemIdentifierField] = msg.SystemIdentifier
 		}
 

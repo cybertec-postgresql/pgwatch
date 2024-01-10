@@ -27,7 +27,7 @@ type MultiWriter struct {
 	sync.Mutex
 }
 
-func NewMultiWriter(ctx context.Context, opts *config.Options) (*MultiWriter, error) {
+func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs *metrics.MetricVersionDefs) (*MultiWriter, error) {
 	logger := log.GetLogger(ctx)
 	mw := &MultiWriter{}
 	for _, f := range opts.Metric.JSONStorageFile {
@@ -40,10 +40,7 @@ func NewMultiWriter(ctx context.Context, opts *config.Options) (*MultiWriter, er
 	}
 
 	for _, connstr := range opts.Metric.PGMetricStoreConnStr {
-		pgw, err := NewPostgresWriter(ctx, connstr,
-			opts.Metric.RealDbnameField,
-			opts.Metric.SystemIdentifierField,
-			opts.Metric.PGRetentionDays)
+		pgw, err := NewPostgresWriter(ctx, connstr, opts, metricDefs)
 		if err != nil {
 			return nil, err
 		}

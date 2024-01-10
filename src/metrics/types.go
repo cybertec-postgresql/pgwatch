@@ -40,6 +40,8 @@ type MetricProperties struct {
 	CallsHelperFunctions bool
 }
 
+type MetricVersionDefs map[string]map[uint]MetricProperties
+
 type MetricEntry map[string]any
 type MetricData []map[string]any
 
