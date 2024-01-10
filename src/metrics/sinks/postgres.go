@@ -21,6 +21,7 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options
 	pgw = &PostgresWriter{
 		ctx:        ctx,
 		MetricDefs: metricDefs,
+		opts:       opts,
 	}
 	if pgw.SinkDb, err = db.InitAndTestMetricStoreConnection(ctx, connstr); err != nil {
 		return
@@ -32,7 +33,7 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options
 	if err = pgw.EnsureBuiltinMetricDummies(); err != nil {
 		return
 	}
-	go pgw.OldPostgresMetricsDeleter(opts.Metric.PGRetentionDays)
+	go pgw.OldPostgresMetricsDeleter()
 	go pgw.UniqueDbnamesListingMaintainer()
 	return
 }
@@ -372,7 +373,8 @@ func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[str
 	return nil
 }
 
-func (pgw *PostgresWriter) OldPostgresMetricsDeleter(metricAgeDaysThreshold int) {
+func (pgw *PostgresWriter) OldPostgresMetricsDeleter() {
+	metricAgeDaysThreshold := pgw.opts.Metric.PGRetentionDays
 	if metricAgeDaysThreshold <= 0 {
 		return
 	}

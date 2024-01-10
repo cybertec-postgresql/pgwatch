@@ -31,7 +31,7 @@ func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs *metri
 	logger := log.GetLogger(ctx)
 	mw := &MultiWriter{}
 	for _, f := range opts.Metric.JSONStorageFile {
-		jw, err := NewJSONWriter(ctx, f, opts.Metric.RealDbnameField, opts.Metric.SystemIdentifierField)
+		jw, err := NewJSONWriter(ctx, f)
 		if err != nil {
 			return nil, err
 		}

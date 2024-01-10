@@ -16,23 +16,19 @@ var (
 )
 
 type JSONWriter struct {
-	ctx                   context.Context
-	RealDbnameField       string
-	SystemIdentifierField string
-	filename              string
+	ctx      context.Context
+	filename string
 }
 
-func NewJSONWriter(ctx context.Context, fname, fieldDB, fieldSysID string) (*JSONWriter, error) {
+func NewJSONWriter(ctx context.Context, fname string) (*JSONWriter, error) {
 	if jf, err := os.Create(fname); err != nil {
 		return nil, err
 	} else if err = jf.Close(); err != nil {
 		return nil, err
 	}
 	return &JSONWriter{
-		ctx:                   ctx,
-		filename:              fname,
-		RealDbnameField:       fieldDB,
-		SystemIdentifierField: fieldSysID,
+		ctx:      ctx,
+		filename: fname,
 	}, nil
 }
 
@@ -55,12 +51,6 @@ func (jw *JSONWriter) Write(msgs []metrics.MetricStoreMessage) error {
 			"data":        msg.Data,
 			"dbname":      msg.DBName,
 			"custom_tags": msg.CustomTags,
-		}
-		if jw.RealDbnameField != "" && msg.RealDbname != "" {
-			dataRow[jw.RealDbnameField] = msg.RealDbname
-		}
-		if jw.SystemIdentifierField != "" && msg.SystemIdentifier != "" {
-			dataRow[jw.SystemIdentifierField] = msg.SystemIdentifier
 		}
 		err = enc.Encode(dataRow)
 		if err != nil {
