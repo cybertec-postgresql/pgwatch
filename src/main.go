@@ -891,15 +891,15 @@ func AddDbnameSysinfoIfNotExistsToQueryResultData(msg MetricFetchMessage, data m
 	logger.Debugf("Enriching all rows of [%s:%s] with sysinfo (%s) / real dbname (%s) if set. ", msg.DBUniqueName, msg.MetricName, ver.SystemIdentifier, ver.RealDbname)
 	for _, dr := range data {
 		if opts.Metric.RealDbnameField > "" && ver.RealDbname > "" {
-			old, ok := dr[tagPrefix+opts.Metric.RealDbnameField]
+			old, ok := dr[opts.Metric.RealDbnameField]
 			if !ok || old == "" {
-				dr[tagPrefix+opts.Metric.RealDbnameField] = ver.RealDbname
+				dr[opts.Metric.RealDbnameField] = ver.RealDbname
 			}
 		}
 		if opts.Metric.SystemIdentifierField > "" && ver.SystemIdentifier > "" {
-			old, ok := dr[tagPrefix+opts.Metric.SystemIdentifierField]
+			old, ok := dr[opts.Metric.SystemIdentifierField]
 			if !ok || old == "" {
-				dr[tagPrefix+opts.Metric.SystemIdentifierField] = ver.SystemIdentifier
+				dr[opts.Metric.SystemIdentifierField] = ver.SystemIdentifier
 			}
 		}
 		enrichedData = append(enrichedData, dr)
