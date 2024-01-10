@@ -25,7 +25,7 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options
 	if pgw.SinkDb, err = db.InitAndTestMetricStoreConnection(ctx, connstr); err != nil {
 		return
 	}
-	if pgw.MetricSchema, err = db.GetMetricSchemaType(ctx, pgw.SinkDb); err != nil {
+	if pgw.MetricSchema, err = metrics.GetMetricSchemaType(ctx, pgw.SinkDb); err != nil {
 		pgw.SinkDb.Close()
 		return
 	}
@@ -40,7 +40,7 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options
 type PostgresWriter struct {
 	ctx          context.Context
 	SinkDb       db.PgxPoolIface
-	MetricSchema db.MetricSchemaType
+	MetricSchema metrics.MetricSchemaType
 	MetricDefs   *metrics.MetricVersionDefs
 	opts         *config.Options
 }
@@ -160,7 +160,7 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
 
 			rowsBatched++
 
-			if pgw.MetricSchema == db.MetricSchemaTimescale {
+			if pgw.MetricSchema == metrics.MetricSchemaTimescale {
 				// set min/max timestamps to check/create partitions
 				bounds, ok := pgPartBounds[msg.MetricName]
 				if !ok || (ok && epochTime.Before(bounds.StartTime)) {
@@ -171,7 +171,7 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
 					bounds.EndTime = epochTime
 					pgPartBounds[msg.MetricName] = bounds
 				}
-			} else if pgw.MetricSchema == db.MetricSchemaPostgres {
+			} else if pgw.MetricSchema == metrics.MetricSchemaPostgres {
 				_, ok := pgPartBoundsDbName[msg.MetricName]
 				if !ok {
 					pgPartBoundsDbName[msg.MetricName] = make(map[string]ExistingPartitionInfo)
@@ -189,9 +189,9 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
 		}
 	}
 
-	if pgw.MetricSchema == db.MetricSchemaPostgres {
+	if pgw.MetricSchema == metrics.MetricSchemaPostgres {
 		err = pgw.EnsureMetricDbnameTime(pgPartBoundsDbName, forceRecreatePGMetricPartitions)
-	} else if pgw.MetricSchema == db.MetricSchemaTimescale {
+	} else if pgw.MetricSchema == metrics.MetricSchemaTimescale {
 		err = pgw.EnsureMetricTimescale(pgPartBounds, forceRecreatePGMetricPartitions)
 	} else {
 		logger.Fatal("should never happen...")
@@ -385,14 +385,14 @@ func (pgw *PostgresWriter) OldPostgresMetricsDeleter(metricAgeDaysThreshold int)
 	}
 
 	for {
-		if pgw.MetricSchema == db.MetricSchemaTimescale {
+		if pgw.MetricSchema == metrics.MetricSchemaTimescale {
 			partsDropped, err := pgw.DropOldTimePartitions(metricAgeDaysThreshold)
 			if err != nil {
 				logger.Errorf("Failed to drop old partitions (>%d days) from Postgres: %v", metricAgeDaysThreshold, err)
 				continue
 			}
 			logger.Infof("Dropped %d old metric partitions...", partsDropped)
-		} else if pgw.MetricSchema == db.MetricSchemaPostgres {
+		} else if pgw.MetricSchema == metrics.MetricSchemaPostgres {
 			partsToDrop, err := pgw.GetOldTimePartitions(metricAgeDaysThreshold)
 			if err != nil {
 				logger.Errorf("Failed to get a listing of old (>%d days) time partitions from Postgres metrics DB - check that the admin.get_old_time_partitions() function is rolled out: %v", metricAgeDaysThreshold, err)

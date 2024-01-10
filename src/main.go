@@ -241,7 +241,7 @@ var undersizedDBsLock = sync.RWMutex{}
 var recoveryIgnoredDBs = make(map[string]bool) // DBs in recovery state and OnlyIfMaster specified in config
 var recoveryIgnoredDBsLock = sync.RWMutex{}
 
-var MetricSchema db.MetricSchemaType
+var MetricSchema metrics.MetricSchemaType
 
 var logger log.LoggerHookerIface
 
@@ -1928,7 +1928,7 @@ func main() {
 			if fileBasedMetrics {
 				metricDefs, renamingDefs, err = metrics.ReadMetricsFromFolder(mainContext, opts.Metric.MetricsFolder)
 			} else {
-				metricDefs, renamingDefs, err = db.ReadMetricsFromPostgres(mainContext, configDb)
+				metricDefs, renamingDefs, err = metrics.ReadMetricsFromPostgres(mainContext, configDb)
 			}
 			if err == nil {
 				UpdateMetricDefinitions(metricDefs, renamingDefs)

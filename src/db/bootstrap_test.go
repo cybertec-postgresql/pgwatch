@@ -32,22 +32,6 @@ func TestGetTableColumns(t *testing.T) {
 	assert.Equal(t, []string{"col1", "col2"}, cols)
 }
 
-func TestGetMetricSchemaType(t *testing.T) {
-	conn, err := pgxmock.NewPool()
-	assert.NoError(t, err)
-
-	conn.ExpectQuery("SELECT schema_type").
-		WillReturnError(errors.New("expected"))
-	_, err = db.GetMetricSchemaType(ctx, conn)
-	assert.Error(t, err)
-
-	conn.ExpectQuery("SELECT schema_type").
-		WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
-	schemaType, err := db.GetMetricSchemaType(context.Background(), conn)
-	assert.NoError(t, err)
-	assert.Equal(t, db.MetricSchemaTimescale, schemaType)
-}
-
 func TestExecuteSchemaScripts(t *testing.T) {
 	conn, err := pgxmock.NewPool()
 	assert.NoError(t, err)
