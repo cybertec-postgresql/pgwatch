@@ -17,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options, metricDefs *metrics.MetricVersionDefs) (pgw *PostgresWriter, err error) {
+func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options, metricDefs metrics.MetricVersionDefs) (pgw *PostgresWriter, err error) {
 	pgw = &PostgresWriter{
 		ctx:        ctx,
 		MetricDefs: metricDefs,
@@ -42,7 +42,7 @@ type PostgresWriter struct {
 	ctx          context.Context
 	SinkDb       db.PgxPoolIface
 	MetricSchema metrics.MetricSchemaType
-	MetricDefs   *metrics.MetricVersionDefs
+	MetricDefs   metrics.MetricVersionDefs
 	opts         *config.Options
 }
 
