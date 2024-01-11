@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch3/metrics/sinks"
+	"github.com/cybertec-postgresql/pgwatch3/sinks"
 	"github.com/pashagolub/pgxmock/v3"
 	"github.com/stretchr/testify/assert"
 )
