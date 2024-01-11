@@ -21,10 +21,6 @@ type PrometheusWriter struct {
 	ctx                               context.Context
 	lastScrapeErrors                  prometheus.Gauge
 	totalScrapes, totalScrapeFailures prometheus.Counter
-	AddRealDbname                     bool
-	RealDbnameField                   string
-	AddSystemIdentifier               bool
-	SystemIdentifierField             string
 	PrometheusNamespace               string
 }
 
@@ -35,10 +31,8 @@ const promScrapingStalenessHardDropLimit = time.Minute * time.Duration(10)
 
 func NewPrometheusWriter(ctx context.Context, opts *config.Options) (promw *PrometheusWriter, err error) {
 	promw = &PrometheusWriter{
-		ctx:                   ctx,
-		RealDbnameField:       opts.Metric.RealDbnameField,
-		SystemIdentifierField: opts.Metric.SystemIdentifierField,
-		PrometheusNamespace:   opts.Metric.PrometheusNamespace,
+		ctx:                 ctx,
+		PrometheusNamespace: opts.Metric.PrometheusNamespace,
 		lastScrapeErrors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: opts.Metric.PrometheusNamespace,
 			Name:      "exporter_last_scrape_errors",
@@ -254,13 +248,6 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Metri
 			for k, v := range msg.CustomTags {
 				labels[k] = fmt.Sprintf("%v", v)
 			}
-		}
-
-		if promw.AddRealDbname && promw.RealDbnameField != "" && msg.RealDbname != "" {
-			labels[promw.RealDbnameField] = msg.RealDbname
-		}
-		if promw.AddSystemIdentifier && promw.SystemIdentifierField != "" && msg.SystemIdentifier != "" {
-			labels[promw.SystemIdentifierField] = msg.SystemIdentifier
 		}
 
 		labelKeys := make([]string, 0)
