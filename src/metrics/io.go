@@ -15,23 +15,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type MetricSchemaType int
-
-const (
-	MetricSchemaPostgres MetricSchemaType = iota
-	MetricSchemaTimescale
-)
-
-func GetMetricSchemaType(ctx context.Context, conn db.PgxIface) (metricSchema MetricSchemaType, err error) {
-	var isTs bool
-	metricSchema = MetricSchemaPostgres
-	sqlSchemaType := `SELECT schema_type = 'timescale' FROM admin.storage_schema_type`
-	if err = conn.QueryRow(ctx, sqlSchemaType).Scan(&isTs); err == nil && isTs {
-		metricSchema = MetricSchemaTimescale
-	}
-	return
-}
-
 func versionToInt(v string) uint {
 	if len(v) == 0 {
 		return 0
