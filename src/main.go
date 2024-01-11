@@ -230,8 +230,6 @@ var undersizedDBsLock = sync.RWMutex{}
 var recoveryIgnoredDBs = make(map[string]bool) // DBs in recovery state and OnlyIfMaster specified in config
 var recoveryIgnoredDBsLock = sync.RWMutex{}
 
-var MetricSchema metrics.MetricSchemaType
-
 var logger log.LoggerHookerIface
 
 // VersionToInt parses a given version and returns an integer  or
@@ -1287,6 +1285,7 @@ func IsInDisabledTimeDayRange(localTime time.Time, metricAttrsDisabledDays strin
 func UpdateMetricDefinitions(newMetrics map[string]map[uint]metrics.MetricProperties, _ map[string]string) {
 	metricDefMapLock.Lock()
 	metricDefinitionMap = newMetrics
+
 	metricDefMapLock.Unlock()
 	logger.Debug("metrics definitions refreshed - nr. found:", len(newMetrics))
 }

@@ -1,29 +1,32 @@
-package metrics_test
+package sinks_test
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch3/metrics"
+	"github.com/cybertec-postgresql/pgwatch3/metrics/sinks"
 	"github.com/pashagolub/pgxmock/v3"
 	"github.com/stretchr/testify/assert"
 )
 
 var ctx = context.Background()
 
-func TestGetMetricSchemaType(t *testing.T) {
+func TestReadMetricSchemaType(t *testing.T) {
 	conn, err := pgxmock.NewPool()
 	assert.NoError(t, err)
 
+	pgw := sinks.PostgresWriter{
+		Ctx:    ctx,
+		SinkDb: conn,
+	}
+
 	conn.ExpectQuery("SELECT schema_type").
 		WillReturnError(errors.New("expected"))
-	_, err = metrics.GetMetricSchemaType(ctx, conn)
-	assert.Error(t, err)
+	assert.Error(t, pgw.ReadMetricSchemaType())
 
 	conn.ExpectQuery("SELECT schema_type").
 		WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
-	schemaType, err := metrics.GetMetricSchemaType(context.Background(), conn)
-	assert.NoError(t, err)
-	assert.Equal(t, metrics.MetricSchemaTimescale, schemaType)
+	assert.NoError(t, pgw.ReadMetricSchemaType())
+	assert.Equal(t, sinks.DbStorageSchemaTimescale, pgw.MetricSchema)
 }
