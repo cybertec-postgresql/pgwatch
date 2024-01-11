@@ -10,23 +10,19 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 )
 
-const (
-	DSjson       = "json"
-	DSpostgres   = "postgres"
-	DSprometheus = "prometheus"
-)
-
 // Writer is an interface that writes metrics values
 type Writer interface {
 	SyncMetric(dbUnique, metricName, op string) error
 	Write(msgs []metrics.MetricStoreMessage) error
 }
 
+// MultiWriter ensures the simultaneous storage of data in several storages.
 type MultiWriter struct {
 	writers []Writer
 	sync.Mutex
 }
 
+// NewMultiWriter creates and returns new instance of MultiWriter struct.
 func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs metrics.MetricVersionDefs) (*MultiWriter, error) {
 	logger := log.GetLogger(ctx)
 	mw := &MultiWriter{}
