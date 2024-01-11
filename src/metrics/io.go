@@ -265,6 +265,7 @@ func ReadPresetMetricsConfigFromFolder(folder string) (pmm map[string]map[string
 	if err = yaml.Unmarshal(presetMetrics, &pcs); err != nil {
 		return pmm, err
 	}
+	pmm = make(map[string]map[string]float64, len(pcs))
 	for _, pc := range pcs {
 		pmm[pc.Name] = pc.Metrics
 	}
