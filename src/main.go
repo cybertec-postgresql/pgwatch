@@ -16,7 +16,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
 	"path/filepath"
 	"regexp"
 	"runtime/debug"
@@ -92,12 +91,6 @@ type HostConfigPerMetricDisabledTimes struct { // metric gathering override per 
 	DisabledDays  string   `yaml:"disabled_days"`
 }
 
-type PresetConfig struct {
-	Name        string
-	Description string
-	Metrics     map[string]float64
-}
-
 type ControlMessage struct {
 	Action string // START, STOP, PAUSE
 	Config map[string]float64
@@ -144,11 +137,7 @@ const (
 	persistQueueMaxSize                           = 10000           // storage queue max elements. when reaching the limit, older metrics will be dropped.
 )
 
-// actual requirements depend a lot of metric type and nr. of obects in schemas,
-// but 100k should be enough for 24h, assuming 5 hosts monitored with "exhaustive" preset config
 const (
-	presetConfigYAMLFile = "preset-configs.yaml"
-
 	gathererStatusStart     = "START"
 	gathererStatusStop      = "STOP"
 	metricdbIdent           = "metricDb"
@@ -1332,29 +1321,6 @@ func jsonTextToStringMap(jsonText string) (map[string]string, error) {
 	return retmap, nil
 }
 
-// Expects "preset metrics" definition file named preset-config.yaml to be present in provided --metrics folder
-func ReadPresetMetricsConfigFromFolder(folder string, _ bool) (map[string]map[string]float64, error) {
-	pmm := make(map[string]map[string]float64)
-
-	logger.Infof("Reading preset metric config from path %s ...", path.Join(folder, presetConfigYAMLFile))
-	presetMetrics, err := os.ReadFile(path.Join(folder, presetConfigYAMLFile))
-	if err != nil {
-		logger.Errorf("Failed to read preset metric config definition at: %s", folder)
-		return pmm, err
-	}
-	pcs := make([]PresetConfig, 0)
-	err = yaml.Unmarshal(presetMetrics, &pcs)
-	if err != nil {
-		logger.Errorf("Unmarshaling error reading preset metric config: %v", err)
-		return pmm, err
-	}
-	for _, pc := range pcs {
-		pmm[pc.Name] = pc.Metrics
-	}
-	logger.Infof("%d preset metric definitions found", len(pcs))
-	return pmm, err
-}
-
 func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md MonitoredDatabase) (MonitoredDatabase, int) {
 	var changed int
 
@@ -1673,7 +1639,7 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []MonitoredDa
 				"continuous_discovery_prefix": mdb.DBUniqueNameOrig,
 			}
 			for k, v := range mdb.CustomTags {
-				db["tag_"+k] = v
+				db[tagPrefix+k] = v
 			}
 			msms = append(msms, metrics.MetricStoreMessage{
 				DBName:     mdb.DBUniqueName,
@@ -1942,7 +1908,7 @@ func main() {
 			logger.Info("starting MetricsBatcher...")
 			go MetricsBatcher(mainContext, opts.BatchingDelayMs, bufferedPersistCh, persistCh)
 		}
-		if metricsWriter, err = sinks.NewMultiWriter(mainContext, opts, &metricDefinitionMap); err != nil {
+		if metricsWriter, err = sinks.NewMultiWriter(mainContext, opts, metricDefinitionMap); err != nil {
 			logger.Fatal(err)
 		}
 		go metricsWriter.WriteMetrics(mainContext, persistCh)
@@ -1957,16 +1923,18 @@ func main() {
 		gatherersShutDown := 0
 
 		if fileBasedMetrics {
-			pmc, err := ReadPresetMetricsConfigFromFolder(opts.Metric.MetricsFolder, false)
+			pmc, err := metrics.ReadPresetMetricsConfigFromFolder(opts.Metric.MetricsFolder)
 			if err != nil {
 				if firstLoop {
-					logger.Fatalf("Could not read preset metric config from \"%s\": %s", path.Join(opts.Metric.MetricsFolder, presetConfigYAMLFile), err)
+					logger.Fatalf("Could not read preset metric config : %w", err)
 				} else {
-					logger.Errorf("Could not read preset metric config from \"%s\": %s", path.Join(opts.Metric.MetricsFolder, presetConfigYAMLFile), err)
+					logger.Errorf("Could not read preset metric config : %w", err)
 				}
 			} else {
 				presetMetricDefMap = pmc
+				logger.Infof("%d preset metric definitions found", len(pmc))
 				logger.Debugf("Loaded preset metric config: %#v", pmc)
+
 			}
 
 			if opts.IsAdHocMode() {

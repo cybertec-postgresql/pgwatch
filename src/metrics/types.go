@@ -64,6 +64,13 @@ type MetricStoreMessagePostgres struct {
 	TagData map[string]any
 }
 
+type PresetConfig struct {
+	Name        string
+	Description string
+	Metrics     map[string]float64
+}
+
 const (
 	FileBasedMetricHelpersDir = "00_helpers"
+	PresetConfigYAMLFile      = "preset-configs.yaml"
 )
