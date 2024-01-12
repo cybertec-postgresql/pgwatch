@@ -1,9 +1,5 @@
 package metrics
 
-import (
-	"time"
-)
-
 type MetricPrometheusAttrs struct {
 	PrometheusGaugeColumns    []string `yaml:"prometheus_gauge_columns"`
 	PrometheusIgnoredColumns  []string `yaml:"prometheus_ignored_columns"` // for cases where we don't want some columns to be exposed in Prom mode
@@ -42,29 +38,21 @@ type MetricProperties struct {
 
 type MetricVersionDefs map[string]map[uint]MetricProperties
 
-type MetricEntry map[string]any
-type MetricData []map[string]any
+type Measurement map[string]any
+type Measurements []map[string]any
 
-type MetricStoreMessage struct {
-	DBName                  string
-	DBType                  string
-	MetricName              string
-	CustomTags              map[string]string
-	Data                    MetricData
-	MetricDefinitionDetails MetricProperties
-	RealDbname              string
-	SystemIdentifier        string
+type MeasurementMessage struct {
+	DBName           string
+	DBType           string
+	MetricName       string
+	CustomTags       map[string]string
+	Data             Measurements
+	MetricDef        MetricProperties
+	RealDbname       string
+	SystemIdentifier string
 }
 
-type MetricStoreMessagePostgres struct {
-	Time    time.Time
-	DBName  string
-	Metric  string
-	Data    map[string]any
-	TagData map[string]any
-}
-
-type PresetConfig struct {
+type Preset struct {
 	Name        string
 	Description string
 	Metrics     map[string]float64

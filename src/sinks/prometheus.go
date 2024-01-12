@@ -63,7 +63,7 @@ func NewPrometheusWriter(ctx context.Context, opts *config.Options) (promw *Prom
 	return
 }
 
-func (promw *PrometheusWriter) Write(msgs []metrics.MetricStoreMessage) error {
+func (promw *PrometheusWriter) Write(msgs []metrics.MeasurementMessage) error {
 	if len(msgs) == 0 || len(msgs[0].Data) == 0 { // no batching in async prom mode, so using 0 indexing ok
 		return nil
 	}
@@ -73,10 +73,10 @@ func (promw *PrometheusWriter) Write(msgs []metrics.MetricStoreMessage) error {
 }
 
 // Async Prom cache
-var promAsyncMetricCache = make(map[string]map[string][]metrics.MetricStoreMessage) // [dbUnique][metric]lastly_fetched_data
+var promAsyncMetricCache = make(map[string]map[string][]metrics.MeasurementMessage) // [dbUnique][metric]lastly_fetched_data
 var promAsyncMetricCacheLock = sync.RWMutex{}
 
-func (promw *PrometheusWriter) PromAsyncCacheAddMetricData(dbUnique, metric string, msgArr []metrics.MetricStoreMessage) { // cache structure: [dbUnique][metric]lastly_fetched_data
+func (promw *PrometheusWriter) PromAsyncCacheAddMetricData(dbUnique, metric string, msgArr []metrics.MeasurementMessage) { // cache structure: [dbUnique][metric]lastly_fetched_data
 	promAsyncMetricCacheLock.Lock()
 	defer promAsyncMetricCacheLock.Unlock()
 	if _, ok := promAsyncMetricCache[dbUnique]; ok {
@@ -88,7 +88,7 @@ func (promw *PrometheusWriter) PromAsyncCacheInitIfRequired(dbUnique, _ string) 
 	promAsyncMetricCacheLock.Lock()
 	defer promAsyncMetricCacheLock.Unlock()
 	if _, ok := promAsyncMetricCache[dbUnique]; !ok {
-		metricMap := make(map[string][]metrics.MetricStoreMessage)
+		metricMap := make(map[string][]metrics.MeasurementMessage)
 		promAsyncMetricCache[dbUnique] = metricMap
 	}
 }
@@ -157,7 +157,7 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 func (promw *PrometheusWriter) setInstanceUpDownState(ch chan<- prometheus.Metric, dbName string) {
 	logger := log.GetLogger(promw.ctx)
 	// vme, err := db.DBGetPGVersion(promw.ctx, dbName, md.DBType, !promw.asyncMode) // in async mode 2min cache can mask smaller downtimes!
-	data := make(metrics.MetricEntry)
+	data := make(metrics.Measurement)
 	// if err != nil {
 	// 	data[promInstanceUpStateMetric] = 0
 	// 	logger.Errorf("[%s:%s] could not determine instance version, reporting as 'down': %v", md.DBUniqueName, promInstanceUpStateMetric, err)
@@ -167,12 +167,12 @@ func (promw *PrometheusWriter) setInstanceUpDownState(ch chan<- prometheus.Metri
 	data[promInstanceUpStateMetric] = 1
 	data[epochColumnName] = time.Now().UnixNano()
 
-	pm := promw.MetricStoreMessageToPromMetrics(metrics.MetricStoreMessage{
+	pm := promw.MetricStoreMessageToPromMetrics(metrics.MeasurementMessage{
 		DBName:           dbName,
 		DBType:           "postgres", //md.DBType,
 		MetricName:       promInstanceUpStateMetric,
 		CustomTags:       nil, //md.CustomTags,
-		Data:             metrics.MetricData{data},
+		Data:             metrics.Measurements{data},
 		RealDbname:       dbName, //vme.RealDbname,
 		SystemIdentifier: dbName, //vme.SystemIdentifier,
 	})
@@ -184,7 +184,7 @@ func (promw *PrometheusWriter) setInstanceUpDownState(ch chan<- prometheus.Metri
 	}
 }
 
-func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.MetricStoreMessage) []prometheus.Metric {
+func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.MeasurementMessage) []prometheus.Metric {
 	promMetrics := make([]prometheus.Metric, 0)
 	logger := log.GetLogger(promw.ctx)
 	var epochTime time.Time
@@ -261,10 +261,10 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Metri
 			skip := false
 			fieldPromDataType := prometheus.CounterValue
 
-			if msg.MetricDefinitionDetails.PrometheusAttrs.PrometheusAllGaugeColumns {
+			if msg.MetricDef.PrometheusAttrs.PrometheusAllGaugeColumns {
 				fieldPromDataType = prometheus.GaugeValue
 			} else {
-				for _, gaugeColumns := range msg.MetricDefinitionDetails.PrometheusAttrs.PrometheusGaugeColumns {
+				for _, gaugeColumns := range msg.MetricDef.PrometheusAttrs.PrometheusGaugeColumns {
 					if gaugeColumns == field {
 						fieldPromDataType = prometheus.GaugeValue
 						break
@@ -275,7 +275,7 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Metri
 				fieldPromDataType = prometheus.GaugeValue
 			}
 
-			for _, ignoredColumns := range msg.MetricDefinitionDetails.PrometheusAttrs.PrometheusIgnoredColumns {
+			for _, ignoredColumns := range msg.MetricDef.PrometheusAttrs.PrometheusIgnoredColumns {
 				if ignoredColumns == field {
 					skip = true
 					break

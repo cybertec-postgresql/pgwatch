@@ -27,7 +27,7 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options
 		Ctx:        ctx,
 		MetricDefs: metricDefs,
 		opts:       opts,
-		input:      make(chan []metrics.MetricStoreMessage, cacheLimit),
+		input:      make(chan []metrics.MeasurementMessage, cacheLimit),
 		lastError:  make(chan error),
 	}
 	if pgw.SinkDb, err = db.InitAndTestMetricStoreConnection(ctx, connstr); err != nil {
@@ -52,13 +52,21 @@ type PostgresWriter struct {
 	MetricSchema DbStorageSchemaType
 	MetricDefs   metrics.MetricVersionDefs
 	opts         *config.Options
-	input        chan []metrics.MetricStoreMessage
+	input        chan []metrics.MeasurementMessage
 	lastError    chan error
 }
 
 type ExistingPartitionInfo struct {
 	StartTime time.Time
 	EndTime   time.Time
+}
+
+type MeasurementMessagePostgres struct {
+	Time    time.Time
+	DBName  string
+	Metric  string
+	Data    map[string]any
+	TagData map[string]any
 }
 
 type DbStorageSchemaType int
@@ -115,7 +123,7 @@ func (pgw *PostgresWriter) EnsureMetricDummy(metric string) (err error) {
 	return
 }
 
-func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
+func (pgw *PostgresWriter) Write(msgs []metrics.MeasurementMessage) error {
 	if pgw.Ctx.Err() != nil {
 		return nil
 	}
@@ -134,7 +142,7 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
 }
 
 func (pgw *PostgresWriter) poll() {
-	cache := make([]metrics.MetricStoreMessage, 0, cacheLimit)
+	cache := make([]metrics.MeasurementMessage, 0, cacheLimit)
 	cacheTimeout := pgw.opts.BatchingDelay
 	tick := time.NewTicker(cacheTimeout)
 	for {
@@ -162,13 +170,13 @@ func (pgw *PostgresWriter) poll() {
 	}
 }
 
-func (pgw *PostgresWriter) write(msgs []metrics.MetricStoreMessage) {
+func (pgw *PostgresWriter) write(msgs []metrics.MeasurementMessage) {
 	if len(msgs) == 0 {
 		return
 	}
 	logger := log.GetLogger(pgw.Ctx)
 	tsWarningPrinted := false
-	metricsToStorePerMetric := make(map[string][]metrics.MetricStoreMessagePostgres)
+	metricsToStorePerMetric := make(map[string][]MeasurementMessagePostgres)
 	rowsBatched := 0
 	totalRows := 0
 	pgPartBounds := make(map[string]ExistingPartitionInfo)                  // metric=min/max
@@ -220,16 +228,16 @@ func (pgw *PostgresWriter) write(msgs []metrics.MetricStoreMessage) {
 				epochTime = time.Unix(0, epochNs)
 			}
 
-			var metricsArr []metrics.MetricStoreMessagePostgres
+			var metricsArr []MeasurementMessagePostgres
 			var ok bool
 
 			metricNameTemp := msg.MetricName
 
 			metricsArr, ok = metricsToStorePerMetric[metricNameTemp]
 			if !ok {
-				metricsToStorePerMetric[metricNameTemp] = make([]metrics.MetricStoreMessagePostgres, 0)
+				metricsToStorePerMetric[metricNameTemp] = make([]MeasurementMessagePostgres, 0)
 			}
-			metricsArr = append(metricsArr, metrics.MetricStoreMessagePostgres{Time: epochTime, DBName: msg.DBName,
+			metricsArr = append(metricsArr, MeasurementMessagePostgres{Time: epochTime, DBName: msg.DBName,
 				Metric: msg.MetricName, Data: fields, TagData: tags})
 			metricsToStorePerMetric[metricNameTemp] = metricsArr
 

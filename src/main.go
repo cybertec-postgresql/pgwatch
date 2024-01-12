@@ -208,7 +208,7 @@ var PGDummyMetricTablesLock = sync.RWMutex{}
 var failedInitialConnectHosts = make(map[string]bool) // hosts that couldn't be connected to even once
 
 var lastMonitoredDBsUpdate time.Time
-var instanceMetricCache = make(map[string](metrics.MetricData)) // [dbUnique+metric]lastly_fetched_data
+var instanceMetricCache = make(map[string](metrics.Measurements)) // [dbUnique+metric]lastly_fetched_data
 var instanceMetricCacheLock = sync.RWMutex{}
 var instanceMetricCacheTimestamp = make(map[string]time.Time) // [dbUnique+metric]last_fetch_time
 var instanceMetricCacheTimestampLock = sync.RWMutex{}
@@ -525,8 +525,8 @@ func GetAllRecoMetricsForVersion(vme DBVersionMapEntry) map[string]metrics.Metri
 	return mvpMap
 }
 
-func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (metrics.MetricData, error) {
-	retData := make(metrics.MetricData, 0)
+func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (metrics.Measurements, error) {
+	retData := make(metrics.Measurements, 0)
 	startTimeEpochNs := time.Now().UnixNano()
 
 	recoMetrics := GetAllRecoMetricsForVersion(vme)
@@ -549,7 +549,7 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (metrics.MetricD
 		}
 	}
 	if len(retData) == 0 { // insert a dummy entry minimally so that Grafana can show at least a dropdown
-		dummy := make(metrics.MetricEntry)
+		dummy := make(metrics.Measurement)
 		dummy["tag_reco_topic"] = "dummy"
 		dummy["tag_object_name"] = "-"
 		dummy["recommendation"] = "no recommendations"
@@ -560,8 +560,8 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (metrics.MetricD
 	return retData, nil
 }
 
-func FilterPgbouncerData(data metrics.MetricData, databaseToKeep string, vme DBVersionMapEntry) metrics.MetricData {
-	filteredData := make(metrics.MetricData, 0)
+func FilterPgbouncerData(data metrics.Measurements, databaseToKeep string, vme DBVersionMapEntry) metrics.Measurements {
+	filteredData := make(metrics.Measurements, 0)
 
 	for _, dr := range data {
 		//log.Debugf("bouncer dr: %+v", dr)
@@ -596,13 +596,13 @@ func FilterPgbouncerData(data metrics.MetricData, databaseToKeep string, vme DBV
 	return filteredData
 }
 
-func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[string]map[string]string, storageCh chan<- []metrics.MetricStoreMessage, context string) ([]metrics.MetricStoreMessage, error) {
+func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[string]map[string]string, storageCh chan<- []metrics.MeasurementMessage, context string) ([]metrics.MeasurementMessage, error) {
 	var vme DBVersionMapEntry
 	var dbpgVersion uint
 	var err, firstErr error
 	var sql string
 	var retryWithSuperuserSQL = true
-	var data, cachedData metrics.MetricData
+	var data, cachedData metrics.Measurements
 	var md MonitoredDatabase
 	var fromCache, isCacheable bool
 
@@ -701,8 +701,8 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 
 			if msg.MetricName == specialMetricInstanceUp {
 				logger.WithError(err).Debugf("[%s:%s] failed to fetch metrics. marking instance as not up", msg.DBUniqueName, msg.MetricName)
-				data = make(metrics.MetricData, 1)
-				data[0] = metrics.MetricEntry{"epoch_ns": time.Now().UnixNano(), "is_up": 0} // should be updated if the "instance_up" metric definition is changed
+				data = make(metrics.Measurements, 1)
+				data[0] = metrics.Measurement{"epoch_ns": time.Now().UnixNano(), "is_up": 0} // should be updated if the "instance_up" metric definition is changed
 				goto send_to_storageChannel
 			}
 
@@ -763,12 +763,12 @@ send_to_storageChannel:
 		}
 		logger.Infof("[%s:%s] loaded %d rows from the instance cache", msg.DBUniqueName, msg.MetricName, len(cachedData))
 		atomic.AddUint64(&totalMetricsReusedFromCacheCounter, uint64(len(cachedData)))
-		return []metrics.MetricStoreMessage{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
-			MetricDefinitionDetails: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
+		return []metrics.MeasurementMessage{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
+			MetricDef: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
 	}
 	atomic.AddUint64(&totalMetricsFetchedCounter, uint64(len(data)))
-	return []metrics.MetricStoreMessage{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
-		MetricDefinitionDetails: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
+	return []metrics.MeasurementMessage{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
+		MetricDef: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
 
 }
 
@@ -784,8 +784,8 @@ func ClearDBUnreachableStateIfAny(dbUnique string) {
 	unreachableDBsLock.Unlock()
 }
 
-func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchMessage, maxAgeSeconds int64) metrics.MetricData {
-	var clonedData metrics.MetricData
+func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchMessage, maxAgeSeconds int64) metrics.Measurements {
+	var clonedData metrics.Measurements
 	instanceMetricCacheTimestampLock.RLock()
 	instanceMetricTS, ok := instanceMetricCacheTimestamp[msg.DBUniqueNameOrig+msg.MetricName]
 	instanceMetricCacheTimestampLock.RUnlock()
@@ -812,7 +812,7 @@ func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchMessage, maxAgeSec
 	return clonedData
 }
 
-func PutToInstanceCache(msg MetricFetchMessage, data metrics.MetricData) {
+func PutToInstanceCache(msg MetricFetchMessage, data metrics.Measurements) {
 	if len(data) == 0 {
 		return
 	}
@@ -834,8 +834,8 @@ func IsCacheableMetric(msg MetricFetchMessage, mvp metrics.MetricProperties) boo
 	return mvp.MetricAttrs.IsInstanceLevel
 }
 
-func AddDbnameSysinfoIfNotExistsToQueryResultData(msg MetricFetchMessage, data metrics.MetricData, ver DBVersionMapEntry) metrics.MetricData {
-	enrichedData := make(metrics.MetricData, 0)
+func AddDbnameSysinfoIfNotExistsToQueryResultData(msg MetricFetchMessage, data metrics.Measurements, ver DBVersionMapEntry) metrics.Measurements {
+	enrichedData := make(metrics.Measurements, 0)
 
 	logger.Debugf("Enriching all rows of [%s:%s] with sysinfo (%s) / real dbname (%s) if set. ", msg.DBUniqueName, msg.MetricName, ver.SystemIdentifier, ver.RealDbname)
 	for _, dr := range data {
@@ -856,7 +856,7 @@ func AddDbnameSysinfoIfNotExistsToQueryResultData(msg MetricFetchMessage, data m
 	return enrichedData
 }
 
-func StoreMetrics(metrics []metrics.MetricStoreMessage, storageCh chan<- []metrics.MetricStoreMessage) (int, error) {
+func StoreMetrics(metrics []metrics.MeasurementMessage, storageCh chan<- []metrics.MeasurementMessage) (int, error) {
 
 	if len(metrics) > 0 {
 		atomic.AddUint64(&totalDatasetsFetchedCounter, 1)
@@ -867,8 +867,8 @@ func StoreMetrics(metrics []metrics.MetricStoreMessage, storageCh chan<- []metri
 	return 0, nil
 }
 
-func deepCopyMetricData(data metrics.MetricData) metrics.MetricData {
-	newData := make(metrics.MetricData, len(data))
+func deepCopyMetricData(data metrics.Measurements) metrics.Measurements {
+	newData := make(metrics.Measurements, len(data))
 
 	for i, dr := range data {
 		newRow := make(map[string]any)
@@ -894,7 +894,7 @@ func deepCopyMetricDefinitionMap(mdm map[string]map[uint]metrics.MetricPropertie
 }
 
 // ControlMessage notifies of shutdown + interval change
-func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbType, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []metrics.MetricStoreMessage) {
+func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbType, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []metrics.MeasurementMessage) {
 	config := configMap
 	interval := config[metricName]
 	hostState := make(map[string]map[string]string)
@@ -933,7 +933,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 			l.Debugf("Ignoring fetch as metric disabled for current time range")
 			continue
 		}
-		var metricStoreMessages []metrics.MetricStoreMessage
+		var metricStoreMessages []metrics.MeasurementMessage
 		var err error
 		mfm := MetricFetchMessage{
 			DBUniqueName:        dbUniqueName,
@@ -982,11 +982,11 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 							if postmasterUptimeS.(int64) < lastUptimeS { // restart (or possibly also failover when host is routed) happened
 								message := "Detected server restart (or failover) of \"" + dbUniqueName + "\""
 								l.Warning(message)
-								detectedChangesSummary := make(metrics.MetricData, 0)
-								entry := metrics.MetricEntry{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
+								detectedChangesSummary := make(metrics.Measurements, 0)
+								entry := metrics.Measurement{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
 								detectedChangesSummary = append(detectedChangesSummary, entry)
 								metricStoreMessages = append(metricStoreMessages,
-									metrics.MetricStoreMessage{DBName: dbUniqueName, DBType: dbType,
+									metrics.MeasurementMessage{DBName: dbUniqueName, DBType: dbType,
 										MetricName: "object_changes", Data: detectedChangesSummary, CustomTags: metricStoreMessages[0].CustomTags})
 							}
 						}
@@ -1018,7 +1018,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 	}
 }
 
-func FetchStatsDirectlyFromOS(msg MetricFetchMessage, vme DBVersionMapEntry, mvp metrics.MetricProperties) ([]metrics.MetricStoreMessage, error) {
+func FetchStatsDirectlyFromOS(msg MetricFetchMessage, vme DBVersionMapEntry, mvp metrics.MetricProperties) ([]metrics.MeasurementMessage, error) {
 	var data []map[string]any
 	var err error
 
@@ -1038,11 +1038,11 @@ func FetchStatsDirectlyFromOS(msg MetricFetchMessage, vme DBVersionMapEntry, mvp
 	}
 
 	msm := DatarowsToMetricstoreMessage(data, msg, vme, mvp)
-	return []metrics.MetricStoreMessage{msm}, nil
+	return []metrics.MeasurementMessage{msm}, nil
 }
 
 // data + custom tags + counters
-func DatarowsToMetricstoreMessage(data metrics.MetricData, msg MetricFetchMessage, vme DBVersionMapEntry, mvp metrics.MetricProperties) metrics.MetricStoreMessage {
+func DatarowsToMetricstoreMessage(data metrics.Measurements, msg MetricFetchMessage, vme DBVersionMapEntry, mvp metrics.MetricProperties) metrics.MeasurementMessage {
 	md, err := GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
 	if err != nil {
 		logger.Errorf("Could not resolve DBUniqueName %s, cannot set custom attributes for gathered data: %v", msg.DBUniqueName, err)
@@ -1050,15 +1050,15 @@ func DatarowsToMetricstoreMessage(data metrics.MetricData, msg MetricFetchMessag
 
 	atomic.AddUint64(&totalMetricsFetchedCounter, uint64(len(data)))
 
-	return metrics.MetricStoreMessage{
-		DBName:                  msg.DBUniqueName,
-		DBType:                  msg.DBType,
-		MetricName:              msg.MetricName,
-		CustomTags:              md.CustomTags,
-		Data:                    data,
-		MetricDefinitionDetails: mvp,
-		RealDbname:              vme.RealDbname,
-		SystemIdentifier:        vme.SystemIdentifier,
+	return metrics.MeasurementMessage{
+		DBName:           msg.DBUniqueName,
+		DBType:           msg.DBType,
+		MetricName:       msg.MetricName,
+		CustomTags:       md.CustomTags,
+		Data:             data,
+		MetricDef:        mvp,
+		RealDbname:       vme.RealDbname,
+		SystemIdentifier: vme.SystemIdentifier,
 	}
 }
 
@@ -1587,13 +1587,13 @@ func decrypt(dbUnique, passphrase, ciphertext string) string {
 	return string(data)
 }
 
-func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []MonitoredDatabase, persistenceChannel chan []metrics.MetricStoreMessage) {
+func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []MonitoredDatabase, persistenceChannel chan []metrics.MeasurementMessage) {
 	if len(monitoredDbs) > 0 {
-		msms := make([]metrics.MetricStoreMessage, len(monitoredDbs))
+		msms := make([]metrics.MeasurementMessage, len(monitoredDbs))
 		now := time.Now()
 
 		for _, mdb := range monitoredDbs {
-			db := metrics.MetricEntry{
+			db := metrics.Measurement{
 				"tag_group":                   mdb.Group,
 				"master_only":                 mdb.OnlyIfMaster,
 				"epoch_ns":                    now.UnixNano(),
@@ -1602,10 +1602,10 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []MonitoredDa
 			for k, v := range mdb.CustomTags {
 				db[tagPrefix+k] = v
 			}
-			msms = append(msms, metrics.MetricStoreMessage{
+			msms = append(msms, metrics.MeasurementMessage{
 				DBName:     mdb.DBUniqueName,
 				MetricName: monitoredDbsDatastoreSyncMetricName,
-				Data:       metrics.MetricData{db},
+				Data:       metrics.Measurements{db},
 			})
 		}
 		select {
@@ -1850,7 +1850,7 @@ func main() {
 	}
 
 	controlChannels := make(map[string](chan ControlMessage)) // [db1+metric1]=chan
-	persistCh := make(chan []metrics.MetricStoreMessage, 10000)
+	measurementCh := make(chan []metrics.MeasurementMessage, 10000)
 
 	var monitoredDbs []MonitoredDatabase
 	var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
@@ -1866,7 +1866,7 @@ func main() {
 		logger.Fatal(err)
 	}
 	if !opts.Ping {
-		go metricsWriter.WriteMetrics(mainContext, persistCh)
+		go metricsWriter.WriteMetrics(mainContext, measurementCh)
 	}
 
 	firstLoop := true
@@ -1960,7 +1960,7 @@ func main() {
 		if lastMonitoredDBsUpdate.IsZero() || lastMonitoredDBsUpdate.Before(time.Now().Add(-1*time.Second*monitoredDbsDatastoreSyncIntervalSeconds)) {
 			monitoredDbsCopy := make([]MonitoredDatabase, len(monitoredDbs))
 			copy(monitoredDbsCopy, monitoredDbs)
-			go SyncMonitoredDBsToDatastore(mainContext, monitoredDbsCopy, persistCh)
+			go SyncMonitoredDBsToDatastore(mainContext, monitoredDbsCopy, measurementCh)
 			lastMonitoredDBsUpdate = time.Now()
 		}
 
@@ -2144,7 +2144,7 @@ func main() {
 							logger.Error(err)
 						}
 
-						go MetricGathererLoop(mainContext, dbUnique, dbUniqueOrig, dbType, metric, metricConfig, controlChannels[dbMetric], persistCh)
+						go MetricGathererLoop(mainContext, dbUnique, dbUniqueOrig, dbType, metric, metricConfig, controlChannels[dbMetric], measurementCh)
 					}
 				} else if (!metricDefOk && chOk) || interval <= 0 {
 					// metric definition files were recently removed or interval set to zero
