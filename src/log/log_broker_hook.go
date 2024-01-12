@@ -29,8 +29,8 @@ type BrokerHook struct {
 const cacheLimit = 512
 const highLoadLimit = 200 * time.Millisecond
 
-// NewHook creates a LogHook to be added to an instance of logger
-func NewHook(ctx context.Context, level string) *BrokerHook {
+// NewBrokerHook creates a LogHook to be added to an instance of logger
+func NewBrokerHook(ctx context.Context, level string) *BrokerHook {
 	l := &BrokerHook{
 		highLoadTimeout: highLoadLimit,
 		input:           make(chan *logrus.Entry, cacheLimit),

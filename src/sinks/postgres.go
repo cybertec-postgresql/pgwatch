@@ -17,11 +17,18 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+const (
+	cacheLimit      = 512
+	highLoadTimeout = time.Second * 5
+)
+
 func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options, metricDefs metrics.MetricVersionDefs) (pgw *PostgresWriter, err error) {
 	pgw = &PostgresWriter{
 		Ctx:        ctx,
 		MetricDefs: metricDefs,
 		opts:       opts,
+		input:      make(chan []metrics.MetricStoreMessage, cacheLimit),
+		lastError:  make(chan error),
 	}
 	if pgw.SinkDb, err = db.InitAndTestMetricStoreConnection(ctx, connstr); err != nil {
 		return
@@ -35,6 +42,7 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options
 	}
 	go pgw.OldPostgresMetricsDeleter()
 	go pgw.UniqueDbnamesListingMaintainer()
+	go pgw.poll()
 	return
 }
 
@@ -44,6 +52,8 @@ type PostgresWriter struct {
 	MetricSchema DbStorageSchemaType
 	MetricDefs   metrics.MetricVersionDefs
 	opts         *config.Options
+	input        chan []metrics.MetricStoreMessage
+	lastError    chan error
 }
 
 type ExistingPartitionInfo struct {
@@ -106,8 +116,55 @@ func (pgw *PostgresWriter) EnsureMetricDummy(metric string) (err error) {
 }
 
 func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
-	if len(msgs) == 0 {
+	if pgw.Ctx.Err() != nil {
 		return nil
+	}
+	select {
+	case pgw.input <- msgs:
+		// msgs sent
+	case <-time.After(highLoadTimeout):
+		// msgs dropped due to a huge load, check stdout or file for detailed log
+	}
+	select {
+	case err := <-pgw.lastError:
+		return err
+	default:
+		return nil
+	}
+}
+
+func (pgw *PostgresWriter) poll() {
+	cache := make([]metrics.MetricStoreMessage, 0, cacheLimit)
+	cacheTimeout := pgw.opts.BatchingDelay
+	tick := time.NewTicker(cacheTimeout)
+	for {
+		select {
+		case <-pgw.Ctx.Done(): //check context with high priority
+			return
+		default:
+			select {
+			case entry := <-pgw.input:
+				cache = append(cache, entry...)
+				if len(cache) < cacheLimit {
+					break
+				}
+				tick.Stop()
+				pgw.write(cache)
+				cache = cache[:0]
+				tick = time.NewTicker(cacheTimeout)
+			case <-tick.C:
+				pgw.write(cache)
+				cache = cache[:0]
+			case <-pgw.Ctx.Done():
+				return
+			}
+		}
+	}
+}
+
+func (pgw *PostgresWriter) write(msgs []metrics.MetricStoreMessage) {
+	if len(msgs) == 0 {
+		return
 	}
 	logger := log.GetLogger(pgw.Ctx)
 	tsWarningPrinted := false
@@ -219,7 +276,7 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
 	}
 	if err != nil {
 		atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-		return err
+		pgw.lastError <- err
 	}
 
 	// send data to PG, with a separate COPY for all metrics
@@ -283,8 +340,9 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MetricStoreMessage) error {
 		// atomic.StoreInt64(&lastSuccessfulDatastoreWriteTimeEpoch, t1.Unix())
 		// atomic.AddUint64(&datastoreTotalWriteTimeMicroseconds, uint64(diff.Microseconds()))
 		// atomic.AddUint64(&datastoreWriteSuccessCounter, 1)
+		return
 	}
-	return err
+	pgw.lastError <- err
 }
 
 func (pgw *PostgresWriter) EnsureMetric(pgPartBounds map[string]ExistingPartitionInfo, force bool) (err error) {

@@ -57,7 +57,7 @@ func getLogFileFormatter(opts config.LoggingOpts) logrus.Formatter {
 // Init creates logging facilities for the application
 func Init(opts config.LoggingOpts) LoggerHookerIface {
 	var err error
-	l := logger{logrus.New(), NewHook(context.Background(), opts.LogLevel)}
+	l := logger{logrus.New(), NewBrokerHook(context.Background(), opts.LogLevel)}
 	l.AddHook(l.BrokerHook)
 	l.Out = os.Stdout
 	if opts.LogFile > "" {

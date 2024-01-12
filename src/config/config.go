@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	flags "github.com/jessevdk/go-flags"
@@ -82,7 +83,7 @@ func validateConfig(c *Options) error {
 		return err
 	}
 	// validate that input is boolean is set
-	if c.BatchingDelayMs < 0 || c.BatchingDelayMs > 3600000 {
+	if c.BatchingDelay < 0 || c.BatchingDelay > time.Hour {
 		return errors.New("--batching-delay-ms must be between 0 and 3600000")
 	}
 
