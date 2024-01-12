@@ -29,7 +29,7 @@ func NewJSONWriter(ctx context.Context, fname string) (*JSONWriter, error) {
 	}, nil
 }
 
-func (jw *JSONWriter) Write(msgs []metrics.MetricStoreMessage) error {
+func (jw *JSONWriter) Write(msgs []metrics.MeasurementMessage) error {
 	if len(msgs) == 0 {
 		return nil
 	}

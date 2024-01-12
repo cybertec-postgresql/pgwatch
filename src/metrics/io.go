@@ -239,7 +239,7 @@ func ParseMetricAttrsFromYAML(path string) (a MetricAttrs, err error) {
 // Expects "preset metrics" definition file named preset-config.yaml to be present in provided --metrics folder
 func ReadPresetMetricsConfigFromFolder(folder string) (pmm map[string]map[string]float64, err error) {
 	var (
-		pcs           []PresetConfig
+		pcs           []Preset
 		presetMetrics []byte
 	)
 	if presetMetrics, err = os.ReadFile(path.Join(folder, PresetConfigYAMLFile)); err != nil {
