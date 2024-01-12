@@ -418,44 +418,6 @@ func UpdateMonitoredDBCache(data []MonitoredDatabase) {
 	monitoredDbCacheLock.Unlock()
 }
 
-func MetricsBatcher(ctx context.Context, batchingMaxDelayMillis int64, bufferedStorageCh <-chan []metrics.MetricStoreMessage, storageCh chan<- []metrics.MetricStoreMessage) {
-	if batchingMaxDelayMillis <= 0 {
-		logger.Fatalf("Check --batching-delay-ms, zero/negative batching delay:", batchingMaxDelayMillis)
-	}
-	var datapointCounter int
-	var maxBatchSize = 1000                        // flush on maxBatchSize metric points or batchingMaxDelayMillis passed
-	batch := make([]metrics.MetricStoreMessage, 0) // no size limit here as limited in persister already
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(time.Millisecond * time.Duration(batchingMaxDelayMillis)):
-			if len(batch) > 0 {
-				flushed := make([]metrics.MetricStoreMessage, len(batch))
-				copy(flushed, batch)
-				logger.WithField("datasets", len(batch)).Debug("Flushing metrics due to batching timeout")
-				storageCh <- flushed
-				batch = make([]metrics.MetricStoreMessage, 0)
-				datapointCounter = 0
-			}
-		case msg := <-bufferedStorageCh:
-			for _, m := range msg { // in reality msg are sent by fetchers one by one though
-				batch = append(batch, m)
-				datapointCounter += len(m.Data)
-				if datapointCounter > maxBatchSize { // flush. also set some last_sent_timestamp so that ticker would pass a round?
-					flushed := make([]metrics.MetricStoreMessage, len(batch))
-					copy(flushed, batch)
-					logger.WithField("datasets", len(batch)).Debugf("Flushing metrics due to maxBatchSize limit of %d datapoints", maxBatchSize)
-					storageCh <- flushed
-					batch = make([]metrics.MetricStoreMessage, 0)
-					datapointCounter = 0
-				}
-			}
-		}
-	}
-}
-
 type UIntSlice []uint
 
 func (x UIntSlice) Len() int           { return len(x) }
@@ -1889,7 +1851,6 @@ func main() {
 
 	controlChannels := make(map[string](chan ControlMessage)) // [db1+metric1]=chan
 	persistCh := make(chan []metrics.MetricStoreMessage, 10000)
-	var bufferedPersistCh chan []metrics.MetricStoreMessage
 
 	var monitoredDbs []MonitoredDatabase
 	var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
@@ -1901,15 +1862,10 @@ func main() {
 	}
 	go SyncMetricDefs(mainContext)
 
+	if metricsWriter, err = sinks.NewMultiWriter(mainContext, opts, metricDefinitionMap); err != nil {
+		logger.Fatal(err)
+	}
 	if !opts.Ping {
-		if opts.BatchingDelayMs > 0 {
-			bufferedPersistCh = make(chan []metrics.MetricStoreMessage, 10000) // "staging area" for metric storage batching, when enabled
-			logger.Info("starting MetricsBatcher...")
-			go MetricsBatcher(mainContext, opts.BatchingDelayMs, bufferedPersistCh, persistCh)
-		}
-		if metricsWriter, err = sinks.NewMultiWriter(mainContext, opts, metricDefinitionMap); err != nil {
-			logger.Fatal(err)
-		}
 		go metricsWriter.WriteMetrics(mainContext, persistCh)
 	}
 
@@ -2004,11 +1960,7 @@ func main() {
 		if lastMonitoredDBsUpdate.IsZero() || lastMonitoredDBsUpdate.Before(time.Now().Add(-1*time.Second*monitoredDbsDatastoreSyncIntervalSeconds)) {
 			monitoredDbsCopy := make([]MonitoredDatabase, len(monitoredDbs))
 			copy(monitoredDbsCopy, monitoredDbs)
-			if opts.BatchingDelayMs > 0 {
-				go SyncMonitoredDBsToDatastore(mainContext, monitoredDbsCopy, bufferedPersistCh)
-			} else {
-				go SyncMonitoredDBsToDatastore(mainContext, monitoredDbsCopy, persistCh)
-			}
+			go SyncMonitoredDBsToDatastore(mainContext, monitoredDbsCopy, persistCh)
 			lastMonitoredDBsUpdate = time.Now()
 		}
 
@@ -2192,11 +2144,7 @@ func main() {
 							logger.Error(err)
 						}
 
-						if opts.BatchingDelayMs > 0 {
-							go MetricGathererLoop(mainContext, dbUnique, dbUniqueOrig, dbType, metric, metricConfig, controlChannels[dbMetric], bufferedPersistCh)
-						} else {
-							go MetricGathererLoop(mainContext, dbUnique, dbUniqueOrig, dbType, metric, metricConfig, controlChannels[dbMetric], persistCh)
-						}
+						go MetricGathererLoop(mainContext, dbUnique, dbUniqueOrig, dbType, metric, metricConfig, controlChannels[dbMetric], persistCh)
 					}
 				} else if (!metricDefOk && chOk) || interval <= 0 {
 					// metric definition files were recently removed or interval set to zero

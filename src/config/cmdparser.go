@@ -1,6 +1,8 @@
 package config
 
 import (
+	"time"
+
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -66,7 +68,7 @@ type Options struct {
 	Logging                      LoggingOpts    `group:"Logging" mapstructure:"Logging"`
 	WebUI                        WebUIOpts      `group:"WebUI" mapstructure:"WebUI"`
 	Start                        StartOpts      `group:"Start" mapstructure:"Start"`
-	BatchingDelayMs              int64          `long:"batching-delay-ms" mapstructure:"batching-delay-ms" description:"Max milliseconds to wait for a batched metrics flush. [Default: 250]" default:"250" env:"PW3_BATCHING_MAX_DELAY_MS"`
+	BatchingDelay                time.Duration  `long:"batching-delay" mapstructure:"batching-delay" description:"Max milliseconds to wait for a batched metrics flush. [Default: 250ms]" default:"250ms" env:"PW3_BATCHING_MAX_DELAY"`
 	AdHocConnString              string         `long:"adhoc-conn-str" mapstructure:"adhoc-conn-str" description:"Ad-hoc mode: monitor a single Postgres DB specified by a standard Libpq connection string" env:"PW3_ADHOC_CONN_STR"`
 	AdHocDBType                  string         `long:"adhoc-dbtype" mapstructure:"adhoc-dbtype" description:"Ad-hoc mode: postgres|postgres-continuous-discovery" default:"postgres" env:"PW3_ADHOC_DBTYPE"`
 	AdHocConfig                  string         `long:"adhoc-config" mapstructure:"adhoc-config" description:"Ad-hoc mode: a preset config name or a custom JSON config" env:"PW3_ADHOC_CONFIG"`
