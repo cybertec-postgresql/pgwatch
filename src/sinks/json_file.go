@@ -3,11 +3,11 @@ package sinks
 import (
 	"context"
 	"encoding/json"
-	"os"
+	"io"
 	"sync/atomic"
 
-	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (
@@ -18,17 +18,14 @@ var (
 type JSONWriter struct {
 	ctx      context.Context
 	filename string
+	w        io.Writer
 }
 
 func NewJSONWriter(ctx context.Context, fname string) (*JSONWriter, error) {
-	if jf, err := os.Create(fname); err != nil {
-		return nil, err
-	} else if err = jf.Close(); err != nil {
-		return nil, err
-	}
 	return &JSONWriter{
 		ctx:      ctx,
 		filename: fname,
+		w:        &lumberjack.Logger{Filename: fname, Compress: true},
 	}, nil
 }
 
@@ -36,15 +33,7 @@ func (jw *JSONWriter) Write(msgs []metrics.MetricStoreMessage) error {
 	if len(msgs) == 0 {
 		return nil
 	}
-	logger := log.GetLogger(jw.ctx)
-	jsonOutFile, err := os.OpenFile(jw.filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
-	if err != nil {
-		atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
-		return err
-	}
-	defer func() { _ = jsonOutFile.Close() }()
-	logger.Infof("Writing %d metric sets to JSON file at \"%s\"...", len(msgs), jw.filename)
-	enc := json.NewEncoder(jsonOutFile)
+	enc := json.NewEncoder(jw.w)
 	for _, msg := range msgs {
 		dataRow := map[string]any{
 			"metric":      msg.MetricName,
@@ -52,8 +41,7 @@ func (jw *JSONWriter) Write(msgs []metrics.MetricStoreMessage) error {
 			"dbname":      msg.DBName,
 			"custom_tags": msg.CustomTags,
 		}
-		err = enc.Encode(dataRow)
-		if err != nil {
+		if err := enc.Encode(dataRow); err != nil {
 			atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
 			return err
 		}
