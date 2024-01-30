@@ -1,9 +1,13 @@
 package config
 
-const DbTypePg = "postgres"
-const DbTypePgCont = "postgres-continuous-discovery"
-const DbTypeBouncer = "pgbouncer"
-const DbTypePgPOOL = "pgpool"
-const DbTypePatroni = "patroni"
-const DbTypePatroniCont = "patroni-continuous-discovery"
-const DbTypePatroniNamespaceDiscovery = "patroni-namespace-discovery"
+type SourceKind string
+
+const (
+	SourcePostgres           SourceKind = "postgres"
+	SourcePostgresContinuous SourceKind = "postgres-continuous-discovery"
+	SourcePgBouncer          SourceKind = "pgbouncer"
+	SourcePgPool             SourceKind = "pgpool"
+	SourcePatroni            SourceKind = "patroni"
+	SourcePatroniContinuous  SourceKind = "patroni-continuous-discovery"
+	SourcePatroniNamespace   SourceKind = "patroni-namespace-discovery"
+)

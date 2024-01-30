@@ -149,7 +149,7 @@ func getEtcdClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, 
 	}
 	kapi := c.KV
 
-	if database.DBType == config.DbTypePatroniNamespaceDiscovery { // all scopes, all DBs (regex filtering applies if defined)
+	if database.Source == config.SourcePatroniNamespace { // all scopes, all DBs (regex filtering applies if defined)
 		if len(database.GetDatabaseName()) > 0 {
 			return ret, fmt.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName)
 		}
@@ -257,7 +257,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 	var ok bool
 	var dbUnique string
 
-	if ce.DBType == config.DbTypePatroniNamespaceDiscovery && ce.HostConfig.DcsType != dcsTypeEtcd {
+	if ce.Source == config.SourcePatroniNamespace && ce.HostConfig.DcsType != dcsTypeEtcd {
 		logger.Warningf("Skipping Patroni monitoring entry \"%s\" as currently only ETCD namespace scanning is supported...", ce.DBUniqueName)
 		return md, nil
 	}
@@ -300,7 +300,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 		}
 		if ce.OnlyIfMaster {
 			dbUnique = ce.DBUniqueName
-			if ce.DBType == config.DbTypePatroniNamespaceDiscovery {
+			if ce.Source == config.SourcePatroniNamespace {
 				dbUnique = ce.DBUniqueName + "_" + m.Scope
 			}
 		} else {
@@ -317,7 +317,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 				IsSuperuser:      ce.IsSuperuser,
 				CustomTags:       ce.CustomTags,
 				HostConfig:       ce.HostConfig,
-				DBType:           "postgres"})
+				Source:           "postgres"})
 			continue
 		}
 		c, err := db.GetPostgresDBConnection(mainContext, ce.ConnStr,
@@ -366,7 +366,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 				IsSuperuser:      ce.IsSuperuser,
 				CustomTags:       ce.CustomTags,
 				HostConfig:       ce.HostConfig,
-				DBType:           "postgres"})
+				Source:           "postgres"})
 		}
 
 	}

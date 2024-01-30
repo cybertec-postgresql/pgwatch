@@ -156,20 +156,13 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 
 func (promw *PrometheusWriter) setInstanceUpDownState(ch chan<- prometheus.Metric, dbName string) {
 	logger := log.GetLogger(promw.ctx)
-	// vme, err := db.DBGetPGVersion(promw.ctx, dbName, md.DBType, !promw.asyncMode) // in async mode 2min cache can mask smaller downtimes!
 	data := make(metrics.Measurement)
-	// if err != nil {
-	// 	data[promInstanceUpStateMetric] = 0
-	// 	logger.Errorf("[%s:%s] could not determine instance version, reporting as 'down': %v", md.DBUniqueName, promInstanceUpStateMetric, err)
-	// } else {
-	// 	data[promInstanceUpStateMetric] = 1
-	// }
 	data[promInstanceUpStateMetric] = 1
 	data[epochColumnName] = time.Now().UnixNano()
 
 	pm := promw.MetricStoreMessageToPromMetrics(metrics.MeasurementMessage{
 		DBName:           dbName,
-		DBType:           "postgres", //md.DBType,
+		SourceType:       "postgres",
 		MetricName:       promInstanceUpStateMetric,
 		CustomTags:       nil, //md.CustomTags,
 		Data:             metrics.Measurements{data},

@@ -129,8 +129,8 @@ func validateAdHocConfig(c *Options) error {
 				return errors.New("--adhoc-conn-str requires --metrics-folder")
 			}
 		}
-		if c.AdHocDBType != DbTypePg && c.AdHocDBType != DbTypePgCont {
-			return fmt.Errorf("--adhoc-dbtype can be of: [ %s (single DB) | %s (all non-template DB-s on an instance) ]. Default: %s", DbTypePg, DbTypePgCont, DbTypePg)
+		if c.AdHocSrcType != SourcePostgres && c.AdHocSrcType != SourcePostgresContinuous {
+			return fmt.Errorf("--adhoc-type can be of: [ %s (single DB) | %s (all non-template DB-s on an instance) ]. Default: %s", SourcePostgres, SourcePostgresContinuous, SourcePostgres)
 		}
 	}
 	return nil

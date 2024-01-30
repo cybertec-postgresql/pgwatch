@@ -101,8 +101,13 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 		}
 	}
 	allSeverityCounts["epoch_ns"] = time.Now().UnixNano()
-	return []metrics.MeasurementMessage{{DBName: mdb.DBUniqueName, DBType: mdb.DBType,
-		MetricName: specialMetricServerLogEventCounts, Data: metrics.Measurements{allSeverityCounts}, CustomTags: mdb.CustomTags}}
+	return []metrics.MeasurementMessage{{
+		DBName:     mdb.DBUniqueName,
+		SourceType: string(mdb.Source),
+		MetricName: specialMetricServerLogEventCounts,
+		Data:       metrics.Measurements{allSeverityCounts},
+		CustomTags: mdb.CustomTags,
+	}}
 }
 
 func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []metrics.MeasurementMessage) {

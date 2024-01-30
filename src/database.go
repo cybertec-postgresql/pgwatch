@@ -22,8 +22,8 @@ import (
 var configDb db.PgxPoolIface
 var monitoredDbConnCache map[string]db.PgxPoolIface = make(map[string]db.PgxPoolIface)
 
-func IsPostgresDBType(dbType string) bool {
-	if dbType == config.DbTypeBouncer || dbType == config.DbTypePgPOOL {
+func IsPostgresSource(Source config.SourceKind) bool {
+	if Source == config.SourcePgBouncer || Source == config.SourcePgPool {
 		return false
 	}
 	return true
@@ -115,7 +115,7 @@ func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, sql string, 
 		return nil, err
 	}
 	defer func() { _ = tx.Commit(ctx) }()
-	if IsPostgresDBType(md.DBType) {
+	if IsPostgresSource(md.Source) {
 		_, err = tx.Exec(ctx, "SET LOCAL lock_timeout TO '100ms'")
 		if err != nil {
 			atomic.AddUint64(&totalMetricFetchFailuresCounter, 1)
@@ -159,7 +159,7 @@ func DBGetSizeMB(dbUnique string) (int64, error) {
 	lastDBSizeCheckLock.RUnlock()
 
 	if !ok || lastDBSizeCheckTime.Add(dbSizeCachingInterval).Before(time.Now()) {
-		ver, err := DBGetPGVersion(mainContext, dbUnique, config.DbTypePg, false)
+		ver, err := DBGetPGVersion(mainContext, dbUnique, config.SourcePostgres, false)
 		if err != nil || (ver.ExecEnv != execEnvAzureSingle) || (ver.ExecEnv == execEnvAzureSingle && ver.ApproxDBSizeB < 1e12) {
 			logger.Debugf("[%s] determining DB size ...", dbUnique)
 
@@ -221,7 +221,7 @@ func GetDBTotalApproxSize(dbUnique string) (int64, error) {
 	return data[0]["db_size_approx"].(int64), nil
 }
 
-func DBGetPGVersion(ctx context.Context, dbUnique string, dbType string, noCache bool) (DBVersionMapEntry, error) {
+func DBGetPGVersion(ctx context.Context, dbUnique string, srcType config.SourceKind, noCache bool) (DBVersionMapEntry, error) {
 	var ver DBVersionMapEntry
 	var verNew DBVersionMapEntry
 	var ok bool
@@ -253,13 +253,13 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, dbType string, noCache
 	getVerLock.Lock() // limit to 1 concurrent version info fetch per DB
 	defer getVerLock.Unlock()
 	logger.WithField("database", dbUnique).
-		WithField("type", dbType).Debug("determining DB version and recovery status...")
+		WithField("type", srcType).Debug("determining DB version and recovery status...")
 
 	if verNew.Extensions == nil {
 		verNew.Extensions = make(map[string]uint)
 	}
 
-	if dbType == config.DbTypeBouncer {
+	if srcType == config.SourcePgBouncer {
 		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, "show version")
 		if err != nil {
 			return verNew, err
@@ -277,7 +277,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, dbType string, noCache
 			verNew.VersionStr = matches[0]
 			verNew.Version = VersionToInt(matches[0])
 		}
-	} else if dbType == config.DbTypePgPOOL {
+	} else if srcType == config.SourcePgPool {
 		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, pgpoolVersion)
 		if err != nil {
 			return verNew, err
@@ -803,7 +803,7 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storageCh <- []metrics.MeasurementMessage{{DBName: dbUnique,
-			DBType:     md.DBType,
+			SourceType: string(md.Source),
 			MetricName: "object_changes",
 			Data:       detectedChangesSummary,
 			CustomTags: md.CustomTags,
@@ -961,7 +961,7 @@ func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existi
 
 // Called once on daemon startup to try to create "metric fething helper" functions automatically
 func TryCreateMetricsFetchingHelpers(dbUnique string) error {
-	dbPgVersion, err := DBGetPGVersion(mainContext, dbUnique, config.DbTypePg, false)
+	dbPgVersion, err := DBGetPGVersion(mainContext, dbUnique, config.SourcePostgres, false)
 	if err != nil {
 		logger.Errorf("Failed to fetch pg version for \"%s\": %s", dbUnique, err)
 		return err
@@ -1073,7 +1073,7 @@ func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase,
 			CustomTags:           ce.CustomTags,
 			HostConfig:           ce.HostConfig,
 			OnlyIfMaster:         ce.OnlyIfMaster,
-			DBType:               ce.DBType})
+			Source:               ce.Source})
 	}
 
 	return md, err

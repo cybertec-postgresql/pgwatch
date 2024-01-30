@@ -51,7 +51,7 @@ type MonitoredDatabase struct {
 	ConnStr              string             `yaml:"conn_str"`
 	Metrics              map[string]float64 `yaml:"custom_metrics"`
 	MetricsStandby       map[string]float64 `yaml:"custom_metrics_standby"`
-	DBType               string
+	Source               config.SourceKind
 	DBNameIncludePattern string            `yaml:"dbname_include_pattern"`
 	DBNameExcludePattern string            `yaml:"dbname_exclude_pattern"`
 	PresetMetrics        string            `yaml:"preset_metrics"`
@@ -100,7 +100,7 @@ type MetricFetchMessage struct {
 	DBUniqueName        string
 	DBUniqueNameOrig    string
 	MetricName          string
-	DBType              string
+	Source              config.SourceKind
 	Interval            time.Duration
 	CreatedOn           time.Time
 	StmtTimeoutOverride int64
@@ -172,8 +172,8 @@ const (
 	execEnvGoogle         = "GOOGLE"
 )
 
-var dbTypeMap = map[string]bool{config.DbTypePg: true, config.DbTypePgCont: true, config.DbTypeBouncer: true, config.DbTypePatroni: true, config.DbTypePatroniCont: true, config.DbTypePgPOOL: true, config.DbTypePatroniNamespaceDiscovery: true}
-var dbTypes = []string{config.DbTypePg, config.DbTypePgCont, config.DbTypeBouncer, config.DbTypePatroni, config.DbTypePatroniCont, config.DbTypePatroniNamespaceDiscovery} // used for informational purposes
+var srcTypeMap = map[config.SourceKind]bool{config.SourcePostgres: true, config.SourcePostgresContinuous: true, config.SourcePgBouncer: true, config.SourcePatroni: true, config.SourcePatroniContinuous: true, config.SourcePgPool: true, config.SourcePatroniNamespace: true}
+var srcTypes = []config.SourceKind{config.SourcePostgres, config.SourcePostgresContinuous, config.SourcePgBouncer, config.SourcePatroni, config.SourcePatroniContinuous, config.SourcePatroniNamespace} // used for informational purposes
 var specialMetrics = map[string]bool{recoMetricName: true, specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 var directlyFetchableOSMetrics = map[string]bool{metricPsutilCPU: true, metricPsutilDisk: true, metricPsutilDiskIoTotal: true, metricPsutilMem: true, metricCPULoad: true}
 var metricDefinitionMap metrics.MetricVersionDefs
@@ -345,7 +345,7 @@ func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
 			Encryption:           row["md_encryption"].(string),
 			Metrics:              metricConfig,
 			MetricsStandby:       metricConfigStandby,
-			DBType:               row["md_dbtype"].(string),
+			Source:               row["md_dbtype"].(config.SourceKind),
 			DBNameIncludePattern: row["md_include_pattern"].(string),
 			DBNameExcludePattern: row["md_exclude_pattern"].(string),
 			Group:                row["md_group"].(string),
@@ -353,8 +353,8 @@ func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
 			OnlyIfMaster:         row["md_only_if_master"].(bool),
 			CustomTags:           customTags}
 
-		if _, ok := dbTypeMap[md.DBType]; !ok {
-			logger.Warningf("Ignoring host \"%s\" - unknown dbtype: %s. Expected one of: %+v", md.DBUniqueName, md.DBType, dbTypes)
+		if _, ok := srcTypeMap[md.Source]; !ok {
+			logger.Warningf("Ignoring source \"%s\" - unknown type: %s. Expected one of: %+v", md.DBUniqueName, md.Source, srcTypes)
 			continue
 		}
 
@@ -362,7 +362,7 @@ func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
 			md.ConnStr = decrypt(md.DBUniqueName, opts.AesGcmKeyphrase, md.ConnStr)
 		}
 
-		if md.DBType == config.DbTypePgCont {
+		if md.Source == config.SourcePostgresContinuous {
 			resolved, err := ResolveDatabasesFromConfigEntry(md)
 			if err != nil {
 				logger.Errorf("Failed to resolve DBs for \"%s\": %s", md.DBUniqueName, err)
@@ -377,7 +377,7 @@ func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
 				tempArr = append(tempArr, rdb.ConnStr)
 			}
 			logger.Debugf("Resolved %d DBs with prefix \"%s\": [%s]", len(resolved), md.DBUniqueName, strings.Join(tempArr, ", "))
-		} else if md.DBType == config.DbTypePatroni || md.DBType == config.DbTypePatroniCont || md.DBType == config.DbTypePatroniNamespaceDiscovery {
+		} else if md.Source == config.SourcePatroni || md.Source == config.SourcePatroniContinuous || md.Source == config.SourcePatroniNamespace {
 			resolved, err := ResolveDatabasesFromPatroni(md)
 			if err != nil {
 				logger.Errorf("Failed to resolve DBs for \"%s\": %s", md.DBUniqueName, err)
@@ -606,7 +606,7 @@ func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[str
 	var md MonitoredDatabase
 	var fromCache, isCacheable bool
 
-	vme, err = DBGetPGVersion(ctx, msg.DBUniqueName, msg.DBType, false)
+	vme, err = DBGetPGVersion(ctx, msg.DBUniqueName, msg.Source, false)
 	if err != nil {
 		logger.Error("failed to fetch pg version for ", msg.DBUniqueName, msg.MetricName, err)
 		return nil, err
@@ -623,7 +623,7 @@ func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[str
 	}
 	dbpgVersion = vme.Version
 
-	if msg.DBType == config.DbTypeBouncer {
+	if msg.Source == config.SourcePgBouncer {
 		dbpgVersion = 0 // version is 0.0 for all pgbouncer sql per convention
 	}
 
@@ -680,7 +680,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 		if data, err = GetRecommendations(msg.DBUniqueName, vme); err != nil {
 			return nil, err
 		}
-	} else if msg.DBType == config.DbTypePgPOOL {
+	} else if msg.Source == config.SourcePgPool {
 		if data, err = FetchMetricsPgpool(msg, vme, mvp); err != nil {
 			return nil, err
 		}
@@ -744,7 +744,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 
 send_to_storageChannel:
 
-	if (opts.Metric.RealDbnameField > "" || opts.Metric.SystemIdentifierField > "") && msg.DBType == config.DbTypePg {
+	if (opts.Metric.RealDbnameField > "" || opts.Metric.SystemIdentifierField > "") && msg.Source == config.SourcePostgres {
 		dbPgVersionMapLock.RLock()
 		ver := dbPgVersionMap[msg.DBUniqueName]
 		dbPgVersionMapLock.RUnlock()
@@ -828,7 +828,7 @@ func PutToInstanceCache(msg MetricFetchMessage, data metrics.Measurements) {
 }
 
 func IsCacheableMetric(msg MetricFetchMessage, mvp metrics.MetricProperties) bool {
-	if !(msg.DBType == config.DbTypePgCont || msg.DBType == config.DbTypePatroniCont) {
+	if !(msg.Source == config.SourcePostgresContinuous || msg.Source == config.SourcePatroniContinuous) {
 		return false
 	}
 	return mvp.MetricAttrs.IsInstanceLevel
@@ -894,7 +894,7 @@ func deepCopyMetricDefinitionMap(mdm map[string]map[uint]metrics.MetricPropertie
 }
 
 // ControlMessage notifies of shutdown + interval change
-func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbType, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []metrics.MeasurementMessage) {
+func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig string, srcType config.SourceKind, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []metrics.MeasurementMessage) {
 	config := configMap
 	interval := config[metricName]
 	hostState := make(map[string]map[string]string)
@@ -916,7 +916,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 
 	for {
 		if lastDBVersionFetchTime.Add(time.Minute * time.Duration(5)).Before(time.Now()) {
-			vme, err = DBGetPGVersion(ctx, dbUniqueName, dbType, false) // in case of errors just ignore metric "disabled" time ranges
+			vme, err = DBGetPGVersion(ctx, dbUniqueName, srcType, false) // in case of errors just ignore metric "disabled" time ranges
 			if err != nil {
 				lastDBVersionFetchTime = time.Now()
 			}
@@ -939,7 +939,7 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 			DBUniqueName:        dbUniqueName,
 			DBUniqueNameOrig:    dbUniqueNameOrig,
 			MetricName:          metricName,
-			DBType:              dbType,
+			Source:              srcType,
 			Interval:            time.Second * time.Duration(interval),
 			StmtTimeoutOverride: stmtTimeoutOverride,
 		}
@@ -986,8 +986,13 @@ func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig, dbT
 								entry := metrics.Measurement{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
 								detectedChangesSummary = append(detectedChangesSummary, entry)
 								metricStoreMessages = append(metricStoreMessages,
-									metrics.MeasurementMessage{DBName: dbUniqueName, DBType: dbType,
-										MetricName: "object_changes", Data: detectedChangesSummary, CustomTags: metricStoreMessages[0].CustomTags})
+									metrics.MeasurementMessage{
+										DBName:     dbUniqueName,
+										SourceType: string(srcType),
+										MetricName: "object_changes",
+										Data:       detectedChangesSummary,
+										CustomTags: metricStoreMessages[0].CustomTags,
+									})
 							}
 						}
 						lastUptimeS = postmasterUptimeS.(int64)
@@ -1052,7 +1057,7 @@ func DatarowsToMetricstoreMessage(data metrics.Measurements, msg MetricFetchMess
 
 	return metrics.MeasurementMessage{
 		DBName:           msg.DBUniqueName,
-		DBType:           msg.DBType,
+		SourceType:       string(msg.Source),
 		MetricName:       msg.MetricName,
 		CustomTags:       md.CustomTags,
 		Data:             data,
@@ -1289,8 +1294,8 @@ func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md MonitoredDatabase) (Monito
 		md.Encryption = os.ExpandEnv(md.Encryption)
 		changed++
 	}
-	if strings.HasPrefix(md.DBType, "$") {
-		md.DBType = os.ExpandEnv(md.DBType)
+	if strings.HasPrefix(string(md.Source), "$") {
+		md.Source = config.SourceKind(os.ExpandEnv(string(md.Source)))
 		changed++
 	}
 	if strings.HasPrefix(md.DBUniqueName, "$") {
@@ -1335,8 +1340,8 @@ func ConfigFileToMonitoredDatabases(configFilePath string) ([]MonitoredDatabase,
 		return hostList, err
 	}
 	for _, v := range c {
-		if v.DBType == "" {
-			v.DBType = config.DbTypePg
+		if v.Source == "" {
+			v.Source = config.SourcePostgres
 		}
 		if v.IsEnabled {
 			logger.Debugf("Found active monitoring config entry: %#v", v)
@@ -1409,29 +1414,29 @@ func GetMonitoredDatabasesFromMonitoringConfig(mc []MonitoredDatabase) []Monitor
 			}
 			e.Metrics = mdef
 		}
-		if _, ok := dbTypeMap[e.DBType]; !ok {
-			logger.Warningf("Ignoring host \"%s\" - unknown dbtype: %s. Expected one of: %+v", e.DBUniqueName, e.DBType, dbTypes)
+		if _, ok := srcTypeMap[e.Source]; !ok {
+			logger.Warningf("Ignoring source \"%s\" - unknown type: %s. Expected one of: %+v", e.DBUniqueName, e.Source, srcTypes)
 			continue
 		}
 		if e.IsEnabled && e.Encryption == "aes-gcm-256" && opts.AesGcmKeyphrase != "" {
 			e.ConnStr = decrypt(e.DBUniqueName, opts.AesGcmKeyphrase, e.ConnStr)
 		}
-		if e.DBType == config.DbTypePatroni && e.GetDatabaseName() == "" {
-			logger.Warningf("Ignoring host \"%s\" as \"dbname\" attribute not specified but required by dbtype=patroni", e.DBUniqueName)
+		if e.Source == config.SourcePatroni && e.GetDatabaseName() == "" {
+			logger.Warningf("Ignoring host \"%s\" as \"dbname\" attribute not specified but required by type=patroni", e.DBUniqueName)
 			continue
 		}
-		if e.DBType == config.DbTypePg && e.GetDatabaseName() == "" {
-			logger.Warningf("Ignoring host \"%s\" as \"dbname\" attribute not specified but required by dbtype=postgres", e.DBUniqueName)
+		if e.Source == config.SourcePostgres && e.GetDatabaseName() == "" {
+			logger.Warningf("Ignoring host \"%s\" as \"dbname\" attribute not specified but required by type=postgres", e.DBUniqueName)
 			continue
 		}
-		if len(e.GetDatabaseName()) == 0 || e.DBType == config.DbTypePgCont || e.DBType == config.DbTypePatroni || e.DBType == config.DbTypePatroniCont || e.DBType == config.DbTypePatroniNamespaceDiscovery {
-			if e.DBType == config.DbTypePgCont {
+		if len(e.GetDatabaseName()) == 0 || e.Source == config.SourcePostgresContinuous || e.Source == config.SourcePatroni || e.Source == config.SourcePatroniContinuous || e.Source == config.SourcePatroniNamespace {
+			if e.Source == config.SourcePostgresContinuous {
 				logger.Debugf("Adding \"%s\" (host=%s, port=%s) to continuous monitoring ...", e.DBUniqueName, e.ConnStr)
 			}
 			var foundDbs []MonitoredDatabase
 			var err error
 
-			if e.DBType == config.DbTypePatroni || e.DBType == config.DbTypePatroniCont || e.DBType == config.DbTypePatroniNamespaceDiscovery {
+			if e.Source == config.SourcePatroni || e.Source == config.SourcePatroniContinuous || e.Source == config.SourcePatroniNamespace {
 				foundDbs, err = ResolveDatabasesFromPatroni(e)
 			} else {
 				foundDbs, err = ResolveDatabasesFromConfigEntry(e)
@@ -1901,8 +1906,8 @@ func main() {
 						logger.Fatalf("Could not parse --adhoc-config(%s): %v", opts.AdHocConfig, err)
 					}
 				}
-				md := MonitoredDatabase{DBUniqueName: opts.AdHocUniqueName, DBType: opts.AdHocDBType, Metrics: adhocconfig, ConnStr: opts.AdHocConnString}
-				if opts.AdHocDBType == config.DbTypePg {
+				md := MonitoredDatabase{DBUniqueName: opts.AdHocUniqueName, Source: opts.AdHocSrcType, Metrics: adhocconfig, ConnStr: opts.AdHocConnString}
+				if opts.AdHocSrcType == config.SourcePostgres {
 					monitoredDbs = []MonitoredDatabase{md}
 				} else {
 					resolved, err := ResolveDatabasesFromConfigEntry(md)
@@ -1984,7 +1989,7 @@ func main() {
 
 			dbUnique := host.DBUniqueName
 			dbUniqueOrig := host.DBUniqueNameOrig
-			dbType := host.DBType
+			srcType := host.Source
 			metricConfig = host.Metrics
 			wasInstancePreviouslyDormant := IsDBDormant(dbUnique)
 
@@ -2013,7 +2018,7 @@ func main() {
 					logger.Infof("new host \"%s\" found, checking connectivity...", dbUnique)
 				}
 
-				ver, err = DBGetPGVersion(mainContext, dbUnique, dbType, true)
+				ver, err = DBGetPGVersion(mainContext, dbUnique, srcType, true)
 				if err != nil {
 					logger.Errorf("could not start metric gathering for DB \"%s\" due to connection problem: %s", dbUnique, err)
 					if opts.AdHocConnString != "" {
@@ -2036,7 +2041,7 @@ func main() {
 					metricConfig = host.MetricsStandby
 				}
 
-				if !opts.Ping && (host.IsSuperuser || opts.IsAdHocMode() && opts.AdHocCreateHelpers) && IsPostgresDBType(dbType) && !ver.IsInRecovery {
+				if !opts.Ping && (host.IsSuperuser || opts.IsAdHocMode() && opts.AdHocCreateHelpers) && IsPostgresSource(srcType) && !ver.IsInRecovery {
 					if opts.Metric.NoHelperFunctions {
 						logger.Infof("[%s] Skipping rollout out helper functions due to the --no-helper-functions flag ...", dbUnique)
 					} else {
@@ -2047,7 +2052,7 @@ func main() {
 
 			}
 
-			if IsPostgresDBType(host.DBType) {
+			if IsPostgresSource(host.Source) {
 				var DBSizeMB int64
 
 				if opts.MinDbSizeMB >= 8 { // an empty DB is a bit less than 8MB
@@ -2062,7 +2067,7 @@ func main() {
 						SetUndersizedDBState(dbUnique, false)
 					}
 				}
-				ver, err := DBGetPGVersion(mainContext, dbUnique, host.DBType, false)
+				ver, err := DBGetPGVersion(mainContext, dbUnique, host.Source, false)
 				if err == nil { // ok to ignore error, re-tried on next loop
 					lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[dbUnique]
 					if ver.IsInRecovery && host.OnlyIfMaster {
@@ -2127,7 +2132,7 @@ func main() {
 
 						metricNameForStorage := metricName
 						if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
-							vme, err := DBGetPGVersion(mainContext, dbUnique, dbType, false)
+							vme, err := DBGetPGVersion(mainContext, dbUnique, srcType, false)
 							if err != nil {
 								logger.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
 							} else {
@@ -2144,7 +2149,7 @@ func main() {
 							logger.Error(err)
 						}
 
-						go MetricGathererLoop(mainContext, dbUnique, dbUniqueOrig, dbType, metric, metricConfig, controlChannels[dbMetric], measurementCh)
+						go MetricGathererLoop(mainContext, dbUnique, dbUniqueOrig, srcType, metric, metricConfig, controlChannels[dbMetric], measurementCh)
 					}
 				} else if (!metricDefOk && chOk) || interval <= 0 {
 					// metric definition files were recently removed or interval set to zero
