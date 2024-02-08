@@ -31,8 +31,6 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/webserver"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
-
-	"gopkg.in/yaml.v2"
 )
 
 type ControlMessage struct {
@@ -1117,44 +1115,6 @@ func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md sources.MonitoredDatabase)
 	}
 
 	return md, changed
-}
-
-func ConfigFileToMonitoredDatabases(configFilePath string) ([]sources.MonitoredDatabase, error) {
-	hostList := make([]sources.MonitoredDatabase, 0)
-
-	logger.Debugf("Converting monitoring YAML config toconfig.MonitoredDatabase from path %s ...", configFilePath)
-	yamlFile, err := os.ReadFile(configFilePath)
-	if err != nil {
-		logger.Errorf("Error reading file %s: %s", configFilePath, err)
-		return hostList, err
-	}
-	// TODO check mod timestamp or hash, from a global "caching map"
-	c := make([]sources.MonitoredDatabase, 0) // there can be multiple configs in a single file
-	err = yaml.Unmarshal(yamlFile, &c)
-	if err != nil {
-		logger.Errorf("Unmarshaling error: %v", err)
-		return hostList, err
-	}
-	for _, v := range c {
-		if v.Kind == "" {
-			v.Kind = sources.SourcePostgres
-		}
-		if v.IsEnabled {
-			logger.Debugf("Found active monitoring config entry: %#v", v)
-			if v.Group == "" {
-				v.Group = "default"
-			}
-			vExp, changed := ExpandEnvVarsForConfigEntryIfStartsWithDollar(v)
-			if changed > 0 {
-				logger.Debugf("[%s] %d config attributes expanded from ENV", vExp.DBUniqueName, changed)
-			}
-			hostList = append(hostList, vExp)
-		}
-	}
-	if len(hostList) == 0 {
-		logger.Warningf("Could not find any valid monitoring configs from file: %s", configFilePath)
-	}
-	return hostList, nil
 }
 
 func getMonitoredDatabasesSnapshot() map[string]sources.MonitoredDatabase {
