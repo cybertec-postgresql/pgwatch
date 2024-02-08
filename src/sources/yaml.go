@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func NewYAMLConfigReader(ctx context.Context, opts *config.Options) (Reader, error) {
