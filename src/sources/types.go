@@ -34,7 +34,7 @@ func (k Kind) IsValid() bool {
 type MonitoredDatabase struct {
 	DBUniqueName         string             `yaml:"unique_name" db:"md_name"`
 	DBUniqueNameOrig     string             // to preserve belonging to a specific instance for continuous modes where DBUniqueName will be dynamic
-	Group                string             `db:"md_group" db:"md_group"`
+	Group                string             `yaml:"group" db:"md_group"`
 	Encryption           string             `yaml:"encryption" db:"md_encryption"`
 	ConnStr              string             `yaml:"conn_str" db:"md_connstr"`
 	Metrics              map[string]float64 `yaml:"custom_metrics" db:"md_config"`

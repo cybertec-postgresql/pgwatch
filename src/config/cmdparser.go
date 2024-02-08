@@ -24,7 +24,7 @@ type ConnectionOpts struct {
 
 // MetricStoreOpts specifies the storage configuration to store metrics data
 type MetricOpts struct {
-	Group                 []string `short:"g" long:"group" mapstructure:"group" description:"Groups for filtering which databases to monitor. By default all are monitored" env:"PW3_GROUP"`
+	Group                 string   `short:"g" long:"group" mapstructure:"group" description:"Group for filtering which databases to monitor. By default all are monitored" env:"PW3_GROUP"`
 	RealDbnameField       string   `long:"real-dbname-field" mapstructure:"real-dbname-field" description:"Tag key for real DB name if --add-real-dbname enabled" env:"PW3_REAL_DBNAME_FIELD" default:"real_dbname"`
 	SystemIdentifierField string   `long:"system-identifier-field" mapstructure:"system-identifier-field" description:"Tag key for system identifier value if --add-system-identifier" env:"PW3_SYSTEM_IDENTIFIER_FIELD" default:"sys_id"`
 	MetricsFolder         string   `short:"m" long:"metrics-folder" mapstructure:"metrics-folder" description:"Folder of metrics definitions" env:"PW3_METRICS_FOLDER"`
