@@ -1,9 +1,10 @@
-package main
+package sources
 
 import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -13,9 +14,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
+	"github.com/cybertec-postgresql/pgwatch3/log"
 	consul_api "github.com/hashicorp/consul/api"
+	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samuel/go-zookeeper/zk"
 	client "go.etcd.io/etcd/client/v3"
@@ -27,6 +29,8 @@ type PatroniClusterMember struct {
 	ConnURL string `yaml:"conn_url"`
 	Role    string
 }
+
+var logger log.LoggerIface = log.FallbackLogger
 
 var lastFoundClusterMembers = make(map[string][]PatroniClusterMember) // needed for cases where DCS is temporarily down
 // don't want to immediately remove monitoring of DBs
@@ -82,6 +86,21 @@ func getConsulClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember
 	}
 
 	return ret, nil
+}
+
+func jsonTextToStringMap(jsonText string) (map[string]string, error) {
+	retmap := make(map[string]string)
+	if jsonText == "" {
+		return retmap, nil
+	}
+	var iMap map[string]any
+	if err := json.Unmarshal([]byte(jsonText), &iMap); err != nil {
+		return nil, err
+	}
+	for k, v := range iMap {
+		retmap[k] = fmt.Sprintf("%v", v)
+	}
+	return retmap, nil
 }
 
 func getTransport(conf HostConfigAttrs) (*tls.Config, error) {
@@ -149,7 +168,7 @@ func getEtcdClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, 
 	}
 	kapi := c.KV
 
-	if database.DBType == config.DbTypePatroniNamespaceDiscovery { // all scopes, all DBs (regex filtering applies if defined)
+	if database.Kind == SourcePatroniNamespace { // all scopes, all DBs (regex filtering applies if defined)
 		if len(database.GetDatabaseName()) > 0 {
 			return ret, fmt.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName)
 		}
@@ -250,6 +269,12 @@ func getZookeeperClusterMembers(database MonitoredDatabase) ([]PatroniClusterMem
 	return ret, nil
 }
 
+const (
+	dcsTypeEtcd      = "etcd"
+	dcsTypeZookeeper = "zookeeper"
+	dcsTypeConsul    = "consul"
+)
+
 func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, error) {
 	var md []MonitoredDatabase
 	var cm []PatroniClusterMember
@@ -257,7 +282,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 	var ok bool
 	var dbUnique string
 
-	if ce.DBType == config.DbTypePatroniNamespaceDiscovery && ce.HostConfig.DcsType != dcsTypeEtcd {
+	if ce.Kind == SourcePatroniNamespace && ce.HostConfig.DcsType != dcsTypeEtcd {
 		logger.Warningf("Skipping Patroni monitoring entry \"%s\" as currently only ETCD namespace scanning is supported...", ce.DBUniqueName)
 		return md, nil
 	}
@@ -300,7 +325,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 		}
 		if ce.OnlyIfMaster {
 			dbUnique = ce.DBUniqueName
-			if ce.DBType == config.DbTypePatroniNamespaceDiscovery {
+			if ce.Kind == SourcePatroniNamespace {
 				dbUnique = ce.DBUniqueName + "_" + m.Scope
 			}
 		} else {
@@ -317,10 +342,10 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 				IsSuperuser:      ce.IsSuperuser,
 				CustomTags:       ce.CustomTags,
 				HostConfig:       ce.HostConfig,
-				DBType:           "postgres"})
+				Kind:             "postgres"})
 			continue
 		}
-		c, err := db.GetPostgresDBConnection(mainContext, ce.ConnStr,
+		c, err := db.GetPostgresDBConnection(context.TODO(), ce.ConnStr,
 			func(c *pgxpool.Config) error {
 				c.ConnConfig.Host = host
 				c.ConnConfig.Database = "template1"
@@ -340,10 +365,14 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 					where not datistemplate
 					and datallowconn
 					and has_database_privilege (datname, 'CONNECT')
-					and case when length(trim($1)) > 0 then datname ~ $2 else true end
-					and case when length(trim($3)) > 0 then not datname ~ $4 else true end`
+					and case when length(trim($1)) > 0 then datname ~ $1 else true end
+					and case when length(trim($2)) > 0 then not datname ~ $2 else true end`
 
-		data, err := DBExecRead(mainContext, c, sql, ce.DBNameIncludePattern, ce.DBNameIncludePattern, ce.DBNameExcludePattern, ce.DBNameExcludePattern)
+		rows, err := c.Query(context.TODO(), sql, ce.IncludePattern, ce.ExcludePattern)
+		if err != nil {
+			return nil, err
+		}
+		data, err := pgx.CollectRows(rows, pgx.RowToMap)
 		if err != nil {
 			logger.Errorf("Could not get DB name listing from Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
 			continue
@@ -366,7 +395,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 				IsSuperuser:      ce.IsSuperuser,
 				CustomTags:       ce.CustomTags,
 				HostConfig:       ce.HostConfig,
-				DBType:           "postgres"})
+				Kind:             "postgres"})
 		}
 
 	}

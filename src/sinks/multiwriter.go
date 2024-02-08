@@ -71,7 +71,7 @@ func (mw *MultiWriter) SyncMetrics(dbUnique, metricName, op string) (err error) 
 	return
 }
 
-func (mw *MultiWriter) WriteMetrics(ctx context.Context, storageCh <-chan []metrics.MeasurementMessage) {
+func (mw *MultiWriter) WriteMeasurements(ctx context.Context, storageCh <-chan []metrics.MeasurementMessage) {
 	var err error
 	logger := log.GetLogger(ctx)
 	for {

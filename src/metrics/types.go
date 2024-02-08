@@ -43,7 +43,7 @@ type Measurements []map[string]any
 
 type MeasurementMessage struct {
 	DBName           string
-	DBType           string
+	SourceType       string
 	MetricName       string
 	CustomTags       map[string]string
 	Data             Measurements
