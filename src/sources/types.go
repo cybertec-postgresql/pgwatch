@@ -77,7 +77,7 @@ type MonitoredDatabases []MonitoredDatabase
 
 // Expand() updates list of monitored objects from continuous monitoring sources, e.g. patroni
 func (mds MonitoredDatabases) Expand() (MonitoredDatabases, error) {
-	resolvedDbs := make(MonitoredDatabases, len(mds))
+	resolvedDbs := make(MonitoredDatabases, 0, len(mds))
 	for _, md := range mds {
 		dbs, err := md.ExpandDatabases()
 		if err != nil {
