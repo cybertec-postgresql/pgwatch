@@ -11,10 +11,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
+	"github.com/cybertec-postgresql/pgwatch3/sources"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -22,15 +22,8 @@ import (
 var configDb db.PgxPoolIface
 var monitoredDbConnCache map[string]db.PgxPoolIface = make(map[string]db.PgxPoolIface)
 
-func IsPostgresSource(Source config.SourceKind) bool {
-	if Source == config.SourcePgBouncer || Source == config.SourcePgPool {
-		return false
-	}
-	return true
-}
-
 // every DB under monitoring should have exactly 1 sql.DB connection assigned, that will internally limit parallel access
-func InitSQLConnPoolForMonitoredDBIfNil(md MonitoredDatabase) error {
+func InitSQLConnPoolForMonitoredDBIfNil(md sources.MonitoredDatabase) error {
 	monitoredDbConnCacheLock.Lock()
 	defer monitoredDbConnCacheLock.Unlock()
 
@@ -90,7 +83,7 @@ func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) 
 
 func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, sql string, args ...any) (metrics.Measurements, error) {
 	var conn db.PgxIface
-	var md MonitoredDatabase
+	var md sources.MonitoredDatabase
 	var data metrics.Measurements
 	var err error
 	var tx pgx.Tx
@@ -115,7 +108,7 @@ func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, sql string, 
 		return nil, err
 	}
 	defer func() { _ = tx.Commit(ctx) }()
-	if IsPostgresSource(md.Source) {
+	if md.IsPostgresSource() {
 		_, err = tx.Exec(ctx, "SET LOCAL lock_timeout TO '100ms'")
 		if err != nil {
 			atomic.AddUint64(&totalMetricFetchFailuresCounter, 1)
@@ -128,27 +121,6 @@ func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, sql string, 
 	return data, err
 }
 
-func GetAllActiveHostsFromConfigDB() (metrics.Measurements, error) {
-	sqlLatest := `
-		select /* pgwatch3_generated */
-		  md_name, md_group, md_dbtype, md_connstr,
-		  coalesce(p.pc_config, md_config)::text as md_config, coalesce(s.pc_config, md_config_standby, '{}'::jsonb)::text as md_config_standby,
-		  md_is_superuser,
-		  coalesce(md_include_pattern, '') as md_include_pattern, coalesce(md_exclude_pattern, '') as md_exclude_pattern,
-		  coalesce(md_custom_tags::text, '{}') as md_custom_tags, 
-		  md_encryption, coalesce(md_host_config, '{}')::text as md_host_config, md_only_if_master
-		from
-		  pgwatch3.monitored_db
-	          left join
-		  pgwatch3.preset_config p on p.pc_name = md_preset_config_name /* primary preset if any */
-	          left join
-		  pgwatch3.preset_config s on s.pc_name = md_preset_config_name_standby /* standby preset if any */
-		where
-		  md_is_enabled
-	`
-	return DBExecRead(mainContext, configDb, sqlLatest)
-}
-
 func DBGetSizeMB(dbUnique string) (int64, error) {
 	sqlDbSize := `select /* pgwatch3_generated */ pg_database_size(current_database());`
 	var sizeMB int64
@@ -159,7 +131,7 @@ func DBGetSizeMB(dbUnique string) (int64, error) {
 	lastDBSizeCheckLock.RUnlock()
 
 	if !ok || lastDBSizeCheckTime.Add(dbSizeCachingInterval).Before(time.Now()) {
-		ver, err := DBGetPGVersion(mainContext, dbUnique, config.SourcePostgres, false)
+		ver, err := DBGetPGVersion(mainContext, dbUnique, sources.SourcePostgres, false)
 		if err != nil || (ver.ExecEnv != execEnvAzureSingle) || (ver.ExecEnv == execEnvAzureSingle && ver.ApproxDBSizeB < 1e12) {
 			logger.Debugf("[%s] determining DB size ...", dbUnique)
 
@@ -221,7 +193,7 @@ func GetDBTotalApproxSize(dbUnique string) (int64, error) {
 	return data[0]["db_size_approx"].(int64), nil
 }
 
-func DBGetPGVersion(ctx context.Context, dbUnique string, srcType config.SourceKind, noCache bool) (DBVersionMapEntry, error) {
+func DBGetPGVersion(ctx context.Context, dbUnique string, srcType sources.Kind, noCache bool) (DBVersionMapEntry, error) {
 	var ver DBVersionMapEntry
 	var verNew DBVersionMapEntry
 	var ok bool
@@ -259,7 +231,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, srcType config.SourceK
 		verNew.Extensions = make(map[string]uint)
 	}
 
-	if srcType == config.SourcePgBouncer {
+	if srcType == sources.SourcePgBouncer {
 		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, "show version")
 		if err != nil {
 			return verNew, err
@@ -277,7 +249,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, srcType config.SourceK
 			verNew.VersionStr = matches[0]
 			verNew.Version = VersionToInt(matches[0])
 		}
-	} else if srcType == config.SourcePgPool {
+	} else if srcType == sources.SourcePgPool {
 		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, pgpoolVersion)
 		if err != nil {
 			return verNew, err
@@ -803,7 +775,7 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storageCh <- []metrics.MeasurementMessage{{DBName: dbUnique,
-			SourceType: string(md.Source),
+			SourceType: string(md.Kind),
 			MetricName: "object_changes",
 			Data:       detectedChangesSummary,
 			CustomTags: md.CustomTags,
@@ -961,7 +933,7 @@ func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existi
 
 // Called once on daemon startup to try to create "metric fething helper" functions automatically
 func TryCreateMetricsFetchingHelpers(dbUnique string) error {
-	dbPgVersion, err := DBGetPGVersion(mainContext, dbUnique, config.SourcePostgres, false)
+	dbPgVersion, err := DBGetPGVersion(mainContext, dbUnique, sources.SourcePostgres, false)
 	if err != nil {
 		logger.Errorf("Failed to fetch pg version for \"%s\": %s", dbUnique, err)
 		return err
@@ -1031,52 +1003,6 @@ func TryCreateMetricsFetchingHelpers(dbUnique string) error {
 		}
 	}
 	return nil
-}
-
-// "resolving" reads all the DB names from the given host/port, additionally matching/not matching specified regex patterns
-func ResolveDatabasesFromConfigEntry(ce MonitoredDatabase) ([]MonitoredDatabase, error) {
-	var c db.PgxPoolIface
-	var err error
-	md := make([]MonitoredDatabase, 0)
-
-	c, err = db.GetPostgresDBConnection(mainContext, ce.ConnStr)
-	if err != nil {
-		return md, err
-	}
-	defer c.Close()
-
-	sql := `select /* pgwatch3_generated */ datname::text as datname,
-		quote_ident(datname)::text as datname_escaped
-		from pg_database
-		where not datistemplate
-		and datallowconn
-		and has_database_privilege (datname, 'CONNECT')
-		and case when length(trim($1)) > 0 then datname ~ $2 else true end
-		and case when length(trim($3)) > 0 then not datname ~ $4 else true end`
-
-	data, err := DBExecRead(mainContext, c, sql, ce.DBNameIncludePattern, ce.DBNameIncludePattern, ce.DBNameExcludePattern, ce.DBNameExcludePattern)
-	if err != nil {
-		return md, err
-	}
-
-	for _, d := range data {
-		md = append(md, MonitoredDatabase{
-			DBUniqueName:         ce.DBUniqueName + "_" + d["datname_escaped"].(string),
-			DBUniqueNameOrig:     ce.DBUniqueName,
-			ConnStr:              ce.ConnStr,
-			Encryption:           ce.Encryption,
-			Metrics:              ce.Metrics,
-			MetricsStandby:       ce.MetricsStandby,
-			PresetMetrics:        ce.PresetMetrics,
-			PresetMetricsStandby: ce.PresetMetricsStandby,
-			IsSuperuser:          ce.IsSuperuser,
-			CustomTags:           ce.CustomTags,
-			HostConfig:           ce.HostConfig,
-			OnlyIfMaster:         ce.OnlyIfMaster,
-			Source:               ce.Source})
-	}
-
-	return md, err
 }
 
 // connects actually to the instance to determine PG relevant disk paths / mounts

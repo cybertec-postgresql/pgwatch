@@ -24,7 +24,7 @@ type ConnectionOpts struct {
 
 // MetricStoreOpts specifies the storage configuration to store metrics data
 type MetricOpts struct {
-	Group                 string   `short:"g" long:"group" mapstructure:"group" description:"Group (or groups, comma separated) for filtering which DBs to monitor. By default all are monitored" env:"PW3_GROUP"`
+	Group                 []string `short:"g" long:"group" mapstructure:"group" description:"Groups for filtering which databases to monitor. By default all are monitored" env:"PW3_GROUP"`
 	RealDbnameField       string   `long:"real-dbname-field" mapstructure:"real-dbname-field" description:"Tag key for real DB name if --add-real-dbname enabled" env:"PW3_REAL_DBNAME_FIELD" default:"real_dbname"`
 	SystemIdentifierField string   `long:"system-identifier-field" mapstructure:"system-identifier-field" description:"Tag key for system identifier value if --add-system-identifier" env:"PW3_SYSTEM_IDENTIFIER_FIELD" default:"sys_id"`
 	MetricsFolder         string   `short:"m" long:"metrics-folder" mapstructure:"metrics-folder" description:"Folder of metrics definitions" env:"PW3_METRICS_FOLDER"`
@@ -57,7 +57,7 @@ type StartOpts struct {
 
 // WebUIOpts specifies the internal web UI server options
 type WebUIOpts struct {
-	WebAddr     string `long:"web-addr" mapstructure:"web-addr" description:"TCP address in the form 'host:port' to listen on" default:":8080" env:"PW3_WEBADDR"`
+	WebAddr     string `long:"web-addr" mapstructure:"web-addr" description:"TCP address in the form 'host:port' to listen on" default:"127.0.0.1:8080" env:"PW3_WEBADDR"`
 	WebUser     string `long:"web-user" mapstructure:"web-user" description:"Admin login" env:"PW3_WEBUSER"`
 	WebPassword string `long:"web-password" mapstructure:"web-password" description:"Admin password" env:"PW3_WEBPASSWORD"`
 }
@@ -70,7 +70,7 @@ type Options struct {
 	Start                        StartOpts      `group:"Start" mapstructure:"Start"`
 	BatchingDelay                time.Duration  `long:"batching-delay" mapstructure:"batching-delay" description:"Max milliseconds to wait for a batched metrics flush. [Default: 250ms]" default:"250ms" env:"PW3_BATCHING_MAX_DELAY"`
 	AdHocConnString              string         `long:"adhoc-conn-str" mapstructure:"adhoc-conn-str" description:"Ad-hoc mode: monitor a single Postgres DB specified by a standard Libpq connection string" env:"PW3_ADHOC_CONN_STR"`
-	AdHocSrcType                 SourceKind     `long:"adhoc-type" mapstructure:"adhoc-type" description:"Ad-hoc mode: postgres|postgres-continuous-discovery" default:"postgres" env:"PW3_ADHOC_TYPE"`
+	AdHocSrcType                 string         `long:"adhoc-type" mapstructure:"adhoc-type" description:"Ad-hoc mode: postgres|postgres-continuous-discovery" default:"postgres" env:"PW3_ADHOC_TYPE"`
 	AdHocConfig                  string         `long:"adhoc-config" mapstructure:"adhoc-config" description:"Ad-hoc mode: a preset config name or a custom JSON config" env:"PW3_ADHOC_CONFIG"`
 	AdHocCreateHelpers           bool           `long:"adhoc-create-helpers" mapstructure:"adhoc-create-helpers" description:"Ad-hoc mode: try to auto-create helpers. Needs superuser to succeed" env:"PW3_ADHOC_CREATE_HELPERS"`
 	AdHocUniqueName              string         `long:"adhoc-name" mapstructure:"adhoc-name" description:"Ad-hoc mode: Unique 'dbname' for Influx" default:"adhoc" env:"PW3_ADHOC_NAME"`

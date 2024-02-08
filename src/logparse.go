@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
+	"github.com/cybertec-postgresql/pgwatch3/sources"
 )
 
 var PgSeverities = [...]string{"DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "LOG", "FATAL", "PANIC"}
@@ -84,7 +85,7 @@ func getFileWithNextModTimestamp(dbUniqueName, logsGlobPath, currentFile string)
 }
 
 // 1. add zero counts for severity levels that didn't have any occurrences in the log
-func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb MonitoredDatabase) []metrics.MeasurementMessage {
+func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb sources.MonitoredDatabase) []metrics.MeasurementMessage {
 	allSeverityCounts := make(metrics.Measurement)
 	for _, s := range PgSeverities {
 		parsedCount, ok := eventCounts[s]
@@ -103,7 +104,7 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 	allSeverityCounts["epoch_ns"] = time.Now().UnixNano()
 	return []metrics.MeasurementMessage{{
 		DBName:     mdb.DBUniqueName,
-		SourceType: string(mdb.Source),
+		SourceType: string(mdb.Kind),
 		MetricName: specialMetricServerLogEventCounts,
 		Data:       metrics.Measurements{allSeverityCounts},
 		CustomTags: mdb.CustomTags,
@@ -118,11 +119,11 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 	var linesRead = 0 // to skip over already parsed lines on Postgres server restart for example
 	var logsMatchRegex, logsMatchRegexPrev, logsGlobPath string
 	var lastSendTime time.Time                    // to storage channel
-	var lastConfigRefreshTime time.Time           // MonitoredDatabase info
+	var lastConfigRefreshTime time.Time           //sources.MonitoredDatabase info
 	var eventCounts = make(map[string]int64)      // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	var eventCountsTotal = make(map[string]int64) // for the whole instance
-	var mdb MonitoredDatabase
-	var hostConfig HostConfigAttrs
+	var mdb sources.MonitoredDatabase
+	var hostConfig sources.HostConfigAttrs
 	var config = configMap
 	var interval float64
 	var err error
@@ -369,7 +370,7 @@ func ZeroEventCounts(eventCounts map[string]int64) {
 	}
 }
 
-func tryDetermineLogFolder(mdb MonitoredDatabase) string {
+func tryDetermineLogFolder(mdb sources.MonitoredDatabase) string {
 	sql := `select current_setting('data_directory') as dd, current_setting('log_directory') as ld`
 
 	logger.Infof("[%s] Trying to determine server logs folder via SQL as host_config.logs_glob_path not specified...", mdb.DBUniqueName)
@@ -387,7 +388,7 @@ func tryDetermineLogFolder(mdb MonitoredDatabase) string {
 	return path.Join(dd, ld, CSVLogDefaultGlobSuffix)
 }
 
-func tryDetermineLogMessagesLanguage(mdb MonitoredDatabase) string {
+func tryDetermineLogMessagesLanguage(mdb sources.MonitoredDatabase) string {
 	sql := `select current_setting('lc_messages')::varchar(2) as lc_messages;`
 
 	logger.Debugf("[%s] Trying to determine server log messages language...", mdb.DBUniqueName)

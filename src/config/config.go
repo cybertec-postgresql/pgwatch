@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -129,8 +130,8 @@ func validateAdHocConfig(c *Options) error {
 				return errors.New("--adhoc-conn-str requires --metrics-folder")
 			}
 		}
-		if c.AdHocSrcType != SourcePostgres && c.AdHocSrcType != SourcePostgresContinuous {
-			return fmt.Errorf("--adhoc-type can be of: [ %s (single DB) | %s (all non-template DB-s on an instance) ]. Default: %s", SourcePostgres, SourcePostgresContinuous, SourcePostgres)
+		if !strings.HasPrefix(c.AdHocSrcType, "postgres") {
+			return fmt.Errorf("--adhoc-type can be of: [ postgres (single DB) | postgres-continuous-discovery (all non-template DB-s on an instance) ]. Default: postgres-continuous-discovery")
 		}
 	}
 	return nil

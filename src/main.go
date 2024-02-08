@@ -16,7 +16,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"regexp"
 	"runtime/debug"
 	"slices"
@@ -34,62 +33,14 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
 	"github.com/cybertec-postgresql/pgwatch3/sinks"
+	"github.com/cybertec-postgresql/pgwatch3/sources"
 	"github.com/cybertec-postgresql/pgwatch3/webserver"
-	"github.com/jackc/pgx/v5"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 
 	"golang.org/x/crypto/pbkdf2"
 	"gopkg.in/yaml.v2"
 )
-
-type MonitoredDatabase struct {
-	DBUniqueName         string `yaml:"unique_name"`
-	DBUniqueNameOrig     string // to preserve belonging to a specific instance for continuous modes where DBUniqueName will be dynamic
-	Group                string
-	Encryption           string             `yaml:"encryption"`
-	ConnStr              string             `yaml:"conn_str"`
-	Metrics              map[string]float64 `yaml:"custom_metrics"`
-	MetricsStandby       map[string]float64 `yaml:"custom_metrics_standby"`
-	Source               config.SourceKind
-	DBNameIncludePattern string            `yaml:"dbname_include_pattern"`
-	DBNameExcludePattern string            `yaml:"dbname_exclude_pattern"`
-	PresetMetrics        string            `yaml:"preset_metrics"`
-	PresetMetricsStandby string            `yaml:"preset_metrics_standby"`
-	IsSuperuser          bool              `yaml:"is_superuser"`
-	IsEnabled            bool              `yaml:"is_enabled"`
-	CustomTags           map[string]string `yaml:"custom_tags"`
-	HostConfig           HostConfigAttrs   `yaml:"host_config"`
-	OnlyIfMaster         bool              `yaml:"only_if_master"`
-}
-
-func (md MonitoredDatabase) GetDatabaseName() string {
-	if conf, err := pgx.ParseConfig(md.ConnStr); err == nil {
-		return conf.Database
-	}
-	return ""
-}
-
-type HostConfigAttrs struct {
-	DcsType                string   `yaml:"dcs_type"`
-	DcsEndpoints           []string `yaml:"dcs_endpoints"`
-	Scope                  string
-	Namespace              string
-	Username               string
-	Password               string
-	CAFile                 string                             `yaml:"ca_file"`
-	CertFile               string                             `yaml:"cert_file"`
-	KeyFile                string                             `yaml:"key_file"`
-	LogsGlobPath           string                             `yaml:"logs_glob_path"`   // default $data_directory / $log_directory / *.csvlog
-	LogsMatchRegex         string                             `yaml:"logs_match_regex"` // default is for CSVLOG format. needs to capture following named groups: log_time, user_name, database_name and error_severity
-	PerMetricDisabledTimes []HostConfigPerMetricDisabledTimes `yaml:"per_metric_disabled_intervals"`
-}
-
-type HostConfigPerMetricDisabledTimes struct { // metric gathering override per host / metric / time
-	Metrics       []string `yaml:"metrics"`
-	DisabledTimes []string `yaml:"disabled_times"`
-	DisabledDays  string   `yaml:"disabled_days"`
-}
 
 type ControlMessage struct {
 	Action string // START, STOP, PAUSE
@@ -100,7 +51,7 @@ type MetricFetchMessage struct {
 	DBUniqueName        string
 	DBUniqueNameOrig    string
 	MetricName          string
-	Source              config.SourceKind
+	Source              sources.Kind
 	Interval            time.Duration
 	CreatedOn           time.Time
 	StmtTimeoutOverride int64
@@ -143,9 +94,6 @@ const (
 	metricdbIdent           = "metricDb"
 	configdbIdent           = "configDb"
 	contextPrometheusScrape = "prometheus-scrape"
-	dcsTypeEtcd             = "etcd"
-	dcsTypeZookeeper        = "zookeeper"
-	dcsTypeConsul           = "consul"
 
 	monitoredDbsDatastoreSyncIntervalSeconds = 600              // write actively monitored DBs listing to metrics store after so many seconds
 	monitoredDbsDatastoreSyncMetricName      = "configured_dbs" // FYI - for Postgres datastore there's also the admin.all_unique_dbnames table with all recent DB unique names with some metric data
@@ -172,8 +120,6 @@ const (
 	execEnvGoogle         = "GOOGLE"
 )
 
-var srcTypeMap = map[config.SourceKind]bool{config.SourcePostgres: true, config.SourcePostgresContinuous: true, config.SourcePgBouncer: true, config.SourcePatroni: true, config.SourcePatroniContinuous: true, config.SourcePgPool: true, config.SourcePatroniNamespace: true}
-var srcTypes = []config.SourceKind{config.SourcePostgres, config.SourcePostgresContinuous, config.SourcePgBouncer, config.SourcePatroni, config.SourcePatroniContinuous, config.SourcePatroniNamespace} // used for informational purposes
 var specialMetrics = map[string]bool{recoMetricName: true, specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 var directlyFetchableOSMetrics = map[string]bool{metricPsutilCPU: true, metricPsutilDisk: true, metricPsutilDiskIoTotal: true, metricPsutilMem: true, metricCPULoad: true}
 var metricDefinitionMap metrics.MetricVersionDefs
@@ -182,14 +128,14 @@ var hostMetricIntervalMap = make(map[string]float64) // [db1_metric] = 30
 var dbPgVersionMap = make(map[string]DBVersionMapEntry)
 var dbPgVersionMapLock = sync.RWMutex{}
 var dbGetPgVersionMapLock = make(map[string]*sync.RWMutex) // synchronize initial PG version detection to 1 instance for each defined host
-var monitoredDbCache map[string]MonitoredDatabase
+var monitoredDbCache map[string]sources.MonitoredDatabase
 var monitoredDbCacheLock sync.RWMutex
 
 var monitoredDbConnCacheLock = sync.RWMutex{}
 var lastSQLFetchError sync.Map
 
 var fileBasedMetrics = false
-var presetMetricDefMap map[string]map[string]float64 // read from metrics folder in "file mode"
+
 // / internal statistics calculation
 var lastSuccessfulDatastoreWriteTimeEpoch int64
 var datastoreWriteFailuresCounter uint64
@@ -224,8 +170,8 @@ var lastDBSizeMB = make(map[string]int64)
 var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHING_INTERVAL
 var lastDBSizeCheckLock sync.RWMutex
 
-var prevLoopMonitoredDBs []MonitoredDatabase // to be able to detect DBs removed from config
-var undersizedDBs = make(map[string]bool)    // DBs below the --min-db-size-mb limit, if set
+var prevLoopMonitoredDBs []sources.MonitoredDatabase // to be able to detect DBs removed from config
+var undersizedDBs = make(map[string]bool)            // DBs below the --min-db-size-mb limit, if set
 var undersizedDBsLock = sync.RWMutex{}
 var recoveryIgnoredDBs = make(map[string]bool) // DBs in recovery state and OnlyIfMaster specified in config
 var recoveryIgnoredDBsLock = sync.RWMutex{}
@@ -276,7 +222,7 @@ func RestoreSQLConnPoolLimitsForPreviouslyDormantDB(dbUnique string) {
 
 }
 
-func InitPGVersionInfoFetchingLockIfNil(md MonitoredDatabase) {
+func InitPGVersionInfoFetchingLockIfNil(md sources.MonitoredDatabase) {
 	dbPgVersionMapLock.Lock()
 	if _, ok := dbGetPgVersionMapLock[md.DBUniqueName]; !ok {
 		dbGetPgVersionMapLock[md.DBUniqueName] = &sync.RWMutex{}
@@ -284,130 +230,18 @@ func InitPGVersionInfoFetchingLockIfNil(md MonitoredDatabase) {
 	dbPgVersionMapLock.Unlock()
 }
 
-func GetMonitoredDatabasesFromConfigDB() ([]MonitoredDatabase, error) {
-	monitoredDBs := make([]MonitoredDatabase, 0)
-	activeHostData, err := GetAllActiveHostsFromConfigDB()
-	groups := strings.Split(opts.Metric.Group, ",")
-	skippedEntries := 0
-
-	if err != nil {
-		logger.Errorf("Failed to read monitoring config from DB: %s", err)
-		return monitoredDBs, err
-	}
-
-	for _, row := range activeHostData {
-
-		if len(opts.Metric.Group) > 0 { // filter out rows with non-matching groups
-			matched := false
-			for _, g := range groups {
-				if row["md_group"].(string) == g {
-					matched = true
-					break
-				}
-			}
-			if !matched {
-				skippedEntries++
-				continue
-			}
-		}
-		if skippedEntries > 0 {
-			logger.Infof("Filtered out %d config entries based on --groups input", skippedEntries)
-		}
-
-		metricConfig, err := jsonTextToMap(row["md_config"].(string))
-		if err != nil {
-			logger.Warningf("Cannot parse metrics JSON config for \"%s\": %v", row["md_name"].(string), err)
-			continue
-		}
-		metricConfigStandby := make(map[string]float64)
-		if configStandby, ok := row["md_config_standby"]; ok {
-			metricConfigStandby, err = jsonTextToMap(configStandby.(string))
-			if err != nil {
-				logger.Warningf("Cannot parse standby metrics JSON config for \"%s\". Ignoring standby config: %v", row["md_name"].(string), err)
-			}
-		}
-		customTags, err := jsonTextToStringMap(row["md_custom_tags"].(string))
-		if err != nil {
-			logger.Warningf("Cannot parse custom tags JSON for \"%s\". Ignoring custom tags. Error: %v", row["md_name"].(string), err)
-			customTags = nil
-		}
-		hostConfigAttrs := HostConfigAttrs{}
-		err = yaml.Unmarshal([]byte(row["md_host_config"].(string)), &hostConfigAttrs)
-		if err != nil {
-			logger.Warningf("Cannot parse host config JSON for \"%s\". Ignoring host config. Error: %v", row["md_name"].(string), err)
-		}
-
-		md := MonitoredDatabase{
-			DBUniqueName:         row["md_name"].(string),
-			DBUniqueNameOrig:     row["md_name"].(string),
-			IsSuperuser:          row["md_is_superuser"].(bool),
-			ConnStr:              row["md_connstr"].(string),
-			Encryption:           row["md_encryption"].(string),
-			Metrics:              metricConfig,
-			MetricsStandby:       metricConfigStandby,
-			Source:               row["md_dbtype"].(config.SourceKind),
-			DBNameIncludePattern: row["md_include_pattern"].(string),
-			DBNameExcludePattern: row["md_exclude_pattern"].(string),
-			Group:                row["md_group"].(string),
-			HostConfig:           hostConfigAttrs,
-			OnlyIfMaster:         row["md_only_if_master"].(bool),
-			CustomTags:           customTags}
-
-		if _, ok := srcTypeMap[md.Source]; !ok {
-			logger.Warningf("Ignoring source \"%s\" - unknown type: %s. Expected one of: %+v", md.DBUniqueName, md.Source, srcTypes)
-			continue
-		}
-
-		if md.Encryption == "aes-gcm-256" && opts.AesGcmKeyphrase != "" {
-			md.ConnStr = decrypt(md.DBUniqueName, opts.AesGcmKeyphrase, md.ConnStr)
-		}
-
-		if md.Source == config.SourcePostgresContinuous {
-			resolved, err := ResolveDatabasesFromConfigEntry(md)
-			if err != nil {
-				logger.Errorf("Failed to resolve DBs for \"%s\": %s", md.DBUniqueName, err)
-				if md.Encryption == "aes-gcm-256" && opts.AesGcmKeyphrase == "" {
-					logger.Errorf("No decryption key set. Use the --aes-gcm-keyphrase or --aes-gcm-keyphrase params to set")
-				}
-				continue
-			}
-			tempArr := make([]string, 0)
-			for _, rdb := range resolved {
-				monitoredDBs = append(monitoredDBs, rdb)
-				tempArr = append(tempArr, rdb.ConnStr)
-			}
-			logger.Debugf("Resolved %d DBs with prefix \"%s\": [%s]", len(resolved), md.DBUniqueName, strings.Join(tempArr, ", "))
-		} else if md.Source == config.SourcePatroni || md.Source == config.SourcePatroniContinuous || md.Source == config.SourcePatroniNamespace {
-			resolved, err := ResolveDatabasesFromPatroni(md)
-			if err != nil {
-				logger.Errorf("Failed to resolve DBs for \"%s\": %s", md.DBUniqueName, err)
-				continue
-			}
-			tempArr := make([]string, 0)
-			for _, rdb := range resolved {
-				monitoredDBs = append(monitoredDBs, rdb)
-				tempArr = append(tempArr, rdb.ConnStr)
-			}
-			logger.Debugf("Resolved %d DBs with prefix \"%s\": [%s]", len(resolved), md.DBUniqueName, strings.Join(tempArr, ", "))
-		} else {
-			monitoredDBs = append(monitoredDBs, md)
-		}
-	}
-	return monitoredDBs, err
-}
-
-func GetMonitoredDatabaseByUniqueName(name string) (MonitoredDatabase, error) {
+func GetMonitoredDatabaseByUniqueName(name string) (sources.MonitoredDatabase, error) {
 	monitoredDbCacheLock.RLock()
 	defer monitoredDbCacheLock.RUnlock()
 	_, exists := monitoredDbCache[name]
 	if !exists {
-		return MonitoredDatabase{}, errors.New("DBUnique not found")
+		return sources.MonitoredDatabase{}, errors.New("DBUnique not found")
 	}
 	return monitoredDbCache[name], nil
 }
 
-func UpdateMonitoredDBCache(data []MonitoredDatabase) {
-	monitoredDbCacheNew := make(map[string]MonitoredDatabase)
+func UpdateMonitoredDBCache(data []sources.MonitoredDatabase) {
+	monitoredDbCacheNew := make(map[string]sources.MonitoredDatabase)
 
 	for _, row := range data {
 		monitoredDbCacheNew[row.DBUniqueName] = row
@@ -603,7 +437,7 @@ func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[str
 	var sql string
 	var retryWithSuperuserSQL = true
 	var data, cachedData metrics.Measurements
-	var md MonitoredDatabase
+	var md sources.MonitoredDatabase
 	var fromCache, isCacheable bool
 
 	vme, err = DBGetPGVersion(ctx, msg.DBUniqueName, msg.Source, false)
@@ -623,7 +457,7 @@ func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[str
 	}
 	dbpgVersion = vme.Version
 
-	if msg.Source == config.SourcePgBouncer {
+	if msg.Source == sources.SourcePgBouncer {
 		dbpgVersion = 0 // version is 0.0 for all pgbouncer sql per convention
 	}
 
@@ -680,7 +514,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 		if data, err = GetRecommendations(msg.DBUniqueName, vme); err != nil {
 			return nil, err
 		}
-	} else if msg.Source == config.SourcePgPool {
+	} else if msg.Source == sources.SourcePgPool {
 		if data, err = FetchMetricsPgpool(msg, vme, mvp); err != nil {
 			return nil, err
 		}
@@ -744,7 +578,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 
 send_to_storageChannel:
 
-	if (opts.Metric.RealDbnameField > "" || opts.Metric.SystemIdentifierField > "") && msg.Source == config.SourcePostgres {
+	if (opts.Metric.RealDbnameField > "" || opts.Metric.SystemIdentifierField > "") && msg.Source == sources.SourcePostgres {
 		dbPgVersionMapLock.RLock()
 		ver := dbPgVersionMap[msg.DBUniqueName]
 		dbPgVersionMapLock.RUnlock()
@@ -828,7 +662,7 @@ func PutToInstanceCache(msg MetricFetchMessage, data metrics.Measurements) {
 }
 
 func IsCacheableMetric(msg MetricFetchMessage, mvp metrics.MetricProperties) bool {
-	if !(msg.Source == config.SourcePostgresContinuous || msg.Source == config.SourcePatroniContinuous) {
+	if !(msg.Source == sources.SourcePostgresContinuous || msg.Source == sources.SourcePatroniContinuous) {
 		return false
 	}
 	return mvp.MetricAttrs.IsInstanceLevel
@@ -894,7 +728,7 @@ func deepCopyMetricDefinitionMap(mdm map[string]map[uint]metrics.MetricPropertie
 }
 
 // ControlMessage notifies of shutdown + interval change
-func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig string, srcType config.SourceKind, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []metrics.MeasurementMessage) {
+func MetricGathererLoop(ctx context.Context, dbUniqueName, dbUniqueNameOrig string, srcType sources.Kind, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []metrics.MeasurementMessage) {
 	config := configMap
 	interval := config[metricName]
 	hostState := make(map[string]map[string]string)
@@ -1208,7 +1042,7 @@ func IsInTimeSpan(checkTime time.Time, timeRange, metric, dbUnique string) bool 
 	return check.Before(t2) && check.After(t1)
 }
 
-func IsInDisabledTimeDayRange(localTime time.Time, metricAttrsDisabledDays string, metricAttrsDisabledTimes []string, hostConfigPerMetricDisabledTimes []HostConfigPerMetricDisabledTimes, metric, dbUnique string) bool {
+func IsInDisabledTimeDayRange(localTime time.Time, metricAttrsDisabledDays string, metricAttrsDisabledTimes []string, hostConfigPerMetricDisabledTimes []sources.HostConfigPerMetricDisabledTimes, metric, dbUnique string) bool {
 	hostConfigMetricMatch := false
 	for _, hcdi := range hostConfigPerMetricDisabledTimes { // host config takes precedence when both specified
 		dayMatchFound := false
@@ -1287,27 +1121,27 @@ func jsonTextToStringMap(jsonText string) (map[string]string, error) {
 	return retmap, nil
 }
 
-func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md MonitoredDatabase) (MonitoredDatabase, int) {
+func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md sources.MonitoredDatabase) (sources.MonitoredDatabase, int) {
 	var changed int
 
 	if strings.HasPrefix(md.Encryption, "$") {
 		md.Encryption = os.ExpandEnv(md.Encryption)
 		changed++
 	}
-	if strings.HasPrefix(string(md.Source), "$") {
-		md.Source = config.SourceKind(os.ExpandEnv(string(md.Source)))
+	if strings.HasPrefix(string(md.Kind), "$") {
+		md.Kind = sources.Kind(os.ExpandEnv(string(md.Kind)))
 		changed++
 	}
 	if strings.HasPrefix(md.DBUniqueName, "$") {
 		md.DBUniqueName = os.ExpandEnv(md.DBUniqueName)
 		changed++
 	}
-	if strings.HasPrefix(md.DBNameIncludePattern, "$") {
-		md.DBNameIncludePattern = os.ExpandEnv(md.DBNameIncludePattern)
+	if strings.HasPrefix(md.IncludePattern, "$") {
+		md.IncludePattern = os.ExpandEnv(md.IncludePattern)
 		changed++
 	}
-	if strings.HasPrefix(md.DBNameExcludePattern, "$") {
-		md.DBNameExcludePattern = os.ExpandEnv(md.DBNameExcludePattern)
+	if strings.HasPrefix(md.ExcludePattern, "$") {
+		md.ExcludePattern = os.ExpandEnv(md.ExcludePattern)
 		changed++
 	}
 	if strings.HasPrefix(md.PresetMetrics, "$") {
@@ -1322,26 +1156,25 @@ func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md MonitoredDatabase) (Monito
 	return md, changed
 }
 
-func ConfigFileToMonitoredDatabases(configFilePath string) ([]MonitoredDatabase, error) {
-	hostList := make([]MonitoredDatabase, 0)
+func ConfigFileToMonitoredDatabases(configFilePath string) ([]sources.MonitoredDatabase, error) {
+	hostList := make([]sources.MonitoredDatabase, 0)
 
-	logger.Debugf("Converting monitoring YAML config to MonitoredDatabase from path %s ...", configFilePath)
+	logger.Debugf("Converting monitoring YAML config toconfig.MonitoredDatabase from path %s ...", configFilePath)
 	yamlFile, err := os.ReadFile(configFilePath)
 	if err != nil {
 		logger.Errorf("Error reading file %s: %s", configFilePath, err)
 		return hostList, err
 	}
 	// TODO check mod timestamp or hash, from a global "caching map"
-	c := make([]MonitoredDatabase, 0) // there can be multiple configs in a single file
-	yamlFile = []byte(string(yamlFile))
+	c := make([]sources.MonitoredDatabase, 0) // there can be multiple configs in a single file
 	err = yaml.Unmarshal(yamlFile, &c)
 	if err != nil {
 		logger.Errorf("Unmarshaling error: %v", err)
 		return hostList, err
 	}
 	for _, v := range c {
-		if v.Source == "" {
-			v.Source = config.SourcePostgres
+		if v.Kind == "" {
+			v.Kind = sources.SourcePostgres
 		}
 		if v.IsEnabled {
 			logger.Debugf("Found active monitoring config entry: %#v", v)
@@ -1361,105 +1194,8 @@ func ConfigFileToMonitoredDatabases(configFilePath string) ([]MonitoredDatabase,
 	return hostList, nil
 }
 
-// reads through the YAML files containing descriptions on which hosts to monitor
-func ReadMonitoringConfigFromFileOrFolder(fileOrFolder string) ([]MonitoredDatabase, error) {
-	hostList := make([]MonitoredDatabase, 0)
-
-	fi, err := os.Stat(fileOrFolder)
-	if err != nil {
-		logger.Errorf("Could not Stat() path: %s", fileOrFolder)
-		return hostList, err
-	}
-	switch mode := fi.Mode(); {
-	case mode.IsDir():
-		logger.Infof("Reading monitoring config from path %s ...", fileOrFolder)
-
-		err := filepath.Walk(fileOrFolder, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err // abort on first failure
-			}
-			if info.Mode().IsRegular() && (strings.HasSuffix(strings.ToLower(info.Name()), ".yaml") || strings.HasSuffix(strings.ToLower(info.Name()), ".yml")) {
-				logger.Debug("Found YAML config file:", info.Name())
-				mdbs, err := ConfigFileToMonitoredDatabases(path)
-				if err == nil {
-					hostList = append(hostList, mdbs...)
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			logger.Errorf("Could not successfully Walk() path %s: %s", fileOrFolder, err)
-			return hostList, err
-		}
-	case mode.IsRegular():
-		hostList, err = ConfigFileToMonitoredDatabases(fileOrFolder)
-	}
-
-	return hostList, err
-}
-
-// Resolves regexes if exact DBs were not specified exact
-func GetMonitoredDatabasesFromMonitoringConfig(mc []MonitoredDatabase) []MonitoredDatabase {
-	md := make([]MonitoredDatabase, 0)
-	if len(mc) == 0 {
-		return md
-	}
-	for _, e := range mc {
-		//log.Debugf("Processing config item: %#v", e)
-		if e.Metrics == nil && len(e.PresetMetrics) > 0 {
-			mdef, ok := presetMetricDefMap[e.PresetMetrics]
-			if !ok {
-				logger.Errorf("Failed to resolve preset config \"%s\" for \"%s\"", e.PresetMetrics, e.DBUniqueName)
-				continue
-			}
-			e.Metrics = mdef
-		}
-		if _, ok := srcTypeMap[e.Source]; !ok {
-			logger.Warningf("Ignoring source \"%s\" - unknown type: %s. Expected one of: %+v", e.DBUniqueName, e.Source, srcTypes)
-			continue
-		}
-		if e.IsEnabled && e.Encryption == "aes-gcm-256" && opts.AesGcmKeyphrase != "" {
-			e.ConnStr = decrypt(e.DBUniqueName, opts.AesGcmKeyphrase, e.ConnStr)
-		}
-		if e.Source == config.SourcePatroni && e.GetDatabaseName() == "" {
-			logger.Warningf("Ignoring host \"%s\" as \"dbname\" attribute not specified but required by type=patroni", e.DBUniqueName)
-			continue
-		}
-		if e.Source == config.SourcePostgres && e.GetDatabaseName() == "" {
-			logger.Warningf("Ignoring host \"%s\" as \"dbname\" attribute not specified but required by type=postgres", e.DBUniqueName)
-			continue
-		}
-		if len(e.GetDatabaseName()) == 0 || e.Source == config.SourcePostgresContinuous || e.Source == config.SourcePatroni || e.Source == config.SourcePatroniContinuous || e.Source == config.SourcePatroniNamespace {
-			if e.Source == config.SourcePostgresContinuous {
-				logger.Debugf("Adding \"%s\" (host=%s, port=%s) to continuous monitoring ...", e.DBUniqueName, e.ConnStr)
-			}
-			var foundDbs []MonitoredDatabase
-			var err error
-
-			if e.Source == config.SourcePatroni || e.Source == config.SourcePatroniContinuous || e.Source == config.SourcePatroniNamespace {
-				foundDbs, err = ResolveDatabasesFromPatroni(e)
-			} else {
-				foundDbs, err = ResolveDatabasesFromConfigEntry(e)
-			}
-			if err != nil {
-				logger.Errorf("Failed to resolve DBs for \"%s\": %s", e.DBUniqueName, err)
-				continue
-			}
-			tempArr := make([]string, 0)
-			for _, r := range foundDbs {
-				md = append(md, r)
-				tempArr = append(tempArr, r.GetDatabaseName())
-			}
-			logger.Debugf("Resolved %d DBs with prefix \"%s\": [%s]", len(foundDbs), e.DBUniqueName, strings.Join(tempArr, ", "))
-		} else {
-			md = append(md, e)
-		}
-	}
-	return md
-}
-
-func getMonitoredDatabasesSnapshot() map[string]MonitoredDatabase {
-	mdSnap := make(map[string]MonitoredDatabase)
+func getMonitoredDatabasesSnapshot() map[string]sources.MonitoredDatabase {
+	mdSnap := make(map[string]sources.MonitoredDatabase)
 
 	if monitoredDbCache != nil {
 		monitoredDbCacheLock.RLock()
@@ -1542,21 +1278,6 @@ func StatsSummarizer(ctx context.Context) {
 	}
 }
 
-func FilterMonitoredDatabasesByGroup(monitoredDBs []MonitoredDatabase, group string) ([]MonitoredDatabase, int) {
-	ret := make([]MonitoredDatabase, 0)
-	groups := strings.Split(group, ",")
-	for _, md := range monitoredDBs {
-		// matched := false
-		for _, g := range groups {
-			if md.Group == g {
-				ret = append(ret, md)
-				break
-			}
-		}
-	}
-	return ret, len(monitoredDBs) - len(ret)
-}
-
 func encrypt(passphrase, plaintext string) string { // called when --password-to-encrypt set
 	key, salt := deriveKey(passphrase, nil)
 	iv := make([]byte, 12)
@@ -1592,7 +1313,7 @@ func decrypt(dbUnique, passphrase, ciphertext string) string {
 	return string(data)
 }
 
-func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []MonitoredDatabase, persistenceChannel chan []metrics.MeasurementMessage) {
+func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []sources.MonitoredDatabase, persistenceChannel chan []metrics.MeasurementMessage) {
 	if len(monitoredDbs) > 0 {
 		msms := make([]metrics.MeasurementMessage, len(monitoredDbs))
 		now := time.Now()
@@ -1622,7 +1343,7 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []MonitoredDa
 	}
 }
 
-func shouldDbBeMonitoredBasedOnCurrentState(md MonitoredDatabase) bool {
+func shouldDbBeMonitoredBasedOnCurrentState(md sources.MonitoredDatabase) bool {
 	return !IsDBDormant(md.DBUniqueName)
 }
 
@@ -1636,7 +1357,7 @@ func ControlChannelsMapToList(controlChannels map[string]chan ControlMessage) []
 	return controlChannelList
 }
 
-func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, currentDBs, prevLoopDBs []MonitoredDatabase, shutDownDueToRoleChange map[string]bool) {
+func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, currentDBs, prevLoopDBs []sources.MonitoredDatabase, shutDownDueToRoleChange map[string]bool) {
 	var curDBsMap = make(map[string]bool)
 
 	for _, curDB := range currentDBs {
@@ -1782,9 +1503,9 @@ func SyncMetricDefs(ctx context.Context) {
 
 func main() {
 	var (
-		err           error
-		cancel        context.CancelFunc
-		metricsWriter *sinks.MultiWriter
+		err                error
+		cancel             context.CancelFunc
+		measurementsWriter *sinks.MultiWriter
 	)
 	exitCode.Store(ExitCodeOK)
 	defer func() {
@@ -1857,7 +1578,7 @@ func main() {
 	controlChannels := make(map[string](chan ControlMessage)) // [db1+metric1]=chan
 	measurementCh := make(chan []metrics.MeasurementMessage, 10000)
 
-	var monitoredDbs []MonitoredDatabase
+	var monitoredDbs sources.MonitoredDatabases
 	var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 	var metricConfig map[string]float64                       // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 
@@ -1867,103 +1588,51 @@ func main() {
 	}
 	go SyncMetricDefs(mainContext)
 
-	if metricsWriter, err = sinks.NewMultiWriter(mainContext, opts, metricDefinitionMap); err != nil {
+	if measurementsWriter, err = sinks.NewMultiWriter(mainContext, opts, metricDefinitionMap); err != nil {
 		logger.Fatal(err)
 	}
 	if !opts.Ping {
-		go metricsWriter.WriteMetrics(mainContext, measurementCh)
+		go measurementsWriter.WriteMeasurements(mainContext, measurementCh)
 	}
 
 	firstLoop := true
 	mainLoopCount := 0
+
+	var srcReader sources.Reader
+
+	if fileBasedMetrics {
+		srcReader, err = sources.NewYAMLConfigReader(mainContext, opts)
+	} else {
+		srcReader, err = sources.NewPostgresConfigReader(mainContext, opts)
+	}
+	if err != nil {
+		logger.Fatal(err)
+	}
 
 	for { //main loop
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
 		var controlChannelNameList []string
 		gatherersShutDown := 0
 
-		if fileBasedMetrics {
-			pmc, err := metrics.ReadPresetMetricsConfigFromFolder(opts.Metric.MetricsFolder)
-			if err != nil {
-				if firstLoop {
-					logger.Fatalf("Could not read preset metric config : %w", err)
-				} else {
-					logger.Errorf("Could not read preset metric config : %w", err)
-				}
+		if monitoredDbs, err = srcReader.GetMonitoredDatabases(); err != nil {
+			if firstLoop {
+				logger.Fatal("could not fetch active hosts - check config!", err)
 			} else {
-				presetMetricDefMap = pmc
-				logger.Infof("%d preset metric definitions found", len(pmc))
-				logger.Debugf("Loaded preset metric config: %#v", pmc)
-
-			}
-
-			if opts.IsAdHocMode() {
-				adhocconfig, ok := pmc[opts.AdHocConfig]
-				if !ok {
-					logger.Warningf("Could not find a preset metric config named \"%s\", assuming JSON config...", opts.AdHocConfig)
-					adhocconfig, err = jsonTextToMap(opts.AdHocConfig)
-					if err != nil {
-						logger.Fatalf("Could not parse --adhoc-config(%s): %v", opts.AdHocConfig, err)
-					}
-				}
-				md := MonitoredDatabase{DBUniqueName: opts.AdHocUniqueName, Source: opts.AdHocSrcType, Metrics: adhocconfig, ConnStr: opts.AdHocConnString}
-				if opts.AdHocSrcType == config.SourcePostgres {
-					monitoredDbs = []MonitoredDatabase{md}
-				} else {
-					resolved, err := ResolveDatabasesFromConfigEntry(md)
-					if err != nil {
-						if firstLoop {
-							logger.Fatalf("Failed to resolve DBs for ConnStr \"%s\": %s", opts.AdHocConnString, err)
-						} else { // keep previously found list
-							logger.Errorf("Failed to resolve DBs for ConnStr \"%s\": %s", opts.AdHocConnString, err)
-						}
-					} else {
-						monitoredDbs = resolved
-					}
-				}
-			} else {
-				mc, err := ReadMonitoringConfigFromFileOrFolder(opts.Connection.Config)
-				if err == nil {
-					logger.Debugf("Found %d monitoring config entries", len(mc))
-					if len(opts.Metric.Group) > 0 {
-						var removedCount int
-						mc, removedCount = FilterMonitoredDatabasesByGroup(mc, opts.Metric.Group)
-						logger.Infof("Filtered out %d config entries based on --groups=%s", removedCount, opts.Metric.Group)
-					}
-					monitoredDbs = GetMonitoredDatabasesFromMonitoringConfig(mc)
-					logger.Debugf("Found %d databases to monitor from %d config items...", len(monitoredDbs), len(mc))
-				} else {
-					if firstLoop {
-						logger.Fatalf("Could not read/parse monitoring config from path: %s. err: %v", opts.Connection.Config, err)
-					} else {
-						logger.Errorf("Could not read/parse monitoring config from path: %s. using last valid config data. err: %v", opts.Connection.Config, err)
-					}
-					time.Sleep(time.Second * time.Duration(opts.Connection.ServersRefreshLoopSeconds))
-					continue
-				}
-			}
-		} else {
-			monitoredDbs, err = GetMonitoredDatabasesFromConfigDB()
-			if err != nil {
-				if firstLoop {
-					logger.Fatal("could not fetch active hosts - check config!", err)
-				} else {
-					logger.Error("could not fetch active hosts, using last valid config data. err:", err)
-					time.Sleep(time.Second * time.Duration(opts.Connection.ServersRefreshLoopSeconds))
-					continue
-				}
+				logger.Error("could not fetch active hosts, using last valid config data. err:", err)
+				time.Sleep(time.Second * time.Duration(opts.Connection.ServersRefreshLoopSeconds))
+				continue
 			}
 		}
 
 		if DoesEmergencyTriggerfileExist() {
 			logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", opts.EmergencyPauseTriggerfile)
-			monitoredDbs = make([]MonitoredDatabase, 0)
+			monitoredDbs = make([]sources.MonitoredDatabase, 0)
 		}
 
 		UpdateMonitoredDBCache(monitoredDbs)
 
 		if lastMonitoredDBsUpdate.IsZero() || lastMonitoredDBsUpdate.Before(time.Now().Add(-1*time.Second*monitoredDbsDatastoreSyncIntervalSeconds)) {
-			monitoredDbsCopy := make([]MonitoredDatabase, len(monitoredDbs))
+			monitoredDbsCopy := make([]sources.MonitoredDatabase, len(monitoredDbs))
 			copy(monitoredDbsCopy, monitoredDbs)
 			go SyncMonitoredDBsToDatastore(mainContext, monitoredDbsCopy, measurementCh)
 			lastMonitoredDBsUpdate = time.Now()
@@ -1989,7 +1658,7 @@ func main() {
 
 			dbUnique := host.DBUniqueName
 			dbUniqueOrig := host.DBUniqueNameOrig
-			srcType := host.Source
+			srcType := host.Kind
 			metricConfig = host.Metrics
 			wasInstancePreviouslyDormant := IsDBDormant(dbUnique)
 
@@ -2041,7 +1710,7 @@ func main() {
 					metricConfig = host.MetricsStandby
 				}
 
-				if !opts.Ping && (host.IsSuperuser || opts.IsAdHocMode() && opts.AdHocCreateHelpers) && IsPostgresSource(srcType) && !ver.IsInRecovery {
+				if !opts.Ping && (host.IsSuperuser || opts.IsAdHocMode() && opts.AdHocCreateHelpers) && host.IsPostgresSource() && !ver.IsInRecovery {
 					if opts.Metric.NoHelperFunctions {
 						logger.Infof("[%s] Skipping rollout out helper functions due to the --no-helper-functions flag ...", dbUnique)
 					} else {
@@ -2052,7 +1721,7 @@ func main() {
 
 			}
 
-			if IsPostgresSource(host.Source) {
+			if host.IsPostgresSource() {
 				var DBSizeMB int64
 
 				if opts.MinDbSizeMB >= 8 { // an empty DB is a bit less than 8MB
@@ -2067,7 +1736,7 @@ func main() {
 						SetUndersizedDBState(dbUnique, false)
 					}
 				}
-				ver, err := DBGetPGVersion(mainContext, dbUnique, host.Source, false)
+				ver, err := DBGetPGVersion(mainContext, dbUnique, host.Kind, false)
 				if err == nil { // ok to ignore error, re-tried on next loop
 					lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[dbUnique]
 					if ver.IsInRecovery && host.OnlyIfMaster {
@@ -2145,7 +1814,7 @@ func main() {
 							}
 						}
 
-						if err := metricsWriter.SyncMetrics(dbUnique, metricNameForStorage, "add"); err != nil {
+						if err := measurementsWriter.SyncMetrics(dbUnique, metricNameForStorage, "add"); err != nil {
 							logger.Error(err)
 						}
 
@@ -2193,7 +1862,7 @@ func main() {
 
 		for _, dbMetric := range controlChannelNameList {
 			var currentMetricConfig map[string]float64
-			var dbInfo MonitoredDatabase
+			var dbInfo sources.MonitoredDatabase
 			var ok, dbRemovedFromConfig bool
 			singleMetricDisabled := false
 			splits := strings.Split(dbMetric, dbMetricJoinStr)
@@ -2240,7 +1909,7 @@ func main() {
 				logger.Debugf("control channel for [%s:%s] deleted", db, metric)
 				gatherersShutDown++
 				ClearDBUnreachableStateIfAny(db)
-				if err := metricsWriter.SyncMetrics(db, metric, "remove"); err != nil {
+				if err := measurementsWriter.SyncMetrics(db, metric, "remove"); err != nil {
 					logger.Error(err)
 				}
 			}
@@ -2251,7 +1920,7 @@ func main() {
 		}
 
 		// Destroy conn pools and metric writers
-		CloseResourcesForRemovedMonitoredDBs(metricsWriter, monitoredDbs, prevLoopMonitoredDBs, hostsToShutDownDueToRoleChange)
+		CloseResourcesForRemovedMonitoredDBs(measurementsWriter, monitoredDbs, prevLoopMonitoredDBs, hostsToShutDownDueToRoleChange)
 
 	MainLoopSleep:
 		mainLoopCount++
