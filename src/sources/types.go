@@ -68,7 +68,7 @@ func (md MonitoredDatabase) ExpandDatabases() (MonitoredDatabases, error) {
 	case SourcePatroni, SourcePatroniContinuous, SourcePatroniNamespace:
 		return ResolveDatabasesFromPatroni(md)
 	case SourcePostgresContinuous:
-		return ResolveDatabasesFromConfigEntry(md)
+		return md.ResolveDatabasesFromConfigEntry()
 	}
 	return nil, nil
 }
@@ -111,4 +111,8 @@ type HostConfigPerMetricDisabledTimes struct { // metric gathering override per 
 	Metrics       []string `yaml:"metrics"`
 	DisabledTimes []string `yaml:"disabled_times"`
 	DisabledDays  string   `yaml:"disabled_days"`
+}
+
+type Reader interface {
+	GetMonitoredDatabases() (MonitoredDatabases, error)
 }
