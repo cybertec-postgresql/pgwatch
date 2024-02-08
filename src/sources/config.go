@@ -36,12 +36,12 @@ type fileConfigReader struct {
 
 func (fcr *fileConfigReader) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
 	var fi fs.FileInfo
-	if fi, err = os.Stat(fcr.opts.Connection.Config); err != nil {
+	if fi, err = os.Stat(fcr.opts.Source.Config); err != nil {
 		return
 	}
 	switch mode := fi.Mode(); {
 	case mode.IsDir():
-		err = filepath.WalkDir(fcr.opts.Connection.Config, func(path string, d fs.DirEntry, err error) error {
+		err = filepath.WalkDir(fcr.opts.Source.Config, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -56,7 +56,7 @@ func (fcr *fileConfigReader) GetMonitoredDatabases() (dbs MonitoredDatabases, er
 			return err
 		})
 	case mode.IsRegular():
-		dbs, err = fcr.getMonitoredDatabases(fcr.opts.Connection.Config)
+		dbs, err = fcr.getMonitoredDatabases(fcr.opts.Source.Config)
 	}
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (fcr *fileConfigReader) getMonitoredDatabases(configFilePath string) (dbs M
 		if v.Kind == "" {
 			v.Kind = SourcePostgres
 		}
-		if v.IsEnabled && (len(fcr.opts.Metric.Group) == 0 || slices.Contains(fcr.opts.Metric.Group, v.Group)) {
+		if v.IsEnabled && (len(fcr.opts.Source.Group) == 0 || slices.Contains(fcr.opts.Source.Group, v.Group)) {
 			dbs = append(dbs, fcr.expandEnvVars(v))
 		}
 	}
@@ -110,7 +110,7 @@ func (fcr *fileConfigReader) expandEnvVars(md MonitoredDatabase) MonitoredDataba
 }
 
 func NewPostgresConfigReader(ctx context.Context, opts *config.Options) (Reader, error) {
-	configDb, err := db.InitAndTestConfigStoreConnection(ctx, opts.Connection.Config)
+	configDb, err := db.InitAndTestConfigStoreConnection(ctx, opts.Source.Config)
 	return &dbConfigReader{
 		ctx:      ctx,
 		configDb: configDb,
@@ -124,7 +124,7 @@ type dbConfigReader struct {
 	opts     *config.Options
 }
 
-func (r *dbConfigReader) GetMonitoredDatabases() (MonitoredDatabases, error) {
+func (r *dbConfigReader) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
 	sqlLatest := `select /* pgwatch3_generated */
 	md_name, 
 	md_group, 
@@ -144,12 +144,18 @@ from
 	left join pgwatch3.preset_config s on s.pc_name = md_preset_config_name_standby
 where
 	md_is_enabled`
-	if len(r.opts.Metric.Group) > 0 {
-		sqlLatest += " and md_group in (" + strings.Join(r.opts.Metric.Group, ",") + ")"
+	if len(r.opts.Source.Group) > 0 {
+		sqlLatest += " and md_group in (" + strings.Join(r.opts.Source.Group, ",") + ")"
 	}
 	rows, err := r.configDb.Query(context.Background(), sqlLatest)
 	if err != nil {
 		return nil, err
 	}
-	return pgx.CollectRows[MonitoredDatabase](rows, pgx.RowToStructByNameLax)
+	dbs, err = pgx.CollectRows[MonitoredDatabase](rows, pgx.RowToStructByNameLax)
+	for _, md := range dbs {
+		if md.Encryption == "aes-gcm-256" && r.opts.Source.AesGcmKeyphrase != "" {
+			md.ConnStr = r.opts.Decrypt(md.ConnStr)
+		}
+	}
+	return
 }

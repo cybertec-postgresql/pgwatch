@@ -2,12 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -38,7 +32,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 
-	"golang.org/x/crypto/pbkdf2"
 	"gopkg.in/yaml.v2"
 )
 
@@ -1091,36 +1084,6 @@ func UpdateMetricDefinitions(newMetrics map[string]map[uint]metrics.MetricProper
 	logger.Debug("metrics definitions refreshed - nr. found:", len(newMetrics))
 }
 
-func jsonTextToMap(jsonText string) (map[string]float64, error) {
-	retmap := make(map[string]float64)
-	if jsonText == "" {
-		return retmap, nil
-	}
-	var hostConfig map[string]any
-	if err := json.Unmarshal([]byte(jsonText), &hostConfig); err != nil {
-		return nil, err
-	}
-	for k, v := range hostConfig {
-		retmap[k] = v.(float64)
-	}
-	return retmap, nil
-}
-
-func jsonTextToStringMap(jsonText string) (map[string]string, error) {
-	retmap := make(map[string]string)
-	if jsonText == "" {
-		return retmap, nil
-	}
-	var iMap map[string]any
-	if err := json.Unmarshal([]byte(jsonText), &iMap); err != nil {
-		return nil, err
-	}
-	for k, v := range iMap {
-		retmap[k] = fmt.Sprintf("%v", v)
-	}
-	return retmap, nil
-}
-
 func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md sources.MonitoredDatabase) (sources.MonitoredDatabase, int) {
 	var changed int
 
@@ -1276,41 +1239,6 @@ func StatsSummarizer(ctx context.Context) {
 			return
 		}
 	}
-}
-
-func encrypt(passphrase, plaintext string) string { // called when --password-to-encrypt set
-	key, salt := deriveKey(passphrase, nil)
-	iv := make([]byte, 12)
-	_, _ = rand.Read(iv)
-	b, _ := aes.NewCipher(key)
-	aesgcm, _ := cipher.NewGCM(b)
-	data := aesgcm.Seal(nil, iv, []byte(plaintext), nil)
-	return hex.EncodeToString(salt) + "-" + hex.EncodeToString(iv) + "-" + hex.EncodeToString(data)
-}
-
-func deriveKey(passphrase string, salt []byte) ([]byte, []byte) {
-	if salt == nil {
-		salt = make([]byte, 8)
-		_, _ = rand.Read(salt)
-	}
-	return pbkdf2.Key([]byte(passphrase), salt, 1000, 32, sha256.New), salt
-}
-
-func decrypt(dbUnique, passphrase, ciphertext string) string {
-	arr := strings.Split(ciphertext, "-")
-	if len(arr) != 3 {
-		logger.Warningf("Aes-gcm-256 encrypted password for \"%s\" should consist of 3 parts - using 'as is'", dbUnique)
-		return ciphertext
-	}
-	salt, _ := hex.DecodeString(arr[0])
-	iv, _ := hex.DecodeString(arr[1])
-	data, _ := hex.DecodeString(arr[2])
-	key, _ := deriveKey(passphrase, salt)
-	b, _ := aes.NewCipher(key)
-	aesgcm, _ := cipher.NewGCM(b)
-	data, _ = aesgcm.Open(nil, iv, data, nil)
-	//log.Debug("decoded", string(data))
-	return string(data)
 }
 
 func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []sources.MonitoredDatabase, persistenceChannel chan []metrics.MeasurementMessage) {
@@ -1522,8 +1450,13 @@ func main() {
 
 	opts, err = config.NewConfig(os.Stdout)
 	if err != nil {
-		if opts != nil && opts.VersionOnly() {
-			printVersion()
+		if opts != nil {
+			if opts.VersionOnly() {
+				printVersion()
+			}
+			if opts.Source.AesGcmPasswordToEncrypt > "" { // special flag - encrypt and exit
+				fmt.Println(opts.Encrypt())
+			}
 			return
 		}
 		fmt.Println("Configuration error: ", err)
@@ -1543,11 +1476,6 @@ func main() {
 
 	logger.Debugf("opts: %+v", opts)
 
-	if opts.AesGcmPasswordToEncrypt > "" { // special flag - encrypt and exit
-		fmt.Println(encrypt(opts.AesGcmKeyphrase, opts.AesGcmPasswordToEncrypt))
-		return
-	}
-
 	if opts.IsAdHocMode() && opts.AdHocUniqueName == "adhoc" {
 		logger.Warning("In ad-hoc mode: using default unique name 'adhoc' for metrics storage. use --adhoc-name to override.")
 	}
@@ -1560,12 +1488,12 @@ func main() {
 	case configKind == config.ConfigFile || configKind == config.ConfigFolder:
 		fileBasedMetrics = true
 	case configKind == config.ConfigPgURL:
-		if configDb, err = db.InitAndTestConfigStoreConnection(mainContext, opts.Connection.Config); err != nil {
+		if configDb, err = db.InitAndTestConfigStoreConnection(mainContext, opts.Source.Config); err != nil {
 			logger.WithError(err).Fatal("Could not connect to configuration database")
 		}
 	}
 
-	if opts.Connection.Init {
+	if opts.Source.Init {
 		return
 	}
 
@@ -1619,7 +1547,7 @@ func main() {
 				logger.Fatal("could not fetch active hosts - check config!", err)
 			} else {
 				logger.Error("could not fetch active hosts, using last valid config data. err:", err)
-				time.Sleep(time.Second * time.Duration(opts.Connection.ServersRefreshLoopSeconds))
+				time.Sleep(time.Second * time.Duration(opts.Source.Refresh))
 				continue
 			}
 		}
@@ -1662,7 +1590,7 @@ func main() {
 			metricConfig = host.Metrics
 			wasInstancePreviouslyDormant := IsDBDormant(dbUnique)
 
-			if host.Encryption == "aes-gcm-256" && len(opts.AesGcmKeyphrase) == 0 && len(opts.AesGcmKeyphraseFile) == 0 {
+			if host.Encryption == "aes-gcm-256" && len(opts.Source.AesGcmKeyphrase) == 0 && len(opts.Source.AesGcmKeyphraseFile) == 0 {
 				// Warn if any encrypted hosts found but no keyphrase given
 				logger.Warningf("Encrypted password type found for host \"%s\", but no decryption keyphrase specified. Use --aes-gcm-keyphrase or --aes-gcm-keyphrase-file params", dbUnique)
 			}
@@ -1691,7 +1619,7 @@ func main() {
 				if err != nil {
 					logger.Errorf("could not start metric gathering for DB \"%s\" due to connection problem: %s", dbUnique, err)
 					if opts.AdHocConnString != "" {
-						logger.Errorf("will retry in %ds...", opts.Connection.ServersRefreshLoopSeconds)
+						logger.Errorf("will retry in %ds...", opts.Source.Refresh)
 					}
 					failedInitialConnectHosts[dbUnique] = true
 					continue
@@ -1724,10 +1652,10 @@ func main() {
 			if host.IsPostgresSource() {
 				var DBSizeMB int64
 
-				if opts.MinDbSizeMB >= 8 { // an empty DB is a bit less than 8MB
+				if opts.Source.MinDbSizeMB >= 8 { // an empty DB is a bit less than 8MB
 					DBSizeMB, _ = DBGetSizeMB(dbUnique) // ignore errors, i.e. only remove from monitoring when we're certain it's under the threshold
 					if DBSizeMB != 0 {
-						if DBSizeMB < opts.MinDbSizeMB {
+						if DBSizeMB < opts.Source.MinDbSizeMB {
 							logger.Infof("[%s] DB will be ignored due to the --min-db-size-mb filter. Current (up to %v cached) DB size = %d MB", dbUnique, dbSizeCachingInterval, DBSizeMB)
 							hostsToShutDownDueToRoleChange[dbUnique] = true // for the case when DB size was previosly above the threshold
 							SetUndersizedDBState(dbUnique, true)
@@ -1926,9 +1854,9 @@ func main() {
 		mainLoopCount++
 		prevLoopMonitoredDBs = monitoredDbs
 
-		logger.Debugf("main sleeping %ds...", opts.Connection.ServersRefreshLoopSeconds)
+		logger.Debugf("main sleeping %ds...", opts.Source.Refresh)
 		select {
-		case <-time.After(time.Second * time.Duration(opts.Connection.ServersRefreshLoopSeconds)):
+		case <-time.After(time.Second * time.Duration(opts.Source.Refresh)):
 			// pass
 		case <-mainContext.Done():
 			return
