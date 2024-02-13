@@ -83,7 +83,7 @@ func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) 
 
 func GetConnByUniqueName(dbUnique string) db.PgxIface {
 	monitoredDbConnCacheLock.RLock()
-	conn, _ := monitoredDbConnCache[dbUnique]
+	conn := monitoredDbConnCache[dbUnique]
 	monitoredDbConnCacheLock.RUnlock()
 	return conn
 }
