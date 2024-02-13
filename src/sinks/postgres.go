@@ -30,7 +30,11 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options
 		input:      make(chan []metrics.MeasurementMessage, cacheLimit),
 		lastError:  make(chan error),
 	}
-	if pgw.SinkDb, err = db.InitAndTestMetricStoreConnection(ctx, connstr); err != nil {
+
+	if pgw.SinkDb, err = db.New(ctx, connstr); err != nil {
+		return
+	}
+	if err = db.InitMeasurementDb(ctx, pgw.SinkDb); err != nil {
 		return
 	}
 	if err = pgw.ReadMetricSchemaType(); err != nil {

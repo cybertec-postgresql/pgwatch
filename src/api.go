@@ -18,7 +18,7 @@ type uiapihandler struct{}
 var uiapi uiapihandler
 
 func (uiapi uiapihandler) TryConnectToDB(params []byte) (err error) {
-	return db.TryDatabaseConnection(context.TODO(), string(params))
+	return db.Ping(context.TODO(), string(params))
 }
 
 // AddPreset adds the preset to the list of available presets

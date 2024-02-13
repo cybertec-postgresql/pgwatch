@@ -16,7 +16,7 @@ const (
 	applicationName      = "pgwatch3" // will be set on all opened PG connections for informative purposes
 )
 
-func TryDatabaseConnection(ctx context.Context, connStr string) error {
+func Ping(ctx context.Context, connStr string) error {
 	c, err := pgx.Connect(ctx, connStr)
 	if c != nil {
 		_ = c.Close(ctx)
@@ -26,15 +26,11 @@ func TryDatabaseConnection(ctx context.Context, connStr string) error {
 
 type ConnConfigCallback = func(*pgxpool.Config) error
 
-func GetPostgresDBConnection(ctx context.Context, connStr string, callbacks ...ConnConfigCallback) (PgxPoolIface, error) {
+// New create a new pool
+func New(ctx context.Context, connStr string, callbacks ...ConnConfigCallback) (PgxPoolIface, error) {
 	connConfig, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
 		return nil, err
-	}
-	for _, f := range callbacks {
-		if err = f(connConfig); err != nil {
-			return nil, err
-		}
 	}
 	if connConfig.ConnConfig.ConnectTimeout == 0 {
 		connConfig.ConnConfig.ConnectTimeout = time.Second * 5
@@ -46,47 +42,47 @@ func GetPostgresDBConnection(ctx context.Context, connStr string, callbacks ...C
 		LogLevel: tracelog.LogLevelDebug, //map[bool]tracelog.LogLevel{false: tracelog.LogLevelWarn, true: tracelog.LogLevelDebug}[true],
 	}
 	connConfig.ConnConfig.Tracer = tracelogger
+	for _, f := range callbacks {
+		if err = f(connConfig); err != nil {
+			return nil, err
+		}
+	}
 	return pgxpool.NewWithConfig(ctx, connConfig)
 }
 
-var backoff = retry.WithMaxRetries(3, retry.NewConstant(1*time.Second))
+type ConnInitCallback = func(context.Context, PgxIface) error
 
-func InitAndTestConfigStoreConnection(ctx context.Context, connStr string) (configDb PgxPoolIface, err error) {
+// Init creates a new pool, check connection is establised. If not retries connection 3 times with delay 1s
+func Init(ctx context.Context, db PgxPoolIface, init ConnInitCallback) error {
+	var backoff = retry.WithMaxRetries(3, retry.NewConstant(1*time.Second))
 	logger := log.GetLogger(ctx)
-	if err = retry.Do(ctx, backoff, func(ctx context.Context) error {
-		if configDb, err = GetPostgresDBConnection(ctx, connStr); err == nil {
-			err = configDb.Ping(ctx)
-		}
-		if err != nil {
+	if err := retry.Do(ctx, backoff, func(ctx context.Context) error {
+		if err := db.Ping(ctx); err != nil {
 			logger.WithError(err).Error("Connection failed")
 			logger.Info("Sleeping before reconnecting...")
 			return retry.RetryableError(err)
 		}
 		return nil
 	}); err != nil {
-		return nil, err
+		return err
 	}
-	err = ExecuteConfigSchemaScripts(ctx, configDb)
-	return
+	return init(ctx, db)
 }
 
-func InitAndTestMetricStoreConnection(ctx context.Context, connStr string) (metricDb PgxPoolIface, err error) {
-	logger := log.GetLogger(ctx)
-	if err = retry.Do(ctx, backoff, func(ctx context.Context) error {
-		if metricDb, err = GetPostgresDBConnection(ctx, connStr); err == nil {
-			err = metricDb.Ping(ctx)
-		}
-		if err != nil {
-			logger.WithError(err).Error("Connection failed")
-			logger.Info("Sleeping before reconnecting...")
-			return retry.RetryableError(err)
-		}
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-	err = ExecuteMetricSchemaScripts(ctx, metricDb)
-	return
+// InitConfigDb creates and inits database with sources, metrics and presets definitions
+func InitConfigDb(ctx context.Context, db PgxPoolIface) error {
+	return Init(ctx, db, func(ctx context.Context, conn PgxIface) error {
+		log.GetLogger(ctx).Info("Executing configuration schema scripts: ", len(configSchemaSQLs))
+		return executeSchemaScripts(ctx, conn, "pgwatch3", configSchemaSQLs)
+	})
+}
+
+// InitMeasurementDb created and inits database to store metrics measurements
+func InitMeasurementDb(ctx context.Context, db PgxPoolIface) error {
+	return Init(ctx, db, func(ctx context.Context, conn PgxIface) error {
+		log.GetLogger(ctx).Info("Executing metric storage schema scripts: ", len(metricSchemaSQLs))
+		return executeSchemaScripts(ctx, conn, "admin", metricSchemaSQLs)
+	})
 }
 
 var (
@@ -103,16 +99,6 @@ var (
 		sqlMetricChangeCompressionIntervalTimescale,
 	}
 )
-
-func ExecuteConfigSchemaScripts(ctx context.Context, conn PgxIface) error {
-	log.GetLogger(ctx).Info("Executing configuration schema scripts: ", len(configSchemaSQLs))
-	return executeSchemaScripts(ctx, conn, "pgwatch3", configSchemaSQLs)
-}
-
-func ExecuteMetricSchemaScripts(ctx context.Context, conn PgxIface) error {
-	log.GetLogger(ctx).Info("Executing metric storage schema scripts: ", len(metricSchemaSQLs))
-	return executeSchemaScripts(ctx, conn, "admin", metricSchemaSQLs)
-}
 
 // executeSchemaScripts executes initial schema scripts
 func executeSchemaScripts(ctx context.Context, conn PgxIface, schema string, sqls []string) (err error) {

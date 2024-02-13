@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
-	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/cybertec-postgresql/pgwatch3/psutil"
@@ -1440,19 +1439,21 @@ func main() {
 		logger.Warning("In ad-hoc mode: using default unique name 'adhoc' for metrics storage. use --adhoc-name to override.")
 	}
 
+	var srcReader sources.Reader
 	// running in config file based mode?
 	configKind, err := opts.GetConfigKind()
 	switch {
 	case err != nil:
 		logger.Fatal(err)
 	case configKind == config.ConfigFile || configKind == config.ConfigFolder:
+		srcReader, err = sources.NewYAMLConfigReader(mainContext, opts)
 		fileBasedMetrics = true
 	case configKind == config.ConfigPgURL:
-		if configDb, err = db.InitAndTestConfigStoreConnection(mainContext, opts.Source.Config); err != nil {
-			logger.WithError(err).Fatal("Could not connect to configuration database")
-		}
+		srcReader, configDb, err = sources.NewPostgresConfigReader(mainContext, opts)
 	}
-
+	if err != nil {
+		logger.Fatal(err)
+	}
 	if opts.Source.Init {
 		return
 	}
@@ -1485,17 +1486,6 @@ func main() {
 
 	firstLoop := true
 	mainLoopCount := 0
-
-	var srcReader sources.Reader
-
-	if fileBasedMetrics {
-		srcReader, err = sources.NewYAMLConfigReader(mainContext, opts)
-	} else {
-		srcReader, err = sources.NewPostgresConfigReader(mainContext, opts)
-	}
-	if err != nil {
-		logger.Fatal(err)
-	}
 
 	for { //main loop
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set

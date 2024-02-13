@@ -13,13 +13,16 @@ type querier interface {
 	Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
 }
 
-func NewPostgresConfigReader(ctx context.Context, opts *config.Options) (Reader, error) {
-	configDb, err := db.InitAndTestConfigStoreConnection(ctx, opts.Source.Config)
+func NewPostgresConfigReader(ctx context.Context, opts *config.Options) (Reader, db.PgxPoolIface, error) {
+	configDb, err := db.New(ctx, opts.Source.Config)
+	if err != nil {
+		return nil, nil, err
+	}
 	return &dbConfigReader{
 		ctx:      ctx,
 		configDb: configDb,
 		opts:     opts,
-	}, err
+	}, configDb, db.InitConfigDb(ctx, configDb)
 }
 
 type dbConfigReader struct {
@@ -71,7 +74,7 @@ func (ce MonitoredDatabase) ResolveDatabasesFromConfigEntry() (resolvedDbs Monit
 		dbname string
 		rows   pgx.Rows
 	)
-	c, err = db.GetPostgresDBConnection(context.TODO(), ce.ConnStr)
+	c, err = db.New(context.TODO(), ce.ConnStr)
 	if err != nil {
 		return
 	}
