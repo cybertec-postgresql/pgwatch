@@ -14,7 +14,7 @@ import (
 func newFormatter(noColors bool) *Formatter {
 	return &Formatter{
 		HideKeys:        false,
-		FieldsOrder:     []string{"database", "metric", "sql", "params"},
+		FieldsOrder:     []string{"source", "metric", "sql", "params"},
 		TimestampFormat: "2006-01-02 15:04:05.000",
 		ShowFullLevel:   true,
 		NoColors:        noColors,

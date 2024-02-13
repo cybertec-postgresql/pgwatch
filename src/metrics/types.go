@@ -52,6 +52,16 @@ type MeasurementMessage struct {
 	SystemIdentifier string
 }
 
+const (
+	gathererStatusStart = "START"
+	gathererStatusStop  = "STOP"
+)
+
+type ControlMessage struct {
+	Action string // START, STOP, PAUSE
+	Config map[string]float64
+}
+
 type Preset struct {
 	Name        string
 	Description string

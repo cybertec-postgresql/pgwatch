@@ -13,7 +13,7 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
-	"github.com/cybertec-postgresql/pgwatch3/psutil"
+	"github.com/cybertec-postgresql/pgwatch3/metrics/psutil"
 	"github.com/cybertec-postgresql/pgwatch3/sources"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -81,30 +81,30 @@ func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) 
 	return nil, err
 }
 
+func GetConnByUniqueName(dbUnique string) db.PgxIface {
+	monitoredDbConnCacheLock.RLock()
+	conn, _ := monitoredDbConnCache[dbUnique]
+	monitoredDbConnCacheLock.RUnlock()
+	return conn
+}
+
 func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, sql string, args ...any) (metrics.Measurements, error) {
 	var conn db.PgxIface
 	var md sources.MonitoredDatabase
 	var data metrics.Measurements
 	var err error
 	var tx pgx.Tx
-	var exists bool
 	if strings.TrimSpace(sql) == "" {
 		return nil, errors.New("empty SQL")
 	}
-	md, err = GetMonitoredDatabaseByUniqueName(dbUnique)
-	if err != nil {
+	if md, err = GetMonitoredDatabaseByUniqueName(dbUnique); err != nil {
 		return nil, err
 	}
-	monitoredDbConnCacheLock.RLock()
-	// sqlx.DB itself is parallel safe
-	conn, exists = monitoredDbConnCache[dbUnique]
-	monitoredDbConnCacheLock.RUnlock()
-	if !exists || conn == nil {
+	if conn = GetConnByUniqueName(dbUnique); conn == nil {
 		logger.Errorf("SQL connection for dbUnique %s not found or nil", dbUnique) // Should always be initialized in the main loop DB discovery code ...
 		return nil, errors.New("SQL connection not found or nil")
 	}
-	tx, err = conn.Begin(ctx)
-	if err != nil {
+	if tx, err = conn.Begin(ctx); err != nil {
 		return nil, err
 	}
 	defer func() { _ = tx.Commit(ctx) }()
@@ -224,7 +224,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, srcType sources.Kind, 
 	}
 	getVerLock.Lock() // limit to 1 concurrent version info fetch per DB
 	defer getVerLock.Unlock()
-	logger.WithField("database", dbUnique).
+	logger.WithField("source", dbUnique).
 		WithField("type", srcType).Debug("determining DB version and recovery status...")
 
 	if verNew.Extensions == nil {
