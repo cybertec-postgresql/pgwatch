@@ -52,7 +52,7 @@ func getFileWithLatestTimestamp(files []string) (string, error) {
 	return latest, nil
 }
 
-func getFileWithNextModTimestamp(dbUniqueName, logsGlobPath, currentFile string) (string, error) {
+func getFileWithNextModTimestamp(logsGlobPath, currentFile string) (string, error) {
 	var nextFile string
 	var nextMod time.Time
 
@@ -268,7 +268,7 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb sources.MonitoredDatab
 				time.Sleep(time.Millisecond * time.Duration(eofSleepMillis))
 
 				// check for newly opened logfiles
-				file, _ := getFileWithNextModTimestamp(dbUniqueName, logsGlobPath, latest)
+				file, _ := getFileWithNextModTimestamp(logsGlobPath, latest)
 				if file != "" {
 					previous = latest
 					latest = file
