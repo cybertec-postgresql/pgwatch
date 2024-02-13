@@ -345,7 +345,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 				Kind:             "postgres"})
 			continue
 		}
-		c, err := db.GetPostgresDBConnection(context.TODO(), ce.ConnStr,
+		c, err := db.New(context.TODO(), ce.ConnStr,
 			func(c *pgxpool.Config) error {
 				c.ConnConfig.Host = host
 				c.ConnConfig.Database = "template1"

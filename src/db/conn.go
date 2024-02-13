@@ -22,7 +22,6 @@ type PgxConnIface interface {
 	PgxIface
 	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
 	Close(ctx context.Context) error
-	Ping(ctx context.Context) error
 }
 
 // PgxPoolIface is interface representing pgx pool

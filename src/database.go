@@ -32,7 +32,7 @@ func InitSQLConnPoolForMonitoredDBIfNil(md sources.MonitoredDatabase) error {
 		return nil
 	}
 
-	conn, err := db.GetPostgresDBConnection(mainContext, md.ConnStr, func(conf *pgxpool.Config) error {
+	conn, err := db.New(mainContext, md.ConnStr, func(conf *pgxpool.Config) error {
 		conf.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
 		return nil
 	})

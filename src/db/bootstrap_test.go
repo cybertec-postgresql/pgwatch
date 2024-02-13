@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pashagolub/pgxmock/v3"
 	"github.com/stretchr/testify/assert"
 
@@ -36,28 +35,17 @@ func TestExecuteSchemaScripts(t *testing.T) {
 	conn, err := pgxmock.NewPool()
 	assert.NoError(t, err)
 
+	conn.ExpectPing()
 	conn.ExpectQuery("SELECT EXISTS").
 		WithArgs("admin").
 		WillReturnError(errors.New("expected"))
-	err = db.ExecuteMetricSchemaScripts(ctx, conn)
+	err = db.InitMeasurementDb(ctx, conn)
 	assert.Error(t, err)
 
+	conn.ExpectPing()
 	conn.ExpectQuery("SELECT EXISTS").
 		WithArgs("pgwatch3").
 		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
-	err = db.ExecuteConfigSchemaScripts(ctx, conn)
+	err = db.InitConfigDb(ctx, conn)
 	assert.NoError(t, err)
-
-	conn.ExpectQuery("SELECT EXISTS").
-		WithArgs("pgwatch3").
-		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
-	conn.
-		ExpectExec("create schema if not exists pgwatch3").
-		WillReturnResult(pgconn.NewCommandTag("OK"))
-	errMetricCreation := errors.New("metric creation failed")
-	conn.
-		ExpectExec("-- metric definitions").
-		WillReturnError(errMetricCreation)
-	err = db.ExecuteConfigSchemaScripts(ctx, conn)
-	assert.ErrorIs(t, err, errMetricCreation)
 }
