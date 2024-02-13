@@ -1,7 +1,8 @@
-package main
+package metrics
 
 import (
 	"bufio"
+	"context"
 	"io"
 	"os"
 	"path"
@@ -10,9 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/metrics"
+	"github.com/cybertec-postgresql/pgwatch3/db"
+	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/sources"
 )
+
+const specialMetricServerLogEventCounts = "server_log_event_counts"
 
 var PgSeverities = [...]string{"DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "LOG", "FATAL", "PANIC"}
 var PgSeveritiesLocale = map[string]map[string]string{
@@ -31,38 +35,35 @@ var PgSeveritiesLocale = map[string]map[string]string{
 const CSVLogDefaultRegEx = `^^(?P<log_time>.*?),"?(?P<user_name>.*?)"?,"?(?P<database_name>.*?)"?,(?P<process_id>\d+),"?(?P<connection_from>.*?)"?,(?P<session_id>.*?),(?P<session_line_num>\d+),"?(?P<command_tag>.*?)"?,(?P<session_start_time>.*?),(?P<virtual_transaction_id>.*?),(?P<transaction_id>.*?),(?P<error_severity>\w+),`
 const CSVLogDefaultGlobSuffix = "*.csv"
 
-func getFileWithLatestTimestamp(files []string) (string, time.Time) {
+func getFileWithLatestTimestamp(files []string) (string, error) {
 	var maxDate time.Time
 	var latest string
 
 	for _, f := range files {
 		fi, err := os.Stat(f)
 		if err != nil {
-			logger.Errorf("Failed to stat() file %s: %s", f, err)
-			continue
+			return "", err
 		}
 		if fi.ModTime().After(maxDate) {
 			latest = f
 			maxDate = fi.ModTime()
 		}
 	}
-	return latest, maxDate
+	return latest, nil
 }
 
-func getFileWithNextModTimestamp(dbUniqueName, logsGlobPath, currentFile string) (string, time.Time) {
+func getFileWithNextModTimestamp(logsGlobPath, currentFile string) (string, error) {
 	var nextFile string
 	var nextMod time.Time
 
 	files, err := filepath.Glob(logsGlobPath)
 	if err != nil {
-		logger.Error("[%s] Error globbing \"%s\"...", dbUniqueName, logsGlobPath)
-		return "", time.Now()
+		return "", err
 	}
 
 	fiCurrent, err := os.Stat(currentFile)
 	if err != nil {
-		logger.Errorf("Failed to stat() currentFile %s: %s", currentFile, err)
-		return "", time.Now()
+		return "", err
 	}
 	//log.Debugf("Stat().ModTime() for %s: %v", currentFile, fiCurrent.ModTime())
 
@@ -72,7 +73,6 @@ func getFileWithNextModTimestamp(dbUniqueName, logsGlobPath, currentFile string)
 		}
 		fi, err := os.Stat(f)
 		if err != nil {
-			logger.Errorf("Failed to stat() currentFile %s: %s", f, err)
 			continue
 		}
 		//log.Debugf("Stat().ModTime() for %s: %v", f, fi.ModTime())
@@ -81,12 +81,12 @@ func getFileWithNextModTimestamp(dbUniqueName, logsGlobPath, currentFile string)
 			nextFile = f
 		}
 	}
-	return nextFile, nextMod
+	return nextFile, nil
 }
 
 // 1. add zero counts for severity levels that didn't have any occurrences in the log
-func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb sources.MonitoredDatabase) []metrics.MeasurementMessage {
-	allSeverityCounts := make(metrics.Measurement)
+func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb sources.MonitoredDatabase) []MeasurementMessage {
+	allSeverityCounts := make(Measurement)
 	for _, s := range PgSeverities {
 		parsedCount, ok := eventCounts[s]
 		if ok {
@@ -102,34 +102,33 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 		}
 	}
 	allSeverityCounts["epoch_ns"] = time.Now().UnixNano()
-	return []metrics.MeasurementMessage{{
+	return []MeasurementMessage{{
 		DBName:     mdb.DBUniqueName,
 		SourceType: string(mdb.Kind),
 		MetricName: specialMetricServerLogEventCounts,
-		Data:       metrics.Measurements{allSeverityCounts},
+		Data:       Measurements{allSeverityCounts},
 		CustomTags: mdb.CustomTags,
 	}}
 }
 
-func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []metrics.MeasurementMessage) {
+func ParseLogs(ctx context.Context, conn db.PgxIface, mdb sources.MonitoredDatabase, realDbname, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []MeasurementMessage) {
 
-	var latest, previous, realDbname, serverMessagesLang string
+	var latest, previous, serverMessagesLang string
 	var latestHandle *os.File
 	var reader *bufio.Reader
 	var linesRead = 0 // to skip over already parsed lines on Postgres server restart for example
 	var logsMatchRegex, logsMatchRegexPrev, logsGlobPath string
 	var lastSendTime time.Time                    // to storage channel
-	var lastConfigRefreshTime time.Time           //sources.MonitoredDatabase info
 	var eventCounts = make(map[string]int64)      // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	var eventCountsTotal = make(map[string]int64) // for the whole instance
-	var mdb sources.MonitoredDatabase
 	var hostConfig sources.HostConfigAttrs
 	var config = configMap
 	var interval float64
 	var err error
 	var firstRun = true
 	var csvlogRegex *regexp.Regexp
-
+	dbUniqueName := realDbname
+	logger := log.GetLogger(ctx)
 	for { // re-try loop. re-start in case of FS errors or just to refresh host config
 		select {
 		case msg := <-controlCh:
@@ -148,21 +147,6 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 			}
 		}
 
-		if lastConfigRefreshTime.IsZero() || lastConfigRefreshTime.Add(time.Second*time.Duration(opts.Source.Refresh)).Before(time.Now()) {
-			mdb, err = GetMonitoredDatabaseByUniqueName(dbUniqueName)
-			if err != nil {
-				logger.Errorf("[%s] Failed to refresh monitored DBs info: %s", dbUniqueName, err)
-				time.Sleep(60 * time.Second)
-				continue
-			}
-			hostConfig = mdb.HostConfig
-			logger.Debugf("[%s] Refreshed hostConfig: %+v", dbUniqueName, hostConfig)
-		}
-
-		dbPgVersionMapLock.RLock()
-		realDbname = dbPgVersionMap[dbUniqueName].RealDbname // to manage 2 sets of event counts - monitored DB + global
-		dbPgVersionMapLock.RUnlock()
-
 		if hostConfig.LogsMatchRegex != "" {
 			logsMatchRegex = hostConfig.LogsMatchRegex
 		}
@@ -174,16 +158,16 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 			logsGlobPath = hostConfig.LogsGlobPath
 		}
 		if logsGlobPath == "" {
-			logsGlobPath = tryDetermineLogFolder(mdb)
-			if logsGlobPath == "" {
-				logger.Warningf("[%s] Could not determine Postgres logs parsing folder. Configured logs_glob_path = %s", dbUniqueName, logsGlobPath)
+			logsGlobPath, err = tryDetermineLogFolder(ctx, conn)
+			if err != nil {
+				logger.WithError(err).Printf("[%s] Could not determine Postgres logs parsing folder. Configured logs_glob_path = %s", dbUniqueName, logsGlobPath)
 				time.Sleep(60 * time.Second)
 				continue
 			}
 		}
-		serverMessagesLang = tryDetermineLogMessagesLanguage(mdb)
-		if serverMessagesLang == "" {
-			logger.Warningf("[%s] Could not determine language (lc_collate) used for server logs, cannot parse logs...", dbUniqueName)
+		serverMessagesLang, err = tryDetermineLogMessagesLanguage(ctx, conn)
+		if err != nil {
+			logger.WithError(err).Warningf("[%s] Could not determine language (lc_collate) used for server logs, cannot parse logs...", dbUniqueName)
 			time.Sleep(60 * time.Second)
 			continue
 		}
@@ -258,12 +242,12 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 		}
 
 		var eofSleepMillis = 0
-		readLoopStart := time.Now()
+		// readLoopStart := time.Now()
 
 		for {
-			if readLoopStart.Add(time.Second * time.Duration(opts.Source.Refresh)).Before(time.Now()) {
-				break // refresh config
-			}
+			// if readLoopStart.Add(time.Second * time.Duration(opts.Source.Refresh)).Before(time.Now()) {
+			// 	break // refresh config
+			// }
 			line, err := reader.ReadString('\n')
 			if err != nil && err != io.EOF {
 				logger.Warningf("[%s] Failed to read logfile %s: %s. Sleeping 60s...", dbUniqueName, latest, err)
@@ -284,7 +268,7 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 				time.Sleep(time.Millisecond * time.Duration(eofSleepMillis))
 
 				// check for newly opened logfiles
-				file, _ := getFileWithNextModTimestamp(dbUniqueName, logsGlobPath, latest)
+				file, _ := getFileWithNextModTimestamp(logsGlobPath, latest)
 				if file != "" {
 					previous = latest
 					latest = file
@@ -311,7 +295,7 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 					goto send_to_storage_if_needed
 				}
 
-				result := RegexMatchesToMap(csvlogRegex, matches)
+				result := regexMatchesToMap(csvlogRegex, matches)
 				//log.Debugf("RegexMatchesToMap: %+v", result)
 				errorSeverity, ok := result["error_severity"]
 				if !ok {
@@ -340,8 +324,8 @@ func logparseLoop(dbUniqueName, metricName string, configMap map[string]float64,
 				logger.Debugf("[%s] Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v", dbUniqueName, eventCounts, eventCountsTotal)
 				metricStoreMessages := eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
 				storeCh <- metricStoreMessages
-				ZeroEventCounts(eventCounts)
-				ZeroEventCounts(eventCountsTotal)
+				zeroEventCounts(eventCounts)
+				zeroEventCounts(eventCountsTotal)
 				lastSendTime = time.Now()
 			}
 
@@ -358,58 +342,45 @@ func severityToEnglish(serverLang, errorSeverity string) string {
 	severityMap := PgSeveritiesLocale[serverLang]
 	severityEn, ok := severityMap[errorSeverity]
 	if !ok {
-		logger.Warningf("Failed to map severity '%s' to english from language '%s'", errorSeverity, serverLang)
 		return errorSeverity
 	}
 	return severityEn
 }
 
-func ZeroEventCounts(eventCounts map[string]int64) {
+func zeroEventCounts(eventCounts map[string]int64) {
 	for _, severity := range PgSeverities {
 		eventCounts[severity] = 0
 	}
 }
 
-func tryDetermineLogFolder(mdb sources.MonitoredDatabase) string {
+func tryDetermineLogFolder(ctx context.Context, conn db.PgxIface) (string, error) {
 	sql := `select current_setting('data_directory') as dd, current_setting('log_directory') as ld`
-
-	logger.Infof("[%s] Trying to determine server logs folder via SQL as host_config.logs_glob_path not specified...", mdb.DBUniqueName)
-	data, err := DBExecReadByDbUniqueName(mainContext, mdb.DBUniqueName, sql)
+	var dd, ld string
+	err := conn.QueryRow(ctx, sql).Scan(&dd, &ld)
 	if err != nil {
-		logger.Errorf("[%s] Failed to query data_directory and log_directory settings...are you superuser or have pg_monitor grant?", mdb.DBUniqueName)
-		return ""
+		return "", err
 	}
-	ld := data[0]["ld"].(string)
-	dd := data[0]["dd"].(string)
 	if strings.HasPrefix(ld, "/") {
 		// we have a full path we can use
-		return path.Join(ld, CSVLogDefaultGlobSuffix)
+		return path.Join(ld, CSVLogDefaultGlobSuffix), nil
 	}
-	return path.Join(dd, ld, CSVLogDefaultGlobSuffix)
+	return path.Join(dd, ld, CSVLogDefaultGlobSuffix), nil
 }
 
-func tryDetermineLogMessagesLanguage(mdb sources.MonitoredDatabase) string {
+func tryDetermineLogMessagesLanguage(ctx context.Context, conn db.PgxIface) (string, error) {
 	sql := `select current_setting('lc_messages')::varchar(2) as lc_messages;`
-
-	logger.Debugf("[%s] Trying to determine server log messages language...", mdb.DBUniqueName)
-	data, err := DBExecReadByDbUniqueName(mainContext, mdb.DBUniqueName, sql)
+	var lc string
+	err := conn.QueryRow(ctx, sql).Scan(&lc)
 	if err != nil {
-		logger.Errorf("[%s] Failed to lc_messages settings: %s", mdb.DBUniqueName, err)
-		return ""
+		return "", err
 	}
-	lang := data[0]["lc_messages"].(string)
-	if lang == "en" {
-		return lang
+	if _, ok := PgSeveritiesLocale[lc]; !ok {
+		return "en", nil
 	}
-	_, ok := PgSeveritiesLocale[lang]
-	if !ok {
-		logger.Warningf("[%s] Server log language '%s' is not yet mapped, assuming severities in english: %+v", mdb.DBUniqueName, lang, PgSeverities)
-		return "en"
-	}
-	return lang
+	return lc, nil
 }
 
-func RegexMatchesToMap(csvlogRegex *regexp.Regexp, matches []string) map[string]string {
+func regexMatchesToMap(csvlogRegex *regexp.Regexp, matches []string) map[string]string {
 	result := make(map[string]string)
 	if len(matches) == 0 || csvlogRegex == nil {
 		return result
