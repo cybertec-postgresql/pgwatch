@@ -18,7 +18,7 @@ ENV GIT_TIME=${GIT_TIME}
 
 ADD src /pgwatch3
 COPY --from=uibuilder /webui/build /pgwatch3/webui/build
-RUN cd /pgwatch3 && go build -ldflags "-X 'main.commit=$GIT_HASH' -X 'main.date=$GIT_TIME' -X 'main.version=$VERSION'"
+RUN cd /pgwatch3 && CGO_ENABLED=0 go build -ldflags "-X 'main.commit=$GIT_HASH' -X 'main.date=$GIT_TIME' -X 'main.version=$VERSION'"
 
 # ----------------------------------------------------------------
 # 3. Build the final image
