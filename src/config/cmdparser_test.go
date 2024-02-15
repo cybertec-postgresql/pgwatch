@@ -9,7 +9,7 @@ import (
 
 func TestParseFail(t *testing.T) {
 	tests := [][]string{
-		{0: "go-test", "--unknown-oprion"},
+		{0: "go-test", "--unknown-option"},
 		{0: "go-test", "-c", "client01", "-f", "foo"},
 	}
 	for _, d := range tests {
@@ -21,7 +21,8 @@ func TestParseFail(t *testing.T) {
 
 func TestParseSuccess(t *testing.T) {
 	tests := [][]string{
-		{0: "go-test", "non-optional-value"},
+		{0: "go-test", "--version"},
+		{0: "go-test", "--aes-gcm-password-to-encrypt", "foobaz"},
 	}
 	for _, d := range tests {
 		os.Args = d
@@ -35,14 +36,6 @@ func TestLogLevel(t *testing.T) {
 	assert.True(t, c.Verbose())
 	c = &Options{Logging: LoggingOpts{LogLevel: "info"}}
 	assert.False(t, c.Verbose())
-}
-
-func TestVersionOnly(t *testing.T) {
-	c := &Options{Version: true}
-	os.Args = []string{0: "go-test", "-v"}
-	assert.True(t, c.VersionOnly())
-	c = &Options{Version: false}
-	assert.False(t, c.VersionOnly())
 }
 
 func TestNewCmdOptions(t *testing.T) {
