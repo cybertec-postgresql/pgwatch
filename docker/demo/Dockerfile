@@ -9,16 +9,14 @@ RUN cd webui && yarn install --network-timeout 100000 && yarn build
 # 2. Build gatherer
 # ----------------------------------------------------------------
 FROM golang:1.22 as builder
+
 ARG VERSION
 ARG GIT_HASH
 ARG GIT_TIME
-ENV VERSION=${VERSION}
-ENV GIT_HASH=${GIT_HASH}
-ENV GIT_TIME=${GIT_TIME}
 
 ADD src /pgwatch3
 COPY --from=uibuilder /webui/build /pgwatch3/webui/build
-RUN cd /pgwatch3 && CGO_ENABLED=0 go build -ldflags "-X 'main.commit=$GIT_HASH' -X 'main.date=$GIT_TIME' -X 'main.version=$VERSION'"
+RUN cd /pgwatch3 && CGO_ENABLED=0 go build -ldflags "-X 'main.commit=${GIT_HASH}' -X 'main.date=${GIT_TIME}' -X 'main.version=${VERSION}'"
 
 # ----------------------------------------------------------------
 # 3. Build the final image
