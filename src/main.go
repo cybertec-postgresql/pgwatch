@@ -1327,8 +1327,8 @@ var opts *config.Options
 
 // version output variables
 var (
-	commit  = "000000"
-	version = "master"
+	commit  = "unknown"
+	version = "unknown"
 	date    = "unknown"
 	dbapi   = "00534"
 )
@@ -1417,19 +1417,16 @@ func main() {
 	SetupCloseHandler(cancel)
 	defer cancel()
 
-	opts, err = config.NewConfig(os.Stdout)
-	if err != nil {
-		if opts != nil {
-			if opts.VersionOnly() {
-				printVersion()
-			}
-			if opts.Source.AesGcmPasswordToEncrypt > "" { // special flag - encrypt and exit
-				fmt.Println(opts.Encrypt())
-			}
-			return
-		}
-		fmt.Println("Configuration error: ", err)
+	if opts, err = config.NewConfig(os.Stdout); err != nil {
 		exitCode.Store(ExitCodeConfigError)
+		return
+	}
+	if opts.VersionOnly() {
+		printVersion()
+		return
+	}
+	if opts.EncryptOnly() { // special flag - encrypt and exit
+		fmt.Println(opts.Encrypt())
 		return
 	}
 

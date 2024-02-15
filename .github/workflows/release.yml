@@ -13,7 +13,7 @@ jobs:
     - name: Set up Golang
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version: '1.22'
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v4
@@ -46,7 +46,6 @@ jobs:
     - name: Version strings
       id: version
       run: |
-        echo "RELEASE_VERSION=$(echo "$GITHUB_REF_NAME#${GITHUB_SHA:0:6}")" >> $GITHUB_OUTPUT
         echo "RELEASE_TIME=$(git show -s --format=%cI HEAD)" >> $GITHUB_OUTPUT
 
     - name: Set up QEMU
@@ -59,7 +58,8 @@ jobs:
       if: ${{ contains(github.ref_name, 'beta') }}
       uses: elgohr/Publish-Docker-Github-Action@v5
       env:
-        GIT_HASH: ${{ steps.version.outputs.RELEASE_VERSION }}
+        GIT_HASH: ${{ github.sha }}
+        VERSION: ${{ github.ref_name }}
         GIT_TIME: ${{ steps.version.outputs.RELEASE_TIME }}     
       with:
         name: pashagolub/pgwatch3
@@ -74,7 +74,8 @@ jobs:
       if: ${{ !contains(github.ref_name, 'beta') && matrix.image.tag == '-demo' }}
       uses: elgohr/Publish-Docker-Github-Action@v5
       env:
-        GIT_HASH: ${{ steps.version.outputs.RELEASE_VERSION }}
+        GIT_HASH: ${{ github.sha }}
+        VERSION: ${{ github.ref_name }}
         GIT_TIME: ${{ steps.version.outputs.RELEASE_TIME }}     
       with:
         name: pashagolub/pgwatch3
@@ -89,7 +90,8 @@ jobs:
       if: ${{ !contains(github.ref_name, 'beta') && matrix.image.tag == '' }}
       uses: elgohr/Publish-Docker-Github-Action@v5
       env:
-        GIT_HASH: ${{ steps.version.outputs.RELEASE_VERSION }}
+        GIT_HASH: ${{ github.sha }}
+        VERSION: ${{ github.ref_name }}
         GIT_TIME: ${{ steps.version.outputs.RELEASE_TIME }}     
       with:
         name: pashagolub/pgwatch3

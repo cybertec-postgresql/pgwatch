@@ -16,8 +16,8 @@ func TestConfig(t *testing.T) {
 	_, err = NewConfig(nil)
 	assert.Error(t, err)
 
-	os.Args = []string{0: "config_test"} // clientname arg is missing, but set PGTT_CLIENTNAME
-	assert.NoError(t, os.Setenv("PW3_PG_METRIC_STORE_CONN_STR", "postgresql://foo:baz@bar/test"))
+	os.Args = []string{0: "config_test"} // clientname arg is missing, but set PW3_CONFIG
+	assert.NoError(t, os.Setenv("PW3_CONFIG", "postgresql://foo:baz@bar/test"))
 	_, err = NewConfig(nil)
 	assert.NoError(t, err)
 }
