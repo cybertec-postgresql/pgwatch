@@ -21,12 +21,12 @@ import (
 // NewConfig returns a new instance of CmdOptions
 func NewConfig(writer io.Writer) (*Options, error) {
 	cmdOpts := new(Options)
-	parser := flags.NewParser(cmdOpts, flags.PrintErrors)
+	parser := flags.NewParser(cmdOpts, flags.HelpFlag)
 	var err error
 	if _, err = parser.Parse(); err != nil {
 		if !flags.WroteHelp(err) {
 			parser.WriteHelp(writer)
-			return nil, err
+			return cmdOpts, err
 		}
 	}
 	return cmdOpts, validateConfig(cmdOpts)
@@ -56,6 +56,11 @@ func (c Options) VersionOnly() bool {
 	return len(os.Args) == 2 && c.Version
 }
 
+// EncryptOnly returns true if the `--aes-gcm-password-to-encrypt` set
+func (c Options) EncryptOnly() bool {
+	return c.Source.AesGcmPasswordToEncrypt > ""
+}
+
 func (c Options) GetConfigKind() (_ Kind, err error) {
 	if _, err := pgx.ParseConfig(c.Source.Config); err == nil {
 		return Kind(ConfigPgURL), nil
@@ -71,6 +76,12 @@ func (c Options) GetConfigKind() (_ Kind, err error) {
 }
 
 func validateConfig(c *Options) error {
+	if c.VersionOnly() || c.EncryptOnly() {
+		return nil
+	}
+	if c.Source.Config == "" {
+		return errors.New("--config was not specified")
+	}
 	if c.Source.Refresh <= 1 {
 		return errors.New("--servers-refresh-loop-seconds must be greater than 1")
 	}
