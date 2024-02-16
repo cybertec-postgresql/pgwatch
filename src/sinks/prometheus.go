@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/prometheus/client_golang/prometheus"
@@ -29,22 +28,26 @@ const promInstanceUpStateMetric = "instance_up"
 // timestamps older than that will be ignored on the Prom scraper side anyways, so better don't emit at all and just log a notice
 const promScrapingStalenessHardDropLimit = time.Minute * time.Duration(10)
 
-func NewPrometheusWriter(ctx context.Context, opts *config.Options) (promw *PrometheusWriter, err error) {
+func NewPrometheusWriter(ctx context.Context, connstr string) (promw *PrometheusWriter, err error) {
+	addr, namespace, found := strings.Cut(connstr, "/")
+	if !found {
+		namespace = "pgwatch3"
+	}
 	promw = &PrometheusWriter{
 		ctx:                 ctx,
-		PrometheusNamespace: opts.Metric.PrometheusNamespace,
+		PrometheusNamespace: namespace,
 		lastScrapeErrors: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: opts.Metric.PrometheusNamespace,
+			Namespace: namespace,
 			Name:      "exporter_last_scrape_errors",
 			Help:      "Last scrape error count for all monitored hosts / metrics",
 		}),
 		totalScrapes: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: opts.Metric.PrometheusNamespace,
+			Namespace: namespace,
 			Name:      "exporter_total_scrapes",
 			Help:      "Total scrape attempts.",
 		}),
 		totalScrapeFailures: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: opts.Metric.PrometheusNamespace,
+			Namespace: namespace,
 			Name:      "exporter_total_scrape_failures",
 			Help:      "Number of errors while executing metric queries",
 		}),
@@ -54,7 +57,7 @@ func NewPrometheusWriter(ctx context.Context, opts *config.Options) (promw *Prom
 		return
 	}
 	promServer := &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", opts.Metric.PrometheusListenAddr, opts.Metric.PrometheusPort),
+		Addr:    addr,
 		Handler: promhttp.Handler(),
 	}
 	go func() {

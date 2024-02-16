@@ -188,9 +188,6 @@ func VersionToInt(v string) uint {
 }
 
 func RestoreSQLConnPoolLimitsForPreviouslyDormantDB(dbUnique string) {
-	if !opts.UseConnPooling {
-		return
-	}
 	monitoredDbConnCacheLock.Lock()
 	defer monitoredDbConnCacheLock.Unlock()
 
@@ -460,8 +457,8 @@ func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[str
 	}
 
 	isCacheable = IsCacheableMetric(msg, mvp)
-	if isCacheable && opts.InstanceLevelCacheMaxSeconds > 0 && msg.Interval.Seconds() > float64(opts.InstanceLevelCacheMaxSeconds) {
-		cachedData = GetFromInstanceCacheIfNotOlderThanSeconds(msg, opts.InstanceLevelCacheMaxSeconds)
+	if isCacheable && opts.Metrics.InstanceLevelCacheMaxSeconds > 0 && msg.Interval.Seconds() > float64(opts.Metrics.InstanceLevelCacheMaxSeconds) {
+		cachedData = GetFromInstanceCacheIfNotOlderThanSeconds(msg, opts.Metrics.InstanceLevelCacheMaxSeconds)
 		if len(cachedData) > 0 {
 			fromCache = true
 			goto send_to_storageChannel
@@ -472,7 +469,7 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 
 	sql = mvp.SQL
 
-	if opts.Metric.NoHelperFunctions && mvp.CallsHelperFunctions && mvp.SQLSU != "" {
+	if opts.Metrics.NoHelperFunctions && mvp.CallsHelperFunctions && mvp.SQLSU != "" {
 		logger.Debugf("[%s:%s] Using SU SQL instead of normal one due to --no-helper-functions input", msg.DBUniqueName, msg.MetricName)
 		sql = mvp.SQLSU
 		retryWithSuperuserSQL = false
@@ -557,13 +554,13 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 
 	}
 
-	if isCacheable && opts.InstanceLevelCacheMaxSeconds > 0 && msg.Interval.Seconds() > float64(opts.InstanceLevelCacheMaxSeconds) {
+	if isCacheable && opts.Metrics.InstanceLevelCacheMaxSeconds > 0 && msg.Interval.Seconds() > float64(opts.Metrics.InstanceLevelCacheMaxSeconds) {
 		PutToInstanceCache(msg, data)
 	}
 
 send_to_storageChannel:
 
-	if (opts.Metric.RealDbnameField > "" || opts.Metric.SystemIdentifierField > "") && msg.Source == sources.SourcePostgres {
+	if (opts.Measurements.RealDbnameField > "" || opts.Measurements.SystemIdentifierField > "") && msg.Source == sources.SourcePostgres {
 		dbPgVersionMapLock.RLock()
 		ver := dbPgVersionMap[msg.DBUniqueName]
 		dbPgVersionMapLock.RUnlock()
@@ -658,16 +655,16 @@ func AddDbnameSysinfoIfNotExistsToQueryResultData(msg MetricFetchMessage, data m
 
 	logger.Debugf("Enriching all rows of [%s:%s] with sysinfo (%s) / real dbname (%s) if set. ", msg.DBUniqueName, msg.MetricName, ver.SystemIdentifier, ver.RealDbname)
 	for _, dr := range data {
-		if opts.Metric.RealDbnameField > "" && ver.RealDbname > "" {
-			old, ok := dr[opts.Metric.RealDbnameField]
+		if opts.Measurements.RealDbnameField > "" && ver.RealDbname > "" {
+			old, ok := dr[opts.Measurements.RealDbnameField]
 			if !ok || old == "" {
-				dr[opts.Metric.RealDbnameField] = ver.RealDbname
+				dr[opts.Measurements.RealDbnameField] = ver.RealDbname
 			}
 		}
-		if opts.Metric.SystemIdentifierField > "" && ver.SystemIdentifier > "" {
-			old, ok := dr[opts.Metric.SystemIdentifierField]
+		if opts.Measurements.SystemIdentifierField > "" && ver.SystemIdentifier > "" {
+			old, ok := dr[opts.Measurements.SystemIdentifierField]
 			if !ok || old == "" {
-				dr[opts.Metric.SystemIdentifierField] = ver.SystemIdentifier
+				dr[opts.Measurements.SystemIdentifierField] = ver.SystemIdentifier
 			}
 		}
 		enrichedData = append(enrichedData, dr)
@@ -779,7 +776,7 @@ func MetricGathererLoop(ctx context.Context,
 		}
 
 		// 1st try local overrides for some metrics if operating in push mode
-		if opts.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
+		if opts.Metrics.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
 			metricStoreMessages, err = FetchStatsDirectlyFromOS(mfm, vme, mvp)
 			if err != nil {
 				l.WithError(err).Errorf("Could not reader metric directly from OS")
@@ -1316,10 +1313,10 @@ func DoesEmergencyTriggerfileExist() bool {
 	// In highly automated K8s / IaC environments such a temporary change might involve pull requests, peer reviews, CI/CD etc
 	// which can all take too long vs "exec -it pgwatch3-pod -- touch /tmp/pgwatch3-emergency-pause".
 	// After creating the file it can still take up to --servers-refresh-loop-seconds (2min def.) for change to take effect!
-	if opts.EmergencyPauseTriggerfile == "" {
+	if opts.Metrics.EmergencyPauseTriggerfile == "" {
 		return false
 	}
-	_, err := os.Stat(opts.EmergencyPauseTriggerfile)
+	_, err := os.Stat(opts.Metrics.EmergencyPauseTriggerfile)
 	return err == nil
 }
 
@@ -1374,7 +1371,7 @@ func LoadMetricDefs(ctx context.Context) (err error) {
 	var metricDefs metrics.MetricVersionDefs
 	var renamingDefs map[string]string
 	if fileBasedMetrics {
-		metricDefs, renamingDefs, err = metrics.ReadMetricsFromFolder(ctx, opts.Metric.MetricsFolder)
+		metricDefs, renamingDefs, err = metrics.ReadMetricsFromFolder(ctx, opts.Metrics.MetricsFolder)
 	} else {
 		metricDefs, renamingDefs, err = metrics.ReadMetricsFromPostgres(ctx, configDb)
 	}
@@ -1457,7 +1454,7 @@ func main() {
 	if err != nil {
 		logger.Fatal(err)
 	}
-	if opts.Source.Init {
+	if opts.Sources.Init {
 		return
 	}
 
@@ -1500,13 +1497,13 @@ func main() {
 				logger.Fatal("could not fetch active hosts - check config!", err)
 			} else {
 				logger.Error("could not fetch active hosts, using last valid config data. err:", err)
-				time.Sleep(time.Second * time.Duration(opts.Source.Refresh))
+				time.Sleep(time.Second * time.Duration(opts.Sources.Refresh))
 				continue
 			}
 		}
 
 		if DoesEmergencyTriggerfileExist() {
-			logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", opts.EmergencyPauseTriggerfile)
+			logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", opts.Metrics.EmergencyPauseTriggerfile)
 			monitoredDbs = make([]sources.MonitoredDatabase, 0)
 		}
 
@@ -1543,7 +1540,7 @@ func main() {
 			metricConfig = host.Metrics
 			wasInstancePreviouslyDormant := IsDBDormant(dbUnique)
 
-			if host.Encryption == "aes-gcm-256" && len(opts.Source.AesGcmKeyphrase) == 0 && len(opts.Source.AesGcmKeyphraseFile) == 0 {
+			if host.Encryption == "aes-gcm-256" && len(opts.Sources.AesGcmKeyphrase) == 0 && len(opts.Sources.AesGcmKeyphraseFile) == 0 {
 				// Warn if any encrypted hosts found but no keyphrase given
 				logger.Warningf("Encrypted password type found for host \"%s\", but no decryption keyphrase specified. Use --aes-gcm-keyphrase or --aes-gcm-keyphrase-file params", dbUnique)
 			}
@@ -1589,7 +1586,7 @@ func main() {
 				}
 
 				if !opts.Ping && host.IsSuperuser && host.IsPostgresSource() && !ver.IsInRecovery {
-					if opts.Metric.NoHelperFunctions {
+					if opts.Metrics.NoHelperFunctions {
 						logger.Infof("[%s] Skipping rollout out helper functions due to the --no-helper-functions flag ...", dbUnique)
 					} else {
 						logger.Infof("Trying to create helper functions if missing for \"%s\"...", dbUnique)
@@ -1602,10 +1599,10 @@ func main() {
 			if host.IsPostgresSource() {
 				var DBSizeMB int64
 
-				if opts.Source.MinDbSizeMB >= 8 { // an empty DB is a bit less than 8MB
+				if opts.Sources.MinDbSizeMB >= 8 { // an empty DB is a bit less than 8MB
 					DBSizeMB, _ = DBGetSizeMB(dbUnique) // ignore errors, i.e. only remove from monitoring when we're certain it's under the threshold
 					if DBSizeMB != 0 {
-						if DBSizeMB < opts.Source.MinDbSizeMB {
+						if DBSizeMB < opts.Sources.MinDbSizeMB {
 							logger.Infof("[%s] DB will be ignored due to the --min-db-size-mb filter. Current (up to %v cached) DB size = %d MB", dbUnique, dbSizeCachingInterval, DBSizeMB)
 							hostsToShutDownDueToRoleChange[dbUnique] = true // for the case when DB size was previosly above the threshold
 							SetUndersizedDBState(dbUnique, true)
@@ -1640,8 +1637,8 @@ func main() {
 					RestoreSQLConnPoolLimitsForPreviouslyDormantDB(dbUnique)
 				}
 
-				if mainLoopCount == 0 && opts.TryCreateListedExtsIfMissing != "" && !ver.IsInRecovery {
-					extsToCreate := strings.Split(opts.TryCreateListedExtsIfMissing, ",")
+				if mainLoopCount == 0 && opts.Sources.TryCreateListedExtsIfMissing != "" && !ver.IsInRecovery {
+					extsToCreate := strings.Split(opts.Sources.TryCreateListedExtsIfMissing, ",")
 					extsCreated := TryCreateMissingExtensions(dbUnique, extsToCreate, ver.Extensions)
 					logger.Infof("[%s] %d/%d extensions created based on --try-create-listed-exts-if-missing input %v", dbUnique, len(extsCreated), len(extsToCreate), extsCreated)
 				}
@@ -1804,9 +1801,9 @@ func main() {
 		mainLoopCount++
 		prevLoopMonitoredDBs = monitoredDbs
 
-		logger.Debugf("main sleeping %ds...", opts.Source.Refresh)
+		logger.Debugf("main sleeping %ds...", opts.Sources.Refresh)
 		select {
-		case <-time.After(time.Second * time.Duration(opts.Source.Refresh)):
+		case <-time.After(time.Second * time.Duration(opts.Sources.Refresh)):
 			// pass
 		case <-mainContext.Done():
 			return

@@ -3,6 +3,8 @@ package sinks
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
@@ -23,37 +25,34 @@ type MultiWriter struct {
 }
 
 // NewMultiWriter creates and returns new instance of MultiWriter struct.
-func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs metrics.MetricVersionDefs) (*MultiWriter, error) {
+func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs metrics.MetricVersionDefs) (mw *MultiWriter, err error) {
+	var w Writer
 	logger := log.GetLogger(ctx)
-	mw := &MultiWriter{}
-	for _, f := range opts.Metric.JSONStorageFile {
-		jw, err := NewJSONWriter(ctx, f)
+	mw = &MultiWriter{}
+	for _, s := range opts.Measurements.Sinks {
+		scheme, path, found := strings.Cut(s, "://")
+		if !found || scheme == "" || path == "" {
+			return nil, fmt.Errorf("malformed sink URI %s", s)
+		}
+		switch scheme {
+		case "jsonfile":
+			w, err = NewJSONWriter(ctx, path)
+		case "postgres", "postgresql":
+			w, err = NewPostgresWriter(ctx, s, opts, metricDefs)
+		case "prometheus":
+			w, err = NewPrometheusWriter(ctx, path)
+		default:
+			return nil, fmt.Errorf("unknown schema %s in sink URI %s", scheme, s)
+		}
 		if err != nil {
 			return nil, err
 		}
-		mw.AddWriter(jw)
-		logger.WithField("file", f).Info(`JSON output enabled`)
+		mw.AddWriter(w)
+		logger.WithField("sink", s).Info(`measurements sink added`)
 	}
 
-	for _, connstr := range opts.Metric.PGMetricStoreConnStr {
-		pgw, err := NewPostgresWriter(ctx, connstr, opts, metricDefs)
-		if err != nil {
-			return nil, err
-		}
-		mw.AddWriter(pgw)
-		logger.WithField("connstr", connstr).Info(`PostgreSQL output enabled`)
-	}
-
-	if opts.Metric.PrometheusListenAddr > "" {
-		promw, err := NewPrometheusWriter(ctx, opts)
-		if err != nil {
-			return nil, err
-		}
-		mw.AddWriter(promw)
-		logger.WithField("listen", opts.Metric.PrometheusListenAddr).Info(`Prometheus output enabled`)
-	}
 	if len(mw.writers) == 0 {
-		return nil, errors.New("no storages specified for metrics")
+		return nil, errors.New("no sinks specified for measurements")
 	}
 	return mw, nil
 }

@@ -14,7 +14,7 @@ type querier interface {
 }
 
 func NewPostgresConfigReader(ctx context.Context, opts *config.Options) (Reader, db.PgxPoolIface, error) {
-	configDb, err := db.New(ctx, opts.Source.Config)
+	configDb, err := db.New(ctx, opts.Sources.Config)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -51,8 +51,8 @@ from
 	left join pgwatch3.preset_config s on s.pc_name = md_preset_config_name_standby
 where
 	md_is_enabled`
-	if len(r.opts.Source.Group) > 0 {
-		sqlLatest += " and md_group in (" + strings.Join(r.opts.Source.Group, ",") + ")"
+	if len(r.opts.Sources.Groups) > 0 {
+		sqlLatest += " and md_group in (" + strings.Join(r.opts.Sources.Groups, ",") + ")"
 	}
 	rows, err := r.configDb.Query(context.Background(), sqlLatest)
 	if err != nil {
@@ -60,7 +60,7 @@ where
 	}
 	dbs, err = pgx.CollectRows[MonitoredDatabase](rows, pgx.RowToStructByNameLax)
 	for _, md := range dbs {
-		if md.Encryption == "aes-gcm-256" && r.opts.Source.AesGcmKeyphrase != "" {
+		if md.Encryption == "aes-gcm-256" && r.opts.Sources.AesGcmKeyphrase != "" {
 			md.ConnStr = r.opts.Decrypt(md.ConnStr)
 		}
 	}
