@@ -3,7 +3,6 @@ package sinks
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"sync/atomic"
 
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
@@ -16,16 +15,14 @@ var (
 )
 
 type JSONWriter struct {
-	ctx      context.Context
-	filename string
-	w        io.Writer
+	ctx context.Context
+	lw  *lumberjack.Logger
 }
 
 func NewJSONWriter(ctx context.Context, fname string) (*JSONWriter, error) {
 	return &JSONWriter{
-		ctx:      ctx,
-		filename: fname,
-		w:        &lumberjack.Logger{Filename: fname, Compress: true},
+		ctx: ctx,
+		lw:  &lumberjack.Logger{Filename: fname, Compress: true},
 	}, nil
 }
 
@@ -33,7 +30,7 @@ func (jw *JSONWriter) Write(msgs []metrics.MeasurementMessage) error {
 	if len(msgs) == 0 {
 		return nil
 	}
-	enc := json.NewEncoder(jw.w)
+	enc := json.NewEncoder(jw.lw)
 	for _, msg := range msgs {
 		dataRow := map[string]any{
 			"metric":      msg.MetricName,

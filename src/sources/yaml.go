@@ -26,12 +26,12 @@ type fileConfigReader struct {
 
 func (fcr *fileConfigReader) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
 	var fi fs.FileInfo
-	if fi, err = os.Stat(fcr.opts.Source.Config); err != nil {
+	if fi, err = os.Stat(fcr.opts.Sources.Config); err != nil {
 		return
 	}
 	switch mode := fi.Mode(); {
 	case mode.IsDir():
-		err = filepath.WalkDir(fcr.opts.Source.Config, func(path string, d fs.DirEntry, err error) error {
+		err = filepath.WalkDir(fcr.opts.Sources.Config, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -46,7 +46,7 @@ func (fcr *fileConfigReader) GetMonitoredDatabases() (dbs MonitoredDatabases, er
 			return err
 		})
 	case mode.IsRegular():
-		dbs, err = fcr.getMonitoredDatabases(fcr.opts.Source.Config)
+		dbs, err = fcr.getMonitoredDatabases(fcr.opts.Sources.Config)
 	}
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (fcr *fileConfigReader) getMonitoredDatabases(configFilePath string) (dbs M
 		if v.Kind == "" {
 			v.Kind = SourcePostgres
 		}
-		if v.IsEnabled && (len(fcr.opts.Source.Group) == 0 || slices.Contains(fcr.opts.Source.Group, v.Group)) {
+		if v.IsEnabled && (len(fcr.opts.Sources.Groups) == 0 || slices.Contains(fcr.opts.Sources.Groups, v.Group)) {
 			dbs = append(dbs, fcr.expandEnvVars(v))
 		}
 	}

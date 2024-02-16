@@ -147,7 +147,7 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MeasurementMessage) error {
 
 func (pgw *PostgresWriter) poll() {
 	cache := make([]metrics.MeasurementMessage, 0, cacheLimit)
-	cacheTimeout := pgw.opts.BatchingDelay
+	cacheTimeout := pgw.opts.Measurements.BatchingDelay
 	tick := time.NewTicker(cacheTimeout)
 	for {
 		select {
@@ -178,7 +178,9 @@ func (pgw *PostgresWriter) write(msgs []metrics.MeasurementMessage) {
 	if len(msgs) == 0 {
 		return
 	}
-	logger := log.GetLogger(pgw.Ctx)
+	logger := log.GetLogger(pgw.Ctx).
+		WithField("sink", "postgres").
+		WithField("db", pgw.SinkDb.Config().ConnConfig.Database)
 	tsWarningPrinted := false
 	metricsToStorePerMetric := make(map[string][]MeasurementMessagePostgres)
 	rowsBatched := 0
@@ -342,13 +344,7 @@ func (pgw *PostgresWriter) write(msgs []metrics.MeasurementMessage) {
 
 	diff := time.Since(t1)
 	if err == nil {
-		if len(msgs) == 1 {
-			logger.Infof("wrote %d/%d rows to Postgres for [%s:%s] in %.1f ms", rowsBatched, totalRows,
-				msgs[0].DBName, msgs[0].MetricName, float64(diff.Nanoseconds())/1000000)
-		} else {
-			logger.Infof("wrote %d/%d rows from %d metric sets to Postgres in %.1f ms", rowsBatched, totalRows,
-				len(msgs), float64(diff.Nanoseconds())/1000000)
-		}
+		logger.WithField("rows", rowsBatched).WithField("elapsed", diff).Info("measurements written")
 		// atomic.StoreInt64(&lastSuccessfulDatastoreWriteTimeEpoch, t1.Unix())
 		// atomic.AddUint64(&datastoreTotalWriteTimeMicroseconds, uint64(diff.Microseconds()))
 		// atomic.AddUint64(&datastoreWriteSuccessCounter, 1)
@@ -461,7 +457,7 @@ func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[str
 }
 
 func (pgw *PostgresWriter) OldPostgresMetricsDeleter() {
-	metricAgeDaysThreshold := pgw.opts.Metric.PGRetentionDays
+	metricAgeDaysThreshold := pgw.opts.Measurements.Retention
 	if metricAgeDaysThreshold <= 0 {
 		return
 	}

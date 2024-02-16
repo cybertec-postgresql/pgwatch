@@ -29,7 +29,8 @@ type PgxPoolIface interface {
 	PgxIface
 	Acquire(ctx context.Context) (*pgxpool.Conn, error)
 	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
-	Stat() *pgxpool.Stat
 	Close()
+	Config() *pgxpool.Config
 	Ping(ctx context.Context) error
+	Stat() *pgxpool.Stat
 }

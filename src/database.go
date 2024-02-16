@@ -33,7 +33,7 @@ func InitSQLConnPoolForMonitoredDBIfNil(md sources.MonitoredDatabase) error {
 	}
 
 	conn, err := db.New(mainContext, md.ConnStr, func(conf *pgxpool.Config) error {
-		conf.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
+		conf.MaxConns = int32(opts.Sources.MaxParallelConnectionsPerDb)
 		return nil
 	})
 	if err != nil {
@@ -41,7 +41,6 @@ func InitSQLConnPoolForMonitoredDBIfNil(md sources.MonitoredDatabase) error {
 	}
 
 	monitoredDbConnCache[md.DBUniqueName] = conn
-	logger.Debugf("[%s] Connection pool initialized with max %d parallel connections. Conn pooling: %v", md.DBUniqueName, opts.MaxParallelConnectionsPerDb, opts.UseConnPooling)
 
 	return nil
 }
@@ -57,13 +56,11 @@ func CloseOrLimitSQLConnPoolForMonitoredDBIfAny(dbUnique string) {
 
 	if IsDBUndersized(dbUnique) || IsDBIgnoredBasedOnRecoveryState(dbUnique) {
 
-		if opts.UseConnPooling {
-			s := conn.Stat()
-			if s.TotalConns() > 1 {
-				logger.Debugf("[%s] Limiting SQL connection pool to max 1 connection due to dormant state ...", dbUnique)
-				// conn.SetMaxIdleConns(1)
-				// conn.SetMaxOpenConns(1)
-			}
+		s := conn.Stat()
+		if s.TotalConns() > 1 {
+			logger.Debugf("[%s] Limiting SQL connection pool to max 1 connection due to dormant state ...", dbUnique)
+			// conn.SetMaxIdleConns(1)
+			// conn.SetMaxOpenConns(1)
 		}
 
 	} else { // removed from config
@@ -281,7 +278,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, srcType sources.Kind, 
 		verNew.IsInRecovery = data[0]["pg_is_in_recovery"].(bool)
 		verNew.RealDbname = data[0]["current_database"].(string)
 
-		if verNew.Version > VersionToInt("10.0") && opts.Metric.SystemIdentifierField > "" {
+		if verNew.Version > VersionToInt("10.0") && opts.Measurements.SystemIdentifierField > "" {
 			logger.Debugf("[%s] determining system identifier version (pg ver: %v)", dbUnique, verNew.VersionStr)
 			data, err := DBExecReadByDbUniqueName(ctx, dbUnique, sqlSysid)
 			if err == nil && len(data) > 0 {
@@ -940,12 +937,12 @@ func TryCreateMetricsFetchingHelpers(dbUnique string) error {
 	}
 
 	if fileBasedMetrics {
-		helpers, _, err := metrics.ReadMetricsFromFolder(mainContext, path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir))
+		helpers, _, err := metrics.ReadMetricsFromFolder(mainContext, path.Join(opts.Metrics.MetricsFolder, metrics.FileBasedMetricHelpersDir))
 		if err != nil {
-			logger.Errorf("Failed to fetch helpers from \"%s\": %s", path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir), err)
+			logger.Errorf("Failed to fetch helpers from \"%s\": %s", path.Join(opts.Metrics.MetricsFolder, metrics.FileBasedMetricHelpersDir), err)
 			return err
 		}
-		logger.Debug("%d helper definitions found from \"%s\"...", len(helpers), path.Join(opts.Metric.MetricsFolder, metrics.FileBasedMetricHelpersDir))
+		logger.Debug("%d helper definitions found from \"%s\"...", len(helpers), path.Join(opts.Metrics.MetricsFolder, metrics.FileBasedMetricHelpersDir))
 
 		for helperName := range helpers {
 			if strings.Contains(helperName, "windows") {
