@@ -1,10 +1,5 @@
 add-real-dbname: false
 add-system-identifier: false
-adhoc-config: ""
-adhoc-conn-str: ""
-adhoc-create-helpers: false
-adhoc-dbtype: postgres
-adhoc-name: adhoc
 aes-gcm-keyphrase: ""
 aes-gcm-keyphrase-file: ""
 aes-gcm-password-to-encrypt: ""

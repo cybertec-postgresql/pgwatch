@@ -1442,10 +1442,6 @@ func main() {
 
 	logger.Debugf("opts: %+v", opts)
 
-	if opts.IsAdHocMode() && opts.AdHocUniqueName == "adhoc" {
-		logger.Warning("In ad-hoc mode: using default unique name 'adhoc' for metrics storage. use --adhoc-name to override.")
-	}
-
 	var srcReader sources.Reader
 	// running in config file based mode?
 	configKind, err := opts.GetConfigKind()
@@ -1575,9 +1571,6 @@ func main() {
 				ver, err = DBGetPGVersion(mainContext, dbUnique, srcType, true)
 				if err != nil {
 					logger.Errorf("could not start metric gathering for DB \"%s\" due to connection problem: %s", dbUnique, err)
-					if opts.AdHocConnString != "" {
-						logger.Errorf("will retry in %ds...", opts.Source.Refresh)
-					}
 					failedInitialConnectHosts[dbUnique] = true
 					continue
 				}
@@ -1595,7 +1588,7 @@ func main() {
 					metricConfig = host.MetricsStandby
 				}
 
-				if !opts.Ping && (host.IsSuperuser || opts.IsAdHocMode() && opts.AdHocCreateHelpers) && host.IsPostgresSource() && !ver.IsInRecovery {
+				if !opts.Ping && host.IsSuperuser && host.IsPostgresSource() && !ver.IsInRecovery {
 					if opts.Metric.NoHelperFunctions {
 						logger.Infof("[%s] Skipping rollout out helper functions due to the --no-helper-functions flag ...", dbUnique)
 					} else {
