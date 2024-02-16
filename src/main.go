@@ -1417,7 +1417,7 @@ func main() {
 	SetupCloseHandler(cancel)
 	defer cancel()
 
-	if opts, err = config.NewConfig(os.Stdout); err != nil {
+	if opts, err = config.New(os.Stdout); err != nil {
 		exitCode.Store(ExitCodeConfigError)
 		return
 	}
