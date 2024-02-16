@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------
 # 1. Build Web UI
 # ----------------------------------------------------------------
-FROM node:19 AS uibuilder
+FROM node:21 AS uibuilder
 ADD src/webui /webui
 RUN cd webui && yarn install --network-timeout 100000 && yarn build
 
