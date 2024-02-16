@@ -37,11 +37,6 @@ func checkFolderExistsAndReadable(path string) bool {
 	return err == nil
 }
 
-const (
-	defaultMetricsDefinitionPathPkg    = "/etc/pgwatch3/metrics" // prebuilt packages / Docker default location
-	defaultMetricsDefinitionPathDocker = "/pgwatch3/metrics"     // prebuilt packages / Docker default location
-)
-
 // Verbose returns true if the debug log is enabled
 func (c Options) Verbose() bool {
 	return c.Logging.LogLevel == "debug"
