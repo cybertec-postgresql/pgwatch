@@ -37,18 +37,9 @@ func checkFolderExistsAndReadable(path string) bool {
 	return err == nil
 }
 
-const (
-	defaultMetricsDefinitionPathPkg    = "/etc/pgwatch3/metrics" // prebuilt packages / Docker default location
-	defaultMetricsDefinitionPathDocker = "/pgwatch3/metrics"     // prebuilt packages / Docker default location
-)
-
 // Verbose returns true if the debug log is enabled
 func (c Options) Verbose() bool {
 	return c.Logging.LogLevel == "debug"
-}
-
-func (c Options) IsAdHocMode() bool {
-	return len(c.AdHocConnString)+len(c.AdHocConfig) > 0
 }
 
 // VersionOnly returns true if the `--version` is the only argument
@@ -97,9 +88,6 @@ func validateConfig(c *Options) error {
 		return err
 	}
 
-	if err := validateAdHocConfig(c); err != nil {
-		return err
-	}
 	// validate that input is boolean is set
 	if c.BatchingDelay < 0 || c.BatchingDelay > time.Hour {
 		return errors.New("--batching-delay-ms must be between 0 and 3600000")
@@ -126,30 +114,6 @@ func validateAesGcmConfig(c *Options) error {
 	}
 	if c.Source.AesGcmPasswordToEncrypt > "" && c.Source.AesGcmKeyphrase == "" { // special flag - encrypt and exit
 		return errors.New("--aes-gcm-password-to-encrypt requires --aes-gcm-keyphrase(-file)")
-	}
-	return nil
-}
-
-func validateAdHocConfig(c *Options) error {
-	if c.AdHocConnString > "" || c.AdHocConfig > "" {
-		if len(c.AdHocConnString)*len(c.AdHocConfig) == 0 {
-			return errors.New("--adhoc-conn-str and --adhoc-config params both need to be specified for Ad-hoc mode to work")
-		}
-		if len(c.Source.Config) > 0 {
-			return errors.New("Conflicting flags! --adhoc-conn-str and --config cannot be both set")
-		}
-		if c.Metric.MetricsFolder == "" {
-			if checkFolderExistsAndReadable(defaultMetricsDefinitionPathPkg) {
-				c.Metric.MetricsFolder = defaultMetricsDefinitionPathPkg
-			} else if checkFolderExistsAndReadable(defaultMetricsDefinitionPathDocker) {
-				c.Metric.MetricsFolder = defaultMetricsDefinitionPathDocker
-			} else {
-				return errors.New("--adhoc-conn-str requires --metrics-folder")
-			}
-		}
-		if !strings.HasPrefix(c.AdHocSrcType, "postgres") {
-			return fmt.Errorf("--adhoc-type can be of: [ postgres (single DB) | postgres-continuous-discovery (all non-template DB-s on an instance) ]. Default: postgres-continuous-discovery")
-		}
 	}
 	return nil
 }

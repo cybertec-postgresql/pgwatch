@@ -27,9 +27,6 @@ There are 3 options to store the configuration:
 
   - File based approach - YAML config file(s) and SQL metric definition files.
 
-  - Purely ENV based setup - i.e. an "ad-hoc" config to monitor a single database or the whole instance. Bascially just a
-    connect string (JDBC or Libpq type) is needed which is perfect for "throwaway" and Cloud / container usage.
-
 Metrics storage DB
 ------------------
 

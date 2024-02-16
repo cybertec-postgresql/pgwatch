@@ -73,11 +73,6 @@ type Options struct {
 	WebUI                        WebUIOpts     `group:"WebUI" mapstructure:"WebUI"`
 	Start                        StartOpts     `group:"Start" mapstructure:"Start"`
 	BatchingDelay                time.Duration `long:"batching-delay" mapstructure:"batching-delay" description:"Max milliseconds to wait for a batched metrics flush. [Default: 250ms]" default:"250ms" env:"PW3_BATCHING_MAX_DELAY"`
-	AdHocConnString              string        `long:"adhoc-conn-str" mapstructure:"adhoc-conn-str" description:"Ad-hoc mode: monitor a single Postgres DB specified by a standard Libpq connection string" env:"PW3_ADHOC_CONN_STR"`
-	AdHocSrcType                 string        `long:"adhoc-type" mapstructure:"adhoc-type" description:"Ad-hoc mode: postgres|postgres-continuous-discovery" default:"postgres" env:"PW3_ADHOC_TYPE"`
-	AdHocConfig                  string        `long:"adhoc-config" mapstructure:"adhoc-config" description:"Ad-hoc mode: a preset config name or a custom JSON config" env:"PW3_ADHOC_CONFIG"`
-	AdHocCreateHelpers           bool          `long:"adhoc-create-helpers" mapstructure:"adhoc-create-helpers" description:"Ad-hoc mode: try to auto-create helpers. Needs superuser to succeed" env:"PW3_ADHOC_CREATE_HELPERS"`
-	AdHocUniqueName              string        `long:"adhoc-name" mapstructure:"adhoc-name" description:"Ad-hoc mode: Unique 'dbname' for Influx" default:"adhoc" env:"PW3_ADHOC_NAME"`
 	DirectOSStats                bool          `long:"direct-os-stats" mapstructure:"direct-os-stats" description:"Extract OS related psutil statistics not via PL/Python wrappers but directly on host" env:"PW3_DIRECT_OS_STATS"`
 	UseConnPooling               bool          `long:"use-conn-pooling" mapstructure:"use-conn-pooling" description:"Enable re-use of metrics fetching connections" env:"PW3_USE_CONN_POOLING"`
 	InstanceLevelCacheMaxSeconds int64         `long:"instance-level-cache-max-seconds" mapstructure:"instance-level-cache-max-seconds" description:"Max allowed staleness for instance level metric data shared between DBs of an instance. Affects 'continuous' host types only. Set to 0 to disable" env:"PW3_INSTANCE_LEVEL_CACHE_MAX_SECONDS" default:"30"`

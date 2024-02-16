@@ -18,11 +18,6 @@ Sizing recommendations
   If disk size reduction is wanted for PostgreSQL storage then best would be to use the TimescaleDB extension - it has
   built-in compression and disk footprint is x5 time less than vanila Postgres, while retaining full SQL support.
 
-  To determine disk usage needs for your exact setup, there's also a *Test Data Generation* mode built into the collector.
-  Using this mode requires two below params, plus also the usual :ref:`Ad-hoc mode <adhoc_mode>` connection string params.
-
-  Relevant params: *\-\-testdata-days, \-\-testdata-multiplier or PW3_TESTDATA_DAYS, PW3_TESTDATA_MULTIPLIER*
-
 * A low-spec (1 vCPU, 2 GB RAM) cloud machine can easily monitor 100 DBs in "exhaustive" settings (i.e. almost all metrics
   are monitored in 1-2min intervals) without breaking a sweat (<20% load).
 

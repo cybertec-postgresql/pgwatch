@@ -112,16 +112,6 @@ For *YAML* based setups:
   #. Activate the newly added metric by including it in some existing *Preset Config* (/etc/pgwatch3/metrics/preset-configs.yaml)
      or add it directly to the YAML config "custom_metrics" section.
 
-FYI - another neat way to quickly test if the metric can be successfully executed on the "to be monitored" DB is to launch
-pgwatch3 in *ad-hoc mode*:
-
-  ::
-
-    pgwatch3-daemon \
-      --adhoc-config='{"my_new_metric": 10}' --adhoc-conn-str="host=mytestdb dbname=postgres" \
-      --datastore=postgres --pg-metric-store-conn-str=postgresql://... \
-      --metrics-folder2=/etc/pgwatch3/metrics --verbose=info
-
 Metric attributes
 -----------------
 
