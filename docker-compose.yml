@@ -3,7 +3,7 @@ version: "3.9"
 services:
   postgres:
     # if you want vanilla experience use "postgres:latest" image and remove "timescaledb" from shared_preload_libraries
-    image: &pgimage timescale/timescaledb:latest-pg15
+    image: &pgimage timescale/timescaledb:latest-pg16
     user: postgres
     command:
       - "-cshared_preload_libraries=pg_stat_statements,timescaledb"
@@ -54,7 +54,7 @@ services:
     image: cybertecpostgresql/pgwatch3:latest
     environment:
       PW3_CONFIG: postgresql://pgwatch3@postgres:5432/pgwatch3
-      PW3_PG_METRIC_STORE_CONN_STR: postgresql://pgwatch3@postgres:5432/pgwatch3_metrics
+      PW3_SINK: postgresql://pgwatch3@postgres:5432/pgwatch3_metrics
     ports:
       - "8080:8080"
     depends_on:
