@@ -202,7 +202,6 @@ new_helper:
 			}
 		}
 	}
-	return
 }
 
 func main() {
