@@ -46,8 +46,9 @@ type (
 
 	Metric struct {
 		SQLs                  SQLs
-		MasterOnly            bool `yaml:",omitempty"`
-		StandbyOnly           bool `yaml:",omitempty"`
+		InitSQL               string `yaml:"init_sql,omitempty"`
+		MasterOnly            bool   `yaml:",omitempty"`
+		StandbyOnly           bool   `yaml:",omitempty"`
 		MetricPrometheusAttrs `yaml:",inline,omitempty"`
 		MetricAttrs           `yaml:",inline,omitempty"`
 	}
@@ -87,7 +88,7 @@ func ReadMetricsFromFolder(folder string) (metricsMap Metrics, err error) {
 	regexMetricNameFilter := regexp.MustCompile(metricNamePattern)
 	regexIsDigitOrPunctuation := regexp.MustCompile(`^[\d\.]+$`)
 
-	fmt.Printf("Searching for metrics from path %s ...", folder)
+	fmt.Printf("Searching for metrics from path %s ...\n", folder)
 
 	for _, metricFolder := range metricFolders {
 		if metricFolder.Name() == FileBasedMetricHelpersDir ||
@@ -170,6 +171,7 @@ type Preset struct {
 // Expects "preset metrics" definition file named preset-config.yaml to be present in provided --metrics folder
 func ReadPresetMetricsConfigFromFolder(folder string) (presets Presets, err error) {
 	var presetMetrics []byte
+	fmt.Printf("Searching for presents from path %s ...\n", folder)
 	if presetMetrics, err = os.ReadFile(path.Join(folder, PresetConfigYAMLFile)); err != nil {
 		return
 	}
@@ -183,6 +185,23 @@ func WriteMetricsToFile(metricDefs any, filename string) error {
 		return err
 	}
 	return os.WriteFile(filename, yamlData, 0644)
+}
+
+func moveHelpersToMetrics(helpers, metrics Metrics) {
+new_helper:
+	for helperName, h := range helpers {
+		for metricName, m := range metrics {
+			for _, sql := range m.SQLs {
+				if strings.Contains(sql, helperName) {
+					for _, v := range h.SQLs {
+						m.InitSQL = v
+						metrics[metricName] = m
+						continue new_helper
+					}
+				}
+			}
+		}
+	}
 }
 
 func main() {
@@ -212,16 +231,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	moveHelpersToMetrics(helpers, metrics)
 	presets, err := ReadPresetMetricsConfigFromFolder(*src)
 	if err != nil {
 		panic(err)
 	}
 	err = WriteMetricsToFile(struct {
-		Helpers Metrics `yaml:"helpers,omitempty"`
 		Metrics Metrics `yaml:"metrics,omitempty"`
 		Presets Presets `yaml:"presets,omitempty"`
 	}{
-		helpers,
 		metrics,
 		presets,
 	}, *dst)
