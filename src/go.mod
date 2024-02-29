@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/websocket v1.5.1
-	github.com/hashicorp/consul/api v1.27.0
+	github.com/hashicorp/consul/api v1.28.0
 	github.com/jackc/pgx/v5 v5.5.3
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/pashagolub/pgxmock/v3 v3.3.0
