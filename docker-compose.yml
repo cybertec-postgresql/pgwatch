@@ -70,13 +70,8 @@ services:
       PGDATABASE: pgwatch3
     command: >
       psql -v ON_ERROR_STOP=1
-        -f /tmp/00_helpers/get_stat_statements/9.4/metric.sql
-        -f /tmp/00_helpers/get_stat_activity/9.2/metric.sql
-        -f /tmp/00_helpers/get_stat_replication/9.2/metric.sql
         -f /tmp/00_helpers/get_table_bloat_approx/9.5/metric.sql
         -f /tmp/00_helpers/get_table_bloat_approx_sql/12/metric.sql
-        -f /tmp/00_helpers/get_wal_size/10/metric.sql
-        -f /tmp/00_helpers/get_sequences/10/metric.sql 
         -c "INSERT INTO pgwatch3.monitored_db (md_name, md_preset_config_name, md_connstr)
           SELECT 'test', 'exhaustive', 'postgresql://pgwatch3:pgwatch3admin@postgres/pgwatch3'
           WHERE NOT EXISTS (SELECT * FROM pgwatch3.monitored_db WHERE md_name = 'test')"
