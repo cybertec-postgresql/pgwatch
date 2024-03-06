@@ -55,7 +55,7 @@ func (hook *BrokerHook) AddSubscriber(msgCh MessageChanType) {
 func (hook *BrokerHook) RemoveSubscriber(msgCh MessageChanType) {
 	hook.mu.Lock()
 	defer hook.mu.Unlock()
-	for i := range hook.subscribers {
+	for i := len(hook.subscribers) - 1; i >= 0; i-- {
 		if hook.subscribers[i] == msgCh {
 			hook.subscribers = append(hook.subscribers[:i], hook.subscribers[i+1:]...)
 		}
