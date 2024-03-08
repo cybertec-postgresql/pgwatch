@@ -17,7 +17,7 @@ For the fastest development experience the Docker compose file is provided:
 ```shell
 git clone https://github.com/cybertec-postgresql/pgwatch3.git && cd pgwatch3
 
-docker-compose up --detach
+docker compose up --detach
 ```
 <pre>
  ✔ Network pgwatch3_default       Created
@@ -39,7 +39,7 @@ looking at metrics. You may log in as admin (`admin`/`admin`) to apply changes t
 To add a test database under monitoring, you can use [built-in WebUI](http://localhost:8080/). Or simply
 execute from command line:
 ```shell
-$ docker-compose up add-test-db
+$ docker compose up add-test-db
 ```
 <pre>
 [+] Running 2/0
@@ -58,7 +58,7 @@ pgwatch3-add-test-db-1 exited with code 0
 
 To emulate workload for added test database execute:
 ```
-$ docker-compose up pgbench
+$ docker compose up pgbench
 ```
 <pre>
 [+] Running 2/2
@@ -111,7 +111,7 @@ pgwatch3-pgbench-1 exited with code 0
 If you apply any changes to the source code and want to restart the agent, it's usually enough to run:
 
 ```shell
-$ docker-compose up pgwatch3 --build --force-recreate --detach
+$ docker compose up pgwatch3 --build --force-recreate --detach
 ```
 
 The command above will rebuild the `pgwatch3` agent from sources and relaunch the container.
