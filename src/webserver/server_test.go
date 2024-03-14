@@ -38,33 +38,33 @@ func TestServerNoAuth(t *testing.T) {
 	assert.NotNil(t, restsrv)
 	rr := httptest.NewRecorder()
 	// test request metrics
-	req_metric, err := http.NewRequest("GET", host+"/metric", nil)
-	restsrv.Handler.ServeHTTP(rr, req_metric)
+	reqMetric, err := http.NewRequest("GET", host+"/metric", nil)
+	restsrv.Handler.ServeHTTP(rr, reqMetric)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, rr.Code, http.StatusUnauthorized, "REQUEST WITHOUT AUTHENTICATION")
 
 	// test request database
-	req_db, err := http.NewRequest("GET", host+"/db", nil)
+	reqDb, err := http.NewRequest("GET", host+"/db", nil)
 	assert.Equal(t, err, nil)
-	restsrv.Handler.ServeHTTP(rr, req_db)
+	restsrv.Handler.ServeHTTP(rr, reqDb)
 	assert.Equal(t, rr.Code, http.StatusUnauthorized, "REQUEST WITHOUT AUTHENTICATION")
 
 	// test request stats
-	req_stats, err := http.NewRequest("GET", host+"/stats", nil)
+	reqStats, err := http.NewRequest("GET", host+"/stats", nil)
 	assert.Equal(t, err, nil)
-	restsrv.Handler.ServeHTTP(rr, req_stats)
+	restsrv.Handler.ServeHTTP(rr, reqStats)
 	assert.Equal(t, rr.Code, http.StatusUnauthorized, "REQUEST WITHOUT AUTHENTICATION")
 
 	// test request
-	req_log, err := http.NewRequest("GET", host+"/log", nil)
+	reqLog, err := http.NewRequest("GET", host+"/log", nil)
 	assert.Equal(t, err, nil)
-	restsrv.Handler.ServeHTTP(rr, req_log)
+	restsrv.Handler.ServeHTTP(rr, reqLog)
 	assert.Equal(t, rr.Code, http.StatusUnauthorized, "REQUEST WITHOUT AUTHENTICATION")
 
 	// request metrics
-	req_connect, err := http.NewRequest("GET", host+"/test-connect", nil)
+	reqConnect, err := http.NewRequest("GET", host+"/test-connect", nil)
 	assert.Equal(t, err, nil)
-	restsrv.Handler.ServeHTTP(rr, req_connect)
+	restsrv.Handler.ServeHTTP(rr, reqConnect)
 	assert.Equal(t, rr.Code, http.StatusUnauthorized, "REQUEST WITHOUT AUTHENTICATION")
 
 }
@@ -84,10 +84,10 @@ func TestGetToken(t *testing.T) {
 		fmt.Println("Error marshaling ", err)
 	}
 
-	req_token, err := http.NewRequest("POST", host+"/login", strings.NewReader(string(payload)))
+	reqToken, err := http.NewRequest("POST", host+"/login", strings.NewReader(string(payload)))
 	assert.Equal(t, err, nil)
 
-	restsrv.Handler.ServeHTTP(rr, req_token)
+	restsrv.Handler.ServeHTTP(rr, reqToken)
 
 	assert.Equal(t, rr.Code, http.StatusOK, "TOKEN RESPONSE OK")
 
