@@ -35,7 +35,7 @@ func TestStatus(t *testing.T) {
 }
 
 func TestServerNoAuth(t *testing.T) {
-	restsrv := webserver.Init(config.WebUIOpts{WebAddr: host}, os.DirFS("../webui/build"), nil, log.FallbackLogger)
+	restsrv := webserver.Init(config.WebUIOpts{WebAddr: "localhost:8080"}, os.DirFS("../webui/build"), nil, log.FallbackLogger)
 	assert.NotNil(t, restsrv)
 	rr := httptest.NewRecorder()
 	// test request metrics
@@ -71,7 +71,7 @@ func TestServerNoAuth(t *testing.T) {
 }
 
 func TestGetToken(t *testing.T) {
-	restsrv := webserver.Init(config.WebUIOpts{WebAddr: "127.0.0.1:8080"}, os.DirFS("../webui/build"), nil, log.FallbackLogger)
+	restsrv := webserver.Init(config.WebUIOpts{WebAddr: "localhost:8080"}, os.DirFS("../webui/build"), nil, log.FallbackLogger)
 	rr := httptest.NewRecorder()
 
 	credentials := Credentials{
