@@ -16,8 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const host = "http://localhost:8080"
-
 type Credentials struct {
 	User     string `json:"user"`
 	Password string `json:"password"`
@@ -35,7 +33,8 @@ func TestStatus(t *testing.T) {
 }
 
 func TestServerNoAuth(t *testing.T) {
-	restsrv := webserver.Init(config.WebUIOpts{WebAddr: "localhost:8080"}, os.DirFS("../webui/build"), nil, log.FallbackLogger)
+	host := "http://localhost:8081"
+	restsrv := webserver.Init(config.WebUIOpts{WebAddr: "localhost:8081"}, os.DirFS("../webui/build"), nil, log.FallbackLogger)
 	assert.NotNil(t, restsrv)
 	rr := httptest.NewRecorder()
 	// test request metrics
@@ -71,7 +70,8 @@ func TestServerNoAuth(t *testing.T) {
 }
 
 func TestGetToken(t *testing.T) {
-	restsrv := webserver.Init(config.WebUIOpts{WebAddr: "localhost:8080"}, os.DirFS("../webui/build"), nil, log.FallbackLogger)
+	host := "http://localhost:8082"
+	restsrv := webserver.Init(config.WebUIOpts{WebAddr: "localhost:8082"}, os.DirFS("../webui/build"), nil, log.FallbackLogger)
 	rr := httptest.NewRecorder()
 
 	credentials := Credentials{
