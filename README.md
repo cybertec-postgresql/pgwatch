@@ -39,7 +39,7 @@ looking at metrics. You may log in as admin (`admin`/`admin`) to apply changes t
 To add a test database under monitoring, you can use [built-in WebUI](http://localhost:8080/). Or simply
 execute from command line:
 ```shell
-$ docker compose up add-test-db
+$ docker compose up add-test-db --force-recreate
 ```
 <pre>
 [+] Running 2/0
