@@ -170,22 +170,31 @@ func ParseMetricAttrsFromYAML(path string) (a MetricAttrs, err error) {
 	return
 }
 
-type Presets []Preset
+type Presets map[string]Preset
 
 type Preset struct {
-	Name        string
+	Name        string `yaml:"name,omitempty"`
 	Description string
 	Metrics     map[string]int
 }
 
 // Expects "preset metrics" definition file named preset-config.yaml to be present in provided --metrics folder
-func ReadPresetMetricsConfigFromFolder(folder string) (presets Presets, err error) {
+func ReadPresetsFromFolder(folder string) (presets Presets, err error) {
 	var presetMetrics []byte
 	fmt.Printf("Searching for presents from path %s ...\n", folder)
 	if presetMetrics, err = os.ReadFile(path.Join(folder, PresetConfigYAMLFile)); err != nil {
 		return
 	}
-	err = yaml.Unmarshal(presetMetrics, &presets)
+	var oldPresets []Preset
+	if err = yaml.Unmarshal(presetMetrics, &oldPresets); err != nil {
+		return
+	}
+	presets = make(Presets, 0)
+	for _, p := range oldPresets {
+		pname := p.Name
+		p.Name = ""
+		presets[pname] = p
+	}
 	return
 }
 
@@ -242,7 +251,7 @@ func main() {
 		panic(err)
 	}
 	moveHelpersToMetrics(helpers, metrics)
-	presets, err := ReadPresetMetricsConfigFromFolder(*src)
+	presets, err := ReadPresetsFromFolder(*src)
 	if err != nil {
 		panic(err)
 	}
