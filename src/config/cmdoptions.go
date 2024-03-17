@@ -149,10 +149,6 @@ func validateConfig(c *Options) error {
 		return errors.New("--max-parallel-connections-per-db must be >= 1")
 	}
 
-	if c.Metrics.MetricsFolder > "" && !checkFolderExistsAndReadable(c.Metrics.MetricsFolder) {
-		return fmt.Errorf("Could not read --metrics-folder path %s", c.Metrics.MetricsFolder)
-	}
-
 	if err := validateAesGcmConfig(c); err != nil {
 		return err
 	}
