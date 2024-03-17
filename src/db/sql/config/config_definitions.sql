@@ -378,7 +378,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_master_only, m_sql)
 values (
 'bgwriter',
-9.2,
+11,
 true,
 $sql$
 select
@@ -402,7 +402,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'cpu_load',
-9.0,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -5231,7 +5231,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'archiver',
-9.4,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -5251,7 +5251,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_wal_size',
-9.0,
+11,
 $sql$
 
 CREATE OR REPLACE FUNCTION get_wal_size() RETURNS int8 AS
@@ -5290,7 +5290,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_sql_su)
 values (
 'wal_size',
-9.0,
+11,
 $sql$
 select
     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -5328,7 +5328,7 @@ $sql$
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_standby_only, m_sql, m_column_attrs)
 values (
 'wal_receiver',
-9.2,
+11,
 true,
 $sql$
 select
@@ -5358,7 +5358,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_stat_replication',
-9.2,
+11,
 $sql$
 
 CREATE OR REPLACE FUNCTION get_stat_replication() RETURNS SETOF pg_stat_replication AS
@@ -5377,7 +5377,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'settings',
-9.0,
+11,
 $sql$
 with qs as (
   select name, setting from pg_settings
@@ -5440,100 +5440,6 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'stat_activity_realtime',
-9.0,
-$sql$
-SELECT
-    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-    pid as tag_pid,
-    usename::text AS user,
-    application_name AS appname,
-    coalesce(client_addr::text, 'local') AS ip,
-    extract(epoch FROM (now() - query_start))::int AS duration_s,
-    waiting::int,
-    case when sa.waiting then
-             (select array_to_string((select array_agg(distinct b.pid order by b.pid) from pg_locks b join pg_locks l on l.database = b.database and l.relation = b.relation
-                                      where l.pid = sa.procpid and b.pid != l.pid and b.granted and not l.granted), ','))
-         else
-             null
-        end as blocking_pids,
-    ltrim(regexp_replace(current_query, E'[ \\t\\n\\r]+' , ' ', 'g'))::varchar(300) AS query
-FROM
-    pg_stat_activity sa
-WHERE
-    current_query <> '<IDLE>'
-    AND procpid != pg_backend_pid()
-    AND datname = current_database()
-    AND NOW() - query_start > '500ms'::interval
-ORDER BY
-    NOW() - query_start DESC
-LIMIT 25;
-$sql$,
-'{"prometheus_all_gauge_columns": true}'
-);
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'stat_activity_realtime',
-9.2,
-$sql$
-SELECT
-    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-    pid as tag_pid,
-    usename::text AS user,
-    application_name AS appname,
-    coalesce(client_addr::text, 'local') AS ip,
-    extract(epoch FROM (now() - query_start))::int AS duration_s,
-    waiting::int,
-    case when sa.waiting then
-        (select array_to_string((select array_agg(distinct b.pid order by b.pid) from pg_locks b join pg_locks l on l.database = b.database and l.relation = b.relation
-           where l.pid = sa.pid and b.pid != l.pid and b.granted and not l.granted), ','))
-        else
-            null
-    end as blocking_pids,
-    ltrim(regexp_replace(query, E'[ \\t\\n\\r]+' , ' ', 'g'))::varchar(300) AS query
-FROM
-    pg_stat_activity sa
-WHERE
-    state != 'idle'
-    AND pid != pg_backend_pid()
-    AND datname = current_database()
-    AND now() - query_start > '500ms'::interval
-ORDER BY
-    now() - query_start DESC
-LIMIT 25;
-$sql$,
-'{"prometheus_all_gauge_columns": true}'
-);
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'stat_activity_realtime',
-9.6,
-$sql$
-SELECT
-    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-    pid as tag_pid,
-    usename::text AS user,
-    application_name AS appname,
-    coalesce(client_addr::text, 'local') AS ip,
-    extract(epoch FROM (now() - query_start))::int AS duration_s,
-    (wait_event_type IS NOT NULL)::int AS waiting,
-    array_to_string(pg_blocking_pids(pid), ',') as blocking_pids,
-    ltrim(regexp_replace(query, E'[ \\t\\n\\r]+' , ' ', 'g'))::varchar(300) AS query
-FROM
-    pg_stat_activity
-WHERE
-  state != 'idle'
-  AND pid != pg_backend_pid()
-  AND datname = current_database()
-  AND now() - query_start > '500ms'::interval
-ORDER BY
-  now() - query_start DESC
-LIMIT 25;
-$sql$,
-'{"prometheus_all_gauge_columns": true}'
-);
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
-values (
-'stat_activity_realtime',
 10,
 $sql$
 SELECT
@@ -5566,14 +5472,14 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql)
 values (
 'recommendations',
-9.0,
+11,
 '/* dummy placeholder - special handling in code to collect other metrics named reco_* */'
 );
 
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_add_index',
-9.1,
+11,
 $sql$
 /* assumes the pg_qualstats extension and superuser or select grants on pg_qualstats_indexes_ddl view */
 select
@@ -5595,7 +5501,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_add_index_ext_qualstats_2.0',
-9.1,
+11,
 $sql$
   /* assumes the pg_qualstats extension and superuser or select grant on pg_qualstats_index_advisor() function */
 SELECT
@@ -5626,7 +5532,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_default_public_schema',
-9.1,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -5648,33 +5554,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_drop_index',
-9.0,
-$sql$
-select
-  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-  'drop_index'::text as tag_reco_topic,
-  quote_ident(schemaname)||'.'||quote_ident(indexrelname) as tag_object_name,
-  ('DROP INDEX ' || quote_ident(schemaname)||'.'||quote_ident(indexrelname) || ';')::text as recommendation,
-  'Before dropping make sure to also check replica pg_stat_user_indexes.idx_scan count if using them for queries'::text as extra_info
-from
-  pg_stat_user_indexes
-  join
-  pg_index using (indexrelid)
-where
-  idx_scan = 0
-  and ((pg_relation_size(indexrelid)::numeric / (pg_database_size(current_database()))) > 0.005 /* 0.5% DB size threshold */
-    or indisvalid)
-  and not indisprimary
-;
-$sql$,
-'{"prometheus_all_gauge_columns": true}',
-true
-);
-
-insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
-values (
-'reco_drop_index',
-9.4,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -5701,7 +5581,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_nested_views',
-9.1,
+11,
 $sql$
 WITH RECURSIVE views AS (
    -- get the directly depending views
@@ -5760,7 +5640,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_sprocs_wo_search_path',
-9.1,
+11,
 $sql$
 with q_sprocs as (
 select
@@ -5790,7 +5670,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_superusers',
-9.1,
+11,
 $sql$
 /* reco_* metrics have special handling - all results are stored actually under one 'recommendations' metric  and
  following text columns are expected:  reco_topic, object_name, recommendation, extra_info.
@@ -5820,7 +5700,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_disabled_triggers',
-9.0,
+11,
 $sql$
 /* "temporarily" disabled triggers might be forgotten about... */
 select
@@ -5846,7 +5726,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'reco_partial_index_candidates',
-9.0,
+11,
 $sql$
 select distinct
     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -5882,7 +5762,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_master_only)
 values (
 'show_plans_realtime',
-9.0,
+11,
 $sql$
 /* assumes pg_show_plans extension */
 select
@@ -5955,7 +5835,7 @@ false
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs, m_is_helper)
 values (
 'get_smart_health_per_device',
-9.1,
+11,
 $sql$
 CREATE EXTENSION IF NOT EXISTS plpython3u;
 /*
@@ -5997,7 +5877,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'smart_health_per_disk',
-9.1,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -6012,7 +5892,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'server_log_event_counts',
-9.0,
+11,
 $sql$
 /* dummy placeholder - special handling in code */
 $sql$,
@@ -6023,7 +5903,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_backup_age_walg',
-9.1,
+11,
 $sql$
 CREATE EXTENSION IF NOT EXISTS plpython3u;
 /*
@@ -6074,7 +5954,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'backup_age_walg',
-9.1,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -6091,7 +5971,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_backup_age_pgbackrest',
-9.1,
+11,
 $sql$
 
 CREATE EXTENSION IF NOT EXISTS plpython3u;
@@ -6141,7 +6021,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'backup_age_pgbackrest',
-9.1,
+11,
 $sql$
 select
   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -6185,7 +6065,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment, m_is_helper)
 values (
 'get_vmstat',
-9.1,
+11,
 $sql$
 /*
   vmstat + some extra infos like CPU count, 1m/5m/15m load avg. and total memory
@@ -6243,7 +6123,7 @@ true
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_column_attrs)
 values (
 'vmstat',
-9.1,
+11,
 $sql$
 SELECT
     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -6258,7 +6138,7 @@ $sql$,
 insert into pgwatch3.metric(m_name, m_pg_version_from, m_sql, m_comment)
 values (
 'instance_up',
-9.0,
+11,
 $sql$
 select
     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
