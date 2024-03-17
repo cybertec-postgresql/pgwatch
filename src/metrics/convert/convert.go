@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -16,12 +17,6 @@ import (
 )
 
 type (
-	MetricPrometheusAttrs struct {
-		PrometheusGaugeColumns    []string `yaml:"prometheus_gauge_columns,omitempty"`
-		PrometheusIgnoredColumns  []string `yaml:"prometheus_ignored_columns,omitempty"` // for cases where we don't want some columns to be exposed in Prom mode
-		PrometheusAllGaugeColumns bool     `yaml:"prometheus_all_gauge_columns,omitempty"`
-	}
-
 	ExtensionInfo struct {
 		ExtName       string `yaml:"ext_name"`
 		ExtMinVersion string `yaml:"ext_min_version"`
@@ -45,12 +40,12 @@ type (
 	SQLs map[int]string
 
 	Metric struct {
-		SQLs                  SQLs
-		InitSQL               string `yaml:"init_sql,omitempty"`
-		MasterOnly            bool   `yaml:",omitempty"`
-		StandbyOnly           bool   `yaml:",omitempty"`
-		MetricPrometheusAttrs `yaml:",inline,omitempty"`
-		MetricAttrs           `yaml:",inline,omitempty"`
+		SQLs        SQLs
+		InitSQL     string   `yaml:"init_sql,omitempty"`
+		MasterOnly  bool     `yaml:",omitempty"`
+		StandbyOnly bool     `yaml:",omitempty"`
+		Gauges      []string `yaml:",omitempty"`
+		MetricAttrs `yaml:",inline,omitempty"`
 	}
 
 	Metrics map[string]Metric
@@ -105,7 +100,7 @@ func ReadMetricsFromFolder(folder string) (metricsMap Metrics, err error) {
 
 		Metric := Metric{}
 		Metric.MetricAttrs, _ = ParseMetricAttrsFromYAML(path.Join(folder, metricFolder.Name(), "metric_attrs.yaml"))
-		Metric.MetricPrometheusAttrs, _ = ParseMetricPrometheusAttrsFromYAML(path.Join(folder, metricFolder.Name(), "column_attrs.yaml"))
+		_ = ParseMetricPrometheusAttrsFromYAML(path.Join(folder, metricFolder.Name(), "column_attrs.yaml"), &Metric)
 		Metric.SQLs = make(SQLs)
 
 		var version int
@@ -144,11 +139,26 @@ func ReadMetricsFromFolder(folder string) (metricsMap Metrics, err error) {
 	return
 }
 
-func ParseMetricPrometheusAttrsFromYAML(path string) (c MetricPrometheusAttrs, err error) {
-	var val []byte
-	if val, err = os.ReadFile(path); err == nil {
-		err = yaml.Unmarshal(val, &c)
+func ParseMetricPrometheusAttrsFromYAML(path string, m *Metric) (err error) {
+	type OldMetricPrometheusAttrs struct {
+		PrometheusGaugeColumns    []string `yaml:"prometheus_gauge_columns,omitempty"`
+		PrometheusIgnoredColumns  []string `yaml:"prometheus_ignored_columns,omitempty"` // for cases where we don't want some columns to be exposed in Prom mode
+		PrometheusAllGaugeColumns bool     `yaml:"prometheus_all_gauge_columns,omitempty"`
 	}
+
+	var val []byte
+	var oldPromAttrs OldMetricPrometheusAttrs
+	if val, err = os.ReadFile(path); err == nil {
+		if err = yaml.Unmarshal(val, &oldPromAttrs); err != nil {
+			return
+		}
+		if oldPromAttrs.PrometheusAllGaugeColumns {
+			m.Gauges = []string{"*"}
+			return
+		}
+		m.Gauges = slices.Clone(oldPromAttrs.PrometheusGaugeColumns)
+	}
+
 	return
 }
 
