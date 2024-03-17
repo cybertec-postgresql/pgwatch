@@ -46,7 +46,7 @@ ALTER TABLE pgwatch3.monitored_db
 CREATE TABLE IF NOT EXISTS pgwatch3.metric (
     m_id serial PRIMARY KEY,
     m_name text NOT NULL,
-    m_pg_version_from numeric NOT NULL,
+    m_pg_version_from int NOT NULL,
     m_sql text NOT NULL,
     m_comment text,
     m_is_active boolean NOT NULL DEFAULT 't',
