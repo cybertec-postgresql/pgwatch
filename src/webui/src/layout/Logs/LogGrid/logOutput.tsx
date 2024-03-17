@@ -1,6 +1,8 @@
+interface LogEventColor {
+  [key: string]: string;
+}
 
-
-const logEventColor = {
+const logEventColor: LogEventColor = {
   "[INFO]": "green",
   "[WARNING]": "orange",
   "[DEBUG]": "purple",
