@@ -177,7 +177,7 @@ metrics:
                    buffers_alloc
                  from
                    pg_stat_bgwriter
-        masteronly: true
+        node_status: master
         is_instance_level: true
     blocking_locks:
         sqls:
@@ -329,7 +329,7 @@ metrics:
                   pg_stat_database_conflicts
                 WHERE
                   datname = current_database()
-        standbyonly: true
+        node_status: standby
     db_size:
         sqls:
             11: |-
@@ -1114,6 +1114,68 @@ metrics:
                   total, used, free, percent
                 from
                   get_psutil_disk()
+        init_sql: |-
+            /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
+            CREATE EXTENSION IF NOT EXISTS plpython3u; /* "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
+
+            CREATE OR REPLACE FUNCTION get_psutil_disk(
+            	OUT dir_or_tablespace text, OUT path text, OUT total float8, OUT used float8, OUT free float8, OUT percent float8
+            )
+             RETURNS SETOF record
+             LANGUAGE plpython3u
+             SECURITY DEFINER
+            AS $FUNCTION$
+
+            from os import stat
+            from os.path import join, exists
+            from psutil import disk_usage
+            ret_list = []
+
+            # data_directory
+            r = plpy.execute("select current_setting('data_directory') as dd, current_setting('log_directory') as ld, current_setting('server_version_num')::int as pgver")
+            dd = r[0]['dd']
+            ld = r[0]['ld']
+            du_dd = disk_usage(dd)
+            ret_list.append(['data_directory', dd, du_dd.total, du_dd.used, du_dd.free, du_dd.percent])
+
+            dd_stat = stat(dd)
+            # log_directory
+            if ld:
+                if not ld.startswith('/'):
+                    ld_path = join(dd, ld)
+                else:
+                    ld_path = ld
+                if exists(ld_path):
+                    log_stat = stat(ld_path)
+                    if log_stat.st_dev == dd_stat.st_dev:
+                        pass                                # no new info, same device
+                    else:
+                        du = disk_usage(ld_path)
+                        ret_list.append(['log_directory', ld_path, du.total, du.used, du.free, du.percent])
+
+            # WAL / XLOG directory
+            # plpy.notice('pg_wal' if r[0]['pgver'] >= 100000 else 'pg_xlog', r[0]['pgver'])
+            joined_path_wal = join(r[0]['dd'], 'pg_wal' if r[0]['pgver'] >= 100000 else 'pg_xlog')
+            wal_stat = stat(joined_path_wal)
+            if wal_stat.st_dev == dd_stat.st_dev:
+                pass                                # no new info, same device
+            else:
+                du = disk_usage(joined_path_wal)
+                ret_list.append(['pg_wal', joined_path_wal, du.total, du.used, du.free, du.percent])
+
+            # add user created tablespaces if any
+            sql_tablespaces = """
+                select spcname as name, pg_catalog.pg_tablespace_location(oid) as location
+                from pg_catalog.pg_tablespace where not spcname like any(array[E'pg\\_%'])"""
+            for row in plpy.cursor(sql_tablespaces):
+                du = disk_usage(row['location'])
+                ret_list.append([row['name'], row['location'], du.total, du.used, du.free, du.percent])
+            return ret_list
+
+            $FUNCTION$;
+
+            GRANT EXECUTE ON FUNCTION get_psutil_disk() TO pgwatch3;
+            COMMENT ON FUNCTION get_psutil_disk() IS 'created for pgwatch3'
         gauges:
             - '*'
         is_instance_level: true
@@ -1193,7 +1255,7 @@ metrics:
                 order by
                   execution_count desc
                 limit 25
-        masteronly: true
+        node_status: master
         extension_version_based_overrides:
             - target_metric: reco_add_index_ext_qualstats_2.0
               expected_extension_versions:
@@ -1222,7 +1284,7 @@ metrics:
                                       pg_qualstats_index_advisor() -> 'indexes') v
                      ) x
                 ORDER BY tag_object_name
-        masteronly: true
+        node_status: master
         is_private: true
     reco_default_public_schema:
         sqls:
@@ -1238,7 +1300,7 @@ metrics:
                 where
                   nspname = 'public'
                   and nspacl::text ~ E'[,\\{]+=U?C/'
-        masteronly: true
+        node_status: master
     reco_disabled_triggers:
         sqls:
             11: |
@@ -1257,7 +1319,7 @@ metrics:
                     pg_namespace n on n.oid = c.relnamespace
                 where
                     tgenabled = 'D'
-        masteronly: true
+        node_status: master
     reco_drop_index:
         sqls:
             11: |
@@ -1284,7 +1346,7 @@ metrics:
                   and not indisprimary
                   and not indisreplident
                   and not schemaname like '_timescaledb%'
-        masteronly: true
+        node_status: master
     reco_nested_views:
         sqls:
             11: |-
@@ -1337,7 +1399,7 @@ metrics:
                 GROUP BY 1, 2, 3
                 HAVING max(level) > 3
                 ORDER BY max(level) DESC, full_name::text
-        masteronly: true
+        node_status: master
     reco_partial_index_candidates:
         sqls:
             11: |
@@ -1389,7 +1451,7 @@ metrics:
                   q_sprocs
                 order by
                    tag_object_name, extra_info
-        masteronly: true
+        node_status: master
     reco_superusers:
         sqls:
             11: |
@@ -1412,7 +1474,7 @@ metrics:
                   q_su, q_total
                 where
                   q_su.count >= 10
-        masteronly: true
+        node_status: master
     recommendations:
         sqls:
             11: /* dummy placeholder - special handling in code to collect other metrics named reco_* */
@@ -1451,7 +1513,7 @@ metrics:
                   greatest(age(xmin), age(catalog_xmin))::int8 as xmin_age_tx
                 from
                   pg_replication_slots
-        masteronly: true
+        node_status: master
         gauges:
             - '*'
         is_instance_level: true
@@ -2492,7 +2554,7 @@ metrics:
                   relkind in ('r', 'm')
                   and c.relpages >= 128 -- tables > 1mb
                   and not n.nspname like any (array[E'pg\\_%', 'information_schema'])
-        masteronly: true
+        node_status: master
         gauges:
             - '*'
     table_bloat_approx_summary:
@@ -3397,7 +3459,7 @@ metrics:
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   pg_wal_lsn_diff(pg_last_wal_receive_lsn(), pg_last_wal_replay_lsn())::int8 as replay_lag_b,
                   extract(epoch from (now() - pg_last_xact_replay_timestamp()))::int8 as last_replay_s
-        standbyonly: true
+        node_status: standby
         gauges:
             - '*'
         is_instance_level: true
