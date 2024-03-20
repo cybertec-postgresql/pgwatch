@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"maps"
 	"math"
 	"net/http"
 	"os"
 	"os/signal"
 	"regexp"
 	"runtime/debug"
-	"slices"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,6 +21,7 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
+	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/cybertec-postgresql/pgwatch3/metrics/psutil"
@@ -51,12 +51,12 @@ type ChangeDetectionResults struct { // for passing around DDL/index/config chan
 type DBVersionMapEntry struct {
 	LastCheckedOn    time.Time
 	IsInRecovery     bool
-	Version          uint
 	VersionStr       string
+	Version          int
 	RealDbname       string
 	SystemIdentifier string
 	IsSuperuser      bool // if true and no helpers are installed, use superuser SQL version of metric if available
-	Extensions       map[string]uint
+	Extensions       map[string]int
 	ExecEnv          string
 	ApproxDBSizeB    int64
 }
@@ -107,7 +107,7 @@ const (
 
 var specialMetrics = map[string]bool{recoMetricName: true, specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 var directlyFetchableOSMetrics = map[string]bool{metricPsutilCPU: true, metricPsutilDisk: true, metricPsutilDiskIoTotal: true, metricPsutilMem: true, metricCPULoad: true}
-var metricDefinitionMap metrics.MetricVersionDefs
+var metricDefinitionMap metrics.Metrics
 var metricDefMapLock = sync.RWMutex{}
 var hostMetricIntervalMap = make(map[string]float64) // [db1_metric] = 30
 var dbPgVersionMap = make(map[string]DBVersionMapEntry)
@@ -143,13 +143,13 @@ var instanceMetricCache = make(map[string](metrics.Measurements)) // [dbUnique+m
 var instanceMetricCacheLock = sync.RWMutex{}
 var instanceMetricCacheTimestamp = make(map[string]time.Time) // [dbUnique+metric]last_fetch_time
 var instanceMetricCacheTimestampLock = sync.RWMutex{}
-var MinExtensionInfoAvailable uint = 901
+var MinExtensionInfoAvailable = 9_01_00
 var regexIsAlpha = regexp.MustCompile("^[a-zA-Z]+$")
 var rBouncerAndPgpoolVerMatch = regexp.MustCompile(`\d+\.+\d+`) // extract $major.minor from "4.1.2 (karasukiboshi)" or "PgBouncer 1.12.0"
 var regexIsPgbouncerMetrics = regexp.MustCompile(specialMetricPgbouncer)
 var unreachableDBsLock sync.RWMutex
 var unreachableDB = make(map[string]time.Time)
-var pgBouncerNumericCountersStartVersion uint // pgBouncer changed internal counters data type in v1.12
+var pgBouncerNumericCountersStartVersion int = 01_12_00 // pgBouncer changed internal counters data type in v1.12
 
 var lastDBSizeMB = make(map[string]int64)
 var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHING_INTERVAL
@@ -166,25 +166,16 @@ var logger log.LoggerHookerIface
 // VersionToInt parses a given version and returns an integer  or
 // an error if unable to parse the version. Only parses valid semantic versions.
 // Performs checking that can find errors within the version.
-// Examples: v1.2 -> 0102, v9.6.3 -> 0906, v11 -> 1100
-func VersionToInt(v string) uint {
-	if len(v) == 0 {
-		return 0
-	}
-	var major int
-	var minor int
+// Examples: v1.2 -> 01_02_00, v9.6.3 -> 09_06_03, v11 -> 11_00_00
+var regVer = regexp.MustCompile(`(\d+).?(\d*).?(\d*)`)
 
-	matches := regexp.MustCompile(`(\d+).?(\d*)`).FindStringSubmatch(v)
-	if len(matches) == 0 {
-		return 0
-	}
-	if len(matches) > 1 {
-		major, _ = strconv.Atoi(matches[1])
-		if len(matches) > 2 {
-			minor, _ = strconv.Atoi(matches[2])
+func VersionToInt(version string) (v int) {
+	if matches := regVer.FindStringSubmatch(version); len(matches) > 1 {
+		for i, match := range matches[1:] {
+			v += func() (m int) { m, _ = strconv.Atoi(match); return }() * int(math.Pow10(4-i*2))
 		}
 	}
-	return uint(major*100 + minor)
+	return
 }
 
 func RestoreSQLConnPoolLimitsForPreviouslyDormantDB(dbUnique string) {
@@ -234,106 +225,30 @@ func UpdateMonitoredDBCache(data []sources.MonitoredDatabase) {
 	monitoredDbCacheLock.Unlock()
 }
 
-type UIntSlice []uint
-
-func (x UIntSlice) Len() int           { return len(x) }
-func (x UIntSlice) Less(i, j int) bool { return x[i] < x[j] }
-func (x UIntSlice) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
-
 // assumes upwards compatibility for versions
-func GetMetricVersionProperties(metric string, vme DBVersionMapEntry, metricDefMap map[string]map[uint]metrics.MetricProperties) (metrics.MetricProperties, error) {
-	var keys UIntSlice
-	var mdm metrics.MetricVersionDefs
-
+func GetMetricVersionProperties(metric string, _ DBVersionMapEntry, metricDefMap *metrics.Metrics) (metrics.Metric, error) {
+	mdm := new(metrics.Metrics)
 	if metricDefMap != nil {
 		mdm = metricDefMap
 	} else {
 		metricDefMapLock.RLock()
-		mdm = deepCopyMetricDefinitionMap(metricDefinitionMap) // copy of global cache
+		mdm.MetricDefs = maps.Clone(metricDefinitionMap.MetricDefs) // copy of global cache
 		metricDefMapLock.RUnlock()
 	}
 
-	_, ok := mdm[metric]
-	if !ok || len(mdm[metric]) == 0 {
-		logger.Debug("metric", metric, "not found")
-		return metrics.MetricProperties{}, errors.New("metric SQL not found")
-	}
-
-	for k := range mdm[metric] {
-		keys = append(keys, k)
-	}
-
-	sort.Sort(keys)
-
-	var bestVer uint
-	var minVer uint
-	var found bool
-	for _, ver := range keys {
-		if vme.Version >= ver {
-			bestVer = ver
-			found = true
-		}
-		if minVer == 0 || ver < minVer {
-			minVer = ver
-		}
-	}
-
-	if !found {
-		if vme.Version < minVer { // metric not yet available for given PG ver
-			return metrics.MetricProperties{}, fmt.Errorf("no suitable SQL found for metric \"%s\", server version \"%s\" too old. min defined SQL ver: %d", metric, vme.VersionStr, minVer)
-		}
-		return metrics.MetricProperties{}, fmt.Errorf("no suitable SQL found for metric \"%s\", version \"%s\"", metric, vme.VersionStr)
-	}
-
-	ret := mdm[metric][bestVer]
-
-	// check if SQL def. override defined for some specific extension version and replace the metric SQL-s if so
-	if ret.MetricAttrs.ExtensionVersionOverrides != nil && len(ret.MetricAttrs.ExtensionVersionOverrides) > 0 {
-		if vme.Extensions != nil && len(vme.Extensions) > 0 {
-			logger.Debugf("[%s] extension version based override request found: %+v", metric, ret.MetricAttrs.ExtensionVersionOverrides)
-			for _, extOverride := range ret.MetricAttrs.ExtensionVersionOverrides {
-				var matching = true
-				for _, extVer := range extOverride.ExpectedExtensionVersions { // "natural" sorting of metric definition assumed
-					installedExtVer, ok := vme.Extensions[extVer.ExtName]
-					if !ok || installedExtVer < VersionToInt(extVer.ExtMinVersion) {
-						matching = false
-					}
-				}
-				if matching { // all defined extensions / versions (if many) need to match
-					_, ok := mdm[extOverride.TargetMetric]
-					if !ok {
-						logger.Warningf("extension based override metric not found for metric %s. substitute metric name: %s", metric, extOverride.TargetMetric)
-						continue
-					}
-					mvp, err := GetMetricVersionProperties(extOverride.TargetMetric, vme, mdm)
-					if err != nil {
-						logger.Warningf("undefined extension based override for metric %s, substitute metric name: %s, version: %s not found", metric, extOverride.TargetMetric, bestVer)
-						continue
-					}
-					logger.Debugf("overriding metric %s based on the extension_version_based_overrides metric attribute with %s:%s", metric, extOverride.TargetMetric, bestVer)
-					if mvp.SQL != "" {
-						ret.SQL = mvp.SQL
-					}
-					if mvp.SQLSU != "" {
-						ret.SQLSU = mvp.SQLSU
-					}
-				}
-			}
-		}
-	}
-	return ret, nil
+	return mdm.MetricDefs[metric], nil
 }
 
-func GetAllRecoMetricsForVersion(vme DBVersionMapEntry) map[string]metrics.MetricProperties {
-	mvpMap := make(map[string]metrics.MetricProperties)
+func GetAllRecoMetricsForVersion(vme DBVersionMapEntry) map[string]metrics.Metric {
+	mvpMap := make(map[string]metrics.Metric)
 	metricDefMapLock.RLock()
 	defer metricDefMapLock.RUnlock()
-	for m := range metricDefinitionMap {
+	for m := range metricDefinitionMap.MetricDefs {
 		if strings.HasPrefix(m, recoPrefix) {
-			mvp, err := GetMetricVersionProperties(m, vme, metricDefinitionMap)
+			mvp, err := GetMetricVersionProperties(m, vme, &metricDefinitionMap)
 			if err != nil {
 				logger.Warningf("Could not get SQL definition for metric \"%s\", PG %s", m, vme.VersionStr)
-			} else if !mvp.MetricAttrs.IsPrivate {
+			} else if mvp.Enabled {
 				mvpMap[m] = mvp
 			}
 		}
@@ -349,7 +264,7 @@ func GetRecommendations(dbUnique string, vme DBVersionMapEntry) (metrics.Measure
 	logger.Debugf("Processing %d recommendation metrics for \"%s\"", len(recoMetrics), dbUnique)
 
 	for m, mvp := range recoMetrics {
-		data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
+		data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.GetSQL(vme.Version))
 		if err != nil {
 			if strings.Contains(err.Error(), "does not exist") { // some more exotic extensions missing is expected, don't pollute the error log
 				logger.Infof("[%s:%s] Could not execute recommendations SQL: %v", dbUnique, m, err)
@@ -414,10 +329,9 @@ func FilterPgbouncerData(data metrics.Measurements, databaseToKeep string, vme D
 
 func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[string]map[string]string, storageCh chan<- []metrics.MeasurementMessage, context string) ([]metrics.MeasurementMessage, error) {
 	var vme DBVersionMapEntry
-	var dbpgVersion uint
-	var err, firstErr error
+	var dbpgVersion int
+	var err error
 	var sql string
-	var retryWithSuperuserSQL = true
 	var data, cachedData metrics.Measurements
 	var md sources.MonitoredDatabase
 	var fromCache, isCacheable bool
@@ -431,7 +345,7 @@ func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[str
 		if vme.ExecEnv == execEnvAzureSingle && vme.ApproxDBSizeB > 1e12 { // 1TB
 			subsMetricName := msg.MetricName + "_approx"
 			mvpApprox, err := GetMetricVersionProperties(subsMetricName, vme, nil)
-			if err == nil && mvpApprox.MetricAttrs.MetricStorageName == msg.MetricName {
+			if err == nil && mvpApprox.StorageName == msg.MetricName {
 				logger.Infof("[%s:%s] Transparently swapping metric to %s due to hard-coded rules...", msg.DBUniqueName, msg.MetricName, subsMetricName)
 				msg.MetricName = subsMetricName
 			}
@@ -465,27 +379,15 @@ func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[str
 		}
 	}
 
-retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL if it's defined
+	sql = mvp.GetSQL(dbpgVersion)
 
-	sql = mvp.SQL
-
-	if opts.Metrics.NoHelperFunctions && mvp.CallsHelperFunctions && mvp.SQLSU != "" {
-		logger.Debugf("[%s:%s] Using SU SQL instead of normal one due to --no-helper-functions input", msg.DBUniqueName, msg.MetricName)
-		sql = mvp.SQLSU
-		retryWithSuperuserSQL = false
-	}
-
-	if (vme.IsSuperuser || (retryWithSuperuserSQL && firstErr != nil)) && mvp.SQLSU != "" {
-		sql = mvp.SQLSU
-		retryWithSuperuserSQL = false
-	}
 	if sql == "" && !(msg.MetricName == specialMetricChangeEvents || msg.MetricName == recoMetricName) {
 		// let's ignore dummy SQL-s
 		logger.Debugf("[%s:%s] Ignoring fetch message - got an empty/dummy SQL string", msg.DBUniqueName, msg.MetricName)
 		return nil, nil
 	}
 
-	if (mvp.MasterOnly && vme.IsInRecovery) || (mvp.StandbyOnly && !vme.IsInRecovery) {
+	if (mvp.MasterOnly() && vme.IsInRecovery) || (mvp.StandbyOnly() && !vme.IsInRecovery) {
 		logger.Debugf("[%s:%s] Skipping fetching of  as server not in wanted state (IsInRecovery=%v)", msg.DBUniqueName, msg.MetricName, vme.IsInRecovery)
 		return nil, nil
 	}
@@ -526,15 +428,6 @@ retry_with_superuser_sql: // if 1st fetch with normal SQL fails, try with SU SQL
 				SetDBUnreachableState(msg.DBUniqueName)
 			}
 
-			if retryWithSuperuserSQL && mvp.SQLSU != "" {
-				firstErr = err
-				logger.Infof("[%s:%s] Normal fetch failed, re-trying to fetch with SU SQL", msg.DBUniqueName, msg.MetricName)
-				goto retry_with_superuser_sql
-			}
-			if firstErr != nil {
-				logger.WithField("source", msg.DBUniqueName).WithField("metric", msg.MetricName).Error(err)
-				return nil, firstErr // returning the initial error
-			}
 			logger.Infof("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
 
 			return nil, err
@@ -567,9 +460,9 @@ send_to_storageChannel:
 		data = AddDbnameSysinfoIfNotExistsToQueryResultData(msg, data, ver)
 	}
 
-	if mvp.MetricAttrs.MetricStorageName != "" {
-		logger.Debugf("[%s] rerouting metric %s data to %s based on metric attributes", msg.DBUniqueName, msg.MetricName, mvp.MetricAttrs.MetricStorageName)
-		msg.MetricName = mvp.MetricAttrs.MetricStorageName
+	if mvp.StorageName != "" {
+		logger.Debugf("[%s] rerouting metric %s data to %s based on metric attributes", msg.DBUniqueName, msg.MetricName, mvp.StorageName)
+		msg.MetricName = mvp.StorageName
 	}
 	if fromCache {
 		md, err = GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
@@ -643,11 +536,11 @@ func PutToInstanceCache(msg MetricFetchMessage, data metrics.Measurements) {
 	instanceMetricCacheTimestampLock.Unlock()
 }
 
-func IsCacheableMetric(msg MetricFetchMessage, mvp metrics.MetricProperties) bool {
+func IsCacheableMetric(msg MetricFetchMessage, mvp metrics.Metric) bool {
 	if !(msg.Source == sources.SourcePostgresContinuous || msg.Source == sources.SourcePatroniContinuous) {
 		return false
 	}
-	return mvp.MetricAttrs.IsInstanceLevel
+	return mvp.IsInstanceLevel
 }
 
 func AddDbnameSysinfoIfNotExistsToQueryResultData(msg MetricFetchMessage, data metrics.Measurements, ver DBVersionMapEntry) metrics.Measurements {
@@ -697,18 +590,6 @@ func deepCopyMetricData(data metrics.Measurements) metrics.Measurements {
 	return newData
 }
 
-func deepCopyMetricDefinitionMap(mdm map[string]map[uint]metrics.MetricProperties) map[string]map[uint]metrics.MetricProperties {
-	newMdm := make(map[string]map[uint]metrics.MetricProperties)
-
-	for metric, verMap := range mdm {
-		newMdm[metric] = make(map[uint]metrics.MetricProperties)
-		for ver, mvp := range verMap {
-			newMdm[metric][ver] = mvp
-		}
-	}
-	return newMdm
-}
-
 // metrics.ControlMessage notifies of shutdown + interval change
 func MetricGathererLoop(ctx context.Context,
 	dbUniqueName, dbUniqueNameOrig string,
@@ -724,12 +605,11 @@ func MetricGathererLoop(ctx context.Context,
 	var lastUptimeS int64 = -1 // used for "server restarted" event detection
 	var lastErrorNotificationTime time.Time
 	var vme DBVersionMapEntry
-	var mvp metrics.MetricProperties
+	var mvp metrics.Metric
 	var err error
 	failedFetches := 0
 	// metricNameForStorage := metricName
 	lastDBVersionFetchTime := time.Unix(0, 0) // check DB ver. ev. 5 min
-	var stmtTimeoutOverride int64
 
 	l := logger.WithField("source", dbUniqueName).WithField("metric", metricName)
 	if metricName == specialMetricServerLogEventCounts {
@@ -753,17 +633,12 @@ func MetricGathererLoop(ctx context.Context,
 			}
 
 			mvp, err = GetMetricVersionProperties(metricName, vme, nil)
-			if err == nil && mvp.MetricAttrs.StatementTimeoutSeconds > 0 {
-				stmtTimeoutOverride = mvp.MetricAttrs.StatementTimeoutSeconds
-			} else {
-				stmtTimeoutOverride = 0
+			if err != nil {
+				l.Errorf("Could not get metric version properties: %v", err)
+				return
 			}
 		}
 
-		if IsMetricCurrentlyDisabledForHost(metricName, vme, dbUniqueName) {
-			l.Debugf("Ignoring fetch as metric disabled for current time range")
-			continue
-		}
 		var metricStoreMessages []metrics.MeasurementMessage
 		var err error
 		mfm := MetricFetchMessage{
@@ -772,7 +647,7 @@ func MetricGathererLoop(ctx context.Context,
 			MetricName:          metricName,
 			Source:              srcType,
 			Interval:            time.Second * time.Duration(interval),
-			StmtTimeoutOverride: stmtTimeoutOverride,
+			StmtTimeoutOverride: 0,
 		}
 
 		// 1st try local overrides for some metrics if operating in push mode
@@ -854,7 +729,7 @@ func MetricGathererLoop(ctx context.Context,
 	}
 }
 
-func FetchStatsDirectlyFromOS(msg MetricFetchMessage, vme DBVersionMapEntry, mvp metrics.MetricProperties) ([]metrics.MeasurementMessage, error) {
+func FetchStatsDirectlyFromOS(msg MetricFetchMessage, vme DBVersionMapEntry, mvp metrics.Metric) ([]metrics.MeasurementMessage, error) {
 	var data []map[string]any
 	var err error
 
@@ -878,7 +753,7 @@ func FetchStatsDirectlyFromOS(msg MetricFetchMessage, vme DBVersionMapEntry, mvp
 }
 
 // data + custom tags + counters
-func DatarowsToMetricstoreMessage(data metrics.Measurements, msg MetricFetchMessage, vme DBVersionMapEntry, mvp metrics.MetricProperties) metrics.MeasurementMessage {
+func DatarowsToMetricstoreMessage(data metrics.Measurements, msg MetricFetchMessage, vme DBVersionMapEntry, mvp metrics.Metric) metrics.MeasurementMessage {
 	md, err := GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
 	if err != nil {
 		logger.Errorf("Could not resolve DBUniqueName %s, cannot set custom attributes for gathered data: %v", msg.DBUniqueName, err)
@@ -900,59 +775,6 @@ func DatarowsToMetricstoreMessage(data metrics.Measurements, msg MetricFetchMess
 
 func IsDirectlyFetchableMetric(metric string) bool {
 	_, ok := directlyFetchableOSMetrics[metric]
-	return ok
-}
-
-func IsMetricCurrentlyDisabledForHost(metricName string, vme DBVersionMapEntry, dbUniqueName string) bool {
-	_, isSpecialMetric := specialMetrics[metricName]
-
-	mvp, err := GetMetricVersionProperties(metricName, vme, nil)
-	if err != nil {
-		if isSpecialMetric || strings.Contains(err.Error(), "too old") {
-			return false
-		}
-		logger.Warningf("[%s][%s] Ignoring any possible time based gathering restrictions, could not get metric details", dbUniqueName, metricName)
-		return false
-	}
-
-	md, err := GetMonitoredDatabaseByUniqueName(dbUniqueName) // TODO caching?
-	if err != nil {
-		logger.Warningf("[%s][%s] Ignoring any possible time based gathering restrictions, could not get DB details", dbUniqueName, metricName)
-		return false
-	}
-
-	if md.HostConfig.PerMetricDisabledTimes == nil && mvp.MetricAttrs.DisabledDays == "" && len(mvp.MetricAttrs.DisableTimes) == 0 {
-		//log.Debugf("[%s][%s] No time based gathering restrictions defined", dbUniqueName, metricName)
-		return false
-	}
-
-	metricHasOverrides := false
-	if md.HostConfig.PerMetricDisabledTimes != nil {
-		for _, hcdt := range md.HostConfig.PerMetricDisabledTimes {
-			if slices.Index(hcdt.Metrics, metricName) > -1 && (hcdt.DisabledDays != "" || len(hcdt.DisabledTimes) > 0) {
-				metricHasOverrides = true
-				break
-			}
-		}
-		if !metricHasOverrides && mvp.MetricAttrs.DisabledDays == "" && len(mvp.MetricAttrs.DisableTimes) == 0 {
-			//log.Debugf("[%s][%s] No time based gathering restrictions defined", dbUniqueName, metricName)
-			return false
-		}
-	}
-
-	return IsInDisabledTimeDayRange(time.Now(), mvp.MetricAttrs.DisabledDays, mvp.MetricAttrs.DisableTimes, md.HostConfig.PerMetricDisabledTimes, metricName, dbUniqueName)
-}
-
-// days: 0 = Sun, ranges allowed
-func IsInDaySpan(locTime time.Time, days, _, _ string) bool {
-	//log.Debug("IsInDaySpan", locTime, days, metric, dbUnique)
-	if days == "" {
-		return false
-	}
-	curDayInt := int(locTime.Weekday())
-	daysMap := DaysStringToIntMap(days)
-	//log.Debugf("curDayInt %v, daysMap %+v", curDayInt, daysMap)
-	_, ok := daysMap[curDayInt]
 	return ok
 }
 
@@ -1037,55 +859,6 @@ func IsInTimeSpan(checkTime time.Time, timeRange, metric, dbUnique string) bool 
 	}
 
 	return check.Before(t2) && check.After(t1)
-}
-
-func IsInDisabledTimeDayRange(localTime time.Time, metricAttrsDisabledDays string, metricAttrsDisabledTimes []string, hostConfigPerMetricDisabledTimes []sources.HostConfigPerMetricDisabledTimes, metric, dbUnique string) bool {
-	hostConfigMetricMatch := false
-	for _, hcdi := range hostConfigPerMetricDisabledTimes { // host config takes precedence when both specified
-		dayMatchFound := false
-		timeMatchFound := false
-		if slices.Index(hcdi.Metrics, metric) > -1 {
-			hostConfigMetricMatch = true
-			if !dayMatchFound && hcdi.DisabledDays != "" && IsInDaySpan(localTime, hcdi.DisabledDays, metric, dbUnique) {
-				dayMatchFound = true
-			}
-			for _, dt := range hcdi.DisabledTimes {
-				if IsInTimeSpan(localTime, dt, metric, dbUnique) {
-					timeMatchFound = true
-					break
-				}
-			}
-		}
-		if hostConfigMetricMatch && (timeMatchFound || len(hcdi.DisabledTimes) == 0) && (dayMatchFound || hcdi.DisabledDays == "") {
-			//log.Debugf("[%s][%s] Host config ignored time/day match, skipping fetch", dbUnique, metric)
-			return true
-		}
-	}
-
-	if !hostConfigMetricMatch && (metricAttrsDisabledDays != "" || len(metricAttrsDisabledTimes) > 0) {
-		dayMatchFound := IsInDaySpan(localTime, metricAttrsDisabledDays, metric, dbUnique)
-		timeMatchFound := false
-		for _, timeRange := range metricAttrsDisabledTimes {
-			if IsInTimeSpan(localTime, timeRange, metric, dbUnique) {
-				timeMatchFound = true
-				break
-			}
-		}
-		if (timeMatchFound || len(metricAttrsDisabledTimes) == 0) && (dayMatchFound || metricAttrsDisabledDays == "") {
-			//log.Debugf("[%s][%s] metrics.MetricAttrs ignored time/day match, skipping fetch", dbUnique, metric)
-			return true
-		}
-	}
-
-	return false
-}
-
-func UpdateMetricDefinitions(newMetrics map[string]map[uint]metrics.MetricProperties, _ map[string]string) {
-	metricDefMapLock.Lock()
-	metricDefinitionMap = newMetrics
-
-	metricDefMapLock.Unlock()
-	logger.Debug("metrics definitions refreshed - nr. found:", len(newMetrics))
 }
 
 func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md sources.MonitoredDatabase) (sources.MonitoredDatabase, int) {
@@ -1367,32 +1140,67 @@ var exitCode atomic.Int32
 
 var mainContext context.Context
 
-func LoadMetricDefs(ctx context.Context) (err error) {
-	var metricDefs metrics.MetricVersionDefs
-	var renamingDefs map[string]string
-	if fileBasedMetrics {
-		metricDefs, renamingDefs, err = metrics.ReadMetricsFromFolder(ctx, opts.Metrics.MetricsFolder)
-	} else {
-		metricDefs, renamingDefs, err = metrics.ReadMetricsFromPostgres(ctx, configDb)
+// LoadMetricDefs loads metric definitions from the reader
+func LoadMetricDefs(r metrics.Reader) (err error) {
+	var metricDefs *metrics.Metrics
+	if metricDefs, err = r.GetMetrics(); err != nil {
+		return
 	}
-	if err == nil {
-		UpdateMetricDefinitions(metricDefs, renamingDefs)
-	}
+	metricDefMapLock.Lock()
+	metricDefinitionMap.MetricDefs = maps.Clone(metricDefs.MetricDefs)
+	metricDefinitionMap.PresetDefs = maps.Clone(metricDefs.PresetDefs)
+	metricDefMapLock.Unlock()
 	return
 }
 
-func SyncMetricDefs(ctx context.Context) {
+// SyncMetricDefs refreshes metric definitions at regular intervals
+func SyncMetricDefs(r metrics.Reader) {
 	for {
 		select {
-		case <-ctx.Done():
+		case <-mainContext.Done():
 			return
 		case <-time.After(metricDefinitionRefreshInterval):
-			// reread metric definitions
-		}
-		if err := LoadMetricDefs(ctx); err != nil {
-			logger.Errorf("Could not refresh metric definitions: %w", err)
+			if err := LoadMetricDefs(r); err != nil {
+				logger.Errorf("Could not refresh metric definitions: %w", err)
+			}
 		}
 	}
+}
+
+func NewConfigurationReaders(opts *config.Options) (sources.Reader, metrics.Reader) {
+	checkError := func(err error) {
+		if err != nil {
+			logger.Fatal(err)
+		}
+	}
+	var (
+		sourcesReader sources.Reader
+		metricsReader metrics.Reader
+	)
+	configKind, err := opts.GetConfigKind()
+	switch {
+	case err != nil:
+		logger.Fatal(err)
+	case configKind == config.ConfigFile:
+		ctx := log.WithLogger(mainContext, logger.WithField("config", "file"))
+		sourcesReader, err = sources.NewYAMLSourcesReader(ctx, opts)
+		checkError(err)
+		metricsReader, err = metrics.NewDefaultMetricReader(ctx)
+	case configKind == config.ConfigFolder:
+		ctx := log.WithLogger(mainContext, logger.WithField("config", "folder"))
+		sourcesReader, err = sources.NewYAMLSourcesReader(ctx, opts)
+		checkError(err)
+		metricsReader, err = metrics.NewYAMLMetricReader(ctx, opts)
+	case configKind == config.ConfigPgURL:
+		ctx := log.WithLogger(mainContext, logger.WithField("config", "postgres"))
+		configDb, err = db.New(ctx, opts.Sources.Config)
+		checkError(err)
+		metricsReader, err = metrics.NewPostgresMetricReader(ctx, configDb, opts)
+		checkError(err)
+		sourcesReader, err = sources.NewPostgresSourcesReader(ctx, configDb, opts)
+	}
+	checkError(err)
+	return sourcesReader, metricsReader
 }
 
 func main() {
@@ -1416,6 +1224,7 @@ func main() {
 
 	if opts, err = config.New(os.Stdout); err != nil {
 		exitCode.Store(ExitCodeConfigError)
+		fmt.Print(err)
 		return
 	}
 	if opts.VersionOnly() {
@@ -1430,35 +1239,25 @@ func main() {
 	logger = log.Init(opts.Logging)
 	mainContext = log.WithLogger(mainContext, logger)
 
-	uifs, _ := fs.Sub(webuifs, "webui/build")
-	ui := webserver.Init(opts.WebUI, uifs, uiapi, logger)
-	if ui == nil {
-		exitCode.Store(ExitCodeWebUIError)
-		return
+	if !opts.Ping {
+		uifs, _ := fs.Sub(webuifs, "webui/build")
+		ui := webserver.Init(opts.WebUI, uifs, uiapi, logger)
+		if ui == nil {
+			exitCode.Store(ExitCodeWebUIError)
+			return
+		}
 	}
 
 	logger.Debugf("opts: %+v", opts)
 
-	var srcReader sources.Reader
-	// running in config file based mode?
-	configKind, err := opts.GetConfigKind()
-	switch {
-	case err != nil:
-		logger.Fatal(err)
-	case configKind == config.ConfigFile || configKind == config.ConfigFolder:
-		srcReader, err = sources.NewYAMLConfigReader(mainContext, opts)
-		fileBasedMetrics = true
-	case configKind == config.ConfigPgURL:
-		srcReader, configDb, err = sources.NewPostgresConfigReader(mainContext, opts)
-	}
-	if err != nil {
-		logger.Fatal(err)
-	}
+	// sourcesReader is used to read the monitored sources (databases, patroni clusets, pgpools, etc.) information
+	// metricsReader is used to read the metric and preset definitions
+	sourcesReader, metricsReader := NewConfigurationReaders(opts)
 	if opts.Sources.Init {
+		// At this point we have initialised the sources, metrics and presets configurations.
+		// Any fatal errors are handled by the configuration readers. So me may exit gracefully.
 		return
 	}
-
-	pgBouncerNumericCountersStartVersion = VersionToInt("1.12")
 
 	if !opts.Ping {
 		go StatsSummarizer(mainContext)
@@ -1471,11 +1270,11 @@ func main() {
 	var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 	var metricConfig map[string]float64                       // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 
-	if err = LoadMetricDefs(mainContext); err != nil {
+	if err = LoadMetricDefs(metricsReader); err != nil {
 		logger.Errorf("Could not load metric definitions: %w", err)
 		os.Exit(int(ExitCodeConfigError))
 	}
-	go SyncMetricDefs(mainContext)
+	go SyncMetricDefs(metricsReader)
 
 	if measurementsWriter, err = sinks.NewMultiWriter(mainContext, opts, metricDefinitionMap); err != nil {
 		logger.Fatal(err)
@@ -1492,7 +1291,7 @@ func main() {
 		var controlChannelNameList []string
 		gatherersShutDown := 0
 
-		if monitoredDbs, err = srcReader.GetMonitoredDatabases(); err != nil {
+		if monitoredDbs, err = sourcesReader.GetMonitoredDatabases(); err != nil {
 			if firstLoop {
 				logger.Fatal("could not fetch active hosts - check config!", err)
 			} else {
@@ -1518,9 +1317,9 @@ func main() {
 
 		logger.
 			WithField("sources", len(monitoredDbs)).
-			WithField("metrics", len(metricDefinitionMap)).
+			WithField("metrics", len(metricDefinitionMap.MetricDefs)).
 			Log(func() logrus.Level {
-				if firstLoop && len(monitoredDbs)*len(metricDefinitionMap) == 0 {
+				if firstLoop && len(monitoredDbs)*len(metricDefinitionMap.MetricDefs) == 0 {
 					return logrus.WarnLevel
 				}
 				return logrus.InfoLevel
@@ -1528,30 +1327,38 @@ func main() {
 
 		firstLoop = false // only used for failing when 1st config reading fails
 
-		for _, host := range monitoredDbs {
-			logger.WithField("source", host.DBUniqueName).
-				WithField("metric", host.Metrics).
-				WithField("tags", host.CustomTags).
-				WithField("config", host.HostConfig).Debug()
+		for _, source := range monitoredDbs {
+			logger.WithField("source", source.DBUniqueName).
+				WithField("metric", source.Metrics).
+				WithField("tags", source.CustomTags).
+				WithField("config", source.HostConfig).Debug()
 
-			dbUnique := host.DBUniqueName
-			dbUniqueOrig := host.DBUniqueNameOrig
-			srcType := host.Kind
-			metricConfig = host.Metrics
+			dbUnique := source.DBUniqueName
+			dbUniqueOrig := source.DBUniqueNameOrig
+			srcType := source.Kind
+			metricConfig = func() map[string]float64 {
+				if len(source.Metrics) > 0 {
+					return source.Metrics
+				}
+				if source.PresetMetrics > "" {
+					return metricDefinitionMap.PresetDefs[source.PresetMetrics].Metrics
+				}
+				return nil
+			}()
 			wasInstancePreviouslyDormant := IsDBDormant(dbUnique)
 
-			if host.Encryption == "aes-gcm-256" && len(opts.Sources.AesGcmKeyphrase) == 0 && len(opts.Sources.AesGcmKeyphraseFile) == 0 {
+			if source.Encryption == "aes-gcm-256" && len(opts.Sources.AesGcmKeyphrase) == 0 && len(opts.Sources.AesGcmKeyphraseFile) == 0 {
 				// Warn if any encrypted hosts found but no keyphrase given
 				logger.Warningf("Encrypted password type found for host \"%s\", but no decryption keyphrase specified. Use --aes-gcm-keyphrase or --aes-gcm-keyphrase-file params", dbUnique)
 			}
 
-			err := InitSQLConnPoolForMonitoredDBIfNil(host)
+			err := InitSQLConnPoolForMonitoredDBIfNil(source)
 			if err != nil {
 				logger.Warningf("Could not init SQL connection pool for %s, retrying on next main loop. Err: %v", dbUnique, err)
 				continue
 			}
 
-			InitPGVersionInfoFetchingLockIfNil(host)
+			InitPGVersionInfoFetchingLockIfNil(source)
 
 			_, connectFailedSoFar := failedInitialConnectHosts[dbUnique]
 
@@ -1575,28 +1382,46 @@ func main() {
 				if connectFailedSoFar {
 					delete(failedInitialConnectHosts, dbUnique)
 				}
-				if ver.IsInRecovery && host.OnlyIfMaster {
+				if ver.IsInRecovery && source.OnlyIfMaster {
 					logger.Infof("[%s] not added to monitoring due to 'master only' property", dbUnique)
 					continue
 				}
-				metricConfig = host.Metrics
+				metricConfig = func() map[string]float64 {
+					if len(source.Metrics) > 0 {
+						return source.Metrics
+					}
+					if source.PresetMetrics > "" {
+						return metricDefinitionMap.PresetDefs[source.PresetMetrics].Metrics
+					}
+					return nil
+				}()
 				hostLastKnownStatusInRecovery[dbUnique] = ver.IsInRecovery
-				if ver.IsInRecovery && len(host.MetricsStandby) > 0 {
-					metricConfig = host.MetricsStandby
+				if ver.IsInRecovery {
+					metricConfig = func() map[string]float64 {
+						if len(source.MetricsStandby) > 0 {
+							return source.MetricsStandby
+						}
+						if source.PresetMetricsStandby > "" {
+							return metricDefinitionMap.PresetDefs[source.PresetMetricsStandby].Metrics
+						}
+						return nil
+					}()
 				}
 
-				if !opts.Ping && host.IsSuperuser && host.IsPostgresSource() && !ver.IsInRecovery {
+				if !opts.Ping && source.IsPostgresSource() && !ver.IsInRecovery {
 					if opts.Metrics.NoHelperFunctions {
-						logger.Infof("[%s] Skipping rollout out helper functions due to the --no-helper-functions flag ...", dbUnique)
+						logger.Infof("[%s] skipping rollout out helper functions due to the --no-helper-functions flag ...", dbUnique)
 					} else {
 						logger.Infof("Trying to create helper functions if missing for \"%s\"...", dbUnique)
-						_ = TryCreateMetricsFetchingHelpers(dbUnique)
+						if err = TryCreateMetricsFetchingHelpers(dbUnique); err != nil {
+							logger.Warningf("Failed to create helper functions for \"%s\": %w", dbUnique, err)
+						}
 					}
 				}
 
 			}
 
-			if host.IsPostgresSource() {
+			if source.IsPostgresSource() {
 				var DBSizeMB int64
 
 				if opts.Sources.MinDbSizeMB >= 8 { // an empty DB is a bit less than 8MB
@@ -1611,22 +1436,22 @@ func main() {
 						SetUndersizedDBState(dbUnique, false)
 					}
 				}
-				ver, err := DBGetPGVersion(mainContext, dbUnique, host.Kind, false)
+				ver, err := DBGetPGVersion(mainContext, dbUnique, source.Kind, false)
 				if err == nil { // ok to ignore error, re-tried on next loop
 					lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[dbUnique]
-					if ver.IsInRecovery && host.OnlyIfMaster {
+					if ver.IsInRecovery && source.OnlyIfMaster {
 						logger.Infof("[%s] to be removed from monitoring due to 'master only' property and status change", dbUnique)
 						hostsToShutDownDueToRoleChange[dbUnique] = true
 						SetRecoveryIgnoredDBState(dbUnique, true)
 						continue
 					} else if lastKnownStatusInRecovery != ver.IsInRecovery {
-						if ver.IsInRecovery && len(host.MetricsStandby) > 0 {
+						if ver.IsInRecovery && len(source.MetricsStandby) > 0 {
 							logger.Warningf("Switching metrics collection for \"%s\" to standby config...", dbUnique)
-							metricConfig = host.MetricsStandby
+							metricConfig = source.MetricsStandby
 							hostLastKnownStatusInRecovery[dbUnique] = true
 						} else {
 							logger.Warningf("Switching metrics collection for \"%s\" to primary config...", dbUnique)
-							metricConfig = host.Metrics
+							metricConfig = source.Metrics
 							hostLastKnownStatusInRecovery[dbUnique] = false
 							SetRecoveryIgnoredDBState(dbUnique, false)
 						}
@@ -1661,7 +1486,7 @@ func main() {
 					metricDefOk = true
 				} else {
 					metricDefMapLock.RLock()
-					_, metricDefOk = metricDefinitionMap[metric]
+					_, metricDefOk = metricDefinitionMap.MetricDefs[metric]
 					metricDefMapLock.RUnlock()
 				}
 
@@ -1683,8 +1508,8 @@ func main() {
 								mvp, err := GetMetricVersionProperties(metricName, vme, nil)
 								if err != nil && !strings.Contains(err.Error(), "too old") {
 									logger.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
-								} else if mvp.MetricAttrs.MetricStorageName != "" {
-									metricNameForStorage = mvp.MetricAttrs.MetricStorageName
+								} else if mvp.StorageName != "" {
+									metricNameForStorage = mvp.StorageName
 								}
 							}
 						}
@@ -1697,7 +1522,7 @@ func main() {
 					}
 				} else if (!metricDefOk && chOk) || interval <= 0 {
 					// metric definition files were recently removed or interval set to zero
-					logger.Warning("shutting down metric", metric, "for", host.DBUniqueName)
+					logger.Warning("shutting down metric", metric, "for", source.DBUniqueName)
 					controlChannels[dbMetric] <- metrics.ControlMessage{Action: gathererStatusStop}
 					delete(controlChannels, dbMetric)
 				} else if !metricDefOk {
