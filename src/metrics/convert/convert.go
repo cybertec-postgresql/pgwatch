@@ -42,8 +42,7 @@ type (
 	Metric struct {
 		SQLs        SQLs
 		InitSQL     string   `yaml:"init_sql,omitempty"`
-		MasterOnly  bool     `yaml:",omitempty"`
-		StandbyOnly bool     `yaml:",omitempty"`
+		NodeStatus  string   `yaml:"node_status,omitempty"`
 		Gauges      []string `yaml:",omitempty"`
 		MetricAttrs `yaml:",inline,omitempty"`
 	}
@@ -128,8 +127,12 @@ func ReadMetricsFromFolder(folder string) (metricsMap Metrics, err error) {
 					if err != nil {
 						continue
 					}
-					Metric.MasterOnly = strings.Contains(metricDef.Name(), "_master")
-					Metric.StandbyOnly = strings.Contains(metricDef.Name(), "_standby")
+					switch {
+					case strings.Contains(metricDef.Name(), "_master"):
+						Metric.NodeStatus = "primary"
+					case strings.Contains(metricDef.Name(), "_standby"):
+						Metric.NodeStatus = "standby"
+					}
 					Metric.SQLs[version] = strings.TrimRight(strings.TrimSpace(string(metricSQL)), ";")
 				}
 			}
