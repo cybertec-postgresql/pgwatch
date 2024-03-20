@@ -32,23 +32,23 @@ func (k Kind) IsValid() bool {
 }
 
 type MonitoredDatabase struct {
-	DBUniqueName         string             `yaml:"unique_name" db:"md_name"`
+	DBUniqueName         string             `yaml:"unique_name" db:"name"`
 	DBUniqueNameOrig     string             // to preserve belonging to a specific instance for continuous modes where DBUniqueName will be dynamic
-	Group                string             `yaml:"group" db:"md_group"`
-	Encryption           string             `yaml:"encryption" db:"md_encryption"`
-	ConnStr              string             `yaml:"conn_str" db:"md_connstr"`
-	Metrics              map[string]float64 `yaml:"custom_metrics" db:"md_config"`
-	MetricsStandby       map[string]float64 `yaml:"custom_metrics_standby" db:"md_config_standby"`
-	Kind                 Kind               `yaml:"kind" db:"md_dbtype"`
-	IncludePattern       string             `yaml:"include_pattern" db:"md_include_pattern"`
-	ExcludePattern       string             `yaml:"exclude_pattern" db:"md_exclude_pattern"`
-	PresetMetrics        string             `yaml:"preset_metrics"`
-	PresetMetricsStandby string             `yaml:"preset_metrics_standby"`
-	IsSuperuser          bool               `yaml:"is_superuser" db:"md_is_superuser"`
-	IsEnabled            bool               `yaml:"is_enabled"`
-	CustomTags           map[string]string  `yaml:"custom_tags" db:"md_custom_tags"`
-	HostConfig           HostConfigAttrs    `yaml:"host_config" db:"md_host_config"`
-	OnlyIfMaster         bool               `yaml:"only_if_master" db:"md_only_if_master"`
+	Group                string             `yaml:"group" db:"group"`
+	Encryption           string             `yaml:"encryption" db:"encryption"`
+	ConnStr              string             `yaml:"conn_str" db:"connstr"`
+	Metrics              map[string]float64 `yaml:"custom_metrics" db:"config"`
+	MetricsStandby       map[string]float64 `yaml:"custom_metrics_standby" db:"config_standby"`
+	Kind                 Kind               `yaml:"kind" db:"dbtype"`
+	IncludePattern       string             `yaml:"include_pattern" db:"include_pattern"`
+	ExcludePattern       string             `yaml:"exclude_pattern" db:"exclude_pattern"`
+	PresetMetrics        string             `yaml:"preset_metrics" db:"preset_config"`
+	PresetMetricsStandby string             `yaml:"preset_metrics_standby" db:"preset_config_standby"`
+	IsSuperuser          bool               `yaml:"is_superuser" db:"is_superuser"`
+	IsEnabled            bool               `yaml:"is_enabled" db:"is_enabled"`
+	CustomTags           map[string]string  `yaml:"custom_tags" db:"custom_tags"`
+	HostConfig           HostConfigAttrs    `yaml:"host_config" db:"host_config"`
+	OnlyIfMaster         bool               `yaml:"only_if_master" db:"only_if_master"`
 }
 
 func (md MonitoredDatabase) GetDatabaseName() string {
