@@ -12,19 +12,19 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func NewYAMLConfigReader(ctx context.Context, opts *config.Options) (Reader, error) {
-	return &fileConfigReader{
+func NewYAMLSourcesReader(ctx context.Context, opts *config.Options) (Reader, error) {
+	return &fileSourcesReader{
 		ctx:  ctx,
 		opts: opts,
 	}, nil
 }
 
-type fileConfigReader struct {
+type fileSourcesReader struct {
 	ctx  context.Context
 	opts *config.Options
 }
 
-func (fcr *fileConfigReader) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
+func (fcr *fileSourcesReader) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
 	var fi fs.FileInfo
 	if fi, err = os.Stat(fcr.opts.Sources.Config); err != nil {
 		return
@@ -54,7 +54,7 @@ func (fcr *fileConfigReader) GetMonitoredDatabases() (dbs MonitoredDatabases, er
 	return dbs.Expand()
 }
 
-func (fcr *fileConfigReader) getMonitoredDatabases(configFilePath string) (dbs MonitoredDatabases, err error) {
+func (fcr *fileSourcesReader) getMonitoredDatabases(configFilePath string) (dbs MonitoredDatabases, err error) {
 	var yamlFile []byte
 	if yamlFile, err = os.ReadFile(configFilePath); err != nil {
 		return
@@ -74,7 +74,7 @@ func (fcr *fileConfigReader) getMonitoredDatabases(configFilePath string) (dbs M
 	return
 }
 
-func (fcr *fileConfigReader) expandEnvVars(md MonitoredDatabase) MonitoredDatabase {
+func (fcr *fileSourcesReader) expandEnvVars(md MonitoredDatabase) MonitoredDatabase {
 	if strings.HasPrefix(md.Encryption, "$") {
 		md.Encryption = os.ExpandEnv(md.Encryption)
 	}

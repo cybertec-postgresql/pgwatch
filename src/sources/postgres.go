@@ -2,58 +2,46 @@ package sources
 
 import (
 	"context"
-	"strings"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	pgx "github.com/jackc/pgx/v5"
 )
 
-type querier interface {
-	Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
-}
-
-func NewPostgresConfigReader(ctx context.Context, opts *config.Options) (Reader, db.PgxPoolIface, error) {
-	configDb, err := db.New(ctx, opts.Sources.Config)
-	if err != nil {
-		return nil, nil, err
-	}
-	return &dbConfigReader{
+func NewPostgresSourcesReader(ctx context.Context, conn db.PgxPoolIface, opts *config.Options) (Reader, error) {
+	return &dbSourcesReader{
 		ctx:      ctx,
-		configDb: configDb,
+		configDb: conn,
 		opts:     opts,
-	}, configDb, db.InitConfigDb(ctx, configDb)
+	}, conn.Ping(ctx)
+
 }
 
-type dbConfigReader struct {
+type dbSourcesReader struct {
 	ctx      context.Context
-	configDb querier
+	configDb db.Querier
 	opts     *config.Options
 }
 
-func (r *dbConfigReader) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
+func (r *dbSourcesReader) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
 	sqlLatest := `select /* pgwatch3_generated */
-	md_name, 
-	md_group, 
-	md_dbtype, 
-	md_connstr,
-	coalesce(p.pc_config, md_config) as md_config, 
-	coalesce(s.pc_config, md_config_standby, '{}'::jsonb) as md_config_standby,
-	md_is_superuser,
-	coalesce(md_include_pattern, '') as md_include_pattern, 
-	coalesce(md_exclude_pattern, '') as md_exclude_pattern,
-	coalesce(md_custom_tags, '{}'::jsonb) as md_custom_tags, 
-	md_encryption, coalesce(md_host_config, '{}') as md_host_config, 
-	md_only_if_master
+	s.name, 
+	"group", 
+	dbtype, 
+	connstr,
+	coalesce(pr.metrics, config) as config, 
+	coalesce(st.metrics, config_standby, '{}'::jsonb) as config_standby,
+	is_superuser,
+	coalesce(include_pattern, '') as include_pattern, 
+	coalesce(exclude_pattern, '') as exclude_pattern,
+	coalesce(custom_tags, '{}'::jsonb) as custom_tags, 
+	encryption, coalesce(host_config, '{}') as host_config, 
+	only_if_master
 from
-	pgwatch3.monitored_db 
-	left join pgwatch3.preset_config p on p.pc_name = md_preset_config_name
-	left join pgwatch3.preset_config s on s.pc_name = md_preset_config_name_standby
-where
-	md_is_enabled`
-	if len(r.opts.Sources.Groups) > 0 {
-		sqlLatest += " and md_group in (" + strings.Join(r.opts.Sources.Groups, ",") + ")"
-	}
+	pgwatch3.source s
+	left join pgwatch3.preset pr on pr.name = preset_config
+	left join pgwatch3.preset st on st.name = preset_config_standby
+`
 	rows, err := r.configDb.Query(context.Background(), sqlLatest)
 	if err != nil {
 		return nil, err

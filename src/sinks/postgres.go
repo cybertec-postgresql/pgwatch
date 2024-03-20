@@ -22,7 +22,7 @@ const (
 	highLoadTimeout = time.Second * 5
 )
 
-func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options, metricDefs metrics.MetricVersionDefs) (pgw *PostgresWriter, err error) {
+func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options, metricDefs metrics.Metrics) (pgw *PostgresWriter, err error) {
 	pgw = &PostgresWriter{
 		Ctx:        ctx,
 		MetricDefs: metricDefs,
@@ -30,7 +30,6 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options
 		input:      make(chan []metrics.MeasurementMessage, cacheLimit),
 		lastError:  make(chan error),
 	}
-
 	if pgw.SinkDb, err = db.New(ctx, connstr); err != nil {
 		return
 	}
@@ -54,7 +53,7 @@ type PostgresWriter struct {
 	Ctx          context.Context
 	SinkDb       db.PgxPoolIface
 	MetricSchema DbStorageSchemaType
-	MetricDefs   metrics.MetricVersionDefs
+	MetricDefs   metrics.Metrics
 	opts         *config.Options
 	input        chan []metrics.MeasurementMessage
 	lastError    chan error
