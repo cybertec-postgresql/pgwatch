@@ -4,7 +4,7 @@
                       # defaults to postgres if not specified
   conn_str: postgresql://pgwatch3:pgwatch3admin@localhost/pgwatch3
   is_superuser: false # setting to true will try to auto-create all metric fetching "helpers"
-  preset_metrics: minimal # from list of presets defined in "metrics/preset-configs.yaml"
+  preset_metrics: exhaustive # from list of presets defined in "metrics/preset-configs.yaml"
   custom_metrics:    # if both preset and custom are specified, custom wins
   preset_metrics_standby: # optional metrics configuration for standby / replica state, v1.8.1+
   custom_metrics_standby:
