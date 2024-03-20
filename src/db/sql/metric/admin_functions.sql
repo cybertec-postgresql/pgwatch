@@ -13,7 +13,8 @@ $SQL$
   and pg_catalog.obj_description(c.oid, 'pg_class') = 'pgwatch3-generated-metric-lvl'
   order by 1
 $SQL$ LANGUAGE sql;
-GRANT EXECUTE ON FUNCTION admin.get_top_level_metric_tables() TO pgwatch3;
+
+-- GRANT EXECUTE ON FUNCTION admin.get_top_level_metric_tables() TO pgwatch3;
 
 
 -- DROP FUNCTION IF EXISTS admin.drop_all_metric_tables();
@@ -37,7 +38,8 @@ BEGIN
   RETURN i;
 END;
 $SQL$ LANGUAGE plpgsql;
-GRANT EXECUTE ON FUNCTION admin.drop_all_metric_tables() TO pgwatch3;
+
+-- GRANT EXECUTE ON FUNCTION admin.drop_all_metric_tables() TO pgwatch3;
 
 
 -- DROP FUNCTION IF EXISTS admin.truncate_all_metric_tables();
@@ -61,7 +63,8 @@ BEGIN
   RETURN i;
 END;
 $SQL$ LANGUAGE plpgsql;
-GRANT EXECUTE ON FUNCTION admin.truncate_all_metric_tables() TO pgwatch3;
+
+-- GRANT EXECUTE ON FUNCTION admin.truncate_all_metric_tables() TO pgwatch3;
 
 
 -- DROP FUNCTION IF EXISTS admin.remove_single_dbname_data(text);
@@ -113,7 +116,8 @@ BEGIN
   RETURN i;
 END;
 $SQL$ LANGUAGE plpgsql;
-GRANT EXECUTE ON FUNCTION admin.remove_single_dbname_data(text) TO pgwatch3;
+
+-- GRANT EXECUTE ON FUNCTION admin.remove_single_dbname_data(text) TO pgwatch3;
 
 
 -- drop function if exists admin.drop_old_time_partitions(int,bool)
@@ -225,7 +229,8 @@ BEGIN
   RETURN i;
 END;
 $SQL$ LANGUAGE plpgsql;
-GRANT EXECUTE ON FUNCTION admin.drop_old_time_partitions(int,bool,text) TO pgwatch3;
+
+-- GRANT EXECUTE ON FUNCTION admin.drop_old_time_partitions(int,bool,text) TO pgwatch3;
 
 -- drop function if exists admin.get_old_time_partitions(int,text);
 -- select * from admin.get_old_time_partitions(1);
@@ -271,4 +276,5 @@ BEGIN
 
 END;
 $SQL$ LANGUAGE plpgsql;
-GRANT EXECUTE ON FUNCTION admin.get_old_time_partitions(int,text) TO pgwatch3;
+
+-- GRANT EXECUTE ON FUNCTION admin.get_old_time_partitions(int,text) TO pgwatch3;
