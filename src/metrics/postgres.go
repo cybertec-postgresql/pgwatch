@@ -16,7 +16,7 @@ func NewPostgresMetricReader(ctx context.Context, conn db.PgxPoolIface, opts *co
 				return nil, err
 			}
 			defer tx.Rollback(ctx)
-			if _, err := tx.Exec(ctx, db.SqlConfigSchema); err != nil {
+			if _, err := tx.Exec(ctx, db.SQLConfigSchema); err != nil {
 				return nil, err
 			}
 			if err := WriteMetricsToPostgres(ctx, tx, GetDefaultMetrics()); err != nil {

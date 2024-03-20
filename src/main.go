@@ -149,7 +149,7 @@ var rBouncerAndPgpoolVerMatch = regexp.MustCompile(`\d+\.+\d+`) // extract $majo
 var regexIsPgbouncerMetrics = regexp.MustCompile(specialMetricPgbouncer)
 var unreachableDBsLock sync.RWMutex
 var unreachableDB = make(map[string]time.Time)
-var pgBouncerNumericCountersStartVersion int = 01_12_00 // pgBouncer changed internal counters data type in v1.12
+var pgBouncerNumericCountersStartVersion = 01_12_00 // pgBouncer changed internal counters data type in v1.12
 
 var lastDBSizeMB = make(map[string]int64)
 var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHING_INTERVAL
@@ -1203,6 +1203,13 @@ func NewConfigurationReaders(opts *config.Options) (sources.Reader, metrics.Read
 	return sourcesReader, metricsReader
 }
 
+var (
+	// sourcesReader is used to read the monitored sources (databases, patroni clusets, pgpools, etc.) information
+	sourcesReader sources.Reader
+	// metricsReader is used to read the metric and preset definitions
+	metricsReader metrics.Reader
+)
+
 func main() {
 	var (
 		err                error
@@ -1239,20 +1246,9 @@ func main() {
 	logger = log.Init(opts.Logging)
 	mainContext = log.WithLogger(mainContext, logger)
 
-	if !opts.Ping {
-		uifs, _ := fs.Sub(webuifs, "webui/build")
-		ui := webserver.Init(opts.WebUI, uifs, uiapi, logger)
-		if ui == nil {
-			exitCode.Store(ExitCodeWebUIError)
-			return
-		}
-	}
-
 	logger.Debugf("opts: %+v", opts)
 
-	// sourcesReader is used to read the monitored sources (databases, patroni clusets, pgpools, etc.) information
-	// metricsReader is used to read the metric and preset definitions
-	sourcesReader, metricsReader := NewConfigurationReaders(opts)
+	sourcesReader, metricsReader = NewConfigurationReaders(opts)
 	if opts.Sources.Init {
 		// At this point we have initialised the sources, metrics and presets configurations.
 		// Any fatal errors are handled by the configuration readers. So me may exit gracefully.
@@ -1282,6 +1278,8 @@ func main() {
 	if !opts.Ping {
 		go measurementsWriter.WriteMeasurements(mainContext, measurementCh)
 	}
+
+	initWebUI(opts)
 
 	firstLoop := true
 	mainLoopCount := 0
@@ -1632,6 +1630,16 @@ func main() {
 			// pass
 		case <-mainContext.Done():
 			return
+		}
+	}
+}
+
+func initWebUI(opts *config.Options) {
+	if !opts.Ping {
+		uifs, _ := fs.Sub(webuifs, "webui/build")
+		ui := webserver.Init(opts.WebUI, uifs, uiapi, logger)
+		if ui == nil {
+			os.Exit(int(ExitCodeWebUIError))
 		}
 	}
 }

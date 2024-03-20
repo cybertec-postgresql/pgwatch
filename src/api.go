@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/db"
+	"github.com/cybertec-postgresql/pgwatch3/sources"
 	"golang.org/x/exp/slices"
 )
 
@@ -91,8 +92,12 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
 // GetDatabases returns the list of monitored databases
 func (uiapi uiapihandler) GetDatabases() (res string, err error) {
-	sql := `select coalesce(jsonb_agg(to_jsonb(db)), '[]') from monitored_db db`
-	err = configDb.QueryRow(context.TODO(), sql).Scan(&res)
+	var dbs sources.MonitoredDatabases
+	if dbs, err = sourcesReader.GetMonitoredDatabases(); err != nil {
+		return
+	}
+	b, _ := json.Marshal(dbs)
+	res = string(b)
 	return
 }
 
