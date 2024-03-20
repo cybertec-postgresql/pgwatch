@@ -58,8 +58,8 @@ func Init(ctx context.Context, db PgxPoolIface, init ConnInitCallback) error {
 	logger := log.GetLogger(ctx)
 	if err := retry.Do(ctx, backoff, func(ctx context.Context) error {
 		if err := db.Ping(ctx); err != nil {
-			logger.WithError(err).Error("Connection failed")
-			logger.Info("Sleeping before reconnecting...")
+			logger.WithError(err).Error("connection failed")
+			logger.Info("sleeping before reconnecting...")
 			return retry.RetryableError(err)
 		}
 		return nil
@@ -69,27 +69,15 @@ func Init(ctx context.Context, db PgxPoolIface, init ConnInitCallback) error {
 	return init(ctx, db)
 }
 
-// InitConfigDb creates and inits database with sources, metrics and presets definitions
-func InitConfigDb(ctx context.Context, db PgxPoolIface) error {
-	return Init(ctx, db, func(ctx context.Context, conn PgxIface) error {
-		log.GetLogger(ctx).Info("Executing configuration schema scripts: ", len(configSchemaSQLs))
-		return executeSchemaScripts(ctx, conn, "pgwatch3", configSchemaSQLs)
-	})
-}
-
 // InitMeasurementDb created and inits database to store metrics measurements
 func InitMeasurementDb(ctx context.Context, db PgxPoolIface) error {
 	return Init(ctx, db, func(ctx context.Context, conn PgxIface) error {
-		log.GetLogger(ctx).Info("Executing metric storage schema scripts: ", len(metricSchemaSQLs))
+		log.GetLogger(ctx).Info("initialising the measurement database...")
 		return executeSchemaScripts(ctx, conn, "admin", metricSchemaSQLs)
 	})
 }
 
 var (
-	configSchemaSQLs = []string{
-		sqlConfigSchema,
-		sqlConfigDefinitions,
-	}
 	metricSchemaSQLs = []string{
 		sqlMetricAdminSchema,
 		sqlMetricAdminFunctions,
@@ -100,13 +88,18 @@ var (
 	}
 )
 
-// executeSchemaScripts executes initial schema scripts
-func executeSchemaScripts(ctx context.Context, conn PgxIface, schema string, sqls []string) (err error) {
+func DoesSchemaExist(ctx context.Context, conn PgxIface, schema string) (bool, error) {
 	var exists bool
 	sqlSchemaExists := "SELECT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = $1)"
-	err = conn.QueryRow(ctx, sqlSchemaExists, schema).Scan(&exists)
+	err := conn.QueryRow(ctx, sqlSchemaExists, schema).Scan(&exists)
+	return exists, err
+}
+
+// executeSchemaScripts executes initial schema scripts
+func executeSchemaScripts(ctx context.Context, conn PgxIface, schema string, sqls []string) error {
+	exists, err := DoesSchemaExist(ctx, conn, schema)
 	if err != nil || exists {
-		return
+		return err
 	}
 	for _, sql := range sqls {
 		if _, err = conn.Exec(ctx, sql); err != nil {

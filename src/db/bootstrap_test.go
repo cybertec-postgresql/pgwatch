@@ -42,10 +42,4 @@ func TestExecuteSchemaScripts(t *testing.T) {
 	err = db.InitMeasurementDb(ctx, conn)
 	assert.Error(t, err)
 
-	conn.ExpectPing()
-	conn.ExpectQuery("SELECT EXISTS").
-		WithArgs("pgwatch3").
-		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
-	err = db.InitConfigDb(ctx, conn)
-	assert.NoError(t, err)
 }
