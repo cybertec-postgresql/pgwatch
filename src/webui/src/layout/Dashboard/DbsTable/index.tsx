@@ -56,13 +56,13 @@ export const DbsTable = () => {
       <DataGrid
         columns={columns}
         rows={data}
-        getRowId={(row) => row.md_name}
+        getRowId={(row) => row.DBUniqueName}
         rowsPerPageOptions={[]}
         components={{ Toolbar: () => <GridToolbarComponent handleModalOpen={handleModalOpen} setEditData={setEditData} /> }}
         disableColumnMenu
         initialState={{
           sorting: {
-            sortModel: [{ field: "md_name", sort: "asc" }]
+            sortModel: [{ field: "DBUniqueName", sort: "asc" }]
           }
         }}
       />
