@@ -15,7 +15,7 @@ func NewPostgresMetricReader(ctx context.Context, conn db.PgxPoolIface, opts *co
 			if err != nil {
 				return nil, err
 			}
-			defer tx.Rollback(ctx)
+			defer func() { _ = tx.Rollback(ctx) }()
 			if _, err := tx.Exec(ctx, db.SQLConfigSchema); err != nil {
 				return nil, err
 			}
@@ -52,7 +52,7 @@ func WriteMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *M
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 	for metricName, metric := range metricDefs.MetricDefs {
 		_, err = tx.Exec(ctx, `INSERT INTO pgwatch3.metric (name, sqls, description, enabled, node_status, gauges, is_instance_level, storage_name)
 		values ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (name, node_status) 

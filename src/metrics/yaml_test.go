@@ -1,7 +1,7 @@
 package metrics_test
 
 import (
-	"io/ioutil"
+	"context"
 	"path/filepath"
 	"testing"
 
@@ -45,10 +45,11 @@ func TestWriteMetricsToFile(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Read the contents of the file
-	data, err := ioutil.ReadFile(tempFile)
+	fmr, err := metrics.NewYAMLMetricReader(context.Background(), tempFile)
+	assert.NoError(t, err)
+	metrics, err := fmr.GetMetrics()
 	assert.NoError(t, err)
 
 	// Assert that the file contains the expected data
-	expectedData := []byte(`` /* Put your expected YAML data here */)
-	assert.Equal(t, expectedData, data)
+	assert.Equal(t, metricDefs, *metrics)
 }
