@@ -8,20 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// NewDefaultMetricReader creates a new default metric reader with an empty path.
-func NewDefaultMetricReader(ctx context.Context) (Reader, error) {
-	return &fileMetricReader{
-		ctx: ctx,
-	}, nil
-}
-
-func GetDefaultMetrics() (metrics *Metrics) {
-	defMetricReader := &fileMetricReader{}
-	metrics, _ = defMetricReader.GetMetrics()
-	return
-}
-
-func NewYAMLMetricReader(ctx context.Context, path string) (Reader, error) {
+func NewYAMLMetricReaderWriter(ctx context.Context, path string) (ReaderWriter, error) {
 	return &fileMetricReader{
 		ctx:  ctx,
 		path: path,
@@ -33,12 +20,12 @@ type fileMetricReader struct {
 	path string
 }
 
-func WriteMetricsToFile(metricDefs Metrics, filename string) error {
+func (fmr *fileMetricReader) WriteMetrics(metricDefs *Metrics) error {
 	yamlData, err := yaml.Marshal(metricDefs)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filename, yamlData, 0644)
+	return os.WriteFile(fmr.path, yamlData, 0644)
 }
 
 //go:embed metrics.yaml
@@ -58,4 +45,40 @@ func (fmr *fileMetricReader) GetMetrics() (metrics *Metrics, err error) {
 		return nil, err
 	}
 	return
+}
+
+func (fmr *fileMetricReader) DeleteMetric(metricName string) error {
+	metrics, err := fmr.GetMetrics()
+	if err != nil {
+		return err
+	}
+	delete(metrics.MetricDefs, metricName)
+	return fmr.WriteMetrics(metrics)
+}
+
+func (fmr *fileMetricReader) UpdateMetric(metricName string, metric Metric) error {
+	metrics, err := fmr.GetMetrics()
+	if err != nil {
+		return err
+	}
+	metrics.MetricDefs[metricName] = metric
+	return fmr.WriteMetrics(metrics)
+}
+
+func (fmr *fileMetricReader) DeletePreset(presetName string) error {
+	metrics, err := fmr.GetMetrics()
+	if err != nil {
+		return err
+	}
+	delete(metrics.PresetDefs, presetName)
+	return fmr.WriteMetrics(metrics)
+}
+
+func (fmr *fileMetricReader) UpdatePreset(presetName string, preset Preset) error {
+	metrics, err := fmr.GetMetrics()
+	if err != nil {
+		return err
+	}
+	metrics.PresetDefs[presetName] = preset
+	return fmr.WriteMetrics(metrics)
 }

@@ -1165,7 +1165,7 @@ func SyncMetricDefs(r metrics.Reader) {
 	}
 }
 
-func NewConfigurationReaders(opts *config.Options) (sources.Reader, metrics.Reader) {
+func NewConfigurationReaders(opts *config.Options) (sources.Reader, metrics.ReaderWriter) {
 	checkError := func(err error) {
 		if err != nil {
 			logger.Fatal(err)
@@ -1173,7 +1173,7 @@ func NewConfigurationReaders(opts *config.Options) (sources.Reader, metrics.Read
 	}
 	var (
 		sourcesReader sources.Reader
-		metricsReader metrics.Reader
+		metricsReader metrics.ReaderWriter
 	)
 	configKind, err := opts.GetConfigKind()
 	switch {
@@ -1183,17 +1183,17 @@ func NewConfigurationReaders(opts *config.Options) (sources.Reader, metrics.Read
 		ctx := log.WithLogger(mainContext, logger.WithField("config", "file"))
 		sourcesReader, err = sources.NewYAMLSourcesReader(ctx, opts)
 		checkError(err)
-		metricsReader, err = metrics.NewDefaultMetricReader(ctx)
+		metricsReader, err = metrics.NewDefaultMetricReaderWriter(ctx)
 	case configKind == config.ConfigFolder:
 		ctx := log.WithLogger(mainContext, logger.WithField("config", "folder"))
 		sourcesReader, err = sources.NewYAMLSourcesReader(ctx, opts)
 		checkError(err)
-		metricsReader, err = metrics.NewYAMLMetricReader(ctx, opts.Sources.Config)
+		metricsReader, err = metrics.NewYAMLMetricReaderWriter(ctx, opts.Sources.Config)
 	case configKind == config.ConfigPgURL:
 		ctx := log.WithLogger(mainContext, logger.WithField("config", "postgres"))
 		configDb, err = db.New(ctx, opts.Sources.Config)
 		checkError(err)
-		metricsReader, err = metrics.NewPostgresMetricReader(ctx, configDb, opts)
+		metricsReader, err = metrics.NewPostgresMetricReaderWriter(ctx, configDb, opts)
 		checkError(err)
 		sourcesReader, err = sources.NewPostgresSourcesReader(ctx, configDb, opts)
 	}
@@ -1204,8 +1204,8 @@ func NewConfigurationReaders(opts *config.Options) (sources.Reader, metrics.Read
 var (
 	// sourcesReader is used to read the monitored sources (databases, patroni clusets, pgpools, etc.) information
 	sourcesReader sources.Reader
-	// metricsReader is used to read the metric and preset definitions
-	metricsReader metrics.Reader
+	// metricsReaderWriter is used to read the metric and preset definitions
+	metricsReaderWriter metrics.ReaderWriter
 )
 
 func main() {
@@ -1246,7 +1246,7 @@ func main() {
 
 	logger.Debugf("opts: %+v", opts)
 
-	sourcesReader, metricsReader = NewConfigurationReaders(opts)
+	sourcesReader, metricsReaderWriter = NewConfigurationReaders(opts)
 	if opts.Sources.Init {
 		// At this point we have initialised the sources, metrics and presets configurations.
 		// Any fatal errors are handled by the configuration readers. So me may exit gracefully.
@@ -1264,11 +1264,11 @@ func main() {
 	var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 	var metricConfig map[string]float64                       // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 
-	if err = LoadMetricDefs(metricsReader); err != nil {
+	if err = LoadMetricDefs(metricsReaderWriter); err != nil {
 		logger.Errorf("Could not load metric definitions: %w", err)
 		os.Exit(int(ExitCodeConfigError))
 	}
-	go SyncMetricDefs(metricsReader)
+	go SyncMetricDefs(metricsReaderWriter)
 
 	if measurementsWriter, err = sinks.NewMultiWriter(mainContext, opts, metricDefinitionMap); err != nil {
 		logger.Fatal(err)

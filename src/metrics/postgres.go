@@ -2,13 +2,14 @@ package metrics
 
 import (
 	"context"
+	"errors"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 )
 
-func NewPostgresMetricReader(ctx context.Context, conn db.PgxPoolIface, opts *config.Options) (Reader, error) {
+func NewPostgresMetricReaderWriter(ctx context.Context, conn db.PgxPoolIface, opts *config.Options) (ReaderWriter, error) {
 	if exists, err := db.DoesSchemaExist(ctx, conn, "pgwatch3"); err == nil {
 		if !exists {
 			tx, err := conn.Begin(ctx)
@@ -19,7 +20,7 @@ func NewPostgresMetricReader(ctx context.Context, conn db.PgxPoolIface, opts *co
 			if _, err := tx.Exec(ctx, db.SQLConfigSchema); err != nil {
 				return nil, err
 			}
-			if err := WriteMetricsToPostgres(ctx, tx, GetDefaultMetrics()); err != nil {
+			if err := writeMetricsToPostgres(ctx, tx, GetDefaultMetrics()); err != nil {
 				return nil, err
 			}
 			if err := tx.Commit(ctx); err != nil {
@@ -30,22 +31,22 @@ func NewPostgresMetricReader(ctx context.Context, conn db.PgxPoolIface, opts *co
 		return nil, err
 	}
 
-	return &dbMetricReader{
+	return &dbMetricReaderWriter{
 		ctx:      ctx,
 		configDb: conn,
 		opts:     opts,
 	}, conn.Ping(ctx)
 }
 
-type dbMetricReader struct {
+type dbMetricReaderWriter struct {
 	ctx      context.Context
-	configDb db.Querier
+	configDb db.PgxIface
 	opts     *config.Options
 }
 
-// WriteMetricsToPostgres writes the metrics and presets definitions to the
+// writeMetricsToPostgres writes the metrics and presets definitions to the
 // pgwatch3.metric and pgwatch3.preset tables in the ConfigDB.
-func WriteMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *Metrics) error {
+func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *Metrics) error {
 	logger := log.GetLogger(ctx)
 	logger.Info("writing metrics definitions to configuration database...")
 	tx, err := conn.Begin(ctx)
@@ -74,9 +75,9 @@ func WriteMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *M
 }
 
 // ReadMetricsFromPostgres reads the metrics and presets definitions from the pgwatch3.metric and pgwatch3.preset tables from the ConfigDB.
-func (r *dbMetricReader) GetMetrics() (metricDefMapNew *Metrics, err error) {
-	ctx := r.ctx
-	conn := r.configDb
+func (dmrw *dbMetricReaderWriter) GetMetrics() (metricDefMapNew *Metrics, err error) {
+	ctx := dmrw.ctx
+	conn := dmrw.configDb
 	logger := log.GetLogger(ctx)
 	logger.Info("reading metrics definitions from configuration database...")
 	metricDefMapNew = &Metrics{MetricDefs{}, PresetDefs{}}
@@ -109,4 +110,24 @@ func (r *dbMetricReader) GetMetrics() (metricDefMapNew *Metrics, err error) {
 		metricDefMapNew.PresetDefs[name] = preset
 	}
 	return metricDefMapNew, nil
+}
+
+func (dmrw *dbMetricReaderWriter) WriteMetrics(metricDefs *Metrics) error {
+	return writeMetricsToPostgres(dmrw.ctx, dmrw.configDb, metricDefs)
+}
+
+func (dmrw *dbMetricReaderWriter) DeleteMetric(metricName string) error {
+	return errors.ErrUnsupported
+}
+
+func (dmrw *dbMetricReaderWriter) UpdateMetric(metricName string, metric Metric) error {
+	return errors.ErrUnsupported
+}
+
+func (dmrw *dbMetricReaderWriter) DeletePreset(presetName string) error {
+	return errors.ErrUnsupported
+}
+
+func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName string, preset Preset) error {
+	return errors.ErrUnsupported
 }
