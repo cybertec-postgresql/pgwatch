@@ -107,3 +107,16 @@ type ControlMessage struct {
 type Reader interface {
 	GetMetrics() (*Metrics, error)
 }
+
+type Writer interface {
+	WriteMetrics(metricDefs *Metrics) error
+	DeleteMetric(metricName string) error
+	DeletePreset(presetName string) error
+	UpdateMetric(metricName string, metric Metric) error
+	UpdatePreset(presetName string, preset Preset) error
+}
+
+type ReaderWriter interface {
+	Reader
+	Writer
+}

@@ -31,18 +31,18 @@ func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		err = Server.api.AddPreset(params)
+		err = Server.api.UpdatePreset(r.URL.Query().Get("name"), params)
 
 	case http.MethodPatch:
 		// update stored preset
 		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		err = Server.api.UpdatePreset(r.URL.Query().Get("id"), params)
+		err = Server.api.UpdatePreset(r.URL.Query().Get("name"), params)
 
 	case http.MethodDelete:
 		// delete stored Preset
-		err = Server.api.DeletePreset(r.URL.Query().Get("id"))
+		err = Server.api.DeletePreset(r.URL.Query().Get("name"))
 
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
