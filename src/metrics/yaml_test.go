@@ -1,6 +1,7 @@
 package metrics_test
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 
@@ -44,7 +45,7 @@ func TestWriteMetricsToFile(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Read the contents of the file
-	fmr, err := metrics.NewYAMLMetricReader(nil, tempFile)
+	fmr, err := metrics.NewYAMLMetricReader(context.Background(), tempFile)
 	assert.NoError(t, err)
 	metrics, err := fmr.GetMetrics()
 	assert.NoError(t, err)

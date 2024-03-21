@@ -119,8 +119,6 @@ var monitoredDbCacheLock sync.RWMutex
 var monitoredDbConnCacheLock = sync.RWMutex{}
 var lastSQLFetchError sync.Map
 
-var fileBasedMetrics = false
-
 // / internal statistics calculation
 var lastSuccessfulDatastoreWriteTimeEpoch int64
 var datastoreWriteFailuresCounter uint64
