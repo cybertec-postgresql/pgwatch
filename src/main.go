@@ -119,8 +119,6 @@ var monitoredDbCacheLock sync.RWMutex
 var monitoredDbConnCacheLock = sync.RWMutex{}
 var lastSQLFetchError sync.Map
 
-var fileBasedMetrics = false
-
 // / internal statistics calculation
 var lastSuccessfulDatastoreWriteTimeEpoch int64
 var datastoreWriteFailuresCounter uint64
@@ -1190,7 +1188,7 @@ func NewConfigurationReaders(opts *config.Options) (sources.Reader, metrics.Read
 		ctx := log.WithLogger(mainContext, logger.WithField("config", "folder"))
 		sourcesReader, err = sources.NewYAMLSourcesReader(ctx, opts)
 		checkError(err)
-		metricsReader, err = metrics.NewYAMLMetricReader(ctx, opts)
+		metricsReader, err = metrics.NewYAMLMetricReader(ctx, opts.Sources.Config)
 	case configKind == config.ConfigPgURL:
 		ctx := log.WithLogger(mainContext, logger.WithField("config", "postgres"))
 		configDb, err = db.New(ctx, opts.Sources.Config)
@@ -1325,38 +1323,38 @@ func main() {
 
 		firstLoop = false // only used for failing when 1st config reading fails
 
-		for _, source := range monitoredDbs {
-			logger.WithField("source", source.DBUniqueName).
-				WithField("metric", source.Metrics).
-				WithField("tags", source.CustomTags).
-				WithField("config", source.HostConfig).Debug()
+		for _, monitoredDB := range monitoredDbs {
+			logger.WithField("source", monitoredDB.DBUniqueName).
+				WithField("metric", monitoredDB.Metrics).
+				WithField("tags", monitoredDB.CustomTags).
+				WithField("config", monitoredDB.HostConfig).Debug()
 
-			dbUnique := source.DBUniqueName
-			dbUniqueOrig := source.DBUniqueNameOrig
-			srcType := source.Kind
+			dbUnique := monitoredDB.DBUniqueName
+			dbUniqueOrig := monitoredDB.DBUniqueNameOrig
+			srcType := monitoredDB.Kind
 			metricConfig = func() map[string]float64 {
-				if len(source.Metrics) > 0 {
-					return source.Metrics
+				if len(monitoredDB.Metrics) > 0 {
+					return monitoredDB.Metrics
 				}
-				if source.PresetMetrics > "" {
-					return metricDefinitionMap.PresetDefs[source.PresetMetrics].Metrics
+				if monitoredDB.PresetMetrics > "" {
+					return metricDefinitionMap.PresetDefs[monitoredDB.PresetMetrics].Metrics
 				}
 				return nil
 			}()
 			wasInstancePreviouslyDormant := IsDBDormant(dbUnique)
 
-			if source.Encryption == "aes-gcm-256" && len(opts.Sources.AesGcmKeyphrase) == 0 && len(opts.Sources.AesGcmKeyphraseFile) == 0 {
+			if monitoredDB.Encryption == "aes-gcm-256" && len(opts.Sources.AesGcmKeyphrase) == 0 && len(opts.Sources.AesGcmKeyphraseFile) == 0 {
 				// Warn if any encrypted hosts found but no keyphrase given
 				logger.Warningf("Encrypted password type found for host \"%s\", but no decryption keyphrase specified. Use --aes-gcm-keyphrase or --aes-gcm-keyphrase-file params", dbUnique)
 			}
 
-			err := InitSQLConnPoolForMonitoredDBIfNil(source)
+			err := InitSQLConnPoolForMonitoredDBIfNil(monitoredDB)
 			if err != nil {
 				logger.Warningf("Could not init SQL connection pool for %s, retrying on next main loop. Err: %v", dbUnique, err)
 				continue
 			}
 
-			InitPGVersionInfoFetchingLockIfNil(source)
+			InitPGVersionInfoFetchingLockIfNil(monitoredDB)
 
 			_, connectFailedSoFar := failedInitialConnectHosts[dbUnique]
 
@@ -1380,33 +1378,33 @@ func main() {
 				if connectFailedSoFar {
 					delete(failedInitialConnectHosts, dbUnique)
 				}
-				if ver.IsInRecovery && source.OnlyIfMaster {
+				if ver.IsInRecovery && monitoredDB.OnlyIfMaster {
 					logger.Infof("[%s] not added to monitoring due to 'master only' property", dbUnique)
 					continue
 				}
 				metricConfig = func() map[string]float64 {
-					if len(source.Metrics) > 0 {
-						return source.Metrics
+					if len(monitoredDB.Metrics) > 0 {
+						return monitoredDB.Metrics
 					}
-					if source.PresetMetrics > "" {
-						return metricDefinitionMap.PresetDefs[source.PresetMetrics].Metrics
+					if monitoredDB.PresetMetrics > "" {
+						return metricDefinitionMap.PresetDefs[monitoredDB.PresetMetrics].Metrics
 					}
 					return nil
 				}()
 				hostLastKnownStatusInRecovery[dbUnique] = ver.IsInRecovery
 				if ver.IsInRecovery {
 					metricConfig = func() map[string]float64 {
-						if len(source.MetricsStandby) > 0 {
-							return source.MetricsStandby
+						if len(monitoredDB.MetricsStandby) > 0 {
+							return monitoredDB.MetricsStandby
 						}
-						if source.PresetMetricsStandby > "" {
-							return metricDefinitionMap.PresetDefs[source.PresetMetricsStandby].Metrics
+						if monitoredDB.PresetMetricsStandby > "" {
+							return metricDefinitionMap.PresetDefs[monitoredDB.PresetMetricsStandby].Metrics
 						}
 						return nil
 					}()
 				}
 
-				if !opts.Ping && source.IsPostgresSource() && !ver.IsInRecovery {
+				if !opts.Ping && monitoredDB.IsPostgresSource() && !ver.IsInRecovery {
 					if opts.Metrics.NoHelperFunctions {
 						logger.Infof("[%s] skipping rollout out helper functions due to the --no-helper-functions flag ...", dbUnique)
 					} else {
@@ -1419,7 +1417,7 @@ func main() {
 
 			}
 
-			if source.IsPostgresSource() {
+			if monitoredDB.IsPostgresSource() {
 				var DBSizeMB int64
 
 				if opts.Sources.MinDbSizeMB >= 8 { // an empty DB is a bit less than 8MB
@@ -1434,22 +1432,22 @@ func main() {
 						SetUndersizedDBState(dbUnique, false)
 					}
 				}
-				ver, err := DBGetPGVersion(mainContext, dbUnique, source.Kind, false)
+				ver, err := DBGetPGVersion(mainContext, dbUnique, monitoredDB.Kind, false)
 				if err == nil { // ok to ignore error, re-tried on next loop
 					lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[dbUnique]
-					if ver.IsInRecovery && source.OnlyIfMaster {
+					if ver.IsInRecovery && monitoredDB.OnlyIfMaster {
 						logger.Infof("[%s] to be removed from monitoring due to 'master only' property and status change", dbUnique)
 						hostsToShutDownDueToRoleChange[dbUnique] = true
 						SetRecoveryIgnoredDBState(dbUnique, true)
 						continue
 					} else if lastKnownStatusInRecovery != ver.IsInRecovery {
-						if ver.IsInRecovery && len(source.MetricsStandby) > 0 {
+						if ver.IsInRecovery && len(monitoredDB.MetricsStandby) > 0 {
 							logger.Warningf("Switching metrics collection for \"%s\" to standby config...", dbUnique)
-							metricConfig = source.MetricsStandby
+							metricConfig = monitoredDB.MetricsStandby
 							hostLastKnownStatusInRecovery[dbUnique] = true
 						} else {
 							logger.Warningf("Switching metrics collection for \"%s\" to primary config...", dbUnique)
-							metricConfig = source.Metrics
+							metricConfig = monitoredDB.Metrics
 							hostLastKnownStatusInRecovery[dbUnique] = false
 							SetRecoveryIgnoredDBState(dbUnique, false)
 						}
@@ -1520,7 +1518,7 @@ func main() {
 					}
 				} else if (!metricDefOk && chOk) || interval <= 0 {
 					// metric definition files were recently removed or interval set to zero
-					logger.Warning("shutting down metric", metric, "for", source.DBUniqueName)
+					logger.Warning("shutting down metric", metric, "for", monitoredDB.DBUniqueName)
 					controlChannels[dbMetric] <- metrics.ControlMessage{Action: gathererStatusStop}
 					delete(controlChannels, dbMetric)
 				} else if !metricDefOk {
@@ -1587,7 +1585,9 @@ func main() {
 					logger.Warningf("Could not find PG version info for DB %s, skipping shutdown check of metric worker process for %s", db, metric)
 					continue
 				}
-
+				if verInfo.IsInRecovery && dbInfo.PresetMetricsStandby > "" || !verInfo.IsInRecovery && dbInfo.PresetMetrics > "" {
+					continue // no need to check presets for single metric disabling
+				}
 				if verInfo.IsInRecovery && len(dbInfo.MetricsStandby) > 0 {
 					currentMetricConfig = dbInfo.MetricsStandby
 				} else {

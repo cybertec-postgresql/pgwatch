@@ -101,11 +101,6 @@ func New(writer io.Writer) (*Options, error) {
 	return cmdOpts, validateConfig(cmdOpts)
 }
 
-func checkFolderExistsAndReadable(path string) bool {
-	_, err := os.ReadDir(path)
-	return err == nil
-}
-
 // Verbose returns true if the debug log is enabled
 func (c Options) Verbose() bool {
 	return c.Logging.LogLevel == "debug"

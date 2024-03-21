@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"os"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"gopkg.in/yaml.v3"
 )
 
@@ -22,10 +21,10 @@ func GetDefaultMetrics() (metrics *Metrics) {
 	return
 }
 
-func NewYAMLMetricReader(ctx context.Context, opts *config.Options) (Reader, error) {
+func NewYAMLMetricReader(ctx context.Context, path string) (Reader, error) {
 	return &fileMetricReader{
 		ctx:  ctx,
-		path: opts.Sources.Config,
+		path: path,
 	}, nil
 }
 
