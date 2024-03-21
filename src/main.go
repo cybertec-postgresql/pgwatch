@@ -1190,7 +1190,7 @@ func NewConfigurationReaders(opts *config.Options) (sources.Reader, metrics.Read
 		ctx := log.WithLogger(mainContext, logger.WithField("config", "folder"))
 		sourcesReader, err = sources.NewYAMLSourcesReader(ctx, opts)
 		checkError(err)
-		metricsReader, err = metrics.NewYAMLMetricReader(ctx, opts)
+		metricsReader, err = metrics.NewYAMLMetricReader(ctx, opts.Sources.Config)
 	case configKind == config.ConfigPgURL:
 		ctx := log.WithLogger(mainContext, logger.WithField("config", "postgres"))
 		configDb, err = db.New(ctx, opts.Sources.Config)
