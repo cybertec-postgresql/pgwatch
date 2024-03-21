@@ -25,12 +25,14 @@ type dbSourcesReader struct {
 
 func (r *dbSourcesReader) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
 	sqlLatest := `select /* pgwatch3_generated */
-	s.name, 
+	name, 
 	"group", 
 	dbtype, 
 	connstr,
-	coalesce(pr.metrics, config) as config, 
-	coalesce(st.metrics, config_standby, '{}'::jsonb) as config_standby,
+	coalesce(config, '{}'::jsonb) as config, 
+	coalesce(config_standby, '{}'::jsonb) as config_standby,
+	coalesce(preset_config, '') as preset_config,
+	coalesce(preset_config_standby, '') as preset_config_standby,
 	is_superuser,
 	coalesce(include_pattern, '') as include_pattern, 
 	coalesce(exclude_pattern, '') as exclude_pattern,
@@ -38,9 +40,7 @@ func (r *dbSourcesReader) GetMonitoredDatabases() (dbs MonitoredDatabases, err e
 	encryption, coalesce(host_config, '{}') as host_config, 
 	only_if_master
 from
-	pgwatch3.source s
-	left join pgwatch3.preset pr on pr.name = preset_config
-	left join pgwatch3.preset st on st.name = preset_config_standby
+	pgwatch3.source
 `
 	rows, err := r.configDb.Query(context.Background(), sqlLatest)
 	if err != nil {
