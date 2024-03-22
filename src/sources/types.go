@@ -1,8 +1,10 @@
 package sources
 
 import (
+	"context"
 	"slices"
 
+	"github.com/cybertec-postgresql/pgwatch3/db"
 	pgx "github.com/jackc/pgx/v5"
 )
 
@@ -67,9 +69,49 @@ func (md MonitoredDatabase) ExpandDatabases() (MonitoredDatabases, error) {
 	case SourcePatroni, SourcePatroniContinuous, SourcePatroniNamespace:
 		return ResolveDatabasesFromPatroni(md)
 	case SourcePostgresContinuous:
-		return md.ResolveDatabasesFromConfigEntry()
+		return md.ResolveDatabasesFromPostgres()
 	}
 	return nil, nil
+}
+
+// "resolving" reads all the DB names from the given host/port, additionally matching/not matching specified regex patterns
+func (md MonitoredDatabase) ResolveDatabasesFromPostgres() (resolvedDbs MonitoredDatabases, err error) {
+	var (
+		c      db.PgxPoolIface
+		dbname string
+		rows   pgx.Rows
+	)
+	c, err = db.New(context.TODO(), md.ConnStr)
+	if err != nil {
+		return
+	}
+	defer c.Close()
+
+	sql := `select /* pgwatch3_generated */
+		quote_ident(datname)::text as datname_escaped
+		from pg_database
+		where not datistemplate
+		and datallowconn
+		and has_database_privilege (datname, 'CONNECT')
+		and case when length(trim($1)) > 0 then datname ~ $1 else true end
+		and case when length(trim($2)) > 0 then not datname ~ $2 else true end`
+
+	if rows, err = c.Query(context.TODO(), sql, md.IncludePattern, md.ExcludePattern); err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		if err = rows.Scan(&dbname); err != nil {
+			return nil, err
+		}
+		rdb := md
+		rdb.DBUniqueName += "_" + dbname
+		resolvedDbs = append(resolvedDbs, rdb)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return
 }
 
 type MonitoredDatabases []MonitoredDatabase
@@ -122,7 +164,7 @@ type Reader interface {
 type Writer interface {
 	WriteMonitoredDatabases(MonitoredDatabases) error
 	DeleteDatabase(string) error
-	UpdateDatabase(name string, md MonitoredDatabase) error
+	UpdateDatabase(md MonitoredDatabase) error
 }
 
 type ReaderWriter interface {
