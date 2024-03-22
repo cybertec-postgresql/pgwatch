@@ -35,7 +35,6 @@ type MonitoredDatabase struct {
 	DBUniqueName         string             `yaml:"unique_name" db:"name"`
 	DBUniqueNameOrig     string             // to preserve belonging to a specific instance for continuous modes where DBUniqueName will be dynamic
 	Group                string             `yaml:"group" db:"group"`
-	Encryption           string             `yaml:"encryption" db:"encryption"`
 	ConnStr              string             `yaml:"conn_str" db:"connstr"`
 	Metrics              map[string]float64 `yaml:"custom_metrics" db:"config"`
 	MetricsStandby       map[string]float64 `yaml:"custom_metrics_standby" db:"config_standby"`

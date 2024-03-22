@@ -47,11 +47,6 @@ from
 		return nil, err
 	}
 	dbs, err = pgx.CollectRows[MonitoredDatabase](rows, pgx.RowToStructByNameLax)
-	for _, md := range dbs {
-		if md.Encryption == "aes-gcm-256" && r.opts.Sources.AesGcmKeyphrase != "" {
-			md.ConnStr = r.opts.Decrypt(md.ConnStr)
-		}
-	}
 	return
 }
 
