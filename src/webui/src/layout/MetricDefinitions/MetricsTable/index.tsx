@@ -1,23 +1,36 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Box, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
 import { ErrorComponent } from "layout/common/ErrorComponent";
-import { metricsColumns } from "layout/common/Grid/GridColumns";
 import { GridToolbarComponent } from "layout/common/Grid/GridToolbarComponent";
 import { LoadingComponent } from "layout/common/LoadingComponent";
 
 import { useDeleteMetric, useMetrics } from "queries/Metric";
-import { Metric } from 'queries/types/MetricTypes';
 
 import { ModalComponent } from "./ModalComponent";
+import { metricsColumns } from "../MetricDefinitions.consts";
+import { MetricRow } from "../MetricDefinitions.types";
 
 export const MetricsTable = () => {
   const [modalOpen, setModalOpen] = useState(false);
-  const [editData, setEditData] = useState<Metric>();
+  const [editData, setEditData] = useState();
 
   const { status, data, error } = useMetrics();
+
+  const rows: MetricRow[] | [] = useMemo(() => {
+    if (data) {
+      return Object.keys(data).map((key) => {
+        const metric = data[key];
+        return {
+          Key: key,
+          Metric: metric,
+        };
+      });
+    }
+    return [];
+  }, [data]);
 
   const deleteRecord = useDeleteMetric();
 
@@ -29,13 +42,7 @@ export const MetricsTable = () => {
     setModalOpen(false);
   };
 
-  const columns = metricsColumns(
-    {
-      setEditData,
-      handleModalOpen,
-      deleteRecord
-    }
-  );
+  const columns = metricsColumns();
 
   if (status === "loading") {
     return (
@@ -56,9 +63,9 @@ export const MetricsTable = () => {
         Metrics
       </Typography>
       <DataGrid
-        getRowId={(row) => row.m_id}
+        getRowId={(row) => row.Key}
         columns={columns}
-        rows={data}
+        rows={rows}
         rowsPerPageOptions={[]}
         components={{ Toolbar: () => <GridToolbarComponent handleModalOpen={handleModalOpen} setEditData={setEditData} /> }}
         disableColumnMenu
