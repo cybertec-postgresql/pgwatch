@@ -21,7 +21,7 @@ func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 	switch r.Method {
 	case http.MethodGet:
 		// return stored Presets
-		if res, err = Server.api.GetPresets(); err != nil {
+		if res, err = Server.GetPresets(); err != nil {
 			return
 		}
 		_, err = w.Write([]byte(res))
@@ -31,18 +31,18 @@ func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		err = Server.api.UpdatePreset(r.URL.Query().Get("name"), params)
+		err = Server.UpdatePreset(r.URL.Query().Get("name"), params)
 
 	case http.MethodPatch:
 		// update stored preset
 		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		err = Server.api.UpdatePreset(r.URL.Query().Get("name"), params)
+		err = Server.UpdatePreset(r.URL.Query().Get("name"), params)
 
 	case http.MethodDelete:
 		// delete stored Preset
-		err = Server.api.DeletePreset(r.URL.Query().Get("name"))
+		err = Server.DeletePreset(r.URL.Query().Get("name"))
 
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
