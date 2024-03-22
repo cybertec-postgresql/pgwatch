@@ -79,6 +79,9 @@ type MonitoredDatabases []MonitoredDatabase
 func (mds MonitoredDatabases) Expand() (MonitoredDatabases, error) {
 	resolvedDbs := make(MonitoredDatabases, 0, len(mds))
 	for _, md := range mds {
+		if !md.IsEnabled {
+			continue
+		}
 		dbs, err := md.ExpandDatabases()
 		if err != nil {
 			return nil, err
