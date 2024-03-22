@@ -23,7 +23,7 @@ func (Server *WebUIServer) handleDBs(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err := Server.api.UpdateDatabase(r.URL.Query().Get("name"), p); err != nil {
+		if err := Server.api.UpdateDatabase(p); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 

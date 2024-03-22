@@ -18,8 +18,8 @@ import (
 
 type apiHandler interface {
 	GetDatabases() (string, error)
-	DeleteDatabase(id string) error
-	UpdateDatabase(id string, params []byte) error
+	DeleteDatabase(name string) error
+	UpdateDatabase(params []byte) error
 
 	GetMetrics() (res string, err error)
 	DeleteMetric(name string) error

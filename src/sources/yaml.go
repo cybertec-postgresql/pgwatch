@@ -31,13 +31,13 @@ func (fcr *fileSourcesReaderWriter) WriteMonitoredDatabases(mds MonitoredDatabas
 	return os.WriteFile(fcr.path, yamlData, 0644)
 }
 
-func (fcr *fileSourcesReaderWriter) UpdateDatabase(name string, md MonitoredDatabase) error {
+func (fcr *fileSourcesReaderWriter) UpdateDatabase(md MonitoredDatabase) error {
 	dbs, err := fcr.GetMonitoredDatabases()
 	if err != nil {
 		return err
 	}
 	for i, db := range dbs {
-		if db.DBUniqueName == name {
+		if db.DBUniqueName == md.DBUniqueName {
 			dbs[i] = md
 			return fcr.WriteMonitoredDatabases(dbs)
 		}
