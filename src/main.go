@@ -1193,8 +1193,8 @@ func NewConfigurationReaders(opts *config.Options) (sources.ReaderWriter, metric
 }
 
 var (
-	// sourcesReader is used to read the monitored sources (databases, patroni clusets, pgpools, etc.) information
-	sourcesReader sources.ReaderWriter
+	// sourcesReaderWriter is used to read the monitored sources (databases, patroni clusets, pgpools, etc.) information
+	sourcesReaderWriter sources.ReaderWriter
 	// metricsReaderWriter is used to read the metric and preset definitions
 	metricsReaderWriter metrics.ReaderWriter
 )
@@ -1232,7 +1232,7 @@ func main() {
 
 	logger.Debugf("opts: %+v", opts)
 
-	sourcesReader, metricsReaderWriter = NewConfigurationReaders(opts)
+	sourcesReaderWriter, metricsReaderWriter = NewConfigurationReaders(opts)
 	if opts.Sources.Init {
 		// At this point we have initialised the sources, metrics and presets configurations.
 		// Any fatal errors are handled by the configuration readers. So me may exit gracefully.
@@ -1273,7 +1273,7 @@ func main() {
 		var controlChannelNameList []string
 		gatherersShutDown := 0
 
-		if monitoredDbs, err = sourcesReader.GetMonitoredDatabases(); err != nil {
+		if monitoredDbs, err = sourcesReaderWriter.GetMonitoredDatabases(); err != nil {
 			if firstLoop {
 				logger.Fatal("could not fetch active hosts - check config!", err)
 			} else {
@@ -1622,7 +1622,7 @@ func main() {
 func initWebUI(opts *config.Options) {
 	if !opts.Ping {
 		uifs, _ := fs.Sub(webuifs, "webui/build")
-		ui := webserver.Init(opts.WebUI, uifs, uiapi, logger)
+		ui := webserver.Init(opts.WebUI, uifs, metricsReaderWriter, sourcesReaderWriter, logger)
 		if ui == nil {
 			os.Exit(int(ExitCodeWebUIError))
 		}
