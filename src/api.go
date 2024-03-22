@@ -89,13 +89,13 @@ func (uiapi uiapihandler) DeleteDatabase(database string) error {
 }
 
 // UpdateDatabase updates the monitored database information
-func (uiapi uiapihandler) UpdateDatabase(database string, params []byte) error {
+func (uiapi uiapihandler) UpdateDatabase(params []byte) error {
 	var md sources.MonitoredDatabase
 	err := json.Unmarshal(params, &md)
 	if err != nil {
 		return err
 	}
-	return sourcesReader.UpdateDatabase(database, md)
+	return sourcesReader.UpdateDatabase(md)
 }
 
 // GetStats
