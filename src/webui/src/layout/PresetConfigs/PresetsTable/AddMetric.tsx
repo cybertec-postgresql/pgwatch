@@ -26,11 +26,11 @@ export const AddMetric = ({ control, handleValidate }: Props) => {
 
   const { data, status, error } = useMetrics();
 
-  useEffect(() => {
+  /*useEffect(() => {
     if (data) {
       setMetricOptions([...new Set(data.map(metric => metric.m_name))].map(metric => ({ label: metric })));
     }
-  }, [data]);
+  }, [data]);*/
 
   if (status === "error") {
     const err = error as Error;
@@ -48,12 +48,13 @@ export const AddMetric = ({ control, handleValidate }: Props) => {
   }
 
   const isOptionExist = (initialValue: string) => {
-    const value = data.find(option => option.m_name === initialValue);
+    /*const value = data.find(option => option.m_name === initialValue);
     if (!value) {
       return ("This option doesn't exist");
     } else {
       return;
-    }
+    }*/
+    return "This option doesn't exist";
   };
 
   return (
