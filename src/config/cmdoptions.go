@@ -1,21 +1,13 @@
 package config
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
-	"fmt"
 	"io"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	flags "github.com/jessevdk/go-flags"
-	"golang.org/x/crypto/pbkdf2"
 )
 
 type Kind int
@@ -33,9 +25,6 @@ type SourceOpts struct {
 	Refresh                      int      `long:"refresh" mapstructure:"refresh" description:"How frequently to resync sources and metrics" env:"PW3_REFRESH" default:"120"`
 	Init                         bool     `long:"init" description:"Initialize configuration database schema to the latest version and exit. Can be used with --upgrade"`
 	Groups                       []string `short:"g" long:"group" mapstructure:"group" description:"Groups for filtering which databases to monitor. By default all are monitored" env:"PW3_GROUP"`
-	AesGcmKeyphrase              string   `long:"aes-gcm-keyphrase" mapstructure:"aes-gcm-keyphrase" description:"Decryption key for AES-GCM-256 passwords" env:"PW3_AES_GCM_KEYPHRASE"`
-	AesGcmKeyphraseFile          string   `long:"aes-gcm-keyphrase-file" mapstructure:"aes-gcm-keyphrase-file" description:"File with decryption key for AES-GCM-256 passwords" env:"PW3_AES_GCM_KEYPHRASE_FILE"`
-	AesGcmPasswordToEncrypt      string   `long:"aes-gcm-password-to-encrypt" mapstructure:"aes-gcm-password-to-encrypt" description:"A special mode, returns the encrypted plain-text string and quits. Keyphrase(file) must be set. Useful for YAML mode" env:"PW3_AES_GCM_PASSWORD_TO_ENCRYPT"`
 	MinDbSizeMB                  int64    `long:"min-db-size-mb" mapstructure:"min-db-size-mb" description:"Smaller size DBs will be ignored and not monitored until they reach the threshold." env:"PW3_MIN_DB_SIZE_MB" default:"0"`
 	MaxParallelConnectionsPerDb  int      `long:"max-parallel-connections-per-db" mapstructure:"max-parallel-connections-per-db" description:"Max parallel metric fetches per DB. Note the multiplication effect on multi-DB instances" env:"PW3_MAX_PARALLEL_CONNECTIONS_PER_DB" default:"2"`
 	TryCreateListedExtsIfMissing string   `long:"try-create-listed-exts-if-missing" mapstructure:"try-create-listed-exts-if-missing" description:"Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements" env:"PW3_TRY_CREATE_LISTED_EXTS_IF_MISSING" default:""`
@@ -43,7 +32,7 @@ type SourceOpts struct {
 
 // MetricOpts specifies metric definitions
 type MetricOpts struct {
-	MetricsFolder                string `short:"m" long:"metrics-folder" mapstructure:"metrics-folder" description:"Folder of metrics definitions" env:"PW3_METRICS_FOLDER"`
+	Metrics                      string `short:"m" long:"metrics" mapstructure:"metrics" description:"File or folder of YAML files with metrics definitions" env:"PW3_METRICS"`
 	NoHelperFunctions            bool   `long:"no-helper-functions" mapstructure:"no-helper-functions" description:"Ignore metric definitions using helper functions (in form get_smth()) and don't also roll out any helpers automatically" env:"PW3_NO_HELPER_FUNCTIONS"`
 	DirectOSStats                bool   `long:"direct-os-stats" mapstructure:"direct-os-stats" description:"Extract OS related psutil statistics not via PL/Python wrappers but directly on host" env:"PW3_DIRECT_OS_STATS"`
 	InstanceLevelCacheMaxSeconds int64  `long:"instance-level-cache-max-seconds" mapstructure:"instance-level-cache-max-seconds" description:"Max allowed staleness for instance level metric data shared between DBs of an instance. Affects 'continuous' host types only. Set to 0 to disable" env:"PW3_INSTANCE_LEVEL_CACHE_MAX_SECONDS" default:"30"`
@@ -111,11 +100,6 @@ func (c Options) VersionOnly() bool {
 	return len(os.Args) == 2 && c.Version
 }
 
-// EncryptOnly returns true if the `--aes-gcm-password-to-encrypt` set
-func (c Options) EncryptOnly() bool {
-	return c.Sources.AesGcmPasswordToEncrypt > ""
-}
-
 func (c Options) GetConfigKind() (_ Kind, err error) {
 	if _, err := pgx.ParseConfig(c.Sources.Config); err == nil {
 		return Kind(ConfigPgURL), nil
@@ -131,9 +115,6 @@ func (c Options) GetConfigKind() (_ Kind, err error) {
 }
 
 func validateConfig(c *Options) error {
-	if c.VersionOnly() || c.EncryptOnly() {
-		return nil
-	}
 	if c.Sources.Config == "" {
 		return errors.New("--config was not specified")
 	}
@@ -144,72 +125,10 @@ func validateConfig(c *Options) error {
 		return errors.New("--max-parallel-connections-per-db must be >= 1")
 	}
 
-	if err := validateAesGcmConfig(c); err != nil {
-		return err
-	}
-
 	// validate that input is boolean is set
 	if c.Measurements.BatchingDelay <= 0 || c.Measurements.BatchingDelay > time.Hour {
 		return errors.New("--batching-delay-ms must be between 0 and 3600000")
 	}
 
 	return nil
-}
-
-func validateAesGcmConfig(c *Options) error {
-	if c.Sources.AesGcmKeyphraseFile > "" {
-		_, err := os.Stat(c.Sources.AesGcmKeyphraseFile)
-		if os.IsNotExist(err) {
-			return fmt.Errorf("Failed to read aes_gcm_keyphrase_file at %s, thus cannot monitor hosts with encrypted passwords", c.Sources.AesGcmKeyphraseFile)
-		}
-		keyBytes, err := os.ReadFile(c.Sources.AesGcmKeyphraseFile)
-		if err != nil {
-			return err
-		}
-		if keyBytes[len(keyBytes)-1] == 10 {
-			c.Sources.AesGcmKeyphrase = string(keyBytes[:len(keyBytes)-1]) // remove line feed
-		} else {
-			c.Sources.AesGcmKeyphrase = string(keyBytes)
-		}
-	}
-	if c.Sources.AesGcmPasswordToEncrypt > "" && c.Sources.AesGcmKeyphrase == "" { // special flag - encrypt and exit
-		return errors.New("--aes-gcm-password-to-encrypt requires --aes-gcm-keyphrase(-file)")
-	}
-	return nil
-}
-
-func (c Options) Encrypt() string { // called when --password-to-encrypt set
-	passphrase, plaintext := c.Sources.AesGcmKeyphrase, c.Sources.AesGcmPasswordToEncrypt
-	key, salt := deriveKey(passphrase, nil)
-	iv := make([]byte, 12)
-	_, _ = rand.Read(iv)
-	b, _ := aes.NewCipher(key)
-	aesgcm, _ := cipher.NewGCM(b)
-	data := aesgcm.Seal(nil, iv, []byte(plaintext), nil)
-	return hex.EncodeToString(salt) + "-" + hex.EncodeToString(iv) + "-" + hex.EncodeToString(data)
-}
-
-func deriveKey(passphrase string, salt []byte) ([]byte, []byte) {
-	if salt == nil {
-		salt = make([]byte, 8)
-		_, _ = rand.Read(salt)
-	}
-	return pbkdf2.Key([]byte(passphrase), salt, 1000, 32, sha256.New), salt
-}
-
-func (c Options) Decrypt(ciphertext string) string {
-	arr := strings.Split(ciphertext, "-")
-	if len(arr) != 3 {
-		// Warning("Aes-gcm-256 encrypted password for \"%s\" should consist of 3 parts - using 'as is'", dbUnique)
-		return ciphertext
-	}
-	salt, _ := hex.DecodeString(arr[0])
-	iv, _ := hex.DecodeString(arr[1])
-	data, _ := hex.DecodeString(arr[2])
-	key, _ := deriveKey(c.Sources.AesGcmKeyphrase, salt)
-	b, _ := aes.NewCipher(key)
-	aesgcm, _ := cipher.NewGCM(b)
-	data, _ = aesgcm.Open(nil, iv, data, nil)
-	//log.Debug("decoded", string(data))
-	return string(data)
 }
