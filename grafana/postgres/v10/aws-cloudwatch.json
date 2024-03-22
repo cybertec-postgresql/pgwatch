@@ -3,7 +3,10 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -13,32 +16,49 @@
     ]
   },
   "editable": true,
-  "gnetId": null,
+  "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
   "links": [],
   "panels": [
     {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": false,
-      "colors": [
-        "rgba(245, 54, 54, 0.9)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(50, 172, 45, 0.97)"
-      ],
-      "datasource": "aws",
-      "decimals": 1,
+      "datasource": {
+        "uid": "aws"
+      },
       "description": "The percentage of CPU utilization.\n\nUnits: Percent",
-      "editable": true,
-      "error": false,
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "rgb(31, 120, 193)",
+            "mode": "fixed"
+          },
+          "decimals": 1,
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
@@ -46,49 +66,34 @@
         "x": 0,
         "y": 0
       },
-      "height": "150",
       "id": 1,
-      "interval": null,
-      "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": true,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": true
+      "options": {
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "tableColumn": "",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "CPU %",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
-          "dsType": null,
           "expression": "",
           "groupBy": [
             {
@@ -106,7 +111,9 @@
           ],
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "CPUUtilization",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "orderByTime": "ASC",
           "period": "600",
@@ -131,47 +138,53 @@
               }
             ]
           ],
-          "statistics": [
-            "Average"
-          ],
+          "statistic": "Average",
           "tags": []
         }
       ],
-      "thresholds": "",
       "timeFrom": "6h",
       "title": "CPU load %",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": false,
-      "colors": [
-        "rgba(245, 54, 54, 0.9)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(50, 172, 45, 0.97)"
-      ],
-      "datasource": "aws",
-      "decimals": 0,
+      "datasource": {
+        "uid": "aws"
+      },
       "description": "The average number of bytes written to disk per second.",
-      "editable": true,
-      "error": false,
-      "format": "bps",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "rgb(31, 120, 193)",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bps"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
@@ -179,49 +192,34 @@
         "x": 4,
         "y": 0
       },
-      "height": "150",
       "id": 2,
-      "interval": null,
-      "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": true,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": true
+      "options": {
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "tableColumn": "",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "Write bytes/s",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
-          "dsType": null,
           "expression": "",
           "groupBy": [
             {
@@ -239,7 +237,9 @@
           ],
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "WriteThroughput",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "orderByTime": "ASC",
           "period": "600",
@@ -264,47 +264,53 @@
               }
             ]
           ],
-          "statistics": [
-            "Average"
-          ],
+          "statistic": "Average",
           "tags": []
         }
       ],
-      "thresholds": "",
       "timeFrom": "6h",
       "title": "Write IO",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": false,
-      "colors": [
-        "rgba(245, 54, 54, 0.9)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(50, 172, 45, 0.97)"
-      ],
-      "datasource": "aws",
-      "decimals": 1,
+      "datasource": {
+        "uid": "aws"
+      },
       "description": "The average number of bytes read from disk per second.",
-      "editable": true,
-      "error": false,
-      "format": "Bps",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "rgb(31, 120, 193)",
+            "mode": "fixed"
+          },
+          "decimals": 1,
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "Bps"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
@@ -312,49 +318,34 @@
         "x": 8,
         "y": 0
       },
-      "height": "150",
       "id": 4,
-      "interval": null,
-      "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": " ",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": true,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": true
+      "options": {
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "tableColumn": "",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "Read bytes/s",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
-          "dsType": null,
           "expression": "",
           "groupBy": [
             {
@@ -372,7 +363,9 @@
           ],
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "ReadThroughput",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "orderByTime": "ASC",
           "period": "600",
@@ -397,47 +390,52 @@
               }
             ]
           ],
-          "statistics": [
-            "Average"
-          ],
+          "statistic": "Average",
           "tags": []
         }
       ],
-      "thresholds": "",
       "timeFrom": "6h",
-      "timeShift": null,
       "title": "Read IO",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": false,
-      "colors": [
-        "rgba(245, 54, 54, 0.9)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(50, 172, 45, 0.97)"
-      ],
-      "datasource": "aws",
+      "datasource": {
+        "uid": "aws"
+      },
       "description": "",
-      "editable": true,
-      "error": false,
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "rgb(31, 120, 193)",
+            "mode": "fixed"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
@@ -445,49 +443,34 @@
         "x": 12,
         "y": 0
       },
-      "height": "150",
       "id": 3,
-      "interval": null,
-      "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": " ",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": true,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": true
+      "options": {
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "tableColumn": "",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "Connections",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
-          "dsType": null,
           "expression": "",
           "groupBy": [
             {
@@ -505,7 +488,9 @@
           ],
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "DatabaseConnections",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "orderByTime": "ASC",
           "period": "600",
@@ -530,48 +515,53 @@
               }
             ]
           ],
-          "statistics": [
-            "Average"
-          ],
+          "statistic": "Average",
           "tags": []
         }
       ],
-      "thresholds": "",
       "timeFrom": "6h",
-      "timeShift": null,
       "title": "Connections",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": false,
-      "colors": [
-        "rgba(245, 54, 54, 0.9)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(50, 172, 45, 0.97)"
-      ],
-      "datasource": "aws",
-      "decimals": 0,
+      "datasource": {
+        "uid": "aws"
+      },
       "description": "The amount of available random access memory.",
-      "editable": true,
-      "error": false,
-      "format": "bytes",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "rgb(31, 120, 193)",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
@@ -579,49 +569,34 @@
         "x": 16,
         "y": 0
       },
-      "height": "150",
       "id": 5,
-      "interval": null,
-      "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": " ",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": true,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": true
+      "options": {
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "tableColumn": "",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "Free mem",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
-          "dsType": null,
           "expression": "",
           "groupBy": [
             {
@@ -640,7 +615,9 @@
           "highResolution": false,
           "id": "",
           "measurement": "table_bloat_approx_summary",
+          "metricEditorMode": 0,
           "metricName": "FreeableMemory",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "orderByTime": "ASC",
           "period": "600",
@@ -665,9 +642,7 @@
               }
             ]
           ],
-          "statistics": [
-            "Average"
-          ],
+          "statistic": "Average",
           "tags": [
             {
               "key": "dbname",
@@ -677,42 +652,49 @@
           ]
         }
       ],
-      "thresholds": "",
       "timeFrom": "6h",
-      "timeShift": null,
       "title": "Free RAM",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": false,
-      "colors": [
-        "rgba(245, 54, 54, 0.9)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(50, 172, 45, 0.97)"
-      ],
-      "datasource": "aws",
-      "decimals": 1,
+      "datasource": {
+        "uid": "aws"
+      },
       "description": "The amount of available storage space.",
-      "editable": true,
-      "error": false,
-      "format": "bytes",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "rgb(31, 120, 193)",
+            "mode": "fixed"
+          },
+          "decimals": 1,
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
@@ -720,49 +702,34 @@
         "x": 20,
         "y": 0
       },
-      "height": "150",
       "id": 6,
-      "interval": null,
-      "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": " ",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": true,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": true
+      "options": {
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "tableColumn": "",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "Free storage",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
-          "dsType": null,
           "expression": "",
           "groupBy": [
             {
@@ -781,7 +748,9 @@
           "highResolution": false,
           "id": "",
           "measurement": "cpu_load",
+          "metricEditorMode": 0,
           "metricName": "FreeStorageSpace",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "orderByTime": "ASC",
           "period": "1800",
@@ -806,9 +775,7 @@
               }
             ]
           ],
-          "statistics": [
-            "Average"
-          ],
+          "statistic": "Average",
           "tags": [
             {
               "key": "dbname",
@@ -818,33 +785,169 @@
           ]
         }
       ],
-      "thresholds": "",
       "timeFrom": "6h",
-      "timeShift": null,
       "title": "Free disk",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "aws",
-      "decimals": 1,
+      "datasource": {
+        "uid": "aws"
+      },
       "description": "Credit balance/usage apply only to T2 instances",
-      "editable": true,
-      "error": false,
-      "fill": 1,
-      "grid": {},
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 1,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "db_stats.mean"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "DB size"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "blk_read_time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "blk_write_time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU credit usage"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU credit balance"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -852,167 +955,196 @@
         "y": 4
       },
       "id": 7,
-      "legend": {
-        "alignAsTable": false,
-        "avg": true,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "alias": "db_stats.mean",
-          "yaxis": 2
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
-        {
-          "alias": "DB size",
-          "yaxis": 2
-        },
-        {
-          "alias": "blk_read_time",
-          "yaxis": 2
-        },
-        {
-          "alias": "blk_write_time",
-          "yaxis": 2
-        },
-        {
-          "alias": "CPU credit usage",
-          "yaxis": 2
-        },
-        {
-          "alias": "CPU credit balance",
-          "yaxis": 2
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
         }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      },
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "CPU load",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
           "expression": "",
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "CPUUtilization",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "period": "300",
           "refId": "B",
           "region": "$region",
           "returnData": false,
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         },
         {
           "alias": "CPU credit balance",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
           "expression": "",
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "CPUCreditBalance",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "period": "300",
           "refId": "A",
           "region": "$region",
           "returnData": false,
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         },
         {
           "alias": "CPU credit usage",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
           "expression": "",
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "CPUCreditUsage",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "period": "300",
           "refId": "C",
           "region": "$region",
           "returnData": false,
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "CPU details",
-      "tooltip": {
-        "msResolution": false,
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 1,
-          "format": "percent",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": 0,
-          "show": true
-        },
-        {
-          "decimals": 0,
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {
-        "IO queue depth": "#bf1b00",
-        "TX rollback ratio": "#890F02"
+      "datasource": {
+        "uid": "aws"
       },
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "aws",
-      "decimals": 1,
-      "editable": true,
-      "error": false,
-      "fill": 1,
-      "grid": {},
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "IO queue depth"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#bf1b00",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TX rollback ratio"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#890F02",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "IO queue depth"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1020,147 +1152,180 @@
         "y": 4
       },
       "id": 8,
-      "legend": {
-        "alignAsTable": false,
-        "avg": true,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "alias": "IO queue depth",
-          "yaxis": 2
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
         }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      },
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "Write ops/s",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
           "expression": "",
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "WriteIOPS",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "period": "300",
           "refId": "A",
           "region": "$region",
           "returnData": false,
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         },
         {
           "alias": "Read ops/s",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
           "expression": "",
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "ReadIOPS",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "period": "300",
           "refId": "B",
           "region": "$region",
           "returnData": false,
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         },
         {
           "alias": "IO queue depth",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
           "expression": "",
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "DiskQueueDepth",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "period": "300",
           "refId": "C",
           "region": "$region",
           "returnData": false,
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "IOPS details",
-      "tooltip": {
-        "msResolution": false,
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 0,
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "decimals": 1,
-          "format": "short",
-          "label": "",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {
-        "#Backends": "#F9E2D2",
-        "Deadlocks (1h rate)": "#BF1B00"
+      "datasource": {
+        "uid": "aws"
       },
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "aws",
-      "decimals": 1,
-      "editable": true,
-      "error": false,
-      "fill": 1,
-      "grid": {},
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "#Backends"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F9E2D2",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Deadlocks (1h rate)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#BF1B00",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1168,204 +1333,211 @@
         "y": 11
       },
       "id": 9,
-      "legend": {
-        "avg": true,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "alias": "Deadlocks (1h rate)",
-          "yaxis": 1
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
-        {
-          "alias": "Temp bytes written",
-          "yaxis": 2
-        },
-        {
-          "alias": "Free RAM",
-          "yaxis": 2
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
         }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      },
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "Free disk space",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
           "expression": "",
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "FreeStorageSpace",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "period": "300",
           "refId": "B",
           "region": "$region",
           "returnData": false,
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         },
         {
           "alias": "WAL size",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
           "expression": "",
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "TransactionLogsDiskUsage",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "period": "300",
           "refId": "C",
           "region": "$region",
           "returnData": false,
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         },
         {
           "alias": "Free RAM",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
           "expression": "",
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "FreeableMemory",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "period": "300",
           "refId": "A",
           "region": "$region",
           "returnData": false,
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Disk/RAM details",
-      "tooltip": {
-        "msResolution": false,
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 0,
-          "format": "bytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "decimals": 0,
-          "format": "bytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {
-        "DB Size": "#2F575E",
-        "WAL rate": "#0A50A1"
+      "datasource": {
+        "uid": "aws"
       },
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "aws",
-      "decimals": 1,
-      "editable": true,
-      "error": false,
-      "fill": 1,
-      "grid": {},
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "Bps"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "DB Size"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#2F575E",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "WAL rate"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#0A50A1",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
         "y": 11
       },
-      "height": "",
       "id": 10,
-      "legend": {
-        "alignAsTable": false,
-        "avg": true,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "alias": "WAL rate (bytes/h)",
-          "yaxis": 2
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
-        {
-          "alias": "DB Size",
-          "yaxis": 2
-        },
-        {
-          "alias": "WAL bytes/s",
-          "yaxis": 1
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
         }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      },
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "Write bytes/s",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
-          "dsType": null,
           "expression": "",
           "groupBy": [
             {
@@ -1383,7 +1555,9 @@
           ],
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "WriteThroughput",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "orderByTime": "ASC",
           "period": "300",
@@ -1406,17 +1580,17 @@
               }
             ]
           ],
-          "statistics": [
-            "Average"
-          ],
+          "statistic": "Average",
           "tags": []
         },
         {
           "alias": "Read bytes/s",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
-          "dsType": null,
           "expression": "",
           "groupBy": [
             {
@@ -1434,7 +1608,9 @@
           ],
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "ReadThroughput",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "orderByTime": "ASC",
           "period": "300",
@@ -1457,17 +1633,17 @@
               }
             ]
           ],
-          "statistics": [
-            "Average"
-          ],
+          "statistic": "Average",
           "tags": []
         },
         {
           "alias": "WAL bytes/s",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
-          "dsType": null,
           "expression": "",
           "groupBy": [
             {
@@ -1485,7 +1661,9 @@
           ],
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "TransactionLogsGeneration",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "orderByTime": "ASC",
           "period": "300",
@@ -1508,63 +1686,72 @@
               }
             ]
           ],
-          "statistics": [
-            "Average"
-          ],
+          "statistic": "Average",
           "tags": []
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "IO throughput",
-      "tooltip": {
-        "msResolution": false,
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 0,
-          "format": "Bps",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "decimals": 0,
-          "format": "Bps",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "aws",
-      "fill": 1,
+      "datasource": {
+        "uid": "aws"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1572,96 +1759,107 @@
         "y": 18
       },
       "id": 15,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "Connections",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
           "expression": "",
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "DatabaseConnections",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "period": "300",
           "refId": "B",
           "region": "$region",
           "returnData": false,
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Connections",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "aws",
+      "datasource": {
+        "uid": "aws"
+      },
       "description": "For replicas only!",
-      "fill": 1,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1669,91 +1867,50 @@
         "y": 18
       },
       "id": 16,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "Replication lag",
+          "datasource": {
+            "uid": "aws"
+          },
           "dimensions": {
             "DBInstanceIdentifier": "$dbname"
           },
           "expression": "",
           "highResolution": false,
           "id": "",
+          "metricEditorMode": 0,
           "metricName": "ReplicaLag",
+          "metricQueryType": 0,
           "namespace": "AWS/RDS",
           "period": "300",
           "refId": "B",
           "region": "$region",
           "returnData": false,
-          "statistics": [
-            "Average"
-          ]
+          "statistic": "Average"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Replication lag",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 0,
-          "format": "s",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": false
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "content": "Brought to you by: <a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2020/11/CYBERTEC_RGB_300x80px.png\" alt=\"Cybertec – The PostgreSQL Database Company\"></a>",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P13C0491EC2EA1DB8"
+      },
       "editable": true,
       "error": false,
       "gridPos": {
@@ -1763,31 +1920,43 @@
         "y": 25
       },
       "id": 14,
-      "links": [],
-      "mode": "html",
-      "title": "",
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "Brought to you by: <a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2020/11/CYBERTEC_RGB_300x80px.png\" alt=\"Cybertec – The PostgreSQL Database Company\"></a>",
+        "mode": "html"
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "P13C0491EC2EA1DB8"
+          },
+          "refId": "A"
+        }
+      ],
       "transparent": true,
       "type": "text"
     }
   ],
-  "schemaVersion": 18,
-  "style": "dark",
+  "schemaVersion": 39,
   "tags": [
     "pgwatch3"
   ],
   "templating": {
     "list": [
       {
-        "allValue": null,
-        "current": {
-          "text": null,
-          "value": null
+        "current": {},
+        "datasource": {
+          "uid": "aws"
         },
-        "datasource": "aws",
         "definition": "",
         "hide": 0,
         "includeAll": false,
-        "label": null,
         "multi": false,
         "name": "region",
         "options": [],
@@ -1797,22 +1966,18 @@
         "skipUrlSync": false,
         "sort": 2,
         "tagValuesQuery": "",
-        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
       },
       {
-        "allValue": null,
-        "current": {
-          "text": null,
-          "value": null
+        "current": {},
+        "datasource": {
+          "uid": "aws"
         },
-        "datasource": "aws",
         "definition": "",
         "hide": 0,
         "includeAll": false,
-        "label": null,
         "multi": false,
         "name": "dbname",
         "options": [],
@@ -1822,7 +1987,6 @@
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
-        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
@@ -1860,6 +2024,7 @@
   },
   "timezone": "browser",
   "title": "AWS CloudWatch overview",
-  "uid": null,
-  "version": 1
+  "uid": "fdgfwa6wwuwhsc",
+  "version": 1,
+  "weekStart": ""
 }
