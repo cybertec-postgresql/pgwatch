@@ -1296,6 +1296,10 @@ func main() {
 				continue
 			}
 		}
+		if monitoredDbs, err = monitoredDbs.Expand(); err != nil {
+			logger.Error(err)
+			continue
+		}
 
 		if DoesEmergencyTriggerfileExist() {
 			logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", opts.Metrics.EmergencyPauseTriggerfile)
