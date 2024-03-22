@@ -177,7 +177,7 @@ metrics:
                    buffers_alloc
                  from
                    pg_stat_bgwriter
-        node_status: master
+        node_status: primary
         is_instance_level: true
     blocking_locks:
         sqls:
@@ -1255,7 +1255,7 @@ metrics:
                 order by
                   execution_count desc
                 limit 25
-        node_status: master
+        node_status: primary
         extension_version_based_overrides:
             - target_metric: reco_add_index_ext_qualstats_2.0
               expected_extension_versions:
@@ -1284,7 +1284,7 @@ metrics:
                                       pg_qualstats_index_advisor() -> 'indexes') v
                      ) x
                 ORDER BY tag_object_name
-        node_status: master
+        node_status: primary
         is_private: true
     reco_default_public_schema:
         sqls:
@@ -1300,7 +1300,7 @@ metrics:
                 where
                   nspname = 'public'
                   and nspacl::text ~ E'[,\\{]+=U?C/'
-        node_status: master
+        node_status: primary
     reco_disabled_triggers:
         sqls:
             11: |
@@ -1319,7 +1319,7 @@ metrics:
                     pg_namespace n on n.oid = c.relnamespace
                 where
                     tgenabled = 'D'
-        node_status: master
+        node_status: primary
     reco_drop_index:
         sqls:
             11: |
@@ -1346,7 +1346,7 @@ metrics:
                   and not indisprimary
                   and not indisreplident
                   and not schemaname like '_timescaledb%'
-        node_status: master
+        node_status: primary
     reco_nested_views:
         sqls:
             11: |-
@@ -1399,7 +1399,7 @@ metrics:
                 GROUP BY 1, 2, 3
                 HAVING max(level) > 3
                 ORDER BY max(level) DESC, full_name::text
-        node_status: master
+        node_status: primary
     reco_partial_index_candidates:
         sqls:
             11: |
@@ -1451,7 +1451,7 @@ metrics:
                   q_sprocs
                 order by
                    tag_object_name, extra_info
-        node_status: master
+        node_status: primary
     reco_superusers:
         sqls:
             11: |
@@ -1474,7 +1474,7 @@ metrics:
                   q_su, q_total
                 where
                   q_su.count >= 10
-        node_status: master
+        node_status: primary
     recommendations:
         sqls:
             11: /* dummy placeholder - special handling in code to collect other metrics named reco_* */
@@ -1513,7 +1513,7 @@ metrics:
                   greatest(age(xmin), age(catalog_xmin))::int8 as xmin_age_tx
                 from
                   pg_replication_slots
-        node_status: master
+        node_status: primary
         gauges:
             - '*'
         is_instance_level: true
@@ -2554,7 +2554,7 @@ metrics:
                   relkind in ('r', 'm')
                   and c.relpages >= 128 -- tables > 1mb
                   and not n.nspname like any (array[E'pg\\_%', 'information_schema'])
-        node_status: master
+        node_status: primary
         gauges:
             - '*'
     table_bloat_approx_summary:
