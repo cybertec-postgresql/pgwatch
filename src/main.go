@@ -862,10 +862,6 @@ func IsInTimeSpan(checkTime time.Time, timeRange, metric, dbUnique string) bool 
 func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md sources.MonitoredDatabase) (sources.MonitoredDatabase, int) {
 	var changed int
 
-	if strings.HasPrefix(md.Encryption, "$") {
-		md.Encryption = os.ExpandEnv(md.Encryption)
-		changed++
-	}
 	if strings.HasPrefix(string(md.Kind), "$") {
 		md.Kind = sources.Kind(os.ExpandEnv(string(md.Kind)))
 		changed++
@@ -1165,37 +1161,32 @@ func SyncMetricDefs(r metrics.Reader) {
 	}
 }
 
-func NewConfigurationReaders(opts *config.Options) (sources.Reader, metrics.ReaderWriter) {
+func NewConfigurationReaders(opts *config.Options) (sources.ReaderWriter, metrics.ReaderWriter) {
 	checkError := func(err error) {
 		if err != nil {
 			logger.Fatal(err)
 		}
 	}
 	var (
-		sourcesReader sources.Reader
+		sourcesReader sources.ReaderWriter
 		metricsReader metrics.ReaderWriter
 	)
 	configKind, err := opts.GetConfigKind()
 	switch {
 	case err != nil:
 		logger.Fatal(err)
-	case configKind == config.ConfigFile:
-		ctx := log.WithLogger(mainContext, logger.WithField("config", "file"))
-		sourcesReader, err = sources.NewYAMLSourcesReader(ctx, opts)
+	case configKind != config.ConfigPgURL:
+		ctx := log.WithLogger(mainContext, logger.WithField("config", "files"))
+		sourcesReader, err = sources.NewYAMLSourcesReaderWriter(ctx, opts.Sources.Config)
 		checkError(err)
-		metricsReader, err = metrics.NewDefaultMetricReaderWriter(ctx)
-	case configKind == config.ConfigFolder:
-		ctx := log.WithLogger(mainContext, logger.WithField("config", "folder"))
-		sourcesReader, err = sources.NewYAMLSourcesReader(ctx, opts)
-		checkError(err)
-		metricsReader, err = metrics.NewYAMLMetricReaderWriter(ctx, opts.Sources.Config)
-	case configKind == config.ConfigPgURL:
+		metricsReader, err = metrics.NewYAMLMetricReaderWriter(ctx, opts.Metrics.Metrics)
+	default:
 		ctx := log.WithLogger(mainContext, logger.WithField("config", "postgres"))
 		configDb, err = db.New(ctx, opts.Sources.Config)
 		checkError(err)
-		metricsReader, err = metrics.NewPostgresMetricReaderWriter(ctx, configDb, opts)
+		metricsReader, err = metrics.NewPostgresMetricReaderWriter(ctx, configDb)
 		checkError(err)
-		sourcesReader, err = sources.NewPostgresSourcesReader(ctx, configDb, opts)
+		sourcesReader, err = sources.NewPostgresSourcesReaderWriter(ctx, configDb)
 	}
 	checkError(err)
 	return sourcesReader, metricsReader
@@ -1203,7 +1194,7 @@ func NewConfigurationReaders(opts *config.Options) (sources.Reader, metrics.Read
 
 var (
 	// sourcesReader is used to read the monitored sources (databases, patroni clusets, pgpools, etc.) information
-	sourcesReader sources.Reader
+	sourcesReader sources.ReaderWriter
 	// metricsReaderWriter is used to read the metric and preset definitions
 	metricsReaderWriter metrics.ReaderWriter
 )
@@ -1236,11 +1227,6 @@ func main() {
 		printVersion()
 		return
 	}
-	if opts.EncryptOnly() { // special flag - encrypt and exit
-		fmt.Println(opts.Encrypt())
-		return
-	}
-
 	logger = log.Init(opts.Logging)
 	mainContext = log.WithLogger(mainContext, logger)
 
@@ -1346,11 +1332,6 @@ func main() {
 				return nil
 			}()
 			wasInstancePreviouslyDormant := IsDBDormant(dbUnique)
-
-			if monitoredDB.Encryption == "aes-gcm-256" && len(opts.Sources.AesGcmKeyphrase) == 0 && len(opts.Sources.AesGcmKeyphraseFile) == 0 {
-				// Warn if any encrypted hosts found but no keyphrase given
-				logger.Warningf("Encrypted password type found for host \"%s\", but no decryption keyphrase specified. Use --aes-gcm-keyphrase or --aes-gcm-keyphrase-file params", dbUnique)
-			}
 
 			err := InitSQLConnPoolForMonitoredDBIfNil(monitoredDB)
 			if err != nil {

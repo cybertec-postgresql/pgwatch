@@ -2,28 +2,38 @@ package sources
 
 import (
 	"context"
+	"errors"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	pgx "github.com/jackc/pgx/v5"
 )
 
-func NewPostgresSourcesReader(ctx context.Context, conn db.PgxPoolIface, opts *config.Options) (Reader, error) {
-	return &dbSourcesReader{
+func NewPostgresSourcesReaderWriter(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error) {
+	return &dbSourcesReaderWriter{
 		ctx:      ctx,
 		configDb: conn,
-		opts:     opts,
 	}, conn.Ping(ctx)
 
 }
 
-type dbSourcesReader struct {
+type dbSourcesReaderWriter struct {
 	ctx      context.Context
 	configDb db.Querier
-	opts     *config.Options
 }
 
-func (r *dbSourcesReader) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
+func (r *dbSourcesReaderWriter) WriteMonitoredDatabases(MonitoredDatabases) error {
+	return errors.ErrUnsupported
+}
+
+func (r *dbSourcesReaderWriter) UpdateDatabase(name string, md MonitoredDatabase) error {
+	return errors.ErrUnsupported
+}
+
+func (r *dbSourcesReaderWriter) DeleteDatabase(string) error {
+	return errors.ErrUnsupported
+}
+
+func (r *dbSourcesReaderWriter) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
 	sqlLatest := `select /* pgwatch3_generated */
 	name, 
 	"group", 

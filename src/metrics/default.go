@@ -5,9 +5,9 @@ import (
 	"errors"
 )
 
-// NewDefaultMetricReaderWriter creates a new default metric reader with an empty path.
-func NewDefaultMetricReaderWriter(context.Context) (ReaderWriter, error) {
-	return &defaultMetricReaderWriter{}, nil
+// NewDefaultMetricReader creates a new default metric reader with an empty path.
+func NewDefaultMetricReader(context.Context) (ReaderWriter, error) {
+	return &defaultMetricReader{}, nil
 }
 
 func GetDefaultMetrics() (metrics *Metrics) {
@@ -16,28 +16,28 @@ func GetDefaultMetrics() (metrics *Metrics) {
 	return
 }
 
-type defaultMetricReaderWriter struct{}
+type defaultMetricReader struct{}
 
-func (dmrw *defaultMetricReaderWriter) WriteMetrics(*Metrics) error {
+func (dmrw *defaultMetricReader) WriteMetrics(*Metrics) error {
 	return errors.ErrUnsupported
 }
 
-func (dmrw *defaultMetricReaderWriter) DeleteMetric(string) error {
+func (dmrw *defaultMetricReader) DeleteMetric(string) error {
 	return errors.ErrUnsupported
 }
 
-func (dmrw *defaultMetricReaderWriter) UpdateMetric(string, Metric) error {
+func (dmrw *defaultMetricReader) UpdateMetric(string, Metric) error {
 	return errors.ErrUnsupported
 }
 
-func (dmrw *defaultMetricReaderWriter) DeletePreset(string) error {
+func (dmrw *defaultMetricReader) DeletePreset(string) error {
 	return errors.ErrUnsupported
 }
 
-func (dmrw *defaultMetricReaderWriter) UpdatePreset(string, Preset) error {
+func (dmrw *defaultMetricReader) UpdatePreset(string, Preset) error {
 	return errors.ErrUnsupported
 }
 
-func (dmrw *defaultMetricReaderWriter) GetMetrics() (*Metrics, error) {
+func (dmrw *defaultMetricReader) GetMetrics() (*Metrics, error) {
 	return GetDefaultMetrics(), nil
 }

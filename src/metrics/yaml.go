@@ -9,6 +9,9 @@ import (
 )
 
 func NewYAMLMetricReaderWriter(ctx context.Context, path string) (ReaderWriter, error) {
+	if path == "" {
+		return NewDefaultMetricReader(ctx)
+	}
 	return &fileMetricReader{
 		ctx:  ctx,
 		path: path,
