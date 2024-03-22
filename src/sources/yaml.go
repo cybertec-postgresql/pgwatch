@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
@@ -51,7 +50,7 @@ func (fcr *fileSourcesReader) GetMonitoredDatabases() (dbs MonitoredDatabases, e
 	if err != nil {
 		return nil, err
 	}
-	return dbs.Expand()
+	return
 }
 
 func (fcr *fileSourcesReader) getMonitoredDatabases(configFilePath string) (dbs MonitoredDatabases, err error) {
@@ -67,9 +66,7 @@ func (fcr *fileSourcesReader) getMonitoredDatabases(configFilePath string) (dbs 
 		if v.Kind == "" {
 			v.Kind = SourcePostgres
 		}
-		if v.IsEnabled && (len(fcr.opts.Sources.Groups) == 0 || slices.Contains(fcr.opts.Sources.Groups, v.Group)) {
-			dbs = append(dbs, fcr.expandEnvVars(v))
-		}
+		dbs = append(dbs, fcr.expandEnvVars(v))
 	}
 	return
 }
