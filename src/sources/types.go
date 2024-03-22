@@ -118,3 +118,14 @@ type HostConfigPerMetricDisabledTimes struct { // metric gathering override per 
 type Reader interface {
 	GetMonitoredDatabases() (MonitoredDatabases, error)
 }
+
+type Writer interface {
+	WriteMonitoredDatabases(MonitoredDatabases) error
+	DeleteDatabase(string) error
+	UpdateDatabase(name string, md MonitoredDatabase) error
+}
+
+type ReaderWriter interface {
+	Reader
+	Writer
+}

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -86,12 +85,17 @@ func (uiapi uiapihandler) GetDatabases() (res string, err error) {
 
 // DeleteDatabase removes the database from the list of monitored databases
 func (uiapi uiapihandler) DeleteDatabase(database string) error {
-	return errors.ErrUnsupported
+	return sourcesReader.DeleteDatabase(database)
 }
 
 // UpdateDatabase updates the monitored database information
 func (uiapi uiapihandler) UpdateDatabase(database string, params []byte) error {
-	return errors.ErrUnsupported
+	var md sources.MonitoredDatabase
+	err := json.Unmarshal(params, &md)
+	if err != nil {
+		return err
+	}
+	return sourcesReader.UpdateDatabase(database, md)
 }
 
 // GetStats
