@@ -930,16 +930,38 @@ func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existi
 var FileBasedMetricHelpersDir = "00_helpers"
 
 // Called once on daemon startup to try to create "metric fething helper" functions automatically
-func TryCreateMetricsFetchingHelpers(dbUnique string) (err error) {
-	for metricName, Metric := range metricDefinitionMap.MetricDefs {
+func TryCreateMetricsFetchingHelpers(md sources.MonitoredDatabase) (err error) {
+	metricConfig := func() map[string]float64 {
+		if len(md.Metrics) > 0 {
+			return md.Metrics
+		}
+		if md.PresetMetrics > "" {
+			return metricDefinitionMap.PresetDefs[md.PresetMetrics].Metrics
+		}
+		return nil
+	}()
+	conf, err := pgx.ParseConfig(md.ConnStr)
+	if err != nil {
+		return err
+	}
+	conf.DefaultQueryExecMode = pgx.QueryExecModeExec
+	c, err := pgx.ConnectConfig(mainContext, conf)
+	if err != nil {
+		return nil
+	}
+	defer c.Close(mainContext)
+
+	for metricName, _ := range metricConfig {
+		Metric := metricDefinitionMap.MetricDefs[metricName]
 		if Metric.InitSQL == "" {
 			continue
 		}
-		_, err = DBExecReadByDbUniqueName(mainContext, dbUnique, Metric.InitSQL)
+
+		_, err = c.Exec(mainContext, Metric.InitSQL)
 		if err != nil {
-			logger.Warningf("Failed to create a metric fetching helper for %s in %s: %w", dbUnique, metricName, err)
+			logger.Warningf("Failed to create a metric fetching helper for %s in %s: %w", md.DBUniqueName, metricName, err)
 		} else {
-			logger.Info("Successfully created metric fetching helper for", dbUnique, metricName)
+			logger.Info("Successfully created metric fetching helper for", md.DBUniqueName, metricName)
 		}
 	}
 	return nil

@@ -2,15 +2,15 @@ CREATE SCHEMA IF NOT EXISTS pgwatch3 AUTHORIZATION pgwatch3;
 SET ROLE TO pgwatch3;
 
 CREATE TABLE IF NOT EXISTS pgwatch3.metric (
-	name text NOT NULL,
+	name text PRIMARY KEY,
 	sqls jsonb NOT NULL,
+	init_sql text,
 	description text,
 	enabled bool NOT NULL DEFAULT TRUE,
 	node_status text,
 	gauges text[],
 	is_instance_level bool NOT NULL DEFAULT FALSE,
-	storage_name text,
-	UNIQUE (name, node_status)
+	storage_name text
 );
 	
 COMMENT ON COlUMN pgwatch3.metric.node_status IS 'currently supports `primary` and `standby`';
@@ -63,7 +63,6 @@ CREATE TABLE IF NOT EXISTS pgwatch3.source(
 	exclude_pattern text, -- valid regex expected. relevant for 'postgres-continuous-discovery'
 	custom_tags jsonb,
 	"group" text NOT NULL DEFAULT 'default',
-	encryption text NOT NULL DEFAULT 'plain-text',
 	host_config jsonb,
 	only_if_master bool NOT NULL DEFAULT FALSE,
 	preset_config_standby text REFERENCES pgwatch3.preset (name),
@@ -71,6 +70,5 @@ CREATE TABLE IF NOT EXISTS pgwatch3.source(
 	CONSTRAINT preset_or_custom_config CHECK (COALESCE(preset_config, config::text) IS NOT NULL AND (preset_config IS NULL OR config IS NULL)),
 	CONSTRAINT preset_or_custom_config_standby CHECK (preset_config_standby IS NULL OR config_standby IS NULL),
 	CHECK (dbtype IN ('postgres', 'pgbouncer', 'postgres-continuous-discovery', 'patroni', 'patroni-continuous-discovery', 'patroni-namespace-discovery', 'pgpool')),
-	CHECK ("group" ~ E'\\w+'),
-	CHECK (encryption IN ('plain-text', 'aes-gcm-256'))
+	CHECK ("group" ~ E'\\w+')
 );
