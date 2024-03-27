@@ -3,7 +3,6 @@ package metrics
 import (
 	"context"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 )
@@ -39,7 +38,6 @@ func NewPostgresMetricReaderWriter(ctx context.Context, conn db.PgxPoolIface) (R
 type dbMetricReaderWriter struct {
 	ctx      context.Context
 	configDb db.PgxIface
-	opts     *config.Options
 }
 
 // writeMetricsToPostgres writes the metrics and presets definitions to the
