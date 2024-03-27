@@ -1,6 +1,6 @@
 import { GridColDef } from "@mui/x-data-grid";
 
-export const columns: GridColDef[] = [
+export const useSqlPopUpColumns = (): GridColDef[] => [
   {
     field: "version",
     headerName: "Version",
@@ -10,6 +10,6 @@ export const columns: GridColDef[] = [
     headerName: "SQL",
     align: "center",
     headerAlign: "center",
-    width: 300,
+    width: 600,
   },
 ];
