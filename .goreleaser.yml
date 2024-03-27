@@ -31,7 +31,7 @@ archives:
       format: zip
   files:
     - ./grafana/**/*
-    - ./src/metrics/sql/**/*
+    - ./src/metrics/metrics.yaml
     - ./src/config/**/*
     - ./README.md
 
@@ -61,8 +61,8 @@ nfpms:
       - rpm
 
     contents:
-      - src: "./src/metrics/sql/*"
-        dst: "/etc/pgwatch3/metrics"
+      - src: "./src/metrics/metrics.yaml"
+        dst: "/etc/pgwatch3/metrics.yaml"
         type: config
       - src: "./src/config/*"
         dst: "/etc/pgwatch3/config"
