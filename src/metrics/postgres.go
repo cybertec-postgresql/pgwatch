@@ -117,7 +117,8 @@ func (dmrw *dbMetricReaderWriter) WriteMetrics(metricDefs *Metrics) error {
 }
 
 func (dmrw *dbMetricReaderWriter) DeleteMetric(metricName string) error {
-	return errors.ErrUnsupported
+	_, err := dmrw.configDb.Exec(dmrw.ctx, `DELETE FROM pgwatch3.metric WHERE name = $1`, metricName)
+	return err
 }
 
 func (dmrw *dbMetricReaderWriter) UpdateMetric(metricName string, metric Metric) error {
@@ -125,7 +126,8 @@ func (dmrw *dbMetricReaderWriter) UpdateMetric(metricName string, metric Metric)
 }
 
 func (dmrw *dbMetricReaderWriter) DeletePreset(presetName string) error {
-	return errors.ErrUnsupported
+	_, err := dmrw.configDb.Exec(dmrw.ctx, `DELETE FROM pgwatch3.preset WHERE name = $1`, presetName)
+	return err
 }
 
 func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName string, preset Preset) error {
