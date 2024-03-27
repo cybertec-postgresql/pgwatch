@@ -951,7 +951,7 @@ func TryCreateMetricsFetchingHelpers(md sources.MonitoredDatabase) (err error) {
 	}
 	defer c.Close(mainContext)
 
-	for metricName, _ := range metricConfig {
+	for metricName := range metricConfig {
 		Metric := metricDefinitionMap.MetricDefs[metricName]
 		if Metric.InitSQL == "" {
 			continue
