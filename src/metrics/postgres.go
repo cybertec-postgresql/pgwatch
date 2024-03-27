@@ -54,10 +54,11 @@ func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *M
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 	for metricName, metric := range metricDefs.MetricDefs {
-		_, err = tx.Exec(ctx, `INSERT INTO pgwatch3.metric (name, sqls, description, enabled, node_status, gauges, is_instance_level, storage_name)
-		values ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (name, node_status) 
-		DO UPDATE SET sqls = $2, description = $3, enabled = $4, gauges = $6, is_instance_level = $7, storage_name = $8`,
-			metricName, metric.SQLs, metric.Description, metric.Enabled, metric.NodeStatus, metric.Gauges, metric.IsInstanceLevel, metric.StorageName)
+		_, err = tx.Exec(ctx, `INSERT INTO pgwatch3.metric (name, sqls, init_sql, description, enabled, node_status, gauges, is_instance_level, storage_name)
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT (name) 
+		DO UPDATE SET sqls = $2, init_sql = $3, description = $4, enabled = $5, 
+		node_status = $6, gauges = $7, is_instance_level = $8, storage_name = $9`,
+			metricName, metric.SQLs, metric.InitSQL, metric.Description, metric.Enabled, metric.NodeStatus, metric.Gauges, metric.IsInstanceLevel, metric.StorageName)
 		if err != nil {
 			return err
 		}
@@ -80,7 +81,7 @@ func (dmrw *dbMetricReaderWriter) GetMetrics() (metricDefMapNew *Metrics, err er
 	logger := log.GetLogger(ctx)
 	logger.Info("reading metrics definitions from configuration database...")
 	metricDefMapNew = &Metrics{MetricDefs{}, PresetDefs{}}
-	rows, err := conn.Query(ctx, `SELECT name, sqls, description, enabled, node_status, gauges, is_instance_level, storage_name FROM pgwatch3.metric`)
+	rows, err := conn.Query(ctx, `SELECT name, sqls, init_sql, description, enabled, node_status, gauges, is_instance_level, storage_name FROM pgwatch3.metric`)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +89,7 @@ func (dmrw *dbMetricReaderWriter) GetMetrics() (metricDefMapNew *Metrics, err er
 	for rows.Next() {
 		metric := Metric{}
 		var name string
-		err = rows.Scan(&name, &metric.SQLs, &metric.Description, &metric.Enabled, &metric.NodeStatus, &metric.Gauges, &metric.IsInstanceLevel, &metric.StorageName)
+		err = rows.Scan(&name, &metric.SQLs, &metric.InitSQL, &metric.Description, &metric.Enabled, &metric.NodeStatus, &metric.Gauges, &metric.IsInstanceLevel, &metric.StorageName)
 		if err != nil {
 			return nil, err
 		}

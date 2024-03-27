@@ -76,8 +76,9 @@ func (r *dbSourcesReaderWriter) GetMonitoredDatabases() (dbs MonitoredDatabases,
 	coalesce(include_pattern, '') as include_pattern, 
 	coalesce(exclude_pattern, '') as exclude_pattern,
 	coalesce(custom_tags, '{}'::jsonb) as custom_tags, 
-	encryption, coalesce(host_config, '{}') as host_config, 
-	only_if_master
+	coalesce(host_config, '{}') as host_config, 
+	only_if_master,
+	is_enabled
 from
 	pgwatch3.source
 `
