@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"context"
-	"errors"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
@@ -122,7 +121,11 @@ func (dmrw *dbMetricReaderWriter) DeleteMetric(metricName string) error {
 }
 
 func (dmrw *dbMetricReaderWriter) UpdateMetric(metricName string, metric Metric) error {
-	return errors.ErrUnsupported
+	_, err := dmrw.configDb.Exec(dmrw.ctx, `UPDATE pgwatch3.metric SET 
+	sqls = $2, init_sql = $3, description = $4, enabled = $5, node_status = $6, gauges = $7, is_instance_level = $8, 
+	storage_name = $9 WHERE name = $1`, metricName, metric.SQLs, metric.InitSQL, metric.Description, metric.Enabled,
+		metric.NodeStatus, metric.Gauges, metric.IsInstanceLevel, metric.StorageName)
+	return err
 }
 
 func (dmrw *dbMetricReaderWriter) DeletePreset(presetName string) error {
@@ -131,5 +134,7 @@ func (dmrw *dbMetricReaderWriter) DeletePreset(presetName string) error {
 }
 
 func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName string, preset Preset) error {
-	return errors.ErrUnsupported
+	_, err := dmrw.configDb.Exec(dmrw.ctx, `UPDATE pgwatch3.preset SET description = $2, metrics = $3 WHERE name = $1`,
+		presetName, preset.Description, preset.Metrics)
+	return err
 }
