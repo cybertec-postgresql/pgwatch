@@ -48,7 +48,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-  # grafana migration to v11 is in active development, uncomment this only for development purpose (it goes in conflict with the grafana v10)
+
   # grafana_latest:
   #   image: grafana/grafana:latest
   #   user: "0:0"
