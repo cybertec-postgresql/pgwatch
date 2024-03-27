@@ -3,10 +3,7 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
-        },
+        "datasource": "-- Grafana --",
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -14,10 +11,7 @@
         "type": "dashboard"
       },
       {
-        "datasource": {
-          "type": "grafana-postgresql-datasource",
-          "uid": "P13C0491EC2EA1DB8"
-        },
+        "datasource": null,
         "enable": true,
         "iconColor": "rgba(255, 96, 96, 1)",
         "limit": 100,
@@ -31,120 +25,22 @@
   },
   "description": "use change_events metric for capturing table/index/sproc/postgresql.conf changes",
   "editable": true,
-  "fiscalYearStartMonth": 0,
+  "gnetId": null,
   "graphTooltip": 0,
+  "id": null,
   "links": [],
   "panels": [
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+      "aliasColors": {
+        "Rollback ratio": "#BF1B00"
       },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "decimals": 1,
       "description": "If there are no vertical red stripes then no changes were detected for that time period",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "decimals": 1,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Rollback ratio"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#BF1B00",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "rollback ratio"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percent"
-              },
-              {
-                "id": "min",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Rollback ratio"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percent"
-              },
-              {
-                "id": "min",
-                "value": 0
-              }
-            ]
-          }
-        ]
-      },
+      "fill": 1,
       "gridPos": {
         "h": 7,
         "w": 24,
@@ -153,28 +49,40 @@
       },
       "id": 1,
       "interval": "5m",
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+      "legend": {
+        "avg": true,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": true
       },
-      "pluginVersion": "10.4.1",
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "rollback ratio",
+          "yaxis": 2
+        },
+        {
+          "alias": "Rollback ratio",
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
       "targets": [
         {
           "alias": "CPU load",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
-          },
+          "dsType": null,
           "format": "time_series",
           "group": [],
           "groupBy": [
@@ -223,10 +131,7 @@
         },
         {
           "alias": "Rollback ratio",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
-          },
+          "dsType": null,
           "format": "time_series",
           "group": [],
           "groupBy": [
@@ -283,60 +188,54 @@
           ]
         }
       ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
       "title": "DDL / config change events",
-      "type": "timeseries"
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 1,
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "decimals": 1,
+          "format": "percent",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "decimals": 2,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "time: YYYY-MM-DD HH:mm:ss"
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
-          }
-        ]
-      },
+      "columns": [],
+      "datasource": null,
+      "filterNull": false,
+      "fontSize": "100%",
       "gridPos": {
         "h": 5,
         "w": 12,
@@ -344,25 +243,37 @@
         "y": 7
       },
       "id": 2,
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "showHeader": true
+      "links": [],
+      "pageSize": null,
+      "scroll": true,
+      "showHeader": true,
+      "sort": {
+        "col": 0,
+        "desc": true
       },
-      "pluginVersion": "10.4.1",
+      "styles": [
+        {
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "pattern": "Time",
+          "type": "date"
+        },
+        {
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "decimals": 2,
+          "pattern": "/.*/",
+          "thresholds": [],
+          "type": "string",
+          "unit": "short"
+        }
+      ],
       "targets": [
         {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
-          },
+          "dsType": null,
           "format": "table",
           "group": [],
           "groupBy": [
@@ -412,67 +323,14 @@
         }
       ],
       "title": "Table changes",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {
-            "reducers": []
-          }
-        }
-      ],
+      "transform": "table",
       "type": "table"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "decimals": 2,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "time: YYYY-MM-DD HH:mm:ss"
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
-          }
-        ]
-      },
+      "columns": [],
+      "datasource": null,
+      "filterNull": false,
+      "fontSize": "100%",
       "gridPos": {
         "h": 5,
         "w": 12,
@@ -480,25 +338,37 @@
         "y": 7
       },
       "id": 3,
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "showHeader": true
+      "links": [],
+      "pageSize": null,
+      "scroll": true,
+      "showHeader": true,
+      "sort": {
+        "col": 0,
+        "desc": true
       },
-      "pluginVersion": "10.4.1",
+      "styles": [
+        {
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "pattern": "Time",
+          "type": "date"
+        },
+        {
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "decimals": 2,
+          "pattern": "/.*/",
+          "thresholds": [],
+          "type": "string",
+          "unit": "short"
+        }
+      ],
       "targets": [
         {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
-          },
+          "dsType": null,
           "format": "table",
           "group": [],
           "groupBy": [
@@ -548,67 +418,14 @@
         }
       ],
       "title": "Index changes",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {
-            "reducers": []
-          }
-        }
-      ],
+      "transform": "table",
       "type": "table"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "decimals": 2,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "time: YYYY-MM-DD HH:mm:ss"
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
-          }
-        ]
-      },
+      "columns": [],
+      "datasource": null,
+      "filterNull": false,
+      "fontSize": "100%",
       "gridPos": {
         "h": 5,
         "w": 12,
@@ -616,25 +433,37 @@
         "y": 12
       },
       "id": 4,
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "showHeader": true
+      "links": [],
+      "pageSize": null,
+      "scroll": true,
+      "showHeader": true,
+      "sort": {
+        "col": 0,
+        "desc": true
       },
-      "pluginVersion": "10.4.1",
+      "styles": [
+        {
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "pattern": "Time",
+          "type": "date"
+        },
+        {
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "decimals": 2,
+          "pattern": "/.*/",
+          "thresholds": [],
+          "type": "number",
+          "unit": "short"
+        }
+      ],
       "targets": [
         {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
-          },
+          "dsType": null,
           "format": "table",
           "group": [],
           "groupBy": [
@@ -683,68 +512,15 @@
         }
       ],
       "title": "Sproc changes",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {
-            "reducers": []
-          }
-        }
-      ],
+      "transform": "table",
       "type": "table"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
-      },
+      "columns": [],
+      "datasource": null,
       "description": "postgresql.conf settings changes",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "decimals": 2,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "time: YYYY-MM-DD HH:mm:ss"
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
-          }
-        ]
-      },
+      "filterNull": false,
+      "fontSize": "100%",
       "gridPos": {
         "h": 5,
         "w": 12,
@@ -752,25 +528,37 @@
         "y": 12
       },
       "id": 5,
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "showHeader": true
+      "links": [],
+      "pageSize": null,
+      "scroll": true,
+      "showHeader": true,
+      "sort": {
+        "col": 0,
+        "desc": true
       },
-      "pluginVersion": "10.4.1",
+      "styles": [
+        {
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "pattern": "Time",
+          "type": "date"
+        },
+        {
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "decimals": 2,
+          "pattern": "/.*/",
+          "thresholds": [],
+          "type": "number",
+          "unit": "short"
+        }
+      ],
       "targets": [
         {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
-          },
+          "dsType": null,
           "format": "table",
           "group": [],
           "groupBy": [
@@ -819,68 +607,21 @@
         }
       ],
       "title": "Config changes",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {
-            "reducers": []
-          }
-        }
-      ],
+      "transform": "table",
       "type": "table"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
-      },
+      "columns": [],
+      "datasource": null,
       "description": "Instance level",
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "decimals": 2,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
+          "custom": {}
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "time: YYYY-MM-DD HH:mm:ss"
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
+      "filterNull": false,
+      "fontSize": "100%",
       "gridPos": {
         "h": 5,
         "w": 12,
@@ -888,25 +629,39 @@
         "y": 17
       },
       "id": 8,
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "showHeader": true
+      "links": [],
+      "pageSize": null,
+      "scroll": true,
+      "showHeader": true,
+      "sort": {
+        "col": 0,
+        "desc": true
       },
-      "pluginVersion": "10.4.1",
+      "styles": [
+        {
+          "align": "auto",
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "pattern": "Time",
+          "type": "date"
+        },
+        {
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "decimals": 2,
+          "pattern": "/.*/",
+          "thresholds": [],
+          "type": "number",
+          "unit": "short"
+        }
+      ],
       "targets": [
         {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
-          },
+          "dsType": null,
           "format": "table",
           "group": [],
           "groupBy": [
@@ -955,68 +710,21 @@
         }
       ],
       "title": "Login and superuser role changes",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {
-            "reducers": []
-          }
-        }
-      ],
+      "transform": "table",
       "type": "table"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
-      },
+      "columns": [],
+      "datasource": null,
       "description": "Per database",
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "decimals": 2,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
+          "custom": {}
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "time: YYYY-MM-DD HH:mm:ss"
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
+      "filterNull": false,
+      "fontSize": "100%",
       "gridPos": {
         "h": 5,
         "w": 12,
@@ -1024,25 +732,39 @@
         "y": 17
       },
       "id": 9,
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "showHeader": true
+      "links": [],
+      "pageSize": null,
+      "scroll": true,
+      "showHeader": true,
+      "sort": {
+        "col": 0,
+        "desc": true
       },
-      "pluginVersion": "10.4.1",
+      "styles": [
+        {
+          "align": "auto",
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "pattern": "Time",
+          "type": "date"
+        },
+        {
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "decimals": 2,
+          "pattern": "/.*/",
+          "thresholds": [],
+          "type": "number",
+          "unit": "short"
+        }
+      ],
       "targets": [
         {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
-          },
+          "dsType": null,
           "format": "table",
           "group": [],
           "groupBy": [
@@ -1091,72 +813,19 @@
         }
       ],
       "title": "Privilege changes",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {
-            "reducers": []
-          }
-        }
-      ],
+      "transform": "table",
       "type": "table"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
-      },
+      "columns": [],
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "decimals": 2,
-          "displayName": "",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
+          "custom": {}
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Time"
-              },
-              {
-                "id": "unit",
-                "value": "time: YYYY-MM-DD HH:mm:ss"
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
+      "fontSize": "100%",
       "gridPos": {
         "h": 8,
         "w": 24,
@@ -1164,25 +833,38 @@
         "y": 22
       },
       "id": 7,
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "showHeader": true
+      "links": [],
+      "pageSize": null,
+      "scroll": true,
+      "showHeader": true,
+      "sort": {
+        "col": 1,
+        "desc": false
       },
-      "pluginVersion": "10.4.1",
+      "styles": [
+        {
+          "alias": "Time",
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "pattern": "Time",
+          "type": "date"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "decimals": 2,
+          "pattern": "/.*/",
+          "thresholds": [],
+          "type": "number",
+          "unit": "short"
+        }
+      ],
       "targets": [
         {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
-          },
           "format": "table",
           "group": [],
           "metricColumn": "none",
@@ -1210,38 +892,29 @@
         }
       ],
       "title": "Settings",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {
-            "reducers": []
-          }
-        }
-      ],
+      "transform": "table",
       "type": "table"
     }
   ],
   "refresh": false,
-  "schemaVersion": 39,
+  "schemaVersion": 18,
+  "style": "dark",
   "tags": [
     "pgwatch3"
   ],
   "templating": {
     "list": [
       {
+        "allValue": null,
         "current": {
-          "isNone": true,
-          "selected": false,
-          "text": "None",
-          "value": ""
+          "text": null,
+          "value": null
         },
-        "datasource": {
-          "type": "grafana-postgresql-datasource",
-          "uid": "P13C0491EC2EA1DB8"
-        },
+        "datasource": null,
         "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics ORDER BY 1;",
         "hide": 0,
         "includeAll": false,
+        "label": null,
         "multi": false,
         "name": "dbname",
         "options": [],
@@ -1251,6 +924,7 @@
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
+        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
@@ -1289,6 +963,5 @@
   "timezone": "browser",
   "title": "Change events",
   "uid": "change-events",
-  "version": 1,
-  "weekStart": ""
+  "version": 1
 }

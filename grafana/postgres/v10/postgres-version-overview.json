@@ -2,11 +2,9 @@
   "annotations": {
     "list": [
       {
+        "$hashKey": null,
         "builtIn": 1,
-        "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
-        },
+        "datasource": "-- Grafana --",
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -16,88 +14,16 @@
     ]
   },
   "editable": true,
-  "fiscalYearStartMonth": 0,
+  "gnetId": null,
   "graphTooltip": 0,
+  "id": null,
   "links": [],
   "panels": [
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
-      },
+      "columns": [],
+      "datasource": null,
       "description": "As per  \"settings\" metric.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "server_version_num"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "none"
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              },
-              {
-                "id": "custom.align",
-                "value": "left"
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "rgba(245, 54, 54, 0.9)",
-                      "value": null
-                    },
-                    {
-                      "color": "rgba(237, 129, 40, 0.89)",
-                      "value": 90400
-                    },
-                    {
-                      "color": "rgba(50, 172, 45, 0.97)",
-                      "value": 90600
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        ]
-      },
+      "fontSize": "130%",
       "gridPos": {
         "h": 14,
         "w": 24,
@@ -105,25 +31,39 @@
         "y": 0
       },
       "id": 2,
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "showHeader": true
+      "links": [],
+      "options": {},
+      "pageSize": null,
+      "scroll": true,
+      "showHeader": true,
+      "sort": {
+        "col": 1,
+        "desc": false
       },
-      "pluginVersion": "10.4.1",
+      "styles": [
+        {
+          "alias": "",
+          "colorMode": "row",
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 0,
+          "mappingType": 1,
+          "pattern": "server_version_num",
+          "thresholds": [
+            "90400",
+            "90600"
+          ],
+          "type": "number",
+          "unit": "none"
+        }
+      ],
       "targets": [
         {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
-          },
+          "$hashKey": null,
           "format": "table",
           "group": [],
           "groupBy": [
@@ -175,21 +115,12 @@
         }
       ],
       "title": "Monitored DBs by version",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {
-            "reducers": []
-          }
-        }
-      ],
+      "transform": "table",
       "type": "table"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
-      },
+      "content": "Brought to you by: <a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2020/11/CYBERTEC_RGB_300x80px.png\" alt=\"Cybertec – The PostgreSQL Database Company\"></a>",
+      "datasource": null,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -197,22 +128,11 @@
         "y": 14
       },
       "id": 8,
-      "options": {
-        "code": {
-          "language": "plaintext",
-          "showLineNumbers": false,
-          "showMiniMap": false
-        },
-        "content": "Brought to you by: <a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2020/11/CYBERTEC_RGB_300x80px.png\" alt=\"Cybertec – The PostgreSQL Database Company\"></a>",
-        "mode": "html"
-      },
-      "pluginVersion": "10.4.1",
+      "links": [],
+      "mode": "html",
+      "options": {},
       "targets": [
         {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
-          },
           "format": "time_series",
           "group": [],
           "metricColumn": "none",
@@ -238,33 +158,33 @@
           ]
         }
       ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "",
       "transparent": true,
       "type": "text"
     }
   ],
-  "schemaVersion": 39,
+  "schemaVersion": 20,
+  "style": "dark",
   "tags": [
     "pgwatch3"
   ],
   "templating": {
     "list": [
       {
+        "allValue": null,
         "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
+          "text": "All",
           "value": [
             "$__all"
           ]
         },
-        "datasource": {
-          "type": "grafana-postgresql-datasource",
-          "uid": "P13C0491EC2EA1DB8"
-        },
+        "datasource": null,
         "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'settings' ORDER BY 1;",
         "hide": 0,
         "includeAll": true,
+        "label": null,
         "multi": true,
         "name": "dbname",
         "options": [],
@@ -274,23 +194,22 @@
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
+        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
       },
       {
+        "allValue": null,
         "current": {
-          "selected": false,
-          "text": "160002",
-          "value": "160002"
+          "text": null,
+          "value": null
         },
-        "datasource": {
-          "type": "grafana-postgresql-datasource",
-          "uid": "P13C0491EC2EA1DB8"
-        },
+        "datasource": null,
         "definition": "SELECT DISTINCT (data->'server_version_num')::int FROM settings WHERE time > now() - '24h'::interval ORDER BY 1 DESC",
         "hide": 0,
         "includeAll": false,
+        "label": null,
         "multi": false,
         "name": "lower_than_server_version_num",
         "options": [],
@@ -300,6 +219,7 @@
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
+        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
@@ -338,6 +258,5 @@
   "timezone": "",
   "title": "Postgres Version Overview",
   "uid": "postgres-version-overview",
-  "version": 1,
-  "weekStart": ""
+  "version": 1
 }

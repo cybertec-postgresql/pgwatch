@@ -4,13 +4,19 @@
       {
         "builtIn": 1,
         "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
+          "type": "grafana",
+          "uid": "-- Grafana --"
         },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
@@ -18,121 +24,95 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": 1697,
   "links": [],
+  "liveNow": false,
   "panels": [
     {
-      "columns": [],
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 1,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
       },
-      "description": "Top 25 longest running queries from pg_stat_activity. Query texts are compacted",
-      "fontSize": "100%",
       "gridPos": {
-        "h": 24,
+        "h": 8,
         "w": 24,
         "x": 0,
         "y": 0
       },
-      "id": 2,
-      "showHeader": true,
-      "sort": {
-        "desc": false
-      },
-      "styles": [
-        {
-          "alias": "",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [
+            "firstNotNull"
           ],
-          "decimals": 2,
-          "pattern": "pid",
-          "thresholds": [],
-          "type": "string",
-          "unit": "short"
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
         },
-        {
-          "alias": "",
-          "align": "auto",
-          "colorMode": "value",
-          "colors": [
-            "rgba(50, 172, 45, 0.97)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(245, 54, 54, 0.9)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 1,
-          "mappingType": 1,
-          "pattern": "duration",
-          "thresholds": [
-            "60",
-            "300"
-          ],
-          "type": "number",
-          "unit": "s"
-        },
-        {
-          "alias": "",
-          "align": "auto",
-          "colorMode": "value",
-          "colors": [
-            "rgba(50, 172, 45, 0.97)",
-            "#C4162A",
-            "rgba(245, 54, 54, 0.9)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "waiting",
-          "thresholds": [
-            "1",
-            "2"
-          ],
-          "type": "string",
-          "unit": "short",
-          "valueMaps": [
-            {
-              "text": "no",
-              "value": "0"
-            },
-            {
-              "text": "yes",
-              "value": "1"
-            }
-          ]
-        },
-        {
-          "alias": "",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "blocking_pids",
-          "thresholds": [],
-          "type": "string",
-          "unit": "short",
-          "valueMaps": []
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
         }
-      ],
+      },
       "targets": [
         {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
-          },
-          "format": "table",
+          "datasource": null,
+          "format": "time_series",
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  tag_data->>'pid' AS pid,\n  data->>'user' AS user,\n  data->>'appname' AS appname,\n  data->>'ip' AS ip,\n  (data->'duration_s')::int AS duration,\n  data->>'waiting' AS waiting,\n  coalesce(data->>'blocking_pids', '') AS blocking_pids,\n  data->>'query' AS query\nFROM\n  stat_activity_realtime\nWHERE\n  dbname = '$dbname'\n  AND time = (SELECT max(time) FROM stat_activity_realtime WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND (data->'duration_s')::int > $min_duration_s\nORDER BY\n  duration DESC\nLIMIT 25\n\n\n\n\n\n\n\n\n\n\n\n\n",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  sum((data->>'count')::integer) as \" \",\n  data->>'query' as \"query\"\nfrom stat_activity\nwhere dbname = '$dbname' and $__timeFilter(time)\n    and case when '$hide_pgwatch_generated' = 'yes' then\n            not data->>'query' ~* E'/\\\\*\\\\W*pgwatch3_generated\\\\W*\\\\*/'\n        else\n            true\n        end\ngroup by 1,3\norder by 1;\n\n",
           "refId": "A",
           "select": [
             [
@@ -154,87 +134,229 @@
           ]
         }
       ],
-      "title": "Stat Activity",
-      "transform": "table",
-      "type": "table-old"
+      "title": "Active sessions detail",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "inspect": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "count"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 61
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 6,
+      "options": {
+        "footer": {
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "9.1.4",
+      "targets": [
+        {
+          "datasource": null,
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "select sum((data->>'count')::integer) as count, data->>'query' as query\nfrom stat_activity\nwhere dbname = '$dbname'\n    and $__timeFilter(time)\n    and case when '$hide_pgwatch_generated' = 'yes' then\n            not data->>'query' ~* E'/\\\\*\\\\W*pgwatch3_generated\\\\W*\\\\*/'\n        else\n            true\n        end\ngroup by 2\norder by 1 desc;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Queries",
+      "type": "table"
     }
   ],
-  "refresh": "5s",
-  "schemaVersion": 39,
-  "tags": [
-    "pgwatch3"
-  ],
+  "refresh": false,
+  "schemaVersion": 37,
+  "style": "dark",
+  "tags": [],
   "templating": {
     "list": [
       {
         "current": {
-          "isNone": true,
-          "selected": false,
-          "text": "None",
-          "value": ""
+          "text": null,
+          "value": null
         },
-        "datasource": {
-          "type": "grafana-postgresql-datasource",
-          "uid": "P13C0491EC2EA1DB8"
-        },
-        "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_activity_realtime' ORDER BY 1;",
+        "datasource": null,
+        "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_activity' ORDER BY 1;",
         "hide": 0,
         "includeAll": false,
         "multi": false,
         "name": "dbname",
         "options": [],
-        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_activity_realtime' ORDER BY 1;",
+        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_activity' ORDER BY 1;",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
-        "tagValuesQuery": "",
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
+        "type": "query"
       },
       {
+        "auto": false,
+        "auto_count": 30,
+        "auto_min": "10s",
         "current": {
-          "text": "1",
-          "value": "1"
+          "selected": false,
+          "text": "1m",
+          "value": "1m"
         },
         "hide": 0,
-        "name": "min_duration_s",
+        "name": "agg_interval",
         "options": [
           {
             "selected": true,
-            "text": "1",
-            "value": "1"
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": false,
+            "text": "5m",
+            "value": "5m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          },
+          {
+            "selected": false,
+            "text": "15m",
+            "value": "15m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": false,
+            "text": "1d",
+            "value": "1d"
           }
         ],
-        "query": "1",
+        "query": "1m,5m,10m,15m,30m,1h,6h,12h,1d",
+        "queryValue": "",
+        "refresh": 2,
         "skipUrlSync": false,
-        "type": "textbox"
+        "type": "interval"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "yes",
+          "value": "yes"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "hide_pgwatch_generated",
+        "options": [
+          {
+            "selected": true,
+            "text": "yes",
+            "value": "yes"
+          },
+          {
+            "selected": false,
+            "text": "no",
+            "value": "no"
+          }
+        ],
+        "query": "yes,no",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
       }
     ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-1h",
     "to": "now"
   },
-  "timepicker": {
-    "hidden": false,
-    "refresh_intervals": [
-      "1s",
-      "2s",
-      "3s",
-      "4s",
-      "5s",
-      "10s",
-      "30s",
-      "1m",
-      "5m",
-      "15m"
-    ]
-  },
-  "timezone": "",
-  "title": "Stat Activity Realtime",
-  "uid": "fdgjq59eo0vlsb",
-  "version": 1,
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Stat Activity",
+  "uid": "Y4_0EvNVz",
+  "version": 11,
   "weekStart": ""
 }
