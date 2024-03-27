@@ -2,7 +2,9 @@ version: "3.9"
 
 services:
   postgres:
-    # if you want vanilla experience use "postgres:latest" image and remove "timescaledb" from shared_preload_libraries
+    # if you want PostgreSQL vanilla experience :
+    # - use "postgres:latest" image 
+    # - remove "timescaledb" from shared_preload_libraries
     image: &pgimage timescale/timescaledb:latest-pg16
     user: postgres
     command:
@@ -70,6 +72,9 @@ services:
       PGDATABASE: pgwatch3
     command: >
       psql -v ON_ERROR_STOP=1
+        -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
+        -c "GRANT EXECUTE ON FUNCTION pg_stat_file(text) TO pgwatch3"
+        -c "GRANT EXECUTE ON FUNCTION pg_stat_file(text, boolean) TO pgwatch3"
         -c "INSERT INTO pgwatch3.source (name, preset_config, connstr)
           SELECT 'demo', 'exhaustive', 'postgresql://pgwatch3:pgwatch3admin@postgres/pgwatch3'
           WHERE NOT EXISTS (SELECT * FROM pgwatch3.source WHERE name = 'demo')"
