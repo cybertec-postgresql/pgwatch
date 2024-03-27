@@ -134,7 +134,8 @@ var gathererStartTime = time.Now()
 
 var PGDummyMetricTables = make(map[string]time.Time)
 var PGDummyMetricTablesLock = sync.RWMutex{}
-var failedInitialConnectHosts = make(map[string]bool) // hosts that couldn't be connected to even once
+
+// var failedInitialConnectHosts = make(map[string]bool) // hosts that couldn't be connected to even once
 
 var lastMonitoredDBsUpdate time.Time
 var instanceMetricCache = make(map[string](metrics.Measurements)) // [dbUnique+metric]lastly_fetched_data
@@ -1322,6 +1323,27 @@ func main() {
 			dbUnique := monitoredDB.DBUniqueName
 			dbUniqueOrig := monitoredDB.DBUniqueNameOrig
 			srcType := monitoredDB.Kind
+			wasInstancePreviouslyDormant := IsDBDormant(dbUnique)
+
+			if err = InitSQLConnPoolForMonitoredDBIfNil(monitoredDB); err != nil {
+				logger.Warningf("Could not init SQL connection pool for %s, retrying on next main loop. Err: %v", dbUnique, err)
+				continue
+			}
+
+			InitPGVersionInfoFetchingLockIfNil(monitoredDB)
+
+			var ver DBVersionMapEntry
+
+			ver, err = DBGetPGVersion(mainContext, dbUnique, srcType, true)
+			if err != nil {
+				logger.Errorf("could not start metric gathering for DB \"%s\" due to connection problem: %s", dbUnique, err)
+				continue
+			}
+			logger.Infof("Connect OK. [%s] is on version %s (in recovery: %v)", dbUnique, ver.VersionStr, ver.IsInRecovery)
+			if ver.IsInRecovery && monitoredDB.OnlyIfMaster {
+				logger.Infof("[%s] not added to monitoring due to 'master only' property", dbUnique)
+				continue
+			}
 			metricConfig = func() map[string]float64 {
 				if len(monitoredDB.Metrics) > 0 {
 					return monitoredDB.Metrics
@@ -1331,75 +1353,28 @@ func main() {
 				}
 				return nil
 			}()
-			wasInstancePreviouslyDormant := IsDBDormant(dbUnique)
-
-			err := InitSQLConnPoolForMonitoredDBIfNil(monitoredDB)
-			if err != nil {
-				logger.Warningf("Could not init SQL connection pool for %s, retrying on next main loop. Err: %v", dbUnique, err)
-				continue
-			}
-
-			InitPGVersionInfoFetchingLockIfNil(monitoredDB)
-
-			_, connectFailedSoFar := failedInitialConnectHosts[dbUnique]
-
-			if connectFailedSoFar { // idea is not to spwan any runners before we've successfully pinged the DB
-				var err error
-				var ver DBVersionMapEntry
-
-				if connectFailedSoFar {
-					logger.Infof("retrying to connect to uninitialized DB \"%s\"...", dbUnique)
-				} else {
-					logger.Infof("new host \"%s\" found, checking connectivity...", dbUnique)
-				}
-
-				ver, err = DBGetPGVersion(mainContext, dbUnique, srcType, true)
-				if err != nil {
-					logger.Errorf("could not start metric gathering for DB \"%s\" due to connection problem: %s", dbUnique, err)
-					failedInitialConnectHosts[dbUnique] = true
-					continue
-				}
-				logger.Infof("Connect OK. [%s] is on version %s (in recovery: %v)", dbUnique, ver.VersionStr, ver.IsInRecovery)
-				if connectFailedSoFar {
-					delete(failedInitialConnectHosts, dbUnique)
-				}
-				if ver.IsInRecovery && monitoredDB.OnlyIfMaster {
-					logger.Infof("[%s] not added to monitoring due to 'master only' property", dbUnique)
-					continue
-				}
+			hostLastKnownStatusInRecovery[dbUnique] = ver.IsInRecovery
+			if ver.IsInRecovery {
 				metricConfig = func() map[string]float64 {
-					if len(monitoredDB.Metrics) > 0 {
-						return monitoredDB.Metrics
+					if len(monitoredDB.MetricsStandby) > 0 {
+						return monitoredDB.MetricsStandby
 					}
-					if monitoredDB.PresetMetrics > "" {
-						return metricDefinitionMap.PresetDefs[monitoredDB.PresetMetrics].Metrics
+					if monitoredDB.PresetMetricsStandby > "" {
+						return metricDefinitionMap.PresetDefs[monitoredDB.PresetMetricsStandby].Metrics
 					}
 					return nil
 				}()
-				hostLastKnownStatusInRecovery[dbUnique] = ver.IsInRecovery
-				if ver.IsInRecovery {
-					metricConfig = func() map[string]float64 {
-						if len(monitoredDB.MetricsStandby) > 0 {
-							return monitoredDB.MetricsStandby
-						}
-						if monitoredDB.PresetMetricsStandby > "" {
-							return metricDefinitionMap.PresetDefs[monitoredDB.PresetMetricsStandby].Metrics
-						}
-						return nil
-					}()
-				}
+			}
 
-				if !opts.Ping && monitoredDB.IsPostgresSource() && !ver.IsInRecovery {
-					if opts.Metrics.NoHelperFunctions {
-						logger.Infof("[%s] skipping rollout out helper functions due to the --no-helper-functions flag ...", dbUnique)
-					} else {
-						logger.Infof("Trying to create helper functions if missing for \"%s\"...", dbUnique)
-						if err = TryCreateMetricsFetchingHelpers(dbUnique); err != nil {
-							logger.Warningf("Failed to create helper functions for \"%s\": %w", dbUnique, err)
-						}
+			if !opts.Ping && monitoredDB.IsPostgresSource() && !ver.IsInRecovery {
+				if opts.Metrics.NoHelperFunctions {
+					logger.Infof("[%s] skipping rollout out helper functions due to the --no-helper-functions flag ...", dbUnique)
+				} else {
+					logger.Infof("Trying to create helper functions if missing for \"%s\"...", dbUnique)
+					if err = TryCreateMetricsFetchingHelpers(monitoredDB); err != nil {
+						logger.Warningf("Failed to create helper functions for \"%s\": %w", dbUnique, err)
 					}
 				}
-
 			}
 
 			if monitoredDB.IsPostgresSource() {
@@ -1524,10 +1499,6 @@ func main() {
 		}
 
 		if opts.Ping {
-			if len(failedInitialConnectHosts) > 0 {
-				logger.Errorf("Could not reach %d configured DB host out of %d", len(failedInitialConnectHosts), len(monitoredDbs))
-				os.Exit(len(failedInitialConnectHosts))
-			}
 			logger.Infof("All configured %d DB hosts were reachable", len(monitoredDbs))
 			os.Exit(0)
 		}
