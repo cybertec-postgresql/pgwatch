@@ -1,3 +1,0 @@
----
-prometheus_all_gauge_columns: true
-prometheus_ignored_columns:
