@@ -737,28 +737,28 @@ func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storageC
 }
 
 func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []metrics.MeasurementMessage, hostState map[string]map[string]string) {
-	sprocСounts := DetectSprocChanges(dbUnique, vme, storageCh, hostState) // TODO some of Detect*() code could be unified...
-	tableСounts := DetectTableChanges(dbUnique, vme, storageCh, hostState)
-	indexСounts := DetectIndexChanges(dbUnique, vme, storageCh, hostState)
-	confСounts := DetectConfigurationChanges(dbUnique, vme, storageCh, hostState)
-	privСhangeCounts := DetectPrivilegeChanges(dbUnique, vme, storageCh, hostState)
+	sprocCounts := DetectSprocChanges(dbUnique, vme, storageCh, hostState) // TODO some of Detect*() code could be unified...
+	tableCounts := DetectTableChanges(dbUnique, vme, storageCh, hostState)
+	indexCounts := DetectIndexChanges(dbUnique, vme, storageCh, hostState)
+	confCounts := DetectConfigurationChanges(dbUnique, vme, storageCh, hostState)
+	privChangeCounts := DetectPrivilegeChanges(dbUnique, vme, storageCh, hostState)
 
 	// need to send info on all object changes as one message as Grafana applies "last wins" for annotations with similar timestamp
 	message := ""
-	if sprocСounts.Altered > 0 || sprocСounts.Created > 0 || sprocСounts.Dropped > 0 {
-		message += fmt.Sprintf(" sprocs %d/%d/%d", sprocСounts.Created, sprocСounts.Altered, sprocСounts.Dropped)
+	if sprocCounts.Altered > 0 || sprocCounts.Created > 0 || sprocCounts.Dropped > 0 {
+		message += fmt.Sprintf(" sprocs %d/%d/%d", sprocCounts.Created, sprocCounts.Altered, sprocCounts.Dropped)
 	}
-	if tableСounts.Altered > 0 || tableСounts.Created > 0 || tableСounts.Dropped > 0 {
-		message += fmt.Sprintf(" tables/views %d/%d/%d", tableСounts.Created, tableСounts.Altered, tableСounts.Dropped)
+	if tableCounts.Altered > 0 || tableCounts.Created > 0 || tableCounts.Dropped > 0 {
+		message += fmt.Sprintf(" tables/views %d/%d/%d", tableCounts.Created, tableCounts.Altered, tableCounts.Dropped)
 	}
-	if indexСounts.Altered > 0 || indexСounts.Created > 0 || indexСounts.Dropped > 0 {
-		message += fmt.Sprintf(" indexes %d/%d/%d", indexСounts.Created, indexСounts.Altered, indexСounts.Dropped)
+	if indexCounts.Altered > 0 || indexCounts.Created > 0 || indexCounts.Dropped > 0 {
+		message += fmt.Sprintf(" indexes %d/%d/%d", indexCounts.Created, indexCounts.Altered, indexCounts.Dropped)
 	}
-	if confСounts.Altered > 0 || confСounts.Created > 0 {
-		message += fmt.Sprintf(" configuration %d/%d/%d", confСounts.Created, confСounts.Altered, confСounts.Dropped)
+	if confCounts.Altered > 0 || confCounts.Created > 0 {
+		message += fmt.Sprintf(" configuration %d/%d/%d", confCounts.Created, confCounts.Altered, confCounts.Dropped)
 	}
-	if privСhangeCounts.Dropped > 0 || privСhangeCounts.Created > 0 {
-		message += fmt.Sprintf(" privileges %d/%d/%d", privСhangeCounts.Created, privСhangeCounts.Altered, privСhangeCounts.Dropped)
+	if privChangeCounts.Dropped > 0 || privChangeCounts.Created > 0 {
+		message += fmt.Sprintf(" privileges %d/%d/%d", privChangeCounts.Created, privChangeCounts.Altered, privChangeCounts.Dropped)
 	}
 
 	if message > "" {
