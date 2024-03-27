@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import TableViewIcon from '@mui/icons-material/TableView';
 import { Dialog, DialogContent, DialogTitle, IconButton, Tooltip } from "@mui/material";
-import { DataGrid, gridClasses } from "@mui/x-data-grid";
-import { columns } from "./SqlPopUp.consts";
+import { DataGrid } from "@mui/x-data-grid";
+import { useSqlPopUpColumns } from "./SqlPopUp.consts";
 
 type SQLRows = {
   version: number;
@@ -23,10 +23,11 @@ export const SqlPopUp = ({ SQLs }: Props) => {
     }));
   }, [SQLs]);
 
-  const handleOpen = () => setOpen(true)
+  const columns = useSqlPopUpColumns();
 
-  const handleClose = () => setOpen(false)
-  console.log(rows);
+  const handleOpen = () => setOpen(true);
+
+  const handleClose = () => setOpen(false);
 
   return rows.length !== 0 ? (
     <>
@@ -43,7 +44,7 @@ export const SqlPopUp = ({ SQLs }: Props) => {
         maxWidth="md"
       >
         <DialogTitle>SQLs</DialogTitle>
-        <DialogContent sx={{ width: 600, maxHeight: 600 }}>
+        <DialogContent sx={{ width: 750, maxHeight: 600 }}>
           <DataGrid
             getRowId={(row) => row.version}
             columns={columns}
@@ -55,5 +56,5 @@ export const SqlPopUp = ({ SQLs }: Props) => {
         </DialogContent>
       </Dialog>
     </>
-  ) : (<p>No SQLs provided for this metric</p>);
+  ) : null;
 };
