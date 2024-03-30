@@ -223,7 +223,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "always",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -377,7 +377,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "always",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -534,7 +534,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "always",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -691,7 +691,7 @@
               "log": 10,
               "type": "log"
             },
-            "showPoints": "never",
+            "showPoints": "always",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -859,10 +859,9 @@
     "list": [
       {
         "current": {
-          "isNone": true,
           "selected": false,
-          "text": "None",
-          "value": ""
+          "text": "test",
+          "value": "test"
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
@@ -1006,6 +1005,6 @@
   "timezone": "",
   "title": "Checkpointer / Bgwriter / Block IO Stats",
   "uid": "checkpointer-bgwriter-stats",
-  "version": 1,
+  "version": 3,
   "weekStart": ""
 }
