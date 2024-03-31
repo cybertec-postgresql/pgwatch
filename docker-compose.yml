@@ -44,6 +44,7 @@ services:
     volumes:
       - "./grafana/postgres_datasource.yml:/etc/grafana/provisioning/datasources/pg_ds.yml"
       - "./grafana/postgres_dashboard.yml:/etc/grafana/provisioning/dashboards/pg_db.yml"
+      # Uncomment the dashboard version you want to use and comment out the other one.
       - "./grafana/postgres/v10:/var/lib/grafana/dashboards"
       #- "./grafana/postgres/v11:/var/lib/grafana/dashboards"
     depends_on:
