@@ -247,7 +247,7 @@ func GetAllRecoMetricsForVersion(vme DBVersionMapEntry) map[string]metrics.Metri
 			mvp, err := GetMetricVersionProperties(m, vme, &metricDefinitionMap)
 			if err != nil {
 				logger.Warningf("Could not get SQL definition for metric \"%s\", PG %s", m, vme.VersionStr)
-			} else if mvp.Enabled {
+			} else {
 				mvpMap[m] = mvp
 			}
 		}

@@ -27,7 +27,6 @@ type (
 
 	Metric struct {
 		SQLs            SQLs
-		Enabled         bool     `yaml:",omitempty"`
 		InitSQL         string   `yaml:"init_sql,omitempty"`
 		NodeStatus      string   `yaml:"node_status,omitempty"`
 		Gauges          []string `yaml:",omitempty"`
