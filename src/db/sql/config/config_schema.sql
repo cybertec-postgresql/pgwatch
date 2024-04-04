@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS pgwatch3.metric (
 	sqls jsonb NOT NULL,
 	init_sql text,
 	description text,
-	enabled bool NOT NULL DEFAULT TRUE,
 	node_status text,
 	gauges text[],
 	is_instance_level bool NOT NULL DEFAULT FALSE,
