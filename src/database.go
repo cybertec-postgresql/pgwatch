@@ -927,8 +927,6 @@ func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existi
 	return extsCreated
 }
 
-var FileBasedMetricHelpersDir = "00_helpers"
-
 // Called once on daemon startup to try to create "metric fething helper" functions automatically
 func TryCreateMetricsFetchingHelpers(md sources.MonitoredDatabase) (err error) {
 	metricConfig := func() map[string]float64 {
