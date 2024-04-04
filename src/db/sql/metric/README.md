@@ -71,21 +71,6 @@ ALTER TABLE some_metric SET (
 SELECT add_compression_policy('some_metric', INTERVAL '1 day');
 ```
 
-## metric (DEPRECATED)
-
-A single / separate table for each distinct metric in the "public" schema. No partitioning. Works on all PG versions. Suitable for up to ~25 monitored DBs.
-
-## metric-time (DEPRECATED)
-
-A single top-level table for each distinct metric in the "public" schema + weekly partitions in the "subpartitions" schema.
-Works on PG 11+ versions. Suitable for up to ~50 monitored DBs. Reduced IO compared to "metric" as old data partitions will be dropped, not deleted.
-
-Default storage schema for the "pgwatch3" Docker image.
-
-## custom (DEPRECATED)
-
-For cases where the available presets are not satisfactory / applicable. All data inserted into "public.metrics" table and the user is responsible for re-routing with a trigger and possible partition management. In that case all table creations and data cleanup must be performed by the user.
-
 # Data size considerations
 
 When you're planning to monitor lots of databases or with very low intervals, i.e. generating a lot of data, but not selecting
