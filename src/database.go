@@ -18,7 +18,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var configDb db.PgxPoolIface
 var monitoredDbConnCache map[string]db.PgxPoolIface = make(map[string]db.PgxPoolIface)
 
 // every DB under monitoring should have exactly 1 sql.DB connection assigned, that will internally limit parallel access
