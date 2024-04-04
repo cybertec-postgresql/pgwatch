@@ -17,7 +17,6 @@ func TestWriteMetricsToFile(t *testing.T) {
 				SQLs: map[int]string{
 					1: "SELECT 1",
 				},
-				Enabled:         true,
 				InitSQL:         "SELECT 1",
 				NodeStatus:      "primary",
 				Gauges:          []string{"gauge1", "gauge2"},
@@ -63,7 +62,6 @@ func TestUpdateMetric(t *testing.T) {
 				SQLs: map[int]string{
 					1: "SELECT 1",
 				},
-				Enabled:         true,
 				InitSQL:         "SELECT 1",
 				NodeStatus:      "primary",
 				Gauges:          []string{"gauge1", "gauge2"},
@@ -98,7 +96,6 @@ func TestUpdateMetric(t *testing.T) {
 		SQLs: map[int]string{
 			1: "SELECT 2",
 		},
-		Enabled:         true,
 		InitSQL:         "SELECT 2",
 		NodeStatus:      "primary",
 		Gauges:          []string{"gauge3", "gauge4"},
@@ -125,7 +122,6 @@ func TestDeleteMetric(t *testing.T) {
 			SQLs: map[int]string{
 				1: "SELECT 1",
 			},
-			Enabled:         true,
 			InitSQL:         "SELECT 1",
 			NodeStatus:      "primary",
 			Gauges:          []string{"gauge1", "gauge2"},
@@ -137,7 +133,6 @@ func TestDeleteMetric(t *testing.T) {
 			SQLs: map[int]string{
 				1: "SELECT 2",
 			},
-			Enabled:         true,
 			InitSQL:         "SELECT 2",
 			NodeStatus:      "primary",
 			Gauges:          []string{"gauge3", "gauge4"},
