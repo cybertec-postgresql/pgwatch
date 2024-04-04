@@ -115,7 +115,7 @@ func (c Options) GetConfigKind() (_ Kind, err error) {
 }
 
 func validateConfig(c *Options) error {
-	if c.Sources.Config == "" {
+	if c.Sources.Config == "" && !c.VersionOnly() {
 		return errors.New("--config was not specified")
 	}
 	if c.Sources.Refresh <= 1 {
