@@ -1183,7 +1183,7 @@ func NewConfigurationReaders(opts *config.Options) (sources.ReaderWriter, metric
 		metricsReader, err = metrics.NewYAMLMetricReaderWriter(ctx, opts.Metrics.Metrics)
 	default:
 		ctx := log.WithLogger(mainContext, logger.WithField("config", "postgres"))
-		configDb, err = db.New(ctx, opts.Sources.Config)
+		configDb, err := db.New(ctx, opts.Sources.Config)
 		checkError(err)
 		metricsReader, err = metrics.NewPostgresMetricReaderWriter(ctx, configDb)
 		checkError(err)
