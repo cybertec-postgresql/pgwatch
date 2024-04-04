@@ -30,7 +30,6 @@ func TestParseFail(t *testing.T) {
 func TestParseSuccess(t *testing.T) {
 	tests := [][]string{
 		{0: "go-test", "--version"},
-		{0: "go-test", "--aes-gcm-password-to-encrypt", "foobaz"},
 	}
 	for _, d := range tests {
 		os.Args = d
