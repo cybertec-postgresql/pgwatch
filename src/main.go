@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -189,11 +188,11 @@ func InitPGVersionInfoFetchingLockIfNil(md *sources.MonitoredDatabase) {
 func GetMonitoredDatabaseByUniqueName(name string) (*sources.MonitoredDatabase, error) {
 	monitoredDbCacheLock.RLock()
 	defer monitoredDbCacheLock.RUnlock()
-	_, exists := monitoredDbCache[name]
-	if !exists {
-		return nil, errors.New("DBUnique not found")
+	md, exists := monitoredDbCache[name]
+	if !exists || md == nil {
+		return nil, fmt.Errorf("Database %s not found in cache", name)
 	}
-	return monitoredDbCache[name], nil
+	return md, nil
 }
 
 func UpdateMonitoredDBCache(data sources.MonitoredDatabases) {
@@ -317,6 +316,12 @@ func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[str
 	var md *sources.MonitoredDatabase
 	var fromCache, isCacheable bool
 
+	md, err = GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
+	if err != nil {
+		logger.Errorf("[%s:%s] could not get monitored DB details", msg.DBUniqueName, err)
+		return nil, err
+	}
+
 	vme, err = DBGetPGVersion(ctx, msg.DBUniqueName, msg.Source, false)
 	if err != nil {
 		logger.Error("failed to fetch pg version for ", msg.DBUniqueName, msg.MetricName, err)
@@ -413,11 +418,6 @@ func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[str
 
 			return nil, err
 		}
-		md, err = GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
-		if err != nil {
-			logger.Errorf("[%s:%s] could not get monitored DB details", msg.DBUniqueName, err)
-			return nil, err
-		}
 
 		logger.WithFields(map[string]any{"source": msg.DBUniqueName, "metric": msg.MetricName, "rows": len(data)}).Info("measurements fetched")
 		if regexIsPgbouncerMetrics.MatchString(msg.MetricName) { // clean unwanted pgbouncer pool stats here as not possible in SQL
@@ -446,17 +446,15 @@ send_to_storageChannel:
 		msg.MetricName = mvp.StorageName
 	}
 	if fromCache {
-		md, err = GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
-		if err != nil {
-			logger.Errorf("[%s:%s] could not get monitored DB details", msg.DBUniqueName, err)
-			return nil, err
-		}
 		logger.Infof("[%s:%s] loaded %d rows from the instance cache", msg.DBUniqueName, msg.MetricName, len(cachedData))
 		atomic.AddUint64(&totalMetricsReusedFromCacheCounter, uint64(len(cachedData)))
 		return []metrics.MeasurementMessage{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
 			MetricDef: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
 	}
 	atomic.AddUint64(&totalMetricsFetchedCounter, uint64(len(data)))
+	if md == nil {
+		logger.Panic("md is nil")
+	}
 	return []metrics.MeasurementMessage{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
 		MetricDef: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
 
@@ -1233,7 +1231,8 @@ func main() {
 		go measurementsWriter.WriteMeasurements(mainContext, measurementCh)
 	}
 
-	initWebUI(opts)
+	logger.Warn("webui is disabled for debugging purposes")
+	//initWebUI(opts)
 
 	firstLoop := true
 	mainLoopCount := 0
