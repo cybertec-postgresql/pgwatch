@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"regexp"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -113,7 +114,7 @@ var hostMetricIntervalMap = make(map[string]float64) // [db1_metric] = 30
 var dbPgVersionMap = make(map[string]DBVersionMapEntry)
 var dbPgVersionMapLock = sync.RWMutex{}
 var dbGetPgVersionMapLock = make(map[string]*sync.RWMutex) // synchronize initial PG version detection to 1 instance for each defined host
-var monitoredDbCache map[string]sources.MonitoredDatabase
+var monitoredDbCache map[string]*sources.MonitoredDatabase
 var monitoredDbCacheLock sync.RWMutex
 
 var monitoredDbConnCacheLock = sync.RWMutex{}
@@ -154,8 +155,8 @@ var lastDBSizeMB = make(map[string]int64)
 var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHING_INTERVAL
 var lastDBSizeCheckLock sync.RWMutex
 
-var prevLoopMonitoredDBs []sources.MonitoredDatabase // to be able to detect DBs removed from config
-var undersizedDBs = make(map[string]bool)            // DBs below the --min-db-size-mb limit, if set
+var prevLoopMonitoredDBs sources.MonitoredDatabases // to be able to detect DBs removed from config
+var undersizedDBs = make(map[string]bool)           // DBs below the --min-db-size-mb limit, if set
 var undersizedDBsLock = sync.RWMutex{}
 var recoveryIgnoredDBs = make(map[string]bool) // DBs in recovery state and OnlyIfMaster specified in config
 var recoveryIgnoredDBsLock = sync.RWMutex{}
@@ -177,24 +178,7 @@ func VersionToInt(version string) (v int) {
 	return
 }
 
-func RestoreSQLConnPoolLimitsForPreviouslyDormantDB(dbUnique string) {
-	monitoredDbConnCacheLock.Lock()
-	defer monitoredDbConnCacheLock.Unlock()
-
-	conn, ok := monitoredDbConnCache[dbUnique]
-	if !ok || conn == nil {
-		logger.Error("DB conn to re-instate pool limits not found, should not happen")
-		return
-	}
-
-	logger.Debugf("[%s] Re-instating SQL connection pool max connections ...", dbUnique)
-
-	// conn.SetMaxIdleConns(opts.MaxParallelConnectionsPerDb)
-	// conn.SetMaxOpenConns(opts.MaxParallelConnectionsPerDb)
-
-}
-
-func InitPGVersionInfoFetchingLockIfNil(md sources.MonitoredDatabase) {
+func InitPGVersionInfoFetchingLockIfNil(md *sources.MonitoredDatabase) {
 	dbPgVersionMapLock.Lock()
 	if _, ok := dbGetPgVersionMapLock[md.DBUniqueName]; !ok {
 		dbGetPgVersionMapLock[md.DBUniqueName] = &sync.RWMutex{}
@@ -202,23 +186,21 @@ func InitPGVersionInfoFetchingLockIfNil(md sources.MonitoredDatabase) {
 	dbPgVersionMapLock.Unlock()
 }
 
-func GetMonitoredDatabaseByUniqueName(name string) (sources.MonitoredDatabase, error) {
+func GetMonitoredDatabaseByUniqueName(name string) (*sources.MonitoredDatabase, error) {
 	monitoredDbCacheLock.RLock()
 	defer monitoredDbCacheLock.RUnlock()
 	_, exists := monitoredDbCache[name]
 	if !exists {
-		return sources.MonitoredDatabase{}, errors.New("DBUnique not found")
+		return nil, errors.New("DBUnique not found")
 	}
 	return monitoredDbCache[name], nil
 }
 
-func UpdateMonitoredDBCache(data []sources.MonitoredDatabase) {
-	monitoredDbCacheNew := make(map[string]sources.MonitoredDatabase)
-
+func UpdateMonitoredDBCache(data sources.MonitoredDatabases) {
+	monitoredDbCacheNew := make(map[string]*sources.MonitoredDatabase)
 	for _, row := range data {
 		monitoredDbCacheNew[row.DBUniqueName] = row
 	}
-
 	monitoredDbCacheLock.Lock()
 	monitoredDbCache = monitoredDbCacheNew
 	monitoredDbCacheLock.Unlock()
@@ -332,7 +314,7 @@ func FetchMetrics(ctx context.Context, msg MetricFetchMessage, hostState map[str
 	var err error
 	var sql string
 	var data, cachedData metrics.Measurements
-	var md sources.MonitoredDatabase
+	var md *sources.MonitoredDatabase
 	var fromCache, isCacheable bool
 
 	vme, err = DBGetPGVersion(ctx, msg.DBUniqueName, msg.Source, false)
@@ -619,7 +601,7 @@ func MetricGathererLoop(ctx context.Context,
 		dbPgVersionMapLock.RLock()
 		realDbname := dbPgVersionMap[dbUniqueName].RealDbname // to manage 2 sets of event counts - monitored DB + global
 		dbPgVersionMapLock.RUnlock()
-		conn := GetConnByUniqueName(dbUniqueName)
+		conn := mdb.Conn
 		metrics.ParseLogs(ctx, conn, mdb, realDbname, metricName, configMap, controlCh, storeCh) // no return
 		return
 	}
@@ -891,21 +873,6 @@ func ExpandEnvVarsForConfigEntryIfStartsWithDollar(md sources.MonitoredDatabase)
 	return md, changed
 }
 
-func getMonitoredDatabasesSnapshot() map[string]sources.MonitoredDatabase {
-	mdSnap := make(map[string]sources.MonitoredDatabase)
-
-	if monitoredDbCache != nil {
-		monitoredDbCacheLock.RLock()
-		defer monitoredDbCacheLock.RUnlock()
-
-		for _, row := range monitoredDbCache {
-			mdSnap[row.DBUniqueName] = row
-		}
-	}
-
-	return mdSnap
-}
-
 func StatsServerHandler(w http.ResponseWriter, _ *http.Request) {
 	jsonResponseTemplate := `
 {
@@ -942,10 +909,9 @@ func StatsServerHandler(w http.ResponseWriter, _ *http.Request) {
 	if metricPointsPerMinute == -1 { // calculate avg. on the fly if 1st summarization hasn't happened yet
 		metricPointsPerMinute = int64((totalMetrics * 60) / gathererUptimeSeconds)
 	}
-	monitoredDbs := getMonitoredDatabasesSnapshot()
-	databasesConfigured := len(monitoredDbs) // including replicas
+	databasesConfigured := len(monitoredDbCache) // including replicas
 	databasesMonitored := 0
-	for _, md := range monitoredDbs {
+	for _, md := range monitoredDbCache {
 		if shouldDbBeMonitoredBasedOnCurrentState(md) {
 			databasesMonitored++
 		}
@@ -975,7 +941,7 @@ func StatsSummarizer(ctx context.Context) {
 	}
 }
 
-func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []sources.MonitoredDatabase, persistenceChannel chan []metrics.MeasurementMessage) {
+func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.MonitoredDatabase, persistenceChannel chan []metrics.MeasurementMessage) {
 	if len(monitoredDbs) > 0 {
 		msms := make([]metrics.MeasurementMessage, len(monitoredDbs))
 		now := time.Now()
@@ -1005,7 +971,7 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []sources.Mon
 	}
 }
 
-func shouldDbBeMonitoredBasedOnCurrentState(md sources.MonitoredDatabase) bool {
+func shouldDbBeMonitoredBasedOnCurrentState(md *sources.MonitoredDatabase) bool {
 	return !IsDBDormant(md.DBUniqueName)
 }
 
@@ -1019,7 +985,7 @@ func ControlChannelsMapToList(controlChannels map[string]chan metrics.ControlMes
 	return controlChannelList
 }
 
-func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, currentDBs, prevLoopDBs []sources.MonitoredDatabase, shutDownDueToRoleChange map[string]bool) {
+func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, currentDBs, prevLoopDBs sources.MonitoredDatabases, shutDownDueToRoleChange map[string]bool) {
 	var curDBsMap = make(map[string]bool)
 
 	for _, curDB := range currentDBs {
@@ -1028,14 +994,16 @@ func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, curr
 
 	for _, prevDB := range prevLoopDBs {
 		if _, ok := curDBsMap[prevDB.DBUniqueName]; !ok { // removed from config
-			CloseOrLimitSQLConnPoolForMonitoredDBIfAny(prevDB.DBUniqueName)
+			prevDB.Conn.Close()
 			_ = metricsWriter.SyncMetrics(prevDB.DBUniqueName, "", "remove")
 		}
 	}
 
 	// or to be ignored due to current instance state
 	for roleChangedDB := range shutDownDueToRoleChange {
-		CloseOrLimitSQLConnPoolForMonitoredDBIfAny(roleChangedDB)
+		if db := currentDBs.GetDatabase(roleChangedDB); db != nil {
+			db.Conn.Close()
+		}
 		_ = metricsWriter.SyncMetrics(roleChangedDB, "", "remove")
 	}
 }
@@ -1065,7 +1033,7 @@ func SetRecoveryIgnoredDBState(dbUnique string, state bool) {
 func IsDBIgnoredBasedOnRecoveryState(dbUnique string) bool {
 	recoveryIgnoredDBsLock.RLock()
 	defer recoveryIgnoredDBsLock.RUnlock()
-	recoveryIgnored, ok := undersizedDBs[dbUnique]
+	recoveryIgnored, ok := recoveryIgnoredDBs[dbUnique]
 	if ok {
 		return recoveryIgnored
 	}
@@ -1182,8 +1150,9 @@ func NewConfigurationReaders(opts *config.Options) (sources.ReaderWriter, metric
 		checkError(err)
 		metricsReader, err = metrics.NewYAMLMetricReaderWriter(ctx, opts.Metrics.Metrics)
 	default:
+		var configDb db.PgxPoolIface
 		ctx := log.WithLogger(mainContext, logger.WithField("config", "postgres"))
-		configDb, err := db.New(ctx, opts.Sources.Config)
+		configDb, err = db.New(ctx, opts.Sources.Config)
 		checkError(err)
 		metricsReader, err = metrics.NewPostgresMetricReaderWriter(ctx, configDb)
 		checkError(err)
@@ -1290,15 +1259,13 @@ func main() {
 
 		if DoesEmergencyTriggerfileExist() {
 			logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", opts.Metrics.EmergencyPauseTriggerfile)
-			monitoredDbs = make([]sources.MonitoredDatabase, 0)
+			monitoredDbs = make([]*sources.MonitoredDatabase, 0)
 		}
 
 		UpdateMonitoredDBCache(monitoredDbs)
 
 		if lastMonitoredDBsUpdate.IsZero() || lastMonitoredDBsUpdate.Before(time.Now().Add(-1*time.Second*monitoredDbsDatastoreSyncIntervalSeconds)) {
-			monitoredDbsCopy := make([]sources.MonitoredDatabase, len(monitoredDbs))
-			copy(monitoredDbsCopy, monitoredDbs)
-			go SyncMonitoredDBsToDatastore(mainContext, monitoredDbsCopy, measurementCh)
+			go SyncMonitoredDBsToDatastore(mainContext, monitoredDbs, measurementCh)
 			lastMonitoredDBsUpdate = time.Now()
 		}
 
@@ -1323,10 +1290,9 @@ func main() {
 			dbUnique := monitoredDB.DBUniqueName
 			dbUniqueOrig := monitoredDB.DBUniqueNameOrig
 			srcType := monitoredDB.Kind
-			wasInstancePreviouslyDormant := IsDBDormant(dbUnique)
 
-			if err = InitSQLConnPoolForMonitoredDBIfNil(monitoredDB); err != nil {
-				logger.Warningf("Could not init SQL connection pool for %s, retrying on next main loop. Err: %v", dbUnique, err)
+			if monitoredDB.Connect(mainContext) != nil {
+				logger.Warningf("could not init connection, retrying on next iteration: %w", err)
 				continue
 			}
 
@@ -1412,10 +1378,6 @@ func main() {
 							SetRecoveryIgnoredDBState(dbUnique, false)
 						}
 					}
-				}
-
-				if wasInstancePreviouslyDormant && !IsDBDormant(dbUnique) {
-					RestoreSQLConnPoolLimitsForPreviouslyDormantDB(dbUnique)
 				}
 
 				if mainLoopCount == 0 && opts.Sources.TryCreateListedExtsIfMissing != "" && !ver.IsInRecovery {
@@ -1514,7 +1476,7 @@ func main() {
 
 		for _, dbMetric := range controlChannelNameList {
 			var currentMetricConfig map[string]float64
-			var dbInfo sources.MonitoredDatabase
+			var dbInfo *sources.MonitoredDatabase
 			var ok, dbRemovedFromConfig bool
 			singleMetricDisabled := false
 			splits := strings.Split(dbMetric, dbMetricJoinStr)
@@ -1578,7 +1540,7 @@ func main() {
 
 	MainLoopSleep:
 		mainLoopCount++
-		prevLoopMonitoredDBs = monitoredDbs
+		prevLoopMonitoredDBs = slices.Clone(monitoredDbs)
 
 		logger.Debugf("main sleeping %ds...", opts.Sources.Refresh)
 		select {

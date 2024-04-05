@@ -31,7 +31,7 @@ func (fcr *fileSourcesReaderWriter) WriteMonitoredDatabases(mds MonitoredDatabas
 	return os.WriteFile(fcr.path, yamlData, 0644)
 }
 
-func (fcr *fileSourcesReaderWriter) UpdateDatabase(md MonitoredDatabase) error {
+func (fcr *fileSourcesReaderWriter) UpdateDatabase(md *MonitoredDatabase) error {
 	dbs, err := fcr.GetMonitoredDatabases()
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (fcr *fileSourcesReaderWriter) DeleteDatabase(name string) error {
 	if err != nil {
 		return err
 	}
-	dbs = slices.DeleteFunc(dbs, func(md MonitoredDatabase) bool { return md.DBUniqueName == name })
+	dbs = slices.DeleteFunc(dbs, func(md *MonitoredDatabase) bool { return md.DBUniqueName == name })
 	return fcr.WriteMonitoredDatabases(dbs)
 }
 
@@ -90,7 +90,7 @@ func (fcr *fileSourcesReaderWriter) getMonitoredDatabases(configFilePath string)
 	if yamlFile, err = os.ReadFile(configFilePath); err != nil {
 		return
 	}
-	c := make([]MonitoredDatabase, 0) // there can be multiple configs in a single file
+	c := make([]*MonitoredDatabase, 0) // there can be multiple configs in a single file
 	if err = yaml.Unmarshal(yamlFile, &c); err != nil {
 		return
 	}
@@ -103,7 +103,7 @@ func (fcr *fileSourcesReaderWriter) getMonitoredDatabases(configFilePath string)
 	return
 }
 
-func (fcr *fileSourcesReaderWriter) expandEnvVars(md MonitoredDatabase) MonitoredDatabase {
+func (fcr *fileSourcesReaderWriter) expandEnvVars(md *MonitoredDatabase) *MonitoredDatabase {
 	if strings.HasPrefix(string(md.Kind), "$") {
 		md.Kind = Kind(os.ExpandEnv(string(md.Kind)))
 	}
