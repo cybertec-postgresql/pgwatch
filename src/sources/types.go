@@ -50,21 +50,31 @@ type MonitoredDatabase struct {
 	CustomTags           map[string]string  `yaml:"custom_tags" db:"custom_tags"`
 	HostConfig           HostConfigAttrs    `yaml:"host_config" db:"host_config"`
 	OnlyIfMaster         bool               `yaml:"only_if_master" db:"only_if_master"`
+
+	Conn db.PgxPoolIface
 }
 
-func (md MonitoredDatabase) GetDatabaseName() string {
+func (md *MonitoredDatabase) Connect(ctx context.Context) (err error) {
+	if md.Conn != nil {
+		return md.Conn.Ping(ctx)
+	}
+	md.Conn, err = db.New(ctx, md.ConnStr)
+	return
+}
+
+func (md *MonitoredDatabase) GetDatabaseName() string {
 	if conf, err := pgx.ParseConfig(md.ConnStr); err == nil {
 		return conf.Database
 	}
 	return ""
 }
 
-func (md MonitoredDatabase) IsPostgresSource() bool {
+func (md *MonitoredDatabase) IsPostgresSource() bool {
 	return md.Kind != SourcePgBouncer && md.Kind != SourcePgPool
 }
 
 // ExpandDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni
-func (md MonitoredDatabase) ExpandDatabases() (MonitoredDatabases, error) {
+func (md *MonitoredDatabase) ExpandDatabases() (MonitoredDatabases, error) {
 	switch md.Kind {
 	case SourcePatroni, SourcePatroniContinuous, SourcePatroniNamespace:
 		return ResolveDatabasesFromPatroni(md)
@@ -75,7 +85,7 @@ func (md MonitoredDatabase) ExpandDatabases() (MonitoredDatabases, error) {
 }
 
 // "resolving" reads all the DB names from the given host/port, additionally matching/not matching specified regex patterns
-func (md MonitoredDatabase) ResolveDatabasesFromPostgres() (resolvedDbs MonitoredDatabases, err error) {
+func (md *MonitoredDatabase) ResolveDatabasesFromPostgres() (resolvedDbs MonitoredDatabases, err error) {
 	var (
 		c      db.PgxPoolIface
 		dbname string
@@ -114,7 +124,7 @@ func (md MonitoredDatabase) ResolveDatabasesFromPostgres() (resolvedDbs Monitore
 	return
 }
 
-type MonitoredDatabases []MonitoredDatabase
+type MonitoredDatabases []*MonitoredDatabase
 
 // Expand() updates list of monitored objects from continuous monitoring sources, e.g. patroni
 func (mds MonitoredDatabases) Expand() (MonitoredDatabases, error) {
@@ -134,6 +144,31 @@ func (mds MonitoredDatabases) Expand() (MonitoredDatabases, error) {
 		resolvedDbs = append(resolvedDbs, dbs...)
 	}
 	return resolvedDbs, nil
+}
+
+func (mds MonitoredDatabases) GetDatabase(name string) *MonitoredDatabase {
+	for _, md := range mds {
+		if md.DBUniqueName == name {
+			return md
+		}
+	}
+	return nil
+}
+
+func (mds MonitoredDatabases) SyncFromReader(r Reader) (MonitoredDatabases, error) {
+	newMDs, err := r.GetMonitoredDatabases()
+	if err != nil {
+		return nil, err
+	}
+	if newMDs, err = newMDs.Expand(); err != nil {
+		return nil, err
+	}
+	for _, newMD := range newMDs {
+		if md := mds.GetDatabase(newMD.DBUniqueName); md != nil {
+			newMD.Conn = md.Conn
+		}
+	}
+	return newMDs, nil
 }
 
 type HostConfigAttrs struct {
@@ -164,7 +199,7 @@ type Reader interface {
 type Writer interface {
 	WriteMonitoredDatabases(MonitoredDatabases) error
 	DeleteDatabase(string) error
-	UpdateDatabase(md MonitoredDatabase) error
+	UpdateDatabase(md *MonitoredDatabase) error
 }
 
 type ReaderWriter interface {

@@ -18,19 +18,16 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var monitoredDbConnCache map[string]db.PgxPoolIface = make(map[string]db.PgxPoolIface)
+// var monitoredDbConnCache map[string]db.PgxPoolIface = make(map[string]db.PgxPoolIface)
 
 // every DB under monitoring should have exactly 1 sql.DB connection assigned, that will internally limit parallel access
-func InitSQLConnPoolForMonitoredDBIfNil(md sources.MonitoredDatabase) error {
-	monitoredDbConnCacheLock.Lock()
-	defer monitoredDbConnCacheLock.Unlock()
-
-	conn, ok := monitoredDbConnCache[md.DBUniqueName]
-	if ok && conn != nil {
+func InitSQLConnPoolForMonitoredDBIfNil(md *sources.MonitoredDatabase) (err error) {
+	conn := md.Conn
+	if conn != nil {
 		return nil
 	}
 
-	conn, err := db.New(mainContext, md.ConnStr, func(conf *pgxpool.Config) error {
+	md.Conn, err = db.New(mainContext, md.ConnStr, func(conf *pgxpool.Config) error {
 		conf.MaxConns = int32(opts.Sources.MaxParallelConnectionsPerDb)
 		return nil
 	})
@@ -38,34 +35,7 @@ func InitSQLConnPoolForMonitoredDBIfNil(md sources.MonitoredDatabase) error {
 		return err
 	}
 
-	monitoredDbConnCache[md.DBUniqueName] = conn
-
 	return nil
-}
-
-func CloseOrLimitSQLConnPoolForMonitoredDBIfAny(dbUnique string) {
-	monitoredDbConnCacheLock.Lock()
-	defer monitoredDbConnCacheLock.Unlock()
-
-	conn, ok := monitoredDbConnCache[dbUnique]
-	if !ok || conn == nil {
-		return
-	}
-
-	if IsDBUndersized(dbUnique) || IsDBIgnoredBasedOnRecoveryState(dbUnique) {
-
-		s := conn.Stat()
-		if s.TotalConns() > 1 {
-			logger.Debugf("[%s] Limiting SQL connection pool to max 1 connection due to dormant state ...", dbUnique)
-			// conn.SetMaxIdleConns(1)
-			// conn.SetMaxOpenConns(1)
-		}
-
-	} else { // removed from config
-		logger.Debugf("[%s] Closing SQL connection pool ...", dbUnique)
-		conn.Close()
-		delete(monitoredDbConnCache, dbUnique)
-	}
 }
 
 func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) (metrics.Measurements, error) {
@@ -77,15 +47,15 @@ func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) 
 }
 
 func GetConnByUniqueName(dbUnique string) db.PgxIface {
-	monitoredDbConnCacheLock.RLock()
-	conn := monitoredDbConnCache[dbUnique]
-	monitoredDbConnCacheLock.RUnlock()
-	return conn
+	if md, err := GetMonitoredDatabaseByUniqueName(dbUnique); err == nil {
+		return md.Conn
+	}
+	return nil
 }
 
 func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, sql string, args ...any) (metrics.Measurements, error) {
 	var conn db.PgxIface
-	var md sources.MonitoredDatabase
+	var md *sources.MonitoredDatabase
 	var data metrics.Measurements
 	var err error
 	var tx pgx.Tx
@@ -927,7 +897,7 @@ func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existi
 }
 
 // Called once on daemon startup to try to create "metric fething helper" functions automatically
-func TryCreateMetricsFetchingHelpers(md sources.MonitoredDatabase) (err error) {
+func TryCreateMetricsFetchingHelpers(md *sources.MonitoredDatabase) (err error) {
 	metricConfig := func() map[string]float64 {
 		if len(md.Metrics) > 0 {
 			return md.Metrics
