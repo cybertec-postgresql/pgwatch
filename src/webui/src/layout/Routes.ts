@@ -1,7 +1,7 @@
+import { MetricsPage } from "pages/MetricsPage/MetricsPage";
 import { SignIn } from "./Authentication/SignIn";
 import { Dashboard } from "./Dashboard";
 import { Logs } from "./Logs";
-import { MetricDefinitions } from "./MetricDefinitions";
 import { PresetConfigs } from "./PresetConfigs";
 import { StatsSummary } from "./StatsSummary";
 
@@ -20,9 +20,9 @@ export const privateRoutes = [
     element: Dashboard
   },
   {
-    title: "Metric definitions",
+    title: "Metrics",
     link: "/metrics",
-    element: MetricDefinitions,
+    element: MetricsPage,
   },
   {
     title: "Preset configs",
