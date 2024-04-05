@@ -37,7 +37,7 @@ func (r *dbSourcesReaderWriter) WriteMonitoredDatabases(dbs MonitoredDatabases) 
 	return tx.Commit(context.Background())
 }
 
-func updateDatabase(conn db.PgxIface, md MonitoredDatabase) (err error) {
+func updateDatabase(conn db.PgxIface, md *MonitoredDatabase) (err error) {
 	sql := `insert into pgwatch3.source(
 name, "group", dbtype, connstr, config, config_standby, preset_config, 
 preset_config_standby, is_superuser, include_pattern, exclude_pattern, custom_tags, host_config, only_if_master) 
@@ -53,7 +53,7 @@ host_config = $13, only_if_master = $14`
 	return err
 }
 
-func (r *dbSourcesReaderWriter) UpdateDatabase(md MonitoredDatabase) error {
+func (r *dbSourcesReaderWriter) UpdateDatabase(md *MonitoredDatabase) error {
 	return updateDatabase(r.configDb, md)
 }
 
@@ -86,6 +86,6 @@ from
 	if err != nil {
 		return nil, err
 	}
-	dbs, err = pgx.CollectRows[MonitoredDatabase](rows, pgx.RowToStructByNameLax)
+	dbs, err = pgx.CollectRows[*MonitoredDatabase](rows, pgx.RowToAddrOfStructByNameLax)
 	return
 }

@@ -88,7 +88,7 @@ func (server *WebUIServer) UpdateDatabase(params []byte) error {
 	if err != nil {
 		return err
 	}
-	return server.sourcesReaderWriter.UpdateDatabase(md)
+	return server.sourcesReaderWriter.UpdateDatabase(&md)
 }
 
 // GetStats
