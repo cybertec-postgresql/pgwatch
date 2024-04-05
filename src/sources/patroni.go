@@ -33,11 +33,11 @@ var logger log.LoggerIface = log.FallbackLogger
 var lastFoundClusterMembers = make(map[string][]PatroniClusterMember) // needed for cases where DCS is temporarily down
 // don't want to immediately remove monitoring of DBs
 
-func getConsulClusterMembers(MonitoredDatabase) ([]PatroniClusterMember, error) {
+func getConsulClusterMembers(*MonitoredDatabase) ([]PatroniClusterMember, error) {
 	return nil, errors.ErrUnsupported
 }
 
-func getZookeeperClusterMembers(MonitoredDatabase) ([]PatroniClusterMember, error) {
+func getZookeeperClusterMembers(*MonitoredDatabase) ([]PatroniClusterMember, error) {
 	return nil, errors.ErrUnsupported
 }
 
@@ -104,7 +104,7 @@ func getTransport(conf HostConfigAttrs) (*tls.Config, error) {
 	return tlsClientConfig, nil
 }
 
-func getEtcdClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, error) {
+func getEtcdClusterMembers(database *MonitoredDatabase) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var cfg client.Config
 
@@ -161,7 +161,7 @@ func getEtcdClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, 
 	return ret, nil
 }
 
-func extractEtcdScopeMembers(database MonitoredDatabase, scope string, kapi client.KV, addScopeToName bool) ([]PatroniClusterMember, error) {
+func extractEtcdScopeMembers(database *MonitoredDatabase, scope string, kapi client.KV, addScopeToName bool) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var name string
 	membersPath := path.Join(database.HostConfig.Namespace, scope, "members")
@@ -198,8 +198,8 @@ const (
 	dcsTypeConsul    = "consul"
 )
 
-func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, error) {
-	var md []MonitoredDatabase
+func ResolveDatabasesFromPatroni(ce *MonitoredDatabase) ([]*MonitoredDatabase, error) {
+	var md []*MonitoredDatabase
 	var cm []PatroniClusterMember
 	var err error
 	var ok bool
@@ -255,7 +255,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 			dbUnique = ce.DBUniqueName + "_" + m.Name
 		}
 		if ce.GetDatabaseName() != "" {
-			md = append(md, MonitoredDatabase{
+			md = append(md, &MonitoredDatabase{
 				DBUniqueName:     dbUnique,
 				DBUniqueNameOrig: ce.DBUniqueName,
 				ConnStr:          ce.ConnStr,
@@ -307,7 +307,7 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 			}
 			connURL.Host = host + ":" + port
 			connURL.Path = d["datname"].(string)
-			md = append(md, MonitoredDatabase{
+			md = append(md, &MonitoredDatabase{
 				DBUniqueName:     dbUnique + "_" + d["datname_escaped"].(string),
 				DBUniqueNameOrig: dbUnique,
 				ConnStr:          connURL.String(),
