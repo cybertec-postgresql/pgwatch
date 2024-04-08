@@ -19,7 +19,7 @@
     "@mui/icons-material": "^5.11.0",
     "@mui/lab": "^5.0.0-alpha.119",
     "@mui/material": "^5.11.8",
-    "@mui/styles": "^5.11.7",
+    "@mui/system": "^5.15.15",
     "@mui/x-data-grid": "^5.17.23",
     "@tanstack/react-query": "^4.24.4",
     "@testing-library/jest-dom": "^5.14.1",
@@ -36,6 +36,7 @@
     "react-use-websocket": "^4.5.0",
     "typescript": "^4.9.5",
     "web-vitals": "^3.1.1",
+    "yaml": "^2.4.1",
     "yup": "^1.4.0"
   },
   "devDependencies": {

@@ -3,7 +3,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { Button, Dialog, DialogActions, DialogContent } from "@mui/material";
 import { useMetricFormContext } from "contexts/MetricForm/MetricForm.context";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
-import { useFormStyles } from "styles/form";
+import { formDialog, formButtons } from "styles/form";
 import { useAddMetric, useEditMetric } from "queries/Metric";
 import { createMetricRequest, getMetricInitialValues } from "./MetricFormDialog.consts";
 import { MetricForm } from "./components/MetricForm/MetricForm";
@@ -12,9 +12,6 @@ import { MetricFormValues } from "./components/MetricForm/MetricForm.types";
 
 export const MetricFormDialog = () => {
   const { data, open, handleClose } = useMetricFormContext();
-
-  const formClasses = useFormStyles();
-
   const formMethods = useForm<MetricFormValues>({
     resolver: yupResolver(metricFormValuesValidationSchema),
   });
@@ -54,13 +51,13 @@ export const MetricFormDialog = () => {
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} className={formClasses.formDialog}>
+    <Dialog open={open} onClose={handleClose} sx={formDialog}>
       <FormProvider {...formMethods}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
             <MetricForm />
           </DialogContent>
-          <DialogActions className={formClasses.formButtons}>
+          <DialogActions sx={formButtons}>
             <Button
               onClick={handleClose}
               size="medium"

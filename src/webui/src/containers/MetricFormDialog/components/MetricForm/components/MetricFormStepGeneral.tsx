@@ -1,13 +1,18 @@
-import { FormControl, FormHelperText, InputLabel, OutlinedInput } from "@mui/material";
-import cx from "classnames";
+import { Box, FormControl, FormHelperText, InputLabel, OutlinedInput } from "@mui/material";
 import { useFormContext } from "react-hook-form";
-import { useFormStyles } from "styles/form";
+import { 
+  formContent, 
+  form, 
+  formControlInput, 
+  formControlCheckbox, 
+  formButtons, 
+  widthDefault, 
+  widthFull 
+ } from "styles/form";
 import { MetricFormValues } from "../MetricForm.types";
 
 export const MetricFormStepGeneral = () => {
   const { register, formState: { errors } } = useFormContext<MetricFormValues>();
-
-  const formClasses = useFormStyles();
 
   const hasError = (field: keyof MetricFormValues) => !!errors[field];
 
@@ -20,9 +25,9 @@ export const MetricFormStepGeneral = () => {
   };
 
   return (
-    <div className={formClasses.form}>
+    <Box sx = {form}>
       <FormControl
-        className={cx(formClasses.formControlInput, formClasses.widthDefault)}
+        sx={{...formControlInput, ...widthDefault}}
         error={hasError("Name")}
         variant="outlined"
       >
@@ -36,7 +41,7 @@ export const MetricFormStepGeneral = () => {
         <FormHelperText id="Name-error">{getError("Name")}</FormHelperText>
       </FormControl>
       <FormControl
-        className={cx(formClasses.formControlInput, formClasses.widthDefault)}
+        sx={{...formControlInput, ...widthDefault}}
         error={hasError("StorageName")}
         variant="outlined"
       >
@@ -48,7 +53,7 @@ export const MetricFormStepGeneral = () => {
         />
       </FormControl>
       <FormControl
-        className={cx(formClasses.formControlInput, formClasses.widthDefault)}
+        sx={{...formControlInput, ...widthDefault}}
         error={hasError("NodeStatus")}
         variant="outlined"
       >
@@ -60,7 +65,7 @@ export const MetricFormStepGeneral = () => {
         />
       </FormControl>
       <FormControl
-        className={cx(formClasses.formControlInput, formClasses.widthFull)}
+        sx={{...formControlInput, ...widthFull}}
         error={hasError("Description")}
         variant="outlined"
       >
@@ -73,6 +78,6 @@ export const MetricFormStepGeneral = () => {
           maxRows={2}
         />
       </FormControl>
-    </div>
+    </Box>
   );
 };

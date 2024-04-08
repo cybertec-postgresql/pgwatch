@@ -1,9 +1,7 @@
-import { makeStyles } from "@mui/styles";
+import { styled } from '@mui/system';
 
-export const useGridActionsStyles = makeStyles(() => ({
-  root: {
+export const Root = styled('div')({
     display: "flex",
     width: "100%",
     justifyContent: "space-between",
-  },
-}));
+});

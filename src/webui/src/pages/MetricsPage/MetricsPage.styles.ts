@@ -1,7 +1,5 @@
-import { makeStyles } from "@mui/styles";
+import { styled } from '@mui/system';
 
-export const useMetricsPageStyles = makeStyles(() => ({
-  root: {
+export const Root = styled('div')({
     flex: "1 1 auto",
-  },
-}));
+});

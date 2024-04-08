@@ -1,13 +1,20 @@
-import { FormControl, FormHelperText, InputLabel, OutlinedInput } from "@mui/material";
+import { Box, FormControl, FormHelperText, InputLabel, OutlinedInput } from "@mui/material";
 import cx from "classnames";
 import { useFormContext } from "react-hook-form";
-import { useFormStyles } from "styles/form";
+import { 
+  formDialog, 
+  formContent, 
+  form, 
+  formControlInput, 
+  formControlCheckbox, 
+  formButtons, 
+  widthDefault, 
+  widthFull 
+ } from "styles/form";
 import { MetricFormValues } from "../MetricForm.types";
 
 export const MetricFormStepSQL = () => {
   const { register, formState: { errors } } = useFormContext<MetricFormValues>();
-
-  const formClasses = useFormStyles();
 
   const hasError = (field: keyof MetricFormValues) => !!errors[field];
 
@@ -20,9 +27,9 @@ export const MetricFormStepSQL = () => {
   };
 
   return (
-    <div className={formClasses.form}>
+    <Box sx={form}>
       <FormControl
-        className={cx(formClasses.formControlInput, formClasses.widthFull)}
+        sx={{...formControlInput, ...widthFull}}
         error={hasError("SQLs")}
         variant="outlined"
       >
@@ -43,6 +50,6 @@ export const MetricFormStepSQL = () => {
         />
         <FormHelperText id="SQLs-error">{getError("SQLs")}</FormHelperText>
       </FormControl>
-    </div>
+    </Box>
   );
 };
