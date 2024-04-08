@@ -1231,8 +1231,8 @@ func main() {
 		go measurementsWriter.WriteMeasurements(mainContext, measurementCh)
 	}
 
-	logger.Warn("webui is disabled for debugging purposes")
-	//initWebUI(opts)
+	// logger.Warn("webui is disabled for debugging purposes")
+	initWebUI(opts)
 
 	firstLoop := true
 	mainLoopCount := 0

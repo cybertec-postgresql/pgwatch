@@ -6,14 +6,12 @@ import { ErrorComponent } from "layout/common/ErrorComponent";
 import { LoadingComponent } from "layout/common/LoadingComponent";
 import { useMetrics } from "queries/Metric";
 import { useMetricsGridColumns } from "./MetricsGrid.consts";
-import { useMetricsGridStyles } from "./MetricsGrid.styles";
+import { Root } from "./MetricsGrid.styles";
 import { MetricGridRow } from "./MetricsGrid.types";
 import { MetricsGridToolbar } from "./components/MetricsGridToolbar/MetricsGridToolbar";
 
 export const MetricsGrid = () => {
   const [formDialogOpen, setFormDialogOpen] = useState(false);
-
-  const classes = useMetricsGridStyles();
 
   const { status, data, error } = useMetrics();
 
@@ -50,7 +48,7 @@ export const MetricsGrid = () => {
   };
 
   return (
-    <div className={classes.root}>
+    <Root>
       <MetricFormProvider
         open={formDialogOpen}
         handleOpen={handleFormDialogOpen}
@@ -66,6 +64,6 @@ export const MetricsGrid = () => {
         />
         <MetricFormDialog />
       </MetricFormProvider>
-    </div >
+    </Root >
   );
 };

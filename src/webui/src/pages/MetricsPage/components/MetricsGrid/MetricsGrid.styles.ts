@@ -1,10 +1,8 @@
-import { makeStyles } from "@mui/styles";
+import { styled } from '@mui/system';
 
-export const useMetricsGridStyles = makeStyles(() => ({
-  root: {
+export const Root = styled('div')({
     display: "flex",
     flexDirection: "column",
     gap: 1,
     height: "100%",
-  },
-}));
+});

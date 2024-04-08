@@ -1,24 +1,24 @@
-import { makeStyles } from "@mui/styles";
-
-export const useFormStyles = makeStyles(() => ({
-  formDialog: {
+export const formDialog = {
     "& .MuiPaper-root": {
       maxWidth: "750px",
-    }
-  },
-  formContent: {
+    },
+};
+  
+export const formContent = {
     maxWidth: "550px",
     width: "550px",
     maxHeight: "650px",
-  },
-  form: {
+};
+  
+export const form = {
     paddingTop: "15px",
     width: "100%",
     display: "flex",
     flexFlow: "column",
     gap: "10px",
-  },
-  formControlInput: {
+};
+
+export const formControlInput = {
     display: "flex",
     "&$formControlBlock": {
       display: "block",
@@ -27,25 +27,28 @@ export const useFormStyles = makeStyles(() => ({
       margin: "0px",
       paddingLeft: "5px",
     },
-  },
-  formControlCheckbox: {
+};
+
+export const formControlCheckbox = {
     "&.MuiFormControlLabel-root": {
       flexDirection: "unset",
       marginLeft: "0px",
       width: "fit-content",
     },
-  },
-  formButtons: {
+};
+
+export const formButtons = {
     "&.MuiDialogActions-root": {
       padding: "0px 8px 8px",
     },
-  },
-  widthDefault: {
+};
+
+export const widthDefault = {
     maxWidth: "240px",
     width: "100%",
-  },
-  widthFull: {
+};
+
+export const widthFull = {
     maxWidth: "100%",
     width: "100%",
-  },
-}));
+};
