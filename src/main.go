@@ -116,7 +116,6 @@ var dbGetPgVersionMapLock = make(map[string]*sync.RWMutex) // synchronize initia
 var monitoredDbCache map[string]*sources.MonitoredDatabase
 var monitoredDbCacheLock sync.RWMutex
 
-var monitoredDbConnCacheLock = sync.RWMutex{}
 var lastSQLFetchError sync.Map
 
 // / internal statistics calculation
@@ -452,9 +451,6 @@ send_to_storageChannel:
 			MetricDef: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
 	}
 	atomic.AddUint64(&totalMetricsFetchedCounter, uint64(len(data)))
-	if md == nil {
-		logger.Panic("md is nil")
-	}
 	return []metrics.MeasurementMessage{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
 		MetricDef: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
 
