@@ -103,7 +103,7 @@ jobs:
 
 
   test-postgresql-ubuntu:
-    if: false # false to skip job during debug
+    if: true # false to skip job during debug
     name: Test and Build on Ubuntu
     runs-on: ubuntu-latest
     steps:

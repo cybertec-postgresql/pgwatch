@@ -1,11 +1,17 @@
-import CheckIcon from '@mui/icons-material/Check';
+import CheckIcon from "@mui/icons-material/Check";
 import { GridColDef } from "@mui/x-data-grid";
-import { MetricRow } from "./MetricDefinitions.types";
+import { MetricGridRow } from "./MetricsGrid.types";
+import { MetricsGridActions } from "./components/MetricsGridActions/MetricsGridActions";
 import { SqlPopUp } from "./components/SqlPopUp/SqlPopUp";
 
-const getIcon = (value: boolean) => value && <CheckIcon color="success" />;
+const getIcon = (value: boolean) => {
+  if (value) {
+    return <CheckIcon color="success" />;
+  }
+  return null;
+};
 
-export const metricsColumns = (): GridColDef<MetricRow>[] => ([
+export const useMetricsGridColumns = (): GridColDef<MetricGridRow>[] => ([
   {
     field: "Key",
     headerName: "Name",
@@ -20,14 +26,6 @@ export const metricsColumns = (): GridColDef<MetricRow>[] => ([
     align: "center",
     headerAlign: "center",
     valueGetter: ({ row }) => row.Metric.Description,
-  },
-  {
-    field: "Enabled",
-    headerName: "Enabled?",
-    width: 120,
-    align: "center",
-    headerAlign: "center",
-    renderCell: ({ row }) => getIcon(row.Metric.Enabled),
   },
   {
     field: "InitSQL",
@@ -76,5 +74,12 @@ export const metricsColumns = (): GridColDef<MetricRow>[] => ([
     align: "center",
     headerAlign: "center",
     renderCell: ({ row }) => <SqlPopUp SQLs={row.Metric.SQLs} />,
-  }
+  },
+  {
+    field: "Actions",
+    headerName: "Actions",
+    headerAlign: "center",
+    width: 100,
+    renderCell: ({ row }) => <MetricsGridActions metric={row} />
+  },
 ]);
