@@ -8,6 +8,10 @@ import (
 	pgxpool "github.com/jackc/pgx/v5/pgxpool"
 )
 
+type Querier interface {
+	Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
+}
+
 // PgxIface is common interface for every pgx class
 type PgxIface interface {
 	Begin(ctx context.Context) (pgx.Tx, error)
@@ -22,6 +26,7 @@ type PgxConnIface interface {
 	PgxIface
 	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
 	Close(ctx context.Context) error
+	Ping(ctx context.Context) error
 }
 
 // PgxPoolIface is interface representing pgx pool

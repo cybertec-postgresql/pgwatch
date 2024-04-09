@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,20 +18,16 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var configDb db.PgxPoolIface
-var monitoredDbConnCache map[string]db.PgxPoolIface = make(map[string]db.PgxPoolIface)
+// var monitoredDbConnCache map[string]db.PgxPoolIface = make(map[string]db.PgxPoolIface)
 
 // every DB under monitoring should have exactly 1 sql.DB connection assigned, that will internally limit parallel access
-func InitSQLConnPoolForMonitoredDBIfNil(md sources.MonitoredDatabase) error {
-	monitoredDbConnCacheLock.Lock()
-	defer monitoredDbConnCacheLock.Unlock()
-
-	conn, ok := monitoredDbConnCache[md.DBUniqueName]
-	if ok && conn != nil {
+func InitSQLConnPoolForMonitoredDBIfNil(md *sources.MonitoredDatabase) (err error) {
+	conn := md.Conn
+	if conn != nil {
 		return nil
 	}
 
-	conn, err := db.New(mainContext, md.ConnStr, func(conf *pgxpool.Config) error {
+	md.Conn, err = db.New(mainContext, md.ConnStr, func(conf *pgxpool.Config) error {
 		conf.MaxConns = int32(opts.Sources.MaxParallelConnectionsPerDb)
 		return nil
 	})
@@ -40,34 +35,7 @@ func InitSQLConnPoolForMonitoredDBIfNil(md sources.MonitoredDatabase) error {
 		return err
 	}
 
-	monitoredDbConnCache[md.DBUniqueName] = conn
-
 	return nil
-}
-
-func CloseOrLimitSQLConnPoolForMonitoredDBIfAny(dbUnique string) {
-	monitoredDbConnCacheLock.Lock()
-	defer monitoredDbConnCacheLock.Unlock()
-
-	conn, ok := monitoredDbConnCache[dbUnique]
-	if !ok || conn == nil {
-		return
-	}
-
-	if IsDBUndersized(dbUnique) || IsDBIgnoredBasedOnRecoveryState(dbUnique) {
-
-		s := conn.Stat()
-		if s.TotalConns() > 1 {
-			logger.Debugf("[%s] Limiting SQL connection pool to max 1 connection due to dormant state ...", dbUnique)
-			// conn.SetMaxIdleConns(1)
-			// conn.SetMaxOpenConns(1)
-		}
-
-	} else { // removed from config
-		logger.Debugf("[%s] Closing SQL connection pool ...", dbUnique)
-		conn.Close()
-		delete(monitoredDbConnCache, dbUnique)
-	}
 }
 
 func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) (metrics.Measurements, error) {
@@ -79,15 +47,15 @@ func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) 
 }
 
 func GetConnByUniqueName(dbUnique string) db.PgxIface {
-	monitoredDbConnCacheLock.RLock()
-	conn := monitoredDbConnCache[dbUnique]
-	monitoredDbConnCacheLock.RUnlock()
-	return conn
+	if md, err := GetMonitoredDatabaseByUniqueName(dbUnique); err == nil {
+		return md.Conn
+	}
+	return nil
 }
 
 func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, sql string, args ...any) (metrics.Measurements, error) {
 	var conn db.PgxIface
-	var md sources.MonitoredDatabase
+	var md *sources.MonitoredDatabase
 	var data metrics.Measurements
 	var err error
 	var tx pgx.Tx
@@ -225,7 +193,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, srcType sources.Kind, 
 		WithField("type", srcType).Debug("determining DB version and recovery status...")
 
 	if verNew.Extensions == nil {
-		verNew.Extensions = make(map[string]uint)
+		verNew.Extensions = make(map[string]int)
 	}
 
 	if srcType == sources.SourcePgBouncer {
@@ -252,7 +220,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, srcType sources.Kind, 
 			return verNew, err
 		}
 		if len(data) == 0 {
-			verNew.Version = VersionToInt("3.0")
+			verNew.Version = 3_00_00
 			verNew.VersionStr = "3.0"
 		} else {
 			matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(string(data[0]["pool_version"].([]byte)))
@@ -278,7 +246,7 @@ func DBGetPGVersion(ctx context.Context, dbUnique string, srcType sources.Kind, 
 		verNew.IsInRecovery = data[0]["pg_is_in_recovery"].(bool)
 		verNew.RealDbname = data[0]["current_database"].(string)
 
-		if verNew.Version > VersionToInt("10.0") && opts.Measurements.SystemIdentifierField > "" {
+		if verNew.Version > 100000 && opts.Measurements.SystemIdentifierField > "" {
 			logger.Debugf("[%s] determining system identifier version (pg ver: %v)", dbUnique, verNew.VersionStr)
 			data, err := DBExecReadByDbUniqueName(ctx, dbUnique, sqlSysid)
 			if err == nil && len(data) > 0 {
@@ -358,7 +326,7 @@ func DetectSprocChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 		return changeCounts
 	}
 
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.GetSQL(int(vme.Version)))
 	if err != nil {
 		logger.Error("could not read sproc_hashes from monitored host: ", dbUnique, ", err:", err)
 		return changeCounts
@@ -442,7 +410,7 @@ func DetectTableChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 		return changeCounts
 	}
 
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.GetSQL(int(vme.Version)))
 	if err != nil {
 		logger.Error("could not read table_hashes from monitored host:", dbUnique, ", err:", err)
 		return changeCounts
@@ -526,7 +494,7 @@ func DetectIndexChanges(dbUnique string, vme DBVersionMapEntry, storageCh chan<-
 		return changeCounts
 	}
 
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.GetSQL(int(vme.Version)))
 	if err != nil {
 		logger.Error("could not read index_hashes from monitored host:", dbUnique, ", err:", err)
 		return changeCounts
@@ -603,13 +571,13 @@ func DetectPrivilegeChanges(dbUnique string, vme DBVersionMapEntry, storageCh ch
 	}
 
 	mvp, err := GetMetricVersionProperties("privilege_changes", vme, nil)
-	if err != nil || mvp.SQL == "" {
+	if err != nil || mvp.GetSQL(int(vme.Version)) == "" {
 		logger.Warningf("[%s][%s] could not get SQL for 'privilege_changes'. cannot detect privilege changes", dbUnique, specialMetricChangeEvents)
 		return changeCounts
 	}
 
 	// returns rows of: object_type, tag_role, tag_object, privilege_type
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.GetSQL(int(vme.Version)))
 	if err != nil {
 		logger.Errorf("[%s][%s] failed to fetch object privileges info: %v", dbUnique, specialMetricChangeEvents, err)
 		return changeCounts
@@ -690,7 +658,7 @@ func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storageC
 		return changeCounts
 	}
 
-	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
+	data, err := DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.GetSQL(int(vme.Version)))
 	if err != nil {
 		logger.Errorf("[%s][%s] could not read configuration_hashes from monitored host: %v", dbUnique, specialMetricChangeEvents, err)
 		return changeCounts
@@ -738,28 +706,28 @@ func DetectConfigurationChanges(dbUnique string, vme DBVersionMapEntry, storageC
 }
 
 func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, storageCh chan<- []metrics.MeasurementMessage, hostState map[string]map[string]string) {
-	sprocСounts := DetectSprocChanges(dbUnique, vme, storageCh, hostState) // TODO some of Detect*() code could be unified...
-	tableСounts := DetectTableChanges(dbUnique, vme, storageCh, hostState)
-	indexСounts := DetectIndexChanges(dbUnique, vme, storageCh, hostState)
-	confСounts := DetectConfigurationChanges(dbUnique, vme, storageCh, hostState)
-	privСhangeCounts := DetectPrivilegeChanges(dbUnique, vme, storageCh, hostState)
+	sprocCounts := DetectSprocChanges(dbUnique, vme, storageCh, hostState) // TODO some of Detect*() code could be unified...
+	tableCounts := DetectTableChanges(dbUnique, vme, storageCh, hostState)
+	indexCounts := DetectIndexChanges(dbUnique, vme, storageCh, hostState)
+	confCounts := DetectConfigurationChanges(dbUnique, vme, storageCh, hostState)
+	privChangeCounts := DetectPrivilegeChanges(dbUnique, vme, storageCh, hostState)
 
 	// need to send info on all object changes as one message as Grafana applies "last wins" for annotations with similar timestamp
 	message := ""
-	if sprocСounts.Altered > 0 || sprocСounts.Created > 0 || sprocСounts.Dropped > 0 {
-		message += fmt.Sprintf(" sprocs %d/%d/%d", sprocСounts.Created, sprocСounts.Altered, sprocСounts.Dropped)
+	if sprocCounts.Altered > 0 || sprocCounts.Created > 0 || sprocCounts.Dropped > 0 {
+		message += fmt.Sprintf(" sprocs %d/%d/%d", sprocCounts.Created, sprocCounts.Altered, sprocCounts.Dropped)
 	}
-	if tableСounts.Altered > 0 || tableСounts.Created > 0 || tableСounts.Dropped > 0 {
-		message += fmt.Sprintf(" tables/views %d/%d/%d", tableСounts.Created, tableСounts.Altered, tableСounts.Dropped)
+	if tableCounts.Altered > 0 || tableCounts.Created > 0 || tableCounts.Dropped > 0 {
+		message += fmt.Sprintf(" tables/views %d/%d/%d", tableCounts.Created, tableCounts.Altered, tableCounts.Dropped)
 	}
-	if indexСounts.Altered > 0 || indexСounts.Created > 0 || indexСounts.Dropped > 0 {
-		message += fmt.Sprintf(" indexes %d/%d/%d", indexСounts.Created, indexСounts.Altered, indexСounts.Dropped)
+	if indexCounts.Altered > 0 || indexCounts.Created > 0 || indexCounts.Dropped > 0 {
+		message += fmt.Sprintf(" indexes %d/%d/%d", indexCounts.Created, indexCounts.Altered, indexCounts.Dropped)
 	}
-	if confСounts.Altered > 0 || confСounts.Created > 0 {
-		message += fmt.Sprintf(" configuration %d/%d/%d", confСounts.Created, confСounts.Altered, confСounts.Dropped)
+	if confCounts.Altered > 0 || confCounts.Created > 0 {
+		message += fmt.Sprintf(" configuration %d/%d/%d", confCounts.Created, confCounts.Altered, confCounts.Dropped)
 	}
-	if privСhangeCounts.Dropped > 0 || privСhangeCounts.Created > 0 {
-		message += fmt.Sprintf(" privileges %d/%d/%d", privСhangeCounts.Created, privСhangeCounts.Altered, privСhangeCounts.Dropped)
+	if privChangeCounts.Dropped > 0 || privChangeCounts.Created > 0 {
+		message += fmt.Sprintf(" privileges %d/%d/%d", privChangeCounts.Created, privChangeCounts.Altered, privChangeCounts.Dropped)
 	}
 
 	if message > "" {
@@ -782,11 +750,11 @@ func CheckForPGObjectChangesAndStore(dbUnique string, vme DBVersionMapEntry, sto
 }
 
 // some extra work needed as pgpool SHOW commands don't specify the return data types for some reason
-func FetchMetricsPgpool(msg MetricFetchMessage, _ DBVersionMapEntry, mvp metrics.MetricProperties) (metrics.Measurements, error) {
+func FetchMetricsPgpool(msg MetricFetchMessage, vme DBVersionMapEntry, mvp metrics.Metric) (metrics.Measurements, error) {
 	var retData = make(metrics.Measurements, 0)
 	epochNs := time.Now().UnixNano()
 
-	sqlLines := strings.Split(strings.ToUpper(mvp.SQL), "\n")
+	sqlLines := strings.Split(strings.ToUpper(mvp.GetSQL(int(vme.Version))), "\n")
 
 	for _, sql := range sqlLines {
 		if strings.HasPrefix(sql, "SHOW POOL_NODES") {
@@ -892,7 +860,7 @@ func DoesFunctionExists(dbUnique, functionName string) bool {
 // Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
 // With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific
 // whitelisting or "trusted extensions" (a feature from v13). Ignores errors.
-func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existingExtensions map[string]uint) []string {
+func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existingExtensions map[string]int) []string {
 	sqlAvailable := `select name::text from pg_available_extensions`
 	extsCreated := make([]string, 0)
 
@@ -929,74 +897,38 @@ func TryCreateMissingExtensions(dbUnique string, extensionNames []string, existi
 }
 
 // Called once on daemon startup to try to create "metric fething helper" functions automatically
-func TryCreateMetricsFetchingHelpers(dbUnique string) error {
-	dbPgVersion, err := DBGetPGVersion(mainContext, dbUnique, sources.SourcePostgres, false)
+func TryCreateMetricsFetchingHelpers(md *sources.MonitoredDatabase) (err error) {
+	metricConfig := func() map[string]float64 {
+		if len(md.Metrics) > 0 {
+			return md.Metrics
+		}
+		if md.PresetMetrics > "" {
+			return metricDefinitionMap.PresetDefs[md.PresetMetrics].Metrics
+		}
+		return nil
+	}()
+	conf, err := pgx.ParseConfig(md.ConnStr)
 	if err != nil {
-		logger.Errorf("Failed to fetch pg version for \"%s\": %s", dbUnique, err)
 		return err
 	}
+	conf.DefaultQueryExecMode = pgx.QueryExecModeExec
+	c, err := pgx.ConnectConfig(mainContext, conf)
+	if err != nil {
+		return nil
+	}
+	defer c.Close(mainContext)
 
-	if fileBasedMetrics {
-		helpers, _, err := metrics.ReadMetricsFromFolder(mainContext, path.Join(opts.Metrics.MetricsFolder, metrics.FileBasedMetricHelpersDir))
+	for metricName := range metricConfig {
+		Metric := metricDefinitionMap.MetricDefs[metricName]
+		if Metric.InitSQL == "" {
+			continue
+		}
+
+		_, err = c.Exec(mainContext, Metric.InitSQL)
 		if err != nil {
-			logger.Errorf("Failed to fetch helpers from \"%s\": %s", path.Join(opts.Metrics.MetricsFolder, metrics.FileBasedMetricHelpersDir), err)
-			return err
-		}
-		logger.Debug("%d helper definitions found from \"%s\"...", len(helpers), path.Join(opts.Metrics.MetricsFolder, metrics.FileBasedMetricHelpersDir))
-
-		for helperName := range helpers {
-			if strings.Contains(helperName, "windows") {
-				logger.Infof("Skipping %s rollout. Windows helpers need to be rolled out manually", helperName)
-				continue
-			}
-			if !DoesFunctionExists(dbUnique, helperName) {
-
-				logger.Debug("Trying to create metric fetching helpers for", dbUnique, helperName)
-				mvp, err := GetMetricVersionProperties(helperName, dbPgVersion, helpers)
-				if err != nil {
-					logger.Warning("Could not find query text for", dbUnique, helperName)
-					continue
-				}
-				_, err = DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
-				if err != nil {
-					logger.Warning("Failed to create a metric fetching helper for", dbUnique, helperName)
-					logger.Warning(err)
-				} else {
-					logger.Info("Successfully created metric fetching helper for", dbUnique, helperName)
-				}
-			}
-		}
-
-	} else {
-		sqlHelpers := "select /* pgwatch3_generated */ distinct m_name from pgwatch3.metric where m_is_active and m_is_helper" // m_name is a helper function name
-		data, err := DBExecRead(mainContext, configDb, sqlHelpers)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		for _, row := range data {
-			metric := row["m_name"].(string)
-
-			if strings.Contains(metric, "windows") {
-				logger.Infof("Skipping %s rollout. Windows helpers need to be rolled out manually", metric)
-				continue
-			}
-			if !DoesFunctionExists(dbUnique, metric) {
-
-				logger.Debug("Trying to create metric fetching helpers for", dbUnique, metric)
-				mvp, err := GetMetricVersionProperties(metric, dbPgVersion, nil)
-				if err != nil {
-					logger.Warning("Could not find query text for", dbUnique, metric)
-					continue
-				}
-				_, err = DBExecReadByDbUniqueName(mainContext, dbUnique, mvp.SQL)
-				if err != nil {
-					logger.Warning("Failed to create a metric fetching helper for", dbUnique, metric)
-					logger.Warning(err)
-				} else {
-					logger.Warning("Successfully created metric fetching helper for", dbUnique, metric)
-				}
-			}
+			logger.Warningf("Failed to create a metric fetching helper for %s in %s: %w", md.DBUniqueName, metricName, err)
+		} else {
+			logger.Info("Successfully created metric fetching helper for", md.DBUniqueName, metricName)
 		}
 	}
 	return nil

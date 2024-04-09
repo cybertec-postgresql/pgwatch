@@ -157,15 +157,9 @@ top folder and for Config DB based setup an according "column_attrs" JSON column
 
 Supported column attributes:
 
-*prometheus_ignored_columns*
-  Columns to be discarded on Prometheus scrapes.
-
 *prometheus_gauge_columns*
   Describe the mentioned output columns as of TYPE *gauge*, i.e. the value can change any time in any direction. Default
   TYPE for pgwatch3 is *counter*.
-
-*prometheus_all_gauge_columns*
-  Describe all columns of metrics as of TYPE *gauge*.
 
 Adding metric fetching helpers
 ------------------------------

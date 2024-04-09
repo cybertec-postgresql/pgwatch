@@ -19,3 +19,6 @@ debug
 
 # VS Code settings
 .vscode/
+
+# leftovers
+src/metrics/sql/

@@ -8,30 +8,61 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"gopkg.in/yaml.v3"
 )
 
-func NewYAMLConfigReader(ctx context.Context, opts *config.Options) (Reader, error) {
-	return &fileConfigReader{
+func NewYAMLSourcesReaderWriter(ctx context.Context, path string) (ReaderWriter, error) {
+	return &fileSourcesReaderWriter{
 		ctx:  ctx,
-		opts: opts,
+		path: path,
 	}, nil
 }
 
-type fileConfigReader struct {
+type fileSourcesReaderWriter struct {
 	ctx  context.Context
-	opts *config.Options
+	path string
 }
 
-func (fcr *fileConfigReader) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
+func (fcr *fileSourcesReaderWriter) WriteMonitoredDatabases(mds MonitoredDatabases) error {
+	yamlData, err := yaml.Marshal(mds)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(fcr.path, yamlData, 0644)
+}
+
+func (fcr *fileSourcesReaderWriter) UpdateDatabase(md *MonitoredDatabase) error {
+	dbs, err := fcr.GetMonitoredDatabases()
+	if err != nil {
+		return err
+	}
+	for i, db := range dbs {
+		if db.DBUniqueName == md.DBUniqueName {
+			dbs[i] = md
+			return fcr.WriteMonitoredDatabases(dbs)
+		}
+	}
+	dbs = append(dbs, md)
+	return fcr.WriteMonitoredDatabases(dbs)
+}
+
+func (fcr *fileSourcesReaderWriter) DeleteDatabase(name string) error {
+	dbs, err := fcr.GetMonitoredDatabases()
+	if err != nil {
+		return err
+	}
+	dbs = slices.DeleteFunc(dbs, func(md *MonitoredDatabase) bool { return md.DBUniqueName == name })
+	return fcr.WriteMonitoredDatabases(dbs)
+}
+
+func (fcr *fileSourcesReaderWriter) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
 	var fi fs.FileInfo
-	if fi, err = os.Stat(fcr.opts.Sources.Config); err != nil {
+	if fi, err = os.Stat(fcr.path); err != nil {
 		return
 	}
 	switch mode := fi.Mode(); {
 	case mode.IsDir():
-		err = filepath.WalkDir(fcr.opts.Sources.Config, func(path string, d fs.DirEntry, err error) error {
+		err = filepath.WalkDir(fcr.path, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -46,20 +77,20 @@ func (fcr *fileConfigReader) GetMonitoredDatabases() (dbs MonitoredDatabases, er
 			return err
 		})
 	case mode.IsRegular():
-		dbs, err = fcr.getMonitoredDatabases(fcr.opts.Sources.Config)
+		dbs, err = fcr.getMonitoredDatabases(fcr.path)
 	}
 	if err != nil {
 		return nil, err
 	}
-	return dbs.Expand()
+	return
 }
 
-func (fcr *fileConfigReader) getMonitoredDatabases(configFilePath string) (dbs MonitoredDatabases, err error) {
+func (fcr *fileSourcesReaderWriter) getMonitoredDatabases(configFilePath string) (dbs MonitoredDatabases, err error) {
 	var yamlFile []byte
 	if yamlFile, err = os.ReadFile(configFilePath); err != nil {
 		return
 	}
-	c := make([]MonitoredDatabase, 0) // there can be multiple configs in a single file
+	c := make([]*MonitoredDatabase, 0) // there can be multiple configs in a single file
 	if err = yaml.Unmarshal(yamlFile, &c); err != nil {
 		return
 	}
@@ -67,17 +98,12 @@ func (fcr *fileConfigReader) getMonitoredDatabases(configFilePath string) (dbs M
 		if v.Kind == "" {
 			v.Kind = SourcePostgres
 		}
-		if v.IsEnabled && (len(fcr.opts.Sources.Groups) == 0 || slices.Contains(fcr.opts.Sources.Groups, v.Group)) {
-			dbs = append(dbs, fcr.expandEnvVars(v))
-		}
+		dbs = append(dbs, fcr.expandEnvVars(v))
 	}
 	return
 }
 
-func (fcr *fileConfigReader) expandEnvVars(md MonitoredDatabase) MonitoredDatabase {
-	if strings.HasPrefix(md.Encryption, "$") {
-		md.Encryption = os.ExpandEnv(md.Encryption)
-	}
+func (fcr *fileSourcesReaderWriter) expandEnvVars(md *MonitoredDatabase) *MonitoredDatabase {
 	if strings.HasPrefix(string(md.Kind), "$") {
 		md.Kind = Kind(os.ExpandEnv(string(md.Kind)))
 	}

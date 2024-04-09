@@ -136,14 +136,14 @@ export const databasesColumns = ({
 }: databasesColumnsProps): GridColDef[] => {
   return [
     {
-      field: "md_name",
+      field: "DBUniqueName",
       headerName: "Unique name",
       width: 150,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "md_dbtype",
+      field: "Kind",
       headerName: "DB type",
       width: 150,
       align: "center",
@@ -151,14 +151,14 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_connstr",
+      field: "ConnStr",
       headerName: "Connection",
       width: 150,
       align: "center",
       headerAlign: "center",
     },
     {
-      field: "md_include_pattern",
+      field: "IncludePattern",
       headerName: "DB name inclusion pattern",
       width: 150,
       align: "center",
@@ -166,7 +166,7 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_exclude_pattern",
+      field: "ExcludePattern",
       headerName: "DB name exclusion pattern",
       width: 150,
       align: "center",
@@ -174,7 +174,7 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_is_superuser",
+      field: "IsSuperuser",
       headerName: "Super user?",
       width: 120,
       type: "boolean",
@@ -184,7 +184,7 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_encryption",
+      field: "Encryption",
       headerName: "Encryption",
       width: 150,
       align: "center",
@@ -192,7 +192,7 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_group",
+      field: "Group",
       headerName: "Group",
       width: 150,
       align: "center",
@@ -200,7 +200,7 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_preset_config_name",
+      field: "PresetMetrics",
       headerName: "Preset metrics config",
       width: 170,
       align: "center",
@@ -208,7 +208,7 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_config",
+      field: "Metrics",
       headerName: "Custom metrics config",
       width: 170,
       align: "center",
@@ -217,7 +217,7 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_preset_config_name_standby",
+      field: "PresetMetricsStandby",
       headerName: "Standby preset config",
       width: 170,
       align: "center",
@@ -225,7 +225,7 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_config_standby",
+      field: "MetricsStandby",
       headerName: "Standby custom config",
       width: 170,
       align: "center",
@@ -234,7 +234,7 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_host_config",
+      field: "HostConfig",
       headerName: "Host config",
       width: 150,
       align: "center",
@@ -242,7 +242,7 @@ export const databasesColumns = ({
       valueGetter: (params) => JSON.stringify(params.value)
     },
     {
-      field: "md_custom_tags",
+      field: "CustomTags",
       headerName: "Custom tags",
       width: 150,
       align: "center",
@@ -251,7 +251,7 @@ export const databasesColumns = ({
       hide: true
     },
     {
-      field: "md_only_if_master",
+      field: "OnlyIfMaster",
       headerName: "Master mode only?",
       type: "boolean",
       width: 120,
@@ -260,31 +260,16 @@ export const databasesColumns = ({
       headerAlign: "center"
     },
     {
-      field: "md_last_modified_on",
-      headerName: "Last modified",
-      type: "string",
-      width: 170,
-      renderCell: (params) => {
-        return (
-          <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
-            {moment(params.value).format("DD.MM.YYYY HH:mm:ss")}
-          </Box>
-        );
-      },
-      align: "center",
-      headerAlign: "center",
-    },
-    {
-      field: "md_is_enabled",
+      field: "IsEnabled",
       headerName: "Enabled?",
       type: "boolean",
       width: 120,
-      renderCell: (params: GridRenderCellParams<boolean>) => <DbEnableSwitchComponent id={params.row.md_unique_name} value={params.value!} />,
+      renderCell: (params: GridRenderCellParams<boolean>) => <DbEnableSwitchComponent id={params.row.DBUniqueName} value={params.value!} />,
       align: "center",
       headerAlign: "center"
     },
     {
-      field: "md_actions",
+      field: "Actions",
       headerName: "Actions",
       type: "actions",
       width: 330,
@@ -294,8 +279,8 @@ export const databasesColumns = ({
           setEditData={setEditData}
           handleModalOpen={handleModalOpen}
           deleteRecord={deleteRecord}
-          deleteParameter={params.row.md_name}
-          warningMessage={`Remove DB "${params.row.md_name}" from monitoring? This does not remove gathered metrics data from InfluxDB, see bottom of page for that`}
+          deleteParameter={params.row.DBUniqueName}
+          warningMessage={`Remove DB "${params.row.DBUniqueName}" from monitoring? This does not remove gathered metrics data from InfluxDB, see bottom of page for that`}
         >
           <Button
             size="small"

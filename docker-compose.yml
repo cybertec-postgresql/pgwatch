@@ -2,7 +2,9 @@ version: "3.9"
 
 services:
   postgres:
-    # if you want vanilla experience use "postgres:latest" image and remove "timescaledb" from shared_preload_libraries
+    # if you want PostgreSQL vanilla experience :
+    # - use "postgres:latest" image 
+    # - remove "timescaledb" from shared_preload_libraries
     image: &pgimage timescale/timescaledb:latest-pg16
     user: postgres
     command:
@@ -70,13 +72,12 @@ services:
       PGDATABASE: pgwatch3
     command: >
       psql -v ON_ERROR_STOP=1
-        -f /tmp/00_helpers/get_table_bloat_approx/9.5/metric.sql
-        -f /tmp/00_helpers/get_table_bloat_approx_sql/12/metric.sql
-        -c "INSERT INTO pgwatch3.monitored_db (md_name, md_preset_config_name, md_connstr)
-          SELECT 'test', 'exhaustive', 'postgresql://pgwatch3:pgwatch3admin@postgres/pgwatch3'
-          WHERE NOT EXISTS (SELECT * FROM pgwatch3.monitored_db WHERE md_name = 'test')"
-    volumes:
-      - "./src/metrics/sql/00_helpers:/tmp/00_helpers"
+        -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
+        -c "GRANT EXECUTE ON FUNCTION pg_stat_file(text) TO pgwatch3"
+        -c "GRANT EXECUTE ON FUNCTION pg_stat_file(text, boolean) TO pgwatch3"
+        -c "INSERT INTO pgwatch3.source (name, preset_config, connstr)
+          SELECT 'demo', 'exhaustive', 'postgresql://pgwatch3:pgwatch3admin@postgres/pgwatch3'
+          WHERE NOT EXISTS (SELECT * FROM pgwatch3.source WHERE name = 'demo')"
     depends_on:
       postgres:
         condition: service_healthy

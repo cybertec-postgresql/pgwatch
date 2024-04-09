@@ -6,10 +6,7 @@ import (
 )
 
 //go:embed sql/config/config_schema.sql
-var sqlConfigSchema string
-
-//go:embed sql/config/config_definitions.sql
-var sqlConfigDefinitions string
+var SQLConfigSchema string
 
 //go:embed sql/metric/admin_schema.sql
 var sqlMetricAdminSchema string

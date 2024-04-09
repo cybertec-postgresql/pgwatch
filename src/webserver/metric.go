@@ -3,7 +3,6 @@ package webserver
 import (
 	"io"
 	"net/http"
-	"strconv"
 )
 
 func (Server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request) {
@@ -11,7 +10,6 @@ func (Server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request)
 		err    error
 		params []byte
 		res    string
-		id     int
 	)
 
 	defer func() {
@@ -23,7 +21,7 @@ func (Server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request)
 	switch r.Method {
 	case http.MethodGet:
 		// return stored metrics
-		if res, err = Server.api.GetMetrics(); err != nil {
+		if res, err = Server.GetMetrics(); err != nil {
 			return
 		}
 		_, err = w.Write([]byte(res))
@@ -33,31 +31,18 @@ func (Server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request)
 		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		err = Server.api.AddMetric(params)
-
-	case http.MethodPatch:
-		// update monitored database
-		if params, err = io.ReadAll(r.Body); err != nil {
-			return
-		}
-		if id, err = strconv.Atoi(r.URL.Query().Get("id")); err != nil {
-			return
-		}
-		err = Server.api.UpdateMetric(id, params)
+		err = Server.UpdateMetric(r.URL.Query().Get("name"), params)
 
 	case http.MethodDelete:
 		// delete stored metric
-		if id, err = strconv.Atoi(r.URL.Query().Get("id")); err != nil {
-			return
-		}
-		err = Server.api.DeleteMetric(id)
+		err = Server.DeleteMetric(r.URL.Query().Get("name"))
 
 	case http.MethodOptions:
-		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")
 		w.WriteHeader(http.StatusNoContent)
 
 	default:
-		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }

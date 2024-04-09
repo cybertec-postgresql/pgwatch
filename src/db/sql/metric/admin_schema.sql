@@ -4,22 +4,22 @@
  "subpartitions" schema - subpartitions of "public" schema top level metric tables (if using time / dbname-time partitioning)
 */
 
-create schema "admin" authorization pgwatch3;
-create schema "subpartitions" authorization pgwatch3;
+create schema "admin";
+create schema "subpartitions";
 
 create extension if not exists btree_gin;
 
-grant all on schema public to pgwatch3;
+-- grant all on schema public to pgwatch3;
 
-do $sql$
-begin
-  execute format($$alter role pgwatch3 in database %s set statement_timeout to '5min'$$, current_database());
-  raise warning 'Enabling asynchronous commit for pgwatch3 role - revert if possible data loss on crash is not acceptable!';
-  execute format($$alter role pgwatch3 in database %s set synchronous_commit to off$$, current_database());
-end
-$sql$;
+-- do $sql$
+-- begin
+--   execute format($$alter role pgwatch3 in database %s set statement_timeout to '5min'$$, current_database());
+--   raise warning 'Enabling asynchronous commit for pgwatch3 role - revert if possible data loss on crash is not acceptable!';
+--   execute format($$alter role pgwatch3 in database %s set synchronous_commit to off$$, current_database());
+-- end
+-- $sql$;
 
-set role to pgwatch3;
+-- set role to pgwatch3;
 
 
 create function admin.get_default_storage_type() returns text as
@@ -123,7 +123,8 @@ BEGIN
   RETURN false;
 END;
 $SQL$ LANGUAGE plpgsql;
-GRANT EXECUTE ON FUNCTION admin.ensure_dummy_metrics_table(text) TO pgwatch3;
+
+-- GRANT EXECUTE ON FUNCTION admin.ensure_dummy_metrics_table(text) TO pgwatch3;
 
 
 CREATE TABLE admin.metrics_template (
@@ -153,5 +154,5 @@ COMMENT ON TABLE admin.metrics_template_realtime IS 'used as a template for all 
 -- create index on admin.metrics_template using brin (dbname, time) with (pages_per_range=32);  /* consider BRIN instead for large data amounts */
 CREATE INDEX ON admin.metrics_template_realtime (dbname, time);
 
-RESET ROLE;
+-- RESET ROLE;
 

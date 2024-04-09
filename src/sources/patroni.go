@@ -16,10 +16,8 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/log"
-	consul_api "github.com/hashicorp/consul/api"
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/samuel/go-zookeeper/zk"
 	client "go.etcd.io/etcd/client/v3"
 )
 
@@ -35,6 +33,14 @@ var logger log.LoggerIface = log.FallbackLogger
 var lastFoundClusterMembers = make(map[string][]PatroniClusterMember) // needed for cases where DCS is temporarily down
 // don't want to immediately remove monitoring of DBs
 
+func getConsulClusterMembers(*MonitoredDatabase) ([]PatroniClusterMember, error) {
+	return nil, errors.ErrUnsupported
+}
+
+func getZookeeperClusterMembers(*MonitoredDatabase) ([]PatroniClusterMember, error) {
+	return nil, errors.ErrUnsupported
+}
+
 func parseHostAndPortFromJdbcConnStr(connStr string) (string, string, error) {
 	r := regexp.MustCompile(`postgres://(.*)+:([0-9]+)/`)
 	matches := r.FindStringSubmatch(connStr)
@@ -43,49 +49,6 @@ func parseHostAndPortFromJdbcConnStr(connStr string) (string, string, error) {
 		return "", "", fmt.Errorf("unexpected regex result groups: %v", matches)
 	}
 	return matches[1], matches[2], nil
-}
-
-func getConsulClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, error) {
-	var ret []PatroniClusterMember
-
-	if len(database.HostConfig.DcsEndpoints) == 0 {
-		return ret, errors.New("Missing Consul connect info, make sure host config has a 'dcs_endpoints' key")
-	}
-
-	config := consul_api.Config{}
-	config.Address = database.HostConfig.DcsEndpoints[0]
-	if config.Address[0] == '/' { // Consul doesn't have leading slashes
-		config.Address = config.Address[1 : len(config.Address)-1]
-	}
-	client, err := consul_api.NewClient(&config)
-	if err != nil {
-		logger.Error("Could not connect to Consul", err)
-		return ret, err
-	}
-
-	kv := client.KV()
-
-	membersPath := path.Join(database.HostConfig.Namespace, database.HostConfig.Scope, "members")
-	members, _, err := kv.List(membersPath, nil)
-	if err != nil {
-		logger.Error("Could not read Patroni members from Consul:", err)
-		return ret, err
-	}
-	for _, member := range members {
-		name := path.Base(member.Key)
-		logger.Debugf("Found a cluster member from Consul: %+v", name)
-		nodeData, err := jsonTextToStringMap(string(member.Value))
-		if err != nil {
-			logger.Errorf("Could not parse Consul node data for node \"%s\": %s", name, err)
-			continue
-		}
-		role := nodeData["role"]
-		connURL := nodeData["conn_url"]
-
-		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnURL: connURL, Role: role, Name: name})
-	}
-
-	return ret, nil
 }
 
 func jsonTextToStringMap(jsonText string) (map[string]string, error) {
@@ -141,7 +104,7 @@ func getTransport(conf HostConfigAttrs) (*tls.Config, error) {
 	return tlsClientConfig, nil
 }
 
-func getEtcdClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, error) {
+func getEtcdClusterMembers(database *MonitoredDatabase) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var cfg client.Config
 
@@ -198,7 +161,7 @@ func getEtcdClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, 
 	return ret, nil
 }
 
-func extractEtcdScopeMembers(database MonitoredDatabase, scope string, kapi client.KV, addScopeToName bool) ([]PatroniClusterMember, error) {
+func extractEtcdScopeMembers(database *MonitoredDatabase, scope string, kapi client.KV, addScopeToName bool) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var name string
 	membersPath := path.Join(database.HostConfig.Namespace, scope, "members")
@@ -229,54 +192,14 @@ func extractEtcdScopeMembers(database MonitoredDatabase, scope string, kapi clie
 	return ret, nil
 }
 
-func getZookeeperClusterMembers(database MonitoredDatabase) ([]PatroniClusterMember, error) {
-	var ret []PatroniClusterMember
-
-	if len(database.HostConfig.DcsEndpoints) == 0 {
-		return ret, errors.New("Missing Zookeeper connect info, make sure host config has a 'dcs_endpoints' key")
-	}
-
-	c, _, err := zk.Connect(database.HostConfig.DcsEndpoints, time.Second, zk.WithLogInfo(false))
-	if err != nil {
-		return ret, err
-	}
-	defer c.Close()
-
-	members, _, err := c.Children(path.Join(database.HostConfig.Namespace, database.HostConfig.Scope, "members"))
-	if err != nil {
-		return ret, err
-	}
-
-	for _, member := range members {
-		logger.Debugf("Found a cluster member from Zookeeper: %+v", member)
-		keyData, _, err := c.Get(path.Join(database.HostConfig.Namespace, database.HostConfig.Scope, "members", member))
-		if err != nil {
-			logger.Errorf("Could not read member (%s) info from Zookeeper:", member, err)
-			continue
-		}
-		nodeData, err := jsonTextToStringMap(string(keyData))
-		if err != nil {
-			logger.Errorf("Could not parse Zookeeper node data for node \"%s\": %s", member, err)
-			continue
-		}
-		role := nodeData["role"]
-		connURL := nodeData["conn_url"]
-		name := path.Base(member)
-
-		ret = append(ret, PatroniClusterMember{Scope: database.HostConfig.Scope, ConnURL: connURL, Role: role, Name: name})
-	}
-
-	return ret, nil
-}
-
 const (
 	dcsTypeEtcd      = "etcd"
 	dcsTypeZookeeper = "zookeeper"
 	dcsTypeConsul    = "consul"
 )
 
-func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, error) {
-	var md []MonitoredDatabase
+func ResolveDatabasesFromPatroni(ce *MonitoredDatabase) ([]*MonitoredDatabase, error) {
+	var md []*MonitoredDatabase
 	var cm []PatroniClusterMember
 	var err error
 	var ok bool
@@ -332,11 +255,10 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 			dbUnique = ce.DBUniqueName + "_" + m.Name
 		}
 		if ce.GetDatabaseName() != "" {
-			md = append(md, MonitoredDatabase{
+			md = append(md, &MonitoredDatabase{
 				DBUniqueName:     dbUnique,
 				DBUniqueNameOrig: ce.DBUniqueName,
 				ConnStr:          ce.ConnStr,
-				Encryption:       ce.Encryption,
 				Metrics:          ce.Metrics,
 				PresetMetrics:    ce.PresetMetrics,
 				IsSuperuser:      ce.IsSuperuser,
@@ -385,11 +307,10 @@ func ResolveDatabasesFromPatroni(ce MonitoredDatabase) ([]MonitoredDatabase, err
 			}
 			connURL.Host = host + ":" + port
 			connURL.Path = d["datname"].(string)
-			md = append(md, MonitoredDatabase{
+			md = append(md, &MonitoredDatabase{
 				DBUniqueName:     dbUnique + "_" + d["datname_escaped"].(string),
 				DBUniqueNameOrig: dbUnique,
 				ConnStr:          connURL.String(),
-				Encryption:       ce.Encryption,
 				Metrics:          ce.Metrics,
 				PresetMetrics:    ce.PresetMetrics,
 				IsSuperuser:      ce.IsSuperuser,

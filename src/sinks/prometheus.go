@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -254,31 +255,11 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Measu
 		}
 
 		for field, value := range fields {
-			skip := false
 			fieldPromDataType := prometheus.CounterValue
-
-			if msg.MetricDef.PrometheusAttrs.PrometheusAllGaugeColumns {
+			if msg.MetricName == promInstanceUpStateMetric ||
+				len(msg.MetricDef.Gauges) > 0 &&
+					(msg.MetricDef.Gauges[0] == "*" || slices.Contains(msg.MetricDef.Gauges, field)) {
 				fieldPromDataType = prometheus.GaugeValue
-			} else {
-				for _, gaugeColumns := range msg.MetricDef.PrometheusAttrs.PrometheusGaugeColumns {
-					if gaugeColumns == field {
-						fieldPromDataType = prometheus.GaugeValue
-						break
-					}
-				}
-			}
-			if msg.MetricName == promInstanceUpStateMetric {
-				fieldPromDataType = prometheus.GaugeValue
-			}
-
-			for _, ignoredColumns := range msg.MetricDef.PrometheusAttrs.PrometheusIgnoredColumns {
-				if ignoredColumns == field {
-					skip = true
-					break
-				}
-			}
-			if skip {
-				continue
 			}
 			var desc *prometheus.Desc
 			if promw.PrometheusNamespace != "" {

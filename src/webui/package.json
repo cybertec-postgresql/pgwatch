@@ -8,22 +8,25 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint:ts": "eslint --ext=jsx,ts,tsx src",
+    "lint:fix": "eslint --ext=jsx,ts,tsx src --fix",
     "lint:cypress": "eslint --no-eslintrc --ext=ts -c cypress/.eslintrc cypress/e2e",
     "lint:quick": "yarn lint:ts --cache"
   },
   "dependencies": {
     "@emotion/react": "^11.9.3",
     "@emotion/styled": "^11.9.3",
+    "@hookform/resolvers": "^3.3.4",
     "@mui/icons-material": "^5.11.0",
     "@mui/lab": "^5.0.0-alpha.119",
     "@mui/material": "^5.11.8",
-    "@mui/styles": "^5.11.7",
+    "@mui/system": "^5.15.15",
     "@mui/x-data-grid": "^5.17.23",
     "@tanstack/react-query": "^4.24.4",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^13.0.0",
     "@testing-library/user-event": "^14.4.3",
     "axios": "^1.6.0",
+    "classnames": "^2.5.1",
     "moment": "^2.29.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -32,7 +35,9 @@
     "react-scripts": "5.0.1",
     "react-use-websocket": "^4.5.0",
     "typescript": "^4.9.5",
-    "web-vitals": "^3.1.1"
+    "web-vitals": "^3.1.1",
+    "yaml": "^2.4.1",
+    "yup": "^1.4.0"
   },
   "devDependencies": {
     "@types/eslint": "^8.21.0",

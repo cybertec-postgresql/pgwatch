@@ -56,7 +56,7 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
-GRANT EXECUTE ON FUNCTION admin.ensure_partition_timescale(text) TO pgwatch3;
+-- GRANT EXECUTE ON FUNCTION admin.ensure_partition_timescale(text) TO pgwatch3;
 
 CREATE OR REPLACE FUNCTION admin.ensure_partition_metric_time(
     metric text,
@@ -155,4 +155,4 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
-GRANT EXECUTE ON FUNCTION admin.ensure_partition_metric_time(text,timestamp with time zone,integer) TO pgwatch3;
+-- GRANT EXECUTE ON FUNCTION admin.ensure_partition_metric_time(text,timestamp with time zone,integer) TO pgwatch3;
