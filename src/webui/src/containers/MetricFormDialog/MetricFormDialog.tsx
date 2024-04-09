@@ -3,7 +3,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { Button, Dialog, DialogActions, DialogContent } from "@mui/material";
 import { useMetricFormContext } from "contexts/MetricForm/MetricForm.context";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
-import { formDialog, formButtons } from "styles/form";
+import { formButtons, formDialog } from "styles/form";
 import { useAddMetric, useEditMetric } from "queries/Metric";
 import { createMetricRequest, getMetricInitialValues } from "./MetricFormDialog.consts";
 import { MetricForm } from "./components/MetricForm/MetricForm";

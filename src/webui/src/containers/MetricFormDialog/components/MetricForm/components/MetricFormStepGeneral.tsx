@@ -1,11 +1,8 @@
 import { Box, FormControl, FormHelperText, InputLabel, OutlinedInput } from "@mui/material";
 import { useFormContext } from "react-hook-form";
 import { 
-  formContent, 
   form, 
   formControlInput, 
-  formControlCheckbox, 
-  formButtons, 
   widthDefault, 
   widthFull 
  } from "styles/form";

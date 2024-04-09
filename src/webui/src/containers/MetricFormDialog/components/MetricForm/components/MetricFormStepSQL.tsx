@@ -1,14 +1,8 @@
 import { Box, FormControl, FormHelperText, InputLabel, OutlinedInput } from "@mui/material";
-import cx from "classnames";
 import { useFormContext } from "react-hook-form";
 import { 
-  formDialog, 
-  formContent, 
   form, 
   formControlInput, 
-  formControlCheckbox, 
-  formButtons, 
-  widthDefault, 
   widthFull 
  } from "styles/form";
 import { MetricFormValues } from "../MetricForm.types";

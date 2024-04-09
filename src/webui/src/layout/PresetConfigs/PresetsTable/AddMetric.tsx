@@ -24,7 +24,7 @@ export const AddMetric = ({ control, handleValidate }: Props) => {
   });
   const [metricOptions, _setMetricOptions] = useState<{ label: string }[]>([]);
 
-  const { data, status, error } = useMetrics();
+  const { data: _data, status, error } = useMetrics();
 
   /*useEffect(() => {
     if (data) {
