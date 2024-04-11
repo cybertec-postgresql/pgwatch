@@ -1,4 +1,4 @@
-package main
+package reaper
 
 import "testing"
 
