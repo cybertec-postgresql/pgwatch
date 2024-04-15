@@ -2,11 +2,11 @@ import { useMemo, useState } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { MetricFormDialog } from "containers/MetricFormDialog/MetricFormDialog";
 import { MetricFormProvider } from "contexts/MetricForm/MetricForm.provider";
+import { usePageStyles } from "styles/page";
 import { ErrorComponent } from "layout/common/ErrorComponent";
 import { LoadingComponent } from "layout/common/LoadingComponent";
 import { useMetrics } from "queries/Metric";
 import { useMetricsGridColumns } from "./MetricsGrid.consts";
-import { Root } from "./MetricsGrid.styles";
 import { MetricGridRow } from "./MetricsGrid.types";
 import { MetricsGridToolbar } from "./components/MetricsGridToolbar/MetricsGridToolbar";
 
@@ -14,6 +14,8 @@ export const MetricsGrid = () => {
   const [formDialogOpen, setFormDialogOpen] = useState(false);
 
   const { status, data, error } = useMetrics();
+
+  const { classes } = usePageStyles();
 
   const rows: MetricGridRow[] | [] = useMemo(() => {
     if (data) {
@@ -48,7 +50,7 @@ export const MetricsGrid = () => {
   };
 
   return (
-    <Root>
+    <div className={classes.page}>
       <MetricFormProvider
         open={formDialogOpen}
         handleOpen={handleFormDialogOpen}
@@ -64,6 +66,6 @@ export const MetricsGrid = () => {
         />
         <MetricFormDialog />
       </MetricFormProvider>
-    </Root >
+    </div >
   );
 };

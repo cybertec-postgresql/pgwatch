@@ -1,7 +1,11 @@
-import { styled } from '@mui/system';
+import { makeStyles } from 'tss-react/mui';
 
-export const Root = styled('div')({
-    display: "flex",
-    width: "100%",
-    justifyContent: "space-between",
-});
+export const useGridActionsStyles = makeStyles()(
+  () => ({
+    root: {
+      display: "flex",
+      width: "100%",
+      justifyContent: "space-between",
+    },
+  }),
+);

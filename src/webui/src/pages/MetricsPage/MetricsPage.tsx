@@ -1,11 +1,13 @@
-import { Root } from "./MetricsPage.styles";
+import { usePageStyles } from "styles/page";
 import { MetricsGrid } from "./components/MetricsGrid/MetricsGrid";
 
 export const MetricsPage = () => {
 
-  return(
-    <Root>
+  const { classes } = usePageStyles();
+
+  return (
+    <div className={classes.root}>
       <MetricsGrid />
-    </Root>
+    </div>
   );
 };
