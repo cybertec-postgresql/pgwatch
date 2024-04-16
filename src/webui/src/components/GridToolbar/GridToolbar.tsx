@@ -1,5 +1,5 @@
 import AddIcon from "@mui/icons-material/Add";
-import { Button as MuiButton } from '@mui/material';
+import { Button } from '@mui/material';
 import { GridToolbarColumnsButton, GridToolbarContainer, GridToolbarFilterButton } from "@mui/x-data-grid";
 
 type Props = {
@@ -14,7 +14,7 @@ export const GridToolbar = (props: Props) => {
     <GridToolbarContainer>
       <GridToolbarColumnsButton size="small" />
       <GridToolbarFilterButton componentsProps={{ button: { size: "small" } }} />
-      <MuiButton startIcon={<AddIcon />} onClick={onNewClick}>New</MuiButton>
+      <Button startIcon={<AddIcon />} onClick={onNewClick}>New</Button>
       {children}
     </GridToolbarContainer>
   );
