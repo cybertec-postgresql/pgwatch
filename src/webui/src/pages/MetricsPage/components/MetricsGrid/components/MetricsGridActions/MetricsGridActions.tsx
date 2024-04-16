@@ -9,8 +9,7 @@ type Props = {
   metric: MetricGridRow;
 };
 
-export const MetricsGridActions = (props: Props) => {
-  const { metric } = props;
+export const MetricsGridActions = ({ metric }: Props) => {
   const { setData, handleOpen } = useMetricFormContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   const { mutate, isSuccess } = useDeleteMetric();
