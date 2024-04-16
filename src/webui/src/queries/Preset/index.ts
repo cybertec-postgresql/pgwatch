@@ -2,14 +2,15 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { UseFormReset } from "react-hook-form";
 
+import { Presets } from "types/Preset/Preset";
 import { QueryKeys } from "queries/queryKeys";
-import { CreatePresetConfigForm, CreatePresetConfigRequestForm, Preset, UpdatePresetConfigRequestForm } from "queries/types/PresetTypes";
+import { CreatePresetConfigForm, CreatePresetConfigRequestForm, UpdatePresetConfigRequestForm } from "queries/types/PresetTypes";
 
 import PresetService from "services/Preset";
 
 const services = PresetService.getInstance();
 
-export const usePresets = () => useQuery<Preset[]>({
+export const usePresets = () => useQuery<Presets>({
   queryKey: QueryKeys.preset,
   queryFn: async () => await services.getPresets()
 });
