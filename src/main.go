@@ -139,7 +139,7 @@ func main() {
 	}
 	if opts.Sources.Init {
 		// At this point we have initialised the sources, metrics and presets configurations.
-		// Any fatal errors are handled by the configuration readers. So me may exit gracefully.
+		// Any fatal errors are handled by the configuration readers. So we may exit gracefully.
 		return
 	}
 
