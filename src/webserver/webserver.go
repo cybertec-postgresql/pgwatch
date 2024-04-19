@@ -48,7 +48,6 @@ func Init(opts config.WebUIOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw so
 	mux.Handle("/test-connect", NewEnsureAuth(s.handleTestConnect))
 	mux.Handle("/metric", NewEnsureAuth(s.handleMetrics))
 	mux.Handle("/preset", NewEnsureAuth(s.handlePresets))
-	mux.Handle("/stats", NewEnsureAuth(s.handleStats))
 	mux.Handle("/log", NewEnsureAuth(s.serveWsLog))
 	mux.HandleFunc("/login", s.handleLogin)
 	mux.HandleFunc("/", s.handleStatic)
@@ -63,7 +62,7 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
-	routes := []string{"/", "/dashboard", "/metrics", "/presets", "/stats_summary", "/logs"}
+	routes := []string{"/", "/dashboard", "/metrics", "/presets", "/logs"}
 	path := r.URL.Path
 	if slices.Contains(routes, path) {
 		path = "index.html"
@@ -95,16 +94,6 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 
 	n, _ := io.Copy(w, file)
 	Server.l.Debug("file", path, "copied", n, "bytes")
-}
-
-func (Server *WebUIServer) handleStats(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		_, _ = w.Write([]byte(Server.GetStats()))
-	default:
-		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-	}
 }
 
 func (Server *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Request) {

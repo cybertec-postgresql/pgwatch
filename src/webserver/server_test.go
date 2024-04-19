@@ -49,12 +49,6 @@ func TestServerNoAuth(t *testing.T) {
 	restsrv.Handler.ServeHTTP(rr, reqDb)
 	assert.Equal(t, rr.Code, http.StatusUnauthorized, "REQUEST WITHOUT AUTHENTICATION")
 
-	// test request stats
-	reqStats, err := http.NewRequest("GET", host+"/stats", nil)
-	assert.Equal(t, err, nil)
-	restsrv.Handler.ServeHTTP(rr, reqStats)
-	assert.Equal(t, rr.Code, http.StatusUnauthorized, "REQUEST WITHOUT AUTHENTICATION")
-
 	// test request
 	reqLog, err := http.NewRequest("GET", host+"/log", nil)
 	assert.Equal(t, err, nil)
