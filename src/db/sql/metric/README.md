@@ -1,29 +1,24 @@
 # Rollout sequence
 
-Pick a storage schema and execute the according "roll_out_*.psql" file via the "psql" CLI tool coming with Postgres,
-or manually first rollout the below files and then the chosen schema type's folder contents as superuser.
+pgwatch3 automatically handles database schema for metric measurements. If `timescale` extension is available then `timescale` 
+schema will be used by default. Otherwise `metric-dbname-time` schema is applied.
 
-* "00_schema_base.sql" - schema type and listing of all known "dbname"-s are stored here
-* "01_old_metrics_cleanup_procedures.sql" - used to list all unique dbnames and to delete/drop old metrics by the application (can also be used for manual cleanup).
-
-The SQL files by default assume that "pgwatch3" user will owns the schema - to changge run the below command for example:
-
-```bash
-find . -name '*.sql' -exec sed -i 's/pgwatch3;/pgwatch3_owner;/g' {} \;
+If one wants to init the schema without running the monitoring, they should use `--init` command-line parameter, e.g.
+```sh
+pgwatch3 --config=postgresql://pgwatch3:pgwatch3admin@localhost/pgwatch3 --sink=postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics --init
 ```
 
 # Schema types
 
-
 ## metric-dbname-time
 
 A single top level table for each distinct metric in the "public" schema + 2 levels of subpartitions ("dbname" + weekly time based) in the "subpartitions" schema.
-Works on PG 11+ versions. Provides the fastest query runtimes when having long retention intervals / lots of metrics data or slow disks and accessing mostly only a single DB's metrics at a time.
-Best used for 50+ monitored DBs.
 
-Also note that when having extremely many hosts under monitoring it might be necessary to increase the "max_locks_per_transaction"
-postgresql.conf parameter on the metrics DB for automatic old partition dropping to work. One could of course also drop old
-data partitions with some custom script / Cron when increasing "max_locks_per_transaction" is not wanted, and actually this
+Provides the fastest query runtimes when having long retention intervals / lots of metrics data or slow disks and accessing mostly only a single DB's metrics at a time.
+
+Also note that when having extremely many hosts under monitoring it might be necessary to increase the `max_locks_per_transaction`
+parameter in `postgresql.conf` on the metric measurements database for automatic old partition dropping to work. One could of course also drop old
+data partitions with some custom script / Cron when increasing `max_locks_per_transaction` is not wanted, and actually this
 kind of approach is also working behind the scenes for versions above v1.8.1.
 
 Something like below will be done by the gatherer AUTOMATICALLY:
@@ -52,7 +47,7 @@ Typical compression ratios vary from 3 to 10x and also querying of larger histor
 Assumes TimescaleDB (v1.7+) extension and "outsources" partition management for normal metrics to the extensions. Realtime
 metrics still use the "metric-time" schema as sadly Timescale doesn't support unlogged tables. Additionally one can also
 tune the chunking and historic data compression intervals - by default it's 2 days and 1 day. To change use the
-admin.timescale_change_chunk_interval() and admin.timescale_change_compress_interval() functions.
+`admin.timescale_change_chunk_interval()` and `admin.timescale_change_compress_interval()` functions.
 
 Note that if wanting to store a deeper history of 6 months or a year then additionally using [Continous Aggregates](https://docs.timescale.com/latest/using-timescaledb/continuous-aggregates)
 might be a good idea. This will though also require modifying the Grafana dashboards, so it's out of scope for pgwatch3.
