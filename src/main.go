@@ -192,11 +192,13 @@ func main() {
 	defer cancel()
 
 	if opts, err = config.New(os.Stdout); err != nil {
-		exitCode.Store(ExitCodeConfigError)
-		fmt.Print(err)
+		if !opts.Help {
+			exitCode.Store(ExitCodeConfigError)
+		}
+		fmt.Println(err)
 		return
 	}
-	if opts.VersionOnly() {
+	if opts.VersionOnly() || opts.Help {
 		printVersion()
 		return
 	}

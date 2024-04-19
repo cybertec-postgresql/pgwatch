@@ -20,9 +20,3 @@ GRANT EXECUTE ON FUNCTION get_load_average() TO pgwatch3;
 COMMENT ON FUNCTION get_load_average() is 'created for pgwatch3';
 COMMIT;
 EOSQL
-
-if [ "$PW3_PG_SCHEMA_TYPE" == "timescale" ] ; then
-    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "pgwatch3_metrics" <<-EOSQL
-        CREATE EXTENSION timescaledb;
-EOSQL
-fi

@@ -74,6 +74,7 @@ type Options struct {
 	WebUI        WebUIOpts       `group:"WebUI"`
 	Version      bool            `long:"version" mapstructure:"version" description:"Show Git build version and exit" env:"PW3_VERSION"`
 	Ping         bool            `long:"ping" mapstructure:"ping" description:"Try to connect to all configured DB-s, report errors and then exit" env:"PW3_PING"`
+	Help         bool
 }
 
 // New returns a new instance of CmdOptions
@@ -82,12 +83,17 @@ func New(writer io.Writer) (*Options, error) {
 	parser := flags.NewParser(cmdOpts, flags.HelpFlag)
 	var err error
 	if _, err = parser.Parse(); err != nil {
-		if !flags.WroteHelp(err) {
-			parser.WriteHelp(writer)
-			return cmdOpts, err
+		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
+			cmdOpts.Help = true
 		}
 	}
-	return cmdOpts, validateConfig(cmdOpts)
+	if err == nil {
+		err = validateConfig(cmdOpts)
+	}
+	if !flags.WroteHelp(err) {
+		parser.WriteHelp(writer)
+	}
+	return cmdOpts, err
 }
 
 // Verbose returns true if the debug log is enabled
