@@ -49,7 +49,7 @@ metrics still use the "metric-time" schema as sadly Timescale doesn't support un
 tune the chunking and historic data compression intervals - by default it's 2 days and 1 day. To change use the
 `admin.timescale_change_chunk_interval()` and `admin.timescale_change_compress_interval()` functions.
 
-Note that if wanting to store a deeper history of 6 months or a year then additionally using [Continous Aggregates](https://docs.timescale.com/latest/using-timescaledb/continuous-aggregates)
+Note that if wanting to store a deeper history of 6 months or a year then additionally using [Continuous Aggregates](https://docs.timescale.com/latest/using-timescaledb/continuous-aggregates)
 might be a good idea. This will though also require modifying the Grafana dashboards, so it's out of scope for pgwatch3.
 
 Something like below will be done by the gatherer AUTOMATICALLY via the `admin.ensure_partition_timescale()` function:

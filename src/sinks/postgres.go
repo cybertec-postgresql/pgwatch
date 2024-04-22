@@ -533,9 +533,9 @@ func (pgw *PostgresWriter) UniqueDbnamesListingMaintainer() {
 		case <-time.After(time.Hour * 24):
 		}
 		var lock bool
-		logger.Infof("Trying to get metricsDb listing maintaner advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
+		logger.Infof("Trying to get metricsDb listing maintainer advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
 		if err := pgw.SinkDb.QueryRow(pgw.Ctx, sqlGetAdvisoryLock).Scan(&lock); err != nil {
-			logger.Error("Getting metricsDb listing maintaner advisory lock failed:", err)
+			logger.Error("Getting metricsDb listing maintainer advisory lock failed:", err)
 			continue
 		}
 		if !lock {

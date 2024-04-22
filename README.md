@@ -29,7 +29,7 @@ docker compose up --detach
 These commands will build and start services listed in the compose file:
 - configuration and metric database;
 - pgwatch3 monitoring agent with WebUI;
-- Grafana with dashbords.
+- Grafana with dashboards.
 
 ## Monitor Database
 
