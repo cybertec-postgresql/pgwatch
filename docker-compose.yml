@@ -37,6 +37,7 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: true
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/1-global-db-overview.json
       GF_INSTALL_PLUGINS: marcusolsson-treemap-panel
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -100,12 +101,24 @@ services:
     profiles:
       - pgbench
 
-  # prometheus:
-  #   image: prom/prometheus
-  #   command:
-  #     - '--config.file=/etc/prometheus/prometheus.yml'
-  #   ports:
-  #     - 9090:9090
-  #   restart: unless-stopped
-  #   volumes:
-  #     - "./docker/prometheus.yml:/etc/prometheus/prometheus.yml"
+  prometheus:
+    image: prom/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - "./docker/prometheus.yml:/etc/prometheus/prometheus.yml"
+    profiles:
+      - prometheus
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "80:80"
+    profiles:
+      - pgadmin
