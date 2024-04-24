@@ -34,12 +34,12 @@ These commands will build and start services listed in the compose file:
 ## Monitor Database
 
 After start, you could open the [monitoring dashboard](http://localhost:3000/) and start
-looking at metrics. You may log in as admin (`admin`/`admin`) to apply changes to dashboards or create new ones.
+looking at metrics.
 
 To add a test database under monitoring, you can use [built-in WebUI](http://localhost:8080/). Or simply
 execute from command line:
 ```shell
-$ docker compose up add-test-db --force-recreate
+docker compose up add-test-db --force-recreate
 ```
 <pre>
 [+] Running 2/0
@@ -57,8 +57,8 @@ pgwatch3-add-test-db-1 exited with code 0
 ## Produce Workload
 
 To emulate workload for added test database execute:
-```
-$ docker compose up pgbench
+```shell
+docker compose up pgbench
 ```
 <pre>
 [+] Running 2/2
@@ -88,7 +88,7 @@ pgwatch3-pgbench-1  | progress: 10.0 s, 509.6 tps, lat 19.541 ms stddev 9.493, 0
 pgwatch3-pgbench-1  | progress: 185.0 s, 325.3 tps, lat 16.825 ms stddev 8.330, 0 failed
 pgwatch3-pgbench-1  |
 pgwatch3-pgbench-1  |
-pgwatch3-pgbench-1  | transaction type: <builtin: TPC-B (sort of)>
+pgwatch3-pgbench-1  | transaction type: builtin: TPC-B (sort of)
 pgwatch3-pgbench-1  | scaling factor: 50
 pgwatch3-pgbench-1  | query mode: simple
 pgwatch3-pgbench-1  | number of clients: 10
@@ -106,12 +106,24 @@ pgwatch3-pgbench-1  | done in 0.45 s (drop tables 0.45 s).
 pgwatch3-pgbench-1 exited with code 0
 </pre>
 
+## Inspect database
+
+> [!IMPORTANT]
+pgAdmin uses port 80. If you want it to use another port, change it in `docker-compose.yml` file.
+
+To look what is inside `pgwatch3` database, you can spin up pgAdmin4:
+```shell
+docker compose up --detach pgadmin
+```
+Go to `localhost` in your favorite browser and login as `admin@local.com`, password `admin`.
+Server `pgwatch3` should be already added in `Servers` group.
+
 ## Development
 
 If you apply any changes to the source code and want to restart the agent, it's usually enough to run:
 
 ```shell
-$ docker compose up pgwatch3 --build --force-recreate --detach
+docker compose up pgwatch3 --build --force-recreate --detach
 ```
 
 The command above will rebuild the `pgwatch3` agent from sources and relaunch the container.
@@ -120,12 +132,12 @@ The command above will rebuild the `pgwatch3` agent from sources and relaunch th
 
 If you are running containers in detached mode, you still can follow the logs:
 ```shell
-$ docker compose logs --follow
+docker compose logs --follow
 ```
 
 Or you may check the log of a particular service:
 ```shell
-$ docker compose logs pgwatch3 --follow
+docker compose logs pgwatch3 --follow
 ```
 
 # Contributing

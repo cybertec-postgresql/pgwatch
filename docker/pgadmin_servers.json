@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "pgwatch3",
+      "Group": "Servers",
+      "Port": 5432,
+      "Username": "pgwatch3",
+      "Host": "postgres",
+      "PassFile": "/pgadmin4/pass",
+      "SSLMode": "disable",
+      "MaintenanceDB": "postgres"
+    }
+  }
+}
