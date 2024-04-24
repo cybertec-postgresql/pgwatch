@@ -118,6 +118,9 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@local.com
       PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - "./docker/pgadmin_servers.json:/pgadmin4/servers.json"
+      - "./docker/pgadmin_pass:/pgadmin4/pass"
     ports:
       - "80:80"
     profiles:

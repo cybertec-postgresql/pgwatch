@@ -115,8 +115,8 @@ To look what is inside `pgwatch3` database, you can spin up pgAdmin4:
 ```shell
 docker compose up --detach pgadmin
 ```
-Go to localhost in your favorite browser and login as `admin@local.com`, password `admin`. Then add new server with 
-name `pgwatch3`, in tab connection enter host name `postgres`, user `pgwatch3`, password `pgwatch3admin`.
+Go to `localhost` in your favorite browser and login as `admin@local.com`, password `admin`.
+Server `pgwatch3` should be already added in `Servers` group.
 
 ## Development
 
