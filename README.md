@@ -108,7 +108,8 @@ pgwatch3-pgbench-1 exited with code 0
 
 ## Inspect database
 
-**Warning:** pgadmin uses port 80. If you want it to use another port, change it in `docker-compose.yml` file.
+> [!IMPORTANT]
+pgAdmin uses port 80. If you want it to use another port, change it in `docker-compose.yml` file.
 
 To look what is inside postgres database, you can spin up pgadmin:
 ```shell
