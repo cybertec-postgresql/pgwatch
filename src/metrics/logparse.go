@@ -111,7 +111,7 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 	}}
 }
 
-func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredDatabase, realDbname, metricName string, configMap map[string]float64, controlCh <-chan ControlMessage, storeCh chan<- []MeasurementMessage) {
+func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredDatabase, realDbname, metricName string, configMap map[string]float64, storeCh chan<- []MeasurementMessage) {
 
 	var latest, previous, serverMessagesLang string
 	var latestHandle *os.File
@@ -131,16 +131,8 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredData
 	logger := log.GetLogger(ctx)
 	for { // re-try loop. re-start in case of FS errors or just to refresh host config
 		select {
-		case msg := <-controlCh:
-			logger.Debug("got control msg", dbUniqueName, metricName, msg)
-			if msg.Action == gathererStatusStart {
-				config = msg.Config
-				interval = config[metricName]
-				logger.Debug("started MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
-			} else if msg.Action == gathererStatusStop {
-				logger.Debug("exiting MetricGathererLoop for ", dbUniqueName, metricName, " interval:", interval)
-				return
-			}
+		case <-ctx.Done():
+			return
 		default:
 			if interval == 0 {
 				interval = config[metricName]

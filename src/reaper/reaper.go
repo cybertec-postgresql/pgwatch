@@ -16,7 +16,6 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/sources"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/exp/maps"
 )
 
 var monitoredDbs sources.MonitoredDatabases
@@ -29,6 +28,7 @@ type Reaper struct {
 	opts                *config.Options
 	sourcesReaderWriter sources.ReaderWriter
 	metricsReaderWriter metrics.ReaderWriter
+	measurementCh       chan []metrics.MeasurementMessage
 }
 
 func NewReaper(opts *config.Options, sourcesReaderWriter sources.ReaderWriter, metricsReaderWriter metrics.ReaderWriter) *Reaper {
@@ -42,7 +42,7 @@ func NewReaper(opts *config.Options, sourcesReaderWriter sources.ReaderWriter, m
 func (r *Reaper) Reap(mainContext context.Context) (err error) {
 	var measurementsWriter *sinks.MultiWriter
 
-	controlChannels := make(map[string](chan metrics.ControlMessage)) // [db1+metric1]=chan
+	cancelFuncs := make(map[string]context.CancelFunc) // [db1+metric1]=chan
 
 	firstLoop := true
 	mainLoopCount := 0
@@ -60,14 +60,13 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 	if measurementsWriter, err = sinks.NewMultiWriter(mainContext, opts, metricDefinitionMap); err != nil {
 		logger.Fatal(err)
 	}
-	measurementCh := make(chan []metrics.MeasurementMessage, 10000)
+	r.measurementCh = make(chan []metrics.MeasurementMessage, 10000)
 	if !opts.Ping {
-		go measurementsWriter.WriteMeasurements(mainContext, measurementCh)
+		go measurementsWriter.WriteMeasurements(mainContext, r.measurementCh)
 	}
 
 	for { //main loop
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
-		var controlChannelNameList []string
 		gatherersShutDown := 0
 
 		if monitoredDbs, err = sourcesReaderWriter.GetMonitoredDatabases(); err != nil {
@@ -92,7 +91,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 		UpdateMonitoredDBCache(monitoredDbs)
 
 		if lastMonitoredDBsUpdate.IsZero() || lastMonitoredDBsUpdate.Before(time.Now().Add(-1*time.Second*monitoredDbsDatastoreSyncIntervalSeconds)) {
-			go SyncMonitoredDBsToDatastore(mainContext, monitoredDbs, measurementCh)
+			go SyncMonitoredDBsToDatastore(mainContext, monitoredDbs, r.measurementCh)
 			lastMonitoredDBsUpdate = time.Now()
 		}
 
@@ -237,13 +236,14 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				}
 
 				dbMetric := dbUnique + dbMetricJoinStr + metric
-				_, chOk := controlChannels[dbMetric]
+				_, chOk := cancelFuncs[dbMetric]
 
 				if metricDefOk && !chOk { // initialize a new per db/per metric control channel
 					if interval > 0 {
 						hostMetricIntervalMap[dbMetric] = interval
 						logger.WithField("source", dbUnique).WithField("metric", metric).WithField("interval", interval).Info("starting gatherer")
-						controlChannels[dbMetric] = make(chan metrics.ControlMessage, 1)
+						metricCtx, cancelFunc := context.WithCancel(mainContext)
+						cancelFuncs[dbMetric] = cancelFunc
 
 						metricNameForStorage := metricName
 						if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
@@ -264,21 +264,20 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 							logger.Error(err)
 						}
 
-						go MetricGathererLoop(mainContext,
+						go r.reapMetricMeasurementsFromSource(metricCtx,
 							dbUnique,
 							dbUniqueOrig,
 							srcType,
 							metric,
-							metricConfig,
-							controlChannels[dbMetric],
-							measurementCh,
-							opts)
+							metricConfig)
 					}
 				} else if (!metricDefOk && chOk) || interval <= 0 {
 					// metric definition files were recently removed or interval set to zero
+					if cancelFunc, isOk := cancelFuncs[dbMetric]; isOk {
+						cancelFunc()
+					}
 					logger.Warning("shutting down metric", metric, "for", monitoredDB.DBUniqueName)
-					controlChannels[dbMetric] <- metrics.ControlMessage{Action: gathererStatusStop}
-					delete(controlChannels, dbMetric)
+					delete(cancelFuncs, dbMetric)
 				} else if !metricDefOk {
 					epoch, ok := lastSQLFetchError.Load(metric)
 					if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) { // complain only 1x per hour
@@ -288,8 +287,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				} else {
 					// check if interval has changed
 					if hostMetricIntervalMap[dbMetric] != interval {
-						logger.Warning("sending interval update for", dbUnique, metric)
-						controlChannels[dbMetric] <- metrics.ControlMessage{Action: gathererStatusStart, Config: metricConfig}
+						logger.Warning("updating interval update for", dbUnique, metric)
 						hostMetricIntervalMap[dbMetric] = interval
 					}
 				}
@@ -303,9 +301,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 		// loop over existing channels and stop workers if DB or metric removed from config
 		// or state change makes it uninteresting
 		logger.Debug("checking if any workers need to be shut down...")
-		controlChannelNameList = maps.Keys(controlChannels)
-
-		for _, dbMetric := range controlChannelNameList {
+		for dbMetric, cancelFunc := range cancelFuncs {
 			var currentMetricConfig map[string]float64
 			var dbInfo *sources.MonitoredDatabase
 			var ok, dbRemovedFromConfig bool
@@ -351,9 +347,9 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 
 			if mainContext.Err() != nil || wholeDbShutDownDueToRoleChange || dbRemovedFromConfig || singleMetricDisabled {
 				logger.Infof("shutting down gatherer for [%s:%s] ...", db, metric)
-				controlChannels[dbMetric] <- metrics.ControlMessage{Action: gathererStatusStop}
-				delete(controlChannels, dbMetric)
-				logger.Debugf("control channel for [%s:%s] deleted", db, metric)
+				cancelFunc()
+				delete(cancelFuncs, dbMetric)
+				logger.Debugf("cancel function for [%s:%s] deleted", db, metric)
 				gatherersShutDown++
 				ClearDBUnreachableStateIfAny(db)
 				if err := measurementsWriter.SyncMetrics(db, metric, "remove"); err != nil {
@@ -384,17 +380,12 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 }
 
 // metrics.ControlMessage notifies of shutdown + interval change
-func MetricGathererLoop(ctx context.Context,
+func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 	dbUniqueName, dbUniqueNameOrig string,
 	srcType sources.Kind,
 	metricName string,
-	configMap map[string]float64,
-	controlCh <-chan metrics.ControlMessage,
-	storeCh chan<- []metrics.MeasurementMessage,
-	opts *config.Options) {
+	configMap map[string]float64) {
 
-	config := configMap
-	interval := config[metricName]
 	hostState := make(map[string]map[string]string)
 	var lastUptimeS int64 = -1 // used for "server restarted" event detection
 	var lastErrorNotificationTime time.Time
@@ -402,7 +393,6 @@ func MetricGathererLoop(ctx context.Context,
 	var mvp metrics.Metric
 	var err error
 	failedFetches := 0
-	// metricNameForStorage := metricName
 	lastDBVersionFetchTime := time.Unix(0, 0) // check DB ver. ev. 5 min
 
 	l := log.GetLogger(ctx).WithField("source", dbUniqueName).WithField("metric", metricName)
@@ -415,13 +405,14 @@ func MetricGathererLoop(ctx context.Context,
 		realDbname := dbPgVersionMap[dbUniqueName].RealDbname // to manage 2 sets of event counts - monitored DB + global
 		dbPgVersionMapLock.RUnlock()
 		conn := mdb.Conn
-		metrics.ParseLogs(ctx, conn, mdb, realDbname, metricName, configMap, controlCh, storeCh) // no return
+		metrics.ParseLogs(ctx, conn, mdb, realDbname, metricName, configMap, r.measurementCh) // no return
 		return
 	}
 
 	for {
+		interval := configMap[metricName]
 		if lastDBVersionFetchTime.Add(time.Minute * time.Duration(5)).Before(time.Now()) {
-			vme, err = DBGetPGVersion(ctx, dbUniqueName, srcType, false, opts.Measurements.SystemIdentifierField) // in case of errors just ignore metric "disabled" time ranges
+			vme, err = DBGetPGVersion(ctx, dbUniqueName, srcType, false, r.opts.Measurements.SystemIdentifierField) // in case of errors just ignore metric "disabled" time ranges
 			if err != nil {
 				lastDBVersionFetchTime = time.Now()
 			}
@@ -445,7 +436,7 @@ func MetricGathererLoop(ctx context.Context,
 		}
 
 		// 1st try local overrides for some metrics if operating in push mode
-		if opts.Metrics.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
+		if r.opts.Metrics.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
 			metricStoreMessages, err = FetchStatsDirectlyFromOS(ctx, mfm, vme, mvp)
 			if err != nil {
 				l.WithError(err).Errorf("Could not reader metric directly from OS")
@@ -453,7 +444,7 @@ func MetricGathererLoop(ctx context.Context,
 		}
 		t1 := time.Now()
 		if metricStoreMessages == nil {
-			metricStoreMessages, err = FetchMetrics(ctx, mfm, hostState, storeCh, "", opts)
+			metricStoreMessages, err = FetchMetrics(ctx, mfm, hostState, r.measurementCh, "", r.opts)
 		}
 		t2 := time.Now()
 
@@ -499,27 +490,16 @@ func MetricGathererLoop(ctx context.Context,
 					}
 				}
 
-				storeCh <- metricStoreMessages
+				r.measurementCh <- metricStoreMessages
 			}
 		}
 
 		select {
 		case <-ctx.Done():
 			return
-		case msg := <-controlCh:
-			l.Debug("got control msg", msg)
-			if msg.Action == gathererStatusStart {
-				config = msg.Config
-				interval = config[metricName]
-				l.Debug("started MetricGathererLoop with interval:", interval)
-			} else if msg.Action == gathererStatusStop {
-				l.Debug("exiting MetricGathererLoop with interval:", interval)
-				return
-			}
 		case <-time.After(time.Second * time.Duration(interval)):
 			l.Debugf("MetricGathererLoop slept for %s", time.Second*time.Duration(interval))
 		}
-
 	}
 }
 
