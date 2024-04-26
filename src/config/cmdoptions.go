@@ -72,7 +72,6 @@ type Options struct {
 	Measurements MeasurementOpts `group:"Measurements"`
 	Logging      LoggingOpts     `group:"Logging"`
 	WebUI        WebUIOpts       `group:"WebUI"`
-	Version      bool            `long:"version" mapstructure:"version" description:"Show Git build version and exit" env:"PW3_VERSION"`
 	Ping         bool            `long:"ping" mapstructure:"ping" description:"Try to connect to all configured DB-s, report errors and then exit" env:"PW3_PING"`
 	Help         bool
 }
@@ -86,12 +85,12 @@ func New(writer io.Writer) (*Options, error) {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
 			cmdOpts.Help = true
 		}
+		if !flags.WroteHelp(err) {
+			parser.WriteHelp(writer)
+		}
 	}
 	if err == nil {
 		err = validateConfig(cmdOpts)
-	}
-	if !flags.WroteHelp(err) {
-		parser.WriteHelp(writer)
 	}
 	return cmdOpts, err
 }
@@ -99,11 +98,6 @@ func New(writer io.Writer) (*Options, error) {
 // Verbose returns true if the debug log is enabled
 func (c Options) Verbose() bool {
 	return c.Logging.LogLevel == "debug"
-}
-
-// VersionOnly returns true if the `--version` is the only argument
-func (c Options) VersionOnly() bool {
-	return len(os.Args) == 2 && c.Version
 }
 
 func (c Options) GetConfigKind() (_ Kind, err error) {
@@ -121,9 +115,6 @@ func (c Options) GetConfigKind() (_ Kind, err error) {
 }
 
 func validateConfig(c *Options) error {
-	if c.Sources.Config == "" && !c.VersionOnly() {
-		return errors.New("--config was not specified")
-	}
 	if c.Sources.Refresh <= 1 {
 		return errors.New("--servers-refresh-loop-seconds must be greater than 1")
 	}

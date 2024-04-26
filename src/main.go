@@ -114,14 +114,11 @@ func main() {
 	defer cancel()
 
 	if opts, err = config.New(os.Stdout); err != nil {
+		printVersion()
+		fmt.Println(err)
 		if !opts.Help {
 			exitCode.Store(ExitCodeConfigError)
 		}
-		fmt.Println(err)
-		return
-	}
-	if opts.VersionOnly() || opts.Help {
-		printVersion()
 		return
 	}
 	logger = log.Init(opts.Logging)
