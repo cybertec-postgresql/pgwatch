@@ -29,12 +29,13 @@ func TestParseFail(t *testing.T) {
 
 func TestParseSuccess(t *testing.T) {
 	tests := [][]string{
-		{0: "go-test", "--version"},
+		{0: "go-test", "--help"},
 	}
 	for _, d := range tests {
 		os.Args = d
-		_, err := New(nil)
-		assert.NoError(t, err)
+		c, err := New(nil)
+		assert.True(t, c.Help)
+		assert.Error(t, err)
 	}
 }
 
