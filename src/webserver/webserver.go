@@ -36,7 +36,7 @@ func Init(opts config.WebUIOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw so
 			ReadTimeout:    10 * time.Second,
 			WriteTimeout:   10 * time.Second,
 			MaxHeaderBytes: 1 << 20,
-			Handler:        mux,
+			Handler:        corsMiddleware(mux),
 		},
 		opts,
 		webuifs,
