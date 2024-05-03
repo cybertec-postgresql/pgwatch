@@ -904,6 +904,9 @@ metrics:
     pgbouncer_stats:
         sqls:
             0: show stats
+    pgbouncer_clients:
+        sqls:
+            0: show clients
     pgpool_stats:
         sqls:
             3: |-
@@ -3704,6 +3707,7 @@ presets:
         description: per DB stats
         metrics:
             pgbouncer_stats: 60
+            pgbouncer_clients: 60
     pgpool:
         description: pool global stats, 1 row per node ID
         metrics:
