@@ -3,7 +3,6 @@ import { PresetsPage } from "pages/PresetsPage/PresetsPage";
 import { SignIn } from "./Authentication/SignIn";
 import { Dashboard } from "./Dashboard";
 import { Logs } from "./Logs";
-import { StatsSummary } from "./StatsSummary";
 
 export const publicRoutes = [
   {
@@ -28,11 +27,6 @@ export const privateRoutes = [
     title: "Presets",
     link: "/presets",
     element: PresetsPage,
-  },
-  {
-    title: "Stats summary",
-    link: "/stats_summary",
-    element: StatsSummary,
   },
   {
     title: "Logs",
