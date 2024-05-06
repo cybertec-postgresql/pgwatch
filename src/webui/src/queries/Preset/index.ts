@@ -1,45 +1,27 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-
-import { UseFormReset } from "react-hook-form";
-
+import { QueryKeys } from "consts/queryKeys";
 import { Presets } from "types/Preset/Preset";
-import { QueryKeys } from "queries/queryKeys";
-import { CreatePresetConfigForm, CreatePresetConfigRequestForm, UpdatePresetConfigRequestForm } from "queries/types/PresetTypes";
-
+import { PresetRequestBody } from "types/Preset/PresetRequestBody";
 import PresetService from "services/Preset";
 
 const services = PresetService.getInstance();
 
 export const usePresets = () => useQuery<Presets>({
-  queryKey: QueryKeys.preset,
+  queryKey: [QueryKeys.Preset],
   queryFn: async () => await services.getPresets()
 });
 
 export const useDeletePreset = () => useMutation({
-  mutationKey: QueryKeys.preset,
-  mutationFn: async (data: string) => await services.deletePreset(data)
+  mutationKey: [QueryKeys.Preset],
+  mutationFn: async (name: string) => await services.deletePreset(name)
 });
 
-export const useEditPreset = (
-  modalClose: () => void,
-  reset: UseFormReset<CreatePresetConfigForm>
-) => useMutation({
-  mutationKey: QueryKeys.preset,
-  mutationFn: async (data: UpdatePresetConfigRequestForm) => await services.editPreset(data),
-  onSuccess: () => {
-    modalClose();
-    reset();
-  }
+export const useEditPreset = () => useMutation({
+  mutationKey: [QueryKeys.Preset],
+  mutationFn: async (data: PresetRequestBody) => await services.editPreset(data),
 });
 
-export const useAddPreset = (
-  modalClose: () => void,
-  reset: UseFormReset<CreatePresetConfigForm>
-) => useMutation({
-  mutationKey: QueryKeys.preset,
-  mutationFn: async (data: CreatePresetConfigRequestForm) => await services.addPreset(data),
-  onSuccess: () => {
-    modalClose();
-    reset();
-  }
+export const useAddPreset = () => useMutation({
+  mutationKey: [QueryKeys.Preset],
+  mutationFn: async (data: PresetRequestBody) => await services.addPreset(data),
 });

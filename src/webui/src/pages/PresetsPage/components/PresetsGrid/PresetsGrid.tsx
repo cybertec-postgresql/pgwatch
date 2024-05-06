@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { DataGrid } from "@mui/x-data-grid";
+import { PresetFormDialog } from "containers/PresetFormDialog/PresetFormDialog";
 import { PresetFormProvider } from "contexts/PresetForm/PresetForm.provider";
 import { usePageStyles } from "styles/page";
 import { ErrorComponent } from "layout/common/ErrorComponent";
@@ -63,6 +64,7 @@ export const PresetsGrid = () => {
           components={{ Toolbar: () => <PresetsGridToolbar /> }}
           disableColumnMenu
         />
+        <PresetFormDialog />
       </PresetFormProvider>
     </div>
   );

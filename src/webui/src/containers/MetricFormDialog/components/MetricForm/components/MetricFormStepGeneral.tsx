@@ -64,7 +64,7 @@ export const MetricFormStepGeneral = () => {
       >
         <InputLabel htmlFor="Description">Description</InputLabel>
         <OutlinedInput
-          {...register("Description", { required: "Description is required" })}
+          {...register("Description")}
           id="Description"
           label="Description"
           multiline

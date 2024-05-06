@@ -10,7 +10,6 @@ export const useFormStyles = makeStyles()(
     formContent: {
       maxWidth: "550px",
       width: "550px",
-      maxHeight: "650px",
     },
     form: {
       paddingTop: "15px",
@@ -18,6 +17,20 @@ export const useFormStyles = makeStyles()(
       display: "flex",
       flexFlow: "column",
       gap: "10px",
+    },
+    row: {
+      display: "flex",
+      width: "100%",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+    },
+    iconRow: {
+      display: "flex",
+      alignItems: "center",
+      maxHeight: "56px",
+      height: "56px",
+      maxWidth: "40px",
+      width: "40px",
     },
     formControlInput: {
       display: "flex",
