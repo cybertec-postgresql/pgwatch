@@ -1,7 +1,7 @@
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { IconButton } from "@mui/material";
-import { Root } from "./GridActions.styles";
+import { useGridActionsStyles } from "./GridActions.styles";
 
 type Props = {
   handleEditClick: () => void;
@@ -11,9 +11,10 @@ type Props = {
 
 export const GridActions = (props: Props) => {
   const { children, handleDeleteClick, handleEditClick } = props;
+  const { classes } = useGridActionsStyles();
 
   return (
-    <Root>
+    <div className={classes.root}>
       <IconButton title="Edit" onClick={handleEditClick}>
         <EditIcon />
       </IconButton>
@@ -21,6 +22,6 @@ export const GridActions = (props: Props) => {
         <DeleteIcon />
       </IconButton>
       {children}
-    </Root>
+    </div>
   );
 };

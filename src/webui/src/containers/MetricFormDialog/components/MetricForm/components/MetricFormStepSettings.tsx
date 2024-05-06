@@ -1,23 +1,18 @@
-import { Box, Checkbox, FormControl, FormControlLabel, FormHelperText, InputLabel, OutlinedInput } from "@mui/material";
+import { Checkbox, FormControl, FormControlLabel, FormHelperText, InputLabel, OutlinedInput } from "@mui/material";
 import { useController, useFormContext } from "react-hook-form";
-import { 
-  form, 
-  formControlCheckbox, 
-  formControlInput, 
-  widthDefault, 
-  widthFull 
- } from "styles/form";
+import { useFormStyles } from "styles/form";
 import { MetricFormValues } from "../MetricForm.types";
 
 export const MetricFormStepSettings = () => {
   const { register, control } = useFormContext<MetricFormValues>();
+  const { classes, cx } = useFormStyles();
 
   const { field } = useController({ name: "IsInstanceLevel", control });
 
   return (
-    <Box sx={form}>
+    <div className={classes.form}>
       <FormControl
-        sx={{...formControlInput, ...widthDefault}}
+        className={cx(classes.formControlInput, classes.widthDefault)}
         variant="outlined"
       >
         <InputLabel htmlFor="Gauges">Gauges</InputLabel>
@@ -32,7 +27,7 @@ export const MetricFormStepSettings = () => {
         <FormHelperText id="Gauges-helper">Write every gauge with a new line</FormHelperText>
       </FormControl>
       <FormControl
-        sx={{...formControlInput, ...widthFull}}
+        className={cx(classes.formControlInput, classes.widthFull)}
         variant="outlined"
       >
         <InputLabel htmlFor="InitSQL">Init SQL</InputLabel>
@@ -45,7 +40,7 @@ export const MetricFormStepSettings = () => {
         />
       </FormControl>
       <FormControlLabel
-        sx={formControlCheckbox}
+        className={classes.formControlCheckbox}
         label="Is instance level"
         labelPlacement="start"
         control={
@@ -56,6 +51,6 @@ export const MetricFormStepSettings = () => {
           />
         }
       />
-    </Box>
+    </div>
   );
 };

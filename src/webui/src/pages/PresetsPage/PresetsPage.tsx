@@ -1,13 +1,12 @@
 import { usePageStyles } from "styles/page";
-import { MetricsGrid } from "./components/MetricsGrid/MetricsGrid";
+import { PresetsGrid } from "./components/PresetsGrid/PresetsGrid";
 
-export const MetricsPage = () => {
-
+export const PresetsPage = () => {
   const { classes } = usePageStyles();
 
   return (
     <div className={classes.root}>
-      <MetricsGrid />
+      <PresetsGrid />
     </div>
   );
 };

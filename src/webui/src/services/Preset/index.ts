@@ -1,5 +1,5 @@
 import { axiosInstance } from "axiosInstance";
-import { CreatePresetConfigRequestForm, UpdatePresetConfigRequestForm } from "queries/types/PresetTypes";
+import { PresetRequestBody } from "types/Preset/PresetRequestBody";
 
 
 export default class PresetService {
@@ -18,18 +18,18 @@ export default class PresetService {
       then(response => response.data);
   };
 
-  public async deletePreset(pc_name: string) {
-    return await axiosInstance.delete("preset", { params: { "id": pc_name } }).
+  public async deletePreset(name: string) {
+    return await axiosInstance.delete("preset", { params: { name } }).
       then(response => response.data);
   };
 
-  public async addPreset(data: CreatePresetConfigRequestForm) {
-    return await axiosInstance.post("preset", data).
+  public async addPreset(data: PresetRequestBody) {
+    return await axiosInstance.post("preset", data.Data, { params: { "name": data.Name } }).
       then(response => response);
   };
 
-  public async editPreset(data: UpdatePresetConfigRequestForm) {
-    return await axiosInstance.patch("preset", data.data, { params: { "id": data.pc_name } }).
+  public async editPreset(data: PresetRequestBody) {
+    return await axiosInstance.patch("preset", data.Data, { params: { "name": data.Name } }).
       then(response => response);
   };
 };

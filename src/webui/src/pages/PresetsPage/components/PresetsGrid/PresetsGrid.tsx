@@ -1,36 +1,36 @@
 import { useMemo, useState } from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import { MetricFormDialog } from "containers/MetricFormDialog/MetricFormDialog";
-import { MetricFormProvider } from "contexts/MetricForm/MetricForm.provider";
+import { PresetFormDialog } from "containers/PresetFormDialog/PresetFormDialog";
+import { PresetFormProvider } from "contexts/PresetForm/PresetForm.provider";
 import { usePageStyles } from "styles/page";
 import { ErrorComponent } from "layout/common/ErrorComponent";
 import { LoadingComponent } from "layout/common/LoadingComponent";
-import { useMetrics } from "queries/Metric";
-import { useMetricsGridColumns } from "./MetricsGrid.consts";
-import { MetricGridRow } from "./MetricsGrid.types";
-import { MetricsGridToolbar } from "./components/MetricsGridToolbar/MetricsGridToolbar";
+import { usePresets } from "queries/Preset";
+import { usePresetsGridColumns } from "./PresetsGrid.consts";
+import { PresetGridRow } from "./PresetsGrid.types";
+import { PresetsGridToolbar } from "./components/PresetsGridToolbar/PresetsGridToolbar";
 
-export const MetricsGrid = () => {
+export const PresetsGrid = () => {
   const [formDialogOpen, setFormDialogOpen] = useState(false);
-
-  const { status, data, error } = useMetrics();
 
   const { classes } = usePageStyles();
 
-  const rows: MetricGridRow[] | [] = useMemo(() => {
+  const { status, data, error } = usePresets();
+
+  const rows: PresetGridRow[] | [] = useMemo(() => {
     if (data) {
       return Object.keys(data).map((key) => {
-        const metric = data[key];
+        const preset = data[key];
         return {
           Key: key,
-          Metric: metric,
+          Preset: preset,
         };
       });
     }
     return [];
   }, [data]);
 
-  const columns = useMetricsGridColumns();
+  const columns = usePresetsGridColumns();
 
   const handleFormDialogOpen = () => setFormDialogOpen(true);
 
@@ -51,7 +51,7 @@ export const MetricsGrid = () => {
 
   return (
     <div className={classes.page}>
-      <MetricFormProvider
+      <PresetFormProvider
         open={formDialogOpen}
         handleOpen={handleFormDialogOpen}
         handleClose={handleFormDialogClose}
@@ -61,11 +61,11 @@ export const MetricsGrid = () => {
           columns={columns}
           rows={rows}
           rowsPerPageOptions={[]}
-          components={{ Toolbar: () => <MetricsGridToolbar /> }}
+          components={{ Toolbar: () => <PresetsGridToolbar /> }}
           disableColumnMenu
         />
-        <MetricFormDialog />
-      </MetricFormProvider>
-    </div >
+        <PresetFormDialog />
+      </PresetFormProvider>
+    </div>
   );
 };

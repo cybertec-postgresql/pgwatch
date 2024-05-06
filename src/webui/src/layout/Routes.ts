@@ -1,8 +1,8 @@
 import { MetricsPage } from "pages/MetricsPage/MetricsPage";
+import { PresetsPage } from "pages/PresetsPage/PresetsPage";
 import { SignIn } from "./Authentication/SignIn";
 import { Dashboard } from "./Dashboard";
 import { Logs } from "./Logs";
-import { PresetConfigs } from "./PresetConfigs";
 
 export const publicRoutes = [
   {
@@ -24,9 +24,9 @@ export const privateRoutes = [
     element: MetricsPage,
   },
   {
-    title: "Preset configs",
+    title: "Presets",
     link: "/presets",
-    element: PresetConfigs,
+    element: PresetsPage,
   },
   {
     title: "Logs",

@@ -79,7 +79,6 @@ export const useMetricsGridColumns = (): GridColDef<MetricGridRow>[] => ([
     field: "Actions",
     headerName: "Actions",
     headerAlign: "center",
-    width: 100,
     renderCell: ({ row }) => <MetricsGridActions metric={row} />
   },
 ]);
