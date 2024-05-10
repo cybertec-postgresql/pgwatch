@@ -8,7 +8,7 @@ require (
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/pashagolub/pgxmock/v3 v3.4.0
-	github.com/prometheus/client_golang v1.19.0
+	github.com/prometheus/client_golang v1.19.1
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sethvargo/go-retry v0.2.4
 	github.com/shirou/gopsutil/v3 v3.24.4
