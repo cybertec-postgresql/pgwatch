@@ -1483,7 +1483,27 @@ metrics:
             11: /* dummy placeholder - special handling in code to collect other metrics named reco_* */
     replication:
         sqls:
-            11: "select /* pgwatch3_generated */\n  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,\n  application_name as tag_application_name,\n  concat(coalesce(client_addr::text, client_hostname), '_', client_port::text) as tag_client_info,\n  coalesce(pg_wal_lsn_diff(case when pg_is_in_recovery() then pg_last_wal_receive_lsn() else pg_current_wal_lsn() end, write_lsn)::int8, 0) as write_lag_b,\n  coalesce(pg_wal_lsn_diff(case when pg_is_in_recovery() then pg_last_wal_receive_lsn() else pg_current_wal_lsn() end, flush_lsn)::int8, 0) as flush_lag_b,\n  coalesce(pg_wal_lsn_diff(case when pg_is_in_recovery() then pg_last_wal_receive_lsn() else pg_current_wal_lsn() end, replay_lsn)::int8, 0) as replay_lag_b,\n  (extract(epoch from write_lag) * 1000)::int8 as write_lag_ms,\n  (extract(epoch from flush_lag) * 1000)::int8 as flush_lag_ms,\n  (extract(epoch from replay_lag) * 1000)::int8 as replay_lag_ms,  \n  state,\n  sync_state,\n  case when sync_state in ('sync', 'quorum') then 1 else 0 end as is_sync_int,\n  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int\nfrom\n  /* when the query fails, grant \"pg_monitor\" system role (exposing all stats) to the monitoring user\n     or create specifically the \"get_stat_replication\" helper and use that instead of pg_stat_replication\n  */\n  --\n  pg_stat_replication\nwhere\n  coalesce(application_name, '') not in ('pg_basebackup', 'pg_rewind')"
+            11: |
+                select /* pgwatch3_generated */
+                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                  application_name as tag_application_name,
+                  usename AS tag_usename,
+                  concat(coalesce(client_addr::text, client_hostname), '_', client_port::text) as tag_client_info,
+                  coalesce(pg_wal_lsn_diff(case when pg_is_in_recovery() then pg_last_wal_receive_lsn() else pg_current_wal_lsn() end, sent_lsn)::int8, 0) as sent_lag_b,
+                  coalesce(pg_wal_lsn_diff(case when pg_is_in_recovery() then pg_last_wal_receive_lsn() else pg_current_wal_lsn() end, write_lsn)::int8, 0) as write_lag_b,
+                  coalesce(pg_wal_lsn_diff(case when pg_is_in_recovery() then pg_last_wal_receive_lsn() else pg_current_wal_lsn() end, flush_lsn)::int8, 0) as flush_lag_b,
+                  coalesce(pg_wal_lsn_diff(case when pg_is_in_recovery() then pg_last_wal_receive_lsn() else pg_current_wal_lsn() end, replay_lsn)::int8, 0) as replay_lag_b,
+                  (extract(epoch from write_lag) * 1000)::int8 as write_lag_ms,
+                  (extract(epoch from flush_lag) * 1000)::int8 as flush_lag_ms,
+                  (extract(epoch from replay_lag) * 1000)::int8 as replay_lag_ms,
+                  state,
+                  sync_state,
+                  case when sync_state in ('sync', 'quorum') then 1 else 0 end as is_sync_int,
+                  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int
+                from
+                  pg_stat_replication
+                where
+                  coalesce(application_name, '') not in ('pg_basebackup', 'pg_rewind');
         gauges:
             - '*'
         is_instance_level: true
