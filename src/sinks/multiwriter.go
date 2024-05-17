@@ -40,7 +40,7 @@ func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs metric
 		case "jsonfile":
 			w, err = NewJSONWriter(ctx, path)
 		case "postgres", "postgresql":
-			w, err = NewPostgresWriter(ctx, s, opts, metricDefs)
+			w, err = NewPostgresWriter(ctx, s, &opts.Measurements, metricDefs)
 		case "prometheus":
 			w, err = NewPrometheusWriter(ctx, path)
 		default:

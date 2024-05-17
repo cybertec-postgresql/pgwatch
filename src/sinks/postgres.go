@@ -23,16 +23,22 @@ const (
 	highLoadTimeout = time.Second * 5
 )
 
-func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options, metricDefs metrics.Metrics) (pgw *PostgresWriter, err error) {
+func NewPostgresWriter(ctx context.Context, connstr string, opts *config.MeasurementOpts, metricDefs metrics.Metrics) (pgw *PostgresWriter, err error) {
+	var conn db.PgxPoolIface
+	if conn, err = db.New(ctx, connstr); err != nil {
+		return
+	}
+	return NewWriterFromPostgresConn(ctx, conn, opts, metricDefs)
+}
+
+func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *config.MeasurementOpts, metricDefs metrics.Metrics) (pgw *PostgresWriter, err error) {
 	pgw = &PostgresWriter{
 		Ctx:        ctx,
 		MetricDefs: metricDefs,
 		opts:       opts,
 		input:      make(chan []metrics.MeasurementMessage, cacheLimit),
 		lastError:  make(chan error),
-	}
-	if pgw.SinkDb, err = db.New(ctx, connstr); err != nil {
-		return
+		SinkDb:     conn,
 	}
 	if err = db.Init(ctx, pgw.SinkDb, func(ctx context.Context, conn db.PgxIface) error {
 		log.GetLogger(ctx).Info("initialising the measurement database...")
@@ -50,7 +56,6 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options
 		return
 	}
 	if err = pgw.ReadMetricSchemaType(); err != nil {
-		pgw.SinkDb.Close()
 		return
 	}
 	if err = pgw.EnsureBuiltinMetricDummies(); err != nil {
@@ -96,7 +101,7 @@ type PostgresWriter struct {
 	SinkDb       db.PgxPoolIface
 	MetricSchema DbStorageSchemaType
 	MetricDefs   metrics.Metrics
-	opts         *config.Options
+	opts         *config.MeasurementOpts
 	input        chan []metrics.MeasurementMessage
 	lastError    chan error
 }
@@ -188,7 +193,7 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MeasurementMessage) error {
 
 func (pgw *PostgresWriter) poll() {
 	cache := make([]metrics.MeasurementMessage, 0, cacheLimit)
-	cacheTimeout := pgw.opts.Measurements.BatchingDelay
+	cacheTimeout := pgw.opts.BatchingDelay
 	tick := time.NewTicker(cacheTimeout)
 	for {
 		select {
@@ -498,7 +503,7 @@ func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[str
 }
 
 func (pgw *PostgresWriter) OldPostgresMetricsDeleter() {
-	metricAgeDaysThreshold := pgw.opts.Measurements.Retention
+	metricAgeDaysThreshold := pgw.opts.Retention
 	if metricAgeDaysThreshold <= 0 {
 		return
 	}

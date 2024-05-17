@@ -72,9 +72,11 @@ func TestWriteMeasurements(t *testing.T) {
 	mw := &MultiWriter{}
 	mockWriter := &MockWriter{}
 	mw.AddWriter(mockWriter)
-	ctx := context.Background()
+	ctx, c := context.WithCancel(context.Background())
+	assert.NotNil(t, c)
 	storageCh := make(chan []metrics.MeasurementMessage)
 	go mw.WriteMeasurements(ctx, storageCh)
 	storageCh <- []metrics.MeasurementMessage{{}}
+	c()
 	close(storageCh)
 }
