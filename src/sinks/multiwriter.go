@@ -25,7 +25,7 @@ type MultiWriter struct {
 }
 
 // NewMultiWriter creates and returns new instance of MultiWriter struct.
-func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs metrics.Metrics) (mw *MultiWriter, err error) {
+func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs *metrics.Metrics) (mw *MultiWriter, err error) {
 	var w Writer
 	logger := log.GetLogger(ctx)
 	mw = &MultiWriter{}

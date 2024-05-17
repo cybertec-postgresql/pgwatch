@@ -23,7 +23,7 @@ const (
 	highLoadTimeout = time.Second * 5
 )
 
-func NewPostgresWriter(ctx context.Context, connstr string, opts *config.MeasurementOpts, metricDefs metrics.Metrics) (pgw *PostgresWriter, err error) {
+func NewPostgresWriter(ctx context.Context, connstr string, opts *config.MeasurementOpts, metricDefs *metrics.Metrics) (pgw *PostgresWriter, err error) {
 	var conn db.PgxPoolIface
 	if conn, err = db.New(ctx, connstr); err != nil {
 		return
@@ -31,7 +31,7 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Measure
 	return NewWriterFromPostgresConn(ctx, conn, opts, metricDefs)
 }
 
-func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *config.MeasurementOpts, metricDefs metrics.Metrics) (pgw *PostgresWriter, err error) {
+func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *config.MeasurementOpts, metricDefs *metrics.Metrics) (pgw *PostgresWriter, err error) {
 	pgw = &PostgresWriter{
 		Ctx:        ctx,
 		MetricDefs: metricDefs,
@@ -100,7 +100,7 @@ type PostgresWriter struct {
 	Ctx          context.Context
 	SinkDb       db.PgxPoolIface
 	MetricSchema DbStorageSchemaType
-	MetricDefs   metrics.Metrics
+	MetricDefs   *metrics.Metrics
 	opts         *config.MeasurementOpts
 	input        chan []metrics.MeasurementMessage
 	lastError    chan error
@@ -161,8 +161,7 @@ func (pgw *PostgresWriter) SyncMetric(dbUnique, metricName, op string) error {
 }
 
 func (pgw *PostgresWriter) EnsureBuiltinMetricDummies() (err error) {
-	names := []string{"sproc_changes", "table_changes", "index_changes", "privilege_changes", "object_changes", "configuration_changes"}
-	for _, name := range names {
+	for _, name := range metrics.GetDefaultBuiltInMetrics() {
 		err = errors.Join(err, pgw.EnsureMetricDummy(name))
 	}
 	return

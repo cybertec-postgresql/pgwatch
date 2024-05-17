@@ -39,7 +39,7 @@ func TestNewMultiWriter(t *testing.T) {
 	}
 
 	for _, i := range input {
-		mw, err := NewMultiWriter(context.Background(), i.opts, *metrics.GetDefaultMetrics())
+		mw, err := NewMultiWriter(context.Background(), i.opts, metrics.GetDefaultMetrics())
 		if i.err {
 			assert.Error(t, err)
 		} else {

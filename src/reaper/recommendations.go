@@ -33,7 +33,7 @@ func GetAllRecoMetricsForVersion(vme DBVersionMapEntry) (map[string]metrics.Metr
 	defer metricDefMapLock.RUnlock()
 	for m := range metricDefinitionMap.MetricDefs {
 		if strings.HasPrefix(m, recoPrefix) {
-			mvp, err := GetMetricVersionProperties(m, vme, &metricDefinitionMap)
+			mvp, err := GetMetricVersionProperties(m, vme, metricDefinitionMap)
 			if err != nil {
 				return nil, err
 			}
