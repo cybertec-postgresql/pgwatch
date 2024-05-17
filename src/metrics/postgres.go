@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	_ "embed"
 
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/log"
@@ -15,7 +16,7 @@ func NewPostgresMetricReaderWriter(ctx context.Context, conn db.PgxPoolIface) (R
 				return nil, err
 			}
 			defer func() { _ = tx.Rollback(ctx) }()
-			if _, err := tx.Exec(ctx, db.SQLConfigSchema); err != nil {
+			if _, err := tx.Exec(ctx, sqlConfigSchema); err != nil {
 				return nil, err
 			}
 			if err := writeMetricsToPostgres(ctx, tx, GetDefaultMetrics()); err != nil {
@@ -34,6 +35,9 @@ func NewPostgresMetricReaderWriter(ctx context.Context, conn db.PgxPoolIface) (R
 		configDb: conn,
 	}, conn.Ping(ctx)
 }
+
+//go:embed postgres_schema.sql
+var sqlConfigSchema string
 
 type dbMetricReaderWriter struct {
 	ctx      context.Context

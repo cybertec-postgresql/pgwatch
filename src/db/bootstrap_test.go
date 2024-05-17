@@ -30,16 +30,3 @@ func TestGetTableColumns(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"col1", "col2"}, cols)
 }
-
-func TestExecuteSchemaScripts(t *testing.T) {
-	conn, err := pgxmock.NewPool()
-	assert.NoError(t, err)
-
-	conn.ExpectPing()
-	conn.ExpectQuery("SELECT EXISTS").
-		WithArgs("admin").
-		WillReturnError(errors.New("expected"))
-	err = db.InitMeasurementDb(ctx, conn)
-	assert.Error(t, err)
-
-}

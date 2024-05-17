@@ -6,6 +6,7 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
 	retry "github.com/sethvargo/go-retry"
@@ -32,13 +33,18 @@ func New(ctx context.Context, connStr string, callbacks ...ConnConfigCallback) (
 	if err != nil {
 		return nil, err
 	}
+	logger := log.GetLogger(ctx)
 	if connConfig.ConnConfig.ConnectTimeout == 0 {
 		connConfig.ConnConfig.ConnectTimeout = time.Second * 5
 	}
 	connConfig.MaxConnIdleTime = 15 * time.Second
 	connConfig.MaxConnLifetime = pgConnRecycleSeconds * time.Second
+	connConfig.ConnConfig.RuntimeParams["application_name"] = applicationName
+	connConfig.ConnConfig.OnNotice = func(_ *pgconn.PgConn, n *pgconn.Notice) {
+		logger.WithField("severity", n.Severity).WithField("notice", n.Message).Info("Notice received")
+	}
 	tracelogger := &tracelog.TraceLog{
-		Logger:   log.NewPgxLogger(log.GetLogger(ctx)),
+		Logger:   log.NewPgxLogger(logger),
 		LogLevel: tracelog.LogLevelDebug, //map[bool]tracelog.LogLevel{false: tracelog.LogLevelWarn, true: tracelog.LogLevelDebug}[true],
 	}
 	connConfig.ConnConfig.Tracer = tracelogger
@@ -69,25 +75,7 @@ func Init(ctx context.Context, db PgxPoolIface, init ConnInitCallback) error {
 	return init(ctx, db)
 }
 
-// InitMeasurementDb created and inits database to store metrics measurements
-func InitMeasurementDb(ctx context.Context, db PgxPoolIface) error {
-	return Init(ctx, db, func(ctx context.Context, conn PgxIface) error {
-		log.GetLogger(ctx).Info("initialising the measurement database...")
-		return executeSchemaScripts(ctx, conn, "admin", metricSchemaSQLs)
-	})
-}
-
-var (
-	metricSchemaSQLs = []string{
-		sqlMetricAdminSchema,
-		sqlMetricAdminFunctions,
-		sqlMetricEnsurePartitionPostgres,
-		sqlMetricEnsurePartitionTimescale,
-		sqlMetricChangeChunkIntervalTimescale,
-		sqlMetricChangeCompressionIntervalTimescale,
-	}
-)
-
+// DoesSchemaExist checks if schema exists
 func DoesSchemaExist(ctx context.Context, conn PgxIface, schema string) (bool, error) {
 	var exists bool
 	sqlSchemaExists := "SELECT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = $1)"
@@ -95,20 +83,7 @@ func DoesSchemaExist(ctx context.Context, conn PgxIface, schema string) (bool, e
 	return exists, err
 }
 
-// executeSchemaScripts executes initial schema scripts
-func executeSchemaScripts(ctx context.Context, conn PgxIface, schema string, sqls []string) error {
-	exists, err := DoesSchemaExist(ctx, conn, schema)
-	if err != nil || exists {
-		return err
-	}
-	for _, sql := range sqls {
-		if _, err = conn.Exec(ctx, sql); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
+// GetTableColumns returns the list of columns for a given table
 func GetTableColumns(ctx context.Context, conn PgxIface, table string) (cols []string, err error) {
 	sql := `SELECT attname FROM pg_attribute a WHERE a.attrelid = to_regclass($1) and a.attnum > 0 and not a.attisdropped`
 	r, err := conn.Query(ctx, sql, table)
