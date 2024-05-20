@@ -1,4 +1,4 @@
-package sinks_test
+package sinks
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
-	"github.com/cybertec-postgresql/pgwatch3/sinks"
 	"github.com/pashagolub/pgxmock/v3"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,9 +18,9 @@ func TestReadMetricSchemaType(t *testing.T) {
 	conn, err := pgxmock.NewPool()
 	assert.NoError(t, err)
 
-	pgw := sinks.PostgresWriter{
-		Ctx:    ctx,
-		SinkDb: conn,
+	pgw := PostgresWriter{
+		сtx:    ctx,
+		sinkDb: conn,
 	}
 
 	conn.ExpectQuery("SELECT schema_type").
@@ -31,7 +30,7 @@ func TestReadMetricSchemaType(t *testing.T) {
 	conn.ExpectQuery("SELECT schema_type").
 		WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 	assert.NoError(t, pgw.ReadMetricSchemaType())
-	assert.Equal(t, sinks.DbStorageSchemaTimescale, pgw.MetricSchema)
+	assert.Equal(t, DbStorageSchemaTimescale, pgw.metricSchema)
 }
 
 func TestNewWriterFromPostgresConn(t *testing.T) {
@@ -46,9 +45,63 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 	}
 
 	opts := &config.MeasurementOpts{BatchingDelay: time.Hour, Retention: 356}
-	pgw, err := sinks.NewWriterFromPostgresConn(ctx, conn, opts, metrics.GetDefaultMetrics())
+	pgw, err := NewWriterFromPostgresConn(ctx, conn, opts, metrics.GetDefaultMetrics())
 	assert.NoError(t, err)
 	assert.NotNil(t, pgw)
 
 	assert.NoError(t, conn.ExpectationsWereMet())
+}
+
+func TestSyncMetric(t *testing.T) {
+	conn, err := pgxmock.NewPool()
+	assert.NoError(t, err)
+	pgw := PostgresWriter{
+		сtx:    ctx,
+		sinkDb: conn,
+	}
+	dbUnique := "mydb"
+	metricName := "mymetric"
+	op := "add"
+	conn.ExpectExec("insert into admin\\.all_distinct_dbname_metrics").WithArgs(dbUnique, metricName).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
+	conn.ExpectExec("select admin\\.ensure_dummy_metrics_table").WithArgs(metricName).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
+	err = pgw.SyncMetric(dbUnique, metricName, op)
+	assert.NoError(t, err)
+	assert.NoError(t, conn.ExpectationsWereMet())
+
+	op = "foo"
+	err = pgw.SyncMetric(dbUnique, metricName, op)
+	assert.NoError(t, err, "ignore unknown operation")
+}
+
+func TestWrite(t *testing.T) {
+	conn, err := pgxmock.NewPool()
+	assert.NoError(t, err)
+	ctx, cancel := context.WithCancel(ctx)
+	pgw := PostgresWriter{
+		сtx:    ctx,
+		sinkDb: conn,
+	}
+	messages := []metrics.MeasurementMessage{
+		{
+			MetricName: "test_metric",
+			Data: metrics.Measurements{
+				{"number": 1, "string": "test_data"},
+			},
+			DBName:     "test_db",
+			CustomTags: map[string]string{"foo": "boo"},
+		},
+	}
+
+	highLoadTimeout = 0
+	err = pgw.Write(messages)
+	assert.NoError(t, err, "messages skipped due to high load")
+
+	highLoadTimeout = time.Second * 5
+	pgw.input = make(chan []metrics.MeasurementMessage, cacheLimit)
+	err = pgw.Write(messages)
+	assert.NoError(t, err, "write successful")
+
+	cancel()
+	err = pgw.Write(messages)
+	assert.Error(t, err, "context canceled")
 }
