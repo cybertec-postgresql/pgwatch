@@ -2,6 +2,7 @@ package sinks
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -33,7 +34,19 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options
 	if pgw.SinkDb, err = db.New(ctx, connstr); err != nil {
 		return
 	}
-	if err = db.InitMeasurementDb(ctx, pgw.SinkDb); err != nil {
+	if err = db.Init(ctx, pgw.SinkDb, func(ctx context.Context, conn db.PgxIface) error {
+		log.GetLogger(ctx).Info("initialising the measurement database...")
+		exists, err := db.DoesSchemaExist(ctx, conn, "admin")
+		if err != nil || exists {
+			return err
+		}
+		for _, sql := range metricSchemaSQLs {
+			if _, err = conn.Exec(ctx, sql); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
 		return
 	}
 	if err = pgw.ReadMetricSchemaType(); err != nil {
@@ -48,6 +61,35 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Options
 	go pgw.poll()
 	return
 }
+
+//go:embed sql/admin_schema.sql
+var sqlMetricAdminSchema string
+
+//go:embed sql/admin_functions.sql
+var sqlMetricAdminFunctions string
+
+//go:embed sql/ensure_partition_postgres.sql
+var sqlMetricEnsurePartitionPostgres string
+
+//go:embed sql/ensure_partition_timescale.sql
+var sqlMetricEnsurePartitionTimescale string
+
+//go:embed sql/change_chunk_interval.sql
+var sqlMetricChangeChunkIntervalTimescale string
+
+//go:embed sql/change_compression_interval.sql
+var sqlMetricChangeCompressionIntervalTimescale string
+
+var (
+	metricSchemaSQLs = []string{
+		sqlMetricAdminSchema,
+		sqlMetricAdminFunctions,
+		sqlMetricEnsurePartitionPostgres,
+		sqlMetricEnsurePartitionTimescale,
+		sqlMetricChangeChunkIntervalTimescale,
+		sqlMetricChangeCompressionIntervalTimescale,
+	}
+)
 
 type PostgresWriter struct {
 	Ctx          context.Context
