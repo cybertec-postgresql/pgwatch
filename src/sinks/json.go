@@ -3,15 +3,9 @@ package sinks
 import (
 	"context"
 	"encoding/json"
-	"sync/atomic"
 
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"gopkg.in/natefinch/lumberjack.v2"
-)
-
-var (
-	totalMetricsDroppedCounter    uint64
-	datastoreWriteFailuresCounter uint64
 )
 
 type JSONWriter struct {
@@ -20,13 +14,18 @@ type JSONWriter struct {
 }
 
 func NewJSONWriter(ctx context.Context, fname string) (*JSONWriter, error) {
-	return &JSONWriter{
+	jw := &JSONWriter{
 		ctx: ctx,
 		lw:  &lumberjack.Logger{Filename: fname, Compress: true},
-	}, nil
+	}
+	go jw.watchCtx()
+	return jw, nil
 }
 
 func (jw *JSONWriter) Write(msgs []metrics.MeasurementMessage) error {
+	if jw.ctx.Err() != nil {
+		return jw.ctx.Err()
+	}
 	if len(msgs) == 0 {
 		return nil
 	}
@@ -39,14 +38,21 @@ func (jw *JSONWriter) Write(msgs []metrics.MeasurementMessage) error {
 			"custom_tags": msg.CustomTags,
 		}
 		if err := enc.Encode(dataRow); err != nil {
-			atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
 			return err
 		}
 	}
 	return nil
 }
 
+func (jw *JSONWriter) watchCtx() {
+	<-jw.ctx.Done()
+	jw.lw.Close()
+}
+
 func (jw *JSONWriter) SyncMetric(_, _, _ string) error {
+	if jw.ctx.Err() != nil {
+		return jw.ctx.Err()
+	}
 	// do nothing, we don't care
 	return nil
 }

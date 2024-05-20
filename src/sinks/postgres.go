@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
@@ -334,7 +333,6 @@ func (pgw *PostgresWriter) write(msgs []metrics.MeasurementMessage) {
 		forceRecreatePGMetricPartitions = false
 	}
 	if err != nil {
-		atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
 		pgw.lastError <- err
 	}
 
@@ -357,7 +355,6 @@ func (pgw *PostgresWriter) write(msgs []metrics.MeasurementMessage) {
 			jsonBytes, err := json.Marshal(m.Data)
 			if err != nil {
 				logger.Errorf("Skipping 1 metric for [%s:%s] due to JSON conversion error: %s", m.DBName, m.Metric, err)
-				atomic.AddUint64(&totalMetricsDroppedCounter, 1)
 				continue
 			}
 
@@ -366,7 +363,6 @@ func (pgw *PostgresWriter) write(msgs []metrics.MeasurementMessage) {
 					jsonBytesTags, err := json.Marshal(m.TagData)
 					if err != nil {
 						l.Error(err)
-						atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
 						return nil
 					}
 					return string(jsonBytesTags)
@@ -378,7 +374,6 @@ func (pgw *PostgresWriter) write(msgs []metrics.MeasurementMessage) {
 
 			if _, err = pgw.SinkDb.CopyFrom(context.Background(), getTargetTable(), getTargetColumns(), pgx.CopyFromRows(rows)); err != nil {
 				l.Error(err)
-				atomic.AddUint64(&datastoreWriteFailuresCounter, 1)
 				forceRecreatePGMetricPartitions = strings.Contains(err.Error(), "no partition")
 				if forceRecreatePGMetricPartitions {
 					logger.Warning("Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run")
