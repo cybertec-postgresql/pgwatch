@@ -396,21 +396,6 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementMessage) {
 	pgw.lastError <- err
 }
 
-func (pgw *PostgresWriter) EnsureMetric(pgPartBounds map[string]ExistingPartitionInfo, force bool) (err error) {
-	logger := log.GetLogger(pgw.сtx)
-	sqlEnsure := `select * from admin.ensure_partition_metric($1)`
-	for metric := range pgPartBounds {
-		if _, ok := partitionMapMetric[metric]; !ok || force {
-			if _, err = pgw.sinkDb.Exec(pgw.сtx, sqlEnsure, metric); err != nil {
-				logger.Errorf("Failed to create partition on metric '%s': %w", metric, err)
-				return err
-			}
-			partitionMapMetric[metric] = ExistingPartitionInfo{}
-		}
-	}
-	return nil
-}
-
 // EnsureMetricTime creates special partitions if Timescale used for realtime metrics
 func (pgw *PostgresWriter) EnsureMetricTime(pgPartBounds map[string]ExistingPartitionInfo, force bool) error {
 	logger := log.GetLogger(pgw.сtx)
