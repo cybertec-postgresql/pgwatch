@@ -3424,7 +3424,7 @@ metrics:
                     not exists (select 1 from pg_locks where relation = relid and mode = 'AccessExclusiveLock')
                   order by relpages desc
                 )
-                select /* pgwatch2_generated */
+                select /* pgwatch3_generated */
                   epoch_ns,
                   tag_table_full_name,
                   0 as is_part_root,
