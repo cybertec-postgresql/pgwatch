@@ -23,7 +23,6 @@ const (
 type SourceOpts struct {
 	Config                       string   `short:"c" long:"config" mapstructure:"config" description:"Postgres URI, file or folder of YAML files containing info on which DBs to monitor and where to store metrics" env:"PW3_CONFIG"`
 	Refresh                      int      `long:"refresh" mapstructure:"refresh" description:"How frequently to resync sources and metrics" env:"PW3_REFRESH" default:"120"`
-	Init                         bool     `long:"init" description:"Initialize configuration database schema to the latest version and exit. Can be used with --upgrade"`
 	Groups                       []string `short:"g" long:"group" mapstructure:"group" description:"Groups for filtering which databases to monitor. By default all are monitored" env:"PW3_GROUP"`
 	MinDbSizeMB                  int64    `long:"min-db-size-mb" mapstructure:"min-db-size-mb" description:"Smaller size DBs will be ignored and not monitored until they reach the threshold." env:"PW3_MIN_DB_SIZE_MB" default:"0"`
 	MaxParallelConnectionsPerDb  int      `long:"max-parallel-connections-per-db" mapstructure:"max-parallel-connections-per-db" description:"Max parallel metric fetches per DB. Note the multiplication effect on multi-DB instances" env:"PW3_MAX_PARALLEL_CONNECTIONS_PER_DB" default:"2"`
@@ -72,6 +71,8 @@ type Options struct {
 	Measurements MeasurementOpts `group:"Measurements"`
 	Logging      LoggingOpts     `group:"Logging"`
 	WebUI        WebUIOpts       `group:"WebUI"`
+	Init         bool            `long:"init" description:"Initialize configurations schemas to the latest version and exit. Can be used with --upgrade"`
+	Upgrade      bool            `long:"upgrade" description:"Upgrade configurations to the latest version"`
 	Ping         bool            `long:"ping" mapstructure:"ping" description:"Try to connect to all configured DB-s, report errors and then exit" env:"PW3_PING"`
 	Help         bool
 }

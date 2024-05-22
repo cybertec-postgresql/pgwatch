@@ -71,3 +71,17 @@ CREATE TABLE IF NOT EXISTS pgwatch3.source(
 	CHECK (dbtype IN ('postgres', 'pgbouncer', 'postgres-continuous-discovery', 'patroni', 'patroni-continuous-discovery', 'patroni-namespace-discovery', 'pgpool')),
 	CHECK ("group" ~ E'\\w+')
 );
+
+-- define migrations you need to apply
+-- every change to the database schema should populate this table.
+-- Version value should contain issue number zero padded followed by
+-- short description of the issue\feature\bug implemented\resolved
+CREATE TABLE pgwatch3.migration(
+    id bigint PRIMARY KEY,
+    version text NOT NULL
+);
+
+INSERT INTO
+    pgwatch3.migration (id, version)
+VALUES
+    (0,  '00179 Apply metrics migrations for v3');
