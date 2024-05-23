@@ -44,6 +44,9 @@ type dbMetricReaderWriter struct {
 	configDb db.PgxIface
 }
 
+// make sure *dbMetricReaderWriter implements the Migrator interface
+var _ Migrator = (*dbMetricReaderWriter)(nil)
+
 // writeMetricsToPostgres writes the metrics and presets definitions to the
 // pgwatch3.metric and pgwatch3.preset tables in the ConfigDB.
 func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *Metrics) error {

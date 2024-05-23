@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -24,7 +25,7 @@ var (
 	commit  = "unknown"
 	version = "unknown"
 	date    = "unknown"
-	dbapi   = "00534"
+	dbapi   = "00179"
 )
 
 func printVersion() {
@@ -95,6 +96,20 @@ func NewConfigurationReaders(opts *config.Options) (sourcesReader sources.Reader
 	return
 }
 
+// UpgradeConfiguration upgrades the configuration if needed.
+func UpgradeConfiguration(m metrics.Migrator) (err error) {
+	if opts.Upgrade {
+		err = m.Migrate()
+	} else {
+		var upgrade bool
+		upgrade, err = m.NeedsMigration()
+		if upgrade {
+			err = errors.Join(err, errors.New("configuration needs upgrade, use --upgrade option"))
+		}
+	}
+	return
+}
+
 func main() {
 	var (
 		err    error
@@ -134,7 +149,19 @@ func main() {
 		logger.Error(err)
 		return
 	}
-	if opts.Sources.Init {
+
+	//check if we want to upgrade the configuration, which can be one of the following:
+	// - PostgreSQL database schema
+	// - YAML file schema
+	if m, ok := metricsReaderWriter.(metrics.Migrator); ok {
+		if err = UpgradeConfiguration(m); err != nil {
+			exitCode.Store(ExitCodeUpgradeError)
+			logger.Error(err)
+			return
+		}
+	}
+
+	if opts.Init {
 		// At this point we have initialised the sources, metrics and presets configurations.
 		// Any fatal errors are handled by the configuration readers. So we may exit gracefully.
 		return

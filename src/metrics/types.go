@@ -105,6 +105,11 @@ type Writer interface {
 	UpdatePreset(presetName string, preset Preset) error
 }
 
+type Migrator interface {
+	Migrate() error
+	NeedsMigration() (bool, error)
+}
+
 type ReaderWriter interface {
 	Reader
 	Writer
