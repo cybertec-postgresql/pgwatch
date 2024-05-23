@@ -17,7 +17,7 @@ import {
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { Controller, FieldPath, FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
-import { useAddDb, useEditDb, useTestConnection } from "queries/Dashboard";
+import { useAddDb, useEditDb, useTestConnection } from "queries/Source";
 import { Db, createDbForm } from "queries/types/DbTypes";
 import {
   AutocompleteComponent,

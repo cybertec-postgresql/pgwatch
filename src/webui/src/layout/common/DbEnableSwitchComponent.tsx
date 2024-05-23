@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { Switch } from "@mui/material";
-import { useEditEnableDb } from "queries/Dashboard";
+import { useEditEnableDb } from "queries/Source";
 
 
 type Props = {

@@ -8,7 +8,7 @@ import { databasesColumns } from "layout/common/Grid/GridColumns";
 import { GridToolbarComponent } from "layout/common/Grid/GridToolbarComponent";
 import { LoadingComponent } from "layout/common/LoadingComponent";
 
-import { useDbs, useDeleteDb } from "queries/Dashboard";
+import { useDbs, useDeleteDb } from "queries/Source";
 import { Db } from "queries/types/DbTypes";
 
 import { ModalComponent } from "./ModalComponent";

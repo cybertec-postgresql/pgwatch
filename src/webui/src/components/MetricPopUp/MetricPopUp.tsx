@@ -10,17 +10,20 @@ type MetricRows = {
 };
 
 type Props = {
-  Metrics: Record<string, number>;
+  Metrics?: Record<string, number> | null;
 };
 
 export const MetricPopUp = ({ Metrics }: Props) => {
   const [open, setOpen] = useState(false);
 
   const rows: MetricRows[] = useMemo(() => {
-    return Object.keys(Metrics).map((key) => ({
-      name: key,
-      interval: Metrics[key],
-    }));
+    if (Metrics) {
+      return Object.keys(Metrics).map((key) => ({
+        name: key,
+        interval: Metrics[key],
+      }));
+    }
+    return [];
   }, [Metrics]);
 
   const columns = useMetricPopUpColumns();

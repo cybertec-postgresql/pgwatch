@@ -1,6 +1,6 @@
 import { GridColDef } from "@mui/x-data-grid";
+import { MetricPopUp } from "../../../../components/MetricPopUp/MetricPopUp";
 import { PresetGridRow } from "./PresetsGrid.types";
-import { MetricPopUp } from "./components/MetricPopUp/MetricPopUp";
 import { PresetsGridActions } from "./components/PresetsGridActions/PresetsGridActions";
 
 export const usePresetsGridColumns = (): GridColDef<PresetGridRow>[] => ([

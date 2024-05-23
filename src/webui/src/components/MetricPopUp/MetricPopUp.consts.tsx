@@ -4,6 +4,7 @@ export const useMetricPopUpColumns = (): GridColDef[] => ([
   {
     field: "name",
     headerName: "Name",
+    flex: 1,
   },
   {
     field: "interval",
