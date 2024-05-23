@@ -5,6 +5,10 @@ import (
 	"errors"
 )
 
+func GetDefaultBuiltInMetrics() []string {
+	return []string{"sproc_changes", "table_changes", "index_changes", "privilege_changes", "object_changes", "configuration_changes"}
+}
+
 // NewDefaultMetricReader creates a new default metric reader with an empty path.
 func NewDefaultMetricReader(context.Context) (ReaderWriter, error) {
 	return &defaultMetricReader{}, nil

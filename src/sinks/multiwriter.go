@@ -25,7 +25,7 @@ type MultiWriter struct {
 }
 
 // NewMultiWriter creates and returns new instance of MultiWriter struct.
-func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs metrics.Metrics) (mw *MultiWriter, err error) {
+func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs *metrics.Metrics) (mw *MultiWriter, err error) {
 	var w Writer
 	logger := log.GetLogger(ctx)
 	mw = &MultiWriter{}
@@ -40,7 +40,7 @@ func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs metric
 		case "jsonfile":
 			w, err = NewJSONWriter(ctx, path)
 		case "postgres", "postgresql":
-			w, err = NewPostgresWriter(ctx, s, opts, metricDefs)
+			w, err = NewPostgresWriter(ctx, s, &opts.Measurements, metricDefs)
 		case "prometheus":
 			w, err = NewPrometheusWriter(ctx, path)
 		default:
