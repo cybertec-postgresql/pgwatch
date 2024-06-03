@@ -15,24 +15,20 @@ func (dmrw *dbMetricReaderWriter) initMigrator() (*migrator.Migrator, error) {
 	if pgxMigrator != nil {
 		return pgxMigrator, nil
 	}
-	m, err := migrator.New(
+	return migrator.New(
 		migrator.TableName("pgwatch3.migration"),
 		migrator.SetNotice(func(s string) {
 			log.GetLogger(dmrw.ctx).Info(s)
 		}),
 		migrations(),
 	)
-    if err != nil{
-        return nil, fmt.Errorf("cannot initialize migration: %w", err)
-    }
-	return m, nil
 }
 
 // MigrateDb upgrades database with all migrations
 func (dmrw *dbMetricReaderWriter) Migrate() error {
 	m, err := dmrw.initMigrator()
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot initialize migration: %w", err)
 	}
 	return m.Migrate(dmrw.ctx, dmrw.configDb)
 }
