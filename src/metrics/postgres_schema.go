@@ -22,7 +22,10 @@ func (dmrw *dbMetricReaderWriter) initMigrator() (*migrator.Migrator, error) {
 		}),
 		migrations(),
 	)
-	return m, fmt.Errorf("cannot initialize migration: %w", err)
+    if err != nil{
+        return nil, fmt.Errorf("cannot initialize migration: %w", err)
+    }
+	return m, nil
 }
 
 // MigrateDb upgrades database with all migrations
