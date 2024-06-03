@@ -21,7 +21,7 @@ import (
 var monitoredDbs sources.MonitoredDatabases
 var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 var metricConfig map[string]float64                       // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
-var metricDefinitionMap *metrics.Metrics
+var metricDefinitionMap *metrics.Metrics = &metrics.Metrics{}
 var metricDefMapLock = sync.RWMutex{}
 
 type Reaper struct {
