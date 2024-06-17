@@ -42,10 +42,10 @@ func TestPing(t *testing.T) {
 
 	pg, err := initTestContainer()
 	assert.NoError(t, err)
-	defer pg.Terminate(ctx)
 	connStr, err = pg.ConnectionString(ctx)
 	assert.NoError(t, err)
 	assert.NoError(t, db.Ping(ctx, connStr))
+	assert.NoError(t, pg.Terminate(ctx))
 }
 
 func TestDoesSchemaExist(t *testing.T) {
@@ -81,7 +81,7 @@ func TestInit(t *testing.T) {
 	assert.Error(t, err)
 	assert.False(t, initCalled)
 
-	conn.ExpectationsWereMet()
+	assert.NoError(t, conn.ExpectationsWereMet())
 }
 
 func initTestContainer() (*postgres.PostgresContainer, error) {
@@ -103,7 +103,7 @@ func initTestContainer() (*postgres.PostgresContainer, error) {
 func TestNew(t *testing.T) {
 	pg, err := initTestContainer()
 	assert.NoError(t, err)
-	defer pg.Terminate(ctx)
+	defer func() { assert.NoError(t, pg.Terminate(ctx)) }()
 	connStr, err := pg.ConnectionString(ctx)
 	t.Log(connStr)
 	assert.NoError(t, err)
@@ -118,10 +118,11 @@ func TestNew(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, pool)
 	assert.True(t, initCalled)
-	pool.Exec(ctx, `DO $$
+	_, err = pool.Exec(ctx, `DO $$
 BEGIN
    RAISE NOTICE 'This is a notice';
 END $$;`)
+	assert.NoError(t, err)
 	pool.Close()
 
 	// Test failed initialization
