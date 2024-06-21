@@ -127,7 +127,6 @@ func main() {
 	mainContext, cancel = context.WithCancel(context.Background())
 	SetupCloseHandler(cancel)
 	defer cancel()
-
 	if opts, err = config.New(os.Stdout); err != nil {
 		printVersion()
 		fmt.Println(err)
