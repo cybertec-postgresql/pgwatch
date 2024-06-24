@@ -256,15 +256,14 @@ func ResolveDatabasesFromPatroni(ce *MonitoredDatabase) ([]*MonitoredDatabase, e
 		}
 		if ce.GetDatabaseName() != "" {
 			md = append(md, &MonitoredDatabase{
-				DBUniqueName:     dbUnique,
-				DBUniqueNameOrig: ce.DBUniqueName,
-				ConnStr:          ce.ConnStr,
-				Metrics:          ce.Metrics,
-				PresetMetrics:    ce.PresetMetrics,
-				IsSuperuser:      ce.IsSuperuser,
-				CustomTags:       ce.CustomTags,
-				HostConfig:       ce.HostConfig,
-				Kind:             "postgres"})
+				DBUniqueName:  dbUnique,
+				ConnStr:       ce.ConnStr,
+				Metrics:       ce.Metrics,
+				PresetMetrics: ce.PresetMetrics,
+				IsSuperuser:   ce.IsSuperuser,
+				CustomTags:    ce.CustomTags,
+				HostConfig:    ce.HostConfig,
+				Kind:          "postgres"})
 			continue
 		}
 		c, err := db.New(context.TODO(), ce.ConnStr,
@@ -308,15 +307,14 @@ func ResolveDatabasesFromPatroni(ce *MonitoredDatabase) ([]*MonitoredDatabase, e
 			connURL.Host = host + ":" + port
 			connURL.Path = d["datname"].(string)
 			md = append(md, &MonitoredDatabase{
-				DBUniqueName:     dbUnique + "_" + d["datname_escaped"].(string),
-				DBUniqueNameOrig: dbUnique,
-				ConnStr:          connURL.String(),
-				Metrics:          ce.Metrics,
-				PresetMetrics:    ce.PresetMetrics,
-				IsSuperuser:      ce.IsSuperuser,
-				CustomTags:       ce.CustomTags,
-				HostConfig:       ce.HostConfig,
-				Kind:             "postgres"})
+				DBUniqueName:  dbUnique + "_" + d["datname_escaped"].(string),
+				ConnStr:       connURL.String(),
+				Metrics:       ce.Metrics,
+				PresetMetrics: ce.PresetMetrics,
+				IsSuperuser:   ce.IsSuperuser,
+				CustomTags:    ce.CustomTags,
+				HostConfig:    ce.HostConfig,
+				Kind:          "postgres"})
 		}
 
 	}
