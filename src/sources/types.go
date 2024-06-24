@@ -2,6 +2,8 @@ package sources
 
 import (
 	"context"
+	"maps"
+	"net/url"
 	"slices"
 
 	"github.com/cybertec-postgresql/pgwatch3/db"
@@ -24,6 +26,7 @@ var Kinds = []Kind{
 	SourcePostgres,
 	SourcePostgresContinuous,
 	SourcePgBouncer,
+	SourcePgPool,
 	SourcePatroni,
 	SourcePatroniContinuous,
 	SourcePatroniNamespace,
@@ -35,7 +38,6 @@ func (k Kind) IsValid() bool {
 
 type MonitoredDatabase struct {
 	DBUniqueName         string             `yaml:"unique_name" db:"name"`
-	DBUniqueNameOrig     string             // to preserve belonging to a specific instance for continuous modes where DBUniqueName will be dynamic
 	Group                string             `yaml:"group" db:"group"`
 	ConnStr              string             `yaml:"conn_str" db:"connstr"`
 	Metrics              map[string]float64 `yaml:"custom_metrics" db:"config"`
@@ -54,6 +56,26 @@ type MonitoredDatabase struct {
 	Conn db.PgxPoolIface
 }
 
+func (md *MonitoredDatabase) Clone() *MonitoredDatabase {
+	clone := &MonitoredDatabase{
+		DBUniqueName:         md.DBUniqueName,
+		Group:                md.Group,
+		ConnStr:              md.ConnStr,
+		Kind:                 md.Kind,
+		IncludePattern:       md.IncludePattern,
+		ExcludePattern:       md.ExcludePattern,
+		PresetMetrics:        md.PresetMetrics,
+		PresetMetricsStandby: md.PresetMetricsStandby,
+		IsSuperuser:          md.IsSuperuser,
+		IsEnabled:            md.IsEnabled,
+		OnlyIfMaster:         md.OnlyIfMaster,
+		Metrics:              maps.Clone(md.Metrics),
+		MetricsStandby:       maps.Clone(md.MetricsStandby),
+		CustomTags:           maps.Clone(md.CustomTags),
+	}
+	return clone
+}
+
 func (md *MonitoredDatabase) Connect(ctx context.Context) (err error) {
 	if md.Conn != nil {
 		return md.Conn.Ping(ctx)
@@ -67,6 +89,15 @@ func (md *MonitoredDatabase) GetDatabaseName() string {
 		return conf.Database
 	}
 	return ""
+}
+
+func (md *MonitoredDatabase) SetDatabaseName(name string) {
+	if conf, err := pgx.ParseConfig(md.ConnStr); err == nil {
+		conf.Database = name
+		md.ConnStr = conf.ConnString()
+		return
+	}
+	md.ConnStr = "postgresql:///" + url.PathEscape(name)
 }
 
 func (md *MonitoredDatabase) IsPostgresSource() bool {
@@ -113,8 +144,9 @@ func (md *MonitoredDatabase) ResolveDatabasesFromPostgres() (resolvedDbs Monitor
 		if err = rows.Scan(&dbname); err != nil {
 			return nil, err
 		}
-		rdb := md
+		rdb := md.Clone()
 		rdb.DBUniqueName += "_" + dbname
+		rdb.SetDatabaseName(dbname)
 		resolvedDbs = append(resolvedDbs, rdb)
 	}
 

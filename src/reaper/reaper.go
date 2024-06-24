@@ -114,7 +114,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				WithField("config", monitoredDB.HostConfig).Debug()
 
 			dbUnique := monitoredDB.DBUniqueName
-			dbUniqueOrig := monitoredDB.DBUniqueNameOrig
+			dbUniqueOrig := monitoredDB.GetDatabaseName()
 			srcType := monitoredDB.Kind
 
 			if monitoredDB.Connect(mainContext) != nil {
@@ -521,7 +521,7 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.Mo
 				"tag_group":                   mdb.Group,
 				"master_only":                 mdb.OnlyIfMaster,
 				"epoch_ns":                    now.UnixNano(),
-				"continuous_discovery_prefix": mdb.DBUniqueNameOrig,
+				"continuous_discovery_prefix": mdb.GetDatabaseName(),
 			}
 			for k, v := range mdb.CustomTags {
 				db[tagPrefix+k] = v
