@@ -1,5 +1,8 @@
 package sources
 
+// This file contains the implementation of the ReaderWriter interface for the PostgreSQL database.
+// Monitored sources are stored in the `pgwatch3.source` table in the configuration database.
+
 import (
 	"context"
 
@@ -30,14 +33,14 @@ func (r *dbSourcesReaderWriter) WriteMonitoredDatabases(dbs MonitoredDatabases) 
 	}
 	defer func() { _ = tx.Rollback(context.Background()) }()
 	for _, md := range dbs {
-		if err = updateDatabase(tx, md); err != nil {
+		if err = r.updateDatabase(tx, md); err != nil {
 			return err
 		}
 	}
 	return tx.Commit(context.Background())
 }
 
-func updateDatabase(conn db.PgxIface, md *MonitoredDatabase) (err error) {
+func (r *dbSourcesReaderWriter) updateDatabase(conn db.PgxIface, md *MonitoredDatabase) (err error) {
 	sql := `insert into pgwatch3.source(
 name, "group", dbtype, connstr, config, config_standby, preset_config, 
 preset_config_standby, is_superuser, include_pattern, exclude_pattern, custom_tags, host_config, only_if_master) 
@@ -54,7 +57,7 @@ host_config = $13, only_if_master = $14`
 }
 
 func (r *dbSourcesReaderWriter) UpdateDatabase(md *MonitoredDatabase) error {
-	return updateDatabase(r.configDb, md)
+	return r.updateDatabase(r.configDb, md)
 }
 
 func (r *dbSourcesReaderWriter) DeleteDatabase(name string) error {

@@ -78,7 +78,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				continue
 			}
 		}
-		if monitoredDbs, err = monitoredDbs.Expand(); err != nil {
+		if monitoredDbs, err = monitoredDbs.ResolveDatabases(); err != nil {
 			logger.Error(err)
 			continue
 		}

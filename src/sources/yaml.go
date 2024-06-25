@@ -1,5 +1,7 @@
 package sources
 
+// This file contains the implementation of the ReaderWriter interface for the YAML file.
+
 import (
 	"context"
 	"io/fs"
