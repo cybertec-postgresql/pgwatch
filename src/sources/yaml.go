@@ -26,10 +26,7 @@ type fileSourcesReaderWriter struct {
 }
 
 func (fcr *fileSourcesReaderWriter) WriteMonitoredDatabases(mds MonitoredDatabases) error {
-	yamlData, err := yaml.Marshal(mds)
-	if err != nil {
-		return err
-	}
+	yamlData, _ := yaml.Marshal(mds)
 	return os.WriteFile(fcr.path, yamlData, 0644)
 }
 
