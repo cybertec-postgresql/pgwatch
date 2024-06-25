@@ -104,83 +104,11 @@ func (md *MonitoredDatabase) IsPostgresSource() bool {
 	return md.Kind != SourcePgBouncer && md.Kind != SourcePgPool
 }
 
-// ExpandDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni
-func (md *MonitoredDatabase) ExpandDatabases() (MonitoredDatabases, error) {
-	switch md.Kind {
-	case SourcePatroni, SourcePatroniContinuous, SourcePatroniNamespace:
-		return ResolveDatabasesFromPatroni(md)
-	case SourcePostgresContinuous:
-		return md.ResolveDatabasesFromPostgres()
-	}
-	return nil, nil
-}
-
-// "resolving" reads all the DB names from the given host/port, additionally matching/not matching specified regex patterns
-func (md *MonitoredDatabase) ResolveDatabasesFromPostgres() (resolvedDbs MonitoredDatabases, err error) {
-	var (
-		c      db.PgxPoolIface
-		dbname string
-		rows   pgx.Rows
-	)
-	c, err = db.New(context.TODO(), md.ConnStr)
-	if err != nil {
-		return
-	}
-	defer c.Close()
-
-	sql := `select /* pgwatch3_generated */
-		quote_ident(datname)::text as datname_escaped
-		from pg_database
-		where not datistemplate
-		and datallowconn
-		and has_database_privilege (datname, 'CONNECT')
-		and case when length(trim($1)) > 0 then datname ~ $1 else true end
-		and case when length(trim($2)) > 0 then not datname ~ $2 else true end`
-
-	if rows, err = c.Query(context.TODO(), sql, md.IncludePattern, md.ExcludePattern); err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		if err = rows.Scan(&dbname); err != nil {
-			return nil, err
-		}
-		rdb := md.Clone()
-		rdb.DBUniqueName += "_" + dbname
-		rdb.SetDatabaseName(dbname)
-		resolvedDbs = append(resolvedDbs, rdb)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return
-}
-
 type MonitoredDatabases []*MonitoredDatabase
 
-// Expand() updates list of monitored objects from continuous monitoring sources, e.g. patroni
-func (mds MonitoredDatabases) Expand() (MonitoredDatabases, error) {
-	resolvedDbs := make(MonitoredDatabases, 0, len(mds))
+func (mds MonitoredDatabases) GetMonitoredDatabase(DBUniqueName string) *MonitoredDatabase {
 	for _, md := range mds {
-		if !md.IsEnabled {
-			continue
-		}
-		dbs, err := md.ExpandDatabases()
-		if err != nil {
-			return nil, err
-		}
-		if len(dbs) == 0 {
-			resolvedDbs = append(resolvedDbs, md)
-			continue
-		}
-		resolvedDbs = append(resolvedDbs, dbs...)
-	}
-	return resolvedDbs, nil
-}
-
-func (mds MonitoredDatabases) GetDatabase(name string) *MonitoredDatabase {
-	for _, md := range mds {
-		if md.DBUniqueName == name {
+		if md.DBUniqueName == DBUniqueName {
 			return md
 		}
 	}
@@ -192,11 +120,11 @@ func (mds MonitoredDatabases) SyncFromReader(r Reader) (MonitoredDatabases, erro
 	if err != nil {
 		return nil, err
 	}
-	if newMDs, err = newMDs.Expand(); err != nil {
+	if newMDs, err = newMDs.ResolveDatabases(); err != nil {
 		return nil, err
 	}
 	for _, newMD := range newMDs {
-		if md := mds.GetDatabase(newMD.DBUniqueName); md != nil {
+		if md := mds.GetMonitoredDatabase(newMD.DBUniqueName); md != nil {
 			newMD.Conn = md.Conn
 		}
 	}

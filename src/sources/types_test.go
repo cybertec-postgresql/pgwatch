@@ -88,26 +88,3 @@ func TestMonitoredDatabase_IsPostgresSource(t *testing.T) {
 	md.Kind = sources.SourcePatroni
 	assert.True(t, md.IsPostgresSource(), "IsPostgresSource() = false, want true")
 }
-
-func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
-	pgContainer, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("docker.io/postgres:16-alpine"),
-		postgres.WithDatabase("mydatabase"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
-	assert.NoError(t, err)
-	defer func() { assert.NoError(t, pgContainer.Terminate(ctx)) }()
-
-	// Create a new MonitoredDatabase instance
-	md := &sources.MonitoredDatabase{}
-	md.ConnStr, err = pgContainer.ConnectionString(ctx)
-	assert.NoError(t, err)
-
-	// Call the ResolveDatabasesFromPostgres method
-	dbs, err := md.ResolveDatabasesFromPostgres()
-	assert.NoError(t, err)
-	assert.True(t, len(dbs) == 2) //postgres and mydatabase
-}
