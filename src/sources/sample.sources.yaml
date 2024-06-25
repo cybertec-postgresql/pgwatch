@@ -63,3 +63,11 @@
   sslrootcert: ''
   sslcert: ''
   sslkey: ''  
+
+- unique_name: $name
+  kind: $kind
+  is_enabled: true
+  include_pattern: $include_pattern
+  exclude_pattern: $exclude_pattern
+  preset_metrics: $preset_metrics
+  preset_metrics_standby: $preset_metrics_standby

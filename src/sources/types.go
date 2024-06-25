@@ -57,7 +57,7 @@ type MonitoredDatabase struct {
 }
 
 func (md *MonitoredDatabase) Clone() *MonitoredDatabase {
-	clone := &MonitoredDatabase{
+	return &MonitoredDatabase{
 		DBUniqueName:         md.DBUniqueName,
 		Group:                md.Group,
 		ConnStr:              md.ConnStr,
@@ -73,7 +73,6 @@ func (md *MonitoredDatabase) Clone() *MonitoredDatabase {
 		MetricsStandby:       maps.Clone(md.MetricsStandby),
 		CustomTags:           maps.Clone(md.CustomTags),
 	}
-	return clone
 }
 
 func (md *MonitoredDatabase) Connect(ctx context.Context) (err error) {
