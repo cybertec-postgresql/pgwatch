@@ -48,12 +48,12 @@ func (rw *RPCWriter) Write(msgs []metrics.MeasurementMessage) error {
 	}
 	for _, msg := range msgs {
 		var status int
-        pgwatch_id := os.Getenv("pgwatch_id")
+        pgwatchId := os.Getenv("pgwatch_id")
         msg.CustomTags = make(map[string]string)
-        if len(pgwatch_id) > 0{
-            msg.CustomTags["pgwatch_id"] = pgwatch_id 
+        if len(pgwatchId) > 0{
+            msg.CustomTags["pgwatchId"] = pgwatchId 
         }else{
-            msg.CustomTags["pgwatch_id"] =  strconv.Itoa(os.Getpid()) + "_pgwatch3"// Replaces with server PID 
+            msg.CustomTags["pgwatchId"] =  strconv.Itoa(os.Getpid()) + "_pgwatch3"// Replaces with server PID 
         }
 		err := rw.client.Call("Receiver.UpdateMeasurements", &msg, &status)
 		if err != nil {
