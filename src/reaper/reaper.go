@@ -108,6 +108,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 		firstLoop = false // only used for failing when 1st config reading fails
 
 		for _, monitoredDB := range monitoredDbs {
+            logger.Info("DB->", monitoredDB)
 			logger.WithField("source", monitoredDB.DBUniqueName).
 				WithField("metric", monitoredDB.Metrics).
 				WithField("tags", monitoredDB.CustomTags).
