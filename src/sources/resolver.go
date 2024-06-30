@@ -1,5 +1,9 @@
 package sources
 
+// This file contains the implemendation of Patroni and PostgrSQL resolvers for continuous monitoring.
+// Patroni resolver will return the list of databases from the Patroni cluster.
+// Postgres resolver will return the list of databases from the given Postgres instance.
+
 import (
 	"context"
 	"crypto/tls"
@@ -20,6 +24,37 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	client "go.etcd.io/etcd/client/v3"
 )
+
+// ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni
+func (mds MonitoredDatabases) ResolveDatabases() (MonitoredDatabases, error) {
+	resolvedDbs := make(MonitoredDatabases, 0, len(mds))
+	for _, md := range mds {
+		if !md.IsEnabled {
+			continue
+		}
+		dbs, err := md.ResolveDatabases()
+		if err != nil {
+			return nil, err
+		}
+		if len(dbs) == 0 {
+			resolvedDbs = append(resolvedDbs, md)
+			continue
+		}
+		resolvedDbs = append(resolvedDbs, dbs...)
+	}
+	return resolvedDbs, nil
+}
+
+// ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni
+func (md *MonitoredDatabase) ResolveDatabases() (MonitoredDatabases, error) {
+	switch md.Kind {
+	case SourcePatroni, SourcePatroniContinuous, SourcePatroniNamespace:
+		return ResolveDatabasesFromPatroni(md)
+	case SourcePostgresContinuous:
+		return ResolveDatabasesFromPostgres(md)
+	}
+	return nil, nil
+}
 
 type PatroniClusterMember struct {
 	Scope   string
@@ -256,15 +291,14 @@ func ResolveDatabasesFromPatroni(ce *MonitoredDatabase) ([]*MonitoredDatabase, e
 		}
 		if ce.GetDatabaseName() != "" {
 			md = append(md, &MonitoredDatabase{
-				DBUniqueName:     dbUnique,
-				DBUniqueNameOrig: ce.DBUniqueName,
-				ConnStr:          ce.ConnStr,
-				Metrics:          ce.Metrics,
-				PresetMetrics:    ce.PresetMetrics,
-				IsSuperuser:      ce.IsSuperuser,
-				CustomTags:       ce.CustomTags,
-				HostConfig:       ce.HostConfig,
-				Kind:             "postgres"})
+				DBUniqueName:  dbUnique,
+				ConnStr:       ce.ConnStr,
+				Metrics:       ce.Metrics,
+				PresetMetrics: ce.PresetMetrics,
+				IsSuperuser:   ce.IsSuperuser,
+				CustomTags:    ce.CustomTags,
+				HostConfig:    ce.HostConfig,
+				Kind:          "postgres"})
 			continue
 		}
 		c, err := db.New(context.TODO(), ce.ConnStr,
@@ -308,18 +342,58 @@ func ResolveDatabasesFromPatroni(ce *MonitoredDatabase) ([]*MonitoredDatabase, e
 			connURL.Host = host + ":" + port
 			connURL.Path = d["datname"].(string)
 			md = append(md, &MonitoredDatabase{
-				DBUniqueName:     dbUnique + "_" + d["datname_escaped"].(string),
-				DBUniqueNameOrig: dbUnique,
-				ConnStr:          connURL.String(),
-				Metrics:          ce.Metrics,
-				PresetMetrics:    ce.PresetMetrics,
-				IsSuperuser:      ce.IsSuperuser,
-				CustomTags:       ce.CustomTags,
-				HostConfig:       ce.HostConfig,
-				Kind:             "postgres"})
+				DBUniqueName:  dbUnique + "_" + d["datname_escaped"].(string),
+				ConnStr:       connURL.String(),
+				Metrics:       ce.Metrics,
+				PresetMetrics: ce.PresetMetrics,
+				IsSuperuser:   ce.IsSuperuser,
+				CustomTags:    ce.CustomTags,
+				HostConfig:    ce.HostConfig,
+				Kind:          "postgres"})
 		}
 
 	}
 
 	return md, err
+}
+
+// "resolving" reads all the DB names from the given host/port, additionally matching/not matching specified regex patterns
+func ResolveDatabasesFromPostgres(md *MonitoredDatabase) (resolvedDbs MonitoredDatabases, err error) {
+	var (
+		c      db.PgxPoolIface
+		dbname string
+		rows   pgx.Rows
+	)
+	c, err = db.New(context.TODO(), md.ConnStr)
+	if err != nil {
+		return
+	}
+	defer c.Close()
+
+	sql := `select /* pgwatch3_generated */
+		quote_ident(datname)::text as datname_escaped
+		from pg_database
+		where not datistemplate
+		and datallowconn
+		and has_database_privilege (datname, 'CONNECT')
+		and case when length(trim($1)) > 0 then datname ~ $1 else true end
+		and case when length(trim($2)) > 0 then not datname ~ $2 else true end`
+
+	if rows, err = c.Query(context.TODO(), sql, md.IncludePattern, md.ExcludePattern); err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		if err = rows.Scan(&dbname); err != nil {
+			return nil, err
+		}
+		rdb := md.Clone()
+		rdb.DBUniqueName += "_" + dbname
+		rdb.SetDatabaseName(dbname)
+		resolvedDbs = append(resolvedDbs, rdb)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return
 }

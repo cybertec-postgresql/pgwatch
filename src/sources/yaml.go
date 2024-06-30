@@ -1,5 +1,7 @@
 package sources
 
+// This file contains the implementation of the ReaderWriter interface for the YAML file.
+
 import (
 	"context"
 	"io/fs"
@@ -24,10 +26,7 @@ type fileSourcesReaderWriter struct {
 }
 
 func (fcr *fileSourcesReaderWriter) WriteMonitoredDatabases(mds MonitoredDatabases) error {
-	yamlData, err := yaml.Marshal(mds)
-	if err != nil {
-		return err
-	}
+	yamlData, _ := yaml.Marshal(mds)
 	return os.WriteFile(fcr.path, yamlData, 0644)
 }
 

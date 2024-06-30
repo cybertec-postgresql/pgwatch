@@ -988,7 +988,7 @@ func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, curr
 
 	// or to be ignored due to current instance state
 	for roleChangedDB := range shutDownDueToRoleChange {
-		if db := currentDBs.GetDatabase(roleChangedDB); db != nil {
+		if db := currentDBs.GetMonitoredDatabase(roleChangedDB); db != nil {
 			db.Conn.Close()
 		}
 		_ = metricsWriter.SyncMetrics(roleChangedDB, "", "remove")
