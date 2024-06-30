@@ -11,7 +11,7 @@ import (
 	"context"
 	"net/rpc"
 	"os"
-    "strconv"
+	"strconv"
 
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 )
@@ -48,13 +48,13 @@ func (rw *RPCWriter) Write(msgs []metrics.MeasurementMessage) error {
 	}
 	for _, msg := range msgs {
 		var status int
-        pgwatchId := os.Getenv("pgwatch_id")
-        msg.CustomTags = make(map[string]string)
-        if len(pgwatchId) > 0{
-            msg.CustomTags["pgwatchId"] = pgwatchId 
-        }else{
-            msg.CustomTags["pgwatchId"] =  strconv.Itoa(os.Getpid()) + "_pgwatch3"// Replaces with server PID 
-        }
+		pgwatchID := os.Getenv("pgwatch_id")
+		msg.CustomTags = make(map[string]string)
+		if len(pgwatchID) > 0 {
+			msg.CustomTags["pgwatchId"] = pgwatchID
+		} else {
+			msg.CustomTags["pgwatchId"] = strconv.Itoa(os.Getpid()) + "_pgwatch3" // Replaces with PID to create a pgwatchid
+		}
 		err := rw.client.Call("Receiver.UpdateMeasurements", &msg, &status)
 		if err != nil {
 			return err
