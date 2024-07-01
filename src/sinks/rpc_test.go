@@ -34,14 +34,17 @@ func (receiver *RPCWriter) UpdateMeasurements(msgs []metrics.MeasurementMessage,
 
 func init() {
 	recv := new(RPCWriter)
-	rpc.Register(recv)
-	rpc.HandleHTTP()
-
-	listener, err := net.Listen("tcp", "0.0.0.0:5050")
-	if err != nil {
+	if err := rpc.Register(recv); err != nil {
 		panic(err)
 	}
-	go http.Serve(listener, nil)
+	rpc.HandleHTTP()
+	if listener, err := net.Listen("tcp", "0.0.0.0:5050"); err == nil {
+		go func() {
+			_ = http.Serve(listener, nil)
+		}()
+	} else {
+		panic(err)
+	}
 }
 
 func TestNewRPCWriter(t *testing.T) {
