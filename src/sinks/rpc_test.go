@@ -1,4 +1,4 @@
-package sinks
+package sinks_test
 
 import (
 	"context"
@@ -9,15 +9,16 @@ import (
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
+	"github.com/cybertec-postgresql/pgwatch3/sinks"
 	"github.com/stretchr/testify/assert"
 )
 
-type Receiver struct {
+type RPCWriter struct {
 }
 
 var ctxt = context.Background()
 
-func (receiver *Receiver) UpdateMeasurements(msgs []metrics.MeasurementMessage, status *int) error {
+func (receiver *RPCWriter) UpdateMeasurements(msgs []metrics.MeasurementMessage, status *int) error {
 	if msgs == nil {
 		return errors.New("msgs is nil")
 	}
@@ -32,7 +33,7 @@ func (receiver *Receiver) UpdateMeasurements(msgs []metrics.MeasurementMessage, 
 }
 
 func init() {
-	recv := new(Receiver)
+	recv := new(RPCWriter)
 	rpc.Register(recv)
 	rpc.HandleHTTP()
 
@@ -45,13 +46,13 @@ func init() {
 
 func TestNewRPCWriter(t *testing.T) {
 	a := assert.New(t)
-	_, err := NewRPCWriter(ctxt, "foo")
+	_, err := sinks.NewRPCWriter(ctxt, "foo")
 	a.Error(err)
 }
 
 func TestRPCWrite(t *testing.T) {
 	a := assert.New(t)
-	rw, err := NewRPCWriter(ctxt, "0.0.0.0:5050")
+	rw, err := sinks.NewRPCWriter(ctxt, "0.0.0.0:5050")
 	a.NoError(err)
 
 	// no error for valid messages
@@ -78,7 +79,8 @@ func TestRPCWrite(t *testing.T) {
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctxt)
-	rw.ctx = ctx
+	rw, err = sinks.NewRPCWriter(ctx, "0.0.0.0:5050")
+	a.NoError(err)
 	cancel()
 	err = rw.Write(msgs)
 	a.Error(err)

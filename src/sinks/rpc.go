@@ -45,7 +45,7 @@ func (rw *RPCWriter) Write(msgs []metrics.MeasurementMessage) error {
 		return nil
 	}
 	var status int
-	err := rw.client.Call("Receiver.UpdateMeasurements", msgs, &status)
+	err := rw.client.Call("RPCWriter.UpdateMeasurements", msgs, &status)
 	if err != nil {
 		return err
 	}
