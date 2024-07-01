@@ -2,13 +2,14 @@ package sinks
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net"
 	"net/http"
 	"net/rpc"
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
+	"github.com/stretchr/testify/assert"
 )
 
 type Receiver struct {
@@ -16,7 +17,16 @@ type Receiver struct {
 
 var ctxt = context.Background()
 
-func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementMessage, status *int) error {
+func (receiver *Receiver) UpdateMeasurements(msgs []metrics.MeasurementMessage, status *int) error {
+	if msgs == nil {
+		return errors.New("msgs is nil")
+	}
+	if len(msgs) == 0 {
+		return nil
+	}
+	if msgs[0].DBName != "Db" {
+		return errors.New("invalid message")
+	}
 	*status = 1
 	return nil
 }
@@ -34,32 +44,42 @@ func init() {
 }
 
 func TestNewRPCWriter(t *testing.T) {
-	port := 5050
-	_, err := NewRPCWriter(ctxt, "0.0.0.0:"+fmt.Sprint(port))
-	if err != nil {
-		t.Log("Unable to create new RPC client, Error: ", err)
-		t.Failed()
-	}
+	a := assert.New(t)
+	_, err := NewRPCWriter(ctxt, "foo")
+	a.Error(err)
 }
 
 func TestRPCWrite(t *testing.T) {
-	port := 5050
-	rw, err := NewRPCWriter(ctxt, "0.0.0.0:"+fmt.Sprint(port))
-	if err != nil {
-		t.Error("Unable to create new RPC client, Error: ", err)
-	}
+	a := assert.New(t)
+	rw, err := NewRPCWriter(ctxt, "0.0.0.0:5050")
+	a.NoError(err)
 
+	// no error for valid messages
 	msgs := []metrics.MeasurementMessage{
-		metrics.MeasurementMessage{
+		{
 			DBName: "Db",
 		},
-		metrics.MeasurementMessage{
-			DBName: "Db2",
+	}
+	err = rw.Write(msgs)
+	a.NoError(err)
+
+	// error for invalid messages
+	msgs = []metrics.MeasurementMessage{
+		{
+			DBName: "invalid",
 		},
 	}
-
 	err = rw.Write(msgs)
-	if err != nil {
-		t.Error("Unable to Write Messages to sink, Error: ", err)
-	}
+	a.Error(err)
+
+	// no error for empty messages
+	err = rw.Write([]metrics.MeasurementMessage{})
+	a.NoError(err)
+
+	// error for cancelled context
+	ctx, cancel := context.WithCancel(ctxt)
+	rw.ctx = ctx
+	cancel()
+	err = rw.Write(msgs)
+	a.Error(err)
 }

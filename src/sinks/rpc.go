@@ -10,8 +10,6 @@ package sinks
 import (
 	"context"
 	"net/rpc"
-	"os"
-	"strconv"
 
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 )
@@ -46,19 +44,10 @@ func (rw *RPCWriter) Write(msgs []metrics.MeasurementMessage) error {
 	if len(msgs) == 0 {
 		return nil
 	}
-	for _, msg := range msgs {
-		var status int
-		pgwatchID := os.Getenv("pgwatch_id")
-		msg.CustomTags = make(map[string]string)
-		if len(pgwatchID) > 0 {
-			msg.CustomTags["pgwatchId"] = pgwatchID
-		} else {
-			msg.CustomTags["pgwatchId"] = strconv.Itoa(os.Getpid()) + "_pgwatch3" // Replaces with PID to create a pgwatchid
-		}
-		err := rw.client.Call("Receiver.UpdateMeasurements", &msg, &status)
-		if err != nil {
-			return err
-		}
+	var status int
+	err := rw.client.Call("Receiver.UpdateMeasurements", msgs, &status)
+	if err != nil {
+		return err
 	}
 	return nil
 }
