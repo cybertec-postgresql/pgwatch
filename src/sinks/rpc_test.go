@@ -21,22 +21,20 @@ func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementMessage, st
 	return nil
 }
 
-func setupServer(port int) error {
+func init() {
 	recv := new(Receiver)
 	rpc.Register(recv)
 	rpc.HandleHTTP()
 
-	listener, err := net.Listen("tcp", "0.0.0.0:"+fmt.Sprint(port))
+	listener, err := net.Listen("tcp", "0.0.0.0:5050")
 	if err != nil {
-		return err
+		panic(err)
 	}
 	go http.Serve(listener, nil)
-	return nil
 }
 
 func TestNewRPCWriter(t *testing.T) {
 	port := 5050
-	setupServer(port)
 	_, err := NewRPCWriter(ctxt, "0.0.0.0:"+fmt.Sprint(port))
 	if err != nil {
 		t.Log("Unable to create new RPC client, Error: ", err)
@@ -46,7 +44,6 @@ func TestNewRPCWriter(t *testing.T) {
 
 func TestRPCWrite(t *testing.T) {
 	port := 5050
-	setupServer(port)
 	rw, err := NewRPCWriter(ctxt, "0.0.0.0:"+fmt.Sprint(port))
 	if err != nil {
 		t.Error("Unable to create new RPC client, Error: ", err)
