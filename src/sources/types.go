@@ -79,14 +79,6 @@ func (s *Source) Clone() *Source {
 	return c
 }
 
-func (srcs Sources) GetMonitoredDatabase() MonitoredDatabases {
-	mds := make(MonitoredDatabases, len(srcs))
-	for i, src := range srcs {
-		mds[i] = &MonitoredDatabase{Source: src}
-	}
-	return mds
-}
-
 // MonitoredDatabase represents a single database to monitor. Unlike source, it contains a database connection.
 // Continuous discovery sources (postgres-continuous-discovery, patroni-continuous-discovery, patroni-namespace-discovery)
 // will produce multiple monitored databases structs based on the discovered databases.
@@ -99,12 +91,6 @@ type (
 
 	MonitoredDatabases []*MonitoredDatabase
 )
-
-func (md *MonitoredDatabase) Clone() *MonitoredDatabase {
-	// we don't clone the connection and connection config
-	c := &MonitoredDatabase{Source: *md.Source.Clone()}
-	return c
-}
 
 func (md *MonitoredDatabase) Connect(ctx context.Context) (err error) {
 	if md.Conn != nil {
