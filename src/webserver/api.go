@@ -67,8 +67,8 @@ func (server *WebUIServer) DeleteMetric(name string) error {
 
 // GetDatabases returns the list of monitored databases
 func (server *WebUIServer) GetDatabases() (res string, err error) {
-	var dbs sources.MonitoredDatabases
-	if dbs, err = server.sourcesReaderWriter.GetMonitoredDatabases(); err != nil {
+	var dbs sources.Sources
+	if dbs, err = server.sourcesReaderWriter.GetSources(); err != nil {
 		return
 	}
 	b, _ := json.Marshal(dbs)
@@ -78,15 +78,15 @@ func (server *WebUIServer) GetDatabases() (res string, err error) {
 
 // DeleteDatabase removes the database from the list of monitored databases
 func (server *WebUIServer) DeleteDatabase(database string) error {
-	return server.sourcesReaderWriter.DeleteDatabase(database)
+	return server.sourcesReaderWriter.DeleteSource(database)
 }
 
 // UpdateDatabase updates the monitored database information
 func (server *WebUIServer) UpdateDatabase(params []byte) error {
-	var md sources.MonitoredDatabase
+	var md sources.Source
 	err := json.Unmarshal(params, &md)
 	if err != nil {
 		return err
 	}
-	return server.sourcesReaderWriter.UpdateDatabase(&md)
+	return server.sourcesReaderWriter.UpdateSource(md)
 }

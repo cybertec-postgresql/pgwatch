@@ -25,7 +25,9 @@ func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
 	defer func() { assert.NoError(t, pgContainer.Terminate(ctx)) }()
 
 	// Create a new MonitoredDatabase instance
-	md := &sources.MonitoredDatabase{DBUniqueName: "continuous", Kind: sources.SourcePostgresContinuous}
+	md := sources.Source{}
+	md.DBUniqueName = "continuous"
+	md.Kind = sources.SourcePostgresContinuous
 	md.ConnStr, err = pgContainer.ConnectionString(ctx)
 	assert.NoError(t, err)
 

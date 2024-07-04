@@ -43,7 +43,7 @@ func TestYAMLGetMonitoredDatabases(t *testing.T) {
 		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, sampleFile)
 		a.NoError(err)
 
-		dbs, err := yamlrw.GetMonitoredDatabases()
+		dbs, err := yamlrw.GetSources()
 		a.NoError(err)
 		a.Len(dbs, sampleEntriesNumber)
 	})
@@ -52,7 +52,7 @@ func TestYAMLGetMonitoredDatabases(t *testing.T) {
 		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, currentDir)
 		a.NoError(err)
 
-		dbs, err := yamlrw.GetMonitoredDatabases()
+		dbs, err := yamlrw.GetSources()
 		a.NoError(err)
 		a.Len(dbs, sampleEntriesNumber)
 	})
@@ -60,7 +60,7 @@ func TestYAMLGetMonitoredDatabases(t *testing.T) {
 	t.Run("nonexistent file", func(*testing.T) {
 		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, "nonexistent.yaml")
 		a.NoError(err)
-		dbs, err := yamlrw.GetMonitoredDatabases()
+		dbs, err := yamlrw.GetSources()
 		a.Error(err)
 		a.Nil(dbs)
 	})
@@ -68,7 +68,7 @@ func TestYAMLGetMonitoredDatabases(t *testing.T) {
 	t.Run("garbage file", func(*testing.T) {
 		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, filepath.Join(currentDir, "yaml.go"))
 		a.NoError(err)
-		dbs, err := yamlrw.GetMonitoredDatabases()
+		dbs, err := yamlrw.GetSources()
 		a.Error(err)
 		a.Nil(dbs)
 	})
@@ -88,10 +88,10 @@ func TestYAMLDeleteDatabase(t *testing.T) {
 		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpSampleFile)
 		a.NoError(err)
 
-		err = yamlrw.DeleteDatabase("test1")
+		err = yamlrw.DeleteSource("test1")
 		a.NoError(err)
 
-		dbs, err := yamlrw.GetMonitoredDatabases()
+		dbs, err := yamlrw.GetSources()
 		a.NoError(err)
 		a.Len(dbs, sampleEntriesNumber-1)
 	})
@@ -99,7 +99,7 @@ func TestYAMLDeleteDatabase(t *testing.T) {
 	t.Run("nonexistent file", func(*testing.T) {
 		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, "nonexistent.yaml")
 		a.NoError(err)
-		err = yamlrw.DeleteDatabase("test1")
+		err = yamlrw.DeleteSource("test1")
 		a.Error(err)
 	})
 }
@@ -119,26 +119,30 @@ func TestYAMLUpdateDatabase(t *testing.T) {
 		a.NoError(err)
 
 		// change the connection string of the first database
-		md := &sources.MonitoredDatabase{DBUniqueName: "test1", ConnStr: "postgresql://localhost/test1"}
-		err = yamlrw.UpdateDatabase(md)
+		md := sources.Source{}
+		md.DBUniqueName = "test1"
+		md.ConnStr = "postgresql://localhost/test1"
+		err = yamlrw.UpdateSource(md)
 		a.NoError(err)
 
 		// add a new database
-		md = &sources.MonitoredDatabase{DBUniqueName: "test5", ConnStr: "postgresql://localhost/test5"}
-		err = yamlrw.UpdateDatabase(md)
+		md = sources.Source{}
+		md.DBUniqueName = "test5"
+		md.ConnStr = "postgresql://localhost/test5"
+		err = yamlrw.UpdateSource(md)
 		a.NoError(err)
 
-		dbs, err := yamlrw.GetMonitoredDatabases()
+		dbs, err := yamlrw.GetSources()
 		a.NoError(err)
 		a.Len(dbs, sampleEntriesNumber+1)
-		dbs.GetMonitoredDatabase("test1").ConnStr = "postgresql://localhost/test1"
-		dbs.GetMonitoredDatabase("test5").ConnStr = "postgresql://localhost/test5"
+		dbs[0].ConnStr = "postgresql://localhost/test1"
+		dbs[sampleEntriesNumber].ConnStr = "postgresql://localhost/test5"
 	})
 
 	t.Run("nonexistent file", func(*testing.T) {
 		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, "")
 		a.NoError(err)
-		err = yamlrw.UpdateDatabase(&sources.MonitoredDatabase{})
+		err = yamlrw.UpdateSource(sources.Source{})
 		a.Error(err)
 	})
 }

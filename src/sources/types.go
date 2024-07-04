@@ -3,7 +3,6 @@ package sources
 import (
 	"context"
 	"maps"
-	"net/url"
 	"slices"
 
 	"github.com/cybertec-postgresql/pgwatch3/db"
@@ -36,43 +35,75 @@ func (k Kind) IsValid() bool {
 	return slices.Contains[[]Kind, Kind](Kinds, k)
 }
 
-type MonitoredDatabase struct {
-	DBUniqueName         string             `yaml:"unique_name" db:"name"`
-	Group                string             `yaml:"group" db:"group"`
-	ConnStr              string             `yaml:"conn_str" db:"connstr"`
-	Metrics              map[string]float64 `yaml:"custom_metrics" db:"config"`
-	MetricsStandby       map[string]float64 `yaml:"custom_metrics_standby" db:"config_standby"`
-	Kind                 Kind               `yaml:"kind" db:"dbtype"`
-	IncludePattern       string             `yaml:"include_pattern" db:"include_pattern"`
-	ExcludePattern       string             `yaml:"exclude_pattern" db:"exclude_pattern"`
-	PresetMetrics        string             `yaml:"preset_metrics" db:"preset_config"`
-	PresetMetricsStandby string             `yaml:"preset_metrics_standby" db:"preset_config_standby"`
-	IsSuperuser          bool               `yaml:"is_superuser" db:"is_superuser"`
-	IsEnabled            bool               `yaml:"is_enabled" db:"is_enabled"`
-	CustomTags           map[string]string  `yaml:"custom_tags" db:"custom_tags"`
-	HostConfig           HostConfigAttrs    `yaml:"host_config" db:"host_config"`
-	OnlyIfMaster         bool               `yaml:"only_if_master" db:"only_if_master"`
+type (
 
-	Conn db.PgxPoolIface
+	// Source represents a configuration how to get databases to monitor. It can be a single database,
+	// a group of databases in postgres cluster, a group of databases in HA patroni cluster.
+	// pgbouncer and pgpool kinds are purely to indicate that the monitored database connection is made
+	// through a connection pooler, which supports its own additional metrics. If one is not interested in
+	// those additional metrics, it is ok to specify the connection details as a regular postgres source.
+	Source struct {
+		DBUniqueName         string             `yaml:"unique_name" db:"name"`
+		Group                string             `yaml:"group" db:"group"`
+		ConnStr              string             `yaml:"conn_str" db:"connstr"`
+		Metrics              map[string]float64 `yaml:"custom_metrics" db:"config"`
+		MetricsStandby       map[string]float64 `yaml:"custom_metrics_standby" db:"config_standby"`
+		Kind                 Kind               `yaml:"kind" db:"dbtype"`
+		IncludePattern       string             `yaml:"include_pattern" db:"include_pattern"`
+		ExcludePattern       string             `yaml:"exclude_pattern" db:"exclude_pattern"`
+		PresetMetrics        string             `yaml:"preset_metrics" db:"preset_config"`
+		PresetMetricsStandby string             `yaml:"preset_metrics_standby" db:"preset_config_standby"`
+		IsSuperuser          bool               `yaml:"is_superuser" db:"is_superuser"`
+		IsEnabled            bool               `yaml:"is_enabled" db:"is_enabled"`
+		CustomTags           map[string]string  `yaml:"custom_tags" db:"custom_tags"`
+		HostConfig           HostConfigAttrs    `yaml:"host_config" db:"host_config"`
+		OnlyIfMaster         bool               `yaml:"only_if_master" db:"only_if_master"`
+	}
+
+	Sources []Source
+)
+
+func (s *Source) GetDatabaseName() string {
+	if с, err := pgx.ParseConfig(s.ConnStr); err == nil {
+		return с.Database
+	}
+	return ""
 }
 
-func (md *MonitoredDatabase) Clone() *MonitoredDatabase {
-	return &MonitoredDatabase{
-		DBUniqueName:         md.DBUniqueName,
-		Group:                md.Group,
-		ConnStr:              md.ConnStr,
-		Kind:                 md.Kind,
-		IncludePattern:       md.IncludePattern,
-		ExcludePattern:       md.ExcludePattern,
-		PresetMetrics:        md.PresetMetrics,
-		PresetMetricsStandby: md.PresetMetricsStandby,
-		IsSuperuser:          md.IsSuperuser,
-		IsEnabled:            md.IsEnabled,
-		OnlyIfMaster:         md.OnlyIfMaster,
-		Metrics:              maps.Clone(md.Metrics),
-		MetricsStandby:       maps.Clone(md.MetricsStandby),
-		CustomTags:           maps.Clone(md.CustomTags),
+func (s *Source) Clone() *Source {
+	c := new(Source)
+	*c = *s
+	c.Metrics = maps.Clone(s.Metrics)
+	c.MetricsStandby = maps.Clone(s.MetricsStandby)
+	c.CustomTags = maps.Clone(s.CustomTags)
+	return c
+}
+
+func (srcs Sources) GetMonitoredDatabase() MonitoredDatabases {
+	mds := make(MonitoredDatabases, len(srcs))
+	for i, src := range srcs {
+		mds[i] = &MonitoredDatabase{Source: src}
 	}
+	return mds
+}
+
+// MonitoredDatabase represents a single database to monitor. Unlike source, it contains a database connection.
+// Continuous discovery sources (postgres-continuous-discovery, patroni-continuous-discovery, patroni-namespace-discovery)
+// will produce multiple monitored databases structs based on the discovered databases.
+type (
+	MonitoredDatabase struct {
+		Source
+		Conn       db.PgxPoolIface
+		ConnConfig *pgx.ConnConfig
+	}
+
+	MonitoredDatabases []*MonitoredDatabase
+)
+
+func (md *MonitoredDatabase) Clone() *MonitoredDatabase {
+	// we don't clone the connection and connection config
+	c := &MonitoredDatabase{Source: *md.Source.Clone()}
+	return c
 }
 
 func (md *MonitoredDatabase) Connect(ctx context.Context) (err error) {
@@ -84,26 +115,28 @@ func (md *MonitoredDatabase) Connect(ctx context.Context) (err error) {
 }
 
 func (md *MonitoredDatabase) GetDatabaseName() string {
-	if conf, err := pgx.ParseConfig(md.ConnStr); err == nil {
-		return conf.Database
+	var err error
+	if md.ConnConfig == nil {
+		if md.ConnConfig, err = pgx.ParseConfig(md.ConnStr); err != nil {
+			return ""
+		}
 	}
-	return ""
+	return md.ConnConfig.Database
 }
 
 func (md *MonitoredDatabase) SetDatabaseName(name string) {
-	if conf, err := pgx.ParseConfig(md.ConnStr); err == nil {
-		conf.Database = name
-		md.ConnStr = conf.ConnString()
-		return
+	var err error
+	if md.ConnConfig == nil {
+		if md.ConnConfig, err = pgx.ParseConfig(md.ConnStr); err != nil {
+			return
+		}
 	}
-	md.ConnStr = "postgresql:///" + url.PathEscape(name)
+	md.ConnConfig.Database = name
 }
 
 func (md *MonitoredDatabase) IsPostgresSource() bool {
 	return md.Kind != SourcePgBouncer && md.Kind != SourcePgPool
 }
-
-type MonitoredDatabases []*MonitoredDatabase
 
 func (mds MonitoredDatabases) GetMonitoredDatabase(DBUniqueName string) *MonitoredDatabase {
 	for _, md := range mds {
@@ -114,20 +147,21 @@ func (mds MonitoredDatabases) GetMonitoredDatabase(DBUniqueName string) *Monitor
 	return nil
 }
 
-func (mds MonitoredDatabases) SyncFromReader(r Reader) (MonitoredDatabases, error) {
-	newMDs, err := r.GetMonitoredDatabases()
+func (mds MonitoredDatabases) SyncFromReader(r Reader) (newmds MonitoredDatabases, err error) {
+	srcs, err := r.GetSources()
 	if err != nil {
 		return nil, err
 	}
-	if newMDs, err = newMDs.ResolveDatabases(); err != nil {
+	if newmds, err = srcs.ResolveDatabases(); err != nil {
 		return nil, err
 	}
-	for _, newMD := range newMDs {
+	for _, newMD := range newmds {
 		if md := mds.GetMonitoredDatabase(newMD.DBUniqueName); md != nil {
 			newMD.Conn = md.Conn
+			newMD.ConnConfig = md.ConnConfig
 		}
 	}
-	return newMDs, nil
+	return newmds, nil
 }
 
 type HostConfigAttrs struct {
@@ -152,13 +186,13 @@ type HostConfigPerMetricDisabledTimes struct { // metric gathering override per 
 }
 
 type Reader interface {
-	GetMonitoredDatabases() (MonitoredDatabases, error)
+	GetSources() (Sources, error)
 }
 
 type Writer interface {
-	WriteMonitoredDatabases(MonitoredDatabases) error
-	DeleteDatabase(string) error
-	UpdateDatabase(md *MonitoredDatabase) error
+	WriteSources(Sources) error
+	DeleteSource(string) error
+	UpdateSource(md Source) error
 }
 
 type ReaderWriter interface {
