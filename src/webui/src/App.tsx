@@ -6,11 +6,11 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 
 import { QueryClientProvider } from "QueryClient";
 
+import { Alert } from "components/Alert/Alert";
 import { Route, Routes } from "react-router-dom";
 import { PrivateRoute } from "layout/PrivateRoute";
 import { privateRoutes, publicRoutes } from "layout/Routes";
 
-import { AlertComponent } from "layout/common/AlertComponent";
 import { AppBar } from "./layout/AppBar";
 
 const mdTheme = createTheme();
@@ -55,7 +55,7 @@ export default function App() {
               {publicRoutesItems}
               {privateRoutesItems}
             </Routes>
-            <AlertComponent />
+            <Alert />
           </Box>
         </Box>
       </ThemeProvider>
