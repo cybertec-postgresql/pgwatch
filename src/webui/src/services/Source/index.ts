@@ -1,6 +1,7 @@
 import { axiosInstance } from "axiosInstance";
+import { Source } from "types/Source/Source";
 import { SourceEditEnabled } from "types/Source/SourceEditEnabled";
-import { createDbForm, updateDbForm, updateEnabledDbForm } from "queries/types/DbTypes";
+import { SourceEditHostConfig } from "types/Source/SourceEditHostConfig";
 
 export default class SourceService {
   private static _instance: SourceService;
@@ -14,28 +15,32 @@ export default class SourceService {
   };
 
   public async getSources() {
-    return await axiosInstance.get("db").
+    return await axiosInstance.get("source").
       then(response => response.data);
   };
 
   public async deleteSource(uniqueName: string) {
-    return await axiosInstance.delete("db", { params: { "id": uniqueName } }).
+    return await axiosInstance.delete("source", { params: { "id": uniqueName } }).
       then(response => response.data);
   };
 
-  public async addSource(data: createDbForm) {
-    return await axiosInstance.post("db", data).
+  public async addSource(data: Source) {
+    return await axiosInstance.post("source", data).
       then(response => response);
   };
 
-  public async editSource(data: updateDbForm) {
-    return await axiosInstance.patch("db", data.data, { params: { "id": data.md_unique_name } }).
+  public async editSource(data: Source) {
+    return await axiosInstance.patch("source", data, { params: { "id": data.DBUniqueName } }).
       then(response => response);
   };
 
   public async editSourceEnable(data: SourceEditEnabled) {
-    return await axiosInstance.patch("db", data.data, { params: { "id": data.uniqueName } }).
+    return await axiosInstance.patch("source", data.data, { params: { "id": data.DBUniqueName } }).
       then(response => response);
+  };
+
+  public async editSourceHostConfig(data: SourceEditHostConfig) {
+    return await axiosInstance.patch("source", data.data, { params: { "id": data.DBUniqueName } });
   };
 
   public async testSourceConnection(data: string) {
