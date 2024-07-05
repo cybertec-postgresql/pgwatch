@@ -24,14 +24,6 @@ export const useFormStyles = makeStyles()(
       alignItems: "flex-start",
       justifyContent: "space-between",
     },
-    iconRow: {
-      display: "flex",
-      alignItems: "center",
-      maxHeight: "56px",
-      height: "56px",
-      maxWidth: "40px",
-      width: "40px",
-    },
     formControlInput: {
       display: "flex",
       "&$formControlBlock": {
@@ -49,18 +41,24 @@ export const useFormStyles = makeStyles()(
         width: "fit-content",
       },
     },
+    addButton: {
+      justifyContent: "end",
+    },
     formButtons: {
       "&.MuiDialogActions-root": {
         padding: "0px 8px 8px",
       },
     },
     widthDefault: {
-      maxWidth: "240px",
+      maxWidth: "270px",
       width: "100%",
     },
     widthFull: {
       maxWidth: "100%",
       width: "100%",
     },
+    hidden: {
+      display: "none",
+    }
   }),
 );
