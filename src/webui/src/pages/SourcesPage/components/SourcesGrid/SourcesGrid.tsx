@@ -1,43 +1,57 @@
 import { useState } from "react";
 import { DataGrid } from "@mui/x-data-grid";
+import { Error } from "components/Error/Error";
+import { Loading } from "components/Loading/Loading";
+import { SourceFormDialog } from "containers/SourceFormDialog/SourceFormDialog";
+import { SourceFormProvider } from "contexts/SourceForm/SourceForm.provider";
 import { usePageStyles } from "styles/page";
-import { ErrorComponent } from "layout/common/ErrorComponent";
-import { LoadingComponent } from "layout/common/LoadingComponent";
 import { useSources } from "queries/Source";
 import { useSourcesGridColumns } from "./SourcesGrid.consts";
+import { SourcesGridToolbar } from "./components/SourcesGridToolbar";
 
 export const SourcesGrid = () => {
   const [formDialogOpen, setFormDialogOpen] = useState(false);
 
   const { classes } = usePageStyles();
 
-  const { status, data, error } = useSources();
+  const { data, isLoading, isError, error } = useSources();
 
   const columns = useSourcesGridColumns();
 
-  if (status === 'loading') {
+  const handleFormDialogOpen = () => setFormDialogOpen(true);
+
+  const handleFormDialogClose = () => setFormDialogOpen(false);
+
+  if (isLoading) {
     return (
-      <LoadingComponent />
+      <Loading />
     );
   }
 
-  if (status === 'error') {
+  if (isError) {
     const err = error as Error;
     return (
-      <ErrorComponent errorMessage={err.message} />
+      <Error message={err.message} />
     );
   }
 
   return (
     <div className={classes.page}>
-      <DataGrid
-        getRowId={(row) => row.DBUniqueName}
-        columns={columns}
-        rows={data}
-        rowsPerPageOptions={[]}
-        //components={{ Toolbar: () => <></> }} TODO
-        disableColumnMenu
-      />
+      <SourceFormProvider
+        open={formDialogOpen}
+        handleOpen={handleFormDialogOpen}
+        handleClose={handleFormDialogClose}
+      >
+        <DataGrid
+          getRowId={(row) => row.DBUniqueName}
+          columns={columns}
+          rows={data ?? []}
+          rowsPerPageOptions={[]}
+          components={{ Toolbar: () => <SourcesGridToolbar /> }}
+          disableColumnMenu
+        />
+        <SourceFormDialog />
+      </SourceFormProvider>
     </div>
   );
 };

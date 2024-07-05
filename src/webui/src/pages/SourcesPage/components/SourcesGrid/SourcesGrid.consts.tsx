@@ -2,7 +2,10 @@ import CheckIcon from "@mui/icons-material/Check";
 import { GridColDef } from "@mui/x-data-grid";
 import { MetricPopUp } from "components/MetricPopUp/MetricPopUp";
 import { Source } from "types/Source/Source";
+import { CustomTagsPopUp } from "./components/CustomTagsPopUp/CustomTagsPopUp";
 import { EnabledSourceSwitch } from "./components/EnabledSourceSwitch";
+import { HostConfigPopUp } from "./components/HostConfigPopUp/HostConfigPopUp";
+import { SourcesGridActions } from "./components/SourcesGridActions";
 
 const getIcon = (value: boolean) => {
   if (value) {
@@ -27,6 +30,7 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     field: "ConnStr",
     headerName: "Connection string",
     flex: 1,
+    minWidth: 300,
     align: "center",
     headerAlign: "center",
   },
@@ -38,7 +42,7 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     renderCell: ({ row }) => <MetricPopUp Metrics={row.Metrics} />
   },
   {
-    field: "MetricsStandby",
+    field: "Metrics Standby",
     width: 120,
     align: "center",
     headerAlign: "center",
@@ -69,7 +73,7 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
   },
   {
     field: "PresetMetrics",
-    headerName: "Metrics",
+    headerName: "Metrics preset",
     width: 150,
     align: "center",
     headerAlign: "center",
@@ -77,7 +81,7 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
   },
   {
     field: "PresetMetricsStandby",
-    headerName: "Metrics standby",
+    headerName: "Metrics standby preset",
     width: 150,
     align: "center",
     headerAlign: "center",
@@ -97,7 +101,7 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     width: 120,
     align: "center",
     headerAlign: "center",
-    renderCell: ({ row }) => <EnabledSourceSwitch uniqueName={row.DBUniqueName} enabled={row.IsEnabled} />,
+    renderCell: ({ row }) => <EnabledSourceSwitch DBUniqueName={row.DBUniqueName} IsEnabled={row.IsEnabled} />,
   },
   {
     field: "CustomTags",
@@ -105,22 +109,31 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     width: 120,
     align: "center",
     headerAlign: "center",
-    //renderCell: ({ row }) => <CustomTagsPopUp />, TODO
+    renderCell: ({ row }) => <CustomTagsPopUp CustomTags={row.CustomTags} />,
     hide: true,
   },
   {
     field: "HostConfig",
     headerName: "Host config",
-    width: 150,
+    width: 120,
     align: "center",
     headerAlign: "center",
+    renderCell: ({row}) => <HostConfigPopUp DBUniqueName={row.DBUniqueName} HostConfig={row.HostConfig} />,
+    hide: true,
   },
   {
     field: "OnlyIfMaster",
-    headerName: "Master mode only",
+    headerName: "Primary mode only",
     width: 120,
     align: "center",
     headerAlign: "center",
     renderCell: ({ value }) => getIcon(value),
+  },
+  {
+    field: "Actions",
+    headerName: "Actions",
+    headerAlign: "center",
+    width: 150,
+    renderCell: ({ row }) => <SourcesGridActions source={row} />
   }
 ]);

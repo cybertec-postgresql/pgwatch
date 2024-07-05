@@ -4,24 +4,24 @@ import { useEditSourceEnable } from "queries/Source";
 
 
 type EnabledSourceSwitchProps = {
-  uniqueName: string;
-  enabled: boolean;
+  DBUniqueName: string;
+  IsEnabled: boolean;
 };
 
 export const EnabledSourceSwitch = (props: EnabledSourceSwitchProps) => {
-  const { uniqueName, enabled } = props;
+  const { DBUniqueName, IsEnabled } = props;
 
-  const [checked, setChecked] = useState(enabled);
+  const [checked, setChecked] = useState(IsEnabled);
 
   const editEnabled = useEditSourceEnable();
   const { status } = editEnabled;
 
-  const handleChange = (_e: any, checked: boolean) => {
-    setChecked(checked);
+  const handleChange = (_e: any, value: boolean) => {
+    setChecked(value);
     editEnabled.mutate(
       {
-        uniqueName,
-        data: { IsEnabled: checked },
+        DBUniqueName,
+        data: { IsEnabled: value },
       }
     );
   };

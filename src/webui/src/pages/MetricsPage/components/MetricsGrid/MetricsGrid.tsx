@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import { DataGrid } from "@mui/x-data-grid";
+import { Error } from "components/Error/Error";
+import { Loading } from "components/Loading/Loading";
 import { MetricFormDialog } from "containers/MetricFormDialog/MetricFormDialog";
 import { MetricFormProvider } from "contexts/MetricForm/MetricForm.provider";
 import { usePageStyles } from "styles/page";
-import { ErrorComponent } from "layout/common/ErrorComponent";
-import { LoadingComponent } from "layout/common/LoadingComponent";
 import { useMetrics } from "queries/Metric";
 import { useMetricsGridColumns } from "./MetricsGrid.consts";
 import { MetricGridRow } from "./MetricsGrid.types";
@@ -13,7 +13,7 @@ import { MetricsGridToolbar } from "./components/MetricsGridToolbar/MetricsGridT
 export const MetricsGrid = () => {
   const [formDialogOpen, setFormDialogOpen] = useState(false);
 
-  const { status, data, error } = useMetrics();
+  const { data, isLoading, isError, error } = useMetrics();
 
   const { classes } = usePageStyles();
 
@@ -36,16 +36,16 @@ export const MetricsGrid = () => {
 
   const handleFormDialogClose = () => setFormDialogOpen(false);
 
-  if (status === "loading") {
+  if (isLoading) {
     return (
-      <LoadingComponent />
+      <Loading />
     );
   };
 
-  if (status === "error") {
+  if (isError) {
     const err = error as Error;
     return (
-      <ErrorComponent errorMessage={err.message} />
+      <Error message={err.message} />
     );
   };
 
