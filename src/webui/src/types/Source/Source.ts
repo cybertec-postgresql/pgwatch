@@ -1,6 +1,5 @@
 export type Source = {
   DBUniqueName: string;
-  DBUniqueNameOrig: string;
   Group: string;
   ConnStr: string;
   Metrics: Record<string, number> | null;
@@ -12,7 +11,7 @@ export type Source = {
   PresetMetricsStandby: string;
   IsSuperuser: boolean;
   IsEnabled: boolean;
-  CustomTags: Record<string, string>;
-  HostConfig: string;
+  CustomTags: Record<string, string> | null;
+  HostConfig: object;
   OnlyIfMaster: boolean;
 };

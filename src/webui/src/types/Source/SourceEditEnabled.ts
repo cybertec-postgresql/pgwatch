@@ -1,5 +1,5 @@
 export type SourceEditEnabled = {
-  uniqueName: string;
+  DBUniqueName: string;
   data: {
     IsEnabled: boolean;
   };
