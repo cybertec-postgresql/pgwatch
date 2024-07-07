@@ -11,8 +11,8 @@ import (
 	"context"
 	"log"
 	"net/rpc"
-    "os"
-    "strconv"
+	"os"
+	"strconv"
 
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 )
@@ -47,13 +47,6 @@ func (rw *RPCWriter) Write(msgs []metrics.MeasurementMessage) error {
 	if len(msgs) == 0 {
 		return nil
 	}
-// <<<<<<< HEAD
-// 	var status int
-// 	err := rw.client.Call("RPCWriter.UpdateMeasurements", msgs, &status)
-// 	if err != nil {
-// 		return err
-// Can't use this, messes up with the RPC Function signature
-// =======
 	for _, msg := range msgs {
 		var status int
 		pgwatchID := os.Getenv("pgwatchID")
@@ -67,9 +60,9 @@ func (rw *RPCWriter) Write(msgs []metrics.MeasurementMessage) error {
 		if err != nil {
 			return err
 		}
-    }
-// >>>>>>> bc59692 (Sync Metric Added; Also added tests for this)
-// 	}
+	}
+	// >>>>>>> bc59692 (Sync Metric Added; Also added tests for this)
+	// 	}
 	return nil
 }
 

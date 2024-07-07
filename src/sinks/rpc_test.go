@@ -3,30 +3,27 @@ package sinks_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"net/rpc"
 	"testing"
-    "fmt"
 
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/cybertec-postgresql/pgwatch3/sinks"
 	"github.com/stretchr/testify/assert"
 )
 
-type RPCWriter struct {
+type Receiver struct {
 }
 
 var ctxt = context.Background()
 
-func (receiver *RPCWriter) UpdateMeasurements(msgs []metrics.MeasurementMessage, status *int) error {
-	if msgs == nil {
+func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementMessage, status *int) error {
+	if msg == nil {
 		return errors.New("msgs is nil")
 	}
-	if len(msgs) == 0 {
-		return nil
-	}
-	if msgs[0].DBName != "Db" {
+	if msg.DBName != "Db" {
 		return errors.New("invalid message")
 	}
 	*status = 1
@@ -34,7 +31,7 @@ func (receiver *RPCWriter) UpdateMeasurements(msgs []metrics.MeasurementMessage,
 }
 
 func init() {
-	recv := new(RPCWriter)
+	recv := new(Receiver)
 	if err := rpc.Register(recv); err != nil {
 		panic(err)
 	}
@@ -45,10 +42,10 @@ func init() {
 		}()
 	} else {
 		panic(err)
-    }
+	}
 }
 
-func (receiver *RPCWriter) SyncMetricSignal(syncReq *sinks.SyncReq, logMsg *string) error {
+func (receiver *Receiver) SyncMetricSignal(syncReq *sinks.SyncReq, logMsg *string) error {
 	*logMsg = "Received>> DBName: " + syncReq.DBName + " OPR: " + syncReq.OPR + " ON: " + syncReq.PgwatchID
 	return nil
 }
@@ -98,13 +95,12 @@ func TestRPCWrite(t *testing.T) {
 
 func TestRPCSyncMetric(t *testing.T) {
 	port := 5050
+	a := assert.New(t)
 	rw, err := sinks.NewRPCWriter(ctxt, "0.0.0.0:"+fmt.Sprint(port))
 	if err != nil {
 		t.Error("Unable to send sync metric signal")
 	}
 
 	err = rw.SyncMetric("Test-DB", "DB-Metric", "Add")
-	if err != nil {
-		t.Error("Test Failed: ", err)
-	}
+	a.NoError(err)
 }
