@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"testing"
+    "fmt"
 
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/cybertec-postgresql/pgwatch3/sinks"
@@ -44,9 +45,15 @@ func init() {
 		}()
 	} else {
 		panic(err)
-	}
+    }
 }
 
+func (receiver *RPCWriter) SyncMetricSignal(syncReq *sinks.SyncReq, logMsg *string) error {
+	*logMsg = "Received>> DBName: " + syncReq.DBName + " OPR: " + syncReq.OPR + " ON: " + syncReq.PgwatchID
+	return nil
+}
+
+// Test begin from here ---------------------------------------------------------
 func TestNewRPCWriter(t *testing.T) {
 	a := assert.New(t)
 	_, err := sinks.NewRPCWriter(ctxt, "foo")
@@ -87,4 +94,17 @@ func TestRPCWrite(t *testing.T) {
 	cancel()
 	err = rw.Write(msgs)
 	a.Error(err)
+}
+
+func TestRPCSyncMetric(t *testing.T) {
+	port := 5050
+	rw, err := sinks.NewRPCWriter(ctxt, "0.0.0.0:"+fmt.Sprint(port))
+	if err != nil {
+		t.Error("Unable to send sync metric signal")
+	}
+
+	err = rw.SyncMetric("Test-DB", "DB-Metric", "Add")
+	if err != nil {
+		t.Error("Test Failed: ", err)
+	}
 }
