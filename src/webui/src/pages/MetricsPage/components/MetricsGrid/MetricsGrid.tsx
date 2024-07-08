@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { Error } from "components/Error/Error";
 import { Loading } from "components/Loading/Loading";
@@ -11,8 +11,6 @@ import { MetricGridRow } from "./MetricsGrid.types";
 import { MetricsGridToolbar } from "./components/MetricsGridToolbar/MetricsGridToolbar";
 
 export const MetricsGrid = () => {
-  const [formDialogOpen, setFormDialogOpen] = useState(false);
-
   const { data, isLoading, isError, error } = useMetrics();
 
   const { classes } = usePageStyles();
@@ -32,10 +30,6 @@ export const MetricsGrid = () => {
 
   const columns = useMetricsGridColumns();
 
-  const handleFormDialogOpen = () => setFormDialogOpen(true);
-
-  const handleFormDialogClose = () => setFormDialogOpen(false);
-
   if (isLoading) {
     return (
       <Loading />
@@ -51,11 +45,7 @@ export const MetricsGrid = () => {
 
   return (
     <div className={classes.page}>
-      <MetricFormProvider
-        open={formDialogOpen}
-        handleOpen={handleFormDialogOpen}
-        handleClose={handleFormDialogClose}
-      >
+      <MetricFormProvider>
         <DataGrid
           getRowId={(row) => row.Key}
           columns={columns}

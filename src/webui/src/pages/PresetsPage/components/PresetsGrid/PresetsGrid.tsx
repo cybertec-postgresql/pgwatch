@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { Error } from "components/Error/Error";
 import { Loading } from "components/Loading/Loading";
@@ -11,8 +11,6 @@ import { PresetGridRow } from "./PresetsGrid.types";
 import { PresetsGridToolbar } from "./components/PresetsGridToolbar/PresetsGridToolbar";
 
 export const PresetsGrid = () => {
-  const [formDialogOpen, setFormDialogOpen] = useState(false);
-
   const { classes } = usePageStyles();
 
   const { data, isLoading, isError, error } = usePresets();
@@ -32,10 +30,6 @@ export const PresetsGrid = () => {
 
   const columns = usePresetsGridColumns();
 
-  const handleFormDialogOpen = () => setFormDialogOpen(true);
-
-  const handleFormDialogClose = () => setFormDialogOpen(false);
-
   if (isLoading) {
     return (
       <Loading />
@@ -51,11 +45,7 @@ export const PresetsGrid = () => {
 
   return (
     <div className={classes.page}>
-      <PresetFormProvider
-        open={formDialogOpen}
-        handleOpen={handleFormDialogOpen}
-        handleClose={handleFormDialogClose}
-      >
+      <PresetFormProvider>
         <DataGrid
           getRowId={(row) => row.Key}
           columns={columns}

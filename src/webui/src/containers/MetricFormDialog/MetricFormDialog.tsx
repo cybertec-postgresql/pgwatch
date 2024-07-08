@@ -31,8 +31,20 @@ export const MetricFormDialog = () => {
   const addMetric = useAddMetric();
   const editMetric = useEditMetric();
 
-  const isSuccess = addMetric.isSuccess || editMetric.isSuccess;
-  const isLoading = addMetric.isLoading || editMetric.isLoading;
+  const isSuccess = useMemo(
+    () => addMetric.isSuccess || editMetric.isSuccess,
+    [addMetric.isSuccess, editMetric.isSuccess],
+  );
+  const isLoading = useMemo(
+    () => addMetric.isLoading || editMetric.isLoading,
+    [addMetric.isLoading, editMetric.isLoading],
+  );
+
+  useEffect(() => {
+    if (isSuccess) {
+      handleClose();
+    }
+  }, [isSuccess]); // eslint-disable-line
 
   const onSubmit: SubmitHandler<MetricFormValues> = (values) => {
     try {
@@ -46,10 +58,6 @@ export const MetricFormDialog = () => {
       setError("SQLs", { message: error.message });
     }
   };
-
-  if (isSuccess) {
-    handleClose();
-  }
 
   return (
     <Dialog open={open} onClose={handleClose} className={classes.formDialog}>

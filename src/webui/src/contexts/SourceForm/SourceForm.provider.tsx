@@ -4,16 +4,17 @@ import { SourceFormContext } from "./SourceForm.context";
 import { SourceFormActions, SourceFormContextType } from "./SourceForm.types";
 
 type Props = {
-  open: boolean;
-  handleOpen: () => void;
-  handleClose: () => void;
   children?: React.ReactNode;
 };
 
-export const SourceFormProvider = (props: Props) => {
-  const { open, handleOpen, handleClose, children } = props;
+export const SourceFormProvider = ({ children }: Props) => {
   const [data, setData] = useState<Source | undefined>(undefined);
   const [action, setAction] = useState<SourceFormActions>(SourceFormActions.Create);
+  const [open, setOpen] = useState(false);
+
+  const handleOpen = () => { setOpen(true); };
+
+  const handleClose = () => setOpen(false);
 
   const getContextValue = (): SourceFormContextType => ({
     data,
@@ -25,7 +26,7 @@ export const SourceFormProvider = (props: Props) => {
     handleClose,
   });
 
-  return(
+  return (
     <SourceFormContext.Provider value={getContextValue()}>
       {children}
     </SourceFormContext.Provider>

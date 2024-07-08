@@ -3,17 +3,16 @@ import TableViewIcon from "@mui/icons-material/TableView";
 import { Button, Dialog, DialogActions, DialogContent, FormControl, FormHelperText, IconButton, InputLabel, OutlinedInput } from "@mui/material";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { useFormStyles } from "styles/form";
-import { ValidationError } from "yup";
+import { Source } from "types/Source/Source";
 import { useEditSourceHostConfig } from "queries/Source";
 import { getHostConfigInitialValues } from "./HostConfigPopUp.consts";
 import { HostConfigFormValues } from "./HostConfigPopUp.types";
 
 type Props = {
-  DBUniqueName: string;
-  HostConfig: object;
+  source: Source;
 };
 
-export const HostConfigPopUp = ({ DBUniqueName, HostConfig }: Props) => {
+export const HostConfigPopUp = ({ source }: Props) => {
   const { classes, cx } = useFormStyles();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -23,9 +22,15 @@ export const HostConfigPopUp = ({ DBUniqueName, HostConfig }: Props) => {
   const { mutate, isSuccess } = useEditSourceHostConfig();
 
   useEffect(() => {
-    const initialValues = getHostConfigInitialValues(HostConfig);
+    const initialValues = getHostConfigInitialValues(source.HostConfig);
     reset(initialValues);
-  }, [HostConfig, dialogOpen, reset]);
+  }, [source.HostConfig, dialogOpen, reset]);
+
+  useEffect(() => {
+    if (isSuccess) {
+      handleClose();
+    }
+  }, [isSuccess]); // eslint-disable-line
 
   const handleOpen = () => setDialogOpen(true);
 
@@ -41,18 +46,14 @@ export const HostConfigPopUp = ({ DBUniqueName, HostConfig }: Props) => {
   const onSubmit: SubmitHandler<HostConfigFormValues> = (values) => {
     try {
       const hostConfig = JSON.parse(values.HostConfig);
-      mutate({ DBUniqueName, data: { HostConfig: hostConfig } });
+      mutate({
+        ...source,
+        HostConfig: hostConfig,
+      });
     } catch (err) {
       setError("HostConfig", { message: "Invalid JSON" });
-      if (ValidationError.isError(err)) {
-        setError("HostConfig", { message: err.message });
-      }
     }
   };
-
-  if (isSuccess) {
-    handleClose();
-  }
 
   return (
     <>

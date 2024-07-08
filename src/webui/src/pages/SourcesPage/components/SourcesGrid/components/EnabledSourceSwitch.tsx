@@ -1,29 +1,25 @@
 import { useEffect, useState } from "react";
 import { Switch } from "@mui/material";
+import { Source } from "types/Source/Source";
 import { useEditSourceEnable } from "queries/Source";
 
 
 type EnabledSourceSwitchProps = {
-  DBUniqueName: string;
-  IsEnabled: boolean;
+  source: Source;
 };
 
-export const EnabledSourceSwitch = (props: EnabledSourceSwitchProps) => {
-  const { DBUniqueName, IsEnabled } = props;
-
-  const [checked, setChecked] = useState(IsEnabled);
+export const EnabledSourceSwitch = ({ source }: EnabledSourceSwitchProps) => {
+  const [checked, setChecked] = useState(source.IsEnabled);
 
   const editEnabled = useEditSourceEnable();
   const { status } = editEnabled;
 
   const handleChange = (_e: any, value: boolean) => {
     setChecked(value);
-    editEnabled.mutate(
-      {
-        DBUniqueName,
-        data: { IsEnabled: value },
-      }
-    );
+    editEnabled.mutate({
+      ...source,
+      IsEnabled: value,
+    });
   };
 
   useEffect(() => {

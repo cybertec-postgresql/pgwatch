@@ -101,7 +101,7 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     width: 120,
     align: "center",
     headerAlign: "center",
-    renderCell: ({ row }) => <EnabledSourceSwitch DBUniqueName={row.DBUniqueName} IsEnabled={row.IsEnabled} />,
+    renderCell: ({ row }) => <EnabledSourceSwitch source={row} />,
   },
   {
     field: "CustomTags",
@@ -118,7 +118,7 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     width: 120,
     align: "center",
     headerAlign: "center",
-    renderCell: ({row}) => <HostConfigPopUp DBUniqueName={row.DBUniqueName} HostConfig={row.HostConfig} />,
+    renderCell: ({row}) => <HostConfigPopUp source={row} />,
     hide: true,
   },
   {

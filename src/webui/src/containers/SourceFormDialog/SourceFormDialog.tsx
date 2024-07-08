@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Button, Dialog, DialogActions, DialogContent } from "@mui/material";
 import { useSourceFormContext } from "contexts/SourceForm/SourceForm.context";
@@ -13,6 +13,7 @@ import { SourceFormValues } from "./components/SourceForm/SourceForm.types";
 
 export const SourceFormDialog = () => {
   const { data, open, action, handleClose } = useSourceFormContext();
+  const [dbUniqueNameOrig, setDbUniqueNameOrig] = useState<string>("");
 
   const formMethods = useForm<SourceFormValues>({
     resolver: yupResolver(sourceFormValuesValidationSchema),
@@ -27,6 +28,7 @@ export const SourceFormDialog = () => {
   useEffect(() => {
     const initialValues = getSourceInitialValues(data);
     reset(initialValues);
+    setDbUniqueNameOrig(initialValues.DBUniqueName);
     if (action === SourceFormActions.Copy) { setValue("DBUniqueName", ""); }
   }, [data, open, reset, action, setValue]);
 
@@ -34,7 +36,7 @@ export const SourceFormDialog = () => {
     if (addSource.isSuccess || editSource.isSuccess) {
       handleClose();
     }
-  }, [addSource.isSuccess, editSource.isSuccess, handleClose]);
+  }, [addSource.isSuccess, editSource.isSuccess]); // eslint-disable-line
 
   const submitTitle = useMemo(() => {
     if (action === SourceFormActions.Edit) {
@@ -46,7 +48,10 @@ export const SourceFormDialog = () => {
   const onSubmit: SubmitHandler<SourceFormValues> = (values) => {
     const source = createSourceRequest(values);
     if (action === SourceFormActions.Edit) {
-      editSource.mutate(source);
+      editSource.mutate({
+        DBUniqueName: dbUniqueNameOrig,
+        data: source,
+      });
     } else {
       addSource.mutate(source);
     }

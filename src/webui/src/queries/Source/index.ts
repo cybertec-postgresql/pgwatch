@@ -1,8 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { QueryKeys } from "consts/queryKeys";
 import { Source } from "types/Source/Source";
-import { SourceEditEnabled } from "types/Source/SourceEditEnabled";
-import { SourceEditHostConfig } from "types/Source/SourceEditHostConfig";
+import { SourceRequestBody } from "types/Source/SourceRequestBody";
 import SourceService from "services/Source";
 
 const services = SourceService.getInstance();
@@ -19,17 +18,17 @@ export const useDeleteSource = () => useMutation({
 
 export const useEditSourceEnable = () => useMutation({
   mutationKey: [QueryKeys.Source],
-  mutationFn: async (data: SourceEditEnabled) => await services.editSourceEnable(data)
+  mutationFn: async (data: Source) => await services.editSourceEnable(data)
 });
 
 export const useEditSourceHostConfig = () => useMutation({
   mutationKey: [QueryKeys.Source],
-  mutationFn: async (data: SourceEditHostConfig) => await services.editSourceHostConfig(data),
+  mutationFn: async (data: Source) => await services.editSourceHostConfig(data),
 });
 
 export const useEditSource = () => useMutation({
   mutationKey: [QueryKeys.Source],
-  mutationFn: async (data: Source) => await services.editSource(data),
+  mutationFn: async (data: SourceRequestBody) => await services.editSource(data),
 });
 
 export const useAddSource = () => useMutation({
