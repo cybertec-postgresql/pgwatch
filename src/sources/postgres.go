@@ -41,7 +41,7 @@ func (r *dbSourcesReaderWriter) WriteMonitoredDatabases(dbs MonitoredDatabases) 
 }
 
 func (r *dbSourcesReaderWriter) updateDatabase(conn db.PgxIface, md *MonitoredDatabase) (err error) {
-	m := db.NullIfZero
+	m := db.MarshallParam
 	sql := `insert into pgwatch3.source(
 	name, 
 	"group", 

@@ -42,7 +42,7 @@ type PgxPoolIface interface {
 	Stat() *pgxpool.Stat
 }
 
-func NullIfZero(v any) any {
+func MarshallParam(v any) any {
 	if v == nil {
 		return nil
 	}

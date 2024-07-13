@@ -12,6 +12,6 @@ package sources
 
 // * `postgres.go` files cover the functionality for the PostgreSQL database.
 // * `yaml.go` files cover the functionality for the YAML file.
-// * `resolver.go` implements continous discovery from patroni and postgres cluster.
+// * `resolver.go` implements continuous discovery from patroni and postgres cluster.
 // * `types.go` defines the types and interfaces.
 // * `sample.sources.yaml` is a sample configuration file.

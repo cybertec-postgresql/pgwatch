@@ -70,13 +70,25 @@ func TestUpdateDatabase(t *testing.T) {
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
 
-	md := &sources.MonitoredDatabase{}
+	md := &sources.MonitoredDatabase{
+		DBUniqueName:   "db1",
+		Group:          "group1",
+		Kind:           sources.Kind("postgres"),
+		ConnStr:        "postgres://user:pass@localhost:5432/db1",
+		Metrics:        map[string]float64{"metric": 60},
+		MetricsStandby: map[string]float64{"standby_metric": 60},
+		IsSuperuser:    true,
+		IncludePattern: ".*",
+		ExcludePattern: `\_.+`,
+		CustomTags:     map[string]string{"tag": "value"},
+	}
 	conn.ExpectPing()
 	conn.ExpectExec(`insert into pgwatch3\.source`).WithArgs(
 		md.DBUniqueName, md.Group, md.Kind,
-		md.ConnStr, md.Metrics, md.MetricsStandby, md.PresetMetrics, md.PresetMetricsStandby,
-		md.IsSuperuser, md.IncludePattern, md.ExcludePattern, md.CustomTags,
-		md.HostConfig, md.OnlyIfMaster,
+		md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`,
+		md.PresetMetrics, md.PresetMetricsStandby,
+		md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
+		nil, md.OnlyIfMaster,
 	).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	pgrw, err := sources.NewPostgresSourcesReaderWriter(ctx, conn)
@@ -94,7 +106,18 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 	a := assert.New(t)
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
-	md := &sources.MonitoredDatabase{}
+	md := &sources.MonitoredDatabase{
+		DBUniqueName:   "db1",
+		Group:          "group1",
+		Kind:           sources.Kind("postgres"),
+		ConnStr:        "postgres://user:pass@localhost:5432/db1",
+		Metrics:        map[string]float64{"metric": 60},
+		MetricsStandby: map[string]float64{"standby_metric": 60},
+		IsSuperuser:    true,
+		IncludePattern: ".*",
+		ExcludePattern: `\_.+`,
+		CustomTags:     map[string]string{"tag": "value"},
+	}
 	mds := sources.MonitoredDatabases{md}
 
 	t.Run("happy path", func(*testing.T) {
@@ -103,9 +126,9 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 		conn.ExpectExec(`truncate pgwatch3\.source`).WillReturnResult(pgxmock.NewResult("TRUNCATE", 1))
 		conn.ExpectExec(`insert into pgwatch3\.source`).WithArgs(
 			md.DBUniqueName, md.Group, md.Kind,
-			md.ConnStr, md.Metrics, md.MetricsStandby, md.PresetMetrics, md.PresetMetricsStandby,
-			md.IsSuperuser, md.IncludePattern, md.ExcludePattern, md.CustomTags,
-			md.HostConfig, md.OnlyIfMaster,
+			md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`, md.PresetMetrics, md.PresetMetricsStandby,
+			md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
+			nil, md.OnlyIfMaster,
 		).WillReturnResult(pgxmock.NewResult("INSERT", 1))
 		conn.ExpectCommit()
 		conn.ExpectRollback() // deferred rollback
@@ -139,9 +162,9 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 		conn.ExpectExec(`truncate pgwatch3\.source`).WillReturnResult(pgxmock.NewResult("TRUNCATE", 1))
 		conn.ExpectExec(`insert into pgwatch3\.source`).WithArgs(
 			md.DBUniqueName, md.Group, md.Kind,
-			md.ConnStr, md.Metrics, md.MetricsStandby, md.PresetMetrics, md.PresetMetricsStandby,
-			md.IsSuperuser, md.IncludePattern, md.ExcludePattern, md.CustomTags,
-			md.HostConfig, md.OnlyIfMaster,
+			md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`, md.PresetMetrics, md.PresetMetricsStandby,
+			md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
+			nil, md.OnlyIfMaster,
 		).WillReturnError(errors.New("failed insert"))
 		conn.ExpectRollback()
 
