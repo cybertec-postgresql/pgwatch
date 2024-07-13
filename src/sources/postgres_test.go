@@ -133,7 +133,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 	a := assert.New(t)
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
-	md := &sources.Source{
+	md := sources.Source{
 		DBUniqueName:   "db1",
 		Group:          "group1",
 		Kind:           sources.Kind("postgres"),
