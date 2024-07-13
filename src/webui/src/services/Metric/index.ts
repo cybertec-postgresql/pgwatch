@@ -30,7 +30,7 @@ export default class MetricService {
   };
 
   public async editMetric(data: MetricRequestBody) {
-    return await axiosInstance.patch("metric", data.Data, { params: { "name": data.Name } }).
+    return await axiosInstance.post("metric", data.Data, { params: { "name": data.Name } }).
       then(response => response);
   };
 }

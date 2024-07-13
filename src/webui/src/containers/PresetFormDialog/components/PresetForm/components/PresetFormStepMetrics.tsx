@@ -1,11 +1,10 @@
 import { useMemo } from "react";
-import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { FormControl, FormHelperText, IconButton, InputLabel, OutlinedInput, Skeleton } from "@mui/material";
+import { Button, FormControl, FormHelperText, IconButton, InputLabel, OutlinedInput } from "@mui/material";
 import { Autocomplete } from "components/Autocomplete/Autocomplete";
+import { Error } from "components/Error/Error";
 import { Controller, useFieldArray, useFormContext } from "react-hook-form";
 import { useFormStyles } from "styles/form";
-import { ErrorComponent } from "layout/common/ErrorComponent";
 import { useMetrics } from "queries/Metric";
 import { PresetFormValues } from "../PresetForm.types";
 
@@ -35,7 +34,7 @@ export const PresetFormStepMetrics = () => {
   if (isError) {
     const err = error as Error;
     return (
-      <ErrorComponent errorMessage={err.message} />
+      <Error message={err.message} />
     );
   }
 
@@ -75,34 +74,30 @@ export const PresetFormStepMetrics = () => {
               id={`Metrics.${index}.Interval`}
               label="Interval"
               type="number"
+              endAdornment={
+                <IconButton
+                  key={`Metrics.${index}.Delete`}
+                  title="Delete metric"
+                  onClick={() => remove(index)}
+                  {...fields.length === 1 && {
+                    disabled: true
+                  }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              }
             />
             <FormHelperText>{getError("Interval", index)}</FormHelperText>
           </FormControl>
-          <div className={classes.iconRow}>
-            <IconButton
-              key={`Metrics.${index}.Delete`}
-              title="Delete metric"
-              onClick={() => remove(index)}
-              {...fields.length === 1 && {
-                disabled: true
-              }}
-            >
-              <DeleteIcon />
-            </IconButton>
-          </div>
         </div>
       ))}
-      <div className={classes.row}>
-        <Skeleton variant="rounded" width={240} height={56} />
-        <Skeleton variant="rounded" width={240} height={56} />
-        <div className={classes.iconRow}>
-          <IconButton
-            title="Add metric"
-            onClick={() => append({ Name: "", Interval: 10 })}
-          >
-            <AddIcon />
-          </IconButton>
-        </div>
+      <div className={cx(classes.row, classes.addButton)}>
+        <Button
+          variant="contained"
+          onClick={() => append({ Name: "", Interval: 10 })}
+        >
+          Add metric
+        </Button>
       </div>
     </div>
   );

@@ -1,21 +1,19 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { DataGrid } from "@mui/x-data-grid";
+import { Error } from "components/Error/Error";
+import { Loading } from "components/Loading/Loading";
 import { PresetFormDialog } from "containers/PresetFormDialog/PresetFormDialog";
 import { PresetFormProvider } from "contexts/PresetForm/PresetForm.provider";
 import { usePageStyles } from "styles/page";
-import { ErrorComponent } from "layout/common/ErrorComponent";
-import { LoadingComponent } from "layout/common/LoadingComponent";
 import { usePresets } from "queries/Preset";
 import { usePresetsGridColumns } from "./PresetsGrid.consts";
 import { PresetGridRow } from "./PresetsGrid.types";
 import { PresetsGridToolbar } from "./components/PresetsGridToolbar/PresetsGridToolbar";
 
 export const PresetsGrid = () => {
-  const [formDialogOpen, setFormDialogOpen] = useState(false);
-
   const { classes } = usePageStyles();
 
-  const { status, data, error } = usePresets();
+  const { data, isLoading, isError, error } = usePresets();
 
   const rows: PresetGridRow[] | [] = useMemo(() => {
     if (data) {
@@ -32,30 +30,22 @@ export const PresetsGrid = () => {
 
   const columns = usePresetsGridColumns();
 
-  const handleFormDialogOpen = () => setFormDialogOpen(true);
-
-  const handleFormDialogClose = () => setFormDialogOpen(false);
-
-  if (status === "loading") {
+  if (isLoading) {
     return (
-      <LoadingComponent />
+      <Loading />
     );
   };
 
-  if (status === "error") {
+  if (isError) {
     const err = error as Error;
     return (
-      <ErrorComponent errorMessage={err.message} />
+      <Error message={err.message} />
     );
   };
 
   return (
     <div className={classes.page}>
-      <PresetFormProvider
-        open={formDialogOpen}
-        handleOpen={handleFormDialogOpen}
-        handleClose={handleFormDialogClose}
-      >
+      <PresetFormProvider>
         <DataGrid
           getRowId={(row) => row.Key}
           columns={columns}

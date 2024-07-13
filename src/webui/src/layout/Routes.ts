@@ -1,22 +1,22 @@
+import { LoginPage } from "pages/LoginPage/LoginPage";
+import { LogsPage } from "pages/LogsPage/LogsPage";
 import { MetricsPage } from "pages/MetricsPage/MetricsPage";
 import { PresetsPage } from "pages/PresetsPage/PresetsPage";
-import { SignIn } from "./Authentication/SignIn";
-import { Dashboard } from "./Dashboard";
-import { Logs } from "./Logs";
+import { SourcesPage } from "pages/SourcesPage/SourcesPage";
 
 export const publicRoutes = [
   {
-    title: "Sign in",
+    title: "Login",
     link: "/",
-    element: SignIn
+    element: LoginPage
   }
 ];
 
 export const privateRoutes = [
   {
-    title: "Dashboard",
-    link: "/dashboard",
-    element: Dashboard
+    title: "Sources",
+    link: "/sources",
+    element: SourcesPage,
   },
   {
     title: "Metrics",
@@ -31,6 +31,6 @@ export const privateRoutes = [
   {
     title: "Logs",
     link: "/logs",
-    element: Logs,
+    element: LogsPage,
   },
 ];

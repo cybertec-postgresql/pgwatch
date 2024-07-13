@@ -44,7 +44,7 @@ func Init(opts config.WebUIOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw so
 		srw,
 	}
 
-	mux.Handle("/db", NewEnsureAuth(s.handleDBs))
+	mux.Handle("/source", NewEnsureAuth(s.handleSources))
 	mux.Handle("/test-connect", NewEnsureAuth(s.handleTestConnect))
 	mux.Handle("/metric", NewEnsureAuth(s.handleMetrics))
 	mux.Handle("/preset", NewEnsureAuth(s.handlePresets))
@@ -62,7 +62,7 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
-	routes := []string{"/", "/dashboard", "/metrics", "/presets", "/logs"}
+	routes := []string{"/", "/sources", "/metrics", "/presets", "/logs"}
 	path := r.URL.Path
 	if slices.Contains(routes, path) {
 		path = "index.html"

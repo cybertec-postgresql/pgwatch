@@ -4,15 +4,16 @@ import { MetricFormContext } from "./MetricForm.context";
 import { MetricFormContextType } from "./MetricForm.types";
 
 type Props = {
-  open: boolean;
-  handleOpen: () => void;
-  handleClose: () => void;
   children?: React.ReactNode;
 };
 
-export const MetricFormProvider = (props: Props) => {
-  const { open, handleOpen, handleClose, children } = props;
+export const MetricFormProvider = ({ children }: Props) => {
   const [data, setData] = useState<MetricGridRow | undefined>(undefined);
+  const [open, setOpen] = useState(false);
+
+  const handleOpen = () => setOpen(true);
+
+  const handleClose = () => setOpen(false);
 
   const getContextValue = (): MetricFormContextType => ({
     data,
