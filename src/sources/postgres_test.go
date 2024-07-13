@@ -39,18 +39,45 @@ func TestGetMonitoredDatabases(t *testing.T) {
 	pgrw, err := sources.NewPostgresSourcesReaderWriter(ctx, conn)
 	a.NoError(err)
 
-	dbs, err := pgrw.GetMonitoredDatabases()
+	dbs, err := pgrw.GetSources()
 	a.NoError(err)
 	a.Len(dbs, 1)
 	a.NoError(conn.ExpectationsWereMet())
 
 	// check failed query
 	conn.ExpectQuery(`select \/\* pgwatch3_generated \*\/`).WillReturnError(errors.New("failed query"))
-	dbs, err = pgrw.GetMonitoredDatabases()
+	dbs, err = pgrw.GetSources()
 	a.Error(err)
 	a.Nil(dbs)
 	a.NoError(conn.ExpectationsWereMet())
 }
+
+func TestSyncFromReader(t *testing.T) {
+	a := assert.New(t)
+	conn, err := pgxmock.NewPool()
+	a.NoError(err)
+	conn.ExpectPing()
+	conn.ExpectQuery(`select \/\* pgwatch3_generated \*\/`).WillReturnRows(pgxmock.NewRows([]string{
+		"name", "group", "dbtype", "connstr", "config", "config_standby", "preset_config",
+		"preset_config_standby", "is_superuser", "include_pattern", "exclude_pattern",
+		"custom_tags", "host_config", "only_if_master", "is_enabled",
+	}).AddRow(
+		"db1", "group1", sources.Kind("postgres"), "postgres://user:pass@localhost:5432/db1",
+		map[string]float64{"metric": 60}, map[string]float64{"standby_metric": 60}, "exhaustive", "exhaustive",
+		true, ".*", `\_.+`, map[string]string{"tag": "value"}, nil, true, true,
+	))
+	pgrw, err := sources.NewPostgresSourcesReaderWriter(ctx, conn)
+	a.NoError(err)
+
+	md := &sources.MonitoredDatabase{}
+	md.DBUniqueName = "db1"
+	dbs := sources.MonitoredDatabases{md}
+	dbs, err = dbs.SyncFromReader(pgrw)
+	a.NoError(err)
+	a.Len(dbs, 1)
+	a.NoError(conn.ExpectationsWereMet())
+}
+
 func TestDeleteDatabase(t *testing.T) {
 	a := assert.New(t)
 	conn, err := pgxmock.NewPool()
@@ -60,7 +87,7 @@ func TestDeleteDatabase(t *testing.T) {
 	pgrw, err := sources.NewPostgresSourcesReaderWriter(ctx, conn)
 	a.NoError(err)
 
-	err = pgrw.DeleteDatabase("db1")
+	err = pgrw.DeleteSource("db1")
 	a.NoError(err)
 	a.NoError(conn.ExpectationsWereMet())
 }
@@ -70,7 +97,7 @@ func TestUpdateDatabase(t *testing.T) {
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
 
-	md := &sources.MonitoredDatabase{
+	md := sources.Source{
 		DBUniqueName:   "db1",
 		Group:          "group1",
 		Kind:           sources.Kind("postgres"),
@@ -93,7 +120,7 @@ func TestUpdateDatabase(t *testing.T) {
 
 	pgrw, err := sources.NewPostgresSourcesReaderWriter(ctx, conn)
 	a.NoError(err)
-	err = pgrw.UpdateDatabase(md)
+	err = pgrw.UpdateSource(md)
 	a.NoError(err)
 	a.NoError(conn.ExpectationsWereMet())
 }
@@ -106,7 +133,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 	a := assert.New(t)
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
-	md := &sources.MonitoredDatabase{
+	md := sources.Source{
 		DBUniqueName:   "db1",
 		Group:          "group1",
 		Kind:           sources.Kind("postgres"),
@@ -118,7 +145,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 		ExcludePattern: `\_.+`,
 		CustomTags:     map[string]string{"tag": "value"},
 	}
-	mds := sources.MonitoredDatabases{md}
+	mds := sources.Sources{md}
 
 	t.Run("happy path", func(*testing.T) {
 		conn.ExpectPing()
@@ -135,7 +162,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 
 		pgrw, err = sources.NewPostgresSourcesReaderWriter(ctx, conn)
 		a.NoError(err)
-		err = pgrw.WriteMonitoredDatabases(mds)
+		err = pgrw.WriteSources(mds)
 		a.NoError(err)
 		a.NoError(conn.ExpectationsWereMet())
 	})
@@ -143,7 +170,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 	t.Run("failed transaction begin", func(*testing.T) {
 		conn.ExpectBegin().WillReturnError(errors.New("failed transaction begin"))
 
-		err = pgrw.WriteMonitoredDatabases(mds)
+		err = pgrw.WriteSources(mds)
 		a.Error(err)
 		a.NoError(conn.ExpectationsWereMet())
 	})
@@ -152,7 +179,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 		conn.ExpectBegin()
 		conn.ExpectExec(`truncate pgwatch3\.source`).WillReturnError(errors.New("failed truncate"))
 
-		err = pgrw.WriteMonitoredDatabases(mds)
+		err = pgrw.WriteSources(mds)
 		a.Error(err)
 		a.NoError(conn.ExpectationsWereMet())
 	})
@@ -168,7 +195,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 		).WillReturnError(errors.New("failed insert"))
 		conn.ExpectRollback()
 
-		err = pgrw.WriteMonitoredDatabases(mds)
+		err = pgrw.WriteSources(mds)
 		a.Error(err)
 		a.NoError(conn.ExpectationsWereMet())
 	})

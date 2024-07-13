@@ -65,10 +65,10 @@ func (server *WebUIServer) DeleteMetric(name string) error {
 	return server.metricsReaderWriter.DeleteMetric(name)
 }
 
-// GetDatabases returns the list of monitored databases
-func (server *WebUIServer) GetDatabases() (res string, err error) {
-	var dbs sources.MonitoredDatabases
-	if dbs, err = server.sourcesReaderWriter.GetMonitoredDatabases(); err != nil {
+// GetSources returns the list of sources fo find databases for monitoring
+func (server *WebUIServer) GetSources() (res string, err error) {
+	var dbs sources.Sources
+	if dbs, err = server.sourcesReaderWriter.GetSources(); err != nil {
 		return
 	}
 	b, _ := json.Marshal(dbs)
@@ -76,17 +76,17 @@ func (server *WebUIServer) GetDatabases() (res string, err error) {
 	return
 }
 
-// DeleteDatabase removes the database from the list of monitored databases
-func (server *WebUIServer) DeleteDatabase(database string) error {
-	return server.sourcesReaderWriter.DeleteDatabase(database)
+// DeleteSource removes the source from the list of configured sources
+func (server *WebUIServer) DeleteSource(database string) error {
+	return server.sourcesReaderWriter.DeleteSource(database)
 }
 
-// UpdateDatabase updates the monitored database information
-func (server *WebUIServer) UpdateDatabase(params []byte) error {
-	var md sources.MonitoredDatabase
+// UpdateSource updates the configured source information
+func (server *WebUIServer) UpdateSource(params []byte) error {
+	var md sources.Source
 	err := json.Unmarshal(params, &md)
 	if err != nil {
 		return err
 	}
-	return server.sourcesReaderWriter.UpdateDatabase(&md)
+	return server.sourcesReaderWriter.UpdateSource(md)
 }

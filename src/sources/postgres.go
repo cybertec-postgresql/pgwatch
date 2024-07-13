@@ -23,7 +23,7 @@ type dbSourcesReaderWriter struct {
 	configDb db.PgxIface
 }
 
-func (r *dbSourcesReaderWriter) WriteMonitoredDatabases(dbs MonitoredDatabases) error {
+func (r *dbSourcesReaderWriter) WriteSources(dbs Sources) error {
 	tx, err := r.configDb.Begin(context.Background())
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func (r *dbSourcesReaderWriter) WriteMonitoredDatabases(dbs MonitoredDatabases) 
 	return tx.Commit(context.Background())
 }
 
-func (r *dbSourcesReaderWriter) updateDatabase(conn db.PgxIface, md *MonitoredDatabase) (err error) {
+func (r *dbSourcesReaderWriter) updateDatabase(conn db.PgxIface, md Source) (err error) {
 	m := db.MarshallParam
 	sql := `insert into pgwatch3.source(
 	name, 
@@ -81,16 +81,16 @@ on conflict (name) do update set
 	return err
 }
 
-func (r *dbSourcesReaderWriter) UpdateDatabase(md *MonitoredDatabase) error {
+func (r *dbSourcesReaderWriter) UpdateSource(md Source) error {
 	return r.updateDatabase(r.configDb, md)
 }
 
-func (r *dbSourcesReaderWriter) DeleteDatabase(name string) error {
+func (r *dbSourcesReaderWriter) DeleteSource(name string) error {
 	_, err := r.configDb.Exec(context.Background(), `delete from pgwatch3.source where name = $1`, name)
 	return err
 }
 
-func (r *dbSourcesReaderWriter) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
+func (r *dbSourcesReaderWriter) GetSources() (dbs Sources, err error) {
 	sqlLatest := `select /* pgwatch3_generated */
 	name, 
 	"group", 
@@ -113,6 +113,6 @@ from
 	if err != nil {
 		return nil, err
 	}
-	dbs, err = pgx.CollectRows[*MonitoredDatabase](rows, pgx.RowToAddrOfStructByNameLax)
+	dbs, err = pgx.CollectRows[Source](rows, pgx.RowToStructByNameLax)
 	return
 }

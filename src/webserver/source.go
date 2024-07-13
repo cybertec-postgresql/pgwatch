@@ -9,7 +9,7 @@ func (Server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request)
 	switch r.Method {
 	case http.MethodGet:
 		// return monitored databases
-		dbs, err := Server.GetDatabases()
+		dbs, err := Server.GetSources()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -23,13 +23,13 @@ func (Server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err := Server.UpdateDatabase(p); err != nil {
+		if err := Server.UpdateSource(p); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 
 	case http.MethodDelete:
 		// delete monitored database
-		if err := Server.DeleteDatabase(r.URL.Query().Get("name")); err != nil {
+		if err := Server.DeleteSource(r.URL.Query().Get("name")); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 

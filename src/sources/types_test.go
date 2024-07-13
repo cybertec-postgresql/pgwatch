@@ -61,22 +61,48 @@ func TestMonitoredDatabase_Connect(t *testing.T) {
 	assert.NoError(t, err)
 }
 func TestMonitoredDatabase_GetDatabaseName(t *testing.T) {
-	md := &sources.MonitoredDatabase{
-		ConnStr: "postgres://user:password@localhost:5432/mydatabase",
-	}
+	md := &sources.MonitoredDatabase{}
+	md.ConnStr = "postgres://user:password@localhost:5432/mydatabase"
 	expected := "mydatabase"
+	// check pgx.ConnConfig related code
 	got := md.GetDatabaseName()
 	assert.Equal(t, expected, got, "GetDatabaseName() = %v, want %v", got, expected)
+	// check ConnStr parsing
+	got = md.Source.GetDatabaseName()
+	assert.Equal(t, expected, got, "GetDatabaseName() = %v, want %v", got, expected)
 
+	md = &sources.MonitoredDatabase{}
 	md.ConnStr = "foo boo"
 	expected = ""
 	got = md.GetDatabaseName()
 	assert.Equal(t, expected, got, "GetDatabaseName() = %v, want %v", got, expected)
 }
+
+func TestMonitoredDatabase_SetDatabaseName(t *testing.T) {
+	md := &sources.MonitoredDatabase{}
+	md.ConnStr = "postgres://user:password@localhost:5432/mydatabase"
+	expected := "mydatabase"
+	// check ConnStr parsing
+	md.SetDatabaseName(expected)
+	got := md.GetDatabaseName()
+	assert.Equal(t, expected, got, "GetDatabaseName() = %v, want %v", got, expected)
+	// check pgx.ConnConfig related code
+	expected = "newdatabase"
+	md.SetDatabaseName(expected)
+	got = md.GetDatabaseName()
+	assert.Equal(t, expected, got, "GetDatabaseName() = %v, want %v", got, expected)
+
+	md = &sources.MonitoredDatabase{}
+	md.ConnStr = "foo boo"
+	expected = ""
+	md.SetDatabaseName("ingored due to invalid ConnStr")
+	got = md.GetDatabaseName()
+	assert.Equal(t, expected, got, "GetDatabaseName() = %v, want %v", got, expected)
+}
+
 func TestMonitoredDatabase_IsPostgresSource(t *testing.T) {
-	md := &sources.MonitoredDatabase{
-		Kind: sources.SourcePostgres,
-	}
+	md := &sources.MonitoredDatabase{}
+	md.Kind = sources.SourcePostgres
 	assert.True(t, md.IsPostgresSource(), "IsPostgresSource() = false, want true")
 
 	md.Kind = sources.SourcePgBouncer

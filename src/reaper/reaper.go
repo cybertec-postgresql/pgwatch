@@ -18,7 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var monitoredDbs sources.MonitoredDatabases
+var monitoredDbs = make(sources.MonitoredDatabases, 0)
 var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 var metricConfig map[string]float64                       // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 var metricDefinitionMap *metrics.Metrics = &metrics.Metrics{}
@@ -69,7 +69,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
 		gatherersShutDown := 0
 
-		if monitoredDbs, err = sourcesReaderWriter.GetMonitoredDatabases(); err != nil {
+		if monitoredDbs, err = monitoredDbs.SyncFromReader(sourcesReaderWriter); err != nil {
 			if firstLoop {
 				logger.Fatal("could not fetch active hosts - check config!", err)
 			} else {
@@ -77,10 +77,6 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				time.Sleep(time.Second * time.Duration(opts.Sources.Refresh))
 				continue
 			}
-		}
-		if monitoredDbs, err = monitoredDbs.ResolveDatabases(); err != nil {
-			logger.Error(err)
-			continue
 		}
 
 		if DoesEmergencyTriggerfileExist(opts.Metrics.EmergencyPauseTriggerfile) {

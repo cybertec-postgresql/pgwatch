@@ -948,7 +948,7 @@ func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.MonitoredD
 
 		_, err = c.Exec(ctx, Metric.InitSQL)
 		if err != nil {
-			log.GetLogger(ctx).Warningf("Failed to create a metric fetching helper for %s in %s: %w", md.DBUniqueName, metricName, err)
+			log.GetLogger(ctx).Warningf("Failed to create a metric fetching helper for %s in %s: %v", md.DBUniqueName, metricName, err)
 		} else {
 			log.GetLogger(ctx).Info("Successfully created metric fetching helper for", md.DBUniqueName, metricName)
 		}
