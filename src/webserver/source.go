@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (Server *WebUIServer) handleDBs(w http.ResponseWriter, r *http.Request) {
+func (Server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		// return monitored databases

@@ -44,7 +44,7 @@ func Init(opts config.WebUIOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw so
 		srw,
 	}
 
-	mux.Handle("/source", NewEnsureAuth(s.handleDBs))
+	mux.Handle("/source", NewEnsureAuth(s.handleSources))
 	mux.Handle("/test-connect", NewEnsureAuth(s.handleTestConnect))
 	mux.Handle("/metric", NewEnsureAuth(s.handleMetrics))
 	mux.Handle("/preset", NewEnsureAuth(s.handlePresets))

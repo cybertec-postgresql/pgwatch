@@ -33,13 +33,6 @@ func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 		}
 		err = Server.UpdatePreset(r.URL.Query().Get("name"), params)
 
-	case http.MethodPatch:
-		// update stored preset
-		if params, err = io.ReadAll(r.Body); err != nil {
-			return
-		}
-		err = Server.UpdatePreset(r.URL.Query().Get("name"), params)
-
 	case http.MethodDelete:
 		// delete stored Preset
 		err = Server.DeletePreset(r.URL.Query().Get("name"))
