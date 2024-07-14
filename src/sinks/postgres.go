@@ -96,6 +96,10 @@ var (
 	}
 )
 
+// PostgresWriter is a sink that writes metric measurements to a Postgres database.
+// At the moment, it supports both Postgres and TimescaleDB as a storage backend.
+// However, one is able to use any Postgres-compatible database as a storage backend,
+// e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 type PostgresWriter struct {
 	сtx          context.Context
 	sinkDb       db.PgxPoolIface
