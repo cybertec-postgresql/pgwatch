@@ -60,9 +60,8 @@ func (rw *RPCWriter) Write(msgs []metrics.MeasurementMessage) error {
 		if err != nil {
 			return err
 		}
+        rw.SyncMetric("demo", "abc", "ADD")
 	}
-	// >>>>>>> bc59692 (Sync Metric Added; Also added tests for this)
-	// 	}
 	return nil
 }
 

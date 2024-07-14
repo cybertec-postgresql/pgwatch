@@ -30,6 +30,11 @@ func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementMessage, st
 	return nil
 }
 
+func (receiver *Receiver) SyncMetricSignal(syncReq *sinks.SyncReq, logMsg *string) error {
+	*logMsg = "Received>> DBName: " + syncReq.DBName + " OPR: " + syncReq.OPR + " ON: " + syncReq.PgwatchID
+	return nil
+}
+
 func init() {
 	recv := new(Receiver)
 	if err := rpc.Register(recv); err != nil {
@@ -43,11 +48,6 @@ func init() {
 	} else {
 		panic(err)
 	}
-}
-
-func (receiver *Receiver) SyncMetricSignal(syncReq *sinks.SyncReq, logMsg *string) error {
-	*logMsg = "Received>> DBName: " + syncReq.DBName + " OPR: " + syncReq.OPR + " ON: " + syncReq.PgwatchID
-	return nil
 }
 
 // Test begin from here ---------------------------------------------------------
