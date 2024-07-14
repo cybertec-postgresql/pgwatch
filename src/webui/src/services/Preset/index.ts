@@ -29,7 +29,7 @@ export default class PresetService {
   };
 
   public async editPreset(data: PresetRequestBody) {
-    return await axiosInstance.patch("preset", data.Data, { params: { "name": data.Name } }).
+    return await axiosInstance.post("preset", data.Data, { params: { "name": data.Name } }).
       then(response => response);
   };
 };

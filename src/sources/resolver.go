@@ -26,18 +26,18 @@ import (
 )
 
 // ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni
-func (mds MonitoredDatabases) ResolveDatabases() (MonitoredDatabases, error) {
-	resolvedDbs := make(MonitoredDatabases, 0, len(mds))
-	for _, md := range mds {
-		if !md.IsEnabled {
+func (srcs Sources) ResolveDatabases() (MonitoredDatabases, error) {
+	resolvedDbs := make(MonitoredDatabases, 0, len(srcs))
+	for _, s := range srcs {
+		if !s.IsEnabled {
 			continue
 		}
-		dbs, err := md.ResolveDatabases()
+		dbs, err := s.ResolveDatabases()
 		if err != nil {
 			return nil, err
 		}
 		if len(dbs) == 0 {
-			resolvedDbs = append(resolvedDbs, md)
+			resolvedDbs = append(resolvedDbs, &MonitoredDatabase{Source: *(&s).Clone()})
 			continue
 		}
 		resolvedDbs = append(resolvedDbs, dbs...)
@@ -46,12 +46,12 @@ func (mds MonitoredDatabases) ResolveDatabases() (MonitoredDatabases, error) {
 }
 
 // ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni
-func (md *MonitoredDatabase) ResolveDatabases() (MonitoredDatabases, error) {
-	switch md.Kind {
+func (s Source) ResolveDatabases() (MonitoredDatabases, error) {
+	switch s.Kind {
 	case SourcePatroni, SourcePatroniContinuous, SourcePatroniNamespace:
-		return ResolveDatabasesFromPatroni(md)
+		return ResolveDatabasesFromPatroni(s)
 	case SourcePostgresContinuous:
-		return ResolveDatabasesFromPostgres(md)
+		return ResolveDatabasesFromPostgres(s)
 	}
 	return nil, nil
 }
@@ -68,11 +68,11 @@ var logger log.LoggerIface = log.FallbackLogger
 var lastFoundClusterMembers = make(map[string][]PatroniClusterMember) // needed for cases where DCS is temporarily down
 // don't want to immediately remove monitoring of DBs
 
-func getConsulClusterMembers(*MonitoredDatabase) ([]PatroniClusterMember, error) {
+func getConsulClusterMembers(Source) ([]PatroniClusterMember, error) {
 	return nil, errors.ErrUnsupported
 }
 
-func getZookeeperClusterMembers(*MonitoredDatabase) ([]PatroniClusterMember, error) {
+func getZookeeperClusterMembers(Source) ([]PatroniClusterMember, error) {
 	return nil, errors.ErrUnsupported
 }
 
@@ -139,76 +139,76 @@ func getTransport(conf HostConfigAttrs) (*tls.Config, error) {
 	return tlsClientConfig, nil
 }
 
-func getEtcdClusterMembers(database *MonitoredDatabase) ([]PatroniClusterMember, error) {
+func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var cfg client.Config
 
-	if len(database.HostConfig.DcsEndpoints) == 0 {
+	if len(s.HostConfig.DcsEndpoints) == 0 {
 		return ret, errors.New("Missing ETCD connect info, make sure host config has a 'dcs_endpoints' key")
 	}
 
-	tlsConfig, err := getTransport(database.HostConfig)
+	tlsConfig, err := getTransport(s.HostConfig)
 	if err != nil {
 		return nil, err
 	}
 	cfg = client.Config{
-		Endpoints:            database.HostConfig.DcsEndpoints,
+		Endpoints:            s.HostConfig.DcsEndpoints,
 		TLS:                  tlsConfig,
 		DialKeepAliveTimeout: time.Second,
-		Username:             database.HostConfig.Username,
-		Password:             database.HostConfig.Password,
+		Username:             s.HostConfig.Username,
+		Password:             s.HostConfig.Password,
 	}
 
 	c, err := client.New(cfg)
 	if err != nil {
-		logger.Errorf("[%s ]Could not connect to ETCD: %v", database.DBUniqueName, err)
+		logger.Errorf("[%s ]Could not connect to ETCD: %v", s.DBUniqueName, err)
 		return ret, err
 	}
 	kapi := c.KV
 
-	if database.Kind == SourcePatroniNamespace { // all scopes, all DBs (regex filtering applies if defined)
-		if len(database.GetDatabaseName()) > 0 {
-			return ret, fmt.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", database.DBUniqueName)
+	if s.Kind == SourcePatroniNamespace { // all scopes, all DBs (regex filtering applies if defined)
+		if len(s.GetDatabaseName()) > 0 {
+			return ret, fmt.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", s.DBUniqueName)
 		}
-		if database.HostConfig.Namespace == "" {
-			return ret, fmt.Errorf("Skipping Patroni entry %s - search 'namespace' not specified", database.DBUniqueName)
+		if s.HostConfig.Namespace == "" {
+			return ret, fmt.Errorf("Skipping Patroni entry %s - search 'namespace' not specified", s.DBUniqueName)
 		}
-		resp, err := kapi.Get(context.Background(), database.HostConfig.Namespace)
+		resp, err := kapi.Get(context.Background(), s.HostConfig.Namespace)
 		if err != nil {
 			return ret, err
 		}
 
 		for _, node := range resp.Kvs {
 			scope := path.Base(string(node.Key)) // Key="/service/batman"
-			scopeMembers, err := extractEtcdScopeMembers(database, scope, kapi, true)
+			scopeMembers, err := extractEtcdScopeMembers(s, scope, kapi, true)
 			if err != nil {
 				continue
 			}
 			ret = append(ret, scopeMembers...)
 		}
 	} else {
-		ret, err = extractEtcdScopeMembers(database, database.HostConfig.Scope, kapi, false)
+		ret, err = extractEtcdScopeMembers(s, s.HostConfig.Scope, kapi, false)
 		if err != nil {
 			return ret, err
 		}
 	}
-	lastFoundClusterMembers[database.DBUniqueName] = ret
+	lastFoundClusterMembers[s.DBUniqueName] = ret
 	return ret, nil
 }
 
-func extractEtcdScopeMembers(database *MonitoredDatabase, scope string, kapi client.KV, addScopeToName bool) ([]PatroniClusterMember, error) {
+func extractEtcdScopeMembers(s Source, scope string, kapi client.KV, addScopeToName bool) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var name string
-	membersPath := path.Join(database.HostConfig.Namespace, scope, "members")
+	membersPath := path.Join(s.HostConfig.Namespace, scope, "members")
 
 	resp, err := kapi.Get(context.Background(), membersPath)
 	if err != nil {
 		return nil, err
 	}
-	logger.Debugf("ETCD response for %s scope %s: %+v", database.DBUniqueName, scope, resp)
+	logger.Debugf("ETCD response for %s scope %s: %+v", s.DBUniqueName, scope, resp)
 
 	for _, node := range resp.Kvs {
-		logger.Debugf("Found a cluster member from etcd [%s:%s]: %+v", database.DBUniqueName, scope, node.Value)
+		logger.Debugf("Found a cluster member from etcd [%s:%s]: %+v", s.DBUniqueName, scope, node.Value)
 		nodeData, err := jsonTextToStringMap(string(node.Value))
 		if err != nil {
 			logger.Errorf("Could not parse ETCD node data for node \"%s\": %s", node, err)
@@ -233,27 +233,22 @@ const (
 	dcsTypeConsul    = "consul"
 )
 
-func ResolveDatabasesFromPatroni(ce *MonitoredDatabase) ([]*MonitoredDatabase, error) {
-	var md []*MonitoredDatabase
+func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error) {
+	var mds []*MonitoredDatabase
 	var cm []PatroniClusterMember
 	var err error
 	var ok bool
 	var dbUnique string
 
-	if ce.Kind == SourcePatroniNamespace && ce.HostConfig.DcsType != dcsTypeEtcd {
-		logger.Warningf("Skipping Patroni monitoring entry \"%s\" as currently only ETCD namespace scanning is supported...", ce.DBUniqueName)
-		return md, nil
-	}
-	logger.Debugf("Resolving Patroni nodes for \"%s\" from HostConfig: %+v", ce.DBUniqueName, ce.HostConfig)
-	if ce.HostConfig.DcsType == dcsTypeEtcd {
+	switch ce.HostConfig.DcsType {
+	case dcsTypeEtcd:
 		cm, err = getEtcdClusterMembers(ce)
-	} else if ce.HostConfig.DcsType == dcsTypeZookeeper {
+	case dcsTypeZookeeper:
 		cm, err = getZookeeperClusterMembers(ce)
-	} else if ce.HostConfig.DcsType == dcsTypeConsul {
+	case dcsTypeConsul:
 		cm, err = getConsulClusterMembers(ce)
-	} else {
-		logger.Error("unknown DCS", ce.HostConfig.DcsType)
-		return md, errors.New("unknown DCS")
+	default:
+		return nil, errors.New("unknown DCS")
 	}
 	if err != nil {
 		logger.Warningf("Failed to get info from DCS for %s, using previous member info if any", ce.DBUniqueName)
@@ -266,7 +261,7 @@ func ResolveDatabasesFromPatroni(ce *MonitoredDatabase) ([]*MonitoredDatabase, e
 	}
 	if len(cm) == 0 {
 		logger.Warningf("No Patroni cluster members found for cluster [%s:%s]", ce.DBUniqueName, ce.HostConfig.Scope)
-		return md, nil
+		return mds, nil
 	}
 	logger.Infof("Found %d Patroni members for entry %s", len(cm), ce.DBUniqueName)
 
@@ -290,15 +285,9 @@ func ResolveDatabasesFromPatroni(ce *MonitoredDatabase) ([]*MonitoredDatabase, e
 			dbUnique = ce.DBUniqueName + "_" + m.Name
 		}
 		if ce.GetDatabaseName() != "" {
-			md = append(md, &MonitoredDatabase{
-				DBUniqueName:  dbUnique,
-				ConnStr:       ce.ConnStr,
-				Metrics:       ce.Metrics,
-				PresetMetrics: ce.PresetMetrics,
-				IsSuperuser:   ce.IsSuperuser,
-				CustomTags:    ce.CustomTags,
-				HostConfig:    ce.HostConfig,
-				Kind:          "postgres"})
+			c := &MonitoredDatabase{Source: *ce.Clone()}
+			c.DBUniqueName = dbUnique
+			mds = append(mds, c)
 			continue
 		}
 		c, err := db.New(context.TODO(), ce.ConnStr,
@@ -307,7 +296,7 @@ func ResolveDatabasesFromPatroni(ce *MonitoredDatabase) ([]*MonitoredDatabase, e
 				c.ConnConfig.Database = "template1"
 				i, err := strconv.ParseUint(port, 10, 16)
 				c.ConnConfig.Port = uint16(i)
-				md[len(md)].ConnStr = c.ConnString()
+				mds[len(mds)].ConnStr = c.ConnString()
 				return err
 			})
 		if err != nil {
@@ -341,30 +330,25 @@ func ResolveDatabasesFromPatroni(ce *MonitoredDatabase) ([]*MonitoredDatabase, e
 			}
 			connURL.Host = host + ":" + port
 			connURL.Path = d["datname"].(string)
-			md = append(md, &MonitoredDatabase{
-				DBUniqueName:  dbUnique + "_" + d["datname_escaped"].(string),
-				ConnStr:       connURL.String(),
-				Metrics:       ce.Metrics,
-				PresetMetrics: ce.PresetMetrics,
-				IsSuperuser:   ce.IsSuperuser,
-				CustomTags:    ce.CustomTags,
-				HostConfig:    ce.HostConfig,
-				Kind:          "postgres"})
+			c := ce.Clone()
+			c.DBUniqueName = dbUnique + "_" + d["datname_escaped"].(string)
+			c.ConnStr = connURL.String()
+			mds = append(mds, &MonitoredDatabase{Source: *c})
 		}
 
 	}
 
-	return md, err
+	return mds, err
 }
 
 // "resolving" reads all the DB names from the given host/port, additionally matching/not matching specified regex patterns
-func ResolveDatabasesFromPostgres(md *MonitoredDatabase) (resolvedDbs MonitoredDatabases, err error) {
+func ResolveDatabasesFromPostgres(s Source) (resolvedDbs MonitoredDatabases, err error) {
 	var (
 		c      db.PgxPoolIface
 		dbname string
 		rows   pgx.Rows
 	)
-	c, err = db.New(context.TODO(), md.ConnStr)
+	c, err = db.New(context.TODO(), s.ConnStr)
 	if err != nil {
 		return
 	}
@@ -379,14 +363,14 @@ func ResolveDatabasesFromPostgres(md *MonitoredDatabase) (resolvedDbs MonitoredD
 		and case when length(trim($1)) > 0 then datname ~ $1 else true end
 		and case when length(trim($2)) > 0 then not datname ~ $2 else true end`
 
-	if rows, err = c.Query(context.TODO(), sql, md.IncludePattern, md.ExcludePattern); err != nil {
+	if rows, err = c.Query(context.TODO(), sql, s.IncludePattern, s.ExcludePattern); err != nil {
 		return nil, err
 	}
 	for rows.Next() {
 		if err = rows.Scan(&dbname); err != nil {
 			return nil, err
 		}
-		rdb := md.Clone()
+		rdb := &MonitoredDatabase{Source: *s.Clone()}
 		rdb.DBUniqueName += "_" + dbname
 		rdb.SetDatabaseName(dbname)
 		resolvedDbs = append(resolvedDbs, rdb)

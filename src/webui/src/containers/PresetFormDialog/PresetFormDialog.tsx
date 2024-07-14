@@ -26,8 +26,20 @@ export const PresetFormDialog = () => {
   const addPreset = useAddPreset();
   const editPreset = useEditPreset();
 
-  const isSuccess = addPreset.isSuccess || editPreset.isSuccess;
-  const isLoading = addPreset.isLoading || editPreset.isLoading;
+  const isSuccess = useMemo(
+    () => addPreset.isSuccess || editPreset.isSuccess,
+    [addPreset.isSuccess, editPreset.isSuccess],
+  );
+  const isLoading = useMemo(
+    () => addPreset.isLoading || editPreset.isLoading,
+    [addPreset.isLoading, editPreset.isLoading]
+  );
+
+  useEffect(() => {
+    if (isSuccess) {
+      handleClose();
+    }
+  }, [isSuccess]); // eslint-disable-line
 
   const submitTitle = useMemo(
     () => data ? "Update preset" : "Add preset",
@@ -43,11 +55,7 @@ export const PresetFormDialog = () => {
     }
   };
 
-  if (isSuccess) {
-    handleClose();
-  }
-
-  return(
+  return (
     <Dialog
       open={open}
       onClose={handleClose}

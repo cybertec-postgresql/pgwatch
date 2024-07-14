@@ -27,7 +27,7 @@ export const AlertProvider = ({ children }: AlertProviderProps) => {
   };
 
   const closeAlert = (_event: Event | React.SyntheticEvent<any, Event>, reason: SnackbarCloseReason) => {
-    if (reason === "clickaway" || reason === "escapeKeyDown") {
+    if (reason && (reason === "clickaway" || reason === "escapeKeyDown")) {
       return;
     }
     setOpen(false);

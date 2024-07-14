@@ -2,6 +2,8 @@ package db
 
 import (
 	"context"
+	"encoding/json"
+	"reflect"
 
 	pgx "github.com/jackc/pgx/v5"
 	pgconn "github.com/jackc/pgx/v5/pgconn"
@@ -38,4 +40,25 @@ type PgxPoolIface interface {
 	Config() *pgxpool.Config
 	Ping(ctx context.Context) error
 	Stat() *pgxpool.Stat
+}
+
+func MarshallParam(v any) any {
+	if v == nil {
+		return nil
+	}
+	val := reflect.ValueOf(v)
+	switch val.Kind() {
+	case reflect.Map, reflect.Slice:
+		if val.Len() == 0 {
+			return nil
+		}
+	case reflect.Struct:
+		if reflect.DeepEqual(v, reflect.Zero(val.Type()).Interface()) {
+			return nil
+		}
+	}
+	if b, err := json.Marshal(v); err == nil {
+		return string(b)
+	}
+	return nil
 }

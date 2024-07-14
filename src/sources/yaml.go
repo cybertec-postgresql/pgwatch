@@ -25,36 +25,36 @@ type fileSourcesReaderWriter struct {
 	path string
 }
 
-func (fcr *fileSourcesReaderWriter) WriteMonitoredDatabases(mds MonitoredDatabases) error {
+func (fcr *fileSourcesReaderWriter) WriteSources(mds Sources) error {
 	yamlData, _ := yaml.Marshal(mds)
 	return os.WriteFile(fcr.path, yamlData, 0644)
 }
 
-func (fcr *fileSourcesReaderWriter) UpdateDatabase(md *MonitoredDatabase) error {
-	dbs, err := fcr.GetMonitoredDatabases()
+func (fcr *fileSourcesReaderWriter) UpdateSource(md Source) error {
+	dbs, err := fcr.GetSources()
 	if err != nil {
 		return err
 	}
 	for i, db := range dbs {
 		if db.DBUniqueName == md.DBUniqueName {
 			dbs[i] = md
-			return fcr.WriteMonitoredDatabases(dbs)
+			return fcr.WriteSources(dbs)
 		}
 	}
 	dbs = append(dbs, md)
-	return fcr.WriteMonitoredDatabases(dbs)
+	return fcr.WriteSources(dbs)
 }
 
-func (fcr *fileSourcesReaderWriter) DeleteDatabase(name string) error {
-	dbs, err := fcr.GetMonitoredDatabases()
+func (fcr *fileSourcesReaderWriter) DeleteSource(name string) error {
+	dbs, err := fcr.GetSources()
 	if err != nil {
 		return err
 	}
-	dbs = slices.DeleteFunc(dbs, func(md *MonitoredDatabase) bool { return md.DBUniqueName == name })
-	return fcr.WriteMonitoredDatabases(dbs)
+	dbs = slices.DeleteFunc(dbs, func(md Source) bool { return md.DBUniqueName == name })
+	return fcr.WriteSources(dbs)
 }
 
-func (fcr *fileSourcesReaderWriter) GetMonitoredDatabases() (dbs MonitoredDatabases, err error) {
+func (fcr *fileSourcesReaderWriter) GetSources() (dbs Sources, err error) {
 	var fi fs.FileInfo
 	if fi, err = os.Stat(fcr.path); err != nil {
 		return
@@ -69,14 +69,14 @@ func (fcr *fileSourcesReaderWriter) GetMonitoredDatabases() (dbs MonitoredDataba
 			if d.IsDir() || !strings.HasSuffix(name, ".yaml") && !strings.HasSuffix(name, ".yml") {
 				return nil
 			}
-			var mdbs MonitoredDatabases
-			if mdbs, err = fcr.getMonitoredDatabases(path); err == nil {
+			var mdbs Sources
+			if mdbs, err = fcr.getSources(path); err == nil {
 				dbs = append(dbs, mdbs...)
 			}
 			return err
 		})
 	case mode.IsRegular():
-		dbs, err = fcr.getMonitoredDatabases(fcr.path)
+		dbs, err = fcr.getSources(fcr.path)
 	}
 	if err != nil {
 		return nil, err
@@ -84,12 +84,12 @@ func (fcr *fileSourcesReaderWriter) GetMonitoredDatabases() (dbs MonitoredDataba
 	return
 }
 
-func (fcr *fileSourcesReaderWriter) getMonitoredDatabases(configFilePath string) (dbs MonitoredDatabases, err error) {
+func (fcr *fileSourcesReaderWriter) getSources(configFilePath string) (dbs Sources, err error) {
 	var yamlFile []byte
 	if yamlFile, err = os.ReadFile(configFilePath); err != nil {
 		return
 	}
-	c := make([]*MonitoredDatabase, 0) // there can be multiple configs in a single file
+	c := make(Sources, 0) // there can be multiple configs in a single file
 	if err = yaml.Unmarshal(yamlFile, &c); err != nil {
 		return
 	}
@@ -102,7 +102,7 @@ func (fcr *fileSourcesReaderWriter) getMonitoredDatabases(configFilePath string)
 	return
 }
 
-func (fcr *fileSourcesReaderWriter) expandEnvVars(md *MonitoredDatabase) *MonitoredDatabase {
+func (fcr *fileSourcesReaderWriter) expandEnvVars(md Source) Source {
 	if strings.HasPrefix(string(md.Kind), "$") {
 		md.Kind = Kind(os.ExpandEnv(string(md.Kind)))
 	}

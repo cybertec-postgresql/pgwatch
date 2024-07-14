@@ -26,8 +26,22 @@ export const Autocomplete = (props: Props) => {
       id={id}
       options={options}
       renderInput={customInput}
-      onChange={(_, value) => field.onChange(value.label ? value.label : "")}
+      onChange={(_, value) => field.onChange(value ? value.label : "")}
       loading={loading}
+      componentsProps={{
+        popper: {
+          modifiers: [
+            {
+              name: 'flip',
+              enabled: false
+            },
+            {
+              name: 'preventOverflow',
+              enabled: false
+            }
+          ]
+        }
+      }}
     />
   );
 };

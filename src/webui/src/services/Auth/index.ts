@@ -1,5 +1,5 @@
 import { axiosInstance } from "axiosInstance";
-import { AuthForm } from "queries/types/AuthTypes";
+import { LoginFormValues } from "pages/LoginPage/components/LoginForm/LoginForm.types";
 
 export default class AuthService {
   private static _instance: AuthService;
@@ -12,7 +12,7 @@ export default class AuthService {
     return AuthService._instance;
   };
 
-  public async login(data: AuthForm) {
+  public async login(data: LoginFormValues) {
     return await axiosInstance.post("login", data).
       then(response => response.data);
   };

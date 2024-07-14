@@ -4,15 +4,16 @@ import { PresetFormContext } from "./PresetForm.context";
 import { PresetFormContextType } from "./PresetForm.types";
 
 type Props = {
-  open: boolean;
-  handleOpen: () => void;
-  handleClose: () => void;
   children?: React.ReactNode;
 };
 
-export const PresetFormProvider = (props: Props) => {
-  const { open, handleOpen, handleClose, children } = props;
+export const PresetFormProvider = ({ children }: Props) => {
   const [data, setData] = useState<PresetGridRow | undefined>(undefined);
+  const [open, setOpen] = useState(false);
+
+  const handleOpen = () => setOpen(true);
+
+  const handleClose = () => setOpen(false);
 
   const getContextValue = (): PresetFormContextType => ({
     data,
@@ -22,7 +23,7 @@ export const PresetFormProvider = (props: Props) => {
     handleClose,
   });
 
-  return(
+  return (
     <PresetFormContext.Provider value={getContextValue()}>
       {children}
     </PresetFormContext.Provider>
