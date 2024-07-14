@@ -19,19 +19,25 @@ type Receiver struct {
 
 var ctxt = context.Background()
 
-func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementMessage, status *int) error {
+func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementMessage, logMsg *string) error {
 	if msg == nil {
 		return errors.New("msgs is nil")
 	}
 	if msg.DBName != "Db" {
 		return errors.New("invalid message")
 	}
-	*status = 1
+	*logMsg = fmt.Sprintf("Received: %+v", *msg)
 	return nil
 }
 
-func (receiver *Receiver) SyncMetricSignal(syncReq *sinks.SyncReq, logMsg *string) error {
-	*logMsg = "Received>> DBName: " + syncReq.DBName + " OPR: " + syncReq.OPR + " ON: " + syncReq.PgwatchID
+func (receiver *Receiver) SyncMetric(syncReq *sinks.SyncReq, logMsg *string) error {
+	if syncReq == nil {
+		return errors.New("msgs is nil")
+	}
+	if syncReq.Operation == "invalid" {
+		return errors.New("invalid message")
+	}
+	*logMsg = fmt.Sprintf("Received: %+v", *syncReq)
 	return nil
 }
 
@@ -101,6 +107,19 @@ func TestRPCSyncMetric(t *testing.T) {
 		t.Error("Unable to send sync metric signal")
 	}
 
+	// no error for valid messages
 	err = rw.SyncMetric("Test-DB", "DB-Metric", "Add")
 	a.NoError(err)
+
+	// error for invalid messages
+	err = rw.SyncMetric("", "", "invalid")
+	a.Error(err)
+
+	// error for cancelled context
+	ctx, cancel := context.WithCancel(ctxt)
+	rw, err = sinks.NewRPCWriter(ctx, "0.0.0.0:5050")
+	a.NoError(err)
+	cancel()
+	err = rw.SyncMetric("Test-DB", "DB-Metric", "Add")
+	a.Error(err)
 }

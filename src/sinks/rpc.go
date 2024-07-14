@@ -1,18 +1,10 @@
-/*
-*
-* RPC sink implementation for pgwatch3.
-* Requires the address and port of the sink.
-*
- */
-
 package sinks
 
 import (
 	"context"
-	"log"
 	"net/rpc"
-	"os"
 
+	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 )
 
@@ -23,7 +15,6 @@ type RPCWriter struct {
 }
 
 func NewRPCWriter(ctx context.Context, address string) (*RPCWriter, error) {
-
 	client, err := rpc.DialHTTP("tcp", address)
 	if err != nil {
 		return nil, err
@@ -46,42 +37,41 @@ func (rw *RPCWriter) Write(msgs []metrics.MeasurementMessage) error {
 	if len(msgs) == 0 {
 		return nil
 	}
+	l := log.GetLogger(rw.ctx).
+		WithField("sink", "rpc").
+		WithField("address", rw.address)
 	for _, msg := range msgs {
-		var status int
-		err := rw.client.Call("Receiver.UpdateMeasurements", &msg, &status)
-		if err != nil {
+		var logMsg string
+		if err := rw.client.Call("Receiver.UpdateMeasurements", &msg, &logMsg); err != nil {
 			return err
+		}
+		if len(logMsg) > 0 {
+			l.Info(logMsg)
 		}
 	}
 	return nil
 }
 
 type SyncReq struct {
-	OPR        string
-	DBName     string
-	PgwatchID  string
+	DbName     string
 	MetricName string
+	Operation  string
 }
 
 func (rw *RPCWriter) SyncMetric(dbUnique string, metricName string, op string) error {
-	syncReq := new(SyncReq)
-
-	syncReq.DBName = dbUnique
-	syncReq.OPR = op
-	syncReq.PgwatchID = os.Getenv("pgwatchID")
-	syncReq.MetricName = metricName
-
 	var logMsg string
-	err := rw.client.Call("Receiver.SyncMetricSignal", &syncReq, &logMsg)
-
-	if err != nil {
+	if err := rw.client.Call("Receiver.SyncMetric", &SyncReq{
+		Operation:  op,
+		DbName:     dbUnique,
+		MetricName: metricName,
+	}, &logMsg); err != nil {
 		return err
 	}
-
 	if len(logMsg) > 0 {
-		log.Println("[Remote SINK INFO]: ", logMsg)
+		log.GetLogger(rw.ctx).
+			WithField("sink", "rpc").
+			WithField("address", rw.address).Info(logMsg)
 	}
-
 	return nil
 }
 
