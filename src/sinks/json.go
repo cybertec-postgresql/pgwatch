@@ -8,6 +8,10 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+// JSONWriter is a sink that writes metric measurements to a file in JSON format.
+// It supports compression and rotation of output files. The default rotation is based on the file size (100Mb).
+// JSONWriter is useful for debugging and testing purposes, as well as for integration with other systems,
+// such as log aggregators, analytics systems, and data processing pipelines, ML models, etc.
 type JSONWriter struct {
 	ctx context.Context
 	lw  *lumberjack.Logger

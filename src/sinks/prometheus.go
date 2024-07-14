@@ -17,6 +17,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+// PrometheusWriter is a sink that allows to expose metric measurements to Prometheus scrapper.
+// Prometheus collects metrics data from pgwatch3 by scraping metrics HTTP endpoints.
 type PrometheusWriter struct {
 	ctx                               context.Context
 	lastScrapeErrors                  prometheus.Gauge
