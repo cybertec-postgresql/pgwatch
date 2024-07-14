@@ -43,6 +43,8 @@ func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs *metri
 			w, err = NewPostgresWriter(ctx, s, &opts.Measurements, metricDefs)
 		case "prometheus":
 			w, err = NewPrometheusWriter(ctx, path)
+		case "rpc":
+			w, err = NewRPCWriter(ctx, path)
 		default:
 			return nil, fmt.Errorf("unknown schema %s in sink URI %s", scheme, s)
 		}
