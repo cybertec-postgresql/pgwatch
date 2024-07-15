@@ -1,5 +1,0 @@
-src/serviceWorker.js
-src/setupTests.ts
-src/**/__tests__/**
-src/**/test/**
-.eslintrc.js

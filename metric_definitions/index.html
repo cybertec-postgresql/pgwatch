@@ -1,0 +1,869 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://pgwatch.com/docs/metric_definitions/">
+      
+      
+        <link rel="prev" href="../using_managed_services/">
+      
+      
+        <link rel="next" href="../web_ui/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.29">
+    
+    
+      
+        <title>Metric definitions - pgwatch3 Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.76a95c52.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#defining-custom-metrics" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pgwatch3 Documentation" class="md-header__button md-logo" aria-label="pgwatch3 Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pgwatch3 Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Metric definitions
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pgwatch3 Documentation" class="md-nav__button md-logo" aria-label="pgwatch3 Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    pgwatch3 Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../project_background/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Project Background
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced_features/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Advanced Features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../components/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Components
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation_options/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker_installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Docker Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom_installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../preparing_databases/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Preparing Databases
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../using_managed_services/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using Managed Services
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Metric Definitions
+  </span>
+  
+
+      </a>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../web_ui/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Web UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboarding_alerting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboarding and Alerting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sizing_recommendations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sizing Recommendations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical_details/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Technical Details
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Security
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../long_term_installations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Long Term Installations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upgrading/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Upgrading
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../kubernetes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kubernetes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<p>Metrics are named SQL queries that return a timestamp and pretty much
+anything else you find useful. Most metrics have many different query
+text versions for different target PostgreSQL versions, also optionally
+taking into account primary / replica state and as of v1.8 also versions
+of installed extensions.</p>
+<pre><code class="language-sql">-- a sample metric
+SELECT
+  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s,
+  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int;
+</code></pre>
+<p>Correct version of the metric definition will be chosen automatically by
+regularly connecting to the target database and checking the Postgres
+version, recovery state, and if the monitoring user is a superuser or
+not. For superusers some metrics have alternate SQL definitions (as of
+v1.6.2) so that no "helpers" are needed for Postgres-native Stats
+Collector infos. Using superuser accounts for remote monitoring is of
+course not really recommended.</p>
+<p>There's a good set of pre-defined metrics &amp; metric configs provided by
+the pgwatch3 project to cover all typical needs, but when monitoring
+hundreds of hosts you'd typically want to develop some custom <em>Preset
+Configs</em> or at least adjust the metric fetching intervals according to
+your monitoring goals.</p>
+<p>Some things to note about the built-in metrics:</p>
+<ul>
+<li>Only a half of them are included in the <em>Preset configs</em> and are
+    ready for direct usage. The rest need some extra extensions or
+    privileges, OS level tool installations etc. To see what's possible
+    just browse the <a href="https://github.com/cybertec-postgresql/pgwatch3/tree/master/pgwatch3/metrics">sample
+    metrics</a>.</li>
+<li>Some builtin metrics are marked to be only executed when server is a
+    primary or conversely, a standby. The flags can be inspected / set
+    on the Web UI Metrics tab or in YAML mode by suffixing the metric
+    definition with "standby" or "master". Note that starting from
+    v1.8.1 it's also possible to specify completely alternative
+    monitoring configurations, i.e. metric-interval pairs, for the
+    "standby" (recovery) state - by default the same set of metrics
+    are used for both states.</li>
+<li>
+<p>There are a couple of special preset metrics that have some
+    non-standard behaviour attached to them:</p>
+<p><em>change_events</em></p>
+<p>:   The "change_events" built-in metric, tracking DDL &amp; config
+    changes, uses internally some other "*_hashes" metrics which
+    are not meant to be used on their own. Such metrics are
+    described also accordingly on the Web UI /metrics page and they
+    should not be removed.</p>
+<p><em>recommendations</em></p>
+<p>:   When enabled (i.e. interval &gt; 0), this metric will find all
+    other metrics starting with "reco_*" and execute those
+    queries. The purpose of the metric is to spot some performance,
+    security and other "best practices" violations. Users can add
+    new "reco_*" queries freely.</p>
+<p><em>server_log_event_counts</em></p>
+<p>:   This enables Postgres server log "tailing" for errors. Can't
+    be used for "pull" setups though unless the DB logs are
+    somehow mounted / copied over, as real file access is needed.
+    See the <code>Log parsing &lt;log_parsing&gt;</code>{.interpreted-text
+    role="ref"} chapter for details.</p>
+<p><em>instance_up</em></p>
+<p>:   For normal metrics there will be no data rows stored if the DB
+    is not reachable, but for this one there will be a 0 stored for
+    the "is_up" column that under normal operations would always
+    be 1. This metric can be used to calculate some "uptime" SLA
+    indicator for example.</p>
+</li>
+</ul>
+<h1 id="defining-custom-metrics">Defining custom metrics</h1>
+<p>For defining metrics definitions you should adhere to a couple of basic
+concepts:</p>
+<ul>
+<li>Every metric query should have an "epoch_ns" (nanoseconds since
+    epoch column to record the metrics reading time. If the column is
+    not there, things will still work but server timestamp of the
+    metrics gathering daemon will be used, some a small loss (assuming
+    intra-datacenter monitoring with little lag) of precision occurs.</li>
+<li>Queries can only return text, integer, boolean or floating point
+    (a.k.a. double precision) Postgres data types. Note that columns
+    with NULL values are not stored at all in the data layer as it's a
+    bit bothersome to work with NULLs!</li>
+<li>Column names should be descriptive enough so that they're
+    self-explanatory, but not over long as it costs also storage</li>
+<li>Metric queries should execute fast - at least below the selected
+    <em>Statement timeout</em> (default 5s)</li>
+<li>Columns can be optionally "tagged" by prefixing them with
+    "tag_". By doing this, the column data will be indexed by the
+    Postgres giving following advantages:<ul>
+<li>Sophisticated auto-discovery support for indexed keys/values,
+    when building charts with Grafana.</li>
+<li>Faster queries for queries on those columns.</li>
+</ul>
+</li>
+<li>All fetched metric rows can also be "prettyfied" with any custom
+    static key-value data, per host. To enable use the "Custom tags"
+    Web UI field for the monitored DB entry or "custom_tags" YAML
+    field. Note that this works per host and applies to all metrics.</li>
+<li>For Prometheus the numerical columns are by default mapped to a
+    Value Type of "Counter" (as most Statistics Collector columns are
+    cumulative), but when this is not the case and the column is a
+    "Gauge" then according column attributes should be declared. See
+    below section on column attributes for details.</li>
+<li>For Prometheus all text fields will be turned into tags / labels as
+    only floats can be stored!</li>
+</ul>
+<p><strong>Adding and using a custom metric:</strong></p>
+<p>For <em>Config DB</em> based setups:</p>
+<blockquote>
+<ol>
+<li>Go to the Web UI "Metric definitions" page and scroll to the
+    bottom.</li>
+<li>Fill the template - pick a name for your metric, select minimum
+    supported PostgreSQL version and insert the query text and any
+    extra attributes if any (see below for options). Hit the "New"
+    button to store.</li>
+<li>Activate the newly added metric by including it in some existing
+    <em>Preset Config</em> (listed on top of the page) or add it directly in
+    JSON form, together with an interval, into the "Custom metrics
+    config" filed on the "DBs" page.</li>
+</ol>
+</blockquote>
+<p>For <em>YAML</em> based setups:</p>
+<blockquote>
+<ol>
+<li>Create a new folder for the metric under
+    "/etc/pgwatch3/metrics". The folder name will be the metric's
+    name, so choose wisely.</li>
+<li>Create a new subfolder for each "minimally supported Postgres
+    version* and insert the metric's SQL definition into a file
+    named "metric.sql". Note the "minimally supported" part - i.e.
+    if your query will work from version v9.0 to v13 then you only
+    need one folder called "9.0". If there was a breaking change in
+    the internal catalogs at v9.6 so that the query stopped working,
+    you need a new folder named "9.6" that will be used for all
+    versions above v9.5.</li>
+<li>Activate the newly added metric by including it in some existing
+    <em>Preset Config</em> (/etc/pgwatch3/metrics/preset-configs.yaml) or add
+    it directly to the YAML config "custom_metrics" section.</li>
+</ol>
+</blockquote>
+<h1 id="metric-attributes">Metric attributes</h1>
+<p>Since v1.7 behaviour of plain metrics can be extended with a set of
+attributes that will modify the gathering in some way. The attributes
+are stored in YAML files called <em>metric_attrs.yaml" in a metrics root
+directory or in the</em>metric_attribute* Config DB table.</p>
+<p>Currently supported attributes:</p>
+<p><em>is_instance_level</em></p>
+<p>:   Enables caching, i.e. sharing of metric data between various
+    databases of a single instance to reduce load on the monitored
+    server.</p>
+<p><em>statement_timeout_seconds</em></p>
+<p>:   Enables to override the default 'per monitored DB' statement
+    timeouts on metric level.</p>
+<p><em>metric_storage_name</em></p>
+<p>:   Enables dynamic "renaming" of metrics at storage level, i.e.
+    declaring almost similar metrics with different names but the data
+    will be stored under one metric. Currently used (for out-of-the box
+    metrics) only for the 'stat_statements_no_query_text' metric, to
+    not to store actual query texts from the "pg_stat_statements"
+    extension for more security sensitive instances.</p>
+<p><em>extension_version_based_overrides</em></p>
+<p>:   Enables to "switch out" the query text from some other metric
+    based on some specific extension version. See 'reco_add_index' for
+    an example definition.</p>
+<p><em>disabled_days</em></p>
+<p>:   Enables to "pause" metric gathering on specified days. See
+    metric_attrs.yaml for "wal" for an example.</p>
+<p><em>disabled_times</em></p>
+<p>:   Enables to "pause" metric gathering on specified time intervals.
+    e.g. "09:00-17:00" for business hours. Note that if time zone is
+    not specified the server time of the gather daemon is used.
+    disabled_days / disabled_times can also be defined both on metric
+    and host (host_attrs) level.</p>
+<p>For a sample definition see
+<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/metrics/wal/metric_attrs.yaml">here</a>.</p>
+<h1 id="column-attributes">Column attributes</h1>
+<p>Besides the <em>_tag</em> column prefix modifier, it's also possible to
+modify the output of certain columns via a few attributes. It's only
+relevant for Prometheus output though currently, to set the correct data
+types in the output description, which is generally considered a
+nice-to-have thing anyways. For YAML based setups this means adding a
+"column_attrs.yaml" file in the metric's top folder and for Config DB
+based setup an according "column_attrs" JSON column should be filled
+via the Web UI.</p>
+<p>Supported column attributes:</p>
+<p><em>prometheus_gauge_columns</em></p>
+<p>:   Describe the mentioned output columns as of TYPE <em>gauge</em>, i.e. the
+    value can change any time in any direction. Default TYPE for
+    pgwatch3 is <em>counter</em>.</p>
+<h1 id="adding-metric-fetching-helpers">Adding metric fetching helpers</h1>
+<p>As mentioned in <code>Helper Functions &lt;helper_functions&gt;</code>{.interpreted-text
+role="ref"} section, Postgres knows very little about the Operating
+System that it's running on, so in some (most) cases it might be
+advantageous to also monitor some basic OS statistics together with the
+PostgreSQL ones, to get a better head start when troubleshooting
+performance problems. But as setup of such OS tools and linking the
+gathered data is not always trivial, pgwatch3 has a system of <em>helpers</em>
+for fetching such data.</p>
+<p>One can invent and install such <em>helpers</em> on the monitored databases
+freely to expose any information needed (backup status etc) via Python,
+or any other PL-language supported by Postgres, and then add according
+metrics similarly to any normal Postgres-native metrics.</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
+      
+    
+  </body>
+</html>

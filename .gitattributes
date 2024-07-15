@@ -1,3 +1,0 @@
-*.sql linguist-language=PLpgSQL
-*.py linguist-vendored
-*.sh linguist-vendored

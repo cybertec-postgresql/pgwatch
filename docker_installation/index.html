@@ -1,0 +1,863 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://pgwatch.com/docs/docker_installation/">
+      
+      
+        <link rel="prev" href="../installation_options/">
+      
+      
+        <link rel="next" href="../custom_installation/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.29">
+    
+    
+      
+        <title>Installing using Docker - pgwatch3 Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.76a95c52.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#simple-setup-steps" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pgwatch3 Documentation" class="md-header__button md-logo" aria-label="pgwatch3 Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pgwatch3 Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Installing using Docker
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pgwatch3 Documentation" class="md-nav__button md-logo" aria-label="pgwatch3 Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    pgwatch3 Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../project_background/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Project Background
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced_features/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Advanced Features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../components/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Components
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation_options/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Docker Installation
+  </span>
+  
+
+      </a>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom_installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../preparing_databases/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Preparing Databases
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../using_managed_services/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using Managed Services
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metric_definitions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Metric Definitions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../web_ui/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Web UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboarding_alerting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboarding and Alerting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sizing_recommendations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sizing Recommendations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical_details/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Technical Details
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Security
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../long_term_installations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Long Term Installations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upgrading/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Upgrading
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../kubernetes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kubernetes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="simple-setup-steps">Simple setup steps</h1>
+<p>The simplest real-life pgwatch3 setup should look something like that:</p>
+<ol>
+<li>
+<p>Decide which metrics storage engine you want to use -
+    <em>cybertec/pgwatch3</em> uses PostgreSQL. For Prometheus mode (exposing a
+    port for remote scraping) one should use the slimmer
+    <em>cybertec/pgwatch3-daemon</em> image which doesn't have any built in
+    databases.</p>
+</li>
+<li>
+<p>Find the latest pgwatch3 release version by going to the project's
+    Github <em>Releases</em> page or use the public API with something like
+    that:</p>
+<pre><code>curl -so- https://api.github.com/repos/cybertec-postgresql/pgwatch3/releases/latest | jq .tag_name | grep -oE '[0-9\.]+'
+</code></pre>
+</li>
+<li>
+<p>Pull the image:</p>
+<pre><code>docker pull cybertec/pgwatch3:X.Y.Z
+</code></pre>
+</li>
+<li>
+<p>Run the Docker image, exposing minimally the Grafana port served on
+    port 3000 internally. In a relatively secure environment you'd
+    usually also include the administrative web UI served on port 8080:</p>
+<pre><code>docker run -d --restart=unless-stopped -p 3000:3000 -p 8080:8080 --name pw3 cybertec/pgwatch3:X.Y.Z
+</code></pre>
+<p>Note that we're setting the container to be automatically restarted
+in case of a reboot/crash - which is highly recommended if not using
+some container management framework to run pgwatch3.</p>
+</li>
+</ol>
+<h1 id="more-future-proof-setup-steps-docker_example_launch">More future proof setup steps {#docker_example_launch}</h1>
+<p>Although the above simple setup example will do for more temporal setups
+/ troubleshooting sessions, for permanent setups it's highly
+recommended to create separate volumes for all software components in
+the container, so that it would be easier to
+<code>update &lt;upgrading&gt;</code>{.interpreted-text role="ref"} to newer pgwatch3
+Docker images and pull file system based backups and also it might be a
+good idea to expose all internal ports at least on <em>localhost</em> for
+possible troubleshooting and making possible to use native backup tools
+more conveniently for Postgres.</p>
+<p>Note that for maximum flexibility, security and update simplicity it's
+best to do a custom setup though - see the next
+<code>chapter &lt;custom_installation&gt;</code>{.interpreted-text role="ref"} for that.</p>
+<p>So in short, for plain Docker setups would be best to do something like:</p>
+<pre><code># let's create volumes for Postgres, Grafana and pgwatch3 marker files / SSL certificates
+for v in pg  grafana pw3 ; do docker volume create $v ; done
+
+# launch pgwatch3 with fully exposed Grafana and Health-check ports
+# and local Postgres and subnet level Web UI ports
+docker run -d --restart=unless-stopped --name pw3 \
+  -p 3000:3000 -p 8081:8081 -p 127.0.0.1:5432:5432 -p 192.168.1.XYZ:8080:8080 \
+  -v pg:/var/lib/postgresql -v grafana:/var/lib/grafana -v pw3:/pgwatch3/persistent-config \
+  cybertec/pgwatch3:X.Y.Z
+</code></pre>
+<p>Note that in non-trusted environments it's a good idea to specify more
+sensitive ports together with some explicit network interfaces for
+additional security - by default Docker listens on all network devices!</p>
+<p>Also note that one can configure many aspects of the software components
+running inside the container via ENV - for a complete list of all
+supported Docker environment variables see the
+<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/docs/ENV_VARIABLES.md">ENV_VARIABLES.md</a>
+file.</p>
+<h1 id="available-docker-images">Available Docker images</h1>
+<p>Following images are regularly pushed to <a href="https://hub.docker.com/u/cybertec">Docked
+Hub</a>:</p>
+<p><em>cybertec/pgwatch3</em></p>
+<p>:   Exactly the same as previous, but metrics are also stored in
+    PostgreSQL - thus needs more disk space. But in return you get more
+    "out of the box" dashboards, as the power of standard SQL gives
+    more complex visualization options.</p>
+<p><em>cybertec/pgwatch3-daemon</em></p>
+<p>:   A light-weight image containing only the metrics collection daemon /
+    agent, that can be integrated into the monitoring setup over
+    configuration specified either via ENV, mounted YAML files or a
+    PostgreSQL Config DB. See the <code>Component
+    reuse &lt;component_reuse&gt;</code>{.interpreted-text role="ref"} chapter for
+    wiring details.</p>
+<p><em>cybertec/pgwatch3-db-bootstrapper</em></p>
+<p>:   Sole purpose of the image is to bootstrap the pgwatch3 <em>Config DB</em>
+    or <em>Metrics DB</em> schema. Useful for custom cloud oriented setups
+    where the above "all components included" images are not a good
+    fit.</p>
+<h1 id="building-custom-docker-images">Building custom Docker images</h1>
+<p>For custom tweaks, more security,specific component versions, etc one
+could easily build the images themselves, just a Docker installation is
+needed: [docker build .]{.title-ref}.</p>
+<p>Build scripts used to prepare the public images can be found
+<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/build-all-images-latest.sh">here</a>.</p>
+<h1 id="interacting-with-the-docker-container">Interacting with the Docker container</h1>
+<ul>
+<li>
+<p>If to launch with the <em>PW3_TESTDB=1</em> env. parameter then the
+    pgwatch3 configuration database running inside Docker is added to
+    the monitoring, so that you should immediately see some metrics at
+    least on the <em>Health-check</em> dashboard.</p>
+</li>
+<li>
+<p>To add new databases / instances to monitoring open the
+    administration Web interface on port 8080 (or some other port, if
+    re-mapped at launch) and go to the <em>/dbs</em> page. Note that the Web UI
+    is an optional component, and one can managed monitoring entries
+    directly in the Postgres Config DB via INSERT-s / UPDATE-s into
+    "pgwatch3.monitored_db" table. Default user/password are again
+    <em>pgwatch3</em> / <em>pgwatch3admin</em>, database name - pgwatch3. In both
+    cases note that it can take up to 2min (default main loop time,
+    changeable via <em>PW3_SERVERS_REFRESH_LOOP_SECONDS</em>) before you see
+    any metrics for newly inserted databases.</p>
+</li>
+<li>
+<p>One can edit existing or create new Grafana dashboards, change
+    Grafana global settings, create users, alerts, etc after logging in
+    as <em>admin</em> / <em>pgwatch3admin</em> (by default, changeable at launch
+    time).</p>
+</li>
+<li>
+<p>Metrics and their intervals that are to be gathered can be
+    customized for every database separately via a custom JSON config
+    field or more conveniently by using <em>Preset Configs</em>, like
+    "minimal", "basic" or "exhaustive" (monitored_db.preset_config
+    table), where the name should already hint at the amount of metrics
+    gathered. For privileged users the "exhaustive" preset is a good
+    starting point, and "unprivileged" for simple developer accounts.</p>
+</li>
+<li>
+<p>To add a new metrics yourself (which are simple SQL queries
+    returning any values and a timestamp) head to
+    <a href="http://127.0.0.1:8080/metrics">http://127.0.0.1:8080/metrics</a>. The queries should always include a
+    "epoch_ns" column and "tag_" prefix can be used for columns
+    that should be quickly searchable/groupable, and thus will be
+    indexed with the PostgreSQL metric stores. See to the bottom of the
+    "metrics" page for more explanations or the documentation chapter
+    on metrics <code>here &lt;custom_metrics&gt;</code>{.interpreted-text role="ref"}.</p>
+</li>
+<li>
+<p>For a quickstart on dashboarding, a list of available metrics
+    together with some instructions are presented on the
+    "Documentation" dashboard.</p>
+</li>
+<li>
+<p>Some built-in metrics like "cpu_load" and others, that gather
+    privileged or OS statistics, require installing <em>helper functions</em>
+    (looking like
+    <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/metrics/00_helpers/get_load_average/9.1/metric.sql">that</a>,
+    so it might be normal to see some blank panels or fetching errors in
+    the logs. On how to prepare databases for monitoring see the
+    <code>Monitoring preparations &lt;preparing_databases&gt;</code>{.interpreted-text
+    role="ref"} chapter.</p>
+</li>
+<li>
+<p>For effective graphing you want to familiarize yourself with the
+    query language of the database system that was selected for metrics
+    storage. Some tips to get going:</p>
+<ul>
+<li>For PostgreSQL/TimescaleDB - some knowledge of <a href="https://www.postgresql.org/docs/current/tutorial-window.html">Window
+    functions</a>
+    is a must if looking at longer time periods of data as the
+    statistics could have been reset in the mean time by user
+    request or the server might have crashed, so that simple
+    <em>max() - min()</em> aggregates on cumulative counters (most data
+    provided by Postgres is cumulative) would lie.</li>
+</ul>
+</li>
+<li>
+<p>For possible troubleshooting needs, logs of the components running
+    inside Docker are by default (if not disabled on container launch)
+    visible under:
+    <a href="http://127.0.0.1:8080/logs/%5Bpgwatch3%7Cpostgres%7Cwebui%7Cgrafana">http://127.0.0.1:8080/logs/%5Bpgwatch3%7Cpostgres%7Cwebui%7Cgrafana</a>].
+    It's of course also possible to log into the container and look at
+    log files directly - they're situated under
+    <em>/var/logs/supervisor/</em>.</p>
+<p>FYI - <code>docker logs ...</code> command is not really useful after a
+successful container startup in pgwatch3 case.</p>
+</li>
+</ul>
+<h1 id="ports-used">Ports used</h1>
+<ul>
+<li>5432 - Postgres configuration or metrics storage DB (when using the
+    cybertec/pgwatch3 image)</li>
+<li>8080 - Management Web UI (monitored hosts, metrics, metrics
+    configurations)</li>
+<li>8081 - Gatherer healthcheck / statistics on number of gathered
+    metrics (JSON).</li>
+<li>3000 - Grafana dashboarding</li>
+</ul>
+<h1 id="docker-compose">Docker Compose</h1>
+<p>As mentioned in the <code>Components &lt;components&gt;</code>{.interpreted-text
+role="ref"} chapter, remember that the pre-built Docker images are just
+one example how your monitoring setup around the pgwatch3 metrics
+collector could be organized. For another example how various components
+(as Docker images here) can work together, see a <em>Docker Compose</em>
+example with loosely coupled components
+<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/docker-compose.yml">here</a>.</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
+      
+    
+  </body>
+</html>

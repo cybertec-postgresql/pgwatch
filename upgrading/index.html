@@ -1,0 +1,881 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://pgwatch.com/docs/upgrading/">
+      
+      
+        <link rel="prev" href="../long_term_installations/">
+      
+      
+        <link rel="next" href="../kubernetes/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.29">
+    
+    
+      
+        <title>Upgrading - pgwatch3 Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.76a95c52.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#updating-to-a-newer-docker-version" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pgwatch3 Documentation" class="md-header__button md-logo" aria-label="pgwatch3 Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pgwatch3 Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Upgrading
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pgwatch3 Documentation" class="md-nav__button md-logo" aria-label="pgwatch3 Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    pgwatch3 Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../project_background/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Project Background
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced_features/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Advanced Features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../components/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Components
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation_options/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker_installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Docker Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom_installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../preparing_databases/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Preparing Databases
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../using_managed_services/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using Managed Services
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metric_definitions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Metric Definitions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../web_ui/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Web UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboarding_alerting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboarding and Alerting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sizing_recommendations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sizing Recommendations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical_details/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Technical Details
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Security
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../long_term_installations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Long Term Installations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Upgrading
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Upgrading
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#without-volumes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Without volumes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#with-volumes" class="md-nav__link">
+    <span class="md-ellipsis">
+      With volumes
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../kubernetes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kubernetes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#without-volumes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Without volumes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#with-volumes" class="md-nav__link">
+    <span class="md-ellipsis">
+      With volumes
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<p>The pgwatch3 daemon code doesn't need too much maintenance itself (if
+you're not interested in new features), but the preset metrics,
+dashboards and the other components that pgwatch3 relies, like Grafana,
+are under very active development and get updates quite regularly so
+already purely from the security standpoint it would make sense to stay
+up to date.</p>
+<p>We also regularly include new component versions in the Docker images
+after verifying that they work. If using Docker, you could also choose
+to build your own images any time some new component versions are
+released, just increment the version numbers in the Dockerfile.</p>
+<h1 id="updating-to-a-newer-docker-version">Updating to a newer Docker version</h1>
+<h2 id="without-volumes">Without volumes</h2>
+<p>If pgwatch3 container was started in the simplest way possible without
+volumes, and if previously gathered metrics are not of great importance,
+and there are no user modified metric or dashboard changes that should
+be preserved, then the easiest way to get the latest components would be
+just to launch new container and import the old monitoring config:</p>
+<pre><code># let's backup up the monitored hosts
+psql -p5432 -U pgwatch3 -d pgwatch3 -c "\copy monitored_db to 'monitored_db.copy'"
+
+# stop the old container and start a new one ...
+docker stop ... &amp;&amp; docker run ....
+
+# import the monitored hosts
+psql -p5432 -U pgwatch3 -d pgwatch3 -c "\copy monitored_db from 'monitored_db.copy'"
+</code></pre>
+<p>If metrics data and other settings like custom dashboards need to be
+preserved then some more steps are needed, but basically it's about
+pulling Postgres backups and restoring them into the new container.</p>
+<p>A tip: to make the restore process easier it would already make sense to
+mount the host folder with the backups in it on the new container with
+"-v \~/pgwatch3_backups:/pgwatch3_backups:rw,z" when starting the
+Docker image. Otherwise one needs to set up SSH or use something like S3
+for example. Also note that port 5432 need to be exposed to take backups
+outside of Docker for Postgres respectively.</p>
+<h2 id="with-volumes">With volumes</h2>
+<p>To make updates a bit easier, the preferred way to launch pgwatch3
+should be to use Docker volumes for each individual component - see the
+<code>Installing using Docker &lt;docker_example_launch&gt;</code>{.interpreted-text
+role="ref"} chapter for details. Then one can just stop the old
+container and start a new one, re-using the volumes.</p>
+<p>With some releases though, updating to newer version might additionally
+still require manual rollout of Config DB <em>schema migrations scripts</em>,
+so always check the release notes for hints on that or just go to the
+"pgwatch3/sql/migrations" folder and execute all SQL scripts that have
+a higher version than the old pgwatch3 container. Error messages like
+will "missing columns" or "wrong datatype" will also hint at that,
+after launching with a new image. FYI - such SQL "patches" are
+generally not provided for metric updates, nor dashboard changes and
+they need to be updated separately.</p>
+<h1 id="updating-without-docker">Updating without Docker</h1>
+<p>For a custom installation there's quite some freedom in doing updates -
+as components (Grafana, PostgreSQL) are loosely coupled, they can be
+updated any time without worrying too much about the other components.
+Only "tightly coupled" components are the pgwatch3 metrics collector,
+config DB and the optional Web UI - if the pgwatch3 config is kept in
+the database. If YAML based approach (see details
+<code>here &lt;yaml_setup&gt;</code>{.interpreted-text role="ref"}) is used, then things
+are even more simple - the pgwatch3 daemon can be updated any time as
+YAML schema has default values for everything and there are no other
+"tightly coupled" components like the Web UI.</p>
+<h1 id="updating-grafana">Updating Grafana</h1>
+<p>The update process for Grafana looks pretty much like the installation
+so take a look at the according
+<code>chapter &lt;custom_install_grafana&gt;</code>{.interpreted-text role="ref"}. If
+using Grafana's package repository it should happen automatically along
+with other system packages. Grafana has a built-in database schema
+migrator, so updating the binaries and restarting is enough.</p>
+<h1 id="updating-grafana-dashboards">Updating Grafana dashboards</h1>
+<p>There are no update or migration scripts for the built-in Grafana
+dashboards as it would break possible user applied changes. If you know
+that there are no user changes, then one can just delete or rename the
+existing ones in a bulk matter and import the latest JSON definitions.
+See <code>here &lt;dashboard_maintenance&gt;</code>{.interpreted-text role="ref"} for
+some more advice on how to manage dashboards.</p>
+<h1 id="updating-the-config-metrics-db-version">Updating the config / metrics DB version</h1>
+<p>Database updates can be quite complex, with many steps, so it makes
+sense to follow the manufacturer's instructions here.</p>
+<p>For PostgreSQL one should distinguish between minor version updates and
+major version upgrades. Minor updates are quite straightforward and
+problem-free, consisting of running something like:</p>
+<pre><code>apt update &amp;&amp; apt install postgresql
+sudo systemctl restart postgresql
+</code></pre>
+<p>For PostgreSQL major version upgrades one should read through the
+according release notes (e.g.
+<a href="https://www.postgresql.org/docs/12/release-12.html#id-1.11.6.5.4">here</a>)
+and be prepared for the unavoidable downtime.</p>
+<h1 id="updating-the-pgwatch3-schema">Updating the pgwatch3 schema</h1>
+<p>This is the pgwatch3 specific part, with some coupling between the
+following components - Config DB SQL schema, metrics collector, and the
+optional Web UI.</p>
+<p>Here one should check from the
+<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/docs/CHANGELOG.md">CHANGELOG</a>
+if pgwatch3 schema needs updating. If yes, then manual applying of
+schema diffs is required before running the new gatherer or Web UI. If
+no, i.e. no schema changes, all components can be updated independently
+in random order.</p>
+<p>Assuming that we initially installed pgwatch3 version v1.6.0, and now
+the latest version is 1.6.2, based on the release notes and <a href="https://github.com/cybertec-postgresql/pgwatch3/tree/master/pgwatch3/sql/config_store/migrations">SQL
+diffs</a>
+we need to apply the following files:</p>
+<blockquote>
+<p>psql -f /etc/pgwatch3/sql/config_store/migrations/v1.6.1-1_patroni_cont_discovery.sql pgwatch3
+    psql -f /etc/pgwatch3/sql/config_store/migrations/v1.6.2_superuser_metrics.sql pgwatch3</p>
+</blockquote>
+<h1 id="updating-the-metrics-collector">Updating the metrics collector</h1>
+<p>Compile or install the gatherer from RPM / DEB / tarball packages. See
+the <code>Custom installation &lt;custom_installation&gt;</code>{.interpreted-text
+role="ref"} chapter for details.</p>
+<p>If using a SystemD service file to auto-start the collector then you
+might want to also check for possible updates on the template there -
+<em>/etc/pgwatch3/startup-scripts/pgwatch3.service</em>.</p>
+<h1 id="updating-the-web-ui">Updating the Web UI</h1>
+<p>Update the optional Python Web UI if using it to administer monitored
+DB-s and metric configs. The Web UI was not included in the pre-built
+packages of older pgwatch3 versions as deploying self-contained Python
+that runs on all platforms is not overly easy. If Web UI is started
+directly on the Github sources ([git clone &amp;&amp; cd webpy &amp;&amp;
+./web.py]{.title-ref}) then it is actually updated automatically as
+CherryPy web server monitors the file changes. If there were some
+breaking schema changes though, it might stop working and needs a
+restart after applying schema "diffs" (see above).</p>
+<p>If using a SystemD service file to auto-start the Web UI then you might
+want to also check for possible updates on the template there -
+<em>/etc/pgwatch/webpy/startup-scripts/pgwatch3-webui.service</em>.</p>
+<h1 id="updating-metric-definitions-updating_metrics">Updating metric definitions {#updating_metrics}</h1>
+<p>In the YAML mode you always get new SQL definitions for the built-in
+metrics automatically when refreshing the sources via Github or
+pre-built packages, but with Config DB approach one needs to do it
+manually. Given that there are no user added metrics, it's simple
+enough though - just delete all old ones and re-insert everything from
+the latest metric definition SQL file.</p>
+<pre><code>pg_dump -t pgwatch3.metric pgwatch3 &gt; old_metric.sql  # a just-in-case backup
+psql  -c "truncate pgwatch3.metric" pgwatch3
+psql -f /etc/pgwatch3/sql/config_store/metric_definitions.sql pgwatch3
+</code></pre>
+<p><strong>If you have added some own custom metrics be sure not to delete or
+truncate them!</strong></p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
+      
+    
+  </body>
+</html>
