@@ -6,6 +6,8 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
+        <meta name="description" content="⚠️ This repo is under active development! Formats, schemas, and APIs are subject to rapid and backward incompatible changes!">
+      
       
       
         <link rel="canonical" href="https://pgwatch.com/docs/custom_installation/">
@@ -22,11 +24,14 @@
     
     
       
-        <title>Custom installation - pgwatch3 Documentation</title>
+        <title>Custom installation - ⚠️ pgwatch3 | WORK IN PROGRESS!!!</title>
       
     
     
       <link rel="stylesheet" href="../assets/stylesheets/main.76a95c52.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -55,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -80,7 +92,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="pgwatch3 Documentation" class="md-header__button md-logo" aria-label="pgwatch3 Documentation" data-md-component="logo">
+    <a href=".." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-header__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -94,7 +106,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            pgwatch3 Documentation
+            ⚠️ pgwatch3 | WORK IN PROGRESS!!!
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -106,6 +118,32 @@
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="light-blue" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9v1Z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -129,11 +167,18 @@
       </label>
       <nav class="md-search__options" aria-label="Search">
         
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
         <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
           
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -149,6 +194,18 @@
   </div>
 </div>
     
+    
+      <div class="md-header__source">
+        <a href="https://github.com/cybertec-postgresql/pgwatch3" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pgwatch3 by Cybertec
+  </div>
+</a>
+      </div>
     
   </nav>
   
@@ -175,14 +232,26 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="pgwatch3 Documentation" class="md-nav__button md-logo" aria-label="pgwatch3 Documentation" data-md-component="logo">
+    <a href=".." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-nav__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
 
     </a>
-    pgwatch3 Documentation
+    ⚠️ pgwatch3 | WORK IN PROGRESS!!!
   </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/cybertec-postgresql/pgwatch3" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pgwatch3 by Cybertec
+  </div>
+</a>
+    </div>
   
   <ul class="md-nav__list" data-md-scrollfix>
     
@@ -339,8 +408,17 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Custom Installation
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         
@@ -351,6 +429,65 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#config-db-based-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Config DB based setup
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Config DB based setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overview-of-installation-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview of installation steps
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#detailed-steps-for-the-config-db-based-pull-approach-with-postgres-metrics-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Detailed steps for the Config DB based "pull" approach with Postgres metrics storage
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yaml-based-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      YAML based setup
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -593,8 +730,56 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#config-db-based-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Config DB based setup
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Config DB based setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overview-of-installation-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview of installation steps
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#detailed-steps-for-the-config-db-based-pull-approach-with-postgres-metrics-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Detailed steps for the Config DB based "pull" approach with Postgres metrics storage
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yaml-based-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      YAML based setup
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -608,14 +793,24 @@
                 
                   
 
+  
+    <a href="https://github.com/cybertec-postgresql/pgwatch3/edit/master/docs/custom_installation.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
+    </a>
+  
+  
 
-<p>As described in the <code>Components &lt;components&gt;</code>{.interpreted-text
-role="ref"} chapter, there a couple of ways how to set up up pgwatch3.
+
+  <h1>Custom Installation</h1>
+
+<p>As described in the <a href="../components/">Components</a> 
+chapter, there a couple of ways how to set up up pgwatch3.
 Two most common ways though are the central <em>Config DB</em> based "pull"
 approach and the <em>YAML file</em> based "push" approach, plus Grafana to
 visualize the gathered metrics.</p>
-<h1 id="config-db-based-setup">Config DB based setup</h1>
-<p><strong>Overview of installation steps</strong></p>
+<h2 id="config-db-based-setup">Config DB based setup</h2>
+<h3 id="overview-of-installation-steps">Overview of installation steps</h3>
 <ol>
 <li>Install Postgres or use any available existing instance - v9.4+
     required for the config DB and v11+ for the metrics DB.</li>
@@ -636,8 +831,7 @@ visualize the gathered metrics.</p>
 <li>Make sure that there are auto-start SystemD services for all
     components in place and optionally set up also backups.</li>
 </ol>
-<p><strong>Detailed steps for the Config DB based "pull" approach with Postgres
-metrics storage</strong></p>
+<h3 id="detailed-steps-for-the-config-db-based-pull-approach-with-postgres-metrics-storage">Detailed steps for the Config DB based "pull" approach with Postgres metrics storage</h3>
 <p>Below are sample steps to do a custom install from scratch using
 Postgres for the pgwatch3 configuration DB, metrics DB and Grafana
 config DB.</p>
@@ -672,10 +866,11 @@ instructions from:</p>
 <a href="https://github.com/cybertec-postgresql/pgwatch3/releases">Github
 releases</a>
 page.</p>
-<pre><code># find out the latest package link and replace below, using v1.8.0 here
-wget https://github.com/cybertec-postgresql/pgwatch3/releases/download/v1.8.0/pgwatch3_v1.8.0-SNAPSHOT-064fdaf_linux_64-bit.deb
-sudo dpkg -i pgwatch3_v1.8.0-SNAPSHOT-064fdaf_linux_64-bit.deb
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="c1"># find out the latest package link and replace below, using v1.8.0 here</span>
+<span class="n">wget</span><span class="w"> </span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">cybertec</span><span class="o">-</span><span class="n">postgresql</span><span class="o">/</span><span class="n">pgwatch3</span><span class="o">/</span><span class="n">releases</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">v1</span><span class="o">.</span><span class="mf">8.0</span><span class="o">/</span><span class="n">pgwatch3_v1</span><span class="o">.</span><span class="mf">8.0</span><span class="o">-</span><span class="n">SNAPSHOT</span><span class="o">-</span><span class="mi">064</span><span class="n">fdaf_linux_64</span><span class="o">-</span><span class="n">bit</span><span class="o">.</span><span class="n">deb</span>
+<span class="n">sudo</span><span class="w"> </span><span class="n">dpkg</span><span class="w"> </span><span class="o">-</span><span class="n">i</span><span class="w"> </span><span class="n">pgwatch3_v1</span><span class="o">.</span><span class="mf">8.0</span><span class="o">-</span><span class="n">SNAPSHOT</span><span class="o">-</span><span class="mi">064</span><span class="n">fdaf_linux_64</span><span class="o">-</span><span class="n">bit</span><span class="o">.</span><span class="n">deb</span>
+</code></pre></div>
+
 </li>
 <li>
 <p>Compiling the Go code yourself</p>
@@ -689,19 +884,19 @@ security environments or some slight code changes are required.</p>
 <li>
 <p>Get the pgwatch3 project's code and compile the gatherer
     daemon</p>
-<pre><code>git clone https://github.com/cybertec-postgresql/pgwatch3.git
-cd pgwatch3/pgwatch3
-./build_gatherer.sh
-# after fetching all the Go library dependencies (can take minutes)
-# an executable named "pgwatch3" should be generated. Additionally it's a good idea
-# to copy it to /usr/bin/pgwatch3-daemon as that's what the default SystemD service expects.
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">git</span><span class="w"> </span><span class="n">clone</span><span class="w"> </span><span class="nl">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="p">.</span><span class="n">com</span><span class="o">/</span><span class="n">cybertec</span><span class="o">-</span><span class="n">postgresql</span><span class="o">/</span><span class="n">pgwatch3</span><span class="p">.</span><span class="n">git</span>
+<span class="n">cd</span><span class="w"> </span><span class="n">pgwatch3</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">webui</span>
+<span class="n">yarn</span><span class="w"> </span><span class="n">install</span><span class="w"> </span><span class="o">--</span><span class="n">network</span><span class="o">-</span><span class="n">timeout</span><span class="w"> </span><span class="mi">100000</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">yarn</span><span class="w"> </span><span class="n">build</span>
+<span class="n">cd</span><span class="w"> </span><span class="p">..</span>
+<span class="k">go</span><span class="w"> </span><span class="n">build</span>
+</code></pre></div>
+
+<p>After fetching all the Go library dependencies (can take minutes)
+an executable named "pgwatch3" should be generated. Additionally it's a good idea
+to copy it to <code>/usr/bin/pgwatch3</code>.</p>
 </li>
 </ol>
 </li>
-</ul>
-<blockquote>
-<ul>
 <li>
 <p>Configure a SystemD auto-start service (optional)</p>
 <p>Sample startup scripts can be found at
@@ -711,150 +906,112 @@ Note that they are OS agnostic and might need some light
 adjustment of paths, etc - so always test them out.</p>
 </li>
 </ul>
-</blockquote>
 </li>
 <li>
 <p><strong>Boostrap the config DB</strong></p>
 <ol>
 <li>
-<p>Create a user to "own" the pgwatch3 schema</p>
-<p>Typically called <em>pgwatch3</em> but can be anything really, if the
+<p>Create a user to "own" the <code>pgwatch3</code> schema</p>
+<p>Typically called <code>pgwatch3</code> but can be anything really, if the
 schema creation file is adjusted accordingly.</p>
-<pre><code>psql -c "create user pgwatch3 password 'xyz'"
-psql -c "create database pgwatch3 owner pgwatch3"
-</code></pre>
+<div class="codehilite"><pre><span></span><code>psql -c &quot;create user pgwatch3 password &#39;xyz&#39;&quot;
+psql -c &quot;create database pgwatch3 owner pgwatch3&quot;
+</code></pre></div>
+
 </li>
 <li>
 <p>Roll out the pgwatch3 config schema</p>
 <p>The schema will most importantly hold connection strings of DB-s
 to be monitored and the metric definitions.</p>
-<pre><code># FYI - one could get the below schema files also directly from Github
-# if re-using some existing remote Postgres instance where pgwatch3 was not installed
+<div class="codehilite"><pre><span></span><code><span class="gh">#</span> FYI - one could get the below schema files also directly from Github
+<span class="gh">#</span> if re-using some existing remote Postgres instance where pgwatch3 was not installed
 psql -f /etc/pgwatch3/sql/config_store/config_store.sql pgwatch3
 psql -f /etc/pgwatch3/sql/config_store/metric_definitions.sql pgwatch3
-</code></pre>
+</code></pre></div>
+
 </li>
 </ol>
 </li>
-</ol>
-<p>::: {#metrics_db_bootstrap}
-1.  <strong>Bootstrap the metrics storage DB</strong></p>
-<pre><code>1.  Create a dedicated database for storing metrics and a user to
-    "own" the metrics schema
-
-    Here again default scripts expect a role named "pgwatch3" but
-    can be anything if to adjust the scripts.
-
-        psql -c "create database pgwatch3_metrics owner pgwatch3"
-
-2.  Roll out the pgwatch3 metrics storage schema
-
-    This is a place to pause and first think how many databases will
-    be monitored, i.e. how much data generated, and based on that
-    one should choose an according metrics storage schema. There are
-    a couple of different options available that are described
-    [here](https://github.com/cybertec-postgresql/pgwatch3/tree/master/pgwatch3/sql/metric_store)
-    in detail, but the gist of it is that you don't want too
-    complex partitioning schemes if you don't have zounds of data
-    and don't need the fastest queries. For a smaller amount of
-    monitored DBs (a couple dozen to a hundred) the default
-    "metric-time" is a good choice. For hundreds of databases,
-    aggressive intervals, or long term storage usage of the
-    TimescaleDB extension is recommended.
-
-        cd /etc/pgwatch3/sql/metric_store
-        psql -f roll_out_metric_time.psql pgwatch3_metrics
-
-    **Default retention for Postgres storage is 2 weeks!** To
-    change, use the `--pg-retention-days / PW3_PG_RETENTION_DAYS`
-    gatherer parameter.
-</code></pre>
+<li>
+<p><strong>Bootstrap the measurements storage DB</strong></p>
 <ol>
+<li>
+<p>Create a dedicated database for storing metrics and a user to
+    "own" the metrics schema</p>
+<p>Here again default scripts expect a role named <code>pgwatch3</code> but
+can be anything if to adjust the scripts.</p>
+<div class="codehilite"><pre><span></span><code>psql -c &quot;create database pgwatch3_metrics owner pgwatch3&quot;
+</code></pre></div>
+
+</li>
+<li>
+<p>Roll out the pgwatch3 metrics storage schema</p>
+<p>This is a place to pause and first think how many databases will
+be monitored, i.e. how much data generated, and based on that
+one should choose an according metrics storage schema. There are
+a couple of different options available that are described
+<a href="https://github.com/cybertec-postgresql/pgwatch3/tree/master/pgwatch3/sql/metric_store">here</a>
+in detail, but the gist of it is that you don't want too
+complex partitioning schemes if you don't have zounds of data
+and don't need the fastest queries. For a smaller amount of
+monitored DBs (a couple dozen to a hundred) the default
+"metric-time" is a good choice. For hundreds of databases,
+aggressive intervals, or long term storage usage of the
+TimescaleDB extension is recommended.</p>
+<div class="codehilite"><pre><span></span><code>cd /etc/pgwatch3/sql/metric_store
+psql -f roll_out_metric_time.psql pgwatch3_metrics
+</code></pre></div>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Default retention for Postgres storage is 2 weeks!
+To change, use the <code>--pg-retention-days / PW3_PG_RETENTION_DAYS</code>
+gatherer parameter.</p>
+</div>
+</li>
+</ol>
+</li>
 <li>
 <p><strong>Prepare the "to-be-monitored" databases for metrics collection</strong></p>
 <p>As a minimum we need a plain unprivileged login user. Better though
-is to grant the user also the <em>pg_monitor</em> system role, available on
+is to grant the user also the <code>pg_monitor</code> system role, available on
 v10+. Superuser privileges should be normally avoided for obvious
 reasons of course, but for initial testing in safe environments it
 can make the initial preparation (automatic <em>helper</em> rollouts) a bit
 easier still, given superuser privileges are later stripped.</p>
-<p>To get most out of your metrics some <em>SECURITY DEFINER</em> wrappers
+<p>To get most out of your metrics some <code>SECURITY DEFINER</code> wrappers
 functions called "helpers" are recommended on the DB-s under
 monitoring. See the detailed chapter on the "preparation" topic
-<code>here &lt;helper_functions&gt;</code>{.interpreted-text role="ref"} for more
+<a href="../preparing_databases/">here</a> for more
 details.</p>
-</li>
-<li>
-<p><strong>Install Python 3 and start the Web UI (optional)</strong></p>
-<p>The Web UI is not strictly required but makes life a lot easier for
-<em>Config DB</em> based setups. Technically it would be fine also to
-manage connection strings of the monitored DB-s directly in the
-"pgwatch3.monitored_db" table and add/adjust metrics in the
-"pgwatch3.metric" table, and <em>Preset Configs</em> in the
-"pgwatch3.preset_config" table.</p>
-<ol>
-<li>
-<p>Install Python 3 and Web UI requirements</p>
-<pre><code># first we need Python 3 and "pip" - the Python package manager
-sudo apt install python3 python3-pip
-cd /etc/pgwatch3/webpy/
-sudo pip3 install -U -r requirements_pg_metrics.txt
-</code></pre>
-</li>
-<li>
-<p>Exposing component logs (optional)</p>
-<p>For use cases where exposing the component (Grafana, Postgres,
-gatherer daemon, Web UI itself) logs over the "/logs" endpoint
-remotely is wanted, then in the custom setup mode some actual
-code changes are needed to specify where logs of all components
-are situated - see top of the pgwatch3.py file for that.
-Defaults are set to work with the Docker image.</p>
-</li>
-<li>
-<p>Start the Web UI</p>
-<pre><code># The defaults assume a local Config DB named pgwatch3, DB user pgwatch3
-python3 web.py --datastore=postgres --pg-metric-store-conn-str="dbname=pgwatch3_metrics user=pgwatch3"
-</code></pre>
-<p>Default port for the Web UI: <strong>8080</strong>. See <code>web.py --help</code> for
-all options.</p>
-</li>
-<li>
-<p>Configure a SystemD auto-start service (optional)</p>
-<p>Sample startup scripts can be found at
-<em>/etc/pgwatch3/webpy/startup-scripts/pgwatch3-webui.service</em> or
-online
-<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/webpy/startup-scripts/pgwatch3-webui.service">here</a>.
-Note that they are OS agnostic and always need some light
-adjustment of paths, etc - so always test them out.</p>
-</li>
-</ol>
 </li>
 <li>
 <p><strong>Configure DB-s and metrics / intervals to be monitored</strong></p>
 <ul>
 <li>From the Web UI "/dbs" page</li>
-<li>Via direct inserts into the Config DB <em>pgwatch3.monitored_db</em>
-    table</li>
+<li>Via direct inserts into the Config DB <code>pgwatch3.monitored_db</code> table</li>
 </ul>
 </li>
 <li>
 <p><strong>Start the pgwatch3 metrics collection agent</strong></p>
 <ol>
 <li>
-<p>The gatherer has quite some parameters (use the <em>--help</em> flag
+<p>The gatherer has quite some parameters (use the <code>--help</code> flag
     to show them all), but simplest form would be:</p>
-<pre><code># default connections params expect a trusted localhost Config DB setup
-# so mostly the 2nd line is not needed actually
-pgwatch3-daemon \
-  --host=localhost --user=pgwatch3 --dbname=pgwatch3 \
-  --datastore=postgres --pg-metric-store-conn-str=postgresql://pgwatch3@localhost:5432/pgwatch3_metrics \
-  --verbose=info
+<div class="codehilite"><pre><span></span><code><span class="n">pgwatch3</span><span class="o">-</span><span class="n">daemon</span><span class="w"> </span><span class="err">\</span>
+<span class="w">  </span><span class="o">--</span><span class="k">host</span><span class="o">=</span><span class="n">localhost</span><span class="w"> </span><span class="o">--</span><span class="k">user</span><span class="o">=</span><span class="n">pgwatch3</span><span class="w"> </span><span class="o">--</span><span class="n">dbname</span><span class="o">=</span><span class="n">pgwatch3</span><span class="w"> </span><span class="err">\</span>
+<span class="w">  </span><span class="o">--</span><span class="n">datastore</span><span class="o">=</span><span class="n">postgres</span><span class="w"> </span><span class="o">--</span><span class="n">pg</span><span class="o">-</span><span class="n">metric</span><span class="o">-</span><span class="n">store</span><span class="o">-</span><span class="n">conn</span><span class="o">-</span><span class="nf">str</span><span class="o">=</span><span class="nl">postgresql</span><span class="p">:</span><span class="o">//</span><span class="n">pgwatch3</span><span class="nv">@localhost</span><span class="err">:</span><span class="mi">5432</span><span class="o">/</span><span class="n">pgwatch3_metrics</span><span class="w"> </span><span class="err">\</span>
+<span class="w">  </span><span class="c1">--verbose=info</span>
+</code></pre></div>
 
-# or via SystemD if set up in step #2
-useradd -m -s /bin/bash pgwatch3 # default SystemD templates run under the pgwatch3 user
+<p>Default connections params expect a trusted localhost Config DB setup
+so mostly the 2nd line is not needed actually.</p>
+<p>Or via SystemD if set up in previous steps</p>
+<div class="codehilite"><pre><span></span><code>useradd -m -s /bin/bash pgwatch3 # default SystemD templates run under the pgwatch3 user
 sudo systemctl start pgwatch3
 sudo systemctl status pgwatch3
-</code></pre>
+</code></pre></div>
+
 <p>After initial verification that all works it's usually good
 idea to set verbosity back to default by removing the <em>verbose</em>
 flag.</p>
@@ -872,95 +1029,103 @@ When using some more aggressive <em>preset metrics config</em> then
 there are usually still some errors though, due to the fact that
 some more extensions or privileges are missing on the monitored
 database side. See the according chapter
-<code>here &lt;preparing_databases&gt;</code>{.interpreted-text role="ref"}.</p>
+<a href="../preparing_databases/">here</a>.</p>
 </li>
 </ol>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
 <p>When you're compiling your own gatherer then the executable file
-will be named just <em>pgwatch3</em> instead of <em>pgwatch3-daemon</em> to avoid
-mixups.
-:::</p>
+will be named just <code>pgwatch3</code> instead of <code>pgwatch3-daemon</code> to avoid
+mixups.</p>
+</div>
+</li>
+<li>
+<p><strong>Install Grafana</strong></p>
+<ol>
+<li>
+<p>Create a Postgres database to hold Grafana internal config, like
+    dashboards etc</p>
+<p>Theoretically it's not absolutely required to use Postgres for
+storing Grafana internal settings / dashboards, but doing so has
+2 advantages - you can easily roll out all pgwatch3 built-in
+dashboards and one can also do remote backups of the Grafana
+configuration easily.</p>
+<div class="codehilite"><pre><span></span><code>psql -c &quot;create user pgwatch3_grafana password &#39;xyz&#39;&quot;
+psql -c &quot;create database pgwatch3_grafana owner pgwatch3_grafana&quot;
+</code></pre></div>
+
+</li>
+<li>
+<p>Follow the instructions from
+    <a href="https://grafana.com/docs/grafana/latest/installation/debian/">https://grafana.com/docs/grafana/latest/installation/debian/</a>,
+    basically something like:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">wget</span><span class="w"> </span><span class="o">-</span><span class="n">q</span><span class="w"> </span><span class="o">-</span><span class="n">O</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">packages</span><span class="o">.</span><span class="n">grafana</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">gpg</span><span class="o">.</span><span class="n">key</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">sudo</span><span class="w"> </span><span class="n">apt</span><span class="o">-</span><span class="n">key</span><span class="w"> </span><span class="n">add</span><span class="w"> </span><span class="o">-</span>
+<span class="n">echo</span><span class="w"> </span><span class="s2">&quot;deb https://packages.grafana.com/oss/deb stable main&quot;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">sudo</span><span class="w"> </span><span class="n">tee</span><span class="w"> </span><span class="o">-</span><span class="n">a</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">apt</span><span class="o">/</span><span class="n">sources</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">d</span><span class="o">/</span><span class="n">grafana</span><span class="o">.</span><span class="n">list</span>
+<span class="n">sudo</span><span class="w"> </span><span class="n">apt</span><span class="o">-</span><span class="n">get</span><span class="w"> </span><span class="n">update</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">sudo</span><span class="w"> </span><span class="n">apt</span><span class="o">-</span><span class="n">get</span><span class="w"> </span><span class="n">install</span><span class="w"> </span><span class="n">grafana</span>
+
+<span class="c1"># review / change config settings and security, etc</span>
+<span class="n">sudo</span><span class="w"> </span><span class="n">vi</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">grafana</span><span class="o">/</span><span class="n">grafana</span><span class="o">.</span><span class="n">ini</span>
+
+<span class="c1"># start and enable auto-start on boot</span>
+<span class="n">sudo</span><span class="w"> </span><span class="n">systemctl</span><span class="w"> </span><span class="n">daemon</span><span class="o">-</span><span class="n">reload</span>
+<span class="n">sudo</span><span class="w"> </span><span class="n">systemctl</span><span class="w"> </span><span class="n">start</span><span class="w"> </span><span class="n">grafana</span><span class="o">-</span><span class="n">server</span>
+<span class="n">sudo</span><span class="w"> </span><span class="n">systemctl</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="n">grafana</span><span class="o">-</span><span class="n">server</span>
+</code></pre></div>
+
+<p>Default Grafana port: 3000</p>
+</li>
+<li>
+<p>Configure Grafana config to use our <code>pgwatch3_grafana</code> DB</p>
+<p>Place something like below in the <code>[database]</code> section of
+<code>/etc/grafana/grafana.ini</code></p>
+<div class="codehilite"><pre><span></span><code><span class="k">[database]</span>
+<span class="na">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">postgres</span>
+<span class="na">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">my-postgres-db:5432</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pgwatch3_grafana</span>
+<span class="na">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pgwatch3_grafana</span>
+<span class="na">password</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">xyz</span>
+</code></pre></div>
+
+<p>Taking a look at <code>[server], [security]</code> and <code>[auth*]</code>
+sections is also recommended.</p>
+</li>
+<li>
+<p>Set up the <code>pgwatch3</code> metrics database as the default datasource</p>
+<p>We need to tell Grafana where our metrics data is located. Add a
+datasource via the Grafana UI (Admin -&gt; Data sources) or adjust
+and execute the "pgwatch3/bootstrap/grafana_datasource.sql"
+script on the <code>pgwatch3_grafana</code> DB.</p>
+</li>
+<li>
+<p>Add pgwatch3 predefined dashboards to Grafana</p>
+<p>This could be done by importing the pgwatch3 dashboard
+definition JSON-s manually, one by one, from the "grafana"
+folder ("Import Dashboard" from the Grafana top menu) or via
+as small helper script located at
+<em>/etc/pgwatch3/grafana-dashboards/import_all.sh</em>. The script
+needs some adjustment for metrics storage type, connect data and
+file paths.</p>
+</li>
+<li>
+<p>Optionally install also Grafana plugins</p>
+<p>Currently one pre-configured dashboard (Biggest relations
+treemap) use an extra plugin - if planning to that dash, then
+run the following:</p>
+<div class="codehilite"><pre><span></span><code>grafana-cli plugins install savantly-heatmap-panel
+</code></pre></div>
+
+</li>
+<li>
+<p>Start discovering the preset dashbaords</p>
+<p>If the previous step of launching pgwatch3 daemon succeeded and
+it was more than some minutes ago, one should already see some
+graphs on dashboards like "DB overview" or "DB overview
+Unprivileged / Developer mode" for example.</p>
 </li>
 </ol>
-<p>::: {#custom_install_grafana}
-1.  <strong>Install Grafana</strong>
-    1.  Create a Postgres database to hold Grafana internal config, like
-        dashboards etc</p>
-<pre><code>    Theoretically it's not absolutely required to use Postgres for
-    storing Grafana internal settings / dashboards, but doing so has
-    2 advantages - you can easily roll out all pgwatch3 built-in
-    dashboards and one can also do remote backups of the Grafana
-    configuration easily.
-
-        psql -c "create user pgwatch3_grafana password 'xyz'"
-        psql -c "create database pgwatch3_grafana owner pgwatch3_grafana"
-
-2.  Follow the instructions from
-    &lt;https://grafana.com/docs/grafana/latest/installation/debian/&gt;,
-    basically something like:
-
-        wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
-        echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
-        sudo apt-get update &amp;&amp; sudo apt-get install grafana
-
-        # review / change config settings and security, etc
-        sudo vi /etc/grafana/grafana.ini
-
-        # start and enable auto-start on boot
-        sudo systemctl daemon-reload
-        sudo systemctl start grafana-server
-        sudo systemctl status grafana-server
-
-    Default Grafana port: 3000
-
-3.  Configure Grafana config to use our pgwatch3_grafana DB
-
-    Place something like below in the "\[database\]" section of
-    /etc/grafana/grafana.ini
-
-        [database]
-        type = postgres
-        host = my-postgres-db:5432
-        name = pgwatch3_grafana
-        user = pgwatch3_grafana
-        password = xyz
-
-    Taking a look at \[server\], \[security\] and \[auth\*\]
-    sections is also recommended.
-
-4.  Set up the pgwatch3 metrics database as the default datasource
-
-    We need to tell Grafana where our metrics data is located. Add a
-    datasource via the Grafana UI (Admin -\&gt; Data sources) or adjust
-    and execute the "pgwatch3/bootstrap/grafana_datasource.sql"
-    script on the *pgwatch3_grafana* DB.
-
-5.  Add pgwatch3 predefined dashboards to Grafana
-
-    This could be done by importing the pgwatch3 dashboard
-    definition JSON-s manually, one by one, from the "grafana"
-    folder ("Import Dashboard" from the Grafana top menu) or via
-    as small helper script located at
-    */etc/pgwatch3/grafana-dashboards/import_all.sh*. The script
-    needs some adjustment for metrics storage type, connect data and
-    file paths.
-
-6.  Optionally install also Grafana plugins
-
-    Currently one pre-configured dashboard (Biggest relations
-    treemap) use an extra plugin - if planning to that dash, then
-    run the following:
-
-        grafana-cli plugins install savantly-heatmap-panel
-
-7.  Start discovering the preset dashbaords
-
-    If the previous step of launching pgwatch3 daemon succeeded and
-    it was more than some minutes ago, one should already see some
-    graphs on dashboards like "DB overview" or "DB overview
-    Unprivileged / Developer mode" for example.
-</code></pre>
-<p>:::</p>
-<h1 id="yaml-based-setup-yaml_setup">YAML based setup {#yaml_setup}</h1>
+</li>
+</ol>
+<h2 id="yaml-based-setup">YAML based setup</h2>
 <p>From v1.4 one can also deploy the pgwatch3 gatherer daemons more easily
 in a de-centralized way, by specifying monitoring configuration via YAML
 files. In that case there is no need for a central Postgres "config
@@ -992,7 +1157,6 @@ DB".</p>
 <code>--metrics-folder / PW3_METRICS_FOLDER</code>.</p>
 <p>For details on individual steps like installing pgwatch3 see the above
 paragraph.</p>
-<p>The Web UI component cannot be used in file based mode.</p>
 
 
 
@@ -1013,6 +1177,8 @@ paragraph.</p>
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
@@ -1020,9 +1186,53 @@ paragraph.</p>
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../docker_installation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Docker Installation">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Docker Installation
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../preparing_databases/" class="md-footer__link md-footer__link--next" aria-label="Next: Preparing Databases">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Preparing Databases
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Made by and for PostgreSQL lovers! 🐘❤️
+    </div>
   
   
     Made with
@@ -1042,7 +1252,7 @@ paragraph.</p>
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.action.edit", "navigation.footer", "navigation.instant", "navigation.tracking", "content.tabs.link"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="../assets/javascripts/bundle.fe8b6f2b.min.js"></script>

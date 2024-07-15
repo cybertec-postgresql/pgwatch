@@ -6,6 +6,8 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
+        <meta name="description" content="⚠️ This repo is under active development! Formats, schemas, and APIs are subject to rapid and backward incompatible changes!">
+      
       
       
         <link rel="canonical" href="https://pgwatch.com/docs/components/">
@@ -22,11 +24,14 @@
     
     
       
-        <title>Components - pgwatch3 Documentation</title>
+        <title>Components - ⚠️ pgwatch3 | WORK IN PROGRESS!!!</title>
       
     
     
       <link rel="stylesheet" href="../assets/stylesheets/main.76a95c52.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -55,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -80,7 +92,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="pgwatch3 Documentation" class="md-header__button md-logo" aria-label="pgwatch3 Documentation" data-md-component="logo">
+    <a href=".." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-header__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -94,7 +106,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            pgwatch3 Documentation
+            ⚠️ pgwatch3 | WORK IN PROGRESS!!!
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -106,6 +118,32 @@
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="light-blue" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9v1Z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -129,11 +167,18 @@
       </label>
       <nav class="md-search__options" aria-label="Search">
         
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
         <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
           
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -149,6 +194,18 @@
   </div>
 </div>
     
+    
+      <div class="md-header__source">
+        <a href="https://github.com/cybertec-postgresql/pgwatch3" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pgwatch3 by Cybertec
+  </div>
+</a>
+      </div>
     
   </nav>
   
@@ -175,14 +232,26 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="pgwatch3 Documentation" class="md-nav__button md-logo" aria-label="pgwatch3 Documentation" data-md-component="logo">
+    <a href=".." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-nav__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
 
     </a>
-    pgwatch3 Documentation
+    ⚠️ pgwatch3 | WORK IN PROGRESS!!!
   </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/cybertec-postgresql/pgwatch3" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pgwatch3 by Cybertec
+  </div>
+</a>
+    </div>
   
   <ul class="md-nav__list" data-md-scrollfix>
     
@@ -279,8 +348,17 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Components
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         
@@ -291,6 +369,161 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-metrics-gathering-daemon" class="md-nav__link">
+    <span class="md-ellipsis">
+      The metrics gathering daemon
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#measurements-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Measurements storage
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Measurements storage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      PostgreSQL
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timescaledb" class="md-nav__link">
+    <span class="md-ellipsis">
+      TimescaleDB
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prometheus" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prometheus
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#json-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      JSON files
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-web-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Web UI
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics-representation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Metrics representation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#component-diagram" class="md-nav__link">
+    <span class="md-ellipsis">
+      Component diagram
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#component-reuse" class="md-nav__link">
+    <span class="md-ellipsis">
+      Component reuse
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Component reuse">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#to-use-an-existing-postgres-db-for-storing-the-monitoring-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      To use an existing Postgres DB for storing the monitoring config
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#to-use-an-existing-grafana-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      To use an existing Grafana installation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#to-use-an-existing-postgres-db-for-storing-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      To use an existing Postgres DB for storing metrics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -593,8 +826,152 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-metrics-gathering-daemon" class="md-nav__link">
+    <span class="md-ellipsis">
+      The metrics gathering daemon
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#measurements-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Measurements storage
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Measurements storage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      PostgreSQL
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timescaledb" class="md-nav__link">
+    <span class="md-ellipsis">
+      TimescaleDB
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prometheus" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prometheus
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#json-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      JSON files
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-web-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Web UI
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics-representation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Metrics representation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#component-diagram" class="md-nav__link">
+    <span class="md-ellipsis">
+      Component diagram
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#component-reuse" class="md-nav__link">
+    <span class="md-ellipsis">
+      Component reuse
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Component reuse">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#to-use-an-existing-postgres-db-for-storing-the-monitoring-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      To use an existing Postgres DB for storing the monitoring config
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#to-use-an-existing-grafana-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      To use an existing Grafana installation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#to-use-an-existing-postgres-db-for-storing-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      To use an existing Postgres DB for storing metrics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -608,6 +985,16 @@
                 
                   
 
+  
+    <a href="https://github.com/cybertec-postgresql/pgwatch3/edit/master/docs/components.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
+    </a>
+  
+  
+
+
+  <h1>Components</h1>
 
 <p>The main development idea around pgwatch3 was to do the minimal work
 needed and not to reinvent the wheel - meaning that pgwatch3 is mostly
@@ -617,7 +1004,7 @@ components that can be used to build up a monitoring setup around the
 pgwatch3 metrics collector. Note that most components are not mandatory
 and for tasks like metrics storage there are many components to choose
 from.</p>
-<h1 id="the-metrics-gathering-daemon">The metrics gathering daemon</h1>
+<h2 id="the-metrics-gathering-daemon">The metrics gathering daemon</h2>
 <p>The metrics collector, written in Go, is the only mandatory and most
 critical component of the whole solution. The main task of the pgwatch3
 collector / daemon is pretty simple - reading the configuration and
@@ -625,74 +1012,54 @@ metric defintions, fetching the metrics from the configured databases
 using the configured connection info and finally storing the metrics to
 some other database, or just exposing them over a port for scraping in
 case of Prometheus mode.</p>
-<h1 id="configuration-store">Configuration store</h1>
+<h2 id="configuration">Configuration</h2>
 <p>The configuration says which databases, how often and with which metrics
 (SQL-s queries) are to be gathered. There are 3 options to store the
 configuration:</p>
 <ul>
-<li>A PostgreSQL database holding a simple schema with 5 tables.</li>
-<li>File based approach - YAML config file(s) and SQL metric definition files.</li>
+<li>A PostgreSQL database holding a simple schema with 5 tables;</li>
+<li>File based approach - YAML config file.</li>
 </ul>
-<h1 id="metrics-storage-db">Metrics storage DB</h1>
+<h2 id="measurements-storage">Measurements storage</h2>
 <p>Many options here so that one can for example go for maximum storage
 effectiveness or pick something where they already know the query
 language:</p>
-<ul>
-<li><a href="https://www.postgresql.org/">PostgreSQL</a> - world's most advanced
-Open Source RDBMS</li>
-</ul>
+<h3 id="postgresql"><a href="https://www.postgresql.org/">PostgreSQL</a></h3>
+<p>PostgreSQL is a world's most advanced Open Source RDBMS.</p>
 <p>Postgres storage is based on the JSONB datatype so minimally
 version 9.4+ is required, but for bigger setups where partitioning
 is a must, v11+ is needed. Any already existing Postgres database
 will do the trick, see the <a href="metrics_db_bootstrap">Bootstrapping the Metrics DB</a> section for2 details.</p>
-<ul>
-<li><a href="https://www.timescale.com/">TimescaleDB</a> time-series extension<blockquote>
-<pre><code>for PostgreSQL
-
-Although technically a plain extension it's often mentioned as a
+<h3 id="timescaledb"><a href="https://www.timescale.com/">TimescaleDB</a></h3>
+<p>TimescaleDB is a time-series extension for PostgreSQL.</p>
+<p>Although technically a plain extension it's often mentioned as a
 separate database system as it brings custom data compression to
 the table, enabling huge disk savings over standard Postgres. Note
-that pgwatch3 does not use Timescale's built-in *retention*
-management but a custom version.
-</code></pre>
-</blockquote>
-</li>
-<li><a href="https://prometheus.io/">Prometheus</a> Time Series DB and monitoring<blockquote>
-<pre><code>system
-
-Though Prometheus is not a traditional database system, it's a
+that pgwatch3 does not use Timescale's built-in <em>retention</em>
+management but a custom version.</p>
+<h3 id="prometheus"><a href="https://prometheus.io/">Prometheus</a></h3>
+<p>Prometheus is a time series database and monitoring system.</p>
+<p>Though Prometheus is not a traditional database system, it's a
 good choice for monitoring Cloud-like environments as the
 monitoring targets don't need to know too much about how actual
 monitoring will be carried out later and also Prometheus has a
 nice fault-tolerant alerting system for enterprise needs. By
-default Prometheus is not set up for long term metrics storage!
-</code></pre>
-</blockquote>
-</li>
-<li><a href="https://graphiteapp.org/">Graphite</a> Time Series DB<blockquote>
-<pre><code>Not as modern as the other options but a performant TSDB
-nevertheless with built-in charting. In pgwatch3 use case though
-there's no support for "custom tags" and request batching
-support which should not be a big problem for lighter use cases.
-</code></pre>
-</blockquote>
-</li>
-<li>JSON files<blockquote>
-<pre><code>Plain text files for testing / special use cases.
-</code></pre>
-</blockquote>
-</li>
-</ul>
-<h1 id="the-web-ui">The Web UI</h1>
+default Prometheus is not set up for long term metrics storage!</p>
+<h3 id="json-files">JSON files</h3>
+<p>Plain text files for testing / special use cases.</p>
+<h2 id="the-web-ui">The Web UI</h2>
 <p>The second homebrewn component of the pgwatch3 solution is an optional
 and relatively simple Web UI for administering details of the monitoring
 configuration like which databases should be monitored, with which
 metrics and intervals. Besides that there are some basic overview tables
 to analyze the gathered data and also possibilities to delete unneeded
 metric data (when removing a test host for example).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
 <p>Note that the Web UI can only be used if storing the configuration in
 the database (Postgres).</p>
-<h1 id="metrics-representation">Metrics representation</h1>
+</div>
+<h2 id="metrics-representation">Metrics representation</h2>
 <p>Standard pgwatch3 setup uses <a href="http://grafana.org/">Grafana</a> for
 analyzing the gathered metrics data in a visual, point-and-click way.
 For that a rich set of predefined dashboards for Postgres is provided,
@@ -700,50 +1067,35 @@ that should cover the needs of most users - advanced users would mostly
 always want to customize some aspects though, so it's not meant as a
 one-size-fits-all solution. Also as metrics are stored in a DB, they can
 be visualized or processed in any other way.</p>
-<h1 id="component-diagram">Component diagram</h1>
+<h2 id="component-diagram">Component diagram</h2>
 <p>Component diagram of a typical setup:</p>
-<p><a href="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgwatch3_architecture.png"><img alt="pgwatch3 typical deployment architecture diagram" src="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgwatch3_architecture.png" /></a></p>
-<h1 id="component-reuse-component_reuse">Component reuse {#component_reuse}</h1>
+<p><a href="../screenshots/pgwatch3_architecture.png"><img alt="pgwatch3 typical deployment architecture diagram" src="../screenshots/pgwatch3_architecture.png" /></a></p>
+<h2 id="component-reuse">Component reuse</h2>
 <p>All components are <em>loosely coupled</em>, thus for non-pgwatch3 components
 (pgwatch3 components are only the metrics collector and the optional Web
 UI) you can decide to make use of an already existing installation of
 Postgres, Grafana or Prometheus and run additionally just the pgwatch3
 collector.</p>
-<ul>
-<li>
-<p>To use an existing Postgres DB for storing the monitoring config</p>
+<h3 id="to-use-an-existing-postgres-db-for-storing-the-monitoring-config">To use an existing Postgres DB for storing the monitoring config</h3>
 <p>Create a new pgwatch3 DB, preferrably also an accroding role who
 owns it. Then roll out the schema
 (pgwatch3/sql/config_store/config_store.sql) and set the following
-parameters when running the image: PW3_PGHOST, PW3_PGPORT,
-PW3_PGDATABASE, PW3_PGUSER, PW3_PGPASSWORD, PW3_PGSSL (optional).</p>
-</li>
-<li>
-<p>To use an existing Grafana installation</p>
+parameters when running the image: <code>PW3_PGHOST</code>, <code>PW3_PGPORT</code>,
+<code>PW3_PGDATABASE</code>, <code>PW3_PGUSER</code>, <code>PW3_PGPASSWORD</code>, <code>PW3_PGSSL</code> (optional).</p>
+<h3 id="to-use-an-existing-grafana-installation">To use an existing Grafana installation</h3>
 <p>Load the pgwatch3 dashboards from <em>grafana_dashboard</em> folder if
 needed (one can totally define their own) and set the following
-paramater: PW3_GRAFANA_BASEURL. This parameter only provides correct
+paramater: <code>PW3_GRAFANA_BASEURL</code>. This parameter only provides correct
 links to Grafana dashboards from the Web UI. Grafana is the most
 loosely coupled component for pgwatch3 and basically doesn't have
 to be used at all. One can make use of the gathered metrics directly
 over the Postgres (or Graphite) API-s.</p>
-</li>
-<li>
-<p>To use an existing Graphite installation</p>
-<p>One can also store the metrics in Graphite instead of Postgres (no
-predefined pgwatch3 dashboards for Graphite though). Following
-parameters needs to be set then: PW3_DATASTORE=graphite,
-PW3_GRAPHITEHOST, PW3_GRAPHITEPORT</p>
-</li>
-<li>
-<p>To use an existing Postgres DB for storing metrics</p>
+<h3 id="to-use-an-existing-postgres-db-for-storing-metrics">To use an existing Postgres DB for storing metrics</h3>
 <ol>
 <li>Roll out the metrics storage schema according to instructions
-    from <code>here &lt;metrics_db_bootstrap&gt;</code>{.interpreted-text
-    role="ref"}.</li>
-<li>Following parameters need to be set for the gatherer:</li>
-</ol>
-<blockquote>
+    from <a href="../preparing_databases/">here</a>.</li>
+<li>
+<p>Following parameters need to be set for the gatherer:</p>
 <ul>
 <li><code>--datastore=postgres</code> or <code>PW3_DATASTORE=postgres</code></li>
 <li><code>--pg-metric-store-conn-str="postgresql://user:pwd@host:port/db"</code>
@@ -751,12 +1103,13 @@ PW3_GRAPHITEHOST, PW3_GRAPHITEPORT</p>
 <li>optionally also adjust the <code>--pg-retention-days</code> parameter. By
     default 14 days for Postgres are kept</li>
 </ul>
-</blockquote>
-<ol>
-<li>If using the Web UI also set the datastore parameters
+</li>
+<li>
+<p>If using the Web UI also set the datastore parameters
     <code>--datastore</code> and <code>--pg-metric-store-conn-str</code> if wanting to
     have an option to be able to clean up data also via the UI in a
-    more targeted way.</li>
+    more targeted way.</p>
+</li>
 </ol>
 <p>When using Postgres metrics storage, the schema rollout script
 activates "asynchronous commiting" feature for the <em>pgwatch3</em> role
@@ -764,10 +1117,8 @@ in the metrics storage DB by default! If this is not wanted (no
 metrics can be lost in case of a crash), then re-enstate normal
 (synchronous) commiting with below query and restart the pgwatch3
 agent:</p>
-<pre><code>ALTER ROLE pgwatch3 IN DATABASE $MY_METRICS_DB SET synchronous_commit TO on;
-</code></pre>
-</li>
-</ul>
+<div class="codehilite"><pre><span></span><code><span class="k">ALTER</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">pgwatch3</span><span class="w"> </span><span class="k">IN</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="err">$</span><span class="n">MY_METRICS_DB</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="n">synchronous_commit</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="k">on</span><span class="p">;</span>
+</code></pre></div>
 
 
 
@@ -788,6 +1139,8 @@ agent:</p>
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
@@ -795,9 +1148,53 @@ agent:</p>
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../advanced_features/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Advanced Features">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Advanced Features
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../installation_options/" class="md-footer__link md-footer__link--next" aria-label="Next: Installation Options">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Installation Options
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Made by and for PostgreSQL lovers! 🐘❤️
+    </div>
   
   
     Made with
@@ -817,7 +1214,7 @@ agent:</p>
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.action.edit", "navigation.footer", "navigation.instant", "navigation.tracking", "content.tabs.link"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
