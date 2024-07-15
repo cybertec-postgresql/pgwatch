@@ -1,6 +1,7 @@
 name: Go Build & Test
 on:
   pull_request:
+    paths-ignore: ['docs/**', 'mkdocs.yml']
   workflow_dispatch:
 
 concurrency:
