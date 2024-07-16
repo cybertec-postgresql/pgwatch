@@ -32,12 +32,13 @@ theme:
     - navigation.footer
     - navigation.instant
     - navigation.tracking
-    # - navigation.tabs
+    - navigation.tabs
     - content.tabs.link
 
 plugins:
   - search
   - tags  
+  - glightbox
   # - minify:
   #     minify_html: true
   # - include-markdown
@@ -56,26 +57,38 @@ plugins:
   #       "customization/build.md": customization/builds.md        
 
 nav:
-  - Introduction: README.md
-  - Project Background: project_background.md
-  - Features: features.md
-  - Advanced Features: advanced_features.md
-  - Components: components.md
-  - Installation Options: installation_options.md
-  - Docker Installation: docker_installation.md
-  - Custom Installation: custom_installation.md
-  - Preparing Databases: preparing_databases.md
-  - Using Managed Services: using_managed_services.md
-  - Metric Definitions: metric_definitions.md
-  - Web UI: web_ui.md
-  - Dashboarding and Alerting: dashboarding_alerting.md
-  - Sizing Recommendations: sizing_recommendations.md
-  - Technical Details: technical_details.md
-  - Security: security.md
-  - Long Term Installations: long_term_installations.md
-  - Upgrading: upgrading.md
-  - Kubernetes: kubernetes.md
+  - Intro: 
+    - Hello World!: README.md
+    - Project Background: project_background.md
+    - Features: features.md
+  - Concepts:
+    - Components: components.md
+    - Installation Options: installation_options.md
+    - Long Term Installations: long_term_installations.md
+    - Web UI: web_ui.md
+  - Tutorials:
+    - Docker Installation: docker_installation.md
+    - Custom Installation: custom_installation.md
+    - Preparing Databases: preparing_databases.md
+    - Upgrading: upgrading.md
+  - How-To Guides:
+    - Dashboarding and Alerting: dashboarding_alerting.md
+    - Using Managed Services: using_managed_services.md
+    - Sizing Recommendations: sizing_recommendations.md
+  - Reference:
+    - Advanced Features: advanced_features.md
+    - Metric Definitions: metric_definitions.md
+    - Technical Details: technical_details.md
+    - Security: security.md
+    - Kubernetes: kubernetes.md
+  - Gallery: gallery.md
 
 markdown_extensions:
   - admonition
-  - codehilite
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
