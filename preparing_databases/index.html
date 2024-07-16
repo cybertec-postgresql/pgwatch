@@ -16,7 +16,7 @@
         <link rel="prev" href="../custom_installation/">
       
       
-        <link rel="next" href="../using_managed_services/">
+        <link rel="next" href="../upgrading/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -57,7 +57,16 @@
     
     
     
-  </head>
+   <link href="../assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
+    html.glightbox-open { overflow: initial; height: 100%; }
+    .gslide-title { margin-top: 0px; user-select: text; }
+    .gslide-desc { color: #666; user-select: text; }
+    .gslide-image img { background: white; }
+    .gscrollbar-fixer { padding-right: 15px; }
+    .gdesc-inner { font-size: 0.75rem; }
+    body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color);}
+    body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color);}
+    body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color);}</style> <script src="../assets/javascripts/glightbox.min.js"></script></head>
   
   
     
@@ -88,9 +97,7 @@
     
       
 
-  
-
-<header class="md-header md-header--shadow" data-md-component="header">
+<header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-header__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
       
@@ -216,6 +223,124 @@
       
         
           
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  Intro
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../components/" class="md-tabs__link">
+          
+  
+  Concepts
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../docker_installation/" class="md-tabs__link">
+          
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../dashboarding_alerting/" class="md-tabs__link">
+          
+  
+  How-To Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../advanced_features/" class="md-tabs__link">
+          
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../gallery/" class="md-tabs__link">
+        
+  
+    
+  
+  Gallery
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
         
       
       <main class="md-main" data-md-component="main">
@@ -229,8 +354,10 @@
                     
 
 
+  
 
-<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-nav__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
       
@@ -261,12 +388,50 @@
   
   
   
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Intro
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Intro
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href=".." class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Introduction
+    Hello World!
   </span>
   
 
@@ -274,9 +439,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -294,9 +460,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -314,29 +481,55 @@
     </li>
   
 
-    
+              
+            
+          </ul>
+        </nav>
       
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../advanced_features/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Advanced Features
-  </span>
-  
-
-      </a>
     </li>
   
 
     
       
       
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Concepts
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
   
   
   
@@ -354,9 +547,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -374,219 +568,10 @@
     </li>
   
 
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../docker_installation/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Docker Installation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../custom_installation/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Custom Installation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  <span class="md-ellipsis">
-    Preparing Databases
-  </span>
-  
-
-      </a>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../using_managed_services/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Using Managed Services
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../metric_definitions/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Metric Definitions
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../web_ui/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Web UI
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../dashboarding_alerting/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Dashboarding and Alerting
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../sizing_recommendations/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Sizing Recommendations
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../technical_details/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Technical Details
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../security/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Security
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -604,9 +589,336 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../web_ui/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Web UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
     
       
       
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker_installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Docker Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom_installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Preparing Databases
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Preparing Databases
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#effects-of-monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      Effects of monitoring
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-preparations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic preparations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rolling-out-helper-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rolling out helper functions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rolling out helper functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rolling-out-common-helpers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rolling out common helpers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#automatic-rollout-of-helpers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Automatic rollout of helpers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plpython-helpers" class="md-nav__link">
+    <span class="md-ellipsis">
+      PL/Python helpers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notice-on-using-metric-fetching-helpers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Notice on using metric fetching helpers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-with-developer-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running with developer credentials
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#different-source-types-explained" class="md-nav__link">
+    <span class="md-ellipsis">
+      Different source types explained
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Different source types explained">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#postgres" class="md-nav__link">
+    <span class="md-ellipsis">
+      postgres
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#postgres-continuous-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      postgres-continuous-discovery
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pgbouncer" class="md-nav__link">
+    <span class="md-ellipsis">
+      pgbouncer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pgpool" class="md-nav__link">
+    <span class="md-ellipsis">
+      pgpool
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#patroni" class="md-nav__link">
+    <span class="md-ellipsis">
+      patroni
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#patroni-continuous-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      patroni-continuous-discovery
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#patroni-namespace-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      patroni-namespace-discovery
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -624,9 +936,247 @@
     </li>
   
 
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
     
       
       
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    How-To Guides
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            How-To Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboarding_alerting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboarding and Alerting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../using_managed_services/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using Managed Services
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sizing_recommendations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sizing Recommendations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced_features/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Advanced Features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metric_definitions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Metric Definitions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical_details/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Technical Details
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Security
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -637,6 +1187,34 @@
   
   <span class="md-ellipsis">
     Kubernetes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gallery/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gallery
   </span>
   
 
@@ -662,8 +1240,170 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#effects-of-monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      Effects of monitoring
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-preparations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic preparations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rolling-out-helper-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rolling out helper functions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rolling out helper functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rolling-out-common-helpers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rolling out common helpers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#automatic-rollout-of-helpers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Automatic rollout of helpers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plpython-helpers" class="md-nav__link">
+    <span class="md-ellipsis">
+      PL/Python helpers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notice-on-using-metric-fetching-helpers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Notice on using metric fetching helpers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-with-developer-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running with developer credentials
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#different-source-types-explained" class="md-nav__link">
+    <span class="md-ellipsis">
+      Different source types explained
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Different source types explained">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#postgres" class="md-nav__link">
+    <span class="md-ellipsis">
+      postgres
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#postgres-continuous-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      postgres-continuous-discovery
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pgbouncer" class="md-nav__link">
+    <span class="md-ellipsis">
+      pgbouncer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pgpool" class="md-nav__link">
+    <span class="md-ellipsis">
+      pgpool
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#patroni" class="md-nav__link">
+    <span class="md-ellipsis">
+      patroni
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#patroni-continuous-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      patroni-continuous-discovery
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#patroni-namespace-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      patroni-namespace-discovery
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -686,7 +1426,9 @@
   
 
 
-<h1 id="effects-of-monitoring">Effects of monitoring</h1>
+  <h1>Preparing Databases</h1>
+
+<h2 id="effects-of-monitoring">Effects of monitoring</h2>
 <ul>
 <li>Although the "Observer effect" applies also for pgwatch3, no
     noticeable impact for the monitored DB is expected when using
@@ -702,24 +1444,22 @@
     timeout</a>
     is <em>5s</em> for entries inserted via the Web UI / database directly.</li>
 </ul>
-<h1 id="basic-preparations">Basic preparations</h1>
+<h2 id="basic-preparations">Basic preparations</h2>
 <p>As a base requirement you'll need a <strong>login user</strong> (non-superuser
 suggested) for connecting to your server and fetching metrics.</p>
 <p>Though theoretically you can use any username you like, but if not using
 "pgwatch3" you need to adjust the "helper" creation SQL scripts (see
 below for explanation) accordingly, as in those by default the
 "pgwatch3" will be granted execute privileges.</p>
-<div class="codehilite"><pre><span></span><code><span class="k">CREATE</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">pgwatch3</span><span class="w"> </span><span class="k">WITH</span><span class="w"> </span><span class="n">LOGIN</span><span class="w"> </span><span class="n">PASSWORD</span><span class="w"> </span><span class="s1">&#39;secret&#39;</span><span class="p">;</span>
-<span class="c1">-- For critical databases it might make sense to ensure that the user account</span>
-<span class="c1">-- used for monitoring can only open a limited number of connections</span>
-<span class="c1">-- (there are according checks in code, but multiple instances might be launched)</span>
-<span class="k">ALTER</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">pgwatch3</span><span class="w"> </span><span class="k">CONNECTION</span><span class="w"> </span><span class="k">LIMIT</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
-<span class="k">GRANT</span><span class="w"> </span><span class="n">pg_monitor</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">pgwatch3</span><span class="p">;</span><span class="w">   </span><span class="o">//</span><span class="w"> </span><span class="n">v10</span><span class="o">+</span>
-<span class="k">GRANT</span><span class="w"> </span><span class="k">CONNECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">mydb</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">pgwatch3</span><span class="p">;</span>
-<span class="k">GRANT</span><span class="w"> </span><span class="k">USAGE</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">SCHEMA</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">pgwatch3</span><span class="p">;</span><span class="w"> </span><span class="c1">-- pgwatch doesn&#39;t necessarily require using the public schema though!</span>
-<span class="k">GRANT</span><span class="w"> </span><span class="k">EXECUTE</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">pg_stat_file</span><span class="p">(</span><span class="nb">text</span><span class="p">)</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">pgwatch3</span><span class="p">;</span><span class="w"> </span><span class="c1">-- needed by the wal_size metric</span>
-</code></pre></div>
-
+<div class="language-sql highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">CREATE</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">pgwatch3</span><span class="w"> </span><span class="k">WITH</span><span class="w"> </span><span class="n">LOGIN</span><span class="w"> </span><span class="n">PASSWORD</span><span class="w"> </span><span class="s1">&#39;secret&#39;</span><span class="p">;</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1">-- For critical databases it might make sense to ensure that the user account</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1">-- used for monitoring can only open a limited number of connections</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1">-- (there are according checks in code, but multiple instances might be launched)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">ALTER</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">pgwatch3</span><span class="w"> </span><span class="k">CONNECTION</span><span class="w"> </span><span class="k">LIMIT</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="k">GRANT</span><span class="w"> </span><span class="n">pg_monitor</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">pgwatch3</span><span class="p">;</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">GRANT</span><span class="w"> </span><span class="k">CONNECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">mydb</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">pgwatch3</span><span class="p">;</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="k">GRANT</span><span class="w"> </span><span class="k">EXECUTE</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">pg_stat_file</span><span class="p">(</span><span class="nb">text</span><span class="p">)</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">pgwatch3</span><span class="p">;</span><span class="w"> </span><span class="c1">-- for wal_size metric</span>
+</span></code></pre></div>
 <p>For most monitored databases it's extremely beneficial (to
 troubleshooting performance issues) to also activate the
 <a href="https://www.postgresql.org/docs/current/pgstatstatements.html">pg_stat_statements</a>
@@ -741,24 +1481,22 @@ setting should be enabled.</p>
 </ul>
 </li>
 <li>
-<p>Add <em>pg_stat_statements</em> to your server config (postgresql.conf) and
+<p>Add <code>pg_stat_statements</code> to your server config (postgresql.conf) and
     restart the server.</p>
-<div class="codehilite"><pre><span></span><code><span class="n">shared_preload_libraries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;pg_stat_statements&#39;</span>
-<span class="n">track_io_timing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">on</span>
+<div class="language-text highlight"><pre><span></span><code>shared_preload_libraries = &#39;pg_stat_statements&#39;
+track_io_timing = on
 </code></pre></div>
-
 </li>
 <li>
 <p>After restarting activate the extension in the monitored DB. Assumes
     Postgres superuser.</p>
-<div class="codehilite"><pre><span></span><code>psql -c &quot;CREATE EXTENSION IF NOT EXISTS pg_stat_statements&quot;
+<div class="language-text highlight"><pre><span></span><code>psql -c &quot;CREATE EXTENSION IF NOT EXISTS pg_stat_statements&quot;
 </code></pre></div>
-
 </li>
 </ol>
-<h1 id="rolling-out-helper-functions-helper_functions">Rolling out helper functions {#helper_functions}</h1>
+<h2 id="rolling-out-helper-functions">Rolling out helper functions</h2>
 <p>Helper functions in pgwatch3 context are standard Postgres stored
-procedures, running under <em>SECURITY DEFINER</em> privileges. Via such
+procedures, running under <code>SECURITY DEFINER</code> privileges. Via such
 wrapper functions one can do <strong>controlled privilege escalation</strong> - i.e.
 to give access to protected Postgres metrics (like active session
 details, "per query" statistics) or even OS-level metrics, to normal
@@ -767,7 +1505,7 @@ unprivileged users, like the pgwatch3 monitoring role.</p>
 you have full access to all Postgres metrics and would need <em>helpers</em>
 only for OS remote statistics. For local (push) setups as of pgwatch3
 version 1.8.4 the most typical OS metrics are covered by the
-"--direct-os-stats" flag, explained below.</p>
+<code>--direct-os-stats</code> flag, explained below.</p>
 <p>For unprivileged monitoring users it is highly recommended to take these
 additional steps on the "to be monitored" database to get maximum
 value out of pgwatch3 in the long run. Without these additional steps,
@@ -777,18 +1515,17 @@ named "unprivileged".</p>
 <p>When monitoring v10+ servers then the built-in <strong>pg_monitor</strong> system
 role is recommended for the monitoring user, which almost substitutes
 superuser privileges for monitoring purposes in a safe way.</p>
-<p><strong>Rolling out common helpers</strong></p>
+<h3 id="rolling-out-common-helpers">Rolling out common helpers</h3>
 <p>For completely unprivileged monitoring users the following <em>helpers</em> are
 recommended to make good use of the default "exhaustive" <em>Preset
 Config</em>:</p>
-<div class="codehilite"><pre><span></span><code><span class="k">export</span><span class="w"> </span><span class="n">PGUSER</span><span class="o">=</span><span class="n">superuser</span>
-<span class="n">psql</span><span class="w"> </span><span class="o">-</span><span class="n">f</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch3</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_stat_activity</span><span class="o">/$</span><span class="n">pgver</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span><span class="w"> </span><span class="n">mydb</span>
-<span class="n">psql</span><span class="w"> </span><span class="o">-</span><span class="n">f</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch3</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_stat_replication</span><span class="o">/$</span><span class="n">pgver</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span><span class="w"> </span><span class="n">mydb</span>
-<span class="n">psql</span><span class="w"> </span><span class="o">-</span><span class="n">f</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch3</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_wal_size</span><span class="o">/$</span><span class="n">pgver</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span><span class="w"> </span><span class="n">mydb</span>
-<span class="n">psql</span><span class="w"> </span><span class="o">-</span><span class="n">f</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch3</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_stat_statements</span><span class="o">/$</span><span class="n">pgver</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span><span class="w"> </span><span class="n">mydb</span>
-<span class="n">psql</span><span class="w"> </span><span class="o">-</span><span class="n">f</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch3</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_sequences</span><span class="o">/$</span><span class="n">pgver</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span><span class="w"> </span><span class="n">mydb</span>
+<div class="language-text highlight"><pre><span></span><code>export PGUSER=superuser
+psql -f /etc/pgwatch3/metrics/00_helpers/get_stat_activity/$pgver/metric.sql mydb
+psql -f /etc/pgwatch3/metrics/00_helpers/get_stat_replication/$pgver/metric.sql mydb
+psql -f /etc/pgwatch3/metrics/00_helpers/get_wal_size/$pgver/metric.sql mydb
+psql -f /etc/pgwatch3/metrics/00_helpers/get_stat_statements/$pgver/metric.sql mydb
+psql -f /etc/pgwatch3/metrics/00_helpers/get_sequences/$pgver/metric.sql mydb
 </code></pre></div>
-
 <p>Note that there might not be an exact Postgres version match for helper
 definitions - then replace <em>\$pgver</em> with the previous available version
 number below your server's Postgres version number.</p>
@@ -796,14 +1533,14 @@ number below your server's Postgres version number.</p>
 for "get_stat_statements") will inspect also the "search_path" and
 by default <strong>will not install into schemas that have PUBLIC CREATE
 privileges</strong>, like the "public" schema by default has!</p>
-<p>Also when rolling out helpers make sure the [search_path]{.title-ref} is
+<p>Also when rolling out helpers make sure the <code>search_path</code> is
 at defaults or set so that it's also accessible for the monitoring role
 as currently neither helpers nor metric definition SQL-s don't assume
-any particualar schema and depend on the [search_path]{.title-ref}
+any particualar schema and depend on the <code>search_path</code>
 including everything needed.</p>
 <p>For more detailed statistics (OS monitoring, table bloat, WAL size, etc)
 it is recommended to install also all other helpers found from the
-[/etc/pgwatch3/metrics/00_helpers]{.title-ref} folder or do it
+<code>/etc/pgwatch3/metrics/00_helpers</code> folder or do it
 automatically by using the <em>rollout_helper.py</em> script found in the
 <em>00_helpers</em> folder.</p>
 <p>As of v1.6.0 though helpers are not needed for Postgres-native metrics
@@ -812,7 +1549,7 @@ is used, as pgwatch3 now supports having 2 SQL definitions for each
 metric - "normal / unprivileged" and "privileged" / "superuser".
 In the file system <em>/etc/pgwatch3/metrics</em> such "privileged" access
 definitions will have a "_su" added to the file name.</p>
-<h1 id="automatic-rollout-of-helpers">Automatic rollout of helpers</h1>
+<h2 id="automatic-rollout-of-helpers">Automatic rollout of helpers</h2>
 <p>pgwatch3 can roll out <em>helpers</em> also automatically on the monitored DB.
 This requires superuser privileges and a configuration attribute for the
 monitored DB. In YAML config mode it's called <em>is_superuser</em>, in Config
@@ -827,7 +1564,7 @@ special purposes and need additional dependencies.</p>
 some instance (generally not a good idea though) it might be a good idea
 to roll out the helpers directly in the <em>template1</em> database - so that
 all newly created databases will get them automatically.</p>
-<h1 id="plpython-helpers">PL/Python helpers</h1>
+<h2 id="plpython-helpers">PL/Python helpers</h2>
 <p>PostgreSQL in general is implemented in such a way that it does not know
 too much about the operation system that it is running on. This is a
 good thing for portability but can be somewhat limiting for monitoring,
@@ -841,36 +1578,35 @@ independent of any System Monitoring tools like Zabbix, etc, with the
 downside that everything is gathered over Postgres connections so that
 when Postgres is down no OS metrics can be gathered also. Since v1.8.4
 though the latter problem can be reduced for local "push" based setups
-via the "--direct-os-stats" option plus according metrics
+via the <code>--direct-os-stats</code> option plus according metrics
 configuration (e.g. the "full" preset).</p>
 <p>Note though that PL/Python is usually disabled by DB-as-a-service
 providers like AWS RDS for security reasons.</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># first install the Python bindings for Postgres</span>
-<span class="n">apt</span><span class="w"> </span><span class="n">install</span><span class="w"> </span><span class="n">postgresql</span><span class="o">-</span><span class="n">plpython3</span><span class="o">-</span><span class="n">XY</span>
-<span class="c1"># yum install postgresqlXY-plpython3</span>
+<div class="language-text highlight"><pre><span></span><code># first install the Python bindings for Postgres
+apt install postgresql-plpython3-XY
+# yum install postgresqlXY-plpython3
 
-<span class="n">psql</span><span class="w"> </span><span class="o">-</span><span class="n">c</span><span class="w"> </span><span class="s2">&quot;CREATE EXTENSION plpython3u&quot;</span>
-<span class="n">psql</span><span class="w"> </span><span class="o">-</span><span class="n">f</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch3</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_load_average</span><span class="o">/</span><span class="mf">9.1</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span><span class="w"> </span><span class="n">mydb</span>
+psql -c &quot;CREATE EXTENSION plpython3u&quot;
+psql -f /etc/pgwatch3/metrics/00_helpers/get_load_average/9.1/metric.sql mydb
 
-<span class="c1"># psutil helpers are only needed when full set of common OS metrics is wanted</span>
-<span class="n">apt</span><span class="w"> </span><span class="n">install</span><span class="w"> </span><span class="n">python3</span><span class="o">-</span><span class="n">psutil</span>
-<span class="n">psql</span><span class="w"> </span><span class="o">-</span><span class="n">f</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch3</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_psutil_cpu</span><span class="o">/</span><span class="mf">9.1</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span><span class="w"> </span><span class="n">mydb</span>
-<span class="n">psql</span><span class="w"> </span><span class="o">-</span><span class="n">f</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch3</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_psutil_mem</span><span class="o">/</span><span class="mf">9.1</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span><span class="w"> </span><span class="n">mydb</span>
-<span class="n">psql</span><span class="w"> </span><span class="o">-</span><span class="n">f</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch3</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_psutil_disk</span><span class="o">/</span><span class="mf">9.1</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span><span class="w"> </span><span class="n">mydb</span>
-<span class="n">psql</span><span class="w"> </span><span class="o">-</span><span class="n">f</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch3</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_psutil_disk_io_total</span><span class="o">/</span><span class="mf">9.1</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span><span class="w"> </span><span class="n">mydb</span>
+# psutil helpers are only needed when full set of common OS metrics is wanted
+apt install python3-psutil
+psql -f /etc/pgwatch3/metrics/00_helpers/get_psutil_cpu/9.1/metric.sql mydb
+psql -f /etc/pgwatch3/metrics/00_helpers/get_psutil_mem/9.1/metric.sql mydb
+psql -f /etc/pgwatch3/metrics/00_helpers/get_psutil_disk/9.1/metric.sql mydb
+psql -f /etc/pgwatch3/metrics/00_helpers/get_psutil_disk_io_total/9.1/metric.sql mydb
 </code></pre></div>
-
 <p>Note that we're assuming here that we're on a modern Linux system with
 Python 3 as default. For older systems Python 3 might not be an option
 though, so you need to change <em>plpython3u</em> to <em>plpythonu</em> and also do
 the same replace inside the code of the actual helper functions! Here
 the <em>rollout_helper.py</em> script with it's <code>--python2</code> flag can be
 helpful again.</p>
-<h1 id="notice-on-using-metric-fetching-helpers">Notice on using metric fetching helpers</h1>
+<h2 id="notice-on-using-metric-fetching-helpers">Notice on using metric fetching helpers</h2>
 <ul>
 <li>Starting from Postgres v10 helpers are mostly not needed (only for
     PL/Python ones getting OS statistics) - there are available some
-    special monitoring roles like "pg_monitor", that are exactly meant
+    special monitoring roles like <code>pg_monitor</code>, that are exactly meant
     to be used for such cases where we want to give access to all
     Statistics Collector views without any other "superuser
     behaviour". See
@@ -880,81 +1616,81 @@ helpful again.</p>
     relatively new still, and only when fetching fails, direct access
     with the "Privileged SQL" is tried.</li>
 <li>For gathering OS statistics (CPU, IO, disk) there are helpers and
-    metrics provided, based on the "psutil" Python package...but from
+    metrics provided, based on the "psutil" Python package... but from
     user reports seems the package behaviour differentiates slightly
     based on the Linux distro / Kernel version used, so small
     adjustments might be needed there (e.g. to remove a non-existent
-    column). Minimum usable Kernel version required is 3.3. Also note
-    that SQL helpers functions are currently defined for Python 3, so
-    for older Python 2 you need to change the <code>LANGUAGE plpython3u</code>
-    part.</li>
+    column). Minimum usable Kernel version required is 3.3.</li>
 <li>When running the gatherer locally, i.e. having a "push" based
-    configuration, the metric fetching helpers are not mostly not needed
+    configuration, the metric fetching helpers are mostly not needed
     as superuser can be used in a safe way and starting from v1.8.4 one
-    can also enable the <strong>--direct-os-stats</strong> parameter to signal that
-    we can fetch the data for the default "<a href="">psutil</a>*" metrics
+    can also enable the <code>--direct-os-stats</code> parameter to signal that
+    we can fetch the data for the default <code>psutil*</code> metrics
     directly from OS counters. If direct OS fetching fails though, the
     fallback is still to try via PL/Python wrappers.</li>
 <li>In rare cases when some "helpers" have been installed, and when
     doing a binary PostgreSQL upgrade at some later point in time via
-    [pg_upgrade]{.title-ref}, this could result in error messages
+    <code>pg_upgrade</code>, this could result in error messages
     thrown. Then just drop those failing helpers on the "to be
     upgraded" cluster and re-create them after the upgrade process.</li>
 </ul>
-<h1 id="running-with-developer-credentials">Running with developer credentials</h1>
+<h2 id="running-with-developer-credentials">Running with developer credentials</h2>
 <p>As mentioned above, helper / wrapper functions are not strictly needed,
 they just provide a bit more information for unprivileged users - thus
 for developers with no means to install any wrappers as superuser, it's
 also possible to benefit from pgwatch3 - for such use cases e.g. the
 "unprivileged" preset metrics profile and the according "DB overview
 Unprivileged / Developer"
-<a href="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/overview_developer.png">dashboard</a>
+<a class="glightbox" href="../screenshots/overview_developer.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="dashboard" src="../screenshots/overview_developer.png" /></a>
 are a good starting point as it only assumes existence of
-[pg_stat_statements]{.title-ref} (which should be available by all cloud
+<code>pg_stat_statements</code> (which should be available by all cloud
 providers).</p>
-<h1 id="different-db-types-explained-db_types">Different <em>DB types</em> explained {#db_types}</h1>
-<p>When adding a new "to be monitored" entry a <em>DB type</em> needs to be
+<h2 id="different-source-types-explained">Different source types explained</h2>
+<p>When adding a new "to be monitored" entry a <em>source type</em> needs to be
 selected. Following types are available:</p>
-<p><em>postgres</em></p>
-<p>:   Monitor a single database on a single Postgres instance. When using
-    the Web UI and the "DB name" field is left empty, there's as a
-    one time operation where all non-template DB names are fetched,
-    prefixed with "Unique name" field value and added to monitoring
-    (if not already monitored). Internally monitoring always happens
-    "per DB" not "per cluster" though.</p>
-<p><em>postgres-continuous-discovery</em></p>
-<p>:   Monitor a whole (or subset of DB-s) of Postgres cluster / instance.
-    Host information without a DB name needs to be specified and then
-    the pgwatch3 daemon will periodically scan the cluster and add any
-    found and not yet monitored DBs to monitoring. In this mode it's
-    also possible to specify regular expressions to include/exclude some
-    database names.</p>
-<p><em>pgbouncer</em></p>
-<p>:   Use to track metrics from PgBouncer's "SHOW STATS" command. In
-    place of the Postgres "DB name" the name of the PgBouncer "pool"
-    to be monitored must be inserted.</p>
-<p><em>pgpool</em></p>
-<p>:   Use to track joint metrics from Pgpool2's <em>SHOW POOL_NODES</em> and
-    <em>POOL_PROCESSES</em> commands. Pgpool2 from version 3.0 is supported.</p>
-<p><em>patroni</em></p>
-<p>:   Patroni is a HA / cluster manager for Postgres that relies on a DCS
-    (Distributed Consensus Store) to store it's state. Typically in
-    such a setup the nodes come and go and also it should not matter who
-    is currently the master. To make it easier to monitor such dynamic
-    constellations pgwatch3 supports reading of cluster node info from
-    all supported DCS-s (etcd, Zookeeper, Consul), but currently only
-    for simpler cases with no security applied (which is actually the
-    common case in a trusted environment).</p>
-<p><em>patroni-continuous-discovery</em></p>
-<p>:   As normal <em>patroni</em> DB type but all DB-s (or only those matching the
-    regex if any provided) are monitored.</p>
-<p><em>patroni-namespace-discovery</em></p>
-<p>:   Similar to <em>patroni-continuous-discovery</em> but all Patroni scopes
-    (clusters) of an ETCD namespace are automatically monitored.
-    Optionally regexes on database names still apply if provided.</p>
+<h3 id="postgres"><em>postgres</em></h3>
+<p>Monitor a single database on a single Postgres instance. When using
+the Web UI and the "DB name" field is left empty, there's as a
+one time operation where all non-template DB names are fetched,
+prefixed with "Unique name" field value and added to monitoring
+(if not already monitored). Internally monitoring always happens
+"per DB" not "per cluster" though.</p>
+<h3 id="postgres-continuous-discovery"><em>postgres-continuous-discovery</em></h3>
+<p>Monitor a whole (or subset of DB-s) of Postgres cluster / instance.
+Host information without a DB name needs to be specified and then
+the pgwatch3 daemon will periodically scan the cluster and add any
+found and not yet monitored DBs to monitoring. In this mode it's
+also possible to specify regular expressions to include/exclude some
+database names.</p>
+<h3 id="pgbouncer"><em>pgbouncer</em></h3>
+<p>Use to track metrics from PgBouncer's <code>SHOW STATS</code> command. In
+place of the Postgres "DB name" the name of the PgBouncer "pool"
+to be monitored must be inserted.</p>
+<h3 id="pgpool"><em>pgpool</em></h3>
+<p>Use to track joint metrics from Pgpool2's <code>SHOW POOL_NODES</code> and
+<code>SHOW POOL_PROCESSES</code> commands. Pgpool2 from version 3.0 is supported.</p>
+<h3 id="patroni"><em>patroni</em></h3>
+<p>Patroni is a HA / cluster manager for Postgres that relies on a DCS
+(Distributed Consensus Store) to store it's state. Typically in
+such a setup the nodes come and go and also it should not matter who
+is currently the master. To make it easier to monitor such dynamic
+constellations pgwatch3 supports reading of cluster node info from
+all supported DCS-s (etcd, Zookeeper, Consul), but currently only
+for simpler cases with no security applied (which is actually the
+common case in a trusted environment).</p>
+<h3 id="patroni-continuous-discovery"><em>patroni-continuous-discovery</em></h3>
+<p>As normal <em>patroni</em> DB type but all DB-s (or only those matching the
+regex if any provided) are monitored.</p>
+<h3 id="patroni-namespace-discovery"><em>patroni-namespace-discovery</em></h3>
+<p>Similar to <em>patroni-continuous-discovery</em> but all Patroni scopes
+(clusters) of an ETCD namespace are automatically monitored.
+Optionally regexes on database names still apply if provided.</p>
+<div class="admonition notice">
+<p class="admonition-title">Notice</p>
 <p>All "continuous" modes expect access to "template1" or "postgres"
 databasess of the specified cluster to determine the database names
 residing there.</p>
+</div>
 
 
 
@@ -1006,13 +1742,13 @@ residing there.</p>
         
         
           
-          <a href="../using_managed_services/" class="md-footer__link md-footer__link--next" aria-label="Next: Using Managed Services">
+          <a href="../upgrading/" class="md-footer__link md-footer__link--next" aria-label="Next: Upgrading">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Using Managed Services
+                Upgrading
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1050,11 +1786,13 @@ residing there.</p>
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.action.edit", "navigation.footer", "navigation.instant", "navigation.tracking", "content.tabs.link"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.action.edit", "navigation.footer", "navigation.instant", "navigation.tracking", "navigation.tabs", "content.tabs.link"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
       
     
-  </body>
+  <script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(() => { lightbox.reload() });
+</script></body>
 </html>

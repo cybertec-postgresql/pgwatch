@@ -13,10 +13,10 @@
         <link rel="canonical" href="https://pgwatch.com/docs/sizing_recommendations/">
       
       
-        <link rel="prev" href="../dashboarding_alerting/">
+        <link rel="prev" href="../using_managed_services/">
       
       
-        <link rel="next" href="../technical_details/">
+        <link rel="next" href="../advanced_features/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -57,7 +57,16 @@
     
     
     
-  </head>
+   <link href="../assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
+    html.glightbox-open { overflow: initial; height: 100%; }
+    .gslide-title { margin-top: 0px; user-select: text; }
+    .gslide-desc { color: #666; user-select: text; }
+    .gslide-image img { background: white; }
+    .gscrollbar-fixer { padding-right: 15px; }
+    .gdesc-inner { font-size: 0.75rem; }
+    body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color);}
+    body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color);}
+    body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color);}</style> <script src="../assets/javascripts/glightbox.min.js"></script></head>
   
   
     
@@ -83,9 +92,7 @@
     
       
 
-  
-
-<header class="md-header md-header--shadow" data-md-component="header">
+<header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-header__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
       
@@ -211,6 +218,124 @@
       
         
           
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  Intro
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../components/" class="md-tabs__link">
+          
+  
+  Concepts
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../docker_installation/" class="md-tabs__link">
+          
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../dashboarding_alerting/" class="md-tabs__link">
+          
+  
+  How-To Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../advanced_features/" class="md-tabs__link">
+          
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../gallery/" class="md-tabs__link">
+        
+  
+    
+  
+  Gallery
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
         
       
       <main class="md-main" data-md-component="main">
@@ -224,8 +349,10 @@
                     
 
 
+  
 
-<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-nav__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
       
@@ -256,12 +383,50 @@
   
   
   
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Intro
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Intro
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href=".." class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Introduction
+    Hello World!
   </span>
   
 
@@ -269,9 +434,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -289,9 +455,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -309,29 +476,55 @@
     </li>
   
 
-    
+              
+            
+          </ul>
+        </nav>
       
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../advanced_features/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Advanced Features
-  </span>
-  
-
-      </a>
     </li>
   
 
     
       
       
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Concepts
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
   
   
   
@@ -349,9 +542,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -369,19 +563,20 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
   
     <li class="md-nav__item">
-      <a href="../docker_installation/" class="md-nav__link">
+      <a href="../long_term_installations/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Docker Installation
+    Long Term Installations
   </span>
   
 
@@ -389,89 +584,10 @@
     </li>
   
 
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../custom_installation/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Custom Installation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../preparing_databases/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Preparing Databases
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../using_managed_services/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Using Managed Services
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../metric_definitions/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Metric Definitions
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -489,9 +605,189 @@
     </li>
   
 
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
     
       
       
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker_installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Docker Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom_installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../preparing_databases/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Preparing Databases
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upgrading/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Upgrading
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    How-To Guides
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            How-To Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
   
   
   
@@ -509,9 +805,31 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../using_managed_services/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using Managed Services
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
     
@@ -537,9 +855,97 @@
     </li>
   
 
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
     
       
       
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced_features/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Advanced Features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metric_definitions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Metric Definitions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -557,9 +963,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -577,49 +984,10 @@
     </li>
   
 
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../long_term_installations/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Long Term Installations
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../upgrading/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Upgrading
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -630,6 +998,34 @@
   
   <span class="md-ellipsis">
     Kubernetes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gallery/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gallery
   </span>
   
 
@@ -683,8 +1079,8 @@
 <li>
 <p>Min 1GB of RAM is required for a Docker setup using Postgres to
     store metrics.</p>
-<p>The gatherer alone needs typically less than 50 MB if the metrics
-store is online. Memory consumption will increase a lot when the
+<p>The gatherer alone needs typically less than 50 MB if the metric 
+measurements are stored online. Memory consumption will increase a lot when the
 metrics store is offline though, as then metrics are cached in RAM
 in ringbuffer style up to a limit of 10k data points (for all
 databases) and then memory consumption is dependent on how "wide"
@@ -710,23 +1106,23 @@ SQL support.</p>
     load).</p>
 </li>
 <li>
-<p>A single POstgres node should handle thousands of requests per
-    second but if this is not enough.</p>
+<p>A single Postgres node should handle thousands of requests per
+    second.</p>
 </li>
 <li>
 <p>When high metrics write latency is problematic (e.g. using a DBaaS
-    across the atlantic) then increasing the default maximum batching
-    delay of 250ms usually gives good results.</p>
-<p>Relevant params: <em>--batching-delay-ms / PW3_BATCHING_MAX_DELAY_MS</em></p>
+    across the Atlantic) then increasing the default maximum batching
+    delay of 250ms usually gives good results.
+    Relevant params: <code>--batching-delay-ms / PW3_BATCHING_MAX_DELAY_MS</code>.</p>
 </li>
 <li>
 <p>Note that when monitoring a very large number of databases, it's
     possible to "shard" / distribute them between many metric
-    collection instances running on different hosts, via the <em>group</em>
+    collection instances running on different hosts, via the <code>group</code>
     attribute. This requires that some hosts have been assigned a
     non-default <em>group</em> identifier, which is just a text field exactly
-    for this sharding purpose.</p>
-<p>Relevant params: <em>--group / PW3_GROUP</em></p>
+    for this sharding purpose.
+    Relevant params: <code>--group / PW3_GROUP</code>.</p>
 </li>
 </ul>
 
@@ -763,7 +1159,7 @@ SQL support.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../dashboarding_alerting/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Dashboarding and Alerting">
+          <a href="../using_managed_services/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Using Managed Services">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
@@ -773,20 +1169,20 @@ SQL support.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Dashboarding and Alerting
+                Using Managed Services
               </div>
             </div>
           </a>
         
         
           
-          <a href="../technical_details/" class="md-footer__link md-footer__link--next" aria-label="Next: Technical Details">
+          <a href="../advanced_features/" class="md-footer__link md-footer__link--next" aria-label="Next: Advanced Features">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Technical Details
+                Advanced Features
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -824,11 +1220,13 @@ SQL support.</p>
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.action.edit", "navigation.footer", "navigation.instant", "navigation.tracking", "content.tabs.link"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.action.edit", "navigation.footer", "navigation.instant", "navigation.tracking", "navigation.tabs", "content.tabs.link"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
       
     
-  </body>
+  <script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(() => { lightbox.reload() });
+</script></body>
 </html>

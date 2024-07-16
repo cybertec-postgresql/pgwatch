@@ -16,7 +16,7 @@
         <link rel="prev" href="../technical_details/">
       
       
-        <link rel="next" href="../long_term_installations/">
+        <link rel="next" href="../kubernetes/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -57,7 +57,16 @@
     
     
     
-  </head>
+   <link href="../assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
+    html.glightbox-open { overflow: initial; height: 100%; }
+    .gslide-title { margin-top: 0px; user-select: text; }
+    .gslide-desc { color: #666; user-select: text; }
+    .gslide-image img { background: white; }
+    .gscrollbar-fixer { padding-right: 15px; }
+    .gdesc-inner { font-size: 0.75rem; }
+    body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color);}
+    body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color);}
+    body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color);}</style> <script src="../assets/javascripts/glightbox.min.js"></script></head>
   
   
     
@@ -88,9 +97,7 @@
     
       
 
-  
-
-<header class="md-header md-header--shadow" data-md-component="header">
+<header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-header__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
       
@@ -216,6 +223,124 @@
       
         
           
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  Intro
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../components/" class="md-tabs__link">
+          
+  
+  Concepts
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../docker_installation/" class="md-tabs__link">
+          
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../dashboarding_alerting/" class="md-tabs__link">
+          
+  
+  How-To Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../advanced_features/" class="md-tabs__link">
+          
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../gallery/" class="md-tabs__link">
+        
+  
+    
+  
+  Gallery
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
         
       
       <main class="md-main" data-md-component="main">
@@ -229,8 +354,10 @@
                     
 
 
+  
 
-<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-nav__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
       
@@ -261,12 +388,50 @@
   
   
   
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Intro
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Intro
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href=".." class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Introduction
+    Hello World!
   </span>
   
 
@@ -274,9 +439,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -294,9 +460,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -314,29 +481,55 @@
     </li>
   
 
-    
+              
+            
+          </ul>
+        </nav>
       
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../advanced_features/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Advanced Features
-  </span>
-  
-
-      </a>
     </li>
   
 
     
       
       
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Concepts
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
   
   
   
@@ -354,9 +547,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -374,219 +568,10 @@
     </li>
   
 
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../docker_installation/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Docker Installation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../custom_installation/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Custom Installation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../preparing_databases/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Preparing Databases
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../using_managed_services/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Using Managed Services
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../metric_definitions/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Metric Definitions
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../web_ui/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Web UI
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../dashboarding_alerting/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Dashboarding and Alerting
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../sizing_recommendations/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Sizing Recommendations
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../technical_details/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Technical Details
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  <span class="md-ellipsis">
-    Security
-  </span>
-  
-
-      </a>
-      
-    </li>
-  
-
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -604,9 +589,139 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../web_ui/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Web UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
     
       
       
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker_installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Docker Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom_installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../preparing_databases/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Preparing Databases
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -624,9 +739,306 @@
     </li>
   
 
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
     
       
       
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    How-To Guides
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            How-To Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboarding_alerting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboarding and Alerting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../using_managed_services/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using Managed Services
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sizing_recommendations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sizing Recommendations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced_features/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Advanced Features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metric_definitions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Metric Definitions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical_details/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Technical Details
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Security
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Security
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#general-security-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      General security information
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#launching-a-more-secure-docker-container" class="md-nav__link">
+    <span class="md-ellipsis">
+      Launching a more secure Docker container
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -637,6 +1049,34 @@
   
   <span class="md-ellipsis">
     Kubernetes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gallery/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gallery
   </span>
   
 
@@ -662,8 +1102,32 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#general-security-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      General security information
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#launching-a-more-secure-docker-container" class="md-nav__link">
+    <span class="md-ellipsis">
+      Launching a more secure Docker container
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -686,17 +1150,15 @@
   
 
 
-<h1 id="general-security-information">General security information</h1>
+  <h1>Security</h1>
+
+<h2 id="general-security-information">General security information</h2>
 <p>Security can be tightened for most pgwatch3 components quite granularly,
 but the default values for the Docker image don't focus on security
 though but rather on being quickly usable for ad-hoc performance
 troubleshooting, which is where the roots of pgwatch3 lie.</p>
 <p>Some points on security:</p>
 <ul>
-<li>
-<p>Starting from v1.3.0 there's a non-root Docker version available
-    (suitable for OpenShift)</p>
-</li>
 <li>
 <p>The administrative Web UI doesn't have by default any security.
     Configurable via env. variables.</p>
@@ -711,34 +1173,23 @@ troubleshooting, which is where the roots of pgwatch3 lie.</p>
 <p>They should be "mostly" stripped of details though and replaced by
 placeholders by Postgres, but if no risks can be taken such
 dashboards (or at least according panels) should be deleted. Or as
-an alternative the "stat_statements_no_query_text" and
-"pg_stat_statements_calls" metrics could be used, which don't
+an alternative the <code>stat_statements_no_query_text</code> and
+<code>pg_stat_statements_calls</code> metrics could be used, which don't
 store query texts in the first place.</p>
 </li>
 <li>
-<p>Safe certificate connections to Postgres are supported as of v1.5.0</p>
-<p>According <em>sslmode</em> (verify-ca, verify-full) and cert file paths
-need to be specified then on Web UI "/dbs" page or in the YAML
-config.</p>
+<p>Safe certificate connections to Postgres are supported. According 
+    <em>sslmode</em> (verify-ca, verify-full) and cert file paths
+    need to be specified then in connection string on Web UI "/dbs" page 
+    or in the YAML config.</p>
 </li>
 <li>
-<p>Encryption / decryption of connection string passwords stored in the
-    config DB or in YAML config files</p>
-<p>By default passwords are stored in plaintext but as of v1.5 it's
-possible to use an encryption passphrase, or a file with the
-passphrase in it, via <em>--aes-gcm-keyphrase /
---aes-gcm-keyphrase-file</em> or <em>PW3_AES_GCM_KEYPHRASE /
-PW3_AES_GCM_KEYPHRASE_FILE</em> parameters. If using the Web UI to store
-connection info, the same encryption key needs to be specified for
-both the Web UI and the gatherer. If using YAML configs then
-encrypted passwords can be generated using the
-<em>--aes-gcm-password-to-encrypt</em> flag for embedding in YAML.</p>
 <p>Note that although pgwatch3 can handle password security, in many
-cases it's better to still use the standard LibPQ <em>.pgpass</em> file to
-store passwords.</p>
+    cases it's better to still use the standard LibPQ <em>.pgpass</em> file to
+    store passwords.</p>
 </li>
 </ul>
-<h1 id="launching-a-more-secure-docker-container">Launching a more secure Docker container</h1>
+<h2 id="launching-a-more-secure-docker-container">Launching a more secure Docker container</h2>
 <p>Some common sense security is built into default Docker images for all
 components but not actived by default. A sample command to launch
 pgwatch3 with following security "checkpoints" enabled:</p>
@@ -748,20 +1199,20 @@ pgwatch3 with following security "checkpoints" enabled:</p>
 <li>Custom user / password for the Grafana "admin" account</li>
 <li>No anonymous access / editing over the admin Web UI</li>
 <li>No viewing of internal logs of components running inside Docker</li>
-<li>Password encryption for connect strings stored in the Config DB</li>
+<li>
+<p>Password encryption for connect strings stored in the Config DB</p>
+<div class="language-properties highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">docker</span><span class="w"> </span><span class="s">run --name pw3 -d --restart=unless-stopped </span><span class="se">\</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="s">-p 3000:3000 -p 8080:8080 </span><span class="se">\</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="s">-e PW3_GRAFANASSL=1 -e PW3_WEBSSL=1 </span><span class="se">\</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="s">-e PW3_GRAFANANOANONYMOUS=1 -e PW3_GRAFANAUSER=myuser </span><span class="se">\</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="s">-e PW3_GRAFANAPASSWORD=mypass </span><span class="se">\</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="s">-e PW3_WEBNOANONYMOUS=1 -e PW3_WEBNOCOMPONENTLOGS=1 </span><span class="se">\</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="s">-e PW3_WEBUSER=myuser -e PW3_WEBPASSWORD=mypass </span><span class="se">\</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="s">-e PW3_AES_GCM_KEYPHRASE=qwerty </span><span class="se">\</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="s">cybertec/pgwatch3</span>
+</span></code></pre></div>
+</li>
 </ol>
-<!-- -->
-
-<div class="codehilite"><pre><span></span><code>docker run --name pw3 -d --restart=unless-stopped \
-  -p 3000:3000 -p 8080:8080 \
-  -e PW3_GRAFANASSL=1 -e PW3_WEBSSL=1 \
-  -e PW3_GRAFANANOANONYMOUS=1 -e PW3_GRAFANAUSER=myuser -e PW3_GRAFANAPASSWORD=mypass \
-  -e PW3_WEBNOANONYMOUS=1 -e PW3_WEBNOCOMPONENTLOGS=1 \
-  -e PW3_WEBUSER=myuser -e PW3_WEBPASSWORD=mypass \
-  -e PW3_AES_GCM_KEYPHRASE=qwerty \
-  cybertec/pgwatch3
-</code></pre></div>
-
 <p>For custom installs it's up to the user though. A hint - Docker
 <em>launcher</em> files can also be inspected to see which config parameters
 are being touched.</p>
@@ -816,13 +1267,13 @@ are being touched.</p>
         
         
           
-          <a href="../long_term_installations/" class="md-footer__link md-footer__link--next" aria-label="Next: Long Term Installations">
+          <a href="../kubernetes/" class="md-footer__link md-footer__link--next" aria-label="Next: Kubernetes">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Long Term Installations
+                Kubernetes
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -860,11 +1311,13 @@ are being touched.</p>
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.action.edit", "navigation.footer", "navigation.instant", "navigation.tracking", "content.tabs.link"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.action.edit", "navigation.footer", "navigation.instant", "navigation.tracking", "navigation.tabs", "content.tabs.link"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
       
     
-  </body>
+  <script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(() => { lightbox.reload() });
+</script></body>
 </html>
