@@ -14,9 +14,9 @@ after verifying that they work. If using Docker, you could also choose
 to build your own images any time some new component versions are
 released, just increment the version numbers in the Dockerfile.
 
-# Updating to a newer Docker version
+## Updating to a newer Docker version
 
-## Without volumes
+### Without volumes
 
 If pgwatch3 container was started in the simplest way possible without
 volumes, and if previously gathered metrics are not of great importance,
@@ -39,61 +39,60 @@ pulling Postgres backups and restoring them into the new container.
 
 A tip: to make the restore process easier it would already make sense to
 mount the host folder with the backups in it on the new container with
-"-v \~/pgwatch3_backups:/pgwatch3_backups:rw,z" when starting the
+`"-v \~/pgwatch3_backups:/pgwatch3_backups:rw,z"` when starting the
 Docker image. Otherwise one needs to set up SSH or use something like S3
 for example. Also note that port 5432 need to be exposed to take backups
 outside of Docker for Postgres respectively.
 
-## With volumes
+### With volumes
 
 To make updates a bit easier, the preferred way to launch pgwatch3
 should be to use Docker volumes for each individual component - see the
-`Installing using Docker <docker_example_launch>`{.interpreted-text
-role="ref"} chapter for details. Then one can just stop the old
+[Installing using Docker](docker_installation.md) 
+chapter for details. Then one can just stop the old
 container and start a new one, re-using the volumes.
 
 With some releases though, updating to newer version might additionally
 still require manual rollout of Config DB *schema migrations scripts*,
 so always check the release notes for hints on that or just go to the
-"pgwatch3/sql/migrations" folder and execute all SQL scripts that have
+`"pgwatch3/sql/migrations"` folder and execute all SQL scripts that have
 a higher version than the old pgwatch3 container. Error messages like
 will "missing columns" or "wrong datatype" will also hint at that,
 after launching with a new image. FYI - such SQL "patches" are
 generally not provided for metric updates, nor dashboard changes and
 they need to be updated separately.
 
-# Updating without Docker
+## Updating without Docker
 
 For a custom installation there's quite some freedom in doing updates -
 as components (Grafana, PostgreSQL) are loosely coupled, they can be
 updated any time without worrying too much about the other components.
 Only "tightly coupled" components are the pgwatch3 metrics collector,
 config DB and the optional Web UI - if the pgwatch3 config is kept in
-the database. If YAML based approach (see details
-`here <yaml_setup>`{.interpreted-text role="ref"}) is used, then things
+the database. If [YAML based approach](installation_options.md) is used, then things
 are even more simple - the pgwatch3 daemon can be updated any time as
 YAML schema has default values for everything and there are no other
 "tightly coupled" components like the Web UI.
 
-# Updating Grafana
+### Updating Grafana
 
 The update process for Grafana looks pretty much like the installation
 so take a look at the according
-`chapter <custom_install_grafana>`{.interpreted-text role="ref"}. If
-using Grafana's package repository it should happen automatically along
+[chapter](custom_installation.md#detailed-steps-for-the-config-db-based-pull-approach-with-postgres-metrics-storage). 
+If using Grafana's package repository it should happen automatically along
 with other system packages. Grafana has a built-in database schema
 migrator, so updating the binaries and restarting is enough.
 
-# Updating Grafana dashboards
+### Updating Grafana dashboards
 
 There are no update or migration scripts for the built-in Grafana
 dashboards as it would break possible user applied changes. If you know
 that there are no user changes, then one can just delete or rename the
 existing ones in a bulk matter and import the latest JSON definitions.
-See `here <dashboard_maintenance>`{.interpreted-text role="ref"} for
+See [here](long_term_installations.md#dashboard-maintenance-dashboard_maintenance) for
 some more advice on how to manage dashboards.
 
-# Updating the config / metrics DB version
+### Updating the config / metrics DB version
 
 Database updates can be quite complex, with many steps, so it makes
 sense to follow the manufacturer's instructions here.
@@ -110,54 +109,31 @@ according release notes (e.g.
 [here](https://www.postgresql.org/docs/12/release-12.html#id-1.11.6.5.4))
 and be prepared for the unavoidable downtime.
 
-# Updating the pgwatch3 schema
+### Updating the pgwatch3 schema
 
 This is the pgwatch3 specific part, with some coupling between the
 following components - Config DB SQL schema, metrics collector, and the
 optional Web UI.
 
 Here one should check from the
-[CHANGELOG](https://github.com/cybertec-postgresql/pgwatch3/blob/master/docs/CHANGELOG.md)
+[CHANGELOG](https://github.com/cybertec-postgresql/pgwatch3/releases)
 if pgwatch3 schema needs updating. If yes, then manual applying of
 schema diffs is required before running the new gatherer or Web UI. If
 no, i.e. no schema changes, all components can be updated independently
 in random order.
 
-Assuming that we initially installed pgwatch3 version v1.6.0, and now
-the latest version is 1.6.2, based on the release notes and [SQL
-diffs](https://github.com/cybertec-postgresql/pgwatch3/tree/master/pgwatch3/sql/config_store/migrations)
-we need to apply the following files:
+    pgwatch3 --config=postgresql://localhost/pgwatch3 --upgrade
 
-> psql -f /etc/pgwatch3/sql/config_store/migrations/v1.6.1-1_patroni_cont_discovery.sql pgwatch3
->     psql -f /etc/pgwatch3/sql/config_store/migrations/v1.6.2_superuser_metrics.sql pgwatch3
-
-# Updating the metrics collector
+### Updating the metrics collector
 
 Compile or install the gatherer from RPM / DEB / tarball packages. See
-the `Custom installation <custom_installation>`{.interpreted-text
-role="ref"} chapter for details.
+the [Custom installation](custom_installation.md)  chapter for details.
 
 If using a SystemD service file to auto-start the collector then you
 might want to also check for possible updates on the template there -
-*/etc/pgwatch3/startup-scripts/pgwatch3.service*.
+`/etc/pgwatch3/startup-scripts/pgwatch3.service`.
 
-# Updating the Web UI
-
-Update the optional Python Web UI if using it to administer monitored
-DB-s and metric configs. The Web UI was not included in the pre-built
-packages of older pgwatch3 versions as deploying self-contained Python
-that runs on all platforms is not overly easy. If Web UI is started
-directly on the Github sources ([git clone && cd webpy &&
-./web.py]{.title-ref}) then it is actually updated automatically as
-CherryPy web server monitors the file changes. If there were some
-breaking schema changes though, it might stop working and needs a
-restart after applying schema "diffs" (see above).
-
-If using a SystemD service file to auto-start the Web UI then you might
-want to also check for possible updates on the template there -
-*/etc/pgwatch/webpy/startup-scripts/pgwatch3-webui.service*.
-
-# Updating metric definitions {#updating_metrics}
+### Updating metric definitions
 
 In the YAML mode you always get new SQL definitions for the built-in
 metrics automatically when refreshing the sources via Github or
@@ -170,5 +146,5 @@ the latest metric definition SQL file.
     psql  -c "truncate pgwatch3.metric" pgwatch3
     psql -f /etc/pgwatch3/sql/config_store/metric_definitions.sql pgwatch3
 
-**If you have added some own custom metrics be sure not to delete or
-truncate them!**
+!!! Warning
+    If you have added some own custom metrics be sure not to delete or truncate them!

@@ -23,44 +23,28 @@ Default port: **8080**
 
 Sample screenshot of the Web UI:
 
-[![A sample screenshot of the pgwatch3 admin Web UI](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/web_ui_dbs.png)](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/web_ui_dbs.png)
+[![A sample screenshot of the pgwatch3 admin Web UI](screenshots/webui_sources_grid.png)](screenshots/webui_sources_grid.png)
 
-# Web UI security
+## Web UI security
 
 By default the Web UI is not secured - anyone can view and modify the
 monitoring configuration. If some security is needed though it can be
 enabled:
 
-> -   HTTPS
->
->     `--ssl, --ssl-cert, --ssl-key, --ssl-certificate-chain` or
->     `PW3_WEBSSL, PW3_WEBCERT, PW3_WEBKEY, PW3_WEBCERTCHAIN`
->
-> -   Password protection
->
->     `--no-anonymous-access, --admin-user, --admin-password` or
->     `PW3_WEBNOANONYMOUS, PW3_WEBUSER, PW3_WEBPASSWORD`
->
-> -   Hiding some possibly sensitive information
->
->     `--no-component-logs, --no-stats-summary` or
->     `PW3_WEBNOCOMPONENTLOGS, PW3_WEBNOSTATSSUMMARY`
->
-> -   Password encryption for the role used for fetching metrics
->
->     `--aes-gcm-keyphrase, --aes-gcm-keyphrase-file` or
->     `PW3_AES_GCM_KEYPHRASE, PW3_AES_GCM_KEYPHRASE_FILE`
->
->     Note that standard *LibPQ .pgpass files* can also be used so
->     there's no requirement to store any passwords in pgwatch3 config
->     DB. Also note that when enabling password encryption, the same key
->     needs to be presented also for the gatherer.
+-   HTTPS
+
+-   Password protection is controlled by `--web-user`, `--web-password` command-line parameters or
+    `PW3_WEBUSER`, `PW3_WEBPASSWORD` environmental variables.
+
+-   Note that it's better to use standard *LibPQ .pgpass files* so
+    there's no requirement to store any passwords in pgwatch3 config
+    database or YAML config file.
 
 For security sensitive environments make sure to always deploy password
 protection together with SSL, as it uses a standard cookie based
 techniques vulnerable to snooping / MITM attacks.
 
-# Exposing the component logs
+## Exposing the component logs
 
 When using the Docker images, internal component logs (Postgres,
 Grafana, Go daemon, Web UI itself) are exposed via the "/logs"

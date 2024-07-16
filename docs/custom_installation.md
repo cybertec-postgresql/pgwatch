@@ -317,7 +317,7 @@ DB".
     mode).
 4.  Prepare the "to-be-monitored" databases for monitoring by creating
     a dedicated login role name as a
-    `minimum <preparing_databases>`{.interpreted-text role="ref"}.
+    [minimum](preparing_databases.md).
 5.  Run the pgatch2 gatherer specifying the YAML config file (or
     folder), and also the folder where metric definitions are located.
     Default location: */etc/pgwatch3/metrics*.

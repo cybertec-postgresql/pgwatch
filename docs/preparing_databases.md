@@ -2,7 +2,7 @@
 title: Preparing databases for monitoring
 ---
 
-# Effects of monitoring
+## Effects of monitoring
 
 -   Although the "Observer effect" applies also for pgwatch3, no
     noticeable impact for the monitored DB is expected when using
@@ -18,7 +18,7 @@ title: Preparing databases for monitoring
     timeout](https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-STATEMENT-TIMEOUT)
     is *5s* for entries inserted via the Web UI / database directly.
 
-# Basic preparations
+## Basic preparations
 
 As a base requirement you'll need a **login user** (non-superuser
 suggested) for connecting to your server and fetching metrics.
@@ -34,10 +34,9 @@ CREATE ROLE pgwatch3 WITH LOGIN PASSWORD 'secret';
 -- used for monitoring can only open a limited number of connections
 -- (there are according checks in code, but multiple instances might be launched)
 ALTER ROLE pgwatch3 CONNECTION LIMIT 3;
-GRANT pg_monitor TO pgwatch3;   // v10+
+GRANT pg_monitor TO pgwatch3;
 GRANT CONNECT ON DATABASE mydb TO pgwatch3;
-GRANT USAGE ON SCHEMA public TO pgwatch3; -- pgwatch doesn't necessarily require using the public schema though!
-GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch3; -- needed by the wal_size metric
+GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch3; -- for wal_size metric
 ```
 
 For most monitored databases it's extremely beneficial (to
@@ -58,21 +57,21 @@ setting should be enabled.
     -   On RedHat / Centos: `yum install -y postgresqlXY-contrib`
     -   On Debian / Ubuntu: `apt install postgresql-contrib`
 
-2.  Add *pg_stat_statements* to your server config (postgresql.conf) and
+1.  Add `pg_stat_statements` to your server config (postgresql.conf) and
     restart the server.
 
         shared_preload_libraries = 'pg_stat_statements'
         track_io_timing = on
 
-3.  After restarting activate the extension in the monitored DB. Assumes
+1.  After restarting activate the extension in the monitored DB. Assumes
     Postgres superuser.
 
         psql -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
 
-# Rolling out helper functions {#helper_functions}
+## Rolling out helper functions
 
 Helper functions in pgwatch3 context are standard Postgres stored
-procedures, running under *SECURITY DEFINER* privileges. Via such
+procedures, running under `SECURITY DEFINER` privileges. Via such
 wrapper functions one can do **controlled privilege escalation** - i.e.
 to give access to protected Postgres metrics (like active session
 details, "per query" statistics) or even OS-level metrics, to normal
@@ -82,7 +81,7 @@ If using a superuser login (recommended only for local "push" setups)
 you have full access to all Postgres metrics and would need *helpers*
 only for OS remote statistics. For local (push) setups as of pgwatch3
 version 1.8.4 the most typical OS metrics are covered by the
-"\--direct-os-stats" flag, explained below.
+`--direct-os-stats` flag, explained below.
 
 For unprivileged monitoring users it is highly recommended to take these
 additional steps on the "to be monitored" database to get maximum
@@ -95,8 +94,7 @@ When monitoring v10+ servers then the built-in **pg_monitor** system
 role is recommended for the monitoring user, which almost substitutes
 superuser privileges for monitoring purposes in a safe way.
 
-**Rolling out common helpers**
-
+### Rolling out common helpers
 For completely unprivileged monitoring users the following *helpers* are
 recommended to make good use of the default "exhaustive" *Preset
 Config*:
@@ -117,15 +115,15 @@ for "get_stat_statements") will inspect also the "search_path" and
 by default **will not install into schemas that have PUBLIC CREATE
 privileges**, like the "public" schema by default has!
 
-Also when rolling out helpers make sure the [search_path]{.title-ref} is
+Also when rolling out helpers make sure the `search_path` is
 at defaults or set so that it's also accessible for the monitoring role
 as currently neither helpers nor metric definition SQL-s don't assume
-any particualar schema and depend on the [search_path]{.title-ref}
+any particualar schema and depend on the `search_path`
 including everything needed.
 
 For more detailed statistics (OS monitoring, table bloat, WAL size, etc)
 it is recommended to install also all other helpers found from the
-[/etc/pgwatch3/metrics/00_helpers]{.title-ref} folder or do it
+`/etc/pgwatch3/metrics/00_helpers` folder or do it
 automatically by using the *rollout_helper.py* script found in the
 *00_helpers* folder.
 
@@ -134,9 +132,9 @@ As of v1.6.0 though helpers are not needed for Postgres-native metrics
 is used, as pgwatch3 now supports having 2 SQL definitions for each
 metric - "normal / unprivileged" and "privileged" / "superuser".
 In the file system */etc/pgwatch3/metrics* such "privileged" access
-definitions will have a "\_su" added to the file name.
+definitions will have a "_su" added to the file name.
 
-# Automatic rollout of helpers
+## Automatic rollout of helpers
 
 pgwatch3 can roll out *helpers* also automatically on the monitored DB.
 This requires superuser privileges and a configuration attribute for the
@@ -155,7 +153,7 @@ some instance (generally not a good idea though) it might be a good idea
 to roll out the helpers directly in the *template1* database - so that
 all newly created databases will get them automatically.
 
-# PL/Python helpers
+## PL/Python helpers
 
 PostgreSQL in general is implemented in such a way that it does not know
 too much about the operation system that it is running on. This is a
@@ -170,7 +168,7 @@ independent of any System Monitoring tools like Zabbix, etc, with the
 downside that everything is gathered over Postgres connections so that
 when Postgres is down no OS metrics can be gathered also. Since v1.8.4
 though the latter problem can be reduced for local "push" based setups
-via the "\--direct-os-stats" option plus according metrics
+via the `--direct-os-stats` option plus according metrics
 configuration (e.g. the "full" preset).
 
 Note though that PL/Python is usually disabled by DB-as-a-service
@@ -197,11 +195,11 @@ the same replace inside the code of the actual helper functions! Here
 the *rollout_helper.py* script with it's `--python2` flag can be
 helpful again.
 
-# Notice on using metric fetching helpers
+## Notice on using metric fetching helpers
 
 -   Starting from Postgres v10 helpers are mostly not needed (only for
     PL/Python ones getting OS statistics) - there are available some
-    special monitoring roles like "pg_monitor", that are exactly meant
+    special monitoring roles like `pg_monitor`, that are exactly meant
     to be used for such cases where we want to give access to all
     Statistics Collector views without any other "superuser
     behaviour". See
@@ -211,28 +209,25 @@ helpful again.
     relatively new still, and only when fetching fails, direct access
     with the "Privileged SQL" is tried.
 -   For gathering OS statistics (CPU, IO, disk) there are helpers and
-    metrics provided, based on the "psutil" Python package\...but from
+    metrics provided, based on the "psutil" Python package... but from
     user reports seems the package behaviour differentiates slightly
     based on the Linux distro / Kernel version used, so small
     adjustments might be needed there (e.g. to remove a non-existent
-    column). Minimum usable Kernel version required is 3.3. Also note
-    that SQL helpers functions are currently defined for Python 3, so
-    for older Python 2 you need to change the `LANGUAGE plpython3u`
-    part.
+    column). Minimum usable Kernel version required is 3.3.
 -   When running the gatherer locally, i.e. having a "push" based
-    configuration, the metric fetching helpers are not mostly not needed
+    configuration, the metric fetching helpers are mostly not needed
     as superuser can be used in a safe way and starting from v1.8.4 one
-    can also enable the **\--direct-os-stats** parameter to signal that
-    we can fetch the data for the default "[psutil]()\*" metrics
+    can also enable the `--direct-os-stats` parameter to signal that
+    we can fetch the data for the default `psutil*` metrics
     directly from OS counters. If direct OS fetching fails though, the
     fallback is still to try via PL/Python wrappers.
 -   In rare cases when some "helpers" have been installed, and when
     doing a binary PostgreSQL upgrade at some later point in time via
-    [pg_upgrade]{.title-ref}, this could result in error messages
+    `pg_upgrade`, this could result in error messages
     thrown. Then just drop those failing helpers on the "to be
     upgraded" cluster and re-create them after the upgrade process.
 
-# Running with developer credentials
+## Running with developer credentials
 
 As mentioned above, helper / wrapper functions are not strictly needed,
 they just provide a bit more information for unprivileged users - thus
@@ -240,67 +235,68 @@ for developers with no means to install any wrappers as superuser, it's
 also possible to benefit from pgwatch3 - for such use cases e.g. the
 "unprivileged" preset metrics profile and the according "DB overview
 Unprivileged / Developer"
-[dashboard](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/overview_developer.png)
+![dashboard](screenshots/overview_developer.png)
 are a good starting point as it only assumes existence of
-[pg_stat_statements]{.title-ref} (which should be available by all cloud
+`pg_stat_statements` (which should be available by all cloud
 providers).
 
-# Different *DB types* explained {#db_types}
+## Different source types explained
 
-When adding a new "to be monitored" entry a *DB type* needs to be
+When adding a new "to be monitored" entry a *source type* needs to be
 selected. Following types are available:
 
-*postgres*
+### *postgres*
 
-:   Monitor a single database on a single Postgres instance. When using
-    the Web UI and the "DB name" field is left empty, there's as a
-    one time operation where all non-template DB names are fetched,
-    prefixed with "Unique name" field value and added to monitoring
-    (if not already monitored). Internally monitoring always happens
-    "per DB" not "per cluster" though.
+Monitor a single database on a single Postgres instance. When using
+the Web UI and the "DB name" field is left empty, there's as a
+one time operation where all non-template DB names are fetched,
+prefixed with "Unique name" field value and added to monitoring
+(if not already monitored). Internally monitoring always happens
+"per DB" not "per cluster" though.
 
-*postgres-continuous-discovery*
+###  *postgres-continuous-discovery*
 
-:   Monitor a whole (or subset of DB-s) of Postgres cluster / instance.
-    Host information without a DB name needs to be specified and then
-    the pgwatch3 daemon will periodically scan the cluster and add any
-    found and not yet monitored DBs to monitoring. In this mode it's
-    also possible to specify regular expressions to include/exclude some
-    database names.
+Monitor a whole (or subset of DB-s) of Postgres cluster / instance.
+Host information without a DB name needs to be specified and then
+the pgwatch3 daemon will periodically scan the cluster and add any
+found and not yet monitored DBs to monitoring. In this mode it's
+also possible to specify regular expressions to include/exclude some
+database names.
 
-*pgbouncer*
+### *pgbouncer*
 
-:   Use to track metrics from PgBouncer's "SHOW STATS" command. In
-    place of the Postgres "DB name" the name of the PgBouncer "pool"
-    to be monitored must be inserted.
+Use to track metrics from PgBouncer's `SHOW STATS` command. In
+place of the Postgres "DB name" the name of the PgBouncer "pool"
+to be monitored must be inserted.
 
-*pgpool*
+### *pgpool*
 
-:   Use to track joint metrics from Pgpool2's *SHOW POOL_NODES* and
-    *POOL_PROCESSES* commands. Pgpool2 from version 3.0 is supported.
+Use to track joint metrics from Pgpool2's `SHOW POOL_NODES` and
+`SHOW POOL_PROCESSES` commands. Pgpool2 from version 3.0 is supported.
 
-*patroni*
+### *patroni*
 
-:   Patroni is a HA / cluster manager for Postgres that relies on a DCS
-    (Distributed Consensus Store) to store it's state. Typically in
-    such a setup the nodes come and go and also it should not matter who
-    is currently the master. To make it easier to monitor such dynamic
-    constellations pgwatch3 supports reading of cluster node info from
-    all supported DCS-s (etcd, Zookeeper, Consul), but currently only
-    for simpler cases with no security applied (which is actually the
-    common case in a trusted environment).
+Patroni is a HA / cluster manager for Postgres that relies on a DCS
+(Distributed Consensus Store) to store it's state. Typically in
+such a setup the nodes come and go and also it should not matter who
+is currently the master. To make it easier to monitor such dynamic
+constellations pgwatch3 supports reading of cluster node info from
+all supported DCS-s (etcd, Zookeeper, Consul), but currently only
+for simpler cases with no security applied (which is actually the
+common case in a trusted environment).
 
-*patroni-continuous-discovery*
+### *patroni-continuous-discovery*
 
-:   As normal *patroni* DB type but all DB-s (or only those matching the
-    regex if any provided) are monitored.
+As normal *patroni* DB type but all DB-s (or only those matching the
+regex if any provided) are monitored.
 
-*patroni-namespace-discovery*
+### *patroni-namespace-discovery*
 
-:   Similar to *patroni-continuous-discovery* but all Patroni scopes
-    (clusters) of an ETCD namespace are automatically monitored.
-    Optionally regexes on database names still apply if provided.
+Similar to *patroni-continuous-discovery* but all Patroni scopes
+(clusters) of an ETCD namespace are automatically monitored.
+Optionally regexes on database names still apply if provided.
 
-All "continuous" modes expect access to "template1" or "postgres"
-databasess of the specified cluster to determine the database names
-residing there.
+!!! Notice
+    All "continuous" modes expect access to "template1" or "postgres"
+    databasess of the specified cluster to determine the database names
+    residing there.

@@ -32,14 +32,14 @@ services:
 -   No Python / OS helpers possible. OS metrics can be integrated in
     Grafana though using the
     [Stackdriver](https://grafana.com/docs/grafana/latest/datasources/google-cloud-monitoring/)
-    data source
--   "pg_monitor" system role available
--   pgwatch3 default preset name: "gce"
+    data source.
+-   `pg_monitor` system role available.
+-   pgwatch3 default preset name: `gce`.
 -   Documentation: <https://cloud.google.com/sql/docs/postgres>
 
 To get most out pgwatch3 on GCE you need some additional clicks in the
 GUI / Cloud Console "Flags" section to enable some common PostgreSQL
-monitoring parameters like *track_io_timing* and *track_functions*.
+monitoring parameters like `track_io_timing` and `track_functions`.
 
 # Amazon RDS for PostgreSQL
 
@@ -48,14 +48,14 @@ monitoring parameters like *track_io_timing* and *track_functions*.
     [CloudWatch](https://grafana.com/docs/grafana/latest/datasources/cloudwatch/)
     data source
 
--   "pg_monitor" system role available
+-   `pg_monitor` system role available.
 
--   pgwatch3 default preset names: "rds", "aurora"
+-   pgwatch3 default preset names: `rds`, `aurora`
 
 -   Documentation:
-
-    > <https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html>
-    > <https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.AuroraPostgreSQL.html>
+    
+    <https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html>
+    <https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.AuroraPostgreSQL.html>
 
 Note that the AWS Aurora PostgreSQL-compatible engine is missing some
 additional metrics compared to normal RDS.
@@ -66,17 +66,17 @@ additional metrics compared to normal RDS.
     Grafana though using the [Azure
     Monitor](https://grafana.com/docs/grafana/latest/datasources/azuremonitor/)
     data source
--   "pg_monitor" system role available
--   pgwatch3 default preset name: "azure"
+-   `pg_monitor` system role available.
+-   pgwatch3 default preset name: `azure`
 -   Documentation: <https://docs.microsoft.com/en-us/azure/postgresql/>
 
 Surprisingly on Azure some file access functions are whitelisted, thus
-one can for example use the "wal_size" metrics.
+one can for example use the `wal_size` metrics.
 
-NB2! By default Azure has **pg_stat_statements** not fully activated by
-default, so you need to enable it manually or via the API. Documentation
-link
-[here](https://docs.microsoft.com/en-us/azure/postgresql/howto-optimize-query-stats-collection).
+!!! Note
+    By default Azure has **pg_stat_statements** not fully activated by
+    default, so you need to enable it manually or via the API. Documentation
+    link [here](https://docs.microsoft.com/en-us/azure/postgresql/howto-optimize-query-stats-collection).
 
 # Aiven for PostgreSQL
 
