@@ -1,0 +1,94 @@
+site_name: ⚠️ pgwatch3 | WORK IN PROGRESS!!!
+site_description: ⚠️ This repo is under active development! Formats, schemas, and APIs are subject to rapid and backward incompatible changes!
+site_url: https://pgwatch.com/docs
+copyright: Made by and for PostgreSQL lovers! 🐘❤️
+repo_name: pgwatch3 by Cybertec
+repo_url: https://github.com/cybertec-postgresql/pgwatch3
+theme:
+  name: material
+  language: en
+  include_search_page: false
+  search_index_only: true
+  palette:
+    - media: "(prefers-color-scheme: light)" # Light mode
+      scheme: default
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)" # Dark mode
+      scheme: slate
+      primary: light blue
+      accent: indigo
+      toggle:
+        icon: material/lightbulb
+        name: Switch to light mode    
+  features:
+    - announce.dismiss
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.action.edit
+    - navigation.footer
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - content.tabs.link
+
+plugins:
+  - search
+  - tags  
+  - glightbox
+  # - minify:
+  #     minify_html: true
+  # - include-markdown
+  # - redirects:
+  #     redirect_maps:
+  #       discord.md: https://discord.gg/rYWM4AZvy7
+  #       github.md: https://github.com/goreleaser
+  #       linkedin.md: https://www.linkedin.com/company/goreleaser/
+  #       mastodon.md: https://fosstodon.org/@goreleaser
+  #       twitter.md: https://twitter.com/goreleaser
+  #       d.md: https://discord.gg/RGEBtg8vQ6
+  #       g.md: https://github.com/goreleaser
+  #       l.md: https://www.linkedin.com/company/goreleaser/
+  #       m.md: https://fosstodon.org/@goreleaser
+  #       t.md: https://twitter.com/goreleaser
+  #       "customization/build.md": customization/builds.md        
+
+nav:
+  - Intro: 
+    - Hello World!: README.md
+    - Project Background: project_background.md
+    - Features: features.md
+  - Concepts:
+    - Components: components.md
+    - Installation Options: installation_options.md
+    - Long Term Installations: long_term_installations.md
+    - Web UI: web_ui.md
+  - Tutorials:
+    - Docker Installation: docker_installation.md
+    - Custom Installation: custom_installation.md
+    - Preparing Databases: preparing_databases.md
+    - Upgrading: upgrading.md
+  - How-To Guides:
+    - Dashboarding and Alerting: dashboarding_alerting.md
+    - Using Managed Services: using_managed_services.md
+    - Sizing Recommendations: sizing_recommendations.md
+  - Reference:
+    - Advanced Features: advanced_features.md
+    - Metric Definitions: metric_definitions.md
+    - Technical Details: technical_details.md
+    - Security: security.md
+    - Kubernetes: kubernetes.md
+  - Gallery: gallery.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
