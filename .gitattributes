@@ -1,3 +1,6 @@
 *.sql linguist-language=PLpgSQL
 *.py linguist-vendored
 *.sh linguist-vendored
+*.js linguist-language=TypeScript
+*.ts linguist-language=TypeScript
+*.tsx linguist-language=TypeScript
