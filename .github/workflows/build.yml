@@ -175,4 +175,4 @@ jobs:
     - name: Build Docker Image
       shell: bash
       run: |
-        ./build-docker.sh     
+        docker/build-docker.sh     
