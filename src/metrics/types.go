@@ -48,7 +48,7 @@ func (m Metric) CallsHelperFunctions() bool {
 	return regexSQLHelperFunctionCalled.MatchString(m.InitSQL)
 }
 
-func (m Metric) MasterOnly() bool {
+func (m Metric) PrimaryOnly() bool {
 	return m.NodeStatus == "primary"
 }
 
