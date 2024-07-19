@@ -2,6 +2,8 @@ package metrics
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetSQL(t *testing.T) {
@@ -27,4 +29,12 @@ func TestGetSQL(t *testing.T) {
 			t.Errorf("VersionToInt() = %v, want %v", got, tt)
 		}
 	}
+}
+func TestPrimaryOnly(t *testing.T) {
+	m := Metric{NodeStatus: "primary"}
+	assert.True(t, m.PrimaryOnly())
+	assert.False(t, m.StandbyOnly())
+	m.NodeStatus = "standby"
+	assert.False(t, m.PrimaryOnly())
+	assert.True(t, m.StandbyOnly())
 }
