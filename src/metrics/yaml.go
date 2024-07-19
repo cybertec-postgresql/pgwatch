@@ -24,10 +24,7 @@ type fileMetricReader struct {
 }
 
 func (fmr *fileMetricReader) WriteMetrics(metricDefs *Metrics) error {
-	yamlData, err := yaml.Marshal(metricDefs)
-	if err != nil {
-		return err
-	}
+	yamlData, _ := yaml.Marshal(metricDefs)
 	return os.WriteFile(fmr.path, yamlData, 0644)
 }
 
