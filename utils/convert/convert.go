@@ -229,7 +229,7 @@ new_helper:
 func main() {
 	// Define command-line flags
 	src := flag.String("src", "", "pgwatch v2 metric folder, e.g. `./metrics/sql`")
-	dst := flag.String("dst", "", "pgwatch v2 output metric file, e.g. `metrics.yaml`")
+	dst := flag.String("dst", "", "pgwatch v3 output metric file, e.g. `metrics.yaml`")
 
 	// Parse command-line flags
 	flag.Parse()
