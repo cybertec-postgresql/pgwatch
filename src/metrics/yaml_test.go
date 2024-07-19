@@ -84,7 +84,7 @@ func TestWriteMetricsToFile(t *testing.T) {
 	// Assert that the file contains the expected data
 	assert.Equal(t, metricDefs, *metrics)
 }
-func TestMetrics(t *testing.T) {
+func TestMetricsToFile(t *testing.T) {
 	// Define test data
 	metricDefs := metrics.Metrics{
 		MetricDefs: metrics.MetricDefs{
@@ -157,7 +157,7 @@ func TestMetrics(t *testing.T) {
 	assert.Zero(t, updatedMetrics.MetricDefs["new_metric"])
 }
 
-func TestPresets(t *testing.T) {
+func TestPresetsToFile(t *testing.T) {
 	// Define test data
 	presetDefs := metrics.PresetDefs{
 		"existing_preset": metrics.Preset{
@@ -212,7 +212,7 @@ func TestPresets(t *testing.T) {
 	assert.Zero(t, updatedMetrics.PresetDefs["new_preset"])
 }
 
-func TestErrorHandling(t *testing.T) {
+func TestErrorHandlingToFile(t *testing.T) {
 	fmr, err := metrics.NewYAMLMetricReaderWriter(context.Background(), "/") // empty path is reserved for default metrics
 	assert.NoError(t, err)
 
