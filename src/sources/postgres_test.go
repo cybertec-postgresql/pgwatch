@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/pashagolub/pgxmock/v3"
+	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/cybertec-postgresql/pgwatch3/sources"
