@@ -140,8 +140,8 @@ func (dmrw *dbMetricReaderWriter) DeletePreset(presetName string) error {
 }
 
 func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName string, preset Preset) error {
-	sql := `insert into pgwatch3.preset(name, description, metrics) values ($1, $2, $3)
-	on conflict (name) do update set description = $2, metrics = $3`
+	sql := `INSERT INTO pgwatch3.preset(name, description, metrics) VALUES ($1, $2, $3)
+	ON CONFLICT (name) DO UPDATE SET description = $2, metrics = $3`
 	_, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParam(preset.Metrics))
 	return err
 }

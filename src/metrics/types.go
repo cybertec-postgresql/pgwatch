@@ -1,9 +1,5 @@
 package metrics
 
-import (
-	"regexp"
-)
-
 type (
 	ExtensionInfo struct {
 		ExtName       string `yaml:"ext_name"`
@@ -43,12 +39,7 @@ type (
 	}
 )
 
-var regexSQLHelperFunctionCalled = regexp.MustCompile(`(?si)^\s*(select|with).*\s+get_\w+\(\)[\s,$]+`) // SQL helpers expected to follow get_smth() naming
-func (m Metric) CallsHelperFunctions() bool {
-	return regexSQLHelperFunctionCalled.MatchString(m.InitSQL)
-}
-
-func (m Metric) MasterOnly() bool {
+func (m Metric) PrimaryOnly() bool {
 	return m.NodeStatus == "primary"
 }
 
