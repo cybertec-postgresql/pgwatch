@@ -27,28 +27,10 @@ jobs:
       with:
         go-version: '1.22'
 
-    - name: Test
+    - name: Create NAT driver
       run: |
-        cd src/webui
-        yarn install && yarn build
-        cd ..
-        go build
-        go test -v -p 1 -parallel 1 -failfast ./...
-
-  test-postgresql-macos:
-    if: true # false to skip job during debug
-    name: Test on MacOS
-    runs-on: macos-latest
-    steps:
-
-    - name: Check out code
-      uses: actions/checkout@v4
-
-    - name: Set up Golang
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.22'
-
+        docker network create --driver nat NetworkName
+        
     - name: Test
       run: |
         cd src/webui
