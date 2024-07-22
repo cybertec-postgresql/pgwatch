@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build and lint
+    name: Build and Lint
     runs-on: ubuntu-latest
     steps:
 
@@ -24,13 +24,29 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.22'
+        cache-dependency-path: 'src/go.sum'
 
+    - name: Cache npm packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          src/webui/node_modules
+        key: ${{ runner.os }}-npm-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-npm-        
+ 
     - name: Build
       run: |
         cd src/webui
         yarn install --network-timeout 100000 && yarn build
         cd ..
         go build
+
+    - name: Upload webui as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: webui-build
+        path: src/webui/build
 
     - name: GolangCI-Lint
       uses: golangci/golangci-lint-action@v6
@@ -55,6 +71,13 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.22'
+        cache-dependency-path: 'src/go.sum'
+
+    - name: Download webui artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: webui-build
+        path: src/webui/build        
 
     - name: Create NAT driver
       if: matrix.os == 'windows-latest'
@@ -100,6 +123,7 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.22'
+        cache-dependency-path: 'src/go.sum'
 
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v6
