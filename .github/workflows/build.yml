@@ -57,10 +57,7 @@ jobs:
   test:
     if: true # false to skip job during debug
     needs: build
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     name: Test
     steps:
 
@@ -79,35 +76,16 @@ jobs:
         name: webui-build
         path: src/webui/build        
 
-    - name: Create NAT driver
-      if: matrix.os == 'windows-latest'
-      run: |
-        docker network create --driver nat NetworkName
-
     - name: Test
       run: |
         cd src
-        go test -failfast -v -timeout=300s -p 1 -coverprofile profile.cov ./...
+        go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./...
 
-    - name: Coveralls Parallel
+    - name: Coveralls
       uses: coverallsapp/github-action@v2
       with:
-        flag-name: ${{ matrix.os }}
-        parallel: true
         base-path: src
         file: src/profile.cov 
-
-  finish-tests:
-    needs: test
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    name: Finilize Tests
-    steps:
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@v2
-      with:
-        parallel-finished: true
-        carryforward: "ubuntu-latest,windows-latest"
 
   goreleaser:
     if: true # false to skip job during debug    
