@@ -9,12 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-var pgxMigrator *migrator.Migrator
-
-func (dmrw *dbMetricReaderWriter) initMigrator() (*migrator.Migrator, error) {
-	if pgxMigrator != nil {
-		return pgxMigrator, nil
-	}
+var initMigrator = func(dmrw *dbMetricReaderWriter) (*migrator.Migrator, error) {
 	return migrator.New(
 		migrator.TableName("pgwatch3.migration"),
 		migrator.SetNotice(func(s string) {
@@ -26,7 +21,7 @@ func (dmrw *dbMetricReaderWriter) initMigrator() (*migrator.Migrator, error) {
 
 // MigrateDb upgrades database with all migrations
 func (dmrw *dbMetricReaderWriter) Migrate() error {
-	m, err := dmrw.initMigrator()
+	m, err := initMigrator(dmrw)
 	if err != nil {
 		return fmt.Errorf("cannot initialize migration: %w", err)
 	}
@@ -35,14 +30,14 @@ func (dmrw *dbMetricReaderWriter) Migrate() error {
 
 // NeedsMigration checks if database needs migration
 func (dmrw *dbMetricReaderWriter) NeedsMigration() (bool, error) {
-	m, err := dmrw.initMigrator()
+	m, err := initMigrator(dmrw)
 	if err != nil {
 		return false, err
 	}
 	return m.NeedUpgrade(dmrw.ctx, dmrw.configDb)
 }
 
-// Migrations holds function returning all updgrade migrations needed
+// migrations holds function returning all updgrade migrations needed
 var migrations func() migrator.Option = func() migrator.Option {
 	return migrator.Migrations(
 		&migrator.Migration{
