@@ -87,7 +87,7 @@ jobs:
     - name: Test
       run: |
         cd src
-        go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./...
+        go test -failfast -v -timeout=300s -p 1 -coverprofile profile.cov ./...
 
     - name: Coveralls Parallel
       uses: coverallsapp/github-action@v2
