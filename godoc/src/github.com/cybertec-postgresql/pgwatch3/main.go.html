@@ -1,0 +1,252 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
+
+  <title>src/github.com/cybertec-postgresql/pgwatch3/\/main.go - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/docs/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/docs/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.22.0";</script>
+<script src="/docs/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/docs/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/docs/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Source file
+    <a href="/docs/godoc/src">src</a>/<a href="/docs/godoc/src/github.com">github.com</a>/<a href="/docs/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/docs/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/docs/godoc/src/github.com/cybertec-postgresql/pgwatch3/\">\</a>/<span class="text-muted">main.go</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/docs/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\">github.com/cybertec-postgresql/pgwatch3/\</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<script type="text/javascript">document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1  </span>package main
+<span id="L2" class="ln">     2  </span>
+<span id="L3" class="ln">     3  </span>import (
+<span id="L4" class="ln">     4  </span>	&#34;context&#34;
+<span id="L5" class="ln">     5  </span>	&#34;errors&#34;
+<span id="L6" class="ln">     6  </span>	&#34;fmt&#34;
+<span id="L7" class="ln">     7  </span>	&#34;io/fs&#34;
+<span id="L8" class="ln">     8  </span>	&#34;os&#34;
+<span id="L9" class="ln">     9  </span>	&#34;os/signal&#34;
+<span id="L10" class="ln">    10  </span>	&#34;runtime/debug&#34;
+<span id="L11" class="ln">    11  </span>	&#34;sync/atomic&#34;
+<span id="L12" class="ln">    12  </span>	&#34;syscall&#34;
+<span id="L13" class="ln">    13  </span>
+<span id="L14" class="ln">    14  </span>	&#34;github.com/cybertec-postgresql/pgwatch3/config&#34;
+<span id="L15" class="ln">    15  </span>	&#34;github.com/cybertec-postgresql/pgwatch3/db&#34;
+<span id="L16" class="ln">    16  </span>	&#34;github.com/cybertec-postgresql/pgwatch3/log&#34;
+<span id="L17" class="ln">    17  </span>	&#34;github.com/cybertec-postgresql/pgwatch3/metrics&#34;
+<span id="L18" class="ln">    18  </span>	&#34;github.com/cybertec-postgresql/pgwatch3/reaper&#34;
+<span id="L19" class="ln">    19  </span>	&#34;github.com/cybertec-postgresql/pgwatch3/sources&#34;
+<span id="L20" class="ln">    20  </span>	&#34;github.com/cybertec-postgresql/pgwatch3/webserver&#34;
+<span id="L21" class="ln">    21  </span>)
+<span id="L22" class="ln">    22  </span>
+<span id="L23" class="ln">    23  </span><span class="comment">// version output variables</span>
+<span id="L24" class="ln">    24  </span>var (
+<span id="L25" class="ln">    25  </span>	commit  = &#34;unknown&#34;
+<span id="L26" class="ln">    26  </span>	version = &#34;unknown&#34;
+<span id="L27" class="ln">    27  </span>	date    = &#34;unknown&#34;
+<span id="L28" class="ln">    28  </span>	dbapi   = &#34;00179&#34;
+<span id="L29" class="ln">    29  </span>)
+<span id="L30" class="ln">    30  </span>
+<span id="L31" class="ln">    31  </span>func printVersion() {
+<span id="L32" class="ln">    32  </span>	fmt.Printf(`pgwatch3:
+<span id="L33" class="ln">    33  </span>  Version:      %s
+<span id="L34" class="ln">    34  </span>  DB Schema:    %s
+<span id="L35" class="ln">    35  </span>  Git Commit:   %s
+<span id="L36" class="ln">    36  </span>  Built:        %s
+<span id="L37" class="ln">    37  </span>`, version, dbapi, commit, date)
+<span id="L38" class="ln">    38  </span>}
+<span id="L39" class="ln">    39  </span>
+<span id="L40" class="ln">    40  </span><span class="comment">// SetupCloseHandler creates a &#39;listener&#39; on a new goroutine which will notify the</span>
+<span id="L41" class="ln">    41  </span><span class="comment">// program if it receives an interrupt from the OS. We then handle this by calling</span>
+<span id="L42" class="ln">    42  </span><span class="comment">// our clean up procedure and exiting the program.</span>
+<span id="L43" class="ln">    43  </span>func SetupCloseHandler(cancel context.CancelFunc) {
+<span id="L44" class="ln">    44  </span>	c := make(chan os.Signal, 2)
+<span id="L45" class="ln">    45  </span>	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+<span id="L46" class="ln">    46  </span>	go func() {
+<span id="L47" class="ln">    47  </span>		&lt;-c
+<span id="L48" class="ln">    48  </span>		logger.Debug(&#34;SetupCloseHandler received an interrupt from OS. Closing session...&#34;)
+<span id="L49" class="ln">    49  </span>		cancel()
+<span id="L50" class="ln">    50  </span>		exitCode.Store(ExitCodeUserCancel)
+<span id="L51" class="ln">    51  </span>	}()
+<span id="L52" class="ln">    52  </span>}
+<span id="L53" class="ln">    53  </span>
+<span id="L54" class="ln">    54  </span>const (
+<span id="L55" class="ln">    55  </span>	ExitCodeOK int32 = iota
+<span id="L56" class="ln">    56  </span>	ExitCodeConfigError
+<span id="L57" class="ln">    57  </span>	ExitCodeInitError
+<span id="L58" class="ln">    58  </span>	ExitCodeWebUIError
+<span id="L59" class="ln">    59  </span>	ExitCodeUpgradeError
+<span id="L60" class="ln">    60  </span>	ExitCodeUserCancel
+<span id="L61" class="ln">    61  </span>	ExitCodeShutdownCommand
+<span id="L62" class="ln">    62  </span>	ExitCodeFatalError
+<span id="L63" class="ln">    63  </span>)
+<span id="L64" class="ln">    64  </span>
+<span id="L65" class="ln">    65  </span>var (
+<span id="L66" class="ln">    66  </span>	exitCode    atomic.Int32          <span class="comment">// Exit code to be returned to the OS</span>
+<span id="L67" class="ln">    67  </span>	mainContext context.Context       <span class="comment">// Main context for the application</span>
+<span id="L68" class="ln">    68  </span>	logger      log.LoggerHookerIface <span class="comment">// Logger for the application</span>
+<span id="L69" class="ln">    69  </span>	opts        *config.Options       <span class="comment">// Command line options for the application</span>
+<span id="L70" class="ln">    70  </span>)
+<span id="L71" class="ln">    71  </span>
+<span id="L72" class="ln">    72  </span><span class="comment">// NewConfigurationReaders creates the configuration readers based on the configuration kind from the options.</span>
+<span id="L73" class="ln">    73  </span>func NewConfigurationReaders(opts *config.Options) (sourcesReader sources.ReaderWriter, metricsReader metrics.ReaderWriter, err error) {
+<span id="L74" class="ln">    74  </span>	var configKind config.Kind
+<span id="L75" class="ln">    75  </span>	configKind, err = opts.GetConfigKind()
+<span id="L76" class="ln">    76  </span>	switch {
+<span id="L77" class="ln">    77  </span>	case err != nil:
+<span id="L78" class="ln">    78  </span>		return
+<span id="L79" class="ln">    79  </span>	case configKind != config.ConfigPgURL:
+<span id="L80" class="ln">    80  </span>		ctx := log.WithLogger(mainContext, logger.WithField(&#34;config&#34;, &#34;files&#34;))
+<span id="L81" class="ln">    81  </span>		if sourcesReader, err = sources.NewYAMLSourcesReaderWriter(ctx, opts.Sources.Config); err != nil {
+<span id="L82" class="ln">    82  </span>			return
+<span id="L83" class="ln">    83  </span>		}
+<span id="L84" class="ln">    84  </span>		metricsReader, err = metrics.NewYAMLMetricReaderWriter(ctx, opts.Metrics.Metrics)
+<span id="L85" class="ln">    85  </span>	default:
+<span id="L86" class="ln">    86  </span>		var configDb db.PgxPoolIface
+<span id="L87" class="ln">    87  </span>		ctx := log.WithLogger(mainContext, logger.WithField(&#34;config&#34;, &#34;postgres&#34;))
+<span id="L88" class="ln">    88  </span>		if configDb, err = db.New(ctx, opts.Sources.Config); err != nil {
+<span id="L89" class="ln">    89  </span>			return
+<span id="L90" class="ln">    90  </span>		}
+<span id="L91" class="ln">    91  </span>		if metricsReader, err = metrics.NewPostgresMetricReaderWriter(ctx, configDb); err != nil {
+<span id="L92" class="ln">    92  </span>			return
+<span id="L93" class="ln">    93  </span>		}
+<span id="L94" class="ln">    94  </span>		sourcesReader, err = sources.NewPostgresSourcesReaderWriter(ctx, configDb)
+<span id="L95" class="ln">    95  </span>	}
+<span id="L96" class="ln">    96  </span>	return
+<span id="L97" class="ln">    97  </span>}
+<span id="L98" class="ln">    98  </span>
+<span id="L99" class="ln">    99  </span><span class="comment">// UpgradeConfiguration upgrades the configuration if needed.</span>
+<span id="L100" class="ln">   100  </span>func UpgradeConfiguration(m metrics.Migrator) (err error) {
+<span id="L101" class="ln">   101  </span>	if opts.Upgrade {
+<span id="L102" class="ln">   102  </span>		err = m.Migrate()
+<span id="L103" class="ln">   103  </span>	} else {
+<span id="L104" class="ln">   104  </span>		var upgrade bool
+<span id="L105" class="ln">   105  </span>		upgrade, err = m.NeedsMigration()
+<span id="L106" class="ln">   106  </span>		if upgrade {
+<span id="L107" class="ln">   107  </span>			err = errors.Join(err, errors.New(&#34;configuration needs upgrade, use --upgrade option&#34;))
+<span id="L108" class="ln">   108  </span>		}
+<span id="L109" class="ln">   109  </span>	}
+<span id="L110" class="ln">   110  </span>	return
+<span id="L111" class="ln">   111  </span>}
+<span id="L112" class="ln">   112  </span>
+<span id="L113" class="ln">   113  </span>func main() {
+<span id="L114" class="ln">   114  </span>	var (
+<span id="L115" class="ln">   115  </span>		err    error
+<span id="L116" class="ln">   116  </span>		cancel context.CancelFunc
+<span id="L117" class="ln">   117  </span>	)
+<span id="L118" class="ln">   118  </span>	exitCode.Store(ExitCodeOK)
+<span id="L119" class="ln">   119  </span>	defer func() {
+<span id="L120" class="ln">   120  </span>		if err := recover(); err != nil {
+<span id="L121" class="ln">   121  </span>			exitCode.Store(ExitCodeFatalError)
+<span id="L122" class="ln">   122  </span>			log.GetLogger(mainContext).WithField(&#34;callstack&#34;, string(debug.Stack())).Error(err)
+<span id="L123" class="ln">   123  </span>		}
+<span id="L124" class="ln">   124  </span>		os.Exit(int(exitCode.Load()))
+<span id="L125" class="ln">   125  </span>	}()
+<span id="L126" class="ln">   126  </span>
+<span id="L127" class="ln">   127  </span>	mainContext, cancel = context.WithCancel(context.Background())
+<span id="L128" class="ln">   128  </span>	SetupCloseHandler(cancel)
+<span id="L129" class="ln">   129  </span>	defer cancel()
+<span id="L130" class="ln">   130  </span>
+<span id="L131" class="ln">   131  </span>	if opts, err = config.New(os.Stdout); err != nil {
+<span id="L132" class="ln">   132  </span>		printVersion()
+<span id="L133" class="ln">   133  </span>		fmt.Println(err)
+<span id="L134" class="ln">   134  </span>		if !opts.Help {
+<span id="L135" class="ln">   135  </span>			exitCode.Store(ExitCodeConfigError)
+<span id="L136" class="ln">   136  </span>		}
+<span id="L137" class="ln">   137  </span>		return
+<span id="L138" class="ln">   138  </span>	}
+<span id="L139" class="ln">   139  </span>	logger = log.Init(opts.Logging)
+<span id="L140" class="ln">   140  </span>	mainContext = log.WithLogger(mainContext, logger)
+<span id="L141" class="ln">   141  </span>
+<span id="L142" class="ln">   142  </span>	logger.Debugf(&#34;opts: %+v&#34;, opts)
+<span id="L143" class="ln">   143  </span>
+<span id="L144" class="ln">   144  </span>	<span class="comment">// sourcesReaderWriter reads/writes the monitored sources (databases, patroni clusters, pgpools, etc.) information</span>
+<span id="L145" class="ln">   145  </span>	<span class="comment">// metricsReaderWriter reads/writes the metric and preset definitions</span>
+<span id="L146" class="ln">   146  </span>	sourcesReaderWriter, metricsReaderWriter, err := NewConfigurationReaders(opts)
+<span id="L147" class="ln">   147  </span>	if err != nil {
+<span id="L148" class="ln">   148  </span>		exitCode.Store(ExitCodeInitError)
+<span id="L149" class="ln">   149  </span>		logger.Error(err)
+<span id="L150" class="ln">   150  </span>		return
+<span id="L151" class="ln">   151  </span>	}
+<span id="L152" class="ln">   152  </span>
+<span id="L153" class="ln">   153  </span>	<span class="comment">//check if we want to upgrade the configuration, which can be one of the following:</span>
+<span id="L154" class="ln">   154  </span>	<span class="comment">// - PostgreSQL database schema</span>
+<span id="L155" class="ln">   155  </span>	<span class="comment">// - YAML file schema</span>
+<span id="L156" class="ln">   156  </span>	if m, ok := metricsReaderWriter.(metrics.Migrator); ok {
+<span id="L157" class="ln">   157  </span>		if err = UpgradeConfiguration(m); err != nil {
+<span id="L158" class="ln">   158  </span>			exitCode.Store(ExitCodeUpgradeError)
+<span id="L159" class="ln">   159  </span>			logger.Error(err)
+<span id="L160" class="ln">   160  </span>			return
+<span id="L161" class="ln">   161  </span>		}
+<span id="L162" class="ln">   162  </span>	}
+<span id="L163" class="ln">   163  </span>
+<span id="L164" class="ln">   164  </span>	if opts.Init {
+<span id="L165" class="ln">   165  </span>		<span class="comment">// At this point we have initialised the sources, metrics and presets configurations.</span>
+<span id="L166" class="ln">   166  </span>		<span class="comment">// Any fatal errors are handled by the configuration readers. So we may exit gracefully.</span>
+<span id="L167" class="ln">   167  </span>		return
+<span id="L168" class="ln">   168  </span>	}
+<span id="L169" class="ln">   169  </span>
+<span id="L170" class="ln">   170  </span>	if !opts.Ping {
+<span id="L171" class="ln">   171  </span>		uifs, _ := fs.Sub(webuifs, &#34;webui/build&#34;)
+<span id="L172" class="ln">   172  </span>		ui := webserver.Init(opts.WebUI, uifs, metricsReaderWriter, sourcesReaderWriter, logger)
+<span id="L173" class="ln">   173  </span>		if ui == nil {
+<span id="L174" class="ln">   174  </span>			os.Exit(int(ExitCodeWebUIError))
+<span id="L175" class="ln">   175  </span>		}
+<span id="L176" class="ln">   176  </span>	}
+<span id="L177" class="ln">   177  </span>
+<span id="L178" class="ln">   178  </span>	reaper := reaper.NewReaper(opts, sourcesReaderWriter, metricsReaderWriter)
+<span id="L179" class="ln">   179  </span>	if err = reaper.Reap(mainContext); err != nil {
+<span id="L180" class="ln">   180  </span>		logger.Error(err)
+<span id="L181" class="ln">   181  </span>		exitCode.Store(ExitCodeFatalError)
+<span id="L182" class="ln">   182  </span>	}
+<span id="L183" class="ln">   183  </span>}
+<span id="L184" class="ln">   184  </span>
+</pre><p></p>
+
+<div id="footer">
+Build version go1.22.0.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+
+</body></html>

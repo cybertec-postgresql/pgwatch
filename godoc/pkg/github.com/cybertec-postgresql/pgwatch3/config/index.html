@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+
+  <title>config - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/docs/godoc/lib/godoc/style.css">
+
+<script>window.initFuncs = [];</script>
+<script src="/docs/godoc/lib/godoc/jquery.js" defer></script>
+
+
+
+
+<script>var goVersion = "go1.22.0";</script>
+<script src="/docs/godoc/lib/godoc/godocs.js" defer></script>
+
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/docs/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/docs/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Package config
+    <span class="text-muted"></span>
+  </h1>
+
+
+
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+
+	<script>
+	document.ANALYSIS_DATA = null;
+	document.CALLGRAPH = null;
+	</script>
+
+	
+		
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "github.com/cybertec-postgresql/pgwatch3/config"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="#pkg-index" class="indexLink">Index</a></dd>
+			
+			
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="pkg-overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+				
+				
+			</div>
+		</div>
+
+		<div id="pkg-index" class="toggleVisible">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
+		</div>
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
+
+		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
+			<div id="manual-nav">
+			<dl>
+			
+			
+			
+			
+				
+				<dd><a href="#Kind">type Kind</a></dd>
+				
+				
+			
+				
+				<dd><a href="#LoggingOpts">type LoggingOpts</a></dd>
+				
+				
+			
+				
+				<dd><a href="#MeasurementOpts">type MeasurementOpts</a></dd>
+				
+				
+			
+				
+				<dd><a href="#MetricOpts">type MetricOpts</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Options">type Options</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#New">func New(writer io.Writer) (*Options, error)</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Options.GetConfigKind">func (c Options) GetConfigKind() (_ Kind, err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Options.Verbose">func (c Options) Verbose() bool</a></dd>
+				
+			
+				
+				<dd><a href="#SourceOpts">type SourceOpts</a></dd>
+				
+				
+			
+				
+				<dd><a href="#WebUIOpts">type WebUIOpts</a></dd>
+				
+				
+			
+			
+			</dl>
+			</div><!-- #manual-nav -->
+
+		
+
+		
+			<h3>Package files</h3>
+			<p>
+			<span style="font-size:90%">
+			
+				<a href="/docs/godoc/src/github.com/cybertec-postgresql/pgwatch3/config/cmdoptions.go.html">cmdoptions.go</a>
+			
+			</span>
+			</p>
+		
+		</div><!-- .expanded -->
+		</div><!-- #pkg-index -->
+
+		
+
+		
+		
+		
+		
+			
+			
+			<h2 id="Kind">type <a href="/docs/godoc/src/github.com/cybertec-postgresql/pgwatch3/config/cmdoptions.go.html#L13">Kind</a>
+				<a class="permalink" href="#Kind">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Kind <a href="https://pkg.go.dev/builtin/#int">int</a></pre>
+
+			
+				
+				<pre>const (
+    <span id="ConfigPgURL">ConfigPgURL</span> <a href="#Kind">Kind</a> = <a href="https://pkg.go.dev/builtin/#iota">iota</a>
+    <span id="ConfigFile">ConfigFile</span>
+    <span id="ConfigFolder">ConfigFolder</span>
+    <span id="ConfigError">ConfigError</span>
+)</pre>
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="LoggingOpts">type <a href="/docs/godoc/src/github.com/cybertec-postgresql/pgwatch3/config/cmdoptions.go.html#L51">LoggingOpts</a>
+				<a class="permalink" href="#LoggingOpts">&#xb6;</a>
+				
+				
+			</h2>
+			<p>LoggingOpts specifies the logging configuration
+
+			<pre>type LoggingOpts struct {
+<span id="LoggingOpts.LogLevel"></span>    LogLevel      <a href="https://pkg.go.dev/builtin/#string">string</a> `short:&#34;v&#34; long:&#34;log-level&#34; mapstructure:&#34;log-level&#34; description:&#34;Verbosity level for stdout and log file&#34; choice:&#34;debug&#34; choice:&#34;info&#34; choice:&#34;error&#34; default:&#34;info&#34;`
+<span id="LoggingOpts.LogFile"></span>    LogFile       <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;log-file&#34; mapstructure:&#34;log-file&#34; description:&#34;File name to store logs&#34;`
+<span id="LoggingOpts.LogFileFormat"></span>    LogFileFormat <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;log-file-format&#34; mapstructure:&#34;log-file-format&#34; description:&#34;Format of file logs&#34; choice:&#34;json&#34; choice:&#34;text&#34; default:&#34;json&#34;`
+<span id="LoggingOpts.LogFileRotate"></span>    LogFileRotate <a href="https://pkg.go.dev/builtin/#bool">bool</a>   `long:&#34;log-file-rotate&#34; mapstructure:&#34;log-file-rotate&#34; description:&#34;Rotate log files&#34;`
+<span id="LoggingOpts.LogFileSize"></span>    LogFileSize   <a href="https://pkg.go.dev/builtin/#int">int</a>    `long:&#34;log-file-size&#34; mapstructure:&#34;log-file-size&#34; description:&#34;Maximum size in MB of the log file before it gets rotated&#34; default:&#34;100&#34;`
+<span id="LoggingOpts.LogFileAge"></span>    LogFileAge    <a href="https://pkg.go.dev/builtin/#int">int</a>    `long:&#34;log-file-age&#34; mapstructure:&#34;log-file-age&#34; description:&#34;Number of days to retain old log files, 0 means forever&#34; default:&#34;0&#34;`
+<span id="LoggingOpts.LogFileNumber"></span>    LogFileNumber <a href="https://pkg.go.dev/builtin/#int">int</a>    `long:&#34;log-file-number&#34; mapstructure:&#34;log-file-number&#34; description:&#34;Maximum number of old log files to retain, 0 to retain all&#34; default:&#34;0&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="MeasurementOpts">type <a href="/docs/godoc/src/github.com/cybertec-postgresql/pgwatch3/config/cmdoptions.go.html#L42">MeasurementOpts</a>
+				<a class="permalink" href="#MeasurementOpts">&#xb6;</a>
+				
+				
+			</h2>
+			<p>MeasurementOpts specifies the storage configuration to store metrics measurements
+
+			<pre>type MeasurementOpts struct {
+<span id="MeasurementOpts.Sinks"></span>    Sinks                 []<a href="https://pkg.go.dev/builtin/#string">string</a>      `long:&#34;sink&#34; mapstructure:&#34;sink&#34; description:&#34;URI where metrics will be stored&#34; env:&#34;PW3_SINK&#34;`
+<span id="MeasurementOpts.BatchingDelay"></span>    BatchingDelay         <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a> `long:&#34;batching-delay&#34; mapstructure:&#34;batching-delay&#34; description:&#34;Max milliseconds to wait for a batched metrics flush. [Default: 250ms]&#34; default:&#34;250ms&#34; env:&#34;PW3_BATCHING_MAX_DELAY&#34;`
+<span id="MeasurementOpts.Retention"></span>    Retention             <a href="https://pkg.go.dev/builtin/#int">int</a>           `long:&#34;retention&#34; mapstructure:&#34;retention&#34; description:&#34;If set, metrics older than that will be deleted&#34; default:&#34;14&#34; env:&#34;PW3_RETENTION&#34;`
+<span id="MeasurementOpts.RealDbnameField"></span>    RealDbnameField       <a href="https://pkg.go.dev/builtin/#string">string</a>        `long:&#34;real-dbname-field&#34; mapstructure:&#34;real-dbname-field&#34; description:&#34;Tag key for real DB name if --add-real-dbname enabled&#34; env:&#34;PW3_REAL_DBNAME_FIELD&#34; default:&#34;real_dbname&#34;`
+<span id="MeasurementOpts.SystemIdentifierField"></span>    SystemIdentifierField <a href="https://pkg.go.dev/builtin/#string">string</a>        `long:&#34;system-identifier-field&#34; mapstructure:&#34;system-identifier-field&#34; description:&#34;Tag key for system identifier value if --add-system-identifier&#34; env:&#34;PW3_SYSTEM_IDENTIFIER_FIELD&#34; default:&#34;sys_id&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="MetricOpts">type <a href="/docs/godoc/src/github.com/cybertec-postgresql/pgwatch3/config/cmdoptions.go.html#L33">MetricOpts</a>
+				<a class="permalink" href="#MetricOpts">&#xb6;</a>
+				
+				
+			</h2>
+			<p>MetricOpts specifies metric definitions
+
+			<pre>type MetricOpts struct {
+<span id="MetricOpts.Metrics"></span>    Metrics                      <a href="https://pkg.go.dev/builtin/#string">string</a> `short:&#34;m&#34; long:&#34;metrics&#34; mapstructure:&#34;metrics&#34; description:&#34;File or folder of YAML files with metrics definitions&#34; env:&#34;PW3_METRICS&#34;`
+<span id="MetricOpts.NoHelperFunctions"></span>    NoHelperFunctions            <a href="https://pkg.go.dev/builtin/#bool">bool</a>   `long:&#34;no-helper-functions&#34; mapstructure:&#34;no-helper-functions&#34; description:&#34;Ignore metric definitions using helper functions (in form get_smth()) and don&#39;t also roll out any helpers automatically&#34; env:&#34;PW3_NO_HELPER_FUNCTIONS&#34;`
+<span id="MetricOpts.DirectOSStats"></span>    DirectOSStats                <a href="https://pkg.go.dev/builtin/#bool">bool</a>   `long:&#34;direct-os-stats&#34; mapstructure:&#34;direct-os-stats&#34; description:&#34;Extract OS related psutil statistics not via PL/Python wrappers but directly on host&#34; env:&#34;PW3_DIRECT_OS_STATS&#34;`
+<span id="MetricOpts.InstanceLevelCacheMaxSeconds"></span>    InstanceLevelCacheMaxSeconds <a href="https://pkg.go.dev/builtin/#int64">int64</a>  `long:&#34;instance-level-cache-max-seconds&#34; mapstructure:&#34;instance-level-cache-max-seconds&#34; description:&#34;Max allowed staleness for instance level metric data shared between DBs of an instance. Affects &#39;continuous&#39; host types only. Set to 0 to disable&#34; env:&#34;PW3_INSTANCE_LEVEL_CACHE_MAX_SECONDS&#34; default:&#34;30&#34;`
+<span id="MetricOpts.EmergencyPauseTriggerfile"></span>    EmergencyPauseTriggerfile    <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;emergency-pause-triggerfile&#34; mapstructure:&#34;emergency-pause-triggerfile&#34; description:&#34;When the file exists no metrics will be temporarily fetched / scraped&#34; env:&#34;PW3_EMERGENCY_PAUSE_TRIGGERFILE&#34; default:&#34;/tmp/pgwatch3-emergency-pause&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Options">type <a href="/docs/godoc/src/github.com/cybertec-postgresql/pgwatch3/config/cmdoptions.go.html#L68">Options</a>
+				<a class="permalink" href="#Options">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Options struct {
+<span id="Options.Sources"></span>    Sources      <a href="#SourceOpts">SourceOpts</a>      `group:&#34;Sources&#34;`
+<span id="Options.Metrics"></span>    Metrics      <a href="#MetricOpts">MetricOpts</a>      `group:&#34;Metrics&#34;`
+<span id="Options.Measurements"></span>    Measurements <a href="#MeasurementOpts">MeasurementOpts</a> `group:&#34;Measurements&#34;`
+<span id="Options.Logging"></span>    Logging      <a href="#LoggingOpts">LoggingOpts</a>     `group:&#34;Logging&#34;`
+<span id="Options.WebUI"></span>    WebUI        <a href="#WebUIOpts">WebUIOpts</a>       `group:&#34;WebUI&#34;`
+<span id="Options.Init"></span>    Init         <a href="https://pkg.go.dev/builtin/#bool">bool</a>            `long:&#34;init&#34; description:&#34;Initialize configurations schemas to the latest version and exit. Can be used with --upgrade&#34;`
+<span id="Options.Upgrade"></span>    Upgrade      <a href="https://pkg.go.dev/builtin/#bool">bool</a>            `long:&#34;upgrade&#34; description:&#34;Upgrade configurations to the latest version&#34;`
+<span id="Options.Ping"></span>    Ping         <a href="https://pkg.go.dev/builtin/#bool">bool</a>            `long:&#34;ping&#34; mapstructure:&#34;ping&#34; description:&#34;Try to connect to all configured DB-s, report errors and then exit&#34; env:&#34;PW3_PING&#34;`
+<span id="Options.Help"></span>    Help         <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="New">func <a href="/docs/godoc/src/github.com/cybertec-postgresql/pgwatch3/config/cmdoptions.go.html#L81">New</a>
+					<a class="permalink" href="#New">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func New(writer <a href="https://pkg.go.dev/io/">io</a>.<a href="https://pkg.go.dev/io/#Writer">Writer</a>) (*<a href="#Options">Options</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>New returns a new instance of CmdOptions
+
+				
+				
+			
+
+			
+				
+				<h3 id="Options.GetConfigKind">func (Options) <a href="/docs/godoc/src/github.com/cybertec-postgresql/pgwatch3/config/cmdoptions.go.html#L104">GetConfigKind</a>
+					<a class="permalink" href="#Options.GetConfigKind">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (c <a href="#Options">Options</a>) GetConfigKind() (_ <a href="#Kind">Kind</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Options.Verbose">func (Options) <a href="/docs/godoc/src/github.com/cybertec-postgresql/pgwatch3/config/cmdoptions.go.html#L100">Verbose</a>
+					<a class="permalink" href="#Options.Verbose">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (c <a href="#Options">Options</a>) Verbose() <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+				<p>Verbose returns true if the debug log is enabled
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="SourceOpts">type <a href="/docs/godoc/src/github.com/cybertec-postgresql/pgwatch3/config/cmdoptions.go.html#L23">SourceOpts</a>
+				<a class="permalink" href="#SourceOpts">&#xb6;</a>
+				
+				
+			</h2>
+			<p>SourceOpts specifies the sources retrieval options
+
+			<pre>type SourceOpts struct {
+<span id="SourceOpts.Config"></span>    Config                       <a href="https://pkg.go.dev/builtin/#string">string</a>   `short:&#34;c&#34; long:&#34;config&#34; mapstructure:&#34;config&#34; description:&#34;Postgres URI, file or folder of YAML files containing info on which DBs to monitor and where to store metrics&#34; env:&#34;PW3_CONFIG&#34;`
+<span id="SourceOpts.Refresh"></span>    Refresh                      <a href="https://pkg.go.dev/builtin/#int">int</a>      `long:&#34;refresh&#34; mapstructure:&#34;refresh&#34; description:&#34;How frequently to resync sources and metrics&#34; env:&#34;PW3_REFRESH&#34; default:&#34;120&#34;`
+<span id="SourceOpts.Groups"></span>    Groups                       []<a href="https://pkg.go.dev/builtin/#string">string</a> `short:&#34;g&#34; long:&#34;group&#34; mapstructure:&#34;group&#34; description:&#34;Groups for filtering which databases to monitor. By default all are monitored&#34; env:&#34;PW3_GROUP&#34;`
+<span id="SourceOpts.MinDbSizeMB"></span>    MinDbSizeMB                  <a href="https://pkg.go.dev/builtin/#int64">int64</a>    `long:&#34;min-db-size-mb&#34; mapstructure:&#34;min-db-size-mb&#34; description:&#34;Smaller size DBs will be ignored and not monitored until they reach the threshold.&#34; env:&#34;PW3_MIN_DB_SIZE_MB&#34; default:&#34;0&#34;`
+<span id="SourceOpts.MaxParallelConnectionsPerDb"></span>    MaxParallelConnectionsPerDb  <a href="https://pkg.go.dev/builtin/#int">int</a>      `long:&#34;max-parallel-connections-per-db&#34; mapstructure:&#34;max-parallel-connections-per-db&#34; description:&#34;Max parallel metric fetches per DB. Note the multiplication effect on multi-DB instances&#34; env:&#34;PW3_MAX_PARALLEL_CONNECTIONS_PER_DB&#34; default:&#34;2&#34;`
+<span id="SourceOpts.TryCreateListedExtsIfMissing"></span>    TryCreateListedExtsIfMissing <a href="https://pkg.go.dev/builtin/#string">string</a>   `long:&#34;try-create-listed-exts-if-missing&#34; mapstructure:&#34;try-create-listed-exts-if-missing&#34; description:&#34;Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements&#34; env:&#34;PW3_TRY_CREATE_LISTED_EXTS_IF_MISSING&#34; default:&#34;&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="WebUIOpts">type <a href="/docs/godoc/src/github.com/cybertec-postgresql/pgwatch3/config/cmdoptions.go.html#L62">WebUIOpts</a>
+				<a class="permalink" href="#WebUIOpts">&#xb6;</a>
+				
+				
+			</h2>
+			<p>WebUIOpts specifies the internal web UI server options
+
+			<pre>type WebUIOpts struct {
+<span id="WebUIOpts.WebAddr"></span>    WebAddr     <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-addr&#34; mapstructure:&#34;web-addr&#34; description:&#34;TCP address in the form &#39;host:port&#39; to listen on&#34; default:&#34;:8080&#34; env:&#34;PW3_WEBADDR&#34;`
+<span id="WebUIOpts.WebUser"></span>    WebUser     <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-user&#34; mapstructure:&#34;web-user&#34; description:&#34;Admin login&#34; env:&#34;PW3_WEBUSER&#34;`
+<span id="WebUIOpts.WebPassword"></span>    WebPassword <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-password&#34; mapstructure:&#34;web-password&#34; description:&#34;Admin password&#34; env:&#34;PW3_WEBPASSWORD&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+	
+
+	
+
+
+
+
+
+
+
+<div id="footer">
+Build version go1.22.0.<br>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+</body>
+</html>
