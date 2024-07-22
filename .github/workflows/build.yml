@@ -27,7 +27,7 @@ jobs:
         cache-dependency-path: 'src/go.sum'
 
     - name: Cache npm packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           src/webui/node_modules
