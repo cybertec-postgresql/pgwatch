@@ -71,7 +71,7 @@ jobs:
         cache-dependency-path: 'src/go.sum'
 
     - name: Download webui artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: webui-build
         path: src/webui/build        
