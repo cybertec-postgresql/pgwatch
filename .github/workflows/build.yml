@@ -75,11 +75,12 @@ jobs:
         flag-name: ${{ matrix.os }}
         parallel: true
         base-path: src
-        file: profile.cov 
+        file: src/profile.cov 
 
   finish-tests:
     needs: test
     runs-on: ubuntu-latest
+    name: Finilize Tests
     steps:
     - name: Coveralls Finished
       uses: coverallsapp/github-action@v2
@@ -91,7 +92,17 @@ jobs:
     if: true # false to skip job during debug    
     needs: build
     runs-on: ubuntu-latest
+    name: GoReleaser
     steps:
+
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Golang
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v6
       with:
@@ -101,7 +112,7 @@ jobs:
   test-docker-images:
     if: true # false to skip job during debug
     needs: build
-    name: Test Docker Image on Ubuntu
+    name: Build Docker Image
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
