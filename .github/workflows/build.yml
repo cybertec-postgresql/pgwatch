@@ -75,6 +75,7 @@ jobs:
 
   finish-tests:
     needs: test
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     name: Finilize Tests
     steps:
