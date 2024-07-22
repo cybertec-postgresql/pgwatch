@@ -43,7 +43,7 @@ jobs:
         go build
 
     - name: Upload webui as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: webui-build
         path: src/webui/build
