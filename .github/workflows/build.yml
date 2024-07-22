@@ -12,11 +12,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build:
+    name: Build and lint
+    runs-on: ubuntu-latest
+    steps:
 
-  test-postgresql-windows:
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Golang
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    - name: Build
+      run: |
+        cd src/webui
+        yarn install --network-timeout 100000 && yarn build
+        cd ..
+        go build
+
+    - name: GolangCI-Lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
+        working-directory: src
+  
+  test:
     if: true # false to skip job during debug
-    name: Test on Windows
-    runs-on: windows-latest
+    needs: build
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    name: Test
     steps:
 
     - name: Check out code
@@ -28,57 +57,41 @@ jobs:
         go-version: '1.22'
 
     - name: Create NAT driver
+      if: matrix.os == 'windows-latest'
       run: |
         docker network create --driver nat NetworkName
-        
-    - name: Test
-      run: |
-        cd src/webui
-        yarn install && yarn build
-        cd ..
-        go build
-        go test -v -p 1 -parallel 1 -failfast ./...
-
-  test-postgresql-ubuntu:
-    if: true # false to skip job during debug
-    name: Test and Build on Ubuntu
-    runs-on: ubuntu-latest
-    steps:
-
-    - name: Check out code
-      uses: actions/checkout@v4
-
-    - name: Set up Golang
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.22'
-
-    - name: Get dependencies
-      run: |
-        cd src
-        go mod download
-        go version
 
     - name: Test
       run: |
         cd src/webui
-        yarn install && yarn build
+        yarn install --network-timeout 100000 && yarn build
         cd ..
         go build
         go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./...
 
-    - name: Coveralls
-      uses: shogo82148/actions-goveralls@v1
+    - name: Coveralls Parallel
+      uses: coverallsapp/github-action@v2
       with:
-        working-directory: src
-        path-to-profile: profile.cov 
+        flag-name: ${{ matrix.os }}
+        parallel: true
+        base-path: src
+        file: profile.cov 
 
-    - name: GolangCI-Lint
-      uses: golangci/golangci-lint-action@v6
+  finish-tests:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Coveralls Finished
+      uses: coverallsapp/github-action@v2
       with:
-        version: latest
-        working-directory: src
+        parallel-finished: true
+        carryforward: "ubuntu-latest,windows-latest"
 
+  goreleaser:
+    if: true # false to skip job during debug    
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v6
       with:
@@ -87,13 +100,12 @@ jobs:
 
   test-docker-images:
     if: true # false to skip job during debug
+    needs: build
     name: Test Docker Image on Ubuntu
     runs-on: ubuntu-latest
     steps:
-
     - name: Check out code
       uses: actions/checkout@v4
-
     - name: Build Docker Image
       shell: bash
       run: |
