@@ -63,10 +63,6 @@ jobs:
 
     - name: Test
       run: |
-        cd src/webui
-        yarn install --network-timeout 100000 && yarn build
-        cd ..
-        go build
         go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./...
 
     - name: Coveralls Parallel
