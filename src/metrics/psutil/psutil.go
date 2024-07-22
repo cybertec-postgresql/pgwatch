@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/disk"
-	"github.com/shirou/gopsutil/v3/load"
-	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/disk"
+	"github.com/shirou/gopsutil/v4/load"
+	"github.com/shirou/gopsutil/v4/mem"
 )
 
 // "cache" of last CPU utilization stats for GetGoPsutilCPU to get more exact results and not having to sleep
@@ -24,7 +24,6 @@ func goPsutilCalcCPUUtilization(probe0, probe1 cpu.TimesStat) float64 {
 }
 
 // Simulates "psutil" metric output. Assumes the result from last call as input, otherwise uses a 1s measurement
-// https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/metrics/psutil_cpu/9.0/metric.sql
 func GetGoPsutilCPU(interval time.Duration) ([]map[string]any, error) {
 	prevCPULoadTimeStatsLock.RLock()
 	prevTime := prevCPULoadTimestamp
@@ -141,10 +140,8 @@ func GetLoadAvgLocal() ([]map[string]any, error) {
 }
 
 func CheckFolderExistsAndReadable(path string) bool {
-	if _, err := os.ReadDir(path); err != nil {
-		return false
-	}
-	return true
+	_, err := os.ReadDir(path)
+	return err == nil
 }
 
 func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]any, error) {
