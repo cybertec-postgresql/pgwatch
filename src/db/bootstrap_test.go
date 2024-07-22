@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pashagolub/pgxmock/v3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	testcontainers "github.com/testcontainers/testcontainers-go"
@@ -41,7 +42,7 @@ func TestPing(t *testing.T) {
 	assert.Error(t, db.Ping(ctx, connStr))
 
 	pg, err := initTestContainer()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	connStr, err = pg.ConnectionString(ctx)
 	assert.NoError(t, err)
 	assert.NoError(t, db.Ping(ctx, connStr))

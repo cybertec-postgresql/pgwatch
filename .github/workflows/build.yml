@@ -1,5 +1,8 @@
 name: Go Build & Test
 on:
+  push:
+    branches:
+      - master
   pull_request:
     paths-ignore: ['docs/**', 'mkdocs.yml']
   workflow_dispatch:
@@ -9,120 +12,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
-  test-postgresql-windows:
-    if: false # false to skip job during debug
-    name: Test on Windows
-    runs-on: windows-latest
-    steps:
-
-    # - name: Start PostgreSQL on Windows
-    #   run: |
-    #     $pgService = Get-Service -Name postgresql*
-    #     Set-Service -InputObject $pgService -Status running -StartupType automatic
-    #     Start-Process -FilePath "$env:PGBIN\pg_isready" -Wait -PassThru
-
-    # - name: Create scheduler user on Windows
-    #   run: |
-    #     & $env:PGBIN\psql --command="CREATE USER scheduler PASSWORD 'somestrong'" --command="\du"
-
-    # - name: Create timetable database
-    #   run: |
-    #     & $env:PGBIN\createdb --owner=scheduler timetable
-    #     $env:PGPASSWORD = 'somestrong'
-    #     & $env:PGBIN\psql --username=scheduler --host=localhost --list timetable
-
-    - name: Check out code
-      uses: actions/checkout@v4
-
-    - name: Set up Golang
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.22'
-
-    - name: Test
-      run: |
-        cd src/webui
-        yarn build
-        cd ..
-        go build
-        go test -v -p 1 -parallel 1 -failfast ./...
-
-
-
-
-  test-postgresql-macos:
-    if: false # false to skip job during debug
-    name: Test on MacOS
-    runs-on: macos-latest
-    steps:
-
-    # - name: Start PostgreSQL on MacOS
-    #   run: |
-    #     brew services start postgresql
-    #     echo "Check PostgreSQL service is running"
-    #     i=10
-    #     COMMAND='pg_isready'
-    #     while [ $i -gt 0 ]; do
-    #         echo "Check PostgreSQL service status"
-    #         eval $COMMAND && break
-    #         ((i--))
-    #         if [ $i == 0 ]; then
-    #             echo "PostgreSQL service not ready, all attempts exhausted"
-    #             exit 1
-    #         fi
-    #         echo "PostgreSQL service not ready, wait 10 more sec, attempts left: $i"
-    #         sleep 10
-    #     done
-
-    # # Homebrew creates an account with the same name as the installing user, but no password
-    # - name: Create scheduler user
-    #   run: |
-    #     psql --command="CREATE USER scheduler PASSWORD 'somestrong'" --command="\du" postgres
-
-    # - name: Create timetable database
-    #   run: |
-    #     createdb --owner=scheduler timetable
-    #     PGPASSWORD=somestrong psql --username=scheduler --host=localhost --list timetable
-
-    - name: Check out code
-      uses: actions/checkout@v4
-
-    - name: Set up Golang
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.22'
-
-    - name: Test
-      run: |
-        cd src/webui
-        yarn build
-        cd ..
-        go build
-        go test -v -p 1 -parallel 1 -failfast ./...
-
-
-
-  test-postgresql-ubuntu:
-    if: true # false to skip job during debug
-    name: Test and Build on Ubuntu
+  build:
+    name: Build and Lint
     runs-on: ubuntu-latest
     steps:
 
-    # - name: Start PostgreSQL on Ubuntu
-    #   run: |
-    #     sudo systemctl start postgresql.service
-    #     pg_isready
-
-    # - name: Create scheduler user
-    #   run: |
-    #     sudo -u postgres psql --command="CREATE USER scheduler PASSWORD 'somestrong'" --command="\du"
-
-    # - name: Create timetable database
-    #   run: |
-    #     sudo -u postgres createdb --owner=scheduler timetable
-    #     PGPASSWORD=somestrong psql --username=scheduler --host=localhost --list timetable
-
     - name: Check out code
       uses: actions/checkout@v4
 
@@ -130,32 +24,84 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.22'
+        cache-dependency-path: 'src/go.sum'
 
-    - name: Get dependencies
-      run: |
-        cd src
-        go mod download
-        go version
-
-    - name: Test
+    - name: Cache npm packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          src/webui/node_modules
+        key: ${{ runner.os }}-npm-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-npm-        
+ 
+    - name: Build
       run: |
         cd src/webui
-        yarn install && yarn build
+        yarn install --network-timeout 100000 && yarn build
         cd ..
         go build
-        go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./...
 
-    - name: Coveralls
-      uses: shogo82148/actions-goveralls@v1
+    - name: Upload webui as artifact
+      uses: actions/upload-artifact@v3
       with:
-        working-directory: src
-        path-to-profile: profile.cov 
+        name: webui-build
+        path: src/webui/build
 
     - name: GolangCI-Lint
       uses: golangci/golangci-lint-action@v6
       with:
         version: latest
         working-directory: src
+  
+  test:
+    if: true # false to skip job during debug
+    needs: build
+    runs-on: ubuntu-latest
+    name: Test
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Golang
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+        cache-dependency-path: 'src/go.sum'
+
+    - name: Download webui artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: webui-build
+        path: src/webui/build        
+
+    - name: Test
+      run: |
+        cd src
+        go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./...
+
+    - name: Coveralls
+      uses: coverallsapp/github-action@v2
+      with:
+        base-path: src
+        file: src/profile.cov 
+
+  goreleaser:
+    if: true # false to skip job during debug    
+    needs: build
+    runs-on: ubuntu-latest
+    name: GoReleaser
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Golang
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+        cache-dependency-path: 'src/go.sum'
 
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v6
@@ -165,13 +111,12 @@ jobs:
 
   test-docker-images:
     if: true # false to skip job during debug
-    name: Test Docker Image on Ubuntu
+    needs: build
+    name: Build Docker Image
     runs-on: ubuntu-latest
     steps:
-
     - name: Check out code
       uses: actions/checkout@v4
-
     - name: Build Docker Image
       shell: bash
       run: |
