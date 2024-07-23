@@ -1,6 +1,7 @@
 site_name: ⚠️ pgwatch3 | WORK IN PROGRESS!!!
 site_description: ⚠️ This repo is under active development! Formats, schemas, and APIs are subject to rapid and backward incompatible changes!
-site_url: https://pgwatch.com/docs
+site_url: https://cybertec-postgresql.github.io/pgwatch3/
+use_directory_urls: false
 copyright: Made by and for PostgreSQL lovers! 🐘❤️
 repo_name: pgwatch3 by Cybertec
 repo_url: https://github.com/cybertec-postgresql/pgwatch3
@@ -82,6 +83,12 @@ nav:
     - Security: security.md
     - Kubernetes: kubernetes.md
   - Gallery: gallery.md
+  - Developer: 
+    - Documentation: godoc.md
+    - Contributing: contributing.md
+    - Code of Conduct: CODE_OF_CONDUCT.md
+    - License: LICENSE.md
+    
 
 markdown_extensions:
   - admonition
