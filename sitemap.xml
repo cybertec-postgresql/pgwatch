@@ -1,108 +1,128 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/index.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/ENV_VARIABLES/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/CODE_OF_CONDUCT.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/advanced_features/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/ENV_VARIABLES.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/components/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/LICENSE.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/custom_installation/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/advanced_features.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/dashboarding_alerting/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/components.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/docker_installation/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/contributing.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/features/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/custom_installation.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/gallery/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/dashboarding_alerting.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/installation_options/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/docker_installation.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/kubernetes/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/features.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/long_term_installations/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/gallery.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/metric_definitions/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/godoc.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/preparing_databases/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/installation_options.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/project_background/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/kubernetes.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/security/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/long_term_installations.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/sizing_recommendations/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/metric_definitions.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/technical_details/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/preparing_databases.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/upgrading/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/project_background.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/using_managed_services/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/security.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://cybertec-postgresql.github.io/pgwatch3/web_ui/</loc>
-         <lastmod>2024-07-22</lastmod>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/sizing_recommendations.html</loc>
+         <lastmod>2024-07-23</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/technical_details.html</loc>
+         <lastmod>2024-07-23</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/upgrading.html</loc>
+         <lastmod>2024-07-23</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/using_managed_services.html</loc>
+         <lastmod>2024-07-23</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://cybertec-postgresql.github.io/pgwatch3/web_ui.html</loc>
+         <lastmod>2024-07-23</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>

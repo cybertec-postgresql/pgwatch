@@ -10,22 +10,28 @@
       
       
       
+        <link rel="canonical" href="https://cybertec-postgresql.github.io/pgwatch3/security.html">
       
       
+        <link rel="prev" href="technical_details.html">
       
-      <link rel="icon" href="/pgwatch3/assets/images/favicon.png">
+      
+        <link rel="next" href="kubernetes.html">
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.29">
     
     
       
-        <title>⚠️ pgwatch3 | WORK IN PROGRESS!!!</title>
+        <title>Security aspects - ⚠️ pgwatch3 | WORK IN PROGRESS!!!</title>
       
     
     
-      <link rel="stylesheet" href="/pgwatch3/assets/stylesheets/main.76a95c52.min.css">
+      <link rel="stylesheet" href="assets/stylesheets/main.76a95c52.min.css">
       
         
-        <link rel="stylesheet" href="/pgwatch3/assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -44,14 +50,23 @@
       
     
     
-    <script>__md_scope=new URL("/pgwatch3/",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
     
     
     
-  </head>
+   <link href="assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
+    html.glightbox-open { overflow: initial; height: 100%; }
+    .gslide-title { margin-top: 0px; user-select: text; }
+    .gslide-desc { color: #666; user-select: text; }
+    .gslide-image img { background: white; }
+    .gscrollbar-fixer { padding-right: 15px; }
+    .gdesc-inner { font-size: 0.75rem; }
+    body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color);}
+    body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color);}
+    body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color);}</style> <script src="assets/javascripts/glightbox.min.js"></script></head>
   
   
     
@@ -69,6 +84,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#general-security-information" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -79,7 +99,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/pgwatch3/." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-header__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
+    <a href="." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-header__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -99,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              Security aspects
             
           </span>
         </div>
@@ -215,7 +235,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="/pgwatch3/index.html" class="md-tabs__link">
+        <a href="index.html" class="md-tabs__link">
           
   
   Intro
@@ -233,7 +253,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="/pgwatch3/components.html" class="md-tabs__link">
+        <a href="components.html" class="md-tabs__link">
           
   
   Concepts
@@ -251,7 +271,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="/pgwatch3/docker_installation.html" class="md-tabs__link">
+        <a href="docker_installation.html" class="md-tabs__link">
           
   
   Tutorials
@@ -269,7 +289,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="/pgwatch3/dashboarding_alerting.html" class="md-tabs__link">
+        <a href="dashboarding_alerting.html" class="md-tabs__link">
           
   
   How-To Guides
@@ -283,11 +303,13 @@
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="/pgwatch3/advanced_features.html" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="advanced_features.html" class="md-tabs__link">
           
   
   Reference
@@ -303,7 +325,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="/pgwatch3/gallery.html" class="md-tabs__link">
+      <a href="gallery.html" class="md-tabs__link">
         
   
     
@@ -322,7 +344,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="/pgwatch3/godoc.html" class="md-tabs__link">
+        <a href="godoc.html" class="md-tabs__link">
           
   
   Developer
@@ -355,7 +377,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/pgwatch3/." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-nav__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
+    <a href="." title="⚠️ pgwatch3 | WORK IN PROGRESS!!!" class="md-nav__button md-logo" aria-label="⚠️ pgwatch3 | WORK IN PROGRESS!!!" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -423,7 +445,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/index.html" class="md-nav__link">
+      <a href="index.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -444,7 +466,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/project_background.html" class="md-nav__link">
+      <a href="project_background.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -465,7 +487,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/features.html" class="md-nav__link">
+      <a href="features.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -531,7 +553,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/components.html" class="md-nav__link">
+      <a href="components.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -552,7 +574,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/installation_options.html" class="md-nav__link">
+      <a href="installation_options.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -573,7 +595,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/long_term_installations.html" class="md-nav__link">
+      <a href="long_term_installations.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -594,7 +616,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/web_ui.html" class="md-nav__link">
+      <a href="web_ui.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -660,7 +682,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/docker_installation.html" class="md-nav__link">
+      <a href="docker_installation.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -681,7 +703,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/custom_installation.html" class="md-nav__link">
+      <a href="custom_installation.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -702,7 +724,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/preparing_databases.html" class="md-nav__link">
+      <a href="preparing_databases.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -723,7 +745,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/upgrading.html" class="md-nav__link">
+      <a href="upgrading.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -789,7 +811,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/dashboarding_alerting.html" class="md-nav__link">
+      <a href="dashboarding_alerting.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -810,7 +832,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/using_managed_services.html" class="md-nav__link">
+      <a href="using_managed_services.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -831,7 +853,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/sizing_recommendations.html" class="md-nav__link">
+      <a href="sizing_recommendations.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -856,23 +878,28 @@
       
   
   
+    
   
   
+  
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -883,7 +910,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Reference
@@ -897,7 +924,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/advanced_features.html" class="md-nav__link">
+      <a href="advanced_features.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -918,7 +945,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/metric_definitions.html" class="md-nav__link">
+      <a href="metric_definitions.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -939,7 +966,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/technical_details.html" class="md-nav__link">
+      <a href="technical_details.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -957,10 +984,28 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="/pgwatch3/security.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Security
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="security.html" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -969,6 +1014,42 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#general-security-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      General security information
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#launching-a-more-secure-docker-container" class="md-nav__link">
+    <span class="md-ellipsis">
+      Launching a more secure Docker container
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -981,7 +1062,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/kubernetes.html" class="md-nav__link">
+      <a href="kubernetes.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1009,7 +1090,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/gallery.html" class="md-nav__link">
+      <a href="gallery.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1067,7 +1148,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/godoc.html" class="md-nav__link">
+      <a href="godoc.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1088,7 +1169,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/contributing.html" class="md-nav__link">
+      <a href="contributing.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1109,7 +1190,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/CODE_OF_CONDUCT.html" class="md-nav__link">
+      <a href="CODE_OF_CONDUCT.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1130,7 +1211,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/pgwatch3/LICENSE.html" class="md-nav__link">
+      <a href="LICENSE.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1169,6 +1250,32 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#general-security-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      General security information
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#launching-a-more-secure-docker-container" class="md-nav__link">
+    <span class="md-ellipsis">
+      Launching a more secure Docker container
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1179,8 +1286,99 @@
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+                  
 
+  
+    <a href="https://github.com/cybertec-postgresql/pgwatch3/edit/master/docs/security.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
+    </a>
+  
+  
+
+
+  <h1>Security</h1>
+
+<h2 id="general-security-information">General security information</h2>
+<p>Security can be tightened for most pgwatch3 components quite granularly,
+but the default values for the Docker image don't focus on security
+though but rather on being quickly usable for ad-hoc performance
+troubleshooting, which is where the roots of pgwatch3 lie.</p>
+<p>Some points on security:</p>
+<ul>
+<li>
+<p>The administrative Web UI doesn't have by default any security.
+    Configurable via env. variables.</p>
+</li>
+<li>
+<p>Viewing Grafana dashboards by default doesn't require login.
+    Editing needs a password. Configurable via env. variables.</p>
+</li>
+<li>
+<p>Dashboards based on the "stat_statements" metric (Stat Statement
+    Overview / Top) expose actual queries.</p>
+<p>They should be "mostly" stripped of details though and replaced by
+placeholders by Postgres, but if no risks can be taken such
+dashboards (or at least according panels) should be deleted. Or as
+an alternative the <code>stat_statements_no_query_text</code> and
+<code>pg_stat_statements_calls</code> metrics could be used, which don't
+store query texts in the first place.</p>
+</li>
+<li>
+<p>Safe certificate connections to Postgres are supported. According 
+    <em>sslmode</em> (verify-ca, verify-full) and cert file paths
+    need to be specified then in connection string on Web UI "/dbs" page 
+    or in the YAML config.</p>
+</li>
+<li>
+<p>Note that although pgwatch3 can handle password security, in many
+    cases it's better to still use the standard LibPQ <em>.pgpass</em> file to
+    store passwords.</p>
+</li>
+</ul>
+<h2 id="launching-a-more-secure-docker-container">Launching a more secure Docker container</h2>
+<p>Some common sense security is built into default Docker images for all
+components but not actived by default. A sample command to launch
+pgwatch3 with following security "checkpoints" enabled:</p>
+<ol>
+<li>HTTPS for both Grafana and the Web UI with self-signed certificates</li>
+<li>No anonymous viewing of graphs in Grafana</li>
+<li>Custom user / password for the Grafana "admin" account</li>
+<li>No anonymous access / editing over the admin Web UI</li>
+<li>No viewing of internal logs of components running inside Docker</li>
+<li>
+<p>Password encryption for connect strings stored in the Config DB</p>
+<div class="language-properties highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">docker</span><span class="w"> </span><span class="s">run --name pw3 -d --restart=unless-stopped </span><span class="se">\</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="s">-p 3000:3000 -p 8080:8080 </span><span class="se">\</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="s">-e PW3_GRAFANASSL=1 -e PW3_WEBSSL=1 </span><span class="se">\</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="s">-e PW3_GRAFANANOANONYMOUS=1 -e PW3_GRAFANAUSER=myuser </span><span class="se">\</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="s">-e PW3_GRAFANAPASSWORD=mypass </span><span class="se">\</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="s">-e PW3_WEBNOANONYMOUS=1 -e PW3_WEBNOCOMPONENTLOGS=1 </span><span class="se">\</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="s">-e PW3_WEBUSER=myuser -e PW3_WEBPASSWORD=mypass </span><span class="se">\</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="s">-e PW3_AES_GCM_KEYPHRASE=qwerty </span><span class="se">\</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="s">cybertec/pgwatch3</span>
+</span></code></pre></div>
+</li>
+</ol>
+<p>For custom installs it's up to the user though. A hint - Docker
+<em>launcher</em> files can also be inspected to see which config parameters
+are being touched.</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
               </article>
             </div>
           
@@ -1194,6 +1392,44 @@
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="technical_details.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Technical Details">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Technical Details
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="kubernetes.html" class="md-footer__link md-footer__link--next" aria-label="Next: Kubernetes">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Kubernetes
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
     
   
   <div class="md-footer-meta md-typeset">
@@ -1222,11 +1458,13 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "/pgwatch3/", "features": ["announce.dismiss", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.action.edit", "navigation.footer", "navigation.instant", "navigation.tracking", "navigation.tabs", "content.tabs.link"], "search": "/pgwatch3/assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": ".", "features": ["announce.dismiss", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.action.edit", "navigation.footer", "navigation.instant", "navigation.tracking", "navigation.tabs", "content.tabs.link"], "search": "assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="/pgwatch3/assets/javascripts/bundle.fe8b6f2b.min.js"></script>
+      <script src="assets/javascripts/bundle.fe8b6f2b.min.js"></script>
       
     
-  </body>
+  <script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(() => { lightbox.reload() });
+</script></body>
 </html>
