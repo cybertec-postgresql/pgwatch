@@ -14,9 +14,9 @@ import (
 
 var monitoredDbCache map[string]*sources.MonitoredDatabase
 var monitoredDbCacheLock sync.RWMutex
-var dbPgVersionMap = make(map[string]DBVersionMapEntry)
-var dbPgVersionMapLock = sync.RWMutex{}
-var dbGetPgVersionMapLock = make(map[string]*sync.RWMutex) // synchronize initial PG version detection to 1 instance for each defined host
+var MonitoredDatabasesSettings = make(map[string]MonitoredDatabaseSettings)
+var MonitoredDatabasesSettingsLock = sync.RWMutex{}
+var MonitoredDatabasesSettingsGetLock = make(map[string]*sync.RWMutex) // synchronize initial PG version detection to 1 instance for each defined host
 
 var unreachableDBsLock sync.RWMutex
 var unreachableDB = make(map[string]time.Time)
@@ -36,11 +36,11 @@ var hostMetricIntervalMap = make(map[string]float64) // [db1_metric] = 30
 var lastSQLFetchError sync.Map
 
 func InitPGVersionInfoFetchingLockIfNil(md *sources.MonitoredDatabase) {
-	dbPgVersionMapLock.Lock()
-	if _, ok := dbGetPgVersionMapLock[md.DBUniqueName]; !ok {
-		dbGetPgVersionMapLock[md.DBUniqueName] = &sync.RWMutex{}
+	MonitoredDatabasesSettingsLock.Lock()
+	if _, ok := MonitoredDatabasesSettingsGetLock[md.DBUniqueName]; !ok {
+		MonitoredDatabasesSettingsGetLock[md.DBUniqueName] = &sync.RWMutex{}
 	}
-	dbPgVersionMapLock.Unlock()
+	MonitoredDatabasesSettingsLock.Unlock()
 }
 
 func UpdateMonitoredDBCache(data sources.MonitoredDatabases) {
@@ -64,7 +64,7 @@ func GetMonitoredDatabaseByUniqueName(name string) (*sources.MonitoredDatabase, 
 }
 
 // assumes upwards compatibility for versions
-func GetMetricVersionProperties(metric string, _ DBVersionMapEntry, metricDefMap *metrics.Metrics) (metrics.Metric, error) {
+func GetMetricVersionProperties(metric string, _ MonitoredDatabaseSettings, metricDefMap *metrics.Metrics) (metrics.Metric, error) {
 	mdm := new(metrics.Metrics)
 	if metricDefMap != nil {
 		mdm = metricDefMap
@@ -106,7 +106,7 @@ func SyncMetricDefs(ctx context.Context, r metrics.Reader) {
 	}
 }
 
-func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchMessage, maxAgeSeconds int64) metrics.Measurements {
+func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchConfig, maxAgeSeconds int64) metrics.Measurements {
 	var clonedData metrics.Measurements
 	instanceMetricCacheTimestampLock.RLock()
 	instanceMetricTS, ok := instanceMetricCacheTimestamp[msg.DBUniqueNameOrig+msg.MetricName]

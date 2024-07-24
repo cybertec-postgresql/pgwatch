@@ -25,7 +25,7 @@ const (
 
 )
 
-type MetricFetchMessage struct {
+type MetricFetchConfig struct {
 	DBUniqueName        string
 	DBUniqueNameOrig    string
 	MetricName          string
@@ -41,7 +41,7 @@ type ChangeDetectionResults struct { // for passing around DDL/index/config chan
 	Dropped int
 }
 
-type DBVersionMapEntry struct {
+type MonitoredDatabaseSettings struct {
 	LastCheckedOn    time.Time
 	IsInRecovery     bool
 	VersionStr       string

@@ -27,7 +27,7 @@ const (
 var specialMetrics = map[string]bool{recoMetricName: true, specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 var regexIsPgbouncerMetrics = regexp.MustCompile(specialMetricPgbouncer)
 
-func GetAllRecoMetricsForVersion(vme DBVersionMapEntry) (map[string]metrics.Metric, error) {
+func GetAllRecoMetricsForVersion(vme MonitoredDatabaseSettings) (map[string]metrics.Metric, error) {
 	mvpMap := make(map[string]metrics.Metric)
 	metricDefMapLock.RLock()
 	defer metricDefMapLock.RUnlock()
@@ -43,7 +43,7 @@ func GetAllRecoMetricsForVersion(vme DBVersionMapEntry) (map[string]metrics.Metr
 	return mvpMap, nil
 }
 
-func GetRecommendations(ctx context.Context, dbUnique string, vme DBVersionMapEntry) (metrics.Measurements, error) {
+func GetRecommendations(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings) (metrics.Measurements, error) {
 	retData := make(metrics.Measurements, 0)
 	startTimeEpochNs := time.Now().UnixNano()
 
