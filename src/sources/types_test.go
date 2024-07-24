@@ -37,8 +37,8 @@ func TestKind_IsValid(t *testing.T) {
 }
 
 func TestMonitoredDatabase_Connect(t *testing.T) {
-	pgContainer, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("docker.io/postgres:16-alpine"),
+	pgContainer, err := postgres.Run(ctx,
+		"docker.io/postgres:16-alpine",
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).

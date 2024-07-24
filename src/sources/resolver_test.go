@@ -13,8 +13,8 @@ import (
 )
 
 func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
-	pgContainer, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("docker.io/postgres:16-alpine"),
+	pgContainer, err := postgres.Run(ctx,
+		"docker.io/postgres:16-alpine",
 		postgres.WithDatabase("mydatabase"),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").

@@ -90,8 +90,8 @@ func initTestContainer() (*postgres.PostgresContainer, error) {
 	dbUser := "pgwatch3"
 	dbPassword := "pgwatch3admin"
 
-	return postgres.RunContainer(ctx,
-		testcontainers.WithImage("docker.io/postgres:16-alpine"),
+	return postgres.Run(ctx,
+		"docker.io/postgres:16-alpine",
 		postgres.WithDatabase(dbName),
 		postgres.WithUsername(dbUser),
 		postgres.WithPassword(dbPassword),
