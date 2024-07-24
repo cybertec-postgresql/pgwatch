@@ -120,9 +120,9 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 
 			InitPGVersionInfoFetchingLockIfNil(monitoredDB)
 
-			var ver DBVersionMapEntry
+			var ver MonitoredDatabaseSettings
 
-			ver, err = DBGetPGVersion(mainContext, dbUnique, srcType, true, opts.Measurements.SystemIdentifierField)
+			ver, err = GetMonitoredDatabaseSettings(mainContext, dbUnique, srcType, true)
 			if err != nil {
 				logger.Errorf("could not start metric gathering for DB \"%s\" due to connection problem: %s", dbUnique, err)
 				continue
@@ -180,7 +180,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 						SetUndersizedDBState(dbUnique, false)
 					}
 				}
-				ver, err := DBGetPGVersion(mainContext, dbUnique, monitoredDB.Kind, false, opts.Measurements.SystemIdentifierField)
+				ver, err := GetMonitoredDatabaseSettings(mainContext, dbUnique, monitoredDB.Kind, false)
 				if err == nil { // ok to ignore error, re-tried on next loop
 					lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[dbUnique]
 					if ver.IsInRecovery && monitoredDB.OnlyIfMaster {
@@ -243,7 +243,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 
 						metricNameForStorage := metricName
 						if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
-							vme, err := DBGetPGVersion(mainContext, dbUnique, srcType, false, opts.Measurements.SystemIdentifierField)
+							vme, err := GetMonitoredDatabaseSettings(mainContext, dbUnique, srcType, false)
 							if err != nil {
 								logger.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
 							} else {
@@ -319,9 +319,9 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 			}
 
 			if !(wholeDbShutDownDueToRoleChange || dbRemovedFromConfig) { // maybe some single metric was disabled
-				dbPgVersionMapLock.RLock()
-				verInfo, ok := dbPgVersionMap[db]
-				dbPgVersionMapLock.RUnlock()
+				MonitoredDatabasesSettingsLock.RLock()
+				verInfo, ok := MonitoredDatabasesSettings[db]
+				MonitoredDatabasesSettingsLock.RUnlock()
 				if !ok {
 					logger.Warningf("Could not find PG version info for DB %s, skipping shutdown check of metric worker process for %s", db, metric)
 					continue
@@ -385,7 +385,7 @@ func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 	hostState := make(map[string]map[string]string)
 	var lastUptimeS int64 = -1 // used for "server restarted" event detection
 	var lastErrorNotificationTime time.Time
-	var vme DBVersionMapEntry
+	var vme MonitoredDatabaseSettings
 	var mvp metrics.Metric
 	var err error
 	failedFetches := 0
@@ -397,9 +397,9 @@ func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 		if err != nil {
 			return
 		}
-		dbPgVersionMapLock.RLock()
-		realDbname := dbPgVersionMap[dbUniqueName].RealDbname // to manage 2 sets of event counts - monitored DB + global
-		dbPgVersionMapLock.RUnlock()
+		MonitoredDatabasesSettingsLock.RLock()
+		realDbname := MonitoredDatabasesSettings[dbUniqueName].RealDbname // to manage 2 sets of event counts - monitored DB + global
+		MonitoredDatabasesSettingsLock.RUnlock()
 		conn := mdb.Conn
 		metrics.ParseLogs(ctx, conn, mdb, realDbname, metricName, configMap, r.measurementCh) // no return
 		return
@@ -408,7 +408,7 @@ func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 	for {
 		interval := configMap[metricName]
 		if lastDBVersionFetchTime.Add(time.Minute * time.Duration(5)).Before(time.Now()) {
-			vme, err = DBGetPGVersion(ctx, dbUniqueName, srcType, false, r.opts.Measurements.SystemIdentifierField) // in case of errors just ignore metric "disabled" time ranges
+			vme, err = GetMonitoredDatabaseSettings(ctx, dbUniqueName, srcType, false) // in case of errors just ignore metric "disabled" time ranges
 			if err != nil {
 				lastDBVersionFetchTime = time.Now()
 			}
@@ -422,7 +422,7 @@ func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 
 		var metricStoreMessages []metrics.MeasurementMessage
 		var err error
-		mfm := MetricFetchMessage{
+		mfm := MetricFetchConfig{
 			DBUniqueName:        dbUniqueName,
 			DBUniqueNameOrig:    dbUniqueNameOrig,
 			MetricName:          metricName,
@@ -537,7 +537,7 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.Mo
 	}
 }
 
-func AddDbnameSysinfoIfNotExistsToQueryResultData(data metrics.Measurements, ver DBVersionMapEntry, opts *config.Options) metrics.Measurements {
+func AddDbnameSysinfoIfNotExistsToQueryResultData(data metrics.Measurements, ver MonitoredDatabaseSettings, opts *config.Options) metrics.Measurements {
 	enrichedData := make(metrics.Measurements, 0)
 	for _, dr := range data {
 		if opts.Measurements.RealDbnameField > "" && ver.RealDbname > "" {
@@ -563,14 +563,14 @@ var instanceMetricCacheLock = sync.RWMutex{}
 var instanceMetricCacheTimestamp = make(map[string]time.Time) // [dbUnique+metric]last_fetch_time
 var instanceMetricCacheTimestampLock = sync.RWMutex{}
 
-func IsCacheableMetric(msg MetricFetchMessage, mvp metrics.Metric) bool {
+func IsCacheableMetric(msg MetricFetchConfig, mvp metrics.Metric) bool {
 	if !(msg.Source == sources.SourcePostgresContinuous || msg.Source == sources.SourcePatroniContinuous) {
 		return false
 	}
 	return mvp.IsInstanceLevel
 }
 
-func PutToInstanceCache(msg MetricFetchMessage, data metrics.Measurements) {
+func PutToInstanceCache(msg MetricFetchConfig, data metrics.Measurements) {
 	if len(data) == 0 {
 		return
 	}
@@ -599,14 +599,14 @@ func deepCopyMetricData(data metrics.Measurements) metrics.Measurements {
 }
 
 func FetchMetrics(ctx context.Context,
-	msg MetricFetchMessage,
+	msg MetricFetchConfig,
 	hostState map[string]map[string]string,
 	storageCh chan<- []metrics.MeasurementMessage,
 	context string,
 	opts *config.Options) ([]metrics.MeasurementMessage, error) {
 
-	var vme DBVersionMapEntry
-	var dbpgVersion int
+	var dbSettings MonitoredDatabaseSettings
+	var dbVersion int
 	var err error
 	var sql string
 	var data, cachedData metrics.Measurements
@@ -619,33 +619,33 @@ func FetchMetrics(ctx context.Context,
 		return nil, err
 	}
 
-	vme, err = DBGetPGVersion(ctx, msg.DBUniqueName, msg.Source, false, opts.Measurements.SystemIdentifierField)
+	dbSettings, err = GetMonitoredDatabaseSettings(ctx, msg.DBUniqueName, msg.Source, false)
 	if err != nil {
 		log.GetLogger(ctx).Error("failed to fetch pg version for ", msg.DBUniqueName, msg.MetricName, err)
 		return nil, err
 	}
 	if msg.MetricName == specialMetricDbSize || msg.MetricName == specialMetricTableStats {
-		if vme.ExecEnv == execEnvAzureSingle && vme.ApproxDBSizeB > 1e12 { // 1TB
+		if dbSettings.ExecEnv == execEnvAzureSingle && dbSettings.ApproxDBSizeB > 1e12 { // 1TB
 			subsMetricName := msg.MetricName + "_approx"
-			mvpApprox, err := GetMetricVersionProperties(subsMetricName, vme, nil)
+			mvpApprox, err := GetMetricVersionProperties(subsMetricName, dbSettings, nil)
 			if err == nil && mvpApprox.StorageName == msg.MetricName {
 				log.GetLogger(ctx).Infof("[%s:%s] Transparently swapping metric to %s due to hard-coded rules...", msg.DBUniqueName, msg.MetricName, subsMetricName)
 				msg.MetricName = subsMetricName
 			}
 		}
 	}
-	dbpgVersion = vme.Version
+	dbVersion = dbSettings.Version
 
 	if msg.Source == sources.SourcePgBouncer {
-		dbpgVersion = 0 // version is 0.0 for all pgbouncer sql per convention
+		dbVersion = 0 // version is 0.0 for all pgbouncer sql per convention
 	}
 
-	mvp, err := GetMetricVersionProperties(msg.MetricName, vme, nil)
+	mvp, err := GetMetricVersionProperties(msg.MetricName, dbSettings, nil)
 	if err != nil && msg.MetricName != recoMetricName {
-		epoch, ok := lastSQLFetchError.Load(msg.MetricName + dbMetricJoinStr + fmt.Sprintf("%v", dbpgVersion))
+		epoch, ok := lastSQLFetchError.Load(msg.MetricName + dbMetricJoinStr + fmt.Sprintf("%v", dbVersion))
 		if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) { // complain only 1x per hour
-			log.GetLogger(ctx).Infof("Failed to get SQL for metric '%s', version '%s': %v", msg.MetricName, vme.VersionStr, err)
-			lastSQLFetchError.Store(msg.MetricName+dbMetricJoinStr+fmt.Sprintf("%v", dbpgVersion), time.Now().Unix())
+			log.GetLogger(ctx).Infof("Failed to get SQL for metric '%s', version '%s': %v", msg.MetricName, dbSettings.VersionStr, err)
+			lastSQLFetchError.Store(msg.MetricName+dbMetricJoinStr+fmt.Sprintf("%v", dbVersion), time.Now().Unix())
 		}
 		if strings.Contains(err.Error(), "too old") {
 			return nil, nil
@@ -662,7 +662,7 @@ func FetchMetrics(ctx context.Context,
 		}
 	}
 
-	sql = mvp.GetSQL(dbpgVersion)
+	sql = mvp.GetSQL(dbVersion)
 
 	if sql == "" && !(msg.MetricName == specialMetricChangeEvents || msg.MetricName == recoMetricName) {
 		// let's ignore dummy SQL-s
@@ -670,19 +670,19 @@ func FetchMetrics(ctx context.Context,
 		return nil, nil
 	}
 
-	if (mvp.PrimaryOnly() && vme.IsInRecovery) || (mvp.StandbyOnly() && !vme.IsInRecovery) {
-		log.GetLogger(ctx).Debugf("[%s:%s] Skipping fetching of  as server not in wanted state (IsInRecovery=%v)", msg.DBUniqueName, msg.MetricName, vme.IsInRecovery)
+	if (mvp.PrimaryOnly() && dbSettings.IsInRecovery) || (mvp.StandbyOnly() && !dbSettings.IsInRecovery) {
+		log.GetLogger(ctx).Debugf("[%s:%s] Skipping fetching of  as server not in wanted state (IsInRecovery=%v)", msg.DBUniqueName, msg.MetricName, dbSettings.IsInRecovery)
 		return nil, nil
 	}
 
 	if msg.MetricName == specialMetricChangeEvents && context != contextPrometheusScrape { // special handling, multiple queries + stateful
-		CheckForPGObjectChangesAndStore(ctx, msg.DBUniqueName, vme, storageCh, hostState) // TODO no hostState for Prometheus currently
+		CheckForPGObjectChangesAndStore(ctx, msg.DBUniqueName, dbSettings, storageCh, hostState) // TODO no hostState for Prometheus currently
 	} else if msg.MetricName == recoMetricName && context != contextPrometheusScrape {
-		if data, err = GetRecommendations(ctx, msg.DBUniqueName, vme); err != nil {
+		if data, err = GetRecommendations(ctx, msg.DBUniqueName, dbSettings); err != nil {
 			return nil, err
 		}
 	} else if msg.Source == sources.SourcePgPool {
-		if data, err = FetchMetricsPgpool(ctx, msg, vme, mvp); err != nil {
+		if data, err = FetchMetricsPgpool(ctx, msg, dbSettings, mvp); err != nil {
 			return nil, err
 		}
 	} else {
@@ -691,9 +691,9 @@ func FetchMetrics(ctx context.Context,
 		if err != nil {
 			// let's soften errors to "info" from functions that expect the server to be a primary to reduce noise
 			if strings.Contains(err.Error(), "recovery is in progress") {
-				dbPgVersionMapLock.RLock()
-				ver := dbPgVersionMap[msg.DBUniqueName]
-				dbPgVersionMapLock.RUnlock()
+				MonitoredDatabasesSettingsLock.RLock()
+				ver := MonitoredDatabasesSettings[msg.DBUniqueName]
+				MonitoredDatabasesSettingsLock.RUnlock()
 				if ver.IsInRecovery {
 					log.GetLogger(ctx).Debugf("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
 					return nil, err
@@ -718,7 +718,7 @@ func FetchMetrics(ctx context.Context,
 
 		log.GetLogger(ctx).WithFields(map[string]any{"source": msg.DBUniqueName, "metric": msg.MetricName, "rows": len(data)}).Info("measurements fetched")
 		if regexIsPgbouncerMetrics.MatchString(msg.MetricName) { // clean unwanted pgbouncer pool stats here as not possible in SQL
-			data = FilterPgbouncerData(ctx, data, md.GetDatabaseName(), vme)
+			data = FilterPgbouncerData(ctx, data, md.GetDatabaseName(), dbSettings)
 		}
 
 		ClearDBUnreachableStateIfAny(msg.DBUniqueName)
@@ -732,9 +732,9 @@ func FetchMetrics(ctx context.Context,
 send_to_storageChannel:
 
 	if (opts.Measurements.RealDbnameField > "" || opts.Measurements.SystemIdentifierField > "") && msg.Source == sources.SourcePostgres {
-		dbPgVersionMapLock.RLock()
-		ver := dbPgVersionMap[msg.DBUniqueName]
-		dbPgVersionMapLock.RUnlock()
+		MonitoredDatabasesSettingsLock.RLock()
+		ver := MonitoredDatabasesSettings[msg.DBUniqueName]
+		MonitoredDatabasesSettingsLock.RUnlock()
 		data = AddDbnameSysinfoIfNotExistsToQueryResultData(data, ver, opts)
 	}
 
@@ -745,16 +745,16 @@ send_to_storageChannel:
 	if fromCache {
 		log.GetLogger(ctx).Infof("[%s:%s] loaded %d rows from the instance cache", msg.DBUniqueName, msg.MetricName, len(cachedData))
 		return []metrics.MeasurementMessage{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
-			MetricDef: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
+			MetricDef: mvp, RealDbname: dbSettings.RealDbname, SystemIdentifier: dbSettings.SystemIdentifier}}, nil
 	}
 	return []metrics.MeasurementMessage{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
-		MetricDef: mvp, RealDbname: vme.RealDbname, SystemIdentifier: vme.SystemIdentifier}}, nil
+		MetricDef: mvp, RealDbname: dbSettings.RealDbname, SystemIdentifier: dbSettings.SystemIdentifier}}, nil
 
 }
 
 var pgBouncerNumericCountersStartVersion = 01_12_00 // pgBouncer changed internal counters data type in v1.12
 
-func FilterPgbouncerData(ctx context.Context, data metrics.Measurements, databaseToKeep string, vme DBVersionMapEntry) metrics.Measurements {
+func FilterPgbouncerData(ctx context.Context, data metrics.Measurements, databaseToKeep string, vme MonitoredDatabaseSettings) metrics.Measurements {
 	filteredData := make(metrics.Measurements, 0)
 
 	for _, dr := range data {
