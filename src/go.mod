@@ -11,7 +11,7 @@ require (
 	github.com/pashagolub/pgxmock/v4 v4.2.0
 	github.com/prometheus/client_golang v1.19.1
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
-	github.com/sethvargo/go-retry v0.2.4
+	github.com/sethvargo/go-retry v0.3.0
 	github.com/shirou/gopsutil/v4 v4.24.6
 	github.com/shopspring/decimal v1.4.0
 	github.com/sirupsen/logrus v1.9.3
