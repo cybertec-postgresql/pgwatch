@@ -226,7 +226,7 @@ func GetMonitoredDatabaseSettings(ctx context.Context, dbUnique string, srcType 
 		dbNewSettings.Version = VersionToInt(matches[0])
 	default:
 		sql := `select /* pgwatch3_generated */ 
-	current_setting('server_version_num')::int / 1_00_00 as ver, 
+	current_setting('server_version_num')::int / 10000 as ver, 
 	version(), 
 	pg_is_in_recovery(), 
 	current_database()::TEXT,
