@@ -177,6 +177,15 @@ metrics:
                    buffers_alloc
                  from
                    pg_stat_bgwriter
+            17: |-
+                select /* pgwatch3_generated */
+                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                  buffers_clean,
+                  maxwritten_clean,
+                  buffers_alloc,
+                  (extract(epoch from now() - stats_reset))::int as last_reset_s
+                from
+                  pg_stat_bgwriter;
         node_status: primary
         is_instance_level: true
     blocking_locks:
