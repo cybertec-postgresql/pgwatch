@@ -245,7 +245,7 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementMessage) {
 	var err error
 
 	for _, msg := range msgs {
-		if msg.Data == nil || len(msg.Data) == 0 {
+		if len(msg.Data) == 0 {
 			continue
 		}
 		logger.WithField("data", msg.Data).WithField("len", len(msg.Data)).Debug("Sending To Postgres")
