@@ -61,7 +61,7 @@ services:
       postgres:
         condition: service_healthy
 
-  pgwatch3:
+  pgwatch:
     # uncomment build section below for dev experience
     build:
       context: .
@@ -76,7 +76,6 @@ services:
       postgres:
         condition: service_healthy
 
-
   add-test-db:
     image: *pgimage
     environment:
@@ -86,6 +85,13 @@ services:
     command: >
       psql -v ON_ERROR_STOP=1
         -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
+        -c "CREATE EXTENSION IF NOT EXISTS plpython3u;
+            CREATE FUNCTION get_load_average(OUT load_1min float, OUT load_5min float, OUT load_15min float) AS '
+              from os import getloadavg
+              la = getloadavg()
+              return [la[0], la[1], la[2]]'
+            LANGUAGE plpython3u VOLATILE;
+            GRANT EXECUTE ON FUNCTION get_load_average() TO pgwatch3"
         -c "GRANT EXECUTE ON FUNCTION pg_stat_file(text) TO pgwatch3"
         -c "GRANT EXECUTE ON FUNCTION pg_stat_file(text, boolean) TO pgwatch3"
         -c "INSERT INTO pgwatch3.source (name, preset_config, connstr)
