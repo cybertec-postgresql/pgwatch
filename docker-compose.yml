@@ -1,12 +1,23 @@
 services:
   postgres:
-    # if you want PostgreSQL vanilla experience :
-    # - use "postgres:latest" image 
-    # - remove "timescaledb" from shared_preload_libraries
-    image: &pgimage timescale/timescaledb:latest-pg16
     user: postgres
+    # Custom Dockerfile.postgres within build section is used to enable plpython3u extension.
+    # Comment out the build section to use the default PostgreSQL or TimescaleDB image.
+    build: 
+      context: .
+      dockerfile: ./docker/Dockerfile.postgres-plpython3u
+
+    # If you want PostgreSQL pure vanilla experience use:
+    # image: &pgimage "postgres:latest"
+
+    # If you want to use TimescaleDB extension use:
+    # image: &pgimage timescale/timescaledb:latest-pg16
+    # and update the command section below with
+    #  "-cshared_preload_libraries=pg_stat_statements,timescaledb"
+
+    image: &pgimage postgres-plpython3u:latest
     command:
-      - "-cshared_preload_libraries=pg_stat_statements,timescaledb"
+      - "-cshared_preload_libraries=pg_stat_statements"
       - "-cpg_stat_statements.track=all"
       - "-ctrack_io_timing=on"
       - "-ctrack_functions=pl"
@@ -23,7 +34,8 @@ services:
       retries: 5
 
   grafana:
-    image: grafana/grafana:latest
+    # to use latest Grafana v11, update the dashboards provisioning folder below
+    image: grafana/grafana:10.4.7
     user: "0:0"
     environment:
       GF_DATABASE_TYPE: postgres
@@ -43,13 +55,13 @@ services:
       - "./grafana/postgres_datasource.yml:/etc/grafana/provisioning/datasources/pg_ds.yml"
       - "./grafana/postgres_dashboard.yml:/etc/grafana/provisioning/dashboards/pg_db.yml"
       # Uncomment the dashboard version you want to use and comment out the other one.
-      # - "./grafana/postgres/v10:/var/lib/grafana/dashboards"
-      - "./grafana/postgres/v11:/var/lib/grafana/dashboards"
+      - "./grafana/postgres/v10:/var/lib/grafana/dashboards"
+      # - "./grafana/postgres/v11:/var/lib/grafana/dashboards"
     depends_on:
       postgres:
         condition: service_healthy
 
-  pgwatch3:
+  pgwatch:
     # uncomment build section below for dev experience
     build:
       context: .
@@ -64,7 +76,6 @@ services:
       postgres:
         condition: service_healthy
 
-
   add-test-db:
     image: *pgimage
     environment:
@@ -74,6 +85,13 @@ services:
     command: >
       psql -v ON_ERROR_STOP=1
         -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
+        -c "CREATE EXTENSION IF NOT EXISTS plpython3u;
+            CREATE FUNCTION get_load_average(OUT load_1min float, OUT load_5min float, OUT load_15min float) AS '
+              from os import getloadavg
+              la = getloadavg()
+              return [la[0], la[1], la[2]]'
+            LANGUAGE plpython3u VOLATILE;
+            GRANT EXECUTE ON FUNCTION get_load_average() TO pgwatch3"
         -c "GRANT EXECUTE ON FUNCTION pg_stat_file(text) TO pgwatch3"
         -c "GRANT EXECUTE ON FUNCTION pg_stat_file(text, boolean) TO pgwatch3"
         -c "INSERT INTO pgwatch3.source (name, preset_config, connstr)
