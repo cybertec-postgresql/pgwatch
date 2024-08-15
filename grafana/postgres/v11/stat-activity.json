@@ -233,8 +233,8 @@
     ]
   },
   "timezone": "",
-  "title": "Stat Activity Realtime",
-  "uid": "fdgjq59eo0vlsb",
+  "title": "Stat Activity",
+  "uid": "stat-activity",
   "version": 1,
   "weekStart": ""
 }

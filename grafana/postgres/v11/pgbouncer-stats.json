@@ -2069,7 +2069,7 @@
   },
   "timezone": "browser",
   "title": "PgBouncer stats",
-  "uid": "cdgjq59nh5zi8d",
+  "uid": "pgbouncer-stats",
   "version": 1,
   "weekStart": ""
 }
