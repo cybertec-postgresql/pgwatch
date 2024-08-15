@@ -8,7 +8,7 @@ RUN cd webui && yarn install --network-timeout 100000 && yarn build
 # ----------------------------------------------------------------
 # 2. Build gatherer
 # ----------------------------------------------------------------
-FROM golang:1.22 as builder
+FROM golang:1.22 AS builder
 
 ARG VERSION
 ARG GIT_HASH
