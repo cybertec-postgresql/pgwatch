@@ -34,7 +34,8 @@ services:
       retries: 5
 
   grafana:
-    image: grafana/grafana:latest
+    # to use latest Grafana v11, update the dashboards provisioning folder below
+    image: grafana/grafana:10.4.7
     user: "0:0"
     environment:
       GF_DATABASE_TYPE: postgres
@@ -54,8 +55,8 @@ services:
       - "./grafana/postgres_datasource.yml:/etc/grafana/provisioning/datasources/pg_ds.yml"
       - "./grafana/postgres_dashboard.yml:/etc/grafana/provisioning/dashboards/pg_db.yml"
       # Uncomment the dashboard version you want to use and comment out the other one.
-      # - "./grafana/postgres/v10:/var/lib/grafana/dashboards"
-      - "./grafana/postgres/v11:/var/lib/grafana/dashboards"
+      - "./grafana/postgres/v10:/var/lib/grafana/dashboards"
+      # - "./grafana/postgres/v11:/var/lib/grafana/dashboards"
     depends_on:
       postgres:
         condition: service_healthy
