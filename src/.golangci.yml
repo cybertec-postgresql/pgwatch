@@ -18,3 +18,4 @@ issues:
   # excluded by default patterns execute `golangci-lint run --help`
   exclude:
     - CPUTimesStat # SA1019: CPUTimesStat is deprecated
+    - SA5008       # duplicate struct tag "choice" (staticcheck)
