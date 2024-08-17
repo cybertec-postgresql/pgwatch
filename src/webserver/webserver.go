@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/cybertec-postgresql/pgwatch3/sources"
@@ -21,13 +20,13 @@ import (
 type WebUIServer struct {
 	l log.LoggerIface
 	http.Server
-	config.WebUIOpts
+	WebUICmdOpts
 	uiFS                fs.FS
 	metricsReaderWriter metrics.ReaderWriter
 	sourcesReaderWriter sources.ReaderWriter
 }
 
-func Init(opts config.WebUIOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, logger log.LoggerIface) *WebUIServer {
+func Init(opts WebUICmdOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, logger log.LoggerIface) *WebUIServer {
 	mux := http.NewServeMux()
 	s := &WebUIServer{
 		logger,

@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/cybertec-postgresql/pgwatch3/log"
 	flags "github.com/jessevdk/go-flags"
 	"github.com/stretchr/testify/assert"
 )
@@ -40,9 +41,9 @@ func TestParseSuccess(t *testing.T) {
 }
 
 func TestLogLevel(t *testing.T) {
-	c := &Options{Logging: LoggingOpts{LogLevel: "debug"}}
+	c := &Options{Logging: log.LoggingCmdOpts{LogLevel: "debug"}}
 	assert.True(t, c.Verbose())
-	c = &Options{Logging: LoggingOpts{LogLevel: "info"}}
+	c = &Options{Logging: log.LoggingCmdOpts{LogLevel: "info"}}
 	assert.False(t, c.Verbose())
 }
 
@@ -52,7 +53,7 @@ func TestNewCmdOptions(t *testing.T) {
 }
 
 func TestConfig(t *testing.T) {
-	os.Args = []string{0: "config_test", "--config=sample.config.yaml"}
+	os.Args = []string{0: "config_test", "--sources=sample.config.yaml"}
 	_, err := New(nil)
 	assert.NoError(t, err)
 
@@ -61,7 +62,7 @@ func TestConfig(t *testing.T) {
 	assert.Error(t, err)
 
 	os.Args = []string{0: "config_test"} // clientname arg is missing, but set PW3_CONFIG
-	assert.NoError(t, os.Setenv("PW3_CONFIG", "postgresql://foo:baz@bar/test"))
+	t.Setenv("PW3_SOURCES", "postgresql://foo:baz@bar/test")
 	_, err = New(nil)
 	assert.NoError(t, err)
 }

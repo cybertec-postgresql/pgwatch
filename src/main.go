@@ -12,11 +12,9 @@ import (
 	"syscall"
 
 	"github.com/cybertec-postgresql/pgwatch3/config"
-	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/cybertec-postgresql/pgwatch3/reaper"
-	"github.com/cybertec-postgresql/pgwatch3/sources"
 	"github.com/cybertec-postgresql/pgwatch3/webserver"
 )
 
@@ -69,33 +67,6 @@ var (
 	opts        *config.Options       // Command line options for the application
 )
 
-// NewConfigurationReaders creates the configuration readers based on the configuration kind from the options.
-func NewConfigurationReaders(opts *config.Options) (sourcesReader sources.ReaderWriter, metricsReader metrics.ReaderWriter, err error) {
-	var configKind config.Kind
-	configKind, err = opts.GetConfigKind()
-	switch {
-	case err != nil:
-		return
-	case configKind != config.ConfigPgURL:
-		ctx := log.WithLogger(mainContext, logger.WithField("config", "files"))
-		if sourcesReader, err = sources.NewYAMLSourcesReaderWriter(ctx, opts.Sources.Config); err != nil {
-			return
-		}
-		metricsReader, err = metrics.NewYAMLMetricReaderWriter(ctx, opts.Metrics.Metrics)
-	default:
-		var configDb db.PgxPoolIface
-		ctx := log.WithLogger(mainContext, logger.WithField("config", "postgres"))
-		if configDb, err = db.New(ctx, opts.Sources.Config); err != nil {
-			return
-		}
-		if metricsReader, err = metrics.NewPostgresMetricReaderWriter(ctx, configDb); err != nil {
-			return
-		}
-		sourcesReader, err = sources.NewPostgresSourcesReaderWriter(ctx, configDb)
-	}
-	return
-}
-
 // UpgradeConfiguration upgrades the configuration if needed.
 func UpgradeConfiguration(m metrics.Migrator) (err error) {
 	if opts.Upgrade {
@@ -141,10 +112,7 @@ func main() {
 
 	logger.Debugf("opts: %+v", opts)
 
-	// sourcesReaderWriter reads/writes the monitored sources (databases, patroni clusters, pgpools, etc.) information
-	// metricsReaderWriter reads/writes the metric and preset definitions
-	sourcesReaderWriter, metricsReaderWriter, err := NewConfigurationReaders(opts)
-	if err != nil {
+	if err := opts.InitConfigReaders(mainContext); err != nil {
 		exitCode.Store(ExitCodeInitError)
 		logger.Error(err)
 		return
@@ -153,7 +121,7 @@ func main() {
 	//check if we want to upgrade the configuration, which can be one of the following:
 	// - PostgreSQL database schema
 	// - YAML file schema
-	if m, ok := metricsReaderWriter.(metrics.Migrator); ok {
+	if m, ok := opts.MetricsReaderWriter.(metrics.Migrator); ok {
 		if err = UpgradeConfiguration(m); err != nil {
 			exitCode.Store(ExitCodeUpgradeError)
 			logger.Error(err)
@@ -169,13 +137,13 @@ func main() {
 
 	if !opts.Ping {
 		uifs, _ := fs.Sub(webuifs, "webui/build")
-		ui := webserver.Init(opts.WebUI, uifs, metricsReaderWriter, sourcesReaderWriter, logger)
+		ui := webserver.Init(opts.WebUI, uifs, opts.MetricsReaderWriter, opts.SourcesReaderWriter, logger)
 		if ui == nil {
 			os.Exit(int(ExitCodeWebUIError))
 		}
 	}
 
-	reaper := reaper.NewReaper(opts, sourcesReaderWriter, metricsReaderWriter)
+	reaper := reaper.NewReaper(opts, opts.SourcesReaderWriter, opts.MetricsReaderWriter)
 	if err = reaper.Reap(mainContext); err != nil {
 		logger.Error(err)
 		exitCode.Store(ExitCodeFatalError)

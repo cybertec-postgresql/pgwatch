@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,20 +20,16 @@ func (mw *MockWriter) Write(_ []metrics.MeasurementMessage) error {
 
 func TestNewMultiWriter(t *testing.T) {
 	input := []struct {
-		opts *config.Options
+		opts *SinkCmdOpts
 		mw   bool // MultiWriter returned
 		err  bool // error returned
 	}{
-		{&config.Options{}, false, true},
-		{&config.Options{
-			Measurements: config.MeasurementOpts{
-				Sinks: []string{"foo"},
-			},
+		{&SinkCmdOpts{}, false, true},
+		{&SinkCmdOpts{
+			Sinks: []string{"foo"},
 		}, false, true},
-		{&config.Options{
-			Measurements: config.MeasurementOpts{
-				Sinks: []string{"jsonfile://test.json"},
-			},
+		{&SinkCmdOpts{
+			Sinks: []string{"jsonfile://test.json"},
 		}, true, false},
 	}
 

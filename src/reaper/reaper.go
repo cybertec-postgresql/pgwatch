@@ -57,7 +57,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 	}
 	go SyncMetricDefs(mainContext, metricsReaderWriter)
 
-	if measurementsWriter, err = sinks.NewMultiWriter(mainContext, opts, metricDefinitionMap); err != nil {
+	if measurementsWriter, err = sinks.NewMultiWriter(mainContext, &opts.Sinks, metricDefinitionMap); err != nil {
 		logger.Fatal(err)
 	}
 	r.measurementCh = make(chan []metrics.MeasurementMessage, 10000)
@@ -124,12 +124,12 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 
 			ver, err = GetMonitoredDatabaseSettings(mainContext, dbUnique, srcType, true)
 			if err != nil {
-				logger.Errorf("could not start metric gathering for DB \"%s\" due to connection problem: %s", dbUnique, err)
+				logger.Errorf("could not start metric gathering due to connection problem: %s", err)
 				continue
 			}
-			logger.Infof("Connect OK. [%s] is on version %s (in recovery: %v)", dbUnique, ver.VersionStr, ver.IsInRecovery)
+			logger.Infof("Connect OK. Version: %s (in recovery: %v)", ver.VersionStr, ver.IsInRecovery)
 			if ver.IsInRecovery && monitoredDB.OnlyIfMaster {
-				logger.Infof("[%s] not added to monitoring due to 'master only' property", dbUnique)
+				logger.Infof("not added to monitoring due to 'master only' property")
 				continue
 			}
 			metricConfig = func() map[string]float64 {
@@ -540,16 +540,16 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.Mo
 func AddDbnameSysinfoIfNotExistsToQueryResultData(data metrics.Measurements, ver MonitoredDatabaseSettings, opts *config.Options) metrics.Measurements {
 	enrichedData := make(metrics.Measurements, 0)
 	for _, dr := range data {
-		if opts.Measurements.RealDbnameField > "" && ver.RealDbname > "" {
-			old, ok := dr[opts.Measurements.RealDbnameField]
+		if opts.Sinks.RealDbnameField > "" && ver.RealDbname > "" {
+			old, ok := dr[opts.Sinks.RealDbnameField]
 			if !ok || old == "" {
-				dr[opts.Measurements.RealDbnameField] = ver.RealDbname
+				dr[opts.Sinks.RealDbnameField] = ver.RealDbname
 			}
 		}
-		if opts.Measurements.SystemIdentifierField > "" && ver.SystemIdentifier > "" {
-			old, ok := dr[opts.Measurements.SystemIdentifierField]
+		if opts.Sinks.SystemIdentifierField > "" && ver.SystemIdentifier > "" {
+			old, ok := dr[opts.Sinks.SystemIdentifierField]
 			if !ok || old == "" {
-				dr[opts.Measurements.SystemIdentifierField] = ver.SystemIdentifier
+				dr[opts.Sinks.SystemIdentifierField] = ver.SystemIdentifier
 			}
 		}
 		enrichedData = append(enrichedData, dr)
@@ -731,7 +731,7 @@ func FetchMetrics(ctx context.Context,
 
 send_to_storageChannel:
 
-	if (opts.Measurements.RealDbnameField > "" || opts.Measurements.SystemIdentifierField > "") && msg.Source == sources.SourcePostgres {
+	if (opts.Sinks.RealDbnameField > "" || opts.Sinks.SystemIdentifierField > "") && msg.Source == sources.SourcePostgres {
 		MonitoredDatabasesSettingsLock.RLock()
 		ver := MonitoredDatabasesSettings[msg.DBUniqueName]
 		MonitoredDatabasesSettingsLock.RUnlock()

@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
@@ -44,7 +43,7 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 		conn.ExpectExec("select admin.ensure_dummy_metrics_table").WithArgs(m).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
 	}
 
-	opts := &config.MeasurementOpts{BatchingDelay: time.Hour, Retention: 356}
+	opts := &SinkCmdOpts{BatchingDelay: time.Hour, Retention: 356}
 	pgw, err := NewWriterFromPostgresConn(ctx, conn, opts, metrics.GetDefaultMetrics())
 	assert.NoError(t, err)
 	assert.NotNil(t, pgw)
