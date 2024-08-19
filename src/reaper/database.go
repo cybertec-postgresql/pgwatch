@@ -912,9 +912,9 @@ func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.MonitoredD
 
 		_, err = c.Exec(ctx, Metric.InitSQL)
 		if err != nil {
-			log.GetLogger(ctx).Warningf("Failed to create a metric fetching helper for %s in %s: %v", md.DBUniqueName, metricName, err)
+			log.GetLogger(ctx).Warningf("Failed to create a metric fetching helper for %s in %s: %v", md.Name, metricName, err)
 		} else {
-			log.GetLogger(ctx).Info("Successfully created metric fetching helper for", md.DBUniqueName, metricName)
+			log.GetLogger(ctx).Info("Successfully created metric fetching helper for", md.Name, metricName)
 		}
 	}
 	return nil
@@ -940,13 +940,13 @@ func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, curr
 	var curDBsMap = make(map[string]bool)
 
 	for _, curDB := range currentDBs {
-		curDBsMap[curDB.DBUniqueName] = true
+		curDBsMap[curDB.Name] = true
 	}
 
 	for _, prevDB := range prevLoopDBs {
-		if _, ok := curDBsMap[prevDB.DBUniqueName]; !ok { // removed from config
+		if _, ok := curDBsMap[prevDB.Name]; !ok { // removed from config
 			prevDB.Conn.Close()
-			_ = metricsWriter.SyncMetrics(prevDB.DBUniqueName, "", "remove")
+			_ = metricsWriter.SyncMetrics(prevDB.Name, "", "remove")
 		}
 	}
 

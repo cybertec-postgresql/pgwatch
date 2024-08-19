@@ -3,7 +3,6 @@ package reaper
 import (
 	"context"
 	"fmt"
-	"os"
 	"slices"
 	"strings"
 	"sync"
@@ -61,9 +60,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 		logger.Fatal(err)
 	}
 	r.measurementCh = make(chan []metrics.MeasurementMessage, 10000)
-	if !opts.Ping {
-		go measurementsWriter.WriteMeasurements(mainContext, r.measurementCh)
-	}
+	go measurementsWriter.WriteMeasurements(mainContext, r.measurementCh)
 
 	for { //main loop
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
@@ -73,7 +70,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 			if firstLoop {
 				logger.Fatal("could not fetch active hosts - check config!", err)
 			} else {
-				logger.Error("could not fetch active hosts, using last valid config data. err:", err)
+				logger.Error("could not fetch active hosts, using last valid config data:", err)
 				time.Sleep(time.Second * time.Duration(opts.Sources.Refresh))
 				continue
 			}
@@ -104,12 +101,12 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 		firstLoop = false // only used for failing when 1st config reading fails
 
 		for _, monitoredDB := range monitoredDbs {
-			logger.WithField("source", monitoredDB.DBUniqueName).
+			logger.WithField("source", monitoredDB.Name).
 				WithField("metric", monitoredDB.Metrics).
 				WithField("tags", monitoredDB.CustomTags).
 				WithField("config", monitoredDB.HostConfig).Debug()
 
-			dbUnique := monitoredDB.DBUniqueName
+			dbUnique := monitoredDB.Name
 			dbUniqueOrig := monitoredDB.GetDatabaseName()
 			srcType := monitoredDB.Kind
 
@@ -154,7 +151,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				}()
 			}
 
-			if !opts.Ping && monitoredDB.IsPostgresSource() && !ver.IsInRecovery {
+			if monitoredDB.IsPostgresSource() && !ver.IsInRecovery {
 				if opts.Metrics.NoHelperFunctions {
 					logger.Infof("[%s] skipping rollout out helper functions due to the --no-helper-functions flag ...", dbUnique)
 				} else {
@@ -207,11 +204,6 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 					extsCreated := TryCreateMissingExtensions(mainContext, dbUnique, extsToCreate, ver.Extensions)
 					logger.Infof("[%s] %d/%d extensions created based on --try-create-listed-exts-if-missing input %v", dbUnique, len(extsCreated), len(extsToCreate), extsCreated)
 				}
-			}
-
-			if opts.Ping {
-				logger.Infof("All configured %d DB hosts were reachable", len(monitoredDbs))
-				os.Exit(0)
 			}
 
 			for metricName, interval := range metricConfig {
@@ -272,7 +264,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 					if cancelFunc, isOk := cancelFuncs[dbMetric]; isOk {
 						cancelFunc()
 					}
-					logger.Warning("shutting down metric", metric, "for", monitoredDB.DBUniqueName)
+					logger.Warning("shutting down metric", metric, "for", monitoredDB.Name)
 					delete(cancelFuncs, dbMetric)
 				} else if !metricDefOk {
 					epoch, ok := lastSQLFetchError.Load(metric)
@@ -523,7 +515,7 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.Mo
 				db[tagPrefix+k] = v
 			}
 			msms = append(msms, metrics.MeasurementMessage{
-				DBName:     mdb.DBUniqueName,
+				DBName:     mdb.Name,
 				MetricName: monitoredDbsDatastoreSyncMetricName,
 				Data:       metrics.Measurements{db},
 			})

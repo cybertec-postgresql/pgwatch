@@ -23,23 +23,18 @@ import (
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	client "go.etcd.io/etcd/client/v3"
+	"go.uber.org/zap"
 )
 
 // ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni
-func (srcs Sources) ResolveDatabases() (MonitoredDatabases, error) {
+func (srcs Sources) ResolveDatabases() (_ MonitoredDatabases, err error) {
 	resolvedDbs := make(MonitoredDatabases, 0, len(srcs))
 	for _, s := range srcs {
 		if !s.IsEnabled {
 			continue
 		}
-		dbs, err := s.ResolveDatabases()
-		if err != nil {
-			return nil, err
-		}
-		if len(dbs) == 0 {
-			resolvedDbs = append(resolvedDbs, &MonitoredDatabase{Source: *(&s).Clone()})
-			continue
-		}
+		dbs, e := s.ResolveDatabases()
+		err = errors.Join(err, e)
 		resolvedDbs = append(resolvedDbs, dbs...)
 	}
 	return resolvedDbs, nil
@@ -53,7 +48,7 @@ func (s Source) ResolveDatabases() (MonitoredDatabases, error) {
 	case SourcePostgresContinuous:
 		return ResolveDatabasesFromPostgres(s)
 	}
-	return nil, nil
+	return MonitoredDatabases{&MonitoredDatabase{Source: *(&s).Clone()}}, nil
 }
 
 type PatroniClusterMember struct {
@@ -157,58 +152,61 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 		DialKeepAliveTimeout: time.Second,
 		Username:             s.HostConfig.Username,
 		Password:             s.HostConfig.Password,
+		DialTimeout:          5 * time.Second,
+		Logger:               zap.NewNop(),
 	}
 
 	c, err := client.New(cfg)
 	if err != nil {
-		logger.Errorf("[%s ]Could not connect to ETCD: %v", s.DBUniqueName, err)
 		return ret, err
 	}
+	ctx, cancel := context.WithTimeoutCause(context.Background(), 5*time.Second, errors.New("etcd client timeout"))
+	defer cancel()
 	kapi := c.KV
 
 	if s.Kind == SourcePatroniNamespace { // all scopes, all DBs (regex filtering applies if defined)
 		if len(s.GetDatabaseName()) > 0 {
-			return ret, fmt.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", s.DBUniqueName)
+			return ret, fmt.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", s.Name)
 		}
 		if s.HostConfig.Namespace == "" {
-			return ret, fmt.Errorf("Skipping Patroni entry %s - search 'namespace' not specified", s.DBUniqueName)
+			return ret, fmt.Errorf("Skipping Patroni entry %s - search 'namespace' not specified", s.Name)
 		}
-		resp, err := kapi.Get(context.Background(), s.HostConfig.Namespace)
+		resp, err := kapi.Get(ctx, s.HostConfig.Namespace)
 		if err != nil {
 			return ret, err
 		}
 
 		for _, node := range resp.Kvs {
 			scope := path.Base(string(node.Key)) // Key="/service/batman"
-			scopeMembers, err := extractEtcdScopeMembers(s, scope, kapi, true)
+			scopeMembers, err := extractEtcdScopeMembers(ctx, s, scope, kapi, true)
 			if err != nil {
 				continue
 			}
 			ret = append(ret, scopeMembers...)
 		}
 	} else {
-		ret, err = extractEtcdScopeMembers(s, s.HostConfig.Scope, kapi, false)
+		ret, err = extractEtcdScopeMembers(ctx, s, s.HostConfig.Scope, kapi, false)
 		if err != nil {
 			return ret, err
 		}
 	}
-	lastFoundClusterMembers[s.DBUniqueName] = ret
+	lastFoundClusterMembers[s.Name] = ret
 	return ret, nil
 }
 
-func extractEtcdScopeMembers(s Source, scope string, kapi client.KV, addScopeToName bool) ([]PatroniClusterMember, error) {
+func extractEtcdScopeMembers(ctx context.Context, s Source, scope string, kapi client.KV, addScopeToName bool) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var name string
 	membersPath := path.Join(s.HostConfig.Namespace, scope, "members")
 
-	resp, err := kapi.Get(context.Background(), membersPath)
+	resp, err := kapi.Get(ctx, membersPath)
 	if err != nil {
 		return nil, err
 	}
-	logger.Debugf("ETCD response for %s scope %s: %+v", s.DBUniqueName, scope, resp)
+	logger.Debugf("ETCD response for %s scope %s: %+v", s.Name, scope, resp)
 
 	for _, node := range resp.Kvs {
-		logger.Debugf("Found a cluster member from etcd [%s:%s]: %+v", s.DBUniqueName, scope, node.Value)
+		logger.Debugf("Found a cluster member from etcd [%s:%s]: %+v", s.Name, scope, node.Value)
 		nodeData, err := jsonTextToStringMap(string(node.Value))
 		if err != nil {
 			logger.Errorf("Could not parse ETCD node data for node \"%s\": %s", node, err)
@@ -235,58 +233,55 @@ const (
 
 func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error) {
 	var mds []*MonitoredDatabase
-	var cm []PatroniClusterMember
+	var clusterMembers []PatroniClusterMember
 	var err error
 	var ok bool
 	var dbUnique string
 
 	switch ce.HostConfig.DcsType {
 	case dcsTypeEtcd:
-		cm, err = getEtcdClusterMembers(ce)
+		clusterMembers, err = getEtcdClusterMembers(ce)
 	case dcsTypeZookeeper:
-		cm, err = getZookeeperClusterMembers(ce)
+		clusterMembers, err = getZookeeperClusterMembers(ce)
 	case dcsTypeConsul:
-		cm, err = getConsulClusterMembers(ce)
+		clusterMembers, err = getConsulClusterMembers(ce)
 	default:
 		return nil, errors.New("unknown DCS")
 	}
 	if err != nil {
-		logger.Warningf("Failed to get info from DCS for %s, using previous member info if any", ce.DBUniqueName)
-		cm, ok = lastFoundClusterMembers[ce.DBUniqueName]
-		if ok { // mask error from main loop not to remove monitored DBs due to "jitter"
+		logger.WithField("source", ce.Name).Debug("Failed to get info from DCS, using previous member info if any")
+		if clusterMembers, ok = lastFoundClusterMembers[ce.Name]; ok { // mask error from main loop not to remove monitored DBs due to "jitter"
 			err = nil
 		}
 	} else {
-		lastFoundClusterMembers[ce.DBUniqueName] = cm
+		lastFoundClusterMembers[ce.Name] = clusterMembers
 	}
-	if len(cm) == 0 {
-		logger.Warningf("No Patroni cluster members found for cluster [%s:%s]", ce.DBUniqueName, ce.HostConfig.Scope)
-		return mds, nil
+	if len(clusterMembers) == 0 {
+		return mds, err
 	}
-	logger.Infof("Found %d Patroni members for entry %s", len(cm), ce.DBUniqueName)
 
-	for _, m := range cm {
-		logger.Infof("Processing Patroni cluster member [%s:%s]", ce.DBUniqueName, m.Name)
+	for _, m := range clusterMembers {
+		logger.Infof("Processing Patroni cluster member [%s:%s]", ce.Name, m.Name)
 		if ce.OnlyIfMaster && m.Role != "master" {
-			logger.Infof("Skipping over Patroni cluster member [%s:%s] as not a master", ce.DBUniqueName, m.Name)
+			logger.Infof("Skipping over Patroni cluster member [%s:%s] as not a master", ce.Name, m.Name)
 			continue
 		}
 		host, port, err := parseHostAndPortFromJdbcConnStr(m.ConnURL)
 		if err != nil {
-			logger.Errorf("Could not parse Patroni conn str \"%s\" [%s:%s]: %v", m.ConnURL, ce.DBUniqueName, m.Scope, err)
+			logger.Errorf("Could not parse Patroni conn str \"%s\" [%s:%s]: %v", m.ConnURL, ce.Name, m.Scope, err)
 			continue
 		}
 		if ce.OnlyIfMaster {
-			dbUnique = ce.DBUniqueName
+			dbUnique = ce.Name
 			if ce.Kind == SourcePatroniNamespace {
-				dbUnique = ce.DBUniqueName + "_" + m.Scope
+				dbUnique = ce.Name + "_" + m.Scope
 			}
 		} else {
-			dbUnique = ce.DBUniqueName + "_" + m.Name
+			dbUnique = ce.Name + "_" + m.Name
 		}
 		if ce.GetDatabaseName() != "" {
 			c := &MonitoredDatabase{Source: *ce.Clone()}
-			c.DBUniqueName = dbUnique
+			c.Name = dbUnique
 			mds = append(mds, c)
 			continue
 		}
@@ -300,7 +295,7 @@ func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error) {
 				return err
 			})
 		if err != nil {
-			logger.Errorf("Could not contact Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
+			logger.Errorf("Could not contact Patroni member [%s:%s]: %v", ce.Name, m.Scope, err)
 			continue
 		}
 		defer c.Close()
@@ -319,7 +314,7 @@ func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error) {
 		}
 		data, err := pgx.CollectRows(rows, pgx.RowToMap)
 		if err != nil {
-			logger.Errorf("Could not get DB name listing from Patroni member [%s:%s]: %v", ce.DBUniqueName, m.Scope, err)
+			logger.Errorf("Could not get DB name listing from Patroni member [%s:%s]: %v", ce.Name, m.Scope, err)
 			continue
 		}
 
@@ -331,7 +326,7 @@ func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error) {
 			connURL.Host = host + ":" + port
 			connURL.Path = d["datname"].(string)
 			c := ce.Clone()
-			c.DBUniqueName = dbUnique + "_" + d["datname_escaped"].(string)
+			c.Name = dbUnique + "_" + d["datname_escaped"].(string)
 			c.ConnStr = connURL.String()
 			mds = append(mds, &MonitoredDatabase{Source: *c})
 		}
@@ -371,7 +366,7 @@ func ResolveDatabasesFromPostgres(s Source) (resolvedDbs MonitoredDatabases, err
 			return nil, err
 		}
 		rdb := &MonitoredDatabase{Source: *s.Clone()}
-		rdb.DBUniqueName += "_" + dbname
+		rdb.Name += "_" + dbname
 		rdb.SetDatabaseName(dbname)
 		resolvedDbs = append(resolvedDbs, rdb)
 	}

@@ -1,6 +1,15 @@
 package main
 
-import "embed"
+import (
+	"embed"
+	"io/fs"
+)
 
 //go:embed webui/build
-var webuifs embed.FS
+var efs embed.FS
+
+var webuifs fs.FS
+
+func init() {
+	webuifs, _ = fs.Sub(efs, "webui/build")
+}

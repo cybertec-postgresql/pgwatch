@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/cybertec-postgresql/pgwatch3/sources"
 	testcontainers "github.com/testcontainers/testcontainers-go"
@@ -21,12 +22,12 @@ func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
 				WithOccurrence(2).
 				WithStartupTimeout(5*time.Second)),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer func() { assert.NoError(t, pgContainer.Terminate(ctx)) }()
 
 	// Create a new MonitoredDatabase instance
 	md := sources.Source{}
-	md.DBUniqueName = "continuous"
+	md.Name = "continuous"
 	md.Kind = sources.SourcePostgresContinuous
 	md.ConnStr, err = pgContainer.ConnectionString(ctx)
 	assert.NoError(t, err)
@@ -37,11 +38,11 @@ func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
 	assert.True(t, len(dbs) == 2) //postgres and mydatabase
 
 	// check the "continuous_mydatabase"
-	db := dbs.GetMonitoredDatabase(md.DBUniqueName + "_mydatabase")
+	db := dbs.GetMonitoredDatabase(md.Name + "_mydatabase")
 	assert.NotNil(t, db)
 	assert.Equal(t, "mydatabase", db.GetDatabaseName())
 
 	//check unexpected database
-	db = dbs.GetMonitoredDatabase(md.DBUniqueName + "_unexpected")
+	db = dbs.GetMonitoredDatabase(md.Name + "_unexpected")
 	assert.Nil(t, db)
 }

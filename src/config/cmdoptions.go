@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"io/fs"
 	"os"
 	"time"
 
@@ -15,6 +16,17 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/webserver"
 	"github.com/jackc/pgx/v5"
 	flags "github.com/jessevdk/go-flags"
+)
+
+const (
+	ExitCodeOK int32 = iota
+	ExitCodeConfigError
+	ExitCodeCmdError
+	ExitCodeWebUIError
+	ExitCodeUpgradeError
+	ExitCodeUserCancel
+	ExitCodeShutdownCommand
+	ExitCodeFatalError
 )
 
 type Kind int
@@ -34,7 +46,6 @@ type Options struct {
 	WebUI   webserver.WebUICmdOpts `group:"WebUI"`
 	Init    bool                   `long:"init" description:"Initialize configurations schemas to the latest version and exit. Can be used with --upgrade"`
 	Upgrade bool                   `long:"upgrade" description:"Upgrade configurations to the latest version"`
-	Ping    bool                   `long:"ping" mapstructure:"ping" description:"Try to connect to all configured DB-s, report errors and then exit" env:"PW3_PING"`
 	Help    bool
 
 	// sourcesReaderWriter reads/writes the monitored sources (databases, patroni clusters, pgpools, etc.) information
@@ -48,6 +59,10 @@ func addCommands(parser *flags.Parser, opts *Options) {
 		"Manage metrics",
 		"Commands to manage metrics",
 		NewMetricCommand(opts))
+	_, _ = parser.AddCommand("source",
+		"Manage sources",
+		"Commands to manage sources",
+		NewSourceCommand(opts))
 }
 
 // New returns a new instance of CmdOptions
@@ -142,6 +157,14 @@ func (c *Options) InitSourceReader(ctx context.Context) (err error) {
 // InitConfigReaders creates the configuration readers based on the configuration kind from the options.
 func (c *Options) InitConfigReaders(ctx context.Context) error {
 	return errors.Join(c.InitMetricReader(ctx), c.InitSourceReader(ctx))
+}
+
+// InitWebUI initializes the web UI server
+func (c *Options) InitWebUI(fs fs.FS, logger log.LoggerIface) error {
+	if webserver.Init(c.WebUI, fs, c.MetricsReaderWriter, c.SourcesReaderWriter, logger) == nil {
+		return errors.New("failed to initialize web UI")
+	}
+	return nil
 }
 
 func validateConfig(c *Options) error {

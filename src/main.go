@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"os/signal"
 	"runtime/debug"
@@ -15,7 +14,6 @@ import (
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 	"github.com/cybertec-postgresql/pgwatch3/reaper"
-	"github.com/cybertec-postgresql/pgwatch3/webserver"
 )
 
 // version output variables
@@ -43,28 +41,17 @@ func SetupCloseHandler(cancel context.CancelFunc) {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		log.GetLogger(mainContext).Debug("SetupCloseHandler received an interrupt from OS. Closing session...")
+		log.GetLogger(mainCtx).Debug("SetupCloseHandler received an interrupt from OS. Closing session...")
 		cancel()
-		exitCode.Store(ExitCodeUserCancel)
+		exitCode.Store(config.ExitCodeUserCancel)
 	}()
 }
 
-const (
-	ExitCodeOK int32 = iota
-	ExitCodeConfigError
-	ExitCodeInitError
-	ExitCodeWebUIError
-	ExitCodeUpgradeError
-	ExitCodeUserCancel
-	ExitCodeShutdownCommand
-	ExitCodeFatalError
-)
-
 var (
-	exitCode    atomic.Int32          // Exit code to be returned to the OS
-	mainContext context.Context       // Main context for the application
-	logger      log.LoggerHookerIface // Logger for the application
-	opts        *config.Options       // Command line options for the application
+	exitCode atomic.Int32          // Exit code to be returned to the OS
+	mainCtx  context.Context       // Main context for the application
+	logger   log.LoggerHookerIface // Logger for the application
+	opts     *config.Options       // Command line options for the application
 )
 
 // UpgradeConfiguration upgrades the configuration if needed.
@@ -86,16 +73,16 @@ func main() {
 		err    error
 		cancel context.CancelFunc
 	)
-	exitCode.Store(ExitCodeOK)
+	exitCode.Store(config.ExitCodeOK)
 	defer func() {
 		if err := recover(); err != nil {
-			exitCode.Store(ExitCodeFatalError)
-			log.GetLogger(mainContext).WithField("callstack", string(debug.Stack())).Error(err)
+			exitCode.Store(config.ExitCodeFatalError)
+			log.GetLogger(mainCtx).WithField("callstack", string(debug.Stack())).Error(err)
 		}
 		os.Exit(int(exitCode.Load()))
 	}()
 
-	mainContext, cancel = context.WithCancel(context.Background())
+	mainCtx, cancel = context.WithCancel(context.Background())
 	SetupCloseHandler(cancel)
 	defer cancel()
 
@@ -103,17 +90,17 @@ func main() {
 		printVersion()
 		fmt.Println(err)
 		if !opts.Help {
-			exitCode.Store(ExitCodeConfigError)
+			exitCode.Store(config.ExitCodeConfigError)
 		}
 		return
 	}
 	logger = log.Init(opts.Logging)
-	mainContext = log.WithLogger(mainContext, logger)
+	mainCtx = log.WithLogger(mainCtx, logger)
 
 	logger.Debugf("opts: %+v", opts)
 
-	if err := opts.InitConfigReaders(mainContext); err != nil {
-		exitCode.Store(ExitCodeInitError)
+	if err := opts.InitConfigReaders(mainCtx); err != nil {
+		exitCode.Store(config.ExitCodeCmdError)
 		logger.Error(err)
 		return
 	}
@@ -123,7 +110,7 @@ func main() {
 	// - YAML file schema
 	if m, ok := opts.MetricsReaderWriter.(metrics.Migrator); ok {
 		if err = UpgradeConfiguration(m); err != nil {
-			exitCode.Store(ExitCodeUpgradeError)
+			exitCode.Store(config.ExitCodeUpgradeError)
 			logger.Error(err)
 			return
 		}
@@ -135,17 +122,15 @@ func main() {
 		return
 	}
 
-	if !opts.Ping {
-		uifs, _ := fs.Sub(webuifs, "webui/build")
-		ui := webserver.Init(opts.WebUI, uifs, opts.MetricsReaderWriter, opts.SourcesReaderWriter, logger)
-		if ui == nil {
-			os.Exit(int(ExitCodeWebUIError))
-		}
+	if err = opts.InitWebUI(webuifs, logger); err != nil {
+		exitCode.Store(config.ExitCodeWebUIError)
+		logger.Error(err)
+		return
 	}
 
 	reaper := reaper.NewReaper(opts, opts.SourcesReaderWriter, opts.MetricsReaderWriter)
-	if err = reaper.Reap(mainContext); err != nil {
+	if err = reaper.Reap(mainCtx); err != nil {
 		logger.Error(err)
-		exitCode.Store(ExitCodeFatalError)
+		exitCode.Store(config.ExitCodeFatalError)
 	}
 }
