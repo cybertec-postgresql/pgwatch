@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"os"
 	"slices"
 
 	"golang.org/x/exp/maps"
@@ -50,7 +49,7 @@ func (cmd *MetricPrintInitCommand) Execute(args []string) error {
 			fmt.Println(m.InitSQL)
 		}
 	}
-	os.Exit(0)
+	cmd.owner.CompleteCommand(ExitCodeOK)
 	return nil
 }
 
@@ -77,6 +76,6 @@ func (cmd *MetricPrintSQLCommand) Execute(args []string) error {
 			fmt.Println(m.GetSQL(cmd.Version))
 		}
 	}
-	os.Exit(0)
+	cmd.owner.CompleteCommand(ExitCodeOK)
 	return nil
 }

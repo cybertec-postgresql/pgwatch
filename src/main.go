@@ -25,11 +25,13 @@ var (
 )
 
 func printVersion() {
-	fmt.Printf(`pgwatch3:
+	fmt.Printf(`
+Version info:
   Version:      %s
   DB Schema:    %s
   Git Commit:   %s
   Built:        %s
+
 `, version, dbapi, commit, date)
 }
 
@@ -94,6 +96,13 @@ func main() {
 		}
 		return
 	}
+
+	// check if some sub-command was executed and exit
+	if opts.CommandCompleted {
+		exitCode.Store(opts.ExitCode)
+		return
+	}
+
 	logger = log.Init(opts.Logging)
 	mainCtx = log.WithLogger(mainCtx, logger)
 

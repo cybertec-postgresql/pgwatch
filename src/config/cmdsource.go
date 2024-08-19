@@ -2,8 +2,8 @@ package config
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"os"
 
 	"github.com/cybertec-postgresql/pgwatch3/sources"
 )
@@ -62,8 +62,11 @@ func (cmd *SourcePingCommand) Execute(args []string) error {
 		} else {
 			fmt.Printf("OK:\t%s\n", s.Name)
 		}
+		err = errors.Join(err, e)
 	}
-
-	os.Exit(map[bool]int{true: int(ExitCodeOK), false: int(ExitCodeCmdError)}[e == nil])
+	// err here specifies execution error, not configuration error
+	// so we indicate it with a special exit code
+	// but we still return nil to indicate that the command was executed
+	cmd.owner.CompleteCommand(map[bool]int32{true: ExitCodeCmdError, false: ExitCodeOK}[err != nil])
 	return nil
 }

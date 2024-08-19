@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -52,6 +53,8 @@ type Options struct {
 	SourcesReaderWriter sources.ReaderWriter
 	// metricsReaderWriter reads/writes the metric and preset definitions
 	MetricsReaderWriter metrics.ReaderWriter
+	ExitCode            int32
+	CommandCompleted    bool
 }
 
 func addCommands(parser *flags.Parser, opts *Options) {
@@ -71,19 +74,28 @@ func New(writer io.Writer) (*Options, error) {
 	parser := flags.NewParser(cmdOpts, flags.HelpFlag)
 	parser.SubcommandsOptional = true // if not command specified, start monitoring
 	addCommands(parser, cmdOpts)
-	var err error
-	if _, err = parser.Parse(); err != nil {
+	nonParsedArgs, err := parser.Parse()
+	if err != nil { //subcommands executed as part of parsing
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
 			cmdOpts.Help = true
 		}
 		if !flags.WroteHelp(err) {
 			parser.WriteHelp(writer)
 		}
+	} else {
+		if !cmdOpts.CommandCompleted && len(nonParsedArgs) > 0 {
+			err = fmt.Errorf("unknown argument(s): %v", nonParsedArgs)
+		}
 	}
 	if err == nil {
 		err = validateConfig(cmdOpts)
 	}
 	return cmdOpts, err
+}
+
+func (c *Options) CompleteCommand(code int32) {
+	c.CommandCompleted = true
+	c.ExitCode = code
 }
 
 // Verbose returns true if the debug log is enabled
