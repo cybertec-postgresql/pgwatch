@@ -134,6 +134,15 @@ func getTransport(conf HostConfigAttrs) (*tls.Config, error) {
 	return tlsClientConfig, nil
 }
 
+func coalesce(errs ...error) error {
+	for _, e := range errs {
+		if e != nil {
+			return e
+		}
+	}
+	return nil
+}
+
 func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var cfg client.Config
@@ -160,6 +169,7 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 	if err != nil {
 		return ret, err
 	}
+
 	ctx, cancel := context.WithTimeoutCause(context.Background(), 5*time.Second, errors.New("etcd client timeout"))
 	defer cancel()
 	kapi := c.KV
@@ -173,7 +183,8 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 		}
 		resp, err := kapi.Get(ctx, s.HostConfig.Namespace)
 		if err != nil {
-			return ret, err
+
+			return ret, coalesce(context.Cause(ctx), err)
 		}
 
 		for _, node := range resp.Kvs {
@@ -187,7 +198,7 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 	} else {
 		ret, err = extractEtcdScopeMembers(ctx, s, s.HostConfig.Scope, kapi, false)
 		if err != nil {
-			return ret, err
+			return ret, coalesce(context.Cause(ctx), err)
 		}
 	}
 	lastFoundClusterMembers[s.Name] = ret

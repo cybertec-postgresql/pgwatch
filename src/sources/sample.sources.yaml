@@ -52,7 +52,7 @@
   sslcert: ''
   sslkey: ''  
 
-- name: $name
+- name: envvar
   kind: $kind
   is_enabled: true
   include_pattern: $include_pattern
