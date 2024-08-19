@@ -55,7 +55,7 @@ func (cmd *SourcePingCommand) Execute(args []string) error {
 			_, e = sources.ResolveDatabasesFromPostgres(s)
 		default:
 			mdb := &sources.MonitoredDatabase{Source: s}
-			e = mdb.Connect(context.Background())
+			e = mdb.Ping(context.Background())
 		}
 		if e != nil {
 			fmt.Printf("FAIL:\t%s (%s)\n", s.Name, e)

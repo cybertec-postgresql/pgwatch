@@ -92,14 +92,28 @@ type (
 	MonitoredDatabases []*MonitoredDatabase
 )
 
-func (md *MonitoredDatabase) Connect(ctx context.Context) (err error) {
-	if md.Conn != nil {
-		return md.Conn.Ping(ctx)
+// Ping will try to establish a brand new connection to the server and return any error
+func (md *MonitoredDatabase) Ping(ctx context.Context) error {
+	c, err := pgx.Connect(ctx, md.ConnStr)
+	if err != nil {
+		return err
 	}
-	md.Conn, err = db.New(ctx, md.ConnStr)
-	return
+	defer func() { _ = c.Close(ctx) }()
+	return c.Ping(ctx)
 }
 
+// Connect will establish a connection to the database if it's not already connected.
+// If the connection is already established, it pings the server to ensure it's still alive.
+func (md *MonitoredDatabase) Connect(ctx context.Context) (err error) {
+	if md.Conn == nil {
+		if md.Conn, err = db.New(ctx, md.ConnStr); err != nil {
+			return err
+		}
+	}
+	return md.Conn.Ping(ctx)
+}
+
+// GetDatabaseName returns the database name from the connection string
 func (md *MonitoredDatabase) GetDatabaseName() string {
 	var err error
 	if md.ConnConfig == nil {
@@ -110,6 +124,8 @@ func (md *MonitoredDatabase) GetDatabaseName() string {
 	return md.ConnConfig.Database
 }
 
+// SetDatabaseName sets the database name in the connection config but
+// does not update the connection string
 func (md *MonitoredDatabase) SetDatabaseName(name string) {
 	var err error
 	if md.ConnConfig == nil {
