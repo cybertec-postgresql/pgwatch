@@ -120,14 +120,14 @@ func TestYAMLUpdateDatabase(t *testing.T) {
 
 		// change the connection string of the first database
 		md := sources.Source{}
-		md.DBUniqueName = "test1"
+		md.Name = "test1"
 		md.ConnStr = "postgresql://localhost/test1"
 		err = yamlrw.UpdateSource(md)
 		a.NoError(err)
 
 		// add a new database
 		md = sources.Source{}
-		md.DBUniqueName = "test5"
+		md.Name = "test5"
 		md.ConnStr = "postgresql://localhost/test5"
 		err = yamlrw.UpdateSource(md)
 		a.NoError(err)

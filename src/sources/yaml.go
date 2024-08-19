@@ -36,7 +36,7 @@ func (fcr *fileSourcesReaderWriter) UpdateSource(md Source) error {
 		return err
 	}
 	for i, db := range dbs {
-		if db.DBUniqueName == md.DBUniqueName {
+		if db.Name == md.Name {
 			dbs[i] = md
 			return fcr.WriteSources(dbs)
 		}
@@ -50,7 +50,7 @@ func (fcr *fileSourcesReaderWriter) DeleteSource(name string) error {
 	if err != nil {
 		return err
 	}
-	dbs = slices.DeleteFunc(dbs, func(md Source) bool { return md.DBUniqueName == name })
+	dbs = slices.DeleteFunc(dbs, func(md Source) bool { return md.Name == name })
 	return fcr.WriteSources(dbs)
 }
 
@@ -106,8 +106,8 @@ func (fcr *fileSourcesReaderWriter) expandEnvVars(md Source) Source {
 	if strings.HasPrefix(string(md.Kind), "$") {
 		md.Kind = Kind(os.ExpandEnv(string(md.Kind)))
 	}
-	if strings.HasPrefix(md.DBUniqueName, "$") {
-		md.DBUniqueName = os.ExpandEnv(md.DBUniqueName)
+	if strings.HasPrefix(md.Name, "$") {
+		md.Name = os.ExpandEnv(md.Name)
 	}
 	if strings.HasPrefix(md.IncludePattern, "$") {
 		md.IncludePattern = os.ExpandEnv(md.IncludePattern)

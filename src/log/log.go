@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
@@ -30,7 +29,7 @@ type logger struct {
 	*BrokerHook
 }
 
-func getLogFileWriter(opts config.LoggingOpts) any {
+func getLogFileWriter(opts LoggingCmdOpts) any {
 	if opts.LogFileRotate {
 		return &lumberjack.Logger{
 			Filename:   opts.LogFile,
@@ -47,7 +46,7 @@ const (
 	enableColors  = false
 )
 
-func getLogFileFormatter(opts config.LoggingOpts) logrus.Formatter {
+func getLogFileFormatter(opts LoggingCmdOpts) logrus.Formatter {
 	if opts.LogFileFormat == "text" {
 		return newFormatter(disableColors)
 	}
@@ -55,7 +54,7 @@ func getLogFileFormatter(opts config.LoggingOpts) logrus.Formatter {
 }
 
 // Init creates logging facilities for the application
-func Init(opts config.LoggingOpts) LoggerHookerIface {
+func Init(opts LoggingCmdOpts) LoggerHookerIface {
 	var err error
 	l := logger{logrus.New(), NewBrokerHook(context.Background(), opts.LogLevel)}
 	l.AddHook(l.BrokerHook)

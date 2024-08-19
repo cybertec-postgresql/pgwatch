@@ -37,8 +37,8 @@ var lastSQLFetchError sync.Map
 
 func InitPGVersionInfoFetchingLockIfNil(md *sources.MonitoredDatabase) {
 	MonitoredDatabasesSettingsLock.Lock()
-	if _, ok := MonitoredDatabasesSettingsGetLock[md.DBUniqueName]; !ok {
-		MonitoredDatabasesSettingsGetLock[md.DBUniqueName] = &sync.RWMutex{}
+	if _, ok := MonitoredDatabasesSettingsGetLock[md.Name]; !ok {
+		MonitoredDatabasesSettingsGetLock[md.Name] = &sync.RWMutex{}
 	}
 	MonitoredDatabasesSettingsLock.Unlock()
 }
@@ -46,7 +46,7 @@ func InitPGVersionInfoFetchingLockIfNil(md *sources.MonitoredDatabase) {
 func UpdateMonitoredDBCache(data sources.MonitoredDatabases) {
 	monitoredDbCacheNew := make(map[string]*sources.MonitoredDatabase)
 	for _, row := range data {
-		monitoredDbCacheNew[row.DBUniqueName] = row
+		monitoredDbCacheNew[row.Name] = row
 	}
 	monitoredDbCacheLock.Lock()
 	monitoredDbCache = monitoredDbCacheNew

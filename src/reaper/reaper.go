@@ -3,7 +3,6 @@ package reaper
 import (
 	"context"
 	"fmt"
-	"os"
 	"slices"
 	"strings"
 	"sync"
@@ -57,13 +56,11 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 	}
 	go SyncMetricDefs(mainContext, metricsReaderWriter)
 
-	if measurementsWriter, err = sinks.NewMultiWriter(mainContext, opts, metricDefinitionMap); err != nil {
+	if measurementsWriter, err = sinks.NewMultiWriter(mainContext, &opts.Sinks, metricDefinitionMap); err != nil {
 		logger.Fatal(err)
 	}
 	r.measurementCh = make(chan []metrics.MeasurementMessage, 10000)
-	if !opts.Ping {
-		go measurementsWriter.WriteMeasurements(mainContext, r.measurementCh)
-	}
+	go measurementsWriter.WriteMeasurements(mainContext, r.measurementCh)
 
 	for { //main loop
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
@@ -73,7 +70,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 			if firstLoop {
 				logger.Fatal("could not fetch active hosts - check config!", err)
 			} else {
-				logger.Error("could not fetch active hosts, using last valid config data. err:", err)
+				logger.Error("could not fetch active hosts, using last valid config data:", err)
 				time.Sleep(time.Second * time.Duration(opts.Sources.Refresh))
 				continue
 			}
@@ -104,12 +101,12 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 		firstLoop = false // only used for failing when 1st config reading fails
 
 		for _, monitoredDB := range monitoredDbs {
-			logger.WithField("source", monitoredDB.DBUniqueName).
+			logger.WithField("source", monitoredDB.Name).
 				WithField("metric", monitoredDB.Metrics).
 				WithField("tags", monitoredDB.CustomTags).
 				WithField("config", monitoredDB.HostConfig).Debug()
 
-			dbUnique := monitoredDB.DBUniqueName
+			dbUnique := monitoredDB.Name
 			dbUniqueOrig := monitoredDB.GetDatabaseName()
 			srcType := monitoredDB.Kind
 
@@ -124,12 +121,12 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 
 			ver, err = GetMonitoredDatabaseSettings(mainContext, dbUnique, srcType, true)
 			if err != nil {
-				logger.Errorf("could not start metric gathering for DB \"%s\" due to connection problem: %s", dbUnique, err)
+				logger.Errorf("could not start metric gathering due to connection problem: %s", err)
 				continue
 			}
-			logger.Infof("Connect OK. [%s] is on version %s (in recovery: %v)", dbUnique, ver.VersionStr, ver.IsInRecovery)
+			logger.Infof("Connect OK. Version: %s (in recovery: %v)", ver.VersionStr, ver.IsInRecovery)
 			if ver.IsInRecovery && monitoredDB.OnlyIfMaster {
-				logger.Infof("[%s] not added to monitoring due to 'master only' property", dbUnique)
+				logger.Infof("not added to monitoring due to 'master only' property")
 				continue
 			}
 			metricConfig = func() map[string]float64 {
@@ -154,7 +151,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				}()
 			}
 
-			if !opts.Ping && monitoredDB.IsPostgresSource() && !ver.IsInRecovery {
+			if monitoredDB.IsPostgresSource() && !ver.IsInRecovery {
 				if opts.Metrics.NoHelperFunctions {
 					logger.Infof("[%s] skipping rollout out helper functions due to the --no-helper-functions flag ...", dbUnique)
 				} else {
@@ -207,11 +204,6 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 					extsCreated := TryCreateMissingExtensions(mainContext, dbUnique, extsToCreate, ver.Extensions)
 					logger.Infof("[%s] %d/%d extensions created based on --try-create-listed-exts-if-missing input %v", dbUnique, len(extsCreated), len(extsToCreate), extsCreated)
 				}
-			}
-
-			if opts.Ping {
-				logger.Infof("All configured %d DB hosts were reachable", len(monitoredDbs))
-				os.Exit(0)
 			}
 
 			for metricName, interval := range metricConfig {
@@ -272,7 +264,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 					if cancelFunc, isOk := cancelFuncs[dbMetric]; isOk {
 						cancelFunc()
 					}
-					logger.Warning("shutting down metric", metric, "for", monitoredDB.DBUniqueName)
+					logger.Warning("shutting down metric", metric, "for", monitoredDB.Name)
 					delete(cancelFuncs, dbMetric)
 				} else if !metricDefOk {
 					epoch, ok := lastSQLFetchError.Load(metric)
@@ -523,7 +515,7 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.Mo
 				db[tagPrefix+k] = v
 			}
 			msms = append(msms, metrics.MeasurementMessage{
-				DBName:     mdb.DBUniqueName,
+				DBName:     mdb.Name,
 				MetricName: monitoredDbsDatastoreSyncMetricName,
 				Data:       metrics.Measurements{db},
 			})
@@ -540,16 +532,16 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.Mo
 func AddDbnameSysinfoIfNotExistsToQueryResultData(data metrics.Measurements, ver MonitoredDatabaseSettings, opts *config.Options) metrics.Measurements {
 	enrichedData := make(metrics.Measurements, 0)
 	for _, dr := range data {
-		if opts.Measurements.RealDbnameField > "" && ver.RealDbname > "" {
-			old, ok := dr[opts.Measurements.RealDbnameField]
+		if opts.Sinks.RealDbnameField > "" && ver.RealDbname > "" {
+			old, ok := dr[opts.Sinks.RealDbnameField]
 			if !ok || old == "" {
-				dr[opts.Measurements.RealDbnameField] = ver.RealDbname
+				dr[opts.Sinks.RealDbnameField] = ver.RealDbname
 			}
 		}
-		if opts.Measurements.SystemIdentifierField > "" && ver.SystemIdentifier > "" {
-			old, ok := dr[opts.Measurements.SystemIdentifierField]
+		if opts.Sinks.SystemIdentifierField > "" && ver.SystemIdentifier > "" {
+			old, ok := dr[opts.Sinks.SystemIdentifierField]
 			if !ok || old == "" {
-				dr[opts.Measurements.SystemIdentifierField] = ver.SystemIdentifier
+				dr[opts.Sinks.SystemIdentifierField] = ver.SystemIdentifier
 			}
 		}
 		enrichedData = append(enrichedData, dr)
@@ -731,7 +723,7 @@ func FetchMetrics(ctx context.Context,
 
 send_to_storageChannel:
 
-	if (opts.Measurements.RealDbnameField > "" || opts.Measurements.SystemIdentifierField > "") && msg.Source == sources.SourcePostgres {
+	if (opts.Sinks.RealDbnameField > "" || opts.Sinks.SystemIdentifierField > "") && msg.Source == sources.SourcePostgres {
 		MonitoredDatabasesSettingsLock.RLock()
 		ver := MonitoredDatabasesSettings[msg.DBUniqueName]
 		MonitoredDatabasesSettingsLock.RUnlock()

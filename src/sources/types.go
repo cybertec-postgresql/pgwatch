@@ -43,7 +43,7 @@ type (
 	// through a connection pooler, which supports its own additional metrics. If one is not interested in
 	// those additional metrics, it is ok to specify the connection details as a regular postgres source.
 	Source struct {
-		DBUniqueName         string             `yaml:"unique_name" db:"name"`
+		Name                 string             `yaml:"name" db:"name"`
 		Group                string             `yaml:"group" db:"group"`
 		ConnStr              string             `yaml:"conn_str" db:"connstr"`
 		Metrics              map[string]float64 `yaml:"custom_metrics" db:"config"`
@@ -92,14 +92,28 @@ type (
 	MonitoredDatabases []*MonitoredDatabase
 )
 
-func (md *MonitoredDatabase) Connect(ctx context.Context) (err error) {
-	if md.Conn != nil {
-		return md.Conn.Ping(ctx)
+// Ping will try to establish a brand new connection to the server and return any error
+func (md *MonitoredDatabase) Ping(ctx context.Context) error {
+	c, err := pgx.Connect(ctx, md.ConnStr)
+	if err != nil {
+		return err
 	}
-	md.Conn, err = db.New(ctx, md.ConnStr)
-	return
+	defer func() { _ = c.Close(ctx) }()
+	return c.Ping(ctx)
 }
 
+// Connect will establish a connection to the database if it's not already connected.
+// If the connection is already established, it pings the server to ensure it's still alive.
+func (md *MonitoredDatabase) Connect(ctx context.Context) (err error) {
+	if md.Conn == nil {
+		if md.Conn, err = db.New(ctx, md.ConnStr); err != nil {
+			return err
+		}
+	}
+	return md.Conn.Ping(ctx)
+}
+
+// GetDatabaseName returns the database name from the connection string
 func (md *MonitoredDatabase) GetDatabaseName() string {
 	var err error
 	if md.ConnConfig == nil {
@@ -110,6 +124,8 @@ func (md *MonitoredDatabase) GetDatabaseName() string {
 	return md.ConnConfig.Database
 }
 
+// SetDatabaseName sets the database name in the connection config but
+// does not update the connection string
 func (md *MonitoredDatabase) SetDatabaseName(name string) {
 	var err error
 	if md.ConnConfig == nil {
@@ -126,28 +142,29 @@ func (md *MonitoredDatabase) IsPostgresSource() bool {
 
 func (mds MonitoredDatabases) GetMonitoredDatabase(DBUniqueName string) *MonitoredDatabase {
 	for _, md := range mds {
-		if md.DBUniqueName == DBUniqueName {
+		if md.Name == DBUniqueName {
 			return md
 		}
 	}
 	return nil
 }
 
+// SyncFromReader will update the monitored databases with the latest configuration from the reader.
+// Any resolution errors will be returned, e.g. etcd unavailability.
+// It's up to the caller to proceed with the databases available or stop the execution due to errors.
 func (mds MonitoredDatabases) SyncFromReader(r Reader) (newmds MonitoredDatabases, err error) {
 	srcs, err := r.GetSources()
 	if err != nil {
 		return nil, err
 	}
-	if newmds, err = srcs.ResolveDatabases(); err != nil {
-		return nil, err
-	}
+	newmds, err = srcs.ResolveDatabases()
 	for _, newMD := range newmds {
-		if md := mds.GetMonitoredDatabase(newMD.DBUniqueName); md != nil {
+		if md := mds.GetMonitoredDatabase(newMD.Name); md != nil {
 			newMD.Conn = md.Conn
 			newMD.ConnConfig = md.ConnConfig
 		}
 	}
-	return newmds, nil
+	return newmds, err
 }
 
 type HostConfigAttrs struct {

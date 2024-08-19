@@ -70,7 +70,7 @@ func TestSyncFromReader(t *testing.T) {
 	a.NoError(err)
 
 	md := &sources.MonitoredDatabase{}
-	md.DBUniqueName = "db1"
+	md.Name = "db1"
 	dbs := sources.MonitoredDatabases{md}
 	dbs, err = dbs.SyncFromReader(pgrw)
 	a.NoError(err)
@@ -98,7 +98,7 @@ func TestUpdateDatabase(t *testing.T) {
 	a.NoError(err)
 
 	md := sources.Source{
-		DBUniqueName:   "db1",
+		Name:           "db1",
 		Group:          "group1",
 		Kind:           sources.Kind("postgres"),
 		ConnStr:        "postgres://user:pass@localhost:5432/db1",
@@ -111,7 +111,7 @@ func TestUpdateDatabase(t *testing.T) {
 	}
 	conn.ExpectPing()
 	conn.ExpectExec(`insert into pgwatch3\.source`).WithArgs(
-		md.DBUniqueName, md.Group, md.Kind,
+		md.Name, md.Group, md.Kind,
 		md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`,
 		md.PresetMetrics, md.PresetMetricsStandby,
 		md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
@@ -134,7 +134,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
 	md := sources.Source{
-		DBUniqueName:   "db1",
+		Name:           "db1",
 		Group:          "group1",
 		Kind:           sources.Kind("postgres"),
 		ConnStr:        "postgres://user:pass@localhost:5432/db1",
@@ -152,7 +152,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 		conn.ExpectBegin()
 		conn.ExpectExec(`truncate pgwatch3\.source`).WillReturnResult(pgxmock.NewResult("TRUNCATE", 1))
 		conn.ExpectExec(`insert into pgwatch3\.source`).WithArgs(
-			md.DBUniqueName, md.Group, md.Kind,
+			md.Name, md.Group, md.Kind,
 			md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`, md.PresetMetrics, md.PresetMetricsStandby,
 			md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
 			nil, md.OnlyIfMaster,
@@ -188,7 +188,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 		conn.ExpectBegin()
 		conn.ExpectExec(`truncate pgwatch3\.source`).WillReturnResult(pgxmock.NewResult("TRUNCATE", 1))
 		conn.ExpectExec(`insert into pgwatch3\.source`).WithArgs(
-			md.DBUniqueName, md.Group, md.Kind,
+			md.Name, md.Group, md.Kind,
 			md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`, md.PresetMetrics, md.PresetMetricsStandby,
 			md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
 			nil, md.OnlyIfMaster,

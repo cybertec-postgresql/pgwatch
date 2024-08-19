@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/db"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
@@ -23,7 +22,7 @@ var (
 	deleterDelay    = time.Hour
 )
 
-func NewPostgresWriter(ctx context.Context, connstr string, opts *config.MeasurementOpts, metricDefs *metrics.Metrics) (pgw *PostgresWriter, err error) {
+func NewPostgresWriter(ctx context.Context, connstr string, opts *SinkCmdOpts, metricDefs *metrics.Metrics) (pgw *PostgresWriter, err error) {
 	var conn db.PgxPoolIface
 	if conn, err = db.New(ctx, connstr); err != nil {
 		return
@@ -31,7 +30,7 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *config.Measure
 	return NewWriterFromPostgresConn(ctx, conn, opts, metricDefs)
 }
 
-func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *config.MeasurementOpts, metricDefs *metrics.Metrics) (pgw *PostgresWriter, err error) {
+func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *SinkCmdOpts, metricDefs *metrics.Metrics) (pgw *PostgresWriter, err error) {
 	pgw = &PostgresWriter{
 		сtx:        ctx,
 		metricDefs: metricDefs,
@@ -105,7 +104,7 @@ type PostgresWriter struct {
 	sinkDb       db.PgxPoolIface
 	metricSchema DbStorageSchemaType
 	metricDefs   *metrics.Metrics
-	opts         *config.MeasurementOpts
+	opts         *SinkCmdOpts
 	input        chan []metrics.MeasurementMessage
 	lastError    chan error
 }

@@ -1,4 +1,4 @@
-- unique_name: test1  # an arbitrary name for the monitored DB. functions also as prefix for found DBs if using continuous discovery "dbtype"-s
+- name: test1  # an arbitrary name for the monitored DB. functions also as prefix for found DBs if using continuous discovery "dbtype"-s
                       # Should be chosen carefully - cannot be (easily) changed for the already stored metric data!
   kind: postgres    # postgres|postgres-continuous-discovery|pgbouncer|pgpool|patroni|patroni-continuous-discovery|patroni-namespace-discovery
                       # defaults to postgres if not specified
@@ -18,14 +18,8 @@
   sslcert: ''
   sslkey: ''
 
-- unique_name: test2
+- name: test2
   kind: patroni-continuous-discovery
-  host: localhost
-  port: 5432
-  dbname: ''
-  user: postgres
-  password:
-  sslmode: disable
   host_config:    # used for storing patroni connect info (dbtype=patroni|patroni-continuous-discovery) or log parsing settings
     dcs_type: etcd
     dcs_endpoints: ["http://localhost:2379"]
@@ -48,14 +42,8 @@
   is_enabled: false
   only_if_master: true # don't gather metrics from standby servers
 
-- unique_name: pgbouncer
-  dbtype: pgbouncer
-  host: 127.0.0.1
-  port: 6432
-  dbname: postgres 
-  user: pgwatch2
-  sslmode: disable    
-  is_superuser: false 
+- name: pgbouncer
+  conn_str: postgresql://pgwatch3:pgwatch3admin@localhost/pgwatch3
   custom_metrics: 
     pgbouncer_stats: 10
     pgbouncer_clients: 10
@@ -64,7 +52,7 @@
   sslcert: ''
   sslkey: ''  
 
-- unique_name: $name
+- name: envvar
   kind: $kind
   is_enabled: true
   include_pattern: $include_pattern

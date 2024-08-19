@@ -5,7 +5,6 @@ import (
 	_ "embed"
 
 	"github.com/cybertec-postgresql/pgwatch3/db"
-	"github.com/cybertec-postgresql/pgwatch3/log"
 )
 
 func NewPostgresMetricReaderWriter(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error) {
@@ -50,8 +49,6 @@ var _ Migrator = (*dbMetricReaderWriter)(nil)
 // writeMetricsToPostgres writes the metrics and presets definitions to the
 // pgwatch3.metric and pgwatch3.preset tables in the ConfigDB.
 func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *Metrics) error {
-	logger := log.GetLogger(ctx)
-	logger.Info("writing metrics definitions to configuration database...")
 	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
@@ -82,8 +79,6 @@ func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *M
 func (dmrw *dbMetricReaderWriter) GetMetrics() (metricDefMapNew *Metrics, err error) {
 	ctx := dmrw.ctx
 	conn := dmrw.configDb
-	logger := log.GetLogger(ctx)
-	logger.Info("reading metrics definitions from configuration database...")
 	metricDefMapNew = &Metrics{MetricDefs{}, PresetDefs{}}
 	rows, err := conn.Query(ctx, `SELECT name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name FROM pgwatch3.metric`)
 	if err != nil {

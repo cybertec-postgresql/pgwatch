@@ -7,7 +7,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
 	"github.com/cybertec-postgresql/pgwatch3/log"
 	"github.com/cybertec-postgresql/pgwatch3/metrics"
 )
@@ -25,11 +24,11 @@ type MultiWriter struct {
 }
 
 // NewMultiWriter creates and returns new instance of MultiWriter struct.
-func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs *metrics.Metrics) (mw *MultiWriter, err error) {
+func NewMultiWriter(ctx context.Context, opts *SinkCmdOpts, metricDefs *metrics.Metrics) (mw *MultiWriter, err error) {
 	var w Writer
 	logger := log.GetLogger(ctx)
 	mw = &MultiWriter{}
-	for _, s := range opts.Measurements.Sinks {
+	for _, s := range opts.Sinks {
 		l := logger.WithField("sink", s)
 		ctx = log.WithLogger(ctx, l)
 		scheme, path, found := strings.Cut(s, "://")
@@ -40,7 +39,7 @@ func NewMultiWriter(ctx context.Context, opts *config.Options, metricDefs *metri
 		case "jsonfile":
 			w, err = NewJSONWriter(ctx, path)
 		case "postgres", "postgresql":
-			w, err = NewPostgresWriter(ctx, s, &opts.Measurements, metricDefs)
+			w, err = NewPostgresWriter(ctx, s, opts, metricDefs)
 		case "prometheus":
 			w, err = NewPrometheusWriter(ctx, path)
 		case "rpc":

@@ -74,7 +74,7 @@ on conflict (name) do update set
 	host_config = $13, 
 	only_if_master = $14`
 	_, err = conn.Exec(context.Background(), sql,
-		md.DBUniqueName, md.Group, md.Kind,
+		md.Name, md.Group, md.Kind,
 		md.ConnStr, m(md.Metrics), m(md.MetricsStandby), md.PresetMetrics, md.PresetMetricsStandby,
 		md.IsSuperuser, md.IncludePattern, md.ExcludePattern, m(md.CustomTags),
 		m(md.HostConfig), md.OnlyIfMaster)

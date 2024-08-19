@@ -103,7 +103,7 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 	}
 	allSeverityCounts["epoch_ns"] = time.Now().UnixNano()
 	return []MeasurementMessage{{
-		DBName:     mdb.DBUniqueName,
+		DBName:     mdb.Name,
 		SourceType: string(mdb.Kind),
 		MetricName: specialMetricServerLogEventCounts,
 		Data:       Measurements{allSeverityCounts},
