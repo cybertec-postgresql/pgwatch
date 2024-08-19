@@ -43,7 +43,7 @@ func SetupCloseHandler(cancel context.CancelFunc) {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		logger.Debug("SetupCloseHandler received an interrupt from OS. Closing session...")
+		log.GetLogger(mainContext).Debug("SetupCloseHandler received an interrupt from OS. Closing session...")
 		cancel()
 		exitCode.Store(ExitCodeUserCancel)
 	}()
