@@ -5,6 +5,7 @@ package sources
 // Postgres resolver will return the list of databases from the given Postgres instance.
 
 import (
+	"cmp"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -134,15 +135,6 @@ func getTransport(conf HostConfigAttrs) (*tls.Config, error) {
 	return tlsClientConfig, nil
 }
 
-func coalesce(errs ...error) error {
-	for _, e := range errs {
-		if e != nil {
-			return e
-		}
-	}
-	return nil
-}
-
 func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var cfg client.Config
@@ -184,7 +176,7 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 		resp, err := kapi.Get(ctx, s.HostConfig.Namespace)
 		if err != nil {
 
-			return ret, coalesce(context.Cause(ctx), err)
+			return ret, cmp.Or(context.Cause(ctx), err)
 		}
 
 		for _, node := range resp.Kvs {
@@ -198,7 +190,7 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 	} else {
 		ret, err = extractEtcdScopeMembers(ctx, s, s.HostConfig.Scope, kapi, false)
 		if err != nil {
-			return ret, coalesce(context.Cause(ctx), err)
+			return ret, cmp.Or(context.Cause(ctx), err)
 		}
 	}
 	lastFoundClusterMembers[s.Name] = ret
