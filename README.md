@@ -1,3 +1,4 @@
+[![Documentation](https://img.shields.io/badge/Documentation-pgwat.ch-brightgreen)](https://pgwat.ch)
 [![License: MIT](https://img.shields.io/badge/License-BSD_3-green.svg)](https://opensource.org/license/bsd-3-clause)
 [![Go Build & Test](https://github.com/cybertec-postgresql/pgwatch3/actions/workflows/build.yml/badge.svg)](https://github.com/cybertec-postgresql/pgwatch3/actions/workflows/build.yml)
 [![Coverage Status](https://coveralls.io/repos/github/cybertec-postgresql/pgwatch3/badge.svg?branch=master&service=github)](https://coveralls.io/github/cybertec-postgresql/pgwatch3?branch=master)
