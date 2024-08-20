@@ -7,16 +7,16 @@
 
   <title>log - GoPages</title>
 
-<link type="text/css" rel="stylesheet" href="/pgwatch3/godoc/lib/godoc/style.css">
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css">
 
 <script>window.initFuncs = [];</script>
-<script src="/pgwatch3/godoc/lib/godoc/jquery.js" defer></script>
+<script src="/godoc/lib/godoc/jquery.js" defer></script>
 
 
 
 
 <script>var goVersion = "go1.22.0";</script>
-<script src="/pgwatch3/godoc/lib/godoc/godocs.js" defer></script>
+<script src="/godoc/lib/godoc/godocs.js" defer></script>
 
 </head>
 <body>
@@ -26,8 +26,8 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
-<div class="top-heading" id="heading-narrow"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
 <a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
 
 </div></div>
@@ -150,7 +150,7 @@
 				<dd><a href="#LoggerHookerIface">type LoggerHookerIface</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Init">func Init(opts config.LoggingOpts) LoggerHookerIface</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Init">func Init(opts LoggingCmdOpts) LoggerHookerIface</a></dd>
 				
 				
 			
@@ -159,6 +159,11 @@
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#GetLogger">func GetLogger(ctx context.Context) LoggerIface</a></dd>
+				
+				
+			
+				
+				<dd><a href="#LoggingCmdOpts">type LoggingCmdOpts</a></dd>
 				
 				
 			
@@ -204,6 +209,8 @@
 			<p>
 			<span style="font-size:90%">
 			
+				<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/cmdopts.go">cmdopts.go</a>
+			
 				<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/formatter.go">formatter.go</a>
 			
 				<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go">log.go</a>
@@ -230,7 +237,7 @@
 		
 			
 			
-			<h2 id="WithLogger">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L111">WithLogger</a>
+			<h2 id="WithLogger">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L110">WithLogger</a>
 				<a class="permalink" href="#WithLogger">&#xb6;</a>
 				
 				
@@ -455,7 +462,7 @@ l.Error(&#34;test4&#34;)
 		
 			
 			
-			<h2 id="LoggerHookerIface">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L18">LoggerHookerIface</a>
+			<h2 id="LoggerHookerIface">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L17">LoggerHookerIface</a>
 				<a class="permalink" href="#LoggerHookerIface">&#xb6;</a>
 				
 				
@@ -479,12 +486,12 @@ l.Error(&#34;test4&#34;)
 
 			
 				
-				<h3 id="Init">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L58">Init</a>
+				<h3 id="Init">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L57">Init</a>
 					<a class="permalink" href="#Init">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func Init(opts <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/config/">config</a>.<a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/config/#LoggingOpts">LoggingOpts</a>) <a href="#LoggerHookerIface">LoggerHookerIface</a></pre>
+				<pre>func Init(opts <a href="#LoggingCmdOpts">LoggingCmdOpts</a>) <a href="#LoggerHookerIface">LoggerHookerIface</a></pre>
 				<p>Init creates logging facilities for the application
 
 				
@@ -495,7 +502,7 @@ l.Error(&#34;test4&#34;)
 		
 			
 			
-			<h2 id="LoggerIface">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L16">LoggerIface</a>
+			<h2 id="LoggerIface">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L15">LoggerIface</a>
 				<a class="permalink" href="#LoggerIface">&#xb6;</a>
 				
 				
@@ -514,7 +521,7 @@ l.Error(&#34;test4&#34;)
 
 			
 				
-				<h3 id="GetLogger">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L120">GetLogger</a>
+				<h3 id="GetLogger">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L119">GetLogger</a>
 					<a class="permalink" href="#GetLogger">&#xb6;</a>
 					
 					
@@ -525,6 +532,38 @@ available, the default logger is returned
 
 				
 				
+			
+
+			
+		
+			
+			
+			<h2 id="LoggingCmdOpts">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/cmdopts.go#L4">LoggingCmdOpts</a>
+				<a class="permalink" href="#LoggingCmdOpts">&#xb6;</a>
+				
+				
+			</h2>
+			<p>LoggingCmdOpts specifies the logging command-line options
+
+			<pre>type LoggingCmdOpts struct {
+<span id="LoggingCmdOpts.LogLevel"></span>    LogLevel      <a href="https://pkg.go.dev/builtin/#string">string</a> `short:&#34;v&#34; long:&#34;log-level&#34; mapstructure:&#34;log-level&#34; description:&#34;Verbosity level for stdout and log file&#34; choice:&#34;debug&#34; choice:&#34;info&#34; choice:&#34;error&#34; default:&#34;info&#34;`
+<span id="LoggingCmdOpts.LogFile"></span>    LogFile       <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;log-file&#34; mapstructure:&#34;log-file&#34; description:&#34;File name to store logs&#34;`
+<span id="LoggingCmdOpts.LogFileFormat"></span>    LogFileFormat <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;log-file-format&#34; mapstructure:&#34;log-file-format&#34; description:&#34;Format of file logs&#34; choice:&#34;json&#34; choice:&#34;text&#34; default:&#34;json&#34;`
+<span id="LoggingCmdOpts.LogFileRotate"></span>    LogFileRotate <a href="https://pkg.go.dev/builtin/#bool">bool</a>   `long:&#34;log-file-rotate&#34; mapstructure:&#34;log-file-rotate&#34; description:&#34;Rotate log files&#34;`
+<span id="LoggingCmdOpts.LogFileSize"></span>    LogFileSize   <a href="https://pkg.go.dev/builtin/#int">int</a>    `long:&#34;log-file-size&#34; mapstructure:&#34;log-file-size&#34; description:&#34;Maximum size in MB of the log file before it gets rotated&#34; default:&#34;100&#34;`
+<span id="LoggingCmdOpts.LogFileAge"></span>    LogFileAge    <a href="https://pkg.go.dev/builtin/#int">int</a>    `long:&#34;log-file-age&#34; mapstructure:&#34;log-file-age&#34; description:&#34;Number of days to retain old log files, 0 means forever&#34; default:&#34;0&#34;`
+<span id="LoggingCmdOpts.LogFileNumber"></span>    LogFileNumber <a href="https://pkg.go.dev/builtin/#int">int</a>    `long:&#34;log-file-number&#34; mapstructure:&#34;log-file-number&#34; description:&#34;Maximum number of old log files to retain, 0 to retain all&#34; default:&#34;0&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
 			
 
 			
@@ -577,7 +616,7 @@ available, the default logger is returned
 		
 			
 			
-			<h2 id="PgxLogger">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L77">PgxLogger</a>
+			<h2 id="PgxLogger">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L76">PgxLogger</a>
 				<a class="permalink" href="#PgxLogger">&#xb6;</a>
 				
 				
@@ -599,7 +638,7 @@ available, the default logger is returned
 
 			
 				
-				<h3 id="NewPgxLogger">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L82">NewPgxLogger</a>
+				<h3 id="NewPgxLogger">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L81">NewPgxLogger</a>
 					<a class="permalink" href="#NewPgxLogger">&#xb6;</a>
 					
 					
@@ -613,7 +652,7 @@ available, the default logger is returned
 
 			
 				
-				<h3 id="PgxLogger.Log">func (*PgxLogger) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L87">Log</a>
+				<h3 id="PgxLogger.Log">func (*PgxLogger) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/log/log.go#L86">Log</a>
 					<a class="permalink" href="#PgxLogger.Log">&#xb6;</a>
 					
 					

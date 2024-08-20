@@ -5,16 +5,16 @@
 
   <title>src/github.com/cybertec-postgresql/pgwatch3/\sources\/yaml_test.go - GoPages</title>
 
-<link type="text/css" rel="stylesheet" href="/pgwatch3/godoc/lib/godoc/style.css"/>
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css"/>
 
 <script>window.initFuncs = [];</script>
-<script src="/pgwatch3/godoc/lib/godoc/jquery.js" defer=""></script>
+<script src="/godoc/lib/godoc/jquery.js" defer=""></script>
 
 
 
 
 <script>var goVersion = "go1.22.0";</script>
-<script src="/pgwatch3/godoc/lib/godoc/godocs.js" defer=""></script>
+<script src="/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
 <body>
@@ -24,8 +24,8 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
-<div class="top-heading" id="heading-narrow"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
 <a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
 
 </div></div>
@@ -38,7 +38,7 @@
 
   <h1>
     Source file
-    <a href="/pgwatch3/godoc/src">src</a>/<a href="/pgwatch3/godoc/src/github.com">github.com</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql/pgwatch3/\sources\">\sources\</a>/<span class="text-muted">yaml_test.go</span>
+    <a href="/godoc/src">src</a>/<a href="/godoc/src/github.com">github.com</a>/<a href="/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3/\sources\">\sources\</a>/<span class="text-muted">yaml_test.go</span>
   </h1>
 
 
@@ -46,7 +46,7 @@
 
 
   <h2>
-    Documentation: <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\sources\">github.com/cybertec-postgresql/pgwatch3/\sources\</a>
+    Documentation: <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\sources\">github.com/cybertec-postgresql/pgwatch3/\sources\</a>
   </h2>
 
 
@@ -177,14 +177,14 @@
 <span id="L120" class="ln">   120  </span>
 <span id="L121" class="ln">   121  </span>		<span class="comment">// change the connection string of the first database</span>
 <span id="L122" class="ln">   122  </span>		md := sources.Source{}
-<span id="L123" class="ln">   123  </span>		md.DBUniqueName = &#34;test1&#34;
+<span id="L123" class="ln">   123  </span>		md.Name = &#34;test1&#34;
 <span id="L124" class="ln">   124  </span>		md.ConnStr = &#34;postgresql://localhost/test1&#34;
 <span id="L125" class="ln">   125  </span>		err = yamlrw.UpdateSource(md)
 <span id="L126" class="ln">   126  </span>		a.NoError(err)
 <span id="L127" class="ln">   127  </span>
 <span id="L128" class="ln">   128  </span>		<span class="comment">// add a new database</span>
 <span id="L129" class="ln">   129  </span>		md = sources.Source{}
-<span id="L130" class="ln">   130  </span>		md.DBUniqueName = &#34;test5&#34;
+<span id="L130" class="ln">   130  </span>		md.Name = &#34;test5&#34;
 <span id="L131" class="ln">   131  </span>		md.ConnStr = &#34;postgresql://localhost/test5&#34;
 <span id="L132" class="ln">   132  </span>		err = yamlrw.UpdateSource(md)
 <span id="L133" class="ln">   133  </span>		a.NoError(err)

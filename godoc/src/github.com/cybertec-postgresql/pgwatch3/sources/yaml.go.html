@@ -5,16 +5,16 @@
 
   <title>src/github.com/cybertec-postgresql/pgwatch3/\sources\/yaml.go - GoPages</title>
 
-<link type="text/css" rel="stylesheet" href="/pgwatch3/godoc/lib/godoc/style.css"/>
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css"/>
 
 <script>window.initFuncs = [];</script>
-<script src="/pgwatch3/godoc/lib/godoc/jquery.js" defer=""></script>
+<script src="/godoc/lib/godoc/jquery.js" defer=""></script>
 
 
 
 
 <script>var goVersion = "go1.22.0";</script>
-<script src="/pgwatch3/godoc/lib/godoc/godocs.js" defer=""></script>
+<script src="/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
 <body>
@@ -24,8 +24,8 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
-<div class="top-heading" id="heading-narrow"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
 <a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
 
 </div></div>
@@ -38,7 +38,7 @@
 
   <h1>
     Source file
-    <a href="/pgwatch3/godoc/src">src</a>/<a href="/pgwatch3/godoc/src/github.com">github.com</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql/pgwatch3/\sources\">\sources\</a>/<span class="text-muted">yaml.go</span>
+    <a href="/godoc/src">src</a>/<a href="/godoc/src/github.com">github.com</a>/<a href="/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3/\sources\">\sources\</a>/<span class="text-muted">yaml.go</span>
   </h1>
 
 
@@ -46,7 +46,7 @@
 
 
   <h2>
-    Documentation: <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\sources\">github.com/cybertec-postgresql/pgwatch3/\sources\</a>
+    Documentation: <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\sources\">github.com/cybertec-postgresql/pgwatch3/\sources\</a>
   </h2>
 
 
@@ -93,7 +93,7 @@
 <span id="L36" class="ln">    36  </span>		return err
 <span id="L37" class="ln">    37  </span>	}
 <span id="L38" class="ln">    38  </span>	for i, db := range dbs {
-<span id="L39" class="ln">    39  </span>		if db.DBUniqueName == md.DBUniqueName {
+<span id="L39" class="ln">    39  </span>		if db.Name == md.Name {
 <span id="L40" class="ln">    40  </span>			dbs[i] = md
 <span id="L41" class="ln">    41  </span>			return fcr.WriteSources(dbs)
 <span id="L42" class="ln">    42  </span>		}
@@ -107,7 +107,7 @@
 <span id="L50" class="ln">    50  </span>	if err != nil {
 <span id="L51" class="ln">    51  </span>		return err
 <span id="L52" class="ln">    52  </span>	}
-<span id="L53" class="ln">    53  </span>	dbs = slices.DeleteFunc(dbs, func(md Source) bool { return md.DBUniqueName == name })
+<span id="L53" class="ln">    53  </span>	dbs = slices.DeleteFunc(dbs, func(md Source) bool { return md.Name == name })
 <span id="L54" class="ln">    54  </span>	return fcr.WriteSources(dbs)
 <span id="L55" class="ln">    55  </span>}
 <span id="L56" class="ln">    56  </span>
@@ -163,8 +163,8 @@
 <span id="L106" class="ln">   106  </span>	if strings.HasPrefix(string(md.Kind), &#34;$&#34;) {
 <span id="L107" class="ln">   107  </span>		md.Kind = Kind(os.ExpandEnv(string(md.Kind)))
 <span id="L108" class="ln">   108  </span>	}
-<span id="L109" class="ln">   109  </span>	if strings.HasPrefix(md.DBUniqueName, &#34;$&#34;) {
-<span id="L110" class="ln">   110  </span>		md.DBUniqueName = os.ExpandEnv(md.DBUniqueName)
+<span id="L109" class="ln">   109  </span>	if strings.HasPrefix(md.Name, &#34;$&#34;) {
+<span id="L110" class="ln">   110  </span>		md.Name = os.ExpandEnv(md.Name)
 <span id="L111" class="ln">   111  </span>	}
 <span id="L112" class="ln">   112  </span>	if strings.HasPrefix(md.IncludePattern, &#34;$&#34;) {
 <span id="L113" class="ln">   113  </span>		md.IncludePattern = os.ExpandEnv(md.IncludePattern)

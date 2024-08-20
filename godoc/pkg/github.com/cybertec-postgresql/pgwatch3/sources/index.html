@@ -7,16 +7,16 @@
 
   <title>sources - GoPages</title>
 
-<link type="text/css" rel="stylesheet" href="/pgwatch3/godoc/lib/godoc/style.css">
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css">
 
 <script>window.initFuncs = [];</script>
-<script src="/pgwatch3/godoc/lib/godoc/jquery.js" defer></script>
+<script src="/godoc/lib/godoc/jquery.js" defer></script>
 
 
 
 
 <script>var goVersion = "go1.22.0";</script>
-<script src="/pgwatch3/godoc/lib/godoc/godocs.js" defer></script>
+<script src="/godoc/lib/godoc/godocs.js" defer></script>
 
 </head>
 <body>
@@ -26,8 +26,8 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
-<div class="top-heading" id="heading-narrow"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
 <a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
 
 </div></div>
@@ -145,6 +145,9 @@
 					<dd>&nbsp; &nbsp; <a href="#MonitoredDatabase.IsPostgresSource">func (md *MonitoredDatabase) IsPostgresSource() bool</a></dd>
 				
 					
+					<dd>&nbsp; &nbsp; <a href="#MonitoredDatabase.Ping">func (md *MonitoredDatabase) Ping(ctx context.Context) error</a></dd>
+				
+					
 					<dd>&nbsp; &nbsp; <a href="#MonitoredDatabase.SetDatabaseName">func (md *MonitoredDatabase) SetDatabaseName(name string)</a></dd>
 				
 			
@@ -198,11 +201,16 @@
 				
 			
 				
+				<dd><a href="#SourceCmdOpts">type SourceCmdOpts</a></dd>
+				
+				
+			
+				
 				<dd><a href="#Sources">type Sources</a></dd>
 				
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Sources.ResolveDatabases">func (srcs Sources) ResolveDatabases() (MonitoredDatabases, error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Sources.ResolveDatabases">func (srcs Sources) ResolveDatabases() (_ MonitoredDatabases, err error)</a></dd>
 				
 			
 				
@@ -220,6 +228,8 @@
 			<h3>Package files</h3>
 			<p>
 			<span style="font-size:90%">
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/cmdopts.go">cmdopts.go</a>
 			
 				<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/doc.go">doc.go</a>
 			
@@ -259,7 +269,7 @@
 		
 			
 			
-			<h2 id="HostConfigAttrs">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L153">HostConfigAttrs</a>
+			<h2 id="HostConfigAttrs">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L170">HostConfigAttrs</a>
 				<a class="permalink" href="#HostConfigAttrs">&#xb6;</a>
 				
 				
@@ -295,7 +305,7 @@
 		
 			
 			
-			<h2 id="HostConfigPerMetricDisabledTimes">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L168">HostConfigPerMetricDisabledTimes</a>
+			<h2 id="HostConfigPerMetricDisabledTimes">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L185">HostConfigPerMetricDisabledTimes</a>
 				<a class="permalink" href="#HostConfigPerMetricDisabledTimes">&#xb6;</a>
 				
 				
@@ -378,7 +388,7 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			<pre>type MonitoredDatabase struct {
     <a href="#Source">Source</a>
-<span id="MonitoredDatabase.Conn"></span>    Conn       <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/">db</a>.<a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/#PgxPoolIface">PgxPoolIface</a>
+<span id="MonitoredDatabase.Conn"></span>    Conn       <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/#PgxPoolIface">PgxPoolIface</a>
 <span id="MonitoredDatabase.ConnConfig"></span>    ConnConfig *<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/">pgx</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/#ConnConfig">ConnConfig</a>
 }
 </pre>
@@ -393,7 +403,7 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="ResolveDatabasesFromPatroni">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/resolver.go#L236">ResolveDatabasesFromPatroni</a>
+				<h3 id="ResolveDatabasesFromPatroni">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/resolver.go#L237">ResolveDatabasesFromPatroni</a>
 					<a class="permalink" href="#ResolveDatabasesFromPatroni">&#xb6;</a>
 					
 					
@@ -406,31 +416,34 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="MonitoredDatabase.Connect">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L95">Connect</a>
+				<h3 id="MonitoredDatabase.Connect">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L107">Connect</a>
 					<a class="permalink" href="#MonitoredDatabase.Connect">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (md *<a href="#MonitoredDatabase">MonitoredDatabase</a>) Connect(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				
+				<p>Connect will establish a connection to the database if it&apos;s not already connected.
+If the connection is already established, it pings the server to ensure it&apos;s still alive.
+
 				
 				
 				
 			
 				
-				<h3 id="MonitoredDatabase.GetDatabaseName">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L103">GetDatabaseName</a>
+				<h3 id="MonitoredDatabase.GetDatabaseName">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L117">GetDatabaseName</a>
 					<a class="permalink" href="#MonitoredDatabase.GetDatabaseName">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (md *<a href="#MonitoredDatabase">MonitoredDatabase</a>) GetDatabaseName() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
-				
+				<p>GetDatabaseName returns the database name from the connection string
+
 				
 				
 				
 			
 				
-				<h3 id="MonitoredDatabase.IsPostgresSource">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L123">IsPostgresSource</a>
+				<h3 id="MonitoredDatabase.IsPostgresSource">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L139">IsPostgresSource</a>
 					<a class="permalink" href="#MonitoredDatabase.IsPostgresSource">&#xb6;</a>
 					
 					
@@ -442,13 +455,28 @@ will produce multiple monitored databases structs based on the discovered databa
 				
 			
 				
-				<h3 id="MonitoredDatabase.SetDatabaseName">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L113">SetDatabaseName</a>
+				<h3 id="MonitoredDatabase.Ping">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L96">Ping</a>
+					<a class="permalink" href="#MonitoredDatabase.Ping">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (md *<a href="#MonitoredDatabase">MonitoredDatabase</a>) Ping(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>Ping will try to establish a brand new connection to the server and return any error
+
+				
+				
+				
+			
+				
+				<h3 id="MonitoredDatabase.SetDatabaseName">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L129">SetDatabaseName</a>
 					<a class="permalink" href="#MonitoredDatabase.SetDatabaseName">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (md *<a href="#MonitoredDatabase">MonitoredDatabase</a>) SetDatabaseName(name <a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
-				
+				<p>SetDatabaseName sets the database name in the connection config but
+does not update the connection string
+
 				
 				
 				
@@ -477,7 +505,7 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="ResolveDatabasesFromPostgres">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/resolver.go#L345">ResolveDatabasesFromPostgres</a>
+				<h3 id="ResolveDatabasesFromPostgres">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/resolver.go#L343">ResolveDatabasesFromPostgres</a>
 					<a class="permalink" href="#ResolveDatabasesFromPostgres">&#xb6;</a>
 					
 					
@@ -491,7 +519,7 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="MonitoredDatabases.GetMonitoredDatabase">func (MonitoredDatabases) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L127">GetMonitoredDatabase</a>
+				<h3 id="MonitoredDatabases.GetMonitoredDatabase">func (MonitoredDatabases) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L143">GetMonitoredDatabase</a>
 					<a class="permalink" href="#MonitoredDatabases.GetMonitoredDatabase">&#xb6;</a>
 					
 					
@@ -503,13 +531,16 @@ will produce multiple monitored databases structs based on the discovered databa
 				
 			
 				
-				<h3 id="MonitoredDatabases.SyncFromReader">func (MonitoredDatabases) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L136">SyncFromReader</a>
+				<h3 id="MonitoredDatabases.SyncFromReader">func (MonitoredDatabases) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L155">SyncFromReader</a>
 					<a class="permalink" href="#MonitoredDatabases.SyncFromReader">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (mds <a href="#MonitoredDatabases">MonitoredDatabases</a>) SyncFromReader(r <a href="#Reader">Reader</a>) (newmds <a href="#MonitoredDatabases">MonitoredDatabases</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				
+				<p>SyncFromReader will update the monitored databases with the latest configuration from the reader.
+Any resolution errors will be returned, e.g. etcd unavailability.
+It&apos;s up to the caller to proceed with the databases available or stop the execution due to errors.
+
 				
 				
 				
@@ -517,7 +548,7 @@ will produce multiple monitored databases structs based on the discovered databa
 		
 			
 			
-			<h2 id="PatroniClusterMember">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/resolver.go#L59">PatroniClusterMember</a>
+			<h2 id="PatroniClusterMember">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/resolver.go#L55">PatroniClusterMember</a>
 				<a class="permalink" href="#PatroniClusterMember">&#xb6;</a>
 				
 				
@@ -545,7 +576,7 @@ will produce multiple monitored databases structs based on the discovered databa
 		
 			
 			
-			<h2 id="Reader">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L174">Reader</a>
+			<h2 id="Reader">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L191">Reader</a>
 				<a class="permalink" href="#Reader">&#xb6;</a>
 				
 				
@@ -569,7 +600,7 @@ will produce multiple monitored databases structs based on the discovered databa
 		
 			
 			
-			<h2 id="ReaderWriter">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L184">ReaderWriter</a>
+			<h2 id="ReaderWriter">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L201">ReaderWriter</a>
 				<a class="permalink" href="#ReaderWriter">&#xb6;</a>
 				
 				
@@ -595,7 +626,7 @@ will produce multiple monitored databases structs based on the discovered databa
 					
 					
 				</h3>
-				<pre>func NewPostgresSourcesReaderWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/">db</a>.<a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/#PgxPoolIface">PgxPoolIface</a>) (<a href="#ReaderWriter">ReaderWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func NewPostgresSourcesReaderWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/#PgxPoolIface">PgxPoolIface</a>) (<a href="#ReaderWriter">ReaderWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
@@ -628,7 +659,7 @@ through a connection pooler, which supports its own additional metrics. If one i
 those additional metrics, it is ok to specify the connection details as a regular postgres source.
 
 			<pre>type Source struct {
-<span id="Source.DBUniqueName"></span>    DBUniqueName         <a href="https://pkg.go.dev/builtin/#string">string</a>             `yaml:&#34;unique_name&#34; db:&#34;name&#34;`
+<span id="Source.Name"></span>    Name                 <a href="https://pkg.go.dev/builtin/#string">string</a>             `yaml:&#34;name&#34; db:&#34;name&#34;`
 <span id="Source.Group"></span>    Group                <a href="https://pkg.go.dev/builtin/#string">string</a>             `yaml:&#34;group&#34; db:&#34;group&#34;`
 <span id="Source.ConnStr"></span>    ConnStr              <a href="https://pkg.go.dev/builtin/#string">string</a>             `yaml:&#34;conn_str&#34; db:&#34;connstr&#34;`
 <span id="Source.Metrics"></span>    Metrics              map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a> `yaml:&#34;custom_metrics&#34; db:&#34;config&#34;`
@@ -682,7 +713,7 @@ those additional metrics, it is ok to specify the connection details as a regula
 				
 			
 				
-				<h3 id="Source.ResolveDatabases">func (Source) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/resolver.go#L49">ResolveDatabases</a>
+				<h3 id="Source.ResolveDatabases">func (Source) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/resolver.go#L45">ResolveDatabases</a>
 					<a class="permalink" href="#Source.ResolveDatabases">&#xb6;</a>
 					
 					
@@ -693,6 +724,37 @@ those additional metrics, it is ok to specify the connection details as a regula
 				
 				
 				
+			
+		
+			
+			
+			<h2 id="SourceCmdOpts">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/cmdopts.go#L4">SourceCmdOpts</a>
+				<a class="permalink" href="#SourceCmdOpts">&#xb6;</a>
+				
+				
+			</h2>
+			<p>SourceOpts specifies the sources related command-line options
+
+			<pre>type SourceCmdOpts struct {
+<span id="SourceCmdOpts.Sources"></span>    Sources                      <a href="https://pkg.go.dev/builtin/#string">string</a>   `short:&#34;s&#34; long:&#34;sources&#34; mapstructure:&#34;config&#34; description:&#34;Postgres URI, file or folder of YAML files containing info on which DBs to monitor&#34; env:&#34;PW3_SOURCES&#34;`
+<span id="SourceCmdOpts.Refresh"></span>    Refresh                      <a href="https://pkg.go.dev/builtin/#int">int</a>      `long:&#34;refresh&#34; mapstructure:&#34;refresh&#34; description:&#34;How frequently to resync sources and metrics&#34; env:&#34;PW3_REFRESH&#34; default:&#34;120&#34;`
+<span id="SourceCmdOpts.Groups"></span>    Groups                       []<a href="https://pkg.go.dev/builtin/#string">string</a> `short:&#34;g&#34; long:&#34;group&#34; mapstructure:&#34;group&#34; description:&#34;Groups for filtering which databases to monitor. By default all are monitored&#34; env:&#34;PW3_GROUP&#34;`
+<span id="SourceCmdOpts.MinDbSizeMB"></span>    MinDbSizeMB                  <a href="https://pkg.go.dev/builtin/#int64">int64</a>    `long:&#34;min-db-size-mb&#34; mapstructure:&#34;min-db-size-mb&#34; description:&#34;Smaller size DBs will be ignored and not monitored until they reach the threshold.&#34; env:&#34;PW3_MIN_DB_SIZE_MB&#34; default:&#34;0&#34;`
+<span id="SourceCmdOpts.MaxParallelConnectionsPerDb"></span>    MaxParallelConnectionsPerDb  <a href="https://pkg.go.dev/builtin/#int">int</a>      `long:&#34;max-parallel-connections-per-db&#34; mapstructure:&#34;max-parallel-connections-per-db&#34; description:&#34;Max parallel metric fetches per DB. Note the multiplication effect on multi-DB instances&#34; env:&#34;PW3_MAX_PARALLEL_CONNECTIONS_PER_DB&#34; default:&#34;2&#34;`
+<span id="SourceCmdOpts.TryCreateListedExtsIfMissing"></span>    TryCreateListedExtsIfMissing <a href="https://pkg.go.dev/builtin/#string">string</a>   `long:&#34;try-create-listed-exts-if-missing&#34; mapstructure:&#34;try-create-listed-exts-if-missing&#34; description:&#34;Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements&#34; env:&#34;PW3_TRY_CREATE_LISTED_EXTS_IF_MISSING&#34; default:&#34;&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
 			
 		
 			
@@ -717,12 +779,12 @@ those additional metrics, it is ok to specify the connection details as a regula
 
 			
 				
-				<h3 id="Sources.ResolveDatabases">func (Sources) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/resolver.go#L29">ResolveDatabases</a>
+				<h3 id="Sources.ResolveDatabases">func (Sources) <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/resolver.go#L31">ResolveDatabases</a>
 					<a class="permalink" href="#Sources.ResolveDatabases">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (srcs <a href="#Sources">Sources</a>) ResolveDatabases() (<a href="#MonitoredDatabases">MonitoredDatabases</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func (srcs <a href="#Sources">Sources</a>) ResolveDatabases() (_ <a href="#MonitoredDatabases">MonitoredDatabases</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				<p>ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni
 
 				
@@ -732,7 +794,7 @@ those additional metrics, it is ok to specify the connection details as a regula
 		
 			
 			
-			<h2 id="Writer">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L178">Writer</a>
+			<h2 id="Writer">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/types.go#L195">Writer</a>
 				<a class="permalink" href="#Writer">&#xb6;</a>
 				
 				

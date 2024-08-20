@@ -1,0 +1,80 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
+
+  <title>src/github.com/cybertec-postgresql/pgwatch3/\sinks\/cmdopts.go - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.22.0";</script>
+<script src="/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Source file
+    <a href="/godoc/src">src</a>/<a href="/godoc/src/github.com">github.com</a>/<a href="/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3/\sinks\">\sinks\</a>/<span class="text-muted">cmdopts.go</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\sinks\">github.com/cybertec-postgresql/pgwatch3/\sinks\</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<script type="text/javascript">document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1  </span>package sinks
+<span id="L2" class="ln">     2  </span>
+<span id="L3" class="ln">     3  </span>import &#34;time&#34;
+<span id="L4" class="ln">     4  </span>
+<span id="L5" class="ln">     5  </span><span class="comment">// SinkCmdOpts specifies the storage configuration to store metrics measurements</span>
+<span id="L6" class="ln">     6  </span>type SinkCmdOpts struct {
+<span id="L7" class="ln">     7  </span>	Sinks                 []string      `long:&#34;sink&#34; mapstructure:&#34;sink&#34; description:&#34;URI where metrics will be stored&#34; env:&#34;PW3_SINK&#34;`
+<span id="L8" class="ln">     8  </span>	BatchingDelay         time.Duration `long:&#34;batching-delay&#34; mapstructure:&#34;batching-delay&#34; description:&#34;Max milliseconds to wait for a batched metrics flush. [Default: 250ms]&#34; default:&#34;250ms&#34; env:&#34;PW3_BATCHING_MAX_DELAY&#34;`
+<span id="L9" class="ln">     9  </span>	Retention             int           `long:&#34;retention&#34; mapstructure:&#34;retention&#34; description:&#34;If set, metrics older than that will be deleted&#34; default:&#34;14&#34; env:&#34;PW3_RETENTION&#34;`
+<span id="L10" class="ln">    10  </span>	RealDbnameField       string        `long:&#34;real-dbname-field&#34; mapstructure:&#34;real-dbname-field&#34; description:&#34;Tag key for real DB name if --add-real-dbname enabled&#34; env:&#34;PW3_REAL_DBNAME_FIELD&#34; default:&#34;real_dbname&#34;`
+<span id="L11" class="ln">    11  </span>	SystemIdentifierField string        `long:&#34;system-identifier-field&#34; mapstructure:&#34;system-identifier-field&#34; description:&#34;Tag key for system identifier value if --add-system-identifier&#34; env:&#34;PW3_SYSTEM_IDENTIFIER_FIELD&#34; default:&#34;sys_id&#34;`
+<span id="L12" class="ln">    12  </span>}
+</pre><p></p>
+
+<div id="footer">
+Build version go1.22.0.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+
+</body></html>

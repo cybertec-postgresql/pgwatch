@@ -5,16 +5,16 @@
 
   <title>src/github.com/cybertec-postgresql/pgwatch3/\reaper\/types.go - GoPages</title>
 
-<link type="text/css" rel="stylesheet" href="/pgwatch3/godoc/lib/godoc/style.css"/>
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css"/>
 
 <script>window.initFuncs = [];</script>
-<script src="/pgwatch3/godoc/lib/godoc/jquery.js" defer=""></script>
+<script src="/godoc/lib/godoc/jquery.js" defer=""></script>
 
 
 
 
 <script>var goVersion = "go1.22.0";</script>
-<script src="/pgwatch3/godoc/lib/godoc/godocs.js" defer=""></script>
+<script src="/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
 <body>
@@ -24,8 +24,8 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
-<div class="top-heading" id="heading-narrow"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
 <a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
 
 </div></div>
@@ -38,7 +38,7 @@
 
   <h1>
     Source file
-    <a href="/pgwatch3/godoc/src">src</a>/<a href="/pgwatch3/godoc/src/github.com">github.com</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql/pgwatch3/\reaper\">\reaper\</a>/<span class="text-muted">types.go</span>
+    <a href="/godoc/src">src</a>/<a href="/godoc/src/github.com">github.com</a>/<a href="/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3/\reaper\">\reaper\</a>/<span class="text-muted">types.go</span>
   </h1>
 
 
@@ -46,7 +46,7 @@
 
 
   <h2>
-    Documentation: <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\reaper\">github.com/cybertec-postgresql/pgwatch3/\reaper\</a>
+    Documentation: <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\reaper\">github.com/cybertec-postgresql/pgwatch3/\reaper\</a>
   </h2>
 
 
@@ -82,7 +82,7 @@
 <span id="L25" class="ln">    25  </span>
 <span id="L26" class="ln">    26  </span>)
 <span id="L27" class="ln">    27  </span>
-<span id="L28" class="ln">    28  </span>type MetricFetchMessage struct {
+<span id="L28" class="ln">    28  </span>type MetricFetchConfig struct {
 <span id="L29" class="ln">    29  </span>	DBUniqueName        string
 <span id="L30" class="ln">    30  </span>	DBUniqueNameOrig    string
 <span id="L31" class="ln">    31  </span>	MetricName          string
@@ -98,7 +98,7 @@
 <span id="L41" class="ln">    41  </span>	Dropped int
 <span id="L42" class="ln">    42  </span>}
 <span id="L43" class="ln">    43  </span>
-<span id="L44" class="ln">    44  </span>type DBVersionMapEntry struct {
+<span id="L44" class="ln">    44  </span>type MonitoredDatabaseSettings struct {
 <span id="L45" class="ln">    45  </span>	LastCheckedOn    time.Time
 <span id="L46" class="ln">    46  </span>	IsInRecovery     bool
 <span id="L47" class="ln">    47  </span>	VersionStr       string

@@ -5,16 +5,16 @@
 
   <title>src/github.com/cybertec-postgresql/pgwatch3/\reaper\/recommendations.go - GoPages</title>
 
-<link type="text/css" rel="stylesheet" href="/pgwatch3/godoc/lib/godoc/style.css"/>
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css"/>
 
 <script>window.initFuncs = [];</script>
-<script src="/pgwatch3/godoc/lib/godoc/jquery.js" defer=""></script>
+<script src="/godoc/lib/godoc/jquery.js" defer=""></script>
 
 
 
 
 <script>var goVersion = "go1.22.0";</script>
-<script src="/pgwatch3/godoc/lib/godoc/godocs.js" defer=""></script>
+<script src="/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
 <body>
@@ -24,8 +24,8 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
-<div class="top-heading" id="heading-narrow"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
 <a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
 
 </div></div>
@@ -38,7 +38,7 @@
 
   <h1>
     Source file
-    <a href="/pgwatch3/godoc/src">src</a>/<a href="/pgwatch3/godoc/src/github.com">github.com</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql/pgwatch3/\reaper\">\reaper\</a>/<span class="text-muted">recommendations.go</span>
+    <a href="/godoc/src">src</a>/<a href="/godoc/src/github.com">github.com</a>/<a href="/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3/\reaper\">\reaper\</a>/<span class="text-muted">recommendations.go</span>
   </h1>
 
 
@@ -46,7 +46,7 @@
 
 
   <h2>
-    Documentation: <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\reaper\">github.com/cybertec-postgresql/pgwatch3/\reaper\</a>
+    Documentation: <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\reaper\">github.com/cybertec-postgresql/pgwatch3/\reaper\</a>
   </h2>
 
 
@@ -84,7 +84,7 @@
 <span id="L27" class="ln">    27  </span>var specialMetrics = map[string]bool{recoMetricName: true, specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 <span id="L28" class="ln">    28  </span>var regexIsPgbouncerMetrics = regexp.MustCompile(specialMetricPgbouncer)
 <span id="L29" class="ln">    29  </span>
-<span id="L30" class="ln">    30  </span>func GetAllRecoMetricsForVersion(vme DBVersionMapEntry) (map[string]metrics.Metric, error) {
+<span id="L30" class="ln">    30  </span>func GetAllRecoMetricsForVersion(vme MonitoredDatabaseSettings) (map[string]metrics.Metric, error) {
 <span id="L31" class="ln">    31  </span>	mvpMap := make(map[string]metrics.Metric)
 <span id="L32" class="ln">    32  </span>	metricDefMapLock.RLock()
 <span id="L33" class="ln">    33  </span>	defer metricDefMapLock.RUnlock()
@@ -100,7 +100,7 @@
 <span id="L43" class="ln">    43  </span>	return mvpMap, nil
 <span id="L44" class="ln">    44  </span>}
 <span id="L45" class="ln">    45  </span>
-<span id="L46" class="ln">    46  </span>func GetRecommendations(ctx context.Context, dbUnique string, vme DBVersionMapEntry) (metrics.Measurements, error) {
+<span id="L46" class="ln">    46  </span>func GetRecommendations(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings) (metrics.Measurements, error) {
 <span id="L47" class="ln">    47  </span>	retData := make(metrics.Measurements, 0)
 <span id="L48" class="ln">    48  </span>	startTimeEpochNs := time.Now().UnixNano()
 <span id="L49" class="ln">    49  </span>

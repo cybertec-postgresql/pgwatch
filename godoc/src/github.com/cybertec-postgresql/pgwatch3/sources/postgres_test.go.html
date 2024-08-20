@@ -5,16 +5,16 @@
 
   <title>src/github.com/cybertec-postgresql/pgwatch3/\sources\/postgres_test.go - GoPages</title>
 
-<link type="text/css" rel="stylesheet" href="/pgwatch3/godoc/lib/godoc/style.css"/>
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css"/>
 
 <script>window.initFuncs = [];</script>
-<script src="/pgwatch3/godoc/lib/godoc/jquery.js" defer=""></script>
+<script src="/godoc/lib/godoc/jquery.js" defer=""></script>
 
 
 
 
 <script>var goVersion = "go1.22.0";</script>
-<script src="/pgwatch3/godoc/lib/godoc/godocs.js" defer=""></script>
+<script src="/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
 <body>
@@ -24,8 +24,8 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
-<div class="top-heading" id="heading-narrow"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
 <a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
 
 </div></div>
@@ -38,7 +38,7 @@
 
   <h1>
     Source file
-    <a href="/pgwatch3/godoc/src">src</a>/<a href="/pgwatch3/godoc/src/github.com">github.com</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql/pgwatch3/\sources\">\sources\</a>/<span class="text-muted">postgres_test.go</span>
+    <a href="/godoc/src">src</a>/<a href="/godoc/src/github.com">github.com</a>/<a href="/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3/\sources\">\sources\</a>/<span class="text-muted">postgres_test.go</span>
   </h1>
 
 
@@ -46,7 +46,7 @@
 
 
   <h2>
-    Documentation: <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\sources\">github.com/cybertec-postgresql/pgwatch3/\sources\</a>
+    Documentation: <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\sources\">github.com/cybertec-postgresql/pgwatch3/\sources\</a>
   </h2>
 
 
@@ -127,7 +127,7 @@
 <span id="L70" class="ln">    70  </span>	a.NoError(err)
 <span id="L71" class="ln">    71  </span>
 <span id="L72" class="ln">    72  </span>	md := &amp;sources.MonitoredDatabase{}
-<span id="L73" class="ln">    73  </span>	md.DBUniqueName = &#34;db1&#34;
+<span id="L73" class="ln">    73  </span>	md.Name = &#34;db1&#34;
 <span id="L74" class="ln">    74  </span>	dbs := sources.MonitoredDatabases{md}
 <span id="L75" class="ln">    75  </span>	dbs, err = dbs.SyncFromReader(pgrw)
 <span id="L76" class="ln">    76  </span>	a.NoError(err)
@@ -155,7 +155,7 @@
 <span id="L98" class="ln">    98  </span>	a.NoError(err)
 <span id="L99" class="ln">    99  </span>
 <span id="L100" class="ln">   100  </span>	md := sources.Source{
-<span id="L101" class="ln">   101  </span>		DBUniqueName:   &#34;db1&#34;,
+<span id="L101" class="ln">   101  </span>		Name:           &#34;db1&#34;,
 <span id="L102" class="ln">   102  </span>		Group:          &#34;group1&#34;,
 <span id="L103" class="ln">   103  </span>		Kind:           sources.Kind(&#34;postgres&#34;),
 <span id="L104" class="ln">   104  </span>		ConnStr:        &#34;postgres://user:pass@localhost:5432/db1&#34;,
@@ -168,7 +168,7 @@
 <span id="L111" class="ln">   111  </span>	}
 <span id="L112" class="ln">   112  </span>	conn.ExpectPing()
 <span id="L113" class="ln">   113  </span>	conn.ExpectExec(`insert into pgwatch3\.source`).WithArgs(
-<span id="L114" class="ln">   114  </span>		md.DBUniqueName, md.Group, md.Kind,
+<span id="L114" class="ln">   114  </span>		md.Name, md.Group, md.Kind,
 <span id="L115" class="ln">   115  </span>		md.ConnStr, `{&#34;metric&#34;:60}`, `{&#34;standby_metric&#34;:60}`,
 <span id="L116" class="ln">   116  </span>		md.PresetMetrics, md.PresetMetricsStandby,
 <span id="L117" class="ln">   117  </span>		md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{&#34;tag&#34;:&#34;value&#34;}`,
@@ -191,7 +191,7 @@
 <span id="L134" class="ln">   134  </span>	conn, err := pgxmock.NewPool()
 <span id="L135" class="ln">   135  </span>	a.NoError(err)
 <span id="L136" class="ln">   136  </span>	md := sources.Source{
-<span id="L137" class="ln">   137  </span>		DBUniqueName:   &#34;db1&#34;,
+<span id="L137" class="ln">   137  </span>		Name:           &#34;db1&#34;,
 <span id="L138" class="ln">   138  </span>		Group:          &#34;group1&#34;,
 <span id="L139" class="ln">   139  </span>		Kind:           sources.Kind(&#34;postgres&#34;),
 <span id="L140" class="ln">   140  </span>		ConnStr:        &#34;postgres://user:pass@localhost:5432/db1&#34;,
@@ -209,7 +209,7 @@
 <span id="L152" class="ln">   152  </span>		conn.ExpectBegin()
 <span id="L153" class="ln">   153  </span>		conn.ExpectExec(`truncate pgwatch3\.source`).WillReturnResult(pgxmock.NewResult(&#34;TRUNCATE&#34;, 1))
 <span id="L154" class="ln">   154  </span>		conn.ExpectExec(`insert into pgwatch3\.source`).WithArgs(
-<span id="L155" class="ln">   155  </span>			md.DBUniqueName, md.Group, md.Kind,
+<span id="L155" class="ln">   155  </span>			md.Name, md.Group, md.Kind,
 <span id="L156" class="ln">   156  </span>			md.ConnStr, `{&#34;metric&#34;:60}`, `{&#34;standby_metric&#34;:60}`, md.PresetMetrics, md.PresetMetricsStandby,
 <span id="L157" class="ln">   157  </span>			md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{&#34;tag&#34;:&#34;value&#34;}`,
 <span id="L158" class="ln">   158  </span>			nil, md.OnlyIfMaster,
@@ -245,7 +245,7 @@
 <span id="L188" class="ln">   188  </span>		conn.ExpectBegin()
 <span id="L189" class="ln">   189  </span>		conn.ExpectExec(`truncate pgwatch3\.source`).WillReturnResult(pgxmock.NewResult(&#34;TRUNCATE&#34;, 1))
 <span id="L190" class="ln">   190  </span>		conn.ExpectExec(`insert into pgwatch3\.source`).WithArgs(
-<span id="L191" class="ln">   191  </span>			md.DBUniqueName, md.Group, md.Kind,
+<span id="L191" class="ln">   191  </span>			md.Name, md.Group, md.Kind,
 <span id="L192" class="ln">   192  </span>			md.ConnStr, `{&#34;metric&#34;:60}`, `{&#34;standby_metric&#34;:60}`, md.PresetMetrics, md.PresetMetricsStandby,
 <span id="L193" class="ln">   193  </span>			md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{&#34;tag&#34;:&#34;value&#34;}`,
 <span id="L194" class="ln">   194  </span>			nil, md.OnlyIfMaster,

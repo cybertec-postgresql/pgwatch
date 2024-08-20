@@ -7,16 +7,16 @@
 
   <title>webserver - GoPages</title>
 
-<link type="text/css" rel="stylesheet" href="/pgwatch3/godoc/lib/godoc/style.css">
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css">
 
 <script>window.initFuncs = [];</script>
-<script src="/pgwatch3/godoc/lib/godoc/jquery.js" defer></script>
+<script src="/godoc/lib/godoc/jquery.js" defer></script>
 
 
 
 
 <script>var goVersion = "go1.22.0";</script>
-<script src="/pgwatch3/godoc/lib/godoc/godocs.js" defer></script>
+<script src="/godoc/lib/godoc/godocs.js" defer></script>
 
 </head>
 <body>
@@ -26,8 +26,8 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
-<div class="top-heading" id="heading-narrow"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
 <a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
 
 </div></div>
@@ -120,10 +120,15 @@
 				
 			
 				
+				<dd><a href="#WebUICmdOpts">type WebUICmdOpts</a></dd>
+				
+				
+			
+				
 				<dd><a href="#WebUIServer">type WebUIServer</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Init">func Init(opts config.WebUIOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, logger log.LoggerIface) *WebUIServer</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Init">func Init(opts WebUICmdOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, logger log.LoggerIface) *WebUIServer</a></dd>
 				
 				
 					
@@ -172,6 +177,8 @@
 			<span style="font-size:90%">
 			
 				<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/webserver/api.go">api.go</a>
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/webserver/cmdopts.go">cmdopts.go</a>
 			
 				<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/webserver/cors.go">cors.go</a>
 			
@@ -249,7 +256,35 @@
 		
 			
 			
-			<h2 id="WebUIServer">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/webserver/webserver.go#L21">WebUIServer</a>
+			<h2 id="WebUICmdOpts">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/webserver/cmdopts.go#L4">WebUICmdOpts</a>
+				<a class="permalink" href="#WebUICmdOpts">&#xb6;</a>
+				
+				
+			</h2>
+			<p>WebUICmdOpts specifies the internal web UI server command-line options
+
+			<pre>type WebUICmdOpts struct {
+<span id="WebUICmdOpts.WebAddr"></span>    WebAddr     <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-addr&#34; mapstructure:&#34;web-addr&#34; description:&#34;TCP address in the form &#39;host:port&#39; to listen on&#34; default:&#34;:8080&#34; env:&#34;PW3_WEBADDR&#34;`
+<span id="WebUICmdOpts.WebUser"></span>    WebUser     <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-user&#34; mapstructure:&#34;web-user&#34; description:&#34;Admin login&#34; env:&#34;PW3_WEBUSER&#34;`
+<span id="WebUICmdOpts.WebPassword"></span>    WebPassword <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-password&#34; mapstructure:&#34;web-password&#34; description:&#34;Admin password&#34; env:&#34;PW3_WEBPASSWORD&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="WebUIServer">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/webserver/webserver.go#L20">WebUIServer</a>
 				<a class="permalink" href="#WebUIServer">&#xb6;</a>
 				
 				
@@ -257,7 +292,7 @@
 			
 			<pre>type WebUIServer struct {
     <a href="https://pkg.go.dev/net/http/">http</a>.<a href="https://pkg.go.dev/net/http/#Server">Server</a>
-    <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/config/">config</a>.<a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/config/#WebUIOpts">WebUIOpts</a>
+    <a href="#WebUICmdOpts">WebUICmdOpts</a>
     <span class="comment">// contains filtered or unexported fields</span>
 }
 </pre>
@@ -272,12 +307,12 @@
 
 			
 				
-				<h3 id="Init">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/webserver/webserver.go#L30">Init</a>
+				<h3 id="Init">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/webserver/webserver.go#L29">Init</a>
 					<a class="permalink" href="#Init">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func Init(opts <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/config/">config</a>.<a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/config/#WebUIOpts">WebUIOpts</a>, webuifs <a href="https://pkg.go.dev/io/fs/">fs</a>.<a href="https://pkg.go.dev/io/fs/#FS">FS</a>, mrw <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/metrics/">metrics</a>.<a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/metrics/#ReaderWriter">ReaderWriter</a>, srw <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/sources/">sources</a>.<a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/sources/#ReaderWriter">ReaderWriter</a>, logger <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/log/">log</a>.<a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/log/#LoggerIface">LoggerIface</a>) *<a href="#WebUIServer">WebUIServer</a></pre>
+				<pre>func Init(opts <a href="#WebUICmdOpts">WebUICmdOpts</a>, webuifs <a href="https://pkg.go.dev/io/fs/">fs</a>.<a href="https://pkg.go.dev/io/fs/#FS">FS</a>, mrw <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/metrics/#ReaderWriter">ReaderWriter</a>, srw <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/sources/#ReaderWriter">ReaderWriter</a>, logger <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/log/">log</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/log/#LoggerIface">LoggerIface</a>) *<a href="#WebUIServer">WebUIServer</a></pre>
 				
 				
 				

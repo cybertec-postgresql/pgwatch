@@ -5,16 +5,16 @@
 
   <title>src/github.com/cybertec-postgresql/pgwatch3/\reaper\/cache.go - GoPages</title>
 
-<link type="text/css" rel="stylesheet" href="/pgwatch3/godoc/lib/godoc/style.css"/>
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css"/>
 
 <script>window.initFuncs = [];</script>
-<script src="/pgwatch3/godoc/lib/godoc/jquery.js" defer=""></script>
+<script src="/godoc/lib/godoc/jquery.js" defer=""></script>
 
 
 
 
 <script>var goVersion = "go1.22.0";</script>
-<script src="/pgwatch3/godoc/lib/godoc/godocs.js" defer=""></script>
+<script src="/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
 <body>
@@ -24,8 +24,8 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
-<div class="top-heading" id="heading-narrow"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
 <a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
 
 </div></div>
@@ -38,7 +38,7 @@
 
   <h1>
     Source file
-    <a href="/pgwatch3/godoc/src">src</a>/<a href="/pgwatch3/godoc/src/github.com">github.com</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/pgwatch3/godoc/src/github.com/cybertec-postgresql/pgwatch3/\reaper\">\reaper\</a>/<span class="text-muted">cache.go</span>
+    <a href="/godoc/src">src</a>/<a href="/godoc/src/github.com">github.com</a>/<a href="/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3">pgwatch3</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch3/\reaper\">\reaper\</a>/<span class="text-muted">cache.go</span>
   </h1>
 
 
@@ -46,7 +46,7 @@
 
 
   <h2>
-    Documentation: <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\reaper\">github.com/cybertec-postgresql/pgwatch3/\reaper\</a>
+    Documentation: <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/\reaper\">github.com/cybertec-postgresql/pgwatch3/\reaper\</a>
   </h2>
 
 
@@ -71,9 +71,9 @@
 <span id="L14" class="ln">    14  </span>
 <span id="L15" class="ln">    15  </span>var monitoredDbCache map[string]*sources.MonitoredDatabase
 <span id="L16" class="ln">    16  </span>var monitoredDbCacheLock sync.RWMutex
-<span id="L17" class="ln">    17  </span>var dbPgVersionMap = make(map[string]DBVersionMapEntry)
-<span id="L18" class="ln">    18  </span>var dbPgVersionMapLock = sync.RWMutex{}
-<span id="L19" class="ln">    19  </span>var dbGetPgVersionMapLock = make(map[string]*sync.RWMutex) <span class="comment">// synchronize initial PG version detection to 1 instance for each defined host</span>
+<span id="L17" class="ln">    17  </span>var MonitoredDatabasesSettings = make(map[string]MonitoredDatabaseSettings)
+<span id="L18" class="ln">    18  </span>var MonitoredDatabasesSettingsLock = sync.RWMutex{}
+<span id="L19" class="ln">    19  </span>var MonitoredDatabasesSettingsGetLock = make(map[string]*sync.RWMutex) <span class="comment">// synchronize initial PG version detection to 1 instance for each defined host</span>
 <span id="L20" class="ln">    20  </span>
 <span id="L21" class="ln">    21  </span>var unreachableDBsLock sync.RWMutex
 <span id="L22" class="ln">    22  </span>var unreachableDB = make(map[string]time.Time)
@@ -93,17 +93,17 @@
 <span id="L36" class="ln">    36  </span>var lastSQLFetchError sync.Map
 <span id="L37" class="ln">    37  </span>
 <span id="L38" class="ln">    38  </span>func InitPGVersionInfoFetchingLockIfNil(md *sources.MonitoredDatabase) {
-<span id="L39" class="ln">    39  </span>	dbPgVersionMapLock.Lock()
-<span id="L40" class="ln">    40  </span>	if _, ok := dbGetPgVersionMapLock[md.DBUniqueName]; !ok {
-<span id="L41" class="ln">    41  </span>		dbGetPgVersionMapLock[md.DBUniqueName] = &amp;sync.RWMutex{}
+<span id="L39" class="ln">    39  </span>	MonitoredDatabasesSettingsLock.Lock()
+<span id="L40" class="ln">    40  </span>	if _, ok := MonitoredDatabasesSettingsGetLock[md.Name]; !ok {
+<span id="L41" class="ln">    41  </span>		MonitoredDatabasesSettingsGetLock[md.Name] = &amp;sync.RWMutex{}
 <span id="L42" class="ln">    42  </span>	}
-<span id="L43" class="ln">    43  </span>	dbPgVersionMapLock.Unlock()
+<span id="L43" class="ln">    43  </span>	MonitoredDatabasesSettingsLock.Unlock()
 <span id="L44" class="ln">    44  </span>}
 <span id="L45" class="ln">    45  </span>
 <span id="L46" class="ln">    46  </span>func UpdateMonitoredDBCache(data sources.MonitoredDatabases) {
 <span id="L47" class="ln">    47  </span>	monitoredDbCacheNew := make(map[string]*sources.MonitoredDatabase)
 <span id="L48" class="ln">    48  </span>	for _, row := range data {
-<span id="L49" class="ln">    49  </span>		monitoredDbCacheNew[row.DBUniqueName] = row
+<span id="L49" class="ln">    49  </span>		monitoredDbCacheNew[row.Name] = row
 <span id="L50" class="ln">    50  </span>	}
 <span id="L51" class="ln">    51  </span>	monitoredDbCacheLock.Lock()
 <span id="L52" class="ln">    52  </span>	monitoredDbCache = monitoredDbCacheNew
@@ -121,7 +121,7 @@
 <span id="L64" class="ln">    64  </span>}
 <span id="L65" class="ln">    65  </span>
 <span id="L66" class="ln">    66  </span><span class="comment">// assumes upwards compatibility for versions</span>
-<span id="L67" class="ln">    67  </span>func GetMetricVersionProperties(metric string, _ DBVersionMapEntry, metricDefMap *metrics.Metrics) (metrics.Metric, error) {
+<span id="L67" class="ln">    67  </span>func GetMetricVersionProperties(metric string, _ MonitoredDatabaseSettings, metricDefMap *metrics.Metrics) (metrics.Metric, error) {
 <span id="L68" class="ln">    68  </span>	mdm := new(metrics.Metrics)
 <span id="L69" class="ln">    69  </span>	if metricDefMap != nil {
 <span id="L70" class="ln">    70  </span>		mdm = metricDefMap
@@ -163,7 +163,7 @@
 <span id="L106" class="ln">   106  </span>	}
 <span id="L107" class="ln">   107  </span>}
 <span id="L108" class="ln">   108  </span>
-<span id="L109" class="ln">   109  </span>func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchMessage, maxAgeSeconds int64) metrics.Measurements {
+<span id="L109" class="ln">   109  </span>func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchConfig, maxAgeSeconds int64) metrics.Measurements {
 <span id="L110" class="ln">   110  </span>	var clonedData metrics.Measurements
 <span id="L111" class="ln">   111  </span>	instanceMetricCacheTimestampLock.RLock()
 <span id="L112" class="ln">   112  </span>	instanceMetricTS, ok := instanceMetricCacheTimestamp[msg.DBUniqueNameOrig+msg.MetricName]

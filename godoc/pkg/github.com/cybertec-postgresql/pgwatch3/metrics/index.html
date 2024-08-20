@@ -7,16 +7,16 @@
 
   <title>metrics - GoPages</title>
 
-<link type="text/css" rel="stylesheet" href="/pgwatch3/godoc/lib/godoc/style.css">
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css">
 
 <script>window.initFuncs = [];</script>
-<script src="/pgwatch3/godoc/lib/godoc/jquery.js" defer></script>
+<script src="/godoc/lib/godoc/jquery.js" defer></script>
 
 
 
 
 <script>var goVersion = "go1.22.0";</script>
-<script src="/pgwatch3/godoc/lib/godoc/godocs.js" defer></script>
+<script src="/godoc/lib/godoc/godocs.js" defer></script>
 
 </head>
 <body>
@@ -26,8 +26,8 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
-<div class="top-heading" id="heading-narrow"><a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/">GoPages</a></div>
 <a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
 
 </div></div>
@@ -179,6 +179,11 @@ At the moment, metric definitions support two storages:
 				
 			
 				
+				<dd><a href="#MetricCmdOpts">type MetricCmdOpts</a></dd>
+				
+				
+			
+				
 				<dd><a href="#MetricDefs">type MetricDefs</a></dd>
 				
 				
@@ -245,6 +250,8 @@ At the moment, metric definitions support two storages:
 			<h3>Package files</h3>
 			<p>
 			<span style="font-size:90%">
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/metrics/cmdopts.go">cmdopts.go</a>
 			
 				<a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/metrics/default.go">default.go</a>
 			
@@ -320,7 +327,7 @@ At the moment, metric definitions support two storages:
 				
 				
 			</h2>
-			<pre>func ParseLogs(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/">db</a>.<a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/#PgxIface">PgxIface</a>, mdb *<a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/sources/">sources</a>.<a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/sources/#MonitoredDatabase">MonitoredDatabase</a>, realDbname, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, configMap map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a>, storeCh chan&lt;- []<a href="#MeasurementMessage">MeasurementMessage</a>)</pre>
+			<pre>func ParseLogs(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/#PgxIface">PgxIface</a>, mdb *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/sources/#MonitoredDatabase">MonitoredDatabase</a>, realDbname, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, configMap map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a>, storeCh chan&lt;- []<a href="#MeasurementMessage">MeasurementMessage</a>)</pre>
 			
 			
 			
@@ -553,6 +560,36 @@ At the moment, metric definitions support two storages:
 		
 			
 			
+			<h2 id="MetricCmdOpts">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/metrics/cmdopts.go#L4">MetricCmdOpts</a>
+				<a class="permalink" href="#MetricCmdOpts">&#xb6;</a>
+				
+				
+			</h2>
+			<p>MetricCmdOpts specifies metric command-line options
+
+			<pre>type MetricCmdOpts struct {
+<span id="MetricCmdOpts.Metrics"></span>    Metrics                      <a href="https://pkg.go.dev/builtin/#string">string</a> `short:&#34;m&#34; long:&#34;metrics&#34; mapstructure:&#34;metrics&#34; description:&#34;File or folder of YAML files with metrics definitions&#34; env:&#34;PW3_METRICS&#34;`
+<span id="MetricCmdOpts.NoHelperFunctions"></span>    NoHelperFunctions            <a href="https://pkg.go.dev/builtin/#bool">bool</a>   `long:&#34;no-helper-functions&#34; mapstructure:&#34;no-helper-functions&#34; description:&#34;Ignore metric definitions using helper functions (in form get_smth()) and don&#39;t also roll out any helpers automatically&#34; env:&#34;PW3_NO_HELPER_FUNCTIONS&#34;`
+<span id="MetricCmdOpts.DirectOSStats"></span>    DirectOSStats                <a href="https://pkg.go.dev/builtin/#bool">bool</a>   `long:&#34;direct-os-stats&#34; mapstructure:&#34;direct-os-stats&#34; description:&#34;Extract OS related psutil statistics not via PL/Python wrappers but directly on host&#34; env:&#34;PW3_DIRECT_OS_STATS&#34;`
+<span id="MetricCmdOpts.InstanceLevelCacheMaxSeconds"></span>    InstanceLevelCacheMaxSeconds <a href="https://pkg.go.dev/builtin/#int64">int64</a>  `long:&#34;instance-level-cache-max-seconds&#34; mapstructure:&#34;instance-level-cache-max-seconds&#34; description:&#34;Max allowed staleness for instance level metric data shared between DBs of an instance. Affects &#39;continuous&#39; host types only. Set to 0 to disable&#34; env:&#34;PW3_INSTANCE_LEVEL_CACHE_MAX_SECONDS&#34; default:&#34;30&#34;`
+<span id="MetricCmdOpts.EmergencyPauseTriggerfile"></span>    EmergencyPauseTriggerfile    <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;emergency-pause-triggerfile&#34; mapstructure:&#34;emergency-pause-triggerfile&#34; description:&#34;When the file exists no metrics will be temporarily fetched / scraped&#34; env:&#34;PW3_EMERGENCY_PAUSE_TRIGGERFILE&#34; default:&#34;/tmp/pgwatch3-emergency-pause&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
 			<h2 id="MetricDefs">type <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/metrics/types.go#L34">MetricDefs</a>
 				<a class="permalink" href="#MetricDefs">&#xb6;</a>
 				
@@ -742,12 +779,12 @@ At the moment, metric definitions support two storages:
 				
 			
 				
-				<h3 id="NewPostgresMetricReaderWriter">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/metrics/postgres.go#L11">NewPostgresMetricReaderWriter</a>
+				<h3 id="NewPostgresMetricReaderWriter">func <a href="https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/metrics/postgres.go#L10">NewPostgresMetricReaderWriter</a>
 					<a class="permalink" href="#NewPostgresMetricReaderWriter">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func NewPostgresMetricReaderWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/">db</a>.<a href="/pgwatch3/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/#PgxPoolIface">PgxPoolIface</a>) (<a href="#ReaderWriter">ReaderWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func NewPostgresMetricReaderWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch3/db/#PgxPoolIface">PgxPoolIface</a>) (<a href="#ReaderWriter">ReaderWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
