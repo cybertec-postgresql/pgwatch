@@ -1,6 +1,6 @@
 site_name: ⚠️ pgwatch3 | WORK IN PROGRESS!!!
 site_description: ⚠️ This repo is under active development! Formats, schemas, and APIs are subject to rapid and backward incompatible changes!
-site_url: https://cybertec-postgresql.github.io/pgwatch3/
+site_url: https://pgwat.ch/
 use_directory_urls: false
 copyright: Made by and for PostgreSQL lovers! 🐘❤️
 repo_name: pgwatch3 by Cybertec
