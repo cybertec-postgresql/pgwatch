@@ -1,6 +1,6 @@
 #!/bin/bash
 
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "pgwatch3" <<-EOSQL
+psql -v ON_ERROR_STOP=1 --username "postgres" --dbname "pgwatch3" <<-EOSQL
     CREATE EXTENSION pg_qualstats;
     CREATE EXTENSION plpython3u;
     CREATE EXTENSION pg_stat_statements;
@@ -8,7 +8,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "pgwatch3" <<-EOSQL
     GRANT EXECUTE ON FUNCTION pg_stat_file(text, boolean) TO pgwatch3;
 EOSQL
 
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "pgwatch3" <<-EOSQL
+psql -v ON_ERROR_STOP=1 --username "postgres" --dbname "pgwatch3" <<-EOSQL
 BEGIN;
 CREATE OR REPLACE FUNCTION get_load_average(OUT load_1min float, OUT load_5min float, OUT load_15min float) AS
 '

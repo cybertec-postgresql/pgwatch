@@ -62,12 +62,12 @@ jobs:
         VERSION: ${{ github.ref_name }}
         GIT_TIME: ${{ steps.version.outputs.RELEASE_TIME }}     
       with:
-        name: pashagolub/pgwatch3
+        name: cybertecpostgresql/pgwatch${{ matrix.image.tag }}
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile: docker/${{ matrix.image.file }}
         buildargs: GIT_HASH,GIT_TIME
-        tags: ${{ github.ref_name }}${{ matrix.image.tag }}
+        tags: ${{ github.ref_name }}
         platforms: linux/amd64,linux/arm64
 
     - name: Publish "latest" tag to Registry
@@ -78,12 +78,12 @@ jobs:
         VERSION: ${{ github.ref_name }}
         GIT_TIME: ${{ steps.version.outputs.RELEASE_TIME }}     
       with:
-        name: pashagolub/pgwatch3
+        name: cybertecpostgresql/pgwatch${{ matrix.image.tag }}
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile: docker/${{ matrix.image.file }}
         buildargs: GIT_HASH,GIT_TIME
-        tags: latest${{ matrix.image.tag }}
+        tags: latest
         platforms: linux/amd64,linux/arm64
 
     - name: Publish "X.X.X, X.X, X" tags to Registry
@@ -94,7 +94,7 @@ jobs:
         VERSION: ${{ github.ref_name }}
         GIT_TIME: ${{ steps.version.outputs.RELEASE_TIME }}     
       with:
-        name: pashagolub/pgwatch3
+        name: cybertecpostgresql/pgwatch${{ matrix.image.tag }}
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile: docker/${{ matrix.image.file }}

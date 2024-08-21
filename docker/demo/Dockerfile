@@ -8,7 +8,7 @@ RUN cd webui && yarn install --network-timeout 100000 && yarn build
 # ----------------------------------------------------------------
 # 2. Build gatherer
 # ----------------------------------------------------------------
-FROM golang:1.22 as builder
+FROM golang:1.22 AS builder
 
 ARG VERSION
 ARG GIT_HASH
@@ -28,7 +28,7 @@ COPY --from=builder /pgwatch3/pgwatch3 /pgwatch3/
 COPY src/metrics/metrics.yaml /pgwatch3/metrics/metrics.yaml
 
 # Install dependencies
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get -qy install curl gnupg postgresql-common apt-transport-https lsb-release musl \
     && sh /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
@@ -69,9 +69,8 @@ COPY docker/bootstrap/create_role_db.sql \
 RUN  echo "include = 'pgwatch_postgresql.conf'" >> /etc/postgresql/postgresql.conf
 COPY docker/demo/postgresql.conf /etc/postgresql/pgwatch_postgresql.conf
 
-ENV PW3_CONFIG postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3
-ENV PW3_SINK postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
-ENV PW3_AES_GCM_KEYPHRASE_FILE /pgwatch3/persistent-config/default-password-encryption-key.txt
+ENV PW3_SOURCES=postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3
+ENV PW3_SINK=postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
 ENV POSTGRES_PASSWORD=mysecretpassword
 
 # Admin UI for configuring servers to be monitored
