@@ -12,6 +12,20 @@ import (
 
 func TestNewPostgresSourcesReaderWriter(t *testing.T) {
 	a := assert.New(t)
+	t.Run("ConnectionError", func(*testing.T) {
+		pgrw, err := sources.NewPostgresSourcesReaderWriter(ctx, "postgres://user:pass@foohost:5432/db1")
+		a.Error(err) // connection error
+		a.NotNil(t, pgrw)
+	})
+	t.Run("InvalidConnStr", func(*testing.T) {
+		pgrw, err := sources.NewPostgresSourcesReaderWriter(ctx, "invalid_connstr")
+		a.Error(err)
+		a.Nil(pgrw)
+	})
+}
+
+func TestNewPostgresSourcesReaderWriterConn(t *testing.T) {
+	a := assert.New(t)
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
 	conn.ExpectPing()

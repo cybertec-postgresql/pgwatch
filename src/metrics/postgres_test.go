@@ -18,6 +18,21 @@ func AnyArgs(n int) []any {
 }
 
 func TestNewPostgresMetricReaderWriter(t *testing.T) {
+	a := assert.New(t)
+	ctx := context.Background()
+	t.Run("ConnectionError", func(*testing.T) {
+		pgrw, err := metrics.NewPostgresMetricReaderWriter(ctx, "postgres://user:pass@foohost:5432/db1")
+		a.Error(err)
+		a.NotNil(pgrw)
+	})
+	t.Run("InvalidConnStr", func(*testing.T) {
+		pgrw, err := metrics.NewPostgresMetricReaderWriter(ctx, "invalid_connstr")
+		a.Error(err)
+		a.Nil(pgrw)
+	})
+}
+
+func TestNewPostgresMetricReaderWriterConn(t *testing.T) {
 	df := metrics.GetDefaultMetrics()
 	metricsCount := len(df.MetricDefs)
 	presetsCount := len(df.PresetDefs)
