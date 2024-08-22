@@ -10,7 +10,15 @@ import (
 	pgx "github.com/jackc/pgx/v5"
 )
 
-func NewPostgresSourcesReaderWriter(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error) {
+func NewPostgresSourcesReaderWriter(ctx context.Context, connstr string) (ReaderWriter, error) {
+	conn, err := db.New(ctx, connstr)
+	if err != nil {
+		return nil, err
+	}
+	return NewPostgresSourcesReaderWriterConn(ctx, conn)
+}
+
+func NewPostgresSourcesReaderWriterConn(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error) {
 	return &dbSourcesReaderWriter{
 		ctx:      ctx,
 		configDb: conn,

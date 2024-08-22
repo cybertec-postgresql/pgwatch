@@ -11,8 +11,8 @@ import (
 )
 
 func TestInit(t *testing.T) {
-	assert.NotNil(t, log.Init(log.LoggingCmdOpts{LogLevel: "debug"}))
-	l := log.Init(log.LoggingCmdOpts{LogLevel: "foobar"})
+	assert.NotNil(t, log.Init(log.CmdOpts{LogLevel: "debug"}))
+	l := log.Init(log.CmdOpts{LogLevel: "foobar"})
 	pgxl := log.NewPgxLogger(l)
 	assert.NotNil(t, pgxl)
 	ctx := log.WithLogger(context.Background(), l)
@@ -21,14 +21,14 @@ func TestInit(t *testing.T) {
 }
 
 func TestFileLogger(t *testing.T) {
-	l := log.Init(log.LoggingCmdOpts{LogLevel: "debug", LogFile: "test.log", LogFileFormat: "text"})
+	l := log.Init(log.CmdOpts{LogLevel: "debug", LogFile: "test.log", LogFileFormat: "text"})
 	l.Info("test")
 	assert.FileExists(t, "test.log", "Log file should be created")
 	_ = os.Remove("test.log")
 }
 
 func TestPgxLog(_ *testing.T) {
-	pgxl := log.NewPgxLogger(log.Init(log.LoggingCmdOpts{LogLevel: "trace"}))
+	pgxl := log.NewPgxLogger(log.Init(log.CmdOpts{LogLevel: "trace"}))
 	var level tracelog.LogLevel
 	for level = tracelog.LogLevelNone; level <= tracelog.LogLevelTrace; level++ {
 		pgxl.Log(context.Background(), level, "foo", map[string]interface{}{"func": "TestPgxLog"})

@@ -22,7 +22,7 @@ var (
 	deleterDelay    = time.Hour
 )
 
-func NewPostgresWriter(ctx context.Context, connstr string, opts *SinkCmdOpts, metricDefs *metrics.Metrics) (pgw *PostgresWriter, err error) {
+func NewPostgresWriter(ctx context.Context, connstr string, opts *CmdOpts, metricDefs *metrics.Metrics) (pgw *PostgresWriter, err error) {
 	var conn db.PgxPoolIface
 	if conn, err = db.New(ctx, connstr); err != nil {
 		return
@@ -30,7 +30,7 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *SinkCmdOpts, m
 	return NewWriterFromPostgresConn(ctx, conn, opts, metricDefs)
 }
 
-func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *SinkCmdOpts, metricDefs *metrics.Metrics) (pgw *PostgresWriter, err error) {
+func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *CmdOpts, metricDefs *metrics.Metrics) (pgw *PostgresWriter, err error) {
 	pgw = &PostgresWriter{
 		сtx:        ctx,
 		metricDefs: metricDefs,
@@ -104,7 +104,7 @@ type PostgresWriter struct {
 	sinkDb       db.PgxPoolIface
 	metricSchema DbStorageSchemaType
 	metricDefs   *metrics.Metrics
-	opts         *SinkCmdOpts
+	opts         *CmdOpts
 	input        chan []metrics.MeasurementMessage
 	lastError    chan error
 }

@@ -10,9 +10,8 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/cybertec-postgresql/pgwatch/config"
+	"github.com/cybertec-postgresql/pgwatch/cmdopts"
 	"github.com/cybertec-postgresql/pgwatch/log"
-	"github.com/cybertec-postgresql/pgwatch/metrics"
 	"github.com/cybertec-postgresql/pgwatch/reaper"
 )
 
@@ -45,7 +44,7 @@ func SetupCloseHandler(cancel context.CancelFunc) {
 		<-c
 		log.GetLogger(mainCtx).Debug("SetupCloseHandler received an interrupt from OS. Closing session...")
 		cancel()
-		exitCode.Store(config.ExitCodeUserCancel)
+		exitCode.Store(cmdopts.ExitCodeUserCancel)
 	}()
 }
 
@@ -53,32 +52,18 @@ var (
 	exitCode atomic.Int32          // Exit code to be returned to the OS
 	mainCtx  context.Context       // Main context for the application
 	logger   log.LoggerHookerIface // Logger for the application
-	opts     *config.Options       // Command line options for the application
+	opts     *cmdopts.Options      // Command line options for the application
 )
-
-// UpgradeConfiguration upgrades the configuration if needed.
-func UpgradeConfiguration(m metrics.Migrator) (err error) {
-	if opts.Upgrade {
-		err = m.Migrate()
-	} else {
-		var upgrade bool
-		upgrade, err = m.NeedsMigration()
-		if upgrade {
-			err = errors.Join(err, errors.New("configuration needs upgrade, use --upgrade option"))
-		}
-	}
-	return
-}
 
 func main() {
 	var (
 		err    error
 		cancel context.CancelFunc
 	)
-	exitCode.Store(config.ExitCodeOK)
+	exitCode.Store(cmdopts.ExitCodeOK)
 	defer func() {
 		if err := recover(); err != nil {
-			exitCode.Store(config.ExitCodeFatalError)
+			exitCode.Store(cmdopts.ExitCodeFatalError)
 			log.GetLogger(mainCtx).WithField("callstack", string(debug.Stack())).Error(err)
 		}
 		os.Exit(int(exitCode.Load()))
@@ -88,11 +73,11 @@ func main() {
 	SetupCloseHandler(cancel)
 	defer cancel()
 
-	if opts, err = config.New(os.Stdout); err != nil {
+	if opts, err = cmdopts.New(os.Stdout); err != nil {
 		printVersion()
 		fmt.Println(err)
 		if !opts.Help {
-			exitCode.Store(config.ExitCodeConfigError)
+			exitCode.Store(cmdopts.ExitCodeConfigError)
 		}
 		return
 	}
@@ -109,30 +94,22 @@ func main() {
 	logger.Debugf("opts: %+v", opts)
 
 	if err := opts.InitConfigReaders(mainCtx); err != nil {
-		exitCode.Store(config.ExitCodeCmdError)
+		exitCode.Store(cmdopts.ExitCodeCmdError)
 		logger.Error(err)
 		return
 	}
 
-	//check if we want to upgrade the configuration, which can be one of the following:
-	// - PostgreSQL database schema
-	// - YAML file schema
-	if m, ok := opts.MetricsReaderWriter.(metrics.Migrator); ok {
-		if err = UpgradeConfiguration(m); err != nil {
-			exitCode.Store(config.ExitCodeUpgradeError)
-			logger.Error(err)
-			return
+	if upgrade, err := opts.NeedsSchemaUpgrade(); upgrade || err != nil {
+		if upgrade {
+			err = errors.Join(err, errors.New(`configuration needs upgrade, use "init --upgrade" command`))
 		}
-	}
-
-	if opts.Init {
-		// At this point we have initialised the sources, metrics and presets configurations.
-		// Any fatal errors are handled by the configuration readers. So we may exit gracefully.
+		exitCode.Store(cmdopts.ExitCodeUpgradeError)
+		logger.Error(err)
 		return
 	}
 
 	if err = opts.InitWebUI(webuifs, logger); err != nil {
-		exitCode.Store(config.ExitCodeWebUIError)
+		exitCode.Store(cmdopts.ExitCodeWebUIError)
 		logger.Error(err)
 		return
 	}
@@ -140,6 +117,6 @@ func main() {
 	reaper := reaper.NewReaper(opts, opts.SourcesReaderWriter, opts.MetricsReaderWriter)
 	if err = reaper.Reap(mainCtx); err != nil {
 		logger.Error(err)
-		exitCode.Store(config.ExitCodeFatalError)
+		exitCode.Store(cmdopts.ExitCodeFatalError)
 	}
 }

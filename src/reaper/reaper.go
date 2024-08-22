@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/config"
+	"github.com/cybertec-postgresql/pgwatch/cmdopts"
 	"github.com/cybertec-postgresql/pgwatch/log"
 	"github.com/cybertec-postgresql/pgwatch/metrics"
 	"github.com/cybertec-postgresql/pgwatch/sinks"
@@ -24,13 +24,13 @@ var metricDefinitionMap *metrics.Metrics = &metrics.Metrics{}
 var metricDefMapLock = sync.RWMutex{}
 
 type Reaper struct {
-	opts                *config.Options
+	opts                *cmdopts.Options
 	sourcesReaderWriter sources.ReaderWriter
 	metricsReaderWriter metrics.ReaderWriter
 	measurementCh       chan []metrics.MeasurementMessage
 }
 
-func NewReaper(opts *config.Options, sourcesReaderWriter sources.ReaderWriter, metricsReaderWriter metrics.ReaderWriter) *Reaper {
+func NewReaper(opts *cmdopts.Options, sourcesReaderWriter sources.ReaderWriter, metricsReaderWriter metrics.ReaderWriter) *Reaper {
 	return &Reaper{
 		opts:                opts,
 		sourcesReaderWriter: sourcesReaderWriter,
@@ -529,7 +529,7 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.Mo
 	}
 }
 
-func AddDbnameSysinfoIfNotExistsToQueryResultData(data metrics.Measurements, ver MonitoredDatabaseSettings, opts *config.Options) metrics.Measurements {
+func AddDbnameSysinfoIfNotExistsToQueryResultData(data metrics.Measurements, ver MonitoredDatabaseSettings, opts *cmdopts.Options) metrics.Measurements {
 	enrichedData := make(metrics.Measurements, 0)
 	for _, dr := range data {
 		if opts.Sinks.RealDbnameField > "" && ver.RealDbname > "" {
@@ -595,7 +595,7 @@ func FetchMetrics(ctx context.Context,
 	hostState map[string]map[string]string,
 	storageCh chan<- []metrics.MeasurementMessage,
 	context string,
-	opts *config.Options) ([]metrics.MeasurementMessage, error) {
+	opts *cmdopts.Options) ([]metrics.MeasurementMessage, error) {
 
 	var dbSettings MonitoredDatabaseSettings
 	var dbVersion int

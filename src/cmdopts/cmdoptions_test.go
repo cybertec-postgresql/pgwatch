@@ -1,4 +1,4 @@
-package config
+package cmdopts
 
 import (
 	"os"
@@ -41,9 +41,9 @@ func TestParseSuccess(t *testing.T) {
 }
 
 func TestLogLevel(t *testing.T) {
-	c := &Options{Logging: log.LoggingCmdOpts{LogLevel: "debug"}}
+	c := &Options{Logging: log.CmdOpts{LogLevel: "debug"}}
 	assert.True(t, c.Verbose())
-	c = &Options{Logging: log.LoggingCmdOpts{LogLevel: "info"}}
+	c = &Options{Logging: log.CmdOpts{LogLevel: "info"}}
 	assert.False(t, c.Verbose())
 }
 

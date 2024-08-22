@@ -20,15 +20,15 @@ func (mw *MockWriter) Write(_ []metrics.MeasurementMessage) error {
 
 func TestNewMultiWriter(t *testing.T) {
 	input := []struct {
-		opts *SinkCmdOpts
+		opts *CmdOpts
 		mw   bool // MultiWriter returned
 		err  bool // error returned
 	}{
-		{&SinkCmdOpts{}, false, true},
-		{&SinkCmdOpts{
+		{&CmdOpts{}, false, true},
+		{&CmdOpts{
 			Sinks: []string{"foo"},
 		}, false, true},
-		{&SinkCmdOpts{
+		{&CmdOpts{
 			Sinks: []string{"jsonfile://test.json"},
 		}, true, false},
 	}

@@ -16,7 +16,7 @@ func TestNewPostgresSourcesReaderWriter(t *testing.T) {
 	a.NoError(err)
 	conn.ExpectPing()
 
-	pgrw, err := sources.NewPostgresSourcesReaderWriter(ctx, conn)
+	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
 	a.NoError(err)
 	a.NotNil(t, pgrw)
 	a.NoError(conn.ExpectationsWereMet())
@@ -36,7 +36,7 @@ func TestGetMonitoredDatabases(t *testing.T) {
 		map[string]float64{"metric": 60}, map[string]float64{"standby_metric": 60}, "exhaustive", "exhaustive",
 		true, ".*", `\_.+`, map[string]string{"tag": "value"}, nil, true, true,
 	))
-	pgrw, err := sources.NewPostgresSourcesReaderWriter(ctx, conn)
+	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
 	a.NoError(err)
 
 	dbs, err := pgrw.GetSources()
@@ -66,7 +66,7 @@ func TestSyncFromReader(t *testing.T) {
 		map[string]float64{"metric": 60}, map[string]float64{"standby_metric": 60}, "exhaustive", "exhaustive",
 		true, ".*", `\_.+`, map[string]string{"tag": "value"}, nil, true, true,
 	))
-	pgrw, err := sources.NewPostgresSourcesReaderWriter(ctx, conn)
+	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
 	a.NoError(err)
 
 	md := &sources.MonitoredDatabase{}
@@ -84,7 +84,7 @@ func TestDeleteDatabase(t *testing.T) {
 	a.NoError(err)
 	conn.ExpectPing()
 	conn.ExpectExec(`delete from pgwatch\.source where name = \$1`).WithArgs("db1").WillReturnResult(pgxmock.NewResult("DELETE", 1))
-	pgrw, err := sources.NewPostgresSourcesReaderWriter(ctx, conn)
+	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
 	a.NoError(err)
 
 	err = pgrw.DeleteSource("db1")
@@ -118,7 +118,7 @@ func TestUpdateDatabase(t *testing.T) {
 		nil, md.OnlyIfMaster,
 	).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-	pgrw, err := sources.NewPostgresSourcesReaderWriter(ctx, conn)
+	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
 	a.NoError(err)
 	err = pgrw.UpdateSource(md)
 	a.NoError(err)
@@ -160,7 +160,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 		conn.ExpectCommit()
 		conn.ExpectRollback() // deferred rollback
 
-		pgrw, err = sources.NewPostgresSourcesReaderWriter(ctx, conn)
+		pgrw, err = sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
 		a.NoError(err)
 		err = pgrw.WriteSources(mds)
 		a.NoError(err)

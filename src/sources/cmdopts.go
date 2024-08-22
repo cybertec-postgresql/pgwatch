@@ -1,7 +1,7 @@
 package sources
 
 // SourceOpts specifies the sources related command-line options
-type SourceCmdOpts struct {
+type CmdOpts struct {
 	Sources                      string   `short:"s" long:"sources" mapstructure:"config" description:"Postgres URI, file or folder of YAML files containing info on which DBs to monitor" env:"PW_SOURCES"`
 	Refresh                      int      `long:"refresh" mapstructure:"refresh" description:"How frequently to resync sources and metrics" env:"PW_REFRESH" default:"120"`
 	Groups                       []string `short:"g" long:"group" mapstructure:"group" description:"Groups for filtering which databases to monitor. By default all are monitored" env:"PW_GROUP"`

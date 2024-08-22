@@ -1,4 +1,4 @@
-package config
+package cmdopts
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/db"
 	"github.com/cybertec-postgresql/pgwatch/log"
 	"github.com/cybertec-postgresql/pgwatch/metrics"
 	"github.com/cybertec-postgresql/pgwatch/sinks"
@@ -39,14 +38,13 @@ const (
 	ConfigError
 )
 
+// Options contains the command line options.
 type Options struct {
-	Sources sources.SourceCmdOpts  `group:"Sources"`
-	Metrics metrics.MetricCmdOpts  `group:"Metrics"`
-	Sinks   sinks.SinkCmdOpts      `group:"Sinks"`
-	Logging log.LoggingCmdOpts     `group:"Logging"`
-	WebUI   webserver.WebUICmdOpts `group:"WebUI"`
-	Init    bool                   `long:"init" description:"Initialize configurations schemas to the latest version and exit. Can be used with --upgrade"`
-	Upgrade bool                   `long:"upgrade" description:"Upgrade configurations to the latest version"`
+	Sources sources.CmdOpts   `group:"Sources"`
+	Metrics metrics.CmdOpts   `group:"Metrics"`
+	Sinks   sinks.CmdOpts     `group:"Sinks"`
+	Logging log.CmdOpts       `group:"Logging"`
+	WebUI   webserver.CmdOpts `group:"WebUI"`
 	Help    bool
 
 	// sourcesReaderWriter reads/writes the monitored sources (databases, patroni clusters, pgpools, etc.) information
@@ -58,39 +56,38 @@ type Options struct {
 }
 
 func addCommands(parser *flags.Parser, opts *Options) {
-	_, _ = parser.AddCommand("metric",
-		"Manage metrics",
-		"Commands to manage metrics",
-		NewMetricCommand(opts))
-	_, _ = parser.AddCommand("source",
-		"Manage sources",
-		"Commands to manage sources",
-		NewSourceCommand(opts))
+	_, _ = parser.AddCommand("metric", "Manage metrics", "", NewMetricCommand(opts))
+	_, _ = parser.AddCommand("source", "Manage sources", "", NewSourceCommand(opts))
+	_, _ = parser.AddCommand("config", "Manage configurations", "", NewConfigCommand(opts))
 }
 
-// New returns a new instance of CmdOptions
-func New(writer io.Writer) (*Options, error) {
-	cmdOpts := new(Options)
+// New returns a new instance of Options and immediately executes the subcommand if specified.
+// Errors are returned for parsing only, if the command line arguments are invalid.
+// Subcommands execution errors (if any) do not affect error returned.
+// Subcommands are responsible for setting exit code only.
+func New(writer io.Writer) (cmdOpts *Options, err error) {
+	cmdOpts = new(Options)
 	parser := flags.NewParser(cmdOpts, flags.HelpFlag)
 	parser.SubcommandsOptional = true // if not command specified, start monitoring
 	addCommands(parser, cmdOpts)
-	nonParsedArgs, err := parser.Parse()
-	if err != nil { //subcommands executed as part of parsing
+	nonParsedArgs, err := parser.Parse() // parse and execute subcommand if any
+	if err != nil {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
 			cmdOpts.Help = true
 		}
 		if !flags.WroteHelp(err) {
 			parser.WriteHelp(writer)
 		}
-	} else {
-		if !cmdOpts.CommandCompleted && len(nonParsedArgs) > 0 {
-			err = fmt.Errorf("unknown argument(s): %v", nonParsedArgs)
-		}
+		return cmdOpts, err
 	}
-	if err == nil {
-		err = validateConfig(cmdOpts)
+	if cmdOpts.CommandCompleted { // subcommand executed, nothing to do more
+		return
 	}
-	return cmdOpts, err
+	if len(nonParsedArgs) > 0 { // we don't expect any non-parsed arguments
+		return cmdOpts, fmt.Errorf("unknown argument(s): %v", nonParsedArgs)
+	}
+	err = validateConfig(cmdOpts)
+	return
 }
 
 func (c *Options) CompleteCommand(code int32) {
@@ -136,11 +133,7 @@ func (c *Options) InitMetricReader(ctx context.Context) (err error) {
 	}
 	switch configKind {
 	case ConfigPgURL:
-		var configDb db.PgxPoolIface
-		if configDb, err = db.New(ctx, c.Sources.Sources); err != nil {
-			return err
-		}
-		c.MetricsReaderWriter, err = metrics.NewPostgresMetricReaderWriter(ctx, configDb)
+		c.MetricsReaderWriter, err = metrics.NewPostgresMetricReaderWriter(ctx, c.Metrics.Metrics)
 	default:
 		c.MetricsReaderWriter, err = metrics.NewYAMLMetricReaderWriter(ctx, c.Metrics.Metrics)
 	}
@@ -150,16 +143,17 @@ func (c *Options) InitMetricReader(ctx context.Context) (err error) {
 // InitSourceReader creates a new source reader based on the configuration kind from the options.
 func (c *Options) InitSourceReader(ctx context.Context) (err error) {
 	var configKind Kind
+	if c.Sources.Sources == "" { //if config database is configured, use it for sources as well
+		if k, err := c.GetConfigKind(c.Metrics.Metrics); err == nil && k == ConfigPgURL {
+			c.Sources.Sources = c.Metrics.Metrics
+		}
+	}
 	if configKind, err = c.GetConfigKind(c.Sources.Sources); err != nil {
 		return
 	}
 	switch configKind {
 	case ConfigPgURL:
-		var configDb db.PgxPoolIface
-		if configDb, err = db.New(ctx, c.Sources.Sources); err != nil {
-			return err
-		}
-		c.SourcesReaderWriter, err = sources.NewPostgresSourcesReaderWriter(ctx, configDb)
+		c.SourcesReaderWriter, err = sources.NewPostgresSourcesReaderWriter(ctx, c.Sources.Sources)
 	default:
 		c.SourcesReaderWriter, err = sources.NewYAMLSourcesReaderWriter(ctx, c.Sources.Sources)
 	}
@@ -169,6 +163,20 @@ func (c *Options) InitSourceReader(ctx context.Context) (err error) {
 // InitConfigReaders creates the configuration readers based on the configuration kind from the options.
 func (c *Options) InitConfigReaders(ctx context.Context) error {
 	return errors.Join(c.InitMetricReader(ctx), c.InitSourceReader(ctx))
+}
+
+// NeedsSchemaUpgrade checks if the configuration database schema needs an upgrade.
+func (c *Options) NeedsSchemaUpgrade() (upgrade bool, err error) {
+	if m, ok := c.SourcesReaderWriter.(metrics.Migrator); ok {
+		upgrade, err = m.NeedsMigration()
+	}
+	if upgrade || err != nil {
+		return
+	}
+	if m, ok := c.MetricsReaderWriter.(metrics.Migrator); ok {
+		return m.NeedsMigration()
+	}
+	return
 }
 
 // InitWebUI initializes the web UI server

@@ -9,12 +9,12 @@ import (
 )
 
 func TestGetLogFileWriter(t *testing.T) {
-	assert.IsType(t, getLogFileWriter(LoggingCmdOpts{LogFileRotate: true}), &lumberjack.Logger{})
-	assert.IsType(t, getLogFileWriter(LoggingCmdOpts{LogFileRotate: false}), "string")
+	assert.IsType(t, getLogFileWriter(CmdOpts{LogFileRotate: true}), &lumberjack.Logger{})
+	assert.IsType(t, getLogFileWriter(CmdOpts{LogFileRotate: false}), "string")
 }
 
 func TestGetLogFileFormatter(t *testing.T) {
-	assert.IsType(t, getLogFileFormatter(LoggingCmdOpts{LogFileFormat: "json"}), &logrus.JSONFormatter{})
-	assert.IsType(t, getLogFileFormatter(LoggingCmdOpts{LogFileFormat: "blah"}), &logrus.JSONFormatter{})
-	assert.IsType(t, getLogFileFormatter(LoggingCmdOpts{LogFileFormat: "text"}), &Formatter{})
+	assert.IsType(t, getLogFileFormatter(CmdOpts{LogFileFormat: "json"}), &logrus.JSONFormatter{})
+	assert.IsType(t, getLogFileFormatter(CmdOpts{LogFileFormat: "blah"}), &logrus.JSONFormatter{})
+	assert.IsType(t, getLogFileFormatter(CmdOpts{LogFileFormat: "text"}), &Formatter{})
 }
