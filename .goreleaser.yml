@@ -31,8 +31,6 @@ archives:
       format: zip
   files:
     - ./grafana/**/*
-    - ./src/metrics/metrics.yaml
-    - ./src/config/**/*
     - ./README.md
 
 checksum:
@@ -61,12 +59,6 @@ nfpms:
       - rpm
 
     contents:
-      - src: "./src/metrics/metrics.yaml"
-        dst: "/etc/pgwatch/metrics.yaml"
-        type: config
-      - src: "./src/config/*"
-        dst: "/etc/pgwatch/config"
-        type: config
       - src: "./grafana/*"
         dst: "/etc/pgwatch/grafana"
       - src: "./README.md"
