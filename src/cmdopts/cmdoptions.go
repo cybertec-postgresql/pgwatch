@@ -104,7 +104,7 @@ func (c *Options) GetConfigKind(arg string) (_ Kind, err error) {
 	if arg == "" {
 		return Kind(ConfigError), errors.New("no configuration provided")
 	}
-	if _, err := pgx.ParseConfig(arg); err == nil {
+	if c.IsPgConnStr(arg) {
 		return Kind(ConfigPgURL), nil
 	}
 	var fi os.FileInfo
@@ -117,24 +117,24 @@ func (c *Options) GetConfigKind(arg string) (_ Kind, err error) {
 	return Kind(ConfigError), err
 }
 
+func (c *Options) IsPgConnStr(arg string) bool {
+	_, err := pgx.ParseConfig(arg)
+	return err == nil
+}
+
 // InitMetricReader creates a new source reader based on the configuration kind from the options.
 func (c *Options) InitMetricReader(ctx context.Context) (err error) {
-	var configKind Kind
 	if c.Metrics.Metrics == "" { //if config database is configured, use it for metrics as well
-		if k, err := c.GetConfigKind(c.Sources.Sources); err == nil && k == ConfigPgURL {
+		if c.IsPgConnStr(c.Sources.Sources) {
 			c.Metrics.Metrics = c.Sources.Sources
 		} else { // otherwise use built-in metrics
 			c.MetricsReaderWriter, err = metrics.NewYAMLMetricReaderWriter(ctx, "")
 			return err
 		}
 	}
-	if configKind, err = c.GetConfigKind(c.Metrics.Metrics); err != nil {
-		return
-	}
-	switch configKind {
-	case ConfigPgURL:
+	if c.IsPgConnStr(c.Metrics.Metrics) {
 		c.MetricsReaderWriter, err = metrics.NewPostgresMetricReaderWriter(ctx, c.Metrics.Metrics)
-	default:
+	} else {
 		c.MetricsReaderWriter, err = metrics.NewYAMLMetricReaderWriter(ctx, c.Metrics.Metrics)
 	}
 	return err
@@ -144,7 +144,7 @@ func (c *Options) InitMetricReader(ctx context.Context) (err error) {
 func (c *Options) InitSourceReader(ctx context.Context) (err error) {
 	var configKind Kind
 	if c.Sources.Sources == "" { //if config database is configured, use it for sources as well
-		if k, err := c.GetConfigKind(c.Metrics.Metrics); err == nil && k == ConfigPgURL {
+		if c.IsPgConnStr(c.Metrics.Metrics) {
 			c.Sources.Sources = c.Metrics.Metrics
 		}
 	}

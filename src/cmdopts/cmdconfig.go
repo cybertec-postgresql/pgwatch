@@ -67,22 +67,16 @@ func (cmd *ConfigInitCommand) InitSources() {
 
 func (cmd *ConfigInitCommand) InitMetrics() {
 	ctx := context.Background()
-	kind, err := cmd.owner.GetConfigKind(cmd.owner.Metrics.Metrics)
-	if err != nil {
-		cmd.owner.CompleteCommand(ExitCodeConfigError)
-		return
-	}
-	switch kind {
-	case ConfigPgURL:
-		if err = cmd.owner.InitMetricReader(ctx); err != nil {
+	if cmd.owner.IsPgConnStr(cmd.owner.Metrics.Metrics) {
+		if err := cmd.owner.InitMetricReader(ctx); err != nil {
 			cmd.owner.CompleteCommand(ExitCodeConfigError)
 			return
 		}
-	case ConfigFile:
+	} else {
 		reader, _ := metrics.NewYAMLMetricReaderWriter(ctx, "")
 		writer, _ := metrics.NewYAMLMetricReaderWriter(ctx, cmd.owner.Metrics.Metrics)
 		defMetrics, _ := reader.GetMetrics()
-		if err = writer.WriteMetrics(defMetrics); err != nil {
+		if err := writer.WriteMetrics(defMetrics); err != nil {
 			fmt.Printf("cannot init metrics: %s", err)
 			cmd.owner.CompleteCommand(ExitCodeConfigError)
 			return
