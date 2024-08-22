@@ -23,7 +23,7 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 	t.Run("ConnectionError", func(*testing.T) {
 		pgrw, err := metrics.NewPostgresMetricReaderWriter(ctx, "postgres://user:pass@foohost:5432/db1")
 		a.Error(err)
-		a.NotNil(pgrw)
+		a.Nil(pgrw)
 	})
 	t.Run("InvalidConnStr", func(*testing.T) {
 		pgrw, err := metrics.NewPostgresMetricReaderWriter(ctx, "invalid_connstr")
