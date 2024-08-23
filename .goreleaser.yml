@@ -49,7 +49,7 @@ nfpms:
       {{- else }}{{ .Arch }}{{ end }}
 
     vendor: CYBERTEC PostgreSQL International GmbH
-    homepage: https://github.com/cybertec-postgresql/pgwatch3
+    homepage: https://github.com/cybertec-postgresql/pgwatch
 
     maintainer: Pavlo Golub <open.an.issue@github.com>
     description: pgwatch3 metrics collector with metric definitions and sample YAML config

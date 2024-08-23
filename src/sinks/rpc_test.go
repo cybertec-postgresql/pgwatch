@@ -9,8 +9,8 @@ import (
 	"net/rpc"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch3/metrics"
-	"github.com/cybertec-postgresql/pgwatch3/sinks"
+	"github.com/cybertec-postgresql/pgwatch/metrics"
+	"github.com/cybertec-postgresql/pgwatch/sinks"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/cybertec-postgresql/pgwatch3/metrics"
-	"github.com/cybertec-postgresql/pgwatch3/metrics/psutil"
+	"github.com/cybertec-postgresql/pgwatch/metrics"
+	"github.com/cybertec-postgresql/pgwatch/metrics/psutil"
 )
 
 func DoesEmergencyTriggerfileExist(fname string) bool {

@@ -52,17 +52,17 @@ setups you'd need to follow a simple process described
 Same as with metrics, also the built-in Grafana dashboards are being
 actively updates, so would make sense to refresh them occasionally also.
 The bulk delete / import scripts can be found
-[here](https://github.com/cybertec-postgresql/pgwatch3/tree/master/grafana)
+[here](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana)
 or you could also manually just re-import some dashboards of interest
 from JSON files in [/etc/pgwatch3/grafana-dashboards] folder
 or from
-[Github](https://github.com/cybertec-postgresql/pgwatch3/tree/master/grafana).
+[Github](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana).
 
 !!! Info
     Notable new dashboards are usually listed also in [release
-    notes](https://github.com/cybertec-postgresql/pgwatch3/blob/master/docs/CHANGELOG.md)
+    notes](https://github.com/cybertec-postgresql/pgwatch/blob/master/docs/CHANGELOG.md)
     and most dashboards also have a sample
-    [screenshots](https://github.com/cybertec-postgresql/pgwatch3/tree/master/docs/screenshots)
+    [screenshots](https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/screenshots)
     available.
 
 ## Storage monitoring

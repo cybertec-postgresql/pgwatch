@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/cybertec-postgresql/pgwatch3/sources"
+	"github.com/cybertec-postgresql/pgwatch/sources"
 )
 
 // the number of entries in the sample.sources.yaml file

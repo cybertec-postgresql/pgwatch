@@ -9,7 +9,7 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 ## Communication Channels
 
 The main communication channel for the project is the 
-[GitHub repository](https://github.com/cybertec-postgresql/pgwatch3). 
+[GitHub repository](https://github.com/cybertec-postgresql/pgwatch). 
 Feel free to open issues and participate in discussions there.
 
 ## Setting Up the Development Environment
@@ -20,19 +20,19 @@ To set up the development environment, please refer to the instructions in the
 ## How to Report Bugs
 
 If you encounter any bugs, please report them by opening an issue in the 
-[GitHub repository issues section](https://github.com/cybertec-postgresql/pgwatch3/issues). 
+[GitHub repository issues section](https://github.com/cybertec-postgresql/pgwatch/issues). 
 Provide as much detail as possible to help us understand and resolve the issue.
 
 ## How to Request Features
 
 If you have a feature request, please start a discussion in the 
-[GitHub repository discussions section](https://github.com/cybertec-postgresql/pgwatch3/discussions). 
+[GitHub repository discussions section](https://github.com/cybertec-postgresql/pgwatch/discussions). 
 We value your feedback and ideas!
 
 ## Submitting Changes
 
 Before submitting any changes, please discuss them in the 
-[GitHub repository discussions section](https://github.com/cybertec-postgresql/pgwatch3/discussions). 
+[GitHub repository discussions section](https://github.com/cybertec-postgresql/pgwatch/discussions). 
 This helps ensure that your contribution aligns with the project goals and prevents duplicate efforts.
 
 When you are ready to submit your changes, create a pull request. Make sure your pull request:
@@ -64,6 +64,6 @@ under the same license as the project.
 ---
 
 We appreciate your contributions and efforts to improve PGWatch. If you have any questions, 
-feel free to reach out through the [GitHub repository](https://github.com/cybertec-postgresql/pgwatch3).
+feel free to reach out through the [GitHub repository](https://github.com/cybertec-postgresql/pgwatch).
 
 Thank you!

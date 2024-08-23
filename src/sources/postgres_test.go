@@ -7,7 +7,7 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/cybertec-postgresql/pgwatch3/sources"
+	"github.com/cybertec-postgresql/pgwatch/sources"
 )
 
 func TestNewPostgresSourcesReaderWriter(t *testing.T) {

@@ -17,7 +17,7 @@ Hub (if new to Docker start
 [here](https://docs.docker.com/get-started/)). For custom setups see the
 [Custom installations](custom_installation.md) paragraph below or turn to the pre-built DEB / RPM / Tar
 packages on the Github Releases
-[page](https://github.com/cybertec-postgresql/pgwatch3/releases).
+[page](https://github.com/cybertec-postgresql/pgwatch/releases).
 
 Launching the latest pgwatch3 Docker image with built-in Postgres
 metrics storage DB:

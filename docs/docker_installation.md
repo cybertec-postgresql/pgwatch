@@ -141,7 +141,7 @@ needed.
 -   Some built-in metrics like `"cpu_load"` and others, that gather
     privileged or OS statistics, require installing *helper functions*
     (looking like
-    [that](https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/metrics/00_helpers/get_load_average/9.1/metric.sql),
+    [that](https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch3/metrics/00_helpers/get_load_average/9.1/metric.sql),
     so it might be normal to see some blank panels or fetching errors in
     the logs. On how to prepare databases for monitoring see the
     [Monitoring preparations](preparing_databases.md) chapter.
@@ -186,4 +186,4 @@ one example how your monitoring setup around the pgwatch3 metrics
 collector could be organized. For another example how various components
 (as Docker images here) can work together, see a *Docker Compose*
 example with loosely coupled components
-[here](https://github.com/cybertec-postgresql/pgwatch3/blob/master/docker-compose.yml).
+[here](https://github.com/cybertec-postgresql/pgwatch/blob/master/docker-compose.yml).

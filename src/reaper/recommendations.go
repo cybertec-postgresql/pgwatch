@@ -8,7 +8,7 @@ import (
 
 	"errors"
 
-	"github.com/cybertec-postgresql/pgwatch3/metrics"
+	"github.com/cybertec-postgresql/pgwatch/metrics"
 )
 
 const (

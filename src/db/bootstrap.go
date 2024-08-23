@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/log"
+	"github.com/cybertec-postgresql/pgwatch/log"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"

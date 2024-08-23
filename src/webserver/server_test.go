@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch3/log"
-	"github.com/cybertec-postgresql/pgwatch3/webserver"
+	"github.com/cybertec-postgresql/pgwatch/log"
+	"github.com/cybertec-postgresql/pgwatch/webserver"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -3,7 +3,7 @@ package reaper
 import (
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/sources"
+	"github.com/cybertec-postgresql/pgwatch/sources"
 )
 
 const (

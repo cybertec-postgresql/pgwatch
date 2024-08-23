@@ -1,4 +1,4 @@
-module github.com/cybertec-postgresql/pgwatch3/convert
+module github.com/cybertec-postgresql/pgwatch/convert
 
 go 1.22.0
 

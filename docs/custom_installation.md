@@ -65,11 +65,11 @@ syntax differences.
 
         The pre-built DEB / RPM / Tar packages are available on the
         [Github
-        releases](https://github.com/cybertec-postgresql/pgwatch3/releases)
+        releases](https://github.com/cybertec-postgresql/pgwatch/releases)
         page.
 
             # find out the latest package link and replace below, using v1.8.0 here
-            wget https://github.com/cybertec-postgresql/pgwatch3/releases/download/v1.8.0/pgwatch3_v1.8.0-SNAPSHOT-064fdaf_linux_64-bit.deb
+            wget https://github.com/cybertec-postgresql/pgwatch/releases/download/v1.8.0/pgwatch3_v1.8.0-SNAPSHOT-064fdaf_linux_64-bit.deb
             sudo dpkg -i pgwatch3_v1.8.0-SNAPSHOT-064fdaf_linux_64-bit.deb
 
     -   Compiling the Go code yourself
@@ -83,7 +83,7 @@ syntax differences.
         2.  Get the pgwatch3 project's code and compile the gatherer
             daemon
 
-                git clone https://github.com/cybertec-postgresql/pgwatch3.git
+                git clone https://github.com/cybertec-postgresql/pgwatch.git
                 cd pgwatch3/src/webui
                 yarn install --network-timeout 100000 && yarn build
                 cd ..
@@ -97,7 +97,7 @@ syntax differences.
 
         Sample startup scripts can be found at
         */etc/pgwatch3/startup-scripts/pgwatch3.service* or online
-        [here](https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/startup-scripts/pgwatch3.service).
+        [here](https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch3/startup-scripts/pgwatch3.service).
         Note that they are OS agnostic and might need some light
         adjustment of paths, etc - so always test them out.
 
@@ -137,7 +137,7 @@ syntax differences.
         be monitored, i.e. how much data generated, and based on that
         one should choose an according metrics storage schema. There are
         a couple of different options available that are described
-        [here](https://github.com/cybertec-postgresql/pgwatch3/tree/master/pgwatch3/sql/metric_store)
+        [here](https://github.com/cybertec-postgresql/pgwatch/tree/master/pgwatch3/sql/metric_store)
         in detail, but the gist of it is that you don't want too
         complex partitioning schemes if you don't have zounds of data
         and don't need the fastest queries. For a smaller amount of
@@ -311,7 +311,7 @@ DB".
 2.  Specify hosts you want to monitor and with which metrics /
     aggressivness in a YAML file or files, following the example config
     located at */etc/pgwatch3/config/instances.yaml* or online
-    [here](https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/config/instances.yaml).
+    [here](https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch3/config/instances.yaml).
     Note that you can also use env. variables inside the YAML templates!
 3.  Bootstrap the metrics storage DB (not needed it using Prometheus
     mode).

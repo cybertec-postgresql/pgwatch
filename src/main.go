@@ -10,10 +10,10 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
-	"github.com/cybertec-postgresql/pgwatch3/log"
-	"github.com/cybertec-postgresql/pgwatch3/metrics"
-	"github.com/cybertec-postgresql/pgwatch3/reaper"
+	"github.com/cybertec-postgresql/pgwatch/config"
+	"github.com/cybertec-postgresql/pgwatch/log"
+	"github.com/cybertec-postgresql/pgwatch/metrics"
+	"github.com/cybertec-postgresql/pgwatch/reaper"
 )
 
 // version output variables

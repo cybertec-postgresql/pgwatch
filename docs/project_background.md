@@ -37,4 +37,4 @@ Cybertec also provides commercial 9-to-5 and 24/7 support for pgwatch3.
 
 For feature requests or troubleshooting assistance please open an issue
 on project's [Github
-page](https://github.com/cybertec-postgresql/pgwatch3).
+page](https://github.com/cybertec-postgresql/pgwatch).

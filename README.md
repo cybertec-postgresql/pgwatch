@@ -1,6 +1,6 @@
 [![Documentation](https://img.shields.io/badge/Documentation-pgwat.ch-brightgreen)](https://pgwat.ch)
 [![License: MIT](https://img.shields.io/badge/License-BSD_3-green.svg)](https://opensource.org/license/bsd-3-clause)
-[![Go Build & Test](https://github.com/cybertec-postgresql/pgwatch3/actions/workflows/build.yml/badge.svg)](https://github.com/cybertec-postgresql/pgwatch3/actions/workflows/build.yml)
+[![Go Build & Test](https://github.com/cybertec-postgresql/pgwatch/actions/workflows/build.yml/badge.svg)](https://github.com/cybertec-postgresql/pgwatch/actions/workflows/build.yml)
 [![Coverage Status](https://coveralls.io/repos/github/cybertec-postgresql/pgwatch3/badge.svg?branch=master&service=github)](https://coveralls.io/github/cybertec-postgresql/pgwatch3?branch=master)
 
 
@@ -16,7 +16,7 @@ This is the next generation of [pgwatch2](https://github.com/cybertec-postgresql
 For the fastest development experience the Docker compose file is provided:
 
 ```shell
-git clone https://github.com/cybertec-postgresql/pgwatch3.git && cd pgwatch3
+git clone https://github.com/cybertec-postgresql/pgwatch.git && cd pgwatch3
 
 docker compose up --detach
 ```

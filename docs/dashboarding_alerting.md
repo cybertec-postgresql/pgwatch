@@ -30,10 +30,10 @@ changes.
 **Links:**
 
 [Built-in dashboards for PostgreSQL (TimescaleDB)
-storage](https://github.com/cybertec-postgresql/pgwatch3/tree/master/grafana/postgres/)
+storage](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana/postgres/)
 
 [Screenshots of pgwatch3 default
-dashboards](https://github.com/cybertec-postgresql/pgwatch3/tree/master/docs/screenshots)
+dashboards](https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/screenshots)
 
 [The online Demo site](https://demo.pgwatch.com/)
 

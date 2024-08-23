@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/config"
-	"github.com/cybertec-postgresql/pgwatch3/log"
-	"github.com/cybertec-postgresql/pgwatch3/metrics"
-	"github.com/cybertec-postgresql/pgwatch3/sinks"
-	"github.com/cybertec-postgresql/pgwatch3/sources"
+	"github.com/cybertec-postgresql/pgwatch/config"
+	"github.com/cybertec-postgresql/pgwatch/log"
+	"github.com/cybertec-postgresql/pgwatch/metrics"
+	"github.com/cybertec-postgresql/pgwatch/sinks"
+	"github.com/cybertec-postgresql/pgwatch/sources"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )

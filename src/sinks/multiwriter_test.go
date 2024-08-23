@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch3/metrics"
+	"github.com/cybertec-postgresql/pgwatch/metrics"
 	"github.com/stretchr/testify/assert"
 )
 

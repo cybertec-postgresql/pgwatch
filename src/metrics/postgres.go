@@ -4,7 +4,7 @@ import (
 	"context"
 	_ "embed"
 
-	"github.com/cybertec-postgresql/pgwatch3/db"
+	"github.com/cybertec-postgresql/pgwatch/db"
 )
 
 func NewPostgresMetricReaderWriter(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error) {

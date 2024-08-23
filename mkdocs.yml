@@ -4,7 +4,7 @@ site_url: https://pgwat.ch/
 use_directory_urls: false
 copyright: Made by and for PostgreSQL lovers! 🐘❤️
 repo_name: pgwatch3 by Cybertec
-repo_url: https://github.com/cybertec-postgresql/pgwatch3
+repo_url: https://github.com/cybertec-postgresql/pgwatch
 theme:
   name: material
   language: en

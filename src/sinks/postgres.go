@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/db"
-	"github.com/cybertec-postgresql/pgwatch3/log"
-	"github.com/cybertec-postgresql/pgwatch3/metrics"
+	"github.com/cybertec-postgresql/pgwatch/db"
+	"github.com/cybertec-postgresql/pgwatch/log"
+	"github.com/cybertec-postgresql/pgwatch/metrics"
 	"github.com/jackc/pgx/v5"
 )
 

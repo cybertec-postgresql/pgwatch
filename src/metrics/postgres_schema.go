@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cybertec-postgresql/pgwatch3/log"
+	"github.com/cybertec-postgresql/pgwatch/log"
 	migrator "github.com/cybertec-postgresql/pgx-migrator"
 	"github.com/jackc/pgx/v5"
 )
