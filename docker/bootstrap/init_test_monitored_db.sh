@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -n "$PW3_TESTDB" ] ; then
+if [ -n "$PW_TESTDB" ] ; then
   echo "adding test monitored database..."
   psql -v ON_ERROR_STOP=1 --username "postgres" --dbname "pgwatch3" <<-EOSQL
       INSERT INTO pgwatch3.source (name, preset_config, config, connstr)

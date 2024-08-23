@@ -22,7 +22,7 @@ it in some way.
         cluster) are allowed
     -   Configurable statement timeouts per DB
     -   SSL connections support for safe over-the-internet monitoring
-        (use `-e PW3_WEBSSL=1 -e PW3_GRAFANASSL=1` when launching
+        (use `-e PW_WEBSSL=1 -e PW_GRAFANASSL=1` when launching
         Docker)
     -   Optional authentication for the Web UI and Grafana (by default
         freely accessible)

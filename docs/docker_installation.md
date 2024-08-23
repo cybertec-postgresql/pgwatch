@@ -96,7 +96,7 @@ needed.
 
 ## Interacting with the Docker container
 
--   If to launch with the `PW3_TESTDB=1` env. parameter then the
+-   If to launch with the `PW_TESTDB=1` env. parameter then the
     pgwatch3 configuration database running inside Docker is added to
     the monitoring, so that you should immediately see some metrics at
     least on the *Health-check* dashboard.
@@ -109,7 +109,7 @@ needed.
     `"pgwatch3.monitored_db"` table. Default user/password are again
     `pgwatch3/pgwatch3admin`, database name - `pgwatch3`. In both
     cases note that it can take up to 2min (default main loop time,
-    changeable via `PW3_SERVERS_REFRESH_LOOP_SECONDS`) before you see
+    changeable via `PW_SERVERS_REFRESH_LOOP_SECONDS`) before you see
     any metrics for newly inserted databases.
 
 -   One can edit existing or create new Grafana dashboards, change

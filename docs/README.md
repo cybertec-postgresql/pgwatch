@@ -23,7 +23,7 @@ Launching the latest pgwatch3 Docker image with built-in Postgres
 metrics storage DB:
 
     # run the latest Docker image, exposing Grafana on port 3000 and the administrative web UI on 8080
-    docker run -d -p 3000:3000 -p 8080:8080 -e PW3_TESTDB=true --name pw3 cybertec/pgwatch3
+    docker run -d -p 3000:3000 -p 8080:8080 -e PW_TESTDB=true --name pw3 cybertec/pgwatch3
 
 After some minutes you could for example open the [DB
 overview](http://127.0.0.1:3000/dashboard/db/db-overview) dashboard
@@ -33,7 +33,7 @@ user/password: `admin/pgwatch3admin`).
 
 If you don't want to add the `"test"` database (the pgwatch3
 configuration DB holding connection strings to monitored DBs and metric
-definitions) to monitoring, remove the `PW3_TESTDB` env variable.
+definitions) to monitoring, remove the `PW_TESTDB` env variable.
 
 Also note that for long term production usage with Docker it's highly
 recommended to use separate *volumes* for each pgwatch3 component - see

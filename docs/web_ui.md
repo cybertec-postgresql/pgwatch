@@ -34,7 +34,7 @@ enabled:
 -   HTTPS
 
 -   Password protection is controlled by `--web-user`, `--web-password` command-line parameters or
-    `PW3_WEBUSER`, `PW3_WEBPASSWORD` environmental variables.
+    `PW_WEBUSER`, `PW_WEBPASSWORD` environmental variables.
 
 -   Note that it's better to use standard *LibPQ .pgpass files* so
     there's no requirement to store any passwords in pgwatch3 config
@@ -48,7 +48,7 @@ techniques vulnerable to snooping / MITM attacks.
 
 When using the Docker images, internal component logs (Postgres,
 Grafana, Go daemon, Web UI itself) are exposed via the "/logs"
-endpoint. If this is not wanted set the PW3_WEBNOCOMPONENTLOGS env.
+endpoint. If this is not wanted set the PW_WEBNOCOMPONENTLOGS env.
 variable. Note that if a working "/logs" endpoint is desired also in
 custom setup mode (non-docker) then some actual code changes are needed
 to specify where logs of all components are situated - see top of the

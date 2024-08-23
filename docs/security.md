@@ -53,12 +53,12 @@ pgwatch3 with following security "checkpoints" enabled:
     ```properties
     docker run --name pw3 -d --restart=unless-stopped \
       -p 3000:3000 -p 8080:8080 \
-      -e PW3_GRAFANASSL=1 -e PW3_WEBSSL=1 \
-      -e PW3_GRAFANANOANONYMOUS=1 -e PW3_GRAFANAUSER=myuser \
-      -e PW3_GRAFANAPASSWORD=mypass \
-      -e PW3_WEBNOANONYMOUS=1 -e PW3_WEBNOCOMPONENTLOGS=1 \
-      -e PW3_WEBUSER=myuser -e PW3_WEBPASSWORD=mypass \
-      -e PW3_AES_GCM_KEYPHRASE=qwerty \
+      -e PW_GRAFANASSL=1 -e PW_WEBSSL=1 \
+      -e PW_GRAFANANOANONYMOUS=1 -e PW_GRAFANAUSER=myuser \
+      -e PW_GRAFANAPASSWORD=mypass \
+      -e PW_WEBNOANONYMOUS=1 -e PW_WEBNOCOMPONENTLOGS=1 \
+      -e PW_WEBUSER=myuser -e PW_WEBPASSWORD=mypass \
+      -e PW_AES_GCM_KEYPHRASE=qwerty \
       cybertec/pgwatch3
     ```
 

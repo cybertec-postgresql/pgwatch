@@ -33,13 +33,13 @@ things via *Ansible* for example and you can also use Env. vars in
 sideYAML files.
 
 Relevant Gatherer env. vars / flags: `--config, --metrics-folder` or
-`PW3_CONFIG / PW3_METRICS_FOLDER`.
+`PW_CONFIG / PW_METRICS_FOLDER`.
 
 ## Prometheus mode
 
 In v1.6.0 was added support for Prometheus - being one of the most
 popular modern metrics gathering / alerting solutions. When the
-`--datastore / PW3_DATASTORE` parameter is set to *prometheus* then the
+`--datastore / PW_DATASTORE` parameter is set to *prometheus* then the
 pgwatch3 metrics collector doesn't do any normal interval-based
 fetching but listens on port *9187* (changeable) for scrape requests
 configured and performed on Prometheus side. Returned metrics belong to

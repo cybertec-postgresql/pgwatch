@@ -17,7 +17,7 @@ if [ ! -f /pgwatch3/persistent-config/default-password-encryption-key.txt ]; the
   chmod 0600 /pgwatch3/persistent-config/default-password-encryption-key.txt
 fi
 
-GRAFANASSL="${PW3_GRAFANASSL,,}"    # to lowercase
+GRAFANASSL="${PW_GRAFANASSL,,}"    # to lowercase
 if [ "$GRAFANASSL" == "1" ] || [ "${GRAFANASSL:0:1}" == "t" ]; then
     $(grep -q 'protocol = http$' /etc/grafana/grafana.ini)
     if [ "$?" -eq 0 ] ; then
@@ -25,18 +25,18 @@ if [ "$GRAFANASSL" == "1" ] || [ "${GRAFANASSL:0:1}" == "t" ]; then
     fi
 fi
 
-if [ -n "$PW3_GRAFANAUSER" ] ; then
-    sed -i "s/admin_user =.*/admin_user = ${PW3_GRAFANAUSER}/" /etc/grafana/grafana.ini
+if [ -n "$PW_GRAFANAUSER" ] ; then
+    sed -i "s/admin_user =.*/admin_user = ${PW_GRAFANAUSER}/" /etc/grafana/grafana.ini
 fi
 
-if [ -n "$PW3_GRAFANAPASSWORD" ] ; then
-    sed -i "s/admin_password =.*/admin_password = ${PW3_GRAFANAPASSWORD}/" /etc/grafana/grafana.ini
+if [ -n "$PW_GRAFANAPASSWORD" ] ; then
+    sed -i "s/admin_password =.*/admin_password = ${PW_GRAFANAPASSWORD}/" /etc/grafana/grafana.ini
 fi
 
 # replace docker compose "postgres" host name to localhost
 sed -i 's/url: postgres/url: localhost/' /etc/grafana/provisioning/datasources/pg_ds.yml
 
-if [ -n "$PW3_GRAFANANOANONYMOUS" ] ; then
+if [ -n "$PW_GRAFANANOANONYMOUS" ] ; then
 CFG=$(cat <<-'HERE'
 [auth.anonymous]
 enabled = false

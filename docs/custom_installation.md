@@ -151,7 +151,7 @@ syntax differences.
 
         !!! Note 
             Default retention for Postgres storage is 2 weeks!
-            To change, use the `--pg-retention-days / PW3_PG_RETENTION_DAYS`
+            To change, use the `--pg-retention-days / PW_PG_RETENTION_DAYS`
             gatherer parameter.
 
 1.  **Prepare the "to-be-monitored" databases for metrics collection**
@@ -327,8 +327,8 @@ DB".
 7.  Make sure that there are auto-start SystemD services for all
     components in place and optionally set up also backups.
 
-Relevant gatherer parameters / env. vars: `--config / PW3_CONFIG` and
-`--metrics-folder / PW3_METRICS_FOLDER`.
+Relevant gatherer parameters / env. vars: `--config / PW_CONFIG` and
+`--metrics-folder / PW_METRICS_FOLDER`.
 
 For details on individual steps like installing pgwatch3 see the above
 paragraph.

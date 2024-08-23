@@ -61,8 +61,8 @@ func TestConfig(t *testing.T) {
 	_, err = New(nil)
 	assert.Error(t, err)
 
-	os.Args = []string{0: "config_test"} // clientname arg is missing, but set PW3_CONFIG
-	t.Setenv("PW3_SOURCES", "postgresql://foo:baz@bar/test")
+	os.Args = []string{0: "config_test"} // clientname arg is missing, but set PW_CONFIG
+	t.Setenv("PW_SOURCES", "postgresql://foo:baz@bar/test")
 	_, err = New(nil)
 	assert.NoError(t, err)
 }

@@ -68,8 +68,8 @@ services:
       dockerfile: ./docker/Dockerfile
     image: cybertecpostgresql/pgwatch3:latest
     environment:
-      PW3_SOURCES: postgresql://pgwatch3@postgres:5432/pgwatch3
-      PW3_SINK: postgresql://pgwatch3@postgres:5432/pgwatch3_metrics
+      PW_SOURCES: postgresql://pgwatch3@postgres:5432/pgwatch3
+      PW_SINK: postgresql://pgwatch3@postgres:5432/pgwatch3_metrics
     ports:
       - "8080:8080"
     depends_on:

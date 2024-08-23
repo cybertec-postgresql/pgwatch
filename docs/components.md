@@ -109,14 +109,14 @@ collector.
 Create a new pgwatch3 DB, preferrably also an accroding role who
 owns it. Then roll out the schema
 (pgwatch3/sql/config_store/config_store.sql) and set the following
-parameters when running the image: `PW3_PGHOST`, `PW3_PGPORT`,
-`PW3_PGDATABASE`, `PW3_PGUSER`, `PW3_PGPASSWORD`, `PW3_PGSSL` (optional).
+parameters when running the image: `PW_PGHOST`, `PW_PGPORT`,
+`PW_PGDATABASE`, `PW_PGUSER`, `PW_PGPASSWORD`, `PW_PGSSL` (optional).
 
 ### To use an existing Grafana installation
 
 Load the pgwatch3 dashboards from *grafana_dashboard* folder if
 needed (one can totally define their own) and set the following
-paramater: `PW3_GRAFANA_BASEURL`. This parameter only provides correct
+paramater: `PW_GRAFANA_BASEURL`. This parameter only provides correct
 links to Grafana dashboards from the Web UI. Grafana is the most
 loosely coupled component for pgwatch3 and basically doesn't have
 to be used at all. One can make use of the gathered metrics directly
@@ -127,9 +127,9 @@ over the Postgres (or Graphite) API-s.
 1.  Roll out the metrics storage schema according to instructions
     from [here](preparing_databases.md).
 1.  Following parameters need to be set for the gatherer:
-    -   `--datastore=postgres` or `PW3_DATASTORE=postgres`
+    -   `--datastore=postgres` or `PW_DATASTORE=postgres`
     -   `--pg-metric-store-conn-str="postgresql://user:pwd@host:port/db"`
-        or `PW3_PG_METRIC_STORE_CONN_STR="..."`
+        or `PW_PG_METRIC_STORE_CONN_STR="..."`
     -   optionally also adjust the `--pg-retention-days` parameter. By
         default 14 days for Postgres are kept
 

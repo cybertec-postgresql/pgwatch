@@ -69,8 +69,8 @@ COPY docker/bootstrap/create_role_db.sql \
 RUN  echo "include = 'pgwatch_postgresql.conf'" >> /etc/postgresql/postgresql.conf
 COPY docker/demo/postgresql.conf /etc/postgresql/pgwatch_postgresql.conf
 
-ENV PW3_SOURCES=postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3
-ENV PW3_SINK=postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
+ENV PW_SOURCES=postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3
+ENV PW_SINK=postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
 ENV POSTGRES_PASSWORD=mysecretpassword
 
 # Admin UI for configuring servers to be monitored
