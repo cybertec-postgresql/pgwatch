@@ -19,8 +19,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/db"
-	"github.com/cybertec-postgresql/pgwatch3/log"
+	"github.com/cybertec-postgresql/pgwatch/db"
+	"github.com/cybertec-postgresql/pgwatch/log"
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	client "go.etcd.io/etcd/client/v3"
@@ -352,7 +352,7 @@ func ResolveDatabasesFromPostgres(s Source) (resolvedDbs MonitoredDatabases, err
 	}
 	defer c.Close()
 
-	sql := `select /* pgwatch3_generated */
+	sql := `select /* pgwatch_generated */
 		quote_ident(datname)::text as datname_escaped
 		from pg_database
 		where not datistemplate

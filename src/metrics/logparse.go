@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/db"
-	"github.com/cybertec-postgresql/pgwatch3/log"
-	"github.com/cybertec-postgresql/pgwatch3/sources"
+	"github.com/cybertec-postgresql/pgwatch/db"
+	"github.com/cybertec-postgresql/pgwatch/log"
+	"github.com/cybertec-postgresql/pgwatch/sources"
 )
 
 const specialMetricServerLogEventCounts = "server_log_event_counts"

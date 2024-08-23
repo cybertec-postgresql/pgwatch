@@ -4,34 +4,34 @@ title: Installing using Docker
 
 ## Simple setup steps
 
-The simplest real-life pgwatch3 setup should look something like that:
+The simplest real-life pgwatch setup should look something like that:
 
 1.  Decide which metrics storage engine you want to use -
-    *cybertec/pgwatch3* uses PostgreSQL. For Prometheus mode (exposing a
+    *cybertec/pgwatch* uses PostgreSQL. For Prometheus mode (exposing a
     port for remote scraping) one should use the slimmer
-    *cybertec/pgwatch3-daemon* image which doesn't have any built in
+    *cybertec/pgwatch-daemon* image which doesn't have any built in
     databases.
 
-1.  Find the latest pgwatch3 release version by going to the project's
+1.  Find the latest pgwatch release version by going to the project's
     Github *Releases* page or use the public API with something like
     that:
 
-        curl -so- https://api.github.com/repos/cybertec-postgresql/pgwatch3/releases/latest | jq .tag_name | grep -oE '[0-9\.]+'
+        curl -so- https://api.github.com/repos/cybertec-postgresql/pgwatch/releases/latest | jq .tag_name | grep -oE '[0-9\.]+'
 
 1.  Pull the image:
 
-        docker pull cybertec/pgwatch3:X.Y.Z
+        docker pull cybertec/pgwatch:X.Y.Z
 
 1.  Run the Docker image, exposing minimally the Grafana port served on
     port 3000 internally. In a relatively secure environment you'd
     usually also include the administrative web UI served on port 8080:
 
         docker run -d --restart=unless-stopped -p 3000:3000 -p 8080:8080 \
-        --name pw3 cybertec/pgwatch3:X.Y.Z
+        --name pw3 cybertec/pgwatch:X.Y.Z
 
     Note that we're setting the container to be automatically restarted
     in case of a reboot/crash - which is highly recommended if not using
-    some container management framework to run pgwatch3.
+    some container management framework to run pgwatch.
 
 ## More future proof setup steps
 
@@ -39,7 +39,7 @@ Although the above simple setup example will do for more temporal setups
 / troubleshooting sessions, for permanent setups it's highly
 recommended to create separate volumes for all software components in
 the container, so that it would be easier to
-[update](upgrading.md) to newer pgwatch3
+[update](upgrading.md) to newer pgwatch
 Docker images and pull file system based backups and also it might be a
 good idea to expose all internal ports at least on *localhost* for
 possible troubleshooting and making possible to use native backup tools
@@ -52,15 +52,15 @@ best to do a custom setup though - see the next
 So in short, for plain Docker setups would be best to do something like:
 
 ```bash
-# let's create volumes for Postgres, Grafana and pgwatch3 marker files / SSL certificates
+# let's create volumes for Postgres, Grafana and pgwatch marker files / SSL certificates
 for v in pg  grafana pw3 ; do docker volume create $v ; done
 
-# launch pgwatch3 with fully exposed Grafana and Health-check ports
+# launch pgwatch with fully exposed Grafana and Health-check ports
 # and local Postgres and subnet level Web UI ports
 docker run -d --restart=unless-stopped --name pw3 \
     -p 3000:3000 -p 8081:8081 -p 127.0.0.1:5432:5432 -p 192.168.1.XYZ:8080:8080 \
-    -v pg:/var/lib/postgresql -v grafana:/var/lib/grafana -v pw3:/pgwatch3/persistent-config \
-    cybertec/pgwatch3:X.Y.Z
+    -v pg:/var/lib/postgresql -v grafana:/var/lib/grafana -v pw3:/pgwatch/persistent-config \
+    cybertec/pgwatch:X.Y.Z
 ```
 
 Note that in non-trusted environments it's a good idea to specify more
@@ -76,11 +76,11 @@ supported Docker environment variables see the [ENV_VARIABLES.md](ENV_VARIABLES.
 Following images are regularly pushed to [Docked
 Hub](https://hub.docker.com/u/cybertec):
 
-*cybertec/pgwatch3-demo*
+*cybertec/pgwatch-demo*
 
-The original pgwatch3 “batteries-included” image with PostgreSQL measurements storage. Just insert connect infos to your database via the admin Web UI (or directly into the Config DB) and then turn to the pre-defined Grafana dashboards to analyze DB health and performance.
+The original pgwatch “batteries-included” image with PostgreSQL measurements storage. Just insert connect infos to your database via the admin Web UI (or directly into the Config DB) and then turn to the pre-defined Grafana dashboards to analyze DB health and performance.
 
-*cybertec/pgwatch3*
+*cybertec/pgwatch*
 
 A light-weight image containing only the metrics collection daemon /
 agent, that can be integrated into the monitoring setup over
@@ -96,8 +96,8 @@ needed.
 
 ## Interacting with the Docker container
 
--   If to launch with the `PW3_TESTDB=1` env. parameter then the
-    pgwatch3 configuration database running inside Docker is added to
+-   If to launch with the `PW_TESTDB=1` env. parameter then the
+    pgwatch configuration database running inside Docker is added to
     the monitoring, so that you should immediately see some metrics at
     least on the *Health-check* dashboard.
 
@@ -106,15 +106,15 @@ needed.
     re-mapped at launch) and go to the */dbs* page. Note that the Web UI
     is an optional component, and one can managed monitoring entries
     directly in the Postgres Config DB via `INSERT`-s / `UPDATE`-s into
-    `"pgwatch3.monitored_db"` table. Default user/password are again
-    `pgwatch3/pgwatch3admin`, database name - `pgwatch3`. In both
+    `"pgwatch.monitored_db"` table. Default user/password are again
+    `pgwatch/pgwatchadmin`, database name - `pgwatch`. In both
     cases note that it can take up to 2min (default main loop time,
-    changeable via `PW3_SERVERS_REFRESH_LOOP_SECONDS`) before you see
+    changeable via `PW_SERVERS_REFRESH_LOOP_SECONDS`) before you see
     any metrics for newly inserted databases.
 
 -   One can edit existing or create new Grafana dashboards, change
     Grafana global settings, create users, alerts, etc after logging in
-    as `pgwatch3/pgwatch3admin` (by default, changeable at launch
+    as `pgwatch/pgwatchadmin` (by default, changeable at launch
     time).
 
 -   Metrics and their intervals that are to be gathered can be
@@ -141,7 +141,7 @@ needed.
 -   Some built-in metrics like `"cpu_load"` and others, that gather
     privileged or OS statistics, require installing *helper functions*
     (looking like
-    [that](https://github.com/cybertec-postgresql/pgwatch3/blob/master/pgwatch3/metrics/00_helpers/get_load_average/9.1/metric.sql),
+    [that](https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch/metrics/00_helpers/get_load_average/9.1/metric.sql),
     so it might be normal to see some blank panels or fetching errors in
     the logs. On how to prepare databases for monitoring see the
     [Monitoring preparations](preparing_databases.md) chapter.
@@ -161,18 +161,18 @@ needed.
 -   For possible troubleshooting needs, logs of the components running
     inside Docker are by default (if not disabled on container launch)
     visible under:
-    <http://127.0.0.1:8080/logs/%5Bpgwatch3%7Cpostgres%7Cwebui%7Cgrafana>.
+    <http://127.0.0.1:8080/logs/%5Bpgwatch%7Cpostgres%7Cwebui%7Cgrafana>.
     It's of course also possible to log into the container and look at
     log files directly - they're situated under
     `/var/logs/supervisor/`.
 
     FYI - `docker logs ...` command is not really useful after a
-    successful container startup in pgwatch3 case.
+    successful container startup in pgwatch case.
 
 ## Ports used
 
 -   *5432* - Postgres configuration or metrics storage DB (when using the
-    cybertec/pgwatch3 image)
+    cybertec/pgwatch image)
 -   *8080* - Management Web UI (monitored hosts, metrics, metrics
     configurations)
 -   *8081* - Gatherer healthcheck / statistics on number of gathered
@@ -182,8 +182,8 @@ needed.
 ## Docker Compose
 
 As mentioned in the [Components](components.md) chapter, remember that the pre-built Docker images are just
-one example how your monitoring setup around the pgwatch3 metrics
+one example how your monitoring setup around the pgwatch metrics
 collector could be organized. For another example how various components
 (as Docker images here) can work together, see a *Docker Compose*
 example with loosely coupled components
-[here](https://github.com/cybertec-postgresql/pgwatch3/blob/master/docker-compose.yml).
+[here](https://github.com/cybertec-postgresql/pgwatch/blob/master/docker-compose.yml).

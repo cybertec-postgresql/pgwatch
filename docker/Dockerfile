@@ -14,9 +14,9 @@ ARG VERSION
 ARG GIT_HASH
 ARG GIT_TIME
 
-ADD src /pgwatch3
-COPY --from=uibuilder /webui/build /pgwatch3/webui/build
-RUN cd /pgwatch3 && CGO_ENABLED=0 go build -ldflags "-X 'main.commit=${GIT_HASH}' -X 'main.date=${GIT_TIME}' -X 'main.version=${VERSION}'"
+ADD src /pgwatch
+COPY --from=uibuilder /webui/build /pgwatch/webui/build
+RUN cd /pgwatch && CGO_ENABLED=0 go build -ldflags "-X 'main.commit=${GIT_HASH}' -X 'main.date=${GIT_TIME}' -X 'main.version=${VERSION}'"
 
 # ----------------------------------------------------------------
 # 3. Build the final image
@@ -24,8 +24,8 @@ RUN cd /pgwatch3 && CGO_ENABLED=0 go build -ldflags "-X 'main.commit=${GIT_HASH}
 FROM alpine
 
 # Copy over the compiled gatherer
-COPY --from=builder /pgwatch3/pgwatch3 /pgwatch3/
-COPY src/metrics/metrics.yaml /pgwatch3/metrics/metrics.yaml
+COPY --from=builder /pgwatch/pgwatch /pgwatch/
+COPY src/metrics/metrics.yaml /pgwatch/metrics/metrics.yaml
 
 # Admin UI for configuring servers to be monitored
 EXPOSE 8080
@@ -35,4 +35,4 @@ EXPOSE 8081
 EXPOSE 9187
 
 # Command to run the executable
-ENTRYPOINT ["/pgwatch3/pgwatch3"]
+ENTRYPOINT ["/pgwatch/pgwatch"]

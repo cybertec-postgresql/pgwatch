@@ -1518,7 +1518,9 @@
     }
   ],
   "schemaVersion": 39,
-  "tags": [],
+  "tags": [
+    "pgwatch"
+  ],
   "templating": {
     "list": [
       {
@@ -1550,8 +1552,8 @@
       {
         "current": {
           "selected": false,
-          "text": "pgwatch3.metric",
-          "value": "pgwatch3.metric"
+          "text": "pgwatch.metric",
+          "value": "pgwatch.metric"
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",

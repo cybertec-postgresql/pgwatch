@@ -282,7 +282,7 @@
   "schemaVersion": 22,
   "style": "dark",
   "tags": [
-    "pgwatch3"
+    "pgwatch"
   ],
   "templating": {
     "list": [

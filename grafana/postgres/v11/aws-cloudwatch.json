@@ -1945,7 +1945,7 @@
   ],
   "schemaVersion": 39,
   "tags": [
-    "pgwatch3"
+    "pgwatch"
   ],
   "templating": {
     "list": [

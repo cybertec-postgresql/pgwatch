@@ -4,10 +4,10 @@ title: Security aspects
 
 ## General security information
 
-Security can be tightened for most pgwatch3 components quite granularly,
+Security can be tightened for most pgwatch components quite granularly,
 but the default values for the Docker image don't focus on security
 though but rather on being quickly usable for ad-hoc performance
-troubleshooting, which is where the roots of pgwatch3 lie.
+troubleshooting, which is where the roots of pgwatch lie.
 
 Some points on security:
 
@@ -32,7 +32,7 @@ Some points on security:
     need to be specified then in connection string on Web UI "/dbs" page 
     or in the YAML config.
 
--   Note that although pgwatch3 can handle password security, in many
+-   Note that although pgwatch can handle password security, in many
     cases it's better to still use the standard LibPQ *.pgpass* file to
     store passwords.
 
@@ -40,7 +40,7 @@ Some points on security:
 
 Some common sense security is built into default Docker images for all
 components but not actived by default. A sample command to launch
-pgwatch3 with following security "checkpoints" enabled:
+pgwatch with following security "checkpoints" enabled:
 
 1.  HTTPS for both Grafana and the Web UI with self-signed certificates
 1.  No anonymous viewing of graphs in Grafana
@@ -53,13 +53,13 @@ pgwatch3 with following security "checkpoints" enabled:
     ```properties
     docker run --name pw3 -d --restart=unless-stopped \
       -p 3000:3000 -p 8080:8080 \
-      -e PW3_GRAFANASSL=1 -e PW3_WEBSSL=1 \
-      -e PW3_GRAFANANOANONYMOUS=1 -e PW3_GRAFANAUSER=myuser \
-      -e PW3_GRAFANAPASSWORD=mypass \
-      -e PW3_WEBNOANONYMOUS=1 -e PW3_WEBNOCOMPONENTLOGS=1 \
-      -e PW3_WEBUSER=myuser -e PW3_WEBPASSWORD=mypass \
-      -e PW3_AES_GCM_KEYPHRASE=qwerty \
-      cybertec/pgwatch3
+      -e PW_GRAFANASSL=1 -e PW_WEBSSL=1 \
+      -e PW_GRAFANANOANONYMOUS=1 -e PW_GRAFANAUSER=myuser \
+      -e PW_GRAFANAPASSWORD=mypass \
+      -e PW_WEBNOANONYMOUS=1 -e PW_WEBNOCOMPONENTLOGS=1 \
+      -e PW_WEBUSER=myuser -e PW_WEBPASSWORD=mypass \
+      -e PW_AES_GCM_KEYPHRASE=qwerty \
+      cybertec/pgwatch
     ```
 
 For custom installs it's up to the user though. A hint - Docker

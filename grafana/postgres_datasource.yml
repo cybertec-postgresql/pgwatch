@@ -5,9 +5,9 @@ datasources:
   type: postgres
   url: postgres:5432
   access: proxy
-  password: pgwatch3admin
-  user: pgwatch3
-  database: pgwatch3_metrics
+  password: pgwatchadmin
+  user: pgwatch
+  database: pgwatch_metrics
   basicAuth: false
   isDefault: true
   jsonData:

@@ -36,7 +36,7 @@ title: Sizing recommendations
 -   When high metrics write latency is problematic (e.g. using a DBaaS
     across the Atlantic) then increasing the default maximum batching
     delay of 250ms usually gives good results.
-    Relevant params: `--batching-delay-ms / PW3_BATCHING_MAX_DELAY_MS`.
+    Relevant params: `--batching-delay-ms / PW_BATCHING_MAX_DELAY_MS`.
 
 -   Note that when monitoring a very large number of databases, it's
     possible to "shard" / distribute them between many metric
@@ -44,4 +44,4 @@ title: Sizing recommendations
     attribute. This requires that some hosts have been assigned a
     non-default *group* identifier, which is just a text field exactly
     for this sharding purpose.
-    Relevant params: `--group / PW3_GROUP`.
+    Relevant params: `--group / PW_GROUP`.

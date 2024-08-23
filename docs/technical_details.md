@@ -3,7 +3,7 @@ title: Technical details
 ---
 
 Here are some technical details that might be interesting for those who
-are planning to use pgwatch3 for critical monitoring tasks or customize
+are planning to use pgwatch for critical monitoring tasks or customize
 it in some way.
 
 -   Dynamic management of monitored databases, metrics and their
@@ -22,14 +22,14 @@ it in some way.
         cluster) are allowed
     -   Configurable statement timeouts per DB
     -   SSL connections support for safe over-the-internet monitoring
-        (use `-e PW3_WEBSSL=1 -e PW3_GRAFANASSL=1` when launching
+        (use `-e PW_WEBSSL=1 -e PW_GRAFANASSL=1` when launching
         Docker)
     -   Optional authentication for the Web UI and Grafana (by default
         freely accessible)
 
 -   Instance-level metrics caching
 
-    To further reduce load on multi-DB instances, pgwatch3 can cache the
+    To further reduce load on multi-DB instances, pgwatch can cache the
     output of metrics that are marked to gather only instance-level
     data. One such metric is for example "wal", and the *metric
     attribute* is "is_instance_level". Caching will be activated only

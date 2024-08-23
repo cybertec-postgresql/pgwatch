@@ -4,7 +4,7 @@ title: Preparing databases for monitoring
 
 ## Effects of monitoring
 
--   Although the "Observer effect" applies also for pgwatch3, no
+-   Although the "Observer effect" applies also for pgwatch, no
     noticeable impact for the monitored DB is expected when using
     *Preset configs* settings, and given that there is some normal load
     on the server anyways and the DB doesn't have thousands of tables.
@@ -24,19 +24,19 @@ As a base requirement you'll need a **login user** (non-superuser
 suggested) for connecting to your server and fetching metrics.
 
 Though theoretically you can use any username you like, but if not using
-"pgwatch3" you need to adjust the "helper" creation SQL scripts (see
+"pgwatch" you need to adjust the "helper" creation SQL scripts (see
 below for explanation) accordingly, as in those by default the
-"pgwatch3" will be granted execute privileges.
+"pgwatch" will be granted execute privileges.
 
 ``` sql
-CREATE ROLE pgwatch3 WITH LOGIN PASSWORD 'secret';
+CREATE ROLE pgwatch WITH LOGIN PASSWORD 'secret';
 -- For critical databases it might make sense to ensure that the user account
 -- used for monitoring can only open a limited number of connections
 -- (there are according checks in code, but multiple instances might be launched)
-ALTER ROLE pgwatch3 CONNECTION LIMIT 3;
-GRANT pg_monitor TO pgwatch3;
-GRANT CONNECT ON DATABASE mydb TO pgwatch3;
-GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch3; -- for wal_size metric
+ALTER ROLE pgwatch CONNECTION LIMIT 3;
+GRANT pg_monitor TO pgwatch;
+GRANT CONNECT ON DATABASE mydb TO pgwatch;
+GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch; -- for wal_size metric
 ```
 
 For most monitored databases it's extremely beneficial (to
@@ -44,7 +44,7 @@ troubleshooting performance issues) to also activate the
 [pg_stat_statements](https://www.postgresql.org/docs/current/pgstatstatements.html)
 extension which will give us exact "per query" performance aggregates
 and also enables to calculate how many queries are executed per second
-for example. In pgwatch3 context it powers the "Stat statements Top"
+for example. In pgwatch context it powers the "Stat statements Top"
 dashboard and many other panels of other dashboards. For additional
 troubleshooting benefits also the
 [track_io_timing](https://www.postgresql.org/docs/current/static/runtime-config-statistics.html#GUC-TRACK-IO-TIMING)
@@ -70,22 +70,22 @@ setting should be enabled.
 
 ## Rolling out helper functions
 
-Helper functions in pgwatch3 context are standard Postgres stored
+Helper functions in pgwatch context are standard Postgres stored
 procedures, running under `SECURITY DEFINER` privileges. Via such
 wrapper functions one can do **controlled privilege escalation** - i.e.
 to give access to protected Postgres metrics (like active session
 details, "per query" statistics) or even OS-level metrics, to normal
-unprivileged users, like the pgwatch3 monitoring role.
+unprivileged users, like the pgwatch monitoring role.
 
 If using a superuser login (recommended only for local "push" setups)
 you have full access to all Postgres metrics and would need *helpers*
-only for OS remote statistics. For local (push) setups as of pgwatch3
+only for OS remote statistics. For local (push) setups as of pgwatch
 version 1.8.4 the most typical OS metrics are covered by the
 `--direct-os-stats` flag, explained below.
 
 For unprivileged monitoring users it is highly recommended to take these
 additional steps on the "to be monitored" database to get maximum
-value out of pgwatch3 in the long run. Without these additional steps,
+value out of pgwatch in the long run. Without these additional steps,
 you lose though about 10-15% of built-in metrics, which might not be too
 tragical nevertheless. For that use case there's also a *preset config*
 named "unprivileged".
@@ -100,11 +100,11 @@ recommended to make good use of the default "exhaustive" *Preset
 Config*:
 
     export PGUSER=superuser
-    psql -f /etc/pgwatch3/metrics/00_helpers/get_stat_activity/$pgver/metric.sql mydb
-    psql -f /etc/pgwatch3/metrics/00_helpers/get_stat_replication/$pgver/metric.sql mydb
-    psql -f /etc/pgwatch3/metrics/00_helpers/get_wal_size/$pgver/metric.sql mydb
-    psql -f /etc/pgwatch3/metrics/00_helpers/get_stat_statements/$pgver/metric.sql mydb
-    psql -f /etc/pgwatch3/metrics/00_helpers/get_sequences/$pgver/metric.sql mydb
+    psql -f /etc/pgwatch/metrics/00_helpers/get_stat_activity/$pgver/metric.sql mydb
+    psql -f /etc/pgwatch/metrics/00_helpers/get_stat_replication/$pgver/metric.sql mydb
+    psql -f /etc/pgwatch/metrics/00_helpers/get_wal_size/$pgver/metric.sql mydb
+    psql -f /etc/pgwatch/metrics/00_helpers/get_stat_statements/$pgver/metric.sql mydb
+    psql -f /etc/pgwatch/metrics/00_helpers/get_sequences/$pgver/metric.sql mydb
 
 Note that there might not be an exact Postgres version match for helper
 definitions - then replace *\$pgver* with the previous available version
@@ -123,20 +123,20 @@ including everything needed.
 
 For more detailed statistics (OS monitoring, table bloat, WAL size, etc)
 it is recommended to install also all other helpers found from the
-`/etc/pgwatch3/metrics/00_helpers` folder or do it
+`/etc/pgwatch/metrics/00_helpers` folder or do it
 automatically by using the *rollout_helper.py* script found in the
 *00_helpers* folder.
 
 As of v1.6.0 though helpers are not needed for Postgres-native metrics
 (e.g. WAL size) if a privileged user (superuser or *pg_monitor* GRANT)
-is used, as pgwatch3 now supports having 2 SQL definitions for each
+is used, as pgwatch now supports having 2 SQL definitions for each
 metric - "normal / unprivileged" and "privileged" / "superuser".
-In the file system */etc/pgwatch3/metrics* such "privileged" access
+In the file system */etc/pgwatch/metrics* such "privileged" access
 definitions will have a "_su" added to the file name.
 
 ## Automatic rollout of helpers
 
-pgwatch3 can roll out *helpers* also automatically on the monitored DB.
+pgwatch can roll out *helpers* also automatically on the monitored DB.
 This requires superuser privileges and a configuration attribute for the
 monitored DB. In YAML config mode it's called *is_superuser*, in Config
 DB *md_is_superuser*, in the Web UI one can tick the "Auto-create
@@ -179,14 +179,14 @@ providers like AWS RDS for security reasons.
     # yum install postgresqlXY-plpython3
 
     psql -c "CREATE EXTENSION plpython3u"
-    psql -f /etc/pgwatch3/metrics/00_helpers/get_load_average/9.1/metric.sql mydb
+    psql -f /etc/pgwatch/metrics/00_helpers/get_load_average/9.1/metric.sql mydb
 
     # psutil helpers are only needed when full set of common OS metrics is wanted
     apt install python3-psutil
-    psql -f /etc/pgwatch3/metrics/00_helpers/get_psutil_cpu/9.1/metric.sql mydb
-    psql -f /etc/pgwatch3/metrics/00_helpers/get_psutil_mem/9.1/metric.sql mydb
-    psql -f /etc/pgwatch3/metrics/00_helpers/get_psutil_disk/9.1/metric.sql mydb
-    psql -f /etc/pgwatch3/metrics/00_helpers/get_psutil_disk_io_total/9.1/metric.sql mydb
+    psql -f /etc/pgwatch/metrics/00_helpers/get_psutil_cpu/9.1/metric.sql mydb
+    psql -f /etc/pgwatch/metrics/00_helpers/get_psutil_mem/9.1/metric.sql mydb
+    psql -f /etc/pgwatch/metrics/00_helpers/get_psutil_disk/9.1/metric.sql mydb
+    psql -f /etc/pgwatch/metrics/00_helpers/get_psutil_disk_io_total/9.1/metric.sql mydb
 
 Note that we're assuming here that we're on a modern Linux system with
 Python 3 as default. For older systems Python 3 might not be an option
@@ -232,7 +232,7 @@ helpful again.
 As mentioned above, helper / wrapper functions are not strictly needed,
 they just provide a bit more information for unprivileged users - thus
 for developers with no means to install any wrappers as superuser, it's
-also possible to benefit from pgwatch3 - for such use cases e.g. the
+also possible to benefit from pgwatch - for such use cases e.g. the
 "unprivileged" preset metrics profile and the according "DB overview
 Unprivileged / Developer"
 ![dashboard](screenshots/overview_developer.png)
@@ -258,7 +258,7 @@ prefixed with "Unique name" field value and added to monitoring
 
 Monitor a whole (or subset of DB-s) of Postgres cluster / instance.
 Host information without a DB name needs to be specified and then
-the pgwatch3 daemon will periodically scan the cluster and add any
+the pgwatch daemon will periodically scan the cluster and add any
 found and not yet monitored DBs to monitoring. In this mode it's
 also possible to specify regular expressions to include/exclude some
 database names.
@@ -280,7 +280,7 @@ Patroni is a HA / cluster manager for Postgres that relies on a DCS
 (Distributed Consensus Store) to store it's state. Typically in
 such a setup the nodes come and go and also it should not matter who
 is currently the master. To make it easier to monitor such dynamic
-constellations pgwatch3 supports reading of cluster node info from
+constellations pgwatch supports reading of cluster node info from
 all supported DCS-s (etcd, Zookeeper, Consul), but currently only
 for simpler cases with no security applied (which is actually the
 common case in a trusted environment).

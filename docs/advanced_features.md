@@ -34,7 +34,7 @@ config (for Config DB based setups) looks like:
 ```
 
 For YAML based setups an example can be found from the
-[instances.yaml](https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/sample.sources.yaml#L21)
+[instances.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/sample.sources.yaml#L21)
 file.
 
 If Patroni is powered by *etcd*, then also username, password, ca_file,
@@ -55,7 +55,7 @@ database server logs for errors. Out-of-the-box it will though only work
 when logs are written in **CSVLOG** format. For other formats user needs
 to specify a regex that parses out named groups of following fields:
 *database_name*, *error_severity*. See
-[here](https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/metrics/logparse.go#L27)
+[here](https://github.com/cybertec-postgresql/pgwatch/blob/master/src/metrics/logparse.go#L27)
 for an example regex.
 
 Note that only the event counts are stored, no error texts, usernames or
@@ -65,7 +65,7 @@ the whole instance. The metric name to enable log parsing is
 destination / setting to work, the monitoring user needs superuser /
 pg_monitor privileges - if this is not possible then log settings need
 to be specified manually under "Host config" as seen for example
-[here](https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/sample.sources.yaml).
+[here](https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/sample.sources.yaml).
 
 **Sample configuration if not using CSVLOG logging:**
 
@@ -87,7 +87,7 @@ preset.
 
 ## PgBouncer support
 
-pgwatch3 also supports collecting internal statistics from the PgBouncer
+pgwatch also supports collecting internal statistics from the PgBouncer
 connection pooler, via the built-in special "pgbouncer" database and
 the `SHOW STATS` command. To enable it choose the according *DB Type*,
 provide connection info to the pooler port and make sure the
@@ -101,7 +101,7 @@ separated via the "database" tag.
 There's also a built-in Grafana dashboard for PgBouncer data, looking
 like that:
 
-[![Grafana dash for PgBouncer stats](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgbouncer_stats.png)](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgbouncer_stats.png)
+[![Grafana dash for PgBouncer stats](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/master/docs/screenshots/pgbouncer_stats.png)](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/master/docs/screenshots/pgbouncer_stats.png)
 
 ## Pgpool-II support
 
@@ -114,11 +114,11 @@ Type*, provide connection info to the pooler port and make sure the
 The built-in Grafana dashboard for Pgpool data looks something like
 that:
 
-[![Grafana dash for PgPool stats](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgpool_status.png)](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch3/master/docs/screenshots/pgpool_status.png)
+[![Grafana dash for PgPool stats](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/master/docs/screenshots/pgpool_status.png)](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/master/docs/screenshots/pgpool_status.png)
 
 ## Prometheus scraping
 
-pgwatch3 was originally designed with direct metrics storage in mind,
+pgwatch was originally designed with direct metrics storage in mind,
 but later also support for externally controlled
 [Prometheus](https://prometheus.io/) scraping was added. Note that
 currently though the storage modes are exclusive, i.e. when you enable

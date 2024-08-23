@@ -54,17 +54,17 @@ function start_pg {
   echo "track_functions='pl'" | sudo tee -a $MASTER_VOL_PATH/postgresql.conf
   echo "track_io_timing='on'" | sudo tee -a $MASTER_VOL_PATH/postgresql.conf
 
-  PW3_USER=$(psql -U postgres -h localhost -p $port -XAtc "select count(*) from pg_roles where rolname = 'pgwatch3'")
-  if [ $? -ne 0 ] || [ "$PW3_USER" -ne 1 ]; then
+  PW_USER=$(psql -U postgres -h localhost -p $port -XAtc "select count(*) from pg_roles where rolname = 'pgwatch'")
+  if [ $? -ne 0 ] || [ "$PW_USER" -ne 1 ]; then
     for j in {1..5} ; do # try a few times when starting docker is slow
-      psql -U postgres -h localhost -p $port -Xc "create user pgwatch3" &>/dev/null
+      psql -U postgres -h localhost -p $port -Xc "create user pgwatch" &>/dev/null
       if [ $? -eq 0 ]; then
         break
       fi
       sleep 2
     done
     if [ $? -ne 0 ]; then
-      echo "could not create pgwatch3 user on docker PG $full_ver on port $port"
+      echo "could not create pgwatch user on docker PG $full_ver on port $port"
       exit 1
     fi
   fi

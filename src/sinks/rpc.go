@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/rpc"
 
-	"github.com/cybertec-postgresql/pgwatch3/log"
-	"github.com/cybertec-postgresql/pgwatch3/metrics"
+	"github.com/cybertec-postgresql/pgwatch/log"
+	"github.com/cybertec-postgresql/pgwatch/metrics"
 )
 
 // RPCWriter is a sink that sends metric measurements to a remote server using the RPC protocol.

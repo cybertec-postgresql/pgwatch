@@ -1,5 +1,5 @@
 # Binaries for programs and plugins
-pgwatch3
+pgwatch
 *.exe
 *.exe~
 *.dll

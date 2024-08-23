@@ -5,7 +5,7 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/cybertec-postgresql/pgwatch3/db"
+	"github.com/cybertec-postgresql/pgwatch/db"
 	pgx "github.com/jackc/pgx/v5"
 )
 

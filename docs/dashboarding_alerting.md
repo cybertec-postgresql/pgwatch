@@ -4,7 +4,7 @@ title: Dashboarding and alerting
 
 # Grafana intro
 
-To display the gathered and stored metrics the pgwatch3 project has
+To display the gathered and stored metrics the pgwatch project has
 decided to rely heavily on the popular Grafana dashboarding solution.
 This means only though that it's installed in the default Docker images
 and there's a set of predefined dashboards available to cover most of
@@ -13,7 +13,7 @@ the metrics gathered via the *Preset Configs*.
 This does not mean though that Grafana is in any way tightly coupled
 with project's other components - quite the opposite actually, one can
 use any other means / tools to use the metrics data gathered by the
-pgwatch3 daemon.
+pgwatch daemon.
 
 Currently there are around 30 preset dashboards available for PostgreSQL
 data sources. Due to that nowadays, if metric gathering volumes are not
@@ -30,10 +30,10 @@ changes.
 **Links:**
 
 [Built-in dashboards for PostgreSQL (TimescaleDB)
-storage](https://github.com/cybertec-postgresql/pgwatch3/tree/master/grafana/postgres/)
+storage](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana/postgres/)
 
-[Screenshots of pgwatch3 default
-dashboards](https://github.com/cybertec-postgresql/pgwatch3/tree/master/docs/screenshots)
+[Screenshots of pgwatch default
+dashboards](https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/screenshots)
 
 [The online Demo site](https://demo.pgwatch.com/)
 
@@ -48,12 +48,12 @@ start with PostgreSQL alerting on a smaller scale. For enterprise usage
 with hundreds of instances it's might get too "clicky" though and
 there are also some limitations - currently you can set alerts only on
 Graph panels and there must be no variables used in the query so you
-cannot use most of the pre-created pgwatch3 graphs, but need to create
+cannot use most of the pre-created pgwatch graphs, but need to create
 your own.
 
 Nevertheless, alerting via Grafana is s a good option for lighter use
 cases and there's also a preset dashboard template named "Alert
-Template" from the pgwatch3 project to give you some ideas on what to
+Template" from the pgwatch project to give you some ideas on what to
 alert on.
 
 Note though that alerting is always a bit of a complex topic - it

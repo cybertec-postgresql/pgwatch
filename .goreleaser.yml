@@ -8,7 +8,7 @@ before:
 
 builds:
 - dir: src
-  binary: pgwatch3
+  binary: pgwatch
   env:
     - CGO_ENABLED=0
   goos:
@@ -49,10 +49,10 @@ nfpms:
       {{- else }}{{ .Arch }}{{ end }}
 
     vendor: CYBERTEC PostgreSQL International GmbH
-    homepage: https://github.com/cybertec-postgresql/pgwatch3
+    homepage: https://github.com/cybertec-postgresql/pgwatch
 
     maintainer: Pavlo Golub <open.an.issue@github.com>
-    description: pgwatch3 metrics collector with metric definitions and sample YAML config
+    description: pgwatch metrics collector with metric definitions and sample YAML config
 
     license: MIT Licence
 
@@ -62,12 +62,12 @@ nfpms:
 
     contents:
       - src: "./src/metrics/metrics.yaml"
-        dst: "/etc/pgwatch3/metrics.yaml"
+        dst: "/etc/pgwatch/metrics.yaml"
         type: config
       - src: "./src/config/*"
-        dst: "/etc/pgwatch3/config"
+        dst: "/etc/pgwatch/config"
         type: config
       - src: "./grafana/*"
-        dst: "/etc/pgwatch3/grafana"
+        dst: "/etc/pgwatch/grafana"
       - src: "./README.md"
-        dst: "/etc/pgwatch3/README.md"
+        dst: "/etc/pgwatch/README.md"

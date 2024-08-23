@@ -30,4 +30,4 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
--- GRANT EXECUTE ON FUNCTION admin.timescale_change_chunk_interval(interval) TO pgwatch3;
+-- GRANT EXECUTE ON FUNCTION admin.timescale_change_chunk_interval(interval) TO pgwatch;

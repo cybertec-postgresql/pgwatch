@@ -9,17 +9,17 @@ create schema "subpartitions";
 
 create extension if not exists btree_gin;
 
--- grant all on schema public to pgwatch3;
+-- grant all on schema public to pgwatch;
 
 -- do $sql$
 -- begin
---   execute format($$alter role pgwatch3 in database %s set statement_timeout to '5min'$$, current_database());
---   raise warning 'Enabling asynchronous commit for pgwatch3 role - revert if possible data loss on crash is not acceptable!';
---   execute format($$alter role pgwatch3 in database %s set synchronous_commit to off$$, current_database());
+--   execute format($$alter role pgwatch in database %s set statement_timeout to '5min'$$, current_database());
+--   raise warning 'Enabling asynchronous commit for pgwatch role - revert if possible data loss on crash is not acceptable!';
+--   execute format($$alter role pgwatch in database %s set synchronous_commit to off$$, current_database());
 -- end
 -- $sql$;
 
--- set role to pgwatch3;
+-- set role to pgwatch;
 
 
 create function admin.get_default_storage_type() returns text as
@@ -41,7 +41,7 @@ create table admin.storage_schema_type (
 
 insert into admin.storage_schema_type default values;
 
-comment on table admin.storage_schema_type is 'identifies storage schema for other pgwatch3 components';
+comment on table admin.storage_schema_type is 'identifies storage schema for other pgwatch components';
 
 create unique index max_one_row on admin.storage_schema_type ((1));
 
@@ -114,7 +114,7 @@ BEGIN
         END IF;
     END IF;
 
-    EXECUTE format($$COMMENT ON TABLE public."%s" IS 'pgwatch3-generated-metric-lvl'$$, metric);
+    EXECUTE format($$COMMENT ON TABLE public."%s" IS 'pgwatch-generated-metric-lvl'$$, metric);
 
     RETURN true;
 
@@ -124,7 +124,7 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
--- GRANT EXECUTE ON FUNCTION admin.ensure_dummy_metrics_table(text) TO pgwatch3;
+-- GRANT EXECUTE ON FUNCTION admin.ensure_dummy_metrics_table(text) TO pgwatch;
 
 
 CREATE TABLE admin.metrics_template (

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/cybertec-postgresql/pgwatch3/db"
+	"github.com/cybertec-postgresql/pgwatch/db"
 	testcontainers "github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -86,9 +86,9 @@ func TestInit(t *testing.T) {
 }
 
 func initTestContainer() (*postgres.PostgresContainer, error) {
-	dbName := "pgwatch3"
-	dbUser := "pgwatch3"
-	dbPassword := "pgwatch3admin"
+	dbName := "pgwatch"
+	dbUser := "pgwatch"
+	dbPassword := "pgwatchadmin"
 
 	return postgres.Run(ctx,
 		"docker.io/postgres:16-alpine",

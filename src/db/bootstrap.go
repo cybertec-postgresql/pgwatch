@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch3/log"
+	"github.com/cybertec-postgresql/pgwatch/log"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	pgConnRecycleSeconds = 1800       // applies for monitored nodes
-	applicationName      = "pgwatch3" // will be set on all opened PG connections for informative purposes
+	pgConnRecycleSeconds = 1800      // applies for monitored nodes
+	applicationName      = "pgwatch" // will be set on all opened PG connections for informative purposes
 )
 
 func Ping(ctx context.Context, connStr string) error {

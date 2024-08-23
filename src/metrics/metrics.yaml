@@ -2,7 +2,7 @@ metrics:
     archiver:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   archived_count,
                   failed_count,
@@ -24,7 +24,7 @@ metrics:
                   where pid != pg_backend_pid()
                   and datname = current_database()
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   (select count(*) from sa_snapshot where backend_type = 'client backend') as total,
                   (select count(*) from pg_stat_activity where pid != pg_backend_pid()) as instance_total,
@@ -51,7 +51,7 @@ metrics:
     backup_age_pgbackrest:
         sqls:
             11: |
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   retcode,
                   backup_age_seconds,
@@ -104,14 +104,14 @@ metrics:
             /* contacting S3 could be laggy depending on location */
             ALTER FUNCTION get_backup_age_pgbackrest() SET statement_timeout TO '30s';
 
-            GRANT EXECUTE ON FUNCTION get_backup_age_pgbackrest() TO pgwatch3;
+            GRANT EXECUTE ON FUNCTION get_backup_age_pgbackrest() TO pgwatch;
 
-            COMMENT ON FUNCTION get_backup_age_pgbackrest() is 'created for pgwatch3'
+            COMMENT ON FUNCTION get_backup_age_pgbackrest() is 'created for pgwatch'
         is_instance_level: true
     backup_age_walg:
         sqls:
             11: |
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   retcode,
                   backup_age_seconds,
@@ -156,14 +156,14 @@ metrics:
             /* contacting S3 could be laggy depending on location */
             ALTER FUNCTION get_backup_age_walg() SET statement_timeout TO '30s';
 
-            GRANT EXECUTE ON FUNCTION get_backup_age_walg() TO pgwatch3;
+            GRANT EXECUTE ON FUNCTION get_backup_age_walg() TO pgwatch;
 
-            COMMENT ON FUNCTION get_backup_age_walg() is 'created for pgwatch3'
+            COMMENT ON FUNCTION get_backup_age_walg() is 'created for pgwatch'
         is_instance_level: true
     bgwriter:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                    checkpoints_timed,
                    checkpoints_req,
@@ -178,7 +178,7 @@ metrics:
                  from
                    pg_stat_bgwriter
             17: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   buffers_clean,
                   maxwritten_clean,
@@ -197,7 +197,7 @@ metrics:
                   and not query like 'autovacuum:%'
                   and pid != pg_backend_pid()
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 AS epoch_ns,
                     waiting.locktype           AS tag_waiting_locktype,
                     waiting_stm.usename::text  AS tag_waiting_user,
@@ -245,7 +245,7 @@ metrics:
     buffercache_by_db:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   datname as tag_database,
                   count(*) * (current_setting('block_size')::int8) as size_b
@@ -262,7 +262,7 @@ metrics:
     buffercache_by_type:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   CASE
                     WHEN relkind = 'r' THEN 'Table'   -- TODO all relkinds covered?
@@ -289,7 +289,7 @@ metrics:
         sqls:
             11: "; -- covered by bgwriter"
             17: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   num_timed,
                   num_requested,
@@ -305,7 +305,7 @@ metrics:
     configuration_hashes:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   name as tag_setting,
                   coalesce(reset_val, '') as value
@@ -314,7 +314,7 @@ metrics:
     cpu_load:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   round(load_1min::numeric, 2)::float as load_1min,
                   round(load_5min::numeric, 2)::float as load_5min,
@@ -330,8 +330,8 @@ metrics:
               la = getloadavg()
               return [la[0], la[1], la[2]]
             $$ LANGUAGE plpython3u VOLATILE;
-            GRANT EXECUTE ON FUNCTION get_load_average() TO pgwatch3;
-            COMMENT ON FUNCTION get_load_average() is 'created for pgwatch3';
+            GRANT EXECUTE ON FUNCTION get_load_average() TO pgwatch;
+            COMMENT ON FUNCTION get_load_average() is 'created for pgwatch';
             COMMIT;
         gauges:
             - '*'
@@ -339,7 +339,7 @@ metrics:
     database_conflicts:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   confl_tablespace,
                   confl_lock,
@@ -354,7 +354,7 @@ metrics:
     db_size:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   pg_database_size(current_database()) as size_b,
                   (select sum(pg_total_relation_size(c.oid))::int8
@@ -367,7 +367,7 @@ metrics:
     db_size_approx:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   current_setting('block_size')::int8 * (
                     select sum(relpages) from pg_class c
@@ -391,7 +391,7 @@ metrics:
     db_stats:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   numbackends,
                   xact_commit,
@@ -427,7 +427,7 @@ metrics:
                 where
                   datname = current_database()
             12: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   numbackends,
                   xact_commit,
@@ -465,7 +465,7 @@ metrics:
                 where
                   datname = current_database()
             14: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   numbackends,
                   xact_commit,
@@ -510,7 +510,7 @@ metrics:
                 where
                   datname = current_database()
             15: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   numbackends,
                   xact_commit,
@@ -562,7 +562,7 @@ metrics:
     db_stats_aurora:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   numbackends,
                   xact_commit,
@@ -596,7 +596,7 @@ metrics:
     index_hashes:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   quote_ident(nspname)||'.'||quote_ident(c.relname) as tag_index,
                   quote_ident(nspname)||'.'||quote_ident(r.relname) as "table",
@@ -690,7 +690,7 @@ metrics:
                              where not indisvalid
                          ) zz
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   schemaname::text as tag_schema,
                   indexrelname::text as tag_index_name,
@@ -718,7 +718,7 @@ metrics:
                   id.schemaname, id.relname, id.indexrelname
             16: |-
                 /* NB! does not return all index stats but biggest, top scanned and biggest unused ones */
-                WITH q_locked_rels AS ( /* pgwatch3_generated */
+                WITH q_locked_rels AS ( /* pgwatch_generated */
                   select relation from pg_locks where mode = 'AccessExclusiveLock'
                 ),
                 q_index_details AS (
@@ -793,7 +793,7 @@ metrics:
                              where not indisvalid
                          ) zz
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   schemaname::text as tag_schema,
                   indexrelname::text as tag_index_name,
@@ -826,13 +826,13 @@ metrics:
                 /* This metric has some special handling attached to it - it will store a 0 value if the DB is not accessible.
                    Thus it can be used to for example calculate some percentual "uptime" indicator.
                 */
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     1::int as is_up
     invalid_indexes:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   format('%I.%I', n.nspname , ci.relname) as tag_index_full_name,
                   coalesce(pg_relation_size(indexrelid), 0) as index_size_b
@@ -855,7 +855,7 @@ metrics:
                 limit 100
     kpi:
         sqls:
-            11: "WITH q_stat_tables AS (\n  SELECT * FROM pg_stat_user_tables t\n  JOIN pg_class c ON c.oid = t.relid\n  WHERE NOT schemaname LIKE E'pg\\\\_temp%'\n  AND c.relpages > (1e7 / 8)    -- >10MB\n),\nq_stat_activity AS (\n    SELECT * FROM pg_stat_activity\n    WHERE datname = current_database() AND pid != pg_backend_pid()\n)\nselect /* pgwatch3_generated */\n  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,\n  case\n      when pg_is_in_recovery() = false then\n          pg_wal_lsn_diff(pg_current_wal_lsn(), '0/0')::int8\n      else\n          pg_wal_lsn_diff(pg_last_wal_replay_lsn(), '0/0')::int8\n      end as wal_location_b,\n  numbackends - 1 as numbackends,\n  (select count(*) from q_stat_activity where state in ('active', 'idle in transaction')) AS active_backends,\n  (select count(*) from q_stat_activity where wait_event_type in ('LWLock', 'Lock', 'BufferPin')) AS blocked_backends,\n  (select round(extract(epoch from now()) - extract(epoch from (select xact_start from q_stat_activity\n    where datid = d.datid and not query like 'autovacuum:%' order by xact_start limit 1))))::int AS kpi_oldest_tx_s,\n  xact_commit + xact_rollback AS tps,\n  xact_commit,\n  xact_rollback,\n  blks_read,\n  blks_hit,\n  temp_bytes,\n  (select sum(seq_scan) from q_stat_tables)::int8 AS seq_scans_on_tbls_gt_10mb,\n  tup_inserted,\n  tup_updated,\n  tup_deleted,\n  (select sum(calls) from pg_stat_user_functions where not schemaname like any(array[E'pg\\\\_%', 'information_schema']))::int8 AS sproc_calls,\n  blk_read_time,\n  blk_write_time,\n  deadlocks,\n  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int,\n  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s  \nFROM\n  pg_stat_database d\nWHERE\n  datname = current_database()"
+            11: "WITH q_stat_tables AS (\n  SELECT * FROM pg_stat_user_tables t\n  JOIN pg_class c ON c.oid = t.relid\n  WHERE NOT schemaname LIKE E'pg\\\\_temp%'\n  AND c.relpages > (1e7 / 8)    -- >10MB\n),\nq_stat_activity AS (\n    SELECT * FROM pg_stat_activity\n    WHERE datname = current_database() AND pid != pg_backend_pid()\n)\nselect /* pgwatch_generated */\n  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,\n  case\n      when pg_is_in_recovery() = false then\n          pg_wal_lsn_diff(pg_current_wal_lsn(), '0/0')::int8\n      else\n          pg_wal_lsn_diff(pg_last_wal_replay_lsn(), '0/0')::int8\n      end as wal_location_b,\n  numbackends - 1 as numbackends,\n  (select count(*) from q_stat_activity where state in ('active', 'idle in transaction')) AS active_backends,\n  (select count(*) from q_stat_activity where wait_event_type in ('LWLock', 'Lock', 'BufferPin')) AS blocked_backends,\n  (select round(extract(epoch from now()) - extract(epoch from (select xact_start from q_stat_activity\n    where datid = d.datid and not query like 'autovacuum:%' order by xact_start limit 1))))::int AS kpi_oldest_tx_s,\n  xact_commit + xact_rollback AS tps,\n  xact_commit,\n  xact_rollback,\n  blks_read,\n  blks_hit,\n  temp_bytes,\n  (select sum(seq_scan) from q_stat_tables)::int8 AS seq_scans_on_tbls_gt_10mb,\n  tup_inserted,\n  tup_updated,\n  tup_deleted,\n  (select sum(calls) from pg_stat_user_functions where not schemaname like any(array[E'pg\\\\_%', 'information_schema']))::int8 AS sproc_calls,\n  blk_read_time,\n  blk_write_time,\n  deadlocks,\n  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int,\n  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s  \nFROM\n  pg_stat_database d\nWHERE\n  datname = current_database()"
         gauges:
             - numbackends
             - active_backends
@@ -873,7 +873,7 @@ metrics:
                     pid != pg_backend_pid()
                     and database = (select oid from pg_database where datname = current_database())
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   locktypes AS tag_locktype,
                   coalesce((select count(*) FROM q_locks WHERE locktype = locktypes), 0) AS count
@@ -893,7 +893,7 @@ metrics:
                     pid != pg_backend_pid()
                     and database = (select oid from pg_database where datname = current_database())
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   lockmodes AS tag_lockmode,
                   coalesce((select count(*) FROM q_locks WHERE mode = lockmodes), 0) AS count
@@ -907,7 +907,7 @@ metrics:
                 with q_sr as (
                   select * from pg_subscription_rel
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   subname::text as tag_subname,
                   subenabled,
@@ -939,7 +939,7 @@ metrics:
     privilege_changes:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     (extract(epoch FROM now()) * 1e9)::int8 AS epoch_ns,
                     *
                 FROM (
@@ -1069,7 +1069,7 @@ metrics:
     psutil_cpu:
         sqls:
             11: |
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   round(cpu_utilization::numeric, 2)::float as cpu_utilization,
                   round(load_1m_norm::numeric, 2)::float as load_1m_norm,
@@ -1123,15 +1123,15 @@ metrics:
 
             $FUNCTION$;
 
-            GRANT EXECUTE ON FUNCTION get_psutil_cpu() TO pgwatch3;
-            COMMENT ON FUNCTION get_psutil_cpu() IS 'created for pgwatch3'
+            GRANT EXECUTE ON FUNCTION get_psutil_cpu() TO pgwatch;
+            COMMENT ON FUNCTION get_psutil_cpu() IS 'created for pgwatch'
         gauges:
             - '*'
         is_instance_level: true
     psutil_disk:
         sqls:
             11: |
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   dir_or_tablespace as tag_dir_or_tablespace,
                   path as tag_path,
@@ -1198,15 +1198,15 @@ metrics:
 
             $FUNCTION$;
 
-            GRANT EXECUTE ON FUNCTION get_psutil_disk() TO pgwatch3;
-            COMMENT ON FUNCTION get_psutil_disk() IS 'created for pgwatch3'
+            GRANT EXECUTE ON FUNCTION get_psutil_disk() TO pgwatch;
+            COMMENT ON FUNCTION get_psutil_disk() IS 'created for pgwatch'
         gauges:
             - '*'
         is_instance_level: true
     psutil_disk_io_total:
         sqls:
             11: |
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   read_count,
                   write_count,
@@ -1231,13 +1231,13 @@ metrics:
                 return None, None, None, None
             $FUNCTION$;
 
-            GRANT EXECUTE ON FUNCTION get_psutil_disk_io_total() TO pgwatch3;
-            COMMENT ON FUNCTION get_psutil_disk_io_total() IS 'created for pgwatch3'
+            GRANT EXECUTE ON FUNCTION get_psutil_disk_io_total() TO pgwatch;
+            COMMENT ON FUNCTION get_psutil_disk_io_total() IS 'created for pgwatch'
         is_instance_level: true
     psutil_mem:
         sqls:
             11: |
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   total, used, free, buff_cache, available, percent,
                   swap_total, swap_used, swap_free, swap_percent
@@ -1259,8 +1259,8 @@ metrics:
             return vm.total, vm.used, vm.free, vm.buffers + vm.cached, vm.available, vm.percent, sw.total, sw.used, sw.free, sw.percent
             $FUNCTION$;
 
-            GRANT EXECUTE ON FUNCTION get_psutil_mem() TO pgwatch3;
-            COMMENT ON FUNCTION get_psutil_mem() IS 'created for pgwatch3'
+            GRANT EXECUTE ON FUNCTION get_psutil_mem() TO pgwatch;
+            COMMENT ON FUNCTION get_psutil_mem() IS 'created for pgwatch'
         gauges:
             - '*'
         is_instance_level: true
@@ -1268,7 +1268,7 @@ metrics:
         sqls:
             11: |-
                 /* assumes the pg_qualstats extension and superuser or select grants on pg_qualstats_indexes_ddl view */
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   'create_index'::text as tag_reco_topic,
                   quote_ident(nspname::text)||'.'||quote_ident(relid::text) as tag_object_name,
@@ -1289,7 +1289,7 @@ metrics:
         sqls:
             11: |-
                 /* assumes the pg_qualstats extension and superuser or select grant on pg_qualstats_index_advisor() function */
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   epoch_ns,
                   tag_reco_topic,
                   tag_object_name,
@@ -1313,7 +1313,7 @@ metrics:
     reco_default_public_schema:
         sqls:
             11: |
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   'default_public_schema_privs'::text as tag_reco_topic,
                   nspname::text as tag_object_name,
@@ -1329,7 +1329,7 @@ metrics:
         sqls:
             11: |
                 /* "temporarily" disabled triggers might be forgotten about... */
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     'disabled_triggers'::text as tag_reco_topic,
                     quote_ident(nspname)||'.'||quote_ident(relname) as tag_object_name,
@@ -1351,7 +1351,7 @@ metrics:
                 with q_database_size as (
                   select pg_database_size(current_database()) as database_size_b
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   'drop_index'::text as tag_reco_topic,
                   quote_ident(schemaname)||'.'||quote_ident(indexrelname) as tag_object_name,
@@ -1413,7 +1413,7 @@ metrics:
                      AND d.deptype = 'n'
                      AND v.oid <> views.view  -- avoid loop
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   'overly_nested_views'::text AS tag_reco_topic,
                   full_name::text as tag_object_name,
@@ -1427,7 +1427,7 @@ metrics:
     reco_partial_index_candidates:
         sqls:
             11: |
-                select distinct /* pgwatch3_generated */
+                select distinct /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     'partial_index_candidates'::text as tag_reco_topic,
                     quote_ident(ni.nspname)||'.'||quote_ident(ci.relname) as tag_object_name,
@@ -1456,16 +1456,16 @@ metrics:
         sqls:
             11: |-
                 with q_sprocs as (
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   format('%s.%s', quote_ident(nspname), quote_ident(proname)) as sproc_name,
                   'alter function ' || proname || '(' || pg_get_function_arguments(p.oid) || ') set search_path = X;' as fix_sql
                 from
                   pg_proc p
                   join pg_namespace n on n.oid = p.pronamespace
                   where prosecdef and not 'search_path' = ANY(coalesce(proconfig, '{}'::text[]))
-                  and not pg_catalog.obj_description(p.oid, 'pg_proc') ~ 'pgwatch3'
+                  and not pg_catalog.obj_description(p.oid, 'pg_proc') ~ 'pgwatch'
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   'sprocs_wo_search_path'::text as tag_reco_topic,
                   sproc_name::text as tag_object_name,
@@ -1488,7 +1488,7 @@ metrics:
                 q_total as (
                   select count(*) from pg_roles where rolcanlogin
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   'superuser_count'::text as tag_reco_topic,
                   '-'::text as tag_object_name,
@@ -1505,7 +1505,7 @@ metrics:
     replication:
         sqls:
             11: |
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   application_name as tag_application_name,
                   usename AS tag_usename,
@@ -1531,7 +1531,7 @@ metrics:
     replication_slot_stats:
         sqls:
             14: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   slot_name::text as tag_slot_name,
                   spill_txns,
@@ -1547,7 +1547,7 @@ metrics:
     replication_slots:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   slot_name::text as tag_slot_name,
                   coalesce(plugin, 'physical')::text as tag_plugin,
@@ -1567,7 +1567,7 @@ metrics:
                 with q_seq_data as (
                     select * from pg_sequences
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     (select round(100.0 * coalesce(max(last_value::numeric / max_value), 0), 2)::float from q_seq_data where not cycle) as max_used_pct,
                     (select count(*) from q_seq_data where not cycle and last_value::numeric / max_value > 0.5) as p50_used_seq_count,
@@ -1584,7 +1584,7 @@ metrics:
                 with qs as (
                   select name, setting from pg_settings
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   current_setting('server_version') as server_version,
                   current_setting('server_version_num')::int8 as server_version_num,
@@ -1639,7 +1639,7 @@ metrics:
         sqls:
             11: |
                 /* assumes pg_show_plans extension */
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   max((extract(epoch from now()) * 1e9)::int8) as epoch_ns,
                   max(extract(epoch from now() - query_start))::int as max_s,
                   avg(extract(epoch from now() - query_start))::int as avg_s,
@@ -1667,7 +1667,7 @@ metrics:
     smart_health_per_disk:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   device as tag_device,
                   retcode
@@ -1704,13 +1704,13 @@ metrics:
 
             $$ LANGUAGE plpython3u VOLATILE;
 
-            GRANT EXECUTE ON FUNCTION get_smart_health_per_device() TO pgwatch3;
+            GRANT EXECUTE ON FUNCTION get_smart_health_per_device() TO pgwatch;
 
-            COMMENT ON FUNCTION get_smart_health_per_device() is 'created for pgwatch3'
+            COMMENT ON FUNCTION get_smart_health_per_device() is 'created for pgwatch'
     sproc_hashes:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   p.oid::text as tag_oid,
                   quote_ident(nspname)||'.'||quote_ident(proname) as tag_sproc,
@@ -1724,7 +1724,7 @@ metrics:
     sproc_stats:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   schemaname::text AS tag_schema,
                   funcname::text  AS tag_function_name,
@@ -1744,7 +1744,7 @@ metrics:
     stat_activity:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   s.query as query,
                   count(*) as count
@@ -1758,7 +1758,7 @@ metrics:
     stat_activity_realtime:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     pid as tag_pid,
                     usename::text AS user,
@@ -1782,7 +1782,7 @@ metrics:
     stat_io:
         sqls:
             16: |-
-                SELECT /* pgwatch3_generated */
+                SELECT /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     coalesce(backend_type, 'total') as tag_backend_type,
                     sum(coalesce(reads, 0))::int8  as reads,
@@ -1805,7 +1805,7 @@ metrics:
     stat_ssl:
         sqls:
             11: |
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   count(*) as total,
                   count(*) FILTER (WHERE ssl) as "on",
@@ -1895,7 +1895,7 @@ metrics:
                             total_time DESC
                         LIMIT 100) a
                 UNION
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     *
                 FROM (
                     SELECT
@@ -1906,7 +1906,7 @@ metrics:
                         calls DESC
                     LIMIT 100) a
                 UNION
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     *
                 FROM (
                     SELECT
@@ -1919,7 +1919,7 @@ metrics:
                         shared_blks_read DESC
                     LIMIT 100) a
                 UNION
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     *
                 FROM (
                     SELECT
@@ -1932,7 +1932,7 @@ metrics:
                         shared_blks_written DESC
                     LIMIT 100) a
                 UNION
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     *
                 FROM (
                     SELECT
@@ -1945,7 +1945,7 @@ metrics:
                         temp_blks_read DESC
                     LIMIT 100) a
                 UNION
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     *
                 FROM (
                     SELECT
@@ -2005,7 +2005,7 @@ metrics:
                         GROUP BY
                             queryid
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     (EXTRACT(epoch FROM now()) * 1e9)::int8 AS epoch_ns,
                     b.tag_queryid,
                     b.users,
@@ -2037,7 +2037,7 @@ metrics:
                             total_time DESC
                         LIMIT 100) a
                 UNION
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     *
                 FROM (
                     SELECT
@@ -2048,7 +2048,7 @@ metrics:
                         calls DESC
                     LIMIT 100) a
                 UNION
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     *
                 FROM (
                     SELECT
@@ -2061,7 +2061,7 @@ metrics:
                         shared_blks_read DESC
                     LIMIT 100) a
                 UNION
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     *
                 FROM (
                     SELECT
@@ -2074,7 +2074,7 @@ metrics:
                         shared_blks_written DESC
                     LIMIT 100) a
                 UNION
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     *
                 FROM (
                     SELECT
@@ -2087,7 +2087,7 @@ metrics:
                         temp_blks_read DESC
                     LIMIT 100) a
                 UNION
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     *
                 FROM (
                     SELECT
@@ -2100,7 +2100,7 @@ metrics:
                         temp_blks_written DESC
                     LIMIT 100) a) b
             15: |-
-                WITH /* pgwatch3_generated */ q_data AS (
+                WITH /* pgwatch_generated */ q_data AS (
                     SELECT
                         queryid::text AS tag_queryid,
                         /*
@@ -2246,7 +2246,7 @@ metrics:
                         temp_blks_written DESC
                     LIMIT 100) a) b
             17: |-
-                WITH /* pgwatch3_generated */ q_data AS (
+                WITH /* pgwatch_generated */ q_data AS (
                   SELECT
                       queryid::text AS tag_queryid,
                       /*
@@ -2394,7 +2394,7 @@ metrics:
     stat_statements_calls:
         sqls:
             11: |
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   coalesce(sum(calls), 0)::int8 as calls,
                   coalesce(round(sum(total_time)::numeric, 3), 0)::float8 as total_time
@@ -2403,7 +2403,7 @@ metrics:
                 where
                   dbid = (select oid from pg_database where datname = current_database())
             13: |
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   coalesce(sum(calls), 0)::int8 as calls,
                   coalesce(round(sum(total_exec_time)::numeric, 3), 0)::float8 as total_time,
@@ -2416,7 +2416,7 @@ metrics:
         sqls:
             11: |-
                 with q_data as (
-                  select /* pgwatch3_generated */
+                  select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     '-'::text as tag_query,
                     coalesce(queryid::text, 'insufficient-privileges-total') as tag_queryid,
@@ -2513,7 +2513,7 @@ metrics:
                 ) a
             13: |-
                 with q_data as (
-                  select /* pgwatch3_generated */
+                  select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     '-' as tag_query,
                     coalesce(queryid::text, 'insufficient-privileges-total') as tag_queryid,
@@ -2612,7 +2612,7 @@ metrics:
                   limit 100
                 ) a
             15: |-
-                with /* pgwatch3_generated */ q_data as (
+                with /* pgwatch_generated */ q_data as (
                   select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     '-' as tag_query,
@@ -2714,7 +2714,7 @@ metrics:
                   limit 100
                 ) a
             17: |-
-                with /* pgwatch3_generated */ q_data as (
+                with /* pgwatch_generated */ q_data as (
                   select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     '-' as tag_query,
@@ -2819,7 +2819,7 @@ metrics:
     subscription_stats:
         sqls:
             15: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   subname::text as tag_subname,
                   apply_error_count,
@@ -2830,7 +2830,7 @@ metrics:
         sqls:
             11: |-
                 /* accessing pgstattuple_approx directly requires superuser or pg_stat_scan_tables/pg_monitor builtin roles */
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   quote_ident(n.nspname)||'.'||quote_ident(c.relname) as tag_full_table_name,
                   approx_free_percent,
@@ -2871,7 +2871,7 @@ metrics:
                         and c.relpages >= 128 -- tables >1mb
                         and not n.nspname != 'information_schema'
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     approx_free_percent,
                     approx_free_space as approx_free_space_b,
@@ -2999,7 +2999,7 @@ metrics:
                              -- WHERE NOT is_na
                          ) s4
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     (select sum(approx_bloat_bytes) from q_bloat) as approx_table_bloat_b,
                     ((select sum(approx_bloat_bytes) from q_bloat) * 100 / pg_database_size(current_database()))::int8 as approx_bloat_percentage
@@ -3117,7 +3117,7 @@ metrics:
                              -- WHERE NOT is_na
                          ) s4
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     (select sum(approx_bloat_bytes) from q_bloat) as approx_table_bloat_b,
                     ((select sum(approx_bloat_bytes) from q_bloat) * 100 / pg_database_size(current_database()))::int8 as approx_bloat_percentage
@@ -3126,7 +3126,7 @@ metrics:
     table_hashes:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   quote_ident(table_schema)||'.'||quote_ident(table_name) as tag_table,
                   md5((array_agg((c.*)::text order by ordinal_position))::text)
@@ -3385,7 +3385,7 @@ metrics:
                           and c.relpersistence != 't' -- and temp tables
                     )
 
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     epoch_ns,
                     tag_schema,
                     tag_table_name,
@@ -3458,7 +3458,7 @@ metrics:
                 ) x
                 order by table_size_b desc nulls last limit 300
             16: |-
-                with recursive /* pgwatch3_generated */
+                with recursive /* pgwatch_generated */
                     q_root_part as (
                         select c.oid,
                                c.relkind,
@@ -3524,7 +3524,7 @@ metrics:
                                     The general idea is to reduce filesystem "stat"-ing on tables that won't make it to final output anyways based on approximate size */
                     )
 
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     epoch_ns,
                     tag_schema,
                     tag_table_name,
@@ -3610,7 +3610,7 @@ metrics:
     table_stats_approx:
         sqls:
             11: |-
-                with recursive /* pgwatch3_generated */
+                with recursive /* pgwatch_generated */
                 q_root_part as (
                     select c.oid,
                           c.relkind,
@@ -3657,7 +3657,7 @@ metrics:
                   ), q_block_size as (
                     select current_setting('block_size')::int8 as bs
                   )
-                  select /* pgwatch3_generated */
+                  select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     relid,
                     quote_ident(schemaname)||'.'||quote_ident(ut.relname) as tag_table_full_name,
@@ -3693,7 +3693,7 @@ metrics:
                     not exists (select 1 from pg_locks where relation = relid and mode = 'AccessExclusiveLock')
                   order by relpages desc
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   epoch_ns,
                   tag_table_full_name,
                   0 as is_part_root,
@@ -3770,7 +3770,7 @@ metrics:
     unused_indexes:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   *
                 from (
@@ -3794,7 +3794,7 @@ metrics:
     vmstat:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     r, b, swpd, free, buff, cache, si, so, bi, bo, "in", cs, us, sy, id, wa, st, cpu_count, load_1m, load_5m, load_15m, total_memory
                 from
@@ -3844,15 +3844,15 @@ metrics:
                     vm[9] * unit, vm[10], vm[11], vm[12], vm[13], vm[14], vm[15], vm[16], cpu_count, load_1m, load_5m, load_15m, total_memory
             $FUNCTION$;
 
-            GRANT EXECUTE ON FUNCTION get_vmstat(int) TO pgwatch3;
-            COMMENT ON FUNCTION get_vmstat(int) IS 'created for pgwatch3'
+            GRANT EXECUTE ON FUNCTION get_vmstat(int) TO pgwatch;
+            COMMENT ON FUNCTION get_vmstat(int) IS 'created for pgwatch'
     wait_events:
         sqls:
             11: |-
                 with q_sa as (
                     select * from pg_stat_activity where datname = current_database() and pid <> pg_backend_pid()
                 )
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   wait_event_type as tag_wait_event_type,
                   wait_event as tag_wait_event,
@@ -3871,7 +3871,7 @@ metrics:
     wal:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   case
                     when pg_is_in_recovery() = false then
@@ -3895,7 +3895,7 @@ metrics:
     wal_receiver:
         sqls:
             11: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   pg_wal_lsn_diff(pg_last_wal_receive_lsn(), pg_last_wal_replay_lsn())::int8 as replay_lag_b,
                   extract(epoch from (now() - pg_last_xact_replay_timestamp()))::int8 as last_replay_s
@@ -3907,9 +3907,9 @@ metrics:
         sqls:
             11: |-
                 /* If using not a real superuser but a role with "pg_monitor" grant then below execute grant is needed:
-                  GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch3;
+                  GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch;
                 */
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     (sum((pg_stat_file('pg_wal/' || name)).size))::int8 as wal_size_b
                 from pg_ls_waldir()
@@ -3919,7 +3919,7 @@ metrics:
     wal_stats:
         sqls:
             14: |-
-                select /* pgwatch3_generated */
+                select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     wal_records,
                     wal_fpi,

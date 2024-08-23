@@ -10,7 +10,7 @@ also choose how they're going to retrieve metrics from databases - in a
 ## Config DB based operation
 
 This is the original central pull mode depicted on the
-[architecture diagram](screenshots/pgwatch3_architecture.png). 
+[architecture diagram](screenshots/pgwatch_architecture.png). 
 It requires a small schema to be rolled out on any Postgres
 database accessible to the metrics gathering daemon, which will hold the
 connect strings, metric definition SQL-s and preset configurations and
@@ -24,7 +24,7 @@ The default Docker images use this approach.
 From v1.4.0 one can deploy the gatherer daemon(s) decentrally with
 *hosts to be monitored* defined in simple YAML files. In that case there
 is no need for the central Postgres "config DB". See the sample
-[instances.yaml](https://github.com/cybertec-postgresql/pgwatch3/blob/master/src/sources/sample.sources.yaml)
+[instances.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/sample.sources.yaml)
 config file for an example. Note that in this mode you also need to
 point out the path to metric definition SQL files when starting the
 gatherer. Also note that the configuration system also supports multiple
@@ -33,20 +33,20 @@ things via *Ansible* for example and you can also use Env. vars in
 sideYAML files.
 
 Relevant Gatherer env. vars / flags: `--config, --metrics-folder` or
-`PW3_CONFIG / PW3_METRICS_FOLDER`.
+`PW_CONFIG / PW_METRICS_FOLDER`.
 
 ## Prometheus mode
 
 In v1.6.0 was added support for Prometheus - being one of the most
 popular modern metrics gathering / alerting solutions. When the
-`--datastore / PW3_DATASTORE` parameter is set to *prometheus* then the
-pgwatch3 metrics collector doesn't do any normal interval-based
+`--datastore / PW_DATASTORE` parameter is set to *prometheus* then the
+pgwatch metrics collector doesn't do any normal interval-based
 fetching but listens on port *9187* (changeable) for scrape requests
 configured and performed on Prometheus side. Returned metrics belong to
-the "pgwatch3" namespace (a prefix basically) which is changeable via
+the "pgwatch" namespace (a prefix basically) which is changeable via
 the `--prometheus-namespace` flag if needed.
 
-Also important to note - in this mode the pgwatch3 agent should not be
+Also important to note - in this mode the pgwatch agent should not be
 run centrally but on all individual DB hosts. While technically possible
 though to run centrally, it would counter the core idea of Prometheus
 and would make scrapes also longer and risk getting timeouts as all DBs

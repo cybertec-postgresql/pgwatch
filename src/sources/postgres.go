@@ -1,12 +1,12 @@
 package sources
 
 // This file contains the implementation of the ReaderWriter interface for the PostgreSQL database.
-// Monitored sources are stored in the `pgwatch3.source` table in the configuration database.
+// Monitored sources are stored in the `pgwatch.source` table in the configuration database.
 
 import (
 	"context"
 
-	"github.com/cybertec-postgresql/pgwatch3/db"
+	"github.com/cybertec-postgresql/pgwatch/db"
 	pgx "github.com/jackc/pgx/v5"
 )
 
@@ -28,7 +28,7 @@ func (r *dbSourcesReaderWriter) WriteSources(dbs Sources) error {
 	if err != nil {
 		return err
 	}
-	if _, err = tx.Exec(context.Background(), `truncate pgwatch3.source`); err != nil {
+	if _, err = tx.Exec(context.Background(), `truncate pgwatch.source`); err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback(context.Background()) }()
@@ -42,7 +42,7 @@ func (r *dbSourcesReaderWriter) WriteSources(dbs Sources) error {
 
 func (r *dbSourcesReaderWriter) updateDatabase(conn db.PgxIface, md Source) (err error) {
 	m := db.MarshallParam
-	sql := `insert into pgwatch3.source(
+	sql := `insert into pgwatch.source(
 	name, 
 	"group", 
 	dbtype, 
@@ -86,12 +86,12 @@ func (r *dbSourcesReaderWriter) UpdateSource(md Source) error {
 }
 
 func (r *dbSourcesReaderWriter) DeleteSource(name string) error {
-	_, err := r.configDb.Exec(context.Background(), `delete from pgwatch3.source where name = $1`, name)
+	_, err := r.configDb.Exec(context.Background(), `delete from pgwatch.source where name = $1`, name)
 	return err
 }
 
 func (r *dbSourcesReaderWriter) GetSources() (dbs Sources, err error) {
-	sqlLatest := `select /* pgwatch3_generated */
+	sqlLatest := `select /* pgwatch_generated */
 	name, 
 	"group", 
 	dbtype, 
@@ -108,7 +108,7 @@ func (r *dbSourcesReaderWriter) GetSources() (dbs Sources, err error) {
 	only_if_master,
 	is_enabled
 from
-	pgwatch3.source`
+	pgwatch.source`
 	rows, err := r.configDb.Query(context.Background(), sqlLatest)
 	if err != nil {
 		return nil, err
