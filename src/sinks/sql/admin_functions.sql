@@ -10,11 +10,11 @@ $SQL$
   join pg_namespace n on n.oid = c.relnamespace
   where relkind in ('r', 'p') and nspname = 'public'
   and exists (select 1 from pg_attribute where attrelid = c.oid and attname = 'time')
-  and pg_catalog.obj_description(c.oid, 'pg_class') = 'pgwatch3-generated-metric-lvl'
+  and pg_catalog.obj_description(c.oid, 'pg_class') = 'pgwatch-generated-metric-lvl'
   order by 1
 $SQL$ LANGUAGE sql;
 
--- GRANT EXECUTE ON FUNCTION admin.get_top_level_metric_tables() TO pgwatch3;
+-- GRANT EXECUTE ON FUNCTION admin.get_top_level_metric_tables() TO pgwatch;
 
 
 -- DROP FUNCTION IF EXISTS admin.drop_all_metric_tables();
@@ -39,7 +39,7 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
--- GRANT EXECUTE ON FUNCTION admin.drop_all_metric_tables() TO pgwatch3;
+-- GRANT EXECUTE ON FUNCTION admin.drop_all_metric_tables() TO pgwatch;
 
 
 -- DROP FUNCTION IF EXISTS admin.truncate_all_metric_tables();
@@ -64,7 +64,7 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
--- GRANT EXECUTE ON FUNCTION admin.truncate_all_metric_tables() TO pgwatch3;
+-- GRANT EXECUTE ON FUNCTION admin.truncate_all_metric_tables() TO pgwatch;
 
 
 -- DROP FUNCTION IF EXISTS admin.remove_single_dbname_data(text);
@@ -97,7 +97,7 @@ BEGIN
                 join pg_class c2 on i.inhparent = c2.oid
                 where c.relkind in ('r', 'p') and nspname = 'subpartitions'
                 and exists (select 1 from pg_attribute where attrelid = c.oid and attname = 'time')
-                and pg_catalog.obj_description(c.oid, 'pg_class') = 'pgwatch3-generated-metric-dbname-lvl'
+                and pg_catalog.obj_description(c.oid, 'pg_class') = 'pgwatch-generated-metric-dbname-lvl'
                 and (regexp_match(pg_catalog.pg_get_expr(c.relpartbound, c.oid), E'FOR VALUES IN \\(''(.*)''\\)'))[1] = dbname
                 order by 1
     )
@@ -117,7 +117,7 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
--- GRANT EXECUTE ON FUNCTION admin.remove_single_dbname_data(text) TO pgwatch3;
+-- GRANT EXECUTE ON FUNCTION admin.remove_single_dbname_data(text) TO pgwatch;
 
 
 -- drop function if exists admin.drop_old_time_partitions(int,bool)
@@ -155,8 +155,8 @@ BEGIN
           c.relkind IN ('r', 'p')
             AND nspname = 'subpartitions'
             AND pg_catalog.obj_description(c.oid, 'pg_class') IN (
-              'pgwatch3-generated-metric-time-lvl',
-              'pgwatch3-generated-metric-dbname-time-lvl'
+              'pgwatch-generated-metric-time-lvl',
+              'pgwatch-generated-metric-dbname-time-lvl'
             )
         ) x
         WHERE is_old
@@ -230,7 +230,7 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
--- GRANT EXECUTE ON FUNCTION admin.drop_old_time_partitions(int,bool,text) TO pgwatch3;
+-- GRANT EXECUTE ON FUNCTION admin.drop_old_time_partitions(int,bool,text) TO pgwatch;
 
 -- drop function if exists admin.get_old_time_partitions(int,text);
 -- select * from admin.get_old_time_partitions(1);
@@ -264,8 +264,8 @@ BEGIN
                         c.relkind IN ('r', 'p')
                   AND nspname = 'subpartitions'
                   AND pg_catalog.obj_description(c.oid, 'pg_class') IN (
-                        'pgwatch3-generated-metric-time-lvl',
-                        'pgwatch3-generated-metric-dbname-time-lvl'
+                        'pgwatch-generated-metric-time-lvl',
+                        'pgwatch-generated-metric-dbname-time-lvl'
                     )
             ) x
             WHERE is_old
@@ -277,4 +277,4 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
--- GRANT EXECUTE ON FUNCTION admin.get_old_time_partitions(int,text) TO pgwatch3;
+-- GRANT EXECUTE ON FUNCTION admin.get_old_time_partitions(int,text) TO pgwatch;

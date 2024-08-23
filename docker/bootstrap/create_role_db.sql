@@ -1,9 +1,9 @@
-CREATE ROLE pgwatch3 WITH 
+CREATE ROLE pgwatch WITH 
     IN ROLE pg_monitor
-    LOGIN PASSWORD 'pgwatch3admin';  -- change the pw for production
+    LOGIN PASSWORD 'pgwatchadmin';  -- change the pw for production
 
-CREATE DATABASE pgwatch3 OWNER pgwatch3;
+CREATE DATABASE pgwatch OWNER pgwatch;
 
-CREATE DATABASE pgwatch3_grafana OWNER pgwatch3;
+CREATE DATABASE pgwatch_grafana OWNER pgwatch;
 
-CREATE DATABASE pgwatch3_metrics OWNER pgwatch3;
+CREATE DATABASE pgwatch_metrics OWNER pgwatch;
