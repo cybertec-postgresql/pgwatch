@@ -234,7 +234,9 @@
   "refresh": false,
   "schemaVersion": 37,
   "style": "dark",
-  "tags": [],
+  "tags": [
+    "pgwatch"
+  ],
   "templating": {
     "list": [
       {

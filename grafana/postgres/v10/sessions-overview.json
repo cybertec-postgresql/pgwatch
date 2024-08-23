@@ -1029,7 +1029,9 @@
   ],
   "schemaVersion": 22,
   "style": "dark",
-  "tags": [],
+  "tags": [
+    "pgwatch"
+  ],
   "templating": {
     "list": [
       {
