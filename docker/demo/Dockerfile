@@ -14,9 +14,9 @@ ARG VERSION
 ARG GIT_HASH
 ARG GIT_TIME
 
-ADD src /pgwatch3
-COPY --from=uibuilder /webui/build /pgwatch3/webui/build
-RUN cd /pgwatch3 && CGO_ENABLED=0 go build -ldflags "-X 'main.commit=${GIT_HASH}' -X 'main.date=${GIT_TIME}' -X 'main.version=${VERSION}'"
+ADD src /pgwatch
+COPY --from=uibuilder /webui/build /pgwatch/webui/build
+RUN cd /pgwatch && CGO_ENABLED=0 go build -ldflags "-X 'main.commit=${GIT_HASH}' -X 'main.date=${GIT_TIME}' -X 'main.version=${VERSION}'"
 
 # ----------------------------------------------------------------
 # 3. Build the final image
@@ -24,8 +24,8 @@ RUN cd /pgwatch3 && CGO_ENABLED=0 go build -ldflags "-X 'main.commit=${GIT_HASH}
 FROM postgres:16-bullseye AS releaser
 
 # Copy over the compiled gatherer
-COPY --from=builder /pgwatch3/pgwatch3 /pgwatch3/
-COPY src/metrics/metrics.yaml /pgwatch3/metrics/metrics.yaml
+COPY --from=builder /pgwatch/pgwatch /pgwatch/
+COPY src/metrics/metrics.yaml /pgwatch/metrics/metrics.yaml
 
 # Install dependencies
 ENV DEBIAN_FRONTEND=noninteractive
@@ -57,7 +57,7 @@ COPY docker/demo/supervisord.conf /etc/supervisor/
 COPY docker/bootstrap/init_persistent_config.sh \
      docker/bootstrap/init_supervisor.sh \
      docker/bootstrap/init_test_monitored_db.sh\
-        /pgwatch3/bootstrap/
+        /pgwatch/bootstrap/
 
 # Set up PostgreSQL initialization scripts
 RUN  mkdir -p /docker-entrypoint-initdb.d
@@ -86,7 +86,7 @@ EXPOSE 9187
 ### Backwards compatibility is not 100% guaranteed so a backup
 ### using traditional means is still recommended before updating - see "Updating to a newer Docker version" from README
 
-VOLUME /pgwatch3/persistent-config
+VOLUME /pgwatch/persistent-config
 VOLUME /var/lib/postgresql
 VOLUME /var/lib/grafana
 
