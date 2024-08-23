@@ -2,7 +2,7 @@
                       # Should be chosen carefully - cannot be (easily) changed for the already stored metric data!
   kind: postgres    # postgres|postgres-continuous-discovery|pgbouncer|pgpool|patroni|patroni-continuous-discovery|patroni-namespace-discovery
                       # defaults to postgres if not specified
-  conn_str: postgresql://pgwatch3:pgwatch3admin@localhost/pgwatch3
+  conn_str: postgresql://pgwatch:pgwatchadmin@localhost/pgwatch
   is_superuser: false # setting to true will try to auto-create all metric fetching "helpers"
   preset_metrics: exhaustive # from list of presets defined in "metrics/preset-configs.yaml"
   custom_metrics:    # if both preset and custom are specified, custom wins
@@ -43,7 +43,7 @@
   only_if_master: true # don't gather metrics from standby servers
 
 - name: pgbouncer
-  conn_str: postgresql://pgwatch3:pgwatch3admin@localhost/pgwatch3
+  conn_str: postgresql://pgwatch:pgwatchadmin@localhost/pgwatch
   custom_metrics: 
     pgbouncer_stats: 10
     pgbouncer_clients: 10

@@ -104,9 +104,9 @@ metrics:
             /* contacting S3 could be laggy depending on location */
             ALTER FUNCTION get_backup_age_pgbackrest() SET statement_timeout TO '30s';
 
-            GRANT EXECUTE ON FUNCTION get_backup_age_pgbackrest() TO pgwatch3;
+            GRANT EXECUTE ON FUNCTION get_backup_age_pgbackrest() TO pgwatch;
 
-            COMMENT ON FUNCTION get_backup_age_pgbackrest() is 'created for pgwatch3'
+            COMMENT ON FUNCTION get_backup_age_pgbackrest() is 'created for pgwatch'
         is_instance_level: true
     backup_age_walg:
         sqls:
@@ -156,9 +156,9 @@ metrics:
             /* contacting S3 could be laggy depending on location */
             ALTER FUNCTION get_backup_age_walg() SET statement_timeout TO '30s';
 
-            GRANT EXECUTE ON FUNCTION get_backup_age_walg() TO pgwatch3;
+            GRANT EXECUTE ON FUNCTION get_backup_age_walg() TO pgwatch;
 
-            COMMENT ON FUNCTION get_backup_age_walg() is 'created for pgwatch3'
+            COMMENT ON FUNCTION get_backup_age_walg() is 'created for pgwatch'
         is_instance_level: true
     bgwriter:
         sqls:
@@ -330,8 +330,8 @@ metrics:
               la = getloadavg()
               return [la[0], la[1], la[2]]
             $$ LANGUAGE plpython3u VOLATILE;
-            GRANT EXECUTE ON FUNCTION get_load_average() TO pgwatch3;
-            COMMENT ON FUNCTION get_load_average() is 'created for pgwatch3';
+            GRANT EXECUTE ON FUNCTION get_load_average() TO pgwatch;
+            COMMENT ON FUNCTION get_load_average() is 'created for pgwatch';
             COMMIT;
         gauges:
             - '*'
@@ -1123,8 +1123,8 @@ metrics:
 
             $FUNCTION$;
 
-            GRANT EXECUTE ON FUNCTION get_psutil_cpu() TO pgwatch3;
-            COMMENT ON FUNCTION get_psutil_cpu() IS 'created for pgwatch3'
+            GRANT EXECUTE ON FUNCTION get_psutil_cpu() TO pgwatch;
+            COMMENT ON FUNCTION get_psutil_cpu() IS 'created for pgwatch'
         gauges:
             - '*'
         is_instance_level: true
@@ -1198,8 +1198,8 @@ metrics:
 
             $FUNCTION$;
 
-            GRANT EXECUTE ON FUNCTION get_psutil_disk() TO pgwatch3;
-            COMMENT ON FUNCTION get_psutil_disk() IS 'created for pgwatch3'
+            GRANT EXECUTE ON FUNCTION get_psutil_disk() TO pgwatch;
+            COMMENT ON FUNCTION get_psutil_disk() IS 'created for pgwatch'
         gauges:
             - '*'
         is_instance_level: true
@@ -1231,8 +1231,8 @@ metrics:
                 return None, None, None, None
             $FUNCTION$;
 
-            GRANT EXECUTE ON FUNCTION get_psutil_disk_io_total() TO pgwatch3;
-            COMMENT ON FUNCTION get_psutil_disk_io_total() IS 'created for pgwatch3'
+            GRANT EXECUTE ON FUNCTION get_psutil_disk_io_total() TO pgwatch;
+            COMMENT ON FUNCTION get_psutil_disk_io_total() IS 'created for pgwatch'
         is_instance_level: true
     psutil_mem:
         sqls:
@@ -1259,8 +1259,8 @@ metrics:
             return vm.total, vm.used, vm.free, vm.buffers + vm.cached, vm.available, vm.percent, sw.total, sw.used, sw.free, sw.percent
             $FUNCTION$;
 
-            GRANT EXECUTE ON FUNCTION get_psutil_mem() TO pgwatch3;
-            COMMENT ON FUNCTION get_psutil_mem() IS 'created for pgwatch3'
+            GRANT EXECUTE ON FUNCTION get_psutil_mem() TO pgwatch;
+            COMMENT ON FUNCTION get_psutil_mem() IS 'created for pgwatch'
         gauges:
             - '*'
         is_instance_level: true
@@ -1463,7 +1463,7 @@ metrics:
                   pg_proc p
                   join pg_namespace n on n.oid = p.pronamespace
                   where prosecdef and not 'search_path' = ANY(coalesce(proconfig, '{}'::text[]))
-                  and not pg_catalog.obj_description(p.oid, 'pg_proc') ~ 'pgwatch3'
+                  and not pg_catalog.obj_description(p.oid, 'pg_proc') ~ 'pgwatch'
                 )
                 select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -1704,9 +1704,9 @@ metrics:
 
             $$ LANGUAGE plpython3u VOLATILE;
 
-            GRANT EXECUTE ON FUNCTION get_smart_health_per_device() TO pgwatch3;
+            GRANT EXECUTE ON FUNCTION get_smart_health_per_device() TO pgwatch;
 
-            COMMENT ON FUNCTION get_smart_health_per_device() is 'created for pgwatch3'
+            COMMENT ON FUNCTION get_smart_health_per_device() is 'created for pgwatch'
     sproc_hashes:
         sqls:
             11: |-
@@ -3844,8 +3844,8 @@ metrics:
                     vm[9] * unit, vm[10], vm[11], vm[12], vm[13], vm[14], vm[15], vm[16], cpu_count, load_1m, load_5m, load_15m, total_memory
             $FUNCTION$;
 
-            GRANT EXECUTE ON FUNCTION get_vmstat(int) TO pgwatch3;
-            COMMENT ON FUNCTION get_vmstat(int) IS 'created for pgwatch3'
+            GRANT EXECUTE ON FUNCTION get_vmstat(int) TO pgwatch;
+            COMMENT ON FUNCTION get_vmstat(int) IS 'created for pgwatch'
     wait_events:
         sqls:
             11: |-
@@ -3907,7 +3907,7 @@ metrics:
         sqls:
             11: |-
                 /* If using not a real superuser but a role with "pg_monitor" grant then below execute grant is needed:
-                  GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch3;
+                  GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch;
                 */
                 select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
