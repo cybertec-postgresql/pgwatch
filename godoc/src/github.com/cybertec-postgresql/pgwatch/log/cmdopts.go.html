@@ -1,0 +1,81 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
+
+  <title>src/github.com/cybertec-postgresql/pgwatch/\log\/cmdopts.go - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.22.0";</script>
+<script src="/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Source file
+    <a href="/godoc/src">src</a>/<a href="/godoc/src/github.com">github.com</a>/<a href="/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/\log\">\log\</a>/<span class="text-muted">cmdopts.go</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/\log\">github.com/cybertec-postgresql/pgwatch/\log\</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<script type="text/javascript">document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1  </span>package log
+<span id="L2" class="ln">     2  </span>
+<span id="L3" class="ln">     3  </span><span class="comment">// CmdOpts specifies the logging command-line options</span>
+<span id="L4" class="ln">     4  </span>type CmdOpts struct {
+<span id="L5" class="ln">     5  </span>	LogLevel      string `short:&#34;v&#34; long:&#34;log-level&#34; mapstructure:&#34;log-level&#34; description:&#34;Verbosity level for stdout and log file&#34; choice:&#34;debug&#34; choice:&#34;info&#34; choice:&#34;error&#34; default:&#34;info&#34;`
+<span id="L6" class="ln">     6  </span>	LogFile       string `long:&#34;log-file&#34; mapstructure:&#34;log-file&#34; description:&#34;File name to store logs&#34;`
+<span id="L7" class="ln">     7  </span>	LogFileFormat string `long:&#34;log-file-format&#34; mapstructure:&#34;log-file-format&#34; description:&#34;Format of file logs&#34; choice:&#34;json&#34; choice:&#34;text&#34; default:&#34;json&#34;`
+<span id="L8" class="ln">     8  </span>	LogFileRotate bool   `long:&#34;log-file-rotate&#34; mapstructure:&#34;log-file-rotate&#34; description:&#34;Rotate log files&#34;`
+<span id="L9" class="ln">     9  </span>	LogFileSize   int    `long:&#34;log-file-size&#34; mapstructure:&#34;log-file-size&#34; description:&#34;Maximum size in MB of the log file before it gets rotated&#34; default:&#34;100&#34;`
+<span id="L10" class="ln">    10  </span>	LogFileAge    int    `long:&#34;log-file-age&#34; mapstructure:&#34;log-file-age&#34; description:&#34;Number of days to retain old log files, 0 means forever&#34; default:&#34;0&#34;`
+<span id="L11" class="ln">    11  </span>	LogFileNumber int    `long:&#34;log-file-number&#34; mapstructure:&#34;log-file-number&#34; description:&#34;Maximum number of old log files to retain, 0 to retain all&#34; default:&#34;0&#34;`
+<span id="L12" class="ln">    12  </span>}
+<span id="L13" class="ln">    13  </span>
+</pre><p></p>
+
+<div id="footer">
+Build version go1.22.0.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+
+</body></html>

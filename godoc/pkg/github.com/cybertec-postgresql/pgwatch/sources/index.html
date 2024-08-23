@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+
+  <title>sources - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css">
+
+<script>window.initFuncs = [];</script>
+<script src="/godoc/lib/godoc/jquery.js" defer></script>
+
+
+
+
+<script>var goVersion = "go1.22.0";</script>
+<script src="/godoc/lib/godoc/godocs.js" defer></script>
+
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Package sources
+    <span class="text-muted"></span>
+  </h1>
+
+
+
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+
+	<script>
+	document.ANALYSIS_DATA = null;
+	document.CALLGRAPH = null;
+	</script>
+
+	
+		
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "github.com/cybertec-postgresql/pgwatch/sources"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="#pkg-index" class="indexLink">Index</a></dd>
+			
+			
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="pkg-overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+				
+				
+			</div>
+		</div>
+
+		<div id="pkg-index" class="toggleVisible">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
+		</div>
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
+
+		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
+			<div id="manual-nav">
+			<dl>
+			
+			
+				<dd><a href="#pkg-variables">Variables</a></dd>
+			
+			
+			
+				
+				<dd><a href="#CmdOpts">type CmdOpts</a></dd>
+				
+				
+			
+				
+				<dd><a href="#HostConfigAttrs">type HostConfigAttrs</a></dd>
+				
+				
+			
+				
+				<dd><a href="#HostConfigPerMetricDisabledTimes">type HostConfigPerMetricDisabledTimes</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Kind">type Kind</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Kind.IsValid">func (k Kind) IsValid() bool</a></dd>
+				
+			
+				
+				<dd><a href="#MonitoredDatabase">type MonitoredDatabase</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#ResolveDatabasesFromPatroni">func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error)</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MonitoredDatabase.Connect">func (md *MonitoredDatabase) Connect(ctx context.Context) (err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MonitoredDatabase.GetDatabaseName">func (md *MonitoredDatabase) GetDatabaseName() string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MonitoredDatabase.IsPostgresSource">func (md *MonitoredDatabase) IsPostgresSource() bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MonitoredDatabase.Ping">func (md *MonitoredDatabase) Ping(ctx context.Context) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MonitoredDatabase.SetDatabaseName">func (md *MonitoredDatabase) SetDatabaseName(name string)</a></dd>
+				
+			
+				
+				<dd><a href="#MonitoredDatabases">type MonitoredDatabases</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#ResolveDatabasesFromPostgres">func ResolveDatabasesFromPostgres(s Source) (resolvedDbs MonitoredDatabases, err error)</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MonitoredDatabases.GetMonitoredDatabase">func (mds MonitoredDatabases) GetMonitoredDatabase(DBUniqueName string) *MonitoredDatabase</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MonitoredDatabases.SyncFromReader">func (mds MonitoredDatabases) SyncFromReader(r Reader) (newmds MonitoredDatabases, err error)</a></dd>
+				
+			
+				
+				<dd><a href="#PatroniClusterMember">type PatroniClusterMember</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Reader">type Reader</a></dd>
+				
+				
+			
+				
+				<dd><a href="#ReaderWriter">type ReaderWriter</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewPostgresSourcesReaderWriter">func NewPostgresSourcesReaderWriter(ctx context.Context, connstr string) (ReaderWriter, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewPostgresSourcesReaderWriterConn">func NewPostgresSourcesReaderWriterConn(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewYAMLSourcesReaderWriter">func NewYAMLSourcesReaderWriter(ctx context.Context, path string) (ReaderWriter, error)</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Source">type Source</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Source.Clone">func (s *Source) Clone() *Source</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Source.GetDatabaseName">func (s *Source) GetDatabaseName() string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Source.ResolveDatabases">func (s Source) ResolveDatabases() (MonitoredDatabases, error)</a></dd>
+				
+			
+				
+				<dd><a href="#Sources">type Sources</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sources.ResolveDatabases">func (srcs Sources) ResolveDatabases() (_ MonitoredDatabases, err error)</a></dd>
+				
+			
+				
+				<dd><a href="#Writer">type Writer</a></dd>
+				
+				
+			
+			
+			</dl>
+			</div><!-- #manual-nav -->
+
+		
+
+		
+			<h3>Package files</h3>
+			<p>
+			<span style="font-size:90%">
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/cmdopts.go">cmdopts.go</a>
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/doc.go">doc.go</a>
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/postgres.go">postgres.go</a>
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/resolver.go">resolver.go</a>
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go">types.go</a>
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/yaml.go">yaml.go</a>
+			
+			</span>
+			</p>
+		
+		</div><!-- .expanded -->
+		</div><!-- #pkg-index -->
+
+		
+
+		
+		
+			<h2 id="pkg-variables">Variables</h2>
+			
+				
+				<pre>var <span id="Kinds">Kinds</span> = []<a href="#Kind">Kind</a>{
+    <a href="#SourcePostgres">SourcePostgres</a>,
+    <a href="#SourcePostgresContinuous">SourcePostgresContinuous</a>,
+    <a href="#SourcePgBouncer">SourcePgBouncer</a>,
+    <a href="#SourcePgPool">SourcePgPool</a>,
+    <a href="#SourcePatroni">SourcePatroni</a>,
+    <a href="#SourcePatroniContinuous">SourcePatroniContinuous</a>,
+    <a href="#SourcePatroniNamespace">SourcePatroniNamespace</a>,
+}</pre>
+			
+		
+		
+		
+			
+			
+			<h2 id="CmdOpts">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/cmdopts.go#L4">CmdOpts</a>
+				<a class="permalink" href="#CmdOpts">&#xb6;</a>
+				
+				
+			</h2>
+			<p>SourceOpts specifies the sources related command-line options
+
+			<pre>type CmdOpts struct {
+<span id="CmdOpts.Sources"></span>    Sources                      <a href="https://pkg.go.dev/builtin/#string">string</a>   `short:&#34;s&#34; long:&#34;sources&#34; mapstructure:&#34;config&#34; description:&#34;Postgres URI, file or folder of YAML files containing info on which DBs to monitor&#34; env:&#34;PW_SOURCES&#34;`
+<span id="CmdOpts.Refresh"></span>    Refresh                      <a href="https://pkg.go.dev/builtin/#int">int</a>      `long:&#34;refresh&#34; mapstructure:&#34;refresh&#34; description:&#34;How frequently to resync sources and metrics&#34; env:&#34;PW_REFRESH&#34; default:&#34;120&#34;`
+<span id="CmdOpts.Groups"></span>    Groups                       []<a href="https://pkg.go.dev/builtin/#string">string</a> `short:&#34;g&#34; long:&#34;group&#34; mapstructure:&#34;group&#34; description:&#34;Groups for filtering which databases to monitor. By default all are monitored&#34; env:&#34;PW_GROUP&#34;`
+<span id="CmdOpts.MinDbSizeMB"></span>    MinDbSizeMB                  <a href="https://pkg.go.dev/builtin/#int64">int64</a>    `long:&#34;min-db-size-mb&#34; mapstructure:&#34;min-db-size-mb&#34; description:&#34;Smaller size DBs will be ignored and not monitored until they reach the threshold.&#34; env:&#34;PW_MIN_DB_SIZE_MB&#34; default:&#34;0&#34;`
+<span id="CmdOpts.MaxParallelConnectionsPerDb"></span>    MaxParallelConnectionsPerDb  <a href="https://pkg.go.dev/builtin/#int">int</a>      `long:&#34;max-parallel-connections-per-db&#34; mapstructure:&#34;max-parallel-connections-per-db&#34; description:&#34;Max parallel metric fetches per DB. Note the multiplication effect on multi-DB instances&#34; env:&#34;PW_MAX_PARALLEL_CONNECTIONS_PER_DB&#34; default:&#34;2&#34;`
+<span id="CmdOpts.TryCreateListedExtsIfMissing"></span>    TryCreateListedExtsIfMissing <a href="https://pkg.go.dev/builtin/#string">string</a>   `long:&#34;try-create-listed-exts-if-missing&#34; mapstructure:&#34;try-create-listed-exts-if-missing&#34; description:&#34;Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements&#34; env:&#34;PW_TRY_CREATE_LISTED_EXTS_IF_MISSING&#34; default:&#34;&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="HostConfigAttrs">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L170">HostConfigAttrs</a>
+				<a class="permalink" href="#HostConfigAttrs">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type HostConfigAttrs struct {
+<span id="HostConfigAttrs.DcsType"></span>    DcsType                <a href="https://pkg.go.dev/builtin/#string">string</a>   `yaml:&#34;dcs_type&#34;`
+<span id="HostConfigAttrs.DcsEndpoints"></span>    DcsEndpoints           []<a href="https://pkg.go.dev/builtin/#string">string</a> `yaml:&#34;dcs_endpoints&#34;`
+<span id="HostConfigAttrs.Scope"></span>    Scope                  <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="HostConfigAttrs.Namespace"></span>    Namespace              <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="HostConfigAttrs.Username"></span>    Username               <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="HostConfigAttrs.Password"></span>    Password               <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="HostConfigAttrs.CAFile"></span>    CAFile                 <a href="https://pkg.go.dev/builtin/#string">string</a>                             `yaml:&#34;ca_file&#34;`
+<span id="HostConfigAttrs.CertFile"></span>    CertFile               <a href="https://pkg.go.dev/builtin/#string">string</a>                             `yaml:&#34;cert_file&#34;`
+<span id="HostConfigAttrs.KeyFile"></span>    KeyFile                <a href="https://pkg.go.dev/builtin/#string">string</a>                             `yaml:&#34;key_file&#34;`
+<span id="HostConfigAttrs.LogsGlobPath"></span>    LogsGlobPath           <a href="https://pkg.go.dev/builtin/#string">string</a>                             `yaml:&#34;logs_glob_path&#34;`   <span class="comment">// default $data_directory / $log_directory / *.csvlog</span>
+<span id="HostConfigAttrs.LogsMatchRegex"></span>    LogsMatchRegex         <a href="https://pkg.go.dev/builtin/#string">string</a>                             `yaml:&#34;logs_match_regex&#34;` <span class="comment">// default is for CSVLOG format. needs to capture following named groups: log_time, user_name, database_name and error_severity</span>
+<span id="HostConfigAttrs.PerMetricDisabledTimes"></span>    PerMetricDisabledTimes []<a href="#HostConfigPerMetricDisabledTimes">HostConfigPerMetricDisabledTimes</a> `yaml:&#34;per_metric_disabled_intervals&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="HostConfigPerMetricDisabledTimes">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L185">HostConfigPerMetricDisabledTimes</a>
+				<a class="permalink" href="#HostConfigPerMetricDisabledTimes">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type HostConfigPerMetricDisabledTimes struct {
+<span id="HostConfigPerMetricDisabledTimes.Metrics"></span>    Metrics       []<a href="https://pkg.go.dev/builtin/#string">string</a> `yaml:&#34;metrics&#34;`
+<span id="HostConfigPerMetricDisabledTimes.DisabledTimes"></span>    DisabledTimes []<a href="https://pkg.go.dev/builtin/#string">string</a> `yaml:&#34;disabled_times&#34;`
+<span id="HostConfigPerMetricDisabledTimes.DisabledDays"></span>    DisabledDays  <a href="https://pkg.go.dev/builtin/#string">string</a>   `yaml:&#34;disabled_days&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Kind">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L12">Kind</a>
+				<a class="permalink" href="#Kind">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Kind <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+
+			
+				
+				<pre>const (
+    <span id="SourcePostgres">SourcePostgres</span>           <a href="#Kind">Kind</a> = &#34;postgres&#34;
+    <span id="SourcePostgresContinuous">SourcePostgresContinuous</span> <a href="#Kind">Kind</a> = &#34;postgres-continuous-discovery&#34;
+    <span id="SourcePgBouncer">SourcePgBouncer</span>          <a href="#Kind">Kind</a> = &#34;pgbouncer&#34;
+    <span id="SourcePgPool">SourcePgPool</span>             <a href="#Kind">Kind</a> = &#34;pgpool&#34;
+    <span id="SourcePatroni">SourcePatroni</span>            <a href="#Kind">Kind</a> = &#34;patroni&#34;
+    <span id="SourcePatroniContinuous">SourcePatroniContinuous</span>  <a href="#Kind">Kind</a> = &#34;patroni-continuous-discovery&#34;
+    <span id="SourcePatroniNamespace">SourcePatroniNamespace</span>   <a href="#Kind">Kind</a> = &#34;patroni-namespace-discovery&#34;
+)</pre>
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="Kind.IsValid">func (Kind) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L34">IsValid</a>
+					<a class="permalink" href="#Kind.IsValid">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (k <a href="#Kind">Kind</a>) IsValid() <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="MonitoredDatabase">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L86">MonitoredDatabase</a>
+				<a class="permalink" href="#MonitoredDatabase">&#xb6;</a>
+				
+				
+			</h2>
+			<p>MonitoredDatabase represents a single database to monitor. Unlike source, it contains a database connection.
+Continuous discovery sources (postgres-continuous-discovery, patroni-continuous-discovery, patroni-namespace-discovery)
+will produce multiple monitored databases structs based on the discovered databases.
+
+			<pre>type MonitoredDatabase struct {
+    <a href="#Source">Source</a>
+<span id="MonitoredDatabase.Conn"></span>    Conn       <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/db/#PgxPoolIface">PgxPoolIface</a>
+<span id="MonitoredDatabase.ConnConfig"></span>    ConnConfig *<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/">pgx</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/#ConnConfig">ConnConfig</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="ResolveDatabasesFromPatroni">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/resolver.go#L237">ResolveDatabasesFromPatroni</a>
+					<a class="permalink" href="#ResolveDatabasesFromPatroni">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func ResolveDatabasesFromPatroni(ce <a href="#Source">Source</a>) ([]*<a href="#MonitoredDatabase">MonitoredDatabase</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+			
+
+			
+				
+				<h3 id="MonitoredDatabase.Connect">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L107">Connect</a>
+					<a class="permalink" href="#MonitoredDatabase.Connect">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (md *<a href="#MonitoredDatabase">MonitoredDatabase</a>) Connect(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>Connect will establish a connection to the database if it&apos;s not already connected.
+If the connection is already established, it pings the server to ensure it&apos;s still alive.
+
+				
+				
+				
+			
+				
+				<h3 id="MonitoredDatabase.GetDatabaseName">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L117">GetDatabaseName</a>
+					<a class="permalink" href="#MonitoredDatabase.GetDatabaseName">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (md *<a href="#MonitoredDatabase">MonitoredDatabase</a>) GetDatabaseName() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				<p>GetDatabaseName returns the database name from the connection string
+
+				
+				
+				
+			
+				
+				<h3 id="MonitoredDatabase.IsPostgresSource">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L139">IsPostgresSource</a>
+					<a class="permalink" href="#MonitoredDatabase.IsPostgresSource">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (md *<a href="#MonitoredDatabase">MonitoredDatabase</a>) IsPostgresSource() <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MonitoredDatabase.Ping">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L96">Ping</a>
+					<a class="permalink" href="#MonitoredDatabase.Ping">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (md *<a href="#MonitoredDatabase">MonitoredDatabase</a>) Ping(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>Ping will try to establish a brand new connection to the server and return any error
+
+				
+				
+				
+			
+				
+				<h3 id="MonitoredDatabase.SetDatabaseName">func (*MonitoredDatabase) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L129">SetDatabaseName</a>
+					<a class="permalink" href="#MonitoredDatabase.SetDatabaseName">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (md *<a href="#MonitoredDatabase">MonitoredDatabase</a>) SetDatabaseName(name <a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
+				<p>SetDatabaseName sets the database name in the connection config but
+does not update the connection string
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="MonitoredDatabases">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L92">MonitoredDatabases</a>
+				<a class="permalink" href="#MonitoredDatabases">&#xb6;</a>
+				
+				
+			</h2>
+			<p>MonitoredDatabase represents a single database to monitor. Unlike source, it contains a database connection.
+Continuous discovery sources (postgres-continuous-discovery, patroni-continuous-discovery, patroni-namespace-discovery)
+will produce multiple monitored databases structs based on the discovered databases.
+
+			<pre>type MonitoredDatabases []*<a href="#MonitoredDatabase">MonitoredDatabase</a></pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="ResolveDatabasesFromPostgres">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/resolver.go#L343">ResolveDatabasesFromPostgres</a>
+					<a class="permalink" href="#ResolveDatabasesFromPostgres">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func ResolveDatabasesFromPostgres(s <a href="#Source">Source</a>) (resolvedDbs <a href="#MonitoredDatabases">MonitoredDatabases</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>&quot;resolving&quot; reads all the DB names from the given host/port, additionally matching/not matching specified regex patterns
+
+				
+				
+			
+
+			
+				
+				<h3 id="MonitoredDatabases.GetMonitoredDatabase">func (MonitoredDatabases) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L143">GetMonitoredDatabase</a>
+					<a class="permalink" href="#MonitoredDatabases.GetMonitoredDatabase">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (mds <a href="#MonitoredDatabases">MonitoredDatabases</a>) GetMonitoredDatabase(DBUniqueName <a href="https://pkg.go.dev/builtin/#string">string</a>) *<a href="#MonitoredDatabase">MonitoredDatabase</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MonitoredDatabases.SyncFromReader">func (MonitoredDatabases) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L155">SyncFromReader</a>
+					<a class="permalink" href="#MonitoredDatabases.SyncFromReader">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (mds <a href="#MonitoredDatabases">MonitoredDatabases</a>) SyncFromReader(r <a href="#Reader">Reader</a>) (newmds <a href="#MonitoredDatabases">MonitoredDatabases</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>SyncFromReader will update the monitored databases with the latest configuration from the reader.
+Any resolution errors will be returned, e.g. etcd unavailability.
+It&apos;s up to the caller to proceed with the databases available or stop the execution due to errors.
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="PatroniClusterMember">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/resolver.go#L55">PatroniClusterMember</a>
+				<a class="permalink" href="#PatroniClusterMember">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type PatroniClusterMember struct {
+<span id="PatroniClusterMember.Scope"></span>    Scope   <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="PatroniClusterMember.Name"></span>    Name    <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="PatroniClusterMember.ConnURL"></span>    ConnURL <a href="https://pkg.go.dev/builtin/#string">string</a> `yaml:&#34;conn_url&#34;`
+<span id="PatroniClusterMember.Role"></span>    Role    <a href="https://pkg.go.dev/builtin/#string">string</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Reader">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L191">Reader</a>
+				<a class="permalink" href="#Reader">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Reader interface {
+    GetSources() (<a href="#Sources">Sources</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="ReaderWriter">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L201">ReaderWriter</a>
+				<a class="permalink" href="#ReaderWriter">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type ReaderWriter interface {
+    <a href="#Reader">Reader</a>
+    <a href="#Writer">Writer</a>
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewPostgresSourcesReaderWriter">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/postgres.go#L13">NewPostgresSourcesReaderWriter</a>
+					<a class="permalink" href="#NewPostgresSourcesReaderWriter">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewPostgresSourcesReaderWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, connstr <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="#ReaderWriter">ReaderWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+			
+				
+				<h3 id="NewPostgresSourcesReaderWriterConn">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/postgres.go#L21">NewPostgresSourcesReaderWriterConn</a>
+					<a class="permalink" href="#NewPostgresSourcesReaderWriterConn">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewPostgresSourcesReaderWriterConn(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/db/#PgxPoolIface">PgxPoolIface</a>) (<a href="#ReaderWriter">ReaderWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+			
+				
+				<h3 id="NewYAMLSourcesReaderWriter">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/yaml.go#L16">NewYAMLSourcesReaderWriter</a>
+					<a class="permalink" href="#NewYAMLSourcesReaderWriter">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewYAMLSourcesReaderWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, path <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="#ReaderWriter">ReaderWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+			
+
+			
+		
+			
+			
+			<h2 id="Source">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L45">Source</a>
+				<a class="permalink" href="#Source">&#xb6;</a>
+				
+				
+			</h2>
+			<p>Source represents a configuration how to get databases to monitor. It can be a single database,
+a group of databases in postgres cluster, a group of databases in HA patroni cluster.
+pgbouncer and pgpool kinds are purely to indicate that the monitored database connection is made
+through a connection pooler, which supports its own additional metrics. If one is not interested in
+those additional metrics, it is ok to specify the connection details as a regular postgres source.
+
+			<pre>type Source struct {
+<span id="Source.Name"></span>    Name                 <a href="https://pkg.go.dev/builtin/#string">string</a>             `yaml:&#34;name&#34; db:&#34;name&#34;`
+<span id="Source.Group"></span>    Group                <a href="https://pkg.go.dev/builtin/#string">string</a>             `yaml:&#34;group&#34; db:&#34;group&#34;`
+<span id="Source.ConnStr"></span>    ConnStr              <a href="https://pkg.go.dev/builtin/#string">string</a>             `yaml:&#34;conn_str&#34; db:&#34;connstr&#34;`
+<span id="Source.Metrics"></span>    Metrics              map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a> `yaml:&#34;custom_metrics&#34; db:&#34;config&#34;`
+<span id="Source.MetricsStandby"></span>    MetricsStandby       map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a> `yaml:&#34;custom_metrics_standby&#34; db:&#34;config_standby&#34;`
+<span id="Source.Kind"></span>    Kind                 <a href="#Kind">Kind</a>               `yaml:&#34;kind&#34; db:&#34;dbtype&#34;`
+<span id="Source.IncludePattern"></span>    IncludePattern       <a href="https://pkg.go.dev/builtin/#string">string</a>             `yaml:&#34;include_pattern&#34; db:&#34;include_pattern&#34;`
+<span id="Source.ExcludePattern"></span>    ExcludePattern       <a href="https://pkg.go.dev/builtin/#string">string</a>             `yaml:&#34;exclude_pattern&#34; db:&#34;exclude_pattern&#34;`
+<span id="Source.PresetMetrics"></span>    PresetMetrics        <a href="https://pkg.go.dev/builtin/#string">string</a>             `yaml:&#34;preset_metrics&#34; db:&#34;preset_config&#34;`
+<span id="Source.PresetMetricsStandby"></span>    PresetMetricsStandby <a href="https://pkg.go.dev/builtin/#string">string</a>             `yaml:&#34;preset_metrics_standby&#34; db:&#34;preset_config_standby&#34;`
+<span id="Source.IsSuperuser"></span>    IsSuperuser          <a href="https://pkg.go.dev/builtin/#bool">bool</a>               `yaml:&#34;is_superuser&#34; db:&#34;is_superuser&#34;`
+<span id="Source.IsEnabled"></span>    IsEnabled            <a href="https://pkg.go.dev/builtin/#bool">bool</a>               `yaml:&#34;is_enabled&#34; db:&#34;is_enabled&#34;`
+<span id="Source.CustomTags"></span>    CustomTags           map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>  `yaml:&#34;custom_tags&#34; db:&#34;custom_tags&#34;`
+<span id="Source.HostConfig"></span>    HostConfig           <a href="#HostConfigAttrs">HostConfigAttrs</a>    `yaml:&#34;host_config&#34; db:&#34;host_config&#34;`
+<span id="Source.OnlyIfMaster"></span>    OnlyIfMaster         <a href="https://pkg.go.dev/builtin/#bool">bool</a>               `yaml:&#34;only_if_master&#34; db:&#34;only_if_master&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="Source.Clone">func (*Source) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L73">Clone</a>
+					<a class="permalink" href="#Source.Clone">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (s *<a href="#Source">Source</a>) Clone() *<a href="#Source">Source</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Source.GetDatabaseName">func (*Source) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L66">GetDatabaseName</a>
+					<a class="permalink" href="#Source.GetDatabaseName">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (s *<a href="#Source">Source</a>) GetDatabaseName() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Source.ResolveDatabases">func (Source) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/resolver.go#L45">ResolveDatabases</a>
+					<a class="permalink" href="#Source.ResolveDatabases">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (s <a href="#Source">Source</a>) ResolveDatabases() (<a href="#MonitoredDatabases">MonitoredDatabases</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="Sources">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L63">Sources</a>
+				<a class="permalink" href="#Sources">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Sources []<a href="#Source">Source</a></pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="Sources.ResolveDatabases">func (Sources) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/resolver.go#L31">ResolveDatabases</a>
+					<a class="permalink" href="#Sources.ResolveDatabases">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (srcs <a href="#Sources">Sources</a>) ResolveDatabases() (_ <a href="#MonitoredDatabases">MonitoredDatabases</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="Writer">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/types.go#L195">Writer</a>
+				<a class="permalink" href="#Writer">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Writer interface {
+    WriteSources(<a href="#Sources">Sources</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+    DeleteSource(<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+    UpdateSource(md <a href="#Source">Source</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+	
+
+	
+
+
+
+
+
+
+
+<div id="footer">
+Build version go1.22.0.<br>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+</body>
+</html>

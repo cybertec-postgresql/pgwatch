@@ -1,0 +1,129 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
+
+  <title>src/github.com/cybertec-postgresql/pgwatch/\reaper\/types.go - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.22.0";</script>
+<script src="/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Source file
+    <a href="/godoc/src">src</a>/<a href="/godoc/src/github.com">github.com</a>/<a href="/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/\reaper\">\reaper\</a>/<span class="text-muted">types.go</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/\reaper\">github.com/cybertec-postgresql/pgwatch/\reaper\</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<script type="text/javascript">document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1  </span>package reaper
+<span id="L2" class="ln">     2  </span>
+<span id="L3" class="ln">     3  </span>import (
+<span id="L4" class="ln">     4  </span>	&#34;time&#34;
+<span id="L5" class="ln">     5  </span>
+<span id="L6" class="ln">     6  </span>	&#34;github.com/cybertec-postgresql/pgwatch/sources&#34;
+<span id="L7" class="ln">     7  </span>)
+<span id="L8" class="ln">     8  </span>
+<span id="L9" class="ln">     9  </span>const (
+<span id="L10" class="ln">    10  </span>	epochColumnName     string = &#34;epoch_ns&#34; <span class="comment">// this column (epoch in nanoseconds) is expected in every metric query</span>
+<span id="L11" class="ln">    11  </span>	tagPrefix           string = &#34;tag_&#34;
+<span id="L12" class="ln">    12  </span>	persistQueueMaxSize        = 10000 <span class="comment">// storage queue max elements. when reaching the limit, older metrics will be dropped.</span>
+<span id="L13" class="ln">    13  </span>
+<span id="L14" class="ln">    14  </span>	gathererStatusStart     = &#34;START&#34;
+<span id="L15" class="ln">    15  </span>	gathererStatusStop      = &#34;STOP&#34;
+<span id="L16" class="ln">    16  </span>	metricdbIdent           = &#34;metricDb&#34;
+<span id="L17" class="ln">    17  </span>	configdbIdent           = &#34;configDb&#34;
+<span id="L18" class="ln">    18  </span>	contextPrometheusScrape = &#34;prometheus-scrape&#34;
+<span id="L19" class="ln">    19  </span>
+<span id="L20" class="ln">    20  </span>	monitoredDbsDatastoreSyncIntervalSeconds = 600              <span class="comment">// write actively monitored DBs listing to metrics store after so many seconds</span>
+<span id="L21" class="ln">    21  </span>	monitoredDbsDatastoreSyncMetricName      = &#34;configured_dbs&#34; <span class="comment">// FYI - for Postgres datastore there&#39;s also the admin.all_unique_dbnames table with all recent DB unique names with some metric data</span>
+<span id="L22" class="ln">    22  </span>
+<span id="L23" class="ln">    23  </span>	dbSizeCachingInterval = 30 * time.Minute
+<span id="L24" class="ln">    24  </span>	dbMetricJoinStr       = &#34;¤¤¤&#34; <span class="comment">// just some unlikely string for a DB name to avoid using maps of maps for DB+metric data</span>
+<span id="L25" class="ln">    25  </span>
+<span id="L26" class="ln">    26  </span>)
+<span id="L27" class="ln">    27  </span>
+<span id="L28" class="ln">    28  </span>type MetricFetchConfig struct {
+<span id="L29" class="ln">    29  </span>	DBUniqueName        string
+<span id="L30" class="ln">    30  </span>	DBUniqueNameOrig    string
+<span id="L31" class="ln">    31  </span>	MetricName          string
+<span id="L32" class="ln">    32  </span>	Source              sources.Kind
+<span id="L33" class="ln">    33  </span>	Interval            time.Duration
+<span id="L34" class="ln">    34  </span>	CreatedOn           time.Time
+<span id="L35" class="ln">    35  </span>	StmtTimeoutOverride int64
+<span id="L36" class="ln">    36  </span>}
+<span id="L37" class="ln">    37  </span>
+<span id="L38" class="ln">    38  </span>type ChangeDetectionResults struct { <span class="comment">// for passing around DDL/index/config change detection results</span>
+<span id="L39" class="ln">    39  </span>	Created int
+<span id="L40" class="ln">    40  </span>	Altered int
+<span id="L41" class="ln">    41  </span>	Dropped int
+<span id="L42" class="ln">    42  </span>}
+<span id="L43" class="ln">    43  </span>
+<span id="L44" class="ln">    44  </span>type MonitoredDatabaseSettings struct {
+<span id="L45" class="ln">    45  </span>	LastCheckedOn    time.Time
+<span id="L46" class="ln">    46  </span>	IsInRecovery     bool
+<span id="L47" class="ln">    47  </span>	VersionStr       string
+<span id="L48" class="ln">    48  </span>	Version          int
+<span id="L49" class="ln">    49  </span>	RealDbname       string
+<span id="L50" class="ln">    50  </span>	SystemIdentifier string
+<span id="L51" class="ln">    51  </span>	IsSuperuser      bool <span class="comment">// if true and no helpers are installed, use superuser SQL version of metric if available</span>
+<span id="L52" class="ln">    52  </span>	Extensions       map[string]int
+<span id="L53" class="ln">    53  </span>	ExecEnv          string
+<span id="L54" class="ln">    54  </span>	ApproxDBSizeB    int64
+<span id="L55" class="ln">    55  </span>}
+<span id="L56" class="ln">    56  </span>
+<span id="L57" class="ln">    57  </span>type ExistingPartitionInfo struct {
+<span id="L58" class="ln">    58  </span>	StartTime time.Time
+<span id="L59" class="ln">    59  </span>	EndTime   time.Time
+<span id="L60" class="ln">    60  </span>}
+<span id="L61" class="ln">    61  </span>
+</pre><p></p>
+
+<div id="footer">
+Build version go1.22.0.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+
+</body></html>
