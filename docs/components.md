@@ -2,19 +2,19 @@
 title: Components
 ---
 
-The main development idea around pgwatch3 was to do the minimal work
-needed and not to reinvent the wheel - meaning that pgwatch3 is mostly
+The main development idea around pgwatch was to do the minimal work
+needed and not to reinvent the wheel - meaning that pgwatch is mostly
 just about gluing together already some proven pieces of software for
 metrics storage and using Grafana for dashboarding. So here a listing of
 components that can be used to build up a monitoring setup around the
-pgwatch3 metrics collector. Note that most components are not mandatory
+pgwatch metrics collector. Note that most components are not mandatory
 and for tasks like metrics storage there are many components to choose
 from.
 
 ## The metrics gathering daemon
 
 The metrics collector, written in Go, is the only mandatory and most
-critical component of the whole solution. The main task of the pgwatch3
+critical component of the whole solution. The main task of the pgwatch
 collector / daemon is pretty simple - reading the configuration and
 metric defintions, fetching the metrics from the configured databases
 using the configured connection info and finally storing the metrics to
@@ -50,7 +50,7 @@ TimescaleDB is a time-series extension for PostgreSQL.
 Although technically a plain extension it's often mentioned as a
 separate database system as it brings custom data compression to
 the table, enabling huge disk savings over standard Postgres. Note
-that pgwatch3 does not use Timescale's built-in *retention*
+that pgwatch does not use Timescale's built-in *retention*
 management but a custom version.
 
 ### [Prometheus](https://prometheus.io/) 
@@ -68,7 +68,7 @@ Plain text files for testing / special use cases.
 
 ## The Web UI
 
-The second homebrewn component of the pgwatch3 solution is an optional
+The second homebrewn component of the pgwatch solution is an optional
 and relatively simple Web UI for administering details of the monitoring
 configuration like which databases should be monitored, with which
 metrics and intervals. Besides that there are some basic overview tables
@@ -82,7 +82,7 @@ metric data (when removing a test host for example).
 
 ## Metrics representation
 
-Standard pgwatch3 setup uses [Grafana](http://grafana.org/) for
+Standard pgwatch setup uses [Grafana](http://grafana.org/) for
 analyzing the gathered metrics data in a visual, point-and-click way.
 For that a rich set of predefined dashboards for Postgres is provided,
 that should cover the needs of most users - advanced users would mostly
@@ -94,31 +94,31 @@ be visualized or processed in any other way.
 
 Component diagram of a typical setup:
 
-[![pgwatch3 typical deployment architecture diagram](screenshots/pgwatch3_architecture.png)](screenshots/pgwatch3_architecture.png)
+[![pgwatch typical deployment architecture diagram](screenshots/pgwatch_architecture.png)](screenshots/pgwatch_architecture.png)
 
 ## Component reuse
 
-All components are *loosely coupled*, thus for non-pgwatch3 components
-(pgwatch3 components are only the metrics collector and the optional Web
+All components are *loosely coupled*, thus for non-pgwatch components
+(pgwatch components are only the metrics collector and the optional Web
 UI) you can decide to make use of an already existing installation of
-Postgres, Grafana or Prometheus and run additionally just the pgwatch3
+Postgres, Grafana or Prometheus and run additionally just the pgwatch
 collector.
 
 ### To use an existing Postgres DB for storing the monitoring config
 
-Create a new pgwatch3 DB, preferrably also an accroding role who
+Create a new pgwatch DB, preferrably also an accroding role who
 owns it. Then roll out the schema
-(pgwatch3/sql/config_store/config_store.sql) and set the following
+(pgwatch/sql/config_store/config_store.sql) and set the following
 parameters when running the image: `PW_PGHOST`, `PW_PGPORT`,
 `PW_PGDATABASE`, `PW_PGUSER`, `PW_PGPASSWORD`, `PW_PGSSL` (optional).
 
 ### To use an existing Grafana installation
 
-Load the pgwatch3 dashboards from *grafana_dashboard* folder if
+Load the pgwatch dashboards from *grafana_dashboard* folder if
 needed (one can totally define their own) and set the following
 paramater: `PW_GRAFANA_BASEURL`. This parameter only provides correct
 links to Grafana dashboards from the Web UI. Grafana is the most
-loosely coupled component for pgwatch3 and basically doesn't have
+loosely coupled component for pgwatch and basically doesn't have
 to be used at all. One can make use of the gathered metrics directly
 over the Postgres (or Graphite) API-s.
 
@@ -139,11 +139,11 @@ over the Postgres (or Graphite) API-s.
     more targeted way.
 
 When using Postgres metrics storage, the schema rollout script
-activates "asynchronous commiting" feature for the *pgwatch3* role
+activates "asynchronous commiting" feature for the *pgwatch* role
 in the metrics storage DB by default! If this is not wanted (no
 metrics can be lost in case of a crash), then re-enstate normal
-(synchronous) commiting with below query and restart the pgwatch3
+(synchronous) commiting with below query and restart the pgwatch
 agent:
 ```sql
-ALTER ROLE pgwatch3 IN DATABASE $MY_METRICS_DB SET synchronous_commit TO on;
+ALTER ROLE pgwatch IN DATABASE $MY_METRICS_DB SET synchronous_commit TO on;
 ```

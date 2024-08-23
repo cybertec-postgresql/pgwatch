@@ -26,7 +26,7 @@ not.
 ## Built-in metrics and presets
 
 There's a good set of pre-defined metrics & metric configs provided by
-the pgwatch3 project to cover all typical needs, but when monitoring
+the pgwatch project to cover all typical needs, but when monitoring
 hundreds of hosts you'd typically want to develop some custom *Preset
 Configs* or at least adjust the metric fetching intervals according to
 your monitoring goals.
@@ -136,7 +136,7 @@ concepts:
 ### For *YAML* based setups:
 
 1.  Create a new folder for the metric under
-    `/etc/pgwatch3/metrics`. The folder name will be the metric's
+    `/etc/pgwatch/metrics`. The folder name will be the metric's
     name, so choose wisely.
 1.  Create a new subfolder for each "minimally supported Postgres
     version and insert the metric's SQL definition into a file
@@ -231,7 +231,7 @@ Supported column attributes:
 
     Describe the mentioned output columns as of TYPE *gauge*, i.e. the
     value can change any time in any direction. Default TYPE for
-    pgwatch3 is *counter*.
+    pgwatch is *counter*.
 
     ```yaml
         table_stats_approx:
@@ -257,7 +257,7 @@ System that it's running on, so in some (most) cases it might be
 advantageous to also monitor some basic OS statistics together with the
 PostgreSQL ones, to get a better head start when troubleshooting
 performance problems. But as setup of such OS tools and linking the
-gathered data is not always trivial, pgwatch3 has a system of *helpers*
+gathered data is not always trivial, pgwatch has a system of *helpers*
 for fetching such data.
 
 One can invent and install such *helpers* on the monitored databases

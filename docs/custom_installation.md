@@ -3,7 +3,7 @@ title: Custom installation
 ---
 
 As described in the [Components](components.md) 
-chapter, there a couple of ways how to set up up pgwatch3.
+chapter, there a couple of ways how to set up up pgwatch.
 Two most common ways though are the central *Config DB* based "pull"
 approach and the *YAML file* based "push" approach, plus Grafana to
 visualize the gathered metrics.
@@ -16,7 +16,7 @@ visualize the gathered metrics.
     required for the config DB and v11+ for the metrics DB.
 1.  Bootstrap the Config DB.
 1.  Bootstrap the metrics storage DB (PostgreSQL here).
-1.  Install pgwatch3 - either from pre-built packages or by compiling
+1.  Install pgwatch - either from pre-built packages or by compiling
     the Go code.
 1.  Prepare the "to-be-monitored" databases for monitoring by creating
     a dedicated login role name as a minimum.
@@ -24,9 +24,9 @@ visualize the gathered metrics.
     dependencies.
 1.  Add some databases to the monitoring configuration via the Web UI or
     directly in the Config DB.
-1.  Start the pgwatch3 metrics collection agent and monitor the logs for
+1.  Start the pgwatch metrics collection agent and monitor the logs for
     any problems.
-1.  Install and configure Grafana and import the pgwatch3 sample
+1.  Install and configure Grafana and import the pgwatch sample
     dashboards to start analyzing the metrics.
 1. Make sure that there are auto-start SystemD services for all
     components in place and optionally set up also backups.
@@ -34,7 +34,7 @@ visualize the gathered metrics.
 ### Detailed steps for the Config DB based "pull" approach with Postgres metrics storage
 
 Below are sample steps to do a custom install from scratch using
-Postgres for the pgwatch3 configuration DB, metrics DB and Grafana
+Postgres for the pgwatch configuration DB, metrics DB and Grafana
 config DB.
 
 All examples here assume Ubuntu as OS - but it's basically the same for
@@ -58,7 +58,7 @@ syntax differences.
     -   <https://www.postgresql.org/download/linux/redhat/> - for CentOS
         / RedHat based systems
 
-1.  **Install pgwatch3** - either from pre-built packages or by
+1.  **Install pgwatch** - either from pre-built packages or by
     compiling the Go code
 
     -   Using pre-built packages
@@ -69,8 +69,8 @@ syntax differences.
         page.
 
             # find out the latest package link and replace below, using v1.8.0 here
-            wget https://github.com/cybertec-postgresql/pgwatch/releases/download/v1.8.0/pgwatch3_v1.8.0-SNAPSHOT-064fdaf_linux_64-bit.deb
-            sudo dpkg -i pgwatch3_v1.8.0-SNAPSHOT-064fdaf_linux_64-bit.deb
+            wget https://github.com/cybertec-postgresql/pgwatch/releases/download/v1.8.0/pgwatch_v1.8.0-SNAPSHOT-064fdaf_linux_64-bit.deb
+            sudo dpkg -i pgwatch_v1.8.0-SNAPSHOT-064fdaf_linux_64-bit.deb
 
     -   Compiling the Go code yourself
 
@@ -80,64 +80,64 @@ syntax differences.
         1.  Install Go by following the [official
             instructions](https://golang.org/doc/install)
 
-        2.  Get the pgwatch3 project's code and compile the gatherer
+        2.  Get the pgwatch project's code and compile the gatherer
             daemon
 
                 git clone https://github.com/cybertec-postgresql/pgwatch.git
-                cd pgwatch3/src/webui
+                cd pgwatch/src/webui
                 yarn install --network-timeout 100000 && yarn build
                 cd ..
                 go build
 
             After fetching all the Go library dependencies (can take minutes)
-            an executable named "pgwatch3" should be generated. Additionally it's a good idea
-            to copy it to `/usr/bin/pgwatch3`.
+            an executable named "pgwatch" should be generated. Additionally it's a good idea
+            to copy it to `/usr/bin/pgwatch`.
 
     -   Configure a SystemD auto-start service (optional)
 
         Sample startup scripts can be found at
-        */etc/pgwatch3/startup-scripts/pgwatch3.service* or online
-        [here](https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch3/startup-scripts/pgwatch3.service).
+        */etc/pgwatch/startup-scripts/pgwatch.service* or online
+        [here](https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch/startup-scripts/pgwatch.service).
         Note that they are OS agnostic and might need some light
         adjustment of paths, etc - so always test them out.
 
 1.  **Boostrap the config DB**
 
-    1.  Create a user to "own" the `pgwatch3` schema
+    1.  Create a user to "own" the `pgwatch` schema
 
-        Typically called `pgwatch3` but can be anything really, if the
+        Typically called `pgwatch` but can be anything really, if the
         schema creation file is adjusted accordingly.
 
-            psql -c "create user pgwatch3 password 'xyz'"
-            psql -c "create database pgwatch3 owner pgwatch3"
+            psql -c "create user pgwatch password 'xyz'"
+            psql -c "create database pgwatch owner pgwatch"
 
-    2.  Roll out the pgwatch3 config schema
+    2.  Roll out the pgwatch config schema
 
         The schema will most importantly hold connection strings of DB-s
         to be monitored and the metric definitions.
 
             # FYI - one could get the below schema files also directly from Github
-            # if re-using some existing remote Postgres instance where pgwatch3 was not installed
-            psql -f /etc/pgwatch3/sql/config_store/config_store.sql pgwatch3
-            psql -f /etc/pgwatch3/sql/config_store/metric_definitions.sql pgwatch3
+            # if re-using some existing remote Postgres instance where pgwatch was not installed
+            psql -f /etc/pgwatch/sql/config_store/config_store.sql pgwatch
+            psql -f /etc/pgwatch/sql/config_store/metric_definitions.sql pgwatch
 
 1.  **Bootstrap the measurements storage DB**
 
     1.  Create a dedicated database for storing metrics and a user to
         "own" the metrics schema
 
-        Here again default scripts expect a role named `pgwatch3` but
+        Here again default scripts expect a role named `pgwatch` but
         can be anything if to adjust the scripts.
 
-            psql -c "create database pgwatch3_metrics owner pgwatch3"
+            psql -c "create database pgwatch_metrics owner pgwatch"
 
-    2.  Roll out the pgwatch3 metrics storage schema
+    2.  Roll out the pgwatch metrics storage schema
 
         This is a place to pause and first think how many databases will
         be monitored, i.e. how much data generated, and based on that
         one should choose an according metrics storage schema. There are
         a couple of different options available that are described
-        [here](https://github.com/cybertec-postgresql/pgwatch/tree/master/pgwatch3/sql/metric_store)
+        [here](https://github.com/cybertec-postgresql/pgwatch/tree/master/pgwatch/sql/metric_store)
         in detail, but the gist of it is that you don't want too
         complex partitioning schemes if you don't have zounds of data
         and don't need the fastest queries. For a smaller amount of
@@ -146,8 +146,8 @@ syntax differences.
         aggressive intervals, or long term storage usage of the
         TimescaleDB extension is recommended.
 
-            cd /etc/pgwatch3/sql/metric_store
-            psql -f roll_out_metric_time.psql pgwatch3_metrics
+            cd /etc/pgwatch/sql/metric_store
+            psql -f roll_out_metric_time.psql pgwatch_metrics
 
         !!! Note 
             Default retention for Postgres storage is 2 weeks!
@@ -172,16 +172,16 @@ syntax differences.
 1.  **Configure DB-s and metrics / intervals to be monitored**
 
     -   From the Web UI "/dbs" page
-    -   Via direct inserts into the Config DB `pgwatch3.monitored_db` table
+    -   Via direct inserts into the Config DB `pgwatch.monitored_db` table
 
-1.  **Start the pgwatch3 metrics collection agent**
+1.  **Start the pgwatch metrics collection agent**
 
     1.  The gatherer has quite some parameters (use the `--help` flag
         to show them all), but simplest form would be:
 
-            pgwatch3-daemon \
-              --host=localhost --user=pgwatch3 --dbname=pgwatch3 \
-              --datastore=postgres --pg-metric-store-conn-str=postgresql://pgwatch3@localhost:5432/pgwatch3_metrics \
+            pgwatch-daemon \
+              --host=localhost --user=pgwatch --dbname=pgwatch \
+              --datastore=postgres --pg-metric-store-conn-str=postgresql://pgwatch@localhost:5432/pgwatch_metrics \
               --verbose=info
         
         Default connections params expect a trusted localhost Config DB setup
@@ -189,9 +189,9 @@ syntax differences.
 
         Or via SystemD if set up in previous steps
 
-            useradd -m -s /bin/bash pgwatch3 # default SystemD templates run under the pgwatch3 user
-            sudo systemctl start pgwatch3
-            sudo systemctl status pgwatch3
+            useradd -m -s /bin/bash pgwatch # default SystemD templates run under the pgwatch user
+            sudo systemctl start pgwatch
+            sudo systemctl status pgwatch
 
         After initial verification that all works it's usually good
         idea to set verbosity back to default by removing the *verbose*
@@ -204,7 +204,7 @@ syntax differences.
 
     2.  Monitor the console or log output for any problems
 
-        If you see metrics trickling into the "pgwatch3_metrics"
+        If you see metrics trickling into the "pgwatch_metrics"
         database (metric names are mapped to table names and tables are
         auto-created), then congratulations - the deployment is working!
         When using some more aggressive *preset metrics config* then
@@ -215,7 +215,7 @@ syntax differences.
 
     !!! Info
         When you're compiling your own gatherer then the executable file
-        will be named just `pgwatch3` instead of `pgwatch3-daemon` to avoid
+        will be named just `pgwatch` instead of `pgwatch-daemon` to avoid
         mixups.
 
 1.  **Install Grafana**
@@ -224,12 +224,12 @@ syntax differences.
 
         Theoretically it's not absolutely required to use Postgres for
         storing Grafana internal settings / dashboards, but doing so has
-        2 advantages - you can easily roll out all pgwatch3 built-in
+        2 advantages - you can easily roll out all pgwatch built-in
         dashboards and one can also do remote backups of the Grafana
         configuration easily.
 
-            psql -c "create user pgwatch3_grafana password 'xyz'"
-            psql -c "create database pgwatch3_grafana owner pgwatch3_grafana"
+            psql -c "create user pgwatch_grafana password 'xyz'"
+            psql -c "create database pgwatch_grafana owner pgwatch_grafana"
 
     2.  Follow the instructions from
         <https://grafana.com/docs/grafana/latest/installation/debian/>,
@@ -249,7 +249,7 @@ syntax differences.
 
         Default Grafana port: 3000
 
-    3.  Configure Grafana config to use our `pgwatch3_grafana` DB
+    3.  Configure Grafana config to use our `pgwatch_grafana` DB
 
         Place something like below in the `[database]` section of
         `/etc/grafana/grafana.ini`
@@ -257,27 +257,27 @@ syntax differences.
             [database]
             type = postgres
             host = my-postgres-db:5432
-            name = pgwatch3_grafana
-            user = pgwatch3_grafana
+            name = pgwatch_grafana
+            user = pgwatch_grafana
             password = xyz
 
         Taking a look at `[server], [security]` and `[auth*]`
         sections is also recommended.
 
-    4.  Set up the `pgwatch3` metrics database as the default datasource
+    4.  Set up the `pgwatch` metrics database as the default datasource
 
         We need to tell Grafana where our metrics data is located. Add a
         datasource via the Grafana UI (Admin -\> Data sources) or adjust
-        and execute the "pgwatch3/bootstrap/grafana_datasource.sql"
-        script on the `pgwatch3_grafana` DB.
+        and execute the "pgwatch/bootstrap/grafana_datasource.sql"
+        script on the `pgwatch_grafana` DB.
 
-    5.  Add pgwatch3 predefined dashboards to Grafana
+    5.  Add pgwatch predefined dashboards to Grafana
 
-        This could be done by importing the pgwatch3 dashboard
+        This could be done by importing the pgwatch dashboard
         definition JSON-s manually, one by one, from the "grafana"
         folder ("Import Dashboard" from the Grafana top menu) or via
         as small helper script located at
-        */etc/pgwatch3/grafana-dashboards/import_all.sh*. The script
+        */etc/pgwatch/grafana-dashboards/import_all.sh*. The script
         needs some adjustment for metrics storage type, connect data and
         file paths.
 
@@ -291,7 +291,7 @@ syntax differences.
 
     7.  Start discovering the preset dashbaords
 
-        If the previous step of launching pgwatch3 daemon succeeded and
+        If the previous step of launching pgwatch daemon succeeded and
         it was more than some minutes ago, one should already see some
         graphs on dashboards like "DB overview" or "DB overview
         Unprivileged / Developer mode" for example.
@@ -299,19 +299,19 @@ syntax differences.
 
 ## YAML based setup
 
-From v1.4 one can also deploy the pgwatch3 gatherer daemons more easily
+From v1.4 one can also deploy the pgwatch gatherer daemons more easily
 in a de-centralized way, by specifying monitoring configuration via YAML
 files. In that case there is no need for a central Postgres "config
 DB".
 
 **YAML installation steps**
 
-1.  Install pgwatch3 - either from pre-built packages or by compiling
+1.  Install pgwatch - either from pre-built packages or by compiling
     the Go code.
 2.  Specify hosts you want to monitor and with which metrics /
     aggressivness in a YAML file or files, following the example config
-    located at */etc/pgwatch3/config/instances.yaml* or online
-    [here](https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch3/config/instances.yaml).
+    located at */etc/pgwatch/config/instances.yaml* or online
+    [here](https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch/config/instances.yaml).
     Note that you can also use env. variables inside the YAML templates!
 3.  Bootstrap the metrics storage DB (not needed it using Prometheus
     mode).
@@ -320,8 +320,8 @@ DB".
     [minimum](preparing_databases.md).
 5.  Run the pgatch2 gatherer specifying the YAML config file (or
     folder), and also the folder where metric definitions are located.
-    Default location: */etc/pgwatch3/metrics*.
-6.  Install and configure Grafana and import the pgwatch3 sample
+    Default location: */etc/pgwatch/metrics*.
+6.  Install and configure Grafana and import the pgwatch sample
     dashboards to start analyzing the metrics. See above for
     instructions.
 7.  Make sure that there are auto-start SystemD services for all
@@ -330,5 +330,5 @@ DB".
 Relevant gatherer parameters / env. vars: `--config / PW_CONFIG` and
 `--metrics-folder / PW_METRICS_FOLDER`.
 
-For details on individual steps like installing pgwatch3 see the above
+For details on individual steps like installing pgwatch see the above
 paragraph.

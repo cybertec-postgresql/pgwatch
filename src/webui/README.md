@@ -1,4 +1,4 @@
-# pgwatch3 web-gui
+# pgwatch web-gui
 
 ## Quick Start
 

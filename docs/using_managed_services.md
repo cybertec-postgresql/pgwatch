@@ -8,8 +8,8 @@ are not to consume extra server resources and not to overflow and
 confuse beginners with too much information. So for advanced
 troubleshooting it might make sense to gather some additional metrics on
 your own, especially given that you can also easily add custom business
-metrics to pgwatch3 using plain SQL, for example to track the amount of
-incoming sales orders. Also with pgwatch3 / Grafana you have more
+metrics to pgwatch using plain SQL, for example to track the amount of
+incoming sales orders. Also with pgwatch / Grafana you have more
 freedom on the visual representation side and access to around 30
 prebuilt dashboards and a lot of freedom creating custom alerting rules.
 
@@ -24,7 +24,7 @@ dashboards like "DB overview" and thus will be better off using a
 dashboard called "DB overview Unprivileged" tailored specially for
 such a use case.
 
-pgwatch3 has been tested to work with the following managed database
+pgwatch has been tested to work with the following managed database
 services:
 
 # Google Cloud SQL for PostgreSQL
@@ -34,10 +34,10 @@ services:
     [Stackdriver](https://grafana.com/docs/grafana/latest/datasources/google-cloud-monitoring/)
     data source.
 -   `pg_monitor` system role available.
--   pgwatch3 default preset name: `gce`.
+-   pgwatch default preset name: `gce`.
 -   Documentation: <https://cloud.google.com/sql/docs/postgres>
 
-To get most out pgwatch3 on GCE you need some additional clicks in the
+To get most out pgwatch on GCE you need some additional clicks in the
 GUI / Cloud Console "Flags" section to enable some common PostgreSQL
 monitoring parameters like `track_io_timing` and `track_functions`.
 
@@ -50,7 +50,7 @@ monitoring parameters like `track_io_timing` and `track_functions`.
 
 -   `pg_monitor` system role available.
 
--   pgwatch3 default preset names: `rds`, `aurora`
+-   pgwatch default preset names: `rds`, `aurora`
 
 -   Documentation:
     
@@ -67,7 +67,7 @@ additional metrics compared to normal RDS.
     Monitor](https://grafana.com/docs/grafana/latest/datasources/azuremonitor/)
     data source
 -   `pg_monitor` system role available.
--   pgwatch3 default preset name: `azure`
+-   pgwatch default preset name: `azure`
 -   Documentation: <https://docs.microsoft.com/en-us/azure/postgresql/>
 
 Surprisingly on Azure some file access functions are whitelisted, thus
@@ -81,6 +81,6 @@ one can for example use the `wal_size` metrics.
 # Aiven for PostgreSQL
 
 The [Aiven developer
-documentation](https://developer.aiven.io/docs/products/postgresql/howto/monitor-with-pgwatch3.html)
+documentation](https://developer.aiven.io/docs/products/postgresql/howto/monitor-with-pgwatch.html)
 contains information on how to monitor PostgreSQL instances running on
-the Aiven platform with pgwatch3.
+the Aiven platform with pgwatch.

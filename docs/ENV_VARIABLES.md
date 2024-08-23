@@ -8,12 +8,12 @@ Some variables influence multiple components. Command line parameters override e
 
 ## Gatherer daemon
 
-See `pgwatch3 --help` output for details.
+See `pgwatch --help` output for details.
 
 ## Grafana
 
 - **PW_GRAFANANOANONYMOUS** Can be set to require login even for viewing dashboards. Default: -
 - **PW_GRAFANAUSER** Administrative user. Default: admin
-- **PW_GRAFANAPASSWORD** Administrative user password. Default: pgwatch3admin
+- **PW_GRAFANAPASSWORD** Administrative user password. Default: pgwatchadmin
 - **PW_GRAFANASSL** Use SSL. Default: -
 - **PW_GRAFANA_BASEURL** For linking to Grafana "Query details" dashboard from "Stat_stmt. overview". Default: http://0.0.0.0:3000
