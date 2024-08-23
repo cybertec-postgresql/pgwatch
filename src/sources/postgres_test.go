@@ -27,7 +27,7 @@ func TestGetMonitoredDatabases(t *testing.T) {
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
 	conn.ExpectPing()
-	conn.ExpectQuery(`select \/\* pgwatch3_generated \*\/`).WillReturnRows(pgxmock.NewRows([]string{
+	conn.ExpectQuery(`select \/\* pgwatch_generated \*\/`).WillReturnRows(pgxmock.NewRows([]string{
 		"name", "group", "dbtype", "connstr", "config", "config_standby", "preset_config",
 		"preset_config_standby", "is_superuser", "include_pattern", "exclude_pattern",
 		"custom_tags", "host_config", "only_if_master", "is_enabled",
@@ -45,7 +45,7 @@ func TestGetMonitoredDatabases(t *testing.T) {
 	a.NoError(conn.ExpectationsWereMet())
 
 	// check failed query
-	conn.ExpectQuery(`select \/\* pgwatch3_generated \*\/`).WillReturnError(errors.New("failed query"))
+	conn.ExpectQuery(`select \/\* pgwatch_generated \*\/`).WillReturnError(errors.New("failed query"))
 	dbs, err = pgrw.GetSources()
 	a.Error(err)
 	a.Nil(dbs)
@@ -57,7 +57,7 @@ func TestSyncFromReader(t *testing.T) {
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
 	conn.ExpectPing()
-	conn.ExpectQuery(`select \/\* pgwatch3_generated \*\/`).WillReturnRows(pgxmock.NewRows([]string{
+	conn.ExpectQuery(`select \/\* pgwatch_generated \*\/`).WillReturnRows(pgxmock.NewRows([]string{
 		"name", "group", "dbtype", "connstr", "config", "config_standby", "preset_config",
 		"preset_config_standby", "is_superuser", "include_pattern", "exclude_pattern",
 		"custom_tags", "host_config", "only_if_master", "is_enabled",

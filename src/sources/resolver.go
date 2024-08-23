@@ -352,7 +352,7 @@ func ResolveDatabasesFromPostgres(s Source) (resolvedDbs MonitoredDatabases, err
 	}
 	defer c.Close()
 
-	sql := `select /* pgwatch3_generated */
+	sql := `select /* pgwatch_generated */
 		quote_ident(datname)::text as datname_escaped
 		from pg_database
 		where not datistemplate

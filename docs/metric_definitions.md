@@ -173,7 +173,7 @@ Currently supported attributes are:
             wal:
                 sqls:
                     11: |
-                        select /* pgwatch3_generated */
+                        select /* pgwatch_generated */
                         ...
                 gauges:
                     - '*'

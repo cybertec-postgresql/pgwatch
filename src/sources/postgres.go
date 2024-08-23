@@ -91,7 +91,7 @@ func (r *dbSourcesReaderWriter) DeleteSource(name string) error {
 }
 
 func (r *dbSourcesReaderWriter) GetSources() (dbs Sources, err error) {
-	sqlLatest := `select /* pgwatch3_generated */
+	sqlLatest := `select /* pgwatch_generated */
 	name, 
 	"group", 
 	dbtype, 

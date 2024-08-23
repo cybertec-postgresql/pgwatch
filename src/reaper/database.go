@@ -90,7 +90,7 @@ const (
 )
 
 func DBGetSizeMB(ctx context.Context, dbUnique string) (int64, error) {
-	sqlDbSize := `select /* pgwatch3_generated */ pg_database_size(current_database());`
+	sqlDbSize := `select /* pgwatch_generated */ pg_database_size(current_database());`
 	var sizeMB int64
 
 	lastDBSizeCheckLock.RLock()
@@ -129,7 +129,7 @@ func DBGetSizeMB(ctx context.Context, dbUnique string) (int64, error) {
 }
 
 func TryDiscoverExecutionEnv(ctx context.Context, dbUnique string) (execEnv string) {
-	sql := `select /* pgwatch3_generated */
+	sql := `select /* pgwatch_generated */
 	case
 	  when exists (select * from pg_settings where name = 'pg_qs.host_database' and setting = 'azure_sys') and version() ~* 'compiled by Visual C' then 'AZURE_SINGLE'
 	  when exists (select * from pg_settings where name = 'pg_qs.host_database' and setting = 'azure_sys') and version() ~* 'compiled by gcc' then 'AZURE_FLEXIBLE'
@@ -143,7 +143,7 @@ func TryDiscoverExecutionEnv(ctx context.Context, dbUnique string) (execEnv stri
 
 func GetDBTotalApproxSize(ctx context.Context, dbUnique string) (int64, error) {
 	sqlApproxDBSize := `
-	select /* pgwatch3_generated */
+	select /* pgwatch_generated */
 		current_setting('block_size')::int8 * sum(relpages) as db_size_approx
 	from
 		pg_class c
@@ -181,7 +181,7 @@ func GetMonitoredDatabaseSettings(ctx context.Context, dbUnique string, srcType 
 
 	l := log.GetLogger(ctx).WithField("source", dbUnique).WithField("kind", srcType)
 
-	sqlExtensions := `select /* pgwatch3_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
+	sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
 
 	MonitoredDatabasesSettingsLock.Lock()
 	getVerLock, ok := MonitoredDatabasesSettingsGetLock[dbUnique]
@@ -225,7 +225,7 @@ func GetMonitoredDatabaseSettings(ctx context.Context, dbUnique string, srcType 
 		}
 		dbNewSettings.Version = VersionToInt(matches[0])
 	default:
-		sql := `select /* pgwatch3_generated */ 
+		sql := `select /* pgwatch_generated */ 
 	current_setting('server_version_num')::int / 10000 as ver, 
 	version(), 
 	pg_is_in_recovery(), 
@@ -263,7 +263,7 @@ FROM
 		}
 
 		l.Debugf("[%s] determining if monitoring user is a superuser...", dbUnique)
-		sqlSu := `select /* pgwatch3_generated */ rolsuper from pg_roles r where rolname = session_user`
+		sqlSu := `select /* pgwatch_generated */ rolsuper from pg_roles r where rolname = session_user`
 
 		if err = GetConnByUniqueName(dbUnique).QueryRow(ctx, sqlSu).Scan(&dbNewSettings.IsSuperuser); err != nil {
 			l.Errorf("[%s] failed to determine if monitoring user is a superuser: %v", dbUnique, err)
@@ -830,7 +830,7 @@ func FetchMetricsPgpool(ctx context.Context, msg MetricFetchConfig, vme Monitore
 
 func DoesFunctionExists(ctx context.Context, dbUnique, functionName string) bool {
 	log.GetLogger(ctx).Debug("Checking for function existence", dbUnique, functionName)
-	sql := fmt.Sprintf("select /* pgwatch3_generated */ 1 from pg_proc join pg_namespace n on pronamespace = n.oid where proname = '%s' and n.nspname = 'public'", functionName)
+	sql := fmt.Sprintf("select /* pgwatch_generated */ 1 from pg_proc join pg_namespace n on pronamespace = n.oid where proname = '%s' and n.nspname = 'public'", functionName)
 	data, err := DBExecReadByDbUniqueName(ctx, dbUnique, sql)
 	if err != nil {
 		log.GetLogger(ctx).Error("Failed to check for function existence", dbUnique, functionName, err)
