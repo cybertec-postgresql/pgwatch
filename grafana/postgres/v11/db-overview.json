@@ -529,7 +529,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "P13C0491EC2EA1DB8"
       },
-      "description": "10min avg. + 6h history. Requires pg_stat_statements extension and the \"get_stat_statements\" helper function  from  the \"sql/metric_fetching_helpers\" folder on the monitored DB. Not including pgwatch3 generated metrics fetching queries.",
+      "description": "10min avg. + 6h history. Requires pg_stat_statements extension and the \"get_stat_statements\" helper function  from  the \"sql/metric_fetching_helpers\" folder on the monitored DB. Not including pgwatch generated metrics fetching queries.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2128,7 +2128,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "P13C0491EC2EA1DB8"
       },
-      "description": "Requires according \"metric fetching helpers\" on the monitored server. Not including pgwatch3 generated metrics fetching queries.",
+      "description": "Requires according \"metric fetching helpers\" on the monitored server. Not including pgwatch generated metrics fetching queries.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2680,7 +2680,7 @@
   "refresh": false,
   "schemaVersion": 39,
   "tags": [
-    "pgwatch3"
+    "pgwatch"
   ],
   "templating": {
     "list": [

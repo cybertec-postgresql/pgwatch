@@ -81,7 +81,7 @@
         {
           "alias": "TPS",
           "exemplar": true,
-          "expr": "avg(rate(pgwatch3_db_stats_xact_commit{dbname='$dbname'}[$agg_interval])) + avg(rate(pgwatch3_db_stats_xact_rollback{dbname='$dbname'}[$agg_interval]))",
+          "expr": "avg(rate(pgwatch_db_stats_xact_commit{dbname='$dbname'}[$agg_interval])) + avg(rate(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -189,7 +189,7 @@
         {
           "alias": "QPS",
           "exemplar": true,
-          "expr": "avg(rate(pgwatch3_stat_statements_calls_calls{dbname='$dbname'}[$agg_interval]))",
+          "expr": "avg(rate(pgwatch_stat_statements_calls_calls{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -301,7 +301,7 @@
         {
           "alias": "avg_query_runtime_per_db",
           "exemplar": true,
-          "expr": "avg(increase(pgwatch3_stat_statements_calls_total_time{dbname='$dbname'}[$agg_interval])) / avg(increase(pgwatch3_stat_statements_calls_calls{dbname='$dbname'}[$agg_interval]))",
+          "expr": "avg(increase(pgwatch_stat_statements_calls_total_time{dbname='$dbname'}[$agg_interval])) / avg(increase(pgwatch_stat_statements_calls_calls{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -415,7 +415,7 @@
         {
           "alias": "",
           "exemplar": true,
-          "expr": "avg(pgwatch3_db_stats_numbackends{dbname='$dbname'}[$agg_interval])",
+          "expr": "avg(pgwatch_db_stats_numbackends{dbname='$dbname'}[$agg_interval])",
           "format": "time_series",
           "groupBy": [
             {
@@ -534,7 +534,7 @@
         {
           "alias": "",
           "exemplar": true,
-          "expr": "avg(rate(pgwatch3_db_stats_temp_bytes{dbname='$dbname'}[$agg_interval]))",
+          "expr": "avg(rate(pgwatch_db_stats_temp_bytes{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -659,7 +659,7 @@
         {
           "alias": "db_size_change_last_hour",
           "exemplar": true,
-          "expr": "avg(delta(pgwatch3_db_size_size_b{dbname='$dbname'}[1h]))",
+          "expr": "avg(delta(pgwatch_db_size_size_b{dbname='$dbname'}[1h]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -762,7 +762,7 @@
         {
           "alias": "DELETE",
           "exemplar": true,
-          "expr": "avg(increase(pgwatch3_db_stats_tup_inserted{dbname='$dbname'}[$agg_interval]))",
+          "expr": "avg(increase(pgwatch_db_stats_tup_inserted{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -814,7 +814,7 @@
         {
           "alias": "UPDATE",
           "exemplar": true,
-          "expr": "avg(increase(pgwatch3_db_stats_tup_updated{dbname='$dbname'}[$agg_interval]))",
+          "expr": "avg(increase(pgwatch_db_stats_tup_updated{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -859,7 +859,7 @@
         {
           "alias": "UPDATE",
           "exemplar": true,
-          "expr": "avg(increase(pgwatch3_db_stats_tup_deleted{dbname='$dbname'}[$agg_interval]))",
+          "expr": "avg(increase(pgwatch_db_stats_tup_deleted{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -1003,7 +1003,7 @@
         {
           "alias": "Shared buffers hit ratio",
           "exemplar": true,
-          "expr": "100 * avg(increase(pgwatch3_db_stats_blks_hit{dbname='$dbname'}[$agg_interval])) / (avg(increase(pgwatch3_db_stats_blks_hit{dbname='$dbname'}[$agg_interval])) + avg(increase(pgwatch3_db_stats_blks_read{dbname='$dbname'}[$agg_interval])))",
+          "expr": "100 * avg(increase(pgwatch_db_stats_blks_hit{dbname='$dbname'}[$agg_interval])) / (avg(increase(pgwatch_db_stats_blks_hit{dbname='$dbname'}[$agg_interval])) + avg(increase(pgwatch_db_stats_blks_read{dbname='$dbname'}[$agg_interval])))",
           "format": "time_series",
           "groupBy": [
             {
@@ -1049,7 +1049,7 @@
         {
           "alias": "TX rollback ratio",
           "exemplar": true,
-          "expr": "100 * avg(increase(pgwatch3_db_stats_xact_rollback{dbname='$dbname'}[$agg_interval])) / (avg(increase(pgwatch3_db_stats_xact_rollback{dbname='$dbname'}[$agg_interval])) + avg(increase(pgwatch3_db_stats_xact_commit{dbname='$dbname'}[$agg_interval])))",
+          "expr": "100 * avg(increase(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$agg_interval])) / (avg(increase(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$agg_interval])) + avg(increase(pgwatch_db_stats_xact_commit{dbname='$dbname'}[$agg_interval])))",
           "format": "time_series",
           "groupBy": [
             {
@@ -1192,7 +1192,7 @@
         {
           "alias": "avg_query_runtime",
           "exemplar": true,
-          "expr": "avg(increase(pgwatch3_stat_statements_calls_total_time{dbname='$dbname'}[$agg_interval])) / avg(increase(pgwatch3_stat_statements_calls_calls{dbname='$dbname'}[$agg_interval]))",
+          "expr": "avg(increase(pgwatch_stat_statements_calls_total_time{dbname='$dbname'}[$agg_interval])) / avg(increase(pgwatch_stat_statements_calls_calls{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -1349,7 +1349,7 @@
         {
           "alias": "WAL rate",
           "exemplar": true,
-          "expr": "avg(rate(pgwatch3_wal_xlog_location_b{dbname='$dbname'}[$agg_interval]))",
+          "expr": "avg(rate(pgwatch_wal_xlog_location_b{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -1406,7 +1406,7 @@
         {
           "alias": "DB Size",
           "exemplar": true,
-          "expr": "avg(pgwatch3_db_size_size_b{dbname='$dbname'}[$agg_interval])",
+          "expr": "avg(pgwatch_db_size_size_b{dbname='$dbname'}[$agg_interval])",
           "format": "time_series",
           "groupBy": [
             {
@@ -1557,7 +1557,7 @@
         {
           "alias": "# Sessions",
           "exemplar": true,
-          "expr": "max(avg_over_time(pgwatch3_backends_total{dbname='$dbname'}[$agg_interval]))",
+          "expr": "max(avg_over_time(pgwatch_backends_total{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -1602,7 +1602,7 @@
         {
           "alias": "# Sessions",
           "exemplar": true,
-          "expr": "max(max_over_time(pgwatch3_backends_active{dbname='$dbname'}[$agg_interval]))",
+          "expr": "max(max_over_time(pgwatch_backends_active{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -1648,7 +1648,7 @@
         {
           "alias": "# Sessions",
           "exemplar": true,
-          "expr": "max(max_over_time(pgwatch3_backends_waiting{dbname='$dbname'}[$agg_interval]))",
+          "expr": "max(max_over_time(pgwatch_backends_waiting{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -1694,7 +1694,7 @@
         {
           "alias": "# Sessions",
           "exemplar": true,
-          "expr": "max(max_over_time(pgwatch3_backends_idleintransaction{dbname='$dbname'}[$agg_interval]))",
+          "expr": "max(max_over_time(pgwatch_backends_idleintransaction{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -1740,7 +1740,7 @@
         {
           "alias": "Temp bytes written",
           "exemplar": true,
-          "expr": "max(increase(pgwatch3_db_stats_deadlocks{dbname='$dbname'}[$agg_interval]))",
+          "expr": "max(increase(pgwatch_db_stats_deadlocks{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -1878,7 +1878,7 @@
         {
           "alias": "TPS",
           "exemplar": true,
-          "expr": "avg(rate(pgwatch3_db_stats_xact_commit{dbname='$dbname'}[$agg_interval])) + avg(rate(pgwatch3_db_stats_xact_rollback{dbname='$dbname'}[$agg_interval]))",
+          "expr": "avg(rate(pgwatch_db_stats_xact_commit{dbname='$dbname'}[$agg_interval])) + avg(rate(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -1922,7 +1922,7 @@
         {
           "alias": "QPS",
           "exemplar": true,
-          "expr": "avg(rate(pgwatch3_stat_statements_calls_calls{dbname='$dbname'}[$agg_interval]))",
+          "expr": "avg(rate(pgwatch_stat_statements_calls_calls{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -2062,7 +2062,7 @@
         {
           "alias": "seq_scan",
           "exemplar": true,
-          "expr": "sum(max(increase(pgwatch3_table_stats_seq_scan{dbname='$dbname',table_size_cardinality_mb=~\"3|4|5|6|7|8\"}[$agg_interval])) by (table_full_name))",
+          "expr": "sum(max(increase(pgwatch_table_stats_seq_scan{dbname='$dbname',table_size_cardinality_mb=~\"3|4|5|6|7|8\"}[$agg_interval])) by (table_full_name))",
           "format": "time_series",
           "groupBy": [
             {
@@ -2213,7 +2213,7 @@
         {
           "alias": "$tag_lockmode",
           "exemplar": true,
-          "expr": "max(max_over_time(pgwatch3_locks_mode_count{dbname='$dbname',lockmode=~\".*Exclusive.*\"}[$agg_interval])) by (lockmode)",
+          "expr": "max(max_over_time(pgwatch_locks_mode_count{dbname='$dbname',lockmode=~\".*Exclusive.*\"}[$agg_interval])) by (lockmode)",
           "format": "time_series",
           "groupBy": [
             {
@@ -2321,7 +2321,7 @@
   "schemaVersion": 27,
   "style": "dark",
   "tags": [
-    "pgwatch3",
+    "pgwatch",
     "postgres"
   ],
   "templating": {

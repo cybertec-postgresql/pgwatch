@@ -550,7 +550,7 @@
         "rgba(50, 172, 45, 0.97)"
       ],
       "datasource": null,
-      "description": "10min avg. + 6h history. Requires pg_stat_statements extension and the \"get_stat_statements\" helper function  from  the \"sql/metric_fetching_helpers\" folder on the monitored DB. Not including pgwatch3 generated metrics fetching queries.",
+      "description": "10min avg. + 6h history. Requires pg_stat_statements extension and the \"get_stat_statements\" helper function  from  the \"sql/metric_fetching_helpers\" folder on the monitored DB. Not including pgwatch generated metrics fetching queries.",
       "editable": true,
       "error": false,
       "format": "none",
@@ -1917,7 +1917,7 @@
       "dashes": false,
       "datasource": null,
       "decimals": 1,
-      "description": "Requires according \"metric fetching helpers\" on the monitored server. Not including pgwatch3 generated metrics fetching queries.",
+      "description": "Requires according \"metric fetching helpers\" on the monitored server. Not including pgwatch generated metrics fetching queries.",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -2356,7 +2356,7 @@
   "schemaVersion": 22,
   "style": "dark",
   "tags": [
-    "pgwatch3"
+    "pgwatch"
   ],
   "templating": {
     "list": [

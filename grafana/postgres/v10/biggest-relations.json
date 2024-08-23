@@ -364,7 +364,7 @@
   "schemaVersion": 36,
   "style": "dark",
   "tags": [
-    "pgwatch3"
+    "pgwatch"
   ],
   "templating": {
     "list": [

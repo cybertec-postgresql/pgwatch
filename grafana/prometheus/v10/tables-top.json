@@ -72,7 +72,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(topk($top, pgwatch3_table_stats_total_relation_size_b{dbname='$dbname'})) by (table_full_name)",
+          "expr": "max(topk($top, pgwatch_table_stats_total_relation_size_b{dbname='$dbname'})) by (table_full_name)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -152,7 +152,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(topk($top, pgwatch3_table_stats_table_size_b{dbname='$dbname'})) by (table_full_name)",
+          "expr": "max(topk($top, pgwatch_table_stats_table_size_b{dbname='$dbname'})) by (table_full_name)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -234,7 +234,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "topk(3, max(delta(pgwatch3_table_stats_total_relation_size_b{dbname='$dbname'})) by (table_full_name))",
+          "expr": "topk(3, max(delta(pgwatch_table_stats_total_relation_size_b{dbname='$dbname'})) by (table_full_name))",
           "format": "table",
           "hide": false,
           "instant": false,
@@ -314,7 +314,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "topk($top, max(increase(pgwatch3_table_stats_seq_scan{dbname='$dbname',table_size_cardinality_mb=~\"3|4|5|6|7|8|9\"}[$__range])) by (table_full_name))",
+          "expr": "topk($top, max(increase(pgwatch_table_stats_seq_scan{dbname='$dbname',table_size_cardinality_mb=~\"3|4|5|6|7|8|9\"}[$__range])) by (table_full_name))",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -395,7 +395,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "8192 * topk($top, max(increase(pgwatch3_table_io_stats_heap_blks_read{dbname='$dbname'}[$__range])) by (table_full_name) + max(increase(pgwatch3_table_io_stats_idx_blks_read{dbname='$dbname'}[$__range])) by (table_full_name))",
+          "expr": "8192 * topk($top, max(increase(pgwatch_table_io_stats_heap_blks_read{dbname='$dbname'}[$__range])) by (table_full_name) + max(increase(pgwatch_table_io_stats_idx_blks_read{dbname='$dbname'}[$__range])) by (table_full_name))",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -476,7 +476,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "8192 * topk($top, max(increase(pgwatch3_table_io_stats_toast_blks_read{dbname='$dbname'}[$__range])) by (table_full_name) + max(increase(pgwatch3_table_io_stats_tidx_blks_read{dbname='$dbname'}[$__range])) by (table_full_name))",
+          "expr": "8192 * topk($top, max(increase(pgwatch_table_io_stats_toast_blks_read{dbname='$dbname'}[$__range])) by (table_full_name) + max(increase(pgwatch_table_io_stats_tidx_blks_read{dbname='$dbname'}[$__range])) by (table_full_name))",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -557,7 +557,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "topk($top, max(increase(pgwatch3_table_stats_n_tup_ins{dbname='$dbname'}[$__range])) by (table_full_name))",
+          "expr": "topk($top, max(increase(pgwatch_table_stats_n_tup_ins{dbname='$dbname'}[$__range])) by (table_full_name))",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -651,7 +651,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "topk($top, max(increase(pgwatch3_table_stats_n_tup_upd{dbname='$dbname'}[$__range])) by (table_full_name))",
+          "expr": "topk($top, max(increase(pgwatch_table_stats_n_tup_upd{dbname='$dbname'}[$__range])) by (table_full_name))",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -732,7 +732,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "topk($top, max(increase(pgwatch3_table_stats_n_tup_del{dbname='$dbname'}[$__range])) by (table_full_name))",
+          "expr": "topk($top, max(increase(pgwatch_table_stats_n_tup_del{dbname='$dbname'}[$__range])) by (table_full_name))",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -763,7 +763,7 @@
   "schemaVersion": 27,
   "style": "dark",
   "tags": [
-    "pgwatch3",
+    "pgwatch",
     "postgres"
   ],
   "templating": {
