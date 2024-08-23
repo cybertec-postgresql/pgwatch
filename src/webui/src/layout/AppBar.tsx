@@ -35,7 +35,7 @@ export const AppBar = () => {
               </Box>
             </a>
             <Typography sx={{ height: "100%", alignItems: "center", display: "flex" }}>
-              PGWATCH3
+              PGWATCH
             </Typography>
           </Box>
           {

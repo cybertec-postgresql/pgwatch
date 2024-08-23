@@ -19,11 +19,11 @@ scrape_configs:
   static_configs:
   - targets:
     - localhost:9090
-- job_name: pgwatch3
+- job_name: pgwatch
   honor_timestamps: true
   scrape_interval: 15s
   scrape_timeout: 10s
-  metrics_path: /pgwatch3
+  metrics_path: /pgwatch
   scheme: http
   static_configs:
   - targets:

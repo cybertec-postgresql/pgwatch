@@ -2,19 +2,19 @@
 
 mkdir /var/run/grafana && chown grafana /var/run/grafana
 
-if [ ! -f /pgwatch3/persistent-config/self-signed-ssl.key -o ! -f /pgwatch3/persistent-config/self-signed-ssl.pem ] ; then
-    openssl req -x509 -newkey rsa:4096 -keyout /pgwatch3/persistent-config/self-signed-ssl.key -out /pgwatch3/persistent-config/self-signed-ssl.pem -days 3650 -nodes -sha256 -subj '/CN=pw3'
-    cp /pgwatch3/persistent-config/self-signed-ssl.pem /etc/ssl/certs/ssl-cert-snakeoil.pem
-    cp /pgwatch3/persistent-config/self-signed-ssl.key /etc/ssl/private/ssl-cert-snakeoil.key
+if [ ! -f /pgwatch/persistent-config/self-signed-ssl.key -o ! -f /pgwatch/persistent-config/self-signed-ssl.pem ] ; then
+    openssl req -x509 -newkey rsa:4096 -keyout /pgwatch/persistent-config/self-signed-ssl.key -out /pgwatch/persistent-config/self-signed-ssl.pem -days 3650 -nodes -sha256 -subj '/CN=pw3'
+    cp /pgwatch/persistent-config/self-signed-ssl.pem /etc/ssl/certs/ssl-cert-snakeoil.pem
+    cp /pgwatch/persistent-config/self-signed-ssl.key /etc/ssl/private/ssl-cert-snakeoil.key
     chown postgres /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/ssl/private/ssl-cert-snakeoil.key
     chmod -R 0600 /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/ssl/private/ssl-cert-snakeoil.key
-    chmod -R o+rx /pgwatch3/persistent-config
+    chmod -R o+rx /pgwatch/persistent-config
 fi
 
-if [ ! -f /pgwatch3/persistent-config/default-password-encryption-key.txt ]; then
-  echo -n "${RANDOM}${RANDOM}${RANDOM}${RANDOM}" > /pgwatch3/persistent-config/default-password-encryption-key.txt
-  chown postgres /pgwatch3/persistent-config/default-password-encryption-key.txt
-  chmod 0600 /pgwatch3/persistent-config/default-password-encryption-key.txt
+if [ ! -f /pgwatch/persistent-config/default-password-encryption-key.txt ]; then
+  echo -n "${RANDOM}${RANDOM}${RANDOM}${RANDOM}" > /pgwatch/persistent-config/default-password-encryption-key.txt
+  chown postgres /pgwatch/persistent-config/default-password-encryption-key.txt
+  chmod 0600 /pgwatch/persistent-config/default-password-encryption-key.txt
 fi
 
 GRAFANASSL="${PW_GRAFANASSL,,}"    # to lowercase

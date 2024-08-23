@@ -1,10 +1,10 @@
 {
   "Servers": {
     "1": {
-      "Name": "pgwatch3",
+      "Name": "pgwatch",
       "Group": "Servers",
       "Port": 5432,
-      "Username": "pgwatch3",
+      "Username": "pgwatch",
       "Host": "postgres",
       "PassFile": "/pgadmin4/pass",
       "SSLMode": "disable",

@@ -4,7 +4,7 @@ set -e
 
 if [ -z $1 ] ; then
   echo "usage:   smoke_test_docker_image.sh IMAGE_TAG"
-  echo "example: smoke_test_docker_image.sh cybertec/pgwatch3:latest"
+  echo "example: smoke_test_docker_image.sh cybertec/pgwatch:latest"
   exit 1
 fi
 
@@ -17,9 +17,9 @@ LOCALHOST=127.0.0.1
 # these vars are passed to subshell, so export them
 export PGHOST=localhost
 export PGPORT=$(shuf -i 10000-65000 -n 1)
-export PGUSER=pgwatch3
-export PGPASSWORD=pgwatch3admin
-export PGDATABASE=pgwatch3_metrics
+export PGUSER=pgwatch
+export PGPASSWORD=pgwatchadmin
+export PGDATABASE=pgwatch_metrics
 
 echo "starting smoke test of Postgres image $IMAGE ..."
 echo "stopping and removing existing container named $CONTAINER_NAME if any"
@@ -41,12 +41,12 @@ echo "OK"
 
 echo "adding new DB 'smoke1' to monitoring via POST to Web UI /dbs page..."
 http --verify=no -f POST $LOCALHOST:$WEBUIPORT/dbs md_unique_name=smoke1 md_dbtype=postgres md_hostname=/var/run/postgresql/ md_port=5432 md_dbname=postgres \
-  md_user=pgwatch3 md_password=pgwatch3admin md_password_type=plain-text md_preset_config_name=basic md_is_enabled=true new=New >/dev/null
+  md_user=pgwatch md_password=pgwatchadmin md_password_type=plain-text md_preset_config_name=basic md_is_enabled=true new=New >/dev/null
 echo "OK"
 
 echo "adding new DB 'smoke2' to monitoring via POST to Web UI /dbs page..."
-http --verify=no -f POST $LOCALHOST:$WEBUIPORT/dbs md_unique_name=smoke2 md_dbtype=postgres md_hostname=/var/run/postgresql/ md_port=5432 md_dbname=pgwatch3 \
-  md_user=pgwatch3 md_password=pgwatch3admin md_password_type=plain-text md_preset_config_name=basic md_is_enabled=true new=New >/dev/null
+http --verify=no -f POST $LOCALHOST:$WEBUIPORT/dbs md_unique_name=smoke2 md_dbtype=postgres md_hostname=/var/run/postgresql/ md_port=5432 md_dbname=pgwatch \
+  md_user=pgwatch md_password=pgwatchadmin md_password_type=plain-text md_preset_config_name=basic md_is_enabled=true new=New >/dev/null
 echo "OK"
 
 

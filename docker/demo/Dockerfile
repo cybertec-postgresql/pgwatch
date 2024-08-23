@@ -69,20 +69,20 @@ COPY docker/bootstrap/create_role_db.sql \
 RUN  echo "include = 'pgwatch_postgresql.conf'" >> /etc/postgresql/postgresql.conf
 COPY docker/demo/postgresql.conf /etc/postgresql/pgwatch_postgresql.conf
 
-ENV PW_SOURCES=postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3
-ENV PW_SINK=postgresql://pgwatch3:pgwatch3admin@localhost:5432/pgwatch3_metrics
+ENV PW_SOURCES=postgresql://pgwatch:pgwatchadmin@localhost:5432/pgwatch
+ENV PW_SINK=postgresql://pgwatch:pgwatchadmin@localhost:5432/pgwatch_metrics
 ENV POSTGRES_PASSWORD=mysecretpassword
 
 # Admin UI for configuring servers to be monitored
 EXPOSE 8080
-# Postgres DB holding the pgwatch3 config DB / metrics
+# Postgres DB holding the pgwatch config DB / metrics
 EXPOSE 5432
 # Grafana UI
 EXPOSE 3000
 # Prometheus scraping port
 EXPOSE 9187
 
-### Volumes for easier updating to newer to newer pgwatch3 containers
+### Volumes for easier updating to newer to newer pgwatch containers
 ### Backwards compatibility is not 100% guaranteed so a backup
 ### using traditional means is still recommended before updating - see "Updating to a newer Docker version" from README
 
