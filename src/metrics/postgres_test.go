@@ -30,9 +30,9 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 	doesntExist := func() *pgxmock.Rows { return pgxmock.NewRows([]string{"exists"}).AddRow(false) }
 
 	t.Run("FullBoostrap", func(*testing.T) {
-		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch3").WillReturnRows(doesntExist())
+		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(doesntExist())
 		conn.ExpectBegin()
-		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch3").WillReturnResult(pgxmock.NewResult("CREATE", 1))
+		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").WillReturnResult(pgxmock.NewResult("CREATE", 1))
 		conn.ExpectBegin()
 		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(metricsCount))
 		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(presetsCount))
@@ -47,7 +47,7 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 	})
 
 	t.Run("SchemaQueryFail", func(*testing.T) {
-		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch3").WillReturnError(assert.AnError)
+		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnError(assert.AnError)
 		rw, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
 		a.Error(err)
 		a.Nil(rw)
@@ -55,7 +55,7 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 	})
 
 	t.Run("BeginFail", func(*testing.T) {
-		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch3").WillReturnRows(doesntExist())
+		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(doesntExist())
 		conn.ExpectBegin().WillReturnError(assert.AnError)
 		rw, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
 		a.Error(err)
@@ -64,9 +64,9 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 	})
 
 	t.Run("CreateSchemaFail", func(*testing.T) {
-		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch3").WillReturnRows(doesntExist())
+		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(doesntExist())
 		conn.ExpectBegin()
-		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch3").WillReturnError(assert.AnError)
+		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").WillReturnError(assert.AnError)
 		conn.ExpectRollback()
 		rw, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
 		a.Error(err)
@@ -75,9 +75,9 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 	})
 
 	t.Run("WriteDefaultMetricsBeginFail", func(*testing.T) {
-		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch3").WillReturnRows(doesntExist())
+		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(doesntExist())
 		conn.ExpectBegin()
-		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch3").WillReturnResult(pgxmock.NewResult("CREATE", 1))
+		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").WillReturnResult(pgxmock.NewResult("CREATE", 1))
 		conn.ExpectBegin().WillReturnError(assert.AnError)
 		conn.ExpectRollback()
 		rw, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
@@ -87,9 +87,9 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 	})
 
 	t.Run("WriteInsertMetricsFail", func(*testing.T) {
-		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch3").WillReturnRows(doesntExist())
+		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(doesntExist())
 		conn.ExpectBegin()
-		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch3").WillReturnResult(pgxmock.NewResult("CREATE", 1))
+		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").WillReturnResult(pgxmock.NewResult("CREATE", 1))
 		conn.ExpectBegin()
 		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnError(assert.AnError)
 		conn.ExpectRollback()
@@ -100,9 +100,9 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 	})
 
 	t.Run("WriteInsertPresetsFail", func(*testing.T) {
-		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch3").WillReturnRows(doesntExist())
+		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(doesntExist())
 		conn.ExpectBegin()
-		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch3").WillReturnResult(pgxmock.NewResult("CREATE", 1))
+		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").WillReturnResult(pgxmock.NewResult("CREATE", 1))
 		conn.ExpectBegin()
 		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(metricsCount))
 		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnError(assert.AnError)
@@ -114,9 +114,9 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 	})
 
 	t.Run("DefaultMetricsCommitFail", func(*testing.T) {
-		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch3").WillReturnRows(doesntExist())
+		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(doesntExist())
 		conn.ExpectBegin()
-		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch3").WillReturnResult(pgxmock.NewResult("CREATE", 1))
+		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").WillReturnResult(pgxmock.NewResult("CREATE", 1))
 		conn.ExpectBegin()
 		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(metricsCount))
 		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(presetsCount))
@@ -129,9 +129,9 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 	})
 
 	t.Run("CommitFail", func(*testing.T) {
-		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch3").WillReturnRows(doesntExist())
+		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(doesntExist())
 		conn.ExpectBegin()
-		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch3").WillReturnResult(pgxmock.NewResult("CREATE", 1))
+		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").WillReturnResult(pgxmock.NewResult("CREATE", 1))
 		conn.ExpectBegin()
 		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(metricsCount))
 		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(presetsCount))
@@ -150,7 +150,7 @@ func TestMetricsToPostgres(t *testing.T) {
 	a.NoError(err)
 	ctx := context.Background()
 
-	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch3").WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
+	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 	conn.ExpectPing()
 
 	readerWriter, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)

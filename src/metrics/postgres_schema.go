@@ -11,7 +11,7 @@ import (
 
 var initMigrator = func(dmrw *dbMetricReaderWriter) (*migrator.Migrator, error) {
 	return migrator.New(
-		migrator.TableName("pgwatch3.migration"),
+		migrator.TableName("pgwatch.migration"),
 		migrator.SetNotice(func(s string) {
 			log.GetLogger(dmrw.ctx).Info(s)
 		}),
@@ -48,7 +48,7 @@ var migrations func() migrator.Option = func() migrator.Option {
 			},
 		},
 
-		// adding new migration here, update "pgwatch3"."migration" in "postgres_schema.sql"
+		// adding new migration here, update "pgwatch"."migration" in "postgres_schema.sql"
 		// and "dbapi" variable in main.go!
 
 		// &migrator.Migration{

@@ -83,7 +83,7 @@ func TestDeleteDatabase(t *testing.T) {
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
 	conn.ExpectPing()
-	conn.ExpectExec(`delete from pgwatch3\.source where name = \$1`).WithArgs("db1").WillReturnResult(pgxmock.NewResult("DELETE", 1))
+	conn.ExpectExec(`delete from pgwatch\.source where name = \$1`).WithArgs("db1").WillReturnResult(pgxmock.NewResult("DELETE", 1))
 	pgrw, err := sources.NewPostgresSourcesReaderWriter(ctx, conn)
 	a.NoError(err)
 
@@ -110,7 +110,7 @@ func TestUpdateDatabase(t *testing.T) {
 		CustomTags:     map[string]string{"tag": "value"},
 	}
 	conn.ExpectPing()
-	conn.ExpectExec(`insert into pgwatch3\.source`).WithArgs(
+	conn.ExpectExec(`insert into pgwatch\.source`).WithArgs(
 		md.Name, md.Group, md.Kind,
 		md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`,
 		md.PresetMetrics, md.PresetMetricsStandby,
@@ -150,8 +150,8 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 	t.Run("happy path", func(*testing.T) {
 		conn.ExpectPing()
 		conn.ExpectBegin()
-		conn.ExpectExec(`truncate pgwatch3\.source`).WillReturnResult(pgxmock.NewResult("TRUNCATE", 1))
-		conn.ExpectExec(`insert into pgwatch3\.source`).WithArgs(
+		conn.ExpectExec(`truncate pgwatch\.source`).WillReturnResult(pgxmock.NewResult("TRUNCATE", 1))
+		conn.ExpectExec(`insert into pgwatch\.source`).WithArgs(
 			md.Name, md.Group, md.Kind,
 			md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`, md.PresetMetrics, md.PresetMetricsStandby,
 			md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
@@ -177,7 +177,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 
 	t.Run("failed truncate", func(*testing.T) {
 		conn.ExpectBegin()
-		conn.ExpectExec(`truncate pgwatch3\.source`).WillReturnError(errors.New("failed truncate"))
+		conn.ExpectExec(`truncate pgwatch\.source`).WillReturnError(errors.New("failed truncate"))
 
 		err = pgrw.WriteSources(mds)
 		a.Error(err)
@@ -186,8 +186,8 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 
 	t.Run("failed insert", func(*testing.T) {
 		conn.ExpectBegin()
-		conn.ExpectExec(`truncate pgwatch3\.source`).WillReturnResult(pgxmock.NewResult("TRUNCATE", 1))
-		conn.ExpectExec(`insert into pgwatch3\.source`).WithArgs(
+		conn.ExpectExec(`truncate pgwatch\.source`).WillReturnResult(pgxmock.NewResult("TRUNCATE", 1))
+		conn.ExpectExec(`insert into pgwatch\.source`).WithArgs(
 			md.Name, md.Group, md.Kind,
 			md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`, md.PresetMetrics, md.PresetMetricsStandby,
 			md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,

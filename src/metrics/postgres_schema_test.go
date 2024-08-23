@@ -16,7 +16,7 @@ func TestMigrate(t *testing.T) {
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
 
-	conn.ExpectExec(`CREATE TABLE IF NOT EXISTS pgwatch3\.migration`).WillReturnResult(pgxmock.NewResult("CREATE", 1))
+	conn.ExpectExec(`CREATE TABLE IF NOT EXISTS pgwatch\.migration`).WillReturnResult(pgxmock.NewResult("CREATE", 1))
 	conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	conn.ExpectBegin()
 	conn.ExpectExec(`INSERT INTO`).WillReturnResult(pgxmock.NewResult("INSERT", 1))
@@ -32,7 +32,7 @@ func TestNeedsMigration(t *testing.T) {
 	a.NoError(err)
 
 	conn.ExpectQuery(`SELECT to_regclass`).
-		WithArgs("pgwatch3.migration").
+		WithArgs("pgwatch.migration").
 		WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
 	conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 

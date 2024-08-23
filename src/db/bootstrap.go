@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	pgConnRecycleSeconds = 1800       // applies for monitored nodes
-	applicationName      = "pgwatch3" // will be set on all opened PG connections for informative purposes
+	pgConnRecycleSeconds = 1800      // applies for monitored nodes
+	applicationName      = "pgwatch" // will be set on all opened PG connections for informative purposes
 )
 
 func Ping(ctx context.Context, connStr string) error {

@@ -18,7 +18,7 @@ import (
 )
 
 // PrometheusWriter is a sink that allows to expose metric measurements to Prometheus scrapper.
-// Prometheus collects metrics data from pgwatch3 by scraping metrics HTTP endpoints.
+// Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints.
 type PrometheusWriter struct {
 	ctx                               context.Context
 	lastScrapeErrors                  prometheus.Gauge
@@ -34,7 +34,7 @@ const promScrapingStalenessHardDropLimit = time.Minute * time.Duration(10)
 func NewPrometheusWriter(ctx context.Context, connstr string) (promw *PrometheusWriter, err error) {
 	addr, namespace, found := strings.Cut(connstr, "/")
 	if !found {
-		namespace = "pgwatch3"
+		namespace = "pgwatch"
 	}
 	promw = &PrometheusWriter{
 		ctx:                 ctx,

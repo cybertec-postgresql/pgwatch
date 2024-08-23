@@ -11,7 +11,7 @@ import (
 func DoesEmergencyTriggerfileExist(fname string) bool {
 	// Main idea of the feature is to be able to quickly free monitored DBs / network of any extra "monitoring effect" load.
 	// In highly automated K8s / IaC environments such a temporary change might involve pull requests, peer reviews, CI/CD etc
-	// which can all take too long vs "exec -it pgwatch3-pod -- touch /tmp/pgwatch3-emergency-pause".
+	// which can all take too long vs "exec -it pgwatch-pod -- touch /tmp/pgwatch-emergency-pause".
 	// After creating the file it can still take up to --servers-refresh-loop-seconds (2min def.) for change to take effect!
 	if fname == "" {
 		return false

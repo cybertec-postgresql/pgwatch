@@ -8,7 +8,7 @@ import (
 )
 
 func NewPostgresMetricReaderWriter(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error) {
-	if exists, err := db.DoesSchemaExist(ctx, conn, "pgwatch3"); err == nil {
+	if exists, err := db.DoesSchemaExist(ctx, conn, "pgwatch"); err == nil {
 		if !exists {
 			tx, err := conn.Begin(ctx)
 			if err != nil {
@@ -47,7 +47,7 @@ type dbMetricReaderWriter struct {
 var _ Migrator = (*dbMetricReaderWriter)(nil)
 
 // writeMetricsToPostgres writes the metrics and presets definitions to the
-// pgwatch3.metric and pgwatch3.preset tables in the ConfigDB.
+// pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *Metrics) error {
 	tx, err := conn.Begin(ctx)
 	if err != nil {
@@ -55,7 +55,7 @@ func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *M
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 	for metricName, metric := range metricDefs.MetricDefs {
-		_, err = tx.Exec(ctx, `INSERT INTO pgwatch3.metric (name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name)
+		_, err = tx.Exec(ctx, `INSERT INTO pgwatch.metric (name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name)
 		values ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (name) 
 		DO UPDATE SET sqls = $2, init_sql = $3, description = $4, node_status = $5, 
 		gauges = $6, is_instance_level = $7, storage_name = $8`,
@@ -65,7 +65,7 @@ func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *M
 		}
 	}
 	for presetName, preset := range metricDefs.PresetDefs {
-		_, err = tx.Exec(ctx, `INSERT INTO pgwatch3.preset (name, description, metrics) 
+		_, err = tx.Exec(ctx, `INSERT INTO pgwatch.preset (name, description, metrics) 
 		VALUES ($1, $2, $3) ON CONFLICT (name) DO UPDATE SET description = $2, metrics = $3;`,
 			presetName, preset.Description, preset.Metrics)
 		if err != nil {
@@ -75,12 +75,12 @@ func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *M
 	return tx.Commit(ctx)
 }
 
-// ReadMetricsFromPostgres reads the metrics and presets definitions from the pgwatch3.metric and pgwatch3.preset tables from the ConfigDB.
+// ReadMetricsFromPostgres reads the metrics and presets definitions from the pgwatch.metric and pgwatch.preset tables from the ConfigDB.
 func (dmrw *dbMetricReaderWriter) GetMetrics() (metricDefMapNew *Metrics, err error) {
 	ctx := dmrw.ctx
 	conn := dmrw.configDb
 	metricDefMapNew = &Metrics{MetricDefs{}, PresetDefs{}}
-	rows, err := conn.Query(ctx, `SELECT name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name FROM pgwatch3.metric`)
+	rows, err := conn.Query(ctx, `SELECT name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name FROM pgwatch.metric`)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (dmrw *dbMetricReaderWriter) GetMetrics() (metricDefMapNew *Metrics, err er
 		}
 		metricDefMapNew.MetricDefs[name] = metric
 	}
-	rows, err = conn.Query(ctx, `SELECT name, description, metrics FROM pgwatch3.preset`)
+	rows, err = conn.Query(ctx, `SELECT name, description, metrics FROM pgwatch.preset`)
 	if err != nil {
 		return nil, err
 	}
@@ -116,12 +116,12 @@ func (dmrw *dbMetricReaderWriter) WriteMetrics(metricDefs *Metrics) error {
 }
 
 func (dmrw *dbMetricReaderWriter) DeleteMetric(metricName string) error {
-	_, err := dmrw.configDb.Exec(dmrw.ctx, `DELETE FROM pgwatch3.metric WHERE name = $1`, metricName)
+	_, err := dmrw.configDb.Exec(dmrw.ctx, `DELETE FROM pgwatch.metric WHERE name = $1`, metricName)
 	return err
 }
 
 func (dmrw *dbMetricReaderWriter) UpdateMetric(metricName string, metric Metric) error {
-	_, err := dmrw.configDb.Exec(dmrw.ctx, `UPDATE pgwatch3.metric SET 
+	_, err := dmrw.configDb.Exec(dmrw.ctx, `UPDATE pgwatch.metric SET 
 	sqls = $2, init_sql = $3, description = $4, node_status = $5, gauges = $6, is_instance_level = $7, storage_name = $8
 	WHERE name = $1`,
 		metricName, db.MarshallParam(metric.SQLs), metric.InitSQL, metric.Description,
@@ -130,12 +130,12 @@ func (dmrw *dbMetricReaderWriter) UpdateMetric(metricName string, metric Metric)
 }
 
 func (dmrw *dbMetricReaderWriter) DeletePreset(presetName string) error {
-	_, err := dmrw.configDb.Exec(dmrw.ctx, `DELETE FROM pgwatch3.preset WHERE name = $1`, presetName)
+	_, err := dmrw.configDb.Exec(dmrw.ctx, `DELETE FROM pgwatch.preset WHERE name = $1`, presetName)
 	return err
 }
 
 func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName string, preset Preset) error {
-	sql := `INSERT INTO pgwatch3.preset(name, description, metrics) VALUES ($1, $2, $3)
+	sql := `INSERT INTO pgwatch.preset(name, description, metrics) VALUES ($1, $2, $3)
 	ON CONFLICT (name) DO UPDATE SET description = $2, metrics = $3`
 	_, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParam(preset.Metrics))
 	return err
