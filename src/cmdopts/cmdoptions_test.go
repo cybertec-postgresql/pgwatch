@@ -1,4 +1,4 @@
-package config
+package cmdopts
 
 import (
 	"os"
@@ -41,9 +41,9 @@ func TestParseSuccess(t *testing.T) {
 }
 
 func TestLogLevel(t *testing.T) {
-	c := &Options{Logging: log.LoggingCmdOpts{LogLevel: "debug"}}
+	c := &Options{Logging: log.CmdOpts{LogLevel: "debug"}}
 	assert.True(t, c.Verbose())
-	c = &Options{Logging: log.LoggingCmdOpts{LogLevel: "info"}}
+	c = &Options{Logging: log.CmdOpts{LogLevel: "info"}}
 	assert.False(t, c.Verbose())
 }
 
@@ -61,7 +61,7 @@ func TestConfig(t *testing.T) {
 	_, err = New(nil)
 	assert.Error(t, err)
 
-	os.Args = []string{0: "config_test"} // clientname arg is missing, but set PW_CONFIG
+	os.Args = []string{0: "config_test"} // sources arg is missing, but set PW3_CONFIG
 	t.Setenv("PW_SOURCES", "postgresql://foo:baz@bar/test")
 	_, err = New(nil)
 	assert.NoError(t, err)

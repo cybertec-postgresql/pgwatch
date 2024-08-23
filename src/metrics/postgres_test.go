@@ -18,6 +18,21 @@ func AnyArgs(n int) []any {
 }
 
 func TestNewPostgresMetricReaderWriter(t *testing.T) {
+	a := assert.New(t)
+	ctx := context.Background()
+	t.Run("ConnectionError", func(*testing.T) {
+		pgrw, err := metrics.NewPostgresMetricReaderWriter(ctx, "postgres://user:pass@foohost:5432/db1")
+		a.Error(err)
+		a.Nil(pgrw)
+	})
+	t.Run("InvalidConnStr", func(*testing.T) {
+		pgrw, err := metrics.NewPostgresMetricReaderWriter(ctx, "invalid_connstr")
+		a.Error(err)
+		a.Nil(pgrw)
+	})
+}
+
+func TestNewPostgresMetricReaderWriterConn(t *testing.T) {
 	df := metrics.GetDefaultMetrics()
 	metricsCount := len(df.MetricDefs)
 	presetsCount := len(df.PresetDefs)
@@ -40,7 +55,7 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 		conn.ExpectCommit()
 		conn.ExpectPing()
 
-		readerWriter, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
+		readerWriter, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
 		a.NoError(err)
 		a.NotNil(readerWriter)
 		a.NoError(conn.ExpectationsWereMet())
@@ -48,7 +63,7 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 
 	t.Run("SchemaQueryFail", func(*testing.T) {
 		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnError(assert.AnError)
-		rw, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
+		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
 		a.Error(err)
 		a.Nil(rw)
 		a.NoError(conn.ExpectationsWereMet())
@@ -57,7 +72,7 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 	t.Run("BeginFail", func(*testing.T) {
 		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(doesntExist())
 		conn.ExpectBegin().WillReturnError(assert.AnError)
-		rw, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
+		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
 		a.Error(err)
 		a.Nil(rw)
 		a.NoError(conn.ExpectationsWereMet())
@@ -68,7 +83,7 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 		conn.ExpectBegin()
 		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").WillReturnError(assert.AnError)
 		conn.ExpectRollback()
-		rw, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
+		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
 		a.Error(err)
 		a.Nil(rw)
 		a.NoError(conn.ExpectationsWereMet())
@@ -80,7 +95,7 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").WillReturnResult(pgxmock.NewResult("CREATE", 1))
 		conn.ExpectBegin().WillReturnError(assert.AnError)
 		conn.ExpectRollback()
-		rw, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
+		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
 		a.Error(err)
 		a.Nil(rw)
 		a.NoError(conn.ExpectationsWereMet())
@@ -93,7 +108,7 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 		conn.ExpectBegin()
 		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnError(assert.AnError)
 		conn.ExpectRollback()
-		rw, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
+		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
 		a.Error(err)
 		a.Nil(rw)
 		a.NoError(conn.ExpectationsWereMet())
@@ -107,7 +122,7 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(metricsCount))
 		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnError(assert.AnError)
 		conn.ExpectRollback()
-		rw, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
+		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
 		a.Error(err)
 		a.Nil(rw)
 		a.NoError(conn.ExpectationsWereMet())
@@ -122,7 +137,7 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(presetsCount))
 		conn.ExpectCommit().WillReturnError(assert.AnError)
 		conn.ExpectRollback()
-		rw, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
+		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
 		a.Error(err)
 		a.Nil(rw)
 		a.NoError(conn.ExpectationsWereMet())
@@ -137,7 +152,7 @@ func TestNewPostgresMetricReaderWriter(t *testing.T) {
 		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(presetsCount))
 		conn.ExpectCommit()
 		conn.ExpectCommit().WillReturnError(assert.AnError)
-		rw, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
+		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
 		a.Error(err)
 		a.Nil(rw)
 		a.NoError(conn.ExpectationsWereMet())
@@ -153,7 +168,7 @@ func TestMetricsToPostgres(t *testing.T) {
 	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 	conn.ExpectPing()
 
-	readerWriter, err := metrics.NewPostgresMetricReaderWriter(ctx, conn)
+	readerWriter, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
 	a.NoError(err)
 	a.NotNil(readerWriter)
 

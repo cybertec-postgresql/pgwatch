@@ -20,13 +20,13 @@ import (
 type WebUIServer struct {
 	l log.LoggerIface
 	http.Server
-	WebUICmdOpts
+	CmdOpts
 	uiFS                fs.FS
 	metricsReaderWriter metrics.ReaderWriter
 	sourcesReaderWriter sources.ReaderWriter
 }
 
-func Init(opts WebUICmdOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, logger log.LoggerIface) *WebUIServer {
+func Init(opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, logger log.LoggerIface) *WebUIServer {
 	mux := http.NewServeMux()
 	s := &WebUIServer{
 		logger,

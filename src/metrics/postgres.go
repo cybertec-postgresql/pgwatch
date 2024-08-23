@@ -7,7 +7,15 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/db"
 )
 
-func NewPostgresMetricReaderWriter(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error) {
+func NewPostgresMetricReaderWriter(ctx context.Context, connstr string) (ReaderWriter, error) {
+	conn, err := db.New(ctx, connstr)
+	if err != nil {
+		return nil, err
+	}
+	return NewPostgresMetricReaderWriterConn(ctx, conn)
+}
+
+func NewPostgresMetricReaderWriterConn(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error) {
 	if exists, err := db.DoesSchemaExist(ctx, conn, "pgwatch"); err == nil {
 		if !exists {
 			tx, err := conn.Begin(ctx)

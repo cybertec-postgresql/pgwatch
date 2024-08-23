@@ -29,7 +29,7 @@ type logger struct {
 	*BrokerHook
 }
 
-func getLogFileWriter(opts LoggingCmdOpts) any {
+func getLogFileWriter(opts CmdOpts) any {
 	if opts.LogFileRotate {
 		return &lumberjack.Logger{
 			Filename:   opts.LogFile,
@@ -46,7 +46,7 @@ const (
 	enableColors  = false
 )
 
-func getLogFileFormatter(opts LoggingCmdOpts) logrus.Formatter {
+func getLogFileFormatter(opts CmdOpts) logrus.Formatter {
 	if opts.LogFileFormat == "text" {
 		return newFormatter(disableColors)
 	}
@@ -54,7 +54,7 @@ func getLogFileFormatter(opts LoggingCmdOpts) logrus.Formatter {
 }
 
 // Init creates logging facilities for the application
-func Init(opts LoggingCmdOpts) LoggerHookerIface {
+func Init(opts CmdOpts) LoggerHookerIface {
 	var err error
 	l := logger{logrus.New(), NewBrokerHook(context.Background(), opts.LogLevel)}
 	l.AddHook(l.BrokerHook)

@@ -1,4 +1,4 @@
-package config
+package cmdopts
 
 import (
 	"os"
@@ -17,7 +17,7 @@ func TestSourcePingCommand_Execute(t *testing.T) {
 	_, err = f.WriteString(`
 - name: test1
   kind: postgres
-  conn_str: postgresql://foo:bar/baz`)
+  conn_str: postgresql://foo@bar/baz`)
 
 	require.NoError(t, err)
 
