@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "internal",
+    "baseUrl": "src",
     "rootDir": "internal",
     "outDir": "build/dist",
     "target": "es2019",
