@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "baseUrl": "internal",
+    "rootDir": "internal",
+    "outDir": "build/dist",
+    "target": "es2019",
+    "lib": ["es2019", "dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    //"suppressImplicitAnyIndexErrors": true,
+    "ignoreDeprecations": "5.0",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "downlevelIteration": true,
+    "noFallthroughCasesInSwitch": true,
+    "jsx": "react-jsx"
+  },
+  "exclude": [
+    "node_modules",
+    "build",
+    "webpack",
+    "jest",
+    "public"
+  ],
+  "include": ["internal"]
+}

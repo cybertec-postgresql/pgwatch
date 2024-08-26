@@ -84,7 +84,7 @@ syntax differences.
             daemon
 
                 git clone https://github.com/cybertec-postgresql/pgwatch.git
-                cd pgwatch/src/webui
+                cd pgwatch/internal/webui
                 yarn install --network-timeout 100000 && yarn build
                 cd ..
                 go build

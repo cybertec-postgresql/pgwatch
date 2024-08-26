@@ -3,12 +3,10 @@ version: 2
 before:
   hooks:
     # weirdly goreleaser doesn't all to include outside of the Go build "root" so need to copy
-    - cp -r grafana ./src/
-    - sh -c "cd ./src/webui && yarn install && yarn build"
+    - sh -c "cd ./internal/webui && yarn install && yarn build"
 
 builds:
-- dir: src
-  binary: pgwatch
+- main: ./cmd/pgwatch
   env:
     - CGO_ENABLED=0
   goos:

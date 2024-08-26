@@ -24,35 +24,34 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.22'
-        cache-dependency-path: 'src/go.sum'
+        cache-dependency-path: 'go.sum'
 
     - name: Cache npm packages
       uses: actions/cache@v4
       with:
         path: |
-          src/webui/node_modules
+          internal/webui/node_modules
         key: ${{ runner.os }}-npm-${{ hashFiles('**/yarn.lock') }}
         restore-keys: |
           ${{ runner.os }}-npm-        
  
     - name: Build
       run: |
-        cd src/webui
+        cd internal/webui
         yarn install --network-timeout 100000 && yarn build
-        cd ..
-        go build
+        cd -
+        go build ./cmd/pgwatch
 
     - name: Upload webui as artifact
       uses: actions/upload-artifact@v4
       with:
         name: webui-build
-        path: src/webui/build
+        path: internal/webui/build
 
     - name: GolangCI-Lint
       uses: golangci/golangci-lint-action@v6
       with:
         version: latest
-        working-directory: src
   
   test:
     if: true # false to skip job during debug
@@ -68,24 +67,22 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.22'
-        cache-dependency-path: 'src/go.sum'
+        cache-dependency-path: 'go.sum'
 
     - name: Download webui artifact
       uses: actions/download-artifact@v4
       with:
         name: webui-build
-        path: src/webui/build        
+        path: internal/webui/build        
 
     - name: Test
       run: |
-        cd src
         go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./...
 
     - name: Coveralls
       uses: coverallsapp/github-action@v2
       with:
-        base-path: src
-        file: src/profile.cov 
+        file: profile.cov 
 
   goreleaser:
     if: true # false to skip job during debug    
@@ -101,7 +98,7 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.22'
-        cache-dependency-path: 'src/go.sum'
+        cache-dependency-path: 'go.sum'
 
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v6

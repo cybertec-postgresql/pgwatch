@@ -2,7 +2,7 @@
 # 1. Build Web UI
 # ----------------------------------------------------------------
 FROM node:21 AS uibuilder
-ADD src/webui /webui
+COPY internal/webui /webui
 RUN cd webui && yarn install --network-timeout 100000 && yarn build
 
 # ----------------------------------------------------------------
@@ -14,9 +14,9 @@ ARG VERSION
 ARG GIT_HASH
 ARG GIT_TIME
 
-ADD src /pgwatch
-COPY --from=uibuilder /webui/build /pgwatch/webui/build
-RUN cd /pgwatch && CGO_ENABLED=0 go build -ldflags "-X 'main.commit=${GIT_HASH}' -X 'main.date=${GIT_TIME}' -X 'main.version=${VERSION}'"
+COPY . /pgwatch
+COPY --from=uibuilder /webui/build /pgwatch/internal/webui/build
+RUN cd /pgwatch && CGO_ENABLED=0 go build -ldflags "-X 'main.commit=${GIT_HASH}' -X 'main.date=${GIT_TIME}' -X 'main.version=${VERSION}'" ./cmd/pgwatch
 
 # ----------------------------------------------------------------
 # 3. Build the final image
@@ -25,7 +25,7 @@ FROM postgres:16-bullseye AS releaser
 
 # Copy over the compiled gatherer
 COPY --from=builder /pgwatch/pgwatch /pgwatch/
-COPY src/metrics/metrics.yaml /pgwatch/metrics/metrics.yaml
+COPY internal/metrics/metrics.yaml /pgwatch/metrics/metrics.yaml
 
 # Install dependencies
 ENV DEBIAN_FRONTEND=noninteractive
