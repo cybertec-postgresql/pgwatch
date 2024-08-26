@@ -295,7 +295,7 @@ FROM
 	return dbNewSettings, nil
 }
 
-func DetectSprocChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementMessage, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectSprocChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -373,13 +373,13 @@ func DetectSprocChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 	log.GetLogger(ctx).Debugf("[%s][%s] detected %d sproc changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []metrics.MeasurementMessage{{DBName: dbUnique, MetricName: "sproc_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- []metrics.MeasurementEnvelope{{DBName: dbUnique, MetricName: "sproc_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
 	}
 
 	return changeCounts
 }
 
-func DetectTableChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementMessage, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectTableChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -457,13 +457,13 @@ func DetectTableChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 	log.GetLogger(ctx).Debugf("[%s][%s] detected %d table changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []metrics.MeasurementMessage{{DBName: dbUnique, MetricName: "table_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- []metrics.MeasurementEnvelope{{DBName: dbUnique, MetricName: "table_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
 	}
 
 	return changeCounts
 }
 
-func DetectIndexChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementMessage, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectIndexChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -539,13 +539,13 @@ func DetectIndexChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 	log.GetLogger(ctx).Debugf("[%s][%s] detected %d index changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []metrics.MeasurementMessage{{DBName: dbUnique, MetricName: "index_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- []metrics.MeasurementEnvelope{{DBName: dbUnique, MetricName: "index_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
 	}
 
 	return changeCounts
 }
 
-func DetectPrivilegeChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementMessage, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectPrivilegeChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -615,7 +615,7 @@ func DetectPrivilegeChanges(ctx context.Context, dbUnique string, vme MonitoredD
 	log.GetLogger(ctx).Debugf("[%s][%s] detected %d object privilege changes...", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []metrics.MeasurementMessage{
+		storageCh <- []metrics.MeasurementEnvelope{
 			{
 				DBName:     dbUnique,
 				MetricName: "privilege_changes",
@@ -627,7 +627,7 @@ func DetectPrivilegeChanges(ctx context.Context, dbUnique string, vme MonitoredD
 	return changeCounts
 }
 
-func DetectConfigurationChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementMessage, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectConfigurationChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -680,7 +680,7 @@ func DetectConfigurationChanges(ctx context.Context, dbUnique string, vme Monito
 	log.GetLogger(ctx).Debugf("[%s][%s] detected %d configuration changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []metrics.MeasurementMessage{{
+		storageCh <- []metrics.MeasurementEnvelope{{
 			DBName:     dbUnique,
 			MetricName: "configuration_changes",
 			Data:       detectedChanges,
@@ -691,7 +691,7 @@ func DetectConfigurationChanges(ctx context.Context, dbUnique string, vme Monito
 	return changeCounts
 }
 
-func CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementMessage, hostState map[string]map[string]string) {
+func CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) {
 	sprocCounts := DetectSprocChanges(ctx, dbUnique, vme, storageCh, hostState) // TODO some of Detect*() code could be unified...
 	tableCounts := DetectTableChanges(ctx, dbUnique, vme, storageCh, hostState)
 	indexCounts := DetectIndexChanges(ctx, dbUnique, vme, storageCh, hostState)
@@ -725,7 +725,7 @@ func CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, vme M
 		influxEntry["epoch_ns"] = time.Now().UnixNano()
 		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []metrics.MeasurementMessage{{DBName: dbUnique,
+		storageCh <- []metrics.MeasurementEnvelope{{DBName: dbUnique,
 			SourceType: string(md.Kind),
 			MetricName: "object_changes",
 			Data:       detectedChangesSummary,

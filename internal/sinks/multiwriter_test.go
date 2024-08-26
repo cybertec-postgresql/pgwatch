@@ -14,7 +14,7 @@ func (mw *MockWriter) SyncMetric(_, _, _ string) error {
 	return nil
 }
 
-func (mw *MockWriter) Write(_ []metrics.MeasurementMessage) error {
+func (mw *MockWriter) Write(_ []metrics.MeasurementEnvelope) error {
 	return nil
 }
 
@@ -69,9 +69,9 @@ func TestWriteMeasurements(t *testing.T) {
 	mw.AddWriter(mockWriter)
 	ctx, c := context.WithCancel(context.Background())
 	assert.NotNil(t, c)
-	storageCh := make(chan []metrics.MeasurementMessage)
+	storageCh := make(chan []metrics.MeasurementEnvelope)
 	go mw.WriteMeasurements(ctx, storageCh)
-	storageCh <- []metrics.MeasurementMessage{{}}
+	storageCh <- []metrics.MeasurementEnvelope{{}}
 	c()
 	close(storageCh)
 }

@@ -80,7 +80,7 @@ func TestWrite(t *testing.T) {
 		сtx:    ctx,
 		sinkDb: conn,
 	}
-	messages := []metrics.MeasurementMessage{
+	messages := []metrics.MeasurementEnvelope{
 		{
 			MetricName: "test_metric",
 			Data: metrics.Measurements{
@@ -96,7 +96,7 @@ func TestWrite(t *testing.T) {
 	assert.NoError(t, err, "messages skipped due to high load")
 
 	highLoadTimeout = time.Second * 5
-	pgw.input = make(chan []metrics.MeasurementMessage, cacheLimit)
+	pgw.input = make(chan []metrics.MeasurementEnvelope, cacheLimit)
 	err = pgw.Write(messages)
 	assert.NoError(t, err, "write successful")
 

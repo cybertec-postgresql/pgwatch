@@ -27,7 +27,7 @@ type Reaper struct {
 	opts                *cmdopts.Options
 	sourcesReaderWriter sources.ReaderWriter
 	metricsReaderWriter metrics.ReaderWriter
-	measurementCh       chan []metrics.MeasurementMessage
+	measurementCh       chan []metrics.MeasurementEnvelope
 }
 
 func NewReaper(opts *cmdopts.Options, sourcesReaderWriter sources.ReaderWriter, metricsReaderWriter metrics.ReaderWriter) *Reaper {
@@ -59,7 +59,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 	if measurementsWriter, err = sinks.NewMultiWriter(mainContext, &opts.Sinks, metricDefinitionMap); err != nil {
 		logger.Fatal(err)
 	}
-	r.measurementCh = make(chan []metrics.MeasurementMessage, 10000)
+	r.measurementCh = make(chan []metrics.MeasurementEnvelope, 10000)
 	go measurementsWriter.WriteMeasurements(mainContext, r.measurementCh)
 
 	for { //main loop
@@ -412,7 +412,7 @@ func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 			}
 		}
 
-		var metricStoreMessages []metrics.MeasurementMessage
+		var metricStoreMessages []metrics.MeasurementEnvelope
 		var err error
 		mfm := MetricFetchConfig{
 			DBUniqueName:        dbUniqueName,
@@ -465,7 +465,7 @@ func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 								entry := metrics.Measurement{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
 								detectedChangesSummary = append(detectedChangesSummary, entry)
 								metricStoreMessages = append(metricStoreMessages,
-									metrics.MeasurementMessage{
+									metrics.MeasurementEnvelope{
 										DBName:     dbUniqueName,
 										SourceType: string(srcType),
 										MetricName: "object_changes",
@@ -491,7 +491,7 @@ func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 	}
 }
 
-func StoreMetrics(metrics []metrics.MeasurementMessage, storageCh chan<- []metrics.MeasurementMessage) (int, error) {
+func StoreMetrics(metrics []metrics.MeasurementEnvelope, storageCh chan<- []metrics.MeasurementEnvelope) (int, error) {
 	if len(metrics) > 0 {
 		storageCh <- metrics
 		return len(metrics), nil
@@ -499,9 +499,9 @@ func StoreMetrics(metrics []metrics.MeasurementMessage, storageCh chan<- []metri
 	return 0, nil
 }
 
-func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.MonitoredDatabase, persistenceChannel chan []metrics.MeasurementMessage) {
+func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.MonitoredDatabase, persistenceChannel chan []metrics.MeasurementEnvelope) {
 	if len(monitoredDbs) > 0 {
-		msms := make([]metrics.MeasurementMessage, len(monitoredDbs))
+		msms := make([]metrics.MeasurementEnvelope, len(monitoredDbs))
 		now := time.Now()
 
 		for _, mdb := range monitoredDbs {
@@ -514,7 +514,7 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.Mo
 			for k, v := range mdb.CustomTags {
 				db[tagPrefix+k] = v
 			}
-			msms = append(msms, metrics.MeasurementMessage{
+			msms = append(msms, metrics.MeasurementEnvelope{
 				DBName:     mdb.Name,
 				MetricName: monitoredDbsDatastoreSyncMetricName,
 				Data:       metrics.Measurements{db},
@@ -593,9 +593,9 @@ func deepCopyMetricData(data metrics.Measurements) metrics.Measurements {
 func FetchMetrics(ctx context.Context,
 	msg MetricFetchConfig,
 	hostState map[string]map[string]string,
-	storageCh chan<- []metrics.MeasurementMessage,
+	storageCh chan<- []metrics.MeasurementEnvelope,
 	context string,
-	opts *cmdopts.Options) ([]metrics.MeasurementMessage, error) {
+	opts *cmdopts.Options) ([]metrics.MeasurementEnvelope, error) {
 
 	var dbSettings MonitoredDatabaseSettings
 	var dbVersion int
@@ -736,10 +736,10 @@ send_to_storageChannel:
 	}
 	if fromCache {
 		log.GetLogger(ctx).Infof("[%s:%s] loaded %d rows from the instance cache", msg.DBUniqueName, msg.MetricName, len(cachedData))
-		return []metrics.MeasurementMessage{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
+		return []metrics.MeasurementEnvelope{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
 			MetricDef: mvp, RealDbname: dbSettings.RealDbname, SystemIdentifier: dbSettings.SystemIdentifier}}, nil
 	}
-	return []metrics.MeasurementMessage{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
+	return []metrics.MeasurementEnvelope{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
 		MetricDef: mvp, RealDbname: dbSettings.RealDbname, SystemIdentifier: dbSettings.SystemIdentifier}}, nil
 
 }

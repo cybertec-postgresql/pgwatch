@@ -26,7 +26,7 @@ func NewJSONWriter(ctx context.Context, fname string) (*JSONWriter, error) {
 	return jw, nil
 }
 
-func (jw *JSONWriter) Write(msgs []metrics.MeasurementMessage) error {
+func (jw *JSONWriter) Write(msgs []metrics.MeasurementEnvelope) error {
 	if jw.ctx.Err() != nil {
 		return jw.ctx.Err()
 	}

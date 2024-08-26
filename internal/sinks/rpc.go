@@ -34,7 +34,7 @@ func NewRPCWriter(ctx context.Context, address string) (*RPCWriter, error) {
 }
 
 // Sends Measurement Message to RPC Sink
-func (rw *RPCWriter) Write(msgs []metrics.MeasurementMessage) error {
+func (rw *RPCWriter) Write(msgs []metrics.MeasurementEnvelope) error {
 	if rw.ctx.Err() != nil {
 		return rw.ctx.Err()
 	}

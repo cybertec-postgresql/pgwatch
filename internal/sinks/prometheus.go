@@ -69,7 +69,7 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 	return
 }
 
-func (promw *PrometheusWriter) Write(msgs []metrics.MeasurementMessage) error {
+func (promw *PrometheusWriter) Write(msgs []metrics.MeasurementEnvelope) error {
 	if len(msgs) == 0 || len(msgs[0].Data) == 0 { // no batching in async prom mode, so using 0 indexing ok
 		return nil
 	}
@@ -79,10 +79,10 @@ func (promw *PrometheusWriter) Write(msgs []metrics.MeasurementMessage) error {
 }
 
 // Async Prom cache
-var promAsyncMetricCache = make(map[string]map[string][]metrics.MeasurementMessage) // [dbUnique][metric]lastly_fetched_data
+var promAsyncMetricCache = make(map[string]map[string][]metrics.MeasurementEnvelope) // [dbUnique][metric]lastly_fetched_data
 var promAsyncMetricCacheLock = sync.RWMutex{}
 
-func (promw *PrometheusWriter) PromAsyncCacheAddMetricData(dbUnique, metric string, msgArr []metrics.MeasurementMessage) { // cache structure: [dbUnique][metric]lastly_fetched_data
+func (promw *PrometheusWriter) PromAsyncCacheAddMetricData(dbUnique, metric string, msgArr []metrics.MeasurementEnvelope) { // cache structure: [dbUnique][metric]lastly_fetched_data
 	promAsyncMetricCacheLock.Lock()
 	defer promAsyncMetricCacheLock.Unlock()
 	if _, ok := promAsyncMetricCache[dbUnique]; ok {
@@ -94,7 +94,7 @@ func (promw *PrometheusWriter) PromAsyncCacheInitIfRequired(dbUnique, _ string) 
 	promAsyncMetricCacheLock.Lock()
 	defer promAsyncMetricCacheLock.Unlock()
 	if _, ok := promAsyncMetricCache[dbUnique]; !ok {
-		metricMap := make(map[string][]metrics.MeasurementMessage)
+		metricMap := make(map[string][]metrics.MeasurementEnvelope)
 		promAsyncMetricCache[dbUnique] = metricMap
 	}
 }
@@ -166,7 +166,7 @@ func (promw *PrometheusWriter) setInstanceUpDownState(ch chan<- prometheus.Metri
 	data[promInstanceUpStateMetric] = 1
 	data[epochColumnName] = time.Now().UnixNano()
 
-	pm := promw.MetricStoreMessageToPromMetrics(metrics.MeasurementMessage{
+	pm := promw.MetricStoreMessageToPromMetrics(metrics.MeasurementEnvelope{
 		DBName:           dbName,
 		SourceType:       "postgres",
 		MetricName:       promInstanceUpStateMetric,
@@ -183,7 +183,7 @@ func (promw *PrometheusWriter) setInstanceUpDownState(ch chan<- prometheus.Metri
 	}
 }
 
-func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.MeasurementMessage) []prometheus.Metric {
+func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.MeasurementEnvelope) []prometheus.Metric {
 	promMetrics := make([]prometheus.Metric, 0)
 	logger := log.GetLogger(promw.ctx)
 	var epochTime time.Time

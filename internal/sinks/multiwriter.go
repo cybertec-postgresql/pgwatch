@@ -14,7 +14,7 @@ import (
 // Writer is an interface that writes metrics values
 type Writer interface {
 	SyncMetric(dbUnique, metricName, op string) error
-	Write(msgs []metrics.MeasurementMessage) error
+	Write(msgs []metrics.MeasurementEnvelope) error
 }
 
 // MultiWriter ensures the simultaneous storage of data in several storages.
@@ -73,7 +73,7 @@ func (mw *MultiWriter) SyncMetrics(dbUnique, metricName, op string) (err error) 
 	return
 }
 
-func (mw *MultiWriter) WriteMeasurements(ctx context.Context, storageCh <-chan []metrics.MeasurementMessage) {
+func (mw *MultiWriter) WriteMeasurements(ctx context.Context, storageCh <-chan []metrics.MeasurementEnvelope) {
 	var err error
 	logger := log.GetLogger(ctx)
 	for {

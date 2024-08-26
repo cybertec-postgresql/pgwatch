@@ -13,7 +13,7 @@ import (
 func TestJSONWriter_Write(t *testing.T) {
 	a := assert.New(t)
 	// Define test data
-	msg := metrics.MeasurementMessage{
+	msg := metrics.MeasurementEnvelope{
 		MetricName: "test_metric",
 		Data: metrics.Measurements{
 			{"number": 1, "string": "test_data"},
@@ -27,13 +27,13 @@ func TestJSONWriter_Write(t *testing.T) {
 	jw, err := NewJSONWriter(ctx, tempFile)
 	a.NoError(err)
 
-	err = jw.Write([]metrics.MeasurementMessage{msg})
+	err = jw.Write([]metrics.MeasurementEnvelope{msg})
 	a.NoError(err, "write successful")
-	err = jw.Write([]metrics.MeasurementMessage{})
+	err = jw.Write([]metrics.MeasurementEnvelope{})
 	a.NoError(err, "empty write successful")
 
 	cancel()
-	err = jw.Write([]metrics.MeasurementMessage{msg})
+	err = jw.Write([]metrics.MeasurementEnvelope{msg})
 	a.Error(err, "context canceled")
 
 	// Read the contents of the file

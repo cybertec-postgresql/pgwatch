@@ -73,7 +73,7 @@ type Preset struct {
 type Measurement map[string]any
 type Measurements []map[string]any
 
-type MeasurementMessage struct {
+type MeasurementEnvelope struct {
 	DBName           string
 	SourceType       string
 	MetricName       string

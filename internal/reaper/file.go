@@ -35,7 +35,7 @@ func IsDirectlyFetchableMetric(metric string) bool {
 	return ok
 }
 
-func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) ([]metrics.MeasurementMessage, error) {
+func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) ([]metrics.MeasurementEnvelope, error) {
 	var data []map[string]any
 	var err error
 
@@ -58,16 +58,16 @@ func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme Mo
 	if err != nil {
 		return nil, err
 	}
-	return []metrics.MeasurementMessage{msm}, nil
+	return []metrics.MeasurementEnvelope{msm}, nil
 }
 
 // data + custom tags + counters
-func DatarowsToMetricstoreMessage(data metrics.Measurements, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) (metrics.MeasurementMessage, error) {
+func DatarowsToMetricstoreMessage(data metrics.Measurements, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) (metrics.MeasurementEnvelope, error) {
 	md, err := GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
 	if err != nil {
-		return metrics.MeasurementMessage{}, err
+		return metrics.MeasurementEnvelope{}, err
 	}
-	return metrics.MeasurementMessage{
+	return metrics.MeasurementEnvelope{
 		DBName:           msg.DBUniqueName,
 		SourceType:       string(msg.Source),
 		MetricName:       msg.MetricName,

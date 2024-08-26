@@ -35,7 +35,7 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		сtx:        ctx,
 		metricDefs: metricDefs,
 		opts:       opts,
-		input:      make(chan []metrics.MeasurementMessage, cacheLimit),
+		input:      make(chan []metrics.MeasurementEnvelope, cacheLimit),
 		lastError:  make(chan error),
 		sinkDb:     conn,
 	}
@@ -105,7 +105,7 @@ type PostgresWriter struct {
 	metricSchema DbStorageSchemaType
 	metricDefs   *metrics.Metrics
 	opts         *CmdOpts
-	input        chan []metrics.MeasurementMessage
+	input        chan []metrics.MeasurementEnvelope
 	lastError    chan error
 }
 
@@ -179,7 +179,7 @@ func (pgw *PostgresWriter) EnsureMetricDummy(metric string) (err error) {
 }
 
 // Write send the measurements to the cache channel
-func (pgw *PostgresWriter) Write(msgs []metrics.MeasurementMessage) error {
+func (pgw *PostgresWriter) Write(msgs []metrics.MeasurementEnvelope) error {
 	if pgw.сtx.Err() != nil {
 		return pgw.сtx.Err()
 	}
@@ -199,7 +199,7 @@ func (pgw *PostgresWriter) Write(msgs []metrics.MeasurementMessage) error {
 
 // poll is the main loop that reads from the input channel and flushes the data to the database
 func (pgw *PostgresWriter) poll() {
-	cache := make([]metrics.MeasurementMessage, 0, cacheLimit)
+	cache := make([]metrics.MeasurementEnvelope, 0, cacheLimit)
 	cacheTimeout := pgw.opts.BatchingDelay
 	tick := time.NewTicker(cacheTimeout)
 	for {
@@ -228,7 +228,7 @@ func (pgw *PostgresWriter) poll() {
 }
 
 // flush sends the cached measurements to the database
-func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementMessage) {
+func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	if len(msgs) == 0 {
 		return
 	}
