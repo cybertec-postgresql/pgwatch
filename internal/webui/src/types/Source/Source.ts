@@ -1,5 +1,5 @@
 export type Source = {
-  DBUniqueName: string;
+  Name: string;
   Group: string;
   ConnStr: string;
   Metrics: Record<string, number> | null;

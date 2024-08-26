@@ -29,17 +29,17 @@ export default class SourceService {
   };
 
   public async editSource(data: SourceRequestBody) {
-    return await axiosInstance.post("source", data.data, { params: { "name": data.DBUniqueName } }).
+    return await axiosInstance.post("source", data.data, { params: { "name": data.Name } }).
       then(response => response);
   };
 
   public async editSourceEnable(data: Source) {
-    return await axiosInstance.post("source", data, { params: { "name": data.DBUniqueName } }).
+    return await axiosInstance.post("source", data, { params: { "name": data.Name } }).
       then(response => response);
   };
 
   public async editSourceHostConfig(data: Source) {
-    return await axiosInstance.post("source", data, { params: { "name": data.DBUniqueName } });
+    return await axiosInstance.post("source", data, { params: { "name": data.Name } });
   };
 
   public async testSourceConnection(data: string) {

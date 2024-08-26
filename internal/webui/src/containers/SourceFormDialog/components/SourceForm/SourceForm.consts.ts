@@ -24,7 +24,7 @@ const tagsValidationSchema = Yup.object({
 });
 
 export const sourceFormValuesValidationSchema = Yup.object({
-  DBUniqueName: Yup.string().required("Unique name is required"),
+  Name: Yup.string().required("Unique name is required"),
   Group: Yup.string().required("Group is required"),
   ConnStr: Yup.string().required("Connection string is required"),
   Kind: Yup.string().required("Type is required"),

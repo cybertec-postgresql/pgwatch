@@ -3,7 +3,7 @@ import { SourceFormSteps } from "./SourceForm.consts";
 export type SourceFormStep = keyof typeof SourceFormSteps;
 
 type SourceFormGeneral = {
-  DBUniqueName: string;
+  Name: string;
   Group: string;
   ConnStr: string;
   Kind: string;

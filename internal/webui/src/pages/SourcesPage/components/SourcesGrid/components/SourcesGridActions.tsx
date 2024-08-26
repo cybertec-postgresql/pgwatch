@@ -33,10 +33,10 @@ export const SourcesGridActions = ({ source }: Props) => {
 
   const handleDeleteClick = () => setDialogOpen(true);
 
-  const handleSubmit = () => mutate(source.DBUniqueName);
+  const handleSubmit = () => mutate(source.Name);
 
   const message = useMemo(
-    () => `Are you sure want to delete source "${source.DBUniqueName}"`,
+    () => `Are you sure want to delete source "${source.Name}"`,
     [source],
   );
 
