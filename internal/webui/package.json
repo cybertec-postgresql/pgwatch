@@ -1,0 +1,78 @@
+{
+  "name": "web-gui",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint:ts": "eslint --ext=jsx,ts,tsx internal",
+    "lint:fix": "eslint --ext=jsx,ts,tsx internal --fix",
+    "lint:cypress": "eslint --no-eslintrc --ext=ts -c cypress/.eslintrc cypress/e2e",
+    "lint:quick": "yarn lint:ts --cache"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.9.3",
+    "@emotion/styled": "^11.9.3",
+    "@hookform/resolvers": "^3.3.4",
+    "@mui/icons-material": "^5.11.0",
+    "@mui/lab": "^5.0.0-alpha.119",
+    "@mui/material": "^5.11.8",
+    "@mui/system": "^5.15.15",
+    "@mui/x-data-grid": "^5.17.23",
+    "@tanstack/react-query": "^4.24.4",
+    "@testing-library/jest-dom": "^5.14.1",
+    "@testing-library/react": "^13.0.0",
+    "@testing-library/user-event": "^14.4.3",
+    "axios": "^1.6.0",
+    "classnames": "^2.5.1",
+    "moment": "^2.29.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.43.1",
+    "react-router-dom": "6.8.1",
+    "react-scripts": "5.0.1",
+    "react-use-websocket": "^4.5.0",
+    "tss-react": "^4.9.6",
+    "typescript": "^4.9.5",
+    "web-vitals": "^3.1.1",
+    "yaml": "^2.4.1",
+    "yup": "^1.4.0"
+  },
+  "devDependencies": {
+    "@types/eslint": "^8.21.0",
+    "@types/jest": "^29.4.0",
+    "@types/node": "^18.13.0",
+    "@types/react": "^18.0.27",
+    "@types/react-dom": "^18.0.10",
+    "@types/react-router-dom": "^5.3.3",
+    "eslint": "^8.33.0",
+    "eslint-config-prettier": "^8.6.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "2.8.4"
+  },
+  "resolutions": {
+    "react-scripts/@svgr/webpack/@svgr/plugin-svgo/svgo/css-select": ">=5.1.0"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "main": "index.js",
+  "license": "MIT"
+}

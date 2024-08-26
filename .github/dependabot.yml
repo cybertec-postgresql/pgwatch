@@ -3,7 +3,7 @@ updates:
 
   # Maintain dependencies for Go modules
   - package-ecosystem: gomod
-    directory: "src/"
+    directory: "/" 
     schedule:
       interval: daily
       time: "04:00"

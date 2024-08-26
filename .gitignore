@@ -24,6 +24,3 @@ debug
 
 # IntelliJ Idea settings
 .idea/
-
-# leftovers
-src/metrics/sql/

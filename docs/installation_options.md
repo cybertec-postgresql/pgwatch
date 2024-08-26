@@ -24,7 +24,7 @@ The default Docker images use this approach.
 From v1.4.0 one can deploy the gatherer daemon(s) decentrally with
 *hosts to be monitored* defined in simple YAML files. In that case there
 is no need for the central Postgres "config DB". See the sample
-[instances.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/src/sources/sample.sources.yaml)
+[instances.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sources/sample.sources.yaml)
 config file for an example. Note that in this mode you also need to
 point out the path to metric definition SQL files when starting the
 gatherer. Also note that the configuration system also supports multiple
