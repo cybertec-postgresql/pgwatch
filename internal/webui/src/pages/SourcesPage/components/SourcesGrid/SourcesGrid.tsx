@@ -32,7 +32,7 @@ export const SourcesGrid = () => {
     <div className={classes.page}>
       <SourceFormProvider>
         <DataGrid
-          getRowId={(row) => row.DBUniqueName}
+          getRowId={(row) => row.Name}
           columns={columns}
           rows={data ?? []}
           rowsPerPageOptions={[]}

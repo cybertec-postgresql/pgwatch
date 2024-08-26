@@ -16,7 +16,7 @@ const getIcon = (value: boolean) => {
 
 export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
   {
-    field: "DBUniqueName",
+    field: "Name",
     headerName: "Name",
   },
   {

@@ -32,16 +32,16 @@ export const SourceFormStepGeneral = () => {
     <div className={classes.form}>
       <FormControl
         className={cx(classes.formControlInput, classes.widthDefault)}
-        error={hasError("DBUniqueName")}
+        error={hasError("Name")}
         variant="outlined"
       >
-        <InputLabel htmlFor="DBUniqueName">Unique name</InputLabel>
+        <InputLabel htmlFor="Name">Unique name</InputLabel>
         <OutlinedInput
-          {...register("DBUniqueName")}
+          {...register("Name")}
           id="Unique name"
           label="Unique name"
         />
-        <FormHelperText>{getError("DBUniqueName")}</FormHelperText>
+        <FormHelperText>{getError("Name")}</FormHelperText>
       </FormControl>
       <FormControl
         className={cx(classes.formControlInput, classes.widthDefault)}

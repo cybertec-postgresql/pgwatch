@@ -13,7 +13,7 @@ import { SourceFormValues } from "./components/SourceForm/SourceForm.types";
 
 export const SourceFormDialog = () => {
   const { data, open, action, handleClose } = useSourceFormContext();
-  const [dbUniqueNameOrig, setDbUniqueNameOrig] = useState<string>("");
+  const [nameOrig, setnameOrig] = useState<string>("");
 
   const formMethods = useForm<SourceFormValues>({
     resolver: yupResolver(sourceFormValuesValidationSchema),
@@ -28,8 +28,8 @@ export const SourceFormDialog = () => {
   useEffect(() => {
     const initialValues = getSourceInitialValues(data);
     reset(initialValues);
-    setDbUniqueNameOrig(initialValues.DBUniqueName);
-    if (action === SourceFormActions.Copy) { setValue("DBUniqueName", ""); }
+    setnameOrig(initialValues.Name);
+    if (action === SourceFormActions.Copy) { setValue("Name", ""); }
   }, [data, open, reset, action, setValue]);
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export const SourceFormDialog = () => {
     const source = createSourceRequest(values);
     if (action === SourceFormActions.Edit) {
       editSource.mutate({
-        DBUniqueName: dbUniqueNameOrig,
+        Name: nameOrig,
         data: source,
       });
     } else {

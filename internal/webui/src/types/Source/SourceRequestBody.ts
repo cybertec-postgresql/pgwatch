@@ -1,6 +1,6 @@
 import { Source } from "./Source";
 
 export type SourceRequestBody = {
-  DBUniqueName: string;
+  Name: string;
   data: Source;
 };

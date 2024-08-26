@@ -4,7 +4,7 @@ import { toRecordFromArray } from "utils/toRecordFromArray";
 import { SourceFormValues } from "./components/SourceForm/SourceForm.types";
 
 export const getSourceInitialValues = (data?: Source): SourceFormValues => ({
-  DBUniqueName: data?.DBUniqueName ?? "",
+  Name: data?.Name ?? "",
   Group: data?.Group ?? "default",
   ConnStr: data?.ConnStr ?? "",
   Kind: data?.Kind ?? "postgres",
@@ -21,7 +21,7 @@ export const getSourceInitialValues = (data?: Source): SourceFormValues => ({
 });
 
 export const createSourceRequest = (values: SourceFormValues): Source => ({
-  DBUniqueName: values.DBUniqueName,
+  Name: values.Name,
   Group: values.Group,
   ConnStr: values.ConnStr,
   Kind: values.Kind,
