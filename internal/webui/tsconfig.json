@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": "src",
-    "rootDir": "internal",
+    "rootDir": "src",
     "outDir": "build/dist",
     "target": "es2019",
     "lib": ["es2019", "dom", "dom.iterable", "esnext"],
