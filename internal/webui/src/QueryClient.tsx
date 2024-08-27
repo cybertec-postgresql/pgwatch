@@ -1,6 +1,6 @@
 import { QueryClientProvider as ClientProvider, MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
+import { isUnauthorized } from "api";
 import axios from "axios";
-import { isUnauthorized } from "axiosInstance";
 import { useNavigate } from "react-router-dom";
 import { logout } from "queries/Auth";
 import { useAlert } from "utils/AlertContext";

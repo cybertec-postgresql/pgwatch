@@ -1,8 +1,14 @@
-import { axiosInstance } from "axiosInstance";
+import { apiClient } from "api";
+import { AxiosInstance } from "axios";
 import { LoginFormValues } from "pages/LoginPage/components/LoginForm/LoginForm.types";
 
 export default class AuthService {
+  private api: AxiosInstance;
   private static _instance: AuthService;
+
+  constructor() {
+    this.api = apiClient();
+  }
 
   public static getInstance(): AuthService {
     if (!AuthService._instance) {
@@ -13,7 +19,7 @@ export default class AuthService {
   };
 
   public async login(data: LoginFormValues) {
-    return await axiosInstance.post("login", data).
+    return await this.api.post("/login", data).
       then(response => response.data);
   };
 }
