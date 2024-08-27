@@ -7,8 +7,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint:ts": "eslint --ext=jsx,ts,tsx internal",
-    "lint:fix": "eslint --ext=jsx,ts,tsx internal --fix",
+    "lint:ts": "eslint --ext=jsx,ts,tsx src",
+    "lint:fix": "eslint --ext=jsx,ts,tsx src --fix",
     "lint:cypress": "eslint --no-eslintrc --ext=ts -c cypress/.eslintrc cypress/e2e",
     "lint:quick": "yarn lint:ts --cache"
   },
@@ -74,5 +74,6 @@
     ]
   },
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }
