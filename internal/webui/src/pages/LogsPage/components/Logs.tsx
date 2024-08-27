@@ -33,7 +33,7 @@ export const Logs = () => {
         callAlert("error", "Connection uninstantiated");
         break;
     }
-  }, [readyState, callAlert]);
+  }, [readyState]); // eslint-disable-line
 
   return (
     <div className={pageClasses.page}>
