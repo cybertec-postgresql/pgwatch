@@ -42,7 +42,7 @@ type PgxPoolIface interface {
 	Stat() *pgxpool.Stat
 }
 
-func MarshallParam(v any) any {
+func MarshallParamToJSONB(v any) any {
 	if v == nil {
 		return nil
 	}
