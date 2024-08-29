@@ -132,8 +132,8 @@ func (dmrw *dbMetricReaderWriter) UpdateMetric(metricName string, metric Metric)
 	_, err := dmrw.configDb.Exec(dmrw.ctx, `UPDATE pgwatch.metric SET 
 	sqls = $2, init_sql = $3, description = $4, node_status = $5, gauges = $6, is_instance_level = $7, storage_name = $8
 	WHERE name = $1`,
-		metricName, db.MarshallParam(metric.SQLs), metric.InitSQL, metric.Description,
-		metric.NodeStatus, db.MarshallParam(metric.Gauges), metric.IsInstanceLevel, metric.StorageName)
+		metricName, db.MarshallParamToJSONB(metric.SQLs), metric.InitSQL, metric.Description,
+		metric.NodeStatus, metric.Gauges, metric.IsInstanceLevel, metric.StorageName)
 	return err
 }
 
@@ -145,6 +145,6 @@ func (dmrw *dbMetricReaderWriter) DeletePreset(presetName string) error {
 func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName string, preset Preset) error {
 	sql := `INSERT INTO pgwatch.preset(name, description, metrics) VALUES ($1, $2, $3)
 	ON CONFLICT (name) DO UPDATE SET description = $2, metrics = $3`
-	_, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParam(preset.Metrics))
+	_, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParamToJSONB(preset.Metrics))
 	return err
 }

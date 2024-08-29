@@ -49,7 +49,7 @@ func (r *dbSourcesReaderWriter) WriteSources(dbs Sources) error {
 }
 
 func (r *dbSourcesReaderWriter) updateDatabase(conn db.PgxIface, md Source) (err error) {
-	m := db.MarshallParam
+	m := db.MarshallParamToJSONB
 	sql := `insert into pgwatch.source(
 	name, 
 	"group", 
