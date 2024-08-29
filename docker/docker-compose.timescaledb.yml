@@ -1,0 +1,6 @@
+include:
+  - path: compose.timescaledb.yml
+  - path: compose.grafana.yml
+  - path: compose.pgwatch.yml
+  - path: compose.pgadmin.yml
+  - path: compose.prometheus.yml

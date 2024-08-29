@@ -1,0 +1,28 @@
+services:
+  grafana:
+    # to use latest Grafana v11, update the dashboards provisioning folder below
+    image: grafana/grafana:10.4.7
+    user: "0:0"
+    environment:
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: postgres:5432
+      GF_DATABASE_NAME: pgwatch_grafana
+      GF_DATABASE_USER: pgwatch
+      GF_DATABASE_PASSWORD: pgwatchadmin
+      GF_DATABASE_SSL_MODE: disable
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/1-global-db-overview.json
+      GF_INSTALL_PLUGINS: marcusolsson-treemap-panel
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    volumes:
+      - "../grafana/postgres_datasource.yml:/etc/grafana/provisioning/datasources/pg_ds.yml"
+      - "../grafana/postgres_dashboard.yml:/etc/grafana/provisioning/dashboards/pg_db.yml"
+      # Uncomment the dashboard version you want to use and comment out the other one.
+      - "../grafana/postgres/v10:/var/lib/grafana/dashboards"
+      # - "./grafana/postgres/v11:/var/lib/grafana/dashboards"
+    depends_on:
+      postgres:
+        condition: service_healthy

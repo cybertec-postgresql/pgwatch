@@ -1,0 +1,46 @@
+services:
+  postgres:
+    user: postgres
+    # Custom Dockerfile.postgres within build section is used to enable plpython3u extension.
+    # Comment out the build section to use the default PostgreSQL or TimescaleDB image.
+    build: 
+      context: .
+      dockerfile: Dockerfile.postgres-plpython3u
+
+    # If you want PostgreSQL pure vanilla experience use:
+    # image: &pgimage "postgres:latest"
+
+    # If you want to use TimescaleDB extension use:
+    # image: &pgimage timescale/timescaledb:latest-pg16
+    # and update the command section below with
+    #  "-cshared_preload_libraries=pg_stat_statements,timescaledb"
+
+    image: &pgimage postgres-plpython3u:latest
+    command:
+      - "-cshared_preload_libraries=pg_stat_statements"
+      - "-cpg_stat_statements.track=all"
+      - "-ctrack_io_timing=on"
+      - "-ctrack_functions=pl"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - "./bootstrap/create_role_db.sql:/docker-entrypoint-initdb.d/create_role_db.sql"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      
+  add-test-db:
+    extends:
+      file: compose.add-test-db.yml
+      service: add-test-db
+    image: *pgimage
+
+  pgbench:
+    extends:
+      file: compose.pgbench.yml
+      service: pgbench  
+    image: *pgimage

@@ -1,0 +1,16 @@
+services:
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - "./bootstrap/pgadmin_servers.json:/pgadmin4/servers.json"
+      - "./bootstrap/pgadmin_pass:/pgadmin4/pass"
+    ports:
+      - "80:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - pgadmin

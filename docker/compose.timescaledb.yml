@@ -1,0 +1,32 @@
+services:
+  postgres:
+    user: postgres
+    image: &pgimage timescale/timescaledb:latest-pg16
+    command:
+      - "-cshared_preload_libraries=pg_stat_statements,timescaledb"
+      - "-cpg_stat_statements.track=all"
+      - "-ctrack_io_timing=on"
+      - "-ctrack_functions=pl"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - "./bootstrap/create_role_db.sql:/docker-entrypoint-initdb.d/create_role_db.sql"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      
+  add-test-db:
+    extends:
+      file: compose.add-test-db.yml
+      service: add-test-db
+    image: *pgimage
+
+  pgbench:
+    extends:
+      file: compose.pgbench.yml
+      service: pgbench  
+    image: *pgimage
