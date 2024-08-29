@@ -64,7 +64,7 @@ type SyncReq struct {
 
 func (rw *RPCWriter) SyncMetric(dbUnique string, metricName string, op string) error {
 	var logMsg string
-	if err := rw.client.Call("Receiver.SyncMetric", &SyncReq{
+	if err := rw.client.Call("Handler.SyncMetric", &SyncReq{
 		Operation:  op,
 		DbName:     dbUnique,
 		MetricName: metricName,

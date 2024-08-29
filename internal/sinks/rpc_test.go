@@ -17,6 +17,9 @@ import (
 type Receiver struct {
 }
 
+type Handler struct {
+}
+
 var ctxt = context.Background()
 
 func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementEnvelope, logMsg *string) error {
@@ -30,7 +33,7 @@ func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementEnvelope, l
 	return nil
 }
 
-func (receiver *Receiver) SyncMetric(syncReq *sinks.SyncReq, logMsg *string) error {
+func (handler *Handler) SyncMetric(syncReq *sinks.SyncReq, logMsg *string) error {
 	if syncReq == nil {
 		return errors.New("msgs is nil")
 	}
@@ -43,7 +46,11 @@ func (receiver *Receiver) SyncMetric(syncReq *sinks.SyncReq, logMsg *string) err
 
 func init() {
 	recv := new(Receiver)
+	handler := new(Handler)
 	if err := rpc.Register(recv); err != nil {
+		panic(err)
+	}
+	if err := rpc.Register(handler); err != nil {
 		panic(err)
 	}
 	rpc.HandleHTTP()
