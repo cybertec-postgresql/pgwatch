@@ -2,19 +2,12 @@ services:
   postgres:
     user: postgres
     # Custom Dockerfile.postgres within build section is used to enable plpython3u extension.
-    # Comment out the build section to use the default PostgreSQL or TimescaleDB image.
+    # Comment out the build section to use the default PostgreSQL image.
     build: 
       context: .
       dockerfile: Dockerfile.postgres-plpython3u
-
-    # If you want PostgreSQL pure vanilla experience use:
+    # If you want pure PostgreSQL vanilla experience use:
     # image: &pgimage "postgres:latest"
-
-    # If you want to use TimescaleDB extension use:
-    # image: &pgimage timescale/timescaledb:latest-pg16
-    # and update the command section below with
-    #  "-cshared_preload_libraries=pg_stat_statements,timescaledb"
-
     image: &pgimage postgres-plpython3u:latest
     command:
       - "-cshared_preload_libraries=pg_stat_statements"
