@@ -18,7 +18,7 @@ For the fastest development experience the Docker compose file is provided:
 ```shell
 git clone https://github.com/cybertec-postgresql/pgwatch.git && cd pgwatch
 
-docker compose up --detach
+docker compose -f ./docker/docker-compose.yml up --detach
 ```
 <pre>
  ✔ Network pgwatch_default       Created
@@ -40,7 +40,7 @@ looking at metrics.
 To add a test database under monitoring, you can use [built-in WebUI](http://localhost:8080/). Or simply
 execute from command line:
 ```shell
-docker compose up add-test-db --force-recreate
+docker compose -f ./docker/docker-compose.yml up add-test-db --force-recreate
 ```
 <pre>
 [+] Running 2/0
@@ -59,7 +59,7 @@ pgwatch-add-test-db-1 exited with code 0
 
 To emulate workload for added test database execute:
 ```shell
-docker compose up pgbench
+docker compose -f ./docker/docker-compose.yml up pgbench
 ```
 <pre>
 [+] Running 2/2
@@ -114,7 +114,7 @@ pgAdmin uses port 80. If you want it to use another port, change it in `docker-c
 
 To look what is inside `pgwatch` database, you can spin up pgAdmin4:
 ```shell
-docker compose up --detach pgadmin
+docker compose -f ./docker/docker-compose.yml up --detach pgadmin
 ```
 Go to `localhost` in your favorite browser and login as `admin@local.com`, password `admin`.
 Server `pgwatch` should be already added in `Servers` group.
@@ -124,7 +124,7 @@ Server `pgwatch` should be already added in `Servers` group.
 If you apply any changes to the source code and want to restart the agent, it's usually enough to run:
 
 ```shell
-docker compose up pgwatch --build --force-recreate --detach
+docker compose -f ./docker/docker-compose.yml up pgwatch --build --force-recreate --detach
 ```
 
 The command above will rebuild the `pgwatch` agent from sources and relaunch the container.
@@ -133,12 +133,12 @@ The command above will rebuild the `pgwatch` agent from sources and relaunch the
 
 If you are running containers in detached mode, you still can follow the logs:
 ```shell
-docker compose logs --follow
+docker compose -f ./docker/docker-compose.yml logs --follow
 ```
 
 Or you may check the log of a particular service:
 ```shell
-docker compose logs pgwatch --follow
+docker compose -f ./docker/docker-compose.yml logs pgwatch --follow
 ```
 
 # Contributing
