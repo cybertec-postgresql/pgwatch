@@ -1,0 +1,17 @@
+services:
+  pgwatch:
+    # uncomment build section below for dev experience
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+    image: cybertecpostgresql/pgwatch:latest
+    environment:
+      PW_SOURCES: postgresql://pgwatch@postgres:5432/pgwatch
+      PW_SINK: postgresql://pgwatch@postgres:5432/pgwatch_metrics
+    # command:
+    #   - "--log-level=debug"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
