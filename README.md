@@ -4,7 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/cybertec-postgresql/pgwatch/badge.svg?branch=master&service=github)](https://coveralls.io/github/cybertec-postgresql/pgwatch?branch=master)
 
 
-# pgwatch v3 WIP. Please do not use it in production!
+# pgwatch v3-beta. Please test it as much as possible!
 
 This is the next generation of [pgwatch2](https://github.com/cybertec-postgresql/pgwatch2/). 
 
