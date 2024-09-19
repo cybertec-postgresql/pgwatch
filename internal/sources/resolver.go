@@ -160,6 +160,7 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 	if err != nil {
 		return ret, err
 	}
+	defer c.Close()
 
 	ctx, cancel := context.WithTimeoutCause(context.Background(), 5*time.Second, errors.New("etcd client timeout"))
 	defer cancel()
@@ -302,6 +303,7 @@ func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error) {
 			logger.Errorf("Could not contact Patroni member [%s:%s]: %v", ce.Name, m.Scope, err)
 			continue
 		}
+		connURL.Scheme = "postgresql"
 		connURL.Host = host + ":" + port
 		connURL.Path = "template1"
 		c, err := db.New(context.TODO(), connURL.String())
