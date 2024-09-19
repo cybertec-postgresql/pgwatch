@@ -16,13 +16,12 @@ import (
 	"os"
 	"path"
 	"regexp"
-	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	pgx "github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	client "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
 )
@@ -173,14 +172,24 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 		if s.HostConfig.Namespace == "" {
 			return ret, fmt.Errorf("Skipping Patroni entry %s - search 'namespace' not specified", s.Name)
 		}
-		resp, err := kapi.Get(ctx, s.HostConfig.Namespace)
+		resp, err := kapi.Get(ctx, s.HostConfig.Namespace, client.WithPrefix(), client.WithKeysOnly())
 		if err != nil {
-
 			return ret, cmp.Or(context.Cause(ctx), err)
 		}
 
+		// etcd3 does not have a dir node.
+		// Key="/service/batman/leader"
+		// Key="/service/batman/members/node"
+		//
+		// create unique map of first level items without Namespace
+		scopes := make(map[string]bool, len(resp.Kvs))
 		for _, node := range resp.Kvs {
-			scope := path.Base(string(node.Key)) // Key="/service/batman"
+			pathSuffix := strings.TrimPrefix(string(node.Key), s.HostConfig.Namespace)
+			scope := strings.SplitN(pathSuffix, "/", 2)[0]
+			scopes[scope] = true
+		}
+
+		for scope := range scopes {
 			scopeMembers, err := extractEtcdScopeMembers(ctx, s, scope, kapi, true)
 			if err != nil {
 				continue
@@ -202,7 +211,7 @@ func extractEtcdScopeMembers(ctx context.Context, s Source, scope string, kapi c
 	var name string
 	membersPath := path.Join(s.HostConfig.Namespace, scope, "members")
 
-	resp, err := kapi.Get(ctx, membersPath)
+	resp, err := kapi.Get(ctx, membersPath, client.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
@@ -288,15 +297,14 @@ func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error) {
 			mds = append(mds, c)
 			continue
 		}
-		c, err := db.New(context.TODO(), ce.ConnStr,
-			func(c *pgxpool.Config) error {
-				c.ConnConfig.Host = host
-				c.ConnConfig.Database = "template1"
-				i, err := strconv.ParseUint(port, 10, 16)
-				c.ConnConfig.Port = uint16(i)
-				mds[len(mds)].ConnStr = c.ConnString()
-				return err
-			})
+		connURL, err := url.Parse(ce.ConnStr)
+		if err != nil {
+			logger.Errorf("Could not contact Patroni member [%s:%s]: %v", ce.Name, m.Scope, err)
+			continue
+		}
+		connURL.Host = host + ":" + port
+		connURL.Path = "template1"
+		c, err := db.New(context.TODO(), connURL.String())
 		if err != nil {
 			logger.Errorf("Could not contact Patroni member [%s:%s]: %v", ce.Name, m.Scope, err)
 			continue
@@ -322,11 +330,6 @@ func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error) {
 		}
 
 		for _, d := range data {
-			connURL, err := url.Parse(ce.ConnStr)
-			if err != nil {
-				continue
-			}
-			connURL.Host = host + ":" + port
 			connURL.Path = d["datname"].(string)
 			c := ce.Clone()
 			c.Name = dbUnique + "_" + d["datname_escaped"].(string)
