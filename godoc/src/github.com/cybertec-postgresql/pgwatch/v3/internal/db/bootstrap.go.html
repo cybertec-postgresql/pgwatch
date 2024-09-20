@@ -1,0 +1,163 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
+
+  <title>src/github.com/cybertec-postgresql/pgwatch/v3/\internal\db\/bootstrap.go - PgWatch Developer Documentation</title>
+
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.22.0";</script>
+<script src="/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Source file
+    <a href="/godoc/src">src</a>/<a href="/godoc/src/github.com">github.com</a>/<a href="/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3">v3</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/\internal\db\">\internal\db\</a>/<span class="text-muted">bootstrap.go</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/\internal\db\">github.com/cybertec-postgresql/pgwatch/v3/\internal\db\</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<script type="text/javascript">document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1  </span>package db
+<span id="L2" class="ln">     2  </span>
+<span id="L3" class="ln">     3  </span>import (
+<span id="L4" class="ln">     4  </span>	&#34;context&#34;
+<span id="L5" class="ln">     5  </span>	&#34;time&#34;
+<span id="L6" class="ln">     6  </span>
+<span id="L7" class="ln">     7  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/log&#34;
+<span id="L8" class="ln">     8  </span>	&#34;github.com/jackc/pgx/v5&#34;
+<span id="L9" class="ln">     9  </span>	&#34;github.com/jackc/pgx/v5/pgconn&#34;
+<span id="L10" class="ln">    10  </span>	&#34;github.com/jackc/pgx/v5/pgxpool&#34;
+<span id="L11" class="ln">    11  </span>	&#34;github.com/jackc/pgx/v5/tracelog&#34;
+<span id="L12" class="ln">    12  </span>	retry &#34;github.com/sethvargo/go-retry&#34;
+<span id="L13" class="ln">    13  </span>)
+<span id="L14" class="ln">    14  </span>
+<span id="L15" class="ln">    15  </span>const (
+<span id="L16" class="ln">    16  </span>	pgConnRecycleSeconds = 1800      <span class="comment">// applies for monitored nodes</span>
+<span id="L17" class="ln">    17  </span>	applicationName      = &#34;pgwatch&#34; <span class="comment">// will be set on all opened PG connections for informative purposes</span>
+<span id="L18" class="ln">    18  </span>)
+<span id="L19" class="ln">    19  </span>
+<span id="L20" class="ln">    20  </span>func Ping(ctx context.Context, connStr string) error {
+<span id="L21" class="ln">    21  </span>	c, err := pgx.Connect(ctx, connStr)
+<span id="L22" class="ln">    22  </span>	if c != nil {
+<span id="L23" class="ln">    23  </span>		_ = c.Close(ctx)
+<span id="L24" class="ln">    24  </span>	}
+<span id="L25" class="ln">    25  </span>	return err
+<span id="L26" class="ln">    26  </span>}
+<span id="L27" class="ln">    27  </span>
+<span id="L28" class="ln">    28  </span>type ConnConfigCallback = func(*pgxpool.Config) error
+<span id="L29" class="ln">    29  </span>
+<span id="L30" class="ln">    30  </span><span class="comment">// New create a new pool</span>
+<span id="L31" class="ln">    31  </span>func New(ctx context.Context, connStr string, callbacks ...ConnConfigCallback) (PgxPoolIface, error) {
+<span id="L32" class="ln">    32  </span>	connConfig, err := pgxpool.ParseConfig(connStr)
+<span id="L33" class="ln">    33  </span>	if err != nil {
+<span id="L34" class="ln">    34  </span>		return nil, err
+<span id="L35" class="ln">    35  </span>	}
+<span id="L36" class="ln">    36  </span>	logger := log.GetLogger(ctx)
+<span id="L37" class="ln">    37  </span>	if connConfig.ConnConfig.ConnectTimeout == 0 {
+<span id="L38" class="ln">    38  </span>		connConfig.ConnConfig.ConnectTimeout = time.Second * 5
+<span id="L39" class="ln">    39  </span>	}
+<span id="L40" class="ln">    40  </span>	connConfig.MaxConnIdleTime = 15 * time.Second
+<span id="L41" class="ln">    41  </span>	connConfig.MaxConnLifetime = pgConnRecycleSeconds * time.Second
+<span id="L42" class="ln">    42  </span>	connConfig.ConnConfig.RuntimeParams[&#34;application_name&#34;] = applicationName
+<span id="L43" class="ln">    43  </span>	connConfig.ConnConfig.OnNotice = func(_ *pgconn.PgConn, n *pgconn.Notice) {
+<span id="L44" class="ln">    44  </span>		logger.WithField(&#34;severity&#34;, n.Severity).WithField(&#34;notice&#34;, n.Message).Info(&#34;Notice received&#34;)
+<span id="L45" class="ln">    45  </span>	}
+<span id="L46" class="ln">    46  </span>	tracelogger := &amp;tracelog.TraceLog{
+<span id="L47" class="ln">    47  </span>		Logger:   log.NewPgxLogger(logger),
+<span id="L48" class="ln">    48  </span>		LogLevel: tracelog.LogLevelDebug, <span class="comment">//map[bool]tracelog.LogLevel{false: tracelog.LogLevelWarn, true: tracelog.LogLevelDebug}[true],</span>
+<span id="L49" class="ln">    49  </span>	}
+<span id="L50" class="ln">    50  </span>	connConfig.ConnConfig.Tracer = tracelogger
+<span id="L51" class="ln">    51  </span>	for _, f := range callbacks {
+<span id="L52" class="ln">    52  </span>		if err = f(connConfig); err != nil {
+<span id="L53" class="ln">    53  </span>			return nil, err
+<span id="L54" class="ln">    54  </span>		}
+<span id="L55" class="ln">    55  </span>	}
+<span id="L56" class="ln">    56  </span>	return pgxpool.NewWithConfig(ctx, connConfig)
+<span id="L57" class="ln">    57  </span>}
+<span id="L58" class="ln">    58  </span>
+<span id="L59" class="ln">    59  </span>type ConnInitCallback = func(context.Context, PgxIface) error
+<span id="L60" class="ln">    60  </span>
+<span id="L61" class="ln">    61  </span><span class="comment">// Init creates a new pool, check connection is establised. If not retries connection 3 times with delay 1s</span>
+<span id="L62" class="ln">    62  </span>func Init(ctx context.Context, db PgxPoolIface, init ConnInitCallback) error {
+<span id="L63" class="ln">    63  </span>	var backoff = retry.WithMaxRetries(3, retry.NewConstant(1*time.Second))
+<span id="L64" class="ln">    64  </span>	logger := log.GetLogger(ctx)
+<span id="L65" class="ln">    65  </span>	if err := retry.Do(ctx, backoff, func(ctx context.Context) error {
+<span id="L66" class="ln">    66  </span>		if err := db.Ping(ctx); err != nil {
+<span id="L67" class="ln">    67  </span>			logger.WithError(err).Error(&#34;connection failed&#34;)
+<span id="L68" class="ln">    68  </span>			logger.Info(&#34;sleeping before reconnecting...&#34;)
+<span id="L69" class="ln">    69  </span>			return retry.RetryableError(err)
+<span id="L70" class="ln">    70  </span>		}
+<span id="L71" class="ln">    71  </span>		return nil
+<span id="L72" class="ln">    72  </span>	}); err != nil {
+<span id="L73" class="ln">    73  </span>		return err
+<span id="L74" class="ln">    74  </span>	}
+<span id="L75" class="ln">    75  </span>	return init(ctx, db)
+<span id="L76" class="ln">    76  </span>}
+<span id="L77" class="ln">    77  </span>
+<span id="L78" class="ln">    78  </span><span class="comment">// DoesSchemaExist checks if schema exists</span>
+<span id="L79" class="ln">    79  </span>func DoesSchemaExist(ctx context.Context, conn PgxIface, schema string) (bool, error) {
+<span id="L80" class="ln">    80  </span>	var exists bool
+<span id="L81" class="ln">    81  </span>	sqlSchemaExists := &#34;SELECT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = $1)&#34;
+<span id="L82" class="ln">    82  </span>	err := conn.QueryRow(ctx, sqlSchemaExists, schema).Scan(&amp;exists)
+<span id="L83" class="ln">    83  </span>	return exists, err
+<span id="L84" class="ln">    84  </span>}
+<span id="L85" class="ln">    85  </span>
+<span id="L86" class="ln">    86  </span><span class="comment">// GetTableColumns returns the list of columns for a given table</span>
+<span id="L87" class="ln">    87  </span>func GetTableColumns(ctx context.Context, conn PgxIface, table string) (cols []string, err error) {
+<span id="L88" class="ln">    88  </span>	sql := `SELECT attname FROM pg_attribute a WHERE a.attrelid = to_regclass($1) and a.attnum &gt; 0 and not a.attisdropped`
+<span id="L89" class="ln">    89  </span>	r, err := conn.Query(ctx, sql, table)
+<span id="L90" class="ln">    90  </span>	if err != nil {
+<span id="L91" class="ln">    91  </span>		return
+<span id="L92" class="ln">    92  </span>	}
+<span id="L93" class="ln">    93  </span>	return pgx.CollectRows(r, pgx.RowTo[string])
+<span id="L94" class="ln">    94  </span>}
+<span id="L95" class="ln">    95  </span>
+</pre><p></p>
+
+<div id="footer">
+Build version go1.22.0.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+
+</body></html>
