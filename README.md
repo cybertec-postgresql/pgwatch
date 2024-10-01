@@ -8,9 +8,6 @@
 
 This is the next generation of [pgwatch2](https://github.com/cybertec-postgresql/pgwatch2/). 
 
-> [!WARNING]  
-> This repo is under active development! Formats, schemas, and APIs are subject to rapid and backward incompatible changes!
-
 ## Quick Start
 
 For the fastest development experience the Docker compose file is provided:
