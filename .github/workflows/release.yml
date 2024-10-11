@@ -34,8 +34,8 @@ jobs:
       fail-fast: true
       matrix:
         image: [ 
-          {file: 'Dockerfile', tag: ''}, 
-          {file: 'demo/Dockerfile', tag: '-demo'}
+          {file: 'Dockerfile', prefix: ''}, 
+          {file: 'demo/Dockerfile', prefix: '-demo'}
         ]
     runs-on: ubuntu-latest
     steps:
@@ -62,7 +62,7 @@ jobs:
         VERSION: ${{ github.ref_name }}
         GIT_TIME: ${{ steps.version.outputs.RELEASE_TIME }}     
       with:
-        name: cybertecpostgresql/pgwatch${{ matrix.image.tag }}
+        name: cybertecpostgresql/pgwatch${{ matrix.image.prefix }}
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile: docker/${{ matrix.image.file }}
@@ -71,14 +71,14 @@ jobs:
         platforms: linux/amd64,linux/arm64
 
     - name: Publish "latest" tag to Registry
-      if: ${{ !contains(github.ref_name, 'beta') && matrix.image.tag == '-demo' }}
+      if: ${{ !contains(github.ref_name, 'beta') }}
       uses: elgohr/Publish-Docker-Github-Action@v5
       env:
         GIT_HASH: ${{ github.sha }}
         VERSION: ${{ github.ref_name }}
         GIT_TIME: ${{ steps.version.outputs.RELEASE_TIME }}     
       with:
-        name: cybertecpostgresql/pgwatch${{ matrix.image.tag }}
+        name: cybertecpostgresql/pgwatch${{ matrix.image.prefix }}
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile: docker/${{ matrix.image.file }}
@@ -87,14 +87,14 @@ jobs:
         platforms: linux/amd64,linux/arm64
 
     - name: Publish "X.X.X, X.X, X" tags to Registry
-      if: ${{ !contains(github.ref_name, 'beta') && matrix.image.tag == '' }}
+      if: ${{ !contains(github.ref_name, 'beta') }}
       uses: elgohr/Publish-Docker-Github-Action@v5
       env:
         GIT_HASH: ${{ github.sha }}
         VERSION: ${{ github.ref_name }}
         GIT_TIME: ${{ steps.version.outputs.RELEASE_TIME }}     
       with:
-        name: cybertecpostgresql/pgwatch${{ matrix.image.tag }}
+        name: cybertecpostgresql/pgwatch${{ matrix.image.prefix }}
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile: docker/${{ matrix.image.file }}

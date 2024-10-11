@@ -10,7 +10,25 @@ This is the next generation of [pgwatch2](https://github.com/cybertec-postgresql
 
 ## Quick Start
 
-For the fastest development experience the Docker compose file is provided:
+To fetch and run the latest **demo** Docker image, exposing 
+- Grafana on port 3000, 
+- the administrative web UI on port 8080,
+- the internal configuration and metrics database on port 5432:
+
+```shell
+docker run -d --name pw3 -p 5432:5432 -p 3000:3000 -p 8080:8080 -e PW_TESTDB=true cybertecpostgresql/pgwatch-demo
+```
+
+After some minutes you could open the ["Database Overview"](http://127.0.0.1:3000/dashboard/db/db-overview) dashboard and start looking at metrics. For defining your own dashboards you need to log in Grafana as admin (`admin`/`pgwatchadmin`).
+
+If you don't want to add the test database for monitoring, remove the `NOTESTDB=1` parameter when launching the container.
+
+
+
+## Development and production use
+
+For production and long term installation `cybertecpostgresql/pgwatch` Docker image should be used. 
+For the fastest development and deployment experience the Docker compose files are provided:
 
 ```shell
 git clone https://github.com/cybertec-postgresql/pgwatch.git && cd pgwatch
