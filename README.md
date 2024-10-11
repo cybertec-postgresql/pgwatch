@@ -21,7 +21,7 @@ docker run -d --name pw3 -p 5432:5432 -p 3000:3000 -p 8080:8080 -e PW_TESTDB=tru
 
 After some minutes you could open the ["Database Overview"](http://127.0.0.1:3000/dashboard/db/db-overview) dashboard and start looking at metrics. For defining your own dashboards you need to log in Grafana as admin (`admin`/`pgwatchadmin`).
 
-If you don't want to add the test database for monitoring, remove the `NOTESTDB=1` parameter when launching the container.
+If you don't want to add the test database for monitoring, remove the `PW_TESTDB` parameter when launching the container.
 
 
 
