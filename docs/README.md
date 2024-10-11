@@ -23,15 +23,15 @@ Launching the latest pgwatch Docker image with built-in Postgres
 metrics storage DB:
 
     # run the latest Docker image, exposing Grafana on port 3000 and the administrative web UI on 8080
-    docker run -d -p 3000:3000 -p 8080:8080 -e PW_TESTDB=true --name pw3 cybertec/pgwatch
+    docker run -d --name pw3 -p 5432:5432 -p 3000:3000 -p 8080:8080 -e PW_TESTDB=true cybertecpostgresql/pgwatch-demo
 
-After some minutes you could for example open the [DB
-overview](http://127.0.0.1:3000/dashboard/db/db-overview) dashboard
+After some minutes you could for example open the ["Database
+Overview"](http://127.0.0.1:3000/dashboard/db/db-overview) dashboard
 and start looking at metrics in Grafana. For defining your own
-dashboards or making changes you need to log in as admin (default
-user/password: `admin/pgwatchadmin`).
+dashboards or making changes you need to log in Grafana as admin (default
+user/password: `admin`/`pgwatchadmin`).
 
-If you don't want to add the `"test"` database (the pgwatch
+If you don't want to add the `test` database (the pgwatch
 configuration DB holding connection strings to monitored DBs and metric
 definitions) to monitoring, remove the `PW_TESTDB` env variable.
 
