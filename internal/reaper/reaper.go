@@ -111,7 +111,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 			dbUniqueOrig := monitoredDB.GetDatabaseName()
 			srcType := monitoredDB.Kind
 
-			if monitoredDB.Connect(mainContext) != nil {
+			if monitoredDB.Connect(mainContext, opts.Sources) != nil {
 				logger.Warningf("could not init connection, retrying on next iteration: %w", err)
 				continue
 			}

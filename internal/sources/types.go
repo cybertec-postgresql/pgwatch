@@ -105,9 +105,10 @@ func (md *MonitoredDatabase) Ping(ctx context.Context) error {
 
 // Connect will establish a connection to the database if it's not already connected.
 // If the connection is already established, it pings the server to ensure it's still alive.
-func (md *MonitoredDatabase) Connect(ctx context.Context) (err error) {
+func (md *MonitoredDatabase) Connect(ctx context.Context, opts CmdOpts) (err error) {
 	if md.Conn == nil {
 		if md.ConnConfig != nil {
+			md.ConnConfig.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
 			md.Conn, err = db.NewWithConfig(ctx, md.ConnConfig)
 		} else {
 			md.Conn, err = db.New(ctx, md.ConnStr)

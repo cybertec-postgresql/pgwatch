@@ -53,11 +53,11 @@ func TestMonitoredDatabase_Connect(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Call the Connect method
-	err = md.Connect(ctx)
+	err = md.Connect(ctx, sources.CmdOpts{})
 	assert.NoError(t, err)
 
 	// Check cached connection
-	err = md.Connect(ctx)
+	err = md.Connect(ctx, sources.CmdOpts{})
 	assert.NoError(t, err)
 }
 func TestMonitoredDatabase_GetDatabaseName(t *testing.T) {
