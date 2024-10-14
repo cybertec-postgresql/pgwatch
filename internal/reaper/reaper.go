@@ -91,12 +91,13 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 		logger.
 			WithField("sources", len(monitoredDbs)).
 			WithField("metrics", len(metricDefinitionMap.MetricDefs)).
+			WithField("presets", len(metricDefinitionMap.PresetDefs)).
 			Log(func() logrus.Level {
 				if firstLoop && len(monitoredDbs)*len(metricDefinitionMap.MetricDefs) == 0 {
 					return logrus.WarnLevel
 				}
 				return logrus.InfoLevel
-			}(), "host info refreshed")
+			}(), "sources and metrics refreshed")
 
 		firstLoop = false // only used for failing when 1st config reading fails
 
@@ -124,7 +125,7 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				logger.Errorf("could not start metric gathering due to connection problem: %s", err)
 				continue
 			}
-			logger.Infof("Connect OK. Version: %s (in recovery: %v)", ver.VersionStr, ver.IsInRecovery)
+			logger.WithField("source", monitoredDB.Name).Infof("Connect OK. Version: %s (in recovery: %v)", ver.VersionStr, ver.IsInRecovery)
 			if ver.IsInRecovery && monitoredDB.OnlyIfMaster {
 				logger.Infof("not added to monitoring due to 'master only' property")
 				continue
@@ -151,14 +152,11 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				}()
 			}
 
-			if monitoredDB.IsPostgresSource() && !ver.IsInRecovery {
-				if opts.Metrics.NoHelperFunctions {
-					logger.Infof("[%s] skipping rollout out helper functions due to the --no-helper-functions flag ...", dbUnique)
-				} else {
-					logger.Infof("Trying to create helper functions if missing for \"%s\"...", dbUnique)
-					if err = TryCreateMetricsFetchingHelpers(mainContext, monitoredDB); err != nil {
-						logger.Warningf("Failed to create helper functions for \"%s\": %w", dbUnique, err)
-					}
+			if monitoredDB.IsPostgresSource() && !ver.IsInRecovery && opts.Metrics.CreateHelpers {
+				ls := logger.WithField("source", dbUnique)
+				ls.Info("trying to create helper objects if missing")
+				if err = TryCreateMetricsFetchingHelpers(mainContext, monitoredDB); err != nil {
+					ls.Warning("failed to create helper functions: %w", err)
 				}
 			}
 
