@@ -6,7 +6,8 @@ import (
 	"slices"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
-	pgx "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Kind string
@@ -86,7 +87,7 @@ type (
 	MonitoredDatabase struct {
 		Source
 		Conn       db.PgxPoolIface
-		ConnConfig *pgx.ConnConfig
+		ConnConfig *pgxpool.Config
 	}
 
 	MonitoredDatabases []*MonitoredDatabase
@@ -106,7 +107,12 @@ func (md *MonitoredDatabase) Ping(ctx context.Context) error {
 // If the connection is already established, it pings the server to ensure it's still alive.
 func (md *MonitoredDatabase) Connect(ctx context.Context) (err error) {
 	if md.Conn == nil {
-		if md.Conn, err = db.New(ctx, md.ConnStr); err != nil {
+		if md.ConnConfig != nil {
+			md.Conn, err = db.NewWithConfig(ctx, md.ConnConfig)
+		} else {
+			md.Conn, err = db.New(ctx, md.ConnStr)
+		}
+		if err != nil {
 			return err
 		}
 	}
@@ -117,23 +123,23 @@ func (md *MonitoredDatabase) Connect(ctx context.Context) (err error) {
 func (md *MonitoredDatabase) GetDatabaseName() string {
 	var err error
 	if md.ConnConfig == nil {
-		if md.ConnConfig, err = pgx.ParseConfig(md.ConnStr); err != nil {
+		if md.ConnConfig, err = pgxpool.ParseConfig(md.ConnStr); err != nil {
 			return ""
 		}
 	}
-	return md.ConnConfig.Database
+	return md.ConnConfig.ConnConfig.Database
 }
 
-// SetDatabaseName sets the database name in the connection config but
-// does not update the connection string
+// SetDatabaseName sets the database name in the connection config for resolved databases
 func (md *MonitoredDatabase) SetDatabaseName(name string) {
 	var err error
 	if md.ConnConfig == nil {
-		if md.ConnConfig, err = pgx.ParseConfig(md.ConnStr); err != nil {
+		if md.ConnConfig, err = pgxpool.ParseConfig(md.ConnStr); err != nil {
 			return
 		}
 	}
-	md.ConnConfig.Database = name
+	md.ConnStr = "" // unset the connection string to force conn config usage
+	md.ConnConfig.ConnConfig.Database = name
 }
 
 func (md *MonitoredDatabase) IsPostgresSource() bool {

@@ -33,6 +33,11 @@ func New(ctx context.Context, connStr string, callbacks ...ConnConfigCallback) (
 	if err != nil {
 		return nil, err
 	}
+	return NewWithConfig(ctx, connConfig, callbacks...)
+}
+
+// NewWithConfig creates a new pool with a given config
+func NewWithConfig(ctx context.Context, connConfig *pgxpool.Config, callbacks ...ConnConfigCallback) (PgxPoolIface, error) {
 	logger := log.GetLogger(ctx)
 	if connConfig.ConnConfig.ConnectTimeout == 0 {
 		connConfig.ConnConfig.ConnectTimeout = time.Second * 5
@@ -45,11 +50,11 @@ func New(ctx context.Context, connStr string, callbacks ...ConnConfigCallback) (
 	}
 	tracelogger := &tracelog.TraceLog{
 		Logger:   log.NewPgxLogger(logger),
-		LogLevel: tracelog.LogLevelDebug, //map[bool]tracelog.LogLevel{false: tracelog.LogLevelWarn, true: tracelog.LogLevelDebug}[true],
+		LogLevel: tracelog.LogLevelDebug,
 	}
 	connConfig.ConnConfig.Tracer = tracelogger
 	for _, f := range callbacks {
-		if err = f(connConfig); err != nil {
+		if err := f(connConfig); err != nil {
 			return nil, err
 		}
 	}
