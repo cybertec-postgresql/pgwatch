@@ -1,57 +1,46 @@
 ---
-title: Introduction
+title: Hello world!
 ---
 
-pgwatch is a flexible PostgreSQL-specific monitoring solution, relying
-on Grafana dashboards for the UI part. It supports monitoring of almost
-all metrics for Postgres out of the box and can be
-easily extended to include custom metrics. At the core of the solution
-is the metrics gathering daemon written in Go, with many options to
-configure the details and aggressiveness of monitoring, types of metrics
-storage and the display the metrics.
+**pgwatch** is a flexible PostgreSQL-specific monitoring solution, offering a comprehensive view of database performance and health. It provides a user-friendly interface through Grafana dashboards, allowing users to easily inspect various metrics and trends.
 
-# Quick start with Docker
+In the world of database management, **monitoring** plays a crucial role in ensuring stability, performance, and security. With a constant need to keep databases healthy and responsive, **pgwatch** answers three fundamental questions:
 
-For the fastest setup experience Docker images are provided via Docker
-Hub (if new to Docker start
-[here](https://docs.docker.com/get-started/)). For custom setups see the
-[Custom installations](tutorial/custom_installation.md) paragraph below or turn to the pre-built DEB / RPM / Tar
-packages on the Github Releases
-[page](https://github.com/cybertec-postgresql/pgwatch/releases).
+[![pgwatch: A comprehensive monitoring solution](gallery/what-how-where.svg)](gallery/what-how-where.svg)
 
-Launching the latest pgwatch Docker image with built-in Postgres
-metrics storage DB:
+## What?
 
-    # run the latest Docker image, exposing Grafana on port 3000 and the administrative web UI on 8080
-    docker run -d --name pw3 -p 5432:5432 -p 3000:3000 -p 8080:8080 -e PW_TESTDB=true cybertecpostgresql/pgwatch-demo
+**What sources to monitor?**
 
-After some minutes you could for example open the ["Database
-Overview"](http://127.0.0.1:3000/dashboard/db/db-overview) dashboard
-and start looking at metrics in Grafana. For defining your own
-dashboards or making changes you need to log in Grafana as admin (default
-user/password: `admin`/`pgwatchadmin`).
+pgwatch is designed specifically for monitoring **PostgreSQL databases** and related infrastructure. It covers a wide range of components crucial for PostgreSQL ecosystems, including:
 
-If you don't want to add the `test` database (the pgwatch
-configuration DB holding connection strings to monitored DBs and metric
-definitions) to monitoring, remove the `PW_TESTDB` env variable.
+  - **PostgreSQL Databases**: pgwatch monitors the core performance and health metrics of your PostgreSQL instances.
+  - **Patroni Clusters**: Monitor the health and performance of high-availability clusters members managed by **Patroni**.
+  - **Connection Poolers (PgPool, PgBouncer)**: pgwatch provides insights into connection pooling with both **PgPool** and **PgBouncer**.
+  - **Backup solutions**: Track the performance and status of **PgBackRest** and **WAL-G** backups, ensuring that your backups are executed correctly.
 
-Also note that for long term production usage with Docker it's highly
-recommended to use separate *volumes* for each pgwatch component - see
-[here](tutorial/docker_installation.md) for a better launch example.
+This extended monitoring capability allows you to gain a comprehensive view of not only your PostgreSQL databases but also the surrounding infrastructure that supports and enhances your database operations.
 
-# Typical "pull" architecture
+## How?
 
-To get an idea how pgwatch is typically deployed a diagram of the
-standard Docker image fetching metrics from a set of Postgres databases
-configured via a configuration DB:
+**What metrics are available for monitoring?**
 
-[![pgwatch typical deployment architecture diagram](gallery/pgwatch_architecture.png)](gallery/pgwatch_architecture.png)
+pgwatch provides out-of-the-box support for almost all essential **PostgreSQL metrics**, including:
 
-# Typical "push" architecture
+  - Database health checks
+  - Query performance
+  - Index usage
+  - Disk I/O
+  - CPU and memory consumption
+  - Locks, waits, and more
 
-A better fit for very dynamic (Cloud) environments might be a more
-de-centralized "push" approach or just exposing the metrics over a
-port for remote scraping. In that case the only component required would
-be the pgwatch metrics collection daemon.
+In addition to the standard metrics, pgwatch can be easily extended to monitor **custom metrics** based on your specific needs. The solution offers flexibility to fine-tune monitoring details and the aggressiveness of data collection.
 
-[![pgwatch "push" deployment architecture diagram](gallery/pgwatch_architecture_push.png)](gallery/pgwatch_architecture_push.png)
+## Where?
+
+**Where are the measurements stored and where can users inspect the dashboards?**
+
+- pgwatch allows users to choose from a variety of **storage backends** aka **sinks** for storing monitoring data, such as JSON file, TimescaleDB, Prometheus, or a traditional PostgreSQL database.
+- The **user interface** for pgwatch is powered by **Grafana dashboards**, providing interactive and detailed visualization of the collected metrics. Users can easily view the performance and status of their databases in real-time, drill down into historical data, and configure custom dashboard views based on their preferences.
+
+For a detailed list of all features and capabilities, please refer to the [Features](intro/features.md) page.
