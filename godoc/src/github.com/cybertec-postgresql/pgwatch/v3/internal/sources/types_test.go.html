@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.22.0";</script>
+<script>var goVersion = "go1.23.0";</script>
 <script src="/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -110,11 +110,11 @@
 <span id="L53" class="ln">    53  </span>	assert.NoError(t, err)
 <span id="L54" class="ln">    54  </span>
 <span id="L55" class="ln">    55  </span>	<span class="comment">// Call the Connect method</span>
-<span id="L56" class="ln">    56  </span>	err = md.Connect(ctx)
+<span id="L56" class="ln">    56  </span>	err = md.Connect(ctx, sources.CmdOpts{})
 <span id="L57" class="ln">    57  </span>	assert.NoError(t, err)
 <span id="L58" class="ln">    58  </span>
 <span id="L59" class="ln">    59  </span>	<span class="comment">// Check cached connection</span>
-<span id="L60" class="ln">    60  </span>	err = md.Connect(ctx)
+<span id="L60" class="ln">    60  </span>	err = md.Connect(ctx, sources.CmdOpts{})
 <span id="L61" class="ln">    61  </span>	assert.NoError(t, err)
 <span id="L62" class="ln">    62  </span>}
 <span id="L63" class="ln">    63  </span>func TestMonitoredDatabase_GetDatabaseName(t *testing.T) {
@@ -175,7 +175,7 @@
 </pre><p></p>
 
 <div id="footer">
-Build version go1.22.0.<br/>
+Build version go1.23.0.<br/>
 </div>
 
 </div><!-- .container -->

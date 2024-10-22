@@ -15,7 +15,7 @@
 
 
 
-<script>var goVersion = "go1.22.0";</script>
+<script>var goVersion = "go1.23.0";</script>
 <script src="/godoc/lib/godoc/godocs.js" defer></script>
 
 </head>
@@ -151,6 +151,9 @@
 					
 					<dd>&nbsp; &nbsp; <a href="#New">func New(ctx context.Context, connStr string, callbacks ...ConnConfigCallback) (PgxPoolIface, error)</a></dd>
 				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewWithConfig">func NewWithConfig(ctx context.Context, connConfig *pgxpool.Config, callbacks ...ConnConfigCallback) (PgxPoolIface, error)</a></dd>
+				
 				
 			
 				
@@ -195,7 +198,7 @@
 		
 			
 			
-			<h2 id="DoesSchemaExist">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/db/bootstrap.go#L79">DoesSchemaExist</a>
+			<h2 id="DoesSchemaExist">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/db/bootstrap.go#L84">DoesSchemaExist</a>
 				<a class="permalink" href="#DoesSchemaExist">&#xb6;</a>
 				
 				
@@ -209,7 +212,7 @@
 		
 			
 			
-			<h2 id="GetTableColumns">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/db/bootstrap.go#L87">GetTableColumns</a>
+			<h2 id="GetTableColumns">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/db/bootstrap.go#L92">GetTableColumns</a>
 				<a class="permalink" href="#GetTableColumns">&#xb6;</a>
 				
 				
@@ -223,7 +226,7 @@
 		
 			
 			
-			<h2 id="Init">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/db/bootstrap.go#L62">Init</a>
+			<h2 id="Init">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/db/bootstrap.go#L67">Init</a>
 				<a class="permalink" href="#Init">&#xb6;</a>
 				
 				
@@ -286,7 +289,7 @@
 		
 			
 			
-			<h2 id="ConnInitCallback">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/db/bootstrap.go#L59">ConnInitCallback</a>
+			<h2 id="ConnInitCallback">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/db/bootstrap.go#L64">ConnInitCallback</a>
 				<a class="permalink" href="#ConnInitCallback">&#xb6;</a>
 				
 				
@@ -403,6 +406,18 @@
 				
 				
 			
+				
+				<h3 id="NewWithConfig">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/db/bootstrap.go#L40">NewWithConfig</a>
+					<a class="permalink" href="#NewWithConfig">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewWithConfig(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, connConfig *<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgxpool/">pgxpool</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgxpool/#Config">Config</a>, callbacks ...<a href="#ConnConfigCallback">ConnConfigCallback</a>) (<a href="#PgxPoolIface">PgxPoolIface</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>NewWithConfig creates a new pool with a given config
+
+				
+				
+			
 
 			
 		
@@ -441,7 +456,7 @@
 
 
 <div id="footer">
-Build version go1.22.0.<br>
+Build version go1.23.0.<br>
 </div>
 
 </div><!-- .container -->

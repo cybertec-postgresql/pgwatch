@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.22.0";</script>
+<script>var goVersion = "go1.23.0";</script>
 <script src="/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -63,14 +63,14 @@
 <span id="L6" class="ln">     6  </span>	Refresh                      int      `long:&#34;refresh&#34; mapstructure:&#34;refresh&#34; description:&#34;How frequently to resync sources and metrics&#34; env:&#34;PW_REFRESH&#34; default:&#34;120&#34;`
 <span id="L7" class="ln">     7  </span>	Groups                       []string `short:&#34;g&#34; long:&#34;group&#34; mapstructure:&#34;group&#34; description:&#34;Groups for filtering which databases to monitor. By default all are monitored&#34; env:&#34;PW_GROUP&#34;`
 <span id="L8" class="ln">     8  </span>	MinDbSizeMB                  int64    `long:&#34;min-db-size-mb&#34; mapstructure:&#34;min-db-size-mb&#34; description:&#34;Smaller size DBs will be ignored and not monitored until they reach the threshold.&#34; env:&#34;PW_MIN_DB_SIZE_MB&#34; default:&#34;0&#34;`
-<span id="L9" class="ln">     9  </span>	MaxParallelConnectionsPerDb  int      `long:&#34;max-parallel-connections-per-db&#34; mapstructure:&#34;max-parallel-connections-per-db&#34; description:&#34;Max parallel metric fetches per DB. Note the multiplication effect on multi-DB instances&#34; env:&#34;PW_MAX_PARALLEL_CONNECTIONS_PER_DB&#34; default:&#34;2&#34;`
+<span id="L9" class="ln">     9  </span>	MaxParallelConnectionsPerDb  int      `long:&#34;max-parallel-connections-per-db&#34; mapstructure:&#34;max-parallel-connections-per-db&#34; description:&#34;Max parallel metric fetches per DB. Note the multiplication effect on multi-DB instances&#34; env:&#34;PW_MAX_PARALLEL_CONNECTIONS_PER_DB&#34; default:&#34;4&#34;`
 <span id="L10" class="ln">    10  </span>	TryCreateListedExtsIfMissing string   `long:&#34;try-create-listed-exts-if-missing&#34; mapstructure:&#34;try-create-listed-exts-if-missing&#34; description:&#34;Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements&#34; env:&#34;PW_TRY_CREATE_LISTED_EXTS_IF_MISSING&#34; default:&#34;&#34;`
 <span id="L11" class="ln">    11  </span>}
 <span id="L12" class="ln">    12  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.22.0.<br/>
+Build version go1.23.0.<br/>
 </div>
 
 </div><!-- .container -->
