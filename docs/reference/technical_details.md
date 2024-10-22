@@ -33,6 +33,6 @@ it in some way.
     output of metrics that are marked to gather only instance-level
     data. One such metric is for example "wal", and the *metric
     attribute* is "is_instance_level". Caching will be activated only
-    for *continuous* [source types](preparing_databases.md#different-source-types-explained), 
+    for *continuous* [source types](../tutorial/preparing_databases.md#different-source-types-explained), 
     and to a default limit of up to 30 seconds (changeable
     via the `--instance-level-cache-max-seconds` param).

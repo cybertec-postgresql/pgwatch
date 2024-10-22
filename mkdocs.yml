@@ -1,5 +1,5 @@
-site_name: ⚠️ pgwatch | v3 WORK IN PROGRESS!!!
-site_description: ⚠️ This repo is under active development! Formats, schemas, and APIs are subject to rapid and backward incompatible changes!
+site_name: 🔬 pgwatch | v3
+site_description: pgwatch is a flexible PostgreSQL-specific monitoring solution
 site_url: https://pgwat.ch/
 use_directory_urls: false
 copyright: Made by and for PostgreSQL lovers! 🐘❤️
@@ -42,52 +42,40 @@ plugins:
   - glightbox
   # - minify:
   #     minify_html: true
-  # - include-markdown
-  # - redirects:
-  #     redirect_maps:
-  #       discord.md: https://discord.gg/rYWM4AZvy7
-  #       github.md: https://github.com/goreleaser
-  #       linkedin.md: https://www.linkedin.com/company/goreleaser/
-  #       mastodon.md: https://fosstodon.org/@goreleaser
-  #       twitter.md: https://twitter.com/goreleaser
-  #       d.md: https://discord.gg/RGEBtg8vQ6
-  #       g.md: https://github.com/goreleaser
-  #       l.md: https://www.linkedin.com/company/goreleaser/
-  #       m.md: https://fosstodon.org/@goreleaser
-  #       t.md: https://twitter.com/goreleaser
-  #       "customization/build.md": customization/builds.md        
-
+ 
 nav:
   - Intro: 
-    - Hello World!: README.md
-    - Project Background: project_background.md
-    - Features: features.md
+    - Hello World!: index.md
+    - Project Background: intro/project_background.md
+    - Features: intro/features.md
   - Concepts:
-    - Components: components.md
-    - Installation Options: installation_options.md
-    - Long Term Installations: long_term_installations.md
-    - Web UI: web_ui.md
+    - Components: concept/components.md
+    - Installation Options: concept/installation_options.md
+    - Long Term Installations: concept/long_term_installations.md
+    - Web UI: concept/web_ui.md
   - Tutorials:
-    - Docker Installation: docker_installation.md
-    - Custom Installation: custom_installation.md
-    - Preparing Databases: preparing_databases.md
-    - Upgrading: upgrading.md
+    - Docker Installation: tutorial/docker_installation.md
+    - Custom Installation: tutorial/custom_installation.md
+    - Preparing Databases: tutorial/preparing_databases.md
+    - Upgrading: tutorial/upgrading.md
   - How-To Guides:
-    - Dashboarding and Alerting: dashboarding_alerting.md
-    - Using Managed Services: using_managed_services.md
-    - Sizing Recommendations: sizing_recommendations.md
+    - Dashboarding and Alerting: howto/dashboarding_alerting.md
+    - Using Managed Services: howto/using_managed_services.md
+    - Sizing Recommendations: howto/sizing_recommendations.md
+    - Bootstrapping metrics database: howto/metrics_db_bootstrap.md
   - Reference:
-    - Advanced Features: advanced_features.md
-    - Metric Definitions: metric_definitions.md
-    - Technical Details: technical_details.md
-    - Security: security.md
-    - Kubernetes: kubernetes.md
-  - Gallery: gallery.md
+    - Advanced Features: reference/advanced_features.md
+    - Metric Definitions: reference/metric_definitions.md
+    - Technical Details: reference/technical_details.md
+    - Security: reference/security.md
+    - Kubernetes: reference/kubernetes.md
+    - Environment Variables: reference/env_variables.md
+  - Gallery: gallery/gallery.md
   - Developer: 
-    - Documentation: godoc.md
-    - Contributing: contributing.md
-    - Code of Conduct: CODE_OF_CONDUCT.md
-    - License: LICENSE.md
+    - Documentation: developer/godoc.md
+    - Contributing: developer/contributing.md
+    - Code of Conduct: developer/CODE_OF_CONDUCT.md
+    - License: developer/LICENSE.md
     
 
 markdown_extensions:

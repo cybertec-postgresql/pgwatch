@@ -235,7 +235,7 @@ for developers with no means to install any wrappers as superuser, it's
 also possible to benefit from pgwatch - for such use cases e.g. the
 "unprivileged" preset metrics profile and the according "DB overview
 Unprivileged / Developer"
-![dashboard](screenshots/overview_developer.png)
+![dashboard](../gallery/overview_developer.png)
 are a good starting point as it only assumes existence of
 `pg_stat_statements` (which should be available by all cloud
 providers).

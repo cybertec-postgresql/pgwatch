@@ -69,7 +69,7 @@ as components (Grafana, PostgreSQL) are loosely coupled, they can be
 updated any time without worrying too much about the other components.
 Only "tightly coupled" components are the pgwatch metrics collector,
 config DB and the optional Web UI - if the pgwatch config is kept in
-the database. If [YAML based approach](installation_options.md) is used, then things
+the database. If [YAML based approach](../concept/installation_options.md) is used, then things
 are even more simple - the pgwatch daemon can be updated any time as
 YAML schema has default values for everything and there are no other
 "tightly coupled" components like the Web UI.
@@ -89,7 +89,7 @@ There are no update or migration scripts for the built-in Grafana
 dashboards as it would break possible user applied changes. If you know
 that there are no user changes, then one can just delete or rename the
 existing ones in a bulk matter and import the latest JSON definitions.
-See [here](long_term_installations.md#dashboard-maintenance-dashboard_maintenance) for
+See [here](../concept/long_term_installations.md) for
 some more advice on how to manage dashboards.
 
 ### Updating the config / metrics DB version
@@ -106,7 +106,7 @@ problem-free, consisting of running something like:
 
 For PostgreSQL major version upgrades one should read through the
 according release notes (e.g.
-[here](https://www.postgresql.org/docs/12/release-12.html#id-1.11.6.5.4))
+[here](https://www.postgresql.org/docs/17/release-17.html#id-1.11.6.5.4))
 and be prepared for the unavoidable downtime.
 
 ### Updating the pgwatch schema

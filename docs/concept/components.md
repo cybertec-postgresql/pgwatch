@@ -42,7 +42,7 @@ PostgreSQL is a world's most advanced Open Source RDBMS.
 Postgres storage is based on the JSONB datatype so minimally
 version 9.4+ is required, but for bigger setups where partitioning
 is a must, v11+ is needed. Any already existing Postgres database
-will do the trick, see the [Bootstrapping the Metrics DB](metrics_db_bootstrap) section for2 details.
+will do the trick, see the [Bootstrapping the Metrics DB](../howto/metrics_db_bootstrap.md) section for details.
 
 ### [TimescaleDB](https://www.timescale.com/) 
 TimescaleDB is a time-series extension for PostgreSQL.
@@ -94,7 +94,7 @@ be visualized or processed in any other way.
 
 Component diagram of a typical setup:
 
-[![pgwatch typical deployment architecture diagram](screenshots/pgwatch_architecture.png)](screenshots/pgwatch_architecture.png)
+[![pgwatch typical deployment architecture diagram](../gallery/pgwatch_architecture.png)](../gallery/pgwatch_architecture.png)
 
 ## Component reuse
 
@@ -125,7 +125,7 @@ over the Postgres (or Graphite) API-s.
 ### To use an existing Postgres DB for storing metrics
 
 1.  Roll out the metrics storage schema according to instructions
-    from [here](preparing_databases.md).
+    from [here](../tutorial/preparing_databases.md).
 1.  Following parameters need to be set for the gatherer:
     -   `--datastore=postgres` or `PW_DATASTORE=postgres`
     -   `--pg-metric-store-conn-str="postgresql://user:pwd@host:port/db"`

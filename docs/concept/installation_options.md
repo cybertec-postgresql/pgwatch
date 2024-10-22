@@ -10,12 +10,12 @@ also choose how they're going to retrieve metrics from databases - in a
 ## Config DB based operation
 
 This is the original central pull mode depicted on the
-[architecture diagram](screenshots/pgwatch_architecture.png). 
+[architecture diagram](../gallery/pgwatch_architecture.png). 
 It requires a small schema to be rolled out on any Postgres
 database accessible to the metrics gathering daemon, which will hold the
 connect strings, metric definition SQL-s and preset configurations and
 some other more minor attributes. For rollout details see the
-[custom installation](custom_installation.md) chapter.
+[custom installation](../tutorial/custom_installation.md) chapter.
 
 The default Docker images use this approach.
 

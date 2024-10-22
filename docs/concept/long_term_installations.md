@@ -31,7 +31,7 @@ update it at least once per year or minimally when some freshly released
 Postgres major version instances are added to monitoring. New Postgres
 versions don't necessary mean that something will break, but you'll be
 missing some newly added metrics, plus the occasional optimizations. See
-the [upgrading chapter](upgrading.md) for details, but basically
+the [upgrading chapter](../tutorial/upgrading.md) for details, but basically
 the process is very similar to initial installation as the collector
 doesn't have any state on its own - it's just on binary program.
 
@@ -45,7 +45,7 @@ If using a YAML based config, just installing newer pre-built RPM / DEB
 packages will do the trick automatically (built-in metrics at
 */etc/pgwatch/metrics* will be refreshed) but for Config DB based
 setups you'd need to follow a simple process described
-[here](upgrading.md#updating-metric-definitions).
+[here](../tutorial/upgrading.md#updating-metric-definitions).
 
 ## Dashboard maintenance
 
@@ -62,7 +62,7 @@ or from
     Notable new dashboards are usually listed also in [release
     notes](https://github.com/cybertec-postgresql/pgwatch/blob/master/docs/CHANGELOG.md)
     and most dashboards also have a sample
-    [screenshots](https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/screenshots)
+    [screenshots](https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/gallery)
     available.
 
 ## Storage monitoring

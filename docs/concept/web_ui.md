@@ -23,7 +23,7 @@ Default port: **8080**
 
 Sample screenshot of the Web UI:
 
-[![A sample screenshot of the pgwatch admin Web UI](screenshots/webui_sources_grid.png)](screenshots/webui_sources_grid.png)
+[![A sample screenshot of the pgwatch admin Web UI](../gallery/webui_sources_grid.png)](../gallery/webui_sources_grid.png)
 
 ## Web UI security
 
