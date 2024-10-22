@@ -15,7 +15,7 @@ Feel free to open issues and participate in discussions there.
 ## Setting Up the Development Environment
 
 To set up the development environment, please refer to the instructions in the 
-[README.md](README.md) file. We use Docker Compose to simplify the setup process.
+[README.md](https://github.com/cybertec-postgresql/pgwatch) file. We use Docker Compose to simplify the setup process.
 
 ## How to Report Bugs
 

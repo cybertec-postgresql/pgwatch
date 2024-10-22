@@ -42,7 +42,7 @@ PostgreSQL is a world's most advanced Open Source RDBMS.
 Postgres storage is based on the JSONB datatype so minimally
 version 9.4+ is required, but for bigger setups where partitioning
 is a must, v11+ is needed. Any already existing Postgres database
-will do the trick, see the [Bootstrapping the Metrics DB](metrics_db_bootstrap) section for2 details.
+will do the trick, see the [Bootstrapping the Metrics DB](../howto/metrics_db_bootstrap.md) section for details.
 
 ### [TimescaleDB](https://www.timescale.com/) 
 TimescaleDB is a time-series extension for PostgreSQL.
@@ -75,11 +75,6 @@ metrics and intervals. Besides that there are some basic overview tables
 to analyze the gathered data and also possibilities to delete unneeded
 metric data (when removing a test host for example).
 
-
-!!! Note
-    Note that the Web UI can only be used if storing the configuration in
-    the database (Postgres).
-
 ## Metrics representation
 
 Standard pgwatch setup uses [Grafana](http://grafana.org/) for
@@ -94,56 +89,12 @@ be visualized or processed in any other way.
 
 Component diagram of a typical setup:
 
-[![pgwatch typical deployment architecture diagram](screenshots/pgwatch_architecture.png)](screenshots/pgwatch_architecture.png)
+[![pgwatch typical deployment architecture diagram](../gallery/pgwatch_architecture.png)](../gallery/pgwatch_architecture.png)
 
 ## Component reuse
 
 All components are *loosely coupled*, thus for non-pgwatch components
-(pgwatch components are only the metrics collector and the optional Web
-UI) you can decide to make use of an already existing installation of
+(pgwatch components are only the metrics collector) 
+you can decide to make use of an already existing installation of
 Postgres, Grafana or Prometheus and run additionally just the pgwatch
 collector.
-
-### To use an existing Postgres DB for storing the monitoring config
-
-Create a new pgwatch DB, preferrably also an accroding role who
-owns it. Then roll out the schema
-(pgwatch/sql/config_store/config_store.sql) and set the following
-parameters when running the image: `PW_PGHOST`, `PW_PGPORT`,
-`PW_PGDATABASE`, `PW_PGUSER`, `PW_PGPASSWORD`, `PW_PGSSL` (optional).
-
-### To use an existing Grafana installation
-
-Load the pgwatch dashboards from *grafana_dashboard* folder if
-needed (one can totally define their own) and set the following
-paramater: `PW_GRAFANA_BASEURL`. This parameter only provides correct
-links to Grafana dashboards from the Web UI. Grafana is the most
-loosely coupled component for pgwatch and basically doesn't have
-to be used at all. One can make use of the gathered metrics directly
-over the Postgres (or Graphite) API-s.
-
-### To use an existing Postgres DB for storing metrics
-
-1.  Roll out the metrics storage schema according to instructions
-    from [here](preparing_databases.md).
-1.  Following parameters need to be set for the gatherer:
-    -   `--datastore=postgres` or `PW_DATASTORE=postgres`
-    -   `--pg-metric-store-conn-str="postgresql://user:pwd@host:port/db"`
-        or `PW_PG_METRIC_STORE_CONN_STR="..."`
-    -   optionally also adjust the `--pg-retention-days` parameter. By
-        default 14 days for Postgres are kept
-
-1.  If using the Web UI also set the datastore parameters
-    `--datastore` and `--pg-metric-store-conn-str` if wanting to
-    have an option to be able to clean up data also via the UI in a
-    more targeted way.
-
-When using Postgres metrics storage, the schema rollout script
-activates "asynchronous commiting" feature for the *pgwatch* role
-in the metrics storage DB by default! If this is not wanted (no
-metrics can be lost in case of a crash), then re-enstate normal
-(synchronous) commiting with below query and restart the pgwatch
-agent:
-```sql
-ALTER ROLE pgwatch IN DATABASE $MY_METRICS_DB SET synchronous_commit TO on;
-```

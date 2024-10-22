@@ -16,16 +16,15 @@ title: List of main features
 -   Many metric data storage options - PostgreSQL, PostgreSQL with the
     compression enabled TimescaleDB extension, or Prometheus scraping
 -   Multiple deployment options - PostgreSQL configuration DB, YAML or
-    ENV configuration, supporting both "push" and "pull" models
+    ENV configuration
 -   Possible to monitoring all, single or a subset (list or regex) of
     databases of a PostgreSQL instance
 -   Global or per DB configuration of metrics and metric fetching
-    intervals and optionally also times / days
+    intervals
 -   Kubernetes/OpenShift ready with sample templates and a Helm chart
 -   PgBouncer, Pgpool2, AWS RDS and Patroni support with automatic
     member discovery
--   Internal health-check API (port 8081 by default) to monitor metrics
-    gathering status / progress remotely
+-   Internal REST API to monitor metrics gathering status remotely
 -   Built-in security with SSL connections support for all components
     and passwords encryption for connect strings
 -   Very low resource requirements for the collector even when
@@ -33,4 +32,3 @@ title: List of main features
 -   Capabilities to go beyond PostgreSQL metrics gathering with built-in
     log parsing for error detection and OS level metrics collection via
     PL/Python "helper" stored procedures
--   A *Ping mode* to test connectivity to all databases under monitoring

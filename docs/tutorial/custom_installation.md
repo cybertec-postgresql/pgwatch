@@ -2,7 +2,7 @@
 title: Custom installation
 ---
 
-As described in the [Components](components.md) 
+As described in the [Components](../concept/components.md) 
 chapter, there a couple of ways how to set up up pgwatch.
 Two most common ways though are the central *Config DB* based "pull"
 approach and the *YAML file* based "push" approach, plus Grafana to

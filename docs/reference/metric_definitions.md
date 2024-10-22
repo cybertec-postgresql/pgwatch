@@ -63,7 +63,7 @@ new `reco_*` queries freely.
 This enables Postgres server log "tailing" for errors. Can't
 be used for "pull" setups though unless the DB logs are
 somehow mounted / copied over, as real file access is needed.
-See the [Log parsing](advanced_features.md#log-parsing) chapter for details.
+See the [Log parsing](../reference/advanced_features.md#log-parsing) chapter for details.
 
 ### instance_up
 For normal metrics there will be no data rows stored if the DB
@@ -311,7 +311,7 @@ Supported column attributes:
 
 # Adding metric fetching helpers
 
-As mentioned in [Helper Functions](preparing_databases.md#rolling-out-helper-functions)
+As mentioned in [Helper Functions](../tutorial/preparing_databases.md#rolling-out-helper-functions)
 section, Postgres knows very little about the Operating
 System that it's running on, so in some (most) cases it might be
 advantageous to also monitor some basic OS statistics together with the

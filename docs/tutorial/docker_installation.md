@@ -69,7 +69,7 @@ additional security - by default Docker listens on all network devices!
 
 Also note that one can configure many aspects of the software components
 running inside the container via ENV - for a complete list of all
-supported Docker environment variables see the [ENV_VARIABLES.md](ENV_VARIABLES.md) file.
+supported Docker environment variables see the [ENV_VARIABLES.md](../reference/env_variables.md) file.
 
 ## Available Docker images
 
@@ -181,7 +181,7 @@ needed.
 
 ## Docker Compose
 
-As mentioned in the [Components](components.md) chapter, remember that the pre-built Docker images are just
+As mentioned in the [Components](../concept/components.md) chapter, remember that the pre-built Docker images are just
 one example how your monitoring setup around the pgwatch metrics
 collector could be organized. For another example how various components
 (as Docker images here) can work together, see a *Docker Compose*
