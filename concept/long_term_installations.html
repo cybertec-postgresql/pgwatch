@@ -1405,12 +1405,12 @@ problem if teams are big, databases are many, and it's done per hand
 the most typical approach would be to write some script or Cronjob that
 parses the company's internal inventory database, files or endpoints
 and translate changes to according CRUD operations on the
-<em>pgwatch.monitored_db</em> table directly.</p>
+<em>pgwatch.source</em> table directly.</p>
 <p>One could also use the <em>REST API</em> for that purpose.</p>
 <p>If pgwatch configuration is kept in YAML files, it should be also
 relatively easy to automate the maintenance as the configuration can be
 organized so that one file represent a single monitoring entry, i.e. the
-<code>--config</code> parameter can also refer to a folder of YAML files.</p>
+<code>--sources</code> and <code>--metrics</code> parameters can also refer to a folder of YAML files.</p>
 <h2 id="updating-the-pgwatch-collector">Updating the pgwatch collector</h2>
 <p>The pgwatch metrics gathering daemon is the core component of the
 solution alas the most critical one. So it's definitely recommended to
@@ -1422,41 +1422,35 @@ the <a href="../tutorial/upgrading.html">upgrading chapter</a> for details, but 
 the process is very similar to initial installation as the collector
 doesn't have any state on its own - it's just on binary program.</p>
 <h2 id="metrics-maintenance">Metrics maintenance</h2>
-<p>Metric definition SQL-s are regularly corrected as suggestions /
+<p>Metric definition SQL-s are regularly corrected as suggestions and
 improvements come in and also new ones are added to cover latest
 Postgres versions, so would make sense to refresh them 1-2x per year.</p>
-<p>If using a YAML based config, just installing newer pre-built RPM / DEB
-packages will do the trick automatically (built-in metrics at
-<em>/etc/pgwatch/metrics</em> will be refreshed) but for Config DB based
+<p>If using built-in metrics, just installing newer pre-built RPM / DEB
+packages will do the trick automatically but for configuration database based
 setups you'd need to follow a simple process described
 <a href="../tutorial/upgrading.html#updating-metric-definitions">here</a>.</p>
 <h2 id="dashboard-maintenance">Dashboard maintenance</h2>
 <p>Same as with metrics, also the built-in Grafana dashboards are being
 actively updates, so would make sense to refresh them occasionally also.
-The bulk delete / import scripts can be found
-<a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana">here</a>
-or you could also manually just re-import some dashboards of interest
+You could manually just re-import some dashboards of interest
 from JSON files in [/etc/pgwatch/grafana-dashboards] folder
 or from
 <a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana">Github</a>.</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
-<p>Notable new dashboards are usually listed also in <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/docs/CHANGELOG.md">release
-notes</a>
-and most dashboards also have a sample
-<a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/gallery">screenshots</a>
+<p>Notable new dashboards are usually listed also in <a href="https://github.com/cybertec-postgresql/pgwatch/releases">release notes</a>
+and most dashboards also have a sample <a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/gallery">screenshots</a>
 available.</p>
 </div>
 <h2 id="storage-monitoring">Storage monitoring</h2>
 <p>In addition to all that you should at least initially periodically
-monitor the metrics DB size...as it can grow quite a lot (especially
+monitor the metric measurements databases size as it can grow quite a lot (especially
 when using Postgres for storage) when the monitored databases have
-hundreds of tables / indexes and if a lot of unique SQL-s are used and
-<em>pg_stat_statements</em> monitoring is enabled. If the storage grows too
+hundreds of tables and indexes, and if a lot of unique SQL-s are used and
+<code>pg_stat_statements</code> monitoring is enabled. If the storage grows too
 fast, one can increase the metric intervals (especially for
 "table_stats", "index_stats" and "stat_statements") or decrease
-the data retention periods via <em>--pg-retention-days</em> or
-<em>--iretentiondays</em> params.</p>
+the data retention periods via <code>--retention</code> param.</p>
 
 
 

@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#config-db-based-operation" class="md-skip">
+        <a href="#configuration-database-based-operation" class="md-skip">
           Skip to content
         </a>
       
@@ -621,9 +621,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#config-db-based-operation" class="md-nav__link">
+  <a href="#configuration-database-based-operation" class="md-nav__link">
     <span class="md-ellipsis">
-      Config DB based operation
+      Configuration database based operation
     </span>
   </a>
   
@@ -633,15 +633,6 @@
   <a href="#file-based-operation" class="md-nav__link">
     <span class="md-ellipsis">
       File based operation
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#prometheus-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Prometheus mode
     </span>
   </a>
   
@@ -1308,9 +1299,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#config-db-based-operation" class="md-nav__link">
+  <a href="#configuration-database-based-operation" class="md-nav__link">
     <span class="md-ellipsis">
-      Config DB based operation
+      Configuration database based operation
     </span>
   </a>
   
@@ -1320,15 +1311,6 @@
   <a href="#file-based-operation" class="md-nav__link">
     <span class="md-ellipsis">
       File based operation
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#prometheus-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Prometheus mode
     </span>
   </a>
   
@@ -1359,11 +1341,10 @@
 
   <h1>Installation Options</h1>
 
-<p>Besides freedom of choosing from a set of metric storage options one can
-also choose how they're going to retrieve metrics from databases - in a
-"pull" or "push" way and how is the monitoring configuration
+<p>Besides freedom of choosing from a set of metric measurements storage options one can
+also choose how is the monitoring configuration
 (connect strings, metric sets and intervals) going to be stored.</p>
-<h2 id="config-db-based-operation">Config DB based operation</h2>
+<h2 id="configuration-database-based-operation">Configuration database based operation</h2>
 <p>This is the original central pull mode depicted on the
 <a href="../gallery/pgwatch_architecture.png">architecture diagram</a>. 
 It requires a small schema to be rolled out on any Postgres
@@ -1371,42 +1352,22 @@ database accessible to the metrics gathering daemon, which will hold the
 connect strings, metric definition SQL-s and preset configurations and
 some other more minor attributes. For rollout details see the
 <a href="../tutorial/custom_installation.html">custom installation</a> chapter.</p>
-<p>The default Docker images use this approach.</p>
+<p>The default Docker demo image <code>cybertecpostgresql/pgwatch-demo</code> uses this approach.</p>
 <h2 id="file-based-operation">File based operation</h2>
-<p>From v1.4.0 one can deploy the gatherer daemon(s) decentrally with
-<em>hosts to be monitored</em> defined in simple YAML files. In that case there
-is no need for the central Postgres "config DB". See the sample
+<p>One can deploy the gatherer daemon(s) decentrally with
+<em>sources to be monitored</em> defined in simple YAML files. In that case there
+is no need for the central Postgres configuration databse. See the sample
 <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sources/sample.sources.yaml">instances.yaml</a>
-config file for an example. Note that in this mode you also need to
-point out the path to metric definition SQL files when starting the
-gatherer. Also note that the configuration system also supports multiple
+config file for an example. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In this mode you also may want, but not forced, to point out the path to 
+metric definition YAML file when starting the
+gatherer. Also note that the configuration system supports multiple
 YAML files in a folder so that you could easily programmatically manage
-things via <em>Ansible</em> for example and you can also use Env. vars in
-sideYAML files.</p>
-<p>Relevant Gatherer env. vars / flags: <code>--config, --metrics-folder</code> or
-<code>PW_CONFIG / PW_METRICS_FOLDER</code>.</p>
-<h2 id="prometheus-mode">Prometheus mode</h2>
-<p>In v1.6.0 was added support for Prometheus - being one of the most
-popular modern metrics gathering / alerting solutions. When the
-<code>--datastore / PW_DATASTORE</code> parameter is set to <em>prometheus</em> then the
-pgwatch metrics collector doesn't do any normal interval-based
-fetching but listens on port <em>9187</em> (changeable) for scrape requests
-configured and performed on Prometheus side. Returned metrics belong to
-the "pgwatch" namespace (a prefix basically) which is changeable via
-the <code>--prometheus-namespace</code> flag if needed.</p>
-<p>Also important to note - in this mode the pgwatch agent should not be
-run centrally but on all individual DB hosts. While technically possible
-though to run centrally, it would counter the core idea of Prometheus
-and would make scrapes also longer and risk getting timeouts as all DBs
-are scanned sequentially for metrics.</p>
-<p>FYI -- the functionality has some overlap with the existing
-<a href="https://github.com/wrouesnel/postgres_exporter">postgres_exporter</a>
-project, but also provides more flexibility in metrics configuration and
-all config changes are applied "online".</p>
-<p>Also note that Prometheus can only store numerical metric data values -
-so metrics output for example PostgreSQL storage and Prometheus are not
-100% compatile. Due to that there's also a separate "preset config"
-named "prometheus".</p>
+things via <em>Ansible</em>, for example, and you can also use environmental 
+variables inside YAML files.</p>
+</div>
 
 
 

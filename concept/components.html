@@ -702,39 +702,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Component reuse">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#to-use-an-existing-postgres-db-for-storing-the-monitoring-config" class="md-nav__link">
-    <span class="md-ellipsis">
-      To use an existing Postgres DB for storing the monitoring config
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#to-use-an-existing-grafana-installation" class="md-nav__link">
-    <span class="md-ellipsis">
-      To use an existing Grafana installation
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#to-use-an-existing-postgres-db-for-storing-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      To use an existing Postgres DB for storing metrics
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -1521,39 +1488,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Component reuse">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#to-use-an-existing-postgres-db-for-storing-the-monitoring-config" class="md-nav__link">
-    <span class="md-ellipsis">
-      To use an existing Postgres DB for storing the monitoring config
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#to-use-an-existing-grafana-installation" class="md-nav__link">
-    <span class="md-ellipsis">
-      To use an existing Grafana installation
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#to-use-an-existing-postgres-db-for-storing-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      To use an existing Postgres DB for storing metrics
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -1639,11 +1573,6 @@ configuration like which databases should be monitored, with which
 metrics and intervals. Besides that there are some basic overview tables
 to analyze the gathered data and also possibilities to delete unneeded
 metric data (when removing a test host for example).</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Note that the Web UI can only be used if storing the configuration in
-the database (Postgres).</p>
-</div>
 <h2 id="metrics-representation">Metrics representation</h2>
 <p>Standard pgwatch setup uses <a href="http://grafana.org/">Grafana</a> for
 analyzing the gathered metrics data in a visual, point-and-click way.
@@ -1657,53 +1586,10 @@ be visualized or processed in any other way.</p>
 <p><a href="../gallery/pgwatch_architecture.png"><img alt="pgwatch typical deployment architecture diagram" src="../gallery/pgwatch_architecture.png" /></a></p>
 <h2 id="component-reuse">Component reuse</h2>
 <p>All components are <em>loosely coupled</em>, thus for non-pgwatch components
-(pgwatch components are only the metrics collector and the optional Web
-UI) you can decide to make use of an already existing installation of
+(pgwatch components are only the metrics collector) 
+you can decide to make use of an already existing installation of
 Postgres, Grafana or Prometheus and run additionally just the pgwatch
 collector.</p>
-<h3 id="to-use-an-existing-postgres-db-for-storing-the-monitoring-config">To use an existing Postgres DB for storing the monitoring config</h3>
-<p>Create a new pgwatch DB, preferrably also an accroding role who
-owns it. Then roll out the schema
-(pgwatch/sql/config_store/config_store.sql) and set the following
-parameters when running the image: <code>PW_PGHOST</code>, <code>PW_PGPORT</code>,
-<code>PW_PGDATABASE</code>, <code>PW_PGUSER</code>, <code>PW_PGPASSWORD</code>, <code>PW_PGSSL</code> (optional).</p>
-<h3 id="to-use-an-existing-grafana-installation">To use an existing Grafana installation</h3>
-<p>Load the pgwatch dashboards from <em>grafana_dashboard</em> folder if
-needed (one can totally define their own) and set the following
-paramater: <code>PW_GRAFANA_BASEURL</code>. This parameter only provides correct
-links to Grafana dashboards from the Web UI. Grafana is the most
-loosely coupled component for pgwatch and basically doesn't have
-to be used at all. One can make use of the gathered metrics directly
-over the Postgres (or Graphite) API-s.</p>
-<h3 id="to-use-an-existing-postgres-db-for-storing-metrics">To use an existing Postgres DB for storing metrics</h3>
-<ol>
-<li>Roll out the metrics storage schema according to instructions
-    from <a href="../tutorial/preparing_databases.html">here</a>.</li>
-<li>
-<p>Following parameters need to be set for the gatherer:</p>
-<ul>
-<li><code>--datastore=postgres</code> or <code>PW_DATASTORE=postgres</code></li>
-<li><code>--pg-metric-store-conn-str="postgresql://user:pwd@host:port/db"</code>
-    or <code>PW_PG_METRIC_STORE_CONN_STR="..."</code></li>
-<li>optionally also adjust the <code>--pg-retention-days</code> parameter. By
-    default 14 days for Postgres are kept</li>
-</ul>
-</li>
-<li>
-<p>If using the Web UI also set the datastore parameters
-    <code>--datastore</code> and <code>--pg-metric-store-conn-str</code> if wanting to
-    have an option to be able to clean up data also via the UI in a
-    more targeted way.</p>
-</li>
-</ol>
-<p>When using Postgres metrics storage, the schema rollout script
-activates "asynchronous commiting" feature for the <em>pgwatch</em> role
-in the metrics storage DB by default! If this is not wanted (no
-metrics can be lost in case of a crash), then re-enstate normal
-(synchronous) commiting with below query and restart the pgwatch
-agent:
-<div class="language-sql highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">ALTER</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">pgwatch</span><span class="w"> </span><span class="k">IN</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="err">$</span><span class="n">MY_METRICS_DB</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="n">synchronous_commit</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="k">on</span><span class="p">;</span>
-</span></code></pre></div></p>
 
 
 

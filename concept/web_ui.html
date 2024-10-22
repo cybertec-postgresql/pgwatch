@@ -671,15 +671,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#exposing-the-component-logs" class="md-nav__link">
-    <span class="md-ellipsis">
-      Exposing the component logs
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1307,15 +1298,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#exposing-the-component-logs" class="md-nav__link">
-    <span class="md-ellipsis">
-      Exposing the component logs
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1341,20 +1323,11 @@
 
   <h1>Web UI</h1>
 
-<p>If using pgwatch in the centrally managed <em>Config DB</em> way, for easy
-configuration management (adding databases to monitoring, adding
-metrics) there is a small Python Web application bundled making use of
-the CherryPy Web-framework.</p>
-<p>For mass configuration changes the Web UI has some buttons to disable /
-enable all hosts for example, but one could technically also log into
-the configuration database and change the <em>pgwatch.monitored_db</em> table
-directly.</p>
+<p>For easy configuration management (adding databases to monitoring, adding
+metrics) there is a Web application bundled.</p>
 <p>Besides managing the metrics gathering configurations, the two other
 useful features for the Web UI would be the possibility to look at the
-logs of the single components and to verify that metrics gathering is
-working on the "Stat Statements Overview" page, which will contact the
-metrics DB (only Postgres is supported) and present some stats
-summaries.</p>
+logs.</p>
 <p>Default port: <strong>8080</strong></p>
 <p>Sample screenshot of the Web UI:</p>
 <p><a href="../gallery/webui_sources_grid.png"><img alt="A sample screenshot of the pgwatch admin Web UI" src="../gallery/webui_sources_grid.png" /></a></p>
@@ -1370,23 +1343,16 @@ enabled:</p>
 <p>Password protection is controlled by <code>--web-user</code>, <code>--web-password</code> command-line parameters or
     <code>PW_WEBUSER</code>, <code>PW_WEBPASSWORD</code> environmental variables.</p>
 </li>
-<li>
-<p>Note that it's better to use standard <em>LibPQ .pgpass files</em> so
-    there's no requirement to store any passwords in pgwatch config
-    database or YAML config file.</p>
-</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It's better to use standard <em>LibPQ .pgpass files</em> so
+there's no requirement to store any passwords in pgwatch config
+database or YAML config file.</p>
+</div>
 <p>For security sensitive environments make sure to always deploy password
 protection together with SSL, as it uses a standard cookie based
 techniques vulnerable to snooping / MITM attacks.</p>
-<h2 id="exposing-the-component-logs">Exposing the component logs</h2>
-<p>When using the Docker images, internal component logs (Postgres,
-Grafana, Go daemon, Web UI itself) are exposed via the "/logs"
-endpoint. If this is not wanted set the PW_WEBNOCOMPONENTLOGS env.
-variable. Note that if a working "/logs" endpoint is desired also in
-custom setup mode (non-docker) then some actual code changes are needed
-to specify where logs of all components are situated - see top of the
-pgwatch.py file for that.</p>
 
 
 
