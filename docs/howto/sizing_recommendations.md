@@ -8,7 +8,7 @@ title: Sizing recommendations
     The gatherer alone needs typically less than 50 MB if the metric 
     measurements are stored online. Memory consumption will increase a lot when the
     metrics store is offline though, as then metrics are cached in RAM
-    in ringbuffer style up to a limit of 10k data points (for all
+    in ring buffer style up to a limit of 10k data points (for all
     databases) and then memory consumption is dependent on how "wide"
     are the metrics gathered.
 
@@ -19,10 +19,10 @@ title: Sizing recommendations
     weeks is also the default metrics retention policy for Postgres
     running in Docker (configurable). Depending on the amount of schema
     objects - tables, indexes, stored procedures and especially on
-    number of unique SQL-s, it could be also much more. If disk size
+    number of unique SQLs, it could be also much more. If disk size
     reduction is wanted for PostgreSQL storage then best would be to use
     the TimescaleDB extension - it has built-in compression and disk
-    footprint is x5 time less than vanila Postgres, while retaining full
+    footprint is x5 time less than vanilla Postgres, while retaining full
     SQL support.
 
 -   A low-spec (1 vCPU, 2 GB RAM) cloud machine can easily monitor 100

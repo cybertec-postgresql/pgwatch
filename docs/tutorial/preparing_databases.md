@@ -7,7 +7,7 @@ title: Preparing databases for monitoring
 -   Although the "Observer effect" applies also for pgwatch, no
     noticeable impact for the monitored DB is expected when using
     *Preset configs* settings, and given that there is some normal load
-    on the server anyways and the DB doesn't have thousands of tables.
+    on the server anyway and the DB doesn't have thousands of tables.
     For some metrics though can happen that the metric reading query
     (notably "stat_statements" and "table_stats") takes some tens of
     milliseconds, which might be more than an average application query.
@@ -39,7 +39,7 @@ GRANT CONNECT ON DATABASE mydb TO pgwatch;
 GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch; -- for wal_size metric
 ```
 
-For most monitored databases it's extremely beneficial (to
+For most monitored databases it's extremely beneficial (for
 troubleshooting performance issues) to also activate the
 [pg_stat_statements](https://www.postgresql.org/docs/current/pgstatstatements.html)
 extension which will give us exact "per query" performance aggregates
@@ -110,18 +110,18 @@ Note that there might not be an exact Postgres version match for helper
 definitions - then replace *\$pgver* with the previous available version
 number below your server's Postgres version number.
 
-Also note that as of v1.8.1 some helpers definition SQL-s scripts (like
+Also note that as of v1.8.1 some helpers definition SQLs scripts (like
 for "get_stat_statements") will inspect also the "search_path" and
 by default **will not install into schemas that have PUBLIC CREATE
 privileges**, like the "public" schema by default has!
 
 Also when rolling out helpers make sure the `search_path` is
 at defaults or set so that it's also accessible for the monitoring role
-as currently neither helpers nor metric definition SQL-s don't assume
-any particualar schema and depend on the `search_path`
+as currently neither helpers nor metric definition SQLs don't assume
+any particular schema and depend on the `search_path`
 including everything needed.
 
-For more detailed statistics (OS monitoring, table bloat, WAL size, etc)
+For more detailed statistics (OS monitoring, table bloat, WAL size, etc.)
 it is recommended to install also all other helpers found from the
 `/etc/pgwatch/metrics/00_helpers` folder or do it
 automatically by using the *rollout_helper.py* script found in the
@@ -144,7 +144,7 @@ helpers" checkbox.
 
 After the automatic rollout it's still generally recommended to remove
 the superuser privileges from the monitoring role, which now should have
-GRANT-s to all automatically created helper functions. Note though that
+GRANTs to all automatically created helper functions. Note though that
 all created helpers will not be immediately usable as some are for
 special purposes and need additional dependencies.
 
@@ -156,15 +156,15 @@ all newly created databases will get them automatically.
 ## PL/Python helpers
 
 PostgreSQL in general is implemented in such a way that it does not know
-too much about the operation system that it is running on. This is a
+too much about the operating system that it is running on. This is a
 good thing for portability but can be somewhat limiting for monitoring,
 especially when there is no *system monitoring* framework in place or
 the data is not conveniently accessible together with metrics gathered
 from Postgres. To overcome this problem, users can also choose to
-install *helpers* extracting OS metrics like CPU, RAM usage, etc so that
+install *helpers* extracting OS metrics like CPU, RAM usage, etc. so that
 this data is stored together with Postgres-native metrics for easier
 graphing / correlation / alerting. This also enable to be totally
-independent of any System Monitoring tools like Zabbix, etc, with the
+independent of any System Monitoring tools like Zabbix, etc., with the
 downside that everything is gathered over Postgres connections so that
 when Postgres is down no OS metrics can be gathered also. Since v1.8.4
 though the latter problem can be reduced for local "push" based setups
@@ -277,17 +277,17 @@ Use to track joint metrics from Pgpool2's `SHOW POOL_NODES` and
 ### *patroni*
 
 Patroni is a HA / cluster manager for Postgres that relies on a DCS
-(Distributed Consensus Store) to store it's state. Typically in
-such a setup the nodes come and go and also it should not matter who
+(Distributed Consensus Store) to store it's state. Typically, in
+such a setup the nodes come and go, and also it should not matter who
 is currently the master. To make it easier to monitor such dynamic
 constellations pgwatch supports reading of cluster node info from
-all supported DCS-s (etcd, Zookeeper, Consul), but currently only
+all supported DCSs (etcd, Zookeeper, Consul), but currently only
 for simpler cases with no security applied (which is actually the
 common case in a trusted environment).
 
 ### *patroni-continuous-discovery*
 
-As normal *patroni* DB type but all DB-s (or only those matching the
+As normal *patroni* DB type but all DBs (or only those matching the
 regex if any provided) are monitored.
 
 ### *patroni-namespace-discovery*
@@ -298,5 +298,5 @@ Optionally regexes on database names still apply if provided.
 
 !!! Notice
     All "continuous" modes expect access to "template1" or "postgres"
-    databasess of the specified cluster to determine the database names
+    databases of the specified cluster to determine the database names
     residing there.

@@ -17,7 +17,7 @@ Sample screenshot of the Web UI:
 
 ## Web UI security
 
-By default the Web UI is not secured - anyone can view and modify the
+By default, the Web UI is not secured - anyone can view and modify the
 monitoring configuration. If some security is needed though it can be
 enabled:
 
