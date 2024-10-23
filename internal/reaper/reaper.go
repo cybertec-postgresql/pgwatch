@@ -655,7 +655,7 @@ func FetchMetrics(ctx context.Context,
 	sql = mvp.GetSQL(dbVersion)
 
 	if sql == "" && !(msg.MetricName == specialMetricChangeEvents || msg.MetricName == recoMetricName) {
-		// let's ignore dummy SQL-s
+		// let's ignore dummy SQLs
 		log.GetLogger(ctx).Debugf("[%s:%s] Ignoring fetch message - got an empty/dummy SQL string", msg.DBUniqueName, msg.MetricName)
 		return nil, nil
 	}
