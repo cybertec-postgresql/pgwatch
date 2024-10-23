@@ -18,7 +18,7 @@ information is stored in a DCS (Distributed Consensus Store), like
 *etcd*, so it can be fetched from there periodically.
 
 When 'patroni' is selected as a **source type** then the usual Postgres 
-host/port fields should be left empty ("dbname" can still filled if only a 
+host/port fields should be left empty ("dbname" can still be filled if only a 
 specific single database is
 to be monitored) and instead "Host config" JSON field should be filled
 with DCS address, type and scope (cluster name) information. A sample
@@ -41,7 +41,7 @@ If Patroni is powered by *etcd*, then also username, password, ca_file,
 cert_file, key_file optional security parameters can be defined - other
 DCS systems are currently only supported without authentication.
 
-Also if you don't use the standby nodes actively for queries then it
+Also, if you don't use the standby nodes actively for queries then it
 might make sense to decrease the volume of gathered metrics and to
 disable the monitoring of such nodes with the "Master mode only?"
 checkbox (when using the Web UI) or with *only_if_master=true* if using
@@ -122,18 +122,18 @@ pgwatch was originally designed with direct metrics storage in mind,
 but later also support for externally controlled
 [Prometheus](https://prometheus.io/) scraping was added. Note that
 currently though the storage modes are exclusive, i.e. when you enable
-the Promotheus endpoint (default port 9187) there will be no direct
+the Prometheus endpoint (default port 9187) there will be no direct
 metrics storage.
 
 To enable the scraping endpoint set `--datastore=prometheus` and
 optionally also `--prometheus-port`, `--prometheus-namespace`,
-`--prometheus-listen-addr`. Additionally note that you still need to
+`--prometheus-listen-addr`. Additionally, note that you still need to
 specify some metrics config as usually - only metrics with interval
 values bigger than zero will be populated on scraping.
 
-Currently a few built-in metrics that require some state to be stored
+Currently, a few built-in metrics that require some state to be stored
 between scrapes, e.g. the "change_events" metric, will currently be
-ignored. Also non-numeric data columns will be ignored! Tag columns will
+ignored. Also, non-numeric data columns will be ignored! Tag columns will
 be preserved though as Prometheus "labels".
 
 ## Cloud providers support
@@ -142,7 +142,7 @@ Due to popularity of various managed PostgreSQL offerings there's also
 support for some managed options in sense of *Preset Configs*, that take
 into account the fact that on such platforms you get a limited user that
 doesn't have access to all metrics or some features have just been
-plain removed. Thus to reduce server log errors and save time on
+plain removed. Thus, to reduce server log errors and save time on
 experimenting there are following presets available:
 
 -   **aws** - for standard AWS RDS managed PostgreSQL databases

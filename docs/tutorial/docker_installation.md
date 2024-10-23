@@ -13,7 +13,7 @@ The simplest real-life pgwatch setup should look something like that:
     databases.
 
 1.  Find the latest pgwatch release version by going to the project's
-    Github *Releases* page or use the public API with something like
+    GitHub *Releases* page or use the public API with something like
     that:
 
         curl -so- https://api.github.com/repos/cybertec-postgresql/pgwatch/releases/latest | jq .tag_name | grep -oE '[0-9\.]+'
@@ -33,19 +33,19 @@ The simplest real-life pgwatch setup should look something like that:
     in case of a reboot/crash - which is highly recommended if not using
     some container management framework to run pgwatch.
 
-## More future proof setup steps
+## More future-proof setup steps
 
 Although the above simple setup example will do for more temporal setups
 / troubleshooting sessions, for permanent setups it's highly
 recommended to create separate volumes for all software components in
 the container, so that it would be easier to
 [update](upgrading.md) to newer pgwatch
-Docker images and pull file system based backups and also it might be a
+Docker images and pull file system based backups, and also it might be a
 good idea to expose all internal ports at least on *localhost* for
 possible troubleshooting and making possible to use native backup tools
 more conveniently for Postgres.
 
-Note that for maximum flexibility, security and update simplicity it's
+Note that, for maximum flexibility, security and update simplicity it's
 best to do a custom setup though - see the next
 [chapter](custom_installation.md) for that.
 
@@ -73,12 +73,15 @@ supported Docker environment variables see the [ENV_VARIABLES.md](../reference/e
 
 ## Available Docker images
 
-Following images are regularly pushed to [Docked
+Following images are regularly pushed to [Docker
 Hub](https://hub.docker.com/u/cybertec):
 
 *cybertec/pgwatch-demo*
 
-The original pgwatch “batteries-included” image with PostgreSQL measurements storage. Just insert connect infos to your database via the admin Web UI (or directly into the Config DB) and then turn to the pre-defined Grafana dashboards to analyze DB health and performance.
+The original pgwatch “batteries-included” image with PostgreSQL measurements
+storage. Just insert connect infos to your database via the admin Web UI (or
+directly into the Config DB) and then turn to the pre-defined Grafana
+dashboards to analyze DB health and performance.
 
 *cybertec/pgwatch*
 
@@ -90,22 +93,22 @@ wiring details.
 
 ## Building custom Docker images
 
-For custom tweaks, more security, specific component versions, etc one
+For custom tweaks, more security, specific component versions, etc. one
 could easily build the images themselves, just a Docker installation is
 needed.
 
 ## Interacting with the Docker container
 
--   If to launch with the `PW_TESTDB=1` env. parameter then the
+-   If launched with the `PW_TESTDB=1` env. parameter then the
     pgwatch configuration database running inside Docker is added to
     the monitoring, so that you should immediately see some metrics at
     least on the *Health-check* dashboard.
 
 -   To add new databases / instances to monitoring open the
     administration Web interface on port 8080 (or some other port, if
-    re-mapped at launch) and go to the */dbs* page. Note that the Web UI
-    is an optional component, and one can managed monitoring entries
-    directly in the Postgres Config DB via `INSERT`-s / `UPDATE`-s into
+    re-mapped at launch) and go to the *SOURCES* page. Note that the Web UI
+    is an optional component, and one can manage monitoring entries
+    directly in the Postgres Config DB via `INSERT` / `UPDATE` into
     `"pgwatch.monitored_db"` table. Default user/password are again
     `pgwatch/pgwatchadmin`, database name - `pgwatch`. In both
     cases note that it can take up to 2min (default main loop time,
@@ -113,7 +116,7 @@ needed.
     any metrics for newly inserted databases.
 
 -   One can edit existing or create new Grafana dashboards, change
-    Grafana global settings, create users, alerts, etc after logging in
+    Grafana global settings, create users, alerts, etc. after logging in
     as `pgwatch/pgwatchadmin` (by default, changeable at launch
     time).
 
@@ -141,7 +144,7 @@ needed.
 -   Some built-in metrics like `"cpu_load"` and others, that gather
     privileged or OS statistics, require installing *helper functions*
     (looking like
-    [that](https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch/metrics/00_helpers/get_load_average/9.1/metric.sql),
+    [that](https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch/metrics/00_helpers/get_load_average/9.1/metric.sql)),
     so it might be normal to see some blank panels or fetching errors in
     the logs. On how to prepare databases for monitoring see the
     [Monitoring preparations](preparing_databases.md) chapter.
@@ -153,7 +156,7 @@ needed.
     -   For PostgreSQL/TimescaleDB - some knowledge of [Window
         functions](https://www.postgresql.org/docs/current/tutorial-window.html)
         is a must if looking at longer time periods of data as the
-        statistics could have been reset in the mean time by user
+        statistics could have been reset in the meantime by user
         request or the server might have crashed, so that simple
         `max() - min()` aggregates on cumulative counters (most data
         provided by Postgres is cumulative) would lie.
