@@ -17,7 +17,7 @@ The metrics collector, written in Go, is the only mandatory and most
 critical component of the whole solution. The main task of the pgwatch
 collector / daemon is pretty simple - reading the configuration and
 metric definitions, fetching the metrics from the configured databases
-using the configured connection info and finally storing the metric results to
+using the configured connection info and finally storing the metric measurements to
 some other database, or just exposing them over a port for scraping in
 case of Prometheus mode.
 
