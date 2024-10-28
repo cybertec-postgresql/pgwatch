@@ -3,7 +3,7 @@ package sources
 // # Sources
 
 // Code in this folder is responsible for reading and writing sources.
-// Sources defines how to get the infgormation for the monitored databases.
+// Sources defines how to get the information for the monitored databases.
 // At the moment, sources definitions support two storages:
 // * PostgreSQL database
 // * YAML file
