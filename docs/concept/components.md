@@ -5,7 +5,7 @@ title: Components
 The main development idea around pgwatch was to do the minimal work
 needed and not to reinvent the wheel - meaning that pgwatch is mostly
 just about gluing together already some proven pieces of software for
-metrics storage and using Grafana for dashboarding. So here a listing of
+metrics storage and using Grafana for dashboarding. So here is a listing of
 components that can be used to build up a monitoring setup around the
 pgwatch metrics collector. Note that most components are not mandatory
 and for tasks like metrics storage there are many components to choose
@@ -16,19 +16,19 @@ from.
 The metrics collector, written in Go, is the only mandatory and most
 critical component of the whole solution. The main task of the pgwatch
 collector / daemon is pretty simple - reading the configuration and
-metric defintions, fetching the metrics from the configured databases
-using the configured connection info and finally storing the metrics to
+metric definitions, fetching the metrics from the configured databases
+using the configured connection info and finally storing the metric measurements to
 some other database, or just exposing them over a port for scraping in
 case of Prometheus mode.
 
 ## Configuration
 
 The configuration says which databases, how often and with which metrics
-(SQL-s queries) are to be gathered. There are 3 options to store the
+(SQL queries) are to be gathered. There are 2 options to store the
 configuration:
 
-- A PostgreSQL database holding a simple schema with 5 tables;
-- File based approach - YAML config file.
+- A PostgreSQL database holding a simple schema with 5 tables.
+- File based approach - YAML config file(s).
 
 ## Measurements storage
 
@@ -50,7 +50,7 @@ TimescaleDB is a time-series extension for PostgreSQL.
 Although technically a plain extension it's often mentioned as a
 separate database system as it brings custom data compression to
 the table, enabling huge disk savings over standard Postgres. Note
-that pgwatch does not use Timescale's built-in *retention*
+that pgwatch does not use Timescales built-in *retention*
 management but a custom version.
 
 ### [Prometheus](https://prometheus.io/) 
@@ -61,14 +61,14 @@ good choice for monitoring Cloud-like environments as the
 monitoring targets don't need to know too much about how actual
 monitoring will be carried out later and also Prometheus has a
 nice fault-tolerant alerting system for enterprise needs. By
-default Prometheus is not set up for long term metrics storage!
+default, Prometheus is not set up for long term metrics storage!
 
 ### JSON files
 Plain text files for testing / special use cases.
 
 ## The Web UI
 
-The second homebrewn component of the pgwatch solution is an optional
+The second homegrown component of the pgwatch solution is an optional
 and relatively simple Web UI for administering details of the monitoring
 configuration like which databases should be monitored, with which
 metrics and intervals. Besides that there are some basic overview tables

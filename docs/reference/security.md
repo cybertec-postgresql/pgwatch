@@ -39,7 +39,7 @@ Some points on security:
 ## Launching a more secure Docker container
 
 Some common sense security is built into default Docker images for all
-components but not actived by default. A sample command to launch
+components but not activated by default. A sample command to launch
 pgwatch with following security "checkpoints" enabled:
 
 1.  HTTPS for both Grafana and the Web UI with self-signed certificates

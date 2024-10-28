@@ -2,7 +2,7 @@
 title: Metric definitions
 ---
 
-## Whats is metric?
+## What is metric?
 
 Metrics are named SQL queries that return a timestamp and pretty much
 anything else you find useful. Most metrics have many different query
@@ -49,7 +49,7 @@ Some things to note about the built-in metrics:
 The "change_events" built-in metric, tracking DDL & config
 changes, uses internally some other "*_hashes" metrics which
 are not meant to be used on their own. Such metrics are
-described also accordingly on the Web UI /metrics page and they
+described also accordingly on the Web UI /metrics page, and they
 should not be removed.
 
 ### recommendations
@@ -141,7 +141,7 @@ For defining metrics definitions you should adhere to a couple of basic
 concepts:
 
 -   Every metric query should have an `epoch_ns` (nanoseconds since
-    epoch column to record the metrics reading time. If the column is
+    epoch column) to record the metrics reading time. If the column is
     not there, things will still work but server timestamp of the
     metrics gathering daemon will be used, some a small loss (assuming
     intra-datacenter monitoring with little lag) of precision occurs.
@@ -152,7 +152,7 @@ concepts:
     bit bothersome to work with NULLs!
 
 -   Column names should be descriptive enough so that they're
-    self-explanatory, but not over long as it costs also storage
+    self-explanatory, but not too long as it costs storage
 
 -   Metric queries should execute fast - at least below the selected
     *Statement timeout* (default 5s)
@@ -182,24 +182,22 @@ concepts:
 
 ### For *Config DB* based setups:
 
-1.  Go to the Web UI "Metric definitions" page and scroll to the
-    bottom.
+1.  Go to the Web UI "METRICS" page and press "+ NEW" button.
 1.  Fill the template - pick a name for your metric, select minimum
     supported PostgreSQL version and insert the query text and any
-    extra attributes if any (see below for options). Hit the "New"
+    extra attributes if any (see below for options). Hit the "ADD METRIC"
     button to store.
 1.  Activate the newly added metric by including it in some existing
-    *Preset Config* (listed on top of the page) or add it directly in
-    JSON form, together with an interval, into the "Custom metrics
-    config" filed on the "DBs" page.
+    *Preset Config* in "PRESETS" page or add it directly to monitored DB,
+    together with an interval, into the "METRICS" tab when editing a source on the "SOURCES" page.
 
 ### For *YAML* based setups:
 
 1.  Create a new folder for the metric under
-    `/etc/pgwatch/metrics`. The folder name will be the metric's
+    `/etc/pgwatch/metrics`. The folder name will be the metrics
     name, so choose wisely.
-1.  Create a new subfolder for each "minimally supported Postgres
-    version and insert the metric's SQL definition into a file
+1.  Create a new subfolder for each "minimally supported" Postgres
+    version and insert the metrics SQL definition into a file
     named "metric.sql". 
     
     !!! Notice
@@ -216,9 +214,9 @@ concepts:
 
 ## Metric attributes
 
-The ehaviour of plain metrics can be extended with a set of
+The behaviour of plain metrics can be extended with a set of
 attributes that will modify the gathering in some way. The attributes
-are stored in YAML files called *metric_attrs.yaml" in a metrics root
+are stored in YAML files called *metric_attrs.yaml* in a metrics root
 directory or in the `metric_attribute` Config DB table.
 
 Currently supported attributes are:
@@ -251,7 +249,7 @@ Currently supported attributes are:
     declaring almost similar metrics with different names but the data
     will be stored under one metric. Currently used (for out-of-the box
     metrics) only for the `stat_statements_no_query_text` metric, to
-    not to store actual query texts from the "pg_stat_statements"
+    not store actual query texts from the "pg_stat_statements"
     extension for more security sensitive instances.
 
 - *extension_version_based_overrides*
@@ -280,9 +278,9 @@ Besides the *\_tag* column prefix modifier, it's also possible to
 modify the output of certain columns via a few attributes. It's only
 relevant for Prometheus output though currently, to set the correct data
 types in the output description, which is generally considered a
-nice-to-have thing anyways. For YAML based setups this means adding a
-"column_attrs.yaml" file in the metric's top folder and for Config DB
-based setup an according "column_attrs" JSON column should be filled
+nice-to-have thing anyway. For YAML based setups this means adding a
+"column_attrs.yaml" file in the metrics top folder and for Config DB
+based setups an according "column_attrs" JSON column should be filled
 via the Web UI.
 
 Supported column attributes:
@@ -321,6 +319,6 @@ gathered data is not always trivial, pgwatch has a system of *helpers*
 for fetching such data.
 
 One can invent and install such *helpers* on the monitored databases
-freely to expose any information needed (backup status etc) via Python,
-or any other PL-language supported by Postgres, and then add according
-metrics similarly to any normal Postgres-native metrics.
+freely to expose any information needed (backup status etc.) via Python,
+or any other PL-language supported by Postgres, and then add these
+metrics similarly to any other Postgres-native metrics.

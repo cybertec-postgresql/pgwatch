@@ -38,7 +38,7 @@ docker compose -f ./docker/docker-compose.yml up --detach
 <pre>
  ✔ Network pgwatch_default       Created
  ✔ Container pgwatch-postgres-1  Healthy
- ✔ Container pgwatch-pgwatch-1  Started
+ ✔ Container pgwatch-pgwatch-1   Started
  ✔ Container pgwatch-grafana-1   Started
 </pre>
 
