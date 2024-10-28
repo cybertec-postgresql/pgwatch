@@ -18,7 +18,7 @@ func TestReadMetricSchemaType(t *testing.T) {
 	assert.NoError(t, err)
 
 	pgw := PostgresWriter{
-		сtx:    ctx,
+		ctx:    ctx,
 		sinkDb: conn,
 	}
 
@@ -55,7 +55,7 @@ func TestSyncMetric(t *testing.T) {
 	conn, err := pgxmock.NewPool()
 	assert.NoError(t, err)
 	pgw := PostgresWriter{
-		сtx:    ctx,
+		ctx:    ctx,
 		sinkDb: conn,
 	}
 	dbUnique := "mydb"
@@ -77,7 +77,7 @@ func TestWrite(t *testing.T) {
 	assert.NoError(t, err)
 	ctx, cancel := context.WithCancel(ctx)
 	pgw := PostgresWriter{
-		сtx:    ctx,
+		ctx:    ctx,
 		sinkDb: conn,
 	}
 	messages := []metrics.MeasurementEnvelope{
