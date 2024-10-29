@@ -1397,10 +1397,10 @@
 
 <p>For long term pgwatch setups the main challenge is to keep the software
 up-to-date to guarantee stable operation and also to make sure that all
-DB-s are under monitoring.</p>
+DBs are under monitoring.</p>
 <h2 id="keeping-inventory-in-sync">Keeping inventory in sync</h2>
 <p>Adding new DBs to monitoring and removing those shut down, can become a
-problem if teams are big, databases are many, and it's done per hand
+problem if teams are big, databases are many, and it's done by hand
 (common for on-premise, non-orchestrated deployments). To combat that,
 the most typical approach would be to write some script or Cronjob that
 parses the company's internal inventory database, files or endpoints
@@ -1420,9 +1420,9 @@ versions don't necessary mean that something will break, but you'll be
 missing some newly added metrics, plus the occasional optimizations. See
 the <a href="../tutorial/upgrading.html">upgrading chapter</a> for details, but basically
 the process is very similar to initial installation as the collector
-doesn't have any state on its own - it's just on binary program.</p>
+doesn't have any state on its own - it's just one executable file.</p>
 <h2 id="metrics-maintenance">Metrics maintenance</h2>
-<p>Metric definition SQL-s are regularly corrected as suggestions and
+<p>Metric definition SQLs are regularly corrected as suggestions and
 improvements come in and also new ones are added to cover latest
 Postgres versions, so would make sense to refresh them 1-2x per year.</p>
 <p>If using built-in metrics, just installing newer pre-built RPM / DEB
@@ -1433,9 +1433,8 @@ setups you'd need to follow a simple process described
 <p>Same as with metrics, also the built-in Grafana dashboards are being
 actively updates, so would make sense to refresh them occasionally also.
 You could manually just re-import some dashboards of interest
-from JSON files in [/etc/pgwatch/grafana-dashboards] folder
-or from
-<a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana">Github</a>.</p>
+from JSON files in [/etc/pgwatch/grafana-dashboards] folder or from
+<a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana">GitHub</a>.</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>Notable new dashboards are usually listed also in <a href="https://github.com/cybertec-postgresql/pgwatch/releases">release notes</a>
@@ -1446,7 +1445,7 @@ available.</p>
 <p>In addition to all that you should at least initially periodically
 monitor the metric measurements databases size as it can grow quite a lot (especially
 when using Postgres for storage) when the monitored databases have
-hundreds of tables and indexes, and if a lot of unique SQL-s are used and
+hundreds of tables and indexes, and if a lot of unique SQLs are used and
 <code>pg_stat_statements</code> monitoring is enabled. If the storage grows too
 fast, one can increase the metric intervals (especially for
 "table_stats", "index_stats" and "stat_statements") or decrease

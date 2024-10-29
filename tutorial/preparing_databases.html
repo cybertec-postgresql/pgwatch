@@ -1622,7 +1622,7 @@
 <li>Although the "Observer effect" applies also for pgwatch, no
     noticeable impact for the monitored DB is expected when using
     <em>Preset configs</em> settings, and given that there is some normal load
-    on the server anyways and the DB doesn't have thousands of tables.
+    on the server anyway and the DB doesn't have thousands of tables.
     For some metrics though can happen that the metric reading query
     (notably "stat_statements" and "table_stats") takes some tens of
     milliseconds, which might be more than an average application query.</li>
@@ -1649,7 +1649,7 @@ below for explanation) accordingly, as in those by default the
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">GRANT</span><span class="w"> </span><span class="k">CONNECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">mydb</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">pgwatch</span><span class="p">;</span>
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="k">GRANT</span><span class="w"> </span><span class="k">EXECUTE</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">pg_stat_file</span><span class="p">(</span><span class="nb">text</span><span class="p">)</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">pgwatch</span><span class="p">;</span><span class="w"> </span><span class="c1">-- for wal_size metric</span>
 </span></code></pre></div>
-<p>For most monitored databases it's extremely beneficial (to
+<p>For most monitored databases it's extremely beneficial (for
 troubleshooting performance issues) to also activate the
 <a href="https://www.postgresql.org/docs/current/pgstatstatements.html">pg_stat_statements</a>
 extension which will give us exact "per query" performance aggregates
@@ -1718,16 +1718,16 @@ psql -f /etc/pgwatch/metrics/00_helpers/get_sequences/$pgver/metric.sql mydb
 <p>Note that there might not be an exact Postgres version match for helper
 definitions - then replace <em>\$pgver</em> with the previous available version
 number below your server's Postgres version number.</p>
-<p>Also note that as of v1.8.1 some helpers definition SQL-s scripts (like
+<p>Also note that as of v1.8.1 some helpers definition SQLs scripts (like
 for "get_stat_statements") will inspect also the "search_path" and
 by default <strong>will not install into schemas that have PUBLIC CREATE
 privileges</strong>, like the "public" schema by default has!</p>
 <p>Also when rolling out helpers make sure the <code>search_path</code> is
 at defaults or set so that it's also accessible for the monitoring role
-as currently neither helpers nor metric definition SQL-s don't assume
-any particualar schema and depend on the <code>search_path</code>
+as currently neither helpers nor metric definition SQLs don't assume
+any particular schema and depend on the <code>search_path</code>
 including everything needed.</p>
-<p>For more detailed statistics (OS monitoring, table bloat, WAL size, etc)
+<p>For more detailed statistics (OS monitoring, table bloat, WAL size, etc.)
 it is recommended to install also all other helpers found from the
 <code>/etc/pgwatch/metrics/00_helpers</code> folder or do it
 automatically by using the <em>rollout_helper.py</em> script found in the
@@ -1746,7 +1746,7 @@ DB <em>md_is_superuser</em>, in the Web UI one can tick the "Auto-create
 helpers" checkbox.</p>
 <p>After the automatic rollout it's still generally recommended to remove
 the superuser privileges from the monitoring role, which now should have
-GRANT-s to all automatically created helper functions. Note though that
+GRANTs to all automatically created helper functions. Note though that
 all created helpers will not be immediately usable as some are for
 special purposes and need additional dependencies.</p>
 <p>A hint: if it can be foreseen that a lot of databases will be created on
@@ -1755,15 +1755,15 @@ to roll out the helpers directly in the <em>template1</em> database - so that
 all newly created databases will get them automatically.</p>
 <h2 id="plpython-helpers">PL/Python helpers</h2>
 <p>PostgreSQL in general is implemented in such a way that it does not know
-too much about the operation system that it is running on. This is a
+too much about the operating system that it is running on. This is a
 good thing for portability but can be somewhat limiting for monitoring,
 especially when there is no <em>system monitoring</em> framework in place or
 the data is not conveniently accessible together with metrics gathered
 from Postgres. To overcome this problem, users can also choose to
-install <em>helpers</em> extracting OS metrics like CPU, RAM usage, etc so that
+install <em>helpers</em> extracting OS metrics like CPU, RAM usage, etc. so that
 this data is stored together with Postgres-native metrics for easier
 graphing / correlation / alerting. This also enable to be totally
-independent of any System Monitoring tools like Zabbix, etc, with the
+independent of any System Monitoring tools like Zabbix, etc., with the
 downside that everything is gathered over Postgres connections so that
 when Postgres is down no OS metrics can be gathered also. Since v1.8.4
 though the latter problem can be reduced for local "push" based setups
@@ -1860,15 +1860,15 @@ to be monitored must be inserted.</p>
 <code>SHOW POOL_PROCESSES</code> commands. Pgpool2 from version 3.0 is supported.</p>
 <h3 id="patroni"><em>patroni</em></h3>
 <p>Patroni is a HA / cluster manager for Postgres that relies on a DCS
-(Distributed Consensus Store) to store it's state. Typically in
-such a setup the nodes come and go and also it should not matter who
+(Distributed Consensus Store) to store it's state. Typically, in
+such a setup the nodes come and go, and also it should not matter who
 is currently the master. To make it easier to monitor such dynamic
 constellations pgwatch supports reading of cluster node info from
-all supported DCS-s (etcd, Zookeeper, Consul), but currently only
+all supported DCSs (etcd, Zookeeper, Consul), but currently only
 for simpler cases with no security applied (which is actually the
 common case in a trusted environment).</p>
 <h3 id="patroni-continuous-discovery"><em>patroni-continuous-discovery</em></h3>
-<p>As normal <em>patroni</em> DB type but all DB-s (or only those matching the
+<p>As normal <em>patroni</em> DB type but all DBs (or only those matching the
 regex if any provided) are monitored.</p>
 <h3 id="patroni-namespace-discovery"><em>patroni-namespace-discovery</em></h3>
 <p>Similar to <em>patroni-continuous-discovery</em> but all Patroni scopes
@@ -1877,7 +1877,7 @@ Optionally regexes on database names still apply if provided.</p>
 <div class="admonition notice">
 <p class="admonition-title">Notice</p>
 <p>All "continuous" modes expect access to "template1" or "postgres"
-databasess of the specified cluster to determine the database names
+databases of the specified cluster to determine the database names
 residing there.</p>
 </div>
 

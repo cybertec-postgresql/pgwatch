@@ -1390,7 +1390,7 @@
   <h1>Custom Installation</h1>
 
 <p>As described in the <a href="../concept/components.html">Components</a> 
-chapter, there a couple of ways how to set up up pgwatch.
+chapter, there is a couple of ways how to set up pgwatch.
 Two most common ways though are the central <em>Config DB</em> based "pull"
 approach and the <em>YAML file</em> based "push" approach, plus Grafana to
 visualize the gathered metrics.</p>
@@ -1417,7 +1417,7 @@ visualize the gathered metrics.</p>
     components in place and optionally set up also backups.</li>
 </ol>
 <h3 id="detailed-steps-for-the-config-db-based-pull-approach-with-postgres-metrics-storage">Detailed steps for the Config DB based "pull" approach with Postgres metrics storage</h3>
-<p>Below are sample steps to do a custom install from scratch using
+<p>Below are the sample steps for a custom installation from scratch using
 Postgres for the pgwatch configuration DB, metrics DB and Grafana
 config DB.</p>
 <p>All examples here assume Ubuntu as OS - but it's basically the same for
@@ -1448,7 +1448,7 @@ instructions from:</p>
 <li>
 <p>Using pre-built packages</p>
 <p>The pre-built DEB / RPM / Tar packages are available on the
-<a href="https://github.com/cybertec-postgresql/pgwatch/releases">Github
+<a href="https://github.com/cybertec-postgresql/pgwatch/releases">GitHub
 releases</a>
 page.</p>
 <div class="language-text highlight"><pre><span></span><code># find out the latest package link and replace below, using v1.8.0 here
@@ -1475,7 +1475,7 @@ cd ..
 go build
 </code></pre></div>
 <p>After fetching all the Go library dependencies (can take minutes)
-an executable named "pgwatch" should be generated. Additionally it's a good idea
+an executable named "pgwatch" should be generated. Additionally, it's a good idea
 to copy it to <code>/usr/bin/pgwatch</code>.</p>
 </li>
 </ol>
@@ -1485,8 +1485,8 @@ to copy it to <code>/usr/bin/pgwatch</code>.</p>
 <p>Sample startup scripts can be found at
 <em>/etc/pgwatch/startup-scripts/pgwatch.service</em> or online
 <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch/startup-scripts/pgwatch.service">here</a>.
-Note that they are OS agnostic and might need some light
-adjustment of paths, etc - so always test them out.</p>
+Note that they are OS-agnostic and might need some light
+adjustment of paths, etc. - so always test them out.</p>
 </li>
 </ul>
 </li>
@@ -1503,9 +1503,9 @@ psql -c &quot;create database pgwatch owner pgwatch&quot;
 </li>
 <li>
 <p>Roll out the pgwatch config schema</p>
-<p>The schema will most importantly hold connection strings of DB-s
+<p>The schema will most importantly hold connection strings of DBs
 to be monitored and the metric definitions.</p>
-<div class="language-text highlight"><pre><span></span><code># FYI - one could get the below schema files also directly from Github
+<div class="language-text highlight"><pre><span></span><code># FYI - one could get the below schema files also directly from GitHub
 # if re-using some existing remote Postgres instance where pgwatch was not installed
 psql -f /etc/pgwatch/sql/config_store/config_store.sql pgwatch
 psql -f /etc/pgwatch/sql/config_store/metric_definitions.sql pgwatch
@@ -1528,11 +1528,11 @@ can be anything if to adjust the scripts.</p>
 <p>Roll out the pgwatch metrics storage schema</p>
 <p>This is a place to pause and first think how many databases will
 be monitored, i.e. how much data generated, and based on that
-one should choose an according metrics storage schema. There are
+one should choose a suitable metrics storage schema. There are
 a couple of different options available that are described
 <a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/pgwatch/sql/metric_store">here</a>
-in detail, but the gist of it is that you don't want too
-complex partitioning schemes if you don't have zounds of data
+in detail, but the gist of it is that you don't want partitioning schemes too
+complex if you don't have zounds of data
 and don't need the fastest queries. For a smaller amount of
 monitored DBs (a couple dozen to a hundred) the default
 "metric-time" is a good choice. For hundreds of databases,
@@ -1583,7 +1583,7 @@ details.</p>
   --verbose=info
 </code></pre></div>
 <p>Default connections params expect a trusted localhost Config DB setup
-so mostly the 2nd line is not needed actually.</p>
+so mostly the 2nd line is not needed, actually.</p>
 <p>Or via SystemD if set up in previous steps</p>
 <div class="language-text highlight"><pre><span></span><code>useradd -m -s /bin/bash pgwatch # default SystemD templates run under the pgwatch user
 sudo systemctl start pgwatch
@@ -1594,7 +1594,7 @@ idea to set verbosity back to default by removing the <em>verbose</em>
 flag.</p>
 <p>Another tip to configure connection strings inside SystemD
 service files is to use the "systemd-escape" utility to escape
-special characters like spaces etc if using the LibPQ connect
+special characters like spaces etc. if using the LibPQ connect
 string syntax rather than JDBC syntax.</p>
 </li>
 <li>
@@ -1621,7 +1621,7 @@ mixups.</p>
 <ol>
 <li>
 <p>Create a Postgres database to hold Grafana internal config, like
-    dashboards etc</p>
+    dashboards etc.</p>
 <p>Theoretically it's not absolutely required to use Postgres for
 storing Grafana internal settings / dashboards, but doing so has
 2 advantages - you can easily roll out all pgwatch built-in
@@ -1673,7 +1673,7 @@ script on the <code>pgwatch_grafana</code> DB.</p>
 <li>
 <p>Add pgwatch predefined dashboards to Grafana</p>
 <p>This could be done by importing the pgwatch dashboard
-definition JSON-s manually, one by one, from the "grafana"
+definition JSONs manually, one by one, from the "grafana"
 folder ("Import Dashboard" from the Grafana top menu) or via
 as small helper script located at
 <em>/etc/pgwatch/grafana-dashboards/import_all.sh</em>. The script
@@ -1682,7 +1682,7 @@ file paths.</p>
 </li>
 <li>
 <p>Optionally install also Grafana plugins</p>
-<p>Currently one pre-configured dashboard (Biggest relations
+<p>Currently, one pre-configured dashboard (Biggest relations
 treemap) use an extra plugin - if planning to that dash, then
 run the following:</p>
 <div class="language-text highlight"><pre><span></span><code>grafana-cli plugins install savantly-heatmap-panel
@@ -1690,7 +1690,7 @@ run the following:</p>
 </li>
 <li>
 <p>Start discovering the preset dashbaords</p>
-<p>If the previous step of launching pgwatch daemon succeeded and
+<p>If the previous step of launching pgwatch daemon succeeded, and
 it was more than some minutes ago, one should already see some
 graphs on dashboards like "DB overview" or "DB overview
 Unprivileged / Developer mode" for example.</p>
@@ -1708,16 +1708,16 @@ DB".</p>
 <li>Install pgwatch - either from pre-built packages or by compiling
     the Go code.</li>
 <li>Specify hosts you want to monitor and with which metrics /
-    aggressivness in a YAML file or files, following the example config
+    aggressiveness in a YAML file or files, following the example config
     located at <em>/etc/pgwatch/config/instances.yaml</em> or online
     <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch/config/instances.yaml">here</a>.
     Note that you can also use env. variables inside the YAML templates!</li>
-<li>Bootstrap the metrics storage DB (not needed it using Prometheus
+<li>Bootstrap the metrics storage DB (not needed if using Prometheus
     mode).</li>
 <li>Prepare the "to-be-monitored" databases for monitoring by creating
     a dedicated login role name as a
     <a href="preparing_databases.html">minimum</a>.</li>
-<li>Run the pgatch2 gatherer specifying the YAML config file (or
+<li>Run the pgwatch gatherer specifying the YAML config file (or
     folder), and also the folder where metric definitions are located.
     Default location: <em>/etc/pgwatch/metrics</em>.</li>
 <li>Install and configure Grafana and import the pgwatch sample

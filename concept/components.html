@@ -1518,7 +1518,7 @@
 <p>The main development idea around pgwatch was to do the minimal work
 needed and not to reinvent the wheel - meaning that pgwatch is mostly
 just about gluing together already some proven pieces of software for
-metrics storage and using Grafana for dashboarding. So here a listing of
+metrics storage and using Grafana for dashboarding. So here is a listing of
 components that can be used to build up a monitoring setup around the
 pgwatch metrics collector. Note that most components are not mandatory
 and for tasks like metrics storage there are many components to choose
@@ -1527,17 +1527,17 @@ from.</p>
 <p>The metrics collector, written in Go, is the only mandatory and most
 critical component of the whole solution. The main task of the pgwatch
 collector / daemon is pretty simple - reading the configuration and
-metric defintions, fetching the metrics from the configured databases
-using the configured connection info and finally storing the metrics to
+metric definitions, fetching the metrics from the configured databases
+using the configured connection info and finally storing the metric measurements to
 some other database, or just exposing them over a port for scraping in
 case of Prometheus mode.</p>
 <h2 id="configuration">Configuration</h2>
 <p>The configuration says which databases, how often and with which metrics
-(SQL-s queries) are to be gathered. There are 3 options to store the
+(SQL queries) are to be gathered. There are 2 options to store the
 configuration:</p>
 <ul>
-<li>A PostgreSQL database holding a simple schema with 5 tables;</li>
-<li>File based approach - YAML config file.</li>
+<li>A PostgreSQL database holding a simple schema with 5 tables.</li>
+<li>File based approach - YAML config file(s).</li>
 </ul>
 <h2 id="measurements-storage">Measurements storage</h2>
 <p>Many options here so that one can for example go for maximum storage
@@ -1554,7 +1554,7 @@ will do the trick, see the <a href="../howto/metrics_db_bootstrap.html">Bootstra
 <p>Although technically a plain extension it's often mentioned as a
 separate database system as it brings custom data compression to
 the table, enabling huge disk savings over standard Postgres. Note
-that pgwatch does not use Timescale's built-in <em>retention</em>
+that pgwatch does not use Timescales built-in <em>retention</em>
 management but a custom version.</p>
 <h3 id="prometheus"><a href="https://prometheus.io/">Prometheus</a></h3>
 <p>Prometheus is a time series database and monitoring system.</p>
@@ -1563,11 +1563,11 @@ good choice for monitoring Cloud-like environments as the
 monitoring targets don't need to know too much about how actual
 monitoring will be carried out later and also Prometheus has a
 nice fault-tolerant alerting system for enterprise needs. By
-default Prometheus is not set up for long term metrics storage!</p>
+default, Prometheus is not set up for long term metrics storage!</p>
 <h3 id="json-files">JSON files</h3>
 <p>Plain text files for testing / special use cases.</p>
 <h2 id="the-web-ui">The Web UI</h2>
-<p>The second homebrewn component of the pgwatch solution is an optional
+<p>The second homegrown component of the pgwatch solution is an optional
 and relatively simple Web UI for administering details of the monitoring
 configuration like which databases should be monitored, with which
 metrics and intervals. Besides that there are some basic overview tables

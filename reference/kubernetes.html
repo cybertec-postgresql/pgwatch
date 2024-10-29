@@ -1264,15 +1264,19 @@
 
   <h1>Kubernetes</h1>
 
-<p>A basic Helm chart is available for installing pgwatch to a Kubernetes
-cluster. The corresponding setup can be found in
-<a href="https://github.com/cybertec-postgresql/pgwatch2">repository</a>, whereas installation is done
-via the following commands:</p>
+<p>A basic Helm chart templates for installing pgwatch to a Kubernetes
+cluster are available as a standalone <a href="https://github.com/cybertec-postgresql/pgwatch-charts">repository</a>. </p>
+<div class="admonition notice">
+<p class="admonition-title">Notice</p>
+<p>Charts are not considered as a part of pgwatch and
+are not maintained by pgwatch developers.</p>
+</div>
+<p>The corresponding setup can be found in <a href="https://github.com/cybertec-postgresql/pgwatch-charts">repository</a>, 
+whereas installation is done via the following commands:</p>
 <div class="language-text highlight"><pre><span></span><code>cd openshift_k8s
 helm install -f chart-values.yml pgwatch ./helm-chart
 </code></pre></div>
-<p>Please have a look at <code>helm-chart/values.yaml</code>
-to get additional information of configurable options.</p>
+<p>Please have a look at <code>helm-chart/values.yaml</code> to get additional information of configurable options. </p>
 
 
 
