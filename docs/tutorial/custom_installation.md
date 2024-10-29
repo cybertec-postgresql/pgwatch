@@ -313,8 +313,7 @@ DB".
     located at */etc/pgwatch/config/instances.yaml* or online
     [here](https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch/config/instances.yaml).
     Note that you can also use env. variables inside the YAML templates!
-3.  Bootstrap the metrics storage DB (not needed if using Prometheus
-    mode).
+3.  Bootstrap the metrics storage DB (not needed if using only Prometheus sink).
 4.  Prepare the "to-be-monitored" databases for monitoring by creating
     a dedicated login role name as a
     [minimum](preparing_databases.md).

@@ -7,8 +7,8 @@ title: Installing using Docker
 The simplest real-life pgwatch setup should look something like that:
 
 1.  Decide which metrics storage engine you want to use -
-    *cybertec/pgwatch* uses PostgreSQL. For Prometheus mode (exposing a
-    port for remote scraping) one should use the slimmer
+    *cybertec/pgwatch* uses PostgreSQL. When only Prometheus sink is used (exposing a
+    port for remote scraping), one should use the slimmer
     *cybertec/pgwatch-daemon* image which doesn't have any built in
     databases.
 
@@ -190,3 +190,40 @@ collector could be organized. For another example how various components
 (as Docker images here) can work together, see a *Docker Compose*
 example with loosely coupled components
 [here](https://github.com/cybertec-postgresql/pgwatch/blob/master/docker-compose.yml).
+
+## Example of advanced setup using YAML files and dual sinks:
+
+pgwatch service in file `docker/docker-compose.yml` can look like this:
+```yaml
+  pgwatch:
+    image: cybertecpostgresql/pgwatch:latest
+    command:
+      - "--web-addr=''"
+      - "-s=/sources.yaml"
+      - "-m=/metrics.yaml"
+      - "--sink=postgresql://pgwatch@postgres:5432/pgwatch_metrics"
+      - "--sink=prometheus://:8080"
+    volumes:
+      - "./sources.yaml:/sources.yaml"
+      - "../internal/metrics/metrics.yaml:/metrics.yaml"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+```
+
+Source file `sources.yaml` in the same directory:
+```yaml
+- name: demo
+  conn_str: postgresql://pgwatch:pgwatchadmin@postgres/pgwatch'
+  is_superuser: false
+  preset_metrics: exhaustive
+  is_enabled: true
+  group: default
+```
+
+Running this setup you get pgwatch that uses sources from YAML file and
+outputs measurements to postgres DB and exposes them for Prometheus 
+to scrape on port 8080 instead of WebUI (which is disabled by `--web-addr=''`).
+Metrics definition is taken from internal file `internal/metrics/metrics.yaml`.
