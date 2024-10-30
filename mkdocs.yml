@@ -70,7 +70,9 @@ nav:
     - Security: reference/security.md
     - Kubernetes: reference/kubernetes.md
     - Environment Variables: reference/env_variables.md
-  - Gallery: gallery/gallery.md
+  - Gallery: 
+    - Dashboards: gallery/dashboards.md
+    - Web UI: gallery/webui.md
   - Developer: 
     - Documentation: developer/godoc.md
     - Contributing: developer/contributing.md
@@ -87,3 +89,4 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - attr_list
