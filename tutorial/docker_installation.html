@@ -324,16 +324,17 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../gallery/gallery.html" class="md-tabs__link">
-        
-  
     
+    
+      <li class="md-tabs__item">
+        <a href="../gallery/dashboards.html" class="md-tabs__link">
+          
   
   Gallery
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -791,6 +792,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#example-of-advanced-setup-using-yaml-files-and-dual-sinks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example of advanced setup using YAML files and dual sinks:
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1176,16 +1186,83 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../gallery/gallery.html" class="md-nav__link">
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
   
   <span class="md-ellipsis">
     Gallery
   </span>
   
 
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Gallery
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gallery/dashboards.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboards
+  </span>
+  
+
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gallery/webui.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Web UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1406,6 +1483,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#example-of-advanced-setup-using-yaml-files-and-dual-sinks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example of advanced setup using YAML files and dual sinks:
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1436,35 +1522,37 @@
 <ol>
 <li>
 <p>Decide which metrics storage engine you want to use -
-    <em>cybertec/pgwatch</em> uses PostgreSQL. For Prometheus mode (exposing a
-    port for remote scraping) one should use the slimmer
-    <em>cybertec/pgwatch-daemon</em> image which doesn't have any built in
+    <em>cybertecpostgresql/pgwatch-demo</em> uses PostgreSQL. 
+    When only Prometheus sink is used (exposing a
+    port for remote scraping), one should use the slimmer
+    <em>cybertecpostgresql/pgwatch</em> image which doesn't have any built in
     databases.</p>
 </li>
 <li>
 <p>Find the latest pgwatch release version by going to the project's
     GitHub <em>Releases</em> page or use the public API with something like
     that:</p>
-<div class="language-text highlight"><pre><span></span><code>curl -so- https://api.github.com/repos/cybertec-postgresql/pgwatch/releases/latest | jq .tag_name | grep -oE &#39;[0-9\.]+&#39;
-</code></pre></div>
-</li>
-<li>
-<p>Pull the image:</p>
-<div class="language-text highlight"><pre><span></span><code>docker pull cybertec/pgwatch:X.Y.Z
-</code></pre></div>
-</li>
-<li>
-<p>Run the Docker image, exposing minimally the Grafana port served on
-    port 3000 internally. In a relatively secure environment you'd
-    usually also include the administrative web UI served on port 8080:</p>
-<div class="language-text highlight"><pre><span></span><code>docker run -d --restart=unless-stopped -p 3000:3000 -p 8080:8080 \
---name pw3 cybertec/pgwatch:X.Y.Z
-</code></pre></div>
-<p>Note that we're setting the container to be automatically restarted
-in case of a reboot/crash - which is highly recommended if not using
-some container management framework to run pgwatch.</p>
 </li>
 </ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-so-<span class="w"> </span>https://api.github.com/repos/cybertec-postgresql/pgwatch/releases/latest<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.tag_name<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-oE<span class="w"> </span><span class="s1">&#39;[0-9\.]+&#39;</span>
+</span></code></pre></div>
+<ol>
+<li>Pull the image:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>pull<span class="w"> </span>cybertecpostgresql/pgwatch-demo:X.Y.Z
+</span></code></pre></div>
+<ol>
+<li>Run the Docker image, exposing minimally the Grafana port served on
+    port 3000 internally. In a relatively secure environment you'd
+    usually also include the administrative web UI served on port 8080:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--restart<span class="o">=</span>unless-stopped<span class="w"> </span>-p<span class="w"> </span><span class="m">3000</span>:3000<span class="w"> </span>-p<span class="w"> </span><span class="m">8080</span>:8080<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>--name<span class="w"> </span>pw3<span class="w"> </span>cybertecpostgresql/pgwatch-demo:X.Y.Z
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>Note that we&#39;re setting the container to be automatically restarted
+in case of a reboot/crash - which is highly recommended if not using
+some container management framework to run pgwatch.
+</code></pre></div>
 <h2 id="more-future-proof-setup-steps">More future-proof setup steps</h2>
 <p>Although the above simple setup example will do for more temporal setups
 / troubleshooting sessions, for permanent setups it's highly
@@ -1479,15 +1567,15 @@ more conveniently for Postgres.</p>
 best to do a custom setup though - see the next
 <a href="custom_installation.html">chapter</a> for that.</p>
 <p>So in short, for plain Docker setups would be best to do something like:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># let&#39;s create volumes for Postgres, Grafana and pgwatch marker files / SSL certificates</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">for</span><span class="w"> </span>v<span class="w"> </span><span class="k">in</span><span class="w"> </span>pg<span class="w">  </span>grafana<span class="w"> </span>pw3<span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>docker<span class="w"> </span>volume<span class="w"> </span>create<span class="w"> </span><span class="nv">$v</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># launch pgwatch with fully exposed Grafana and Health-check ports</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># and local Postgres and subnet level Web UI ports</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--restart<span class="o">=</span>unless-stopped<span class="w"> </span>--name<span class="w"> </span>pw3<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span>-p<span class="w"> </span><span class="m">3000</span>:3000<span class="w"> </span>-p<span class="w"> </span><span class="m">8081</span>:8081<span class="w"> </span>-p<span class="w"> </span><span class="m">127</span>.0.0.1:5432:5432<span class="w"> </span>-p<span class="w"> </span><span class="m">192</span>.168.1.XYZ:8080:8080<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span>-v<span class="w"> </span>pg:/var/lib/postgresql<span class="w"> </span>-v<span class="w"> </span>grafana:/var/lib/grafana<span class="w"> </span>-v<span class="w"> </span>pw3:/pgwatch/persistent-config<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span>cybertec/pgwatch:X.Y.Z
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># let&#39;s create volumes for Postgres, Grafana and pgwatch marker files / SSL certificates</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">for</span><span class="w"> </span>v<span class="w"> </span><span class="k">in</span><span class="w"> </span>pg<span class="w">  </span>grafana<span class="w"> </span>pw3<span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>docker<span class="w"> </span>volume<span class="w"> </span>create<span class="w"> </span><span class="nv">$v</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># launch pgwatch with fully exposed Grafana and Health-check ports</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># and local Postgres and subnet level Web UI ports</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--restart<span class="o">=</span>unless-stopped<span class="w"> </span>--name<span class="w"> </span>pw3<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span>-p<span class="w"> </span><span class="m">3000</span>:3000<span class="w"> </span>-p<span class="w"> </span><span class="m">8081</span>:8081<span class="w"> </span>-p<span class="w"> </span><span class="m">127</span>.0.0.1:5432:5432<span class="w"> </span>-p<span class="w"> </span><span class="m">192</span>.168.1.XYZ:8080:8080<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span>-v<span class="w"> </span>pg:/var/lib/postgresql<span class="w"> </span>-v<span class="w"> </span>grafana:/var/lib/grafana<span class="w"> </span>-v<span class="w"> </span>pw3:/pgwatch/persistent-config<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">    </span>cybertecpostgresql/pgwatch-demo:X.Y.Z
 </span></code></pre></div>
 <p>Note that in non-trusted environments it's a good idea to specify more
 sensitive ports together with some explicit network interfaces for
@@ -1496,14 +1584,14 @@ additional security - by default Docker listens on all network devices!</p>
 running inside the container via ENV - for a complete list of all
 supported Docker environment variables see the <a href="../reference/env_variables.html">ENV_VARIABLES.md</a> file.</p>
 <h2 id="available-docker-images">Available Docker images</h2>
-<p>Following images are regularly pushed to <a href="https://hub.docker.com/u/cybertec">Docker
+<p>Following images are regularly pushed to <a href="https://hub.docker.com/u/cybertecpostgresql">Docker
 Hub</a>:</p>
-<p><em>cybertec/pgwatch-demo</em></p>
+<p><em>cybertecpostgresql/pgwatch-demo</em></p>
 <p>The original pgwatch “batteries-included” image with PostgreSQL measurements
 storage. Just insert connect infos to your database via the admin Web UI (or
 directly into the Config DB) and then turn to the pre-defined Grafana
 dashboards to analyze DB health and performance.</p>
-<p><em>cybertec/pgwatch</em></p>
+<p><em>cybertecpostgresql/pgwatch</em></p>
 <p>A light-weight image containing only the metrics collection daemon /
 agent, that can be integrated into the monitoring setup over
 configuration specified either via ENV, mounted YAML files or a
@@ -1615,6 +1703,34 @@ collector could be organized. For another example how various components
 (as Docker images here) can work together, see a <em>Docker Compose</em>
 example with loosely coupled components
 <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/docker-compose.yml">here</a>.</p>
+<h2 id="example-of-advanced-setup-using-yaml-files-and-dual-sinks">Example of advanced setup using YAML files and dual sinks:</h2>
+<p>pgwatch service in file <code>docker/docker-compose.yml</code> can look like this:
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="w">  </span><span class="nt">pgwatch</span><span class="p">:</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cybertecpostgresql/pgwatch:latest</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nt">command</span><span class="p">:</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;--web-disable=true&quot;</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;--sources=/sources.yaml&quot;</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;--sink=postgresql://pgwatch@postgres:5432/pgwatch_metrics&quot;</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;--sink=prometheus://:8080&quot;</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;./sources.yaml:/sources.yaml&quot;</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;8080:8080&quot;</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">      </span><span class="nt">postgres</span><span class="p">:</span>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">        </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service_healthy</span>
+</span></code></pre></div></p>
+<p>Source file <code>sources.yaml</code> in the same directory:
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">demo</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgresql://pgwatch:pgwatchadmin@postgres/pgwatch&#39;</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">preset_metrics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">exhaustive</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">is_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">default</span>
+</span></code></pre></div></p>
+<p>Running this setup you get pgwatch that uses sources from YAML file and
+outputs measurements to postgres DB and exposes them for Prometheus 
+to scrape on port 8080 instead of WebUI (which is disabled by <code>--web-disable</code>).
+Metrics definition are built-in, you can examine definition in <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/metrics/metrics.yaml"><code>internal/metrics/metrics.yaml</code></a>.</p>
 
 
 

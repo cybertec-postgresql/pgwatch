@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://pgwat.ch/tutorial/upgrading.html">
+        <link rel="canonical" href="https://pgwat.ch/gallery/webui.html">
       
       
-        <link rel="prev" href="preparing_databases.html">
+        <link rel="prev" href="dashboards.html">
       
       
-        <link rel="next" href="../howto/dashboarding_alerting.html">
+        <link rel="next" href="../developer/godoc.html">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Upgrading - 🔬 pgwatch | v3</title>
+        <title>Web UI - 🔬 pgwatch | v3</title>
       
     
     
@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#updating-to-a-newer-docker-version" class="md-skip">
+        <a href="#web-user-interface" class="md-skip">
           Skip to content
         </a>
       
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Upgrading
+              Web UI
             
           </span>
         </div>
@@ -267,13 +267,11 @@
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="docker_installation.html" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../tutorial/docker_installation.html" class="md-tabs__link">
           
   
   Tutorials
@@ -323,11 +321,13 @@
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../gallery/dashboards.html" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="dashboards.html" class="md-tabs__link">
           
   
   Gallery
@@ -642,28 +642,23 @@
       
   
   
-    
   
   
-  
     
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -674,7 +669,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Tutorials
@@ -688,7 +683,7 @@
   
   
     <li class="md-nav__item">
-      <a href="docker_installation.html" class="md-nav__link">
+      <a href="../tutorial/docker_installation.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -709,7 +704,7 @@
   
   
     <li class="md-nav__item">
-      <a href="custom_installation.html" class="md-nav__link">
+      <a href="../tutorial/custom_installation.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -730,7 +725,7 @@
   
   
     <li class="md-nav__item">
-      <a href="preparing_databases.html" class="md-nav__link">
+      <a href="../tutorial/preparing_databases.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -748,28 +743,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Upgrading
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="upgrading.html" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../tutorial/upgrading.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -778,126 +755,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#updating-to-a-newer-docker-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating to a newer Docker version
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Updating to a newer Docker version">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#without-volumes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Without volumes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#with-volumes" class="md-nav__link">
-    <span class="md-ellipsis">
-      With volumes
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#updating-without-docker" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating without Docker
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Updating without Docker">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#updating-grafana" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating Grafana
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updating-grafana-dashboards" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating Grafana dashboards
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updating-the-config-metrics-db-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating the config / metrics DB version
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updating-the-pgwatch-schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating the pgwatch schema
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updating-the-metrics-collector" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating the metrics collector
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updating-metric-definitions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating metric definitions
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1214,23 +1071,28 @@
       
   
   
+    
   
   
+  
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -1241,7 +1103,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             Gallery
@@ -1255,7 +1117,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../gallery/dashboards.html" class="md-nav__link">
+      <a href="dashboards.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1273,10 +1135,19 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../gallery/webui.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="webui.html" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1285,6 +1156,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -1443,116 +1315,8 @@
   
   
   
+    
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#updating-to-a-newer-docker-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating to a newer Docker version
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Updating to a newer Docker version">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#without-volumes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Without volumes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#with-volumes" class="md-nav__link">
-    <span class="md-ellipsis">
-      With volumes
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#updating-without-docker" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating without Docker
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Updating without Docker">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#updating-grafana" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating Grafana
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updating-grafana-dashboards" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating Grafana dashboards
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updating-the-config-metrics-db-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating the config / metrics DB version
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updating-the-pgwatch-schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating the pgwatch schema
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updating-the-metrics-collector" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating the metrics collector
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updating-metric-definitions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Updating metric definitions
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -1567,7 +1331,7 @@
                   
 
   
-    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/tutorial/upgrading.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/gallery/webui.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
     </a>
@@ -1575,137 +1339,23 @@
   
 
 
-  <h1>Upgrading</h1>
-
-<p>The pgwatch daemon code doesn't need too much maintenance itself (if
-you're not interested in new features), but the preset metrics,
-dashboards and the other components that pgwatch relies on, like Grafana,
-are under very active development and get updates quite regularly so
-already purely from the security standpoint it would make sense to stay
-up to date.</p>
-<p>We also regularly include new component versions in the Docker images
-after verifying that they work. If using Docker, you could also choose
-to build your own images any time some new component versions are
-released, just increment the version numbers in the Dockerfile.</p>
-<h2 id="updating-to-a-newer-docker-version">Updating to a newer Docker version</h2>
-<h3 id="without-volumes">Without volumes</h3>
-<p>If pgwatch container was started in the simplest way possible without
-volumes, and if previously gathered metrics are not of great importance,
-and there are no user modified metric or dashboard changes that should
-be preserved, then the easiest way to get the latest components would be
-just to launch new container and import the old monitoring config:</p>
-<div class="language-text highlight"><pre><span></span><code># let&#39;s backup up the monitored hosts
-psql -p5432 -U pgwatch -d pgwatch -c &quot;\copy monitored_db to &#39;monitored_db.copy&#39;&quot;
-
-# stop the old container and start a new one ...
-docker stop ... &amp;&amp; docker run ....
-
-# import the monitored hosts
-psql -p5432 -U pgwatch -d pgwatch -c &quot;\copy monitored_db from &#39;monitored_db.copy&#39;&quot;
-</code></pre></div>
-<p>If metrics data and other settings like custom dashboards need to be
-preserved then some more steps are needed, but basically it's about
-pulling Postgres backups and restoring them into the new container.</p>
-<p>A tip: to make the restore process easier it would already make sense to
-mount the host folder with the backups in it on the new container with
-<code>"-v \~/pgwatch_backups:/pgwatch_backups:rw,z"</code> when starting the
-Docker image. Otherwise, one needs to set up SSH or use something like S3
-for example. Also note that port 5432 need to be exposed to take backups
-outside of Docker for Postgres respectively.</p>
-<h3 id="with-volumes">With volumes</h3>
-<p>To make updates a bit easier, the preferred way to launch pgwatch
-should be to use Docker volumes for each individual component - see the
-<a href="docker_installation.html">Installing using Docker</a> 
-chapter for details. Then one can just stop the old
-container and start a new one, re-using the volumes.</p>
-<p>With some releases though, updating to newer version might additionally
-still require manual rollout of Config DB <em>schema migrations scripts</em>,
-so always check the release notes for hints on that or just go to the
-<code>"pgwatch/sql/migrations"</code> folder and execute all SQL scripts that have
-a higher version than the old pgwatch container. Error messages like
-will "missing columns" or "wrong datatype" will also hint at that,
-after launching with a new image. FYI - such SQL "patches" are
-generally not provided for metric updates, nor dashboard changes, and
-they need to be updated separately.</p>
-<h2 id="updating-without-docker">Updating without Docker</h2>
-<p>For a custom installation there's quite some freedom in doing updates -
-as components (Grafana, PostgreSQL) are loosely coupled, they can be
-updated any time without worrying too much about the other components.
-Only "tightly coupled" components are the pgwatch metrics collector,
-config DB and the optional Web UI - if the pgwatch config is kept in
-the database. If <a href="../concept/installation_options.html">YAML based approach</a> is used, then things
-are even more simple - the pgwatch daemon can be updated any time as
-YAML schema has default values for everything and there are no other
-"tightly coupled" components like the Web UI.</p>
-<h3 id="updating-grafana">Updating Grafana</h3>
-<p>The update process for Grafana looks pretty much like the installation
-so take a look at the according
-<a href="custom_installation.html#detailed-steps-for-the-config-db-based-pull-approach-with-postgres-metrics-storage">chapter</a>. 
-If using Grafana package repository it should happen automatically along
-with other system packages. Grafana has a built-in database schema
-migrator, so updating the binaries and restarting is enough.</p>
-<h3 id="updating-grafana-dashboards">Updating Grafana dashboards</h3>
-<p>There are no update or migration scripts for the built-in Grafana
-dashboards as it would break possible user applied changes. If you know
-that there are no user changes, then one can just delete or rename the
-existing ones in bulk and import the latest JSON definitions.
-See <a href="../concept/long_term_installations.html">here</a> for
-some more advice on how to manage dashboards.</p>
-<h3 id="updating-the-config-metrics-db-version">Updating the config / metrics DB version</h3>
-<p>Database updates can be quite complex, with many steps, so it makes
-sense to follow the manufacturer's instructions here.</p>
-<p>For PostgreSQL one should distinguish between minor version updates and
-major version upgrades. Minor updates are quite straightforward and
-problem-free, consisting of running something like:</p>
-<div class="language-text highlight"><pre><span></span><code>apt update &amp;&amp; apt install postgresql
-sudo systemctl restart postgresql
-</code></pre></div>
-<p>For PostgreSQL major version upgrades one should read through the
-according release notes (e.g.
-<a href="https://www.postgresql.org/docs/17/release-17.html#id-1.11.6.5.4">here</a>)
-and be prepared for the unavoidable downtime.</p>
-<h3 id="updating-the-pgwatch-schema">Updating the pgwatch schema</h3>
-<p>This is the pgwatch specific part, with some coupling between the
-following components - Config DB SQL schema, metrics collector, and the
-optional Web UI.</p>
-<p>Here one should check from the
-<a href="https://github.com/cybertec-postgresql/pgwatch/releases">CHANGELOG</a>
-if pgwatch schema needs updating. If yes, then manual applying of
-schema diffs is required before running the new gatherer or Web UI. If
-no, i.e. no schema changes, all components can be updated independently
-in random order.</p>
-<div class="language-text highlight"><pre><span></span><code>pgwatch --config=postgresql://localhost/pgwatch --upgrade
-</code></pre></div>
-<h3 id="updating-the-metrics-collector">Updating the metrics collector</h3>
-<p>Compile or install the gatherer from RPM / DEB / tarball packages. See
-the <a href="custom_installation.html">Custom installation</a>  chapter for details.</p>
-<p>If using a SystemD service file to auto-start the collector then you
-might want to also check for possible updates on the template there -
-<code>/etc/pgwatch/startup-scripts/pgwatch.service</code>.</p>
-<h3 id="updating-metric-definitions">Updating metric definitions</h3>
-<p>In the YAML mode you always get new SQL definitions for the built-in
-metrics automatically when refreshing the sources via GitHub or
-pre-built packages, but with Config DB approach one needs to do it
-manually. Given that there are no user added metrics, it's simple
-enough though - just delete all old ones and re-insert everything from
-the latest metric definition SQL file.</p>
-<div class="language-text highlight"><pre><span></span><code>pg_dump -t pgwatch.metric pgwatch &gt; old_metric.sql  # a just-in-case backup
-psql  -c &quot;truncate pgwatch.metric&quot; pgwatch
-psql -f /etc/pgwatch/sql/config_store/metric_definitions.sql pgwatch
-</code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>If you have added some own custom metrics be sure not to delete or truncate them!</p>
-</div>
+<h1 id="web-user-interface">Web User Interface</h1>
+<p>The Web User Interface (WebUI) allows you to interact with the pgwatch and control monitored sources, metrics and presets
+definitions, and view and logs.</p>
+<p>Sources
+<a class="glightbox" href="webui_sources_grid.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom" data-gallery="webui"><img alt="Sources" data-gallery="webui" src="webui_sources_grid.png" /></a></p>
+<p>Metrics
+<a class="glightbox" href="webui_metrics_grid.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom" data-gallery="webui"><img alt="Metrics" data-gallery="webui" src="webui_metrics_grid.png" /></a></p>
+<p>Presets
+<a class="glightbox" href="webui_presets_grid.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom" data-gallery="webui"><img alt="Presets" data-gallery="webui" src="webui_presets_grid.png" /></a></p>
+<p>Logs
+<a class="glightbox" href="webui_logs.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom" data-gallery="webui"><img alt="Logs" data-gallery="webui" src="webui_logs.png" /></a>   </p>
 
 
 
 
 
 
-
-  
-  
 
 
 
@@ -1731,7 +1381,7 @@ psql -f /etc/pgwatch/sql/config_store/metric_definitions.sql pgwatch
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="preparing_databases.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Preparing Databases">
+          <a href="dashboards.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Dashboards">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
@@ -1741,20 +1391,20 @@ psql -f /etc/pgwatch/sql/config_store/metric_definitions.sql pgwatch
                 Previous
               </span>
               <div class="md-ellipsis">
-                Preparing Databases
+                Dashboards
               </div>
             </div>
           </a>
         
         
           
-          <a href="../howto/dashboarding_alerting.html" class="md-footer__link md-footer__link--next" aria-label="Next: Dashboarding and Alerting">
+          <a href="../developer/godoc.html" class="md-footer__link md-footer__link--next" aria-label="Next: Documentation">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Dashboarding and Alerting
+                Documentation
               </div>
             </div>
             <div class="md-footer__button md-icon">

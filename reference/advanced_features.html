@@ -324,16 +324,17 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../gallery/gallery.html" class="md-tabs__link">
-        
-  
     
+    
+      <li class="md-tabs__item">
+        <a href="../gallery/dashboards.html" class="md-tabs__link">
+          
   
   Gallery
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -1167,16 +1168,83 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../gallery/gallery.html" class="md-nav__link">
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
   
   <span class="md-ellipsis">
     Gallery
   </span>
   
 
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Gallery
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gallery/dashboards.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboards
+  </span>
+  
+
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gallery/webui.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Web UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1506,14 +1574,13 @@ that:</p>
 <h2 id="prometheus-scraping">Prometheus scraping</h2>
 <p>pgwatch was originally designed with direct metrics storage in mind,
 but later also support for externally controlled
-<a href="https://prometheus.io/">Prometheus</a> scraping was added. Note that
-currently though the storage modes are exclusive, i.e. when you enable
-the Prometheus endpoint (default port 9187) there will be no direct
-metrics storage.</p>
-<p>To enable the scraping endpoint set <code>--datastore=prometheus</code> and
-optionally also <code>--prometheus-port</code>, <code>--prometheus-namespace</code>,
-<code>--prometheus-listen-addr</code>. Additionally, note that you still need to
-specify some metrics config as usually - only metrics with interval
+<a href="https://prometheus.io/">Prometheus</a> scraping was added.</p>
+<p>To enable the scraping endpoint, add this commandline parameter:
+<code>--sink=prometheus://&lt;host&gt;:&lt;port&gt;/&lt;namespace&gt;</code>.
+If you omit host (Ex: <code>--sink=prometheus://:8080</code>), server listens on all
+interfaces and supplied port. If you omit namespace, default is <code>pgwatch</code>.</p>
+<p>Additionally, note that you still need to
+specify some metrics config as usual - only metrics with interval
 values bigger than zero will be populated on scraping.</p>
 <p>Currently, a few built-in metrics that require some state to be stored
 between scrapes, e.g. the "change_events" metric, will currently be
