@@ -7,27 +7,34 @@ title: Installing using Docker
 The simplest real-life pgwatch setup should look something like that:
 
 1.  Decide which metrics storage engine you want to use -
-    *cybertec/pgwatch* uses PostgreSQL. For Prometheus mode (exposing a
-    port for remote scraping) one should use the slimmer
-    *cybertec/pgwatch-daemon* image which doesn't have any built in
+    *cybertecpostgresql/pgwatch-demo* uses PostgreSQL. 
+    When only Prometheus sink is used (exposing a
+    port for remote scraping), one should use the slimmer
+    *cybertecpostgresql/pgwatch* image which doesn't have any built in
     databases.
 
 1.  Find the latest pgwatch release version by going to the project's
     GitHub *Releases* page or use the public API with something like
     that:
 
-        curl -so- https://api.github.com/repos/cybertec-postgresql/pgwatch/releases/latest | jq .tag_name | grep -oE '[0-9\.]+'
+```bash
+curl -so- https://api.github.com/repos/cybertec-postgresql/pgwatch/releases/latest | jq .tag_name | grep -oE '[0-9\.]+'
+```
 
 1.  Pull the image:
 
-        docker pull cybertec/pgwatch:X.Y.Z
+```bash
+docker pull cybertecpostgresql/pgwatch-demo:X.Y.Z
+```
 
 1.  Run the Docker image, exposing minimally the Grafana port served on
     port 3000 internally. In a relatively secure environment you'd
     usually also include the administrative web UI served on port 8080:
 
-        docker run -d --restart=unless-stopped -p 3000:3000 -p 8080:8080 \
-        --name pw3 cybertec/pgwatch:X.Y.Z
+```bash
+docker run -d --restart=unless-stopped -p 3000:3000 -p 8080:8080 \
+--name pw3 cybertecpostgresql/pgwatch-demo:X.Y.Z
+```
 
     Note that we're setting the container to be automatically restarted
     in case of a reboot/crash - which is highly recommended if not using
@@ -60,7 +67,7 @@ for v in pg  grafana pw3 ; do docker volume create $v ; done
 docker run -d --restart=unless-stopped --name pw3 \
     -p 3000:3000 -p 8081:8081 -p 127.0.0.1:5432:5432 -p 192.168.1.XYZ:8080:8080 \
     -v pg:/var/lib/postgresql -v grafana:/var/lib/grafana -v pw3:/pgwatch/persistent-config \
-    cybertec/pgwatch:X.Y.Z
+    cybertecpostgresql/pgwatch-demo:X.Y.Z
 ```
 
 Note that in non-trusted environments it's a good idea to specify more
@@ -74,16 +81,16 @@ supported Docker environment variables see the [ENV_VARIABLES.md](../reference/e
 ## Available Docker images
 
 Following images are regularly pushed to [Docker
-Hub](https://hub.docker.com/u/cybertec):
+Hub](https://hub.docker.com/u/cybertecpostgresql):
 
-*cybertec/pgwatch-demo*
+*cybertecpostgresql/pgwatch-demo*
 
 The original pgwatch “batteries-included” image with PostgreSQL measurements
 storage. Just insert connect infos to your database via the admin Web UI (or
 directly into the Config DB) and then turn to the pre-defined Grafana
 dashboards to analyze DB health and performance.
 
-*cybertec/pgwatch*
+*cybertecpostgresql/pgwatch*
 
 A light-weight image containing only the metrics collection daemon /
 agent, that can be integrated into the monitoring setup over
@@ -190,3 +197,37 @@ collector could be organized. For another example how various components
 (as Docker images here) can work together, see a *Docker Compose*
 example with loosely coupled components
 [here](https://github.com/cybertec-postgresql/pgwatch/blob/master/docker-compose.yml).
+
+## Example of advanced setup using YAML files and dual sinks:
+
+pgwatch service in file `docker/docker-compose.yml` can look like this:
+```yaml
+  pgwatch:
+    image: cybertecpostgresql/pgwatch:latest
+    command:
+      - "--web-disable=true"
+      - "--sources=/sources.yaml"
+      - "--sink=postgresql://pgwatch@postgres:5432/pgwatch_metrics"
+      - "--sink=prometheus://:8080"
+    volumes:
+      - "./sources.yaml:/sources.yaml"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+```
+
+Source file `sources.yaml` in the same directory:
+```yaml
+- name: demo
+  conn_str: postgresql://pgwatch:pgwatchadmin@postgres/pgwatch'
+  preset_metrics: exhaustive
+  is_enabled: true
+  group: default
+```
+
+Running this setup you get pgwatch that uses sources from YAML file and
+outputs measurements to postgres DB and exposes them for Prometheus 
+to scrape on port 8080 instead of WebUI (which is disabled by `--web-disable`).
+Metrics definition are built-in, you can examine definition in [`internal/metrics/metrics.yaml`](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/metrics/metrics.yaml).

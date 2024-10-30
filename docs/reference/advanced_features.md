@@ -120,15 +120,15 @@ that:
 
 pgwatch was originally designed with direct metrics storage in mind,
 but later also support for externally controlled
-[Prometheus](https://prometheus.io/) scraping was added. Note that
-currently though the storage modes are exclusive, i.e. when you enable
-the Prometheus endpoint (default port 9187) there will be no direct
-metrics storage.
+[Prometheus](https://prometheus.io/) scraping was added.
 
-To enable the scraping endpoint set `--datastore=prometheus` and
-optionally also `--prometheus-port`, `--prometheus-namespace`,
-`--prometheus-listen-addr`. Additionally, note that you still need to
-specify some metrics config as usually - only metrics with interval
+To enable the scraping endpoint, add this commandline parameter:
+`--sink=prometheus://<host>:<port>/<namespace>`.
+If you omit host (Ex: `--sink=prometheus://:8080`), server listens on all
+interfaces and supplied port. If you omit namespace, default is `pgwatch`.
+
+Additionally, note that you still need to
+specify some metrics config as usual - only metrics with interval
 values bigger than zero will be populated on scraping.
 
 Currently, a few built-in metrics that require some state to be stored
