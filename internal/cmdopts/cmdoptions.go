@@ -181,7 +181,7 @@ func (c *Options) NeedsSchemaUpgrade() (upgrade bool, err error) {
 
 // InitWebUI initializes the web UI server
 func (c *Options) InitWebUI(fs fs.FS, logger log.LoggerIface) error {
-	if c.WebUI.WebAddr == "" {
+	if c.WebUI.WebDisable {
 		logger.Info("web user interface is disabled")
 		return nil
 	}
