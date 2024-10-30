@@ -198,14 +198,12 @@ pgwatch service in file `docker/docker-compose.yml` can look like this:
   pgwatch:
     image: cybertecpostgresql/pgwatch:latest
     command:
-      - "--web-addr=''"
-      - "-s=/sources.yaml"
-      - "-m=/metrics.yaml"
+      - "--web-disable=true"
+      - "--sources=/sources.yaml"
       - "--sink=postgresql://pgwatch@postgres:5432/pgwatch_metrics"
       - "--sink=prometheus://:8080"
     volumes:
       - "./sources.yaml:/sources.yaml"
-      - "../internal/metrics/metrics.yaml:/metrics.yaml"
     ports:
       - "8080:8080"
     depends_on:
@@ -217,7 +215,6 @@ Source file `sources.yaml` in the same directory:
 ```yaml
 - name: demo
   conn_str: postgresql://pgwatch:pgwatchadmin@postgres/pgwatch'
-  is_superuser: false
   preset_metrics: exhaustive
   is_enabled: true
   group: default
@@ -225,5 +222,5 @@ Source file `sources.yaml` in the same directory:
 
 Running this setup you get pgwatch that uses sources from YAML file and
 outputs measurements to postgres DB and exposes them for Prometheus 
-to scrape on port 8080 instead of WebUI (which is disabled by `--web-addr=''`).
-Metrics definition is taken from internal file `internal/metrics/metrics.yaml`.
+to scrape on port 8080 instead of WebUI (which is disabled by `--web-disable`).
+Metrics definition are built-in, you can examine definition in [`internal/metrics/metrics.yaml`](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/metrics/metrics.yaml).
