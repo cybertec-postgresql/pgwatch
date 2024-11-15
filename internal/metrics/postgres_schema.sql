@@ -1,5 +1,4 @@
-CREATE SCHEMA IF NOT EXISTS pgwatch AUTHORIZATION pgwatch;
-SET ROLE TO pgwatch;
+CREATE SCHEMA IF NOT EXISTS pgwatch;
 
 CREATE TABLE IF NOT EXISTS pgwatch.metric (
 	name text PRIMARY KEY,
