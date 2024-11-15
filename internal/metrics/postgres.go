@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"context"
-	_ "embed"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 )
@@ -16,35 +15,14 @@ func NewPostgresMetricReaderWriter(ctx context.Context, connstr string) (ReaderW
 }
 
 func NewPostgresMetricReaderWriterConn(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error) {
-	if exists, err := db.DoesSchemaExist(ctx, conn, "pgwatch"); err == nil {
-		if !exists {
-			tx, err := conn.Begin(ctx)
-			if err != nil {
-				return nil, err
-			}
-			defer func() { _ = tx.Rollback(ctx) }()
-			if _, err := tx.Exec(ctx, sqlConfigSchema); err != nil {
-				return nil, err
-			}
-			if err := writeMetricsToPostgres(ctx, tx, GetDefaultMetrics()); err != nil {
-				return nil, err
-			}
-			if err := tx.Commit(ctx); err != nil {
-				return nil, err
-			}
-		}
-	} else {
+	if err := initSchema(ctx, conn); err != nil {
 		return nil, err
 	}
-
 	return &dbMetricReaderWriter{
 		ctx:      ctx,
 		configDb: conn,
 	}, conn.Ping(ctx)
 }
-
-//go:embed postgres_schema.sql
-var sqlConfigSchema string
 
 type dbMetricReaderWriter struct {
 	ctx      context.Context

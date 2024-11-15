@@ -2,12 +2,39 @@ package metrics
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	migrator "github.com/cybertec-postgresql/pgx-migrator"
 	"github.com/jackc/pgx/v5"
 )
+
+//go:embed postgres_schema.sql
+var sqlConfigSchema string
+
+var initSchema = func(ctx context.Context, conn db.PgxIface) (err error) {
+	var exists bool
+	if exists, err = db.DoesSchemaExist(ctx, conn, "pgwatch"); err != nil || exists {
+		return err
+	}
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if _, err := tx.Exec(ctx, sqlConfigSchema); err != nil {
+		return err
+	}
+	if err := writeMetricsToPostgres(ctx, tx, GetDefaultMetrics()); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 var initMigrator = func(dmrw *dbMetricReaderWriter) (*migrator.Migrator, error) {
 	return migrator.New(
