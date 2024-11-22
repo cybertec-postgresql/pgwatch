@@ -25,15 +25,3 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      
-  add-test-db:
-    extends:
-      file: compose.add-test-db.yml
-      service: add-test-db
-    image: *pgimage
-
-  pgbench:
-    extends:
-      file: compose.pgbench.yml
-      service: pgbench  
-    image: *pgimage
