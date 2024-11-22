@@ -1,7 +1,7 @@
 services:
   postgres:
     user: postgres
-    image: &pgimage timescale/timescaledb:latest-pg16
+    image: &pgimage timescale/timescaledb:latest-pg17
     command:
       - "-cshared_preload_libraries=pg_stat_statements,timescaledb"
       - "-cpg_stat_statements.track=all"
@@ -18,15 +18,3 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      
-  add-test-db:
-    extends:
-      file: compose.add-test-db.yml
-      service: add-test-db
-    image: *pgimage
-
-  pgbench:
-    extends:
-      file: compose.pgbench.yml
-      service: pgbench  
-    image: *pgimage
