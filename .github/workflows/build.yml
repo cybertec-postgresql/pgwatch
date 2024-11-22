@@ -26,6 +26,11 @@ jobs:
         go-version: '1.23'
         cache-dependency-path: 'go.sum'
 
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'        
+
     - name: Cache npm packages
       uses: actions/cache@v4
       with:
@@ -99,6 +104,11 @@ jobs:
       with:
         go-version: '1.23'
         cache-dependency-path: 'go.sum'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'                      
 
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v6
