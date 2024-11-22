@@ -51,7 +51,7 @@ func NewMultiWriter(ctx context.Context, opts *CmdOpts, metricDefs *metrics.Metr
 			return nil, err
 		}
 		mw.AddWriter(w)
-		l.Info(`measurements sink activated`)
+		l.Info(`Measurements sink activated`)
 	}
 
 	if len(mw.writers) == 0 {

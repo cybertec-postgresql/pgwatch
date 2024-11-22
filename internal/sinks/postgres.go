@@ -40,7 +40,7 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		sinkDb:     conn,
 	}
 	if err = db.Init(ctx, pgw.sinkDb, func(ctx context.Context, conn db.PgxIface) error {
-		log.GetLogger(ctx).Info("initialising the measurement database...")
+		log.GetLogger(ctx).Info("Initialising measurements database...")
 		exists, err := db.DoesSchemaExist(ctx, conn, "admin")
 		if err != nil || exists {
 			return err
