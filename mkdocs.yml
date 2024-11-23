@@ -52,6 +52,7 @@ nav:
     - Components: concept/components.md
     - Installation Options: concept/installation_options.md
     - Long Term Installations: concept/long_term_installations.md
+    - Sizing Recommendations: howto/sizing_recommendations.md
     - Web UI: concept/web_ui.md
   - Tutorials:
     - Docker Installation: tutorial/docker_installation.md
@@ -61,8 +62,7 @@ nav:
   - How-To Guides:
     - Dashboarding and Alerting: howto/dashboarding_alerting.md
     - Using Managed Services: howto/using_managed_services.md
-    - Sizing Recommendations: howto/sizing_recommendations.md
-    - Bootstrapping metrics database: howto/metrics_db_bootstrap.md
+    - Bootstraping the Metrics Measurements Database (Sink): howto/metrics_db_bootstrap.md
   - Reference:
     - Advanced Features: reference/advanced_features.md
     - Metric Definitions: reference/metric_definitions.md
