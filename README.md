@@ -35,12 +35,12 @@ git clone https://github.com/cybertec-postgresql/pgwatch.git && cd pgwatch
 
 docker compose -f ./docker/docker-compose.yml up --detach
 ```
-<pre>
+```console
  ✔ Network pgwatch_default       Created
  ✔ Container pgwatch-postgres-1  Healthy
  ✔ Container pgwatch-pgwatch-1   Started
  ✔ Container pgwatch-grafana-1   Started
-</pre>
+```
 
 These commands will build and start services listed in the compose file:
 - configuration and metric database;
@@ -55,77 +55,78 @@ looking at metrics.
 To add a test database under monitoring, you can use [built-in WebUI](http://localhost:8080/). Or simply
 execute from command line:
 ```shell
-docker compose -f ./docker/docker-compose.yml up add-test-db --force-recreate
+docker/compose.add-test-db.sh
 ```
-<pre>
-[+] Running 2/0
- ✔ Container pgwatch-postgres-1     Running                                                                       0.0s
- ✔ Container pgwatch-add-test-db-1  Created                                                                       0.0s
-Attaching to pgwatch-add-test-db-1
-pgwatch-add-test-db-1  | BEGIN
-...
-pgwatch-add-test-db-1  | GRANT
-pgwatch-add-test-db-1  | COMMENT
-pgwatch-add-test-db-1  | INSERT 0 1
-pgwatch-add-test-db-1 exited with code 0
-</pre>
+
+```console
+CREATE EXTENSION
+CREATE EXTENSION
+CREATE FUNCTION
+GRANT
+GRANT
+GRANT
+INSERT 0 1
+```
 
 ## Produce Workload
 
 To emulate workload for added test database execute:
 ```shell
-docker compose -f ./docker/docker-compose.yml up pgbench
+docker/compose.pgbench.sh 
 ```
-<pre>
-[+] Running 2/2
- ✔ Container pgwatch-postgres-1  Running                                                                          0.0s
- ✔ Container pgwatch-pgbench-1   Created                                                                          0.1s
-Attaching to pgwatch-pgbench-1
-pgwatch-pgbench-1  | dropping old tables...
-pgwatch-pgbench-1  | NOTICE:  table "pgbench_accounts" does not exist, skipping
-pgwatch-pgbench-1  | NOTICE:  table "pgbench_branches" does not exist, skipping
-pgwatch-pgbench-1  | NOTICE:  table "pgbench_history" does not exist, skipping
-pgwatch-pgbench-1  | NOTICE:  table "pgbench_tellers" does not exist, skipping
-pgwatch-pgbench-1  | creating tables...
-pgwatch-pgbench-1  | generating data (client-side)...
-pgwatch-pgbench-1  | 100000 of 5000000 tuples (2%) done (elapsed 0.11 s, remaining 5.17 s)
-pgwatch-pgbench-1  | 200000 of 5000000 tuples (4%) done (elapsed 0.25 s, remaining 6.06 s)
-...
-pgwatch-pgbench-1  | 5000000 of 5000000 tuples (100%) done (elapsed 16.28 s, remaining 0.00 s)
-pgwatch-pgbench-1  | vacuuming...
-pgwatch-pgbench-1  | creating primary keys...
-pgwatch-pgbench-1  | done in 42.29 s (drop tables 0.03 s, create tables 0.04 s, client-side generate 18.23 s, vacuum 1.29 s, primary keys 22.70 s).
-pgwatch-pgbench-1  | pgbench (15.4)
-pgwatch-pgbench-1  | starting vacuum...
-pgwatch-pgbench-1  | end.
-pgwatch-pgbench-1  | progress: 5.0 s, 642.2 tps, lat 15.407 ms stddev 11.794, 0 failed
-pgwatch-pgbench-1  | progress: 10.0 s, 509.6 tps, lat 19.541 ms stddev 9.493, 0 failed
-...
-pgwatch-pgbench-1  | progress: 185.0 s, 325.3 tps, lat 16.825 ms stddev 8.330, 0 failed
-pgwatch-pgbench-1  |
-pgwatch-pgbench-1  |
-pgwatch-pgbench-1  | transaction type: builtin: TPC-B (sort of)
-pgwatch-pgbench-1  | scaling factor: 50
-pgwatch-pgbench-1  | query mode: simple
-pgwatch-pgbench-1  | number of clients: 10
-pgwatch-pgbench-1  | number of threads: 2
-pgwatch-pgbench-1  | maximum number of tries: 1
-pgwatch-pgbench-1  | number of transactions per client: 10000
-pgwatch-pgbench-1  | number of transactions actually processed: 100000/100000
-pgwatch-pgbench-1  | number of failed transactions: 0 (0.000%)
-pgwatch-pgbench-1  | latency average = 18.152 ms
-pgwatch-pgbench-1  | latency stddev = 13.732 ms
-pgwatch-pgbench-1  | initial connection time = 25.085 ms
-pgwatch-pgbench-1  | tps = 534.261013 (without initial connection time)
-pgwatch-pgbench-1  | dropping old tables...
-pgwatch-pgbench-1  | done in 0.45 s (drop tables 0.45 s).
-pgwatch-pgbench-1 exited with code 0
-</pre>
+```console
+dropping old tables...
+creating tables...
+generating data (client-side)...
+vacuuming...
+creating primary keys...
+done in 16.82 s (drop tables 0.14 s, create tables 0.01 s, client-side generate 14.18 s, vacuum 0.21 s, primary keys 2.28 s).
+pgbench (17.2 (Debian 17.2-1.pgdg120+1))
+starting vacuum...end.
+progress: 5.0 s, 1888.9 tps, lat 5.224 ms stddev 3.512, 0 failed
+^Csh-5.2$ docker/compose.pgbench.sh
+dropping old tables...
+creating tables...
+generating data (client-side)...
+vacuuming...
+creating primary keys...
+done in 9.46 s (drop tables 0.11 s, create tables 0.01 s, client-side generate 6.95 s, vacuum 0.26 s, primary keys 2.13 s).   
+pgbench (17.2 (Debian 17.2-1.pgdg120+1))
+starting vacuum...end.
+progress: 5.0 s, 1551.3 tps, lat 3.805 ms stddev 11.169, 0 failed
+progress: 10.0 s, 307.5 tps, lat 45.560 ms stddev 380.998, 0 failed
+progress: 15.0 s, 2579.0 tps, lat 3.865 ms stddev 2.611, 0 failed
+progress: 20.0 s, 1974.9 tps, lat 5.038 ms stddev 4.808, 0 failed
+progress: 25.0 s, 1414.9 tps, lat 7.048 ms stddev 5.124, 0 failed
+progress: 30.0 s, 1643.0 tps, lat 6.056 ms stddev 4.395, 0 failed
+progress: 35.0 s, 947.4 tps, lat 10.423 ms stddev 34.786, 0 failed
+progress: 40.0 s, 1832.3 tps, lat 5.485 ms stddev 4.438, 0 failed
+progress: 45.0 s, 1541.0 tps, lat 6.456 ms stddev 4.135, 0 failed
+progress: 50.0 s, 2017.3 tps, lat 4.938 ms stddev 3.316, 0 failed
+progress: 55.0 s, 1730.3 tps, lat 5.751 ms stddev 4.706, 0 failed
+progress: 60.0 s, 1363.6 tps, lat 7.302 ms stddev 32.543, 0 failed
+transaction type: <builtin: TPC-B (sort of)>
+scaling factor: 50
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+number of transactions per client: 10000
+number of transactions actually processed: 100000/100000
+number of failed transactions: 0 (0.000%)
+latency average = 6.253 ms
+latency stddev = 49.094 ms
+initial connection time = 15.263 ms
+tps = 1567.619330 (without initial connection time)
+dropping old tables...
+done in 0.11 s (drop tables 0.11 s).
+```
+
 
 ## Inspect database
 
 > [!IMPORTANT]
-pgAdmin uses port 80. If you want it to use another port, change it in `docker-compose.yml` file.
+pgAdmin uses port 80. If you want it to use another port, change it in `docker/compose.pgadmin.yml` file.
 
 To look what is inside `pgwatch` database, you can spin up pgAdmin4:
 ```shell
