@@ -2,7 +2,7 @@
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-docker compose exec postgres psql -v ON_ERROR_STOP=1 -c \
+docker compose exec postgres psql -d pgwatch -v ON_ERROR_STOP=1 -c \
 "CREATE EXTENSION IF NOT EXISTS pg_stat_statements; 
 CREATE EXTENSION IF NOT EXISTS plpython3u; 
 CREATE FUNCTION get_load_average(OUT load_1min float, OUT load_5min float, OUT load_15min float) AS ' 
