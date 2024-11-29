@@ -13,10 +13,10 @@
         <link rel="canonical" href="https://pgwat.ch/concept/long_term_installations.html">
       
       
-        <link rel="prev" href="installation_options.html">
+        <link rel="prev" href="dashboards.html">
       
       
-        <link rel="next" href="../howto/sizing_recommendations.html">
+        <link rel="next" href="sizing_recommendations.html">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -291,10 +291,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../howto/dashboarding_alerting.html" class="md-tabs__link">
+        <a href="../howto/using_managed_services.html" class="md-tabs__link">
           
   
-  How-To Guides
+  How To
 
         </a>
       </li>
@@ -580,11 +580,53 @@
   
   
     <li class="md-nav__item">
-      <a href="installation_options.html" class="md-nav__link">
+      <a href="configuration_options.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Installation Options
+    Configuration Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="web_ui.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Web UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="dashboards.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboards
   </span>
   
 
@@ -652,9 +694,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#updating-the-pgwatch-collector" class="md-nav__link">
+  <a href="#updating-the-pgwatch-binary" class="md-nav__link">
     <span class="md-ellipsis">
-      Updating the pgwatch collector
+      Updating the pgwatch binary
     </span>
   </a>
   
@@ -703,7 +745,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/sizing_recommendations.html" class="md-nav__link">
+      <a href="sizing_recommendations.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -724,11 +766,11 @@
   
   
     <li class="md-nav__item">
-      <a href="web_ui.html" class="md-nav__link">
+      <a href="alerting.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Web UI
+    Alerting
   </span>
   
 
@@ -898,7 +940,7 @@
             
   
   <span class="md-ellipsis">
-    How-To Guides
+    How To
   </span>
   
 
@@ -908,30 +950,9 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            How-To Guides
+            How To
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../howto/dashboarding_alerting.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Dashboarding and Alerting
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
             
               
                 
@@ -961,11 +982,53 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/metrics_db_bootstrap.html" class="md-nav__link">
+      <a href="../howto/bootstrap-sink-postgres.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Bootstraping the Metrics Measurements Database (Sink)
+    Bootstrap PostgreSQL sink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/bootstrap-sink-prometheus.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootstrap Prometheus sink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/build-pgwatch.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Build pgwatch from source
   </span>
   
 
@@ -1403,9 +1466,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#updating-the-pgwatch-collector" class="md-nav__link">
+  <a href="#updating-the-pgwatch-binary" class="md-nav__link">
     <span class="md-ellipsis">
-      Updating the pgwatch collector
+      Updating the pgwatch binary
     </span>
   </a>
   
@@ -1479,7 +1542,7 @@ and translate changes to according CRUD operations on the
 relatively easy to automate the maintenance as the configuration can be
 organized so that one file represent a single monitoring entry, i.e. the
 <code>--sources</code> and <code>--metrics</code> parameters can also refer to a folder of YAML files.</p>
-<h2 id="updating-the-pgwatch-collector">Updating the pgwatch collector</h2>
+<h2 id="updating-the-pgwatch-binary">Updating the pgwatch binary</h2>
 <p>The pgwatch metrics gathering daemon is the core component of the
 solution alas the most critical one. So it's definitely recommended to
 update it at least once per year or minimally when some freshly released
@@ -1493,8 +1556,8 @@ doesn't have any state on its own - it's just one executable file.</p>
 <p>Metric definition SQLs are regularly corrected as suggestions and
 improvements come in and also new ones are added to cover latest
 Postgres versions, so would make sense to refresh them 1-2x per year.</p>
-<p>If using built-in metrics, just installing newer pre-built RPM / DEB
-packages will do the trick automatically but for configuration database based
+<p>If using built-in metrics, just installing newer pre-built RPM or DEB
+packages, or binary will do the trick automatically but for configuration database based
 setups you'd need to follow a simple process described
 <a href="../tutorial/upgrading.html#updating-metric-definitions">here</a>.</p>
 <h2 id="dashboard-maintenance">Dashboard maintenance</h2>
@@ -1552,7 +1615,7 @@ the data retention periods via <code>--retention</code> param.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="installation_options.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Installation Options">
+          <a href="dashboards.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Dashboards">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
@@ -1562,14 +1625,14 @@ the data retention periods via <code>--retention</code> param.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Installation Options
+                Dashboards
               </div>
             </div>
           </a>
         
         
           
-          <a href="../howto/sizing_recommendations.html" class="md-footer__link md-footer__link--next" aria-label="Next: Sizing Recommendations">
+          <a href="sizing_recommendations.html" class="md-footer__link md-footer__link--next" aria-label="Next: Sizing Recommendations">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next

@@ -16,7 +16,7 @@
         <link rel="prev" href="../intro/features.html">
       
       
-        <link rel="next" href="installation_options.html">
+        <link rel="next" href="configuration_options.html">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#the-metrics-gathering-daemon" class="md-skip">
+        <a href="#the-pgwatch-itself" class="md-skip">
           Skip to content
         </a>
       
@@ -291,10 +291,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../howto/dashboarding_alerting.html" class="md-tabs__link">
+        <a href="../howto/using_managed_services.html" class="md-tabs__link">
           
   
-  How-To Guides
+  How To
 
         </a>
       </li>
@@ -601,11 +601,35 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-metrics-gathering-daemon" class="md-nav__link">
+  <a href="#the-pgwatch-itself" class="md-nav__link">
     <span class="md-ellipsis">
-      The metrics gathering daemon
+      The pgwatch itself
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="The pgwatch itself">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#web-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      Web UI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rest-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      REST API
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -619,13 +643,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#measurements-storage" class="md-nav__link">
+  <a href="#sinks" class="md-nav__link">
     <span class="md-ellipsis">
-      Measurements storage
+      Sinks
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Measurements storage">
+    <nav class="md-nav" aria-label="Sinks">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -664,24 +688,24 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#rpc-sink" class="md-nav__link">
+    <span class="md-ellipsis">
+      RPC Sink
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-web-ui" class="md-nav__link">
+  <a href="#dashboards-and-visualization" class="md-nav__link">
     <span class="md-ellipsis">
-      The Web UI
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#metrics-representation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Metrics representation
+      Dashboards and Visualization
     </span>
   </a>
   
@@ -721,11 +745,53 @@
   
   
     <li class="md-nav__item">
-      <a href="installation_options.html" class="md-nav__link">
+      <a href="configuration_options.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Installation Options
+    Configuration Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="web_ui.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Web UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="dashboards.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboards
   </span>
   
 
@@ -763,7 +829,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/sizing_recommendations.html" class="md-nav__link">
+      <a href="sizing_recommendations.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -784,11 +850,11 @@
   
   
     <li class="md-nav__item">
-      <a href="web_ui.html" class="md-nav__link">
+      <a href="alerting.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Web UI
+    Alerting
   </span>
   
 
@@ -958,7 +1024,7 @@
             
   
   <span class="md-ellipsis">
-    How-To Guides
+    How To
   </span>
   
 
@@ -968,30 +1034,9 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            How-To Guides
+            How To
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../howto/dashboarding_alerting.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Dashboarding and Alerting
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
             
               
                 
@@ -1021,11 +1066,53 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/metrics_db_bootstrap.html" class="md-nav__link">
+      <a href="../howto/bootstrap-sink-postgres.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Bootstraping the Metrics Measurements Database (Sink)
+    Bootstrap PostgreSQL sink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/bootstrap-sink-prometheus.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootstrap Prometheus sink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/build-pgwatch.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Build pgwatch from source
   </span>
   
 
@@ -1454,11 +1541,35 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-metrics-gathering-daemon" class="md-nav__link">
+  <a href="#the-pgwatch-itself" class="md-nav__link">
     <span class="md-ellipsis">
-      The metrics gathering daemon
+      The pgwatch itself
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="The pgwatch itself">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#web-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      Web UI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rest-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      REST API
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1472,13 +1583,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#measurements-storage" class="md-nav__link">
+  <a href="#sinks" class="md-nav__link">
     <span class="md-ellipsis">
-      Measurements storage
+      Sinks
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Measurements storage">
+    <nav class="md-nav" aria-label="Sinks">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1517,24 +1628,24 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#rpc-sink" class="md-nav__link">
+    <span class="md-ellipsis">
+      RPC Sink
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-web-ui" class="md-nav__link">
+  <a href="#dashboards-and-visualization" class="md-nav__link">
     <span class="md-ellipsis">
-      The Web UI
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#metrics-representation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Metrics representation
+      Dashboards and Visualization
     </span>
   </a>
   
@@ -1591,14 +1702,30 @@ components that can be used to build up a monitoring setup around the
 pgwatch metrics collector. Note that most components are not mandatory
 and for tasks like metrics storage there are many components to choose
 from.</p>
-<h2 id="the-metrics-gathering-daemon">The metrics gathering daemon</h2>
+<h2 id="the-pgwatch-itself">The pgwatch itself</h2>
 <p>The metrics collector, written in Go, is the only mandatory and most
 critical component of the whole solution. The main task of the pgwatch
-collector / daemon is pretty simple - reading the configuration and
-metric definitions, fetching the metrics from the configured databases
-using the configured connection info and finally storing the metric measurements to
-some other database, or just exposing them over a port for scraping in
-case of Prometheus mode.</p>
+collector is to read the configuration and metric definitions, 
+fetch the metrics measurements from the configured databases
+using the configured connection info and finally send the metric measurements to
+sinks. A sink is a type of a storage or service that collects measurements, 
+where they are stored and processed for later use. </p>
+<h3 id="web-ui">Web UI</h3>
+<p>The simple Web User Interface is a part of the pgwatch collector and is 
+controlled by the <code>--web-addr</code> command line flag in the form <code>host:port</code> to listen on.
+By default Web UI is available on <code>localhost:8080</code>. </p>
+<p>The Web UI is used for administering details of the monitoring
+configuration, like which databases should be monitored, with which
+metrics and intervals. Besides that there are some basic overview tables
+to analyze the gathered data and also possibilities to delete unneeded
+metric data (when removing a test host for example).</p>
+<h3 id="rest-api">REST API</h3>
+<p>The REST API is a part of the pgwatch collector as well as the Web UI.
+The API is used for the same purposes as the Web UI but can be used by
+automated scripts or other tools. The API is available on the same port
+as the Web UI.</p>
+<p>Both the Web UI and the REST API can be disabled by specofying the
+<code>--web-disable</code> flag.</p>
 <h2 id="configuration">Configuration</h2>
 <p>The configuration says which databases, how often and with which metrics
 (SQL queries) are to be gathered. There are 2 options to store the
@@ -1607,16 +1734,15 @@ configuration:</p>
 <li>A PostgreSQL database holding a simple schema with 5 tables.</li>
 <li>File based approach - YAML config file(s).</li>
 </ul>
-<h2 id="measurements-storage">Measurements storage</h2>
+<h2 id="sinks">Sinks</h2>
 <p>Many options here so that one can for example go for maximum storage
 effectiveness or pick something where they already know the query
 language:</p>
 <h3 id="postgresql"><a href="https://www.postgresql.org/">PostgreSQL</a></h3>
 <p>PostgreSQL is a world's most advanced Open Source RDBMS.</p>
 <p>Postgres storage is based on the JSONB datatype so minimally
-version 9.4+ is required, but for bigger setups where partitioning
-is a must, v11+ is needed. Any already existing Postgres database
-will do the trick, see the <a href="../howto/metrics_db_bootstrap.html">Bootstrapping the Metrics DB</a> section for details.</p>
+version v11+ is required. Any already existing Postgres database
+will do the trick, see the <a href="../howto/bootstrap-sink-postgres.html">Bootstrapping the Metrics DB</a> section for details.</p>
 <h3 id="timescaledb"><a href="https://www.timescale.com/">TimescaleDB</a></h3>
 <p>TimescaleDB is a time-series extension for PostgreSQL.</p>
 <p>Although technically a plain extension it's often mentioned as a
@@ -1634,21 +1760,15 @@ nice fault-tolerant alerting system for enterprise needs. By
 default, Prometheus is not set up for long term metrics storage!</p>
 <h3 id="json-files">JSON files</h3>
 <p>Plain text files for testing / special use cases.</p>
-<h2 id="the-web-ui">The Web UI</h2>
-<p>The second homegrown component of the pgwatch solution is an optional
-and relatively simple Web UI for administering details of the monitoring
-configuration like which databases should be monitored, with which
-metrics and intervals. Besides that there are some basic overview tables
-to analyze the gathered data and also possibilities to delete unneeded
-metric data (when removing a test host for example).</p>
-<h2 id="metrics-representation">Metrics representation</h2>
-<p>Standard pgwatch setup uses <a href="http://grafana.org/">Grafana</a> for
+<h3 id="rpc-sink">RPC Sink</h3>
+<p>A simple RPC server that can be used to receive metrics.</p>
+<h2 id="dashboards-and-visualization">Dashboards and Visualization</h2>
+<p>Standard pgwatch setup provides predfined <a href="http://grafana.org/">Grafana</a> dashboards for
 analyzing the gathered metrics data in a visual, point-and-click way.
-For that a rich set of predefined dashboards for Postgres is provided,
-that should cover the needs of most users - advanced users would mostly
+Those should cover the needs of most users - advanced users would mostly
 always want to customize some aspects though, so it's not meant as a
-one-size-fits-all solution. Also as metrics are stored in a DB, they can
-be visualized or processed in any other way.</p>
+one-size-fits-all solution. Also as metrics are sent to different sinks, they can
+be visualized or processed in any other way, e.g. Prometheus has its own dashboarding.</p>
 <h2 id="component-diagram">Component diagram</h2>
 <p>Component diagram of a typical setup:</p>
 <p><a href="../gallery/pgwatch_architecture.png"><img alt="pgwatch typical deployment architecture diagram" src="../gallery/pgwatch_architecture.png" /></a></p>
@@ -1709,13 +1829,13 @@ collector.</p>
         
         
           
-          <a href="installation_options.html" class="md-footer__link md-footer__link--next" aria-label="Next: Installation Options">
+          <a href="configuration_options.html" class="md-footer__link md-footer__link--next" aria-label="Next: Configuration Options">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Installation Options
+                Configuration Options
               </div>
             </div>
             <div class="md-footer__button md-icon">

@@ -289,10 +289,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../howto/dashboarding_alerting.html" class="md-tabs__link">
+        <a href="../howto/using_managed_services.html" class="md-tabs__link">
           
   
-  How-To Guides
+  How To
 
         </a>
       </li>
@@ -575,11 +575,53 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/installation_options.html" class="md-nav__link">
+      <a href="../concept/configuration_options.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Installation Options
+    Configuration Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/web_ui.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Web UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/dashboards.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboards
   </span>
   
 
@@ -617,7 +659,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/sizing_recommendations.html" class="md-nav__link">
+      <a href="../concept/sizing_recommendations.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -638,11 +680,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/web_ui.html" class="md-nav__link">
+      <a href="../concept/alerting.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Web UI
+    Alerting
   </span>
   
 
@@ -812,7 +854,7 @@
             
   
   <span class="md-ellipsis">
-    How-To Guides
+    How To
   </span>
   
 
@@ -822,30 +864,9 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            How-To Guides
+            How To
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../howto/dashboarding_alerting.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Dashboarding and Alerting
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
             
               
                 
@@ -875,11 +896,53 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/metrics_db_bootstrap.html" class="md-nav__link">
+      <a href="../howto/bootstrap-sink-postgres.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Bootstraping the Metrics Measurements Database (Sink)
+    Bootstrap PostgreSQL sink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/bootstrap-sink-prometheus.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootstrap Prometheus sink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/build-pgwatch.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Build pgwatch from source
   </span>
   
 
@@ -2056,25 +2119,6 @@ will be stored under one metric. Currently used (for out-of-the box
 metrics) only for the <code>stat_statements_no_query_text</code> metric, to
 not store actual query texts from the "pg_stat_statements"
 extension for more security sensitive instances.</p>
-</li>
-<li>
-<p><em>extension_version_based_overrides</em></p>
-<p>Enables to "switch out" the query text from some other metric
-based on some specific extension version. See 'reco_add_index' for
-an example definition.</p>
-</li>
-<li>
-<p><em>disabled_days</em></p>
-<p>Enables to "pause" metric gathering on specified days. See
-<code>metric_attrs.yaml</code> for "wal" for an example.</p>
-</li>
-<li>
-<p><em>disabled_times</em></p>
-<p>Enables to "pause" metric gathering on specified time intervals.
-e.g. "09:00-17:00" for business hours. Note that if time zone is
-not specified the server time of the gather daemon is used.
-disabled_days / disabled_times can also be defined both on metric
-and host (host_attrs) level.</p>
 </li>
 </ul>
 <h2 id="column-attributes">Column attributes</h2>

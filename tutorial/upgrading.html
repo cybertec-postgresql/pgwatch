@@ -16,7 +16,7 @@
         <link rel="prev" href="preparing_databases.html">
       
       
-        <link rel="next" href="../howto/dashboarding_alerting.html">
+        <link rel="next" href="../howto/using_managed_services.html">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -291,10 +291,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../howto/dashboarding_alerting.html" class="md-tabs__link">
+        <a href="../howto/using_managed_services.html" class="md-tabs__link">
           
   
-  How-To Guides
+  How To
 
         </a>
       </li>
@@ -575,11 +575,53 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/installation_options.html" class="md-nav__link">
+      <a href="../concept/configuration_options.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Installation Options
+    Configuration Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/web_ui.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Web UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/dashboards.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboards
   </span>
   
 
@@ -617,7 +659,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/sizing_recommendations.html" class="md-nav__link">
+      <a href="../concept/sizing_recommendations.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -638,11 +680,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/web_ui.html" class="md-nav__link">
+      <a href="../concept/alerting.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Web UI
+    Alerting
   </span>
   
 
@@ -955,7 +997,7 @@
             
   
   <span class="md-ellipsis">
-    How-To Guides
+    How To
   </span>
   
 
@@ -965,30 +1007,9 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            How-To Guides
+            How To
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../howto/dashboarding_alerting.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Dashboarding and Alerting
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
             
               
                 
@@ -1018,11 +1039,53 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/metrics_db_bootstrap.html" class="md-nav__link">
+      <a href="../howto/bootstrap-sink-postgres.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Bootstraping the Metrics Measurements Database (Sink)
+    Bootstrap PostgreSQL sink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/bootstrap-sink-prometheus.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootstrap Prometheus sink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/build-pgwatch.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Build pgwatch from source
   </span>
   
 
@@ -1633,14 +1696,13 @@ as components (Grafana, PostgreSQL) are loosely coupled, they can be
 updated any time without worrying too much about the other components.
 Only "tightly coupled" components are the pgwatch metrics collector,
 config DB and the optional Web UI - if the pgwatch config is kept in
-the database. If <a href="../concept/installation_options.html">YAML based approach</a> is used, then things
+the database. If <a href="../concept/configuration_options.html">YAML based approach</a> is used, then things
 are even more simple - the pgwatch daemon can be updated any time as
 YAML schema has default values for everything and there are no other
 "tightly coupled" components like the Web UI.</p>
 <h3 id="updating-grafana">Updating Grafana</h3>
 <p>The update process for Grafana looks pretty much like the installation
-so take a look at the according
-<a href="custom_installation.html#detailed-steps-for-the-config-db-based-pull-approach-with-postgres-metrics-storage">chapter</a>. 
+so take a look at the according <a href="custom_installation.html">chapter</a>. 
 If using Grafana package repository it should happen automatically along
 with other system packages. Grafana has a built-in database schema
 migrator, so updating the binaries and restarting is enough.</p>
@@ -1748,13 +1810,13 @@ psql -f /etc/pgwatch/sql/config_store/metric_definitions.sql pgwatch
         
         
           
-          <a href="../howto/dashboarding_alerting.html" class="md-footer__link md-footer__link--next" aria-label="Next: Dashboarding and Alerting">
+          <a href="../howto/using_managed_services.html" class="md-footer__link md-footer__link--next" aria-label="Next: Using Managed Services">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Dashboarding and Alerting
+                Using Managed Services
               </div>
             </div>
             <div class="md-footer__button md-icon">

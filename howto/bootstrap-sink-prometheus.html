@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://pgwat.ch/howto/dashboarding_alerting.html">
+        <link rel="canonical" href="https://pgwat.ch/howto/bootstrap-sink-prometheus.html">
       
       
-        <link rel="prev" href="../tutorial/upgrading.html">
+        <link rel="prev" href="bootstrap-sink-postgres.html">
       
       
-        <link rel="next" href="using_managed_services.html">
+        <link rel="next" href="build-pgwatch.html">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Dashboarding and alerting - 🔬 pgwatch | v3</title>
+        <title>Bootstrap Prometheus sink - 🔬 pgwatch | v3</title>
       
     
     
@@ -84,11 +84,6 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
-        
-        <a href="#grafana-intro" class="md-skip">
-          Skip to content
-        </a>
-      
     </div>
     <div data-md-component="announce">
       
@@ -119,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Dashboarding and alerting
+              Bootstrap Prometheus sink
             
           </span>
         </div>
@@ -291,10 +286,10 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="dashboarding_alerting.html" class="md-tabs__link">
+        <a href="using_managed_services.html" class="md-tabs__link">
           
   
-  How-To Guides
+  How To
 
         </a>
       </li>
@@ -575,11 +570,53 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/installation_options.html" class="md-nav__link">
+      <a href="../concept/configuration_options.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Installation Options
+    Configuration Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/web_ui.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Web UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/dashboards.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboards
   </span>
   
 
@@ -617,7 +654,7 @@
   
   
     <li class="md-nav__item">
-      <a href="sizing_recommendations.html" class="md-nav__link">
+      <a href="../concept/sizing_recommendations.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -638,11 +675,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/web_ui.html" class="md-nav__link">
+      <a href="../concept/alerting.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Web UI
+    Alerting
   </span>
   
 
@@ -817,7 +854,7 @@
             
   
   <span class="md-ellipsis">
-    How-To Guides
+    How To
   </span>
   
 
@@ -827,40 +864,9 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            How-To Guides
+            How To
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="dashboarding_alerting.html" class="md-nav__link md-nav__link--active">
-        
-  
-  <span class="md-ellipsis">
-    Dashboarding and Alerting
-  </span>
-  
-
-      </a>
-      
-    </li>
-  
-
-              
             
               
                 
@@ -890,11 +896,61 @@
   
   
     <li class="md-nav__item">
-      <a href="metrics_db_bootstrap.html" class="md-nav__link">
+      <a href="bootstrap-sink-postgres.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Bootstraping the Metrics Measurements Database (Sink)
+    Bootstrap PostgreSQL sink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+      <a href="bootstrap-sink-prometheus.html" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Bootstrap Prometheus sink
+  </span>
+  
+
+      </a>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="build-pgwatch.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Build pgwatch from source
   </span>
   
 
@@ -1315,8 +1371,6 @@
   
   
   
-    
-  
   
 </nav>
                   </div>
@@ -1331,7 +1385,7 @@
                   
 
   
-    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/howto/dashboarding_alerting.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/howto/bootstrap-sink-prometheus.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
     </a>
@@ -1339,52 +1393,50 @@
   
 
 
-<h1 id="grafana-intro">Grafana intro</h1>
-<p>To display the gathered and stored metrics the pgwatch project has
-decided to rely heavily on the popular Grafana dashboarding solution.
-This means only though that it's installed in the default Docker images
-and there's a set of predefined dashboards available to cover most of
-the metrics gathered via the <em>Preset Configs</em>.</p>
-<p>This does not mean though that Grafana is in any way tightly coupled
-with project's other components - quite the opposite actually, one can
-use any other means / tools to use the metrics data gathered by the
-pgwatch daemon.</p>
-<p>Currently, there are around 30 preset dashboards available for PostgreSQL
-data sources. Due to that nowadays, if metric gathering volumes are not
-a problem, we recommend using Postgres storage for most users.</p>
-<p>Note though that most users will probably want to always adjust the
-built-in dashboards slightly (colors, roundings, etc.), so that they
-should be taken only as examples to quickly get started. Also note that
-in case of changes it's not recommended to change the built-in ones,
-but use the <em>Save as</em> features - this will allow later to easily update
-all the dashboards <em>en masse</em> per script, without losing any custom user
-changes.</p>
-<p><strong>Links:</strong></p>
-<p><a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana/postgres/">Built-in dashboards for PostgreSQL (TimescaleDB)
-storage</a></p>
-<p><a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/screenshots">Screenshots of pgwatch default
-dashboards</a></p>
-<p><a href="https://demo.pgwatch.com/">The online Demo site</a></p>
-<h1 id="alerting">Alerting</h1>
-<p>Alerting is very conveniently also supported by Grafana in a simple
-point-and-click style - see
-<a href="https://grafana.com/docs/grafana/latest/alerting/alerts-overview/">here</a>
-for the official documentation. In general all more popular notification
-services are supported, and it's pretty much the easiest way to quickly
-start with PostgreSQL alerting on a smaller scale. For enterprise usage
-with hundreds of instances it's might get too "clicky" though and
-there are also some limitations - currently you can set alerts only on
-Graph panels and there must be no variables used in the query so you
-cannot use most of the pre-created pgwatch graphs, but need to create
-your own.</p>
-<p>Nevertheless, alerting via Grafana is s a good option for lighter use
-cases and there's also a preset dashboard template named "Alert
-Template" from the pgwatch project to give you some ideas on what to
-alert on.</p>
-<p>Note though that alerting is always a bit of a complex topic - it
-requires good understanding of PostgreSQL operational metrics and also
-business criticality background infos, so we don't want to be too
-opinionated here, and it's up to the users to implement.</p>
+  <h1>Bootstrap Prometheus sink</h1>
+
+<p>Prometheus scrapper is a popular way to collect metrics from various sources. 
+Pgwatch can serve the metrics in a format that Prometheus can fetch. 
+The difference from other sinks is that the Prometheus is responsible for 
+retrieving the metrics from the pgwatch endpoint. </p>
+<p>It's important to configure the proper interval and timeout for the Prometheus scrapper.
+The rule of thumb is to set the <code>scrape_interval</code> to the minimum interval of metrics used or less.
+Let's say if the most aggressive metric is collected every 60 seconds,
+the <code>scrape_interval</code> should be set to 60 seconds or less.</p>
+<ol>
+<li>
+<p>Install Prometheus following the <a href="https://prometheus.io/docs/prometheus/latest/installation/">instructions</a>. </p>
+</li>
+<li>
+<p>Configure Prometheus to scrape the pgwatch metrics. Add the following to the <code>scrape_configs</code> section of the <code>prometheus.yml</code> file:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">job_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pgwatch</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">honor_timestamps</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">scrape_interval</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">15s</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">scrape_timeout</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10s</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">metrics_path</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/pgwatch</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">scheme</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">static_configs</span><span class="p p-Indicator">:</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">targets</span><span class="p">:</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">localhost:9187</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>localhost:9187</code> is the address and port where the pgwatch gatherer serves 
+the scrapper, e.g. <code>--sink=prometheus://localhost:9187</code>. 
+If you have changed the address or port, adjust the <code>targets</code> accordingly.</p>
+</div>
+</li>
+<li>
+<p>Restart Prometheus to apply the changes.</p>
+</li>
+<li>
+<p>Now you can run pgwatch with the Prometheus sink:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pgwatch<span class="w"> </span>--sources<span class="o">=</span>/etc/sources.yaml<span class="w"> </span>--sink<span class="o">=</span>prometheus://localhost:9187
+</span></code></pre></div>
+<p>The Prometheus sink is now activated. You can now start collecting metrics from your sources and 
+fetching them with Prometheus.</p>
+</li>
+</ol>
 
 
 
@@ -1419,7 +1471,7 @@ opinionated here, and it's up to the users to implement.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../tutorial/upgrading.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Upgrading">
+          <a href="bootstrap-sink-postgres.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Bootstrap PostgreSQL sink">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
@@ -1429,20 +1481,20 @@ opinionated here, and it's up to the users to implement.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Upgrading
+                Bootstrap PostgreSQL sink
               </div>
             </div>
           </a>
         
         
           
-          <a href="using_managed_services.html" class="md-footer__link md-footer__link--next" aria-label="Next: Using Managed Services">
+          <a href="build-pgwatch.html" class="md-footer__link md-footer__link--next" aria-label="Next: Build pgwatch from source">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Using Managed Services
+                Build pgwatch from source
               </div>
             </div>
             <div class="md-footer__button md-icon">

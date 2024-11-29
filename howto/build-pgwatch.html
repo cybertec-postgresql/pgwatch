@@ -10,10 +10,10 @@
       
       
       
-        <link rel="canonical" href="https://pgwat.ch/howto/metrics_db_bootstrap.html">
+        <link rel="canonical" href="https://pgwat.ch/howto/build-pgwatch.html">
       
       
-        <link rel="prev" href="using_managed_services.html">
+        <link rel="prev" href="bootstrap-sink-prometheus.html">
       
       
         <link rel="next" href="../reference/advanced_features.html">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Bootstrapping the Metrics Measurements Database (Sink) - 🔬 pgwatch | v3</title>
+        <title>Build pgwatch from source - 🔬 pgwatch | v3</title>
       
     
     
@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#choosing-a-database" class="md-skip">
+        <a href="#prerequisites" class="md-skip">
           Skip to content
         </a>
       
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Bootstrapping the Metrics Measurements Database (Sink)
+              Build pgwatch from source
             
           </span>
         </div>
@@ -291,10 +291,10 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="dashboarding_alerting.html" class="md-tabs__link">
+        <a href="using_managed_services.html" class="md-tabs__link">
           
   
-  How-To Guides
+  How To
 
         </a>
       </li>
@@ -575,11 +575,53 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/installation_options.html" class="md-nav__link">
+      <a href="../concept/configuration_options.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Installation Options
+    Configuration Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/web_ui.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Web UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/dashboards.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboards
   </span>
   
 
@@ -617,7 +659,7 @@
   
   
     <li class="md-nav__item">
-      <a href="sizing_recommendations.html" class="md-nav__link">
+      <a href="../concept/sizing_recommendations.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -638,11 +680,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/web_ui.html" class="md-nav__link">
+      <a href="../concept/alerting.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Web UI
+    Alerting
   </span>
   
 
@@ -817,7 +859,7 @@
             
   
   <span class="md-ellipsis">
-    How-To Guides
+    How To
   </span>
   
 
@@ -827,30 +869,9 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            How-To Guides
+            How To
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="dashboarding_alerting.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Dashboarding and Alerting
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
             
               
                 
@@ -877,6 +898,48 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="bootstrap-sink-postgres.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootstrap PostgreSQL sink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="bootstrap-sink-prometheus.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootstrap Prometheus sink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -889,11 +952,11 @@
         
       
       
-      <a href="metrics_db_bootstrap.html" class="md-nav__link md-nav__link--active">
+      <a href="build-pgwatch.html" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
-    Bootstraping the Metrics Measurements Database (Sink)
+    Build pgwatch from source
   </span>
   
 
@@ -1331,7 +1394,7 @@
                   
 
   
-    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/howto/metrics_db_bootstrap.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/howto/build-pgwatch.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
     </a>
@@ -1339,58 +1402,43 @@
   
 
 
-<h1 id="choosing-a-database">Choosing a Database</h1>
-<p>pgwatch supports multiple databases for storing metrics measurements. The following databases are supported:</p>
+<h1 id="prerequisites">Prerequisites</h1>
 <ul>
-<li>PostgreSQL</li>
-<li>TimescaleDB</li>
-<li>CitusDB</li>
-<li>CockroachDB</li>
-<li>any other database that supports the PostgreSQL wire protocol</li>
+<li><a href="https://golang.org/doc/install">Go</a> 1.23 or later</li>
+<li><a href="https://nodejs.org/en/download/">Node.js</a> 22 or later</li>
+<li><a href="https://yarnpkg.com/getting-started/install">Yarn</a> 1.22 or later (optional)</li>
+<li><a href="https://git-scm.com/book/en/v2/Getting-Started-Installing-Git">Git</a> 2.23 or later (optional)</li>
 </ul>
-<p>We will use PostgreSQL in this guide. But the steps are similar for other databases. It's up to you to choose the database that best fits your needs and set it up accordingly.</p>
-<h1 id="creating-the-database">Creating the Database</h1>
-<p>First, we need to create a database for storing the metrics measurements. We will use the <code>psql</code> command-line tool to create the database. You can also use a GUI tool like pgAdmin to create the database.</p>
-<p>Let's assume we want to create a database named <code>measurements</code> on a completely fresh PostgreSQL installation. 
-It is wise to use a special role for the metrics database, so we will create a role named <code>pgwatch</code> and assign it to the <code>measurements</code> database.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>$ psql -U postgres -h 10.0.0.42 -p 5432 -d postgres
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>psql (17.2)
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>postgres=# CREATE ROLE pgwatch WITH LOGIN PASSWORD &#39;pgwatchadmin&#39;;
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>CREATE ROLE
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>postgres=# CREATE DATABASE measurements OWNER pgwatch;
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>CREATE DATABASE
+<h1 id="get-the-sources">Get the sources</h1>
+<p>Download the <a href="https://github.com/cybertec-postgresql/pgwatch/archive/refs/heads/master.zip">sources</a> 
+from the GitHub repository and extract to <code>pgwatch</code> directory. Or clone the repository:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/cybertec-postgresql/pgwatch.git
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>pgwatch
+</span></code></pre></div></p>
+<h1 id="build-the-web-ui">Build the Web UI</h1>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>internal/webui<span class="w"> </span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>yarn<span class="w"> </span>install<span class="w"> </span>--network-timeout<span class="w"> </span><span class="m">100000</span><span class="w"> </span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>yarn<span class="w"> </span>build
 </span></code></pre></div>
-<p>That's it! We have created a database named <code>measurements</code> with the owner <code>pgwatch</code>. Now we can proceed to the next step.</p>
-<h1 id="usage">Usage</h1>
-<p>pgwatch will automatically create the necessary tables and indexes in the database when it starts. You don't need to create any tables or indexes manually.</p>
-<p>You can now configure pgwatch to use the <code>measurements</code> database as the sink for storing metrics measurements. </p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>$<span class="w"> </span>pgwatch<span class="w"> </span>--sources<span class="o">=</span>/etc/sources.yaml<span class="w"> </span>--sink<span class="o">=</span>postgresql://pgwatch@10.0.0.42/measurements
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="o">[</span>INFO<span class="o">]</span><span class="w"> </span><span class="o">[</span>sink:postgresql://pgwatch@10.0.0.42/measurements<span class="o">]</span><span class="w"> </span>Initialising<span class="w"> </span>measurements<span class="w"> </span>database...
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="o">[</span>INFO<span class="o">]</span><span class="w"> </span><span class="o">[</span>sink:postgresql://pgwatch@10.0.0.42/measurements<span class="o">]</span><span class="w"> </span>Measurements<span class="w"> </span>sink<span class="w"> </span>activated
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>...
-</span></code></pre></div>
-<p>That's it! You have successfully bootstrapped the metrics measurements database for pgwatch. You can now start collecting metrics from your sources and storing them in the database. </p>
-<p>If now you want to see the tables created by pgwatch in the <code>measurements</code> database, you can connect to the database using the <code>psql</code> command-line tool and list the tables.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>$ psql -U pgwatch -h 10.0.0.42 -p 5432 -d measurements
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>psql (17.2)
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>measurements=&gt; \dn
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>     List of schemas
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>     Name      |  Owner
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>---------------+---------
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a> admin         | pgwatch
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a> subpartitions | pgwatch
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>(3 rows)
-</span></code></pre></div>
-<p>You can see that pgwatch has created the <code>admin</code> and <code>subpartitions</code> schemas in the <code>measurements</code> database. These schemas contain the tables and indexes used by pgwatch to store metrics measurements. You may examine these schemas to understand how pgwatch stores metrics measurements in the database.</p>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>You can also add <code>--log-level=debug</code> command-line parameter to see every SQL query executed by pgwatch. 
-This can be useful for debugging purposes. But remember that this will log a lot of information, 
-so it is wise to use it with empty sources this time, meaning there are no database to monitor yet.</p>
+<p>Or use <code>npm</code> instead of <code>yarn</code>:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">cd</span><span class="w"> </span>internal/webui
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>npm<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span>fetch-timeout<span class="w"> </span><span class="m">100000</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>npm<span class="w"> </span>install
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>npm<span class="w"> </span>run<span class="w"> </span>build
+</span></code></pre></div></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These timeouts are optional but in practice they may save you from some network issues.</p>
 </div>
+<p>This will build the Web UI and place the output in <code>internal/webui/build</code>.</p>
+<h1 id="build-the-pgwatch-binary">Build the pgwatch binary</h1>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">cd</span><span class="w"> </span>../..
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">GIT_TIME</span><span class="o">=</span><span class="sb">`</span>git<span class="w"> </span>show<span class="w"> </span>-s<span class="w"> </span>--format<span class="o">=</span>%cI<span class="w"> </span>HEAD<span class="sb">`</span><span class="w"> </span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">GIT_HASH</span><span class="o">=</span><span class="sb">`</span>git<span class="w"> </span>show<span class="w"> </span>-s<span class="w"> </span>--format<span class="o">=</span>%H<span class="w"> </span>HEAD<span class="sb">`</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span><span class="sb">`</span>git<span class="w"> </span>rev-parse<span class="w"> </span>--abbrev-ref<span class="w"> </span>HEAD<span class="sb">`</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>go<span class="w"> </span>build<span class="w"> </span>-ldflags<span class="w"> </span><span class="s2">&quot;-X &#39;main.commit=</span><span class="si">${</span><span class="nv">GIT_HASH</span><span class="si">}</span><span class="s2">&#39; -X &#39;main.date=</span><span class="si">${</span><span class="nv">GIT_TIME</span><span class="si">}</span><span class="s2">&#39; -X &#39;main.version=</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="w"> </span>./cmd/pgwatch
+</span></code></pre></div>
+<p>This will build the <code>pgwatch</code> or <code>pgwatch.exe</code> binary and place it in the root directory.</p>
 
 
 
@@ -1425,7 +1473,7 @@ so it is wise to use it with empty sources this time, meaning there are no datab
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="using_managed_services.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Using Managed Services">
+          <a href="bootstrap-sink-prometheus.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Bootstrap Prometheus sink">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
@@ -1435,7 +1483,7 @@ so it is wise to use it with empty sources this time, meaning there are no datab
                 Previous
               </span>
               <div class="md-ellipsis">
-                Using Managed Services
+                Bootstrap Prometheus sink
               </div>
             </div>
           </a>

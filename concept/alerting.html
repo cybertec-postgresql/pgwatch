@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://pgwat.ch/concept/installation_options.html">
+        <link rel="canonical" href="https://pgwat.ch/concept/alerting.html">
       
       
-        <link rel="prev" href="components.html">
+        <link rel="prev" href="sizing_recommendations.html">
       
       
-        <link rel="next" href="long_term_installations.html">
+        <link rel="next" href="../tutorial/docker_installation.html">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Installation options - 🔬 pgwatch | v3</title>
+        <title>Alerting - 🔬 pgwatch | v3</title>
       
     
     
@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#configuration-database-based-operation" class="md-skip">
+        <a href="#grafana-alerting" class="md-skip">
           Skip to content
         </a>
       
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Installation options
+              Alerting
             
           </span>
         </div>
@@ -291,10 +291,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../howto/dashboarding_alerting.html" class="md-tabs__link">
+        <a href="../howto/using_managed_services.html" class="md-tabs__link">
           
   
-  How-To Guides
+  How To
 
         </a>
       </li>
@@ -577,72 +577,60 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Installation Options
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="installation_options.html" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="configuration_options.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Installation Options
+    Configuration Options
   </span>
   
 
       </a>
-      
-        
+    </li>
+  
 
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+              
+            
+              
+                
   
   
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#configuration-database-based-operation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configuration database based operation
-    </span>
-  </a>
+    <li class="md-nav__item">
+      <a href="web_ui.html" class="md-nav__link">
+        
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#file-based-operation" class="md-nav__link">
-    <span class="md-ellipsis">
-      File based operation
-    </span>
-  </a>
+  <span class="md-ellipsis">
+    Web UI
+  </span>
   
-</li>
-      
-    </ul>
+
+      </a>
+    </li>
   
-</nav>
-      
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="dashboards.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboards
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -676,7 +664,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/sizing_recommendations.html" class="md-nav__link">
+      <a href="sizing_recommendations.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -694,18 +682,81 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="web_ui.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Alerting
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="alerting.html" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
-    Web UI
+    Alerting
   </span>
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#grafana-alerting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Grafana Alerting
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prometheus-alerting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prometheus Alerting
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-alerting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom alerting
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -871,7 +922,7 @@
             
   
   <span class="md-ellipsis">
-    How-To Guides
+    How To
   </span>
   
 
@@ -881,30 +932,9 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            How-To Guides
+            How To
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../howto/dashboarding_alerting.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Dashboarding and Alerting
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
             
               
                 
@@ -934,11 +964,53 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/metrics_db_bootstrap.html" class="md-nav__link">
+      <a href="../howto/bootstrap-sink-postgres.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Bootstraping the Metrics Measurements Database (Sink)
+    Bootstrap PostgreSQL sink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/bootstrap-sink-prometheus.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootstrap Prometheus sink
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/build-pgwatch.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Build pgwatch from source
   </span>
   
 
@@ -1367,18 +1439,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configuration-database-based-operation" class="md-nav__link">
+  <a href="#grafana-alerting" class="md-nav__link">
     <span class="md-ellipsis">
-      Configuration database based operation
+      Grafana Alerting
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#file-based-operation" class="md-nav__link">
+  <a href="#prometheus-alerting" class="md-nav__link">
     <span class="md-ellipsis">
-      File based operation
+      Prometheus Alerting
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-alerting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom alerting
     </span>
   </a>
   
@@ -1399,7 +1480,7 @@
                   
 
   
-    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/concept/installation_options.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/concept/alerting.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
     </a>
@@ -1407,35 +1488,37 @@
   
 
 
-  <h1>Installation Options</h1>
+  <h1>Alerting</h1>
 
-<p>Besides freedom of choosing from a set of metric measurements storage options one can
-also choose how is the monitoring configuration
-(connect strings, metric sets and intervals) going to be stored.</p>
-<h2 id="configuration-database-based-operation">Configuration database based operation</h2>
-<p>This is the original central pull mode depicted on the
-<a href="../gallery/pgwatch_architecture.png">architecture diagram</a>. 
-It requires a small schema to be rolled out on any Postgres
-database accessible to the metrics gathering daemon, which will hold the
-connect strings, metric definition SQLs and preset configurations and
-some other more minor attributes. For rollout details see the
-<a href="../tutorial/custom_installation.html">custom installation</a> chapter.</p>
-<p>The default Docker demo image <code>cybertecpostgresql/pgwatch-demo</code> uses this approach.</p>
-<h2 id="file-based-operation">File based operation</h2>
-<p>One can deploy the gatherer daemon(s) decentralized with
-<em>sources to be monitored</em> defined in simple YAML files. In that case there
-is no need for the central Postgres configuration database. See the
-<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sources/sample.sources.yaml">sample.sources.yaml</a>
-config file for an example. </p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>In this mode you also may want, but not forced, to point out the path to 
-metric definition YAML file when starting the
-gatherer. Also note that the configuration system supports multiple
-YAML files in a folder so that you could easily programmatically manage
-things via <em>Ansible</em>, for example, and you can also use environment
-variables inside YAML files.</p>
-</div>
+<p>There two schools of thought when it comes to alerting - some people
+prefer to have it tightly integrated with the monitoring solution, some
+prefer to have it separate. pgwatch is more on the latter side - it's
+not a full-blown alerting solution but rather a metrics gathering and
+storage solution. This means that you can use any alerting solution you
+like - from simple shell scripts to full-blown alerting systems like
+Prometheus Alertmanager or PagerDuty.</p>
+<h2 id="grafana-alerting">Grafana Alerting</h2>
+<p>Alerting is very conveniently also supported by 
+<a href="https://grafana.com/docs/grafana/latest/alerting/">Grafana</a> in a simple
+point-and-click style. In general all more popular notification
+services are supported, and it's pretty much the easiest way to quickly
+start with PostgreSQL alerting on a smaller scale. For enterprise usage
+with hundreds of instances it's might get too "clicky" though and
+there are also some limitations - currently you can set alerts only on
+Graph panels and there must be no variables used in the query so you
+cannot use most of the pre-created pgwatch graphs, but need to create
+your own.</p>
+<h2 id="prometheus-alerting">Prometheus Alerting</h2>
+<p>If you are using Prometheus as a metrics sink, you can also use its
+<a href="https://prometheus.io/docs/alerting/alertmanager/">Alertmanager</a> for
+alerting. It's a bit more complex to set up but also more powerful and
+flexible. It's also more suitable for larger installations with many
+instances.</p>
+<h2 id="custom-alerting">Custom alerting</h2>
+<p>If you prefer to have a more custom alerting solution, you can use the
+RPC sink to send metrics to your own alerting system. The RPC sink is a
+simple RPC server that can be used to receive metrics. You can then
+write your own alerting logic in your favorite programming language.</p>
 
 
 
@@ -1470,7 +1553,7 @@ variables inside YAML files.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="components.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Components">
+          <a href="sizing_recommendations.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Sizing Recommendations">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
@@ -1480,20 +1563,20 @@ variables inside YAML files.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Components
+                Sizing Recommendations
               </div>
             </div>
           </a>
         
         
           
-          <a href="long_term_installations.html" class="md-footer__link md-footer__link--next" aria-label="Next: Long Term Installations">
+          <a href="../tutorial/docker_installation.html" class="md-footer__link md-footer__link--next" aria-label="Next: Docker Installation">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Long Term Installations
+                Docker Installation
               </div>
             </div>
             <div class="md-footer__button md-icon">
