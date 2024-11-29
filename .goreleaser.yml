@@ -30,6 +30,11 @@ archives:
   files:
     - ./grafana/**/*
     - ./README.md
+    - src: ./internal/sources/sample.sources.yaml
+      dst: sample.sources.yaml
+    - src: ./internal/metrics/metrics.yaml
+      dst: metrics.yaml
+
 
 checksum:
   name_template: 'checksums.txt'
@@ -58,5 +63,9 @@ nfpms:
     contents:
       - src: "./grafana/*"
         dst: "/etc/pgwatch/grafana"
+      - src: "./internal/sources/sample.sources.yaml"
+        dst: "/etc/pgwatch/sample.sources.yaml"
+      - src: "./internal/metrics/metrics.yaml"
+        dst: "/etc/pgwatch/metrics.yaml"
       - src: "./README.md"
         dst: "/etc/pgwatch/README.md"
