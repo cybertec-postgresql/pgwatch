@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
@@ -113,4 +114,58 @@ func TestMonitoredDatabase_IsPostgresSource(t *testing.T) {
 
 	md.Kind = sources.SourcePatroni
 	assert.True(t, md.IsPostgresSource(), "IsPostgresSource() = false, want true")
+}
+
+type testSourceReader struct {
+	sources.Sources
+	error
+}
+
+func (r testSourceReader) GetSources() (sources.Sources, error) {
+	return r.Sources, r.error
+}
+
+func TestMonitoredDatabases_SyncFromReader_error(t *testing.T) {
+	reader := testSourceReader{error: assert.AnError}
+	mds := sources.MonitoredDatabases{}
+	_, err := mds.SyncFromReader(reader)
+	assert.Error(t, err)
+}
+
+func TestMonitoredDatabases_SyncFromReader(t *testing.T) {
+	db, _ := pgxmock.NewPool()
+	src := sources.Source{
+		Name:      "test",
+		Kind:      sources.SourcePostgres,
+		IsEnabled: true,
+		ConnStr:   "postgres://user:password@localhost:5432/mydatabase",
+	}
+	reader := testSourceReader{Sources: sources.Sources{src}}
+	// first read the sources
+	mds, _ := reader.GetSources()
+	assert.NotNil(t, mds, "GetSources() = nil, want not nil")
+	// then resolve the databases
+	mdbs, _ := mds.ResolveDatabases()
+	assert.NotNil(t, mdbs, "ResolveDatabases() = nil, want not nil")
+	// pretend that we have a connection
+	mdbs[0].Conn = db
+	db.ExpectClose()
+	// sync the databases and make sure they are the same
+	newmdbs, _ := mdbs.SyncFromReader(reader)
+	assert.NotNil(t, newmdbs)
+	assert.Equal(t, mdbs[0].ConnStr, newmdbs[0].ConnStr)
+	assert.Equal(t, db, newmdbs[0].Conn)
+	// change the connection string and check if databases are updated
+	reader.Sources[0].ConnStr = "postgres://user:password@localhost:5432/anotherdatabase"
+	newmdbs, _ = mdbs.SyncFromReader(reader)
+	assert.NotNil(t, newmdbs)
+	assert.NotEqual(t, mdbs[0].ConnStr, newmdbs[0].ConnStr)
+	assert.Nil(t, newmdbs[0].Conn)
+	assert.NoError(t, db.ExpectationsWereMet())
+	// change the unique name of the source and check if it's updated
+	reader.Sources[0].Name = "another"
+	newmdbs, _ = mdbs.SyncFromReader(reader)
+	assert.NotNil(t, newmdbs)
+	assert.NotEqual(t, mdbs[0].Name, newmdbs[0].Name)
+	assert.Nil(t, newmdbs[0].Conn)
 }
