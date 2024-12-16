@@ -171,11 +171,11 @@ jobs:
       run: pip install mike mkdocs-material mkdocs-glightbox
 
     - name: Check if we should push to gh-pages
-      # if: ${{ github.event_name == 'pull_request' && github.ref == 'refs/heads/master' }}
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
       run: |
         echo ${{ github.event_name }}
         echo ${{ github.ref }}
-        echo "push_opt=--debug" >> $GITHUB_ENV 
+        echo "push_opt=--push" >> $GITHUB_ENV 
 
     - name: Build mkdocs
       run: mike ${{ env.push_opt }} deploy devel
