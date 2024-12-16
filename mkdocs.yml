@@ -90,3 +90,7 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.superfences
   - attr_list
+
+extra:
+  version:
+    provider: mike
