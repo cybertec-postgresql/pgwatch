@@ -178,4 +178,4 @@ jobs:
         echo "push_opt=--push" >> $GITHUB_ENV 
 
     - name: Build mkdocs
-      run: mike ${{ env.push_opt }} deploy devel
+      run: mike deploy ${{ env.push_opt }} devel
