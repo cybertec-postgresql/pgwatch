@@ -173,10 +173,8 @@ jobs:
     - name: Check if we should push to gh-pages
       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
       run: |
-        echo ${{ github.event_name }}
-        echo ${{ github.ref }}
+        git fetch origin gh-pages --depth=1
         echo "push_opt=--push" >> $GITHUB_ENV 
 
     - name: Build mkdocs
       run: mike deploy ${{ env.push_opt }} devel
-
