@@ -163,7 +163,7 @@ jobs:
         python-version: 3.12
 
     - name: Install dependencies
-      run: pip install mkdocs-material mkdocs-glightbox
+      run: pip install mike mkdocs-material mkdocs-glightbox
 
     - name: Build mkdocs
-      run: mkdocs build
+      run: mike --debug deploy devel
