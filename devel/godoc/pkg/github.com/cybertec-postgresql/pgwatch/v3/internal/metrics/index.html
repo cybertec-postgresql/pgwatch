@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+
+  <title>metrics - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css">
+
+<script>window.initFuncs = [];</script>
+<script src="/godoc/lib/godoc/jquery.js" defer></script>
+
+
+
+
+<script>var goVersion = "go1.23.4";</script>
+<script src="/godoc/lib/godoc/godocs.js" defer></script>
+
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Package metrics
+    <span class="text-muted"></span>
+  </h1>
+
+
+
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+
+	<script>
+	document.ANALYSIS_DATA = null;
+	document.CALLGRAPH = null;
+	</script>
+
+	
+		
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="#pkg-index" class="indexLink">Index</a></dd>
+			
+			
+				<dd><a href="#pkg-subdirectories">Subdirectories</a></dd>
+			
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="pkg-overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+				<h3 id="hdr-Metrics">Metrics</h3>
+<p>Code in this folder is responsible for reading and writing metric definitions.
+At the moment, metric definitions support two storages:
+<ul>
+<li>PostgreSQL database
+<li>YAML file
+</ul>
+<h3 id="hdr-Content">Content</h3>
+<ul>
+<li>`postgres*.go` files cover the functionality for the PostgreSQL database.
+<li>`yaml*.go` files cover the functionality for the YAML file.
+<li>`metrics.yaml` holds all default metrics and presets.
+<li>`default.go` provides access to default metrics.
+</ul>
+
+				
+			</div>
+		</div>
+
+		<div id="pkg-index" class="toggleVisible">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
+		</div>
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
+
+		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
+			<div id="manual-nav">
+			<dl>
+			
+				<dd><a href="#pkg-constants">Constants</a></dd>
+			
+			
+				<dd><a href="#pkg-variables">Variables</a></dd>
+			
+			
+				
+				<dd><a href="#GetDefaultBuiltInMetrics">func GetDefaultBuiltInMetrics() []string</a></dd>
+			
+				
+				<dd><a href="#ParseLogs">func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredDatabase, realDbname, metricName string, configMap map[string]float64, storeCh chan&lt;- []MeasurementEnvelope)</a></dd>
+			
+				
+				<dd><a href="#getFileWithLatestTimestamp">func getFileWithLatestTimestamp(files []string) (string, error)</a></dd>
+			
+				
+				<dd><a href="#getFileWithNextModTimestamp">func getFileWithNextModTimestamp(logsGlobPath, currentFile string) (string, error)</a></dd>
+			
+				
+				<dd><a href="#regexMatchesToMap">func regexMatchesToMap(csvlogRegex *regexp.Regexp, matches []string) map[string]string</a></dd>
+			
+				
+				<dd><a href="#severityToEnglish">func severityToEnglish(serverLang, errorSeverity string) string</a></dd>
+			
+				
+				<dd><a href="#tryDetermineLogFolder">func tryDetermineLogFolder(ctx context.Context, conn db.PgxIface) (string, error)</a></dd>
+			
+				
+				<dd><a href="#tryDetermineLogMessagesLanguage">func tryDetermineLogMessagesLanguage(ctx context.Context, conn db.PgxIface) (string, error)</a></dd>
+			
+				
+				<dd><a href="#writeMetricsToPostgres">func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *Metrics) error</a></dd>
+			
+				
+				<dd><a href="#zeroEventCounts">func zeroEventCounts(eventCounts map[string]int64)</a></dd>
+			
+			
+				
+				<dd><a href="#CmdOpts">type CmdOpts</a></dd>
+				
+				
+			
+				
+				<dd><a href="#ExtensionInfo">type ExtensionInfo</a></dd>
+				
+				
+			
+				
+				<dd><a href="#ExtensionOverrides">type ExtensionOverrides</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Measurement">type Measurement</a></dd>
+				
+				
+			
+				
+				<dd><a href="#MeasurementEnvelope">type MeasurementEnvelope</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#eventCountsToMetricStoreMessages">func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb *sources.MonitoredDatabase) []MeasurementEnvelope</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Measurements">type Measurements</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Metric">type Metric</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Metric.GetSQL">func (m Metric) GetSQL(version int) string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Metric.PrimaryOnly">func (m Metric) PrimaryOnly() bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Metric.StandbyOnly">func (m Metric) StandbyOnly() bool</a></dd>
+				
+			
+				
+				<dd><a href="#MetricAttrs">type MetricAttrs</a></dd>
+				
+				
+			
+				
+				<dd><a href="#MetricDefs">type MetricDefs</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Metrics">type Metrics</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#GetDefaultMetrics">func GetDefaultMetrics() (metrics *Metrics)</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Migrator">type Migrator</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Preset">type Preset</a></dd>
+				
+				
+			
+				
+				<dd><a href="#PresetDefs">type PresetDefs</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Reader">type Reader</a></dd>
+				
+				
+			
+				
+				<dd><a href="#ReaderWriter">type ReaderWriter</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewDefaultMetricReader">func NewDefaultMetricReader(context.Context) (ReaderWriter, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewPostgresMetricReaderWriter">func NewPostgresMetricReaderWriter(ctx context.Context, connstr string) (ReaderWriter, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewPostgresMetricReaderWriterConn">func NewPostgresMetricReaderWriterConn(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewYAMLMetricReaderWriter">func NewYAMLMetricReaderWriter(ctx context.Context, path string) (ReaderWriter, error)</a></dd>
+				
+				
+			
+				
+				<dd><a href="#SQLs">type SQLs</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Writer">type Writer</a></dd>
+				
+				
+			
+				
+				<dd><a href="#dbMetricReaderWriter">type dbMetricReaderWriter</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#dbMetricReaderWriter.DeleteMetric">func (dmrw *dbMetricReaderWriter) DeleteMetric(metricName string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#dbMetricReaderWriter.DeletePreset">func (dmrw *dbMetricReaderWriter) DeletePreset(presetName string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#dbMetricReaderWriter.GetMetrics">func (dmrw *dbMetricReaderWriter) GetMetrics() (metricDefMapNew *Metrics, err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#dbMetricReaderWriter.Migrate">func (dmrw *dbMetricReaderWriter) Migrate() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#dbMetricReaderWriter.NeedsMigration">func (dmrw *dbMetricReaderWriter) NeedsMigration() (bool, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#dbMetricReaderWriter.UpdateMetric">func (dmrw *dbMetricReaderWriter) UpdateMetric(metricName string, metric Metric) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#dbMetricReaderWriter.UpdatePreset">func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName string, preset Preset) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#dbMetricReaderWriter.WriteMetrics">func (dmrw *dbMetricReaderWriter) WriteMetrics(metricDefs *Metrics) error</a></dd>
+				
+			
+				
+				<dd><a href="#defaultMetricReader">type defaultMetricReader</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#defaultMetricReader.DeleteMetric">func (dmrw *defaultMetricReader) DeleteMetric(string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#defaultMetricReader.DeletePreset">func (dmrw *defaultMetricReader) DeletePreset(string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#defaultMetricReader.GetMetrics">func (dmrw *defaultMetricReader) GetMetrics() (*Metrics, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#defaultMetricReader.UpdateMetric">func (dmrw *defaultMetricReader) UpdateMetric(string, Metric) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#defaultMetricReader.UpdatePreset">func (dmrw *defaultMetricReader) UpdatePreset(string, Preset) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#defaultMetricReader.WriteMetrics">func (dmrw *defaultMetricReader) WriteMetrics(*Metrics) error</a></dd>
+				
+			
+				
+				<dd><a href="#fileMetricReader">type fileMetricReader</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#fileMetricReader.DeleteMetric">func (fmr *fileMetricReader) DeleteMetric(metricName string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#fileMetricReader.DeletePreset">func (fmr *fileMetricReader) DeletePreset(presetName string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#fileMetricReader.GetMetrics">func (fmr *fileMetricReader) GetMetrics() (metrics *Metrics, err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#fileMetricReader.UpdateMetric">func (fmr *fileMetricReader) UpdateMetric(metricName string, metric Metric) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#fileMetricReader.UpdatePreset">func (fmr *fileMetricReader) UpdatePreset(presetName string, preset Preset) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#fileMetricReader.WriteMetrics">func (fmr *fileMetricReader) WriteMetrics(metricDefs *Metrics) error</a></dd>
+				
+			
+			
+			</dl>
+			</div><!-- #manual-nav -->
+
+		
+
+		
+			<h3>Package files</h3>
+			<p>
+			<span style="font-size:90%">
+			
+				<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/cmdopts.go.html">cmdopts.go</a>
+			
+				<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/default.go.html">default.go</a>
+			
+				<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/doc.go.html">doc.go</a>
+			
+				<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html">logparse.go</a>
+			
+				<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html">postgres.go</a>
+			
+				<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres_schema.go.html">postgres_schema.go</a>
+			
+				<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html">types.go</a>
+			
+				<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html">yaml.go</a>
+			
+			</span>
+			</p>
+		
+		</div><!-- .expanded -->
+		</div><!-- #pkg-index -->
+
+		
+
+		
+			<h2 id="pkg-constants">Constants</h2>
+			
+				
+				<pre>const <span id="CSVLogDefaultGlobSuffix">CSVLogDefaultGlobSuffix</span> = &#34;*.csv&#34;</pre>
+			
+				
+				<pre>const <span id="CSVLogDefaultRegEx">CSVLogDefaultRegEx</span> = `^^(?P&lt;log_time&gt;.*?),&#34;?(?P&lt;user_name&gt;.*?)&#34;?,&#34;?(?P&lt;database_name&gt;.*?)&#34;?,(?P&lt;process_id&gt;\d+),&#34;?(?P&lt;connection_from&gt;.*?)&#34;?,(?P&lt;session_id&gt;.*?),(?P&lt;session_line_num&gt;\d+),&#34;?(?P&lt;command_tag&gt;.*?)&#34;?,(?P&lt;session_start_time&gt;.*?),(?P&lt;virtual_transaction_id&gt;.*?),(?P&lt;transaction_id&gt;.*?),(?P&lt;error_severity&gt;\w+),`</pre>
+			
+				
+				<pre>const <span id="specialMetricServerLogEventCounts">specialMetricServerLogEventCounts</span> = &#34;server_log_event_counts&#34;</pre>
+			
+		
+		
+			<h2 id="pkg-variables">Variables</h2>
+			
+				
+				<pre>var <span id="PgSeverities">PgSeverities</span> = [...]<a href="https://pkg.go.dev/builtin/#string">string</a>{&#34;DEBUG&#34;, &#34;INFO&#34;, &#34;NOTICE&#34;, &#34;WARNING&#34;, &#34;ERROR&#34;, &#34;LOG&#34;, &#34;FATAL&#34;, &#34;PANIC&#34;}</pre>
+			
+				
+				<pre>var <span id="PgSeveritiesLocale">PgSeveritiesLocale</span> = map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>{
+    &#34;C.&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;NOTICE&#34;: &#34;NOTICE&#34;, &#34;WARNING&#34;: &#34;WARNING&#34;, &#34;ERROR&#34;: &#34;ERROR&#34;, &#34;FATAL&#34;: &#34;FATAL&#34;, &#34;PANIC&#34;: &#34;PANIC&#34;},
+    &#34;de&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;HINWEIS&#34;: &#34;NOTICE&#34;, &#34;WARNUNG&#34;: &#34;WARNING&#34;, &#34;FEHLER&#34;: &#34;ERROR&#34;, &#34;FATAL&#34;: &#34;FATAL&#34;, &#34;PANIK&#34;: &#34;PANIC&#34;},
+    &#34;fr&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;NOTICE&#34;: &#34;NOTICE&#34;, &#34;ATTENTION&#34;: &#34;WARNING&#34;, &#34;ERREUR&#34;: &#34;ERROR&#34;, &#34;FATAL&#34;: &#34;FATAL&#34;, &#34;PANIK&#34;: &#34;PANIC&#34;},
+    &#34;it&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;NOTIFICA&#34;: &#34;NOTICE&#34;, &#34;ATTENZIONE&#34;: &#34;WARNING&#34;, &#34;ERRORE&#34;: &#34;ERROR&#34;, &#34;FATALE&#34;: &#34;FATAL&#34;, &#34;PANICO&#34;: &#34;PANIC&#34;},
+    &#34;ko&#34;: {&#34;디버그&#34;: &#34;DEBUG&#34;, &#34;로그&#34;: &#34;LOG&#34;, &#34;정보&#34;: &#34;INFO&#34;, &#34;알림&#34;: &#34;NOTICE&#34;, &#34;경고&#34;: &#34;WARNING&#34;, &#34;오류&#34;: &#34;ERROR&#34;, &#34;치명적오류&#34;: &#34;FATAL&#34;, &#34;손상&#34;: &#34;PANIC&#34;},
+    &#34;pl&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;DZIENNIK&#34;: &#34;LOG&#34;, &#34;INFORMACJA&#34;: &#34;INFO&#34;, &#34;UWAGA&#34;: &#34;NOTICE&#34;, &#34;OSTRZEŻENIE&#34;: &#34;WARNING&#34;, &#34;BŁĄD&#34;: &#34;ERROR&#34;, &#34;KATASTROFALNY&#34;: &#34;FATAL&#34;, &#34;PANIKA&#34;: &#34;PANIC&#34;},
+    &#34;ru&#34;: {&#34;ОТЛАДКА&#34;: &#34;DEBUG&#34;, &#34;СООБЩЕНИЕ&#34;: &#34;LOG&#34;, &#34;ИНФОРМАЦИЯ&#34;: &#34;INFO&#34;, &#34;ЗАМЕЧАНИЕ&#34;: &#34;NOTICE&#34;, &#34;ПРЕДУПРЕЖДЕНИЕ&#34;: &#34;WARNING&#34;, &#34;ОШИБКА&#34;: &#34;ERROR&#34;, &#34;ВАЖНО&#34;: &#34;FATAL&#34;, &#34;ПАНИКА&#34;: &#34;PANIC&#34;},
+    &#34;sv&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOGG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;NOTIS&#34;: &#34;NOTICE&#34;, &#34;VARNING&#34;: &#34;WARNING&#34;, &#34;FEL&#34;: &#34;ERROR&#34;, &#34;FATALT&#34;: &#34;FATAL&#34;, &#34;PANIK&#34;: &#34;PANIC&#34;},
+    &#34;tr&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;BİLGİ&#34;: &#34;INFO&#34;, &#34;NOT&#34;: &#34;NOTICE&#34;, &#34;UYARI&#34;: &#34;WARNING&#34;, &#34;HATA&#34;: &#34;ERROR&#34;, &#34;ÖLÜMCÜL (FATAL)&#34;: &#34;FATAL&#34;, &#34;KRİTİK&#34;: &#34;PANIC&#34;},
+    &#34;zh&#34;: {&#34;调试&#34;: &#34;DEBUG&#34;, &#34;日志&#34;: &#34;LOG&#34;, &#34;信息&#34;: &#34;INFO&#34;, &#34;注意&#34;: &#34;NOTICE&#34;, &#34;警告&#34;: &#34;WARNING&#34;, &#34;错误&#34;: &#34;ERROR&#34;, &#34;致命错误&#34;: &#34;FATAL&#34;, &#34;比致命错误还过分的错误&#34;: &#34;PANIC&#34;},
+}</pre>
+			
+				
+				<pre>var <span id="defaultMetricsYAML">defaultMetricsYAML</span> []<a href="https://pkg.go.dev/builtin/#byte">byte</a></pre>
+			
+				
+				<pre>var <span id="initMigrator">initMigrator</span> = func(dmrw *dbMetricReaderWriter) (*<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migrator">Migrator</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>) {
+    return <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#New">New</a>(
+        <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#TableName">TableName</a>(&#34;pgwatch.migration&#34;),
+        <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#SetNotice">SetNotice</a>(func(s <a href="https://pkg.go.dev/builtin/#string">string</a>) {
+            <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#GetLogger">GetLogger</a>(dmrw.ctx).<a href="#Info">Info</a>(s)
+        }),
+        migrations(),
+    )
+}</pre>
+			
+				
+				<pre>var <span id="initSchema">initSchema</span> = func(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>) {
+    var <span id="exists">exists</span> <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+    if exists, err = <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#DoesSchemaExist">DoesSchemaExist</a>(ctx, conn, &#34;pgwatch&#34;); err != <a href="https://pkg.go.dev/builtin/#nil">nil</a> || exists {
+        return err
+    }
+    tx, err := conn.<a href="#Begin">Begin</a>(ctx)
+    if err != <a href="https://pkg.go.dev/builtin/#nil">nil</a> {
+        return err
+    }
+    defer func() { _ = tx.<a href="#Rollback">Rollback</a>(ctx) }()
+    if _, err := tx.<a href="#Exec">Exec</a>(ctx, sqlConfigSchema); err != <a href="https://pkg.go.dev/builtin/#nil">nil</a> {
+        return err
+    }
+    if err := writeMetricsToPostgres(ctx, tx, <a href="#GetDefaultMetrics">GetDefaultMetrics</a>()); err != <a href="https://pkg.go.dev/builtin/#nil">nil</a> {
+        return err
+    }
+    if err := tx.<a href="#Commit">Commit</a>(ctx); err != <a href="https://pkg.go.dev/builtin/#nil">nil</a> {
+        return err
+    }
+    return <a href="https://pkg.go.dev/builtin/#nil">nil</a>
+}</pre>
+			
+				<p>migrations holds function returning all updgrade migrations needed
+
+				<pre>var <span id="migrations">migrations</span> func() <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Option">Option</a> = func() <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Option">Option</a> {
+    return <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migrations">Migrations</a>(
+        &amp;<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migration">Migration</a>{
+            <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migration.Name">Name</a>: &#34;00179 Apply metrics migrations for v3&#34;,
+            <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migration.Func">Func</a>: func(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, pgx.<a href="#Tx">Tx</a>) <a href="https://pkg.go.dev/builtin/#error">error</a> {
+
+                return <a href="https://pkg.go.dev/builtin/#nil">nil</a>
+            },
+        },
+    )
+}</pre>
+			
+				
+				<pre>var <span id="sqlConfigSchema">sqlConfigSchema</span> <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+			
+		
+		
+			
+			
+			<h2 id="GetDefaultBuiltInMetrics">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/default.go.html#L8">GetDefaultBuiltInMetrics</a>
+				<a class="permalink" href="#GetDefaultBuiltInMetrics">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func GetDefaultBuiltInMetrics() []<a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="ParseLogs">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L114">ParseLogs</a>
+				<a class="permalink" href="#ParseLogs">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func ParseLogs(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>, mdb *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a>, realDbname, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, configMap map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a>, storeCh chan&lt;- []<a href="#MeasurementEnvelope">MeasurementEnvelope</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="getFileWithLatestTimestamp">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L38">getFileWithLatestTimestamp</a>
+				<a class="permalink" href="#getFileWithLatestTimestamp">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func getFileWithLatestTimestamp(files []<a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="getFileWithNextModTimestamp">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L55">getFileWithNextModTimestamp</a>
+				<a class="permalink" href="#getFileWithNextModTimestamp">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func getFileWithNextModTimestamp(logsGlobPath, currentFile <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="regexMatchesToMap">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L375">regexMatchesToMap</a>
+				<a class="permalink" href="#regexMatchesToMap">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func regexMatchesToMap(csvlogRegex *<a href="https://pkg.go.dev/regexp/">regexp</a>.<a href="https://pkg.go.dev/regexp/#Regexp">Regexp</a>, matches []<a href="https://pkg.go.dev/builtin/#string">string</a>) map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="severityToEnglish">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L329">severityToEnglish</a>
+				<a class="permalink" href="#severityToEnglish">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func severityToEnglish(serverLang, errorSeverity <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="tryDetermineLogFolder">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L348">tryDetermineLogFolder</a>
+				<a class="permalink" href="#tryDetermineLogFolder">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func tryDetermineLogFolder(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="tryDetermineLogMessagesLanguage">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L362">tryDetermineLogMessagesLanguage</a>
+				<a class="permalink" href="#tryDetermineLogMessagesLanguage">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func tryDetermineLogMessagesLanguage(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="writeMetricsToPostgres">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L37">writeMetricsToPostgres</a>
+				<a class="permalink" href="#writeMetricsToPostgres">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func writeMetricsToPostgres(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>, metricDefs *<a href="#Metrics">Metrics</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+			<p>writeMetricsToPostgres writes the metrics and presets definitions to the
+pgwatch.metric and pgwatch.preset tables in the ConfigDB.
+
+			
+			
+
+		
+			
+			
+			<h2 id="zeroEventCounts">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L342">zeroEventCounts</a>
+				<a class="permalink" href="#zeroEventCounts">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func zeroEventCounts(eventCounts map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a>)</pre>
+			
+			
+			
+
+		
+		
+			
+			
+			<h2 id="CmdOpts">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/cmdopts.go.html#L4">CmdOpts</a>
+				<a class="permalink" href="#CmdOpts">&#xb6;</a>
+				
+				
+			</h2>
+			<p>CmdOpts specifies metric command-line options
+
+			<pre>type CmdOpts struct {
+<span id="CmdOpts.Metrics"></span>    Metrics                      <a href="https://pkg.go.dev/builtin/#string">string</a> `short:&#34;m&#34; long:&#34;metrics&#34; mapstructure:&#34;metrics&#34; description:&#34;File or folder of YAML files with metrics definitions&#34; env:&#34;PW_METRICS&#34;`
+<span id="CmdOpts.CreateHelpers"></span>    CreateHelpers                <a href="https://pkg.go.dev/builtin/#bool">bool</a>   `long:&#34;create-helpers&#34; mapstructure:&#34;create-helpers&#34; description:&#34;Create helper database objects from metric definitions&#34; env:&#34;PW_CREATE_HELPERS&#34;`
+<span id="CmdOpts.DirectOSStats"></span>    DirectOSStats                <a href="https://pkg.go.dev/builtin/#bool">bool</a>   `long:&#34;direct-os-stats&#34; mapstructure:&#34;direct-os-stats&#34; description:&#34;Extract OS related psutil statistics not via PL/Python wrappers but directly on host&#34; env:&#34;PW_DIRECT_OS_STATS&#34;`
+<span id="CmdOpts.InstanceLevelCacheMaxSeconds"></span>    InstanceLevelCacheMaxSeconds <a href="https://pkg.go.dev/builtin/#int64">int64</a>  `long:&#34;instance-level-cache-max-seconds&#34; mapstructure:&#34;instance-level-cache-max-seconds&#34; description:&#34;Max allowed staleness for instance level metric data shared between DBs of an instance. Affects &#39;continuous&#39; host types only. Set to 0 to disable&#34; env:&#34;PW_INSTANCE_LEVEL_CACHE_MAX_SECONDS&#34; default:&#34;30&#34;`
+<span id="CmdOpts.EmergencyPauseTriggerfile"></span>    EmergencyPauseTriggerfile    <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;emergency-pause-triggerfile&#34; mapstructure:&#34;emergency-pause-triggerfile&#34; description:&#34;When the file exists no metrics will be temporarily fetched / scraped&#34; env:&#34;PW_EMERGENCY_PAUSE_TRIGGERFILE&#34; default:&#34;/tmp/pgwatch-emergency-pause&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="ExtensionInfo">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L4">ExtensionInfo</a>
+				<a class="permalink" href="#ExtensionInfo">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type ExtensionInfo struct {
+<span id="ExtensionInfo.ExtName"></span>    ExtName       <a href="https://pkg.go.dev/builtin/#string">string</a> `yaml:&#34;ext_name&#34;`
+<span id="ExtensionInfo.ExtMinVersion"></span>    ExtMinVersion <a href="https://pkg.go.dev/builtin/#string">string</a> `yaml:&#34;ext_min_version&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="ExtensionOverrides">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L9">ExtensionOverrides</a>
+				<a class="permalink" href="#ExtensionOverrides">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type ExtensionOverrides struct {
+<span id="ExtensionOverrides.TargetMetric"></span>    TargetMetric              <a href="https://pkg.go.dev/builtin/#string">string</a>          `yaml:&#34;target_metric&#34;`
+<span id="ExtensionOverrides.ExpectedExtensionVersions"></span>    ExpectedExtensionVersions []<a href="#ExtensionInfo">ExtensionInfo</a> `yaml:&#34;expected_extension_versions&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Measurement">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L73">Measurement</a>
+				<a class="permalink" href="#Measurement">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Measurement map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#any">any</a></pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="MeasurementEnvelope">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L76">MeasurementEnvelope</a>
+				<a class="permalink" href="#MeasurementEnvelope">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type MeasurementEnvelope struct {
+<span id="MeasurementEnvelope.DBName"></span>    DBName           <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MeasurementEnvelope.SourceType"></span>    SourceType       <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MeasurementEnvelope.MetricName"></span>    MetricName       <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MeasurementEnvelope.CustomTags"></span>    CustomTags       map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MeasurementEnvelope.Data"></span>    Data             <a href="#Measurements">Measurements</a>
+<span id="MeasurementEnvelope.MetricDef"></span>    MetricDef        <a href="#Metric">Metric</a>
+<span id="MeasurementEnvelope.RealDbname"></span>    RealDbname       <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MeasurementEnvelope.SystemIdentifier"></span>    SystemIdentifier <a href="https://pkg.go.dev/builtin/#string">string</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="eventCountsToMetricStoreMessages">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L88">eventCountsToMetricStoreMessages</a>
+					<a class="permalink" href="#eventCountsToMetricStoreMessages">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a>, mdb *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a>) []<a href="#MeasurementEnvelope">MeasurementEnvelope</a></pre>
+				<p>1. add zero counts for severity levels that didn&apos;t have any occurrences in the log
+
+				
+				
+			
+
+			
+		
+			
+			
+			<h2 id="Measurements">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L74">Measurements</a>
+				<a class="permalink" href="#Measurements">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Measurements []map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#any">any</a></pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Metric">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L24">Metric</a>
+				<a class="permalink" href="#Metric">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Metric struct {
+<span id="Metric.SQLs"></span>    SQLs            <a href="#SQLs">SQLs</a>
+<span id="Metric.InitSQL"></span>    InitSQL         <a href="https://pkg.go.dev/builtin/#string">string</a>   `yaml:&#34;init_sql,omitempty&#34;`
+<span id="Metric.NodeStatus"></span>    NodeStatus      <a href="https://pkg.go.dev/builtin/#string">string</a>   `yaml:&#34;node_status,omitempty&#34;`
+<span id="Metric.Gauges"></span>    Gauges          []<a href="https://pkg.go.dev/builtin/#string">string</a> `yaml:&#34;,omitempty&#34;`
+<span id="Metric.IsInstanceLevel"></span>    IsInstanceLevel <a href="https://pkg.go.dev/builtin/#bool">bool</a>     `yaml:&#34;is_instance_level,omitempty&#34;`
+<span id="Metric.StorageName"></span>    StorageName     <a href="https://pkg.go.dev/builtin/#string">string</a>   `yaml:&#34;storage_name,omitempty&#34;`
+<span id="Metric.Description"></span>    Description     <a href="https://pkg.go.dev/builtin/#string">string</a>   `yaml:&#34;description,omitempty&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="Metric.GetSQL">func (Metric) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L50">GetSQL</a>
+					<a class="permalink" href="#Metric.GetSQL">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m <a href="#Metric">Metric</a>) GetSQL(version <a href="https://pkg.go.dev/builtin/#int">int</a>) <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Metric.PrimaryOnly">func (Metric) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L42">PrimaryOnly</a>
+					<a class="permalink" href="#Metric.PrimaryOnly">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m <a href="#Metric">Metric</a>) PrimaryOnly() <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Metric.StandbyOnly">func (Metric) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L46">StandbyOnly</a>
+					<a class="permalink" href="#Metric.StandbyOnly">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m <a href="#Metric">Metric</a>) StandbyOnly() <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="MetricAttrs">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L14">MetricAttrs</a>
+				<a class="permalink" href="#MetricAttrs">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type MetricAttrs struct {
+<span id="MetricAttrs.ExtensionVersionOverrides"></span>    ExtensionVersionOverrides []<a href="#ExtensionOverrides">ExtensionOverrides</a> `yaml:&#34;extension_version_based_overrides,omitempty&#34;`
+<span id="MetricAttrs.IsPrivate"></span>    IsPrivate                 <a href="https://pkg.go.dev/builtin/#bool">bool</a>                 `yaml:&#34;is_private,omitempty&#34;`                <span class="comment">// used only for extension overrides currently and ignored otherwise</span>
+<span id="MetricAttrs.DisabledDays"></span>    DisabledDays              <a href="https://pkg.go.dev/builtin/#string">string</a>               `yaml:&#34;disabled_days,omitempty&#34;`             <span class="comment">// Cron style, 0 = Sunday. Ranges allowed: 0,2-4</span>
+<span id="MetricAttrs.DisableTimes"></span>    DisableTimes              []<a href="https://pkg.go.dev/builtin/#string">string</a>             `yaml:&#34;disabled_times,omitempty&#34;`            <span class="comment">// &#34;11:00-13:00&#34;</span>
+<span id="MetricAttrs.StatementTimeoutSeconds"></span>    StatementTimeoutSeconds   <a href="https://pkg.go.dev/builtin/#int64">int64</a>                `yaml:&#34;statement_timeout_seconds,omitempty&#34;` <span class="comment">// overrides per monitored DB settings</span>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="MetricDefs">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L34">MetricDefs</a>
+				<a class="permalink" href="#MetricDefs">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type MetricDefs map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#Metric">Metric</a></pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Metrics">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L36">Metrics</a>
+				<a class="permalink" href="#Metrics">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Metrics struct {
+<span id="Metrics.MetricDefs"></span>    MetricDefs <a href="#MetricDefs">MetricDefs</a> `yaml:&#34;metrics&#34;`
+<span id="Metrics.PresetDefs"></span>    PresetDefs <a href="#PresetDefs">PresetDefs</a> `yaml:&#34;presets&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="GetDefaultMetrics">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/default.go.html#L17">GetDefaultMetrics</a>
+					<a class="permalink" href="#GetDefaultMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func GetDefaultMetrics() (metrics *<a href="#Metrics">Metrics</a>)</pre>
+				
+				
+				
+			
+
+			
+		
+			
+			
+			<h2 id="Migrator">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L99">Migrator</a>
+				<a class="permalink" href="#Migrator">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Migrator interface {
+    Migrate() <a href="https://pkg.go.dev/builtin/#error">error</a>
+    NeedsMigration() (<a href="https://pkg.go.dev/builtin/#bool">bool</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+}</pre>
+
+			
+
+			
+				<p>make sure *dbMetricReaderWriter implements the Migrator interface
+
+				<pre>var <span id="_">_</span> <a href="#Migrator">Migrator</a> = (*dbMetricReaderWriter)(<a href="https://pkg.go.dev/builtin/#nil">nil</a>)</pre>
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Preset">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L68">Preset</a>
+				<a class="permalink" href="#Preset">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Preset struct {
+<span id="Preset.Description"></span>    Description <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="Preset.Metrics"></span>    Metrics     map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="PresetDefs">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L66">PresetDefs</a>
+				<a class="permalink" href="#PresetDefs">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type PresetDefs map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#Preset">Preset</a></pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Reader">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L87">Reader</a>
+				<a class="permalink" href="#Reader">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Reader interface {
+    GetMetrics() (*<a href="#Metrics">Metrics</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="ReaderWriter">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L104">ReaderWriter</a>
+				<a class="permalink" href="#ReaderWriter">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type ReaderWriter interface {
+    <a href="#Reader">Reader</a>
+    <a href="#Writer">Writer</a>
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewDefaultMetricReader">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/default.go.html#L13">NewDefaultMetricReader</a>
+					<a class="permalink" href="#NewDefaultMetricReader">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewDefaultMetricReader(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (<a href="#ReaderWriter">ReaderWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>NewDefaultMetricReader creates a new default metric reader with an empty path.
+
+				
+				
+			
+				
+				<h3 id="NewPostgresMetricReaderWriter">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L9">NewPostgresMetricReaderWriter</a>
+					<a class="permalink" href="#NewPostgresMetricReaderWriter">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewPostgresMetricReaderWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, connstr <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="#ReaderWriter">ReaderWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+			
+				
+				<h3 id="NewPostgresMetricReaderWriterConn">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L17">NewPostgresMetricReaderWriterConn</a>
+					<a class="permalink" href="#NewPostgresMetricReaderWriterConn">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewPostgresMetricReaderWriterConn(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxPoolIface">PgxPoolIface</a>) (<a href="#ReaderWriter">ReaderWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+			
+				
+				<h3 id="NewYAMLMetricReaderWriter">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L11">NewYAMLMetricReaderWriter</a>
+					<a class="permalink" href="#NewYAMLMetricReaderWriter">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewYAMLMetricReaderWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, path <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="#ReaderWriter">ReaderWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+			
+
+			
+		
+			
+			
+			<h2 id="SQLs">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L22">SQLs</a>
+				<a class="permalink" href="#SQLs">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type SQLs map[<a href="https://pkg.go.dev/builtin/#int">int</a>]<a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Writer">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L91">Writer</a>
+				<a class="permalink" href="#Writer">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Writer interface {
+    WriteMetrics(metricDefs *<a href="#Metrics">Metrics</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+    DeleteMetric(metricName <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+    DeletePreset(presetName <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+    UpdateMetric(metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, metric <a href="#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+    UpdatePreset(presetName <a href="https://pkg.go.dev/builtin/#string">string</a>, preset <a href="#Preset">Preset</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="dbMetricReaderWriter">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L27">dbMetricReaderWriter</a>
+				<a class="permalink" href="#dbMetricReaderWriter">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type dbMetricReaderWriter struct {
+<span id="dbMetricReaderWriter.ctx"></span>    ctx      <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
+<span id="dbMetricReaderWriter.configDb"></span>    configDb <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="dbMetricReaderWriter.DeleteMetric">func (*dbMetricReaderWriter) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L104">DeleteMetric</a>
+					<a class="permalink" href="#dbMetricReaderWriter.DeleteMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *dbMetricReaderWriter) DeleteMetric(metricName <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="dbMetricReaderWriter.DeletePreset">func (*dbMetricReaderWriter) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L118">DeletePreset</a>
+					<a class="permalink" href="#dbMetricReaderWriter.DeletePreset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *dbMetricReaderWriter) DeletePreset(presetName <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="dbMetricReaderWriter.GetMetrics">func (*dbMetricReaderWriter) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L65">GetMetrics</a>
+					<a class="permalink" href="#dbMetricReaderWriter.GetMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *dbMetricReaderWriter) GetMetrics() (metricDefMapNew *<a href="#Metrics">Metrics</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>ReadMetricsFromPostgres reads the metrics and presets definitions from the pgwatch.metric and pgwatch.preset tables from the ConfigDB.
+
+				
+				
+				
+			
+				
+				<h3 id="dbMetricReaderWriter.Migrate">func (*dbMetricReaderWriter) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres_schema.go.html#L50">Migrate</a>
+					<a class="permalink" href="#dbMetricReaderWriter.Migrate">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *dbMetricReaderWriter) Migrate() <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>MigrateDb upgrades database with all migrations
+
+				
+				
+				
+			
+				
+				<h3 id="dbMetricReaderWriter.NeedsMigration">func (*dbMetricReaderWriter) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres_schema.go.html#L59">NeedsMigration</a>
+					<a class="permalink" href="#dbMetricReaderWriter.NeedsMigration">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *dbMetricReaderWriter) NeedsMigration() (<a href="https://pkg.go.dev/builtin/#bool">bool</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>NeedsMigration checks if database needs migration
+
+				
+				
+				
+			
+				
+				<h3 id="dbMetricReaderWriter.UpdateMetric">func (*dbMetricReaderWriter) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L109">UpdateMetric</a>
+					<a class="permalink" href="#dbMetricReaderWriter.UpdateMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *dbMetricReaderWriter) UpdateMetric(metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, metric <a href="#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="dbMetricReaderWriter.UpdatePreset">func (*dbMetricReaderWriter) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L123">UpdatePreset</a>
+					<a class="permalink" href="#dbMetricReaderWriter.UpdatePreset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName <a href="https://pkg.go.dev/builtin/#string">string</a>, preset <a href="#Preset">Preset</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="dbMetricReaderWriter.WriteMetrics">func (*dbMetricReaderWriter) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L100">WriteMetrics</a>
+					<a class="permalink" href="#dbMetricReaderWriter.WriteMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *dbMetricReaderWriter) WriteMetrics(metricDefs *<a href="#Metrics">Metrics</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="defaultMetricReader">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/default.go.html#L23">defaultMetricReader</a>
+				<a class="permalink" href="#defaultMetricReader">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type defaultMetricReader struct{}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="defaultMetricReader.DeleteMetric">func (*defaultMetricReader) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/default.go.html#L29">DeleteMetric</a>
+					<a class="permalink" href="#defaultMetricReader.DeleteMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *defaultMetricReader) DeleteMetric(<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="defaultMetricReader.DeletePreset">func (*defaultMetricReader) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/default.go.html#L37">DeletePreset</a>
+					<a class="permalink" href="#defaultMetricReader.DeletePreset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *defaultMetricReader) DeletePreset(<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="defaultMetricReader.GetMetrics">func (*defaultMetricReader) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/default.go.html#L45">GetMetrics</a>
+					<a class="permalink" href="#defaultMetricReader.GetMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *defaultMetricReader) GetMetrics() (*<a href="#Metrics">Metrics</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="defaultMetricReader.UpdateMetric">func (*defaultMetricReader) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/default.go.html#L33">UpdateMetric</a>
+					<a class="permalink" href="#defaultMetricReader.UpdateMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *defaultMetricReader) UpdateMetric(<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="defaultMetricReader.UpdatePreset">func (*defaultMetricReader) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/default.go.html#L41">UpdatePreset</a>
+					<a class="permalink" href="#defaultMetricReader.UpdatePreset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *defaultMetricReader) UpdatePreset(<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="#Preset">Preset</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="defaultMetricReader.WriteMetrics">func (*defaultMetricReader) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/default.go.html#L25">WriteMetrics</a>
+					<a class="permalink" href="#defaultMetricReader.WriteMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dmrw *defaultMetricReader) WriteMetrics(*<a href="#Metrics">Metrics</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="fileMetricReader">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L21">fileMetricReader</a>
+				<a class="permalink" href="#fileMetricReader">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type fileMetricReader struct {
+<span id="fileMetricReader.ctx"></span>    ctx  <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
+<span id="fileMetricReader.path"></span>    path <a href="https://pkg.go.dev/builtin/#string">string</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="fileMetricReader.DeleteMetric">func (*fileMetricReader) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L50">DeleteMetric</a>
+					<a class="permalink" href="#fileMetricReader.DeleteMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (fmr *fileMetricReader) DeleteMetric(metricName <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="fileMetricReader.DeletePreset">func (*fileMetricReader) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L68">DeletePreset</a>
+					<a class="permalink" href="#fileMetricReader.DeletePreset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (fmr *fileMetricReader) DeletePreset(presetName <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="fileMetricReader.GetMetrics">func (*fileMetricReader) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L34">GetMetrics</a>
+					<a class="permalink" href="#fileMetricReader.GetMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (fmr *fileMetricReader) GetMetrics() (metrics *<a href="#Metrics">Metrics</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="fileMetricReader.UpdateMetric">func (*fileMetricReader) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L59">UpdateMetric</a>
+					<a class="permalink" href="#fileMetricReader.UpdateMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (fmr *fileMetricReader) UpdateMetric(metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, metric <a href="#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="fileMetricReader.UpdatePreset">func (*fileMetricReader) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L77">UpdatePreset</a>
+					<a class="permalink" href="#fileMetricReader.UpdatePreset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (fmr *fileMetricReader) UpdatePreset(presetName <a href="https://pkg.go.dev/builtin/#string">string</a>, preset <a href="#Preset">Preset</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="fileMetricReader.WriteMetrics">func (*fileMetricReader) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L26">WriteMetrics</a>
+					<a class="permalink" href="#fileMetricReader.WriteMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (fmr *fileMetricReader) WriteMetrics(metricDefs *<a href="#Metrics">Metrics</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+		
+	
+
+	
+
+
+
+
+
+	
+	
+		<h2 id="pkg-subdirectories">Subdirectories</h2>
+	
+	<div class="pkg-dir">
+		<table>
+			<tr>
+				<th class="pkg-name">Name</th>
+				<th class="pkg-synopsis">Synopsis</th>
+			</tr>
+
+			
+			<tr>
+				<td colspan="2"><a href="..">..</a></td>
+			</tr>
+			
+
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 0px;">
+						<a href="psutil/?m=all">psutil</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						
+					</td>
+				</tr>
+			
+		</table>
+	</div>
+
+
+
+<div id="footer">
+Build version go1.23.4.<br>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+</body>
+</html>
