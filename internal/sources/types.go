@@ -3,6 +3,7 @@ package sources
 import (
 	"context"
 	"maps"
+	"reflect"
 	"slices"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
@@ -166,9 +167,18 @@ func (mds MonitoredDatabases) SyncFromReader(r Reader) (newmds MonitoredDatabase
 	}
 	newmds, err = srcs.ResolveDatabases()
 	for _, newMD := range newmds {
-		if md := mds.GetMonitoredDatabase(newMD.Name); md != nil {
+		md := mds.GetMonitoredDatabase(newMD.Name)
+		if md == nil {
+			continue
+		}
+		if reflect.DeepEqual(md.Source, newMD.Source) {
+			// keep the existing connection if the source is the same
 			newMD.Conn = md.Conn
 			newMD.ConnConfig = md.ConnConfig
+			continue
+		}
+		if md.Conn != nil {
+			md.Conn.Close()
 		}
 	}
 	return newmds, err
