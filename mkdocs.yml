@@ -94,3 +94,4 @@ markdown_extensions:
 extra:
   version:
     provider: mike
+    alias: true
