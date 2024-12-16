@@ -122,8 +122,10 @@ jobs:
     name: Build Docker Image
     runs-on: ubuntu-latest
     steps:
+
     - name: Check out code
       uses: actions/checkout@v4
+    
     - name: Build Docker Image
       shell: bash
       run: |
@@ -133,3 +135,36 @@ jobs:
         --build-arg VERSION=`git rev-parse --abbrev-ref HEAD` \
         -t cybertecpostgresql/pgwatch:latest \
         -f docker/Dockerfile .   
+
+  build-docs:
+    if: true # false to skip job during debug
+    needs: build
+    name: Build Docs
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Golang
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'      
+    
+    - name: Set up gopages
+      run: go install github.com/johnstarich/go/gopages@v0.1.28
+    
+    - name: Build Developer Docs
+      run: gopages -out "docs/godoc" -base "/godoc" -internal
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.12
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: pip install mkdocs-material mkdocs-glightbox
+
+    - name: Build mkdocs
+      run: mkdocs build
