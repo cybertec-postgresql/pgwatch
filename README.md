@@ -3,15 +3,15 @@
 [![Go Build & Test](https://github.com/cybertec-postgresql/pgwatch/actions/workflows/build.yml/badge.svg)](https://github.com/cybertec-postgresql/pgwatch/actions/workflows/build.yml)
 [![Coverage Status](https://coveralls.io/repos/github/cybertec-postgresql/pgwatch/badge.svg?branch=master&service=github)](https://coveralls.io/github/cybertec-postgresql/pgwatch?branch=master)
 
+# pgwatch: PostgreSQL monitoring solution
 
-# pgwatch v3-beta. Please test it as much as possible!
-
-This is the next generation of [pgwatch2](https://github.com/cybertec-postgresql/pgwatch2/). 
+This is the next generation of [pgwatch2](https://github.com/cybertec-postgresql/pgwatch2/).
 
 ## Quick Start
 
-To fetch and run the latest **demo** Docker image, exposing 
-- Grafana on port 3000, 
+To fetch and run the latest **demo** Docker image, exposing
+
+- Grafana on port 3000,
 - the administrative web UI on port 8080,
 - the internal configuration and metrics database on port 5432:
 
@@ -23,11 +23,9 @@ After some minutes you could open the ["Database Overview"](http://127.0.0.1:300
 
 If you don't want to add the test database for monitoring, remove the `PW_TESTDB` parameter when launching the container.
 
-
-
 ## Development and production use
 
-For production and long term installation `cybertecpostgresql/pgwatch` Docker image should be used. 
+For production and long term installation `cybertecpostgresql/pgwatch` Docker image should be used.
 For the fastest development and deployment experience the Docker compose files are provided:
 
 ```shell
@@ -35,6 +33,7 @@ git clone https://github.com/cybertec-postgresql/pgwatch.git && cd pgwatch
 
 docker compose -f ./docker/docker-compose.yml up --detach
 ```
+
 ```console
  ✔ Network pgwatch_default       Created
  ✔ Container pgwatch-postgres-1  Healthy
@@ -43,6 +42,7 @@ docker compose -f ./docker/docker-compose.yml up --detach
 ```
 
 These commands will build and start services listed in the compose file:
+
 - configuration and metric database;
 - pgwatch monitoring agent with WebUI;
 - Grafana with dashboards.
@@ -54,6 +54,7 @@ looking at metrics.
 
 To add a test database under monitoring, you can use [built-in WebUI](http://localhost:8080/). Or simply
 execute from command line:
+
 ```shell
 docker/compose.add-test-db.sh
 ```
@@ -71,9 +72,11 @@ INSERT 0 1
 ## Produce Workload
 
 To emulate workload for added test database execute:
+
 ```shell
 docker/compose.pgbench.sh 
 ```
+
 ```console
 dropping old tables...
 creating tables...
@@ -122,16 +125,17 @@ dropping old tables...
 done in 0.11 s (drop tables 0.11 s).
 ```
 
-
 ## Inspect database
 
 > [!IMPORTANT]
 pgAdmin uses port 80. If you want it to use another port, change it in `docker/compose.pgadmin.yml` file.
 
 To look what is inside `pgwatch` database, you can spin up pgAdmin4:
+
 ```shell
 docker compose -f ./docker/docker-compose.yml up --detach pgadmin
 ```
+
 Go to `localhost` in your favorite browser and login as `admin@local.com`, password `admin`.
 Server `pgwatch` should be already added in `Servers` group.
 
@@ -148,11 +152,13 @@ The command above will rebuild the `pgwatch` agent from sources and relaunch the
 ## Logs
 
 If you are running containers in detached mode, you still can follow the logs:
+
 ```shell
 docker compose -f ./docker/docker-compose.yml logs --follow
 ```
 
 Or you may check the log of a particular service:
+
 ```shell
 docker compose -f ./docker/docker-compose.yml logs pgwatch --follow
 ```
