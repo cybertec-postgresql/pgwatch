@@ -179,3 +179,4 @@ jobs:
 
     - name: Build mkdocs
       run: mike deploy ${{ env.push_opt }} devel
+
