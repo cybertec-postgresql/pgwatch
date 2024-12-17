@@ -1,0 +1,278 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upgrading &mdash; pgwatch v2  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Kubernetes" href="kubernetes.html" />
+    <link rel="prev" title="Long term installations" href="long_term_installations.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pgwatch v2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_background.html">Project background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">List of main features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_features.html">Advanced features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation_options.html">Installation options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_installation.html">Installing using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_installation.html">Custom installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preparing_databases.html">Preparing databases for monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_managed_services.html">Monitoring managed cloud databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metric_definitions.html">Metric definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_ui.html">The Admin Web UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dashboarding_alerting.html">Dashboarding and alerting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sizing_recommendations.html">Sizing recommendations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security aspects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="long_term_installations.html">Long term installations</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Upgrading</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#updating-to-a-newer-docker-version">Updating to a newer Docker version</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#without-volumes">Without volumes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#with-volumes">With volumes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-without-docker">Updating without Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-grafana">Updating Grafana</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-grafana-dashboards">Updating Grafana dashboards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-the-config-metrics-db-version">Updating the config / metrics DB version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-the-pgwatch2-schema">Updating the pgwatch2 schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-the-metrics-collector">Updating the metrics collector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-the-web-ui">Updating the Web UI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-metric-definitions">Updating metric definitions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Kubernetes</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pgwatch v2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Upgrading</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/upgrading.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>This documentation pertains to older v2.x releases. 
+Many features and functions have since been updated or replaced. 
+Please refer to the <a class="reference external" href="https://pgwat.ch/">current version</a> 
+for the latest information.</p>
+</div>
+<section id="upgrading">
+<span id="id1"></span><h1>Upgrading<a class="headerlink" href="#upgrading" title="Link to this heading"></a></h1>
+<p>The pgwatch2 daemon code doesn’t need too much maintenance itself (if you’re not interested in new features), but the preset
+metrics, dashboards and the other components that pgwatch2 relies, like Grafana, are under very active development and get
+updates quite regularly so already purely from the security standpoint it would make sense to stay up to date.</p>
+<p>We also regularly include new component versions in the Docker images after verifying that they work. If using Docker, you
+could also choose to build your own images any time some new component versions are released, just increment the version
+numbers in the Dockerfile.</p>
+<section id="updating-to-a-newer-docker-version">
+<h2>Updating to a newer Docker version<a class="headerlink" href="#updating-to-a-newer-docker-version" title="Link to this heading"></a></h2>
+<section id="without-volumes">
+<h3>Without volumes<a class="headerlink" href="#without-volumes" title="Link to this heading"></a></h3>
+<p>If pgwatch2 container was started in the simplest way possible without volumes, and if previously gathered metrics are
+not of great importance, and there are no user modified metric or dashboard changes that should be preserved, then the easiest
+way to get the latest components would be just to launch new container and import the old monitoring config:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># let&#39;s backup up the monitored hosts</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">p5432</span> <span class="o">-</span><span class="n">U</span> <span class="n">pgwatch2</span> <span class="o">-</span><span class="n">d</span> <span class="n">pgwatch2</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;\copy monitored_db to &#39;monitored_db.copy&#39;&quot;</span>
+
+<span class="c1"># stop the old container and start a new one ...</span>
+<span class="n">docker</span> <span class="n">stop</span> <span class="o">...</span> <span class="o">&amp;&amp;</span> <span class="n">docker</span> <span class="n">run</span> <span class="o">....</span>
+
+<span class="c1"># import the monitored hosts</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">p5432</span> <span class="o">-</span><span class="n">U</span> <span class="n">pgwatch2</span> <span class="o">-</span><span class="n">d</span> <span class="n">pgwatch2</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;\copy monitored_db from &#39;monitored_db.copy&#39;&quot;</span>
+</pre></div>
+</div>
+<p>If metrics data and other settings like custom dashboards need to be preserved then some more steps are needed, but basically
+it’s about pulling InfluxDB / Postgres backups and restoring them into the new container - see the take_backup.sh
+<a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/blob/master/take_backup.sh">script</a> for an example with InfluxDB storage.</p>
+<p>A tip: to make the restore process easier it would already make sense to mount the host folder with the backups in it on the
+new container with “-v ~/pgwatch2_backups:/pgwatch2_backups:rw,z” when starting the Docker image. Otherwise one needs to set
+up SSH or use something like S3 for example. Also note that ports 5432 and 8088 need to be exposed to take backups
+outside of Docker for Postgres and InfluxDB respectively.</p>
+</section>
+<section id="with-volumes">
+<h3>With volumes<a class="headerlink" href="#with-volumes" title="Link to this heading"></a></h3>
+<p>To make updates a bit easier, the preferred way to launch pgwatch2 should be to use Docker volumes for each individual
+component - see the <a class="reference internal" href="docker_installation.html#docker-example-launch"><span class="std std-ref">Installing using Docker</span></a> chapter for details. Then one can just stop the old
+container and start a new one, re-using the volumes.</p>
+<p>With some releases though, updating to newer version might additionally still require manual rollout of Config DB <em>schema migrations scripts</em>,
+so always check the release notes for hints on that or just go to the “pgwatch2/sql/migrations” folder and execute all SQL
+scripts that have a higher version than the old pgwatch2 container. Error messages like will “missing columns” or “wrong datatype”
+will also hint at that, after launching with a new image. FYI - such SQL “patches” are generally not provided for metric updates,
+nor dashboard changes and they need to be updated separately.</p>
+</section>
+</section>
+<section id="updating-without-docker">
+<h2>Updating without Docker<a class="headerlink" href="#updating-without-docker" title="Link to this heading"></a></h2>
+<p>For a custom installation there’s quite some freedom in doing updates - as components (Grafana, InfluxDB, PostgreSQL) are
+loosely coupled, they can be updated any time without worrying too much about the other components. Only “tightly coupled” components are the
+pgwatch2 metrics collector, config DB and the optional Web UI - if the pgwatch2 config is kept in the database. If YAML based
+approach (see details <a class="reference internal" href="custom_installation.html#yaml-setup"><span class="std std-ref">here</span></a>) is used, then things are even more simple - the pgwatch2 daemon can be updated
+any time as YAML schema has default values for everything and there are no other “tightly coupled” components like the Web UI.</p>
+</section>
+<section id="updating-grafana">
+<h2>Updating Grafana<a class="headerlink" href="#updating-grafana" title="Link to this heading"></a></h2>
+<p>The update process for Grafana looks pretty much like the installation so take a look at the according <a class="reference internal" href="custom_installation.html#custom-install-grafana"><span class="std std-ref">chapter</span></a>.
+If using Grafana’s package repository it should happen automatically along with other system packages. Grafana has a built-in
+database schema migrator, so updating the binaries and restarting is enough.</p>
+</section>
+<section id="updating-grafana-dashboards">
+<h2>Updating Grafana dashboards<a class="headerlink" href="#updating-grafana-dashboards" title="Link to this heading"></a></h2>
+<p>There are no update or migration scripts for the built-in Grafana dashboards as it would break possible user applied changes. If
+you know that there are no user changes, then one can just delete or rename the existing ones in a bulk matter and import the latest JSON
+definitions. See <a class="reference internal" href="long_term_installations.html#dashboard-maintenance"><span class="std std-ref">here</span></a> for some more advice on how to manage dashboards.</p>
+</section>
+<section id="updating-the-config-metrics-db-version">
+<h2>Updating the config / metrics DB version<a class="headerlink" href="#updating-the-config-metrics-db-version" title="Link to this heading"></a></h2>
+<p>Database updates can be quite complex, with many steps, so it makes sense to follow the manufacturer’s instructions here.</p>
+<p>For InfluxDB typically something like that is enough though (assuming Debian based here):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>influxd version # check current version
+INFLUX_LATEST=$(curl -so- https://api.github.com/repos/influxdata/influxdb/releases/latest \
+                  | jq .tag_name | grep -oE &#39;[0-9\.]+&#39;)
+wget https://dl.influxdata.com/influxdb/releases/influxdb_${INFLUX_LATEST}_amd64.deb
+sudo dpkg -i influxdb_${INFLUX_LATEST}_amd64.deb
+</pre></div>
+</div>
+<p>For PostgreSQL one should distinguish between minor version updates and major version upgrades. Minor updates are quite
+straightforward and problem-free, consisting of running something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">apt</span> <span class="n">update</span> <span class="o">&amp;&amp;</span> <span class="n">apt</span> <span class="n">install</span> <span class="n">postgresql</span>
+<span class="n">sudo</span> <span class="n">systemctl</span> <span class="n">restart</span> <span class="n">postgresql</span>
+</pre></div>
+</div>
+<p>For PostgreSQL major version upgrades one should read through the according release notes (e.g. <a class="reference external" href="https://www.postgresql.org/docs/12/release-12.html#id-1.11.6.5.4">here</a>)
+and be prepared for the unavoidable downtime.</p>
+</section>
+<section id="updating-the-pgwatch2-schema">
+<h2>Updating the pgwatch2 schema<a class="headerlink" href="#updating-the-pgwatch2-schema" title="Link to this heading"></a></h2>
+<p>This is the pgwatch2 specific part, with some coupling between the following components - Config DB SQL schema, metrics collector,
+and the optional Web UI.</p>
+<p>Here one should check from the <a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/blob/master/CHANGELOG.md">CHANGELOG</a> if
+pgwatch2 schema needs updating. If yes, then manual applying of schema diffs is required before running the new gatherer
+or Web UI. If no, i.e. no schema changes, all components can be updated independently in random order.</p>
+<p>Assuming that we initially installed pgwatch2 version v1.6.0, and now the latest version is 1.6.2, based on the release notes and
+<a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/tree/master/pgwatch2/sql/config_store/migrations">SQL diffs</a> we need to
+apply the following files:</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">psql</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">sql</span><span class="o">/</span><span class="n">config_store</span><span class="o">/</span><span class="n">migrations</span><span class="o">/</span><span class="n">v1</span><span class="mf">.6.1</span><span class="o">-</span><span class="mi">1</span><span class="n">_patroni_cont_discovery</span><span class="o">.</span><span class="n">sql</span> <span class="n">pgwatch2</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">sql</span><span class="o">/</span><span class="n">config_store</span><span class="o">/</span><span class="n">migrations</span><span class="o">/</span><span class="n">v1</span><span class="mf">.6.2</span><span class="n">_superuser_metrics</span><span class="o">.</span><span class="n">sql</span> <span class="n">pgwatch2</span>
+</pre></div>
+</div>
+</div></blockquote>
+</section>
+<section id="updating-the-metrics-collector">
+<h2>Updating the metrics collector<a class="headerlink" href="#updating-the-metrics-collector" title="Link to this heading"></a></h2>
+<p>Compile or install the gatherer from RPM / DEB / tarball packages. See the <a class="reference internal" href="custom_installation.html#custom-installation"><span class="std std-ref">Custom installation</span></a>
+chapter for details.</p>
+<p>If using a SystemD service file to auto-start the collector then you might want to also check for possible updates on the
+template there - <em>/etc/pgwatch2/startup-scripts/pgwatch2.service</em>.</p>
+</section>
+<section id="updating-the-web-ui">
+<h2>Updating the Web UI<a class="headerlink" href="#updating-the-web-ui" title="Link to this heading"></a></h2>
+<p>Update the optional Python Web UI if using it to administer monitored DB-s and metric configs. The Web UI was not included
+in the pre-built packages of older pgwatch2 versions as deploying self-contained Python that runs on all platforms is not
+overly easy. If Web UI is started directly on the Github sources (<cite>git clone &amp;&amp; cd webpy &amp;&amp; ./web.py</cite>) then it is actually updated automatically as CherryPy
+web server monitors the file changes. If there were some breaking schema changes though, it might stop working and needs
+a restart after applying schema “diffs” (see above).</p>
+<p>If using a SystemD service file to auto-start the Web UI then you might want to also check for possible updates on the
+template there - <em>/etc/pgwatch/webpy/startup-scripts/pgwatch2-webui.service</em>.</p>
+</section>
+<section id="updating-metric-definitions">
+<span id="updating-metrics"></span><h2>Updating metric definitions<a class="headerlink" href="#updating-metric-definitions" title="Link to this heading"></a></h2>
+<p>In the YAML mode you always get new SQL definitions for the built-in metrics automatically when refreshing the sources via Github
+or pre-built packages, but with Config DB approach one needs to do it manually. Given that there are no user added metrics,
+it’s simple enough though - just delete all old ones and re-insert everything from the latest metric definition SQL file.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pg_dump</span> <span class="o">-</span><span class="n">t</span> <span class="n">pgwatch2</span><span class="o">.</span><span class="n">metric</span> <span class="n">pgwatch2</span> <span class="o">&gt;</span> <span class="n">old_metric</span><span class="o">.</span><span class="n">sql</span>  <span class="c1"># a just-in-case backup</span>
+<span class="n">psql</span>  <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;truncate pgwatch2.metric&quot;</span> <span class="n">pgwatch2</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">sql</span><span class="o">/</span><span class="n">config_store</span><span class="o">/</span><span class="n">metric_definitions</span><span class="o">.</span><span class="n">sql</span> <span class="n">pgwatch2</span>
+</pre></div>
+</div>
+<p><strong>NB! If you have added some own custom metrics be sure not to delete or truncate them!</strong></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="long_term_installations.html" class="btn btn-neutral float-left" title="Long term installations" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="kubernetes.html" class="btn btn-neutral float-right" title="Kubernetes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, CYBERTEC PostgreSQL International GmBh.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

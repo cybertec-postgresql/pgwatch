@@ -1,0 +1,158 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project background &mdash; pgwatch v2  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="List of main features" href="features.html" />
+    <link rel="prev" title="Introduction" href="README.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pgwatch v2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Project background</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#project-feedback">Project feedback</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">List of main features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_features.html">Advanced features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation_options.html">Installation options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_installation.html">Installing using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_installation.html">Custom installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preparing_databases.html">Preparing databases for monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_managed_services.html">Monitoring managed cloud databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metric_definitions.html">Metric definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_ui.html">The Admin Web UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dashboarding_alerting.html">Dashboarding and alerting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sizing_recommendations.html">Sizing recommendations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security aspects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="long_term_installations.html">Long term installations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Kubernetes</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pgwatch v2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Project background</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/project_background.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>This documentation pertains to older v2.x releases. 
+Many features and functions have since been updated or replaced. 
+Please refer to the <a class="reference external" href="https://pgwat.ch/">current version</a> 
+for the latest information.</p>
+</div>
+<section id="project-background">
+<h1>Project background<a class="headerlink" href="#project-background" title="Link to this heading"></a></h1>
+<p>The pgwatch2 project got started back in 2016 and released in 2017 initially for internal monitoring needs at Cybertec as
+all the Open Source PostgreSQL monitoring tools at the time had various limitations like being too slow and invasive to set up
+or providing a fixed set of visuals and metrics.</p>
+<p>For more background on the project motivations and design goals see the original series of blogposts announcing the project
+and the following feature updates released approximately twice per year.</p>
+<p>Cybertec also provides commercial 9-to-5 and 24/7 support for pgwatch2.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.cybertec-postgresql.com/en/announcing-pgwatch2-a-simple-but-versatile-postgresql-monitoring-tool/">Project announcement</a></p></li>
+<li><p><a class="reference external" href="https://www.cybertec-postgresql.com/en/a-more-detailed-look-at-pgwatch2-postgresql-monitoring-tool/">Implementation details</a></p></li>
+<li><p><a class="reference external" href="https://www.cybertec-postgresql.com/en/new-features-for-cybertecs-pgwatch2-postgres-monitoring-tool/">Feature pack 1</a></p></li>
+<li><p><a class="reference external" href="https://www.cybertec-postgresql.com/en/updates-for-the-pgwatch2-postgres-monitoring-tool/">Feature pack 2</a></p></li>
+<li><p><a class="reference external" href="https://www.cybertec-postgresql.com/en/pgwatch2-feature-pack-3/">Feature pack 3</a></p></li>
+<li><p><a class="reference external" href="https://www.cybertec-postgresql.com/en/major-feature-update-for-the-pgwatch2-postgres-monitoring-tool/">Feature pack 4</a></p></li>
+<li><p><a class="reference external" href="https://www.cybertec-postgresql.com/en/version-1-6-of-pgwatch2-postgresql-monitoring-tool-released/">Feature pack 5</a></p></li>
+<li><p><a class="reference external" href="https://www.cybertec-postgresql.com/en/pgwatch2-v1-7-0-released/">Feature pack 6</a></p></li>
+<li><p><a class="reference external" href="https://www.cybertec-postgresql.com/en/pgwatch2-v1-8-0-released/">Feature pack 7</a></p></li>
+</ul>
+<section id="project-feedback">
+<h2>Project feedback<a class="headerlink" href="#project-feedback" title="Link to this heading"></a></h2>
+<p>For feature requests or troubleshooting assistance please open an issue on project’s <a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2">Github page</a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="README.html" class="btn btn-neutral float-left" title="Introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="features.html" class="btn btn-neutral float-right" title="List of main features" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, CYBERTEC PostgreSQL International GmBh.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

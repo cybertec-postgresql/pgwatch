@@ -1,0 +1,306 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Metric definitions &mdash; pgwatch v2  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="The Admin Web UI" href="web_ui.html" />
+    <link rel="prev" title="Monitoring managed cloud databases" href="using_managed_services.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pgwatch v2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_background.html">Project background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">List of main features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_features.html">Advanced features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation_options.html">Installation options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_installation.html">Installing using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_installation.html">Custom installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preparing_databases.html">Preparing databases for monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_managed_services.html">Monitoring managed cloud databases</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Metric definitions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#defining-custom-metrics">Defining custom metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#metric-attributes">Metric attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#column-attributes">Column attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-metric-fetching-helpers">Adding metric fetching helpers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="web_ui.html">The Admin Web UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dashboarding_alerting.html">Dashboarding and alerting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sizing_recommendations.html">Sizing recommendations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security aspects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="long_term_installations.html">Long term installations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Kubernetes</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pgwatch v2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Metric definitions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/metric_definitions.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>This documentation pertains to older v2.x releases. 
+Many features and functions have since been updated or replaced. 
+Please refer to the <a class="reference external" href="https://pgwat.ch/">current version</a> 
+for the latest information.</p>
+</div>
+<section id="metric-definitions">
+<span id="custom-metrics"></span><h1>Metric definitions<a class="headerlink" href="#metric-definitions" title="Link to this heading"></a></h1>
+<p>Metrics are named SQL queries that return a timestamp and pretty much anything else you find
+useful. Most metrics have many different query text versions for different target PostgreSQL versions, also optionally taking
+into account primary / replica state and as of v1.8 also versions of installed extensions.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="c1">-- a sample metric</span>
+<span class="k">SELECT</span>
+<span class="w">  </span><span class="p">(</span><span class="k">extract</span><span class="p">(</span><span class="n">epoch</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">now</span><span class="p">())</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1</span><span class="n">e9</span><span class="p">)::</span><span class="nb">int8</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">epoch_ns</span><span class="p">,</span>
+<span class="w">  </span><span class="k">extract</span><span class="p">(</span><span class="n">epoch</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="p">(</span><span class="n">now</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">pg_postmaster_start_time</span><span class="p">()))::</span><span class="nb">int8</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postmaster_uptime_s</span><span class="p">,</span>
+<span class="w">  </span><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="n">pg_is_in_recovery</span><span class="p">()</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">in_recovery_int</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Correct version of the metric definition will be chosen automatically by regularly connecting to the
+target database and checking the Postgres version, recovery state, and if the monitoring user is a superuser or not. For superusers some
+metrics have alternate SQL definitions (as of v1.6.2) so that no “helpers” are needed for Postgres-native Stats Collector infos.
+Using superuser accounts for remote monitoring is of course not really recommended.</p>
+<p>There’s a good set of pre-defined metrics &amp; metric configs provided by the pgwatch2 project to cover all typical needs,
+but when monitoring hundreds of hosts you’d typically want to develop some custom <em>Preset Configs</em> or at least adjust the
+metric fetching intervals according to your monitoring goals.</p>
+<p>Some things to note about the built-in metrics:</p>
+<ul>
+<li><p>Only a half of them are included in the <em>Preset configs</em> and are ready for direct usage. The rest need some extra
+extensions or privileges, OS level tool installations etc. To see what’s possible just browse the
+<a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/tree/master/pgwatch2/metrics">sample metrics</a>.</p></li>
+<li><p>Some builtin metrics are marked to be only executed when server is a primary or conversely, a standby. The flags can be
+inspected / set on the Web UI Metrics tab or in YAML mode by suffixing the metric definition with “standby” or “master”.
+Note that starting from v1.8.1 it’s also possible to specify completely alternative monitoring configurations, i.e.
+metric-interval pairs, for the “standby” (recovery) state - by default the same set of metrics are used for both states.</p></li>
+<li><p>There are a couple of special preset metrics that have some non-standard behaviour attached to them:</p>
+<dl class="simple">
+<dt><em>change_events</em></dt><dd><p>The “change_events” built-in metric, tracking DDL &amp; config changes, uses internally some other “*_hashes” metrics
+which are not meant to be used on their own. Such metrics are described also accordingly on the Web UI /metrics page
+and they should not be removed.</p>
+</dd>
+<dt><em>recommendations</em></dt><dd><p>When enabled (i.e. interval &gt; 0), this metric will find all other metrics starting with “reco_*” and execute those
+queries. The purpose of the metric is to spot some performance, security and other “best practices” violations. Users
+can add new “reco_*” queries freely.</p>
+</dd>
+<dt><em>server_log_event_counts</em></dt><dd><p>This enables Postgres server log “tailing” for errors. Can’t be used for “pull” setups though unless the DB logs are
+somehow mounted / copied over, as real file access is needed. See the <a class="reference internal" href="advanced_features.html#log-parsing"><span class="std std-ref">Log parsing</span></a> chapter for
+details.</p>
+</dd>
+<dt><em>instance_up</em></dt><dd><p>For normal metrics there will be no data rows stored if the DB is not reachable, but for this one there will be a 0
+stored for the “is_up” column that under normal operations would always be 1. This metric can be used to calculate
+some “uptime” SLA indicator for example.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<section id="defining-custom-metrics">
+<h2>Defining custom metrics<a class="headerlink" href="#defining-custom-metrics" title="Link to this heading"></a></h2>
+<p>For defining metrics definitions you should adhere to a couple of basic concepts:</p>
+<ul class="simple">
+<li><p>Every metric query should have an “epoch_ns” (nanoseconds since epoch column to record the metrics reading time.
+If the column is not there, things will still work but server timestamp of the metrics gathering daemon will be used,
+some a small loss (assuming intra-datacenter monitoring with little lag) of precision occurs.</p></li>
+<li><p>Queries can only return text, integer, boolean or floating point (a.k.a. double precision) Postgres data types. Note
+that columns with NULL values are not stored at all in the data layer as it’s a bit bothersome to work with NULLs!</p></li>
+<li><p>Column names should be descriptive enough so that they’re self-explanatory, but not over long as it costs also storage</p></li>
+<li><p>Metric queries should execute fast - at least below the selected <em>Statement timeout</em> (default 5s)</p></li>
+<li><p>Columns can be optionally “tagged” by prefixing them with “tag_”. By doing this, the column data
+will be indexed by the InfluxDB / Postgres giving following advantages:</p>
+<ul>
+<li><p>Sophisticated auto-discovery support for indexed keys/values, when building charts with Grafana.</p></li>
+<li><p>Faster queries for queries on those columns.</p></li>
+<li><p>Less disk space used for repeating values in InfluxDB. Thus when you’re for example returning some longish
+and repetitive status strings (possible with Singlestat or Table panels) that you’ll be looking
+up by some ID column, it might still make sense to prefix the column with “tag_” to reduce disks space.</p></li>
+<li><p>If using InfluxDB storage, there needs to be at least one tag column, identifying all rows uniquely, is more than
+on row can be returned by the query.</p></li>
+</ul>
+</li>
+<li><p>All fetched metric rows can also be “prettyfied” with any custom static key-value data, per host. To enable use the “Custom tags”
+Web UI field for the monitored DB entry or “custom_tags” YAML field. Note that this works per host and applies to all metrics.</p></li>
+<li><p>For Prometheus the numerical columns are by default mapped to a Value Type of “Counter” (as most Statistics
+Collector columns are cumulative), but when this is not the case and the column is a “Gauge” then according column
+attributes should be declared. See below section on column attributes for details.</p></li>
+<li><p>NB! For Prometheus all text fields will be turned into tags / labels as only floats can be stored!</p></li>
+</ul>
+<p><strong>Adding and using a custom metric:</strong></p>
+<p>For <em>Config DB</em> based setups:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Go to the Web UI “Metric definitions” page and scroll to the bottom.</p></li>
+<li><p>Fill the template - pick a name for your metric, select minimum supported PostgreSQL version and insert the query
+text and any extra attributes if any (see below for options). Hit the “New” button to store.</p></li>
+<li><p>Activate the newly added metric by including it in some existing <em>Preset Config</em> (listed on top of the page) or
+add it directly in JSON form, together with an interval, into the “Custom metrics config” filed on the “DBs” page.</p></li>
+</ol>
+</div></blockquote>
+<p>For <em>YAML</em> based setups:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Create a new folder for the metric under “/etc/pgwatch2/metrics”. The folder name will be the metric’s name, so choose
+wisely.</p></li>
+<li><p>Create a new subfolder for each “minimally supported Postgres version* and insert the metric’s SQL definition into a
+file named “metric.sql”. NB! Note the “minimally supported” part - i.e. if your query will work from version v9.0 to
+v13 then you only need one folder called “9.0”. If there was a breaking change in the internal catalogs at v9.6 so
+that the query stopped working, you need a new folder named “9.6” that will be used for all versions above v9.5.</p></li>
+<li><p>Activate the newly added metric by including it in some existing <em>Preset Config</em> (/etc/pgwatch2/metrics/preset-configs.yaml)
+or add it directly to the YAML config “custom_metrics” section.</p></li>
+</ol>
+</div></blockquote>
+<p>FYI - another neat way to quickly test if the metric can be successfully executed on the “to be monitored” DB is to launch
+pgwatch2 in <em>ad-hoc mode</em>:</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pgwatch2</span><span class="o">-</span><span class="n">daemon</span> \
+  <span class="o">--</span><span class="n">adhoc</span><span class="o">-</span><span class="n">config</span><span class="o">=</span><span class="s1">&#39;{&quot;my_new_metric&quot;: 10}&#39;</span> <span class="o">--</span><span class="n">adhoc</span><span class="o">-</span><span class="n">conn</span><span class="o">-</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;host=mytestdb dbname=postgres&quot;</span> \
+  <span class="o">--</span><span class="n">datastore</span><span class="o">=</span><span class="n">postgres</span> <span class="o">--</span><span class="n">pg</span><span class="o">-</span><span class="n">metric</span><span class="o">-</span><span class="n">store</span><span class="o">-</span><span class="n">conn</span><span class="o">-</span><span class="nb">str</span><span class="o">=</span><span class="n">postgresql</span><span class="p">:</span><span class="o">//...</span> \
+  <span class="o">--</span><span class="n">metrics</span><span class="o">-</span><span class="n">folder2</span><span class="o">=/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">metrics</span> <span class="o">--</span><span class="n">verbose</span><span class="o">=</span><span class="n">info</span>
+</pre></div>
+</div>
+</div></blockquote>
+</section>
+<section id="metric-attributes">
+<h2>Metric attributes<a class="headerlink" href="#metric-attributes" title="Link to this heading"></a></h2>
+<p>Since v1.7 behaviour of plain metrics can be extended with a set of attributes that will modify the gathering in some way.
+The attributes are stored in YAML files called <em>metric_attrs.yaml” in a metrics root directory or in the *metric_attribute</em>
+Config DB table.</p>
+<p>Currently supported attributes:</p>
+<dl class="simple">
+<dt><em>is_instance_level</em></dt><dd><p>Enables caching, i.e. sharing of metric data between various databases of a single instance to
+reduce load on the monitored server.</p>
+</dd>
+<dt><em>statement_timeout_seconds</em></dt><dd><p>Enables to override the default ‘per monitored DB’ statement timeouts on metric level.</p>
+</dd>
+<dt><em>metric_storage_name</em></dt><dd><p>Enables dynamic “renaming” of metrics at storage level, i.e. declaring almost similar metrics
+with different names but the data will be stored under one metric. Currently used (for out-of-the box metrics) only
+for the ‘stat_statements_no_query_text’ metric, to not to store actual query texts from the “pg_stat_statements”
+extension for more security sensitive instances.</p>
+</dd>
+<dt><em>extension_version_based_overrides</em></dt><dd><p>Enables to “switch out” the query text from some other metric based on some specific extension version. See ‘reco_add_index’ for an example definition.</p>
+</dd>
+<dt><em>disabled_days</em></dt><dd><p>Enables to “pause” metric gathering on specified days. See metric_attrs.yaml for “wal” for an example.</p>
+</dd>
+<dt><em>disabled_times</em></dt><dd><p>Enables to “pause” metric gathering on specified time intervals. e.g. “09:00-17:00” for business hours.
+Note that if time zone is not specified the server time of the gather daemon is used.
+NB! disabled_days / disabled_times can also be defined both on metric and host (host_attrs) level.</p>
+</dd>
+</dl>
+<p>For a sample definition see <a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/blob/master/pgwatch2/metrics/wal/metric_attrs.yaml">here</a>.</p>
+</section>
+<section id="column-attributes">
+<h2>Column attributes<a class="headerlink" href="#column-attributes" title="Link to this heading"></a></h2>
+<p>Besides the <em>_tag</em> column prefix modifier, it’s also possible to modify the output of certain columns via a few attributes. It’s only
+relevant for Prometheus output though currently, to set the correct data types in the output description, which is generally
+considered a nice-to-have thing anyways. For YAML based setups this means adding a “column_attrs.yaml” file in the metric’s
+top folder and for Config DB based setup an according “column_attrs” JSON column should be filled via the Web UI.</p>
+<p>Supported column attributes:</p>
+<dl class="simple">
+<dt><em>prometheus_ignored_columns</em></dt><dd><p>Columns to be discarded on Prometheus scrapes.</p>
+</dd>
+<dt><em>prometheus_gauge_columns</em></dt><dd><p>Describe the mentioned output columns as of TYPE <em>gauge</em>, i.e. the value can change any time in any direction. Default
+TYPE for pgwatch2 is <em>counter</em>.</p>
+</dd>
+<dt><em>prometheus_all_gauge_columns</em></dt><dd><p>Describe all columns of metrics as of TYPE <em>gauge</em>.</p>
+</dd>
+</dl>
+</section>
+<section id="adding-metric-fetching-helpers">
+<h2>Adding metric fetching helpers<a class="headerlink" href="#adding-metric-fetching-helpers" title="Link to this heading"></a></h2>
+<p>As mentioned in <a class="reference internal" href="preparing_databases.html#helper-functions"><span class="std std-ref">Helper Functions</span></a> section, Postgres knows very little about the Operating System that it’s running on,
+so in some (most) cases it might be advantageous to also monitor some basic OS statistics
+together with the PostgreSQL ones, to get a better head start when troubleshooting performance problems. But as setup of
+such OS tools and linking the gathered data is not always trivial, pgwatch2 has a system of <em>helpers</em> for fetching such data.</p>
+<p>One can invent and install such <em>helpers</em> on the monitored databases freely to expose any information needed (backup status etc)
+via Python, or any other PL-language supported by Postgres, and then add according metrics similarly to any normal Postgres-native metrics.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="using_managed_services.html" class="btn btn-neutral float-left" title="Monitoring managed cloud databases" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="web_ui.html" class="btn btn-neutral float-right" title="The Admin Web UI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, CYBERTEC PostgreSQL International GmBh.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

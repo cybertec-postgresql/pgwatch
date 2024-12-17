@@ -1,0 +1,166 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sizing recommendations &mdash; pgwatch v2  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Technical details" href="technical_details.html" />
+    <link rel="prev" title="Dashboarding and alerting" href="dashboarding_alerting.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pgwatch v2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_background.html">Project background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">List of main features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_features.html">Advanced features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation_options.html">Installation options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_installation.html">Installing using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_installation.html">Custom installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preparing_databases.html">Preparing databases for monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_managed_services.html">Monitoring managed cloud databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metric_definitions.html">Metric definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_ui.html">The Admin Web UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dashboarding_alerting.html">Dashboarding and alerting</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Sizing recommendations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security aspects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="long_term_installations.html">Long term installations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Kubernetes</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pgwatch v2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Sizing recommendations</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/sizing_recommendations.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>This documentation pertains to older v2.x releases. 
+Many features and functions have since been updated or replaced. 
+Please refer to the <a class="reference external" href="https://pgwat.ch/">current version</a> 
+for the latest information.</p>
+</div>
+<section id="sizing-recommendations">
+<span id="id1"></span><h1>Sizing recommendations<a class="headerlink" href="#sizing-recommendations" title="Link to this heading"></a></h1>
+<ul>
+<li><p>Min 1GB of RAM is required for a Docker setup using Postgres to store metrics, for InfluxDB it should be at least 2GB.</p>
+<p>The gatherer alone needs typically less than 50 MB if the metrics store is online. Memory consumption will increase a lot
+when the metrics store is offline though, as then metrics are cached in RAM in ringbuffer
+style up to a limit of 10k data points (for all databases) and then memory consumption is dependent on how “wide” are
+the metrics gathered.</p>
+</li>
+<li><p>Storage requirements vary a lot and are hard to predict.</p>
+<p>2GB of disk space should be enough though for monitoring a single DB with “exhaustive” <em>preset</em> for 1 month with InfluxDB storage. 1 month is also the default metrics
+retention policy for Influx running in Docker (configurable). Depending on the amount of schema objects - tables, indexes, stored
+procedures and especially on number of unique SQL-s, it could be also much more. With Postgres as metric store multiply it with ~5x,
+but if disk size reduction is wanted for PostgreSQL storage then best would be to use the TimescaleDB extension - it has
+built-in compression and disk footprint is on the same level with InfluxDB, while retaining full SQL support.</p>
+<p>To determine disk usage needs for your exact setup, there’s also a <em>Test Data Generation</em> mode built into the collector.
+Using this mode requires two below params, plus also the usual <a class="reference internal" href="installation_options.html#adhoc-mode"><span class="std std-ref">Ad-hoc mode</span></a> connection string params.</p>
+<p>Relevant params: <em>--testdata-days, --testdata-multiplier or PW2_TESTDATA_DAYS, PW2_TESTDATA_MULTIPLIER</em></p>
+</li>
+<li><p>A low-spec (1 vCPU, 2 GB RAM) cloud machine can easily monitor 100 DBs in “exhaustive” settings (i.e. almost all metrics
+are monitored in 1-2min intervals) without breaking a sweat (&lt;20% load).</p></li>
+<li><p>A single InfluxDB node should handle thousands of requests per second but if this is not enough, pgwatch2 also supports
+writing into a secondary “mirror” InfluxDB, to distribute at least read load evenly. If more than two are needed one
+should look at InfluxDB Enterprise, Graphite, PostgreSQL with streaming replicas for read scaling or for example Citus for write scaling.</p></li>
+<li><p>When high metrics write latency is problematic (e.g. using a DBaaS across the atlantic) then increasing the default maximum
+batching delay of 250ms usually gives good results.</p>
+<p>Relevant params: <em>--batching-delay-ms / PW2_BATCHING_MAX_DELAY_MS</em></p>
+</li>
+<li><p>Note that when monitoring a very large number of databases, it’s possible to “shard” / distribute them between many
+metric collection instances running on different hosts, via the <em>group</em> attribute. This requires that some hosts
+have been assigned a non-default <em>group</em> identifier, which is just a text field exactly for this sharding purpose.</p>
+<p>Relevant params: <em>--group / PW2_GROUP</em></p>
+</li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="dashboarding_alerting.html" class="btn btn-neutral float-left" title="Dashboarding and alerting" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="technical_details.html" class="btn btn-neutral float-right" title="Technical details" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, CYBERTEC PostgreSQL International GmBh.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

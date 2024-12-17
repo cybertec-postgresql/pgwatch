@@ -1,0 +1,290 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installing using Docker &mdash; pgwatch v2  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Custom installation" href="custom_installation.html" />
+    <link rel="prev" title="Installation options" href="installation_options.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pgwatch v2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_background.html">Project background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">List of main features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_features.html">Advanced features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation_options.html">Installation options</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installing using Docker</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#simple-setup-steps">Simple setup steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#more-future-proof-setup-steps">More future proof setup steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#available-docker-images">Available Docker images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-custom-docker-images">Building custom Docker images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interacting-with-the-docker-container">Interacting with the Docker container</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ports-used">Ports used</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#docker-compose">Docker Compose</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="custom_installation.html">Custom installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preparing_databases.html">Preparing databases for monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_managed_services.html">Monitoring managed cloud databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metric_definitions.html">Metric definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_ui.html">The Admin Web UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dashboarding_alerting.html">Dashboarding and alerting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sizing_recommendations.html">Sizing recommendations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security aspects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="long_term_installations.html">Long term installations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Kubernetes</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pgwatch v2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installing using Docker</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/docker_installation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>This documentation pertains to older v2.x releases. 
+Many features and functions have since been updated or replaced. 
+Please refer to the <a class="reference external" href="https://pgwat.ch/">current version</a> 
+for the latest information.</p>
+</div>
+<section id="installing-using-docker">
+<h1>Installing using Docker<a class="headerlink" href="#installing-using-docker" title="Link to this heading"></a></h1>
+<section id="simple-setup-steps">
+<h2>Simple setup steps<a class="headerlink" href="#simple-setup-steps" title="Link to this heading"></a></h2>
+<p>The simplest real-life pgwatch2 setup should look something like that:</p>
+<ol class="arabic">
+<li><p>Decide which metrics storage engine you want to use - <em>cybertec/pgwatch2</em> and <em>cybertec/pgwatch2-nonroot</em> images use InfluxDB
+internally for metrics storage, while <em>cybertec/pgwatch2-postgres</em> uses PostgreSQL. For Prometheus mode (exposing a port
+for remote scraping) one should use the slimmer <em>cybertec/pgwatch2-daemon</em> image which doesn’t have any built in databases.</p></li>
+<li><p>Find the latest pgwatch2 release version by going to the project’s Github <em>Releases</em> page or use the public API with
+something like that:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">curl</span> <span class="o">-</span><span class="n">so</span><span class="o">-</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">api</span><span class="o">.</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">repos</span><span class="o">/</span><span class="n">cybertec</span><span class="o">-</span><span class="n">postgresql</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">releases</span><span class="o">/</span><span class="n">latest</span> <span class="o">|</span> <span class="n">jq</span> <span class="o">.</span><span class="n">tag_name</span> <span class="o">|</span> <span class="n">grep</span> <span class="o">-</span><span class="n">oE</span> <span class="s1">&#39;[0-9\.]+&#39;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Pull the image:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">pull</span> <span class="n">cybertec</span><span class="o">/</span><span class="n">pgwatch2</span><span class="p">:</span><span class="n">X</span><span class="o">.</span><span class="n">Y</span><span class="o">.</span><span class="n">Z</span>
+</pre></div>
+</div>
+</li>
+<li><p>Run the Docker image, exposing minimally the Grafana port served on port 3000 internally. In a relatively secure
+environment you’d usually also include the administrative web UI served on port 8080:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">run</span> <span class="o">-</span><span class="n">d</span> <span class="o">--</span><span class="n">restart</span><span class="o">=</span><span class="n">unless</span><span class="o">-</span><span class="n">stopped</span> <span class="o">-</span><span class="n">p</span> <span class="mi">3000</span><span class="p">:</span><span class="mi">3000</span> <span class="o">-</span><span class="n">p</span> <span class="mi">8080</span><span class="p">:</span><span class="mi">8080</span> <span class="o">--</span><span class="n">name</span> <span class="n">pw2</span> <span class="n">cybertec</span><span class="o">/</span><span class="n">pgwatch2</span><span class="p">:</span><span class="n">X</span><span class="o">.</span><span class="n">Y</span><span class="o">.</span><span class="n">Z</span>
+</pre></div>
+</div>
+<p>Note that we’re using a Docker image with the built-in InfluxDB metrics storage DB here and setting the container to be automatically
+restarted in case of a reboot / crash - which is highly recommended if not using some container management framework to
+run pgwatch2.</p>
+</li>
+</ol>
+</section>
+<section id="more-future-proof-setup-steps">
+<span id="docker-example-launch"></span><h2>More future proof setup steps<a class="headerlink" href="#more-future-proof-setup-steps" title="Link to this heading"></a></h2>
+<p>Although the above simple setup example will do for more temporal setups / troubleshooting sessions, for permanent setups
+it’s highly recommended to create separate volumes for all software components in the container, so that it would be easier
+to <a class="reference internal" href="upgrading.html#upgrading"><span class="std std-ref">update</span></a> to newer pgwatch2 Docker images and pull file system based backups and also it might be a good idea
+to expose all internal ports at least on <em>localhost</em> for possible troubleshooting and making possible to use native backup
+tools more conveniently for InfluxDB or Postgres.</p>
+<p>Note that for maximum flexibility, security and update simplicity it’s best to do a custom setup though - see the next
+<a class="reference internal" href="custom_installation.html#custom-installation"><span class="std std-ref">chapter</span></a> for that.</p>
+<p>So in short, for plain Docker setups would be best to do something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># let&#39;s create volumes for Postgres, Grafana and pgwatch2 marker files / SSL certificates
+for v in pg  grafana pw2 ; do docker volume create $v ; done
+
+# launch pgwatch2 with fully exposed Grafana and Health-check ports
+# and local Postgres and subnet level Web UI ports
+docker run -d --restart=unless-stopped --name pw2 \
+  -p 3000:3000 -p 8081:8081 -p 127.0.0.1:5432:5432 -p 192.168.1.XYZ:8080:8080 \
+  -v pg:/var/lib/postgresql -v grafana:/var/lib/grafana -v pw2:/pgwatch2/persistent-config \
+  cybertec/pgwatch2-postgres:X.Y.Z
+</pre></div>
+</div>
+<p>Note that in non-trusted environments it’s a good idea to specify more sensitive ports together with some explicit network
+interfaces for additional security - by default Docker listens on all network devices!</p>
+<p>Also note that one can configure many aspects of the software components running inside the container via ENV - for a complete
+list of all supported Docker environment variables see the <a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/blob/master/ENV_VARIABLES.md">ENV_VARIABLES.md</a>
+file.</p>
+</section>
+<section id="available-docker-images">
+<h2>Available Docker images<a class="headerlink" href="#available-docker-images" title="Link to this heading"></a></h2>
+<p>Following images are regularly pushed to <a class="reference external" href="https://hub.docker.com/u/cybertec">Docked Hub</a>:</p>
+<dl class="simple">
+<dt><em>cybertec/pgwatch2</em></dt><dd><p>The original pgwatch2 “batteries-included” image with InfluxDB metrics storage. Just insert connect infos to your
+database via the admin Web UI (or directly into the Config DB) and then turn to the pre-defined Grafana dashboards
+to analyze DB health and performance.</p>
+</dd>
+<dt><em>cybertec/pgwatch2-postgres</em></dt><dd><p>Exactly the same as previous, but metrics are also stored in PostgreSQL - thus needs more disk space. But in return you
+get more “out of the box” dashboards, as the power of standard SQL gives more complex visualization options.</p>
+</dd>
+<dt><em>cybertec/pgwatch2-nonroot</em></dt><dd><p>Same components as for the original <em>cybertec/pgwatch2</em> image, but no “root” user is used internally, so it can also be
+launched in security restricted environments like OpenShift. Limits ad-hoc troubleshooting and “in container” customizations
+or updates though, but this is the standard for orchestrated cloud environments - you need to fix the image and re-deploy.</p>
+</dd>
+<dt><em>cybertec/pgwatch2-daemon</em></dt><dd><p>A light-weight image containing only the metrics collection daemon / agent, that can be integrated into the monitoring
+setup over configuration specified either via ENV, mounted YAML files or a PostgreSQL Config DB. See the <a class="reference internal" href="components.html#component-reuse"><span class="std std-ref">Component
+reuse</span></a> chapter for wiring details.</p>
+</dd>
+<dt><em>cybertec/pgwatch2-db-bootstrapper</em></dt><dd><p>Sole purpose of the image is to bootstrap the pgwatch2 <em>Config DB</em> or <em>Metrics DB</em> schema. Useful for custom cloud oriented
+setups where the above “all components included” images are not a good fit.</p>
+</dd>
+</dl>
+</section>
+<section id="building-custom-docker-images">
+<h2>Building custom Docker images<a class="headerlink" href="#building-custom-docker-images" title="Link to this heading"></a></h2>
+<p>For custom tweaks, more security,specific component versions, etc one could easily build the images themselves, just a
+Docker installation is needed: <cite>docker build .</cite>.</p>
+<p>Build scripts used to prepare the public images can be found <a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/blob/master/build-all-images-latest.sh">here</a>.</p>
+</section>
+<section id="interacting-with-the-docker-container">
+<h2>Interacting with the Docker container<a class="headerlink" href="#interacting-with-the-docker-container" title="Link to this heading"></a></h2>
+<ul>
+<li><p>If to launch with the <em>PW2_TESTDB=1</em> env. parameter then the pgwatch2 configuration database running inside Docker
+is added to the monitoring, so that you should immediately see some metrics at least on the <em>Health-check</em> dashboard.</p></li>
+<li><p>To add new databases / instances to monitoring open the administration Web interface on port 8080 (or some other port,
+if re-mapped at launch) and go to the <em>/dbs</em> page. Note that the Web UI is an optional component, and one can managed
+monitoring entries directly in the Postgres Config DB via INSERT-s / UPDATE-s into “pgwatch2.monitored_db” table. Default
+user/password are again <em>pgwatch2</em> / <em>pgwatch2admin</em>, database name - pgwatch2.
+In both cases note that it can take up to 2min (default main loop time, changeable via <em>PW2_SERVERS_REFRESH_LOOP_SECONDS</em>)
+before you see any metrics for newly inserted databases.</p></li>
+<li><p>One can edit existing or create new Grafana dashboards, change Grafana global settings, create users, alerts, etc after
+logging in as <em>admin</em> / <em>pgwatch2admin</em> (by default, changeable at launch time).</p></li>
+<li><p>Metrics and their intervals that are to be gathered can be customized for every database separately via a custom JSON
+config field or more conveniently by using <em>Preset Configs</em>, like “minimal”, “basic” or “exhaustive” (monitored_db.preset_config
+table), where the name should already hint at the amount of metrics gathered. For privileged users the “exhaustive”
+preset is a good starting point, and “unprivileged” for simple developer accounts.</p></li>
+<li><p>To add a new metrics yourself (which are simple SQL queries returning any values and a timestamp) head to <a class="reference external" href="http://127.0.0.1:8080/metrics">http://127.0.0.1:8080/metrics</a>.
+The queries should always include a “epoch_ns” column and “tag_” prefix can be used for columns that should be quickly
+searchable / groupable, and thus will be indexed with the InfluxDB and PostgreSQL metric stores. See to the bottom of the
+“metrics” page for more explanations or the documentation chapter on metrics <a class="reference internal" href="metric_definitions.html#custom-metrics"><span class="std std-ref">here</span></a>.</p></li>
+<li><p>For a quickstart on dashboarding, a list of available metrics together with some instructions are presented on the “Documentation” dashboard.</p></li>
+<li><p>Some built-in metrics like “cpu_load” and others, that gather privileged or OS statistics, require installing <em>helper functions</em>
+(looking like <a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/blob/master/pgwatch2/metrics/00_helpers/get_load_average/9.1/metric.sql">that</a>,
+so it might be normal to see some blank panels or fetching errors in the logs. On how to prepare databases for monitoring
+see the <a class="reference internal" href="preparing_databases.html#preparing-databases"><span class="std std-ref">Monitoring preparations</span></a> chapter.</p></li>
+<li><p>For effective graphing you want to familiarize yourself with the query language of the database system that was selected
+for metrics storage. Some tips to get going:</p>
+<ul class="simple">
+<li><p>For InfluxQL -  the non_negative_derivative() function is very handy as Postgres statistics are mostly evergrowing counters
+and one needs to calculate so called <em>deltas</em> to show change. Documentation <a class="reference external" href="https://docs.influxdata.com/influxdb/latest/query_language/functions/#non-negative-derivative">here</a>.</p></li>
+<li><p>For PostgreSQL / TimescaleDB - some knowledge of <a class="reference external" href="https://www.postgresql.org/docs/current/tutorial-window.html">Window functions</a>
+is a must if looking at longer time periods of data as the statistics could have been reset in the mean time by user request
+or the server might have crashed, so that simple <em>max() - min()</em> aggregates on cumulative counters (most data provided by Postgres is cumulative) would lie.</p></li>
+</ul>
+</li>
+<li><p>For possible troubleshooting needs, logs of the components running inside Docker are by default (if not disabled on container launch) visible under:
+<a class="reference external" href="http://127.0.0.1:8080/logs">http://127.0.0.1:8080/logs</a>/[pgwatch2|postgres|webui|influxdb|grafana]. It’s of course also possible to log into the container
+and look at log files directly - they’re situated under <em>/var/log/supervisor/</em>.</p>
+<p>FYI - <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">logs</span> <span class="pre">...</span></code> command is not really useful after a successful container startup in pgwatch2 case.</p>
+</li>
+</ul>
+</section>
+<section id="ports-used">
+<h2>Ports used<a class="headerlink" href="#ports-used" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>5432 - Postgres configuration or metrics storage DB (when using the cybertec/pgwatch2-postgres image)</p></li>
+<li><p>8080 - Management Web UI (monitored hosts, metrics, metrics configurations)</p></li>
+<li><p>8081 - Gatherer healthcheck / statistics on number of gathered metrics (JSON).</p></li>
+<li><p>3000 - Grafana dashboarding</p></li>
+<li><p>8086 - InfluxDB API (when using the InfluxDB version)</p></li>
+<li><p>8088 - InfluxDB Backup port (when using the InfluxDB version)</p></li>
+</ul>
+</section>
+<section id="docker-compose">
+<h2>Docker Compose<a class="headerlink" href="#docker-compose" title="Link to this heading"></a></h2>
+<p>As mentioned in the <a class="reference internal" href="components.html#components"><span class="std std-ref">Components</span></a> chapter, remember that the pre-built Docker images are just one
+example how your monitoring setup around the pgwatch2 metrics collector could be organized. For another example how various
+components (as Docker images here) can work together, see a <em>Docker Compose</em> example with loosely coupled components
+<a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/blob/master/docker-compose.yml">here</a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation_options.html" class="btn btn-neutral float-left" title="Installation options" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="custom_installation.html" class="btn btn-neutral float-right" title="Custom installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, CYBERTEC PostgreSQL International GmBh.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

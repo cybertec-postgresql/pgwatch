@@ -1,0 +1,484 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom installation &mdash; pgwatch v2  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Preparing databases for monitoring" href="preparing_databases.html" />
+    <link rel="prev" title="Installing using Docker" href="docker_installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pgwatch v2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_background.html">Project background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">List of main features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_features.html">Advanced features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation_options.html">Installation options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_installation.html">Installing using Docker</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Custom installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#config-db-based-setup">Config DB based setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#yaml-based-setup">YAML based setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-influxdb-for-metrics-storage">Using InfluxDB for metrics storage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="preparing_databases.html">Preparing databases for monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_managed_services.html">Monitoring managed cloud databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metric_definitions.html">Metric definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_ui.html">The Admin Web UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dashboarding_alerting.html">Dashboarding and alerting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sizing_recommendations.html">Sizing recommendations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security aspects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="long_term_installations.html">Long term installations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Kubernetes</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pgwatch v2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Custom installation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/custom_installation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>This documentation pertains to older v2.x releases. 
+Many features and functions have since been updated or replaced. 
+Please refer to the <a class="reference external" href="https://pgwat.ch/">current version</a> 
+for the latest information.</p>
+</div>
+<section id="custom-installation">
+<span id="id1"></span><h1>Custom installation<a class="headerlink" href="#custom-installation" title="Link to this heading"></a></h1>
+<p>As described in the <a class="reference internal" href="components.html#components"><span class="std std-ref">Components</span></a> chapter, there a couple of ways how to set up up pgwatch2. Two most
+common ways though are the central <em>Config DB</em> based “pull” approach and the <em>YAML file</em> based “push” approach, plus
+Grafana to visualize the gathered metrics.</p>
+<section id="config-db-based-setup">
+<h2>Config DB based setup<a class="headerlink" href="#config-db-based-setup" title="Link to this heading"></a></h2>
+<p><strong>Overview of installation steps</strong></p>
+<ol class="arabic simple">
+<li><p>Install Postgres or use any available existing instance - v9.4+ required for the config DB and v11+ for the metrics DB.</p></li>
+<li><p>Bootstrap the Config DB.</p></li>
+<li><p>Bootstrap the metrics storage DB (PostgreSQL here).</p></li>
+<li><p>Install pgwatch2 - either from pre-built packages or by compiling the Go code.</p></li>
+<li><p>Prepare the “to-be-monitored” databases for monitoring by creating a dedicated login role name as a minimum.</p></li>
+<li><p>Optional step - install the administrative Web UI + Python &amp; library dependencies.</p></li>
+<li><p>Add some databases to the monitoring configuration via the Web UI or directly in the Config DB.</p></li>
+<li><p>Start the pgwatch2 metrics collection agent and monitor the logs for any problems.</p></li>
+<li><p>Install and configure Grafana and import the pgwatch2 sample dashboards to start analyzing the metrics.</p></li>
+<li><p>Make sure that there are auto-start SystemD services for all components in place and optionally set up also backups.</p></li>
+</ol>
+<p><strong>Detailed steps for the Config DB based “pull” approach with Postgres metrics storage</strong></p>
+<p>Below are sample steps to do a custom install from scratch using Postgres for the pgwatch2 configuration DB, metrics DB and
+Grafana config DB.</p>
+<p>All examples here assume Ubuntu as OS - but it’s basically the same for RedHat family of operations systems also, minus package installation syntax differences.</p>
+<ol class="arabic">
+<li><p><strong>Install Postgres</strong></p>
+<p>Follow the standard Postgres install procedure basically. Use the latest major version available, but minimally
+v11+ is recommended for the metrics DB due to recent partitioning speedup improvements and also older versions were missing some
+default JSONB casts so that a few built-in Grafana dashboards need adjusting otherwise.</p>
+<p>To get the latest Postgres versions, official Postgres PGDG repos are to be preferred over default disto repos. Follow
+the instructions from:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://wiki.postgresql.org/wiki/Apt">https://wiki.postgresql.org/wiki/Apt</a> - for Debian / Ubuntu based systems</p></li>
+<li><p><a class="reference external" href="https://www.postgresql.org/download/linux/redhat/">https://www.postgresql.org/download/linux/redhat/</a> - for CentOS / RedHat based systems</p></li>
+</ul>
+</li>
+<li><p><strong>Install pgwatch2</strong> - either from pre-built packages or by compiling the Go code</p>
+<ul>
+<li><p>Using pre-built packages</p>
+<p>The pre-built DEB / RPM / Tar packages are available on the <a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/releases">Github releases</a> page.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># find out the latest package link and replace below, using v1.8.0 here</span>
+<span class="n">wget</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">cybertec</span><span class="o">-</span><span class="n">postgresql</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">releases</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">v1</span><span class="mf">.8.0</span><span class="o">/</span><span class="n">pgwatch2_v1</span><span class="mf">.8.0</span><span class="o">-</span><span class="n">SNAPSHOT</span><span class="o">-</span><span class="mi">064</span><span class="n">fdaf_linux_64</span><span class="o">-</span><span class="n">bit</span><span class="o">.</span><span class="n">deb</span>
+<span class="n">sudo</span> <span class="n">dpkg</span> <span class="o">-</span><span class="n">i</span> <span class="n">pgwatch2_v1</span><span class="mf">.8.0</span><span class="o">-</span><span class="n">SNAPSHOT</span><span class="o">-</span><span class="mi">064</span><span class="n">fdaf_linux_64</span><span class="o">-</span><span class="n">bit</span><span class="o">.</span><span class="n">deb</span>
+</pre></div>
+</div>
+</li>
+<li><p>Compiling the Go code yourself</p>
+<p>This method of course is not needed unless dealing with maximum security environments or some slight code changes are required.</p>
+<ol class="arabic">
+<li><p>Install Go by following the <a class="reference external" href="https://golang.org/doc/install">official instructions</a></p></li>
+<li><p>Get the pgwatch2 project’s code and compile the gatherer daemon</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">cybertec</span><span class="o">-</span><span class="n">postgresql</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">.</span><span class="n">git</span>
+<span class="n">cd</span> <span class="n">pgwatch2</span><span class="o">/</span><span class="n">pgwatch2</span>
+<span class="o">./</span><span class="n">build_gatherer</span><span class="o">.</span><span class="n">sh</span>
+<span class="c1"># after fetching all the Go library dependencies (can take minutes)</span>
+<span class="c1"># an executable named &quot;pgwatch2&quot; should be generated. Additionally it&#39;s a good idea</span>
+<span class="c1"># to copy it to /usr/bin/pgwatch2-daemon as that&#39;s what the default SystemD service expects.</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+</ul>
+<blockquote>
+<div><ul>
+<li><p>Configure a SystemD auto-start service (optional)</p>
+<p>Sample startup scripts can be found at <em>/etc/pgwatch2/startup-scripts/pgwatch2.service</em> or online
+<a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/blob/master/pgwatch2/startup-scripts/pgwatch2.service">here</a>.
+Note that they are OS agnostic and might need some light adjustment of paths, etc - so always test them out.</p>
+</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><strong>Boostrap the config DB</strong></p>
+<ol class="arabic">
+<li><p>Create a user to “own” the pgwatch2 schema</p>
+<p>Typically called <em>pgwatch2</em> but can be anything really, if the schema creation file is adjusted accordingly.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">psql</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;create user pgwatch2 password &#39;xyz&#39;&quot;</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;create database pgwatch2 owner pgwatch2&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Roll out the pgwatch2 config schema</p>
+<p>The schema will most importantly hold connection strings of DB-s to be monitored and the metric definitions.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># FYI - one could get the below schema files also directly from Github</span>
+<span class="c1"># if re-using some existing remote Postgres instance where pgwatch2 was not installed</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">sql</span><span class="o">/</span><span class="n">config_store</span><span class="o">/</span><span class="n">config_store</span><span class="o">.</span><span class="n">sql</span> <span class="n">pgwatch2</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">sql</span><span class="o">/</span><span class="n">config_store</span><span class="o">/</span><span class="n">metric_definitions</span><span class="o">.</span><span class="n">sql</span> <span class="n">pgwatch2</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+</ol>
+<ol class="arabic" id="metrics-db-bootstrap">
+<li><p><strong>Bootstrap the metrics storage DB</strong></p>
+<ol class="arabic">
+<li><p>Create a dedicated database for storing metrics and a user to “own” the metrics schema</p>
+<p>Here again default scripts expect a role named “pgwatch2” but can be anything if to adjust the scripts.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">psql</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;create database pgwatch2_metrics owner pgwatch2&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Roll out the pgwatch2 metrics storage schema</p>
+<p>This is a place to pause and first think how many databases will be monitored, i.e. how much data generated, and based
+on that one should choose an according metrics storage schema. There are a couple of different options available that
+are described <a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/tree/master/pgwatch2/sql/metric_store">here</a> in detail,
+but the gist of it is that you don’t want too complex partitioning schemes if you don’t have zounds of data and don’t
+need the fastest queries. For a smaller amount of monitored DBs (a couple dozen to a hundred) the default “metric-time”
+is a good choice. For hundreds of databases, aggressive intervals, or long term storage usage of the TimescaleDB extension
+is recommended.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">sql</span><span class="o">/</span><span class="n">metric_store</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">f</span> <span class="n">roll_out_metric_time</span><span class="o">.</span><span class="n">psql</span> <span class="n">pgwatch2_metrics</span>
+</pre></div>
+</div>
+<p><strong>NB! Default retention for Postgres storage is 2 weeks!</strong> To change, use the <code class="docutils literal notranslate"><span class="pre">--pg-retention-days</span> <span class="pre">/</span> <span class="pre">PW2_PG_RETENTION_DAYS</span></code> gatherer parameter.</p>
+</li>
+</ol>
+</li>
+<li><p><strong>Prepare the “to-be-monitored” databases for metrics collection</strong></p>
+<p>As a minimum we need a plain unprivileged login user. Better though is to grant the user also the <em>pg_monitor</em> system role,
+available on v10+. Superuser privileges should be normally avoided for obvious reasons of course, but for initial testing in safe
+environments it can make the initial preparation (automatic <em>helper</em> rollouts) a bit easier still, given superuser privileges
+are later stripped.</p>
+<p>NB! To get most out of your metrics some <em>SECURITY DEFINER</em> wrappers functions called “helpers” are recommended on the DB-s under monitoring.
+See the detailed chapter on the “preparation” topic <a class="reference internal" href="preparing_databases.html#helper-functions"><span class="std std-ref">here</span></a> for more details.</p>
+</li>
+<li><p><strong>Install Python 3 and start the Web UI (optional)</strong></p>
+<p>NB! The Web UI is not strictly required but makes life a lot easier for <em>Config DB</em> based setups. Technically it would be fine also to manage connection
+strings of the monitored DB-s directly in the “pgwatch2.monitored_db” table and add/adjust metrics in the “pgwatch2.metric” table,
+and <em>Preset Configs</em> in the “pgwatch2.preset_config” table.</p>
+<ol class="arabic">
+<li><p>Install Python 3 and Web UI requirements</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># first we need Python 3 and &quot;pip&quot; - the Python package manager</span>
+<span class="n">sudo</span> <span class="n">apt</span> <span class="n">install</span> <span class="n">python3</span> <span class="n">python3</span><span class="o">-</span><span class="n">pip</span>
+<span class="n">cd</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">webpy</span><span class="o">/</span>
+<span class="n">sudo</span> <span class="n">pip3</span> <span class="n">install</span> <span class="o">-</span><span class="n">U</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements_pg_metrics</span><span class="o">.</span><span class="n">txt</span>
+<span class="c1"># NB! Replace with &quot;requirements_influx_metrics.txt&quot; if using InfluxDB to store metrics</span>
+</pre></div>
+</div>
+</li>
+<li><p>Exposing component logs (optional)</p>
+<p>For use cases where exposing the component (Grafana, Postgres, Influx, gatherer daemon, Web UI itself) logs over the
+“/logs” endpoint remotely is wanted, then in the custom setup mode some actual code changes are needed to specify
+where logs of all components are situated - see top of the pgwatch2.py file for that. Defaults are set to work with the Docker image.</p>
+</li>
+<li><p>Start the Web UI</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># NB! The defaults assume a local Config DB named pgwatch2, DB user pgwatch2</span>
+<span class="n">python3</span> <span class="n">web</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">datastore</span><span class="o">=</span><span class="n">postgres</span> <span class="o">--</span><span class="n">pg</span><span class="o">-</span><span class="n">metric</span><span class="o">-</span><span class="n">store</span><span class="o">-</span><span class="n">conn</span><span class="o">-</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;dbname=pgwatch2_metrics user=pgwatch2&quot;</span>
+</pre></div>
+</div>
+<p>Default port for the Web UI: <strong>8080</strong>. See <code class="docutils literal notranslate"><span class="pre">web.py</span> <span class="pre">--help</span></code> for all options.</p>
+<p><code class="docutils literal notranslate"><span class="pre">target_session_attrs</span></code> is set to <code class="docutils literal notranslate"><span class="pre">read-write</span></code> by default.
+This allows connecting to rw node when multiple (comma separated) hosts on <code class="docutils literal notranslate"><span class="pre">-H</span> <span class="pre">/</span> <span class="pre">--host</span> <span class="pre">/</span> <span class="pre">PW2_PGHOST</span></code> (i.e. config DB being PG cluster)</p>
+</li>
+<li><p>Configure a SystemD auto-start service (optional)</p>
+<p>Sample startup scripts can be found at <em>/etc/pgwatch2/webpy/startup-scripts/pgwatch2-webui.service</em> or online
+<a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/blob/master/webpy/startup-scripts/pgwatch2-webui.service">here</a>.
+Note that they are OS agnostic and always need some light adjustment of paths, etc - so always test them out.</p>
+</li>
+</ol>
+</li>
+<li><p><strong>Configure DB-s and metrics / intervals to be monitored</strong></p>
+<ul class="simple">
+<li><p>From the Web UI “/dbs” page</p></li>
+<li><p>Via direct inserts into the Config DB <em>pgwatch2.monitored_db</em> table</p></li>
+</ul>
+</li>
+<li><p><strong>Start the pgwatch2 metrics collection agent</strong></p>
+<ol class="arabic">
+<li><p>The gatherer has quite some parameters (use the <em>--help</em> flag to show them all), but simplest form would be:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># default connections params expect a trusted localhost Config DB setup</span>
+<span class="c1"># so mostly the 2nd line is not needed actually</span>
+<span class="n">pgwatch2</span><span class="o">-</span><span class="n">daemon</span> \
+  <span class="o">--</span><span class="n">host</span><span class="o">=</span><span class="n">localhost</span> <span class="o">--</span><span class="n">user</span><span class="o">=</span><span class="n">pgwatch2</span> <span class="o">--</span><span class="n">dbname</span><span class="o">=</span><span class="n">pgwatch2</span> \
+  <span class="o">--</span><span class="n">datastore</span><span class="o">=</span><span class="n">postgres</span> <span class="o">--</span><span class="n">pg</span><span class="o">-</span><span class="n">metric</span><span class="o">-</span><span class="n">store</span><span class="o">-</span><span class="n">conn</span><span class="o">-</span><span class="nb">str</span><span class="o">=</span><span class="n">postgresql</span><span class="p">:</span><span class="o">//</span><span class="n">pgwatch2</span><span class="nd">@localhost</span><span class="p">:</span><span class="mi">5432</span><span class="o">/</span><span class="n">pgwatch2_metrics</span> \
+  <span class="o">--</span><span class="n">verbose</span><span class="o">=</span><span class="n">info</span>
+
+<span class="c1"># or via SystemD if set up in step #2</span>
+<span class="n">useradd</span> <span class="o">-</span><span class="n">m</span> <span class="o">-</span><span class="n">s</span> <span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">bash</span> <span class="n">pgwatch2</span> <span class="c1"># default SystemD templates run under the pgwatch2 user</span>
+<span class="n">sudo</span> <span class="n">systemctl</span> <span class="n">start</span> <span class="n">pgwatch2</span>
+<span class="n">sudo</span> <span class="n">systemctl</span> <span class="n">status</span> <span class="n">pgwatch2</span>
+</pre></div>
+</div>
+<p>After initial verification that all works it’s usually good idea to set verbosity back to default by removing the
+<em>verbose</em> flag.</p>
+<p>Another tip to configure connection strings inside SystemD service files is to use the “systemd-escape” utility to
+escape special characters like spaces etc if using the LibPQ connect string syntax rather than JDBC syntax.</p>
+</li>
+<li><p>Alternative start command when using InfluxDB storage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pgwatch2</span><span class="o">-</span><span class="n">daemon</span> \
+  <span class="o">--</span><span class="n">host</span><span class="o">=</span><span class="n">localhost</span> <span class="o">--</span><span class="n">user</span><span class="o">=</span><span class="n">pgwatch2</span> <span class="o">--</span><span class="n">dbname</span><span class="o">=</span><span class="n">pgwatch2</span> \
+  <span class="o">--</span><span class="n">datastore</span><span class="o">=</span><span class="n">influx</span> \
+  <span class="o">--</span><span class="n">ihost</span><span class="o">=</span><span class="n">my</span><span class="o">-</span><span class="n">influx</span><span class="o">-</span><span class="n">db</span> <span class="o">--</span><span class="n">idbname</span><span class="o">=</span><span class="n">pgwatch2</span> <span class="o">--</span><span class="n">iuser</span><span class="o">=</span><span class="n">pgwatch2</span> <span class="o">--</span><span class="n">ipassword</span><span class="o">=</span><span class="n">xyz</span>
+</pre></div>
+</div>
+<p>NB! pgwatch2 has also support for writing metrics into two separate Influx databases in parallel as the Open Source
+version has no HA options comparable to Postgres.</p>
+</li>
+<li><p>Monitor the console or log output for any problems</p>
+<p>If you see metrics trickling into the “pgwatch2_metrics” database (metric names are mapped to table names and tables
+are auto-created), then congratulations - the deployment is working! When using some more aggressive <em>preset metrics config</em>
+then there are usually still some errors though, due to the fact that some more extensions or privileges are missing
+on the monitored database side. See the according chapter <a class="reference internal" href="preparing_databases.html#preparing-databases"><span class="std std-ref">here</span></a>.</p>
+</li>
+</ol>
+<p>NB! When you’re compiling your own gatherer then the executable file will be named just <em>pgwatch2</em> instead of <em>pgwatch2-daemon</em>
+to avoid mixups.</p>
+</li>
+</ol>
+<ol class="arabic" id="custom-install-grafana">
+<li><p><strong>Install Grafana</strong></p>
+<ol class="arabic">
+<li><p>Create a Postgres database to hold Grafana internal config, like dashboards etc</p>
+<p>Theoretically it’s not absolutely required to use Postgres for storing Grafana internal settings / dashboards, but
+doing so has 2 advantages - you can easily roll out all pgwatch2 built-in dashboards and one can also do remote backups
+of the Grafana configuration easily.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">psql</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;create user pgwatch2_grafana password &#39;xyz&#39;&quot;</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;create database pgwatch2_grafana owner pgwatch2_grafana&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Follow the instructions from <a class="reference external" href="https://grafana.com/docs/grafana/latest/installation/debian/">https://grafana.com/docs/grafana/latest/installation/debian/</a>, basically
+something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">wget</span> <span class="o">-</span><span class="n">q</span> <span class="o">-</span><span class="n">O</span> <span class="o">-</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">packages</span><span class="o">.</span><span class="n">grafana</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">gpg</span><span class="o">.</span><span class="n">key</span> <span class="o">|</span> <span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">key</span> <span class="n">add</span> <span class="o">-</span>
+<span class="n">echo</span> <span class="s2">&quot;deb https://packages.grafana.com/oss/deb stable main&quot;</span> <span class="o">|</span> <span class="n">sudo</span> <span class="n">tee</span> <span class="o">-</span><span class="n">a</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">apt</span><span class="o">/</span><span class="n">sources</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">d</span><span class="o">/</span><span class="n">grafana</span><span class="o">.</span><span class="n">list</span>
+<span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">update</span> <span class="o">&amp;&amp;</span> <span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">grafana</span>
+
+<span class="c1"># review / change config settings and security, etc</span>
+<span class="n">sudo</span> <span class="n">vi</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">grafana</span><span class="o">/</span><span class="n">grafana</span><span class="o">.</span><span class="n">ini</span>
+
+<span class="c1"># start and enable auto-start on boot</span>
+<span class="n">sudo</span> <span class="n">systemctl</span> <span class="n">daemon</span><span class="o">-</span><span class="n">reload</span>
+<span class="n">sudo</span> <span class="n">systemctl</span> <span class="n">start</span> <span class="n">grafana</span><span class="o">-</span><span class="n">server</span>
+<span class="n">sudo</span> <span class="n">systemctl</span> <span class="n">status</span> <span class="n">grafana</span><span class="o">-</span><span class="n">server</span>
+</pre></div>
+</div>
+<p>Default Grafana port: 3000</p>
+</li>
+<li><p>Configure Grafana config to use our pgwatch2_grafana DB</p>
+<p>Place something like below in the “[database]” section of /etc/grafana/grafana.ini</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">database</span><span class="p">]</span>
+<span class="nb">type</span> <span class="o">=</span> <span class="n">postgres</span>
+<span class="n">host</span> <span class="o">=</span> <span class="n">my</span><span class="o">-</span><span class="n">postgres</span><span class="o">-</span><span class="n">db</span><span class="p">:</span><span class="mi">5432</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">pgwatch2_grafana</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">pgwatch2_grafana</span>
+<span class="n">password</span> <span class="o">=</span> <span class="n">xyz</span>
+</pre></div>
+</div>
+<p>Taking a look at [server], [security] and [auth*] sections is also recommended.</p>
+</li>
+<li><p>Set up the pgwatch2 metrics database as the default datasource</p>
+<p>We need to tell Grafana where our metrics data is located. Add a datasource via the Grafana UI (Admin -&gt; Data sources)
+or adjust and execute the “pgwatch2/bootstrap/grafana_datasource.sql” script on the <em>pgwatch2_grafana</em> DB.</p>
+</li>
+<li><p>Add pgwatch2 predefined dashboards to Grafana</p>
+<p>This could be done by importing the pgwatch2 dashboard definition JSON-s manually, one by one, from the “grafana_dashboards” folder
+(“Import Dashboard” from the Grafana top menu) or via as small helper script located at <em>/etc/pgwatch2/grafana-dashboards/import_all.sh</em>.
+The script needs some adjustment for metrics storage type, connect data and file paths.</p>
+</li>
+<li><p>Optionally install also Grafana plugins</p>
+<p>Currently one pre-configured dashboard (Biggest relations treemap) use an extra plugin - if planning to that dash, then run the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">grafana</span><span class="o">-</span><span class="n">cli</span> <span class="n">plugins</span> <span class="n">install</span> <span class="n">savantly</span><span class="o">-</span><span class="n">heatmap</span><span class="o">-</span><span class="n">panel</span>
+</pre></div>
+</div>
+</li>
+<li><p>Start discovering the preset dashbaords</p>
+<p>If the previous step of launching pgwatch2 daemon succeeded and it was more than some minutes ago, one should already
+see some graphs on dashboards like “DB overview” or “DB overview Unprivileged / Developer mode” for example.</p>
+</li>
+</ol>
+</li>
+</ol>
+</section>
+<section id="yaml-based-setup">
+<span id="yaml-setup"></span><h2>YAML based setup<a class="headerlink" href="#yaml-based-setup" title="Link to this heading"></a></h2>
+<p>From v1.4 one can also deploy the pgwatch2 gatherer daemons more easily in a de-centralized way, by specifying monitoring configuration via YAML files. In that case there is no need for a central Postgres “config DB”.</p>
+<p><strong>YAML installation steps</strong></p>
+<ol class="arabic simple">
+<li><p>Install pgwatch2 - either from pre-built packages or by compiling the Go code.</p></li>
+<li><p>Specify hosts you want to monitor and with which metrics / aggressivness in a YAML file or files,
+following the example config located at <em>/etc/pgwatch2/config/instances.yaml</em> or online
+<a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/blob/master/pgwatch2/config/instances.yaml">here</a>.
+Note that you can also use env. variables inside the YAML templates!</p></li>
+<li><p>Bootstrap the metrics storage DB (not needed it using Prometheus mode).</p></li>
+<li><p>Prepare the “to-be-monitored” databases for monitoring by creating a dedicated login role name as a <a class="reference internal" href="preparing_databases.html#preparing-databases"><span class="std std-ref">minimum</span></a>.</p></li>
+<li><p>Run the pgatch2 gatherer specifying the YAML config file (or folder), and also the folder where metric definitions are
+located. Default location: <em>/etc/pgwatch2/metrics</em>.</p></li>
+<li><p>Install and configure Grafana and import the pgwatch2 sample dashboards to start analyzing the metrics. See above for instructions.</p></li>
+<li><p>Make sure that there are auto-start SystemD services for all components in place and optionally set up also backups.</p></li>
+</ol>
+<p>Relevant gatherer parameters / env. vars: <code class="docutils literal notranslate"><span class="pre">--config</span> <span class="pre">/</span> <span class="pre">PW2_CONFIG</span></code> and <code class="docutils literal notranslate"><span class="pre">--metrics-folder</span> <span class="pre">/</span> <span class="pre">PW2_METRICS_FOLDER</span></code>.</p>
+<p>For details on individual steps like installing pgwatch2 see the above paragraph.</p>
+<p>NB! The Web UI component cannot be used in file based mode.</p>
+</section>
+<section id="using-influxdb-for-metrics-storage">
+<h2>Using InfluxDB for metrics storage<a class="headerlink" href="#using-influxdb-for-metrics-storage" title="Link to this heading"></a></h2>
+<p>An alternative flow for the above examples would be to replace Postgres metrics storage with InfluxDB. This might be a
+good idea when you have hundreds of databases to monitor or want to use very aggressive intervals as InfluxDB has the
+smallest disk footprint of the supported options (with more CPU / RAM usage though). See the <a class="reference internal" href="sizing_recommendations.html#sizing-recommendations"><span class="std std-ref">Sizing recommendations</span></a>
+chapter for indicative numbers.</p>
+<ol class="arabic">
+<li><p>Install InfluxDB (the Open Source version)</p>
+<ol class="arabic simple">
+<li><p>From project package repositories:</p></li>
+</ol>
+<blockquote>
+<div><p>Follow the instructions from <a class="reference external" href="https://docs.influxdata.com/influxdb/latest/introduction/install/">https://docs.influxdata.com/influxdb/latest/introduction/install/</a> or just download and
+install the latest package:</p>
+</div></blockquote>
+<ol class="arabic">
+<li><p>Or directly from the packages:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>INFLUX_LATEST=$(curl -so- https://api.github.com/repos/influxdata/influxdb/releases/latest \
+                  | jq .tag_name | grep -oE &#39;[0-9\.]+&#39;)
+wget https://dl.influxdata.com/influxdb/releases/influxdb_${INFLUX_LATEST}_amd64.deb
+sudo dpkg -i influxdb_${INFLUX_LATEST}_amd64.deb
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+<li><p>Review / adjust the config and start the server</p>
+<p>Take a look at the default config located at <em>/etc/influxdb/influxdb.conf</em> and edit per use case / hardware needs. Most
+importantly one should enable authentication if not running InfluxDB on the same host as the collector or to set the server
+to listen only on localhost (the <em>bind-address</em> parameter).</p>
+<p>Also changing the <em>wal-fsync-delay</em> parameter usually makes sense to get better performance, as metric data is usually
+something where we can in the worst case lose the latest half a second of data without problems.</p>
+<p>See <a class="reference external" href="https://docs.influxdata.com/influxdb/latest/administration/config/">here</a> for more information on configuring InfluxDB.</p>
+</li>
+<li><p>Create a non-root user, a metrics database and a retention policy (optional)</p>
+<p>If security is topic one should create a separate non-root login user (e.g. “pgwatch2”) to be used by the metrics gathering
+daemon to store metrics. See <a class="reference external" href="https://docs.influxdata.com/influxdb/latest/administration/authentication_and_authorization/">here</a>
+for details on creating new users.</p>
+<p>If going that road one also needs to create manually a database and a retention policy to go with it as by default old
+metrics data is not purged. These tasks by the way are also tried by the pgwatch2 daemon automatically, but will fail
+if not an admin user.</p>
+<p>Sample commands:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CREATE</span> <span class="n">DATABASE</span> <span class="n">pgwatch2</span> <span class="n">WITH</span> <span class="n">DURATION</span> <span class="mi">30</span><span class="n">d</span> <span class="n">REPLICATION</span> <span class="mi">1</span> <span class="n">SHARD</span> <span class="n">DURATION</span> <span class="mi">1</span><span class="n">d</span> <span class="n">NAME</span> <span class="n">pgwatch2_def_ret</span>
+<span class="n">CREATE</span> <span class="n">USER</span> <span class="n">pgwatch2</span> <span class="n">WITH</span> <span class="n">PASSWORD</span> <span class="s1">&#39;qwerty&#39;</span>
+<span class="n">GRANT</span> <span class="n">READ</span> <span class="n">ON</span> <span class="n">pgwatch2</span> <span class="n">TO</span> <span class="n">pgwatch2</span>
+<span class="n">GRANT</span> <span class="n">WRITE</span> <span class="n">ON</span> <span class="n">pgwatch2</span> <span class="n">TO</span> <span class="n">pgwatch2</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>Default port for the InfluxDB client API: <strong>8086</strong></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="docker_installation.html" class="btn btn-neutral float-left" title="Installing using Docker" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="preparing_databases.html" class="btn btn-neutral float-right" title="Preparing databases for monitoring" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, CYBERTEC PostgreSQL International GmBh.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,182 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Admin Web UI &mdash; pgwatch v2  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Dashboarding and alerting" href="dashboarding_alerting.html" />
+    <link rel="prev" title="Metric definitions" href="metric_definitions.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pgwatch v2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_background.html">Project background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">List of main features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_features.html">Advanced features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation_options.html">Installation options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_installation.html">Installing using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_installation.html">Custom installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preparing_databases.html">Preparing databases for monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_managed_services.html">Monitoring managed cloud databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metric_definitions.html">Metric definitions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The Admin Web UI</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#web-ui-security">Web UI security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#exposing-the-component-logs">Exposing the component logs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dashboarding_alerting.html">Dashboarding and alerting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sizing_recommendations.html">Sizing recommendations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security aspects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="long_term_installations.html">Long term installations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Kubernetes</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pgwatch v2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">The Admin Web UI</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/web_ui.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>This documentation pertains to older v2.x releases. 
+Many features and functions have since been updated or replaced. 
+Please refer to the <a class="reference external" href="https://pgwat.ch/">current version</a> 
+for the latest information.</p>
+</div>
+<section id="the-admin-web-ui">
+<h1>The Admin Web UI<a class="headerlink" href="#the-admin-web-ui" title="Link to this heading"></a></h1>
+<p>If using pgwatch2 in the centrally managed <em>Config DB</em> way, for easy configuration management (adding databases to monitoring, adding
+metrics) there is a small Python Web application bundled making use of the CherryPy
+Web-framework.</p>
+<p>For mass configuration changes the Web UI has some buttons to disable / enable all hosts for example, but one could
+technically also log into the configuration database and change the <em>pgwatch2.monitored_db</em> table  directly.</p>
+<p>Besides managing the metrics gathering configurations, the two other useful features for the Web UI would be the possibility
+to look at the logs of the single components and to verify that metrics gathering is working on the “Stat Statements Overview” page,
+which will contact the metrics DB (only Postgres and InfluxDB supported) and present some stats summaries.</p>
+<p>Default port: <strong>8080</strong></p>
+<p>Sample screenshot of the Web UI:</p>
+<a class="reference external image-reference" href="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch2/master/screenshots/web_ui_dbs.png"><img alt="A sample screenshot of the pgwatch2 admin Web UI" src="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch2/master/screenshots/web_ui_dbs.png" />
+</a>
+<section id="web-ui-security">
+<h2>Web UI security<a class="headerlink" href="#web-ui-security" title="Link to this heading"></a></h2>
+<p>By default the Web UI is not secured - anyone can view and modify the monitoring configuration. If some security is needed
+though it can be enabled:</p>
+<blockquote>
+<div><ul>
+<li><p>HTTPS</p>
+<p><code class="docutils literal notranslate"><span class="pre">--ssl,</span> <span class="pre">--ssl-cert,</span> <span class="pre">--ssl-key,</span> <span class="pre">--ssl-certificate-chain</span></code> or <code class="docutils literal notranslate"><span class="pre">PW2_WEBSSL,</span> <span class="pre">PW2_WEBCERT,</span> <span class="pre">PW2_WEBKEY,</span> <span class="pre">PW2_WEBCERTCHAIN</span></code></p>
+</li>
+<li><p>Password protection</p>
+<p><code class="docutils literal notranslate"><span class="pre">--no-anonymous-access,</span> <span class="pre">--admin-user,</span> <span class="pre">--admin-password</span></code> or <code class="docutils literal notranslate"><span class="pre">PW2_WEBNOANONYMOUS,</span> <span class="pre">PW2_WEBUSER,</span> <span class="pre">PW2_WEBPASSWORD</span></code></p>
+</li>
+<li><p>Hiding some possibly sensitive information</p>
+<p><code class="docutils literal notranslate"><span class="pre">--no-component-logs,</span> <span class="pre">--no-stats-summary</span></code> or <code class="docutils literal notranslate"><span class="pre">PW2_WEBNOCOMPONENTLOGS,</span> <span class="pre">PW2_WEBNOSTATSSUMMARY</span></code></p>
+</li>
+<li><p>Password encryption for the role used for fetching metrics</p>
+<p><code class="docutils literal notranslate"><span class="pre">--aes-gcm-keyphrase,</span> <span class="pre">--aes-gcm-keyphrase-file</span></code> or <code class="docutils literal notranslate"><span class="pre">PW2_AES_GCM_KEYPHRASE,</span> <span class="pre">PW2_AES_GCM_KEYPHRASE_FILE</span></code></p>
+<p>Note that standard <em>LibPQ .pgpass files</em> can also be used so there’s no requirement to store any passwords in pgwatch2
+config DB. Also note that when enabling password encryption, the same key needs to be presented also for the gatherer.</p>
+</li>
+</ul>
+</div></blockquote>
+<p>NB! For security sensitive environments make sure to always deploy password protection together with SSL, as it uses
+a standard cookie based techniques vulnerable to snooping / MITM attacks.</p>
+</section>
+<section id="exposing-the-component-logs">
+<h2>Exposing the component logs<a class="headerlink" href="#exposing-the-component-logs" title="Link to this heading"></a></h2>
+<p>When using the Docker images, internal component logs (Postgres, Influx, Grafana, Go daemon, Web UI itself) are exposed via the “/logs”
+endpoint. If this is not wanted set the PW2_WEBNOCOMPONENTLOGS env. variable. Note that if a working “/logs” endpoint is desired
+also in custom setup mode (non-docker) then some actual code changes are needed to specify where logs of all components are
+situated - see top of the pgwatch2.py file for that.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="metric_definitions.html" class="btn btn-neutral float-left" title="Metric definitions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dashboarding_alerting.html" class="btn btn-neutral float-right" title="Dashboarding and alerting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, CYBERTEC PostgreSQL International GmBh.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

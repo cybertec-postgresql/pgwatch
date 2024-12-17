@@ -1,0 +1,192 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Long term installations &mdash; pgwatch v2  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Upgrading" href="upgrading.html" />
+    <link rel="prev" title="Security aspects" href="security.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pgwatch v2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_background.html">Project background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">List of main features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_features.html">Advanced features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation_options.html">Installation options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_installation.html">Installing using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_installation.html">Custom installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preparing_databases.html">Preparing databases for monitoring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_managed_services.html">Monitoring managed cloud databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metric_definitions.html">Metric definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_ui.html">The Admin Web UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dashboarding_alerting.html">Dashboarding and alerting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sizing_recommendations.html">Sizing recommendations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security aspects</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Long term installations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#keeping-inventory-in-sync">Keeping inventory in sync</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-the-pgwatch2-collector">Updating the pgwatch2 collector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#metrics-maintenance">Metrics maintenance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dashboard-maintenance">Dashboard maintenance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#storage-monitoring">Storage monitoring</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Kubernetes</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pgwatch v2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Long term installations</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/long_term_installations.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>This documentation pertains to older v2.x releases. 
+Many features and functions have since been updated or replaced. 
+Please refer to the <a class="reference external" href="https://pgwat.ch/">current version</a> 
+for the latest information.</p>
+</div>
+<section id="long-term-installations">
+<h1>Long term installations<a class="headerlink" href="#long-term-installations" title="Link to this heading"></a></h1>
+<p>For long term pgwatch2 setups the main challenge is to keep the software up-to-date to guarantee stable operation and also
+to make sure that all DB-s are under monitoring.</p>
+<section id="keeping-inventory-in-sync">
+<h2>Keeping inventory in sync<a class="headerlink" href="#keeping-inventory-in-sync" title="Link to this heading"></a></h2>
+<p>Adding new DBs to monitoring and removing those shut down, can become a problem if teams are big, databases are many, and
+it’s done per hand (common for on-premise, non-orchestrated deployments). To combat that, the most typical approach would
+be to write some script or Cronjob that parses the company’s internal inventory database, files or endpoints and translate changes
+to according CRUD operations on the <em>pgwatch2.monitored_db</em> table directly.</p>
+<p>One could also use the Web UI page (pseudo) <em>API</em> for that purpose, if the optional Web UI component has been deployed.
+See <a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/blob/master/docker/test/smoke_test_docker_image.sh#L44">here</a>
+for an usage example - but direct database access is of course more flexible.</p>
+<p>If pgwatch2 configuration is kept in YAML files, it should be also relatively easy to automate the maintenance as the
+configuration can be organized so that one file represent a single monitoring entry, i.e. the <em>--config</em> parameter can
+also refer to a folder of YAML files.</p>
+</section>
+<section id="updating-the-pgwatch2-collector">
+<h2>Updating the pgwatch2 collector<a class="headerlink" href="#updating-the-pgwatch2-collector" title="Link to this heading"></a></h2>
+<p>The pgwatch2 metrics gathering daemon is the core component of the solution alas the most critical one. So it’s definitely recommended
+to update it at least once per year or minimally when some freshly released Postgres major version instances are added to monitoring.
+New Postgres versions don’t necessary mean that something will break, but you’ll be missing some newly added metrics, plus
+the occasional optimizations. See the ref:<cite>upgrading chapter &lt;upgrading&gt;</cite> for details, but basically the process is very
+similar to initial installation as the collector doesn’t have any state on its own - it’s just on binary program.</p>
+</section>
+<section id="metrics-maintenance">
+<h2>Metrics maintenance<a class="headerlink" href="#metrics-maintenance" title="Link to this heading"></a></h2>
+<p>Metric definition SQL-s are regularly corrected as suggestions / improvements come in and also new ones are added to cover
+latest Postgres versions, so would make sense to refresh them 1-2x per year.</p>
+<p>If using a YAML based config, just installing newer pre-built RPM / DEB packages will do the trick automatically (built-in
+metrics at <em>/etc/pgwatch2/metrics</em> will be refreshed) but for Config DB based setups you’d need to follow a simple process
+described <a class="reference internal" href="upgrading.html#updating-metrics"><span class="std std-ref">here</span></a>.</p>
+</section>
+<section id="dashboard-maintenance">
+<span id="id1"></span><h2>Dashboard maintenance<a class="headerlink" href="#dashboard-maintenance" title="Link to this heading"></a></h2>
+<p>Same as with metrics, also the built-in Grafana dashboards are being actively updates, so would make sense to refresh them
+occasionally also. The bulk delete / import scripts can be found <a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/tree/master/grafana_dashboards">here</a>
+or you could also manually just re-import some dashboards of interest from JSON files in <cite>/etc/pgwatch2/grafana-dashboards</cite> folder
+or from <a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/tree/master/grafana_dashboards">Github</a>.</p>
+<p>NB! The <em>delete_all_old_pw2_dashes.sh</em> script deletes all pgwatch2 built-in dashboards so you should take
+some extra care when you’ve changed them. In general it’s a good idea not to modify the preset dashboards too much, but
+rate use the “Save As…” button and rename the dashboards to something else.</p>
+<p>FYI - notable new dashboards are usually listed also in <a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/blob/master/CHANGELOG.md">release notes</a>
+and most dashboards also have a sample <a class="reference external" href="https://github.com/cybertec-postgresql/pgwatch2/tree/master/screenshots">screenshots</a> available.</p>
+</section>
+<section id="storage-monitoring">
+<h2>Storage monitoring<a class="headerlink" href="#storage-monitoring" title="Link to this heading"></a></h2>
+<p>In addition to all that you should at least initially periodically monitor the metrics DB size…as it can grow quite a
+lot (especially when using Postgres for storage) when the monitored databases have hundreds of tables / indexes and if a
+lot of unique SQL-s are used and <em>pg_stat_statements</em> monitoring is enabled. If the storage grows too fast, one can increase
+the metric intervals (especially for “table_stats”, “index_stats” and “stat_statements”) or decrease the data retention
+periods via <em>--pg-retention-days</em> or <em>--iretentiondays</em> params.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="security.html" class="btn btn-neutral float-left" title="Security aspects" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="upgrading.html" class="btn btn-neutral float-right" title="Upgrading" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, CYBERTEC PostgreSQL International GmBh.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

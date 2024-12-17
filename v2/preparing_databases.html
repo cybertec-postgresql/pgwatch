@@ -1,0 +1,345 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preparing databases for monitoring &mdash; pgwatch v2  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Monitoring managed cloud databases" href="using_managed_services.html" />
+    <link rel="prev" title="Custom installation" href="custom_installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pgwatch v2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_background.html">Project background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">List of main features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_features.html">Advanced features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation_options.html">Installation options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_installation.html">Installing using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_installation.html">Custom installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Preparing databases for monitoring</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#effects-of-monitoring">Effects of monitoring</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-preparations">Basic preparations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rolling-out-helper-functions">Rolling out helper functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#automatic-rollout-of-helpers">Automatic rollout of helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pl-python-helpers">PL/Python helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#notice-on-using-metric-fetching-helpers">Notice on using metric fetching helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-with-developer-credentials">Running with developer credentials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#different-db-types-explained">Different <em>DB types</em> explained</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="using_managed_services.html">Monitoring managed cloud databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metric_definitions.html">Metric definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_ui.html">The Admin Web UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dashboarding_alerting.html">Dashboarding and alerting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sizing_recommendations.html">Sizing recommendations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security aspects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="long_term_installations.html">Long term installations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Kubernetes</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pgwatch v2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Preparing databases for monitoring</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/preparing_databases.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>This documentation pertains to older v2.x releases. 
+Many features and functions have since been updated or replaced. 
+Please refer to the <a class="reference external" href="https://pgwat.ch/">current version</a> 
+for the latest information.</p>
+</div>
+<section id="preparing-databases-for-monitoring">
+<span id="preparing-databases"></span><h1>Preparing databases for monitoring<a class="headerlink" href="#preparing-databases-for-monitoring" title="Link to this heading"></a></h1>
+<section id="effects-of-monitoring">
+<h2>Effects of monitoring<a class="headerlink" href="#effects-of-monitoring" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Although the “Observer effect” applies also for pgwatch2, no noticeable impact for the monitored DB is expected when using
+<em>Preset configs</em> settings, and given that there is some normal load on the server anyways and the DB doesn’t have thousands of tables.
+For some metrics though can happen that
+the metric reading query (notably “stat_statements” and “table_stats”) takes some tens of milliseconds, which might be
+more than an average application query.</p></li>
+<li><p>At any time maximally 2 metric fetching queries can run in parallel on any monitored DBs. This can be changed by recompiling
+(MAX_PG_CONNECTIONS_PER_MONITORED_DB variable) the gatherer.</p></li>
+<li><p>Default Postgres <a class="reference external" href="https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-STATEMENT-TIMEOUT">statement timeout</a>
+is <em>5s</em> for entries inserted via the Web UI / database directly.</p></li>
+</ul>
+</section>
+<section id="basic-preparations">
+<h2>Basic preparations<a class="headerlink" href="#basic-preparations" title="Link to this heading"></a></h2>
+<p>As a base requirement you’ll need a <strong>login user</strong> (non-superuser suggested) for connecting to your server and fetching metrics.</p>
+<p>Though theoretically you can use any username you like, but if not using “pgwatch2” you need to adjust the “helper” creation
+SQL scripts (see below for explanation) accordingly, as in those by default the “pgwatch2” will be granted execute privileges.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">pgwatch2</span><span class="w"> </span><span class="k">WITH</span><span class="w"> </span><span class="n">LOGIN</span><span class="w"> </span><span class="n">PASSWORD</span><span class="w"> </span><span class="s1">&#39;secret&#39;</span><span class="p">;</span>
+<span class="c1">-- NB! For critical databases it might make sense to ensure that the user account</span>
+<span class="c1">-- used for monitoring can only open a limited number of connections</span>
+<span class="c1">-- (there are according checks in code, but multiple instances might be launched)</span>
+<span class="k">ALTER</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">pgwatch2</span><span class="w"> </span><span class="k">CONNECTION</span><span class="w"> </span><span class="k">LIMIT</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+<span class="k">GRANT</span><span class="w"> </span><span class="n">pg_monitor</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">pgwatch2</span><span class="p">;</span><span class="w">   </span><span class="o">//</span><span class="w"> </span><span class="n">v10</span><span class="o">+</span>
+<span class="k">GRANT</span><span class="w"> </span><span class="k">CONNECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">mydb</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">pgwatch2</span><span class="p">;</span>
+<span class="k">GRANT</span><span class="w"> </span><span class="k">USAGE</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">SCHEMA</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">pgwatch2</span><span class="p">;</span><span class="w"> </span><span class="c1">-- NB! pgwatch doesn&#39;t necessarily require using the public schema though!</span>
+<span class="k">GRANT</span><span class="w"> </span><span class="k">EXECUTE</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">pg_stat_file</span><span class="p">(</span><span class="nb">text</span><span class="p">)</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">pgwatch2</span><span class="p">;</span><span class="w"> </span><span class="c1">-- needed by the wal_size metric</span>
+<span class="k">GRANT</span><span class="w"> </span><span class="k">EXECUTE</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">pg_stat_file</span><span class="p">(</span><span class="nb">text</span><span class="p">,</span><span class="w"> </span><span class="nb">boolean</span><span class="p">)</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">pgwatch2</span><span class="p">;</span><span class="w"> </span><span class="c1">-- some sqls are calling pg_stat_file(&#39;postmaster.pid&#39;, true)</span>
+</pre></div>
+</div>
+<p>For most monitored databases it’s extremely beneficial (to troubleshooting performance issues) to also activate the
+<a class="reference external" href="https://www.postgresql.org/docs/current/pgstatstatements.html">pg_stat_statements</a> extension which will give us exact “per query” performance aggregates and also enables to calculate
+how many queries are executed per second for example. In pgwatch2 context it powers the “Stat statements Top” dashboard
+and many other panels of other dashboards. For additional troubleshooting benefits also the <a class="reference external" href="https://www.postgresql.org/docs/current/static/runtime-config-statistics.html#GUC-TRACK-IO-TIMING">track_io_timing</a>
+setting should be enabled.</p>
+<ol class="arabic">
+<li><p>Make sure the Postgres <em>contrib</em> package is installed (should be installed automatically together with the  Postgres server package on Debian based systems).</p>
+<ul class="simple">
+<li><p>On RedHat / Centos: <code class="docutils literal notranslate"><span class="pre">yum</span> <span class="pre">install</span> <span class="pre">-y</span> <span class="pre">postgresqlXY-contrib</span></code></p></li>
+<li><p>On Debian / Ubuntu: <code class="docutils literal notranslate"><span class="pre">apt</span> <span class="pre">install</span> <span class="pre">postgresql-contrib</span></code></p></li>
+</ul>
+</li>
+<li><p>Add <em>pg_stat_statements</em> to your server config (postgresql.conf) and restart the server.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">shared_preload_libraries</span> <span class="o">=</span> <span class="s1">&#39;pg_stat_statements&#39;</span>
+<span class="n">track_io_timing</span> <span class="o">=</span> <span class="n">on</span>
+</pre></div>
+</div>
+</li>
+<li><p>After restarting activate the extension in the monitored DB. Assumes Postgres superuser.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">psql</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;CREATE EXTENSION IF NOT EXISTS pg_stat_statements&quot;</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="rolling-out-helper-functions">
+<span id="helper-functions"></span><h2>Rolling out helper functions<a class="headerlink" href="#rolling-out-helper-functions" title="Link to this heading"></a></h2>
+<p>Helper functions in pgwatch2 context are standard Postgres stored procedures, running under <em>SECURITY DEFINER</em> privileges.
+Via such wrapper functions one can do <strong>controlled privilege escalation</strong> - i.e. to give access to protected Postgres
+metrics (like active session details, “per query” statistics) or even OS-level metrics, to normal unprivileged users, like the pgwatch2
+monitoring role.</p>
+<p>If using a superuser login (recommended only for local “push” setups) you have full access to
+all Postgres metrics and would need <em>helpers</em> only for OS remote statistics. For local (push) setups as of pgwatch2 version
+1.8.4 the most typical OS metrics are covered by the “–direct-os-stats” flag, explained below.</p>
+<p>For unprivileged monitoring users it is highly recommended to take these additional steps on the “to be monitored”
+database to get maximum value out of pgwatch2 in the long run. Without these additional steps, you lose though about
+10-15% of built-in metrics, which might not be too tragical nevertheless. For that use case there’s also a <em>preset config</em>
+named “unprivileged”.</p>
+<p>NB! When monitoring v10+ servers then the built-in <strong>pg_monitor</strong> system role is recommended for the monitoring user, which
+almost substitutes superuser privileges for monitoring purposes in a safe way.</p>
+<p><strong>Rolling out common helpers</strong></p>
+<p>For completely unprivileged monitoring users the following <em>helpers</em> are recommended to make good use of the default
+“exhaustive” <em>Preset Config</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export PGUSER=superuser
+psql -f /etc/pgwatch2/metrics/00_helpers/get_stat_activity/$pgver/metric.sql mydb
+psql -f /etc/pgwatch2/metrics/00_helpers/get_stat_replication/$pgver/metric.sql mydb
+psql -f /etc/pgwatch2/metrics/00_helpers/get_wal_size/$pgver/metric.sql mydb
+psql -f /etc/pgwatch2/metrics/00_helpers/get_stat_statements/$pgver/metric.sql mydb
+psql -f /etc/pgwatch2/metrics/00_helpers/get_sequences/$pgver/metric.sql mydb
+</pre></div>
+</div>
+<p>NB! Note that there might not be an exact Postgres version match for helper definitions - then replace <em>$pgver</em> with the previous
+available version number below your server’s Postgres version number.</p>
+<p>NB! Also note that as of v1.8.1 some helpers definition SQL-s scripts (like for “get_stat_statements”) will inspect also
+the “search_path” and by default <strong>will not install into schemas that have PUBLIC CREATE privileges</strong>, like the “public”
+schema by default has!</p>
+<p>Also when rolling out helpers make sure the <cite>search_path</cite> is at defaults or set so that it’s also accessible for the monitoring role
+as currently neither helpers nor metric definition SQL-s don’t assume any particualar schema and depend on the <cite>search_path</cite> including everything needed.</p>
+<p>For more detailed statistics (OS monitoring, table bloat, WAL size, etc) it is recommended to install also all other helpers
+found from the <cite>/etc/pgwatch2/metrics/00_helpers</cite> folder or do it automatically by using the <em>rollout_helper.py</em> script
+found in the <em>00_helpers</em> folder.</p>
+<p>As of v1.6.0 though helpers are not needed for Postgres-native metrics (e.g. WAL size) if a privileged user (superuser
+or <em>pg_monitor</em> GRANT) is used, as pgwatch2 now supports having 2 SQL definitions for each metric - “normal / unprivileged”
+and “privileged” / “superuser”. In the file system <em>/etc/pgwatch2/metrics</em> such “privileged” access definitions will have a “_su” added to the file name.</p>
+</section>
+<section id="automatic-rollout-of-helpers">
+<h2>Automatic rollout of helpers<a class="headerlink" href="#automatic-rollout-of-helpers" title="Link to this heading"></a></h2>
+<p>pgwatch2 can roll out <em>helpers</em> also automatically on the monitored DB. This requires superuser privileges and a configuration
+attribute for the monitored DB. In YAML config mode it’s called <em>is_superuser</em>, in Config DB <em>md_is_superuser</em>, in the Web UI one
+can tick the “Auto-create helpers” checkbox and for <em>ad-hoc</em> mode there are the <em>–adhoc-create-helpers</em> / <em>PW2_ADHOC_CREATE_HELPERS</em> flags.</p>
+<p>After the automatic rollout it’s still generally recommended to remove the superuser privileges from the monitoring role,
+which now should have GRANT-s to all automatically created helper functions. Note though that all created helpers will not be immediately usable as
+some are for special purposes and need additional dependencies.</p>
+<p>A hint: if it can be foreseen that a lot of databases will be created on some instance (generally not a good idea though) it
+might be a good idea to roll out the helpers directly in the <em>template1</em> database - so that all newly created databases
+will get them automatically.</p>
+</section>
+<section id="pl-python-helpers">
+<h2>PL/Python helpers<a class="headerlink" href="#pl-python-helpers" title="Link to this heading"></a></h2>
+<p>PostgreSQL in general is implemented in such a way that it does not know too much about the operation system that it is
+running on. This is a good thing for portability but can be somewhat limiting for monitoring, especially when there is no
+<em>system monitoring</em> framework in place or the data is not conveniently accessible together with metrics gathered from Postgres.
+To overcome this problem, users can also choose to install <em>helpers</em> extracting OS metrics like CPU, RAM usage, etc so that this
+data is stored together with Postgres-native metrics for easier graphing / correlation / alerting. This also enable to be totally independent
+of any System Monitoring tools like Zabbix, etc, with the downside that everything is gathered over Postgres connections so that
+when Postgres is down no OS metrics can be gathered also. Since v1.8.4 though the latter problem can be reduced for local
+“push” based setups via the “–direct-os-stats” option plus according metrics configuration (e.g. the “full” preset).</p>
+<p>Note though that PL/Python is usually disabled by DB-as-a-service providers like AWS RDS for security reasons.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># first install the Python bindings for Postgres</span>
+<span class="n">apt</span> <span class="n">install</span> <span class="n">postgresql</span><span class="o">-</span><span class="n">plpython3</span><span class="o">-</span><span class="n">XY</span>
+<span class="c1"># yum install postgresqlXY-plpython3</span>
+
+<span class="n">psql</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;CREATE EXTENSION plpython3u&quot;</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_load_average</span><span class="o">/</span><span class="mf">9.1</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span> <span class="n">mydb</span>
+
+<span class="c1"># psutil helpers are only needed when full set of common OS metrics is wanted</span>
+<span class="n">apt</span> <span class="n">install</span> <span class="n">python3</span><span class="o">-</span><span class="n">psutil</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_psutil_cpu</span><span class="o">/</span><span class="mf">9.1</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span> <span class="n">mydb</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_psutil_mem</span><span class="o">/</span><span class="mf">9.1</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span> <span class="n">mydb</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_psutil_disk</span><span class="o">/</span><span class="mf">9.1</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span> <span class="n">mydb</span>
+<span class="n">psql</span> <span class="o">-</span><span class="n">f</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">pgwatch2</span><span class="o">/</span><span class="n">metrics</span><span class="o">/</span><span class="mi">00</span><span class="n">_helpers</span><span class="o">/</span><span class="n">get_psutil_disk_io_total</span><span class="o">/</span><span class="mf">9.1</span><span class="o">/</span><span class="n">metric</span><span class="o">.</span><span class="n">sql</span> <span class="n">mydb</span>
+</pre></div>
+</div>
+<p>Note that we’re assuming here that we’re on a modern Linux system with Python 3 as default. For older systems Python 3
+might not be an option though, so you need to change <em>plpython3u</em> to <em>plpythonu</em> and also do the same replace inside the
+code of the actual helper functions! Here the <em>rollout_helper.py</em> script with it’s <code class="docutils literal notranslate"><span class="pre">--python2</span></code> flag can be helpful again.</p>
+</section>
+<section id="notice-on-using-metric-fetching-helpers">
+<h2>Notice on using metric fetching helpers<a class="headerlink" href="#notice-on-using-metric-fetching-helpers" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Starting from Postgres v10 helpers are mostly not needed (only for PL/Python ones getting OS statistics) - there are available
+some special monitoring roles like “pg_monitor”, that are exactly meant to be used for such cases where we want to give access
+to all Statistics Collector views without any other “superuser behaviour”. See <a class="reference external" href="https://www.postgresql.org/docs/current/default-roles.html">here</a>
+for documentation on such special system roles. Note that currently most out-of-the-box metrics first rely on the helpers
+as v10 is relatively new still, and only when fetching fails, direct access with the “Privileged SQL” is tried.</p></li>
+<li><p>For gathering OS statistics (CPU, IO, disk) there are helpers and metrics provided, based on the “psutil” Python
+package…but from user reports seems the package behaviour differentiates slightly based on the Linux distro / Kernel
+version used, so small adjustments might be needed there (e.g. to remove a non-existent column). Minimum usable Kernel version
+required is 3.3. Also note that SQL helpers functions are currently defined for Python 3, so for older Python 2 you need
+to change the <code class="docutils literal notranslate"><span class="pre">LANGUAGE</span> <span class="pre">plpython3u</span></code> part.</p></li>
+<li><p>When running the gatherer locally, i.e. having a “push” based configuration, the metric fetching helpers are not mostly
+not needed as superuser can be used in a safe way and starting from v1.8.4 one can also enable the <strong>–direct-os-stats</strong>
+parameter to signal that we can fetch the data for the default “psutil_*” metrics directly from OS counters. If direct
+OS fetching fails though, the fallback is still to try via PL/Python wrappers.</p></li>
+<li><p>In rare cases when some “helpers” have been installed, and when doing a binary PostgreSQL upgrade at some later point in time via <cite>pg_upgrade</cite>, this could result in
+error messages thrown. Then just drop those failing helpers on the “to be upgraded” cluster and re-create them after the upgrade process.</p></li>
+</ul>
+</section>
+<section id="running-with-developer-credentials">
+<h2>Running with developer credentials<a class="headerlink" href="#running-with-developer-credentials" title="Link to this heading"></a></h2>
+<p>As mentioned above, helper / wrapper functions are not strictly needed, they just provide a bit more information for unprivileged users - thus for developers
+with no means to install any wrappers as superuser, it’s also possible to benefit from pgwatch2 - for such use cases e.g.
+the “unprivileged” preset metrics profile and the according “DB overview Unprivileged / Developer” <a class="reference external" href="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch2/master/screenshots/overview_developer.png">dashboard</a>
+are a good starting point as it only assumes existence of <cite>pg_stat_statements</cite> (which should be available by all cloud providers).</p>
+</section>
+<section id="different-db-types-explained">
+<span id="db-types"></span><h2>Different <em>DB types</em> explained<a class="headerlink" href="#different-db-types-explained" title="Link to this heading"></a></h2>
+<p>When adding a new “to be monitored” entry a <em>DB type</em> needs to be selected. Following types are available:</p>
+<dl class="simple">
+<dt><em>postgres</em></dt><dd><p>Monitor a single database on a single Postgres instance.
+When using the Web UI and the “DB name” field is left empty, there’s as a one time operation where all non-template DB names are fetched,
+prefixed with “Unique name” field value and added to monitoring (if not already monitored). Internally monitoring always
+happens “per DB” not “per cluster” though.</p>
+</dd>
+<dt><em>postgres-continuous-discovery</em></dt><dd><p>Monitor a whole (or subset of DB-s) of Postgres cluster / instance.
+Host information without a DB name needs to be specified and then the pgwatch2 daemon will periodically scan the cluster
+and add any found and not yet monitored  DBs to monitoring. In this mode it’s also possible to specify regular expressions
+to include/exclude some database names.</p>
+</dd>
+<dt><em>pgbouncer</em></dt><dd><p>Use to track metrics from PgBouncer’s “SHOW STATS” command.
+In place of the Postgres “DB name” the name of the PgBouncer “pool” to be monitored must be inserted.</p>
+</dd>
+<dt><em>pgpool</em></dt><dd><p>Use to track joint metrics from Pgpool2’s <em>SHOW POOL_NODES</em> and <em>POOL_PROCESSES</em> commands.
+Pgpool2 from version 3.0 is supported.</p>
+</dd>
+<dt><em>patroni</em></dt><dd><p>Patroni is a HA / cluster manager for Postgres that relies on a DCS (Distributed Consensus Store) to store it’s state.
+Typically in such a setup the nodes come and go and also it should not matter who is currently the master.
+To make it easier to monitor such dynamic constellations pgwatch2 supports reading of cluster node info from all
+supported DCS-s (etcd, Zookeeper, Consul), but currently only for simpler cases with no security applied (which is actually
+the common case in a trusted environment).</p>
+</dd>
+<dt><em>patroni-continuous-discovery</em></dt><dd><p>As normal <em>patroni</em> DB type but all DB-s (or only those matching the regex if any provided) are monitored.</p>
+</dd>
+<dt><em>patroni-namespace-discovery</em></dt><dd><p>Similar to <em>patroni-continuous-discovery</em> but all Patroni scopes (clusters) of an ETCD namespace are automatically monitored.
+Optionally regexes on database names still apply if provided.</p>
+</dd>
+</dl>
+<p>NB! All “continuous” modes expect access to “template1” or “postgres” databasess of the specified cluster to determine
+the database names residing there.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="custom_installation.html" class="btn btn-neutral float-left" title="Custom installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="using_managed_services.html" class="btn btn-neutral float-right" title="Monitoring managed cloud databases" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, CYBERTEC PostgreSQL International GmBh.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
