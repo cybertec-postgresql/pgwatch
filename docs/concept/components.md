@@ -36,7 +36,8 @@ Many options here so that one can for example go for maximum storage
 effectiveness or pick something where they already know the query
 language:
 
-### [PostgreSQL](https://www.postgresql.org/) 
+### [PostgreSQL](https://www.postgresql.org/)
+
 PostgreSQL is a world's most advanced Open Source RDBMS.
 
 Postgres storage is based on the JSONB datatype so minimally
@@ -44,7 +45,8 @@ version 9.4+ is required, but for bigger setups where partitioning
 is a must, v11+ is needed. Any already existing Postgres database
 will do the trick, see the [Bootstrapping the Metrics DB](../howto/metrics_db_bootstrap.md) section for details.
 
-### [TimescaleDB](https://www.timescale.com/) 
+### [TimescaleDB](https://www.timescale.com/)
+
 TimescaleDB is a time-series extension for PostgreSQL.
 
 Although technically a plain extension it's often mentioned as a
@@ -53,7 +55,8 @@ the table, enabling huge disk savings over standard Postgres. Note
 that pgwatch does not use Timescales built-in *retention*
 management but a custom version.
 
-### [Prometheus](https://prometheus.io/) 
+### [Prometheus](https://prometheus.io/)
+
 Prometheus is a time series database and monitoring system.
 
 Though Prometheus is not a traditional database system, it's a
@@ -64,6 +67,7 @@ nice fault-tolerant alerting system for enterprise needs. By
 default, Prometheus is not set up for long term metrics storage!
 
 ### JSON files
+
 Plain text files for testing / special use cases.
 
 ## The Web UI
@@ -87,14 +91,10 @@ be visualized or processed in any other way.
 
 ## Component diagram
 
-Component diagram of a typical setup:
-
-[![pgwatch typical deployment architecture diagram](../gallery/pgwatch_architecture.png)](../gallery/pgwatch_architecture.png)
-
-## Component reuse
+[![pgwatch typical deployment architecture diagram](../gallery/pgwatch_architecture.jpg)](../gallery/pgwatch_architecture.jpg)
 
 All components are *loosely coupled*, thus for non-pgwatch components
-(pgwatch components are only the metrics collector) 
+(pgwatch components are only the metrics collector)
 you can decide to make use of an already existing installation of
 Postgres, Grafana or Prometheus and run additionally just the pgwatch
 collector.
