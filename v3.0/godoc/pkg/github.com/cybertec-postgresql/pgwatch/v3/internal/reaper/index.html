@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+
+  <title>reaper - PgWatch Developer Documentation</title>
+
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css">
+
+<script>window.initFuncs = [];</script>
+<script src="/godoc/lib/godoc/jquery.js" defer></script>
+
+
+
+
+<script>var goVersion = "go1.23.4";</script>
+<script src="/godoc/lib/godoc/godocs.js" defer></script>
+
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Package reaper
+    <span class="text-muted"></span>
+  </h1>
+
+
+
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+
+	<script>
+	document.ANALYSIS_DATA = null;
+	document.CALLGRAPH = null;
+	</script>
+
+	
+		
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "github.com/cybertec-postgresql/pgwatch/v3/internal/reaper"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="#pkg-index" class="indexLink">Index</a></dd>
+			
+			
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="pkg-overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+				
+				
+			</div>
+		</div>
+
+		<div id="pkg-index" class="toggleVisible">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
+		</div>
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
+
+		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
+			<div id="manual-nav">
+			<dl>
+			
+				<dd><a href="#pkg-constants">Constants</a></dd>
+			
+			
+				<dd><a href="#pkg-variables">Variables</a></dd>
+			
+			
+				
+				<dd><a href="#AddDbnameSysinfoIfNotExistsToQueryResultData">func AddDbnameSysinfoIfNotExistsToQueryResultData(data metrics.Measurements, ver MonitoredDatabaseSettings, opts *cmdopts.Options) metrics.Measurements</a></dd>
+			
+				
+				<dd><a href="#CheckForPGObjectChangesAndStore">func CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan&lt;- []metrics.MeasurementEnvelope, hostState map[string]map[string]string)</a></dd>
+			
+				
+				<dd><a href="#ClearDBUnreachableStateIfAny">func ClearDBUnreachableStateIfAny(dbUnique string)</a></dd>
+			
+				
+				<dd><a href="#CloseResourcesForRemovedMonitoredDBs">func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, currentDBs, prevLoopDBs sources.MonitoredDatabases, shutDownDueToRoleChange map[string]bool)</a></dd>
+			
+				
+				<dd><a href="#DBExecRead">func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) (metrics.Measurements, error)</a></dd>
+			
+				
+				<dd><a href="#DBExecReadByDbUniqueName">func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, sql string, args ...any) (metrics.Measurements, error)</a></dd>
+			
+				
+				<dd><a href="#DBGetSizeMB">func DBGetSizeMB(ctx context.Context, dbUnique string) (int64, error)</a></dd>
+			
+				
+				<dd><a href="#DatarowsToMetricstoreMessage">func DatarowsToMetricstoreMessage(data metrics.Measurements, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) (metrics.MeasurementEnvelope, error)</a></dd>
+			
+				
+				<dd><a href="#DoesEmergencyTriggerfileExist">func DoesEmergencyTriggerfileExist(fname string) bool</a></dd>
+			
+				
+				<dd><a href="#DoesFunctionExists">func DoesFunctionExists(ctx context.Context, dbUnique, functionName string) bool</a></dd>
+			
+				
+				<dd><a href="#FetchMetrics">func FetchMetrics(ctx context.Context, msg MetricFetchConfig, hostState map[string]map[string]string, storageCh chan&lt;- []metrics.MeasurementEnvelope, context string, opts *cmdopts.Options) ([]metrics.MeasurementEnvelope, error)</a></dd>
+			
+				
+				<dd><a href="#FetchMetricsPgpool">func FetchMetricsPgpool(ctx context.Context, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) (metrics.Measurements, error)</a></dd>
+			
+				
+				<dd><a href="#FetchStatsDirectlyFromOS">func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) ([]metrics.MeasurementEnvelope, error)</a></dd>
+			
+				
+				<dd><a href="#FilterPgbouncerData">func FilterPgbouncerData(ctx context.Context, data metrics.Measurements, databaseToKeep string, vme MonitoredDatabaseSettings) metrics.Measurements</a></dd>
+			
+				
+				<dd><a href="#GetAllRecoMetricsForVersion">func GetAllRecoMetricsForVersion(vme MonitoredDatabaseSettings) (map[string]metrics.Metric, error)</a></dd>
+			
+				
+				<dd><a href="#GetConnByUniqueName">func GetConnByUniqueName(dbUnique string) db.PgxIface</a></dd>
+			
+				
+				<dd><a href="#GetDBTotalApproxSize">func GetDBTotalApproxSize(ctx context.Context, dbUnique string) (int64, error)</a></dd>
+			
+				
+				<dd><a href="#GetFromInstanceCacheIfNotOlderThanSeconds">func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchConfig, maxAgeSeconds int64) metrics.Measurements</a></dd>
+			
+				
+				<dd><a href="#GetGoPsutilDiskPG">func GetGoPsutilDiskPG(ctx context.Context, dbUnique string) (metrics.Measurements, error)</a></dd>
+			
+				
+				<dd><a href="#GetMetricVersionProperties">func GetMetricVersionProperties(metric string, _ MonitoredDatabaseSettings, metricDefMap *metrics.Metrics) (metrics.Metric, error)</a></dd>
+			
+				
+				<dd><a href="#GetMonitoredDatabaseByUniqueName">func GetMonitoredDatabaseByUniqueName(name string) (*sources.MonitoredDatabase, error)</a></dd>
+			
+				
+				<dd><a href="#GetRecommendations">func GetRecommendations(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings) (metrics.Measurements, error)</a></dd>
+			
+				
+				<dd><a href="#InitPGVersionInfoFetchingLockIfNil">func InitPGVersionInfoFetchingLockIfNil(md *sources.MonitoredDatabase)</a></dd>
+			
+				
+				<dd><a href="#InitSQLConnPoolForMonitoredDBIfNil">func InitSQLConnPoolForMonitoredDBIfNil(ctx context.Context, md *sources.MonitoredDatabase, maxConns int) (err error)</a></dd>
+			
+				
+				<dd><a href="#IsCacheableMetric">func IsCacheableMetric(msg MetricFetchConfig, mvp metrics.Metric) bool</a></dd>
+			
+				
+				<dd><a href="#IsDBDormant">func IsDBDormant(dbUnique string) bool</a></dd>
+			
+				
+				<dd><a href="#IsDBIgnoredBasedOnRecoveryState">func IsDBIgnoredBasedOnRecoveryState(dbUnique string) bool</a></dd>
+			
+				
+				<dd><a href="#IsDBUndersized">func IsDBUndersized(dbUnique string) bool</a></dd>
+			
+				
+				<dd><a href="#IsDirectlyFetchableMetric">func IsDirectlyFetchableMetric(metric string) bool</a></dd>
+			
+				
+				<dd><a href="#LoadMetricDefs">func LoadMetricDefs(r metrics.Reader) (err error)</a></dd>
+			
+				
+				<dd><a href="#PutToInstanceCache">func PutToInstanceCache(msg MetricFetchConfig, data metrics.Measurements)</a></dd>
+			
+				
+				<dd><a href="#SetDBUnreachableState">func SetDBUnreachableState(dbUnique string)</a></dd>
+			
+				
+				<dd><a href="#SetRecoveryIgnoredDBState">func SetRecoveryIgnoredDBState(dbUnique string, state bool)</a></dd>
+			
+				
+				<dd><a href="#SetUndersizedDBState">func SetUndersizedDBState(dbUnique string, state bool)</a></dd>
+			
+				
+				<dd><a href="#StoreMetrics">func StoreMetrics(metrics []metrics.MeasurementEnvelope, storageCh chan&lt;- []metrics.MeasurementEnvelope) (int, error)</a></dd>
+			
+				
+				<dd><a href="#SyncMetricDefs">func SyncMetricDefs(ctx context.Context, r metrics.Reader)</a></dd>
+			
+				
+				<dd><a href="#SyncMonitoredDBsToDatastore">func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.MonitoredDatabase, persistenceChannel chan []metrics.MeasurementEnvelope)</a></dd>
+			
+				
+				<dd><a href="#TryCreateMetricsFetchingHelpers">func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.MonitoredDatabase) (err error)</a></dd>
+			
+				
+				<dd><a href="#TryCreateMissingExtensions">func TryCreateMissingExtensions(ctx context.Context, dbUnique string, extensionNames []string, existingExtensions map[string]int) []string</a></dd>
+			
+				
+				<dd><a href="#TryDiscoverExecutionEnv">func TryDiscoverExecutionEnv(ctx context.Context, dbUnique string) (execEnv string)</a></dd>
+			
+				
+				<dd><a href="#UpdateMonitoredDBCache">func UpdateMonitoredDBCache(data sources.MonitoredDatabases)</a></dd>
+			
+				
+				<dd><a href="#VersionToInt">func VersionToInt(version string) (v int)</a></dd>
+			
+				
+				<dd><a href="#deepCopyMetricData">func deepCopyMetricData(data metrics.Measurements) metrics.Measurements</a></dd>
+			
+			
+				
+				<dd><a href="#ChangeDetectionResults">type ChangeDetectionResults</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DetectConfigurationChanges">func DetectConfigurationChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan&lt;- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DetectIndexChanges">func DetectIndexChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan&lt;- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DetectPrivilegeChanges">func DetectPrivilegeChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan&lt;- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DetectSprocChanges">func DetectSprocChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan&lt;- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DetectTableChanges">func DetectTableChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan&lt;- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults</a></dd>
+				
+				
+			
+				
+				<dd><a href="#ExistingPartitionInfo">type ExistingPartitionInfo</a></dd>
+				
+				
+			
+				
+				<dd><a href="#MetricFetchConfig">type MetricFetchConfig</a></dd>
+				
+				
+			
+				
+				<dd><a href="#MonitoredDatabaseSettings">type MonitoredDatabaseSettings</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#GetMonitoredDatabaseSettings">func GetMonitoredDatabaseSettings(ctx context.Context, dbUnique string, srcType sources.Kind, noCache bool) (MonitoredDatabaseSettings, error)</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Reaper">type Reaper</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewReaper">func NewReaper(opts *cmdopts.Options, sourcesReaderWriter sources.ReaderWriter, metricsReaderWriter metrics.ReaderWriter) *Reaper</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reaper.Reap">func (r *Reaper) Reap(mainContext context.Context) (err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reaper.reapMetricMeasurementsFromSource">func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context, dbUniqueName, dbUniqueNameOrig string, srcType sources.Kind, metricName string, configMap map[string]float64)</a></dd>
+				
+			
+			
+			</dl>
+			</div><!-- #manual-nav -->
+
+		
+
+		
+			<h3>Package files</h3>
+			<p>
+			<span style="font-size:90%">
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/cache.go">cache.go</a>
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go">database.go</a>
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/file.go">file.go</a>
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/reaper.go">reaper.go</a>
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/recommendations.go">recommendations.go</a>
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/types.go">types.go</a>
+			
+			</span>
+			</p>
+		
+		</div><!-- .expanded -->
+		</div><!-- #pkg-index -->
+
+		
+
+		
+			<h2 id="pkg-constants">Constants</h2>
+			
+				
+				<pre>const (
+    <span id="execEnvUnknown">execEnvUnknown</span>       = &#34;UNKNOWN&#34;
+    <span id="execEnvAzureSingle">execEnvAzureSingle</span>   = &#34;AZURE_SINGLE&#34;
+    <span id="execEnvAzureFlexible">execEnvAzureFlexible</span> = &#34;AZURE_FLEXIBLE&#34;
+    <span id="execEnvGoogle">execEnvGoogle</span>        = &#34;GOOGLE&#34;
+)</pre>
+			
+				
+				<pre>const (
+    <span id="metricCPULoad">metricCPULoad</span>           = &#34;cpu_load&#34;
+    <span id="metricPsutilCPU">metricPsutilCPU</span>         = &#34;psutil_cpu&#34;
+    <span id="metricPsutilDisk">metricPsutilDisk</span>        = &#34;psutil_disk&#34;
+    <span id="metricPsutilDiskIoTotal">metricPsutilDiskIoTotal</span> = &#34;psutil_disk_io_total&#34;
+    <span id="metricPsutilMem">metricPsutilMem</span>         = &#34;psutil_mem&#34;
+)</pre>
+			
+				
+				<pre>const (
+    <span id="recoPrefix">recoPrefix</span>                        = &#34;reco_&#34; <span class="comment">// special handling for metrics with such prefix, data stored in RECO_METRIC_NAME</span>
+    <span id="recoMetricName">recoMetricName</span>                    = &#34;recommendations&#34;
+    <span id="specialMetricChangeEvents">specialMetricChangeEvents</span>         = &#34;change_events&#34;
+    <span id="specialMetricServerLogEventCounts">specialMetricServerLogEventCounts</span> = &#34;server_log_event_counts&#34;
+    <span id="specialMetricPgbouncer">specialMetricPgbouncer</span>            = &#34;^pgbouncer_(stats|pools)$&#34;
+    <span id="specialMetricPgpoolStats">specialMetricPgpoolStats</span>          = &#34;pgpool_stats&#34;
+    <span id="specialMetricInstanceUp">specialMetricInstanceUp</span>           = &#34;instance_up&#34;
+    <span id="specialMetricDbSize">specialMetricDbSize</span>               = &#34;db_size&#34;     <span class="comment">// can be transparently switched to db_size_approx on instances with very slow FS access (Azure Single Server)</span>
+    <span id="specialMetricTableStats">specialMetricTableStats</span>           = &#34;table_stats&#34; <span class="comment">// can be transparently switched to table_stats_approx on instances with very slow FS (Azure Single Server)</span>
+
+)</pre>
+			
+				
+				<pre>const (
+    <span id="epochColumnName">epochColumnName</span>     <a href="https://pkg.go.dev/builtin/#string">string</a> = &#34;epoch_ns&#34; <span class="comment">// this column (epoch in nanoseconds) is expected in every metric query</span>
+    <span id="tagPrefix">tagPrefix</span>           <a href="https://pkg.go.dev/builtin/#string">string</a> = &#34;tag_&#34;
+    <span id="persistQueueMaxSize">persistQueueMaxSize</span>        = 10000 <span class="comment">// storage queue max elements. when reaching the limit, older metrics will be dropped.</span>
+
+    <span id="gathererStatusStart">gathererStatusStart</span>     = &#34;START&#34;
+    <span id="gathererStatusStop">gathererStatusStop</span>      = &#34;STOP&#34;
+    <span id="metricdbIdent">metricdbIdent</span>           = &#34;metricDb&#34;
+    <span id="configdbIdent">configdbIdent</span>           = &#34;configDb&#34;
+    <span id="contextPrometheusScrape">contextPrometheusScrape</span> = &#34;prometheus-scrape&#34;
+
+    <span id="monitoredDbsDatastoreSyncIntervalSeconds">monitoredDbsDatastoreSyncIntervalSeconds</span> = 600              <span class="comment">// write actively monitored DBs listing to metrics store after so many seconds</span>
+    <span id="monitoredDbsDatastoreSyncMetricName">monitoredDbsDatastoreSyncMetricName</span>      = &#34;configured_dbs&#34; <span class="comment">// FYI - for Postgres datastore there&#39;s also the admin.all_unique_dbnames table with all recent DB unique names with some metric data</span>
+
+    <span id="dbSizeCachingInterval">dbSizeCachingInterval</span> = 30 * <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Minute">Minute</a>
+    <span id="dbMetricJoinStr">dbMetricJoinStr</span>       = &#34;¤¤¤&#34; <span class="comment">// just some unlikely string for a DB name to avoid using maps of maps for DB+metric data</span>
+
+)</pre>
+			
+				
+				<pre>const <span id="metricDefinitionRefreshInterval">metricDefinitionRefreshInterval</span> <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a> = <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Minute">Minute</a> * 2 <span class="comment">// min time before checking for new/changed metric definitions</span>
+</pre>
+			
+		
+		
+			<h2 id="pkg-variables">Variables</h2>
+			
+				
+				<pre>var <span id="MonitoredDatabasesSettings">MonitoredDatabasesSettings</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>)</pre>
+			
+				
+				<pre>var <span id="MonitoredDatabasesSettingsGetLock">MonitoredDatabasesSettingsGetLock</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]*<a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a>) <span class="comment">// synchronize initial PG version detection to 1 instance for each defined host</span>
+</pre>
+			
+				
+				<pre>var <span id="MonitoredDatabasesSettingsLock">MonitoredDatabasesSettingsLock</span> = <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a>{}</pre>
+			
+				
+				<pre>var <span id="directlyFetchableOSMetrics">directlyFetchableOSMetrics</span> = map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#bool">bool</a>{metricPsutilCPU: <a href="https://pkg.go.dev/builtin/#true">true</a>, metricPsutilDisk: <a href="https://pkg.go.dev/builtin/#true">true</a>, metricPsutilDiskIoTotal: <a href="https://pkg.go.dev/builtin/#true">true</a>, metricPsutilMem: <a href="https://pkg.go.dev/builtin/#true">true</a>, metricCPULoad: <a href="https://pkg.go.dev/builtin/#true">true</a>}</pre>
+			
+				
+				<pre>var <span id="hostLastKnownStatusInRecovery">hostLastKnownStatusInRecovery</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#bool">bool</a>) <span class="comment">// isInRecovery</span>
+</pre>
+			
+				
+				<pre>var <span id="hostMetricIntervalMap">hostMetricIntervalMap</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a>) <span class="comment">// [db1_metric] = 30</span>
+</pre>
+			
+				
+				<pre>var <span id="instanceMetricCache">instanceMetricCache</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>](<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a>)) <span class="comment">// [dbUnique+metric]lastly_fetched_data</span>
+</pre>
+			
+				
+				<pre>var <span id="instanceMetricCacheLock">instanceMetricCacheLock</span> = <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a>{}</pre>
+			
+				
+				<pre>var <span id="instanceMetricCacheTimestamp">instanceMetricCacheTimestamp</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>) <span class="comment">// [dbUnique+metric]last_fetch_time</span>
+</pre>
+			
+				
+				<pre>var <span id="instanceMetricCacheTimestampLock">instanceMetricCacheTimestampLock</span> = <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a>{}</pre>
+			
+				
+				<pre>var <span id="lastDBSizeCheckLock">lastDBSizeCheckLock</span> <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a></pre>
+			
+				
+				<pre>var <span id="lastDBSizeFetchTime">lastDBSizeFetchTime</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>) <span class="comment">// cached for DB_SIZE_CACHING_INTERVAL</span>
+</pre>
+			
+				
+				<pre>var <span id="lastDBSizeMB">lastDBSizeMB</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a>)</pre>
+			
+				
+				<pre>var <span id="lastMonitoredDBsUpdate">lastMonitoredDBsUpdate</span> <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a></pre>
+			
+				
+				<pre>var <span id="lastSQLFetchError">lastSQLFetchError</span> <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#Map">Map</a></pre>
+			
+				
+				<pre>var <span id="metricConfig">metricConfig</span> map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a> <span class="comment">// set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state</span>
+</pre>
+			
+				
+				<pre>var <span id="metricDefMapLock">metricDefMapLock</span> = <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a>{}</pre>
+			
+				
+				<pre>var <span id="metricDefinitionMap">metricDefinitionMap</span> *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metrics">Metrics</a> = &amp;<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metrics">Metrics</a>{}</pre>
+			
+				
+				<pre>var <span id="monitoredDbCache">monitoredDbCache</span> map[<a href="https://pkg.go.dev/builtin/#string">string</a>]*<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a></pre>
+			
+				
+				<pre>var <span id="monitoredDbCacheLock">monitoredDbCacheLock</span> <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a></pre>
+			
+				
+				<pre>var <span id="monitoredDbs">monitoredDbs</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabases">MonitoredDatabases</a>, 0)</pre>
+			
+				
+				<pre>var <span id="pgBouncerNumericCountersStartVersion">pgBouncerNumericCountersStartVersion</span> = 01_12_00 <span class="comment">// pgBouncer changed internal counters data type in v1.12</span>
+</pre>
+			
+				
+				<pre>var <span id="prevLoopMonitoredDBs">prevLoopMonitoredDBs</span> <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabases">MonitoredDatabases</a> <span class="comment">// to be able to detect DBs removed from config</span>
+</pre>
+			
+				
+				<pre>var <span id="rBouncerAndPgpoolVerMatch">rBouncerAndPgpoolVerMatch</span> = <a href="https://pkg.go.dev/regexp/">regexp</a>.<a href="https://pkg.go.dev/regexp/#MustCompile">MustCompile</a>(`\d+\.+\d+`) <span class="comment">// extract $major.minor from &#34;4.1.2 (karasukiboshi)&#34; or &#34;PgBouncer 1.12.0&#34;</span>
+</pre>
+			
+				
+				<pre>var <span id="recoveryIgnoredDBs">recoveryIgnoredDBs</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#bool">bool</a>) <span class="comment">// DBs in recovery state and OnlyIfMaster specified in config</span>
+</pre>
+			
+				
+				<pre>var <span id="recoveryIgnoredDBsLock">recoveryIgnoredDBsLock</span> = <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a>{}</pre>
+			
+				<p>VersionToInt parses a given version and returns an integer  or
+an error if unable to parse the version. Only parses valid semantic versions.
+Performs checking that can find errors within the version.
+Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
+
+				<pre>var <span id="regVer">regVer</span> = <a href="https://pkg.go.dev/regexp/">regexp</a>.<a href="https://pkg.go.dev/regexp/#MustCompile">MustCompile</a>(`(\d+).?(\d*).?(\d*)`)</pre>
+			
+				
+				<pre>var <span id="regexIsPgbouncerMetrics">regexIsPgbouncerMetrics</span> = <a href="https://pkg.go.dev/regexp/">regexp</a>.<a href="https://pkg.go.dev/regexp/#MustCompile">MustCompile</a>(specialMetricPgbouncer)</pre>
+			
+				
+				<pre>var <span id="specialMetrics">specialMetrics</span> = map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#bool">bool</a>{recoMetricName: <a href="https://pkg.go.dev/builtin/#true">true</a>, specialMetricChangeEvents: <a href="https://pkg.go.dev/builtin/#true">true</a>, specialMetricServerLogEventCounts: <a href="https://pkg.go.dev/builtin/#true">true</a>}</pre>
+			
+				
+				<pre>var <span id="undersizedDBs">undersizedDBs</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#bool">bool</a>) <span class="comment">// DBs below the --min-db-size-mb limit, if set</span>
+</pre>
+			
+				
+				<pre>var <span id="undersizedDBsLock">undersizedDBsLock</span> = <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a>{}</pre>
+			
+				
+				<pre>var <span id="unreachableDB">unreachableDB</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>)</pre>
+			
+				
+				<pre>var <span id="unreachableDBsLock">unreachableDBsLock</span> <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a></pre>
+			
+		
+		
+			
+			
+			<h2 id="AddDbnameSysinfoIfNotExistsToQueryResultData">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/reaper.go#L530">AddDbnameSysinfoIfNotExistsToQueryResultData</a>
+				<a class="permalink" href="#AddDbnameSysinfoIfNotExistsToQueryResultData">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func AddDbnameSysinfoIfNotExistsToQueryResultData(data <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a>, ver <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>, opts *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/">cmdopts</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/#Options">Options</a>) <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="CheckForPGObjectChangesAndStore">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L694">CheckForPGObjectChangesAndStore</a>
+				<a class="permalink" href="#CheckForPGObjectChangesAndStore">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func CheckForPGObjectChangesAndStore(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, vme <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>, storageCh chan&lt;- []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="ClearDBUnreachableStateIfAny">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L968">ClearDBUnreachableStateIfAny</a>
+				<a class="permalink" href="#ClearDBUnreachableStateIfAny">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func ClearDBUnreachableStateIfAny(dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="CloseResourcesForRemovedMonitoredDBs">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L939">CloseResourcesForRemovedMonitoredDBs</a>
+				<a class="permalink" href="#CloseResourcesForRemovedMonitoredDBs">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func CloseResourcesForRemovedMonitoredDBs(metricsWriter *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/">sinks</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/#MultiWriter">MultiWriter</a>, currentDBs, prevLoopDBs <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabases">MonitoredDatabases</a>, shutDownDueToRoleChange map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#bool">bool</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="DBExecRead">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L42">DBExecRead</a>
+				<a class="permalink" href="#DBExecRead">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func DBExecRead(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>, sql <a href="https://pkg.go.dev/builtin/#string">string</a>, args ...<a href="https://pkg.go.dev/builtin/#any">any</a>) (<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="DBExecReadByDbUniqueName">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L57">DBExecReadByDbUniqueName</a>
+				<a class="permalink" href="#DBExecReadByDbUniqueName">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func DBExecReadByDbUniqueName(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, sql <a href="https://pkg.go.dev/builtin/#string">string</a>, args ...<a href="https://pkg.go.dev/builtin/#any">any</a>) (<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="DBGetSizeMB">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L92">DBGetSizeMB</a>
+				<a class="permalink" href="#DBGetSizeMB">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func DBGetSizeMB(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#int64">int64</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="DatarowsToMetricstoreMessage">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/file.go#L65">DatarowsToMetricstoreMessage</a>
+				<a class="permalink" href="#DatarowsToMetricstoreMessage">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func DatarowsToMetricstoreMessage(data <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a>, msg <a href="#MetricFetchConfig">MetricFetchConfig</a>, vme <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>, mvp <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metric">Metric</a>) (<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>data + custom tags + counters
+
+			
+			
+
+		
+			
+			
+			<h2 id="DoesEmergencyTriggerfileExist">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/file.go#L11">DoesEmergencyTriggerfileExist</a>
+				<a class="permalink" href="#DoesEmergencyTriggerfileExist">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func DoesEmergencyTriggerfileExist(fname <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="DoesFunctionExists">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L831">DoesFunctionExists</a>
+				<a class="permalink" href="#DoesFunctionExists">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func DoesFunctionExists(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique, functionName <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="FetchMetrics">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/reaper.go#L591">FetchMetrics</a>
+				<a class="permalink" href="#FetchMetrics">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func FetchMetrics(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>,
+    msg <a href="#MetricFetchConfig">MetricFetchConfig</a>,
+    hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>,
+    storageCh chan&lt;- []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>,
+    context <a href="https://pkg.go.dev/builtin/#string">string</a>,
+    opts *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/">cmdopts</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/#Options">Options</a>) ([]<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="FetchMetricsPgpool">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L739">FetchMetricsPgpool</a>
+				<a class="permalink" href="#FetchMetricsPgpool">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func FetchMetricsPgpool(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, msg <a href="#MetricFetchConfig">MetricFetchConfig</a>, vme <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>, mvp <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metric">Metric</a>) (<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>some extra work needed as pgpool SHOW commands don&apos;t specify the return data types for some reason
+
+			
+			
+
+		
+			
+			
+			<h2 id="FetchStatsDirectlyFromOS">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/file.go#L38">FetchStatsDirectlyFromOS</a>
+				<a class="permalink" href="#FetchStatsDirectlyFromOS">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func FetchStatsDirectlyFromOS(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, msg <a href="#MetricFetchConfig">MetricFetchConfig</a>, vme <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>, mvp <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metric">Metric</a>) ([]<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="FilterPgbouncerData">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/reaper.go#L747">FilterPgbouncerData</a>
+				<a class="permalink" href="#FilterPgbouncerData">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func FilterPgbouncerData(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, data <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a>, databaseToKeep <a href="https://pkg.go.dev/builtin/#string">string</a>, vme <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>) <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="GetAllRecoMetricsForVersion">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/recommendations.go#L30">GetAllRecoMetricsForVersion</a>
+				<a class="permalink" href="#GetAllRecoMetricsForVersion">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func GetAllRecoMetricsForVersion(vme <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>) (map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metric">Metric</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="GetConnByUniqueName">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L50">GetConnByUniqueName</a>
+				<a class="permalink" href="#GetConnByUniqueName">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func GetConnByUniqueName(dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="GetDBTotalApproxSize">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L144">GetDBTotalApproxSize</a>
+				<a class="permalink" href="#GetDBTotalApproxSize">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func GetDBTotalApproxSize(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#int64">int64</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="GetFromInstanceCacheIfNotOlderThanSeconds">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/cache.go#L109">GetFromInstanceCacheIfNotOlderThanSeconds</a>
+				<a class="permalink" href="#GetFromInstanceCacheIfNotOlderThanSeconds">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func GetFromInstanceCacheIfNotOlderThanSeconds(msg <a href="#MetricFetchConfig">MetricFetchConfig</a>, maxAgeSeconds <a href="https://pkg.go.dev/builtin/#int64">int64</a>) <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="GetGoPsutilDiskPG">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L924">GetGoPsutilDiskPG</a>
+				<a class="permalink" href="#GetGoPsutilDiskPG">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func GetGoPsutilDiskPG(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>connects actually to the instance to determine PG relevant disk paths / mounts
+
+			
+			
+
+		
+			
+			
+			<h2 id="GetMetricVersionProperties">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/cache.go#L67">GetMetricVersionProperties</a>
+				<a class="permalink" href="#GetMetricVersionProperties">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func GetMetricVersionProperties(metric <a href="https://pkg.go.dev/builtin/#string">string</a>, _ <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>, metricDefMap *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metrics">Metrics</a>) (<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metric">Metric</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>assumes upwards compatibility for versions
+
+			
+			
+
+		
+			
+			
+			<h2 id="GetMonitoredDatabaseByUniqueName">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/cache.go#L56">GetMonitoredDatabaseByUniqueName</a>
+				<a class="permalink" href="#GetMonitoredDatabaseByUniqueName">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func GetMonitoredDatabaseByUniqueName(name <a href="https://pkg.go.dev/builtin/#string">string</a>) (*<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="GetRecommendations">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/recommendations.go#L46">GetRecommendations</a>
+				<a class="permalink" href="#GetRecommendations">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func GetRecommendations(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, vme <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>) (<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="InitPGVersionInfoFetchingLockIfNil">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/cache.go#L38">InitPGVersionInfoFetchingLockIfNil</a>
+				<a class="permalink" href="#InitPGVersionInfoFetchingLockIfNil">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func InitPGVersionInfoFetchingLockIfNil(md *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="InitSQLConnPoolForMonitoredDBIfNil">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L25">InitSQLConnPoolForMonitoredDBIfNil</a>
+				<a class="permalink" href="#InitSQLConnPoolForMonitoredDBIfNil">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func InitSQLConnPoolForMonitoredDBIfNil(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a>, maxConns <a href="https://pkg.go.dev/builtin/#int">int</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>every DB under monitoring should have exactly 1 sql.DB connection assigned, that will internally limit parallel access
+
+			
+			
+
+		
+			
+			
+			<h2 id="IsCacheableMetric">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/reaper.go#L556">IsCacheableMetric</a>
+				<a class="permalink" href="#IsCacheableMetric">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func IsCacheableMetric(msg <a href="#MetricFetchConfig">MetricFetchConfig</a>, mvp <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="IsDBDormant">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L1006">IsDBDormant</a>
+				<a class="permalink" href="#IsDBDormant">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func IsDBDormant(dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="IsDBIgnoredBasedOnRecoveryState">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L996">IsDBIgnoredBasedOnRecoveryState</a>
+				<a class="permalink" href="#IsDBIgnoredBasedOnRecoveryState">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func IsDBIgnoredBasedOnRecoveryState(dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="IsDBUndersized">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L980">IsDBUndersized</a>
+				<a class="permalink" href="#IsDBUndersized">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func IsDBUndersized(dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="IsDirectlyFetchableMetric">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/file.go#L33">IsDirectlyFetchableMetric</a>
+				<a class="permalink" href="#IsDirectlyFetchableMetric">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func IsDirectlyFetchableMetric(metric <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="LoadMetricDefs">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/cache.go#L81">LoadMetricDefs</a>
+				<a class="permalink" href="#LoadMetricDefs">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func LoadMetricDefs(r <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Reader">Reader</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>LoadMetricDefs loads metric definitions from the reader
+
+			
+			
+
+		
+			
+			
+			<h2 id="PutToInstanceCache">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/reaper.go#L563">PutToInstanceCache</a>
+				<a class="permalink" href="#PutToInstanceCache">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func PutToInstanceCache(msg <a href="#MetricFetchConfig">MetricFetchConfig</a>, data <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="SetDBUnreachableState">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L962">SetDBUnreachableState</a>
+				<a class="permalink" href="#SetDBUnreachableState">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func SetDBUnreachableState(dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="SetRecoveryIgnoredDBState">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L990">SetRecoveryIgnoredDBState</a>
+				<a class="permalink" href="#SetRecoveryIgnoredDBState">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func SetRecoveryIgnoredDBState(dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, state <a href="https://pkg.go.dev/builtin/#bool">bool</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="SetUndersizedDBState">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L974">SetUndersizedDBState</a>
+				<a class="permalink" href="#SetUndersizedDBState">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func SetUndersizedDBState(dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, state <a href="https://pkg.go.dev/builtin/#bool">bool</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="StoreMetrics">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/reaper.go#L492">StoreMetrics</a>
+				<a class="permalink" href="#StoreMetrics">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func StoreMetrics(metrics []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, storageCh chan&lt;- []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) (<a href="https://pkg.go.dev/builtin/#int">int</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="SyncMetricDefs">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/cache.go#L96">SyncMetricDefs</a>
+				<a class="permalink" href="#SyncMetricDefs">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func SyncMetricDefs(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, r <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Reader">Reader</a>)</pre>
+			<p>SyncMetricDefs refreshes metric definitions at regular intervals
+
+			
+			
+
+		
+			
+			
+			<h2 id="SyncMonitoredDBsToDatastore">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/reaper.go#L500">SyncMonitoredDBsToDatastore</a>
+				<a class="permalink" href="#SyncMonitoredDBsToDatastore">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func SyncMonitoredDBsToDatastore(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, monitoredDbs []*<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a>, persistenceChannel chan []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="TryCreateMetricsFetchingHelpers">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L886">TryCreateMetricsFetchingHelpers</a>
+				<a class="permalink" href="#TryCreateMetricsFetchingHelpers">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func TryCreateMetricsFetchingHelpers(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>Called once on daemon startup to try to create &quot;metric fething helper&quot; functions automatically
+
+			
+			
+
+		
+			
+			
+			<h2 id="TryCreateMissingExtensions">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L849">TryCreateMissingExtensions</a>
+				<a class="permalink" href="#TryCreateMissingExtensions">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func TryCreateMissingExtensions(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, extensionNames []<a href="https://pkg.go.dev/builtin/#string">string</a>, existingExtensions map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int">int</a>) []<a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+			<p>Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
+With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific
+whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores errors.
+
+			
+			
+
+		
+			
+			
+			<h2 id="TryDiscoverExecutionEnv">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L131">TryDiscoverExecutionEnv</a>
+				<a class="permalink" href="#TryDiscoverExecutionEnv">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func TryDiscoverExecutionEnv(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>) (execEnv <a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="UpdateMonitoredDBCache">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/cache.go#L46">UpdateMonitoredDBCache</a>
+				<a class="permalink" href="#UpdateMonitoredDBCache">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func UpdateMonitoredDBCache(data <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabases">MonitoredDatabases</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="VersionToInt">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L166">VersionToInt</a>
+				<a class="permalink" href="#VersionToInt">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func VersionToInt(version <a href="https://pkg.go.dev/builtin/#string">string</a>) (v <a href="https://pkg.go.dev/builtin/#int">int</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="deepCopyMetricData">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/reaper.go#L577">deepCopyMetricData</a>
+				<a class="permalink" href="#deepCopyMetricData">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func deepCopyMetricData(data <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a>) <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a></pre>
+			
+			
+			
+
+		
+		
+			
+			
+			<h2 id="ChangeDetectionResults">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/types.go#L38">ChangeDetectionResults</a>
+				<a class="permalink" href="#ChangeDetectionResults">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type ChangeDetectionResults struct {
+<span id="ChangeDetectionResults.Created"></span>    Created <a href="https://pkg.go.dev/builtin/#int">int</a>
+<span id="ChangeDetectionResults.Altered"></span>    Altered <a href="https://pkg.go.dev/builtin/#int">int</a>
+<span id="ChangeDetectionResults.Dropped"></span>    Dropped <a href="https://pkg.go.dev/builtin/#int">int</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="DetectConfigurationChanges">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L630">DetectConfigurationChanges</a>
+					<a class="permalink" href="#DetectConfigurationChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func DetectConfigurationChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, vme <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>, storageCh chan&lt;- []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
+				
+				
+				
+			
+				
+				<h3 id="DetectIndexChanges">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L466">DetectIndexChanges</a>
+					<a class="permalink" href="#DetectIndexChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func DetectIndexChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, vme <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>, storageCh chan&lt;- []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
+				
+				
+				
+			
+				
+				<h3 id="DetectPrivilegeChanges">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L548">DetectPrivilegeChanges</a>
+					<a class="permalink" href="#DetectPrivilegeChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func DetectPrivilegeChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, vme <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>, storageCh chan&lt;- []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
+				
+				
+				
+			
+				
+				<h3 id="DetectSprocChanges">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L298">DetectSprocChanges</a>
+					<a class="permalink" href="#DetectSprocChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func DetectSprocChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, vme <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>, storageCh chan&lt;- []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
+				
+				
+				
+			
+				
+				<h3 id="DetectTableChanges">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L382">DetectTableChanges</a>
+					<a class="permalink" href="#DetectTableChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func DetectTableChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, vme <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>, storageCh chan&lt;- []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
+				
+				
+				
+			
+
+			
+		
+			
+			
+			<h2 id="ExistingPartitionInfo">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/types.go#L57">ExistingPartitionInfo</a>
+				<a class="permalink" href="#ExistingPartitionInfo">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type ExistingPartitionInfo struct {
+<span id="ExistingPartitionInfo.StartTime"></span>    StartTime <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>
+<span id="ExistingPartitionInfo.EndTime"></span>    EndTime   <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="MetricFetchConfig">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/types.go#L28">MetricFetchConfig</a>
+				<a class="permalink" href="#MetricFetchConfig">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type MetricFetchConfig struct {
+<span id="MetricFetchConfig.DBUniqueName"></span>    DBUniqueName        <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MetricFetchConfig.DBUniqueNameOrig"></span>    DBUniqueNameOrig    <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MetricFetchConfig.MetricName"></span>    MetricName          <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MetricFetchConfig.Source"></span>    Source              <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#Kind">Kind</a>
+<span id="MetricFetchConfig.Interval"></span>    Interval            <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>
+<span id="MetricFetchConfig.CreatedOn"></span>    CreatedOn           <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>
+<span id="MetricFetchConfig.StmtTimeoutOverride"></span>    StmtTimeoutOverride <a href="https://pkg.go.dev/builtin/#int64">int64</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="MonitoredDatabaseSettings">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/types.go#L44">MonitoredDatabaseSettings</a>
+				<a class="permalink" href="#MonitoredDatabaseSettings">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type MonitoredDatabaseSettings struct {
+<span id="MonitoredDatabaseSettings.LastCheckedOn"></span>    LastCheckedOn    <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>
+<span id="MonitoredDatabaseSettings.IsInRecovery"></span>    IsInRecovery     <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+<span id="MonitoredDatabaseSettings.VersionStr"></span>    VersionStr       <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MonitoredDatabaseSettings.Version"></span>    Version          <a href="https://pkg.go.dev/builtin/#int">int</a>
+<span id="MonitoredDatabaseSettings.RealDbname"></span>    RealDbname       <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MonitoredDatabaseSettings.SystemIdentifier"></span>    SystemIdentifier <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MonitoredDatabaseSettings.IsSuperuser"></span>    IsSuperuser      <a href="https://pkg.go.dev/builtin/#bool">bool</a> <span class="comment">// if true and no helpers are installed, use superuser SQL version of metric if available</span>
+<span id="MonitoredDatabaseSettings.Extensions"></span>    Extensions       map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int">int</a>
+<span id="MonitoredDatabaseSettings.ExecEnv"></span>    ExecEnv          <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MonitoredDatabaseSettings.ApproxDBSizeB"></span>    ApproxDBSizeB    <a href="https://pkg.go.dev/builtin/#int64">int64</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="GetMonitoredDatabaseSettings">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/database.go#L177">GetMonitoredDatabaseSettings</a>
+					<a class="permalink" href="#GetMonitoredDatabaseSettings">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func GetMonitoredDatabaseSettings(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, srcType <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#Kind">Kind</a>, noCache <a href="https://pkg.go.dev/builtin/#bool">bool</a>) (<a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+			
+
+			
+		
+			
+			
+			<h2 id="Reaper">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/reaper.go#L26">Reaper</a>
+				<a class="permalink" href="#Reaper">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Reaper struct {
+<span id="Reaper.opts"></span>    opts                *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/">cmdopts</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/#Options">Options</a>
+<span id="Reaper.sourcesReaderWriter"></span>    sourcesReaderWriter <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#ReaderWriter">ReaderWriter</a>
+<span id="Reaper.metricsReaderWriter"></span>    metricsReaderWriter <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#ReaderWriter">ReaderWriter</a>
+<span id="Reaper.measurementCh"></span>    measurementCh       chan []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewReaper">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/reaper.go#L33">NewReaper</a>
+					<a class="permalink" href="#NewReaper">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewReaper(opts *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/">cmdopts</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/#Options">Options</a>, sourcesReaderWriter <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#ReaderWriter">ReaderWriter</a>, metricsReaderWriter <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#ReaderWriter">ReaderWriter</a>) *<a href="#Reaper">Reaper</a></pre>
+				
+				
+				
+			
+
+			
+				
+				<h3 id="Reaper.Reap">func (*Reaper) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/reaper.go#L41">Reap</a>
+					<a class="permalink" href="#Reaper.Reap">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) Reap(mainContext <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Reaper.reapMetricMeasurementsFromSource">func (*Reaper) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/reaper/reaper.go#L369">reapMetricMeasurementsFromSource</a>
+					<a class="permalink" href="#Reaper.reapMetricMeasurementsFromSource">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) reapMetricMeasurementsFromSource(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>,
+    dbUniqueName, dbUniqueNameOrig <a href="https://pkg.go.dev/builtin/#string">string</a>,
+    srcType <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#Kind">Kind</a>,
+    metricName <a href="https://pkg.go.dev/builtin/#string">string</a>,
+    configMap map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a>)</pre>
+				<p>metrics.ControlMessage notifies of shutdown + interval change
+
+				
+				
+				
+			
+		
+	
+
+	
+
+
+
+
+
+
+
+<div id="footer">
+Build version go1.23.4.<br>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+</body>
+</html>

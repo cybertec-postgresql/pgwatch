@@ -1,0 +1,79 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
+
+  <title>src/github.com/cybertec-postgresql/pgwatch/v3/\internal\metrics\/cmdopts.go - PgWatch Developer Documentation</title>
+
+<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.23.4";</script>
+<script src="/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Source file
+    <a href="/godoc/src">src</a>/<a href="/godoc/src/github.com">github.com</a>/<a href="/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3">v3</a>/<a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/\internal\metrics\">\internal\metrics\</a>/<span class="text-muted">cmdopts.go</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/\internal\metrics\">github.com/cybertec-postgresql/pgwatch/v3/\internal\metrics\</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<script type="text/javascript">document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1  </span>package metrics
+<span id="L2" class="ln">     2  </span>
+<span id="L3" class="ln">     3  </span><span class="comment">// CmdOpts specifies metric command-line options</span>
+<span id="L4" class="ln">     4  </span>type CmdOpts struct {
+<span id="L5" class="ln">     5  </span>	Metrics                      string `short:&#34;m&#34; long:&#34;metrics&#34; mapstructure:&#34;metrics&#34; description:&#34;File or folder of YAML files with metrics definitions&#34; env:&#34;PW_METRICS&#34;`
+<span id="L6" class="ln">     6  </span>	CreateHelpers                bool   `long:&#34;create-helpers&#34; mapstructure:&#34;create-helpers&#34; description:&#34;Create helper database objects from metric definitions&#34; env:&#34;PW_CREATE_HELPERS&#34;`
+<span id="L7" class="ln">     7  </span>	DirectOSStats                bool   `long:&#34;direct-os-stats&#34; mapstructure:&#34;direct-os-stats&#34; description:&#34;Extract OS related psutil statistics not via PL/Python wrappers but directly on host&#34; env:&#34;PW_DIRECT_OS_STATS&#34;`
+<span id="L8" class="ln">     8  </span>	InstanceLevelCacheMaxSeconds int64  `long:&#34;instance-level-cache-max-seconds&#34; mapstructure:&#34;instance-level-cache-max-seconds&#34; description:&#34;Max allowed staleness for instance level metric data shared between DBs of an instance. Affects &#39;continuous&#39; host types only. Set to 0 to disable&#34; env:&#34;PW_INSTANCE_LEVEL_CACHE_MAX_SECONDS&#34; default:&#34;30&#34;`
+<span id="L9" class="ln">     9  </span>	EmergencyPauseTriggerfile    string `long:&#34;emergency-pause-triggerfile&#34; mapstructure:&#34;emergency-pause-triggerfile&#34; description:&#34;When the file exists no metrics will be temporarily fetched / scraped&#34; env:&#34;PW_EMERGENCY_PAUSE_TRIGGERFILE&#34; default:&#34;/tmp/pgwatch-emergency-pause&#34;`
+<span id="L10" class="ln">    10  </span>}
+<span id="L11" class="ln">    11  </span>
+</pre><p></p>
+
+<div id="footer">
+Build version go1.23.4.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+
+</body></html>
