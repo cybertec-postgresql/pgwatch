@@ -31,6 +31,8 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *CmdOpts, metri
 }
 
 func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *CmdOpts, metricDefs *metrics.Metrics) (pgw *PostgresWriter, err error) {
+	l := log.GetLogger(ctx).WithField("sink", "postgres").WithField("db", conn.Config().ConnConfig.Database)
+	ctx = log.WithLogger(ctx, l)
 	pgw = &PostgresWriter{
 		ctx:        ctx,
 		metricDefs: metricDefs,
@@ -40,7 +42,7 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		sinkDb:     conn,
 	}
 	if err = db.Init(ctx, pgw.sinkDb, func(ctx context.Context, conn db.PgxIface) error {
-		log.GetLogger(ctx).Info("Initialising measurements database...")
+		l.Info("initialising measurements database...")
 		exists, err := db.DoesSchemaExist(ctx, conn, "admin")
 		if err != nil || exists {
 			return err
@@ -63,6 +65,7 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 	go pgw.deleteOldPartitions(deleterDelay)
 	go pgw.maintainUniqueSources()
 	go pgw.poll()
+	l.Info(`measurements sink is activated`)
 	return
 }
 
@@ -178,7 +181,7 @@ func (pgw *PostgresWriter) EnsureMetricDummy(metric string) (err error) {
 	return
 }
 
-// Write send the measurements to the cache channel
+// Write sends the measurements to the cache channel
 func (pgw *PostgresWriter) Write(msgs []metrics.MeasurementEnvelope) error {
 	if pgw.ctx.Err() != nil {
 		return pgw.ctx.Err()
@@ -232,9 +235,7 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	if len(msgs) == 0 {
 		return
 	}
-	logger := log.GetLogger(pgw.ctx).
-		WithField("sink", "postgres").
-		WithField("db", pgw.sinkDb.Config().ConnConfig.Database)
+	logger := log.GetLogger(pgw.ctx)
 	tsWarningPrinted := false
 	metricsToStorePerMetric := make(map[string][]MeasurementMessagePostgres)
 	rowsBatched := 0
@@ -247,7 +248,7 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 		if len(msg.Data) == 0 {
 			continue
 		}
-		logger.WithField("data", msg.Data).WithField("len", len(msg.Data)).Debug("Sending To Postgres")
+		logger.WithField("data", msg.Data).WithField("len", len(msg.Data)).Debug("sending to postgres")
 
 		for _, dataRow := range msg.Data {
 			var epochTime time.Time
@@ -337,7 +338,7 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	} else if pgw.metricSchema == DbStorageSchemaTimescale {
 		err = pgw.EnsureMetricTimescale(pgPartBounds, forceRecreatePGMetricPartitions)
 	} else {
-		logger.Fatal("should never happen...")
+		logger.Fatal("unknown storage schema...")
 	}
 	if forceRecreatePGMetricPartitions {
 		forceRecreatePGMetricPartitions = false

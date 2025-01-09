@@ -36,6 +36,8 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 	if !found {
 		namespace = "pgwatch"
 	}
+	l := log.GetLogger(ctx).WithField("sink", "prometheus").WithField("address", addr)
+	ctx = log.WithLogger(ctx, l)
 	promw = &PrometheusWriter{
 		ctx:                 ctx,
 		PrometheusNamespace: namespace,
@@ -179,7 +181,7 @@ func (promw *PrometheusWriter) setInstanceUpDownState(ch chan<- prometheus.Metri
 	if len(pm) > 0 {
 		ch <- pm[0]
 	} else {
-		logger.Errorf("Could not formulate an instance state report - should not happen")
+		logger.Error("Could not formulate an instance state report - should not happen")
 	}
 }
 
