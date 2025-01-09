@@ -111,21 +111,21 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 func (Server *WebUIServer) handleLiveness(w http.ResponseWriter, _ *http.Request) {
 	if Server.ctx.Err() != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		w.Write([]byte(`{"status": "unavailable"}`))
+		_, _ = w.Write([]byte(`{"status": "unavailable"}`))
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status": "ok"}`))
+	_, _ = w.Write([]byte(`{"status": "ok"}`))
 }
 
 func (Server *WebUIServer) handleReadiness(w http.ResponseWriter, _ *http.Request) {
 	if Server.readyChecker.Ready() {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status": "ok"}`))
+		_, _ = w.Write([]byte(`{"status": "ok"}`))
 		return
 	}
 	w.WriteHeader(http.StatusServiceUnavailable)
-	w.Write([]byte(`{"status": "busy"}`))
+	_, _ = w.Write([]byte(`{"status": "busy"}`))
 }
 
 func (Server *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Request) {
