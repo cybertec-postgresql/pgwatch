@@ -23,7 +23,8 @@ func NewRPCWriter(ctx context.Context, address string) (*RPCWriter, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	l := log.GetLogger(ctx).WithField("sink", "rpc").WithField("address", address)
+	ctx = log.WithLogger(ctx, l)
 	rw := &RPCWriter{
 		ctx:     ctx,
 		address: address,
@@ -41,16 +42,13 @@ func (rw *RPCWriter) Write(msgs []metrics.MeasurementEnvelope) error {
 	if len(msgs) == 0 {
 		return nil
 	}
-	l := log.GetLogger(rw.ctx).
-		WithField("sink", "rpc").
-		WithField("address", rw.address)
 	for _, msg := range msgs {
 		var logMsg string
 		if err := rw.client.Call("Receiver.UpdateMeasurements", &msg, &logMsg); err != nil {
 			return err
 		}
 		if len(logMsg) > 0 {
-			l.Info(logMsg)
+			log.GetLogger(rw.ctx).Info(logMsg)
 		}
 	}
 	return nil
@@ -72,9 +70,7 @@ func (rw *RPCWriter) SyncMetric(dbUnique string, metricName string, op string) e
 		return err
 	}
 	if len(logMsg) > 0 {
-		log.GetLogger(rw.ctx).
-			WithField("sink", "rpc").
-			WithField("address", rw.address).Info(logMsg)
+		log.GetLogger(rw.ctx).Info(logMsg)
 	}
 	return nil
 }

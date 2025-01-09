@@ -26,11 +26,8 @@ type MultiWriter struct {
 // NewMultiWriter creates and returns new instance of MultiWriter struct.
 func NewMultiWriter(ctx context.Context, opts *CmdOpts, metricDefs *metrics.Metrics) (mw *MultiWriter, err error) {
 	var w Writer
-	logger := log.GetLogger(ctx)
 	mw = &MultiWriter{}
 	for _, s := range opts.Sinks {
-		l := logger.WithField("sink", s)
-		ctx = log.WithLogger(ctx, l)
 		scheme, path, found := strings.Cut(s, "://")
 		if !found || scheme == "" || path == "" {
 			return nil, fmt.Errorf("malformed sink URI %s", s)
@@ -51,9 +48,7 @@ func NewMultiWriter(ctx context.Context, opts *CmdOpts, metricDefs *metrics.Metr
 			return nil, err
 		}
 		mw.AddWriter(w)
-		l.Info(`Measurements sink activated`)
 	}
-
 	if len(mw.writers) == 0 {
 		return nil, errors.New("no sinks specified for measurements")
 	}

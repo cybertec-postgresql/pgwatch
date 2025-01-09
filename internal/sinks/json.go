@@ -3,7 +3,9 @@ package sinks
 import (
 	"context"
 	"encoding/json"
+	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -18,6 +20,8 @@ type JSONWriter struct {
 }
 
 func NewJSONWriter(ctx context.Context, fname string) (*JSONWriter, error) {
+	l := log.GetLogger(ctx).WithField("sink", "jsonfile").WithField("filename", fname)
+	ctx = log.WithLogger(ctx, l)
 	jw := &JSONWriter{
 		ctx: ctx,
 		lw:  &lumberjack.Logger{Filename: fname, Compress: true},
@@ -34,6 +38,7 @@ func (jw *JSONWriter) Write(msgs []metrics.MeasurementEnvelope) error {
 		return nil
 	}
 	enc := json.NewEncoder(jw.lw)
+	t1 := time.Now()
 	for _, msg := range msgs {
 		dataRow := map[string]any{
 			"metric":      msg.MetricName,
@@ -45,6 +50,8 @@ func (jw *JSONWriter) Write(msgs []metrics.MeasurementEnvelope) error {
 			return err
 		}
 	}
+	diff := time.Since(t1)
+	log.GetLogger(jw.ctx).WithField("rows", len(msgs)).WithField("elapsed", diff).Info("measurements written")
 	return nil
 }
 
