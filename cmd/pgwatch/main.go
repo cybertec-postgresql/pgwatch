@@ -13,6 +13,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/reaper"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/webserver"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/webui"
 )
 
@@ -90,13 +91,14 @@ func main() {
 		return
 	}
 
-	if err = opts.InitWebUI(webui.WebUIFs, logger); err != nil {
+	reaper := reaper.NewReaper(opts, opts.SourcesReaderWriter, opts.MetricsReaderWriter)
+
+	if webserver.Init(mainCtx, opts.WebUI, webui.WebUIFs, opts.MetricsReaderWriter, opts.SourcesReaderWriter, reaper) == nil {
 		exitCode.Store(cmdopts.ExitCodeWebUIError)
-		logger.Error(err)
+		logger.Error("failed to initialize web UI")
 		return
 	}
 
-	reaper := reaper.NewReaper(opts, opts.SourcesReaderWriter, opts.MetricsReaderWriter)
 	if err = reaper.Reap(mainCtx); err != nil {
 		logger.Error(err)
 		exitCode.Store(cmdopts.ExitCodeFatalError)

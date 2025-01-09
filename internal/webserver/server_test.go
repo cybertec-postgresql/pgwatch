@@ -1,6 +1,7 @@
 package webserver_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/webserver"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,20 +20,40 @@ type Credentials struct {
 	Password string `json:"password"`
 }
 
-func TestStatus(t *testing.T) {
-	restsrv := webserver.Init(webserver.CmdOpts{WebAddr: "127.0.0.1:8080"}, os.DirFS("../webui/build"), nil, nil, log.FallbackLogger)
+type ReadyBool bool
+
+func (ready *ReadyBool) Ready() bool {
+	return bool(*ready)
+}
+
+func TestHealth(t *testing.T) {
+	var ready ReadyBool
+	ctx, cancel := context.WithCancel(context.Background())
+	restsrv := webserver.Init(ctx, webserver.CmdOpts{WebAddr: "127.0.0.1:8080"}, os.DirFS("../webui/build"), nil, nil, &ready)
 	assert.NotNil(t, restsrv)
-	// r, err := http.Get("http://localhost:8080/")
-	// assert.NoError(t, err)
-	// assert.Equal(t, http.StatusOK, r.StatusCode)
-	// b, err := io.ReadAll(r.Body)
-	// assert.NoError(t, err)
-	// assert.True(t, len(b) > 0)
+
+	r, err := http.Get("http://localhost:8080/liveness")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, r.StatusCode)
+
+	cancel()
+	r, err = http.Get("http://localhost:8080/liveness")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusServiceUnavailable, r.StatusCode)
+
+	r, err = http.Get("http://localhost:8080/readiness")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusServiceUnavailable, r.StatusCode)
+
+	ready = true
+	r, err = http.Get("http://localhost:8080/readiness")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, r.StatusCode)
 }
 
 func TestServerNoAuth(t *testing.T) {
 	host := "http://localhost:8081"
-	restsrv := webserver.Init(webserver.CmdOpts{WebAddr: "localhost:8081"}, os.DirFS("../webui/build"), nil, nil, log.FallbackLogger)
+	restsrv := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8081"}, os.DirFS("../webui/build"), nil, nil, nil)
 	assert.NotNil(t, restsrv)
 	rr := httptest.NewRecorder()
 	// test request metrics
@@ -64,7 +84,7 @@ func TestServerNoAuth(t *testing.T) {
 
 func TestGetToken(t *testing.T) {
 	host := "http://localhost:8082"
-	restsrv := webserver.Init(webserver.CmdOpts{WebAddr: "localhost:8082"}, os.DirFS("../webui/build"), nil, nil, log.FallbackLogger)
+	restsrv := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8082"}, os.DirFS("../webui/build"), nil, nil, nil)
 	rr := httptest.NewRecorder()
 
 	credentials := Credentials{
