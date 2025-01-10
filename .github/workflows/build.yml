@@ -160,7 +160,7 @@ jobs:
       run: go install github.com/johnstarich/go/gopages@v0.1.28
     
     - name: Build Developer Docs
-      run: gopages -out "docs/godoc" -base "/godoc" -internal
+      run: gopages -out "docs/godoc" -base "/devel/godoc" -internal
 
     - name: Set up Python
       uses: actions/setup-python@v5
