@@ -7,16 +7,16 @@
 
   <title>sinks - PgWatch Developer Documentation</title>
 
-<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css">
+<link type="text/css" rel="stylesheet" href="/v3.0/godoc/lib/godoc/style.css">
 
 <script>window.initFuncs = [];</script>
-<script src="/godoc/lib/godoc/jquery.js" defer></script>
+<script src="/v3.0/godoc/lib/godoc/jquery.js" defer></script>
 
 
 
 
 <script>var goVersion = "go1.23.4";</script>
-<script src="/godoc/lib/godoc/godocs.js" defer></script>
+<script src="/v3.0/godoc/lib/godoc/godocs.js" defer></script>
 
 </head>
 <body>
@@ -26,8 +26,8 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
-<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<div class="top-heading" id="heading-wide"><a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
 <a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
 
 </div></div>
@@ -378,7 +378,7 @@
 			
 				<p>Async Prom cache
 
-				<pre>var <span id="promAsyncMetricCache">promAsyncMetricCache</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>][]<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <span class="comment">// [dbUnique][metric]lastly_fetched_data</span>
+				<pre>var <span id="promAsyncMetricCache">promAsyncMetricCache</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>][]<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <span class="comment">// [dbUnique][metric]lastly_fetched_data</span>
 </pre>
 			
 				
@@ -437,7 +437,7 @@
 		
 			
 			
-			<h2 id="DbStorageSchemaType">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L125">DbStorageSchemaType</a>
+			<h2 id="DbStorageSchemaType">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L128">DbStorageSchemaType</a>
 				<a class="permalink" href="#DbStorageSchemaType">&#xb6;</a>
 				
 				
@@ -465,7 +465,7 @@
 		
 			
 			
-			<h2 id="ExistingPartitionInfo">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L112">ExistingPartitionInfo</a>
+			<h2 id="ExistingPartitionInfo">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L115">ExistingPartitionInfo</a>
 				<a class="permalink" href="#ExistingPartitionInfo">&#xb6;</a>
 				
 				
@@ -491,7 +491,7 @@
 		
 			
 			
-			<h2 id="JSONWriter">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/json.go#L15">JSONWriter</a>
+			<h2 id="JSONWriter">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/json.go#L17">JSONWriter</a>
 				<a class="permalink" href="#JSONWriter">&#xb6;</a>
 				
 				
@@ -517,7 +517,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 
 			
 				
-				<h3 id="NewJSONWriter">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/json.go#L20">NewJSONWriter</a>
+				<h3 id="NewJSONWriter">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/json.go#L22">NewJSONWriter</a>
 					<a class="permalink" href="#NewJSONWriter">&#xb6;</a>
 					
 					
@@ -530,7 +530,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 
 			
 				
-				<h3 id="JSONWriter.SyncMetric">func (*JSONWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/json.go#L56">SyncMetric</a>
+				<h3 id="JSONWriter.SyncMetric">func (*JSONWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/json.go#L63">SyncMetric</a>
 					<a class="permalink" href="#JSONWriter.SyncMetric">&#xb6;</a>
 					
 					
@@ -542,19 +542,19 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 				
 			
 				
-				<h3 id="JSONWriter.Write">func (*JSONWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/json.go#L29">Write</a>
+				<h3 id="JSONWriter.Write">func (*JSONWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/json.go#L33">Write</a>
 					<a class="permalink" href="#JSONWriter.Write">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (jw *<a href="#JSONWriter">JSONWriter</a>) Write(msgs []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<pre>func (jw *<a href="#JSONWriter">JSONWriter</a>) Write(msgs []<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				
 				
 				
 				
 			
 				
-				<h3 id="JSONWriter.watchCtx">func (*JSONWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/json.go#L51">watchCtx</a>
+				<h3 id="JSONWriter.watchCtx">func (*JSONWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/json.go#L58">watchCtx</a>
 					<a class="permalink" href="#JSONWriter.watchCtx">&#xb6;</a>
 					
 					
@@ -568,7 +568,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 		
 			
 			
-			<h2 id="MeasurementMessagePostgres">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L117">MeasurementMessagePostgres</a>
+			<h2 id="MeasurementMessagePostgres">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L120">MeasurementMessagePostgres</a>
 				<a class="permalink" href="#MeasurementMessagePostgres">&#xb6;</a>
 				
 				
@@ -625,7 +625,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 					
 					
 				</h3>
-				<pre>func NewMultiWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, opts *<a href="#CmdOpts">CmdOpts</a>, metricDefs *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metrics">Metrics</a>) (mw *<a href="#MultiWriter">MultiWriter</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func NewMultiWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, opts *<a href="#CmdOpts">CmdOpts</a>, metricDefs *<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metrics">Metrics</a>) (mw *<a href="#MultiWriter">MultiWriter</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				<p>NewMultiWriter creates and returns new instance of MultiWriter struct.
 
 				
@@ -634,7 +634,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 
 			
 				
-				<h3 id="MultiWriter.AddWriter">func (*MultiWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/multiwriter.go#L63">AddWriter</a>
+				<h3 id="MultiWriter.AddWriter">func (*MultiWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/multiwriter.go#L58">AddWriter</a>
 					<a class="permalink" href="#MultiWriter.AddWriter">&#xb6;</a>
 					
 					
@@ -646,7 +646,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 				
 			
 				
-				<h3 id="MultiWriter.SyncMetrics">func (*MultiWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/multiwriter.go#L69">SyncMetrics</a>
+				<h3 id="MultiWriter.SyncMetrics">func (*MultiWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/multiwriter.go#L64">SyncMetrics</a>
 					<a class="permalink" href="#MultiWriter.SyncMetrics">&#xb6;</a>
 					
 					
@@ -658,12 +658,12 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 				
 			
 				
-				<h3 id="MultiWriter.WriteMeasurements">func (*MultiWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/multiwriter.go#L76">WriteMeasurements</a>
+				<h3 id="MultiWriter.WriteMeasurements">func (*MultiWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/multiwriter.go#L71">WriteMeasurements</a>
 					<a class="permalink" href="#MultiWriter.WriteMeasurements">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (mw *<a href="#MultiWriter">MultiWriter</a>) WriteMeasurements(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, storageCh &lt;-chan []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>)</pre>
+				<pre>func (mw *<a href="#MultiWriter">MultiWriter</a>) WriteMeasurements(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, storageCh &lt;-chan []<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>)</pre>
 				
 				
 				
@@ -672,7 +672,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 		
 			
 			
-			<h2 id="PostgresWriter">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L102">PostgresWriter</a>
+			<h2 id="PostgresWriter">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L105">PostgresWriter</a>
 				<a class="permalink" href="#PostgresWriter">&#xb6;</a>
 				
 				
@@ -684,11 +684,11 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 
 			<pre>type PostgresWriter struct {
 <span id="PostgresWriter.ctx"></span>    ctx          <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
-<span id="PostgresWriter.sinkDb"></span>    sinkDb       <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxPoolIface">PgxPoolIface</a>
+<span id="PostgresWriter.sinkDb"></span>    sinkDb       <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxPoolIface">PgxPoolIface</a>
 <span id="PostgresWriter.metricSchema"></span>    metricSchema <a href="#DbStorageSchemaType">DbStorageSchemaType</a>
-<span id="PostgresWriter.metricDefs"></span>    metricDefs   *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metrics">Metrics</a>
+<span id="PostgresWriter.metricDefs"></span>    metricDefs   *<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metrics">Metrics</a>
 <span id="PostgresWriter.opts"></span>    opts         *<a href="#CmdOpts">CmdOpts</a>
-<span id="PostgresWriter.input"></span>    input        chan []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>
+<span id="PostgresWriter.input"></span>    input        chan []<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>
 <span id="PostgresWriter.lastError"></span>    lastError    chan <a href="https://pkg.go.dev/builtin/#error">error</a>
 }
 </pre>
@@ -708,7 +708,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 					
 					
 				</h3>
-				<pre>func NewPostgresWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, connstr <a href="https://pkg.go.dev/builtin/#string">string</a>, opts *<a href="#CmdOpts">CmdOpts</a>, metricDefs *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metrics">Metrics</a>) (pgw *<a href="#PostgresWriter">PostgresWriter</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func NewPostgresWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, connstr <a href="https://pkg.go.dev/builtin/#string">string</a>, opts *<a href="#CmdOpts">CmdOpts</a>, metricDefs *<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metrics">Metrics</a>) (pgw *<a href="#PostgresWriter">PostgresWriter</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
@@ -719,7 +719,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 					
 					
 				</h3>
-				<pre>func NewWriterFromPostgresConn(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxPoolIface">PgxPoolIface</a>, opts *<a href="#CmdOpts">CmdOpts</a>, metricDefs *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metrics">Metrics</a>) (pgw *<a href="#PostgresWriter">PostgresWriter</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func NewWriterFromPostgresConn(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxPoolIface">PgxPoolIface</a>, opts *<a href="#CmdOpts">CmdOpts</a>, metricDefs *<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metrics">Metrics</a>) (pgw *<a href="#PostgresWriter">PostgresWriter</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
@@ -727,7 +727,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 
 			
 				
-				<h3 id="PostgresWriter.AddDBUniqueMetricToListingTable">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L653">AddDBUniqueMetricToListingTable</a>
+				<h3 id="PostgresWriter.AddDBUniqueMetricToListingTable">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L654">AddDBUniqueMetricToListingTable</a>
 					<a class="permalink" href="#PostgresWriter.AddDBUniqueMetricToListingTable">&#xb6;</a>
 					
 					
@@ -739,7 +739,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.DropOldTimePartitions">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L638">DropOldTimePartitions</a>
+				<h3 id="PostgresWriter.DropOldTimePartitions">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L639">DropOldTimePartitions</a>
 					<a class="permalink" href="#PostgresWriter.DropOldTimePartitions">&#xb6;</a>
 					
 					
@@ -751,7 +751,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.EnsureBuiltinMetricDummies">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L168">EnsureBuiltinMetricDummies</a>
+				<h3 id="PostgresWriter.EnsureBuiltinMetricDummies">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L171">EnsureBuiltinMetricDummies</a>
 					<a class="permalink" href="#PostgresWriter.EnsureBuiltinMetricDummies">&#xb6;</a>
 					
 					
@@ -764,7 +764,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.EnsureMetricDbnameTime">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L454">EnsureMetricDbnameTime</a>
+				<h3 id="PostgresWriter.EnsureMetricDbnameTime">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L455">EnsureMetricDbnameTime</a>
 					<a class="permalink" href="#PostgresWriter.EnsureMetricDbnameTime">&#xb6;</a>
 					
 					
@@ -776,7 +776,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.EnsureMetricDummy">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L176">EnsureMetricDummy</a>
+				<h3 id="PostgresWriter.EnsureMetricDummy">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L179">EnsureMetricDummy</a>
 					<a class="permalink" href="#PostgresWriter.EnsureMetricDummy">&#xb6;</a>
 					
 					
@@ -789,7 +789,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.EnsureMetricTime">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L404">EnsureMetricTime</a>
+				<h3 id="PostgresWriter.EnsureMetricTime">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L405">EnsureMetricTime</a>
 					<a class="permalink" href="#PostgresWriter.EnsureMetricTime">&#xb6;</a>
 					
 					
@@ -802,7 +802,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.EnsureMetricTimescale">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L436">EnsureMetricTimescale</a>
+				<h3 id="PostgresWriter.EnsureMetricTimescale">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L437">EnsureMetricTimescale</a>
 					<a class="permalink" href="#PostgresWriter.EnsureMetricTimescale">&#xb6;</a>
 					
 					
@@ -814,7 +814,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.GetOldTimePartitions">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L644">GetOldTimePartitions</a>
+				<h3 id="PostgresWriter.GetOldTimePartitions">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L645">GetOldTimePartitions</a>
 					<a class="permalink" href="#PostgresWriter.GetOldTimePartitions">&#xb6;</a>
 					
 					
@@ -826,7 +826,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.ReadMetricSchemaType">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L132">ReadMetricSchemaType</a>
+				<h3 id="PostgresWriter.ReadMetricSchemaType">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L135">ReadMetricSchemaType</a>
 					<a class="permalink" href="#PostgresWriter.ReadMetricSchemaType">&#xb6;</a>
 					
 					
@@ -838,7 +838,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.SyncMetric">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L157">SyncMetric</a>
+				<h3 id="PostgresWriter.SyncMetric">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L160">SyncMetric</a>
 					<a class="permalink" href="#PostgresWriter.SyncMetric">&#xb6;</a>
 					
 					
@@ -851,20 +851,20 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.Write">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L182">Write</a>
+				<h3 id="PostgresWriter.Write">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L185">Write</a>
 					<a class="permalink" href="#PostgresWriter.Write">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (pgw *<a href="#PostgresWriter">PostgresWriter</a>) Write(msgs []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				<p>Write send the measurements to the cache channel
+				<pre>func (pgw *<a href="#PostgresWriter">PostgresWriter</a>) Write(msgs []<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>Write sends the measurements to the cache channel
 
 				
 				
 				
 			
 				
-				<h3 id="PostgresWriter.deleteOldPartitions">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L492">deleteOldPartitions</a>
+				<h3 id="PostgresWriter.deleteOldPartitions">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L493">deleteOldPartitions</a>
 					<a class="permalink" href="#PostgresWriter.deleteOldPartitions">&#xb6;</a>
 					
 					
@@ -877,12 +877,12 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.flush">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L231">flush</a>
+				<h3 id="PostgresWriter.flush">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L234">flush</a>
 					<a class="permalink" href="#PostgresWriter.flush">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (pgw *<a href="#PostgresWriter">PostgresWriter</a>) flush(msgs []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>)</pre>
+				<pre>func (pgw *<a href="#PostgresWriter">PostgresWriter</a>) flush(msgs []<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>)</pre>
 				<p>flush sends the cached measurements to the database
 
 				
@@ -890,7 +890,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.maintainUniqueSources">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L547">maintainUniqueSources</a>
+				<h3 id="PostgresWriter.maintainUniqueSources">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L548">maintainUniqueSources</a>
 					<a class="permalink" href="#PostgresWriter.maintainUniqueSources">&#xb6;</a>
 					
 					
@@ -904,7 +904,7 @@ This is used to avoid listing the same source multiple times in Grafana dropdown
 				
 			
 				
-				<h3 id="PostgresWriter.poll">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L201">poll</a>
+				<h3 id="PostgresWriter.poll">func (*PostgresWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/postgres.go#L204">poll</a>
 					<a class="permalink" href="#PostgresWriter.poll">&#xb6;</a>
 					
 					
@@ -958,7 +958,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 
 			
 				
-				<h3 id="PrometheusWriter.Collect">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L126">Collect</a>
+				<h3 id="PrometheusWriter.Collect">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L128">Collect</a>
 					<a class="permalink" href="#PrometheusWriter.Collect">&#xb6;</a>
 					
 					
@@ -970,7 +970,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.Describe">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L123">Describe</a>
+				<h3 id="PrometheusWriter.Describe">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L125">Describe</a>
 					<a class="permalink" href="#PrometheusWriter.Describe">&#xb6;</a>
 					
 					
@@ -982,31 +982,31 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.MetricStoreMessageToPromMetrics">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L186">MetricStoreMessageToPromMetrics</a>
+				<h3 id="PrometheusWriter.MetricStoreMessageToPromMetrics">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L188">MetricStoreMessageToPromMetrics</a>
 					<a class="permalink" href="#PrometheusWriter.MetricStoreMessageToPromMetrics">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (promw *<a href="#PrometheusWriter">PrometheusWriter</a>) MetricStoreMessageToPromMetrics(msg <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) []<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/">prometheus</a>.<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/#Metric">Metric</a></pre>
+				<pre>func (promw *<a href="#PrometheusWriter">PrometheusWriter</a>) MetricStoreMessageToPromMetrics(msg <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) []<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/">prometheus</a>.<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/#Metric">Metric</a></pre>
 				
 				
 				
 				
 			
 				
-				<h3 id="PrometheusWriter.PromAsyncCacheAddMetricData">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L85">PromAsyncCacheAddMetricData</a>
+				<h3 id="PrometheusWriter.PromAsyncCacheAddMetricData">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L87">PromAsyncCacheAddMetricData</a>
 					<a class="permalink" href="#PrometheusWriter.PromAsyncCacheAddMetricData">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (promw *<a href="#PrometheusWriter">PrometheusWriter</a>) PromAsyncCacheAddMetricData(dbUnique, metric <a href="https://pkg.go.dev/builtin/#string">string</a>, msgArr []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>)</pre>
+				<pre>func (promw *<a href="#PrometheusWriter">PrometheusWriter</a>) PromAsyncCacheAddMetricData(dbUnique, metric <a href="https://pkg.go.dev/builtin/#string">string</a>, msgArr []<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>)</pre>
 				
 				
 				
 				
 			
 				
-				<h3 id="PrometheusWriter.PromAsyncCacheInitIfRequired">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L93">PromAsyncCacheInitIfRequired</a>
+				<h3 id="PrometheusWriter.PromAsyncCacheInitIfRequired">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L95">PromAsyncCacheInitIfRequired</a>
 					<a class="permalink" href="#PrometheusWriter.PromAsyncCacheInitIfRequired">&#xb6;</a>
 					
 					
@@ -1018,7 +1018,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.PurgeMetricsFromPromAsyncCacheIfAny">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L102">PurgeMetricsFromPromAsyncCacheIfAny</a>
+				<h3 id="PrometheusWriter.PurgeMetricsFromPromAsyncCacheIfAny">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L104">PurgeMetricsFromPromAsyncCacheIfAny</a>
 					<a class="permalink" href="#PrometheusWriter.PurgeMetricsFromPromAsyncCacheIfAny">&#xb6;</a>
 					
 					
@@ -1030,7 +1030,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.SyncMetric">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L113">SyncMetric</a>
+				<h3 id="PrometheusWriter.SyncMetric">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L115">SyncMetric</a>
 					<a class="permalink" href="#PrometheusWriter.SyncMetric">&#xb6;</a>
 					
 					
@@ -1042,19 +1042,19 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.Write">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L72">Write</a>
+				<h3 id="PrometheusWriter.Write">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L74">Write</a>
 					<a class="permalink" href="#PrometheusWriter.Write">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (promw *<a href="#PrometheusWriter">PrometheusWriter</a>) Write(msgs []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<pre>func (promw *<a href="#PrometheusWriter">PrometheusWriter</a>) Write(msgs []<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				
 				
 				
 				
 			
 				
-				<h3 id="PrometheusWriter.setInstanceUpDownState">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L163">setInstanceUpDownState</a>
+				<h3 id="PrometheusWriter.setInstanceUpDownState">func (*PrometheusWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/prometheus.go#L165">setInstanceUpDownState</a>
 					<a class="permalink" href="#PrometheusWriter.setInstanceUpDownState">&#xb6;</a>
 					
 					
@@ -1108,7 +1108,7 @@ or an analytics system.
 
 			
 				
-				<h3 id="RPCWriter.SyncMetric">func (*RPCWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/rpc.go#L65">SyncMetric</a>
+				<h3 id="RPCWriter.SyncMetric">func (*RPCWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/rpc.go#L63">SyncMetric</a>
 					<a class="permalink" href="#RPCWriter.SyncMetric">&#xb6;</a>
 					
 					
@@ -1120,12 +1120,12 @@ or an analytics system.
 				
 			
 				
-				<h3 id="RPCWriter.Write">func (*RPCWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/rpc.go#L37">Write</a>
+				<h3 id="RPCWriter.Write">func (*RPCWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/rpc.go#L38">Write</a>
 					<a class="permalink" href="#RPCWriter.Write">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (rw *<a href="#RPCWriter">RPCWriter</a>) Write(msgs []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<pre>func (rw *<a href="#RPCWriter">RPCWriter</a>) Write(msgs []<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				<p>Sends Measurement Message to RPC Sink
 
 				
@@ -1133,7 +1133,7 @@ or an analytics system.
 				
 			
 				
-				<h3 id="RPCWriter.watchCtx">func (*RPCWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/rpc.go#L82">watchCtx</a>
+				<h3 id="RPCWriter.watchCtx">func (*RPCWriter) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/rpc.go#L78">watchCtx</a>
 					<a class="permalink" href="#RPCWriter.watchCtx">&#xb6;</a>
 					
 					
@@ -1147,7 +1147,7 @@ or an analytics system.
 		
 			
 			
-			<h2 id="SyncReq">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/rpc.go#L59">SyncReq</a>
+			<h2 id="SyncReq">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sinks/rpc.go#L57">SyncReq</a>
 				<a class="permalink" href="#SyncReq">&#xb6;</a>
 				
 				
@@ -1183,7 +1183,7 @@ or an analytics system.
 
 			<pre>type Writer interface {
     SyncMetric(dbUnique, metricName, op <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
-    Write(msgs []<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+    Write(msgs []<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
 }</pre>
 
 			

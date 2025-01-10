@@ -7,16 +7,16 @@
 
   <title>metrics - PgWatch Developer Documentation</title>
 
-<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css">
+<link type="text/css" rel="stylesheet" href="/v3.0/godoc/lib/godoc/style.css">
 
 <script>window.initFuncs = [];</script>
-<script src="/godoc/lib/godoc/jquery.js" defer></script>
+<script src="/v3.0/godoc/lib/godoc/jquery.js" defer></script>
 
 
 
 
 <script>var goVersion = "go1.23.4";</script>
-<script src="/godoc/lib/godoc/godocs.js" defer></script>
+<script src="/v3.0/godoc/lib/godoc/godocs.js" defer></script>
 
 </head>
 <body>
@@ -26,8 +26,8 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
-<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<div class="top-heading" id="heading-wide"><a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
 <a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
 
 </div></div>
@@ -421,16 +421,16 @@ At the moment, metric definitions support two storages:
     return <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#New">New</a>(
         <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#TableName">TableName</a>(&#34;pgwatch.migration&#34;),
         <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#SetNotice">SetNotice</a>(func(s <a href="https://pkg.go.dev/builtin/#string">string</a>) {
-            <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#GetLogger">GetLogger</a>(dmrw.ctx).<a href="#Info">Info</a>(s)
+            <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#GetLogger">GetLogger</a>(dmrw.ctx).<a href="#Info">Info</a>(s)
         }),
         migrations(),
     )
 }</pre>
 			
 				
-				<pre>var <span id="initSchema">initSchema</span> = func(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>) {
+				<pre>var <span id="initSchema">initSchema</span> = func(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>) {
     var <span id="exists">exists</span> <a href="https://pkg.go.dev/builtin/#bool">bool</a>
-    if exists, err = <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#DoesSchemaExist">DoesSchemaExist</a>(ctx, conn, &#34;pgwatch&#34;); err != <a href="https://pkg.go.dev/builtin/#nil">nil</a> || exists {
+    if exists, err = <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#DoesSchemaExist">DoesSchemaExist</a>(ctx, conn, &#34;pgwatch&#34;); err != <a href="https://pkg.go.dev/builtin/#nil">nil</a> || exists {
         return err
     }
     tx, err := conn.<a href="#Begin">Begin</a>(ctx)
@@ -489,7 +489,7 @@ At the moment, metric definitions support two storages:
 				
 				
 			</h2>
-			<pre>func ParseLogs(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>, mdb *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a>, realDbname, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, configMap map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a>, storeCh chan&lt;- []<a href="#MeasurementEnvelope">MeasurementEnvelope</a>)</pre>
+			<pre>func ParseLogs(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>, mdb *<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a>, realDbname, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, configMap map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a>, storeCh chan&lt;- []<a href="#MeasurementEnvelope">MeasurementEnvelope</a>)</pre>
 			
 			
 			
@@ -554,7 +554,7 @@ At the moment, metric definitions support two storages:
 				
 				
 			</h2>
-			<pre>func tryDetermineLogFolder(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<pre>func tryDetermineLogFolder(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			
 			
 			
@@ -567,7 +567,7 @@ At the moment, metric definitions support two storages:
 				
 				
 			</h2>
-			<pre>func tryDetermineLogMessagesLanguage(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<pre>func tryDetermineLogMessagesLanguage(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			
 			
 			
@@ -580,7 +580,7 @@ At the moment, metric definitions support two storages:
 				
 				
 			</h2>
-			<pre>func writeMetricsToPostgres(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>, metricDefs *<a href="#Metrics">Metrics</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+			<pre>func writeMetricsToPostgres(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>, metricDefs *<a href="#Metrics">Metrics</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 			<p>writeMetricsToPostgres writes the metrics and presets definitions to the
 pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 
@@ -741,7 +741,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 					
 					
 				</h3>
-				<pre>func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a>, mdb *<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a>) []<a href="#MeasurementEnvelope">MeasurementEnvelope</a></pre>
+				<pre>func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a>, mdb *<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a>) []<a href="#MeasurementEnvelope">MeasurementEnvelope</a></pre>
 				<p>1. add zero counts for severity levels that didn&apos;t have any occurrences in the log
 
 				
@@ -1079,7 +1079,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 					
 					
 				</h3>
-				<pre>func NewPostgresMetricReaderWriterConn(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxPoolIface">PgxPoolIface</a>) (<a href="#ReaderWriter">ReaderWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func NewPostgresMetricReaderWriterConn(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxPoolIface">PgxPoolIface</a>) (<a href="#ReaderWriter">ReaderWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
@@ -1158,7 +1158,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 			
 			<pre>type dbMetricReaderWriter struct {
 <span id="dbMetricReaderWriter.ctx"></span>    ctx      <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
-<span id="dbMetricReaderWriter.configDb"></span>    configDb <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>
+<span id="dbMetricReaderWriter.configDb"></span>    configDb <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>
 }
 </pre>
 

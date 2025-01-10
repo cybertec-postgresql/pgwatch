@@ -7,16 +7,16 @@
 
   <title>webserver - PgWatch Developer Documentation</title>
 
-<link type="text/css" rel="stylesheet" href="/godoc/lib/godoc/style.css">
+<link type="text/css" rel="stylesheet" href="/v3.0/godoc/lib/godoc/style.css">
 
 <script>window.initFuncs = [];</script>
-<script src="/godoc/lib/godoc/jquery.js" defer></script>
+<script src="/v3.0/godoc/lib/godoc/jquery.js" defer></script>
 
 
 
 
 <script>var goVersion = "go1.23.4";</script>
-<script src="/godoc/lib/godoc/godocs.js" defer></script>
+<script src="/v3.0/godoc/lib/godoc/godocs.js" defer></script>
 
 </head>
 <body>
@@ -26,8 +26,8 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
-<div class="top-heading" id="heading-narrow"><a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<div class="top-heading" id="heading-wide"><a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
 <a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
 
 </div></div>
@@ -144,10 +144,15 @@
 				
 			
 				
+				<dd><a href="#ReadyChecker">type ReadyChecker</a></dd>
+				
+				
+			
+				
 				<dd><a href="#WebUIServer">type WebUIServer</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Init">func Init(opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, logger log.LoggerIface) *WebUIServer</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Init">func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc ReadyChecker) (*WebUIServer, error)</a></dd>
 				
 				
 					
@@ -184,6 +189,9 @@
 					<dd>&nbsp; &nbsp; <a href="#WebUIServer.UpdateSource">func (server *WebUIServer) UpdateSource(params []byte) error</a></dd>
 				
 					
+					<dd>&nbsp; &nbsp; <a href="#WebUIServer.handleLiveness">func (Server *WebUIServer) handleLiveness(w http.ResponseWriter, _ *http.Request)</a></dd>
+				
+					
 					<dd>&nbsp; &nbsp; <a href="#WebUIServer.handleLogin">func (Server *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request)</a></dd>
 				
 					
@@ -191,6 +199,9 @@
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#WebUIServer.handlePresets">func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#WebUIServer.handleReadiness">func (Server *WebUIServer) handleReadiness(w http.ResponseWriter, _ *http.Request)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#WebUIServer.handleSources">func (Server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request)</a></dd>
@@ -249,6 +260,12 @@
 
 		
 			<h2 id="pkg-constants">Constants</h2>
+			
+				
+				<pre>const (
+    <span id="WebDisableAll">WebDisableAll</span> <a href="https://pkg.go.dev/builtin/#string">string</a> = &#34;all&#34;
+    <span id="WebDisableUI">WebDisableUI</span>  <a href="https://pkg.go.dev/builtin/#string">string</a> = &#34;ui&#34;
+)</pre>
 			
 				
 				<pre>const (
@@ -338,7 +355,7 @@
 				
 				
 			</h2>
-			<pre>func writer(ws *<a href="https://pkg.go.dev/github.com/gorilla/websocket/">websocket</a>.<a href="https://pkg.go.dev/github.com/gorilla/websocket/#Conn">Conn</a>, l <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#LoggerHookerIface">LoggerHookerIface</a>)</pre>
+			<pre>func writer(ws *<a href="https://pkg.go.dev/github.com/gorilla/websocket/">websocket</a>.<a href="https://pkg.go.dev/github.com/gorilla/websocket/#Conn">Conn</a>, l <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#LoggerHookerIface">LoggerHookerIface</a>)</pre>
 			
 			
 			
@@ -347,7 +364,7 @@
 		
 			
 			
-			<h2 id="CmdOpts">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/cmdopts.go#L4">CmdOpts</a>
+			<h2 id="CmdOpts">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/cmdopts.go#L9">CmdOpts</a>
 				<a class="permalink" href="#CmdOpts">&#xb6;</a>
 				
 				
@@ -355,7 +372,7 @@
 			<p>CmdOpts specifies the internal web UI server command-line options
 
 			<pre>type CmdOpts struct {
-<span id="CmdOpts.WebDisable"></span>    WebDisable  <a href="https://pkg.go.dev/builtin/#bool">bool</a>   `long:&#34;web-disable&#34; mapstructure:&#34;web-disable&#34; description:&#34;Disable the web UI&#34; env:&#34;PW_WEBDISABLE&#34;`
+<span id="CmdOpts.WebDisable"></span>    WebDisable  <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-disable&#34; mapstructure:&#34;web-disable&#34; description:&#34;Disable REST API and/or web UI&#34; env:&#34;PW_WEBDISABLE&#34; optional:&#34;true&#34; optional-value:&#34;all&#34; choice:&#34;all&#34; choice:&#34;ui&#34;`
 <span id="CmdOpts.WebAddr"></span>    WebAddr     <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-addr&#34; mapstructure:&#34;web-addr&#34; description:&#34;TCP address in the form &#39;host:port&#39; to listen on&#34; default:&#34;:8080&#34; env:&#34;PW_WEBADDR&#34;`
 <span id="CmdOpts.WebUser"></span>    WebUser     <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-user&#34; mapstructure:&#34;web-user&#34; description:&#34;Admin login&#34; env:&#34;PW_WEBUSER&#34;`
 <span id="CmdOpts.WebPassword"></span>    WebPassword <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-password&#34; mapstructure:&#34;web-password&#34; description:&#34;Admin password&#34; env:&#34;PW_WEBPASSWORD&#34;`
@@ -424,19 +441,45 @@
 		
 			
 			
-			<h2 id="WebUIServer">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/webserver.go#L20">WebUIServer</a>
+			<h2 id="ReadyChecker">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/webserver.go#L22">ReadyChecker</a>
+				<a class="permalink" href="#ReadyChecker">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type ReadyChecker interface {
+    Ready() <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="WebUIServer">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/webserver.go#L26">WebUIServer</a>
 				<a class="permalink" href="#WebUIServer">&#xb6;</a>
 				
 				
 			</h2>
 			
 			<pre>type WebUIServer struct {
-<span id="WebUIServer.l"></span>    l <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#LoggerIface">LoggerIface</a>
     <a href="https://pkg.go.dev/net/http/">http</a>.<a href="https://pkg.go.dev/net/http/#Server">Server</a>
     <a href="#CmdOpts">CmdOpts</a>
-<span id="WebUIServer.uiFS"></span>    uiFS                <a href="https://pkg.go.dev/io/fs/">fs</a>.<a href="https://pkg.go.dev/io/fs/#FS">FS</a>
-<span id="WebUIServer.metricsReaderWriter"></span>    metricsReaderWriter <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#ReaderWriter">ReaderWriter</a>
-<span id="WebUIServer.sourcesReaderWriter"></span>    sourcesReaderWriter <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#ReaderWriter">ReaderWriter</a>
+<span id="WebUIServer.ctx"></span>    ctx                 <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
+<span id="WebUIServer.l"></span>    l                   <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#LoggerIface">LoggerIface</a>
+<span id="WebUIServer.uiFS"></span>    uiFS                <a href="https://pkg.go.dev/io/fs/">fs</a>.<a href="https://pkg.go.dev/io/fs/#FS">FS</a> <span class="comment">// webui files</span>
+<span id="WebUIServer.metricsReaderWriter"></span>    metricsReaderWriter <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#ReaderWriter">ReaderWriter</a>
+<span id="WebUIServer.sourcesReaderWriter"></span>    sourcesReaderWriter <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#ReaderWriter">ReaderWriter</a>
+<span id="WebUIServer.readyChecker"></span>    readyChecker        <a href="#ReadyChecker">ReadyChecker</a>
 }
 </pre>
 
@@ -450,12 +493,12 @@
 
 			
 				
-				<h3 id="Init">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/webserver.go#L29">Init</a>
+				<h3 id="Init">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/webserver.go#L37">Init</a>
 					<a class="permalink" href="#Init">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func Init(opts <a href="#CmdOpts">CmdOpts</a>, webuifs <a href="https://pkg.go.dev/io/fs/">fs</a>.<a href="https://pkg.go.dev/io/fs/#FS">FS</a>, mrw <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#ReaderWriter">ReaderWriter</a>, srw <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#ReaderWriter">ReaderWriter</a>, logger <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#LoggerIface">LoggerIface</a>) *<a href="#WebUIServer">WebUIServer</a></pre>
+				<pre>func Init(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, opts <a href="#CmdOpts">CmdOpts</a>, webuifs <a href="https://pkg.go.dev/io/fs/">fs</a>.<a href="https://pkg.go.dev/io/fs/#FS">FS</a>, mrw <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#ReaderWriter">ReaderWriter</a>, srw <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#ReaderWriter">ReaderWriter</a>, rc <a href="#ReadyChecker">ReadyChecker</a>) (*<a href="#WebUIServer">WebUIServer</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
@@ -604,6 +647,18 @@
 				
 			
 				
+				<h3 id="WebUIServer.handleLiveness">func (*WebUIServer) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/webserver.go#L120">handleLiveness</a>
+					<a class="permalink" href="#WebUIServer.handleLiveness">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (Server *<a href="#WebUIServer">WebUIServer</a>) handleLiveness(w <a href="https://pkg.go.dev/net/http/">http</a>.<a href="https://pkg.go.dev/net/http/#ResponseWriter">ResponseWriter</a>, _ *<a href="https://pkg.go.dev/net/http/">http</a>.<a href="https://pkg.go.dev/net/http/#Request">Request</a>)</pre>
+				
+				
+				
+				
+			
+				
 				<h3 id="WebUIServer.handleLogin">func (*WebUIServer) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/jwt.go#L23">handleLogin</a>
 					<a class="permalink" href="#WebUIServer.handleLogin">&#xb6;</a>
 					
@@ -640,6 +695,18 @@
 				
 			
 				
+				<h3 id="WebUIServer.handleReadiness">func (*WebUIServer) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/webserver.go#L130">handleReadiness</a>
+					<a class="permalink" href="#WebUIServer.handleReadiness">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (Server *<a href="#WebUIServer">WebUIServer</a>) handleReadiness(w <a href="https://pkg.go.dev/net/http/">http</a>.<a href="https://pkg.go.dev/net/http/#ResponseWriter">ResponseWriter</a>, _ *<a href="https://pkg.go.dev/net/http/">http</a>.<a href="https://pkg.go.dev/net/http/#Request">Request</a>)</pre>
+				
+				
+				
+				
+			
+				
 				<h3 id="WebUIServer.handleSources">func (*WebUIServer) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/source.go#L8">handleSources</a>
 					<a class="permalink" href="#WebUIServer.handleSources">&#xb6;</a>
 					
@@ -652,7 +719,7 @@
 				
 			
 				
-				<h3 id="WebUIServer.handleStatic">func (*WebUIServer) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/webserver.go#L59">handleStatic</a>
+				<h3 id="WebUIServer.handleStatic">func (*WebUIServer) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/webserver.go#L81">handleStatic</a>
 					<a class="permalink" href="#WebUIServer.handleStatic">&#xb6;</a>
 					
 					
@@ -664,7 +731,7 @@
 				
 			
 				
-				<h3 id="WebUIServer.handleTestConnect">func (*WebUIServer) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/webserver.go#L98">handleTestConnect</a>
+				<h3 id="WebUIServer.handleTestConnect">func (*WebUIServer) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/webserver/webserver.go#L140">handleTestConnect</a>
 					<a class="permalink" href="#WebUIServer.handleTestConnect">&#xb6;</a>
 					
 					
