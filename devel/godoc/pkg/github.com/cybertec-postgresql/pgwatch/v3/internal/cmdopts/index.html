@@ -198,9 +198,6 @@
 					<dd>&nbsp; &nbsp; <a href="#Options.InitSourceReader">func (c *Options) InitSourceReader(ctx context.Context) (err error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Options.InitWebUI">func (c *Options) InitWebUI(fs fs.FS, logger log.LoggerIface) error</a></dd>
-				
-					
 					<dd>&nbsp; &nbsp; <a href="#Options.IsPgConnStr">func (c *Options) IsPgConnStr(arg string) bool</a></dd>
 				
 					
@@ -273,7 +270,7 @@
 		
 			
 			
-			<h2 id="addCommands">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L58">addCommands</a>
+			<h2 id="addCommands">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L57">addCommands</a>
 				<a class="permalink" href="#addCommands">&#xb6;</a>
 				
 				
@@ -286,7 +283,7 @@
 		
 			
 			
-			<h2 id="validateConfig">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L194">validateConfig</a>
+			<h2 id="validateConfig">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L181">validateConfig</a>
 				<a class="permalink" href="#validateConfig">&#xb6;</a>
 				
 				
@@ -436,7 +433,7 @@
 		
 			
 			
-			<h2 id="Kind">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L32">Kind</a>
+			<h2 id="Kind">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L31">Kind</a>
 				<a class="permalink" href="#Kind">&#xb6;</a>
 				
 				
@@ -579,7 +576,7 @@
 		
 			
 			
-			<h2 id="Options">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L42">Options</a>
+			<h2 id="Options">type <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L41">Options</a>
 				<a class="permalink" href="#Options">&#xb6;</a>
 				
 				
@@ -613,7 +610,7 @@
 
 			
 				
-				<h3 id="New">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L68">New</a>
+				<h3 id="New">func <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L67">New</a>
 					<a class="permalink" href="#New">&#xb6;</a>
 					
 					
@@ -630,7 +627,7 @@ Subcommands are responsible for setting exit code only.
 
 			
 				
-				<h3 id="Options.CompleteCommand">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L93">CompleteCommand</a>
+				<h3 id="Options.CompleteCommand">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L92">CompleteCommand</a>
 					<a class="permalink" href="#Options.CompleteCommand">&#xb6;</a>
 					
 					
@@ -642,7 +639,7 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.GetConfigKind">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L103">GetConfigKind</a>
+				<h3 id="Options.GetConfigKind">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L102">GetConfigKind</a>
 					<a class="permalink" href="#Options.GetConfigKind">&#xb6;</a>
 					
 					
@@ -654,7 +651,7 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.InitConfigReaders">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L164">InitConfigReaders</a>
+				<h3 id="Options.InitConfigReaders">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L163">InitConfigReaders</a>
 					<a class="permalink" href="#Options.InitConfigReaders">&#xb6;</a>
 					
 					
@@ -667,7 +664,7 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.InitMetricReader">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L126">InitMetricReader</a>
+				<h3 id="Options.InitMetricReader">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L125">InitMetricReader</a>
 					<a class="permalink" href="#Options.InitMetricReader">&#xb6;</a>
 					
 					
@@ -680,7 +677,7 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.InitSourceReader">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L144">InitSourceReader</a>
+				<h3 id="Options.InitSourceReader">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L143">InitSourceReader</a>
 					<a class="permalink" href="#Options.InitSourceReader">&#xb6;</a>
 					
 					
@@ -693,20 +690,7 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.InitWebUI">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L183">InitWebUI</a>
-					<a class="permalink" href="#Options.InitWebUI">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (c *<a href="#Options">Options</a>) InitWebUI(fs <a href="https://pkg.go.dev/io/fs/">fs</a>.<a href="https://pkg.go.dev/io/fs/#FS">FS</a>, logger <a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#LoggerIface">LoggerIface</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				<p>InitWebUI initializes the web UI server
-
-				
-				
-				
-			
-				
-				<h3 id="Options.IsPgConnStr">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L120">IsPgConnStr</a>
+				<h3 id="Options.IsPgConnStr">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L119">IsPgConnStr</a>
 					<a class="permalink" href="#Options.IsPgConnStr">&#xb6;</a>
 					
 					
@@ -718,7 +702,7 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.NeedsSchemaUpgrade">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L169">NeedsSchemaUpgrade</a>
+				<h3 id="Options.NeedsSchemaUpgrade">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L168">NeedsSchemaUpgrade</a>
 					<a class="permalink" href="#Options.NeedsSchemaUpgrade">&#xb6;</a>
 					
 					
@@ -731,7 +715,7 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.Verbose">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L99">Verbose</a>
+				<h3 id="Options.Verbose">func (*Options) <a href="/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L98">Verbose</a>
 					<a class="permalink" href="#Options.Verbose">&#xb6;</a>
 					
 					
