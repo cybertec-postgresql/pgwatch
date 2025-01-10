@@ -1,10 +1,12 @@
 package webserver
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/fs"
 	"mime"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -17,30 +19,41 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
-type WebUIServer struct {
-	l log.LoggerIface
-	http.Server
-	CmdOpts
-	uiFS                fs.FS
-	metricsReaderWriter metrics.ReaderWriter
-	sourcesReaderWriter sources.ReaderWriter
+type ReadyChecker interface {
+	Ready() bool
 }
 
-func Init(opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, logger log.LoggerIface) *WebUIServer {
+type WebUIServer struct {
+	http.Server
+	CmdOpts
+	ctx                 context.Context
+	l                   log.LoggerIface
+	uiFS                fs.FS // webui files
+	metricsReaderWriter metrics.ReaderWriter
+	sourcesReaderWriter sources.ReaderWriter
+	readyChecker        ReadyChecker
+}
+
+func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc ReadyChecker) (*WebUIServer, error) {
+	if opts.WebDisable == WebDisableAll {
+		return nil, nil
+	}
 	mux := http.NewServeMux()
 	s := &WebUIServer{
-		logger,
-		http.Server{
+		Server: http.Server{
 			Addr:           opts.WebAddr,
 			ReadTimeout:    10 * time.Second,
 			WriteTimeout:   10 * time.Second,
 			MaxHeaderBytes: 1 << 20,
 			Handler:        corsMiddleware(mux),
 		},
-		opts,
-		webuifs,
-		mrw,
-		srw,
+		ctx:                 ctx,
+		l:                   log.GetLogger(ctx),
+		CmdOpts:             opts,
+		uiFS:                webuifs,
+		metricsReaderWriter: mrw,
+		sourcesReaderWriter: srw,
+		readyChecker:        rc,
 	}
 
 	mux.Handle("/source", NewEnsureAuth(s.handleSources))
@@ -49,11 +62,20 @@ func Init(opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.Rea
 	mux.Handle("/preset", NewEnsureAuth(s.handlePresets))
 	mux.Handle("/log", NewEnsureAuth(s.serveWsLog))
 	mux.HandleFunc("/login", s.handleLogin)
-	mux.HandleFunc("/", s.handleStatic)
+	mux.HandleFunc("/liveness", s.handleLiveness)
+	mux.HandleFunc("/readiness", s.handleReadiness)
+	if opts.WebDisable != WebDisableUI {
+		mux.HandleFunc("/", s.handleStatic)
+	}
 
-	go func() { panic(s.ListenAndServe()) }()
+	ln, err := net.Listen("tcp", s.Addr)
+	if err != nil {
+		return nil, err
+	}
 
-	return s
+	go func() { panic(s.Serve(ln)) }()
+
+	return s, nil
 }
 
 func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
@@ -93,6 +115,26 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 
 	n, _ := io.Copy(w, file)
 	Server.l.Debug("file", path, "copied", n, "bytes")
+}
+
+func (Server *WebUIServer) handleLiveness(w http.ResponseWriter, _ *http.Request) {
+	if Server.ctx.Err() != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = w.Write([]byte(`{"status": "unavailable"}`))
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status": "ok"}`))
+}
+
+func (Server *WebUIServer) handleReadiness(w http.ResponseWriter, _ *http.Request) {
+	if Server.readyChecker.Ready() {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status": "ok"}`))
+		return
+	}
+	w.WriteHeader(http.StatusServiceUnavailable)
+	_, _ = w.Write([]byte(`{"status": "busy"}`))
 }
 
 func (Server *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Request) {

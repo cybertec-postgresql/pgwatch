@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"time"
 
@@ -177,18 +176,6 @@ func (c *Options) NeedsSchemaUpgrade() (upgrade bool, err error) {
 		return m.NeedsMigration()
 	}
 	return
-}
-
-// InitWebUI initializes the web UI server
-func (c *Options) InitWebUI(fs fs.FS, logger log.LoggerIface) error {
-	if c.WebUI.WebDisable {
-		logger.Info("web user interface is disabled")
-		return nil
-	}
-	if webserver.Init(c.WebUI, fs, c.MetricsReaderWriter, c.SourcesReaderWriter, logger) == nil {
-		return errors.New("failed to initialize web UI")
-	}
-	return nil
 }
 
 func validateConfig(c *Options) error {

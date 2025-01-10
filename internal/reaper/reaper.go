@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"sync/atomic"
+
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
@@ -24,6 +26,7 @@ var metricDefinitionMap *metrics.Metrics = &metrics.Metrics{}
 var metricDefMapLock = sync.RWMutex{}
 
 type Reaper struct {
+	ready               atomic.Bool
 	opts                *cmdopts.Options
 	sourcesReaderWriter sources.ReaderWriter
 	metricsReaderWriter metrics.ReaderWriter
@@ -35,15 +38,24 @@ func NewReaper(opts *cmdopts.Options, sourcesReaderWriter sources.ReaderWriter, 
 		opts:                opts,
 		sourcesReaderWriter: sourcesReaderWriter,
 		metricsReaderWriter: metricsReaderWriter,
+		measurementCh:       make(chan []metrics.MeasurementEnvelope, 10000),
 	}
 }
 
+// Ready() returns true if the service is healthy and operating correctly
+func (r *Reaper) Ready() bool {
+	return r.ready.Load()
+}
+
+// Reap() starts the main monitoring loop. It is responsible for fetching metrics measurements
+// from the sources and storing them to the sinks. It also manages the lifecycle of
+// the metric gatherers. In case of a source or metric definition change, it will
+// start or stop the gatherers accordingly.
 func (r *Reaper) Reap(mainContext context.Context) (err error) {
 	var measurementsWriter *sinks.MultiWriter
 
 	cancelFuncs := make(map[string]context.CancelFunc) // [db1+metric1]=chan
 
-	firstLoop := true
 	mainLoopCount := 0
 	logger := log.GetLogger(mainContext)
 	metricsReaderWriter := r.metricsReaderWriter
@@ -59,22 +71,18 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 	if measurementsWriter, err = sinks.NewMultiWriter(mainContext, &opts.Sinks, metricDefinitionMap); err != nil {
 		logger.Fatal(err)
 	}
-	r.measurementCh = make(chan []metrics.MeasurementEnvelope, 10000)
 	go measurementsWriter.WriteMeasurements(mainContext, r.measurementCh)
+
+	if monitoredDbs, err = monitoredDbs.SyncFromReader(sourcesReaderWriter); err != nil {
+		logger.Fatal("could not fetch active hosts - check config!", err)
+	}
+
+	// at this stage we have all the metric definitions, the sinks and the sources configured
+	r.ready.Store(true)
 
 	for { //main loop
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
 		gatherersShutDown := 0
-
-		if monitoredDbs, err = monitoredDbs.SyncFromReader(sourcesReaderWriter); err != nil {
-			if firstLoop {
-				logger.Fatal("could not fetch active hosts - check config!", err)
-			} else {
-				logger.Error("could not fetch active hosts, using last valid config data:", err)
-				time.Sleep(time.Second * time.Duration(opts.Sources.Refresh))
-				continue
-			}
-		}
 
 		if DoesEmergencyTriggerfileExist(opts.Metrics.EmergencyPauseTriggerfile) {
 			logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", opts.Metrics.EmergencyPauseTriggerfile)
@@ -93,13 +101,11 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 			WithField("metrics", len(metricDefinitionMap.MetricDefs)).
 			WithField("presets", len(metricDefinitionMap.PresetDefs)).
 			Log(func() logrus.Level {
-				if firstLoop && len(monitoredDbs)*len(metricDefinitionMap.MetricDefs) == 0 {
+				if len(monitoredDbs)*len(metricDefinitionMap.MetricDefs) == 0 {
 					return logrus.WarnLevel
 				}
 				return logrus.InfoLevel
 			}(), "sources and metrics refreshed")
-
-		firstLoop = false // only used for failing when 1st config reading fails
 
 		for _, monitoredDB := range monitoredDbs {
 			logger.WithField("source", monitoredDB.Name).
@@ -358,7 +364,9 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 		logger.Debugf("main sleeping %ds...", opts.Sources.Refresh)
 		select {
 		case <-time.After(time.Second * time.Duration(opts.Sources.Refresh)):
-			// pass
+			if monitoredDbs, err = monitoredDbs.SyncFromReader(sourcesReaderWriter); err != nil {
+				logger.Error("could not fetch active hosts, using last valid config data:", err)
+			}
 		case <-mainContext.Done():
 			return
 		}
