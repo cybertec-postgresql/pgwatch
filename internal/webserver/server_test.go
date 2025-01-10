@@ -26,10 +26,31 @@ func (ready *ReadyBool) Ready() bool {
 	return bool(*ready)
 }
 
+func TestWebDisableOpt(t *testing.T) {
+	var ready ReadyBool
+	restsrv, err := webserver.Init(context.Background(), webserver.CmdOpts{WebDisable: "all"}, os.DirFS("../webui/build"), nil, nil, &ready)
+	assert.Nil(t, restsrv, "no webserver should be started")
+	assert.NoError(t, err)
+
+	restsrv, err = webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8079", WebDisable: "ui"}, os.DirFS("../webui/build"), nil, nil, &ready)
+	assert.NotNil(t, restsrv)
+	assert.NoError(t, err)
+	r, err := http.Get("http://localhost:8079/")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, r.StatusCode, "no webui should be served")
+	r, err = http.Get("http://localhost:8079/liveness")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, r.StatusCode, "rest api should be served though")
+
+	restsrv, err = webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8079"}, os.DirFS("../webui/build"), nil, nil, &ready)
+	assert.Nil(t, restsrv)
+	assert.Error(t, err, "port should be in use")
+}
+
 func TestHealth(t *testing.T) {
 	var ready ReadyBool
 	ctx, cancel := context.WithCancel(context.Background())
-	restsrv := webserver.Init(ctx, webserver.CmdOpts{WebAddr: "127.0.0.1:8080"}, os.DirFS("../webui/build"), nil, nil, &ready)
+	restsrv, _ := webserver.Init(ctx, webserver.CmdOpts{WebAddr: "127.0.0.1:8080"}, os.DirFS("../webui/build"), nil, nil, &ready)
 	assert.NotNil(t, restsrv)
 
 	r, err := http.Get("http://localhost:8080/liveness")
@@ -53,7 +74,7 @@ func TestHealth(t *testing.T) {
 
 func TestServerNoAuth(t *testing.T) {
 	host := "http://localhost:8081"
-	restsrv := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8081"}, os.DirFS("../webui/build"), nil, nil, nil)
+	restsrv, _ := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8081"}, os.DirFS("../webui/build"), nil, nil, nil)
 	assert.NotNil(t, restsrv)
 	rr := httptest.NewRecorder()
 	// test request metrics
@@ -84,7 +105,7 @@ func TestServerNoAuth(t *testing.T) {
 
 func TestGetToken(t *testing.T) {
 	host := "http://localhost:8082"
-	restsrv := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8082"}, os.DirFS("../webui/build"), nil, nil, nil)
+	restsrv, _ := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8082"}, os.DirFS("../webui/build"), nil, nil, nil)
 	rr := httptest.NewRecorder()
 
 	credentials := Credentials{

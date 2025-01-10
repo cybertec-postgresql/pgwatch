@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"mime"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -23,17 +24,20 @@ type ReadyChecker interface {
 }
 
 type WebUIServer struct {
-	ctx context.Context
-	l   log.LoggerIface
 	http.Server
 	CmdOpts
-	uiFS                fs.FS
+	ctx                 context.Context
+	l                   log.LoggerIface
+	uiFS                fs.FS // webui files
 	metricsReaderWriter metrics.ReaderWriter
 	sourcesReaderWriter sources.ReaderWriter
 	readyChecker        ReadyChecker
 }
 
-func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc ReadyChecker) *WebUIServer {
+func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc ReadyChecker) (*WebUIServer, error) {
+	if opts.WebDisable == WebDisableAll {
+		return nil, nil
+	}
 	mux := http.NewServeMux()
 	s := &WebUIServer{
 		Server: http.Server{
@@ -60,13 +64,18 @@ func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWr
 	mux.HandleFunc("/login", s.handleLogin)
 	mux.HandleFunc("/liveness", s.handleLiveness)
 	mux.HandleFunc("/readiness", s.handleReadiness)
-	if !opts.WebDisable {
+	if opts.WebDisable != WebDisableUI {
 		mux.HandleFunc("/", s.handleStatic)
 	}
 
-	go func() { panic(s.ListenAndServe()) }()
+	ln, err := net.Listen("tcp", s.Addr)
+	if err != nil {
+		return nil, err
+	}
 
-	return s
+	go func() { panic(s.Serve(ln)) }()
+
+	return s, nil
 }
 
 func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {

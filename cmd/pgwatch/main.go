@@ -93,9 +93,10 @@ func main() {
 
 	reaper := reaper.NewReaper(opts, opts.SourcesReaderWriter, opts.MetricsReaderWriter)
 
-	if webserver.Init(mainCtx, opts.WebUI, webui.WebUIFs, opts.MetricsReaderWriter, opts.SourcesReaderWriter, reaper) == nil {
+	if _, err = webserver.Init(mainCtx, opts.WebUI, webui.WebUIFs, opts.MetricsReaderWriter,
+		opts.SourcesReaderWriter, reaper); err != nil {
 		exitCode.Store(cmdopts.ExitCodeWebUIError)
-		logger.Error("failed to initialize web UI")
+		logger.Error("failed to initialize web UI: ", err)
 		return
 	}
 

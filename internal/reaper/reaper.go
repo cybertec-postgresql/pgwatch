@@ -42,11 +42,15 @@ func NewReaper(opts *cmdopts.Options, sourcesReaderWriter sources.ReaderWriter, 
 	}
 }
 
-// Ready() returns true if the service healthy and operating correctly
+// Ready() returns true if the service is healthy and operating correctly
 func (r *Reaper) Ready() bool {
 	return r.ready.Load()
 }
 
+// Reap() starts the main monitoring loop. It is responsible for fetching metrics measurements
+// from the sources and storing them to the sinks. It also manages the lifecycle of
+// the metric gatherers. In case of a source or metric definition change, it will
+// start or stop the gatherers accordingly.
 func (r *Reaper) Reap(mainContext context.Context) (err error) {
 	var measurementsWriter *sinks.MultiWriter
 
