@@ -5,6 +5,7 @@ import { Source } from "types/Source/Source";
 import { CustomTagsPopUp } from "./components/CustomTagsPopUp/CustomTagsPopUp";
 import { EnabledSourceSwitch } from "./components/EnabledSourceSwitch";
 import { HostConfigPopUp } from "./components/HostConfigPopUp/HostConfigPopUp";
+import { MaskConnectionString } from "./components/MaskConnectionString";
 import { SourcesGridActions } from "./components/SourcesGridActions";
 
 const getIcon = (value: boolean) => {
@@ -33,6 +34,7 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     minWidth: 300,
     align: "center",
     headerAlign: "center",
+    renderCell: ({ row }) => <MaskConnectionString source={row} />,
   },
   {
     field: "Metrics",
