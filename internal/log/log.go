@@ -112,7 +112,7 @@ func WithLogger(ctx context.Context, logger LoggerIface) context.Context {
 }
 
 // FallbackLogger is an alias for the standard logger
-var FallbackLogger = logrus.StandardLogger()
+var FallbackLogger = Init(CmdOpts{})
 
 // GetLogger retrieves the current logger from the context. If no logger is
 // available, the default logger is returned
