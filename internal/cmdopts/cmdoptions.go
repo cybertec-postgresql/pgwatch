@@ -61,9 +61,10 @@ func addCommands(parser *flags.Parser, opts *Options) {
 }
 
 // New returns a new instance of Options and immediately executes the subcommand if specified.
-// Errors are returned for parsing only, if the command line arguments are invalid.
-// Subcommands execution errors (if any) do not affect error returned.
-// Subcommands are responsible for setting exit code only.
+// Subcommands are responsible for setting exit code.
+// Function prints help message only if options are incorrect. If subcommand is executed
+// but fails, function outputs the error message only, indicating that some argument
+// values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 func New(writer io.Writer) (cmdOpts *Options, err error) {
 	cmdOpts = new(Options)
 	parser := flags.NewParser(cmdOpts, flags.HelpFlag)
@@ -74,7 +75,7 @@ func New(writer io.Writer) (cmdOpts *Options, err error) {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
 			cmdOpts.Help = true
 		}
-		if !flags.WroteHelp(err) {
+		if !flags.WroteHelp(err) && !cmdOpts.CommandCompleted {
 			parser.WriteHelp(writer)
 		}
 		return cmdOpts, err
@@ -85,7 +86,7 @@ func New(writer io.Writer) (cmdOpts *Options, err error) {
 	if len(nonParsedArgs) > 0 { // we don't expect any non-parsed arguments
 		return cmdOpts, fmt.Errorf("unknown argument(s): %v", nonParsedArgs)
 	}
-	err = validateConfig(cmdOpts)
+	err = cmdOpts.ValidateConfig()
 	return
 }
 
@@ -142,7 +143,7 @@ func (c *Options) InitMetricReader(ctx context.Context) (err error) {
 // InitSourceReader creates a new source reader based on the configuration kind from the options.
 func (c *Options) InitSourceReader(ctx context.Context) (err error) {
 	var configKind Kind
-	if c.Sources.Sources == "" { //if config database is configured, use it for sources as well
+	if c.Sources.Sources == "" { //if metric database is configured, use it for sources as well
 		if c.IsPgConnStr(c.Metrics.Metrics) {
 			c.Sources.Sources = c.Metrics.Metrics
 		}
@@ -178,9 +179,18 @@ func (c *Options) NeedsSchemaUpgrade() (upgrade bool, err error) {
 	return
 }
 
-func validateConfig(c *Options) error {
+// ValidateConfig checks if the configuration is valid.
+// Configuration database can be specified for one of the --sources or --metrics.
+// If one is specified, the other one is set to the same value.
+func (c *Options) ValidateConfig() error {
 	if len(c.Sources.Sources)+len(c.Metrics.Metrics) == 0 {
 		return errors.New("both --sources and --metrics are empty")
+	}
+	switch { // if specified configuration database, use it for both sources and metrics
+	case c.Sources.Sources == "" && c.IsPgConnStr(c.Metrics.Metrics):
+		c.Sources.Sources = c.Metrics.Metrics
+	case c.Metrics.Metrics == "" && c.IsPgConnStr(c.Sources.Sources):
+		c.Metrics.Metrics = c.Sources.Sources
 	}
 	if c.Sources.Refresh <= 1 {
 		return errors.New("--servers-refresh-loop-seconds must be greater than 1")
