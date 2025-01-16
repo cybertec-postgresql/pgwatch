@@ -3,7 +3,6 @@ package cmdopts
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
@@ -27,91 +26,74 @@ type ConfigInitCommand struct {
 	owner *Options
 }
 
-func (cmd *ConfigInitCommand) Execute([]string) error {
-	if len(cmd.owner.Sources.Sources)+len(cmd.owner.Metrics.Metrics) == 0 {
-		return errors.New("both --sources and --metrics are empty")
-	}
-	if cmd.owner.Metrics.Metrics > "" {
-		cmd.InitMetrics()
-	}
-	if cmd.owner.Sources.Sources > "" && cmd.owner.Metrics.Metrics != cmd.owner.Sources.Sources {
-		cmd.InitSources()
-	}
-	cmd.owner.CommandCompleted = true
-	return nil
-}
-
-func (cmd *ConfigInitCommand) InitSources() {
-	ctx := context.Background()
-	kind, err := cmd.owner.GetConfigKind(cmd.owner.Sources.Sources)
-	if err != nil {
-		cmd.owner.CompleteCommand(ExitCodeConfigError)
+// Execute initializes the configuration.
+func (cmd *ConfigInitCommand) Execute([]string) (err error) {
+	if err = cmd.owner.ValidateConfig(); err != nil {
 		return
 	}
-	switch kind {
-	case ConfigPgURL:
-		if err = cmd.owner.InitSourceReader(ctx); err != nil {
-			cmd.owner.CompleteCommand(ExitCodeConfigError)
-			return
-		}
-	case ConfigFile:
-		writer, _ := sources.NewYAMLSourcesReaderWriter(ctx, cmd.owner.Sources.Sources)
-		if err = writer.WriteSources(sources.Sources{sources.Source{}}); err != nil {
-			fmt.Printf("cannot init sources: %s", err)
-			cmd.owner.CompleteCommand(ExitCodeConfigError)
-			return
-		}
+	if cmd.owner.Metrics.Metrics > "" {
+		err = cmd.InitMetrics()
 	}
-	fmt.Println("Sources initialized")
+	if cmd.owner.Sources.Sources > "" && cmd.owner.Metrics.Metrics != cmd.owner.Sources.Sources {
+		err = errors.Join(err, cmd.InitSources())
+	}
+	cmd.owner.CompleteCommand(map[bool]int32{
+		true:  ExitCodeOK,
+		false: ExitCodeConfigError,
+	}[err == nil])
+	return
 }
 
-func (cmd *ConfigInitCommand) InitMetrics() {
+// InitSources initializes the sources configuration.
+func (cmd *ConfigInitCommand) InitSources() (err error) {
 	ctx := context.Background()
-	if cmd.owner.IsPgConnStr(cmd.owner.Metrics.Metrics) {
-		if err := cmd.owner.InitMetricReader(ctx); err != nil {
-			cmd.owner.CompleteCommand(ExitCodeConfigError)
-			return
-		}
-	} else {
-		reader, _ := metrics.NewYAMLMetricReaderWriter(ctx, "")
-		writer, _ := metrics.NewYAMLMetricReaderWriter(ctx, cmd.owner.Metrics.Metrics)
-		defMetrics, _ := reader.GetMetrics()
-		if err := writer.WriteMetrics(defMetrics); err != nil {
-			fmt.Printf("cannot init metrics: %s", err)
-			cmd.owner.CompleteCommand(ExitCodeConfigError)
-			return
-		}
+	opts := cmd.owner
+	if opts.IsPgConnStr(opts.Sources.Sources) {
+		return opts.InitSourceReader(ctx)
 	}
-	fmt.Println("Metrics initialized")
+	rw, _ := sources.NewYAMLSourcesReaderWriter(ctx, opts.Sources.Sources)
+	return rw.WriteSources(sources.Sources{sources.Source{}})
+}
+
+// InitMetrics initializes the metrics configuration.
+func (cmd *ConfigInitCommand) InitMetrics() (err error) {
+	ctx := context.Background()
+	opts := cmd.owner
+	err = opts.InitMetricReader(ctx)
+	if err != nil || opts.IsPgConnStr(opts.Metrics.Metrics) {
+		return // nothing to do, database initialized automatically
+	}
+	reader, _ := metrics.NewYAMLMetricReaderWriter(ctx, "")
+	defMetrics, _ := reader.GetMetrics()
+	return opts.MetricsReaderWriter.WriteMetrics(defMetrics)
 }
 
 type ConfigUpgradeCommand struct {
 	owner *Options
 }
 
+// Execute upgrades the configuration schema.
 func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
-	err = cmd.owner.InitConfigReaders(context.Background())
-	if err != nil {
-		cmd.owner.CompleteCommand(ExitCodeConfigError)
-		fmt.Println(err)
+	opts := cmd.owner
+	if err = opts.ValidateConfig(); err != nil {
 		return
 	}
-	if m, ok := cmd.owner.MetricsReaderWriter.(metrics.Migrator); ok {
-		if err = m.Migrate(); err != nil {
-			cmd.owner.CompleteCommand(ExitCodeUpgradeError)
-			fmt.Printf("cannot upgrade metrics: %s", err)
+	// for now only postgres configuration is upgradable
+	if opts.IsPgConnStr(opts.Metrics.Metrics) && opts.IsPgConnStr(opts.Sources.Sources) {
+		err = opts.InitMetricReader(context.Background())
+		if err != nil {
+			opts.CompleteCommand(ExitCodeConfigError)
 			return
 		}
-		cmd.owner.CompleteCommand(ExitCodeOK)
-		fmt.Println("Configuration schema upgraded")
-		return
+		if m, ok := opts.MetricsReaderWriter.(metrics.Migrator); ok {
+			err = m.Migrate()
+			opts.CompleteCommand(map[bool]int32{
+				true:  ExitCodeOK,
+				false: ExitCodeConfigError,
+			}[err == nil])
+			return
+		}
 	}
-	// if s, ok := cmd.owner.SourcesReaderWriter.(sources.Migrator); ok {
-	// 	if err = cmd.UpgradeConfiguration(s); err != nil {
-	// 		cmd.owner.CompleteCommand(ExitCodeUpgradeError)
-	// 		fmt.Printf("cannot upgrade sources: %s", err)
-	// 		return
-	// 	}
-	// }
-	return errors.New("Configuration storage does not support upgrade")
+	opts.CompleteCommand(ExitCodeConfigError)
+	return errors.New("configuration storage does not support upgrade")
 }
