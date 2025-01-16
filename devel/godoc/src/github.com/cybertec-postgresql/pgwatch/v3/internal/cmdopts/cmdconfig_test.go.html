@@ -97,22 +97,53 @@
 <span id="L40" class="ln">    40  </span>		a.True(fi.Size() &gt; 0)
 <span id="L41" class="ln">    41  </span>	})
 <span id="L42" class="ln">    42  </span>
-<span id="L43" class="ln">    43  </span>	t.Run(&#34;metrics is an invalid file name&#34;, func(*testing.T) {
-<span id="L44" class="ln">    44  </span>		os.Args = []string{0: &#34;config_test&#34;, &#34;--metrics=/&#34;, &#34;config&#34;, &#34;init&#34;}
-<span id="L45" class="ln">    45  </span>		opts, err := New(io.Discard)
-<span id="L46" class="ln">    46  </span>		a.NoError(err) <span class="comment">// parsing should not fail</span>
-<span id="L47" class="ln">    47  </span>		a.Equal(ExitCodeConfigError, opts.ExitCode)
-<span id="L48" class="ln">    48  </span>	})
-<span id="L49" class="ln">    49  </span>
-<span id="L50" class="ln">    50  </span>	t.Run(&#34;metrics is proper postgres connectin string&#34;, func(*testing.T) {
-<span id="L51" class="ln">    51  </span>		os.Args = []string{0: &#34;config_test&#34;, &#34;--metrics=postgresql://foo@bar/baz&#34;, &#34;config&#34;, &#34;init&#34;}
-<span id="L52" class="ln">    52  </span>		opts, err := New(io.Discard)
-<span id="L53" class="ln">    53  </span>		a.NoError(err) <span class="comment">// parsing should not fail</span>
-<span id="L54" class="ln">    54  </span>		a.Equal(ExitCodeConfigError, opts.ExitCode)
-<span id="L55" class="ln">    55  </span>	})
-<span id="L56" class="ln">    56  </span>
-<span id="L57" class="ln">    57  </span>}
-<span id="L58" class="ln">    58  </span>
+<span id="L43" class="ln">    43  </span>	t.Run(&#34;sources is a proper file name&#34;, func(*testing.T) {
+<span id="L44" class="ln">    44  </span>		fname := t.TempDir() + &#34;/sources.yaml&#34;
+<span id="L45" class="ln">    45  </span>		os.Args = []string{0: &#34;config_test&#34;, &#34;--sources=&#34; + fname, &#34;config&#34;, &#34;init&#34;}
+<span id="L46" class="ln">    46  </span>		_, err := New(io.Discard)
+<span id="L47" class="ln">    47  </span>		a.NoError(err)
+<span id="L48" class="ln">    48  </span>		a.FileExists(fname)
+<span id="L49" class="ln">    49  </span>		fi, err := os.Stat(fname)
+<span id="L50" class="ln">    50  </span>		require.NoError(t, err)
+<span id="L51" class="ln">    51  </span>		a.True(fi.Size() &gt; 0)
+<span id="L52" class="ln">    52  </span>	})
+<span id="L53" class="ln">    53  </span>
+<span id="L54" class="ln">    54  </span>	t.Run(&#34;metrics is an invalid file name&#34;, func(*testing.T) {
+<span id="L55" class="ln">    55  </span>		os.Args = []string{0: &#34;config_test&#34;, &#34;--metrics=/&#34;, &#34;config&#34;, &#34;init&#34;}
+<span id="L56" class="ln">    56  </span>		opts, err := New(io.Discard)
+<span id="L57" class="ln">    57  </span>		a.Error(err)
+<span id="L58" class="ln">    58  </span>		a.Equal(ExitCodeConfigError, opts.ExitCode)
+<span id="L59" class="ln">    59  </span>	})
+<span id="L60" class="ln">    60  </span>
+<span id="L61" class="ln">    61  </span>	t.Run(&#34;metrics is proper postgres connectin string&#34;, func(*testing.T) {
+<span id="L62" class="ln">    62  </span>		os.Args = []string{0: &#34;config_test&#34;, &#34;--metrics=postgresql://foo@bar/baz&#34;, &#34;config&#34;, &#34;init&#34;}
+<span id="L63" class="ln">    63  </span>		opts, err := New(io.Discard)
+<span id="L64" class="ln">    64  </span>		a.Error(err)
+<span id="L65" class="ln">    65  </span>		a.Equal(ExitCodeConfigError, opts.ExitCode)
+<span id="L66" class="ln">    66  </span>	})
+<span id="L67" class="ln">    67  </span>
+<span id="L68" class="ln">    68  </span>}
+<span id="L69" class="ln">    69  </span>
+<span id="L70" class="ln">    70  </span>func TestConfigUpgradeCommand_Execute(t *testing.T) {
+<span id="L71" class="ln">    71  </span>	a := assert.New(t)
+<span id="L72" class="ln">    72  </span>
+<span id="L73" class="ln">    73  </span>	t.Run(&#34;sources and metrics are empty&#34;, func(*testing.T) {
+<span id="L74" class="ln">    74  </span>		os.Args = []string{0: &#34;config_test&#34;, &#34;config&#34;, &#34;upgrade&#34;}
+<span id="L75" class="ln">    75  </span>		_, err := New(io.Discard)
+<span id="L76" class="ln">    76  </span>		a.Error(err)
+<span id="L77" class="ln">    77  </span>	})
+<span id="L78" class="ln">    78  </span>
+<span id="L79" class="ln">    79  </span>	t.Run(&#34;metrics is a proper file name but files are not upgradable&#34;, func(*testing.T) {
+<span id="L80" class="ln">    80  </span>		fname := t.TempDir() + &#34;/metrics.yaml&#34;
+<span id="L81" class="ln">    81  </span>		os.Args = []string{0: &#34;config_test&#34;, &#34;--metrics=&#34; + fname, &#34;config&#34;, &#34;upgrade&#34;}
+<span id="L82" class="ln">    82  </span>		c, err := New(io.Discard)
+<span id="L83" class="ln">    83  </span>		a.Error(err)
+<span id="L84" class="ln">    84  </span>		a.True(c.CommandCompleted)
+<span id="L85" class="ln">    85  </span>		a.Equal(ExitCodeConfigError, c.ExitCode)
+<span id="L86" class="ln">    86  </span>	})
+<span id="L87" class="ln">    87  </span>
+<span id="L88" class="ln">    88  </span>}
+<span id="L89" class="ln">    89  </span>
 </pre><p></p>
 
 <div id="footer">

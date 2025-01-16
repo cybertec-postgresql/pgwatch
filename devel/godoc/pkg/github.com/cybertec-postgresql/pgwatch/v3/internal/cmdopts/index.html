@@ -112,9 +112,6 @@
 				
 				<dd><a href="#addCommands">func addCommands(parser *flags.Parser, opts *Options)</a></dd>
 			
-				
-				<dd><a href="#validateConfig">func validateConfig(c *Options) error</a></dd>
-			
 			
 				
 				<dd><a href="#ConfigCommand">type ConfigCommand</a></dd>
@@ -129,13 +126,13 @@
 				
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#ConfigInitCommand.Execute">func (cmd *ConfigInitCommand) Execute([]string) error</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#ConfigInitCommand.Execute">func (cmd *ConfigInitCommand) Execute([]string) (err error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#ConfigInitCommand.InitMetrics">func (cmd *ConfigInitCommand) InitMetrics()</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#ConfigInitCommand.InitMetrics">func (cmd *ConfigInitCommand) InitMetrics() (err error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#ConfigInitCommand.InitSources">func (cmd *ConfigInitCommand) InitSources()</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#ConfigInitCommand.InitSources">func (cmd *ConfigInitCommand) InitSources() (err error)</a></dd>
 				
 			
 				
@@ -202,6 +199,9 @@
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#Options.NeedsSchemaUpgrade">func (c *Options) NeedsSchemaUpgrade() (upgrade bool, err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Options.ValidateConfig">func (c *Options) ValidateConfig() error</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#Options.Verbose">func (c *Options) Verbose() bool</a></dd>
@@ -281,23 +281,10 @@
 			
 
 		
-			
-			
-			<h2 id="validateConfig">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L181">validateConfig</a>
-				<a class="permalink" href="#validateConfig">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func validateConfig(c *<a href="#Options">Options</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-			
-			
-			
-
-		
 		
 			
 			
-			<h2 id="ConfigCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L12">ConfigCommand</a>
+			<h2 id="ConfigCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L11">ConfigCommand</a>
 				<a class="permalink" href="#ConfigCommand">&#xb6;</a>
 				
 				
@@ -320,7 +307,7 @@
 
 			
 				
-				<h3 id="NewConfigCommand">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L18">NewConfigCommand</a>
+				<h3 id="NewConfigCommand">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L17">NewConfigCommand</a>
 					<a class="permalink" href="#NewConfigCommand">&#xb6;</a>
 					
 					
@@ -335,7 +322,7 @@
 		
 			
 			
-			<h2 id="ConfigInitCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L26">ConfigInitCommand</a>
+			<h2 id="ConfigInitCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L25">ConfigInitCommand</a>
 				<a class="permalink" href="#ConfigInitCommand">&#xb6;</a>
 				
 				
@@ -363,32 +350,35 @@
 					
 					
 				</h3>
-				<pre>func (cmd *<a href="#ConfigInitCommand">ConfigInitCommand</a>) Execute([]<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
+				<pre>func (cmd *<a href="#ConfigInitCommand">ConfigInitCommand</a>) Execute([]<a href="https://pkg.go.dev/builtin/#string">string</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>Execute initializes the configuration.
+
 				
 				
 				
 			
 				
-				<h3 id="ConfigInitCommand.InitMetrics">func (*ConfigInitCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L68">InitMetrics</a>
+				<h3 id="ConfigInitCommand.InitMetrics">func (*ConfigInitCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L59">InitMetrics</a>
 					<a class="permalink" href="#ConfigInitCommand.InitMetrics">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (cmd *<a href="#ConfigInitCommand">ConfigInitCommand</a>) InitMetrics()</pre>
-				
+				<pre>func (cmd *<a href="#ConfigInitCommand">ConfigInitCommand</a>) InitMetrics() (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>InitMetrics initializes the metrics configuration.
+
 				
 				
 				
 			
 				
-				<h3 id="ConfigInitCommand.InitSources">func (*ConfigInitCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L44">InitSources</a>
+				<h3 id="ConfigInitCommand.InitSources">func (*ConfigInitCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L48">InitSources</a>
 					<a class="permalink" href="#ConfigInitCommand.InitSources">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (cmd *<a href="#ConfigInitCommand">ConfigInitCommand</a>) InitSources()</pre>
-				
+				<pre>func (cmd *<a href="#ConfigInitCommand">ConfigInitCommand</a>) InitSources() (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>InitSources initializes the sources configuration.
+
 				
 				
 				
@@ -396,7 +386,7 @@
 		
 			
 			
-			<h2 id="ConfigUpgradeCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L88">ConfigUpgradeCommand</a>
+			<h2 id="ConfigUpgradeCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L71">ConfigUpgradeCommand</a>
 				<a class="permalink" href="#ConfigUpgradeCommand">&#xb6;</a>
 				
 				
@@ -419,13 +409,14 @@
 
 			
 				
-				<h3 id="ConfigUpgradeCommand.Execute">func (*ConfigUpgradeCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L92">Execute</a>
+				<h3 id="ConfigUpgradeCommand.Execute">func (*ConfigUpgradeCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdconfig.go.html#L76">Execute</a>
 					<a class="permalink" href="#ConfigUpgradeCommand.Execute">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (cmd *<a href="#ConfigUpgradeCommand">ConfigUpgradeCommand</a>) Execute([]<a href="https://pkg.go.dev/builtin/#string">string</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				
+				<p>Execute upgrades the configuration schema.
+
 				
 				
 				
@@ -610,16 +601,17 @@
 
 			
 				
-				<h3 id="New">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L67">New</a>
+				<h3 id="New">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L68">New</a>
 					<a class="permalink" href="#New">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func New(writer <a href="https://pkg.go.dev/io/">io</a>.<a href="https://pkg.go.dev/io/#Writer">Writer</a>) (cmdOpts *<a href="#Options">Options</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				<p>New returns a new instance of Options and immediately executes the subcommand if specified.
-Errors are returned for parsing only, if the command line arguments are invalid.
-Subcommands execution errors (if any) do not affect error returned.
-Subcommands are responsible for setting exit code only.
+Subcommands are responsible for setting exit code.
+Function prints help message only if options are incorrect. If subcommand is executed
+but fails, function outputs the error message only, indicating that some argument
+values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 
 				
 				
@@ -627,7 +619,7 @@ Subcommands are responsible for setting exit code only.
 
 			
 				
-				<h3 id="Options.CompleteCommand">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L92">CompleteCommand</a>
+				<h3 id="Options.CompleteCommand">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L93">CompleteCommand</a>
 					<a class="permalink" href="#Options.CompleteCommand">&#xb6;</a>
 					
 					
@@ -639,7 +631,7 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.GetConfigKind">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L102">GetConfigKind</a>
+				<h3 id="Options.GetConfigKind">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L103">GetConfigKind</a>
 					<a class="permalink" href="#Options.GetConfigKind">&#xb6;</a>
 					
 					
@@ -651,7 +643,7 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.InitConfigReaders">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L163">InitConfigReaders</a>
+				<h3 id="Options.InitConfigReaders">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L155">InitConfigReaders</a>
 					<a class="permalink" href="#Options.InitConfigReaders">&#xb6;</a>
 					
 					
@@ -664,7 +656,7 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.InitMetricReader">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L125">InitMetricReader</a>
+				<h3 id="Options.InitMetricReader">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L126">InitMetricReader</a>
 					<a class="permalink" href="#Options.InitMetricReader">&#xb6;</a>
 					
 					
@@ -677,7 +669,7 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.InitSourceReader">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L143">InitSourceReader</a>
+				<h3 id="Options.InitSourceReader">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L140">InitSourceReader</a>
 					<a class="permalink" href="#Options.InitSourceReader">&#xb6;</a>
 					
 					
@@ -690,7 +682,7 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.IsPgConnStr">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L119">IsPgConnStr</a>
+				<h3 id="Options.IsPgConnStr">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L120">IsPgConnStr</a>
 					<a class="permalink" href="#Options.IsPgConnStr">&#xb6;</a>
 					
 					
@@ -702,7 +694,7 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.NeedsSchemaUpgrade">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L168">NeedsSchemaUpgrade</a>
+				<h3 id="Options.NeedsSchemaUpgrade">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L160">NeedsSchemaUpgrade</a>
 					<a class="permalink" href="#Options.NeedsSchemaUpgrade">&#xb6;</a>
 					
 					
@@ -715,7 +707,22 @@ Subcommands are responsible for setting exit code only.
 				
 			
 				
-				<h3 id="Options.Verbose">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L98">Verbose</a>
+				<h3 id="Options.ValidateConfig">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L176">ValidateConfig</a>
+					<a class="permalink" href="#Options.ValidateConfig">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (c *<a href="#Options">Options</a>) ValidateConfig() <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>ValidateConfig checks if the configuration is valid.
+Configuration database can be specified for one of the --sources or --metrics.
+If one is specified, the other one is set to the same value.
+
+				
+				
+				
+			
+				
+				<h3 id="Options.Verbose">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L99">Verbose</a>
 					<a class="permalink" href="#Options.Verbose">&#xb6;</a>
 					
 					
