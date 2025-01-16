@@ -40,6 +40,17 @@ func TestConfigInitCommand_Execute(t *testing.T) {
 		a.True(fi.Size() > 0)
 	})
 
+	t.Run("sources is a proper file name", func(*testing.T) {
+		fname := t.TempDir() + "/sources.yaml"
+		os.Args = []string{0: "config_test", "--sources=" + fname, "config", "init"}
+		_, err := New(io.Discard)
+		a.NoError(err)
+		a.FileExists(fname)
+		fi, err := os.Stat(fname)
+		require.NoError(t, err)
+		a.True(fi.Size() > 0)
+	})
+
 	t.Run("metrics is an invalid file name", func(*testing.T) {
 		os.Args = []string{0: "config_test", "--metrics=/", "config", "init"}
 		opts, err := New(io.Discard)

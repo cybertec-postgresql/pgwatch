@@ -48,11 +48,11 @@ func (cmd *ConfigInitCommand) Execute([]string) (err error) {
 func (cmd *ConfigInitCommand) InitSources() (err error) {
 	ctx := context.Background()
 	opts := cmd.owner
-	err = opts.InitSourceReader(ctx)
-	if err != nil || opts.IsPgConnStr(opts.Sources.Sources) {
-		return // nothing to do, database initialized automatically
+	if opts.IsPgConnStr(opts.Sources.Sources) {
+		return opts.InitSourceReader(ctx)
 	}
-	return opts.SourcesReaderWriter.WriteSources(sources.Sources{sources.Source{}})
+	rw, _ := sources.NewYAMLSourcesReaderWriter(ctx, opts.Sources.Sources)
+	return rw.WriteSources(sources.Sources{sources.Source{}})
 }
 
 // InitMetrics initializes the metrics configuration.
