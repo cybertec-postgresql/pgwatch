@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://pgwat.ch/v3.0/reference/security.html">
+        <link rel="canonical" href="https://pgwat.ch/v3.0/howto/config_db_bootstrap.html">
       
       
-        <link rel="prev" href="technical_details.html">
+        <link rel="prev" href="using_managed_services.html">
       
       
-        <link rel="next" href="kubernetes.html">
+        <link rel="next" href="metrics_db_bootstrap.html">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Security aspects - 🔬 pgwatch</title>
+        <title>Bootstrapping the Configuration Database - 🔬 pgwatch</title>
       
     
     
@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#general-security-information" class="md-skip">
+        <a href="#choosing-a-database" class="md-skip">
           Skip to content
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Security aspects
+              Bootstrapping the Configuration Database
             
           </span>
         </div>
@@ -289,11 +289,13 @@
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../howto/dashboarding_alerting.html" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="dashboarding_alerting.html" class="md-tabs__link">
           
   
   How-To Guides
@@ -307,13 +309,11 @@
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="advanced_features.html" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../reference/advanced_features.html" class="md-tabs__link">
           
   
   Reference
@@ -621,7 +621,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/sizing_recommendations.html" class="md-nav__link">
+      <a href="sizing_recommendations.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -796,23 +796,28 @@
       
   
   
+    
   
   
+  
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -823,7 +828,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             How-To Guides
@@ -837,7 +842,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/dashboarding_alerting.html" class="md-nav__link">
+      <a href="dashboarding_alerting.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -858,166 +863,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/using_managed_services.html" class="md-nav__link">
+      <a href="using_managed_services.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     Using Managed Services
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../howto/config_db_bootstrap.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Bootstrapping the Configuration Database
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../howto/metrics_db_bootstrap.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Bootstraping the Metrics Measurements Database (Sink)
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-    
-      
-        
-        
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
-            
-  
-  <span class="md-ellipsis">
-    Reference
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_5">
-            <span class="md-nav__icon md-icon"></span>
-            Reference
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="advanced_features.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Advanced Features
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="metric_definitions.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Metric Definitions
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="technical_details.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Technical Details
   </span>
   
 
@@ -1045,18 +895,18 @@
           
   
   <span class="md-ellipsis">
-    Security
+    Bootstrapping the Configuration Database
   </span>
   
 
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <a href="security.html" class="md-nav__link md-nav__link--active">
+      <a href="config_db_bootstrap.html" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
-    Security
+    Bootstrapping the Configuration Database
   </span>
   
 
@@ -1076,18 +926,36 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#general-security-information" class="md-nav__link">
+  <a href="#choosing-a-database" class="md-nav__link">
     <span class="md-ellipsis">
-      General security information
+      Choosing a Database
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#launching-a-more-secure-docker-container" class="md-nav__link">
+  <a href="#creating-the-database" class="md-nav__link">
     <span class="md-ellipsis">
-      Launching a more secure Docker container
+      Creating the Database
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#init-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      Init (optional)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage
     </span>
   </a>
   
@@ -1109,7 +977,157 @@
   
   
     <li class="md-nav__item">
-      <a href="kubernetes.html" class="md-nav__link">
+      <a href="metrics_db_bootstrap.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootstraping the Metrics Measurements Database (Sink)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/advanced_features.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Advanced Features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/metric_definitions.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Metric Definitions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/technical_details.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Technical Details
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/security.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Security
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/kubernetes.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1130,7 +1148,7 @@
   
   
     <li class="md-nav__item">
-      <a href="env_variables.html" class="md-nav__link">
+      <a href="../reference/env_variables.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1392,18 +1410,36 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#general-security-information" class="md-nav__link">
+  <a href="#choosing-a-database" class="md-nav__link">
     <span class="md-ellipsis">
-      General security information
+      Choosing a Database
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#launching-a-more-secure-docker-container" class="md-nav__link">
+  <a href="#creating-the-database" class="md-nav__link">
     <span class="md-ellipsis">
-      Launching a more secure Docker container
+      Creating the Database
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#init-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      Init (optional)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage
     </span>
   </a>
   
@@ -1424,7 +1460,7 @@
                   
 
   
-    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/reference/security.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/howto/config_db_bootstrap.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1432,72 +1468,72 @@
   
 
 
-  <h1>Security</h1>
+  <h1>Bootstrapping the Configuration Database</h1>
 
-<h2 id="general-security-information">General security information</h2>
-<p>Security can be tightened for most pgwatch components quite granularly,
-but the default values for the Docker image don't focus on security
-though but rather on being quickly usable for ad-hoc performance
-troubleshooting, which is where the roots of pgwatch lie.</p>
-<p>Some points on security:</p>
+<h2 id="choosing-a-database">Choosing a Database</h2>
+<p>pgwatch supports any database that supports the PostgreSQL wire protocol. This includes:</p>
 <ul>
-<li>
-<p>The administrative Web UI doesn't have by default any security.
-    Configurable via env. variables.</p>
-</li>
-<li>
-<p>Viewing Grafana dashboards by default doesn't require login.
-    Editing needs a password. Configurable via env. variables.</p>
-</li>
-<li>
-<p>Dashboards based on the "stat_statements" metric (Stat Statement
-    Overview / Top) expose actual queries.</p>
-<p>They should be "mostly" stripped of details though and replaced by
-placeholders by Postgres, but if no risks can be taken such
-dashboards (or at least according panels) should be deleted. Or as
-an alternative the <code>stat_statements_no_query_text</code> and
-<code>pg_stat_statements_calls</code> metrics could be used, which don't
-store query texts in the first place.</p>
-</li>
-<li>
-<p>Safe certificate connections to Postgres are supported. According 
-    <em>sslmode</em> (verify-ca, verify-full) and cert file paths
-    need to be specified then in connection string on Web UI "/dbs" page 
-    or in the YAML config.</p>
-</li>
-<li>
-<p>Note that although pgwatch can handle password security, in many
-    cases it's better to still use the standard LibPQ <em>.pgpass</em> file to
-    store passwords.</p>
-</li>
+<li>PostgreSQL</li>
+<li>TimescaleDB</li>
+<li>CitusDB</li>
+<li>CockroachDB</li>
+<li>many more</li>
 </ul>
-<h2 id="launching-a-more-secure-docker-container">Launching a more secure Docker container</h2>
-<p>Some common sense security is built into default Docker images for all
-components but not activated by default. A sample command to launch
-pgwatch with following security "checkpoints" enabled:</p>
-<ol>
-<li>HTTPS for both Grafana and the Web UI with self-signed certificates</li>
-<li>No anonymous viewing of graphs in Grafana</li>
-<li>Custom user / password for the Grafana "admin" account</li>
-<li>No anonymous access / editing over the admin Web UI</li>
-<li>No viewing of internal logs of components running inside Docker</li>
-<li>
-<p>Password encryption for connect strings stored in the Config DB</p>
-<div class="language-properties highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">docker</span><span class="w"> </span><span class="s">run --name pw3 -d --restart=unless-stopped </span><span class="se">\</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="s">-p 3000:3000 -p 8080:8080 </span><span class="se">\</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="s">-e PW_GRAFANASSL=1 -e PW_WEBSSL=1 </span><span class="se">\</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="s">-e PW_GRAFANANOANONYMOUS=1 -e PW_GRAFANAUSER=myuser </span><span class="se">\</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="s">-e PW_GRAFANAPASSWORD=mypass </span><span class="se">\</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="s">-e PW_WEBNOANONYMOUS=1 -e PW_WEBNOCOMPONENTLOGS=1 </span><span class="se">\</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="s">-e PW_WEBUSER=myuser -e PW_WEBPASSWORD=mypass </span><span class="se">\</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="s">-e PW_AES_GCM_KEYPHRASE=qwerty </span><span class="se">\</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="s">cybertec/pgwatch</span>
+<p>We will use PostgreSQL in this guide. But the steps are similar for other databases. It's up to you to choose the database that best fits your needs and set it up accordingly.</p>
+<h2 id="creating-the-database">Creating the Database</h2>
+<p>First, we need to create a database for storing the configuration. We will use the <code>psql</code> command-line tool to create the database. You can also use a GUI tool like pgAdmin to create the database.</p>
+<p>Let's assume we want to create a database named <code>pgwatch</code> on a completely fresh PostgreSQL installation.
+It is wise to use a special role for the configuration database, so we will create a role named <code>pgwatch</code> and assign it to the <code>pgwatch</code> database.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>$ psql -U postgres -h localhost -p 5432 -d postgres
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>psql (17.2)
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>postgres=# CREATE ROLE pgwatch WITH LOGIN PASSWORD &#39;pgwatchadmin&#39;;
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>CREATE ROLE
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>postgres=# CREATE DATABASE pgwatch OWNER pgwatch;
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>CREATE DATABASE
 </span></code></pre></div>
-</li>
-</ol>
-<p>For custom installs it's up to the user though. A hint - Docker
-<em>launcher</em> files can also be inspected to see which config parameters
-are being touched.</p>
+<p>That's it! We have created a database named <code>pgwatch</code> with the owner <code>pgwatch</code>. Now we can proceed to the next step.</p>
+<h2 id="init-optional">Init (optional)</h2>
+<p>pgwatch will automatically create the necessary tables and indexes in the database when it starts. But in case
+you want to create the schema as a separate step, you can use the <code>config init</code> command-line command. The only thing you
+need is to provide the connection string to the database.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch config init
+</span></code></pre></div>
+<p>Or you can use the <code>config init</code> command with the <code>--metrics</code> flag, since metrics and sources share the same database.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pgwatch --metrics=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch config init
+</span></code></pre></div>
+<h2 id="usage">Usage</h2>
+<p>You can now configure pgwatch to use the <code>pgwatch</code> database as the configuration database for storing monitored sources,
+metric deinitions and presets.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>$ pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=postgresql://pgwatch@10.0.0.42/measurements
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>...
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>[INFO] [metrics:75] [presets:17] [sources:2] sources and metrics refreshed
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>...
+</span></code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>Even though configuration database can hold both sources and metrics definitions,
+you are free to use any combination of configurations. For example, you can use a database
+for metrics and YAML file for sources, or vice versa.</p>
+</div>
+<p>That's it! You have successfully bootstrapped the configuration database for pgwatch.</p>
+<p>If now you want to see the tables created by pgwatch in the configuration database, you can connect to the database
+using the <code>psql</code> command-line tool and list the tables.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$ psql postgresql://pgwatch:pgwatchadmin@localhost/pgwatch
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>psql (17.2)
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>pgwatch=# \dt pgwatch.*
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>           List of relations
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a> Schema  |   Name    | Type  |  Owner
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>---------+-----------+-------+---------
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a> pgwatch | metric    | table | pgwatch
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a> pgwatch | migration | table | pgwatch
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a> pgwatch | preset    | table | pgwatch
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a> pgwatch | source    | table | pgwatch
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>(4 rows)
+</span></code></pre></div>
+<p>You may examine these tables to understand how pgwatch stores metrics and presets definitions, as well as what sources and how to monitor in the database.</p>
 
 
 
@@ -1532,7 +1568,7 @@ are being touched.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="technical_details.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Technical Details">
+          <a href="using_managed_services.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Using Managed Services">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1542,20 +1578,20 @@ are being touched.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Technical Details
+                Using Managed Services
               </div>
             </div>
           </a>
         
         
           
-          <a href="kubernetes.html" class="md-footer__link md-footer__link--next" aria-label="Next: Kubernetes">
+          <a href="metrics_db_bootstrap.html" class="md-footer__link md-footer__link--next" aria-label="Next: Bootstraping the Metrics Measurements Database (Sink)">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Kubernetes
+                Bootstraping the Metrics Measurements Database (Sink)
               </div>
             </div>
             <div class="md-footer__button md-icon">

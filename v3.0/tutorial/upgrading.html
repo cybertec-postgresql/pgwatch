@@ -1022,6 +1022,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../howto/config_db_bootstrap.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootstrapping the Configuration Database
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../howto/metrics_db_bootstrap.html" class="md-nav__link">
         
   
@@ -1619,7 +1640,7 @@ outside of Docker for Postgres respectively.</p>
 <h3 id="with-volumes">With volumes</h3>
 <p>To make updates a bit easier, the preferred way to launch pgwatch
 should be to use Docker volumes for each individual component - see the
-<a href="docker_installation.html">Installing using Docker</a> 
+<a href="docker_installation.html">Installing using Docker</a>
 chapter for details. Then one can just stop the old
 container and start a new one, re-using the volumes.</p>
 <p>With some releases though, updating to newer version might additionally
@@ -1644,7 +1665,7 @@ YAML schema has default values for everything and there are no other
 <h3 id="updating-grafana">Updating Grafana</h3>
 <p>The update process for Grafana looks pretty much like the installation
 so take a look at the according
-<a href="custom_installation.html#detailed-steps-for-the-config-db-based-pull-approach-with-postgres-metrics-storage">chapter</a>. 
+<a href="custom_installation.html#detailed-steps-for-the-configurartion-database-approach-with-postgres-sink">chapter</a>.
 If using Grafana package repository it should happen automatically along
 with other system packages. Grafana has a built-in database schema
 migrator, so updating the binaries and restarting is enough.</p>

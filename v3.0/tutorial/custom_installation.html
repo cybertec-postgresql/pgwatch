@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#config-db-based-setup" class="md-skip">
+        <a href="#configuration-database-based-setup" class="md-skip">
           Skip to content
         </a>
       
@@ -776,13 +776,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#config-db-based-setup" class="md-nav__link">
+  <a href="#configuration-database-based-setup" class="md-nav__link">
     <span class="md-ellipsis">
-      Config DB based setup
+      Configuration Database based setup
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Config DB based setup">
+    <nav class="md-nav" aria-label="Configuration Database based setup">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -795,9 +795,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#detailed-steps-for-the-config-db-based-pull-approach-with-postgres-metrics-storage" class="md-nav__link">
+  <a href="#detailed-steps-for-the-configurartion-database-approach-with-postgres-sink" class="md-nav__link">
     <span class="md-ellipsis">
-      Detailed steps for the Config DB based "pull" approach with Postgres metrics storage
+      Detailed steps for the configurartion database approach with Postgres sink
     </span>
   </a>
   
@@ -809,11 +809,26 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#yaml-based-setup" class="md-nav__link">
+  <a href="#yaml-configuration-based-setup" class="md-nav__link">
     <span class="md-ellipsis">
-      YAML based setup
+      YAML Configuration based setup
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="YAML Configuration based setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#yaml-configuration-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      YAML Configuration file
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -946,6 +961,27 @@
   
   <span class="md-ellipsis">
     Using Managed Services
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/config_db_bootstrap.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootstrapping the Configuration Database
   </span>
   
 
@@ -1395,13 +1431,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#config-db-based-setup" class="md-nav__link">
+  <a href="#configuration-database-based-setup" class="md-nav__link">
     <span class="md-ellipsis">
-      Config DB based setup
+      Configuration Database based setup
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Config DB based setup">
+    <nav class="md-nav" aria-label="Configuration Database based setup">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1414,9 +1450,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#detailed-steps-for-the-config-db-based-pull-approach-with-postgres-metrics-storage" class="md-nav__link">
+  <a href="#detailed-steps-for-the-configurartion-database-approach-with-postgres-sink" class="md-nav__link">
     <span class="md-ellipsis">
-      Detailed steps for the Config DB based "pull" approach with Postgres metrics storage
+      Detailed steps for the configurartion database approach with Postgres sink
     </span>
   </a>
   
@@ -1428,11 +1464,26 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#yaml-based-setup" class="md-nav__link">
+  <a href="#yaml-configuration-based-setup" class="md-nav__link">
     <span class="md-ellipsis">
-      YAML based setup
+      YAML Configuration based setup
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="YAML Configuration based setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#yaml-configuration-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      YAML Configuration file
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1461,72 +1512,66 @@
 
   <h1>Custom Installation</h1>
 
-<p>As described in the <a href="../concept/components.html">Components</a> 
+<p>As described in the <a href="../concept/components.html">Components</a>
 chapter, there is a couple of ways how to set up pgwatch.
-Two most common ways though are the central <em>Config DB</em> based "pull"
-approach and the <em>YAML file</em> based "push" approach, plus Grafana to
+Two most common ways though are using the central <strong>configurartion database</strong>
+approach and the <strong>YAML file</strong> based approach, plus Grafana to
 visualize the gathered metrics.</p>
-<h2 id="config-db-based-setup">Config DB based setup</h2>
+<h2 id="configuration-database-based-setup">Configuration Database based setup</h2>
 <h3 id="overview-of-installation-steps">Overview of installation steps</h3>
 <ol>
-<li>Install Postgres or use any available existing instance - v9.4+
-    required for the config DB and v11+ for the metrics DB.</li>
-<li>Bootstrap the Config DB.</li>
-<li>Bootstrap the metrics storage DB (PostgreSQL here).</li>
+<li>Install Postgres or use any available existing instance - v11+
+    is required but the latest major version is recommended.</li>
+<li>Bootstrap the configuration database.</li>
+<li>Bootstrap the metrics measurements storage database aka sink (PostgreSQL here).</li>
 <li>Install pgwatch - either from pre-built packages or by compiling
     the Go code.</li>
-<li>Prepare the "to-be-monitored" databases for monitoring by creating
+<li><a href="preparing_databases.html">Prepare</a> the "to-be-monitored" databases for monitoring by creating
     a dedicated login role name as a minimum.</li>
-<li>Optional step - install the administrative Web UI + Python &amp; library
-    dependencies.</li>
-<li>Add some databases to the monitoring configuration via the Web UI or
-    directly in the Config DB.</li>
+<li>Add some databases to the monitoring configuration via the Web UI, REST API or
+    directly in the configuration database.</li>
 <li>Start the pgwatch metrics collection agent and monitor the logs for
     any problems.</li>
 <li>Install and configure Grafana and import the pgwatch sample
     dashboards to start analyzing the metrics.</li>
-<li>Make sure that there are auto-start SystemD services for all
+<li>Make sure that there are auto-start services for all
     components in place and optionally set up also backups.</li>
 </ol>
-<h3 id="detailed-steps-for-the-config-db-based-pull-approach-with-postgres-metrics-storage">Detailed steps for the Config DB based "pull" approach with Postgres metrics storage</h3>
+<h3 id="detailed-steps-for-the-configurartion-database-approach-with-postgres-sink">Detailed steps for the configurartion database approach with Postgres sink</h3>
 <p>Below are the sample steps for a custom installation from scratch using
-Postgres for the pgwatch configuration DB, metrics DB and Grafana
-config DB.</p>
-<p>All examples here assume Ubuntu as OS - but it's basically the same for
+Postgres for the pgwatch configurartion database, measurements database and Grafana
+configurartion database.</p>
+<p>All examples here assume Ubuntu as OS but it's basically the same for
 RedHat family of operations systems also, minus package installation
 syntax differences.</p>
 <ol>
 <li>
 <p><strong>Install Postgres</strong></p>
 <p>Follow the standard Postgres install procedure basically. Use the
-latest major version available, but minimally v11+ is recommended
-for the metrics DB due to recent partitioning speedup improvements
-and also older versions were missing some default JSONB casts so
-that a few built-in Grafana dashboards need adjusting otherwise.</p>
+latest major version available, but minimally v11+ is required.</p>
 <p>To get the latest Postgres versions, official Postgres PGDG repos
 are to be preferred over default disto repos. Follow the
 instructions from:</p>
 <ul>
-<li><a href="https://wiki.postgresql.org/wiki/Apt">https://wiki.postgresql.org/wiki/Apt</a> - for Debian / Ubuntu
+<li><a href="https://www.postgresql.org/download/linux/debian/">https://www.postgresql.org/download/linux/debian/</a> - for Debian / Ubuntu
     based systems</li>
 <li><a href="https://www.postgresql.org/download/linux/redhat/">https://www.postgresql.org/download/linux/redhat/</a> - for CentOS
     / RedHat based systems</li>
+<li><a href="https://www.postgresql.org/download/windows/">https://www.postgresql.org/download/windows/</a> - for Windows</li>
 </ul>
 </li>
 <li>
-<p><strong>Install pgwatch</strong> - either from pre-built packages or by
+<p><strong>Install pgwatch</strong> either from pre-built packages or by
     compiling the Go code</p>
 <ul>
 <li>
-<p>Using pre-built packages</p>
-<p>The pre-built DEB / RPM / Tar packages are available on the
-<a href="https://github.com/cybertec-postgresql/pgwatch/releases">GitHub
-releases</a>
-page.</p>
-<div class="language-text highlight"><pre><span></span><code># find out the latest package link and replace below, using v1.8.0 here
-wget https://github.com/cybertec-postgresql/pgwatch/releases/download/v1.8.0/pgwatch_v1.8.0-SNAPSHOT-064fdaf_linux_64-bit.deb
-sudo dpkg -i pgwatch_v1.8.0-SNAPSHOT-064fdaf_linux_64-bit.deb
-</code></pre></div>
+<p>Using pre-built packages which are available on the
+    <a href="https://github.com/cybertec-postgresql/pgwatch/releases">GitHub releases</a>
+    page:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a># find out the latest package link and replace below, using v3.0 here
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>wget https://github.com/cybertec-postgresql/pgwatch/releases/download/3.0.0/pgwatch_Linux_x86_64.deb
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>sudo dpkg -i pgwatch_Linux_x86_64.deb
+</span></code></pre></div>
 </li>
 <li>
 <p>Compiling the Go code yourself</p>
@@ -1540,12 +1585,12 @@ security environments or some slight code changes are required.</p>
 <li>
 <p>Get the pgwatch project's code and compile the gatherer
     daemon</p>
-<div class="language-text highlight"><pre><span></span><code>git clone https://github.com/cybertec-postgresql/pgwatch.git
-cd pgwatch/internal/webui
-yarn install --network-timeout 100000 &amp;&amp; yarn build
-cd ..
-go build
-</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git clone https://github.com/cybertec-postgresql/pgwatch.git
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>cd pgwatch/internal/webui
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>yarn install --network-timeout 100000 &amp;&amp; yarn build
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>cd ..
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>go build ./cmd/pgwatch/
+</span></code></pre></div>
 <p>After fetching all the Go library dependencies (can take minutes)
 an executable named "pgwatch" should be generated. Additionally, it's a good idea
 to copy it to <code>/usr/bin/pgwatch</code>.</p>
@@ -1553,80 +1598,69 @@ to copy it to <code>/usr/bin/pgwatch</code>.</p>
 </ol>
 </li>
 <li>
-<p>Configure a SystemD auto-start service (optional)</p>
-<p>Sample startup scripts can be found at
-<em>/etc/pgwatch/startup-scripts/pgwatch.service</em> or online
-<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch/startup-scripts/pgwatch.service">here</a>.
-Note that they are OS-agnostic and might need some light
-adjustment of paths, etc. - so always test them out.</p>
+<p>Configure a SystemD auto-start service (optional). Here is the sample:</p>
+<div class="language-ini highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">[Unit]</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">pgwatch</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="na">After</span><span class="o">=</span><span class="s">network-online.target</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># After=&lt;postgresql@17-main.service&gt;</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="k">[Service]</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="na">User</span><span class="o">=</span><span class="s">pgwatch</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="na">Type</span><span class="o">=</span><span class="s">notify</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/pgwatch --sources=postgresql://pgwatch@localhost:5432/pgwatch --sink=postgresql://pgwatch@localhost:5432/pgwatch_metrics</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="na">Restart</span><span class="o">=</span><span class="s">on-failure</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="na">TimeoutStartSec</span><span class="o">=</span><span class="s">0</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="k">[Install]</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">multi-user.target</span>
+</span></code></pre></div>
 </li>
 </ul>
 </li>
 <li>
-<p><strong>Boostrap the config DB</strong></p>
-<ol>
-<li>
-<p>Create a user to "own" the <code>pgwatch</code> schema</p>
-<p>Typically called <code>pgwatch</code> but can be anything really, if the
-schema creation file is adjusted accordingly.</p>
-<div class="language-text highlight"><pre><span></span><code>psql -c &quot;create user pgwatch password &#39;xyz&#39;&quot;
-psql -c &quot;create database pgwatch owner pgwatch&quot;
-</code></pre></div>
-</li>
-<li>
-<p>Roll out the pgwatch config schema</p>
-<p>The schema will most importantly hold connection strings of DBs
-to be monitored and the metric definitions.</p>
-<div class="language-text highlight"><pre><span></span><code># FYI - one could get the below schema files also directly from GitHub
-# if re-using some existing remote Postgres instance where pgwatch was not installed
-psql -f /etc/pgwatch/sql/config_store/config_store.sql pgwatch
-psql -f /etc/pgwatch/sql/config_store/metric_definitions.sql pgwatch
-</code></pre></div>
-</li>
-</ol>
-</li>
-<li>
-<p><strong>Bootstrap the measurements storage DB</strong></p>
-<ol>
-<li>
-<p>Create a dedicated database for storing metrics and a user to
-    "own" the metrics schema</p>
-<p>Here again default scripts expect a role named <code>pgwatch</code> but
-can be anything if to adjust the scripts.</p>
-<div class="language-text highlight"><pre><span></span><code>psql -c &quot;create database pgwatch_metrics owner pgwatch&quot;
-</code></pre></div>
-</li>
-<li>
-<p>Roll out the pgwatch metrics storage schema</p>
-<p>This is a place to pause and first think how many databases will
-be monitored, i.e. how much data generated, and based on that
-one should choose a suitable metrics storage schema. There are
-a couple of different options available that are described
-<a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/pgwatch/sql/metric_store">here</a>
-in detail, but the gist of it is that you don't want partitioning schemes too
-complex if you don't have zounds of data
-and don't need the fastest queries. For a smaller amount of
-monitored DBs (a couple dozen to a hundred) the default
-"metric-time" is a good choice. For hundreds of databases,
-aggressive intervals, or long term storage usage of the
-TimescaleDB extension is recommended.</p>
-<div class="language-text highlight"><pre><span></span><code>cd /etc/pgwatch/sql/metric_store
-psql -f roll_out_metric_time.psql pgwatch_metrics
-</code></pre></div>
+<p><strong>Boostrap the configuration database</strong></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Default retention for Postgres storage is 2 weeks!
-To change, use the <code>--pg-retention-days / PW_PG_RETENTION_DAYS</code>
-gatherer parameter.</p>
+<p>The detailed steps are described in the
+<a href="../howto/config_db_bootstrap.html">Bootstrapping the Configuration Database</a> chapter</p>
 </div>
+<ul>
+<li>
+<p>Create a user to "own" the <code>pgwatch</code> database</p>
+<p>Typically called <code>pgwatch</code> but can be anything really, if the
+schema creation file is adjusted accordingly.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>psql -c &quot;create user pgwatch password &#39;xyz&#39;&quot;
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>psql -c &quot;create database pgwatch owner pgwatch&quot;
+</span></code></pre></div>
 </li>
-</ol>
+<li>
+<p>Roll out the pgwatch config schema (optional)</p>
+<p>pgwatch will automatically create the necessary tables and indexes in the database when it starts. But in case
+you want to create the schema as a separate step, you can use the <code>config init</code> command-line command:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch config init
+</span></code></pre></div>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Bootstrap the measurements storage database (sink)</strong></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The detailed steps are described in the
+<a href="../howto/metrics_db_bootstrap.html">Bootstrapping the Metrics Measurements Database (Sink)</a> chapter</p>
+</div>
+<p>Create a dedicated database for storing metrics and a user to
+"own" the measurements schema. Here again default scripts expect a
+role named <code>pgwatch</code> but can be anything if to adjust the scripts:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>psql -c &quot;create database pgwatch_metrics owner pgwatch&quot;
+</span></code></pre></div>
 </li>
 <li>
 <p><strong>Prepare the "to-be-monitored" databases for metrics collection</strong></p>
 <p>As a minimum we need a plain unprivileged login user. Better though
 is to grant the user also the <code>pg_monitor</code> system role, available on
-v10+. Superuser privileges should be normally avoided for obvious
+v10+. Superuser privileges <strong>should be normally avoided</strong> for obvious
 reasons of course, but for initial testing in safe environments it
 can make the initial preparation (automatic <em>helper</em> rollouts) a bit
 easier still, given superuser privileges are later stripped.</p>
@@ -1637,10 +1671,10 @@ monitoring. See the detailed chapter on the "preparation" topic
 details.</p>
 </li>
 <li>
-<p><strong>Configure DB-s and metrics / intervals to be monitored</strong></p>
+<p><strong>Configure sources and metrics with intervals to be monitored</strong></p>
 <ul>
-<li>From the Web UI "/dbs" page</li>
-<li>Via direct inserts into the Config DB <code>pgwatch.monitored_db</code> table</li>
+<li>from the Web UI "Sources" page</li>
+<li>via direct inserts into the Config DB <code>pgwatch.source</code> table</li>
 </ul>
 </li>
 <li>
@@ -1649,25 +1683,19 @@ details.</p>
 <li>
 <p>The gatherer has quite some parameters (use the <code>--help</code> flag
     to show them all), but simplest form would be:</p>
-<div class="language-text highlight"><pre><span></span><code>pgwatch-daemon \
-  --host=localhost --user=pgwatch --dbname=pgwatch \
-  --datastore=postgres --pg-metric-store-conn-str=postgresql://pgwatch@localhost:5432/pgwatch_metrics \
-  --verbose=info
-</code></pre></div>
-<p>Default connections params expect a trusted localhost Config DB setup
-so mostly the 2nd line is not needed, actually.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pgwatch \
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    --sources=postgresql://pgwatch@localhost:5432/pgwatch \
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    --sink=postgresql://pgwatch@localhost:5432/pgwatch_metrics \
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    --log-level=debug
+</span></code></pre></div>
 <p>Or via SystemD if set up in previous steps</p>
-<div class="language-text highlight"><pre><span></span><code>useradd -m -s /bin/bash pgwatch # default SystemD templates run under the pgwatch user
-sudo systemctl start pgwatch
-sudo systemctl status pgwatch
-</code></pre></div>
-<p>After initial verification that all works it's usually good
-idea to set verbosity back to default by removing the <em>verbose</em>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>useradd -m -s /bin/bash pgwatch # default SystemD templates run under the pgwatch user
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>sudo systemctl start pgwatch
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>sudo systemctl status pgwatch
+</span></code></pre></div>
+<p>After initial verification that all works, it's usually good
+idea to set verbosity back to default by removing the <em>--log-level=debug</em>
 flag.</p>
-<p>Another tip to configure connection strings inside SystemD
-service files is to use the "systemd-escape" utility to escape
-special characters like spaces etc. if using the LibPQ connect
-string syntax rather than JDBC syntax.</p>
 </li>
 <li>
 <p>Monitor the console or log output for any problems</p>
@@ -1681,12 +1709,6 @@ database side. See the according chapter
 <a href="preparing_databases.html">here</a>.</p>
 </li>
 </ol>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>When you're compiling your own gatherer then the executable file
-will be named just <code>pgwatch</code> instead of <code>pgwatch-daemon</code> to avoid
-mixups.</p>
-</div>
 </li>
 <li>
 <p><strong>Install Grafana</strong></p>
@@ -1695,74 +1717,70 @@ mixups.</p>
 <p>Create a Postgres database to hold Grafana internal config, like
     dashboards etc.</p>
 <p>Theoretically it's not absolutely required to use Postgres for
-storing Grafana internal settings / dashboards, but doing so has
+storing Grafana internal settings, but doing so has
 2 advantages - you can easily roll out all pgwatch built-in
 dashboards and one can also do remote backups of the Grafana
 configuration easily.</p>
-<div class="language-text highlight"><pre><span></span><code>psql -c &quot;create user pgwatch_grafana password &#39;xyz&#39;&quot;
-psql -c &quot;create database pgwatch_grafana owner pgwatch_grafana&quot;
-</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>psql -c &quot;create user pgwatch_grafana password &#39;xyz&#39;&quot;
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>psql -c &quot;create database pgwatch_grafana owner pgwatch_grafana&quot;
+</span></code></pre></div>
 </li>
 <li>
-<p>Follow the instructions from
-    <a href="https://grafana.com/docs/grafana/latest/installation/debian/">https://grafana.com/docs/grafana/latest/installation/debian/</a>,
-    basically something like:</p>
-<div class="language-text highlight"><pre><span></span><code>wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
-echo &quot;deb https://packages.grafana.com/oss/deb stable main&quot; | sudo tee -a /etc/apt/sources.list.d/grafana.list
-sudo apt-get update &amp;&amp; sudo apt-get install grafana
-
-# review / change config settings and security, etc
-sudo vi /etc/grafana/grafana.ini
-
-# start and enable auto-start on boot
-sudo systemctl daemon-reload
-sudo systemctl start grafana-server
-sudo systemctl status grafana-server
-</code></pre></div>
+<p>Follow the instructions from <a href="https://grafana.com/docs/grafana/latest/installation/">Grafana documentation</a>,
+basically something like:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>echo &quot;deb https://packages.grafana.com/oss/deb stable main&quot; | sudo tee -a /etc/apt/sources.list.d/grafana.list
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>sudo apt-get update &amp;&amp; sudo apt-get install grafana
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a># review / change config settings and security, etc
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>sudo vi /etc/grafana/grafana.ini
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a># start and enable auto-start on boot
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>sudo systemctl daemon-reload
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>sudo systemctl start grafana-server
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>sudo systemctl status grafana-server
+</span></code></pre></div>
 <p>Default Grafana port: 3000</p>
 </li>
 <li>
 <p>Configure Grafana config to use our <code>pgwatch_grafana</code> DB</p>
-<p>Place something like below in the <code>[database]</code> section of
+<p>Place something like this below in the <code>[database]</code> section of
 <code>/etc/grafana/grafana.ini</code></p>
-<div class="language-text highlight"><pre><span></span><code>[database]
-type = postgres
-host = my-postgres-db:5432
-name = pgwatch_grafana
-user = pgwatch_grafana
-password = xyz
-</code></pre></div>
+<div class="language-ini highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">[database]</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="na">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">postgres</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="na">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">my-postgres-db:5432</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pgwatch_grafana</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="na">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pgwatch_grafana</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="na">password</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">xyz</span>
+</span></code></pre></div>
 <p>Taking a look at <code>[server], [security]</code> and <code>[auth*]</code>
 sections is also recommended.</p>
 </li>
 <li>
 <p>Set up the <code>pgwatch</code> metrics database as the default datasource</p>
 <p>We need to tell Grafana where our metrics data is located. Add a
-datasource via the Grafana UI (Admin -&gt; Data sources) or adjust
-and execute the "pgwatch/bootstrap/grafana_datasource.sql"
-script on the <code>pgwatch_grafana</code> DB.</p>
+datasource via the Grafana UI (Admin -&gt; Data sources) or use
+<code>pgwatch/grafana/postgres_datasource.yml</code> for
+<a href="https://grafana.com/docs/grafana/latest/administration/provisioning/">provisioning</a>.</p>
 </li>
 <li>
 <p>Add pgwatch predefined dashboards to Grafana</p>
 <p>This could be done by importing the pgwatch dashboard
-definition JSONs manually, one by one, from the "grafana"
-folder ("Import Dashboard" from the Grafana top menu) or via
-as small helper script located at
-<em>/etc/pgwatch/grafana-dashboards/import_all.sh</em>. The script
-needs some adjustment for metrics storage type, connect data and
-file paths.</p>
+definition JSONs manually, one by one, from the <code>pgwatch/grafana</code>
+folder ("Import Dashboard" from the Grafana top menu) or by
+<a href="https://grafana.com/docs/grafana/latest/administration/provisioning/">dashboard provisioning</a>.</p>
 </li>
 <li>
 <p>Optionally install also Grafana plugins</p>
 <p>Currently, one pre-configured dashboard (Biggest relations
-treemap) use an extra plugin - if planning to that dash, then
+treemap) use an extra plugin - if planning to use that dash, then
 run the following:</p>
-<div class="language-text highlight"><pre><span></span><code>grafana-cli plugins install savantly-heatmap-panel
-</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>grafana-cli plugins install savantly-heatmap-panel
+</span></code></pre></div>
 </li>
 <li>
 <p>Start discovering the preset dashbaords</p>
-<p>If the previous step of launching pgwatch daemon succeeded, and
+<p>If the previous step of launching pgwatch succeeded, and
 it was more than some minutes ago, one should already see some
 graphs on dashboards like "DB overview" or "DB overview
 Unprivileged / Developer mode" for example.</p>
@@ -1770,37 +1788,54 @@ Unprivileged / Developer mode" for example.</p>
 </ol>
 </li>
 </ol>
-<h2 id="yaml-based-setup">YAML based setup</h2>
-<p>From v1.4 one can also deploy the pgwatch gatherer daemons more easily
-in a de-centralized way, by specifying monitoring configuration via YAML
-files. In that case there is no need for a central Postgres "config
-DB".</p>
-<p><strong>YAML installation steps</strong></p>
+<h2 id="yaml-configuration-based-setup">YAML Configuration based setup</h2>
+<p>The process is completely identical to the above, but instead of
+setting up a Postgres database for the configuration, one would use a
+YAML file. For details on individual steps like installing pgwatch see the above
+paragraph.</p>
 <ol>
+<li>Install Postgres or use any available existing instance - v11+
+    is required but the latest major version is recommended.</li>
+<li>Edit the YAML file to include the sources to be monitored.</li>
+<li>Bootstrap the metrics measurements storage database aka sink (PostgreSQL here).</li>
 <li>Install pgwatch - either from pre-built packages or by compiling
     the Go code.</li>
-<li>Specify hosts you want to monitor and with which metrics /
-    aggressiveness in a YAML file or files, following the example config
-    located at <em>/etc/pgwatch/config/instances.yaml</em> or online
-    <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch/config/instances.yaml">here</a>.
-    Note that you can also use env. variables inside the YAML templates!</li>
-<li>Bootstrap the metrics storage DB (not needed if using only Prometheus sink).</li>
-<li>Prepare the "to-be-monitored" databases for monitoring by creating
-    a dedicated login role name as a
-    <a href="preparing_databases.html">minimum</a>.</li>
-<li>Run the pgwatch gatherer specifying the YAML config file (or
-    folder), and also the folder where metric definitions are located.
-    Default location: <em>/etc/pgwatch/metrics</em>.</li>
+<li><a href="preparing_databases.html">Prepare</a> the "to-be-monitored" databases for monitoring by creating
+    a dedicated login role name as a minimum.</li>
+<li>Add some databases to the monitoring configuration via the Web UI, REST API or
+    directly in the configuration database.</li>
+<li>Start the pgwatch metrics collection agent and monitor the logs for
+    any problems.</li>
 <li>Install and configure Grafana and import the pgwatch sample
-    dashboards to start analyzing the metrics. See above for
-    instructions.</li>
-<li>Make sure that there are auto-start SystemD services for all
+    dashboards to start analyzing the metrics.</li>
+<li>Make sure that there are auto-start services for all
     components in place and optionally set up also backups.</li>
 </ol>
-<p>Relevant gatherer parameters / env. vars: <code>--config / PW_CONFIG</code> and
-<code>--metrics-folder / PW_METRICS_FOLDER</code>.</p>
-<p>For details on individual steps like installing pgwatch see the above
-paragraph.</p>
+<h3 id="yaml-configuration-file">YAML Configuration file</h3>
+<p>The content of a file is a array of sources definitions, like this:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test1</span><span class="w">       </span><span class="c1"># An arbitrary unique name for the monitored source</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres</span><span class="w">    </span><span class="c1"># One of the:</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">                      </span><span class="c1"># - postgres</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">                      </span><span class="c1"># - postgres-continuous-discovery</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">                      </span><span class="c1"># - pgbouncer</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">                      </span><span class="c1"># - pgpool</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">                      </span><span class="c1"># - patroni</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">                      </span><span class="c1"># - patroni-continuous-discovery</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">                      </span><span class="c1"># - patroni-namespace-discover</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">                      </span><span class="c1"># Defaults to postgres if not specified</span>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="w">  </span><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgresql://pgwatch:pgwatchadmin@somehost/mydb</span>
+</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="w">  </span><span class="nt">preset_metrics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">exhaustive</span><span class="w"> </span><span class="c1"># from list of presets defined in &quot;metrics/preset-configs.yaml&quot;</span>
+</span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="w">  </span><span class="nt">custom_metrics</span><span class="p">:</span><span class="w">    </span><span class="c1"># if both preset and custom are specified, custom wins</span>
+</span><span id="__span-12-14"><a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="w">  </span><span class="nt">preset_metrics_standby</span><span class="p">:</span><span class="w"> </span><span class="c1"># optional metrics configuration for standby / replica state, v1.8.1+</span>
+</span><span id="__span-12-15"><a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="w">  </span><span class="nt">custom_metrics_standby</span><span class="p">:</span>
+</span><span id="__span-12-16"><a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="w">  </span><span class="nt">include_pattern</span><span class="p">:</span><span class="w"> </span><span class="c1"># regex to filter databases to actually monitor for the &quot;continuous&quot; modes</span>
+</span><span id="__span-12-17"><a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a><span class="w">  </span><span class="nt">exclude_pattern</span><span class="p">:</span>
+</span><span id="__span-12-18"><a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a><span class="w">  </span><span class="nt">is_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="__span-12-19"><a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a><span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">default</span><span class="w"> </span><span class="c1"># just for logical grouping of DB hosts or for &quot;sharding&quot;, i.e. splitting the workload between many gatherer daemons</span>
+</span><span id="__span-12-20"><a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a><span class="w">  </span><span class="nt">custom_tags</span><span class="p">:</span><span class="w">      </span><span class="c1"># option to add arbitrary tags for every stored data row,</span>
+</span><span id="__span-12-21"><a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a><span class="w">      </span><span class="nt">aws_instance_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">i-0af01c0123456789a</span><span class="w">       </span><span class="c1"># for example to fetch data from some other source onto a same Grafana graph</span>
+</span><span id="__span-12-22"><a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a><span class="nn">...</span>
+</span></code></pre></div>
 
 
 

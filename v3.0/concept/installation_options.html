@@ -938,6 +938,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../howto/config_db_bootstrap.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootstrapping the Configuration Database
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../howto/metrics_db_bootstrap.html" class="md-nav__link">
         
   
@@ -1418,7 +1439,7 @@ also choose how is the monitoring configuration
 (connect strings, metric sets and intervals) going to be stored.</p>
 <h2 id="configuration-database-based-operation">Configuration database based operation</h2>
 <p>This is the original central pull mode depicted on the
-<a href="../gallery/pgwatch_architecture.png">architecture diagram</a>. 
+<a href="components.html#component-diagram">architecture diagram</a>.
 It requires a small schema to be rolled out on any Postgres
 database accessible to the metrics gathering daemon, which will hold the
 connect strings, metric definition SQLs and preset configurations and
@@ -1430,10 +1451,10 @@ some other more minor attributes. For rollout details see the
 <em>sources to be monitored</em> defined in simple YAML files. In that case there
 is no need for the central Postgres configuration database. See the
 <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sources/sample.sources.yaml">sample.sources.yaml</a>
-config file for an example. </p>
+config file for an example.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>In this mode you also may want, but not forced, to point out the path to 
+<p>In this mode you also may want, but not forced, to point out the path to
 metric definition YAML file when starting the
 gatherer. Also note that the configuration system supports multiple
 YAML files in a folder so that you could easily programmatically manage
