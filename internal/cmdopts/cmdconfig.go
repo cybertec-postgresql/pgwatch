@@ -45,25 +45,27 @@ func (cmd *ConfigInitCommand) Execute([]string) (err error) {
 }
 
 // InitSources initializes the sources configuration.
-func (cmd *ConfigInitCommand) InitSources() error {
+func (cmd *ConfigInitCommand) InitSources() (err error) {
 	ctx := context.Background()
-	if cmd.owner.IsPgConnStr(cmd.owner.Sources.Sources) {
-		return cmd.owner.InitSourceReader(ctx)
+	opts := cmd.owner
+	err = opts.InitSourceReader(ctx)
+	if err != nil || opts.IsPgConnStr(opts.Sources.Sources) {
+		return // nothing to do, database initialized automatically
 	}
-	writer, _ := sources.NewYAMLSourcesReaderWriter(ctx, cmd.owner.Sources.Sources)
-	return writer.WriteSources(sources.Sources{sources.Source{}})
+	return opts.SourcesReaderWriter.WriteSources(sources.Sources{sources.Source{}})
 }
 
 // InitMetrics initializes the metrics configuration.
 func (cmd *ConfigInitCommand) InitMetrics() (err error) {
 	ctx := context.Background()
-	if cmd.owner.IsPgConnStr(cmd.owner.Metrics.Metrics) {
-		return cmd.owner.InitMetricReader(ctx)
+	opts := cmd.owner
+	err = opts.InitMetricReader(ctx)
+	if err != nil || opts.IsPgConnStr(opts.Metrics.Metrics) {
+		return // nothing to do, database initialized automatically
 	}
 	reader, _ := metrics.NewYAMLMetricReaderWriter(ctx, "")
-	writer, _ := metrics.NewYAMLMetricReaderWriter(ctx, cmd.owner.Metrics.Metrics)
 	defMetrics, _ := reader.GetMetrics()
-	return writer.WriteMetrics(defMetrics)
+	return opts.MetricsReaderWriter.WriteMetrics(defMetrics)
 }
 
 type ConfigUpgradeCommand struct {

@@ -124,30 +124,21 @@ func (c *Options) IsPgConnStr(arg string) bool {
 
 // InitMetricReader creates a new source reader based on the configuration kind from the options.
 func (c *Options) InitMetricReader(ctx context.Context) (err error) {
-	if c.Metrics.Metrics == "" { //if config database is configured, use it for metrics as well
-		if c.IsPgConnStr(c.Sources.Sources) {
-			c.Metrics.Metrics = c.Sources.Sources
-		} else { // otherwise use built-in metrics
-			c.MetricsReaderWriter, err = metrics.NewYAMLMetricReaderWriter(ctx, "")
-			return err
-		}
+	if c.Metrics.Metrics == "" { // use built-in metrics
+		c.MetricsReaderWriter, err = metrics.NewYAMLMetricReaderWriter(ctx, "")
+		return
 	}
 	if c.IsPgConnStr(c.Metrics.Metrics) {
 		c.MetricsReaderWriter, err = metrics.NewPostgresMetricReaderWriter(ctx, c.Metrics.Metrics)
 	} else {
 		c.MetricsReaderWriter, err = metrics.NewYAMLMetricReaderWriter(ctx, c.Metrics.Metrics)
 	}
-	return err
+	return
 }
 
 // InitSourceReader creates a new source reader based on the configuration kind from the options.
 func (c *Options) InitSourceReader(ctx context.Context) (err error) {
 	var configKind Kind
-	if c.Sources.Sources == "" { //if metric database is configured, use it for sources as well
-		if c.IsPgConnStr(c.Metrics.Metrics) {
-			c.Sources.Sources = c.Metrics.Metrics
-		}
-	}
 	if configKind, err = c.GetConfigKind(c.Sources.Sources); err != nil {
 		return
 	}
@@ -157,7 +148,7 @@ func (c *Options) InitSourceReader(ctx context.Context) (err error) {
 	default:
 		c.SourcesReaderWriter, err = sources.NewYAMLSourcesReaderWriter(ctx, c.Sources.Sources)
 	}
-	return err
+	return
 }
 
 // InitConfigReaders creates the configuration readers based on the configuration kind from the options.
