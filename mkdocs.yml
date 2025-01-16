@@ -62,6 +62,7 @@ nav:
   - How-To Guides:
     - Dashboarding and Alerting: howto/dashboarding_alerting.md
     - Using Managed Services: howto/using_managed_services.md
+    - Bootstrapping the Configuration Database: howto/config_db_bootstrap.md
     - Bootstraping the Metrics Measurements Database (Sink): howto/metrics_db_bootstrap.md
   - Reference:
     - Advanced Features: reference/advanced_features.md
