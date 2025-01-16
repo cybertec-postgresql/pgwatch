@@ -14,10 +14,10 @@ In the world of database management, **monitoring** plays a crucial role in ensu
 
 pgwatch is designed specifically for monitoring **PostgreSQL databases** and related infrastructure. It covers a wide range of components crucial for PostgreSQL ecosystems, including:
 
-  - **PostgreSQL Databases**: pgwatch monitors the core performance and health metrics of your PostgreSQL instances.
-  - **Patroni Clusters**: Monitor the health and performance of high-availability clusters members managed by **Patroni**.
-  - **Connection Poolers (PgPool, PgBouncer)**: pgwatch provides insights into connection pooling with both **PgPool** and **PgBouncer**.
-  - **Backup solutions**: Track the performance and status of **PgBackRest** and **WAL-G** backups, ensuring that your backups are executed correctly.
+- **PostgreSQL Databases**: pgwatch monitors the core performance and health metrics of your PostgreSQL instances.
+- **Patroni Clusters**: Monitor the health and performance of high-availability clusters members managed by **Patroni**.
+- **Connection Poolers (PgPool, PgBouncer)**: pgwatch provides insights into connection pooling with both **PgPool** and **PgBouncer**.
+- **Backup solutions**: Track the performance and status of **PgBackRest** and **WAL-G** backups, ensuring that your backups are executed correctly.
 
 This extended monitoring capability allows you to gain a comprehensive view of not only your PostgreSQL databases but also the surrounding infrastructure that supports and enhances your database operations.
 
@@ -27,12 +27,12 @@ This extended monitoring capability allows you to gain a comprehensive view of n
 
 pgwatch provides out-of-the-box support for almost all essential **PostgreSQL metrics**, including:
 
-  - Database health checks
-  - Query performance
-  - Index usage
-  - Disk I/O
-  - CPU and memory consumption
-  - Locks, waits, and more
+- Database health checks
+- Query performance
+- Index usage
+- Disk I/O
+- CPU and memory consumption
+- Locks, waits, and more
 
 In addition to the standard metrics, pgwatch can be easily extended to monitor **custom metrics** based on your specific needs. The solution offers flexibility to fine-tune monitoring details and the aggressiveness of data collection.
 

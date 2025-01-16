@@ -6,14 +6,14 @@ title: Installing using Docker
 
 The simplest real-life pgwatch setup should look something like that:
 
-1.  Decide which metrics storage engine you want to use -
-    *cybertecpostgresql/pgwatch-demo* uses PostgreSQL. 
+1. Decide which metrics storage engine you want to use -
+    *cybertecpostgresql/pgwatch-demo* uses PostgreSQL.
     When only Prometheus sink is used (exposing a
     port for remote scraping), one should use the slimmer
     *cybertecpostgresql/pgwatch* image which doesn't have any built in
     databases.
 
-1.  Find the latest pgwatch release version by going to the project's
+1. Find the latest pgwatch release version by going to the project's
     GitHub *Releases* page or use the public API with something like
     that:
 
@@ -21,13 +21,13 @@ The simplest real-life pgwatch setup should look something like that:
 curl -so- https://api.github.com/repos/cybertec-postgresql/pgwatch/releases/latest | jq .tag_name | grep -oE '[0-9\.]+'
 ```
 
-1.  Pull the image:
+1. Pull the image:
 
 ```bash
 docker pull cybertecpostgresql/pgwatch-demo:X.Y.Z
 ```
 
-1.  Run the Docker image, exposing minimally the Grafana port served on
+1. Run the Docker image, exposing minimally the Grafana port served on
     port 3000 internally. In a relatively secure environment you'd
     usually also include the administrative web UI served on port 8080:
 
@@ -36,9 +36,9 @@ docker run -d --restart=unless-stopped -p 3000:3000 -p 8080:8080 \
 --name pw3 cybertecpostgresql/pgwatch-demo:X.Y.Z
 ```
 
-    Note that we're setting the container to be automatically restarted
-    in case of a reboot/crash - which is highly recommended if not using
-    some container management framework to run pgwatch.
+Note that we're setting the container to be automatically restarted
+in case of a reboot/crash - which is highly recommended if not using
+some container management framework to run pgwatch.
 
 ## More future-proof setup steps
 
@@ -83,14 +83,14 @@ supported Docker environment variables see the [ENV_VARIABLES.md](../reference/e
 Following images are regularly pushed to [Docker
 Hub](https://hub.docker.com/u/cybertecpostgresql):
 
-*cybertecpostgresql/pgwatch-demo*
+### cybertecpostgresql/pgwatch-demo
 
 The original pgwatch “batteries-included” image with PostgreSQL measurements
 storage. Just insert connect infos to your database via the admin Web UI (or
 directly into the Config DB) and then turn to the pre-defined Grafana
 dashboards to analyze DB health and performance.
 
-*cybertecpostgresql/pgwatch*
+### cybertecpostgresql/pgwatch
 
 A light-weight image containing only the metrics collection daemon /
 agent, that can be integrated into the monitoring setup over
@@ -106,12 +106,12 @@ needed.
 
 ## Interacting with the Docker container
 
--   If launched with the `PW_TESTDB=1` env. parameter then the
+- If launched with the `PW_TESTDB=1` env. parameter then the
     pgwatch configuration database running inside Docker is added to
     the monitoring, so that you should immediately see some metrics at
     least on the *Health-check* dashboard.
 
--   To add new databases / instances to monitoring open the
+- To add new databases / instances to monitoring open the
     administration Web interface on port 8080 (or some other port, if
     re-mapped at launch) and go to the *SOURCES* page. Note that the Web UI
     is an optional component, and one can manage monitoring entries
@@ -122,12 +122,12 @@ needed.
     changeable via `PW_SERVERS_REFRESH_LOOP_SECONDS`) before you see
     any metrics for newly inserted databases.
 
--   One can edit existing or create new Grafana dashboards, change
+- One can edit existing or create new Grafana dashboards, change
     Grafana global settings, create users, alerts, etc. after logging in
     as `pgwatch/pgwatchadmin` (by default, changeable at launch
     time).
 
--   Metrics and their intervals that are to be gathered can be
+- Metrics and their intervals that are to be gathered can be
     customized for every database separately via a custom JSON config
     field or more conveniently by using *Preset Configs*, like
     "minimal", "basic" or "exhaustive" (`monitored_db.preset_config`
@@ -135,7 +135,7 @@ needed.
     gathered. For privileged users the "exhaustive" preset is a good
     starting point, and "unprivileged" for simple developer accounts.
 
--   To add a new metrics yourself (which are simple SQL queries
+- To add a new metrics yourself (which are simple SQL queries
     returning any values and a timestamp) head to
     <http://127.0.0.1:8080/metrics>. The queries should always include a
     `"epoch_ns"` column and `"tag\_"` prefix can be used for columns
@@ -144,11 +144,11 @@ needed.
     "metrics" page for more explanations or the documentation chapter
     on metrics.
 
--   For a quickstart on dashboarding, a list of available metrics
+- For a quickstart on dashboarding, a list of available metrics
     together with some instructions are presented on the
     "Documentation" dashboard.
 
--   Some built-in metrics like `"cpu_load"` and others, that gather
+- Some built-in metrics like `"cpu_load"` and others, that gather
     privileged or OS statistics, require installing *helper functions*
     (looking like
     [that](https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch/metrics/00_helpers/get_load_average/9.1/metric.sql)),
@@ -156,11 +156,11 @@ needed.
     the logs. On how to prepare databases for monitoring see the
     [Monitoring preparations](preparing_databases.md) chapter.
 
--   For effective graphing you want to familiarize yourself with the
+- For effective graphing you want to familiarize yourself with the
     query language of the database system that was selected for metrics
     storage. Some tips to get going:
 
-    -   For PostgreSQL/TimescaleDB - some knowledge of [Window
+  - For PostgreSQL/TimescaleDB - some knowledge of [Window
         functions](https://www.postgresql.org/docs/current/tutorial-window.html)
         is a must if looking at longer time periods of data as the
         statistics could have been reset in the meantime by user
@@ -168,7 +168,7 @@ needed.
         `max() - min()` aggregates on cumulative counters (most data
         provided by Postgres is cumulative) would lie.
 
--   For possible troubleshooting needs, logs of the components running
+- For possible troubleshooting needs, logs of the components running
     inside Docker are by default (if not disabled on container launch)
     visible under:
     <http://127.0.0.1:8080/logs/%5Bpgwatch%7Cpostgres%7Cwebui%7Cgrafana>.
@@ -181,13 +181,13 @@ needed.
 
 ## Ports used
 
--   *5432* - Postgres configuration or metrics storage DB (when using the
+- *5432* - Postgres configuration or metrics storage DB (when using the
     cybertec/pgwatch image)
--   *8080* - Management Web UI (monitored hosts, metrics, metrics
+- *8080* - Management Web UI (monitored hosts, metrics, metrics
     configurations)
--   *8081* - Gatherer healthcheck / statistics on number of gathered
+- *8081* - Gatherer healthcheck / statistics on number of gathered
     metrics (JSON).
--   *3000* - Grafana dashboarding
+- *3000* - Grafana dashboarding
 
 ## Docker Compose
 
@@ -198,9 +198,10 @@ collector could be organized. For another example how various components
 example with loosely coupled components
 [here](https://github.com/cybertec-postgresql/pgwatch/blob/master/docker-compose.yml).
 
-## Example of advanced setup using YAML files and dual sinks:
+## Example of advanced setup using YAML files and dual sinks
 
 pgwatch service in file `docker/docker-compose.yml` can look like this:
+
 ```yaml
   pgwatch:
     image: cybertecpostgresql/pgwatch:latest
@@ -219,6 +220,7 @@ pgwatch service in file `docker/docker-compose.yml` can look like this:
 ```
 
 Source file `sources.yaml` in the same directory:
+
 ```yaml
 - name: demo
   conn_str: postgresql://pgwatch:pgwatchadmin@postgres/pgwatch'
@@ -228,6 +230,6 @@ Source file `sources.yaml` in the same directory:
 ```
 
 Running this setup you get pgwatch that uses sources from YAML file and
-outputs measurements to postgres DB and exposes them for Prometheus 
+outputs measurements to postgres DB and exposes them for Prometheus
 to scrape on port 8080 instead of WebUI (which is disabled by `--web-disable`).
 Metrics definition are built-in, you can examine definition in [`internal/metrics/metrics.yaml`](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/metrics/metrics.yaml).

@@ -48,7 +48,7 @@ outside of Docker for Postgres respectively.
 
 To make updates a bit easier, the preferred way to launch pgwatch
 should be to use Docker volumes for each individual component - see the
-[Installing using Docker](docker_installation.md) 
+[Installing using Docker](docker_installation.md)
 chapter for details. Then one can just stop the old
 container and start a new one, re-using the volumes.
 
@@ -78,7 +78,7 @@ YAML schema has default values for everything and there are no other
 
 The update process for Grafana looks pretty much like the installation
 so take a look at the according
-[chapter](custom_installation.md#detailed-steps-for-the-config-db-based-pull-approach-with-postgres-metrics-storage). 
+[chapter](custom_installation.md#detailed-steps-for-the-configurartion-database-approach-with-postgres-sink).
 If using Grafana package repository it should happen automatically along
 with other system packages. Grafana has a built-in database schema
 migrator, so updating the binaries and restarting is enough.

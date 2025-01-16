@@ -2,6 +2,9 @@
 title: Components
 ---
 
+
+## Component diagram
+
 The main development idea around pgwatch was to do the minimal work
 needed and not to reinvent the wheel - meaning that pgwatch is mostly
 just about gluing together already some proven pieces of software for
@@ -10,6 +13,14 @@ components that can be used to build up a monitoring setup around the
 pgwatch metrics collector. Note that most components are not mandatory
 and for tasks like metrics storage there are many components to choose
 from.
+
+[![pgwatch typical deployment architecture diagram](../gallery/pgwatch_architecture.jpg)](../gallery/pgwatch_architecture.jpg)
+
+All components are *loosely coupled*, thus for non-pgwatch components
+(pgwatch components are only the metrics collector)
+you can decide to make use of an already existing installation of
+Postgres, Grafana or Prometheus and run additionally just the pgwatch
+collector.
 
 ## The metrics gathering daemon
 
@@ -89,12 +100,3 @@ always want to customize some aspects though, so it's not meant as a
 one-size-fits-all solution. Also as metrics are stored in a DB, they can
 be visualized or processed in any other way.
 
-## Component diagram
-
-[![pgwatch typical deployment architecture diagram](../gallery/pgwatch_architecture.jpg)](../gallery/pgwatch_architecture.jpg)
-
-All components are *loosely coupled*, thus for non-pgwatch components
-(pgwatch components are only the metrics collector)
-you can decide to make use of an already existing installation of
-Postgres, Grafana or Prometheus and run additionally just the pgwatch
-collector.

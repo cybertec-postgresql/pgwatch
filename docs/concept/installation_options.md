@@ -9,7 +9,7 @@ also choose how is the monitoring configuration
 ## Configuration database based operation
 
 This is the original central pull mode depicted on the
-[architecture diagram](../gallery/pgwatch_architecture.png). 
+[architecture diagram](components.md#component-diagram).
 It requires a small schema to be rolled out on any Postgres
 database accessible to the metrics gathering daemon, which will hold the
 connect strings, metric definition SQLs and preset configurations and
@@ -24,10 +24,10 @@ One can deploy the gatherer daemon(s) decentralized with
 *sources to be monitored* defined in simple YAML files. In that case there
 is no need for the central Postgres configuration database. See the
 [sample.sources.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sources/sample.sources.yaml)
-config file for an example. 
+config file for an example.
 
 !!! Note
-    In this mode you also may want, but not forced, to point out the path to 
+    In this mode you also may want, but not forced, to point out the path to
     metric definition YAML file when starting the
     gatherer. Also note that the configuration system supports multiple
     YAML files in a folder so that you could easily programmatically manage
