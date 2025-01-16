@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#the-metrics-gathering-daemon" class="md-skip">
+        <a href="#component-diagram" class="md-skip">
           Skip to content
         </a>
       
@@ -605,6 +605,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#component-diagram" class="md-nav__link">
+    <span class="md-ellipsis">
+      Component diagram
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-metrics-gathering-daemon" class="md-nav__link">
     <span class="md-ellipsis">
       The metrics gathering daemon
@@ -686,15 +695,6 @@
   <a href="#metrics-representation" class="md-nav__link">
     <span class="md-ellipsis">
       Metrics representation
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#component-diagram" class="md-nav__link">
-    <span class="md-ellipsis">
-      Component diagram
     </span>
   </a>
   
@@ -1000,6 +1000,27 @@
   
   <span class="md-ellipsis">
     Using Managed Services
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/config_db_bootstrap.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootstrapping the Configuration Database
   </span>
   
 
@@ -1449,6 +1470,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#component-diagram" class="md-nav__link">
+    <span class="md-ellipsis">
+      Component diagram
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-metrics-gathering-daemon" class="md-nav__link">
     <span class="md-ellipsis">
       The metrics gathering daemon
@@ -1535,15 +1565,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#component-diagram" class="md-nav__link">
-    <span class="md-ellipsis">
-      Component diagram
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1569,6 +1590,7 @@
 
   <h1>Components</h1>
 
+<h2 id="component-diagram">Component diagram</h2>
 <p>The main development idea around pgwatch was to do the minimal work
 needed and not to reinvent the wheel - meaning that pgwatch is mostly
 just about gluing together already some proven pieces of software for
@@ -1577,6 +1599,12 @@ components that can be used to build up a monitoring setup around the
 pgwatch metrics collector. Note that most components are not mandatory
 and for tasks like metrics storage there are many components to choose
 from.</p>
+<p><a href="../gallery/pgwatch_architecture.jpg"><img alt="pgwatch typical deployment architecture diagram" src="../gallery/pgwatch_architecture.jpg" /></a></p>
+<p>All components are <em>loosely coupled</em>, thus for non-pgwatch components
+(pgwatch components are only the metrics collector)
+you can decide to make use of an already existing installation of
+Postgres, Grafana or Prometheus and run additionally just the pgwatch
+collector.</p>
 <h2 id="the-metrics-gathering-daemon">The metrics gathering daemon</h2>
 <p>The metrics collector, written in Go, is the only mandatory and most
 critical component of the whole solution. The main task of the pgwatch
@@ -1635,13 +1663,6 @@ that should cover the needs of most users - advanced users would mostly
 always want to customize some aspects though, so it's not meant as a
 one-size-fits-all solution. Also as metrics are stored in a DB, they can
 be visualized or processed in any other way.</p>
-<h2 id="component-diagram">Component diagram</h2>
-<p><a href="../gallery/pgwatch_architecture.jpg"><img alt="pgwatch typical deployment architecture diagram" src="../gallery/pgwatch_architecture.jpg" /></a></p>
-<p>All components are <em>loosely coupled</em>, thus for non-pgwatch components
-(pgwatch components are only the metrics collector)
-you can decide to make use of an already existing installation of
-Postgres, Grafana or Prometheus and run additionally just the pgwatch
-collector.</p>
 
 
 
