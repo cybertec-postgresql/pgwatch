@@ -1,0 +1,153 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
+
+  <title>src/github.com/cybertec-postgresql/pgwatch/v3/\internal\webserver\/wslog.go - PgWatch Developer Documentation</title>
+
+<link type="text/css" rel="stylesheet" href="/v3.0/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/v3.0/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.23.4";</script>
+<script src="/v3.0/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">PgWatch Developer Documentation</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Source file
+    <a href="/v3.0/godoc/src">src</a>/<a href="/v3.0/godoc/src/github.com">github.com</a>/<a href="/v3.0/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/v3.0/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/v3.0/godoc/src/github.com/cybertec-postgresql/pgwatch/v3">v3</a>/<a href="/v3.0/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/\internal\webserver\">\internal\webserver\</a>/<span class="text-muted">wslog.go</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/\internal\webserver\">github.com/cybertec-postgresql/pgwatch/v3/\internal\webserver\</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<script type="text/javascript">document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1  </span>package webserver
+<span id="L2" class="ln">     2  </span>
+<span id="L3" class="ln">     3  </span>import (
+<span id="L4" class="ln">     4  </span>	&#34;net/http&#34;
+<span id="L5" class="ln">     5  </span>	&#34;time&#34;
+<span id="L6" class="ln">     6  </span>
+<span id="L7" class="ln">     7  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/log&#34;
+<span id="L8" class="ln">     8  </span>	&#34;github.com/gorilla/websocket&#34;
+<span id="L9" class="ln">     9  </span>)
+<span id="L10" class="ln">    10  </span>
+<span id="L11" class="ln">    11  </span>const (
+<span id="L12" class="ln">    12  </span>	<span class="comment">// Time allowed to write the file to the client.</span>
+<span id="L13" class="ln">    13  </span>	writeWait = 10 * time.Second
+<span id="L14" class="ln">    14  </span>
+<span id="L15" class="ln">    15  </span>	<span class="comment">// Time allowed to read the next pong message from the client.</span>
+<span id="L16" class="ln">    16  </span>	pongWait = 60 * time.Second
+<span id="L17" class="ln">    17  </span>
+<span id="L18" class="ln">    18  </span>	<span class="comment">// Send pings to client with this period. Must be less than pongWait.</span>
+<span id="L19" class="ln">    19  </span>	pingPeriod = (pongWait * 9) / 10
+<span id="L20" class="ln">    20  </span>)
+<span id="L21" class="ln">    21  </span>
+<span id="L22" class="ln">    22  </span>var (
+<span id="L23" class="ln">    23  </span>	upgrader = websocket.Upgrader{
+<span id="L24" class="ln">    24  </span>		ReadBufferSize:  1024,
+<span id="L25" class="ln">    25  </span>		WriteBufferSize: 1024,
+<span id="L26" class="ln">    26  </span>	}
+<span id="L27" class="ln">    27  </span>)
+<span id="L28" class="ln">    28  </span>
+<span id="L29" class="ln">    29  </span>func reader(ws *websocket.Conn) {
+<span id="L30" class="ln">    30  </span>	defer ws.Close()
+<span id="L31" class="ln">    31  </span>	ws.SetReadLimit(512)
+<span id="L32" class="ln">    32  </span>	err := ws.SetReadDeadline(time.Now().Add(pongWait))
+<span id="L33" class="ln">    33  </span>	if err != nil {
+<span id="L34" class="ln">    34  </span>		return
+<span id="L35" class="ln">    35  </span>	}
+<span id="L36" class="ln">    36  </span>	ws.SetPongHandler(func(string) error { return ws.SetReadDeadline(time.Now().Add(pongWait)) })
+<span id="L37" class="ln">    37  </span>	for {
+<span id="L38" class="ln">    38  </span>		_, _, err = ws.ReadMessage()
+<span id="L39" class="ln">    39  </span>		if err != nil {
+<span id="L40" class="ln">    40  </span>			break
+<span id="L41" class="ln">    41  </span>		}
+<span id="L42" class="ln">    42  </span>	}
+<span id="L43" class="ln">    43  </span>}
+<span id="L44" class="ln">    44  </span>
+<span id="L45" class="ln">    45  </span>func writer(ws *websocket.Conn, l log.LoggerHookerIface) {
+<span id="L46" class="ln">    46  </span>	pingTicker := time.NewTicker(pingPeriod)
+<span id="L47" class="ln">    47  </span>	defer func() {
+<span id="L48" class="ln">    48  </span>		pingTicker.Stop()
+<span id="L49" class="ln">    49  </span>		ws.Close()
+<span id="L50" class="ln">    50  </span>	}()
+<span id="L51" class="ln">    51  </span>	msgChan := make(log.MessageChanType)
+<span id="L52" class="ln">    52  </span>	l.AddSubscriber(msgChan)
+<span id="L53" class="ln">    53  </span>	defer l.RemoveSubscriber(msgChan)
+<span id="L54" class="ln">    54  </span>	for {
+<span id="L55" class="ln">    55  </span>		select {
+<span id="L56" class="ln">    56  </span>		case msg := &lt;-msgChan:
+<span id="L57" class="ln">    57  </span>			if ws.SetWriteDeadline(time.Now().Add(writeWait)) != nil ||
+<span id="L58" class="ln">    58  </span>				ws.WriteMessage(websocket.TextMessage, []byte(msg)) != nil {
+<span id="L59" class="ln">    59  </span>				return
+<span id="L60" class="ln">    60  </span>			}
+<span id="L61" class="ln">    61  </span>		case &lt;-pingTicker.C:
+<span id="L62" class="ln">    62  </span>			if ws.SetWriteDeadline(time.Now().Add(writeWait)) != nil ||
+<span id="L63" class="ln">    63  </span>				ws.WriteMessage(websocket.PingMessage, []byte{}) != nil {
+<span id="L64" class="ln">    64  </span>				return
+<span id="L65" class="ln">    65  </span>			}
+<span id="L66" class="ln">    66  </span>		}
+<span id="L67" class="ln">    67  </span>	}
+<span id="L68" class="ln">    68  </span>}
+<span id="L69" class="ln">    69  </span>
+<span id="L70" class="ln">    70  </span>func (Server *WebUIServer) serveWsLog(w http.ResponseWriter, r *http.Request) {
+<span id="L71" class="ln">    71  </span>	ws, err := upgrader.Upgrade(w, r, nil)
+<span id="L72" class="ln">    72  </span>	if err != nil {
+<span id="L73" class="ln">    73  </span>		Server.l.Error(err)
+<span id="L74" class="ln">    74  </span>		return
+<span id="L75" class="ln">    75  </span>	}
+<span id="L76" class="ln">    76  </span>	Server.l.WithField(&#34;reguest&#34;, r.URL.String()).Debugf(&#34;established websocket connection&#34;)
+<span id="L77" class="ln">    77  </span>	l, ok := Server.l.(log.LoggerHookerIface)
+<span id="L78" class="ln">    78  </span>	if !ok {
+<span id="L79" class="ln">    79  </span>		Server.l.Error(&#34;cannot cast WebUIServer.l to log.LoggerHookerIface&#34;)
+<span id="L80" class="ln">    80  </span>		return
+<span id="L81" class="ln">    81  </span>	}
+<span id="L82" class="ln">    82  </span>	go writer(ws, l)
+<span id="L83" class="ln">    83  </span>	reader(ws)
+<span id="L84" class="ln">    84  </span>}
+<span id="L85" class="ln">    85  </span>
+</pre><p></p>
+
+<div id="footer">
+Build version go1.23.4.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+
+</body></html>
