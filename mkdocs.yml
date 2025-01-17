@@ -75,8 +75,8 @@ nav:
     - Dashboards: gallery/dashboards.md
     - Web UI: gallery/webui.md
   - Developer: 
-    - Documentation: developer/godoc.md
     - Contributing: developer/contributing.md
+    - Documentation: ../devel/godoc/index.html
     - Code of Conduct: developer/CODE_OF_CONDUCT.md
     - License: developer/LICENSE.md
     
