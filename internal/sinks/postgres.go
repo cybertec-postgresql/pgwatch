@@ -150,10 +150,10 @@ const (
 const specialMetricPgbouncer = "^pgbouncer_(stats|pools)$"
 
 var (
-	regexIsPgbouncerMetrics         = regexp.MustCompile(specialMetricPgbouncer)
-	forceRecreatePGMetricPartitions = false                                             // to signal override PG metrics storage cache
-	partitionMapMetric              = make(map[string]ExistingPartitionInfo)            // metric = min/max bounds
-	partitionMapMetricDbname        = make(map[string]map[string]ExistingPartitionInfo) // metric[dbname = min/max bounds]
+	regexIsPgbouncerMetrics  = regexp.MustCompile(specialMetricPgbouncer)
+	forceRecreatePartitions  = false                                             // to signal override PG metrics storage cache
+	partitionMapMetric       = make(map[string]ExistingPartitionInfo)            // metric = min/max bounds
+	partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo) // metric[dbname = min/max bounds]
 )
 
 // SyncMetric ensures that tables exist for newly added metrics and/or sources
@@ -333,15 +333,16 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 		}
 	}
 
-	if pgw.metricSchema == DbStorageSchemaPostgres {
-		err = pgw.EnsureMetricDbnameTime(pgPartBoundsDbName, forceRecreatePGMetricPartitions)
-	} else if pgw.metricSchema == DbStorageSchemaTimescale {
-		err = pgw.EnsureMetricTimescale(pgPartBounds, forceRecreatePGMetricPartitions)
-	} else {
+	switch pgw.metricSchema {
+	case DbStorageSchemaPostgres:
+		err = pgw.EnsureMetricDbnameTime(pgPartBoundsDbName, forceRecreatePartitions)
+	case DbStorageSchemaTimescale:
+		err = pgw.EnsureMetricTimescale(pgPartBounds, forceRecreatePartitions)
+	default:
 		logger.Fatal("unknown storage schema...")
 	}
-	if forceRecreatePGMetricPartitions {
-		forceRecreatePGMetricPartitions = false
+	if forceRecreatePartitions {
+		forceRecreatePartitions = false
 	}
 	if err != nil {
 		pgw.lastError <- err
@@ -385,8 +386,8 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 
 			if _, err = pgw.sinkDb.CopyFrom(context.Background(), getTargetTable(), getTargetColumns(), pgx.CopyFromRows(rows)); err != nil {
 				l.Error(err)
-				forceRecreatePGMetricPartitions = strings.Contains(err.Error(), "no partition")
-				if forceRecreatePGMetricPartitions {
+				forceRecreatePartitions = strings.Contains(err.Error(), "no partition")
+				if forceRecreatePartitions {
 					logger.Warning("Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run")
 				}
 			}
@@ -404,7 +405,7 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 // EnsureMetricTime creates special partitions if Timescale used for realtime metrics
 func (pgw *PostgresWriter) EnsureMetricTime(pgPartBounds map[string]ExistingPartitionInfo, force bool) error {
 	logger := log.GetLogger(pgw.ctx)
-	sqlEnsure := `select * from admin.ensure_partition_metric_time($1, $2)`
+	sqlEnsure := `select part_available_from, part_available_to from admin.ensure_partition_metric_time($1, $2)`
 	for metric, pb := range pgPartBounds {
 		if !strings.HasSuffix(metric, "_realtime") {
 			continue
@@ -415,17 +416,18 @@ func (pgw *PostgresWriter) EnsureMetricTime(pgPartBounds map[string]ExistingPart
 
 		partInfo, ok := partitionMapMetric[metric]
 		if !ok || (ok && (pb.StartTime.Before(partInfo.StartTime))) || force {
-			err := pgw.sinkDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.StartTime).Scan(&partInfo)
+			err := pgw.sinkDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.StartTime).
+				Scan(&partInfo.StartTime, &partInfo.EndTime)
 			if err != nil {
-				logger.Error("Failed to create partition on 'metrics':", err)
+				logger.Error("Failed to create partition on 'metrics': ", err)
 				return err
 			}
 			partitionMapMetric[metric] = partInfo
 		}
 		if pb.EndTime.After(partInfo.EndTime) || force {
-			err := pgw.sinkDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.EndTime).Scan(&partInfo.EndTime)
+			err := pgw.sinkDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.EndTime).Scan(nil, &partInfo.EndTime)
 			if err != nil {
-				logger.Error("Failed to create partition on 'metrics':", err)
+				logger.Error("Failed to create partition on 'metrics': ", err)
 				return err
 			}
 			partitionMapMetric[metric] = partInfo

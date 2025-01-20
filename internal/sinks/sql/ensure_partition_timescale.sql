@@ -137,17 +137,17 @@ BEGIN
       END IF;
     END IF;
 
-  IF NOT EXISTS (SELECT 1
-                   FROM pg_tables
-                  WHERE tablename = l_part_name
-                    AND schemaname = 'subpartitions')
-  THEN
-    --RAISE NOTICE 'creating sub-partition % ...', l_part_name;
-    l_sql := format($$CREATE %s TABLE IF NOT EXISTS subpartitions.%s PARTITION OF public.%s FOR VALUES FROM ('%s') TO ('%s')$$,
-                    l_unlogged, quote_ident(l_part_name), quote_ident(metric), l_part_start, l_part_end);
-    EXECUTE l_sql;
-    EXECUTE format($$COMMENT ON TABLE subpartitions.%s IS 'pgwatch-generated-metric-time-lvl'$$, quote_ident(l_part_name));
-  END IF;
+    IF NOT EXISTS (SELECT 1
+                    FROM pg_tables
+                    WHERE tablename = l_part_name
+                      AND schemaname = 'subpartitions')
+    THEN
+      --RAISE NOTICE 'creating sub-partition % ...', l_part_name;
+      l_sql := format($$CREATE %s TABLE IF NOT EXISTS subpartitions.%s PARTITION OF public.%s FOR VALUES FROM ('%s') TO ('%s')$$,
+                      l_unlogged, quote_ident(l_part_name), quote_ident(metric), l_part_start, l_part_end);
+      EXECUTE l_sql;
+      EXECUTE format($$COMMENT ON TABLE subpartitions.%s IS 'pgwatch-generated-metric-time-lvl'$$, quote_ident(l_part_name));
+    END IF;
 
   END LOOP;
 
