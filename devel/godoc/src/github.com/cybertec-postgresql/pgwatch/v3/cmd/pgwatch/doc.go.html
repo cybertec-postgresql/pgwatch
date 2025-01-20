@@ -1,0 +1,179 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
+
+  <title>src/github.com/cybertec-postgresql/pgwatch/v3/cmd/pgwatch/doc.go - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/devel/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/devel/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.23.4";</script>
+<script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Source file
+    <a href="/devel/godoc/src">src</a>/<a href="/devel/godoc/src/github.com">github.com</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3">v3</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/cmd">cmd</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/cmd/pgwatch">pgwatch</a>/<span class="text-muted">doc.go</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/cmd/pgwatch">github.com/cybertec-postgresql/pgwatch/v3/cmd/pgwatch</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<script type="text/javascript">document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1  </span><span class="comment">// pgwatch is a command line tool that collects metrics from PostgreSQL databases and forwards to external sinks.</span>
+<span id="L2" class="ln">     2  </span><span class="comment">//</span>
+<span id="L3" class="ln">     3  </span><span class="comment">// Usage:</span>
+<span id="L4" class="ln">     4  </span><span class="comment">//</span>
+<span id="L5" class="ln">     5  </span><span class="comment">//	pgwatch [OPTIONS] [config | metric | source]</span>
+<span id="L6" class="ln">     6  </span><span class="comment">//</span>
+<span id="L7" class="ln">     7  </span><span class="comment">// Sources:</span>
+<span id="L8" class="ln">     8  </span><span class="comment">//</span>
+<span id="L9" class="ln">     9  </span><span class="comment">//	-s, --sources=                           Postgres URI, file or folder of YAML</span>
+<span id="L10" class="ln">    10  </span><span class="comment">//	                                         files containing info on which DBs</span>
+<span id="L11" class="ln">    11  </span><span class="comment">//	                                         to monitor [$PW_SOURCES]</span>
+<span id="L12" class="ln">    12  </span><span class="comment">//	    --refresh=                           How frequently to resync sources and</span>
+<span id="L13" class="ln">    13  </span><span class="comment">//	                                         metrics (default: 120) [$PW_REFRESH]</span>
+<span id="L14" class="ln">    14  </span><span class="comment">//	-g, --group=                             Groups for filtering which databases</span>
+<span id="L15" class="ln">    15  </span><span class="comment">//	                                         to monitor. By default all are</span>
+<span id="L16" class="ln">    16  </span><span class="comment">//	                                         monitored [$PW_GROUP]</span>
+<span id="L17" class="ln">    17  </span><span class="comment">//	    --min-db-size-mb=                    Smaller size DBs will be ignored and</span>
+<span id="L18" class="ln">    18  </span><span class="comment">//	                                         not monitored until they reach the</span>
+<span id="L19" class="ln">    19  </span><span class="comment">//	                                         threshold. (default: 0)</span>
+<span id="L20" class="ln">    20  </span><span class="comment">//	                                         [$PW_MIN_DB_SIZE_MB]</span>
+<span id="L21" class="ln">    21  </span><span class="comment">//	    --max-parallel-connections-per-db=   Max parallel metric fetches per DB.</span>
+<span id="L22" class="ln">    22  </span><span class="comment">//	                                         Note the multiplication effect on</span>
+<span id="L23" class="ln">    23  </span><span class="comment">//	                                         multi-DB instances (default: 4)</span>
+<span id="L24" class="ln">    24  </span><span class="comment">//	                                         [$PW_MAX_PARALLEL_CONNECTIONS_PER_DB]</span>
+<span id="L25" class="ln">    25  </span><span class="comment">//	    --try-create-listed-exts-if-missing= Try creating the listed extensions</span>
+<span id="L26" class="ln">    26  </span><span class="comment">//	                                         (comma sep.) on first connect for</span>
+<span id="L27" class="ln">    27  </span><span class="comment">//	                                         all monitored DBs when missing. Main</span>
+<span id="L28" class="ln">    28  </span><span class="comment">//	                                         usage - pg_stat_statements</span>
+<span id="L29" class="ln">    29  </span><span class="comment">//	                                         [$PW_TRY_CREATE_LISTED_EXTS_IF_MISSING]</span>
+<span id="L30" class="ln">    30  </span><span class="comment">//</span>
+<span id="L31" class="ln">    31  </span><span class="comment">// Metrics:</span>
+<span id="L32" class="ln">    32  </span><span class="comment">//</span>
+<span id="L33" class="ln">    33  </span><span class="comment">//	-m, --metrics=                           File or folder of YAML files with</span>
+<span id="L34" class="ln">    34  </span><span class="comment">//	                                         metrics definitions [$PW_METRICS]</span>
+<span id="L35" class="ln">    35  </span><span class="comment">//	    --create-helpers                     Create helper database objects from</span>
+<span id="L36" class="ln">    36  </span><span class="comment">//	                                         metric definitions</span>
+<span id="L37" class="ln">    37  </span><span class="comment">//	                                         [$PW_CREATE_HELPERS]</span>
+<span id="L38" class="ln">    38  </span><span class="comment">//	    --direct-os-stats                    Extract OS related psutil statistics</span>
+<span id="L39" class="ln">    39  </span><span class="comment">//	                                         not via PL/Python wrappers but</span>
+<span id="L40" class="ln">    40  </span><span class="comment">//	                                         directly on host</span>
+<span id="L41" class="ln">    41  </span><span class="comment">//	                                         [$PW_DIRECT_OS_STATS]</span>
+<span id="L42" class="ln">    42  </span><span class="comment">//	    --instance-level-cache-max-seconds=  Max allowed staleness for instance</span>
+<span id="L43" class="ln">    43  </span><span class="comment">//	                                         level metric data shared between DBs</span>
+<span id="L44" class="ln">    44  </span><span class="comment">//	                                         of an instance. Affects &#39;continuous&#39;</span>
+<span id="L45" class="ln">    45  </span><span class="comment">//	                                         host types only. Set to 0 to disable</span>
+<span id="L46" class="ln">    46  </span><span class="comment">//	                                         (default: 30)</span>
+<span id="L47" class="ln">    47  </span><span class="comment">//	                                         [$PW_INSTANCE_LEVEL_CACHE_MAX_SECONDS]</span>
+<span id="L48" class="ln">    48  </span><span class="comment">//	    --emergency-pause-triggerfile=       When the file exists no metrics will</span>
+<span id="L49" class="ln">    49  </span><span class="comment">//	                                         be temporarily fetched / scraped</span>
+<span id="L50" class="ln">    50  </span><span class="comment">//	                                         (default:</span>
+<span id="L51" class="ln">    51  </span><span class="comment">//	                                         /tmp/pgwatch-emergency-pause)</span>
+<span id="L52" class="ln">    52  </span><span class="comment">//	                                         [$PW_EMERGENCY_PAUSE_TRIGGERFILE]</span>
+<span id="L53" class="ln">    53  </span><span class="comment">//</span>
+<span id="L54" class="ln">    54  </span><span class="comment">// Sinks:</span>
+<span id="L55" class="ln">    55  </span><span class="comment">//</span>
+<span id="L56" class="ln">    56  </span><span class="comment">//	--sink=                              URI where metrics will be stored,</span>
+<span id="L57" class="ln">    57  </span><span class="comment">//	                                     can be used multiple times [$PW_SINK]</span>
+<span id="L58" class="ln">    58  </span><span class="comment">//	--batching-delay=                    Max milliseconds to wait for a</span>
+<span id="L59" class="ln">    59  </span><span class="comment">//	                                     batched metrics flush. [Default:</span>
+<span id="L60" class="ln">    60  </span><span class="comment">//	                                     250ms] (default: 250ms)</span>
+<span id="L61" class="ln">    61  </span><span class="comment">//	                                     [$PW_BATCHING_MAX_DELAY]</span>
+<span id="L62" class="ln">    62  </span><span class="comment">//	--retention=                         If set, metrics older than that will</span>
+<span id="L63" class="ln">    63  </span><span class="comment">//	                                     be deleted (default: 14)</span>
+<span id="L64" class="ln">    64  </span><span class="comment">//	                                     [$PW_RETENTION]</span>
+<span id="L65" class="ln">    65  </span><span class="comment">//	--real-dbname-field=                 Tag key for real database name</span>
+<span id="L66" class="ln">    66  </span><span class="comment">//	                                     (default: real_dbname)</span>
+<span id="L67" class="ln">    67  </span><span class="comment">//	                                     [$PW_REAL_DBNAME_FIELD]</span>
+<span id="L68" class="ln">    68  </span><span class="comment">//	--system-identifier-field=           Tag key for system identifier value</span>
+<span id="L69" class="ln">    69  </span><span class="comment">//	                                     (default: sys_id)</span>
+<span id="L70" class="ln">    70  </span><span class="comment">//	                                     [$PW_SYSTEM_IDENTIFIER_FIELD]</span>
+<span id="L71" class="ln">    71  </span><span class="comment">//</span>
+<span id="L72" class="ln">    72  </span><span class="comment">// Logging:</span>
+<span id="L73" class="ln">    73  </span><span class="comment">//</span>
+<span id="L74" class="ln">    74  </span><span class="comment">//	-v, --log-level=[debug|info|error]       Verbosity level for stdout and log</span>
+<span id="L75" class="ln">    75  </span><span class="comment">//	                                         file (default: info)</span>
+<span id="L76" class="ln">    76  </span><span class="comment">//	    --log-file=                          File name to store logs</span>
+<span id="L77" class="ln">    77  </span><span class="comment">//	    --log-file-format=[json|text]        Format of file logs (default: json)</span>
+<span id="L78" class="ln">    78  </span><span class="comment">//	    --log-file-rotate                    Rotate log files</span>
+<span id="L79" class="ln">    79  </span><span class="comment">//	    --log-file-size=                     Maximum size in MB of the log file</span>
+<span id="L80" class="ln">    80  </span><span class="comment">//	                                         before it gets rotated (default: 100)</span>
+<span id="L81" class="ln">    81  </span><span class="comment">//	    --log-file-age=                      Number of days to retain old log</span>
+<span id="L82" class="ln">    82  </span><span class="comment">//	                                         files, 0 means forever (default: 0)</span>
+<span id="L83" class="ln">    83  </span><span class="comment">//	    --log-file-number=                   Maximum number of old log files to</span>
+<span id="L84" class="ln">    84  </span><span class="comment">//	                                         retain, 0 to retain all (default: 0)</span>
+<span id="L85" class="ln">    85  </span><span class="comment">//</span>
+<span id="L86" class="ln">    86  </span><span class="comment">// WebUI:</span>
+<span id="L87" class="ln">    87  </span><span class="comment">//</span>
+<span id="L88" class="ln">    88  </span><span class="comment">//	--web-disable=[all|ui]               Disable REST API and/or web UI</span>
+<span id="L89" class="ln">    89  </span><span class="comment">//	                                     [$PW_WEBDISABLE]</span>
+<span id="L90" class="ln">    90  </span><span class="comment">//	--web-addr=                          TCP address in the form &#39;host:port&#39;</span>
+<span id="L91" class="ln">    91  </span><span class="comment">//	                                     to listen on (default: :8080)</span>
+<span id="L92" class="ln">    92  </span><span class="comment">//	                                     [$PW_WEBADDR]</span>
+<span id="L93" class="ln">    93  </span><span class="comment">//	--web-user=                          Admin login [$PW_WEBUSER]</span>
+<span id="L94" class="ln">    94  </span><span class="comment">//	--web-password=                      Admin password [$PW_WEBPASSWORD]</span>
+<span id="L95" class="ln">    95  </span><span class="comment">//</span>
+<span id="L96" class="ln">    96  </span><span class="comment">// Help Options:</span>
+<span id="L97" class="ln">    97  </span><span class="comment">//</span>
+<span id="L98" class="ln">    98  </span><span class="comment">//	-h, --help                               Show this help message</span>
+<span id="L99" class="ln">    99  </span><span class="comment">//</span>
+<span id="L100" class="ln">   100  </span><span class="comment">// Available commands:</span>
+<span id="L101" class="ln">   101  </span><span class="comment">//</span>
+<span id="L102" class="ln">   102  </span><span class="comment">//	config         Manage configurations</span>
+<span id="L103" class="ln">   103  </span><span class="comment">//	   init            Initialize configuration</span>
+<span id="L104" class="ln">   104  </span><span class="comment">//	   upgrade         Upgrade configuration schema</span>
+<span id="L105" class="ln">   105  </span><span class="comment">//	metric         Manage metrics</span>
+<span id="L106" class="ln">   106  </span><span class="comment">//	   print-init      Get and print init SQL for a given metric or preset</span>
+<span id="L107" class="ln">   107  </span><span class="comment">//	   print-sql       Get and print SQL for a given metric</span>
+<span id="L108" class="ln">   108  </span><span class="comment">//	source         Manage sources</span>
+<span id="L109" class="ln">   109  </span><span class="comment">//	   ping            Try to connect to configured sources, report errors if any and exit</span>
+<span id="L110" class="ln">   110  </span>package main
+<span id="L111" class="ln">   111  </span>
+</pre><p></p>
+
+<div id="footer">
+Build version go1.23.4.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+
+</body></html>
