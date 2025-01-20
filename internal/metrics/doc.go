@@ -1,6 +1,5 @@
-// # Metrics
+// Package metrics is responsible for reading and writing metric definitions.
 //
-// Code in this folder is responsible for reading and writing metric definitions.
 // At the moment, metric definitions support two storages:
 //   - PostgreSQL database
 //   - YAML file

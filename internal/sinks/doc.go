@@ -1,4 +1,4 @@
-// Package sinks provides functionality to store monitored data in different ways.
+// Package sinks rovides functionality to store monitored data in different ways.
 //
 // At the moment we provide sink connectors for
 //   - PostgreSQL and flavours,
