@@ -4,23 +4,20 @@ title: Preparing databases for monitoring
 
 ## Effects of monitoring
 
--   Although the "Observer effect" applies also for pgwatch, no
+- Although the "Observer effect" applies also for pgwatch, no
     noticeable impact for the monitored DB is expected when using
     *Preset configs* settings, and given that there is some normal load
     on the server anyway and the DB doesn't have thousands of tables.
     For some metrics though can happen that the metric reading query
-    (notably "stat_statements" and "table_stats") takes some tens of
+    (notably `stat_statements` and `table_stats`) takes some tens of
     milliseconds, which might be more than an average application query.
--   At any time maximally 2 metric fetching queries can run in parallel
-    on any monitored DBs. This can be changed by recompiling
-    (MAX_PG_CONNECTIONS_PER_MONITORED_DB variable) the gatherer.
--   Default Postgres [statement
+- Default Postgres [statement
     timeout](https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-STATEMENT-TIMEOUT)
     is *5s* for entries inserted via the Web UI / database directly.
 
 ## Basic preparations
 
-As a base requirement you'll need a **login user** (non-superuser
+As a base requirement you'll need a **login user** (`pg_monitor`
 suggested) for connecting to your server and fetching metrics.
 
 Though theoretically you can use any username you like, but if not using
@@ -28,15 +25,16 @@ Though theoretically you can use any username you like, but if not using
 below for explanation) accordingly, as in those by default the
 "pgwatch" will be granted execute privileges.
 
-``` sql
+```sql
 CREATE ROLE pgwatch WITH LOGIN PASSWORD 'secret';
 -- For critical databases it might make sense to ensure that the user account
 -- used for monitoring can only open a limited number of connections
 -- (there are according checks in code, but multiple instances might be launched)
-ALTER ROLE pgwatch CONNECTION LIMIT 3;
+ALTER ROLE pgwatch CONNECTION LIMIT 5;
 GRANT pg_monitor TO pgwatch;
 GRANT CONNECT ON DATABASE mydb TO pgwatch;
 GRANT EXECUTE ON FUNCTION pg_stat_file(text) to pgwatch; -- for wal_size metric
+GRANT EXECUTE ON FUNCTION pg_stat_file(text, boolean) TO pgwatch;
 ```
 
 For most monitored databases it's extremely beneficial (for
@@ -50,108 +48,108 @@ troubleshooting benefits also the
 [track_io_timing](https://www.postgresql.org/docs/current/static/runtime-config-statistics.html#GUC-TRACK-IO-TIMING)
 setting should be enabled.
 
-1.  Make sure the Postgres *contrib* package is installed (should be
+1. Make sure the Postgres *contrib* package is installed (should be
     installed automatically together with the Postgres server package on
     Debian based systems).
 
-    -   On RedHat / Centos: `yum install -y postgresqlXY-contrib`
-    -   On Debian / Ubuntu: `apt install postgresql-contrib`
+    - On RedHat / Centos: `yum install -y postgresqlXY-contrib`
+    - On Debian / Ubuntu: `apt install postgresql-contrib`
 
-1.  Add `pg_stat_statements` to your server config (postgresql.conf) and
+1. Add `pg_stat_statements` to your server config (postgresql.conf) and
     restart the server.
 
-        shared_preload_libraries = 'pg_stat_statements'
-        track_io_timing = on
+    ```ini
+    shared_preload_libraries = 'pg_stat_statements'
+    track_io_timing = on
+    ```
 
-1.  After restarting activate the extension in the monitored DB. Assumes
+1. After restarting activate the extension in the monitored DB. Assumes
     Postgres superuser.
 
-        psql -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
+    ```terminal
+    psql -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
+    ```
 
-## Rolling out helper functions
+## Metrics initialization
+
+Some **rare** metrics are not runable out-of-the-box on Postgres and
+need some installed helper functions, extensions or database objects
+before they can be used.
+For example, it is impossible to obtain the CPU usage statistics
+with a regular SQL query. But it is possible to get this system
+information with some untrusted procedure language like PL/Python.
+
+That's why some metrics have a special init section in their definitions.
+Some init sections might contain `CREATE FUNCTION` statements that
+create helper functions in the monitored database. Some might contain
+`CREATE EXTENSION` or other preparation steps.
+
+To examine the init section of a metric, you can use the following
+command:
+
+```terminal
+pgwatch metric print-init <metric or preset name> ...
+```
+
+You may put multiple metric or preset names in the command line. The
+output will contain the concatenated init sections of the specified
+metrics or presets.
+
+For example, to check the init section of the `cpu_load` metric:
+
+```terminal
+$ pgwatch metric print-init cpu_load
+--  cpu_load
+BEGIN;
+CREATE EXTENSION IF NOT EXISTS plpython3u;
+CREATE OR REPLACE FUNCTION get_load_average(OUT load_1min float, OUT load_5min float, OUT load_15min float) AS
+$$
+  from os import getloadavg
+  la = getloadavg()
+  return [la[0], la[1], la[2]]
+$$ LANGUAGE plpython3u VOLATILE;
+GRANT EXECUTE ON FUNCTION get_load_average() TO pgwatch;
+COMMENT ON FUNCTION get_load_average() is 'created for pgwatch';
+COMMIT;
+```
 
 Helper functions in pgwatch context are standard Postgres stored
 procedures, running under `SECURITY DEFINER` privileges. Via such
-wrapper functions one can do **controlled privilege escalation** - i.e.
-to give access to protected Postgres metrics (like active session
-details, "per query" statistics) or even OS-level metrics, to normal
-unprivileged users, like the pgwatch monitoring role.
+wrapper functions one can do **controlled privilege escalation**, i.e.
+to give access to OS-level metrics.
 
-If using a superuser login (recommended only for local "push" setups)
-you have full access to all Postgres metrics and would need *helpers*
-only for OS remote statistics. For local (push) setups as of pgwatch
-version 1.8.4 the most typical OS metrics are covered by the
-`--direct-os-stats` flag, explained below.
+Since pgwatch operates with a "least privilege" principle, it shouldn't
+automatically create needed helper functions on the monitored database.
 
-For unprivileged monitoring users it is highly recommended to take these
-additional steps on the "to be monitored" database to get maximum
-value out of pgwatch in the long run. Without these additional steps,
-you lose though about 10-15% of built-in metrics, which might not be too
-tragical nevertheless. For that use case there's also a *preset config*
-named "unprivileged".
+So to create the helper functions, you need to execute init commands under
+the appropriate account, usually a superuser account. The easiest way to do it
+is just pipe the output of the `pgwatch metric print-init` command to the
+`psql` command:
 
-When monitoring v10+ servers then the built-in **pg_monitor** system
-role is recommended for the monitoring user, which almost substitutes
-superuser privileges for monitoring purposes in a safe way.
+```terminal
+export PGUSER=superuser
+pgwatch metric print-init cpu_load psutil_mem psutil_disk | psql -d mydb
+```
 
-### Rolling out common helpers
-For completely unprivileged monitoring users the following *helpers* are
-recommended to make good use of the default "exhaustive" *Preset
-Config*:
+!!! Info
+    Here in all examples we assume that we are using the built-in metrics.
+    But you can also use your own custom metrics. In this case, you need to
+    provide the appropriate command-line options, e.g.
+    ```terminal
+    pgwatch --metrics=/path/to/your/metrics.yaml metric print-init ...
+    ```
 
-    export PGUSER=superuser
-    psql -f /etc/pgwatch/metrics/00_helpers/get_stat_activity/$pgver/metric.sql mydb
-    psql -f /etc/pgwatch/metrics/00_helpers/get_stat_replication/$pgver/metric.sql mydb
-    psql -f /etc/pgwatch/metrics/00_helpers/get_wal_size/$pgver/metric.sql mydb
-    psql -f /etc/pgwatch/metrics/00_helpers/get_stat_statements/$pgver/metric.sql mydb
-    psql -f /etc/pgwatch/metrics/00_helpers/get_sequences/$pgver/metric.sql mydb
-
-Note that there might not be an exact Postgres version match for helper
-definitions - then replace *\$pgver* with the previous available version
-number below your server's Postgres version number.
-
-Also note that as of v1.8.1 some helpers definition SQLs scripts (like
-for "get_stat_statements") will inspect also the "search_path" and
-by default **will not install into schemas that have PUBLIC CREATE
-privileges**, like the "public" schema by default has!
-
-Also when rolling out helpers make sure the `search_path` is
+Also when init metrics make sure the `search_path` is
 at defaults or set so that it's also accessible for the monitoring role
 as currently neither helpers nor metric definition SQLs don't assume
 any particular schema and depend on the `search_path`
 including everything needed.
 
-For more detailed statistics (OS monitoring, table bloat, WAL size, etc.)
-it is recommended to install also all other helpers found from the
-`/etc/pgwatch/metrics/00_helpers` folder or do it
-automatically by using the *rollout_helper.py* script found in the
-*00_helpers* folder.
-
-As of v1.6.0 though helpers are not needed for Postgres-native metrics
-(e.g. WAL size) if a privileged user (superuser or *pg_monitor* GRANT)
-is used, as pgwatch now supports having 2 SQL definitions for each
-metric - "normal / unprivileged" and "privileged" / "superuser".
-In the file system */etc/pgwatch/metrics* such "privileged" access
-definitions will have a "_su" added to the file name.
-
-## Automatic rollout of helpers
-
-pgwatch can roll out *helpers* also automatically on the monitored DB.
-This requires superuser privileges and a configuration attribute for the
-monitored DB. In YAML config mode it's called *is_superuser*, in Config
-DB *md_is_superuser*, in the Web UI one can tick the "Auto-create
-helpers" checkbox.
-
-After the automatic rollout it's still generally recommended to remove
-the superuser privileges from the monitoring role, which now should have
-GRANTs to all automatically created helper functions. Note though that
-all created helpers will not be immediately usable as some are for
-special purposes and need additional dependencies.
-
-A hint: if it can be foreseen that a lot of databases will be created on
-some instance (generally not a good idea though) it might be a good idea
-to roll out the helpers directly in the *template1* database - so that
-all newly created databases will get them automatically.
+!!! hint
+    If it can be foreseen that a lot of databases will be created on
+    some instance it might be a good idea
+    to roll out the helpers directly in the *template1* database, so that
+    all newly created databases will get them automatically.
 
 ## PL/Python helpers
 
@@ -166,73 +164,52 @@ this data is stored together with Postgres-native metrics for easier
 graphing / correlation / alerting. This also enable to be totally
 independent of any System Monitoring tools like Zabbix, etc., with the
 downside that everything is gathered over Postgres connections so that
-when Postgres is down no OS metrics can be gathered also. Since v1.8.4
-though the latter problem can be reduced for local "push" based setups
-via the `--direct-os-stats` option plus according metrics
-configuration (e.g. the "full" preset).
+when Postgres is down no OS metrics can be gathered also.
 
 Note though that PL/Python is usually disabled by DB-as-a-service
 providers like AWS RDS for security reasons.
 
-    # first install the Python bindings for Postgres
-    apt install postgresql-plpython3-XY
-    # yum install postgresqlXY-plpython3
+```terminal
+# first install the Python bindings for Postgres
+apt install postgresql-plpython3-XY
+# yum install postgresqlXY-plpython3
 
-    psql -c "CREATE EXTENSION plpython3u"
-    psql -f /etc/pgwatch/metrics/00_helpers/get_load_average/9.1/metric.sql mydb
+pgwatch metric print-init cpu_load | psql -d mydb
 
-    # psutil helpers are only needed when full set of common OS metrics is wanted
-    apt install python3-psutil
-    psql -f /etc/pgwatch/metrics/00_helpers/get_psutil_cpu/9.1/metric.sql mydb
-    psql -f /etc/pgwatch/metrics/00_helpers/get_psutil_mem/9.1/metric.sql mydb
-    psql -f /etc/pgwatch/metrics/00_helpers/get_psutil_disk/9.1/metric.sql mydb
-    psql -f /etc/pgwatch/metrics/00_helpers/get_psutil_disk_io_total/9.1/metric.sql mydb
-
-Note that we're assuming here that we're on a modern Linux system with
-Python 3 as default. For older systems Python 3 might not be an option
-though, so you need to change *plpython3u* to *plpythonu* and also do
-the same replace inside the code of the actual helper functions! Here
-the *rollout_helper.py* script with it's `--python2` flag can be
-helpful again.
+# psutil helpers are only needed when full set of common OS metrics is wanted
+apt install python3-psutil
+pgwatch metric print-init psutil_cpu psutil_mem psutil_disk psutil_disk_io_total | psql -d mydb
+```
 
 ## Notice on using metric fetching helpers
 
--   Starting from Postgres v10 helpers are mostly not needed (only for
-    PL/Python ones getting OS statistics) - there are available some
-    special monitoring roles like `pg_monitor`, that are exactly meant
-    to be used for such cases where we want to give access to all
-    Statistics Collector views without any other "superuser
-    behaviour". See
-    [here](https://www.postgresql.org/docs/current/default-roles.html)
-    for documentation on such special system roles. Note that currently
-    most out-of-the-box metrics first rely on the helpers as v10 is
-    relatively new still, and only when fetching fails, direct access
-    with the "Privileged SQL" is tried.
--   For gathering OS statistics (CPU, IO, disk) there are helpers and
+- Helpers are mostly needed only for PL/Python metrics getting OS statistics.
+- For gathering OS statistics (CPU, IO, disk) there are helpers and
     metrics provided, based on the "psutil" Python package... but from
     user reports seems the package behaviour differentiates slightly
     based on the Linux distro / Kernel version used, so small
     adjustments might be needed there (e.g. to remove a non-existent
     column). Minimum usable Kernel version required is 3.3.
--   When running the gatherer locally, i.e. having a "push" based
-    configuration, the metric fetching helpers are mostly not needed
-    as superuser can be used in a safe way and starting from v1.8.4 one
-    can also enable the `--direct-os-stats` parameter to signal that
-    we can fetch the data for the default `psutil*` metrics
+- When running the gatherer locally one can enable the `--direct-os-stats` 
+    parameter to signal that we can fetch the data for the default `psutil*` metrics
     directly from OS counters. If direct OS fetching fails though, the
     fallback is still to try via PL/Python wrappers.
--   In rare cases when some "helpers" have been installed, and when
+- In rare cases when some "helpers" have been installed, and when
     doing a binary PostgreSQL upgrade at some later point in time via
     `pg_upgrade`, this could result in error messages
     thrown. Then just drop those failing helpers on the "to be
     upgraded" cluster and re-create them after the upgrade process.
 
+!!! Info
+    If despite all the warnings you still want to run the pgwatch
+    with a sufficient user account (e.g. a superuser) you can also
+    use the `--create-helpers` parameter to automatically create all
+    needed helper functions in the monitored databases.
+
 ## Running with developer credentials
 
-As mentioned above, helper / wrapper functions are not strictly needed,
-they just provide a bit more information for unprivileged users - thus
-for developers with no means to install any wrappers as superuser, it's
-also possible to benefit from pgwatch - for such use cases e.g. the
+For developers with no means to install any wrappers as superuser, it's
+also possible to benefit from pgwatch. For such use cases the
 "unprivileged" preset metrics profile and the according "DB overview
 Unprivileged / Developer"
 ![dashboard](../gallery/overview_developer.png)
@@ -247,17 +224,13 @@ selected. Following types are available:
 
 ### *postgres*
 
-Monitor a single database on a single Postgres instance. When using
-the Web UI and the "DB name" field is left empty, there's as a
-one time operation where all non-template DB names are fetched,
-prefixed with "Unique name" field value and added to monitoring
-(if not already monitored). Internally monitoring always happens
-"per DB" not "per cluster" though.
+Monitor a single database on a single Postgres instance. Internally monitoring 
+always happens "per DB" not "per cluster" though.
 
-###  *postgres-continuous-discovery*
+### *postgres-continuous-discovery*
 
 Monitor a whole (or subset of DB-s) of Postgres cluster / instance.
-Host information without a DB name needs to be specified and then
+Connection string needs to be specified and then
 the pgwatch daemon will periodically scan the cluster and add any
 found and not yet monitored DBs to monitoring. In this mode it's
 also possible to specify regular expressions to include/exclude some
@@ -265,14 +238,12 @@ database names.
 
 ### *pgbouncer*
 
-Use to track metrics from PgBouncer's `SHOW STATS` command. In
-place of the Postgres "DB name" the name of the PgBouncer "pool"
-to be monitored must be inserted.
+Use to track metrics from PgBouncer's `SHOW STATS` command.
 
 ### *pgpool*
 
 Use to track joint metrics from Pgpool2's `SHOW POOL_NODES` and
-`SHOW POOL_PROCESSES` commands. Pgpool2 from version 3.0 is supported.
+`SHOW POOL_PROCESSES` commands.
 
 ### *patroni*
 
