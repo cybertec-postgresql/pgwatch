@@ -2,110 +2,110 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://pgwat.ch/v3.0/index.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/concept/components.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/concept/installation_options.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/concept/long_term_installations.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/concept/web_ui.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/developer/CODE_OF_CONDUCT.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/developer/LICENSE.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/developer/contributing.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/gallery/dashboards.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/gallery/webui.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/howto/config_db_bootstrap.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/howto/dashboarding_alerting.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/howto/metrics_db_bootstrap.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/howto/sizing_recommendations.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/howto/using_managed_services.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/intro/features.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/intro/project_background.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/reference/advanced_features.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/reference/env_variables.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/reference/kubernetes.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/reference/metric_definitions.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/reference/security.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/reference/technical_details.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/tutorial/custom_installation.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/tutorial/docker_installation.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/tutorial/preparing_databases.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v3.0/tutorial/upgrading.html</loc>
-         <lastmod>2025-01-17</lastmod>
+         <lastmod>2025-01-22</lastmod>
     </url>
 </urlset>
