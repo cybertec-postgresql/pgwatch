@@ -162,6 +162,30 @@
 <span id="L105" class="ln">   105  </span>	assert.Error(t, err, &#34;context canceled&#34;)
 <span id="L106" class="ln">   106  </span>}
 <span id="L107" class="ln">   107  </span>
+<span id="L108" class="ln">   108  </span>func TestPostgresWriter_EnsureMetricTime(t *testing.T) {
+<span id="L109" class="ln">   109  </span>	conn, err := pgxmock.NewPool()
+<span id="L110" class="ln">   110  </span>	assert.NoError(t, err)
+<span id="L111" class="ln">   111  </span>	pgw := PostgresWriter{
+<span id="L112" class="ln">   112  </span>		ctx:    ctx,
+<span id="L113" class="ln">   113  </span>		sinkDb: conn,
+<span id="L114" class="ln">   114  </span>	}
+<span id="L115" class="ln">   115  </span>
+<span id="L116" class="ln">   116  </span>	TestPartBounds := map[string]ExistingPartitionInfo{&#34;test_metric_realtime&#34;: {time.Now(), time.Now()}}
+<span id="L117" class="ln">   117  </span>	conn.ExpectQuery(`select part_available_from, part_available_to`).
+<span id="L118" class="ln">   118  </span>		WithArgs(&#34;test_metric_realtime&#34;, TestPartBounds[&#34;test_metric_realtime&#34;].StartTime).
+<span id="L119" class="ln">   119  </span>		WillReturnRows(pgxmock.NewRows([]string{&#34;part_available_from&#34;, &#34;part_available_to&#34;}).
+<span id="L120" class="ln">   120  </span>			AddRow(time.Now(), time.Now()))
+<span id="L121" class="ln">   121  </span>
+<span id="L122" class="ln">   122  </span>	conn.ExpectQuery(`select part_available_from, part_available_to`).
+<span id="L123" class="ln">   123  </span>		WithArgs(&#34;test_metric_realtime&#34;, TestPartBounds[&#34;test_metric_realtime&#34;].EndTime).
+<span id="L124" class="ln">   124  </span>		WillReturnRows(pgxmock.NewRows([]string{&#34;part_available_from&#34;, &#34;part_available_to&#34;}).
+<span id="L125" class="ln">   125  </span>			AddRow(time.Now(), time.Now()))
+<span id="L126" class="ln">   126  </span>
+<span id="L127" class="ln">   127  </span>	err = pgw.EnsureMetricTime(TestPartBounds, true)
+<span id="L128" class="ln">   128  </span>	assert.NoError(t, err)
+<span id="L129" class="ln">   129  </span>	assert.NoError(t, conn.ExpectationsWereMet())
+<span id="L130" class="ln">   130  </span>}
+<span id="L131" class="ln">   131  </span>
 </pre><p></p>
 
 <div id="footer">
