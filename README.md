@@ -16,7 +16,9 @@ To fetch and run the latest **demo** Docker image, exposing
 - the internal configuration and metrics database on port 5432:
 
 ```shell
-docker run -d --name pw3 -p 5432:5432 -p 3000:3000 -p 8080:8080 -e PW_TESTDB=true cybertecpostgresql/pgwatch-demo
+docker run --detach --name pw3 \
+-p 5432:5432 -p 3000:3000 -p 8080:8080 -e PW_TESTDB=true \
+cybertecpostgresql/pgwatch-demo
 ```
 
 After some minutes you could open the ["Database Overview"](http://127.0.0.1:3000/d/db-overview/db-overview) dashboard and start looking at metrics. For defining your own dashboards you need to log in Grafana as admin (`admin`/`pgwatchadmin`).
