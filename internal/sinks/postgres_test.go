@@ -104,3 +104,27 @@ func TestWrite(t *testing.T) {
 	err = pgw.Write(messages)
 	assert.Error(t, err, "context canceled")
 }
+
+func TestPostgresWriter_EnsureMetricTime(t *testing.T) {
+	conn, err := pgxmock.NewPool()
+	assert.NoError(t, err)
+	pgw := PostgresWriter{
+		ctx:    ctx,
+		sinkDb: conn,
+	}
+
+	TestPartBounds := map[string]ExistingPartitionInfo{"test_metric_realtime": {time.Now(), time.Now()}}
+	conn.ExpectQuery(`select part_available_from, part_available_to`).
+		WithArgs("test_metric_realtime", TestPartBounds["test_metric_realtime"].StartTime).
+		WillReturnRows(pgxmock.NewRows([]string{"part_available_from", "part_available_to"}).
+			AddRow(time.Now(), time.Now()))
+
+	conn.ExpectQuery(`select part_available_from, part_available_to`).
+		WithArgs("test_metric_realtime", TestPartBounds["test_metric_realtime"].EndTime).
+		WillReturnRows(pgxmock.NewRows([]string{"part_available_from", "part_available_to"}).
+			AddRow(time.Now(), time.Now()))
+
+	err = pgw.EnsureMetricTime(TestPartBounds, true)
+	assert.NoError(t, err)
+	assert.NoError(t, conn.ExpectationsWereMet())
+}
