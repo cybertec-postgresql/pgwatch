@@ -138,8 +138,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "eeaynldpp0jk0f"
+        "type": "prometheus"
       },
       "description": "Queries Per Second based on pg_stat_statements.calls. Can be smaller that TPS if transactions don't execute anything or don't make it to the pg_stat_statements top.",
       "fieldConfig": {
@@ -203,8 +202,7 @@
         {
           "alias": "QPS",
           "datasource": {
-            "type": "prometheus",
-            "uid": "eeaynldpp0jk0f"
+            "type": "prometheus"
           },
           "exemplar": true,
           "expr": "avg(rate(pgwatch_stat_statements_calls_calls{dbname='$dbname'}[$agg_interval]))",
