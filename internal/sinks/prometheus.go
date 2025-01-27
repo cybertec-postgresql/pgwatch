@@ -3,6 +3,7 @@ package sinks
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"reflect"
 	"slices"
@@ -65,9 +66,15 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 		Addr:    addr,
 		Handler: promhttp.Handler(),
 	}
-	go func() {
-		log.GetLogger(ctx).Error(promServer.ListenAndServe())
-	}()
+
+	ln, err := net.Listen("tcp", promServer.Addr)
+	if err != nil {
+		return nil, err
+	}
+
+	go func() { log.GetLogger(ctx).Error(promServer.Serve(ln)) }()
+
+	l.Info(`measurements sink is activated`)
 	return
 }
 
