@@ -3,7 +3,10 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -13,64 +16,100 @@
     ]
   },
   "editable": true,
-  "gnetId": null,
+  "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": null,
   "links": [],
   "panels": [
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "decimals": 1,
+      "datasource": {
+        "type": "prometheus"
+      },
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
           "unit": "short"
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 24,
         "x": 0,
         "y": 0
       },
-      "hiddenSeries": false,
       "id": 2,
       "interval": "$agg_interval",
-      "legend": {
-        "alignAsTable": false,
-        "avg": true,
-        "current": false,
-        "hideEmpty": false,
-        "hideZero": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "alertThreshold": true,
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
-      "percentage": false,
-      "pluginVersion": "7.5.9",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+          },
           "exemplar": true,
           "expr": "max(increase(pgwatch_table_stats_n_tup_ins{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval]))",
           "interval": "",
@@ -78,6 +117,9 @@
           "refId": "A"
         },
         {
+          "datasource": {
+            "type": "prometheus"
+          },
           "exemplar": true,
           "expr": "max(increase(pgwatch_table_stats_n_tup_upd{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval]))",
           "hide": false,
@@ -86,6 +128,9 @@
           "refId": "B"
         },
         {
+          "datasource": {
+            "type": "prometheus"
+          },
           "exemplar": true,
           "expr": "max(increase(pgwatch_table_stats_n_tup_del{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval]))",
           "hide": false,
@@ -94,101 +139,98 @@
           "refId": "C"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "IUD ($agg_interval tot.)",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:76",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:77",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": false
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+      },
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
           "unit": "short"
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 24,
         "x": 0,
         "y": 9
       },
-      "hiddenSeries": false,
       "id": 3,
       "interval": "$agg_interval",
-      "legend": {
-        "alignAsTable": false,
-        "avg": true,
-        "current": false,
-        "hideEmpty": false,
-        "hideZero": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "alertThreshold": true,
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
-      "percentage": false,
-      "pluginVersion": "7.5.9",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+          },
           "exemplar": true,
           "expr": "max(increase(pgwatch_table_stats_seq_scan{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval]))",
           "interval": "",
@@ -196,102 +238,99 @@
           "refId": "A"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Seq. scans ($agg_interval tot.)",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:76",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:77",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
           "unit": "bytes"
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 24,
         "x": 0,
         "y": 18
       },
-      "hiddenSeries": false,
       "id": 4,
       "interval": "$agg_interval",
-      "legend": {
-        "alignAsTable": false,
-        "avg": true,
-        "current": false,
-        "hideEmpty": false,
-        "hideZero": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "alertThreshold": true,
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
-      "percentage": false,
-      "pluginVersion": "7.5.9",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+          },
           "exemplar": true,
           "expr": "max(pgwatch_table_stats_table_size_b{dbname='$dbname',table_full_name=\"$table\"})",
           "interval": "",
@@ -299,6 +338,9 @@
           "refId": "A"
         },
         {
+          "datasource": {
+            "type": "prometheus"
+          },
           "exemplar": true,
           "expr": "max(pgwatch_table_stats_total_relation_size_b{dbname='$dbname',table_full_name=\"$table\"})",
           "hide": false,
@@ -307,110 +349,136 @@
           "refId": "B"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Size",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:76",
-          "format": "bytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:77",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "decimals": 1,
+      "datasource": {
+        "type": "prometheus"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 1,
+          "mappings": [],
+          "max": 110,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
           "unit": "percent"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "allIsNull",
+                "value": 0
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": false
+                }
+              }
+            ]
+          }
+        ]
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 24,
         "x": 0,
         "y": 27
       },
-      "hiddenSeries": false,
       "id": 5,
-      "interval": "$agg_interval",
-      "legend": {
-        "alignAsTable": false,
-        "avg": true,
-        "current": false,
-        "hideEmpty": true,
-        "hideZero": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "connected",
+      "interval": "30m",
       "options": {
-        "alertThreshold": true
+        "alertThreshold": true,
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
-      "percentage": false,
-      "pluginVersion": "7.5.9",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "editorMode": "code",
           "exemplar": true,
-          "expr": "100 * max(increase(pgwatch_table_io_stats_heap_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval])) / max((increase(pgwatch_table_io_stats_heap_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval])) + max(increase(pgwatch_table_io_stats_heap_blks_read{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval])))",
+          "expr": "100 * increase(pgwatch_table_io_stats_heap_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval]) / (increase(pgwatch_table_io_stats_heap_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval]) + increase(pgwatch_table_io_stats_heap_blks_read{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval]))",
+          "hide": false,
           "interval": "",
           "legendFormat": "heap",
+          "range": true,
           "refId": "A"
         },
         {
+          "datasource": {
+            "type": "prometheus"
+          },
           "exemplar": true,
           "expr": "100 * max(increase(pgwatch_table_io_stats_idx_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval])) / max((increase(pgwatch_table_io_stats_idx_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval])) + max(increase(pgwatch_table_io_stats_idx_blks_read{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval])))",
           "hide": false,
@@ -419,6 +487,9 @@
           "refId": "B"
         },
         {
+          "datasource": {
+            "type": "prometheus"
+          },
           "exemplar": true,
           "expr": "100 * max(increase(pgwatch_table_io_stats_toast_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval])) / (max(increase(pgwatch_table_io_stats_toast_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval])) + max(increase(pgwatch_table_io_stats_toast_blks_read{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval])))",
           "hide": false,
@@ -427,6 +498,9 @@
           "refId": "C"
         },
         {
+          "datasource": {
+            "type": "prometheus"
+          },
           "exemplar": true,
           "expr": "100 * max(increase(pgwatch_table_io_stats_tidx_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval])) / (max(increase(pgwatch_table_io_stats_tidx_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval])) + max(increase(pgwatch_table_io_stats_tidx_blks_read{dbname='$dbname',table_full_name=\"$table\"}[$agg_interval])))",
           "hide": false,
@@ -435,181 +509,176 @@
           "refId": "D"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Shared Buffers hit % ($agg_interval avg.)",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:76",
-          "decimals": 1,
-          "format": "percent",
-          "label": null,
-          "logBase": 1,
-          "max": "110",
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:77",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": false
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "decimals": 1,
+      "datasource": {
+        "type": "prometheus"
+      },
       "description": "Amount of block data read from the table, including cache and TOAST",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
           "unit": "bytes"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "allIsNull",
+                "value": 0
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": false
+                }
+              }
+            ]
+          }
+        ]
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 24,
         "x": 0,
         "y": 36
       },
-      "hiddenSeries": false,
       "id": 9,
       "interval": "$agg_interval",
-      "legend": {
-        "alignAsTable": false,
-        "avg": true,
-        "current": false,
-        "hideEmpty": true,
-        "hideZero": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "connected",
       "options": {
-        "alertThreshold": true
+        "alertThreshold": true,
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
-      "percentage": false,
-      "pluginVersion": "7.5.9",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "editorMode": "code",
           "exemplar": true,
-          "expr": "8192 * (max(increase(pgwatch_table_io_stats_heap_blks_hit{dbname='$dbname',table_full_name=\"$table\"})) + max(increase(pgwatch_table_io_stats_heap_blks_read{dbname='$dbname',table_full_name=\"$table\"})))",
+          "expr": "8192 * (max(increase(pgwatch_table_io_stats_heap_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$__interval])) + max(increase(pgwatch_table_io_stats_heap_blks_read{dbname='$dbname',table_full_name=\"$table\"}[$__interval])))",
           "interval": "",
           "legendFormat": "heap",
+          "range": true,
           "refId": "A"
         },
         {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "editorMode": "code",
           "exemplar": true,
-          "expr": "8192 * (max(increase(pgwatch_table_io_stats_idx_blks_hit{dbname='$dbname',table_full_name=\"$table\"})) + max(increase(pgwatch_table_io_stats_idx_blks_read{dbname='$dbname',table_full_name=\"$table\"})))",
+          "expr": "8192 * (max(increase(pgwatch_table_io_stats_idx_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$__interval])) + max(increase(pgwatch_table_io_stats_idx_blks_read{dbname='$dbname',table_full_name=\"$table\"}[$__interval])))",
           "hide": false,
           "interval": "",
           "legendFormat": "idx",
+          "range": true,
           "refId": "B"
         },
         {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "editorMode": "code",
           "exemplar": true,
-          "expr": "8192 * (max(increase(pgwatch_table_io_stats_toast_blks_hit{dbname='$dbname',table_full_name=\"$table\"})) + max(increase(pgwatch_table_io_stats_toast_blks_read{dbname='$dbname',table_full_name=\"$table\"})))",
+          "expr": "8192 * (max(increase(pgwatch_table_io_stats_toast_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$__interval])) + max(increase(pgwatch_table_io_stats_toast_blks_read{dbname='$dbname',table_full_name=\"$table\"}[$__interval])))",
           "hide": false,
           "interval": "",
           "legendFormat": "toast",
+          "range": true,
           "refId": "C"
         },
         {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "editorMode": "code",
           "exemplar": true,
-          "expr": "8192 * (max(increase(pgwatch_table_io_stats_tidx_blks_hit{dbname='$dbname',table_full_name=\"$table\"})) + max(increase(pgwatch_table_io_stats_tidx_blks_read{dbname='$dbname',table_full_name=\"$table\"})))",
+          "expr": "8192 * (max(increase(pgwatch_table_io_stats_tidx_blks_hit{dbname='$dbname',table_full_name=\"$table\"}[$__interval])) + max(increase(pgwatch_table_io_stats_tidx_blks_read{dbname='$dbname',table_full_name=\"$table\"}[$__interval])))",
           "hide": false,
           "interval": "",
           "legendFormat": "tidx",
+          "range": true,
           "refId": "D"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Block bandwith ($agg_interval tot.)",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:76",
-          "decimals": 1,
-          "format": "bytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:77",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+      },
       "description": "Including both manual VACUUM and AUTOVACUUM",
       "fieldConfig": {
         "defaults": {
@@ -646,6 +715,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -653,12 +723,17 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+          },
           "exemplar": true,
           "expr": "pgwatch_table_stats_seconds_since_last_vacuum{dbname='$dbname',table_full_name=\"$table\"}",
           "instant": true,
@@ -667,13 +742,13 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Time since last VACUUM",
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+      },
       "description": "Including both manual ANALYZE and AUTOVACUUM",
       "fieldConfig": {
         "defaults": {
@@ -710,6 +785,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -717,12 +793,17 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+          },
           "exemplar": true,
           "expr": "pgwatch_table_stats_seconds_since_last_analyze{dbname='$dbname',table_full_name=\"$table\"}",
           "instant": true,
@@ -731,15 +812,13 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Time since last ANALYZE",
       "type": "stat"
     }
   ],
+  "preload": false,
   "refresh": false,
-  "schemaVersion": 27,
-  "style": "dark",
+  "schemaVersion": 40,
   "tags": [
     "pgwatch",
     "postgres"
@@ -747,15 +826,12 @@
   "templating": {
     "list": [
       {
-        "allValue": null,
-        "datasource": null,
+        "datasource": {
+          "type": "prometheus",
+          "default": true
+        },
         "definition": "label_values(dbname)",
-        "description": null,
-        "error": null,
-        "hide": 0,
         "includeAll": false,
-        "label": null,
-        "multi": false,
         "name": "dbname",
         "options": [],
         "query": {
@@ -764,29 +840,16 @@
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 1,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
+        "type": "query"
       },
       {
-        "allValue": null,
-        "current": {
-          "selected": true,
-          "text": "public.relationships",
-          "value": "public.relationships"
+        "datasource": {
+          "type": "prometheus",
+          "default": true
         },
-        "datasource": null,
         "definition": "label_values(pgwatch_table_stats_seq_scan{dbname=~\"$dbname\"}, table_full_name) ",
-        "description": null,
-        "error": null,
-        "hide": 0,
         "includeAll": false,
-        "label": null,
-        "multi": false,
         "name": "table",
         "options": [],
         "query": {
@@ -795,27 +858,17 @@
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 1,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
+        "type": "query"
       },
       {
         "auto": false,
         "auto_count": 30,
         "auto_min": "10s",
         "current": {
-          "selected": false,
-          "text": "10m",
-          "value": "10m"
+          "text": "15m",
+          "value": "15m"
         },
-        "description": null,
-        "error": null,
-        "hide": 0,
-        "label": null,
         "name": "agg_interval",
         "options": [
           {
@@ -829,12 +882,12 @@
             "value": "5m"
           },
           {
-            "selected": true,
+            "selected": false,
             "text": "10m",
             "value": "10m"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "15m",
             "value": "15m"
           },
@@ -880,20 +933,19 @@
           }
         ],
         "query": "1m,5m,10m,15m,30m,1h,6h,12h,1d,7d,14d,30d",
-        "queryValue": "",
         "refresh": 2,
-        "skipUrlSync": false,
         "type": "interval"
       }
     ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Table details",
   "uid": null,
-  "version": 1
+  "version": 1,
+  "weekStart": ""
 }
