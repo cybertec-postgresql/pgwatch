@@ -106,7 +106,7 @@ metrics:
 
             GRANT EXECUTE ON FUNCTION get_backup_age_pgbackrest() TO pgwatch;
 
-            COMMENT ON FUNCTION get_backup_age_pgbackrest() is 'created for pgwatch'
+            COMMENT ON FUNCTION get_backup_age_pgbackrest() is 'created for pgwatch';
         is_instance_level: true
     backup_age_walg:
         sqls:
@@ -158,7 +158,7 @@ metrics:
 
             GRANT EXECUTE ON FUNCTION get_backup_age_walg() TO pgwatch;
 
-            COMMENT ON FUNCTION get_backup_age_walg() is 'created for pgwatch'
+            COMMENT ON FUNCTION get_backup_age_walg() is 'created for pgwatch';
         is_instance_level: true
     bgwriter:
         sqls:
@@ -1167,7 +1167,7 @@ metrics:
             $FUNCTION$;
 
             GRANT EXECUTE ON FUNCTION get_psutil_cpu() TO pgwatch;
-            COMMENT ON FUNCTION get_psutil_cpu() IS 'created for pgwatch'
+            COMMENT ON FUNCTION get_psutil_cpu() IS 'created for pgwatch';
         gauges:
             - '*'
         is_instance_level: true
@@ -1242,7 +1242,7 @@ metrics:
             $FUNCTION$;
 
             GRANT EXECUTE ON FUNCTION get_psutil_disk() TO pgwatch;
-            COMMENT ON FUNCTION get_psutil_disk() IS 'created for pgwatch'
+            COMMENT ON FUNCTION get_psutil_disk() IS 'created for pgwatch';
         gauges:
             - '*'
         is_instance_level: true
@@ -1275,7 +1275,7 @@ metrics:
             $FUNCTION$;
 
             GRANT EXECUTE ON FUNCTION get_psutil_disk_io_total() TO pgwatch;
-            COMMENT ON FUNCTION get_psutil_disk_io_total() IS 'created for pgwatch'
+            COMMENT ON FUNCTION get_psutil_disk_io_total() IS 'created for pgwatch';
         is_instance_level: true
     psutil_mem:
         sqls:
@@ -1303,7 +1303,7 @@ metrics:
             $FUNCTION$;
 
             GRANT EXECUTE ON FUNCTION get_psutil_mem() TO pgwatch;
-            COMMENT ON FUNCTION get_psutil_mem() IS 'created for pgwatch'
+            COMMENT ON FUNCTION get_psutil_mem() IS 'created for pgwatch';
         gauges:
             - '*'
         is_instance_level: true
@@ -1749,7 +1749,7 @@ metrics:
 
             GRANT EXECUTE ON FUNCTION get_smart_health_per_device() TO pgwatch;
 
-            COMMENT ON FUNCTION get_smart_health_per_device() is 'created for pgwatch'
+            COMMENT ON FUNCTION get_smart_health_per_device() is 'created for pgwatch';
     sproc_hashes:
         sqls:
             11: |-
@@ -3888,7 +3888,7 @@ metrics:
             $FUNCTION$;
 
             GRANT EXECUTE ON FUNCTION get_vmstat(int) TO pgwatch;
-            COMMENT ON FUNCTION get_vmstat(int) IS 'created for pgwatch'
+            COMMENT ON FUNCTION get_vmstat(int) IS 'created for pgwatch';
     wait_events:
         sqls:
             11: |-
