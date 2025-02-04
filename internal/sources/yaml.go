@@ -4,6 +4,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -61,6 +62,7 @@ func (fcr *fileSourcesReaderWriter) GetSources() (dbs Sources, err error) {
 	}
 	switch mode := fi.Mode(); {
 	case mode.IsDir():
+		var names []string
 		err = filepath.WalkDir(fcr.path, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
@@ -70,10 +72,17 @@ func (fcr *fileSourcesReaderWriter) GetSources() (dbs Sources, err error) {
 				return nil
 			}
 			var mdbs Sources
-			if mdbs, err = fcr.getSources(path); err == nil {
-				dbs = append(dbs, mdbs...)
+			if mdbs, err = fcr.getSources(path); err != nil {
+				return err
 			}
-			return err
+			for _, mdb := range mdbs {
+				if slices.Contains(names, mdb.Name) {
+					return fmt.Errorf("duplicate source with name '%s' found in file %s", mdb.Name, path)
+				}
+				names = append(names, mdb.Name)
+			}
+			dbs = append(dbs, mdbs...)
+			return nil
 		})
 	case mode.IsRegular():
 		dbs, err = fcr.getSources(fcr.path)
@@ -93,7 +102,12 @@ func (fcr *fileSourcesReaderWriter) getSources(configFilePath string) (dbs Sourc
 	if err = yaml.Unmarshal(yamlFile, &c); err != nil {
 		return
 	}
+	var names []string
 	for _, v := range c {
+		if slices.Contains(names, v.Name) {
+			return nil, fmt.Errorf("duplicate source with name '%s' found in file %s", v.Name, configFilePath)
+		}
+		names = append(names, v.Name)
 		if v.Kind == "" {
 			v.Kind = SourcePostgres
 		}
