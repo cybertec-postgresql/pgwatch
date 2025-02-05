@@ -248,6 +248,9 @@ At the moment, sources definitions support two storages:
 					
 					<dd>&nbsp; &nbsp; <a href="#Sources.ResolveDatabases">func (srcs Sources) ResolveDatabases() (_ MonitoredDatabases, err error)</a></dd>
 				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sources.Validate">func (srcs Sources) Validate() (Sources, error)</a></dd>
+				
 			
 				
 				<dd><a href="#Writer">type Writer</a></dd>
@@ -435,7 +438,7 @@ At the moment, sources definitions support two storages:
 		
 			
 			
-			<h2 id="HostConfigAttrs">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L187">HostConfigAttrs</a>
+			<h2 id="HostConfigAttrs">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L202">HostConfigAttrs</a>
 				<a class="permalink" href="#HostConfigAttrs">&#xb6;</a>
 				
 				
@@ -471,7 +474,7 @@ At the moment, sources definitions support two storages:
 		
 			
 			
-			<h2 id="HostConfigPerMetricDisabledTimes">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L202">HostConfigPerMetricDisabledTimes</a>
+			<h2 id="HostConfigPerMetricDisabledTimes">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L217">HostConfigPerMetricDisabledTimes</a>
 				<a class="permalink" href="#HostConfigPerMetricDisabledTimes">&#xb6;</a>
 				
 				
@@ -498,7 +501,7 @@ At the moment, sources definitions support two storages:
 		
 			
 			
-			<h2 id="Kind">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L14">Kind</a>
+			<h2 id="Kind">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L15">Kind</a>
 				<a class="permalink" href="#Kind">&#xb6;</a>
 				
 				
@@ -529,7 +532,7 @@ At the moment, sources definitions support two storages:
 
 			
 				
-				<h3 id="Kind.IsValid">func (Kind) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L36">IsValid</a>
+				<h3 id="Kind.IsValid">func (Kind) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L37">IsValid</a>
 					<a class="permalink" href="#Kind.IsValid">&#xb6;</a>
 					
 					
@@ -543,7 +546,7 @@ At the moment, sources definitions support two storages:
 		
 			
 			
-			<h2 id="MonitoredDatabase">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L88">MonitoredDatabase</a>
+			<h2 id="MonitoredDatabase">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L103">MonitoredDatabase</a>
 				<a class="permalink" href="#MonitoredDatabase">&#xb6;</a>
 				
 				
@@ -582,7 +585,7 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="MonitoredDatabase.Connect">func (*MonitoredDatabase) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L109">Connect</a>
+				<h3 id="MonitoredDatabase.Connect">func (*MonitoredDatabase) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L124">Connect</a>
 					<a class="permalink" href="#MonitoredDatabase.Connect">&#xb6;</a>
 					
 					
@@ -596,7 +599,7 @@ If the connection is already established, it pings the server to ensure it&apos;
 				
 			
 				
-				<h3 id="MonitoredDatabase.GetDatabaseName">func (*MonitoredDatabase) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L125">GetDatabaseName</a>
+				<h3 id="MonitoredDatabase.GetDatabaseName">func (*MonitoredDatabase) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L140">GetDatabaseName</a>
 					<a class="permalink" href="#MonitoredDatabase.GetDatabaseName">&#xb6;</a>
 					
 					
@@ -609,7 +612,7 @@ If the connection is already established, it pings the server to ensure it&apos;
 				
 			
 				
-				<h3 id="MonitoredDatabase.IsPostgresSource">func (*MonitoredDatabase) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L147">IsPostgresSource</a>
+				<h3 id="MonitoredDatabase.IsPostgresSource">func (*MonitoredDatabase) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L162">IsPostgresSource</a>
 					<a class="permalink" href="#MonitoredDatabase.IsPostgresSource">&#xb6;</a>
 					
 					
@@ -621,7 +624,7 @@ If the connection is already established, it pings the server to ensure it&apos;
 				
 			
 				
-				<h3 id="MonitoredDatabase.Ping">func (*MonitoredDatabase) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L98">Ping</a>
+				<h3 id="MonitoredDatabase.Ping">func (*MonitoredDatabase) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L113">Ping</a>
 					<a class="permalink" href="#MonitoredDatabase.Ping">&#xb6;</a>
 					
 					
@@ -634,7 +637,7 @@ If the connection is already established, it pings the server to ensure it&apos;
 				
 			
 				
-				<h3 id="MonitoredDatabase.SetDatabaseName">func (*MonitoredDatabase) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L136">SetDatabaseName</a>
+				<h3 id="MonitoredDatabase.SetDatabaseName">func (*MonitoredDatabase) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L151">SetDatabaseName</a>
 					<a class="permalink" href="#MonitoredDatabase.SetDatabaseName">&#xb6;</a>
 					
 					
@@ -649,7 +652,7 @@ If the connection is already established, it pings the server to ensure it&apos;
 		
 			
 			
-			<h2 id="MonitoredDatabases">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L94">MonitoredDatabases</a>
+			<h2 id="MonitoredDatabases">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L109">MonitoredDatabases</a>
 				<a class="permalink" href="#MonitoredDatabases">&#xb6;</a>
 				
 				
@@ -684,7 +687,7 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="MonitoredDatabases.GetMonitoredDatabase">func (MonitoredDatabases) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L151">GetMonitoredDatabase</a>
+				<h3 id="MonitoredDatabases.GetMonitoredDatabase">func (MonitoredDatabases) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L166">GetMonitoredDatabase</a>
 					<a class="permalink" href="#MonitoredDatabases.GetMonitoredDatabase">&#xb6;</a>
 					
 					
@@ -696,7 +699,7 @@ will produce multiple monitored databases structs based on the discovered databa
 				
 			
 				
-				<h3 id="MonitoredDatabases.SyncFromReader">func (MonitoredDatabases) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L163">SyncFromReader</a>
+				<h3 id="MonitoredDatabases.SyncFromReader">func (MonitoredDatabases) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L178">SyncFromReader</a>
 					<a class="permalink" href="#MonitoredDatabases.SyncFromReader">&#xb6;</a>
 					
 					
@@ -785,7 +788,7 @@ It&apos;s up to the caller to proceed with the databases available or stop the e
 		
 			
 			
-			<h2 id="Reader">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L208">Reader</a>
+			<h2 id="Reader">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L223">Reader</a>
 				<a class="permalink" href="#Reader">&#xb6;</a>
 				
 				
@@ -809,7 +812,7 @@ It&apos;s up to the caller to proceed with the databases available or stop the e
 		
 			
 			
-			<h2 id="ReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L218">ReaderWriter</a>
+			<h2 id="ReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L233">ReaderWriter</a>
 				<a class="permalink" href="#ReaderWriter">&#xb6;</a>
 				
 				
@@ -867,7 +870,7 @@ It&apos;s up to the caller to proceed with the databases available or stop the e
 		
 			
 			
-			<h2 id="Source">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L47">Source</a>
+			<h2 id="Source">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L48">Source</a>
 				<a class="permalink" href="#Source">&#xb6;</a>
 				
 				
@@ -909,7 +912,7 @@ those additional metrics, it is ok to specify the connection details as a regula
 
 			
 				
-				<h3 id="Source.Clone">func (*Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L75">Clone</a>
+				<h3 id="Source.Clone">func (*Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L90">Clone</a>
 					<a class="permalink" href="#Source.Clone">&#xb6;</a>
 					
 					
@@ -921,7 +924,7 @@ those additional metrics, it is ok to specify the connection details as a regula
 				
 			
 				
-				<h3 id="Source.GetDatabaseName">func (*Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L68">GetDatabaseName</a>
+				<h3 id="Source.GetDatabaseName">func (*Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L83">GetDatabaseName</a>
 					<a class="permalink" href="#Source.GetDatabaseName">&#xb6;</a>
 					
 					
@@ -948,7 +951,7 @@ those additional metrics, it is ok to specify the connection details as a regula
 		
 			
 			
-			<h2 id="Sources">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L65">Sources</a>
+			<h2 id="Sources">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L66">Sources</a>
 				<a class="permalink" href="#Sources">&#xb6;</a>
 				
 				
@@ -980,10 +983,22 @@ those additional metrics, it is ok to specify the connection details as a regula
 				
 				
 			
+				
+				<h3 id="Sources.Validate">func (Sources) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L69">Validate</a>
+					<a class="permalink" href="#Sources.Validate">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (srcs <a href="#Sources">Sources</a>) Validate() (<a href="#Sources">Sources</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
 		
 			
 			
-			<h2 id="Writer">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L212">Writer</a>
+			<h2 id="Writer">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L227">Writer</a>
 				<a class="permalink" href="#Writer">&#xb6;</a>
 				
 				
@@ -1167,7 +1182,7 @@ those additional metrics, it is ok to specify the connection details as a regula
 				
 			
 				
-				<h3 id="fileSourcesReaderWriter.expandEnvVars">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/yaml.go.html#L105">expandEnvVars</a>
+				<h3 id="fileSourcesReaderWriter.expandEnvVars">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/yaml.go.html#L102">expandEnvVars</a>
 					<a class="permalink" href="#fileSourcesReaderWriter.expandEnvVars">&#xb6;</a>
 					
 					
