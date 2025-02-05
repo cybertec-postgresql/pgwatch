@@ -81,7 +81,7 @@ func (fcr *fileSourcesReaderWriter) GetSources() (dbs Sources, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return
+	return dbs.Validate()
 }
 
 func (fcr *fileSourcesReaderWriter) getSources(configFilePath string) (dbs Sources, err error) {
@@ -94,9 +94,6 @@ func (fcr *fileSourcesReaderWriter) getSources(configFilePath string) (dbs Sourc
 		return
 	}
 	for _, v := range c {
-		if v.Kind == "" {
-			v.Kind = SourcePostgres
-		}
 		dbs = append(dbs, fcr.expandEnvVars(v))
 	}
 	return

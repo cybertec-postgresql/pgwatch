@@ -72,6 +72,51 @@ func TestYAMLGetMonitoredDatabases(t *testing.T) {
 		a.Error(err)
 		a.Nil(dbs)
 	})
+
+	t.Run("duplicate in single file", func(t *testing.T) {
+		tmpFile := filepath.Join(t.TempDir(), "duplicate.yaml")
+		yamlContent := `
+- name: test1
+  conn_str: postgresql://localhost/test1
+- name: test2
+  conn_str: postgresql://localhost/test2
+- name: test1
+  conn_str: postgresql://localhost/test1_duplicate
+`
+		err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+		a.NoError(err)
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+		a.NoError(err)
+
+		dbs, err := yamlrw.GetSources()
+		a.Error(err)
+		a.Nil(dbs)
+	})
+
+	t.Run("duplicates across files", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		yamlContent1 := `
+- name: test1
+  conn_str: postgresql://localhost/test1
+- name: test2
+  conn_str: postgresql://localhost/test2
+`
+		err := os.WriteFile(filepath.Join(tmpDir, "sources1.yaml"), []byte(yamlContent1), 0644)
+		a.NoError(err)
+
+		yamlContent2 := `
+- name: test1
+  conn_str: postgresql://localhost/test1_duplicate
+`
+		err = os.WriteFile(filepath.Join(tmpDir, "sources2.yaml"), []byte(yamlContent2), 0644)
+		a.NoError(err)
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpDir)
+		a.NoError(err)
+
+		dbs, err := yamlrw.GetSources()
+		a.Error(err)
+		a.Nil(dbs)
+	})
 }
 
 func TestYAMLDeleteDatabase(t *testing.T) {
