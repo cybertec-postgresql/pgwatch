@@ -18,11 +18,15 @@ services:
       - "3000:3000"
     restart: unless-stopped
     volumes:
-      - "../grafana/postgres_datasource.yml:/etc/grafana/provisioning/datasources/pg_ds.yml"
-      - "../grafana/postgres_dashboard.yml:/etc/grafana/provisioning/dashboards/pg_db.yml"
+      - "../grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/pgwatch_dashboards.yml"
+      # Uncomment the datasource version you want to use
+      - "../grafana/postgres_datasource.yml:/etc/grafana/provisioning/datasources/postgres_datasource.yml"
+      # - "../grafana/prometheus_datasource.yml:/etc/grafana/provisioning/datasources/prometheus_datasource.yml"
       # Uncomment the dashboard version you want to use and comment out the other one.
       - "../grafana/postgres/v10:/var/lib/grafana/dashboards"
-      # - "./grafana/postgres/v11:/var/lib/grafana/dashboards"
+      # - "../grafana/postgres/v11:/var/lib/grafana/dashboards"
+      # - "../grafana/prometheus/v10:/var/lib/grafana/dashboards"
+      # - "../grafana/prometheus/v11:/var/lib/grafana/dashboards"
     depends_on:
       postgres:
         condition: service_healthy
