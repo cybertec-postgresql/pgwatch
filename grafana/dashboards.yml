@@ -4,7 +4,7 @@ providers:
 - name: 'default'
   orgId: 1
   folder: ''
-  type: file
+  type: 'file'
   disableDeletion: false
   updateIntervalSeconds: 10 #how often Grafana will scan for changed dashboards
   options:

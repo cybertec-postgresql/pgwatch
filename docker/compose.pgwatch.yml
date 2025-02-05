@@ -7,11 +7,12 @@ services:
     image: cybertecpostgresql/pgwatch:latest
     environment:
       PW_SOURCES: postgresql://pgwatch@postgres:5432/pgwatch
-      PW_SINK: postgresql://pgwatch@postgres:5432/pgwatch_metrics
-    # command:
-    #   - "--log-level=debug"
+    command:
+      - "--sink=postgresql://pgwatch@postgres:5432/pgwatch_metrics"
+      - "--sink=prometheus://pgwatch:9187/pgwatch"
     ports:
       - "8080:8080"
+      - "9187:9187"
     depends_on:
       postgres:
         condition: service_healthy

@@ -3,7 +3,10 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -13,13 +16,16 @@
     ]
   },
   "editable": true,
-  "gnetId": null,
+  "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": null,
   "links": [],
   "panels": [
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -51,20 +57,15 @@
                 "id": "mappings",
                 "value": [
                   {
-                    "from": "",
-                    "id": 1,
-                    "text": "PRIMARY",
-                    "to": "",
-                    "type": 1,
-                    "value": "0"
-                  },
-                  {
-                    "from": "",
-                    "id": 2,
-                    "text": "STANDBY",
-                    "to": "",
-                    "type": 1,
-                    "value": "1"
+                    "options": {
+                      "0": {
+                        "text": "PRIMARY"
+                      },
+                      "1": {
+                        "text": "STANDBY"
+                      }
+                    },
+                    "type": "value"
                   }
                 ]
               }
@@ -79,12 +80,12 @@
         "y": 0
       },
       "id": 2,
-      "maxDataPoints": null,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -92,14 +93,21 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
+          "editorMode": "code",
           "exemplar": true,
-          "expr": "max(last_over_time(pgwatch_db_stats_in_recovery_int{dbname='$dbname'}))",
+          "expr": "max(last_over_time(pgwatch_db_stats_in_recovery_int{dbname='$dbname'}[$__interval]))",
           "instant": true,
           "interval": "",
           "legendFormat": "",
@@ -110,7 +118,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -150,6 +161,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -157,12 +169,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(abs(pgwatch_db_stats_postmaster_uptime_s{dbname='$dbname'}))",
           "instant": true,
@@ -175,7 +193,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -206,11 +227,13 @@
         "y": 0
       },
       "id": 4,
+      "interval": "3h",
       "options": {
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -218,14 +241,21 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
+          "editorMode": "code",
           "exemplar": true,
-          "expr": "max(pgwatch_settings_server_version_num{dbname='$dbname'})",
+          "expr": "max_over_time(pgwatch_settings_server_version_num{dbname='$dbname'}[$__interval])",
           "instant": true,
           "interval": "",
           "legendFormat": "",
@@ -236,7 +266,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "Over the selected time range",
       "fieldConfig": {
         "defaults": {
@@ -273,6 +306,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -280,12 +314,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_backends_longest_query_seconds{dbname='$dbname'}[$__interval]))",
           "interval": "10m",
@@ -297,7 +337,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -334,6 +377,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -341,16 +385,24 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
+          "editorMode": "code",
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_backends_active{dbname='$dbname'}[$__range]))",
           "interval": "",
           "legendFormat": "",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -358,7 +410,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "PostgreSQL configurations setting. Changing requires restart. Numbers above 500+ are not recommended",
       "fieldConfig": {
         "defaults": {
@@ -394,11 +449,13 @@
         "y": 4
       },
       "id": 7,
+      "interval": "3h",
       "options": {
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -406,14 +463,21 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
+          "editorMode": "code",
           "exemplar": true,
-          "expr": "max(pgwatch_settings_max_connections{dbname='$dbname'})",
+          "expr": "max_over_time(pgwatch_settings_max_connections{dbname='$dbname'}[$__interval])",
           "instant": true,
           "interval": "",
           "legendFormat": "",
@@ -424,7 +488,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -466,6 +533,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -473,12 +541,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_backends_waiting{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -490,7 +564,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "Shared Buffers is the Postgres -managed file cache and 90%+ is what you normally want to see for best performance.",
       "fieldConfig": {
         "defaults": {
@@ -499,6 +576,8 @@
           },
           "decimals": 1,
           "mappings": [],
+          "max": 100,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -533,6 +612,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -540,12 +620,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "100 * avg(increase(pgwatch_db_stats_blks_hit{dbname='$dbname'}[$__range])) / (avg(increase(pgwatch_db_stats_blks_read{dbname='$dbname'}[$__range])) + avg(increase(pgwatch_db_stats_blks_hit{dbname='$dbname'}[$__range])))",
           "instant": false,
@@ -558,7 +644,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -567,6 +656,8 @@
           },
           "decimals": 1,
           "mappings": [],
+          "max": 100,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -597,6 +688,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -604,12 +696,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "100 * avg(increase(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$__range])) / (avg(increase(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$__range])) + avg(increase(pgwatch_db_stats_xact_commit{dbname='$dbname'}[$__range])))",
           "interval": "",
@@ -621,7 +719,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "Transactions per Second.",
       "fieldConfig": {
         "defaults": {
@@ -656,6 +757,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -663,12 +765,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "avg(rate(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$__range])) + avg(rate(pgwatch_db_stats_xact_commit{dbname='$dbname'}[$__range]))",
           "instant": false,
@@ -681,7 +789,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "Transactions per Second.",
       "fieldConfig": {
         "defaults": {
@@ -710,13 +821,13 @@
         "y": 8
       },
       "id": 12,
-      "interval": null,
       "maxDataPoints": 1,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -724,12 +835,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": false,
           "expr": "avg(rate(pgwatch_stat_statements_calls_calls{dbname='$dbname'}[$__range]))",
           "instant": false,
@@ -742,7 +859,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "Open transactions where no queries are being executed. Bad for the database health generally.",
       "fieldConfig": {
         "defaults": {
@@ -780,6 +900,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -787,12 +908,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_backends_idleintransaction{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -804,7 +931,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "On non-temporary  tables",
       "fieldConfig": {
         "defaults": {
@@ -839,6 +969,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -846,12 +977,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "60 * avg(rate(pgwatch_db_stats_tup_inserted{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -863,7 +1000,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "On non-temporary  tables",
       "fieldConfig": {
         "defaults": {
@@ -898,6 +1038,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -905,12 +1046,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "60 * avg(rate(pgwatch_db_stats_tup_updated{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -922,7 +1069,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "On non-temporary  tables",
       "fieldConfig": {
         "defaults": {
@@ -957,6 +1107,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -964,12 +1115,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "60 * avg(rate(pgwatch_db_stats_tup_deleted{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -981,7 +1138,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "Percentage of rows touched by queries that are actually returned to the client. Low numbers (< 10%) for an OLTP workload can hint at missing indexes",
       "fieldConfig": {
         "defaults": {
@@ -990,6 +1150,8 @@
           },
           "decimals": 1,
           "mappings": [],
+          "max": 100,
+          "min": 0,
           "noValue": "0",
           "thresholds": {
             "mode": "absolute",
@@ -1021,6 +1183,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1028,12 +1191,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "100 * avg(increase(pgwatch_db_stats_tup_fetched{dbname='$dbname'}[$__range])) / avg(increase(pgwatch_db_stats_tup_returned{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -1045,7 +1214,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1077,12 +1249,12 @@
         "y": 16
       },
       "id": 14,
-      "maxDataPoints": null,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1090,12 +1262,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(pgwatch_db_size_size_b{dbname='$dbname'})",
           "instant": true,
@@ -1108,7 +1286,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1146,6 +1327,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1153,12 +1335,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "avg(delta(pgwatch_db_size_size_b{dbname='$dbname'}[1d]))",
           "instant": false,
@@ -1171,7 +1359,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "Checkpoints should normally be performed by the background \"Checkpointer\" process. If seeing high numbers then adjusting server configuration is recommended.",
       "fieldConfig": {
         "defaults": {
@@ -1209,6 +1400,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1216,12 +1408,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(increase(pgwatch_bgwriter_checkpoints_req{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -1233,7 +1431,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "Transaction logs generation velocity.",
       "fieldConfig": {
         "defaults": {
@@ -1271,6 +1472,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1278,12 +1480,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(rate(pgwatch_wal_xlog_location_b{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -1295,7 +1503,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "For selected timeframe. Postgres writes temporary files to disk when sorting / grouping  big amounts of data that doesn't fit into \"work_mem\" / \"\"maintenance_work_mem\"",
       "fieldConfig": {
         "defaults": {
@@ -1333,6 +1544,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1340,12 +1552,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(increase(pgwatch_db_stats_temp_bytes{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -1357,7 +1575,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "For selected timeframe. Frequent sequential scans on bigger tables should usually be avoided.",
       "fieldConfig": {
         "defaults": {
@@ -1396,6 +1617,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1403,12 +1625,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "sum(max(increase(pgwatch_table_stats_seq_scan{dbname='$dbname',table_size_cardinality_mb=~\"3|4|5|6|7|8\"}[$__range])))",
           "interval": "",
@@ -1420,7 +1648,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "Long running AUTOVACUUM processes can hint at workload or configuration  problems",
       "fieldConfig": {
         "defaults": {
@@ -1460,6 +1691,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1467,12 +1699,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_backends_longest_autovacuum_seconds{dbname='$dbname'}[1d]))",
           "interval": "",
@@ -1484,7 +1722,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "Based on db_stats.backup_duration_s  / pg_backup_start_time() [9.3+] function. N/A if no backup in progress.",
       "fieldConfig": {
         "defaults": {
@@ -1517,12 +1758,12 @@
         "y": 20
       },
       "id": 25,
-      "maxDataPoints": null,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1530,12 +1771,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_db_stats_backup_duration_s{dbname='$dbname'}[1d]))",
           "interval": "",
@@ -1547,7 +1794,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "Max. age since last VACUUM FREEZE. Could hint at problems when going into 100s of millions",
       "fieldConfig": {
         "defaults": {
@@ -1587,6 +1837,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1594,12 +1845,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_table_stats_tx_freeze_age{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -1611,7 +1868,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "In TX. Holds back VACUUM. 1 million warning threshold",
       "fieldConfig": {
         "defaults": {
@@ -1645,12 +1905,12 @@
         "y": 24
       },
       "id": 23,
-      "maxDataPoints": null,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1658,12 +1918,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(max_over_time({__name__=~\"(pgwatch_backends_max_xmin_age_tx|replication_slots_xmin_age_tx)\",dbname='$dbname'}[$__range]))",
           "instant": true,
@@ -1676,7 +1942,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "\"Apply\" (data made visible to queries on replica)  lag in bytes",
       "fieldConfig": {
         "defaults": {
@@ -1715,6 +1984,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1722,12 +1992,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_replication_replay_lag_b{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -1739,7 +2015,10 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus"
+
+      },
       "description": "Inactive repl. slots accumulate WAL files until disk space runs out. Re-animate the replica or use  pg_drop_replication_slot() to remove the slot so that Postgres can delete the un-needed WALs.",
       "fieldConfig": {
         "defaults": {
@@ -1776,6 +2055,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1783,12 +2063,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "7.5.9",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus"
+    
+          },
           "exemplar": true,
           "expr": "max(pgwatch_replication_slots_non_active_int{dbname='$dbname'})",
           "instant": true,
@@ -1801,8 +2087,9 @@
       "type": "stat"
     }
   ],
-  "schemaVersion": 27,
-  "style": "dark",
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 40,
   "tags": [
     "pgwatch",
     "postgres"
@@ -1810,15 +2097,16 @@
   "templating": {
     "list": [
       {
-        "allValue": null,
-        "datasource": null,
+        "current": {
+          "text": "ryzen_postgres",
+          "value": "ryzen_postgres"
+        },
+        "datasource": {
+          "type": "prometheus"
+  
+        },
         "definition": "label_values(dbname)",
-        "description": null,
-        "error": null,
-        "hide": 0,
         "includeAll": false,
-        "label": null,
-        "multi": false,
         "name": "dbname",
         "options": [],
         "query": {
@@ -1827,13 +2115,8 @@
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 1,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
+        "type": "query"
       }
     ]
   },
@@ -1845,5 +2128,6 @@
   "timezone": "",
   "title": "Health-check",
   "uid": null,
-  "version": 1
+  "version": 1,
+  "weekStart": ""
 }

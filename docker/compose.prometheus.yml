@@ -8,5 +8,6 @@ services:
     restart: unless-stopped
     volumes:
       - "./bootstrap/prometheus.yml:/etc/prometheus/prometheus.yml"
-    profiles:
-      - prometheus
+    depends_on:
+      postgres:
+        condition: service_healthy
