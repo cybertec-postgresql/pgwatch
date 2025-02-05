@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"reflect"
 	"slices"
@@ -64,6 +65,20 @@ type (
 
 	Sources []Source
 )
+
+func (srcs Sources) Validate() (Sources, error) {
+	names := map[string]any{}
+	for _, src := range srcs {
+		if _, ok := names[src.Name]; ok {
+			return nil, fmt.Errorf("duplicate source with name '%s' found", src.Name)
+		}
+		names[src.Name] = nil
+		if src.Kind == "" {
+			src.Kind = SourcePostgres
+		}
+	}
+	return srcs, nil
+}
 
 func (s *Source) GetDatabaseName() string {
 	if с, err := pgx.ParseConfig(s.ConnStr); err == nil {
