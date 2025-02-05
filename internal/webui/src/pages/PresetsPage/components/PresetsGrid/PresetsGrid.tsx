@@ -4,6 +4,7 @@ import { Error } from "components/Error/Error";
 import { Loading } from "components/Loading/Loading";
 import { PresetFormDialog } from "containers/PresetFormDialog/PresetFormDialog";
 import { PresetFormProvider } from "contexts/PresetForm/PresetForm.provider";
+import { useGridColumnVisibility } from 'hooks/useGridColumnVisibility';
 import { usePageStyles } from "styles/page";
 import { usePresets } from "queries/Preset";
 import { usePresetsGridColumns } from "./PresetsGrid.consts";
@@ -14,6 +15,9 @@ export const PresetsGrid = () => {
   const { classes } = usePageStyles();
 
   const { data, isLoading, isError, error } = usePresets();
+
+  const columns = usePresetsGridColumns();
+  const { columnVisibility, onColumnVisibilityChange } = useGridColumnVisibility('PRESETS_GRID', columns);
 
   const rows: PresetGridRow[] | [] = useMemo(() => {
     if (data) {
@@ -27,8 +31,6 @@ export const PresetsGrid = () => {
     }
     return [];
   }, [data]);
-
-  const columns = usePresetsGridColumns();
 
   if (isLoading) {
     return (
@@ -53,6 +55,8 @@ export const PresetsGrid = () => {
           rowsPerPageOptions={[]}
           components={{ Toolbar: () => <PresetsGridToolbar /> }}
           disableColumnMenu
+          columnVisibilityModel={columnVisibility}
+          onColumnVisibilityModelChange={onColumnVisibilityChange}
         />
         <PresetFormDialog />
       </PresetFormProvider>
