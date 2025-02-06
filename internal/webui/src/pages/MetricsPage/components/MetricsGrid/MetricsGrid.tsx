@@ -4,6 +4,7 @@ import { Error } from "components/Error/Error";
 import { Loading } from "components/Loading/Loading";
 import { MetricFormDialog } from "containers/MetricFormDialog/MetricFormDialog";
 import { MetricFormProvider } from "contexts/MetricForm/MetricForm.provider";
+import { useGridColumnVisibility } from 'hooks/useGridColumnVisibility';
 import { usePageStyles } from "styles/page";
 import { useMetrics } from "queries/Metric";
 import { useMetricsGridColumns } from "./MetricsGrid.consts";
@@ -14,6 +15,9 @@ export const MetricsGrid = () => {
   const { data, isLoading, isError, error } = useMetrics();
 
   const { classes } = usePageStyles();
+
+  const columns = useMetricsGridColumns();
+  const { columnVisibility, onColumnVisibilityChange } = useGridColumnVisibility('METRICS_GRID', columns);
 
   const rows: MetricGridRow[] | [] = useMemo(() => {
     if (data) {
@@ -27,8 +31,6 @@ export const MetricsGrid = () => {
     }
     return [];
   }, [data]);
-
-  const columns = useMetricsGridColumns();
 
   if (isLoading) {
     return (
@@ -53,6 +55,8 @@ export const MetricsGrid = () => {
           rowsPerPageOptions={[]}
           components={{ Toolbar: () => <MetricsGridToolbar /> }}
           disableColumnMenu
+          columnVisibilityModel={columnVisibility}
+          onColumnVisibilityModelChange={onColumnVisibilityChange}
         />
         <MetricFormDialog />
       </MetricFormProvider>

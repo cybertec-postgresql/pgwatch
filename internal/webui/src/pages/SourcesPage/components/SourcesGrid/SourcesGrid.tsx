@@ -3,6 +3,7 @@ import { Error } from "components/Error/Error";
 import { Loading } from "components/Loading/Loading";
 import { SourceFormDialog } from "containers/SourceFormDialog/SourceFormDialog";
 import { SourceFormProvider } from "contexts/SourceForm/SourceForm.provider";
+import { useGridColumnVisibility } from 'hooks/useGridColumnVisibility';
 import { usePageStyles } from "styles/page";
 import { useSources } from "queries/Source";
 import { useSourcesGridColumns } from "./SourcesGrid.consts";
@@ -14,6 +15,7 @@ export const SourcesGrid = () => {
   const { data, isLoading, isError, error } = useSources();
 
   const columns = useSourcesGridColumns();
+  const { columnVisibility, onColumnVisibilityChange } = useGridColumnVisibility('SOURCES_GRID', columns);
 
   if (isLoading) {
     return (
@@ -38,6 +40,8 @@ export const SourcesGrid = () => {
           rowsPerPageOptions={[]}
           components={{ Toolbar: () => <SourcesGridToolbar /> }}
           disableColumnMenu
+          columnVisibilityModel={columnVisibility}
+          onColumnVisibilityModelChange={onColumnVisibilityChange}
         />
         <SourceFormDialog />
       </SourceFormProvider>
