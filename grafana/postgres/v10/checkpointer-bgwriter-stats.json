@@ -86,7 +86,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, '$agg_interval'),\n  sum(nullif(ct - ct_lag, 0)) as \"checkpoints_timed\",\n  sum(nullif(cr - cr_lag, 0)) as \"checkpoints_req\"\nFROM (\n  SELECT\n    time,\n    (data->'checkpoints_timed')::int8 as ct, lag((data->'checkpoints_timed')::int8) over w as ct_lag,\n    (data->'checkpoints_req')::int8 as cr, lag((data->'checkpoints_req')::int8) over w as cr_lag\n  FROM\n    bgwriter\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w as (order by time)\n) x\nWHERE ct >= ct_lag and cr >= cr_lag\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, '$agg_interval'),\n  sum(nullif(ct - ct_lag, 0)) as \"checkpoints_timed\",\n  sum(nullif(cr - cr_lag, 0)) as \"checkpoints_req\"\nFROM (\n  SELECT\n    time,\n    (data->'checkpoints_timed')::int8 as ct, lag((data->'checkpoints_timed')::int8) over w as ct_lag,\n    (data->'checkpoints_req')::int8 as cr, lag((data->'checkpoints_req')::int8) over w as cr_lag\n  FROM\n    bgwriter\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w as (order by time)\n  \n  UNION ALL\n  \n  SELECT\n    time,\n    (data->'num_timed')::int8 as ct, lag((data->'num_timed')::int8) over w as ct_lag,\n    (data->'num_requested')::int8 as cr, lag((data->'num_requested')::int8) over w as cr_lag\n  FROM\n    checkpointer\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w as (order by time)\n) x\nWHERE ct >= ct_lag and cr >= cr_lag\nGROUP BY 1\nORDER BY 1\n",
           "refId": "B",
           "resultFormat": "time_series",
           "select": [
@@ -232,7 +232,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, '$agg_interval'),\n  sum(wt-wt_lag) as \"checkpoint_write_time\",\n  sum(st-st_lag) as \"checkpoint_sync_time\"\nFROM (\n\n  SELECT\n    time,\n    (data->'checkpoint_write_time')::int8 as wt, lag((data->'checkpoint_write_time')::int8) over w as wt_lag,\n    (data->'checkpoint_sync_time')::int8 as st, lag((data->'checkpoint_sync_time')::int8) over w as st_lag\n  FROM\n    bgwriter\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w as (order by time)\n) x\nWHERE wt >= wt_lag or st >= st_lag\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, '$agg_interval'),\n  sum(wt-wt_lag) as \"checkpoint_write_time\",\n  sum(st-st_lag) as \"checkpoint_sync_time\"\nFROM (\n  SELECT\n    time,\n    (data->'write_time')::int8 as wt, lag((data->'write_time')::int8) over w as wt_lag,\n    (data->'sync_time')::int8 as st, lag((data->'sync_time')::int8) over w as st_lag\n  FROM\n    checkpointer\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w as (order by time)    \n  UNION ALL\n  SELECT\n    time,\n    (data->'checkpoint_write_time')::int8 as wt, lag((data->'checkpoint_write_time')::int8) over w as wt_lag,\n    (data->'checkpoint_sync_time')::int8 as st, lag((data->'checkpoint_sync_time')::int8) over w as st_lag\n  FROM\n    bgwriter\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w as (order by time)\n) x\nWHERE wt >= wt_lag or st >= st_lag\nGROUP BY 1\nORDER BY 1\n",
           "refId": "B",
           "resultFormat": "time_series",
           "select": [
