@@ -15,7 +15,6 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
-	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )
 
@@ -128,10 +127,11 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 
 			ver, err = GetMonitoredDatabaseSettings(mainContext, dbUnique, srcType, true)
 			if err != nil {
-				logger.Errorf("could not start metric gathering due to connection problem: %s", err)
+				logger.WithField("source", dbUnique).
+					Errorf("could not start metric gathering due to connection problem: %s", err)
 				continue
 			}
-			logger.WithField("source", monitoredDB.Name).Infof("Connect OK. Version: %s (in recovery: %v)", ver.VersionStr, ver.IsInRecovery)
+			logger.WithField("source", dbUnique).Infof("Connect OK. Version: %s (in recovery: %v)", ver.VersionStr, ver.IsInRecovery)
 			if ver.IsInRecovery && monitoredDB.OnlyIfMaster {
 				logger.Infof("not added to monitoring due to 'master only' property")
 				continue
@@ -483,7 +483,6 @@ func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 						lastUptimeS = postmasterUptimeS.(int64)
 					}
 				}
-
 				r.measurementCh <- metricStoreMessages
 			}
 		}
@@ -715,9 +714,9 @@ func FetchMetrics(ctx context.Context,
 		}
 
 		log.GetLogger(ctx).WithFields(map[string]any{"source": msg.DBUniqueName, "metric": msg.MetricName, "rows": len(data)}).Info("measurements fetched")
-		if regexIsPgbouncerMetrics.MatchString(msg.MetricName) { // clean unwanted pgbouncer pool stats here as not possible in SQL
-			data = FilterPgbouncerData(ctx, data, md.GetDatabaseName(), dbSettings)
-		}
+		// if regexIsPgbouncerMetrics.MatchString(msg.MetricName) { // clean unwanted pgbouncer pool stats here as not possible in SQL
+		// 	data = FilterPgbouncerData(ctx, data, md.GetDatabaseName(), dbSettings)
+		// }
 
 		ClearDBUnreachableStateIfAny(msg.DBUniqueName)
 
@@ -750,40 +749,4 @@ send_to_storageChannel:
 
 }
 
-var pgBouncerNumericCountersStartVersion = 01_12_00 // pgBouncer changed internal counters data type in v1.12
 
-func FilterPgbouncerData(ctx context.Context, data metrics.Measurements, databaseToKeep string, vme MonitoredDatabaseSettings) metrics.Measurements {
-	filteredData := make(metrics.Measurements, 0)
-
-	for _, dr := range data {
-		//log.Debugf("bouncer dr: %+v", dr)
-		if _, ok := dr["database"]; !ok {
-			log.GetLogger(ctx).Warning("Expected 'database' key not found from pgbouncer_stats, not storing data")
-			continue
-		}
-		if (len(databaseToKeep) > 0 && dr["database"] != databaseToKeep) || dr["database"] == "pgbouncer" { // always ignore the internal 'pgbouncer' DB
-			log.GetLogger(ctx).Debugf("Skipping bouncer stats for pool entry %v as not the specified DBName of %s", dr["database"], databaseToKeep)
-			continue // and all others also if a DB / pool name was specified in config
-		}
-
-		dr["tag_database"] = dr["database"] // support multiple databases / pools via tags if DbName left empty
-		delete(dr, "database")              // remove the original pool name
-
-		if vme.Version >= pgBouncerNumericCountersStartVersion { // v1.12 counters are of type numeric instead of int64
-			for k, v := range dr {
-				if k == "tag_database" {
-					continue
-				}
-				decimalCounter, err := decimal.NewFromString(string(v.([]uint8)))
-				if err != nil {
-					log.GetLogger(ctx).Errorf("Could not parse \"%+v\" to Decimal: %s", string(v.([]uint8)), err)
-					return filteredData
-				}
-				dr[k] = decimalCounter.IntPart() // technically could cause overflow...but highly unlikely for 2^63
-			}
-		}
-		filteredData = append(filteredData, dr)
-	}
-
-	return filteredData
-}

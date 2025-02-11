@@ -236,7 +236,6 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 		return
 	}
 	logger := log.GetLogger(pgw.ctx)
-	tsWarningPrinted := false
 	metricsToStorePerMetric := make(map[string][]MeasurementMessagePostgres)
 	rowsBatched := 0
 	totalRows := 0
@@ -280,10 +279,6 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 			}
 
 			if epochNs == 0 {
-				if !tsWarningPrinted && !regexIsPgbouncerMetrics.MatchString(msg.MetricName) {
-					logger.Warning("No timestamp_ns found, server time will be used. measurement:", msg.MetricName)
-					tsWarningPrinted = true
-				}
 				epochTime = time.Now()
 			} else {
 				epochTime = time.Unix(0, epochNs)
