@@ -322,7 +322,6 @@ metrics:
                 from
                   get_load_average();   -- needs the plpythonu proc from "metric_fetching_helpers" folder
         init_sql: |-
-            BEGIN;
             CREATE EXTENSION IF NOT EXISTS plpython3u;
             CREATE OR REPLACE FUNCTION get_load_average(OUT load_1min float, OUT load_5min float, OUT load_15min float) AS
             $$
@@ -332,7 +331,6 @@ metrics:
             $$ LANGUAGE plpython3u VOLATILE;
             GRANT EXECUTE ON FUNCTION get_load_average() TO pgwatch;
             COMMENT ON FUNCTION get_load_average() is 'created for pgwatch';
-            COMMIT;
         gauges:
             - '*'
         is_instance_level: true
@@ -389,6 +387,9 @@ metrics:
             - '*'
         metric_storage_name: db_size
     db_stats:
+        init_sql: |-
+            GRANT EXECUTE ON FUNCTION pg_stat_file(text) TO pgwatch;
+            GRANT EXECUTE ON FUNCTION pg_stat_file(text, boolean) TO pgwatch;
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -1308,6 +1309,7 @@ metrics:
             - '*'
         is_instance_level: true
     reco_add_index:
+        init_sql: CREATE EXTENSION IF NOT EXISTS pg_qualstats;
         sqls:
             11: |-
                 /* assumes the pg_qualstats extension and superuser or select grants on pg_qualstats_indexes_ddl view */
@@ -1329,6 +1331,7 @@ metrics:
                 - ext_name: pg_qualstats
                   ext_min_version: "2.0"
     reco_add_index_ext_qualstats_2.0:
+        init_sql: CREATE EXTENSION IF NOT EXISTS pg_qualstats; 
         sqls:
             11: |-
                 /* assumes the pg_qualstats extension and superuser or select grant on pg_qualstats_index_advisor() function */
@@ -1388,6 +1391,7 @@ metrics:
                     tgenabled = 'D'
         node_status: primary
     reco_drop_index:
+        init_sql: CREATE EXTENSION IF NOT EXISTS pg_qualstats;
         sqls:
             11: |
                 /* assumes the pg_qualstats extension */
@@ -1864,6 +1868,7 @@ metrics:
         gauges:
             - '*'
     stat_statements:
+        init_sql: CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
         sqls:
             11: |-
                 WITH q_data AS (
@@ -2435,6 +2440,7 @@ metrics:
                         temp_blks_written DESC
                     LIMIT 100) a) b;
     stat_statements_calls:
+        init_sql: CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
         sqls:
             11: |
                 select /* pgwatch_generated */
@@ -2456,6 +2462,7 @@ metrics:
                 where
                   dbid = (select oid from pg_database where datname = current_database())
     stat_statements_no_query_text:
+        init_sql: CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
         sqls:
             11: |-
                 with q_data as (
@@ -4116,42 +4123,6 @@ presets:
             settings: 7200
             sproc_stats: 180
             stat_activity: 30
-            stat_ssl: 120
-            stat_statements: 180
-            stat_statements_calls: 60
-            table_bloat_approx_summary_sql: 7200
-            table_io_stats: 600
-            table_stats: 300
-            wal: 60
-            wal_receiver: 120
-            wal_size: 120
-    full_influx:
-        description: almost all available metrics for a even deeper performance understanding
-        metrics:
-            archiver: 60
-            backends: 60
-            bgwriter: 60
-            checkpointer: 60
-            change_events: 300
-            cpu_load: 60
-            db_size: 300
-            db_stats: 60
-            index_stats: 900
-            kpi: 120
-            locks: 60
-            locks_mode: 60
-            logical_subscriptions: 120
-            psutil_cpu: 120
-            psutil_disk: 120
-            psutil_disk_io_total: 120
-            psutil_mem: 120
-            recommendations: 43200
-            replication: 120
-            replication_slots: 120
-            sequence_health: 3600
-            server_log_event_counts: 60
-            settings: 7200
-            sproc_stats: 180
             stat_ssl: 120
             stat_statements: 180
             stat_statements_calls: 60
