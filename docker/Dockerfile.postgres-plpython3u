@@ -2,7 +2,8 @@ FROM postgres:17
 
 # Install the necessary packages for plpython3u
 RUN apt-get update && apt-get install -y \
-    postgresql-plpython3-17 pg-activity
+    postgresql-plpython3-17 postgresql-17-pg-qualstats python3-psutil \
+    pg-activity
 
 # Clean up
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
