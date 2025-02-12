@@ -8,7 +8,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/jessevdk/go-flags v1.6.1
-	github.com/pashagolub/pgxmock/v4 v4.4.0
+	github.com/pashagolub/pgxmock/v4 v4.5.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sethvargo/go-retry v0.3.0
