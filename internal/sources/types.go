@@ -109,6 +109,16 @@ type (
 	MonitoredDatabases []*MonitoredDatabase
 )
 
+// ping will try to ping the server to ensure the connection is still alive
+func (md *MonitoredDatabase) ping(ctx context.Context) (err error) {
+	if md.Kind == SourcePgBouncer {
+		// pgbouncer is very picky about the queries it accepts
+		_, err = md.Conn.Exec(ctx, "SHOW VERSION")
+		return
+	}
+	return md.Conn.Ping(ctx)
+}
+
 // Ping will try to establish a brand new connection to the server and return any error
 func (md *MonitoredDatabase) Ping(ctx context.Context) error {
 	c, err := pgx.Connect(ctx, md.ConnStr)
@@ -116,44 +126,51 @@ func (md *MonitoredDatabase) Ping(ctx context.Context) error {
 		return err
 	}
 	defer func() { _ = c.Close(ctx) }()
-	return c.Ping(ctx)
+	return md.ping(ctx)
 }
 
 // Connect will establish a connection to the database if it's not already connected.
 // If the connection is already established, it pings the server to ensure it's still alive.
 func (md *MonitoredDatabase) Connect(ctx context.Context, opts CmdOpts) (err error) {
 	if md.Conn == nil {
-		if md.ConnConfig != nil {
-			md.ConnConfig.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
-			md.Conn, err = db.NewWithConfig(ctx, md.ConnConfig)
-		} else {
-			md.Conn, err = db.New(ctx, md.ConnStr)
+		if err = md.ParseConfig(); err != nil {
+			return err
 		}
+		if md.Kind == SourcePgBouncer {
+			md.ConnConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+		}
+		if opts.MaxParallelConnectionsPerDb > 0 {
+			md.ConnConfig.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
+		}
+		md.Conn, err = db.NewWithConfig(ctx, md.ConnConfig)
 		if err != nil {
 			return err
 		}
 	}
-	return md.Conn.Ping(ctx)
+	return md.ping(ctx)
+}
+
+// ParseConfig will parse the connection string and store the result in the connection config
+func (md *MonitoredDatabase) ParseConfig() (err error) {
+	if md.ConnConfig == nil {
+		md.ConnConfig, err = pgxpool.ParseConfig(md.ConnStr)
+		return
+	}
+	return
 }
 
 // GetDatabaseName returns the database name from the connection string
 func (md *MonitoredDatabase) GetDatabaseName() string {
-	var err error
-	if md.ConnConfig == nil {
-		if md.ConnConfig, err = pgxpool.ParseConfig(md.ConnStr); err != nil {
-			return ""
-		}
+	if err := md.ParseConfig(); err != nil {
+		return ""
 	}
 	return md.ConnConfig.ConnConfig.Database
 }
 
 // SetDatabaseName sets the database name in the connection config for resolved databases
 func (md *MonitoredDatabase) SetDatabaseName(name string) {
-	var err error
-	if md.ConnConfig == nil {
-		if md.ConnConfig, err = pgxpool.ParseConfig(md.ConnStr); err != nil {
-			return
-		}
+	if err := md.ParseConfig(); err != nil {
+		return
 	}
 	md.ConnStr = "" // unset the connection string to force conn config usage
 	md.ConnConfig.ConnConfig.Database = name

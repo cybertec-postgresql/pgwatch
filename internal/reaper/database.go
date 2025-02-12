@@ -69,17 +69,19 @@ func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, sql string, 
 		log.GetLogger(ctx).Errorf("SQL connection for dbUnique %s not found or nil", dbUnique) // Should always be initialized in the main loop DB discovery code ...
 		return nil, errors.New("SQL connection not found or nil")
 	}
-	if tx, err = conn.Begin(ctx); err != nil {
-		return nil, err
-	}
-	defer func() { _ = tx.Commit(ctx) }()
 	if md.IsPostgresSource() {
+		// we don't want transaction for non-postgres sources, e.g. pgbouncer
+		if tx, err = conn.Begin(ctx); err != nil {
+			return nil, err
+		}
+		defer func() { _ = tx.Commit(ctx) }()
 		_, err = tx.Exec(ctx, "SET LOCAL lock_timeout TO '100ms'")
 		if err != nil {
 			return nil, err
 		}
+		return DBExecRead(ctx, tx, sql, args...)
 	}
-	return DBExecRead(ctx, tx, sql, args...)
+	return DBExecRead(ctx, conn, sql, args...)
 }
 
 const (

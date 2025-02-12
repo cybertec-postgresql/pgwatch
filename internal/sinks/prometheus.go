@@ -205,9 +205,6 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Measu
 
 	epochNs, ok := (msg.Data[0][epochColumnName]).(int64)
 	if !ok {
-		if msg.MetricName != "pgbouncer_stats" {
-			logger.Warning("No timestamp_ns found, (gatherer) server time will be used. measurement:", msg.MetricName)
-		}
 		epochTime = time.Now()
 	} else {
 		epochTime = time.Unix(0, epochNs)
