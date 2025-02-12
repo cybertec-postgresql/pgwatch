@@ -2,7 +2,6 @@ package reaper
 
 import (
 	"context"
-	"regexp"
 	"strings"
 	"time"
 
@@ -16,7 +15,6 @@ const (
 	recoMetricName                    = "recommendations"
 	specialMetricChangeEvents         = "change_events"
 	specialMetricServerLogEventCounts = "server_log_event_counts"
-	specialMetricPgbouncer            = "^pgbouncer_(stats|pools)$"
 	specialMetricPgpoolStats          = "pgpool_stats"
 	specialMetricInstanceUp           = "instance_up"
 	specialMetricDbSize               = "db_size"     // can be transparently switched to db_size_approx on instances with very slow FS access (Azure Single Server)
@@ -25,7 +23,6 @@ const (
 )
 
 var specialMetrics = map[string]bool{recoMetricName: true, specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
-var regexIsPgbouncerMetrics = regexp.MustCompile(specialMetricPgbouncer)
 
 func GetAllRecoMetricsForVersion(vme MonitoredDatabaseSettings) (map[string]metrics.Metric, error) {
 	mvpMap := make(map[string]metrics.Metric)

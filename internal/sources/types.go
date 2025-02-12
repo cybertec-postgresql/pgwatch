@@ -139,7 +139,9 @@ func (md *MonitoredDatabase) Connect(ctx context.Context, opts CmdOpts) (err err
 		if md.Kind == SourcePgBouncer {
 			md.ConnConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 		}
-		md.ConnConfig.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
+		if opts.MaxParallelConnectionsPerDb > 0 {
+			md.ConnConfig.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
+		}
 		md.Conn, err = db.NewWithConfig(ctx, md.ConnConfig)
 		if err != nil {
 			return err
@@ -159,7 +161,9 @@ func (md *MonitoredDatabase) ParseConfig() (err error) {
 
 // GetDatabaseName returns the database name from the connection string
 func (md *MonitoredDatabase) GetDatabaseName() string {
-	_ = md.ParseConfig()
+	if err := md.ParseConfig(); err != nil {
+		return ""
+	}
 	return md.ConnConfig.ConnConfig.Database
 }
 

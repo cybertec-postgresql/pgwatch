@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -147,10 +146,7 @@ const (
 	tagPrefix       string = "tag_"
 )
 
-const specialMetricPgbouncer = "^pgbouncer_(stats|pools)$"
-
 var (
-	regexIsPgbouncerMetrics  = regexp.MustCompile(specialMetricPgbouncer)
 	forceRecreatePartitions  = false                                             // to signal override PG metrics storage cache
 	partitionMapMetric       = make(map[string]ExistingPartitionInfo)            // metric = min/max bounds
 	partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo) // metric[dbname = min/max bounds]
