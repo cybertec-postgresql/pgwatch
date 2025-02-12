@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.23.5";</script>
+<script>var goVersion = "go1.23.6";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -166,136 +166,153 @@
 <span id="L109" class="ln">   109  </span>	MonitoredDatabases []*MonitoredDatabase
 <span id="L110" class="ln">   110  </span>)
 <span id="L111" class="ln">   111  </span>
-<span id="L112" class="ln">   112  </span><span class="comment">// Ping will try to establish a brand new connection to the server and return any error</span>
-<span id="L113" class="ln">   113  </span>func (md *MonitoredDatabase) Ping(ctx context.Context) error {
-<span id="L114" class="ln">   114  </span>	c, err := pgx.Connect(ctx, md.ConnStr)
-<span id="L115" class="ln">   115  </span>	if err != nil {
-<span id="L116" class="ln">   116  </span>		return err
-<span id="L117" class="ln">   117  </span>	}
-<span id="L118" class="ln">   118  </span>	defer func() { _ = c.Close(ctx) }()
-<span id="L119" class="ln">   119  </span>	return c.Ping(ctx)
+<span id="L112" class="ln">   112  </span><span class="comment">// ping will try to ping the server to ensure the connection is still alive</span>
+<span id="L113" class="ln">   113  </span>func (md *MonitoredDatabase) ping(ctx context.Context) (err error) {
+<span id="L114" class="ln">   114  </span>	if md.Kind == SourcePgBouncer {
+<span id="L115" class="ln">   115  </span>		<span class="comment">// pgbouncer is very picky about the queries it accepts</span>
+<span id="L116" class="ln">   116  </span>		_, err = md.Conn.Exec(ctx, &#34;SHOW VERSION&#34;)
+<span id="L117" class="ln">   117  </span>		return
+<span id="L118" class="ln">   118  </span>	}
+<span id="L119" class="ln">   119  </span>	return md.Conn.Ping(ctx)
 <span id="L120" class="ln">   120  </span>}
 <span id="L121" class="ln">   121  </span>
-<span id="L122" class="ln">   122  </span><span class="comment">// Connect will establish a connection to the database if it&#39;s not already connected.</span>
-<span id="L123" class="ln">   123  </span><span class="comment">// If the connection is already established, it pings the server to ensure it&#39;s still alive.</span>
-<span id="L124" class="ln">   124  </span>func (md *MonitoredDatabase) Connect(ctx context.Context, opts CmdOpts) (err error) {
-<span id="L125" class="ln">   125  </span>	if md.Conn == nil {
-<span id="L126" class="ln">   126  </span>		if md.ConnConfig != nil {
-<span id="L127" class="ln">   127  </span>			md.ConnConfig.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
-<span id="L128" class="ln">   128  </span>			md.Conn, err = db.NewWithConfig(ctx, md.ConnConfig)
-<span id="L129" class="ln">   129  </span>		} else {
-<span id="L130" class="ln">   130  </span>			md.Conn, err = db.New(ctx, md.ConnStr)
-<span id="L131" class="ln">   131  </span>		}
-<span id="L132" class="ln">   132  </span>		if err != nil {
-<span id="L133" class="ln">   133  </span>			return err
-<span id="L134" class="ln">   134  </span>		}
-<span id="L135" class="ln">   135  </span>	}
-<span id="L136" class="ln">   136  </span>	return md.Conn.Ping(ctx)
-<span id="L137" class="ln">   137  </span>}
-<span id="L138" class="ln">   138  </span>
-<span id="L139" class="ln">   139  </span><span class="comment">// GetDatabaseName returns the database name from the connection string</span>
-<span id="L140" class="ln">   140  </span>func (md *MonitoredDatabase) GetDatabaseName() string {
-<span id="L141" class="ln">   141  </span>	var err error
-<span id="L142" class="ln">   142  </span>	if md.ConnConfig == nil {
-<span id="L143" class="ln">   143  </span>		if md.ConnConfig, err = pgxpool.ParseConfig(md.ConnStr); err != nil {
-<span id="L144" class="ln">   144  </span>			return &#34;&#34;
-<span id="L145" class="ln">   145  </span>		}
-<span id="L146" class="ln">   146  </span>	}
-<span id="L147" class="ln">   147  </span>	return md.ConnConfig.ConnConfig.Database
-<span id="L148" class="ln">   148  </span>}
-<span id="L149" class="ln">   149  </span>
-<span id="L150" class="ln">   150  </span><span class="comment">// SetDatabaseName sets the database name in the connection config for resolved databases</span>
-<span id="L151" class="ln">   151  </span>func (md *MonitoredDatabase) SetDatabaseName(name string) {
-<span id="L152" class="ln">   152  </span>	var err error
-<span id="L153" class="ln">   153  </span>	if md.ConnConfig == nil {
-<span id="L154" class="ln">   154  </span>		if md.ConnConfig, err = pgxpool.ParseConfig(md.ConnStr); err != nil {
-<span id="L155" class="ln">   155  </span>			return
-<span id="L156" class="ln">   156  </span>		}
-<span id="L157" class="ln">   157  </span>	}
-<span id="L158" class="ln">   158  </span>	md.ConnStr = &#34;&#34; <span class="comment">// unset the connection string to force conn config usage</span>
-<span id="L159" class="ln">   159  </span>	md.ConnConfig.ConnConfig.Database = name
+<span id="L122" class="ln">   122  </span><span class="comment">// Ping will try to establish a brand new connection to the server and return any error</span>
+<span id="L123" class="ln">   123  </span>func (md *MonitoredDatabase) Ping(ctx context.Context) error {
+<span id="L124" class="ln">   124  </span>	c, err := pgx.Connect(ctx, md.ConnStr)
+<span id="L125" class="ln">   125  </span>	if err != nil {
+<span id="L126" class="ln">   126  </span>		return err
+<span id="L127" class="ln">   127  </span>	}
+<span id="L128" class="ln">   128  </span>	defer func() { _ = c.Close(ctx) }()
+<span id="L129" class="ln">   129  </span>	return md.ping(ctx)
+<span id="L130" class="ln">   130  </span>}
+<span id="L131" class="ln">   131  </span>
+<span id="L132" class="ln">   132  </span><span class="comment">// Connect will establish a connection to the database if it&#39;s not already connected.</span>
+<span id="L133" class="ln">   133  </span><span class="comment">// If the connection is already established, it pings the server to ensure it&#39;s still alive.</span>
+<span id="L134" class="ln">   134  </span>func (md *MonitoredDatabase) Connect(ctx context.Context, opts CmdOpts) (err error) {
+<span id="L135" class="ln">   135  </span>	if md.Conn == nil {
+<span id="L136" class="ln">   136  </span>		if err = md.ParseConfig(); err != nil {
+<span id="L137" class="ln">   137  </span>			return err
+<span id="L138" class="ln">   138  </span>		}
+<span id="L139" class="ln">   139  </span>		if md.Kind == SourcePgBouncer {
+<span id="L140" class="ln">   140  </span>			md.ConnConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+<span id="L141" class="ln">   141  </span>		}
+<span id="L142" class="ln">   142  </span>		if opts.MaxParallelConnectionsPerDb &gt; 0 {
+<span id="L143" class="ln">   143  </span>			md.ConnConfig.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
+<span id="L144" class="ln">   144  </span>		}
+<span id="L145" class="ln">   145  </span>		md.Conn, err = db.NewWithConfig(ctx, md.ConnConfig)
+<span id="L146" class="ln">   146  </span>		if err != nil {
+<span id="L147" class="ln">   147  </span>			return err
+<span id="L148" class="ln">   148  </span>		}
+<span id="L149" class="ln">   149  </span>	}
+<span id="L150" class="ln">   150  </span>	return md.ping(ctx)
+<span id="L151" class="ln">   151  </span>}
+<span id="L152" class="ln">   152  </span>
+<span id="L153" class="ln">   153  </span><span class="comment">// ParseConfig will parse the connection string and store the result in the connection config</span>
+<span id="L154" class="ln">   154  </span>func (md *MonitoredDatabase) ParseConfig() (err error) {
+<span id="L155" class="ln">   155  </span>	if md.ConnConfig == nil {
+<span id="L156" class="ln">   156  </span>		md.ConnConfig, err = pgxpool.ParseConfig(md.ConnStr)
+<span id="L157" class="ln">   157  </span>		return
+<span id="L158" class="ln">   158  </span>	}
+<span id="L159" class="ln">   159  </span>	return
 <span id="L160" class="ln">   160  </span>}
 <span id="L161" class="ln">   161  </span>
-<span id="L162" class="ln">   162  </span>func (md *MonitoredDatabase) IsPostgresSource() bool {
-<span id="L163" class="ln">   163  </span>	return md.Kind != SourcePgBouncer &amp;&amp; md.Kind != SourcePgPool
-<span id="L164" class="ln">   164  </span>}
-<span id="L165" class="ln">   165  </span>
-<span id="L166" class="ln">   166  </span>func (mds MonitoredDatabases) GetMonitoredDatabase(DBUniqueName string) *MonitoredDatabase {
-<span id="L167" class="ln">   167  </span>	for _, md := range mds {
-<span id="L168" class="ln">   168  </span>		if md.Name == DBUniqueName {
-<span id="L169" class="ln">   169  </span>			return md
-<span id="L170" class="ln">   170  </span>		}
-<span id="L171" class="ln">   171  </span>	}
-<span id="L172" class="ln">   172  </span>	return nil
-<span id="L173" class="ln">   173  </span>}
-<span id="L174" class="ln">   174  </span>
-<span id="L175" class="ln">   175  </span><span class="comment">// SyncFromReader will update the monitored databases with the latest configuration from the reader.</span>
-<span id="L176" class="ln">   176  </span><span class="comment">// Any resolution errors will be returned, e.g. etcd unavailability.</span>
-<span id="L177" class="ln">   177  </span><span class="comment">// It&#39;s up to the caller to proceed with the databases available or stop the execution due to errors.</span>
-<span id="L178" class="ln">   178  </span>func (mds MonitoredDatabases) SyncFromReader(r Reader) (newmds MonitoredDatabases, err error) {
-<span id="L179" class="ln">   179  </span>	srcs, err := r.GetSources()
-<span id="L180" class="ln">   180  </span>	if err != nil {
-<span id="L181" class="ln">   181  </span>		return nil, err
-<span id="L182" class="ln">   182  </span>	}
-<span id="L183" class="ln">   183  </span>	newmds, err = srcs.ResolveDatabases()
-<span id="L184" class="ln">   184  </span>	for _, newMD := range newmds {
-<span id="L185" class="ln">   185  </span>		md := mds.GetMonitoredDatabase(newMD.Name)
-<span id="L186" class="ln">   186  </span>		if md == nil {
-<span id="L187" class="ln">   187  </span>			continue
-<span id="L188" class="ln">   188  </span>		}
-<span id="L189" class="ln">   189  </span>		if reflect.DeepEqual(md.Source, newMD.Source) {
-<span id="L190" class="ln">   190  </span>			<span class="comment">// keep the existing connection if the source is the same</span>
-<span id="L191" class="ln">   191  </span>			newMD.Conn = md.Conn
-<span id="L192" class="ln">   192  </span>			newMD.ConnConfig = md.ConnConfig
-<span id="L193" class="ln">   193  </span>			continue
-<span id="L194" class="ln">   194  </span>		}
-<span id="L195" class="ln">   195  </span>		if md.Conn != nil {
-<span id="L196" class="ln">   196  </span>			md.Conn.Close()
-<span id="L197" class="ln">   197  </span>		}
-<span id="L198" class="ln">   198  </span>	}
-<span id="L199" class="ln">   199  </span>	return newmds, err
-<span id="L200" class="ln">   200  </span>}
-<span id="L201" class="ln">   201  </span>
-<span id="L202" class="ln">   202  </span>type HostConfigAttrs struct {
-<span id="L203" class="ln">   203  </span>	DcsType                string   `yaml:&#34;dcs_type&#34;`
-<span id="L204" class="ln">   204  </span>	DcsEndpoints           []string `yaml:&#34;dcs_endpoints&#34;`
-<span id="L205" class="ln">   205  </span>	Scope                  string
-<span id="L206" class="ln">   206  </span>	Namespace              string
-<span id="L207" class="ln">   207  </span>	Username               string
-<span id="L208" class="ln">   208  </span>	Password               string
-<span id="L209" class="ln">   209  </span>	CAFile                 string                             `yaml:&#34;ca_file&#34;`
-<span id="L210" class="ln">   210  </span>	CertFile               string                             `yaml:&#34;cert_file&#34;`
-<span id="L211" class="ln">   211  </span>	KeyFile                string                             `yaml:&#34;key_file&#34;`
-<span id="L212" class="ln">   212  </span>	LogsGlobPath           string                             `yaml:&#34;logs_glob_path&#34;`   <span class="comment">// default $data_directory / $log_directory / *.csvlog</span>
-<span id="L213" class="ln">   213  </span>	LogsMatchRegex         string                             `yaml:&#34;logs_match_regex&#34;` <span class="comment">// default is for CSVLOG format. needs to capture following named groups: log_time, user_name, database_name and error_severity</span>
-<span id="L214" class="ln">   214  </span>	PerMetricDisabledTimes []HostConfigPerMetricDisabledTimes `yaml:&#34;per_metric_disabled_intervals&#34;`
-<span id="L215" class="ln">   215  </span>}
-<span id="L216" class="ln">   216  </span>
-<span id="L217" class="ln">   217  </span>type HostConfigPerMetricDisabledTimes struct { <span class="comment">// metric gathering override per host / metric / time</span>
-<span id="L218" class="ln">   218  </span>	Metrics       []string `yaml:&#34;metrics&#34;`
-<span id="L219" class="ln">   219  </span>	DisabledTimes []string `yaml:&#34;disabled_times&#34;`
-<span id="L220" class="ln">   220  </span>	DisabledDays  string   `yaml:&#34;disabled_days&#34;`
-<span id="L221" class="ln">   221  </span>}
-<span id="L222" class="ln">   222  </span>
-<span id="L223" class="ln">   223  </span>type Reader interface {
-<span id="L224" class="ln">   224  </span>	GetSources() (Sources, error)
-<span id="L225" class="ln">   225  </span>}
-<span id="L226" class="ln">   226  </span>
-<span id="L227" class="ln">   227  </span>type Writer interface {
-<span id="L228" class="ln">   228  </span>	WriteSources(Sources) error
-<span id="L229" class="ln">   229  </span>	DeleteSource(string) error
-<span id="L230" class="ln">   230  </span>	UpdateSource(md Source) error
-<span id="L231" class="ln">   231  </span>}
-<span id="L232" class="ln">   232  </span>
-<span id="L233" class="ln">   233  </span>type ReaderWriter interface {
-<span id="L234" class="ln">   234  </span>	Reader
-<span id="L235" class="ln">   235  </span>	Writer
-<span id="L236" class="ln">   236  </span>}
-<span id="L237" class="ln">   237  </span>
+<span id="L162" class="ln">   162  </span><span class="comment">// GetDatabaseName returns the database name from the connection string</span>
+<span id="L163" class="ln">   163  </span>func (md *MonitoredDatabase) GetDatabaseName() string {
+<span id="L164" class="ln">   164  </span>	if err := md.ParseConfig(); err != nil {
+<span id="L165" class="ln">   165  </span>		return &#34;&#34;
+<span id="L166" class="ln">   166  </span>	}
+<span id="L167" class="ln">   167  </span>	return md.ConnConfig.ConnConfig.Database
+<span id="L168" class="ln">   168  </span>}
+<span id="L169" class="ln">   169  </span>
+<span id="L170" class="ln">   170  </span><span class="comment">// SetDatabaseName sets the database name in the connection config for resolved databases</span>
+<span id="L171" class="ln">   171  </span>func (md *MonitoredDatabase) SetDatabaseName(name string) {
+<span id="L172" class="ln">   172  </span>	if err := md.ParseConfig(); err != nil {
+<span id="L173" class="ln">   173  </span>		return
+<span id="L174" class="ln">   174  </span>	}
+<span id="L175" class="ln">   175  </span>	md.ConnStr = &#34;&#34; <span class="comment">// unset the connection string to force conn config usage</span>
+<span id="L176" class="ln">   176  </span>	md.ConnConfig.ConnConfig.Database = name
+<span id="L177" class="ln">   177  </span>}
+<span id="L178" class="ln">   178  </span>
+<span id="L179" class="ln">   179  </span>func (md *MonitoredDatabase) IsPostgresSource() bool {
+<span id="L180" class="ln">   180  </span>	return md.Kind != SourcePgBouncer &amp;&amp; md.Kind != SourcePgPool
+<span id="L181" class="ln">   181  </span>}
+<span id="L182" class="ln">   182  </span>
+<span id="L183" class="ln">   183  </span>func (mds MonitoredDatabases) GetMonitoredDatabase(DBUniqueName string) *MonitoredDatabase {
+<span id="L184" class="ln">   184  </span>	for _, md := range mds {
+<span id="L185" class="ln">   185  </span>		if md.Name == DBUniqueName {
+<span id="L186" class="ln">   186  </span>			return md
+<span id="L187" class="ln">   187  </span>		}
+<span id="L188" class="ln">   188  </span>	}
+<span id="L189" class="ln">   189  </span>	return nil
+<span id="L190" class="ln">   190  </span>}
+<span id="L191" class="ln">   191  </span>
+<span id="L192" class="ln">   192  </span><span class="comment">// SyncFromReader will update the monitored databases with the latest configuration from the reader.</span>
+<span id="L193" class="ln">   193  </span><span class="comment">// Any resolution errors will be returned, e.g. etcd unavailability.</span>
+<span id="L194" class="ln">   194  </span><span class="comment">// It&#39;s up to the caller to proceed with the databases available or stop the execution due to errors.</span>
+<span id="L195" class="ln">   195  </span>func (mds MonitoredDatabases) SyncFromReader(r Reader) (newmds MonitoredDatabases, err error) {
+<span id="L196" class="ln">   196  </span>	srcs, err := r.GetSources()
+<span id="L197" class="ln">   197  </span>	if err != nil {
+<span id="L198" class="ln">   198  </span>		return nil, err
+<span id="L199" class="ln">   199  </span>	}
+<span id="L200" class="ln">   200  </span>	newmds, err = srcs.ResolveDatabases()
+<span id="L201" class="ln">   201  </span>	for _, newMD := range newmds {
+<span id="L202" class="ln">   202  </span>		md := mds.GetMonitoredDatabase(newMD.Name)
+<span id="L203" class="ln">   203  </span>		if md == nil {
+<span id="L204" class="ln">   204  </span>			continue
+<span id="L205" class="ln">   205  </span>		}
+<span id="L206" class="ln">   206  </span>		if reflect.DeepEqual(md.Source, newMD.Source) {
+<span id="L207" class="ln">   207  </span>			<span class="comment">// keep the existing connection if the source is the same</span>
+<span id="L208" class="ln">   208  </span>			newMD.Conn = md.Conn
+<span id="L209" class="ln">   209  </span>			newMD.ConnConfig = md.ConnConfig
+<span id="L210" class="ln">   210  </span>			continue
+<span id="L211" class="ln">   211  </span>		}
+<span id="L212" class="ln">   212  </span>		if md.Conn != nil {
+<span id="L213" class="ln">   213  </span>			md.Conn.Close()
+<span id="L214" class="ln">   214  </span>		}
+<span id="L215" class="ln">   215  </span>	}
+<span id="L216" class="ln">   216  </span>	return newmds, err
+<span id="L217" class="ln">   217  </span>}
+<span id="L218" class="ln">   218  </span>
+<span id="L219" class="ln">   219  </span>type HostConfigAttrs struct {
+<span id="L220" class="ln">   220  </span>	DcsType                string   `yaml:&#34;dcs_type&#34;`
+<span id="L221" class="ln">   221  </span>	DcsEndpoints           []string `yaml:&#34;dcs_endpoints&#34;`
+<span id="L222" class="ln">   222  </span>	Scope                  string
+<span id="L223" class="ln">   223  </span>	Namespace              string
+<span id="L224" class="ln">   224  </span>	Username               string
+<span id="L225" class="ln">   225  </span>	Password               string
+<span id="L226" class="ln">   226  </span>	CAFile                 string                             `yaml:&#34;ca_file&#34;`
+<span id="L227" class="ln">   227  </span>	CertFile               string                             `yaml:&#34;cert_file&#34;`
+<span id="L228" class="ln">   228  </span>	KeyFile                string                             `yaml:&#34;key_file&#34;`
+<span id="L229" class="ln">   229  </span>	LogsGlobPath           string                             `yaml:&#34;logs_glob_path&#34;`   <span class="comment">// default $data_directory / $log_directory / *.csvlog</span>
+<span id="L230" class="ln">   230  </span>	LogsMatchRegex         string                             `yaml:&#34;logs_match_regex&#34;` <span class="comment">// default is for CSVLOG format. needs to capture following named groups: log_time, user_name, database_name and error_severity</span>
+<span id="L231" class="ln">   231  </span>	PerMetricDisabledTimes []HostConfigPerMetricDisabledTimes `yaml:&#34;per_metric_disabled_intervals&#34;`
+<span id="L232" class="ln">   232  </span>}
+<span id="L233" class="ln">   233  </span>
+<span id="L234" class="ln">   234  </span>type HostConfigPerMetricDisabledTimes struct { <span class="comment">// metric gathering override per host / metric / time</span>
+<span id="L235" class="ln">   235  </span>	Metrics       []string `yaml:&#34;metrics&#34;`
+<span id="L236" class="ln">   236  </span>	DisabledTimes []string `yaml:&#34;disabled_times&#34;`
+<span id="L237" class="ln">   237  </span>	DisabledDays  string   `yaml:&#34;disabled_days&#34;`
+<span id="L238" class="ln">   238  </span>}
+<span id="L239" class="ln">   239  </span>
+<span id="L240" class="ln">   240  </span>type Reader interface {
+<span id="L241" class="ln">   241  </span>	GetSources() (Sources, error)
+<span id="L242" class="ln">   242  </span>}
+<span id="L243" class="ln">   243  </span>
+<span id="L244" class="ln">   244  </span>type Writer interface {
+<span id="L245" class="ln">   245  </span>	WriteSources(Sources) error
+<span id="L246" class="ln">   246  </span>	DeleteSource(string) error
+<span id="L247" class="ln">   247  </span>	UpdateSource(md Source) error
+<span id="L248" class="ln">   248  </span>}
+<span id="L249" class="ln">   249  </span>
+<span id="L250" class="ln">   250  </span>type ReaderWriter interface {
+<span id="L251" class="ln">   251  </span>	Reader
+<span id="L252" class="ln">   252  </span>	Writer
+<span id="L253" class="ln">   253  </span>}
+<span id="L254" class="ln">   254  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.23.5.<br/>
+Build version go1.23.6.<br/>
 </div>
 
 </div><!-- .container -->

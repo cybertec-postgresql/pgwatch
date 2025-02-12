@@ -15,7 +15,7 @@
 
 
 
-<script>var goVersion = "go1.23.5";</script>
+<script>var goVersion = "go1.23.6";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer></script>
 
 </head>
@@ -342,9 +342,6 @@
 
 				<pre>const <span id="promScrapingStalenessHardDropLimit">promScrapingStalenessHardDropLimit</span> = <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Minute">Minute</a> * <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>(10)</pre>
 			
-				
-				<pre>const <span id="specialMetricPgbouncer">specialMetricPgbouncer</span> = &#34;^pgbouncer_(stats|pools)$&#34;</pre>
-			
 		
 		
 			<h2 id="pkg-variables">Variables</h2>
@@ -358,7 +355,6 @@
 			
 				
 				<pre>var (
-    <span id="regexIsPgbouncerMetrics">regexIsPgbouncerMetrics</span>  = <a href="https://pkg.go.dev/regexp/">regexp</a>.<a href="https://pkg.go.dev/regexp/#MustCompile">MustCompile</a>(specialMetricPgbouncer)
     <span id="forceRecreatePartitions">forceRecreatePartitions</span>  = <a href="https://pkg.go.dev/builtin/#false">false</a>                                             <span class="comment">// to signal override PG metrics storage cache</span>
     <span id="partitionMapMetric">partitionMapMetric</span>       = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#ExistingPartitionInfo">ExistingPartitionInfo</a>)            <span class="comment">// metric = min/max bounds</span>
     <span id="partitionMapMetricDbname">partitionMapMetricDbname</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#ExistingPartitionInfo">ExistingPartitionInfo</a>) <span class="comment">// metric[dbname = min/max bounds]</span>
@@ -437,7 +433,7 @@
 		
 			
 			
-			<h2 id="DbStorageSchemaType">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L128">DbStorageSchemaType</a>
+			<h2 id="DbStorageSchemaType">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L127">DbStorageSchemaType</a>
 				<a class="permalink" href="#DbStorageSchemaType">&#xb6;</a>
 				
 				
@@ -465,7 +461,7 @@
 		
 			
 			
-			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L115">ExistingPartitionInfo</a>
+			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L114">ExistingPartitionInfo</a>
 				<a class="permalink" href="#ExistingPartitionInfo">&#xb6;</a>
 				
 				
@@ -568,7 +564,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 		
 			
 			
-			<h2 id="MeasurementMessagePostgres">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L120">MeasurementMessagePostgres</a>
+			<h2 id="MeasurementMessagePostgres">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L119">MeasurementMessagePostgres</a>
 				<a class="permalink" href="#MeasurementMessagePostgres">&#xb6;</a>
 				
 				
@@ -672,7 +668,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 		
 			
 			
-			<h2 id="PostgresWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L105">PostgresWriter</a>
+			<h2 id="PostgresWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L104">PostgresWriter</a>
 				<a class="permalink" href="#PostgresWriter">&#xb6;</a>
 				
 				
@@ -703,7 +699,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 
 			
 				
-				<h3 id="NewPostgresWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L25">NewPostgresWriter</a>
+				<h3 id="NewPostgresWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L24">NewPostgresWriter</a>
 					<a class="permalink" href="#NewPostgresWriter">&#xb6;</a>
 					
 					
@@ -714,7 +710,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="NewWriterFromPostgresConn">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L33">NewWriterFromPostgresConn</a>
+				<h3 id="NewWriterFromPostgresConn">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L32">NewWriterFromPostgresConn</a>
 					<a class="permalink" href="#NewWriterFromPostgresConn">&#xb6;</a>
 					
 					
@@ -727,7 +723,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 
 			
 				
-				<h3 id="PostgresWriter.AddDBUniqueMetricToListingTable">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L656">AddDBUniqueMetricToListingTable</a>
+				<h3 id="PostgresWriter.AddDBUniqueMetricToListingTable">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L647">AddDBUniqueMetricToListingTable</a>
 					<a class="permalink" href="#PostgresWriter.AddDBUniqueMetricToListingTable">&#xb6;</a>
 					
 					
@@ -739,7 +735,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.DropOldTimePartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L641">DropOldTimePartitions</a>
+				<h3 id="PostgresWriter.DropOldTimePartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L632">DropOldTimePartitions</a>
 					<a class="permalink" href="#PostgresWriter.DropOldTimePartitions">&#xb6;</a>
 					
 					
@@ -751,7 +747,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.EnsureBuiltinMetricDummies">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L171">EnsureBuiltinMetricDummies</a>
+				<h3 id="PostgresWriter.EnsureBuiltinMetricDummies">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L167">EnsureBuiltinMetricDummies</a>
 					<a class="permalink" href="#PostgresWriter.EnsureBuiltinMetricDummies">&#xb6;</a>
 					
 					
@@ -764,7 +760,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.EnsureMetricDbnameTime">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L457">EnsureMetricDbnameTime</a>
+				<h3 id="PostgresWriter.EnsureMetricDbnameTime">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L448">EnsureMetricDbnameTime</a>
 					<a class="permalink" href="#PostgresWriter.EnsureMetricDbnameTime">&#xb6;</a>
 					
 					
@@ -776,7 +772,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.EnsureMetricDummy">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L179">EnsureMetricDummy</a>
+				<h3 id="PostgresWriter.EnsureMetricDummy">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L175">EnsureMetricDummy</a>
 					<a class="permalink" href="#PostgresWriter.EnsureMetricDummy">&#xb6;</a>
 					
 					
@@ -789,7 +785,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.EnsureMetricTime">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L406">EnsureMetricTime</a>
+				<h3 id="PostgresWriter.EnsureMetricTime">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L397">EnsureMetricTime</a>
 					<a class="permalink" href="#PostgresWriter.EnsureMetricTime">&#xb6;</a>
 					
 					
@@ -802,7 +798,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.EnsureMetricTimescale">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L439">EnsureMetricTimescale</a>
+				<h3 id="PostgresWriter.EnsureMetricTimescale">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L430">EnsureMetricTimescale</a>
 					<a class="permalink" href="#PostgresWriter.EnsureMetricTimescale">&#xb6;</a>
 					
 					
@@ -814,7 +810,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.GetOldTimePartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L647">GetOldTimePartitions</a>
+				<h3 id="PostgresWriter.GetOldTimePartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L638">GetOldTimePartitions</a>
 					<a class="permalink" href="#PostgresWriter.GetOldTimePartitions">&#xb6;</a>
 					
 					
@@ -826,7 +822,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.ReadMetricSchemaType">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L135">ReadMetricSchemaType</a>
+				<h3 id="PostgresWriter.ReadMetricSchemaType">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L134">ReadMetricSchemaType</a>
 					<a class="permalink" href="#PostgresWriter.ReadMetricSchemaType">&#xb6;</a>
 					
 					
@@ -838,7 +834,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.SyncMetric">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L160">SyncMetric</a>
+				<h3 id="PostgresWriter.SyncMetric">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L156">SyncMetric</a>
 					<a class="permalink" href="#PostgresWriter.SyncMetric">&#xb6;</a>
 					
 					
@@ -851,7 +847,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.Write">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L185">Write</a>
+				<h3 id="PostgresWriter.Write">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L181">Write</a>
 					<a class="permalink" href="#PostgresWriter.Write">&#xb6;</a>
 					
 					
@@ -864,7 +860,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.deleteOldPartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L495">deleteOldPartitions</a>
+				<h3 id="PostgresWriter.deleteOldPartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L486">deleteOldPartitions</a>
 					<a class="permalink" href="#PostgresWriter.deleteOldPartitions">&#xb6;</a>
 					
 					
@@ -877,7 +873,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.flush">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L234">flush</a>
+				<h3 id="PostgresWriter.flush">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L230">flush</a>
 					<a class="permalink" href="#PostgresWriter.flush">&#xb6;</a>
 					
 					
@@ -890,7 +886,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.maintainUniqueSources">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L550">maintainUniqueSources</a>
+				<h3 id="PostgresWriter.maintainUniqueSources">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L541">maintainUniqueSources</a>
 					<a class="permalink" href="#PostgresWriter.maintainUniqueSources">&#xb6;</a>
 					
 					
@@ -904,7 +900,7 @@ This is used to avoid listing the same source multiple times in Grafana dropdown
 				
 			
 				
-				<h3 id="PostgresWriter.poll">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L204">poll</a>
+				<h3 id="PostgresWriter.poll">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L200">poll</a>
 					<a class="permalink" href="#PostgresWriter.poll">&#xb6;</a>
 					
 					
@@ -1209,7 +1205,7 @@ or an analytics system.
 
 
 <div id="footer">
-Build version go1.23.5.<br>
+Build version go1.23.6.<br>
 </div>
 
 </div><!-- .container -->
