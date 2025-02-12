@@ -4,6 +4,4 @@ CREATE ROLE pgwatch WITH
 
 CREATE DATABASE pgwatch OWNER pgwatch;
 
-CREATE DATABASE pgwatch_grafana OWNER pgwatch;
-
 CREATE DATABASE pgwatch_metrics OWNER pgwatch;
