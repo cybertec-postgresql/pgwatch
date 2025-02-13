@@ -45,7 +45,8 @@ RUN apt-get update \
 # Install Grafana
 RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
     && curl "https://dl.grafana.com/oss/release/grafana_10.4.7_${arch}.deb" --output grafana.deb \
-    && dpkg -i grafana.deb && rm grafana.deb
+    && dpkg -i grafana.deb && rm grafana.deb \
+    && grafana-cli plugins install marcusolsson-treemap-panel
 COPY docker/demo/grafana.ini /etc/grafana/grafana.ini
 COPY grafana/postgres_datasource.yml /etc/grafana/provisioning/datasources/pg_ds.yml
 COPY grafana/dashboards.yml /etc/grafana/provisioning/dashboards/pg_db.yml
