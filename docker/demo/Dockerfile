@@ -21,7 +21,7 @@ RUN cd /pgwatch && CGO_ENABLED=0 go build -ldflags "-X 'main.commit=${GIT_HASH}'
 # ----------------------------------------------------------------
 # 3. Build the final image
 # ----------------------------------------------------------------
-FROM postgres:16-bullseye AS releaser
+FROM postgres:17-bullseye AS releaser
 
 # Copy over the compiled gatherer
 COPY --from=builder /pgwatch/pgwatch /pgwatch/
@@ -37,19 +37,20 @@ RUN apt-get update \
     && curl -L "https://www.postgresql.org/media/keys/ACCC4CF8.asc" | apt-key add - \
     && apt-get update \
     && apt-get -qy install \
-        timescaledb-2-postgresql-16 postgresql-plpython3-16 postgresql-16-pg-qualstats \
+        timescaledb-2-postgresql-17 postgresql-plpython3-17 postgresql-17-pg-qualstats \
         supervisor python3-psutil libfontconfig1 \
     && apt-get purge -y --auto-remove \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Grafana
 RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
-    && curl "https://dl.grafana.com/oss/release/grafana_10.3.3_${arch}.deb" --output grafana.deb \
-    && dpkg -i grafana.deb && rm grafana.deb
+    && curl "https://dl.grafana.com/oss/release/grafana_10.4.7_${arch}.deb" --output grafana.deb \
+    && dpkg -i grafana.deb && rm grafana.deb \
+    && grafana-cli plugins install marcusolsson-treemap-panel
 COPY docker/demo/grafana.ini /etc/grafana/grafana.ini
 COPY grafana/postgres_datasource.yml /etc/grafana/provisioning/datasources/pg_ds.yml
-COPY grafana/postgres_dashboard.yml /etc/grafana/provisioning/dashboards/pg_db.yml
-ADD grafana/postgres/v10/ /var/lib/grafana/dashboards/
+COPY grafana/dashboards.yml /etc/grafana/provisioning/dashboards/pg_db.yml
+COPY grafana/postgres/v10/ /var/lib/grafana/dashboards/
 
 
 # Set up supervisord [https://docs.docker.com/engine/admin/using_supervisord/]
