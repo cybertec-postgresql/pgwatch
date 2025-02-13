@@ -1309,29 +1309,6 @@ metrics:
             - '*'
         is_instance_level: true
     reco_add_index:
-        init_sql: CREATE EXTENSION IF NOT EXISTS pg_qualstats;
-        sqls:
-            11: |-
-                /* assumes the pg_qualstats extension and superuser or select grants on pg_qualstats_indexes_ddl view */
-                select /* pgwatch_generated */
-                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-                  'create_index'::text as tag_reco_topic,
-                  quote_ident(nspname::text)||'.'||quote_ident(relid::text) as tag_object_name,
-                  ddl as recommendation,
-                  ('qual execution count: '|| execution_count)::text as extra_info
-                from
-                  pg_qualstats_indexes_ddl
-                order by
-                  execution_count desc
-                limit 25
-        node_status: primary
-        extension_version_based_overrides:
-            - target_metric: reco_add_index_ext_qualstats_2.0
-              expected_extension_versions:
-                - ext_name: pg_qualstats
-                  ext_min_version: "2.0"
-    reco_add_index_ext_qualstats_2.0:
-        init_sql: CREATE EXTENSION IF NOT EXISTS pg_qualstats; 
         sqls:
             11: |-
                 /* assumes the pg_qualstats extension and superuser or select grant on pg_qualstats_index_advisor() function */
@@ -1391,7 +1368,6 @@ metrics:
                     tgenabled = 'D'
         node_status: primary
     reco_drop_index:
-        init_sql: CREATE EXTENSION IF NOT EXISTS pg_qualstats;
         sqls:
             11: |
                 /* assumes the pg_qualstats extension */
@@ -1547,6 +1523,7 @@ metrics:
                   q_su.count >= 10
         node_status: primary
     recommendations:
+        init_sql: CREATE EXTENSION IF NOT EXISTS pg_qualstats;
         sqls:
             11: /* dummy placeholder - special handling in code to collect other metrics named reco_* */
     replication:
