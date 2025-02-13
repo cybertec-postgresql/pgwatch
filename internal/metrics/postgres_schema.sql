@@ -33,7 +33,7 @@ BEGIN
 	ELSIF TG_OP = 'UPDATE' THEN
 		IF OLD.name <> NEW.name THEN
 			UPDATE pgwatch.preset
-			SET pc_config = jsonb_set(metrics - OLD.name::text, ARRAY[NEW.name::text], metrics -> OLD.name)
+			SET metrics = jsonb_set(metrics - OLD.name::text, ARRAY[NEW.name::text], metrics -> OLD.name)
 			WHERE metrics ? OLD.name::text;
 		END IF;
 	END IF;
