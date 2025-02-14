@@ -1,7 +1,7 @@
 services:
   grafana:
     # to use latest Grafana v11, update the dashboards provisioning folder below
-    image: grafana/grafana:10.4.7
+    image: grafana/grafana:10.4.15
     user: "0:0"
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: true
