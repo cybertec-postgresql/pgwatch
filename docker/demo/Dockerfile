@@ -27,15 +27,14 @@ FROM postgres:17-bullseye AS releaser
 COPY --from=builder /pgwatch/pgwatch /pgwatch/
 COPY internal/metrics/metrics.yaml /pgwatch/metrics/metrics.yaml
 
-# Install dependencies
+# Install TimescaleDB and extensions
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
-    && apt-get -qy install curl gnupg postgresql-common apt-transport-https lsb-release musl \
+    && apt-get -qy install curl gnupg postgresql-common apt-transport-https lsb-release \
     && sh /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
-    && echo "deb https://packagecloud.io/timescale/timescaledb/debian/ $(lsb_release -c -s) main" | tee /etc/apt/sources.list.d/timescaledb.list \
-    && curl -L "https://packagecloud.io/timescale/timescaledb/gpgkey" | apt-key add - \
     && curl -L "https://www.postgresql.org/media/keys/ACCC4CF8.asc" | apt-key add - \
-    && apt-get update \
+    && curl -s https://packagecloud.io/install/repositories/timescale/timescaledb/script.deb.sh | bash \
+    
     && apt-get -qy install \
         timescaledb-2-postgresql-17 postgresql-plpython3-17 postgresql-17-pg-qualstats \
         supervisor python3-psutil libfontconfig1 \
@@ -43,15 +42,15 @@ RUN apt-get update \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Grafana
-RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
-    && curl "https://dl.grafana.com/oss/release/grafana_10.4.7_${arch}.deb" --output grafana.deb \
-    && dpkg -i grafana.deb && rm grafana.deb \
+RUN curl -L https://apt.grafana.com/gpg.key | apt-key add - \
+    && echo "deb https://apt.grafana.com stable main" | tee /etc/apt/sources.list.d/grafana.list \
+    && apt-get update \
+    && apt-get -qy install grafana=10.4.15 \
     && grafana-cli plugins install marcusolsson-treemap-panel
 COPY docker/demo/grafana.ini /etc/grafana/grafana.ini
 COPY grafana/postgres_datasource.yml /etc/grafana/provisioning/datasources/pg_ds.yml
 COPY grafana/dashboards.yml /etc/grafana/provisioning/dashboards/pg_db.yml
 COPY grafana/postgres/v10/ /var/lib/grafana/dashboards/
-
 
 # Set up supervisord [https://docs.docker.com/engine/admin/using_supervisord/]
 COPY docker/demo/supervisord.conf /etc/supervisor/
