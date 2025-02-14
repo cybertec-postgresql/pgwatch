@@ -7,7 +7,7 @@
 
 # pgwatch: PostgreSQL monitoring solution
 
-This is the next generation of [pgwatch2](https://github.com/cybertec-postgresql/pgwatch2/).
+![pgwatch typical deployment architecture diagram](docs/gallery/pgwatch_architecture_no_config.png)
 
 ## Quick Start
 
