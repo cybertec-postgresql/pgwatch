@@ -181,7 +181,7 @@ func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]an
 		if err != nil {
 			return nil, err
 		}
-		if err != nil || ldDevice != ddDevice { // no point to report same data in case of single folder configuration
+		if ldDevice != ddDevice { // no point to report same data in case of single folder configuration
 			ld := make(map[string]any)
 			ldUsage, err := disk.Usage(logDirPath)
 			if err != nil {
@@ -212,7 +212,7 @@ func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]an
 			return nil, err
 		}
 
-		if err != nil || walDevice != ddDevice || walDevice != ldDevice { // no point to report same data in case of single folder configuration
+		if walDevice != ddDevice || walDevice != ldDevice { // no point to report same data in case of single folder configuration
 			walUsage, err := disk.Usage(walDirPath)
 			if err != nil {
 				return nil, err
