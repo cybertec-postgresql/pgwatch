@@ -285,7 +285,7 @@
 <span id="L228" class="ln">   228  </span>		dbNewSettings.Version = VersionToInt(matches[0])
 <span id="L229" class="ln">   229  </span>	default:
 <span id="L230" class="ln">   230  </span>		sql := `select /* pgwatch_generated */ 
-<span id="L231" class="ln">   231  </span>	current_setting(&#39;server_version_num&#39;)::int / 10000 as ver, 
+<span id="L231" class="ln">   231  </span>	div(current_setting(&#39;server_version_num&#39;)::int, 10000) as ver, 
 <span id="L232" class="ln">   232  </span>	version(), 
 <span id="L233" class="ln">   233  </span>	pg_is_in_recovery(), 
 <span id="L234" class="ln">   234  </span>	current_database()::TEXT,
