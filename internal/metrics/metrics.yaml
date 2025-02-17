@@ -1,3 +1,26 @@
+# The following structure is expected for metrics and preset definitions:
+# metrics:
+#    metric_name:
+#        init_sql: |-
+#            CREATE EXTENSION IF NOT EXISTS some_extension;
+#            CREATE OR REPLACE FUNCTION get_some_stat(OUT some_stat int)
+#            ...
+#        sqls:
+#            11: |
+#                select /* pgwatch_generated */
+#                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+#                  ...
+#            14: |
+#                select /* pgwatch_generated */
+#                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+#                  ...
+#        gauges:
+#            - '*'
+#        is_instance_level: true
+#        node_status: primary
+#        statement_timeout_seconds: 300
+#        metric_storage_name: db_stats
+
 metrics:
     archiver:
         sqls:
