@@ -238,7 +238,7 @@
 <span id="L181" class="ln">   181  </span>		if err != nil {
 <span id="L182" class="ln">   182  </span>			return nil, err
 <span id="L183" class="ln">   183  </span>		}
-<span id="L184" class="ln">   184  </span>		if err != nil || ldDevice != ddDevice { <span class="comment">// no point to report same data in case of single folder configuration</span>
+<span id="L184" class="ln">   184  </span>		if ldDevice != ddDevice { <span class="comment">// no point to report same data in case of single folder configuration</span>
 <span id="L185" class="ln">   185  </span>			ld := make(map[string]any)
 <span id="L186" class="ln">   186  </span>			ldUsage, err := disk.Usage(logDirPath)
 <span id="L187" class="ln">   187  </span>			if err != nil {
@@ -269,7 +269,7 @@
 <span id="L212" class="ln">   212  </span>			return nil, err
 <span id="L213" class="ln">   213  </span>		}
 <span id="L214" class="ln">   214  </span>
-<span id="L215" class="ln">   215  </span>		if err != nil || walDevice != ddDevice || walDevice != ldDevice { <span class="comment">// no point to report same data in case of single folder configuration</span>
+<span id="L215" class="ln">   215  </span>		if walDevice != ddDevice || walDevice != ldDevice { <span class="comment">// no point to report same data in case of single folder configuration</span>
 <span id="L216" class="ln">   216  </span>			walUsage, err := disk.Usage(walDirPath)
 <span id="L217" class="ln">   217  </span>			if err != nil {
 <span id="L218" class="ln">   218  </span>				return nil, err
