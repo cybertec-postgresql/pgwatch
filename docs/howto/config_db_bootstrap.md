@@ -37,7 +37,7 @@ That's it! We have created a database named `pgwatch` with the owner `pgwatch`. 
 ## Init (optional)
 
 pgwatch will automatically create the necessary tables and indexes in the database when it starts. But in case
-you want to create the schema as a separate step, you can use the `config init` command-line command. The only thing you
+you want to create the schema as a separate step, you can use the `config init` command. The only thing you
 need is to provide the connection string to the database.
 
 ```terminal
