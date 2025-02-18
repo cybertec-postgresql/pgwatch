@@ -64,6 +64,7 @@ nav:
     - Using Managed Services: howto/using_managed_services.md
     - Bootstrapping the Configuration Database: howto/config_db_bootstrap.md
     - Bootstraping the Metrics Measurements Database (Sink): howto/metrics_db_bootstrap.md
+    - Migration from pgwatch v2: howto/migrate_v2_to_v3.md
   - Reference:
     - Advanced Features: reference/advanced_features.md
     - Metric Definitions: reference/metric_definitions.md
