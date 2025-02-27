@@ -65,7 +65,6 @@ func getFileWithNextModTimestamp(logsGlobPath, currentFile string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	//log.Debugf("Stat().ModTime() for %s: %v", currentFile, fiCurrent.ModTime())
 
 	for _, f := range files {
 		if f == currentFile {
@@ -127,8 +126,7 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredData
 	var err error
 	var firstRun = true
 	var csvlogRegex *regexp.Regexp
-	dbUniqueName := realDbname
-	logger := log.GetLogger(ctx)
+	logger := log.GetLogger(ctx).WithField("source", mdb.Name)
 	for { // re-try loop. re-start in case of FS errors or just to refresh host config
 		select {
 		case <-ctx.Done():
@@ -143,7 +141,7 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredData
 			logsMatchRegex = hostConfig.LogsMatchRegex
 		}
 		if logsMatchRegex == "" {
-			logger.Debugf("[%s] Log parsing enabled with default CSVLOG regex", dbUniqueName)
+			logger.Debug("Log parsing enabled with default CSVLOG regex")
 			logsMatchRegex = CSVLogDefaultRegEx
 		}
 		if hostConfig.LogsGlobPath != "" {
@@ -152,14 +150,14 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredData
 		if logsGlobPath == "" {
 			logsGlobPath, err = tryDetermineLogFolder(ctx, conn)
 			if err != nil {
-				logger.WithError(err).Printf("[%s] Could not determine Postgres logs parsing folder. Configured logs_glob_path = %s", dbUniqueName, logsGlobPath)
+				logger.WithError(err).Print("Could not determine Postgres logs parsing folder. Configured logs_glob_path = ", logsGlobPath)
 				time.Sleep(60 * time.Second)
 				continue
 			}
 		}
 		serverMessagesLang, err = tryDetermineLogMessagesLanguage(ctx, conn)
 		if err != nil {
-			logger.WithError(err).Warningf("[%s] Could not determine language (lc_collate) used for server logs, cannot parse logs...", dbUniqueName)
+			logger.WithError(err).Warningf("Could not determine language (lc_collate) used for server logs, cannot parse logs...")
 			time.Sleep(60 * time.Second)
 			continue
 		}
@@ -167,31 +165,30 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredData
 		if logsMatchRegexPrev != logsMatchRegex { // avoid regex recompile if no changes
 			csvlogRegex, err = regexp.Compile(logsMatchRegex)
 			if err != nil {
-				logger.Errorf("[%s] Invalid regex: %s", dbUniqueName, logsMatchRegex)
+				logger.WithError(err).Print("Invalid regex: ", logsMatchRegex)
 				time.Sleep(60 * time.Second)
 				continue
 			}
-			logger.Infof("[%s] Changing logs parsing regex to: %s", dbUniqueName, logsMatchRegex)
+			logger.Infof("Changing logs parsing regex to: %s", logsMatchRegex)
 			logsMatchRegexPrev = logsMatchRegex
 		}
 
-		logger.Debugf("[%s] Considering log files determined by glob pattern: %s", dbUniqueName, logsGlobPath)
+		logger.Debugf("Considering log files determined by glob pattern: %s", logsGlobPath)
 
 		if latest == "" || firstRun {
-
 			globMatches, err := filepath.Glob(logsGlobPath)
 			if err != nil || len(globMatches) == 0 {
-				logger.Infof("[%s] No logfiles found to parse from glob '%s'. Sleeping 60s...", dbUniqueName, logsGlobPath)
+				logger.Infof("No logfiles found to parse from glob '%s'. Sleeping 60s...", logsGlobPath)
 				time.Sleep(60 * time.Second)
 				continue
 			}
 
-			logger.Debugf("[%s] Found %v logfiles from glob pattern, picking the latest", dbUniqueName, len(globMatches))
+			logger.Debugf("Found %v logfiles from glob pattern, picking the latest", len(globMatches))
 			if len(globMatches) > 1 {
 				// find latest timestamp
 				latest, _ = getFileWithLatestTimestamp(globMatches)
 				if latest == "" {
-					logger.Warningf("[%s] Could not determine the latest logfile. Sleeping 60s...", dbUniqueName)
+					logger.Warningf("Could not determine the latest logfile. Sleeping 60s...")
 					time.Sleep(60 * time.Second)
 					continue
 				}
@@ -199,13 +196,13 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredData
 			} else if len(globMatches) == 1 {
 				latest = globMatches[0]
 			}
-			logger.Infof("[%s] Starting to parse logfile: %s ", dbUniqueName, latest)
+			logger.Infof("Starting to parse logfile: %s ", latest)
 		}
 
 		if latestHandle == nil {
 			latestHandle, err = os.Open(latest)
 			if err != nil {
-				logger.Warningf("[%s] Failed to open logfile %s: %s. Sleeping 60s...", dbUniqueName, latest, err)
+				logger.Warningf("Failed to open logfile %s: %s. Sleeping 60s...", latest, err)
 				time.Sleep(60 * time.Second)
 				continue
 			}
@@ -215,18 +212,18 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredData
 				for i <= linesRead {
 					_, err = reader.ReadString('\n')
 					if err == io.EOF && i < linesRead {
-						logger.Warningf("[%s] Failed to open logfile %s: %s. Sleeping 60s...", dbUniqueName, latest, err)
+						logger.Warningf("Failed to open logfile %s: %s. Sleeping 60s...", latest, err)
 						linesRead = 0
 						break
 					} else if err != nil {
-						logger.Warningf("[%s] Failed to skip %d logfile lines for %s, there might be duplicates reported. Error: %s", dbUniqueName, linesRead, latest, err)
+						logger.Warningf("Failed to skip %d logfile lines for %s, there might be duplicates reported. Error: %s", linesRead, latest, err)
 						time.Sleep(60 * time.Second)
 						linesRead = i
 						break
 					}
 					i++
 				}
-				logger.Debug("[%s] Skipped %d already processed lines from %s", dbUniqueName, linesRead, latest)
+				logger.Debugf("Skipped %d already processed lines from %s", linesRead, latest)
 			} else if firstRun { // seek to end
 				_, _ = latestHandle.Seek(0, 2)
 				firstRun = false
@@ -242,10 +239,10 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredData
 			// }
 			line, err := reader.ReadString('\n')
 			if err != nil && err != io.EOF {
-				logger.Warningf("[%s] Failed to read logfile %s: %s. Sleeping 60s...", dbUniqueName, latest, err)
+				logger.Warningf("Failed to read logfile %s: %s. Sleeping 60s...", latest, err)
 				err = latestHandle.Close()
 				if err != nil {
-					logger.Warningf("[%s] Failed to close logfile %s properly: %s", dbUniqueName, latest, err)
+					logger.Warningf("Failed to close logfile %s properly: %s", latest, err)
 				}
 				latestHandle = nil
 				time.Sleep(60 * time.Second)
@@ -253,7 +250,7 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredData
 			}
 
 			if err == io.EOF {
-				//log.Debugf("[%s] EOF reached for logfile %s", dbUniqueName, latest)
+				//log.Debugf("EOF reached for logfile %s", latest)
 				if eofSleepMillis < 5000 && float64(eofSleepMillis) < interval*1000 {
 					eofSleepMillis += 100 // progressively sleep more if nothing going on but not more that 5s or metric interval
 				}
@@ -267,9 +264,9 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredData
 					err = latestHandle.Close()
 					latestHandle = nil
 					if err != nil {
-						logger.Warningf("[%s] Failed to close logfile %s properly: %s", dbUniqueName, latest, err)
+						logger.Warningf("Failed to close logfile %s properly: %s", latest, err)
 					}
-					logger.Infof("[%s] Switching to new logfile: %s", dbUniqueName, file)
+					logger.Infof("Switching to new logfile: %s", file)
 					linesRead = 0
 					break
 				}
@@ -282,7 +279,7 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredData
 
 				matches := csvlogRegex.FindStringSubmatch(line)
 				if len(matches) == 0 {
-					//log.Debugf("[%s] No logline regex match for line:", dbUniqueName) // normal case actually for queries spanning multiple loglines
+					//log.Debugf("No logline regex match for line:") // normal case actually for queries spanning multiple loglines
 					//log.Debugf(line)
 					goto send_to_storage_if_needed
 				}
@@ -313,7 +310,7 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredData
 
 		send_to_storage_if_needed:
 			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-1*time.Second*time.Duration(interval))) {
-				logger.Debugf("[%s] Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v", dbUniqueName, eventCounts, eventCountsTotal)
+				logger.Debugf("Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v", eventCounts, eventCountsTotal)
 				metricStoreMessages := eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
 				storeCh <- metricStoreMessages
 				zeroEventCounts(eventCounts)
