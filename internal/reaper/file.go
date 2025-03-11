@@ -36,18 +36,19 @@ func IsDirectlyFetchableMetric(metric string) bool {
 }
 
 func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) ([]metrics.MeasurementEnvelope, error) {
-	var data []map[string]any
+	var data metrics.Measurements
 	var err error
 
-	if msg.MetricName == metricCPULoad { // could function pointers work here?
+	switch msg.MetricName {
+	case metricCPULoad:
 		data, err = psutil.GetLoadAvgLocal()
-	} else if msg.MetricName == metricPsutilCPU {
+	case metricPsutilCPU:
 		data, err = psutil.GetGoPsutilCPU(msg.Interval)
-	} else if msg.MetricName == metricPsutilDisk {
+	case metricPsutilDisk:
 		data, err = GetGoPsutilDiskPG(ctx, msg.DBUniqueName)
-	} else if msg.MetricName == metricPsutilDiskIoTotal {
+	case metricPsutilDiskIoTotal:
 		data, err = psutil.GetGoPsutilDiskTotals()
-	} else if msg.MetricName == metricPsutilMem {
+	case metricPsutilMem:
 		data, err = psutil.GetGoPsutilMem()
 	}
 	if err != nil {
