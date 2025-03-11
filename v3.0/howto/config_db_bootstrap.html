@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.4">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.5">
     
     
       
@@ -1012,6 +1012,28 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="migrate_v2_to_v3.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Migration from pgwatch v2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1533,7 +1555,7 @@ It is wise to use a special role for the configuration database, so we will crea
 <p>That's it! We have created a database named <code>pgwatch</code> with the owner <code>pgwatch</code>. Now we can proceed to the next step.</p>
 <h2 id="init-optional">Init (optional)</h2>
 <p>pgwatch will automatically create the necessary tables and indexes in the database when it starts. But in case
-you want to create the schema as a separate step, you can use the <code>config init</code> command-line command. The only thing you
+you want to create the schema as a separate step, you can use the <code>config init</code> command. The only thing you
 need is to provide the connection string to the database.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch config init
 </span></code></pre></div>
