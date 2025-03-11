@@ -101,7 +101,7 @@ syntax differences.
 
         [Service]
         User=pgwatch
-        Type=notify
+        Type=exec
         ExecStart=/usr/bin/pgwatch --sources=postgresql://pgwatch@localhost:5432/pgwatch --sink=postgresql://pgwatch@localhost:5432/pgwatch_metrics
         Restart=on-failure
         TimeoutStartSec=0
