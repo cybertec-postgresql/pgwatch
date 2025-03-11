@@ -229,9 +229,15 @@ func TestMetricsToPostgres(t *testing.T) {
 	})
 
 	t.Run("UpdateMetric", func(*testing.T) {
-		conn.ExpectExec(`UPDATE.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		err = readerWriter.UpdateMetric("test", metrics.Metric{})
 		a.NoError(err)
+	})
+
+	t.Run("FailUpdateMetric", func(*testing.T) {
+		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+		err = readerWriter.UpdateMetric("test", metrics.Metric{})
+		a.ErrorIs(err, metrics.ErrMetricNotFound)
 	})
 
 	t.Run("DeletePreset", func(*testing.T) {
@@ -244,6 +250,12 @@ func TestMetricsToPostgres(t *testing.T) {
 		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1))
 		err = readerWriter.UpdatePreset("test", metrics.Preset{})
 		a.NoError(err)
+	})
+
+	t.Run("FailUpdatePreset", func(*testing.T) {
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 0))
+		err = readerWriter.UpdatePreset("test", metrics.Preset{})
+		a.ErrorIs(err, metrics.ErrPresetNotFound)
 	})
 
 	// check all expectations were met

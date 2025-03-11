@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"errors"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 )
@@ -28,6 +29,13 @@ type dbMetricReaderWriter struct {
 	ctx      context.Context
 	configDb db.PgxIface
 }
+
+var (
+	ErrMetricNotFound = errors.New("metric not found")
+	ErrPresetNotFound = errors.New("preset not found")
+	ErrInvalidMetric  = errors.New("invalid metric")
+	ErrInvalidPreset  = errors.New("invalid preset")
+)
 
 // make sure *dbMetricReaderWriter implements the Migrator interface
 var _ Migrator = (*dbMetricReaderWriter)(nil)
@@ -107,11 +115,16 @@ func (dmrw *dbMetricReaderWriter) DeleteMetric(metricName string) error {
 }
 
 func (dmrw *dbMetricReaderWriter) UpdateMetric(metricName string, metric Metric) error {
-	_, err := dmrw.configDb.Exec(dmrw.ctx, `UPDATE pgwatch.metric SET 
-	sqls = $2, init_sql = $3, description = $4, node_status = $5, gauges = $6, is_instance_level = $7, storage_name = $8
-	WHERE name = $1`,
+	ct, err := dmrw.configDb.Exec(dmrw.ctx, `INSERT INTO pgwatch.metric
+(name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+ON CONFLICT (name) DO UPDATE SET 
+sqls = $2, init_sql = $3, description = $4, node_status = $5, gauges = $6, is_instance_level = $7, storage_name = $8`,
 		metricName, db.MarshallParamToJSONB(metric.SQLs), metric.InitSQL, metric.Description,
 		metric.NodeStatus, metric.Gauges, metric.IsInstanceLevel, metric.StorageName)
+	if err == nil && ct.RowsAffected() == 0 {
+		return ErrMetricNotFound
+	}
 	return err
 }
 
@@ -123,6 +136,9 @@ func (dmrw *dbMetricReaderWriter) DeletePreset(presetName string) error {
 func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName string, preset Preset) error {
 	sql := `INSERT INTO pgwatch.preset(name, description, metrics) VALUES ($1, $2, $3)
 	ON CONFLICT (name) DO UPDATE SET description = $2, metrics = $3`
-	_, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParamToJSONB(preset.Metrics))
+	ct, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParamToJSONB(preset.Metrics))
+	if err == nil && ct.RowsAffected() == 0 {
+		return ErrPresetNotFound
+	}
 	return err
 }
