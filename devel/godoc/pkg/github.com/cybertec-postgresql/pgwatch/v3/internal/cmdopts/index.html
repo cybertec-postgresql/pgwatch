@@ -15,7 +15,7 @@
 
 
 
-<script>var goVersion = "go1.23.6";</script>
+<script>var goVersion = "go1.23.7";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer></script>
 
 </head>
@@ -191,6 +191,9 @@
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#Options.InitMetricReader">func (c *Options) InitMetricReader(ctx context.Context) (err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Options.InitSinkWriter">func (c *Options) InitSinkWriter(ctx context.Context) (err error)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#Options.InitSourceReader">func (c *Options) InitSourceReader(ctx context.Context) (err error)</a></dd>
@@ -585,12 +588,12 @@
 <span id="Options.WebUI"></span>    WebUI   <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/webserver/">webserver</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/webserver/#CmdOpts">CmdOpts</a> `group:&#34;WebUI&#34;`
 <span id="Options.Help"></span>    Help    <a href="https://pkg.go.dev/builtin/#bool">bool</a>
 
-    <span class="comment">// sourcesReaderWriter reads/writes the monitored sources (databases, patroni clusters, pgpools, etc.) information</span>
 <span id="Options.SourcesReaderWriter"></span>    SourcesReaderWriter <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#ReaderWriter">ReaderWriter</a>
-    <span class="comment">// metricsReaderWriter reads/writes the metric and preset definitions</span>
 <span id="Options.MetricsReaderWriter"></span>    MetricsReaderWriter <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#ReaderWriter">ReaderWriter</a>
-<span id="Options.ExitCode"></span>    ExitCode            <a href="https://pkg.go.dev/builtin/#int32">int32</a>
-<span id="Options.CommandCompleted"></span>    CommandCompleted    <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+<span id="Options.SinksWriter"></span>    SinksWriter         <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/">sinks</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/#Writer">Writer</a>
+
+<span id="Options.ExitCode"></span>    ExitCode         <a href="https://pkg.go.dev/builtin/#int32">int32</a>
+<span id="Options.CommandCompleted"></span>    CommandCompleted <a href="https://pkg.go.dev/builtin/#bool">bool</a>
 }
 </pre>
 
@@ -672,6 +675,19 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 				
 			
 				
+				<h3 id="Options.InitSinkWriter">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L160">InitSinkWriter</a>
+					<a class="permalink" href="#Options.InitSinkWriter">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (c *<a href="#Options">Options</a>) InitSinkWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>InitSinkWriter creates a new MultiWriter instance if needed.
+
+				
+				
+				
+			
+				
 				<h3 id="Options.InitSourceReader">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L140">InitSourceReader</a>
 					<a class="permalink" href="#Options.InitSourceReader">&#xb6;</a>
 					
@@ -697,7 +713,7 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 				
 			
 				
-				<h3 id="Options.NeedsSchemaUpgrade">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L160">NeedsSchemaUpgrade</a>
+				<h3 id="Options.NeedsSchemaUpgrade">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L170">NeedsSchemaUpgrade</a>
 					<a class="permalink" href="#Options.NeedsSchemaUpgrade">&#xb6;</a>
 					
 					
@@ -710,7 +726,7 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 				
 			
 				
-				<h3 id="Options.ValidateConfig">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L176">ValidateConfig</a>
+				<h3 id="Options.ValidateConfig">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L186">ValidateConfig</a>
 					<a class="permalink" href="#Options.ValidateConfig">&#xb6;</a>
 					
 					
@@ -823,7 +839,7 @@ If one is specified, the other one is set to the same value.
 
 
 <div id="footer">
-Build version go1.23.6.<br>
+Build version go1.23.7.<br>
 </div>
 
 </div><!-- .container -->

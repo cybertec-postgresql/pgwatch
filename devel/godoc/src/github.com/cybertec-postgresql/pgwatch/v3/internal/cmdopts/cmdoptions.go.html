@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.23.6";</script>
+<script>var goVersion = "go1.23.7";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -103,12 +103,12 @@
 <span id="L46" class="ln">    46  </span>	WebUI   webserver.CmdOpts `group:&#34;WebUI&#34;`
 <span id="L47" class="ln">    47  </span>	Help    bool
 <span id="L48" class="ln">    48  </span>
-<span id="L49" class="ln">    49  </span>	<span class="comment">// sourcesReaderWriter reads/writes the monitored sources (databases, patroni clusters, pgpools, etc.) information</span>
-<span id="L50" class="ln">    50  </span>	SourcesReaderWriter sources.ReaderWriter
-<span id="L51" class="ln">    51  </span>	<span class="comment">// metricsReaderWriter reads/writes the metric and preset definitions</span>
-<span id="L52" class="ln">    52  </span>	MetricsReaderWriter metrics.ReaderWriter
-<span id="L53" class="ln">    53  </span>	ExitCode            int32
-<span id="L54" class="ln">    54  </span>	CommandCompleted    bool
+<span id="L49" class="ln">    49  </span>	SourcesReaderWriter sources.ReaderWriter
+<span id="L50" class="ln">    50  </span>	MetricsReaderWriter metrics.ReaderWriter
+<span id="L51" class="ln">    51  </span>	SinksWriter         sinks.Writer
+<span id="L52" class="ln">    52  </span>
+<span id="L53" class="ln">    53  </span>	ExitCode         int32
+<span id="L54" class="ln">    54  </span>	CommandCompleted bool
 <span id="L55" class="ln">    55  </span>}
 <span id="L56" class="ln">    56  </span>
 <span id="L57" class="ln">    57  </span>func addCommands(parser *flags.Parser, opts *Options) {
@@ -213,52 +213,62 @@
 <span id="L156" class="ln">   156  </span>	return errors.Join(c.InitMetricReader(ctx), c.InitSourceReader(ctx))
 <span id="L157" class="ln">   157  </span>}
 <span id="L158" class="ln">   158  </span>
-<span id="L159" class="ln">   159  </span><span class="comment">// NeedsSchemaUpgrade checks if the configuration database schema needs an upgrade.</span>
-<span id="L160" class="ln">   160  </span>func (c *Options) NeedsSchemaUpgrade() (upgrade bool, err error) {
-<span id="L161" class="ln">   161  </span>	if m, ok := c.SourcesReaderWriter.(metrics.Migrator); ok {
-<span id="L162" class="ln">   162  </span>		upgrade, err = m.NeedsMigration()
-<span id="L163" class="ln">   163  </span>	}
-<span id="L164" class="ln">   164  </span>	if upgrade || err != nil {
-<span id="L165" class="ln">   165  </span>		return
-<span id="L166" class="ln">   166  </span>	}
-<span id="L167" class="ln">   167  </span>	if m, ok := c.MetricsReaderWriter.(metrics.Migrator); ok {
-<span id="L168" class="ln">   168  </span>		return m.NeedsMigration()
-<span id="L169" class="ln">   169  </span>	}
-<span id="L170" class="ln">   170  </span>	return
-<span id="L171" class="ln">   171  </span>}
-<span id="L172" class="ln">   172  </span>
-<span id="L173" class="ln">   173  </span><span class="comment">// ValidateConfig checks if the configuration is valid.</span>
-<span id="L174" class="ln">   174  </span><span class="comment">// Configuration database can be specified for one of the --sources or --metrics.</span>
-<span id="L175" class="ln">   175  </span><span class="comment">// If one is specified, the other one is set to the same value.</span>
-<span id="L176" class="ln">   176  </span>func (c *Options) ValidateConfig() error {
-<span id="L177" class="ln">   177  </span>	if len(c.Sources.Sources)+len(c.Metrics.Metrics) == 0 {
-<span id="L178" class="ln">   178  </span>		return errors.New(&#34;both --sources and --metrics are empty&#34;)
+<span id="L159" class="ln">   159  </span><span class="comment">// InitSinkWriter creates a new MultiWriter instance if needed.</span>
+<span id="L160" class="ln">   160  </span>func (c *Options) InitSinkWriter(ctx context.Context) (err error) {
+<span id="L161" class="ln">   161  </span>	metricDefs, err := c.MetricsReaderWriter.GetMetrics()
+<span id="L162" class="ln">   162  </span>	if err != nil {
+<span id="L163" class="ln">   163  </span>		return err
+<span id="L164" class="ln">   164  </span>	}
+<span id="L165" class="ln">   165  </span>	c.SinksWriter, err = sinks.NewSinkWriter(ctx, &amp;c.Sinks, metricDefs)
+<span id="L166" class="ln">   166  </span>	return
+<span id="L167" class="ln">   167  </span>}
+<span id="L168" class="ln">   168  </span>
+<span id="L169" class="ln">   169  </span><span class="comment">// NeedsSchemaUpgrade checks if the configuration database schema needs an upgrade.</span>
+<span id="L170" class="ln">   170  </span>func (c *Options) NeedsSchemaUpgrade() (upgrade bool, err error) {
+<span id="L171" class="ln">   171  </span>	if m, ok := c.SourcesReaderWriter.(metrics.Migrator); ok {
+<span id="L172" class="ln">   172  </span>		upgrade, err = m.NeedsMigration()
+<span id="L173" class="ln">   173  </span>	}
+<span id="L174" class="ln">   174  </span>	if upgrade || err != nil {
+<span id="L175" class="ln">   175  </span>		return
+<span id="L176" class="ln">   176  </span>	}
+<span id="L177" class="ln">   177  </span>	if m, ok := c.MetricsReaderWriter.(metrics.Migrator); ok {
+<span id="L178" class="ln">   178  </span>		return m.NeedsMigration()
 <span id="L179" class="ln">   179  </span>	}
-<span id="L180" class="ln">   180  </span>	switch { <span class="comment">// if specified configuration database, use it for both sources and metrics</span>
-<span id="L181" class="ln">   181  </span>	case c.Sources.Sources == &#34;&#34; &amp;&amp; c.IsPgConnStr(c.Metrics.Metrics):
-<span id="L182" class="ln">   182  </span>		c.Sources.Sources = c.Metrics.Metrics
-<span id="L183" class="ln">   183  </span>	case c.Metrics.Metrics == &#34;&#34; &amp;&amp; c.IsPgConnStr(c.Sources.Sources):
-<span id="L184" class="ln">   184  </span>		c.Metrics.Metrics = c.Sources.Sources
-<span id="L185" class="ln">   185  </span>	}
-<span id="L186" class="ln">   186  </span>	if c.Sources.Refresh &lt;= 1 {
-<span id="L187" class="ln">   187  </span>		return errors.New(&#34;--servers-refresh-loop-seconds must be greater than 1&#34;)
-<span id="L188" class="ln">   188  </span>	}
-<span id="L189" class="ln">   189  </span>	if c.Sources.MaxParallelConnectionsPerDb &lt; 1 {
-<span id="L190" class="ln">   190  </span>		return errors.New(&#34;--max-parallel-connections-per-db must be &gt;= 1&#34;)
-<span id="L191" class="ln">   191  </span>	}
-<span id="L192" class="ln">   192  </span>
-<span id="L193" class="ln">   193  </span>	<span class="comment">// validate that input is boolean is set</span>
-<span id="L194" class="ln">   194  </span>	if c.Sinks.BatchingDelay &lt;= 0 || c.Sinks.BatchingDelay &gt; time.Hour {
-<span id="L195" class="ln">   195  </span>		return errors.New(&#34;--batching-delay-ms must be between 0 and 3600000&#34;)
-<span id="L196" class="ln">   196  </span>	}
-<span id="L197" class="ln">   197  </span>
-<span id="L198" class="ln">   198  </span>	return nil
-<span id="L199" class="ln">   199  </span>}
-<span id="L200" class="ln">   200  </span>
+<span id="L180" class="ln">   180  </span>	return
+<span id="L181" class="ln">   181  </span>}
+<span id="L182" class="ln">   182  </span>
+<span id="L183" class="ln">   183  </span><span class="comment">// ValidateConfig checks if the configuration is valid.</span>
+<span id="L184" class="ln">   184  </span><span class="comment">// Configuration database can be specified for one of the --sources or --metrics.</span>
+<span id="L185" class="ln">   185  </span><span class="comment">// If one is specified, the other one is set to the same value.</span>
+<span id="L186" class="ln">   186  </span>func (c *Options) ValidateConfig() error {
+<span id="L187" class="ln">   187  </span>	if len(c.Sources.Sources)+len(c.Metrics.Metrics) == 0 {
+<span id="L188" class="ln">   188  </span>		return errors.New(&#34;both --sources and --metrics are empty&#34;)
+<span id="L189" class="ln">   189  </span>	}
+<span id="L190" class="ln">   190  </span>	switch { <span class="comment">// if specified configuration database, use it for both sources and metrics</span>
+<span id="L191" class="ln">   191  </span>	case c.Sources.Sources == &#34;&#34; &amp;&amp; c.IsPgConnStr(c.Metrics.Metrics):
+<span id="L192" class="ln">   192  </span>		c.Sources.Sources = c.Metrics.Metrics
+<span id="L193" class="ln">   193  </span>	case c.Metrics.Metrics == &#34;&#34; &amp;&amp; c.IsPgConnStr(c.Sources.Sources):
+<span id="L194" class="ln">   194  </span>		c.Metrics.Metrics = c.Sources.Sources
+<span id="L195" class="ln">   195  </span>	}
+<span id="L196" class="ln">   196  </span>	if c.Sources.Refresh &lt;= 1 {
+<span id="L197" class="ln">   197  </span>		return errors.New(&#34;--servers-refresh-loop-seconds must be greater than 1&#34;)
+<span id="L198" class="ln">   198  </span>	}
+<span id="L199" class="ln">   199  </span>	if c.Sources.MaxParallelConnectionsPerDb &lt; 1 {
+<span id="L200" class="ln">   200  </span>		return errors.New(&#34;--max-parallel-connections-per-db must be &gt;= 1&#34;)
+<span id="L201" class="ln">   201  </span>	}
+<span id="L202" class="ln">   202  </span>
+<span id="L203" class="ln">   203  </span>	<span class="comment">// validate that input is boolean is set</span>
+<span id="L204" class="ln">   204  </span>	if c.Sinks.BatchingDelay &lt;= 0 || c.Sinks.BatchingDelay &gt; time.Hour {
+<span id="L205" class="ln">   205  </span>		return errors.New(&#34;--batching-delay-ms must be between 0 and 3600000&#34;)
+<span id="L206" class="ln">   206  </span>	}
+<span id="L207" class="ln">   207  </span>
+<span id="L208" class="ln">   208  </span>	return nil
+<span id="L209" class="ln">   209  </span>}
+<span id="L210" class="ln">   210  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.23.6.<br/>
+Build version go1.23.7.<br/>
 </div>
 
 </div><!-- .container -->

@@ -15,7 +15,7 @@
 
 
 
-<script>var goVersion = "go1.23.6";</script>
+<script>var goVersion = "go1.23.7";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer></script>
 
 </head>
@@ -161,18 +161,15 @@
 				
 				<dd><a href="#MultiWriter">type MultiWriter</a></dd>
 				
-					
-					<dd>&nbsp; &nbsp; <a href="#NewMultiWriter">func NewMultiWriter(ctx context.Context, opts *CmdOpts, metricDefs *metrics.Metrics) (mw *MultiWriter, err error)</a></dd>
-				
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#MultiWriter.AddWriter">func (mw *MultiWriter) AddWriter(w Writer)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#MultiWriter.SyncMetrics">func (mw *MultiWriter) SyncMetrics(dbUnique, metricName, op string) (err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#MultiWriter.SyncMetric">func (mw *MultiWriter) SyncMetric(dbUnique, metricName, op string) (err error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#MultiWriter.WriteMeasurements">func (mw *MultiWriter) WriteMeasurements(ctx context.Context, storageCh &lt;-chan []metrics.MeasurementEnvelope)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#MultiWriter.Write">func (mw *MultiWriter) Write(msgs []metrics.MeasurementEnvelope) (err error)</a></dd>
 				
 			
 				
@@ -290,6 +287,9 @@
 			
 				
 				<dd><a href="#Writer">type Writer</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewSinkWriter">func NewSinkWriter(ctx context.Context, opts *CmdOpts, metricDefs *metrics.Metrics) (w Writer, err error)</a></dd>
 				
 				
 			
@@ -593,7 +593,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 		
 			
 			
-			<h2 id="MultiWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/multiwriter.go.html#L21">MultiWriter</a>
+			<h2 id="MultiWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/multiwriter.go.html#L20">MultiWriter</a>
 				<a class="permalink" href="#MultiWriter">&#xb6;</a>
 				
 				
@@ -615,22 +615,10 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 			
 
 			
-				
-				<h3 id="NewMultiWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/multiwriter.go.html#L27">NewMultiWriter</a>
-					<a class="permalink" href="#NewMultiWriter">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func NewMultiWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, opts *<a href="#CmdOpts">CmdOpts</a>, metricDefs *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metrics">Metrics</a>) (mw *<a href="#MultiWriter">MultiWriter</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				<p>NewMultiWriter creates and returns new instance of MultiWriter struct.
-
-				
-				
-			
 
 			
 				
-				<h3 id="MultiWriter.AddWriter">func (*MultiWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/multiwriter.go.html#L58">AddWriter</a>
+				<h3 id="MultiWriter.AddWriter">func (*MultiWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/multiwriter.go.html#L59">AddWriter</a>
 					<a class="permalink" href="#MultiWriter.AddWriter">&#xb6;</a>
 					
 					
@@ -642,24 +630,24 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 				
 			
 				
-				<h3 id="MultiWriter.SyncMetrics">func (*MultiWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/multiwriter.go.html#L64">SyncMetrics</a>
-					<a class="permalink" href="#MultiWriter.SyncMetrics">&#xb6;</a>
+				<h3 id="MultiWriter.SyncMetric">func (*MultiWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/multiwriter.go.html#L65">SyncMetric</a>
+					<a class="permalink" href="#MultiWriter.SyncMetric">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (mw *<a href="#MultiWriter">MultiWriter</a>) SyncMetrics(dbUnique, metricName, op <a href="https://pkg.go.dev/builtin/#string">string</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func (mw *<a href="#MultiWriter">MultiWriter</a>) SyncMetric(dbUnique, metricName, op <a href="https://pkg.go.dev/builtin/#string">string</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
 				
 			
 				
-				<h3 id="MultiWriter.WriteMeasurements">func (*MultiWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/multiwriter.go.html#L71">WriteMeasurements</a>
-					<a class="permalink" href="#MultiWriter.WriteMeasurements">&#xb6;</a>
+				<h3 id="MultiWriter.Write">func (*MultiWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/multiwriter.go.html#L72">Write</a>
+					<a class="permalink" href="#MultiWriter.Write">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (mw *<a href="#MultiWriter">MultiWriter</a>) WriteMeasurements(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, storageCh &lt;-chan []<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>)</pre>
+				<pre>func (mw *<a href="#MultiWriter">MultiWriter</a>) Write(msgs []<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
@@ -1170,7 +1158,7 @@ or an analytics system.
 		
 			
 			
-			<h2 id="Writer">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/multiwriter.go.html#L15">Writer</a>
+			<h2 id="Writer">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/multiwriter.go.html#L14">Writer</a>
 				<a class="permalink" href="#Writer">&#xb6;</a>
 				
 				
@@ -1191,6 +1179,18 @@ or an analytics system.
 			
 
 			
+				
+				<h3 id="NewSinkWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/multiwriter.go.html#L26">NewSinkWriter</a>
+					<a class="permalink" href="#NewSinkWriter">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewSinkWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, opts *<a href="#CmdOpts">CmdOpts</a>, metricDefs *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metrics">Metrics</a>) (w <a href="#Writer">Writer</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>NewSinkWriter creates and returns new instance of MultiWriter struct.
+
+				
+				
+			
 
 			
 		
@@ -1205,7 +1205,7 @@ or an analytics system.
 
 
 <div id="footer">
-Build version go1.23.6.<br>
+Build version go1.23.7.<br>
 </div>
 
 </div><!-- .container -->

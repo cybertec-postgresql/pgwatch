@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.23.6";</script>
+<script>var goVersion = "go1.23.7";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -92,7 +92,7 @@
 <span id="L35" class="ln">    35  </span>}
 <span id="L36" class="ln">    36  </span>
 <span id="L37" class="ln">    37  </span>func (k Kind) IsValid() bool {
-<span id="L38" class="ln">    38  </span>	return slices.Contains[[]Kind, Kind](Kinds, k)
+<span id="L38" class="ln">    38  </span>	return slices.Contains(Kinds, k)
 <span id="L39" class="ln">    39  </span>}
 <span id="L40" class="ln">    40  </span>
 <span id="L41" class="ln">    41  </span>type (
@@ -312,7 +312,7 @@
 </pre><p></p>
 
 <div id="footer">
-Build version go1.23.6.<br/>
+Build version go1.23.7.<br/>
 </div>
 
 </div><!-- .container -->
