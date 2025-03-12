@@ -35,7 +35,7 @@ var Kinds = []Kind{
 }
 
 func (k Kind) IsValid() bool {
-	return slices.Contains[[]Kind, Kind](Kinds, k)
+	return slices.Contains(Kinds, k)
 }
 
 type (

@@ -34,7 +34,7 @@ func TestNewMultiWriter(t *testing.T) {
 	}
 
 	for _, i := range input {
-		mw, err := NewMultiWriter(context.Background(), i.opts, metrics.GetDefaultMetrics())
+		mw, err := NewSinkWriter(context.Background(), i.opts, metrics.GetDefaultMetrics())
 		if i.err {
 			assert.Error(t, err)
 		} else {
@@ -59,7 +59,7 @@ func TestSyncMetrics(t *testing.T) {
 	mw := &MultiWriter{}
 	mockWriter := &MockWriter{}
 	mw.AddWriter(mockWriter)
-	err := mw.SyncMetrics("db", "metric", "op")
+	err := mw.SyncMetric("db", "metric", "op")
 	assert.NoError(t, err)
 }
 
@@ -67,11 +67,6 @@ func TestWriteMeasurements(t *testing.T) {
 	mw := &MultiWriter{}
 	mockWriter := &MockWriter{}
 	mw.AddWriter(mockWriter)
-	ctx, c := context.WithCancel(context.Background())
-	assert.NotNil(t, c)
-	storageCh := make(chan []metrics.MeasurementEnvelope)
-	go mw.WriteMeasurements(ctx, storageCh)
-	storageCh <- []metrics.MeasurementEnvelope{{}}
-	c()
-	close(storageCh)
+	err := mw.Write([]metrics.MeasurementEnvelope{{}})
+	assert.NoError(t, err)
 }

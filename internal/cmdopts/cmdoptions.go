@@ -46,12 +46,12 @@ type Options struct {
 	WebUI   webserver.CmdOpts `group:"WebUI"`
 	Help    bool
 
-	// sourcesReaderWriter reads/writes the monitored sources (databases, patroni clusters, pgpools, etc.) information
 	SourcesReaderWriter sources.ReaderWriter
-	// metricsReaderWriter reads/writes the metric and preset definitions
 	MetricsReaderWriter metrics.ReaderWriter
-	ExitCode            int32
-	CommandCompleted    bool
+	SinksWriter         sinks.Writer
+
+	ExitCode         int32
+	CommandCompleted bool
 }
 
 func addCommands(parser *flags.Parser, opts *Options) {
@@ -154,6 +154,16 @@ func (c *Options) InitSourceReader(ctx context.Context) (err error) {
 // InitConfigReaders creates the configuration readers based on the configuration kind from the options.
 func (c *Options) InitConfigReaders(ctx context.Context) error {
 	return errors.Join(c.InitMetricReader(ctx), c.InitSourceReader(ctx))
+}
+
+// InitSinkWriter creates a new MultiWriter instance if needed.
+func (c *Options) InitSinkWriter(ctx context.Context) (err error) {
+	metricDefs, err := c.MetricsReaderWriter.GetMetrics()
+	if err != nil {
+		return err
+	}
+	c.SinksWriter, err = sinks.NewSinkWriter(ctx, &c.Sinks, metricDefs)
+	return
 }
 
 // NeedsSchemaUpgrade checks if the configuration database schema needs an upgrade.

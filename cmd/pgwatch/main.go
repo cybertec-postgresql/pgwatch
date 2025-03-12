@@ -17,10 +17,10 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/webui"
 )
 
-// SetupCloseHandler creates a 'listener' on a new goroutine which will notify the
+// setupCloseHandler creates a 'listener' on a new goroutine which will notify the
 // program if it receives an interrupt from the OS. We then handle this by calling
 // our clean up procedure and exiting the program.
-func SetupCloseHandler(cancel context.CancelFunc) {
+func setupCloseHandler(cancel context.CancelFunc) {
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -53,7 +53,7 @@ func main() {
 	}()
 
 	mainCtx, cancel = context.WithCancel(context.Background())
-	SetupCloseHandler(cancel)
+	setupCloseHandler(cancel)
 	defer cancel()
 
 	if opts, err = cmdopts.New(os.Stdout); err != nil {
@@ -82,6 +82,12 @@ func main() {
 		return
 	}
 
+	if err := opts.InitSinkWriter(mainCtx); err != nil {
+		exitCode.Store(cmdopts.ExitCodeCmdError)
+		logger.Error(err)
+		return
+	}
+
 	if upgrade, err := opts.NeedsSchemaUpgrade(); upgrade || err != nil {
 		if upgrade {
 			err = errors.Join(err, errors.New(`configuration needs upgrade, use "init --upgrade" command`))
@@ -91,7 +97,11 @@ func main() {
 		return
 	}
 
-	reaper := reaper.NewReaper(opts, opts.SourcesReaderWriter, opts.MetricsReaderWriter)
+	reaper, err := reaper.NewReaper(mainCtx, opts)
+	if err != nil {
+		logger.Error(err)
+		exitCode.Store(cmdopts.ExitCodeFatalError)
+	}
 
 	if _, err = webserver.Init(mainCtx, opts.WebUI, webui.WebUIFs, opts.MetricsReaderWriter,
 		opts.SourcesReaderWriter, reaper); err != nil {

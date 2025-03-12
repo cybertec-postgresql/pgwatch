@@ -938,7 +938,7 @@ func GetGoPsutilDiskPG(ctx context.Context, dbUnique string) (metrics.Measuremen
 	return psutil.GetGoPsutilDiskPG(data, dataTblsp)
 }
 
-func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, currentDBs, prevLoopDBs sources.MonitoredDatabases, shutDownDueToRoleChange map[string]bool) {
+func CloseResourcesForRemovedMonitoredDBs(metricsWriter sinks.Writer, currentDBs, prevLoopDBs sources.MonitoredDatabases, shutDownDueToRoleChange map[string]bool) {
 	var curDBsMap = make(map[string]bool)
 
 	for _, curDB := range currentDBs {
@@ -948,7 +948,7 @@ func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, curr
 	for _, prevDB := range prevLoopDBs {
 		if _, ok := curDBsMap[prevDB.Name]; !ok { // removed from config
 			prevDB.Conn.Close()
-			_ = metricsWriter.SyncMetrics(prevDB.Name, "", "remove")
+			_ = metricsWriter.SyncMetric(prevDB.Name, "", "remove")
 		}
 	}
 
@@ -957,7 +957,7 @@ func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, curr
 		if db := currentDBs.GetMonitoredDatabase(roleChangedDB); db != nil {
 			db.Conn.Close()
 		}
-		_ = metricsWriter.SyncMetrics(roleChangedDB, "", "remove")
+		_ = metricsWriter.SyncMetric(roleChangedDB, "", "remove")
 	}
 }
 
