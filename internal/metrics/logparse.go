@@ -110,7 +110,7 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 	}}
 }
 
-func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredDatabase, realDbname, metricName string, configMap map[string]float64, storeCh chan<- []MeasurementEnvelope) {
+func ParseLogs(ctx context.Context, mdb *sources.MonitoredDatabase, realDbname, metricName string, configMap map[string]float64, storeCh chan<- []MeasurementEnvelope) {
 
 	var latest, previous, serverMessagesLang string
 	var latestHandle *os.File
@@ -148,16 +148,16 @@ func ParseLogs(ctx context.Context, conn db.PgxIface, mdb *sources.MonitoredData
 			logsGlobPath = hostConfig.LogsGlobPath
 		}
 		if logsGlobPath == "" {
-			logsGlobPath, err = tryDetermineLogFolder(ctx, conn)
+			logsGlobPath, err = tryDetermineLogFolder(ctx, mdb.Conn)
 			if err != nil {
 				logger.WithError(err).Print("Could not determine Postgres logs parsing folder. Configured logs_glob_path = ", logsGlobPath)
 				time.Sleep(60 * time.Second)
 				continue
 			}
 		}
-		serverMessagesLang, err = tryDetermineLogMessagesLanguage(ctx, conn)
+		serverMessagesLang, err = tryDetermineLogMessagesLanguage(ctx, mdb.Conn)
 		if err != nil {
-			logger.WithError(err).Warningf("Could not determine language (lc_collate) used for server logs, cannot parse logs...")
+			logger.WithError(err).Warning("Could not determine language (lc_collate) used for server logs, cannot parse logs...")
 			time.Sleep(60 * time.Second)
 			continue
 		}

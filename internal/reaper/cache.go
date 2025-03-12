@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
+	"github.com/sirupsen/logrus"
 )
 
 var monitoredDbCache map[string]*sources.MonitoredDatabase
@@ -77,30 +77,47 @@ func GetMetricVersionProperties(metric string, _ MonitoredDatabaseSettings, metr
 	return mdm.MetricDefs[metric], nil
 }
 
-// LoadMetricDefs loads metric definitions from the reader
-func LoadMetricDefs(r metrics.Reader) (err error) {
+// LoadMetrics loads metric definitions from the reader
+func (r *Reaper) LoadMetrics() (err error) {
 	var metricDefs *metrics.Metrics
-	if metricDefs, err = r.GetMetrics(); err != nil {
+	if metricDefs, err = r.MetricsReaderWriter.GetMetrics(); err != nil {
 		return
 	}
 	metricDefMapLock.Lock()
 	metricDefinitionMap.MetricDefs = maps.Clone(metricDefs.MetricDefs)
 	metricDefinitionMap.PresetDefs = maps.Clone(metricDefs.PresetDefs)
 	metricDefMapLock.Unlock()
+	r.logger.
+		WithField("metrics", len(metricDefinitionMap.MetricDefs)).
+		WithField("presets", len(metricDefinitionMap.PresetDefs)).
+		Log(func() logrus.Level {
+			if len(metricDefinitionMap.PresetDefs)*len(metricDefinitionMap.MetricDefs) == 0 {
+				return logrus.WarnLevel
+			}
+			return logrus.InfoLevel
+		}(), "metrics and presets refreshed")
 	return
 }
 
-const metricDefinitionRefreshInterval time.Duration = time.Minute * 2 // min time before checking for new/changed metric definitions
+// LoadSources loads sources from the reader
+func (r *Reaper) LoadSources() (err error) {
+	if monitoredSources, err = monitoredSources.SyncFromReader(r.SourcesReaderWriter); err != nil {
+		return err
+	}
+	r.logger.WithField("sources", len(monitoredSources)).Info("sources refreshed")
+	return nil
+}
 
-// SyncMetricDefs refreshes metric definitions at regular intervals
-func SyncMetricDefs(ctx context.Context, r metrics.Reader) {
+// WriteMeasurements() writes the metrics to the sinks
+func (r *Reaper) WriteMeasurements(ctx context.Context) {
+	var err error
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(metricDefinitionRefreshInterval):
-			if err := LoadMetricDefs(r); err != nil {
-				log.GetLogger(ctx).Errorf("Could not refresh metric definitions: %w", err)
+		case msg := <-r.measurementCh:
+			if err = r.SinksWriter.Write(msg); err != nil {
+				r.logger.Error(err)
 			}
 		}
 	}

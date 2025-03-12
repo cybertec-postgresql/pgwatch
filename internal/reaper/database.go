@@ -18,26 +18,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-// every DB under monitoring should have exactly 1 sql.DB connection assigned, that will internally limit parallel access
-func InitSQLConnPoolForMonitoredDBIfNil(ctx context.Context, md *sources.MonitoredDatabase, maxConns int) (err error) {
-	conn := md.Conn
-	if conn != nil {
-		return nil
-	}
-
-	md.Conn, err = db.New(ctx, md.ConnStr, func(conf *pgxpool.Config) error {
-		conf.MaxConns = int32(maxConns)
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) (metrics.Measurements, error) {
 	rows, err := conn.Query(ctx, sql, args...)
@@ -65,10 +46,7 @@ func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, sql string, 
 	if md, err = GetMonitoredDatabaseByUniqueName(dbUnique); err != nil {
 		return nil, err
 	}
-	if conn = GetConnByUniqueName(dbUnique); conn == nil {
-		log.GetLogger(ctx).Errorf("SQL connection for dbUnique %s not found or nil", dbUnique) // Should always be initialized in the main loop DB discovery code ...
-		return nil, errors.New("SQL connection not found or nil")
-	}
+	conn = md.Conn
 	if md.IsPostgresSource() {
 		// we don't want transaction for non-postgres sources, e.g. pgbouncer
 		if tx, err = conn.Begin(ctx); err != nil {
@@ -101,7 +79,11 @@ func DBGetSizeMB(ctx context.Context, dbUnique string) (int64, error) {
 	lastDBSizeCheckLock.RUnlock()
 
 	if !ok || lastDBSizeCheckTime.Add(dbSizeCachingInterval).Before(time.Now()) {
-		ver, err := GetMonitoredDatabaseSettings(ctx, dbUnique, sources.SourcePostgres, false)
+		md, err := GetMonitoredDatabaseByUniqueName(dbUnique)
+		if err != nil {
+			return 0, err
+		}
+		ver, err := GetMonitoredDatabaseSettings(ctx, md, false)
 		if err != nil || (ver.ExecEnv != execEnvAzureSingle) || (ver.ExecEnv == execEnvAzureSingle && ver.ApproxDBSizeB < 1e12) {
 			log.GetLogger(ctx).Debugf("[%s] determining DB size ...", dbUnique)
 
@@ -176,26 +158,25 @@ func VersionToInt(version string) (v int) {
 
 var rBouncerAndPgpoolVerMatch = regexp.MustCompile(`\d+\.+\d+`) // extract $major.minor from "4.1.2 (karasukiboshi)" or "PgBouncer 1.12.0"
 
-func GetMonitoredDatabaseSettings(ctx context.Context, dbUnique string, srcType sources.Kind, noCache bool) (MonitoredDatabaseSettings, error) {
+func GetMonitoredDatabaseSettings(ctx context.Context, md *sources.MonitoredDatabase, noCache bool) (MonitoredDatabaseSettings, error) {
 	var dbSettings MonitoredDatabaseSettings
 	var dbNewSettings MonitoredDatabaseSettings
 	var ok bool
 
-	l := log.GetLogger(ctx).WithField("source", dbUnique).WithField("kind", srcType)
+	l := log.GetLogger(ctx).WithField("source", md.Name).WithField("kind", md.Kind)
 
 	sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
 
 	MonitoredDatabasesSettingsLock.Lock()
-	getVerLock, ok := MonitoredDatabasesSettingsGetLock[dbUnique]
+	getVerLock, ok := MonitoredDatabasesSettingsGetLock[md.Name]
 	if !ok {
-		MonitoredDatabasesSettingsGetLock[dbUnique] = &sync.RWMutex{}
-		getVerLock = MonitoredDatabasesSettingsGetLock[dbUnique]
+		MonitoredDatabasesSettingsGetLock[md.Name] = &sync.RWMutex{}
+		getVerLock = MonitoredDatabasesSettingsGetLock[md.Name]
 	}
-	dbSettings, ok = MonitoredDatabasesSettings[dbUnique]
+	dbSettings, ok = MonitoredDatabasesSettings[md.Name]
 	MonitoredDatabasesSettingsLock.Unlock()
 
 	if !noCache && ok && dbSettings.LastCheckedOn.After(time.Now().Add(time.Minute*-2)) { // use cached version for 2 min
-		//log.Debugf("using cached postgres version %s for %s", ver.Version.String(), dbUnique)
 		return dbSettings, nil
 	}
 	getVerLock.Lock() // limit to 1 concurrent version info fetch per DB
@@ -206,9 +187,9 @@ func GetMonitoredDatabaseSettings(ctx context.Context, dbUnique string, srcType 
 		dbNewSettings.Extensions = make(map[string]int)
 	}
 
-	switch srcType {
+	switch md.Kind {
 	case sources.SourcePgBouncer:
-		if err := GetConnByUniqueName(dbUnique).QueryRow(ctx, "SHOW VERSION").Scan(&dbNewSettings.VersionStr); err != nil {
+		if err := md.Conn.QueryRow(ctx, "SHOW VERSION").Scan(&dbNewSettings.VersionStr); err != nil {
 			return dbNewSettings, err
 		}
 		matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(dbNewSettings.VersionStr)
@@ -217,7 +198,7 @@ func GetMonitoredDatabaseSettings(ctx context.Context, dbUnique string, srcType 
 		}
 		dbNewSettings.Version = VersionToInt(matches[0])
 	case sources.SourcePgPool:
-		if err := GetConnByUniqueName(dbUnique).QueryRow(ctx, "SHOW POOL_VERSION").Scan(&dbNewSettings.VersionStr); err != nil {
+		if err := md.Conn.QueryRow(ctx, "SHOW POOL_VERSION").Scan(&dbNewSettings.VersionStr); err != nil {
 			return dbNewSettings, err
 		}
 
@@ -236,7 +217,7 @@ func GetMonitoredDatabaseSettings(ctx context.Context, dbUnique string, srcType 
 FROM
 	pg_control_system()`
 
-		err := GetConnByUniqueName(dbUnique).QueryRow(ctx, sql).
+		err := md.Conn.QueryRow(ctx, sql).
 			Scan(&dbNewSettings.Version, &dbNewSettings.VersionStr,
 				&dbNewSettings.IsInRecovery, &dbNewSettings.RealDbname,
 				&dbNewSettings.SystemIdentifier)
@@ -252,29 +233,29 @@ FROM
 			dbNewSettings.ExecEnv = dbSettings.ExecEnv // carry over as not likely to change ever
 		} else {
 			l.Debugf("determining the execution env...")
-			dbNewSettings.ExecEnv = TryDiscoverExecutionEnv(ctx, dbUnique)
+			dbNewSettings.ExecEnv = TryDiscoverExecutionEnv(ctx, md.Name)
 		}
 
 		// to work around poor Azure Single Server FS functions performance for some metrics + the --min-db-size-mb filter
 		if dbNewSettings.ExecEnv == execEnvAzureSingle {
-			if approxSize, err := GetDBTotalApproxSize(ctx, dbUnique); err == nil {
+			if approxSize, err := GetDBTotalApproxSize(ctx, md.Name); err == nil {
 				dbNewSettings.ApproxDBSizeB = approxSize
 			} else {
 				dbNewSettings.ApproxDBSizeB = dbSettings.ApproxDBSizeB
 			}
 		}
 
-		l.Debugf("[%s] determining if monitoring user is a superuser...", dbUnique)
+		l.Debugf("[%s] determining if monitoring user is a superuser...", md.Name)
 		sqlSu := `select /* pgwatch_generated */ rolsuper from pg_roles r where rolname = session_user`
 
-		if err = GetConnByUniqueName(dbUnique).QueryRow(ctx, sqlSu).Scan(&dbNewSettings.IsSuperuser); err != nil {
-			l.Errorf("[%s] failed to determine if monitoring user is a superuser: %v", dbUnique, err)
+		if err = md.Conn.QueryRow(ctx, sqlSu).Scan(&dbNewSettings.IsSuperuser); err != nil {
+			l.Errorf("[%s] failed to determine if monitoring user is a superuser: %v", md.Name, err)
 		}
 
-		l.Debugf("[%s] determining installed extensions info...", dbUnique)
-		data, err := DBExecReadByDbUniqueName(ctx, dbUnique, sqlExtensions)
+		l.Debugf("[%s] determining installed extensions info...", md.Name)
+		data, err := DBExecReadByDbUniqueName(ctx, md.Name, sqlExtensions)
 		if err != nil {
-			l.Errorf("[%s] failed to determine installed extensions info: %v", dbUnique, err)
+			l.Errorf("[%s] failed to determine installed extensions info: %v", md.Name, err)
 		} else {
 			for _, dr := range data {
 				extver := VersionToInt(dr["extversion"].(string))
@@ -284,14 +265,14 @@ FROM
 				}
 				dbNewSettings.Extensions[dr["extname"].(string)] = extver
 			}
-			l.Debugf("[%s] installed extensions: %+v", dbUnique, dbNewSettings.Extensions)
+			l.Debugf("[%s] installed extensions: %+v", md.Name, dbNewSettings.Extensions)
 		}
 
 	}
 
 	dbNewSettings.LastCheckedOn = time.Now()
 	MonitoredDatabasesSettingsLock.Lock()
-	MonitoredDatabasesSettings[dbUnique] = dbNewSettings
+	MonitoredDatabasesSettings[md.Name] = dbNewSettings
 	MonitoredDatabasesSettingsLock.Unlock()
 
 	return dbNewSettings, nil
@@ -938,7 +919,7 @@ func GetGoPsutilDiskPG(ctx context.Context, dbUnique string) (metrics.Measuremen
 	return psutil.GetGoPsutilDiskPG(data, dataTblsp)
 }
 
-func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, currentDBs, prevLoopDBs sources.MonitoredDatabases, shutDownDueToRoleChange map[string]bool) {
+func CloseResourcesForRemovedMonitoredDBs(metricsWriter sinks.Writer, currentDBs, prevLoopDBs sources.MonitoredDatabases, shutDownDueToRoleChange map[string]bool) {
 	var curDBsMap = make(map[string]bool)
 
 	for _, curDB := range currentDBs {
@@ -948,7 +929,7 @@ func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, curr
 	for _, prevDB := range prevLoopDBs {
 		if _, ok := curDBsMap[prevDB.Name]; !ok { // removed from config
 			prevDB.Conn.Close()
-			_ = metricsWriter.SyncMetrics(prevDB.Name, "", "remove")
+			_ = metricsWriter.SyncMetric(prevDB.Name, "", "remove")
 		}
 	}
 
@@ -957,7 +938,7 @@ func CloseResourcesForRemovedMonitoredDBs(metricsWriter *sinks.MultiWriter, curr
 		if db := currentDBs.GetMonitoredDatabase(roleChangedDB); db != nil {
 			db.Conn.Close()
 		}
-		_ = metricsWriter.SyncMetrics(roleChangedDB, "", "remove")
+		_ = metricsWriter.SyncMetric(roleChangedDB, "", "remove")
 	}
 }
 

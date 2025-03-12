@@ -7,7 +7,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 )
 
@@ -23,10 +22,12 @@ type MultiWriter struct {
 	sync.Mutex
 }
 
-// NewMultiWriter creates and returns new instance of MultiWriter struct.
-func NewMultiWriter(ctx context.Context, opts *CmdOpts, metricDefs *metrics.Metrics) (mw *MultiWriter, err error) {
-	var w Writer
-	mw = &MultiWriter{}
+// NewSinkWriter creates and returns new instance of MultiWriter struct.
+func NewSinkWriter(ctx context.Context, opts *CmdOpts, metricDefs *metrics.Metrics) (w Writer, err error) {
+	if len(opts.Sinks) == 0 {
+		return nil, errors.New("no sinks specified for measurements")
+	}
+	mw := &MultiWriter{}
 	for _, s := range opts.Sinks {
 		scheme, path, found := strings.Cut(s, "://")
 		if !found || scheme == "" || path == "" {
@@ -49,8 +50,8 @@ func NewMultiWriter(ctx context.Context, opts *CmdOpts, metricDefs *metrics.Metr
 		}
 		mw.AddWriter(w)
 	}
-	if len(mw.writers) == 0 {
-		return nil, errors.New("no sinks specified for measurements")
+	if len(mw.writers) == 1 {
+		return mw.writers[0], nil
 	}
 	return mw, nil
 }
@@ -61,27 +62,16 @@ func (mw *MultiWriter) AddWriter(w Writer) {
 	mw.Unlock()
 }
 
-func (mw *MultiWriter) SyncMetrics(dbUnique, metricName, op string) (err error) {
+func (mw *MultiWriter) SyncMetric(dbUnique, metricName, op string) (err error) {
 	for _, w := range mw.writers {
 		err = errors.Join(err, w.SyncMetric(dbUnique, metricName, op))
 	}
 	return
 }
 
-func (mw *MultiWriter) WriteMeasurements(ctx context.Context, storageCh <-chan []metrics.MeasurementEnvelope) {
-	var err error
-	logger := log.GetLogger(ctx)
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case msg := <-storageCh:
-			for _, w := range mw.writers {
-				err = w.Write(msg)
-				if err != nil {
-					logger.Error(err)
-				}
-			}
-		}
+func (mw *MultiWriter) Write(msgs []metrics.MeasurementEnvelope) (err error) {
+	for _, w := range mw.writers {
+		err = errors.Join(err, w.Write(msgs))
 	}
+	return
 }
