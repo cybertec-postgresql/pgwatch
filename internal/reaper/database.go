@@ -18,26 +18,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-// every DB under monitoring should have exactly 1 sql.DB connection assigned, that will internally limit parallel access
-func InitSQLConnPoolForMonitoredDBIfNil(ctx context.Context, md *sources.MonitoredDatabase, maxConns int) (err error) {
-	conn := md.Conn
-	if conn != nil {
-		return nil
-	}
-
-	md.Conn, err = db.New(ctx, md.ConnStr, func(conf *pgxpool.Config) error {
-		conf.MaxConns = int32(maxConns)
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) (metrics.Measurements, error) {
 	rows, err := conn.Query(ctx, sql, args...)
