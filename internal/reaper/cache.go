@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 	"github.com/sirupsen/logrus"
@@ -106,7 +105,7 @@ const metricDefinitionRefreshInterval time.Duration = time.Minute * 2 // min tim
 func (r *Reaper) ReadMetrics(ctx context.Context) {
 	for {
 		if err := r.LoadMetricDefs(); err != nil {
-			log.GetLogger(ctx).Errorf("Could not refresh metric definitions: %w", err)
+			r.logger.WithError(err).Error("could not refresh metric definitions")
 			continue
 		}
 		select {

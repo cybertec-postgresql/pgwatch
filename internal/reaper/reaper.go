@@ -305,7 +305,6 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				logger.WithField("source", db).WithField("metric", metric).Infof("stoppin gatherer...")
 				cancelFunc()
 				delete(cancelFuncs, dbMetric)
-				logger.Debugf("cancel function for [%s:%s] deleted", db, metric)
 				gatherersShutDown++
 				ClearDBUnreachableStateIfAny(db)
 				if err := r.SinksWriter.SyncMetric(db, metric, "remove"); err != nil {
