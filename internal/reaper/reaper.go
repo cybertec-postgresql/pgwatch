@@ -352,7 +352,7 @@ func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 	failedFetches := 0
 	lastDBVersionFetchTime := time.Unix(0, 0) // check DB ver. ev. 5 min
 
-	l := log.GetLogger(ctx).WithField("source", dbUniqueName).WithField("metric", metricName)
+	l := r.logger.WithField("source", dbUniqueName).WithField("metric", metricName)
 	if metricName == specialMetricServerLogEventCounts {
 		mdb, err := GetMonitoredDatabaseByUniqueName(dbUniqueName)
 		if err != nil {
@@ -677,10 +677,6 @@ func FetchMetrics(ctx context.Context,
 		}
 
 		log.GetLogger(ctx).WithFields(map[string]any{"source": msg.DBUniqueName, "metric": msg.MetricName, "rows": len(data)}).Info("measurements fetched")
-		// if regexIsPgbouncerMetrics.MatchString(msg.MetricName) { // clean unwanted pgbouncer pool stats here as not possible in SQL
-		// 	data = FilterPgbouncerData(ctx, data, md.GetDatabaseName(), dbSettings)
-		// }
-
 		ClearDBUnreachableStateIfAny(msg.DBUniqueName)
 
 	}
