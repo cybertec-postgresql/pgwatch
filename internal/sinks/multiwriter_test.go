@@ -21,7 +21,7 @@ func (mw *MockWriter) Write(_ []metrics.MeasurementEnvelope) error {
 func TestNewMultiWriter(t *testing.T) {
 	input := []struct {
 		opts *CmdOpts
-		mw   bool // MultiWriter returned
+		w    bool // Writer returned
 		err  bool // error returned
 	}{
 		{&CmdOpts{}, false, true},
@@ -31,6 +31,21 @@ func TestNewMultiWriter(t *testing.T) {
 		{&CmdOpts{
 			Sinks: []string{"jsonfile://test.json"},
 		}, true, false},
+		{&CmdOpts{
+			Sinks: []string{"jsonfile://test.json", "jsonfile://test1.json"},
+		}, true, false},
+		{&CmdOpts{
+			Sinks: []string{"prometheus://foo/"},
+		}, false, true},
+		{&CmdOpts{
+			Sinks: []string{"rpc://foo/"},
+		}, false, true},
+		{&CmdOpts{
+			Sinks: []string{"postgresql:///baz"},
+		}, false, true},
+		{&CmdOpts{
+			Sinks: []string{"foo:///"},
+		}, false, true},
 	}
 
 	for _, i := range input {
@@ -40,7 +55,7 @@ func TestNewMultiWriter(t *testing.T) {
 		} else {
 			assert.NoError(t, err)
 		}
-		if i.mw {
+		if i.w {
 			assert.NotNil(t, mw)
 		} else {
 			assert.Nil(t, mw)
