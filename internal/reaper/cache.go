@@ -77,8 +77,8 @@ func GetMetricVersionProperties(metric string, _ MonitoredDatabaseSettings, metr
 	return mdm.MetricDefs[metric], nil
 }
 
-// LoadMetricDefs loads metric definitions from the reader
-func (r *Reaper) LoadMetricDefs() (err error) {
+// LoadMetrics loads metric definitions from the reader
+func (r *Reaper) LoadMetrics() (err error) {
 	var metricDefs *metrics.Metrics
 	if metricDefs, err = r.MetricsReaderWriter.GetMetrics(); err != nil {
 		return
@@ -99,22 +99,13 @@ func (r *Reaper) LoadMetricDefs() (err error) {
 	return
 }
 
-const metricDefinitionRefreshInterval time.Duration = time.Minute * 2 // min time before checking for new/changed metric definitions
-
-// ReadMetrics refreshes metric definitions at regular intervals
-func (r *Reaper) ReadMetrics(ctx context.Context) {
-	for {
-		if err := r.LoadMetricDefs(); err != nil {
-			r.logger.WithError(err).Error("could not refresh metric definitions")
-			continue
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(metricDefinitionRefreshInterval):
-			// pass through
-		}
+// LoadSources loads sources from the reader
+func (r *Reaper) LoadSources() (err error) {
+	if monitoredSources, err = monitoredSources.SyncFromReader(r.SourcesReaderWriter); err != nil {
+		return err
 	}
+	r.logger.WithField("sources", len(monitoredSources)).Info("sources refreshed")
+	return nil
 }
 
 // WriteMeasurements() writes the metrics to the sinks

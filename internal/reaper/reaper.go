@@ -31,17 +31,12 @@ type Reaper struct {
 }
 
 // NewReaper creates a new Reaper instance
-func NewReaper(mainContext context.Context, opts *cmdopts.Options) (r *Reaper, err error) {
+func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper, err error) {
 	r = &Reaper{
 		Options:       opts,
 		measurementCh: make(chan []metrics.MeasurementEnvelope, 10000),
-		logger:        log.GetLogger(mainContext),
+		logger:        log.GetLogger(ctx),
 	}
-	if monitoredSources, err = monitoredSources.SyncFromReader(r.SourcesReaderWriter); err != nil {
-		return nil, err
-	}
-	go r.ReadMetrics(mainContext)
-	go r.WriteMeasurements(mainContext)
 	return r, nil
 }
 
@@ -54,18 +49,22 @@ func (r *Reaper) Ready() bool {
 // from the sources and storing them to the sinks. It also manages the lifecycle of
 // the metric gatherers. In case of a source or metric definition change, it will
 // start or stop the gatherers accordingly.
-func (r *Reaper) Reap(mainContext context.Context) (err error) {
+func (r *Reaper) Reap(ctx context.Context) (err error) {
 	cancelFuncs := make(map[string]context.CancelFunc) // [db1+metric1]=chan
 
 	mainLoopCount := 0
 	logger := r.logger
 
+	go r.WriteMeasurements(ctx)
 	r.ready.Store(true)
 
 	for { //main loop
-		r.logger.WithField("sources", len(monitoredSources)).Info("sourcers refreshed")
-		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
-		gatherersShutDown := 0
+		if err = r.LoadSources(); err != nil {
+			logger.WithError(err).Error("could not refresh active sources, using last valid cache")
+		}
+		if err = r.LoadMetrics(); err != nil {
+			logger.WithError(err).Error("could not refresh metric definitions, using last valid cache")
+		}
 
 		if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
 			logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", r.Metrics.EmergencyPauseTriggerfile)
@@ -75,33 +74,31 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 		UpdateMonitoredDBCache(monitoredSources)
 
 		if lastMonitoredDBsUpdate.IsZero() || lastMonitoredDBsUpdate.Before(time.Now().Add(-1*time.Second*monitoredDbsDatastoreSyncIntervalSeconds)) {
-			go SyncMonitoredDBsToDatastore(mainContext, monitoredSources, r.measurementCh)
+			go SyncMonitoredDBsToDatastore(ctx, monitoredSources, r.measurementCh)
 			lastMonitoredDBsUpdate = time.Now()
 		}
 
+		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
 		for _, monitoredSource := range monitoredSources {
-			logger.WithField("source", monitoredSource).Debug()
+			srcL := logger.WithField("source", monitoredSource.Name)
 
-			srcType := monitoredSource.Kind
-
-			if monitoredSource.Connect(mainContext, r.Sources) != nil {
-				logger.Warningf("could not init connection, retrying on next iteration: %w", err)
+			if monitoredSource.Connect(ctx, r.Sources) != nil {
+				srcL.WithError(err).Warning("could not init connection, retrying on next iteration")
 				continue
 			}
 
 			InitPGVersionInfoFetchingLockIfNil(monitoredSource)
 
-			var ver MonitoredDatabaseSettings
+			var dbSettings MonitoredDatabaseSettings
 
-			ver, err = GetMonitoredDatabaseSettings(mainContext, monitoredSource.Name, srcType, true)
+			dbSettings, err = GetMonitoredDatabaseSettings(ctx, monitoredSource, true)
 			if err != nil {
-				logger.WithError(err).WithField("source", monitoredSource.Name).
-					Error("could not start metric gathering")
+				srcL.WithError(err).Error("could not start metric gathering")
 				continue
 			}
-			logger.WithField("source", monitoredSource.Name).WithField("recovery", ver.IsInRecovery).Infof("Connect OK. Version: %s", ver.VersionStr)
-			if ver.IsInRecovery && monitoredSource.OnlyIfMaster {
-				logger.Infof("not added to monitoring due to 'master only' property")
+			srcL.WithField("recovery", dbSettings.IsInRecovery).Infof("Connect OK. Version: %s", dbSettings.VersionStr)
+			if dbSettings.IsInRecovery && monitoredSource.OnlyIfMaster {
+				srcL.Info("not added to monitoring due to 'master only' property")
 				continue
 			}
 			metricConfig = func() map[string]float64 {
@@ -113,8 +110,8 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				}
 				return nil
 			}()
-			hostLastKnownStatusInRecovery[monitoredSource.Name] = ver.IsInRecovery
-			if ver.IsInRecovery {
+			hostLastKnownStatusInRecovery[monitoredSource.Name] = dbSettings.IsInRecovery
+			if dbSettings.IsInRecovery {
 				metricConfig = func() map[string]float64 {
 					if len(monitoredSource.MetricsStandby) > 0 {
 						return monitoredSource.MetricsStandby
@@ -126,11 +123,10 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				}()
 			}
 
-			if monitoredSource.IsPostgresSource() && !ver.IsInRecovery && r.Metrics.CreateHelpers {
-				ls := logger.WithField("source", monitoredSource.Name)
-				ls.Info("trying to create helper objects if missing")
-				if err = TryCreateMetricsFetchingHelpers(mainContext, monitoredSource); err != nil {
-					ls.Warning("failed to create helper functions: %w", err)
+			if monitoredSource.IsPostgresSource() && !dbSettings.IsInRecovery && r.Metrics.CreateHelpers {
+				srcL.Info("trying to create helper objects if missing")
+				if err = TryCreateMetricsFetchingHelpers(ctx, monitoredSource); err != nil {
+					srcL.WithError(err).Warning("failed to create helper functions")
 				}
 			}
 
@@ -138,10 +134,10 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				var DBSizeMB int64
 
 				if r.Sources.MinDbSizeMB >= 8 { // an empty DB is a bit less than 8MB
-					DBSizeMB, _ = DBGetSizeMB(mainContext, monitoredSource.Name) // ignore errors, i.e. only remove from monitoring when we're certain it's under the threshold
+					DBSizeMB, _ = DBGetSizeMB(ctx, monitoredSource.Name) // ignore errors, i.e. only remove from monitoring when we're certain it's under the threshold
 					if DBSizeMB != 0 {
 						if DBSizeMB < r.Sources.MinDbSizeMB {
-							logger.Infof("[%s] DB will be ignored due to the --min-db-size-mb filter. Current (up to %v cached) DB size = %d MB", monitoredSource.Name, dbSizeCachingInterval, DBSizeMB)
+							srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
 							hostsToShutDownDueToRoleChange[monitoredSource.Name] = true // for the case when DB size was previosly above the threshold
 							SetUndersizedDBState(monitoredSource.Name, true)
 							continue
@@ -149,21 +145,21 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 						SetUndersizedDBState(monitoredSource.Name, false)
 					}
 				}
-				ver, err := GetMonitoredDatabaseSettings(mainContext, monitoredSource.Name, monitoredSource.Kind, false)
+				ver, err := GetMonitoredDatabaseSettings(ctx, monitoredSource, false)
 				if err == nil { // ok to ignore error, re-tried on next loop
 					lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[monitoredSource.Name]
 					if ver.IsInRecovery && monitoredSource.OnlyIfMaster {
-						logger.Infof("[%s] to be removed from monitoring due to 'master only' property and status change", monitoredSource.Name)
+						srcL.Info("to be removed from monitoring due to 'master only' property and status change")
 						hostsToShutDownDueToRoleChange[monitoredSource.Name] = true
 						SetRecoveryIgnoredDBState(monitoredSource.Name, true)
 						continue
 					} else if lastKnownStatusInRecovery != ver.IsInRecovery {
 						if ver.IsInRecovery && len(monitoredSource.MetricsStandby) > 0 {
-							logger.Warningf("Switching metrics collection for \"%s\" to standby config...", monitoredSource.Name)
+							srcL.Warning("Switching metrics collection to standby config...")
 							metricConfig = monitoredSource.MetricsStandby
 							hostLastKnownStatusInRecovery[monitoredSource.Name] = true
 						} else {
-							logger.Warningf("Switching metrics collection for \"%s\" to primary config...", monitoredSource.Name)
+							srcL.Warning("Switching metrics collection to primary config...")
 							metricConfig = monitoredSource.Metrics
 							hostLastKnownStatusInRecovery[monitoredSource.Name] = false
 							SetRecoveryIgnoredDBState(monitoredSource.Name, false)
@@ -173,8 +169,8 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 
 				if mainLoopCount == 0 && r.Sources.TryCreateListedExtsIfMissing != "" && !ver.IsInRecovery {
 					extsToCreate := strings.Split(r.Sources.TryCreateListedExtsIfMissing, ",")
-					extsCreated := TryCreateMissingExtensions(mainContext, monitoredSource.Name, extsToCreate, ver.Extensions)
-					logger.Infof("[%s] %d/%d extensions created based on --try-create-listed-exts-if-missing input %v", monitoredSource.Name, len(extsCreated), len(extsToCreate), extsCreated)
+					extsCreated := TryCreateMissingExtensions(ctx, monitoredSource.Name, extsToCreate, ver.Extensions)
+					srcL.Infof("%d/%d extensions created based on --try-create-listed-exts-if-missing input %v", len(extsCreated), len(extsToCreate), extsCreated)
 				}
 			}
 
@@ -197,19 +193,19 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				if metricDefOk && !chOk { // initialize a new per db/per metric control channel
 					if interval > 0 {
 						hostMetricIntervalMap[dbMetric] = interval
-						logger.WithField("source", monitoredSource.Name).WithField("metric", metric).WithField("interval", interval).Info("starting gatherer")
-						metricCtx, cancelFunc := context.WithCancel(mainContext)
+						srcL.WithField("metric", metric).WithField("interval", interval).Info("starting gatherer")
+						metricCtx, cancelFunc := context.WithCancel(ctx)
 						cancelFuncs[dbMetric] = cancelFunc
 
 						metricNameForStorage := metricName
 						if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
-							vme, err := GetMonitoredDatabaseSettings(mainContext, monitoredSource.Name, srcType, false)
+							vme, err := GetMonitoredDatabaseSettings(ctx, monitoredSource, false)
 							if err != nil {
-								logger.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
+								srcL.WithError(err).Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
 							} else {
 								mvp, err := GetMetricVersionProperties(metricName, vme, nil)
 								if err != nil && !strings.Contains(err.Error(), "too old") {
-									logger.Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
+									srcL.WithError(err).Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
 								} else if mvp.StorageName != "" {
 									metricNameForStorage = mvp.StorageName
 								}
@@ -217,33 +213,28 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 						}
 
 						if err := r.SinksWriter.SyncMetric(monitoredSource.Name, metricNameForStorage, "add"); err != nil {
-							logger.Error(err)
+							srcL.Error(err)
 						}
 
-						go r.reapMetricMeasurementsFromSource(metricCtx,
-							monitoredSource.Name,
-							monitoredSource.GetDatabaseName(),
-							srcType,
-							metric,
-							metricConfig)
+						go r.reapMetricMeasurements(metricCtx, monitoredSource, metric, metricConfig)
 					}
 				} else if (!metricDefOk && chOk) || interval <= 0 {
 					// metric definition files were recently removed or interval set to zero
 					if cancelFunc, isOk := cancelFuncs[dbMetric]; isOk {
 						cancelFunc()
 					}
-					logger.Warning("shutting down metric", metric, "for", monitoredSource.Name)
+					srcL.WithField("metric", metric).Warning("shutting down gatherer...")
 					delete(cancelFuncs, dbMetric)
 				} else if !metricDefOk {
 					epoch, ok := lastSQLFetchError.Load(metric)
 					if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) { // complain only 1x per hour
-						logger.Warningf("metric definition \"%s\" not found for \"%s\"", metric, monitoredSource.Name)
+						srcL.WithField("metric", metric).Warning("metric definition not found")
 						lastSQLFetchError.Store(metric, time.Now().Unix())
 					}
 				} else {
 					// check if interval has changed
 					if hostMetricIntervalMap[dbMetric] != interval {
-						logger.Warning("updating interval update for", monitoredSource.Name, metric)
+						srcL.WithField("metric", metric).Info("updating interval...")
 						hostMetricIntervalMap[dbMetric] = interval
 					}
 				}
@@ -301,20 +292,15 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 				}
 			}
 
-			if mainContext.Err() != nil || wholeDbShutDownDueToRoleChange || dbRemovedFromConfig || singleMetricDisabled {
-				logger.WithField("source", db).WithField("metric", metric).Infof("stoppin gatherer...")
+			if ctx.Err() != nil || wholeDbShutDownDueToRoleChange || dbRemovedFromConfig || singleMetricDisabled {
+				logger.WithField("source", db).WithField("metric", metric).Info("stoppin gatherer...")
 				cancelFunc()
 				delete(cancelFuncs, dbMetric)
-				gatherersShutDown++
 				ClearDBUnreachableStateIfAny(db)
 				if err := r.SinksWriter.SyncMetric(db, metric, "remove"); err != nil {
 					logger.Error(err)
 				}
 			}
-		}
-
-		if gatherersShutDown > 0 {
-			logger.Warningf("sent STOP message to %d gatherers (it might take some time for them to stop though)", gatherersShutDown)
 		}
 
 		// Destroy conn pools and metric writers
@@ -327,19 +313,16 @@ func (r *Reaper) Reap(mainContext context.Context) (err error) {
 		logger.Debugf("main sleeping %ds...", r.Sources.Refresh)
 		select {
 		case <-time.After(time.Second * time.Duration(r.Sources.Refresh)):
-			if monitoredSources, err = monitoredSources.SyncFromReader(r.SourcesReaderWriter); err != nil {
-				logger.Error("could not fetch active hosts, using last valid config data:", err)
-			}
-		case <-mainContext.Done():
+			// pass
+		case <-ctx.Done():
 			return
 		}
 	}
 }
 
 // metrics.ControlMessage notifies of shutdown + interval change
-func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
-	dbUniqueName, dbUniqueNameOrig string,
-	srcType sources.Kind,
+func (r *Reaper) reapMetricMeasurements(ctx context.Context,
+	mdb *sources.MonitoredDatabase,
 	metricName string,
 	configMap map[string]float64) {
 
@@ -352,24 +335,19 @@ func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 	failedFetches := 0
 	lastDBVersionFetchTime := time.Unix(0, 0) // check DB ver. ev. 5 min
 
-	l := r.logger.WithField("source", dbUniqueName).WithField("metric", metricName)
+	l := r.logger.WithField("source", mdb.Name).WithField("metric", metricName)
 	if metricName == specialMetricServerLogEventCounts {
-		mdb, err := GetMonitoredDatabaseByUniqueName(dbUniqueName)
-		if err != nil {
-			return
-		}
 		MonitoredDatabasesSettingsLock.RLock()
-		realDbname := MonitoredDatabasesSettings[dbUniqueName].RealDbname // to manage 2 sets of event counts - monitored DB + global
+		realDbname := MonitoredDatabasesSettings[mdb.Name].RealDbname // to manage 2 sets of event counts - monitored DB + global
 		MonitoredDatabasesSettingsLock.RUnlock()
-		conn := mdb.Conn
-		metrics.ParseLogs(ctx, conn, mdb, realDbname, metricName, configMap, r.measurementCh) // no return
+		metrics.ParseLogs(ctx, mdb, realDbname, metricName, configMap, r.measurementCh) // no return
 		return
 	}
 
 	for {
 		interval := configMap[metricName]
 		if lastDBVersionFetchTime.Add(time.Minute * time.Duration(5)).Before(time.Now()) {
-			vme, err = GetMonitoredDatabaseSettings(ctx, dbUniqueName, srcType, false) // in case of errors just ignore metric "disabled" time ranges
+			vme, err = GetMonitoredDatabaseSettings(ctx, mdb, false) // in case of errors just ignore metric "disabled" time ranges
 			if err != nil {
 				lastDBVersionFetchTime = time.Now()
 			}
@@ -384,10 +362,10 @@ func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 		var metricStoreMessages []metrics.MeasurementEnvelope
 		var err error
 		mfm := MetricFetchConfig{
-			DBUniqueName:        dbUniqueName,
-			DBUniqueNameOrig:    dbUniqueNameOrig,
+			DBUniqueName:        mdb.Name,
+			DBUniqueNameOrig:    mdb.GetDatabaseName(),
 			MetricName:          metricName,
-			Source:              srcType,
+			Source:              mdb.Kind,
 			Interval:            time.Second * time.Duration(interval),
 			StmtTimeoutOverride: 0,
 		}
@@ -428,15 +406,15 @@ func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 					if ok {
 						if lastUptimeS != -1 {
 							if postmasterUptimeS.(int64) < lastUptimeS { // restart (or possibly also failover when host is routed) happened
-								message := "Detected server restart (or failover) of \"" + dbUniqueName + "\""
+								message := "Detected server restart (or failover) of \"" + mdb.Name + "\""
 								l.Warning(message)
 								detectedChangesSummary := make(metrics.Measurements, 0)
 								entry := metrics.Measurement{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
 								detectedChangesSummary = append(detectedChangesSummary, entry)
 								metricStoreMessages = append(metricStoreMessages,
 									metrics.MeasurementEnvelope{
-										DBName:     dbUniqueName,
-										SourceType: string(srcType),
+										DBName:     mdb.Name,
+										SourceType: string(mdb.Kind),
 										MetricName: "object_changes",
 										Data:       detectedChangesSummary,
 										CustomTags: metricStoreMessages[0].CustomTags,
@@ -454,7 +432,7 @@ func (r *Reaper) reapMetricMeasurementsFromSource(ctx context.Context,
 		case <-ctx.Done():
 			return
 		case <-time.After(time.Second * time.Duration(interval)):
-			l.Debugf("MetricGathererLoop slept for %s", time.Second*time.Duration(interval))
+			// continue
 		}
 	}
 }
@@ -579,7 +557,7 @@ func FetchMetrics(ctx context.Context,
 		return nil, err
 	}
 
-	dbSettings, err = GetMonitoredDatabaseSettings(ctx, msg.DBUniqueName, msg.Source, false)
+	dbSettings, err = GetMonitoredDatabaseSettings(ctx, md, false)
 	if err != nil {
 		log.GetLogger(ctx).Error("failed to fetch pg version for ", msg.DBUniqueName, msg.MetricName, err)
 		return nil, err
@@ -671,7 +649,9 @@ func FetchMetrics(ctx context.Context,
 				SetDBUnreachableState(msg.DBUniqueName)
 			}
 
-			log.GetLogger(ctx).Infof("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
+			log.GetLogger(ctx).
+				WithFields(map[string]any{"source": msg.DBUniqueName, "metric": msg.MetricName}).
+				WithError(err).Error("failed to fetch metrics")
 
 			return nil, err
 		}
