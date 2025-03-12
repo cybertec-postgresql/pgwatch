@@ -46,10 +46,7 @@ func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, sql string, 
 	if md, err = GetMonitoredDatabaseByUniqueName(dbUnique); err != nil {
 		return nil, err
 	}
-	if conn = GetConnByUniqueName(dbUnique); conn == nil {
-		log.GetLogger(ctx).Errorf("SQL connection for dbUnique %s not found or nil", dbUnique) // Should always be initialized in the main loop DB discovery code ...
-		return nil, errors.New("SQL connection not found or nil")
-	}
+	conn = md.Conn
 	if md.IsPostgresSource() {
 		// we don't want transaction for non-postgres sources, e.g. pgbouncer
 		if tx, err = conn.Begin(ctx); err != nil {
