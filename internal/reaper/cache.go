@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var monitoredDbCache map[string]*sources.MonitoredDatabase
+var monitoredDbCache map[string]*sources.SourceConn
 var monitoredDbCacheLock sync.RWMutex
 var MonitoredDatabasesSettings = make(map[string]MonitoredDatabaseSettings)
 var MonitoredDatabasesSettingsLock = sync.RWMutex{}
@@ -25,8 +25,8 @@ var lastDBSizeMB = make(map[string]int64)
 var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHING_INTERVAL
 var lastDBSizeCheckLock sync.RWMutex
 
-var prevLoopMonitoredDBs sources.MonitoredDatabases // to be able to detect DBs removed from config
-var undersizedDBs = make(map[string]bool)           // DBs below the --min-db-size-mb limit, if set
+var prevLoopMonitoredDBs sources.SourceConns // to be able to detect DBs removed from config
+var undersizedDBs = make(map[string]bool)    // DBs below the --min-db-size-mb limit, if set
 var undersizedDBsLock = sync.RWMutex{}
 var recoveryIgnoredDBs = make(map[string]bool) // DBs in recovery state and OnlyIfMaster specified in config
 var recoveryIgnoredDBsLock = sync.RWMutex{}
@@ -35,7 +35,7 @@ var hostMetricIntervalMap = make(map[string]float64) // [db1_metric] = 30
 
 var lastSQLFetchError sync.Map
 
-func InitPGVersionInfoFetchingLockIfNil(md *sources.MonitoredDatabase) {
+func InitPGVersionInfoFetchingLockIfNil(md *sources.SourceConn) {
 	MonitoredDatabasesSettingsLock.Lock()
 	if _, ok := MonitoredDatabasesSettingsGetLock[md.Name]; !ok {
 		MonitoredDatabasesSettingsGetLock[md.Name] = &sync.RWMutex{}
@@ -43,8 +43,8 @@ func InitPGVersionInfoFetchingLockIfNil(md *sources.MonitoredDatabase) {
 	MonitoredDatabasesSettingsLock.Unlock()
 }
 
-func UpdateMonitoredDBCache(data sources.MonitoredDatabases) {
-	monitoredDbCacheNew := make(map[string]*sources.MonitoredDatabase)
+func UpdateMonitoredDBCache(data sources.SourceConns) {
+	monitoredDbCacheNew := make(map[string]*sources.SourceConn)
 	for _, row := range data {
 		monitoredDbCacheNew[row.Name] = row
 	}
@@ -53,7 +53,7 @@ func UpdateMonitoredDBCache(data sources.MonitoredDatabases) {
 	monitoredDbCacheLock.Unlock()
 }
 
-func GetMonitoredDatabaseByUniqueName(name string) (*sources.MonitoredDatabase, error) {
+func GetMonitoredDatabaseByUniqueName(name string) (*sources.SourceConn, error) {
 	monitoredDbCacheLock.RLock()
 	defer monitoredDbCacheLock.RUnlock()
 	md, exists := monitoredDbCache[name]

@@ -1,15 +1,11 @@
 package sources
 
 import (
-	"context"
 	"fmt"
 	"maps"
-	"reflect"
 	"slices"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Kind string
@@ -94,126 +90,6 @@ func (s *Source) Clone() *Source {
 	c.MetricsStandby = maps.Clone(s.MetricsStandby)
 	c.CustomTags = maps.Clone(s.CustomTags)
 	return c
-}
-
-// MonitoredDatabase represents a single database to monitor. Unlike source, it contains a database connection.
-// Continuous discovery sources (postgres-continuous-discovery, patroni-continuous-discovery, patroni-namespace-discovery)
-// will produce multiple monitored databases structs based on the discovered databases.
-type (
-	MonitoredDatabase struct {
-		Source
-		Conn       db.PgxPoolIface
-		ConnConfig *pgxpool.Config
-	}
-
-	MonitoredDatabases []*MonitoredDatabase
-)
-
-// ping will try to ping the server to ensure the connection is still alive
-func (md *MonitoredDatabase) ping(ctx context.Context) (err error) {
-	if md.Kind == SourcePgBouncer {
-		// pgbouncer is very picky about the queries it accepts
-		_, err = md.Conn.Exec(ctx, "SHOW VERSION")
-		return
-	}
-	return md.Conn.Ping(ctx)
-}
-
-// Ping will try to establish a brand new connection to the server and return any error
-func (md *MonitoredDatabase) Ping(ctx context.Context) error {
-	c, err := pgx.Connect(ctx, md.ConnStr)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = c.Close(ctx) }()
-	return md.ping(ctx)
-}
-
-// Connect will establish a connection to the database if it's not already connected.
-// If the connection is already established, it pings the server to ensure it's still alive.
-func (md *MonitoredDatabase) Connect(ctx context.Context, opts CmdOpts) (err error) {
-	if md.Conn == nil {
-		if err = md.ParseConfig(); err != nil {
-			return err
-		}
-		if md.Kind == SourcePgBouncer {
-			md.ConnConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
-		}
-		if opts.MaxParallelConnectionsPerDb > 0 {
-			md.ConnConfig.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
-		}
-		md.Conn, err = db.NewWithConfig(ctx, md.ConnConfig)
-		if err != nil {
-			return err
-		}
-	}
-	return md.ping(ctx)
-}
-
-// ParseConfig will parse the connection string and store the result in the connection config
-func (md *MonitoredDatabase) ParseConfig() (err error) {
-	if md.ConnConfig == nil {
-		md.ConnConfig, err = pgxpool.ParseConfig(md.ConnStr)
-		return
-	}
-	return
-}
-
-// GetDatabaseName returns the database name from the connection string
-func (md *MonitoredDatabase) GetDatabaseName() string {
-	if err := md.ParseConfig(); err != nil {
-		return ""
-	}
-	return md.ConnConfig.ConnConfig.Database
-}
-
-// SetDatabaseName sets the database name in the connection config for resolved databases
-func (md *MonitoredDatabase) SetDatabaseName(name string) {
-	if err := md.ParseConfig(); err != nil {
-		return
-	}
-	md.ConnStr = "" // unset the connection string to force conn config usage
-	md.ConnConfig.ConnConfig.Database = name
-}
-
-func (md *MonitoredDatabase) IsPostgresSource() bool {
-	return md.Kind != SourcePgBouncer && md.Kind != SourcePgPool
-}
-
-func (mds MonitoredDatabases) GetMonitoredDatabase(DBUniqueName string) *MonitoredDatabase {
-	for _, md := range mds {
-		if md.Name == DBUniqueName {
-			return md
-		}
-	}
-	return nil
-}
-
-// SyncFromReader will update the monitored databases with the latest configuration from the reader.
-// Any resolution errors will be returned, e.g. etcd unavailability.
-// It's up to the caller to proceed with the databases available or stop the execution due to errors.
-func (mds MonitoredDatabases) SyncFromReader(r Reader) (newmds MonitoredDatabases, err error) {
-	srcs, err := r.GetSources()
-	if err != nil {
-		return nil, err
-	}
-	newmds, err = srcs.ResolveDatabases()
-	for _, newMD := range newmds {
-		md := mds.GetMonitoredDatabase(newMD.Name)
-		if md == nil {
-			continue
-		}
-		if reflect.DeepEqual(md.Source, newMD.Source) {
-			// keep the existing connection if the source is the same
-			newMD.Conn = md.Conn
-			newMD.ConnConfig = md.ConnConfig
-			continue
-		}
-		if md.Conn != nil {
-			md.Conn.Close()
-		}
-	}
-	return newmds, err
 }
 
 type HostConfigAttrs struct {

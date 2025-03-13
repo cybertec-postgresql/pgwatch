@@ -28,16 +28,9 @@ func DBExecRead(ctx context.Context, conn db.PgxIface, sql string, args ...any) 
 	return nil, err
 }
 
-func GetConnByUniqueName(dbUnique string) db.PgxIface {
-	if md, err := GetMonitoredDatabaseByUniqueName(dbUnique); err == nil {
-		return md.Conn
-	}
-	return nil
-}
-
 func DBExecReadByDbUniqueName(ctx context.Context, dbUnique string, sql string, args ...any) (metrics.Measurements, error) {
 	var conn db.PgxIface
-	var md *sources.MonitoredDatabase
+	var md *sources.SourceConn
 	var err error
 	var tx pgx.Tx
 	if strings.TrimSpace(sql) == "" {
@@ -112,35 +105,6 @@ func DBGetSizeMB(ctx context.Context, dbUnique string) (int64, error) {
 	return lastDBSize, nil
 }
 
-func TryDiscoverExecutionEnv(ctx context.Context, dbUnique string) (execEnv string) {
-	sql := `select /* pgwatch_generated */
-	case
-	  when exists (select * from pg_settings where name = 'pg_qs.host_database' and setting = 'azure_sys') and version() ~* 'compiled by Visual C' then 'AZURE_SINGLE'
-	  when exists (select * from pg_settings where name = 'pg_qs.host_database' and setting = 'azure_sys') and version() ~* 'compiled by gcc' then 'AZURE_FLEXIBLE'
-	  when exists (select * from pg_settings where name = 'cloudsql.supported_extensions') then 'GOOGLE'
-	else
-	  'UNKNOWN'
-	end as exec_env`
-	_ = GetConnByUniqueName(dbUnique).QueryRow(ctx, sql).Scan(&execEnv)
-	return
-}
-
-func GetDBTotalApproxSize(ctx context.Context, dbUnique string) (int64, error) {
-	sqlApproxDBSize := `
-	select /* pgwatch_generated */
-		current_setting('block_size')::int8 * sum(relpages) as db_size_approx
-	from
-		pg_class c
-	where	/* works only for v9.1+*/
-		c.relpersistence != 't';
-	`
-	data, err := DBExecReadByDbUniqueName(ctx, dbUnique, sqlApproxDBSize)
-	if err != nil {
-		return 0, err
-	}
-	return data[0]["db_size_approx"].(int64), nil
-}
-
 // VersionToInt parses a given version and returns an integer  or
 // an error if unable to parse the version. Only parses valid semantic versions.
 // Performs checking that can find errors within the version.
@@ -158,7 +122,7 @@ func VersionToInt(version string) (v int) {
 
 var rBouncerAndPgpoolVerMatch = regexp.MustCompile(`\d+\.+\d+`) // extract $major.minor from "4.1.2 (karasukiboshi)" or "PgBouncer 1.12.0"
 
-func GetMonitoredDatabaseSettings(ctx context.Context, md *sources.MonitoredDatabase, noCache bool) (MonitoredDatabaseSettings, error) {
+func GetMonitoredDatabaseSettings(ctx context.Context, md *sources.SourceConn, noCache bool) (MonitoredDatabaseSettings, error) {
 	var dbSettings MonitoredDatabaseSettings
 	var dbNewSettings MonitoredDatabaseSettings
 	var ok bool
@@ -233,12 +197,12 @@ FROM
 			dbNewSettings.ExecEnv = dbSettings.ExecEnv // carry over as not likely to change ever
 		} else {
 			l.Debugf("determining the execution env...")
-			dbNewSettings.ExecEnv = TryDiscoverExecutionEnv(ctx, md.Name)
+			dbNewSettings.ExecEnv = md.DiscoverPlatform(ctx)
 		}
 
 		// to work around poor Azure Single Server FS functions performance for some metrics + the --min-db-size-mb filter
 		if dbNewSettings.ExecEnv == execEnvAzureSingle {
-			if approxSize, err := GetDBTotalApproxSize(ctx, md.Name); err == nil {
+			if approxSize, err := md.GetApproxSize(ctx); err == nil {
 				dbNewSettings.ApproxDBSizeB = approxSize
 			} else {
 				dbNewSettings.ApproxDBSizeB = dbSettings.ApproxDBSizeB
@@ -811,21 +775,6 @@ func FetchMetricsPgpool(ctx context.Context, msg MetricFetchConfig, vme Monitore
 	return retData, nil
 }
 
-func DoesFunctionExists(ctx context.Context, dbUnique, functionName string) bool {
-	log.GetLogger(ctx).Debug("Checking for function existence", dbUnique, functionName)
-	sql := fmt.Sprintf("select /* pgwatch_generated */ 1 from pg_proc join pg_namespace n on pronamespace = n.oid where proname = '%s' and n.nspname = 'public'", functionName)
-	data, err := DBExecReadByDbUniqueName(ctx, dbUnique, sql)
-	if err != nil {
-		log.GetLogger(ctx).Error("Failed to check for function existence", dbUnique, functionName, err)
-		return false
-	}
-	if len(data) > 0 {
-		log.GetLogger(ctx).Debugf("Function %s exists on %s", functionName, dbUnique)
-		return true
-	}
-	return false
-}
-
 // Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
 // With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific
 // whitelisting or "trusted extensions" (a feature from v13). Ignores errors.
@@ -866,7 +815,7 @@ func TryCreateMissingExtensions(ctx context.Context, dbUnique string, extensionN
 }
 
 // Called once on daemon startup to try to create "metric fething helper" functions automatically
-func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.MonitoredDatabase) (err error) {
+func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn) (err error) {
 	metricConfig := func() map[string]float64 {
 		if len(md.Metrics) > 0 {
 			return md.Metrics
@@ -919,7 +868,7 @@ func GetGoPsutilDiskPG(ctx context.Context, dbUnique string) (metrics.Measuremen
 	return psutil.GetGoPsutilDiskPG(data, dataTblsp)
 }
 
-func CloseResourcesForRemovedMonitoredDBs(metricsWriter sinks.Writer, currentDBs, prevLoopDBs sources.MonitoredDatabases, shutDownDueToRoleChange map[string]bool) {
+func CloseResourcesForRemovedMonitoredDBs(metricsWriter sinks.Writer, currentDBs, prevLoopDBs sources.SourceConns, shutDownDueToRoleChange map[string]bool) {
 	var curDBsMap = make(map[string]bool)
 
 	for _, curDB := range currentDBs {

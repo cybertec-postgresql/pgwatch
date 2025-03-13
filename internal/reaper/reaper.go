@@ -16,7 +16,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
-var monitoredSources = make(sources.MonitoredDatabases, 0)
+var monitoredSources = make(sources.SourceConns, 0)
 var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 var metricConfig map[string]float64                       // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 var metricDefinitionMap *metrics.Metrics = &metrics.Metrics{}
@@ -68,7 +68,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 
 		if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
 			logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", r.Metrics.EmergencyPauseTriggerfile)
-			monitoredSources = make([]*sources.MonitoredDatabase, 0)
+			monitoredSources = make([]*sources.SourceConn, 0)
 		}
 
 		UpdateMonitoredDBCache(monitoredSources)
@@ -250,7 +250,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 		logger.Debug("checking if any workers need to be shut down...")
 		for dbMetric, cancelFunc := range cancelFuncs {
 			var currentMetricConfig map[string]float64
-			var dbInfo *sources.MonitoredDatabase
+			var dbInfo *sources.SourceConn
 			var ok, dbRemovedFromConfig bool
 			singleMetricDisabled := false
 			splits := strings.Split(dbMetric, dbMetricJoinStr)
@@ -322,7 +322,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 
 // metrics.ControlMessage notifies of shutdown + interval change
 func (r *Reaper) reapMetricMeasurements(ctx context.Context,
-	mdb *sources.MonitoredDatabase,
+	mdb *sources.SourceConn,
 	metricName string,
 	configMap map[string]float64) {
 
@@ -445,7 +445,7 @@ func StoreMetrics(metrics []metrics.MeasurementEnvelope, storageCh chan<- []metr
 	return 0, nil
 }
 
-func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.MonitoredDatabase, persistenceChannel chan []metrics.MeasurementEnvelope) {
+func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.SourceConn, persistenceChannel chan []metrics.MeasurementEnvelope) {
 	if len(monitoredDbs) > 0 {
 		msms := make([]metrics.MeasurementEnvelope, len(monitoredDbs))
 		now := time.Now()
@@ -547,7 +547,7 @@ func FetchMetrics(ctx context.Context,
 	var err error
 	var sql string
 	var data, cachedData metrics.Measurements
-	var md *sources.MonitoredDatabase
+	var md *sources.SourceConn
 	var fromCache, isCacheable bool
 
 	md, err = GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
