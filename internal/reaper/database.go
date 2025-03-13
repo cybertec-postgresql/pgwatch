@@ -890,39 +890,3 @@ func CloseResourcesForRemovedMonitoredDBs(metricsWriter sinks.Writer, currentDBs
 		_ = metricsWriter.SyncMetric(roleChangedDB, "", "remove")
 	}
 }
-
-func SetUndersizedDBState(dbUnique string, state bool) {
-	undersizedDBsLock.Lock()
-	undersizedDBs[dbUnique] = state
-	undersizedDBsLock.Unlock()
-}
-
-func IsDBUndersized(dbUnique string) bool {
-	undersizedDBsLock.RLock()
-	defer undersizedDBsLock.RUnlock()
-	undersized, ok := undersizedDBs[dbUnique]
-	if ok {
-		return undersized
-	}
-	return false
-}
-
-func SetRecoveryIgnoredDBState(dbUnique string, state bool) {
-	recoveryIgnoredDBsLock.Lock()
-	recoveryIgnoredDBs[dbUnique] = state
-	recoveryIgnoredDBsLock.Unlock()
-}
-
-func IsDBIgnoredBasedOnRecoveryState(dbUnique string) bool {
-	recoveryIgnoredDBsLock.RLock()
-	defer recoveryIgnoredDBsLock.RUnlock()
-	recoveryIgnored, ok := recoveryIgnoredDBs[dbUnique]
-	if ok {
-		return recoveryIgnored
-	}
-	return false
-}
-
-func IsDBDormant(dbUnique string) bool {
-	return IsDBUndersized(dbUnique) || IsDBIgnoredBasedOnRecoveryState(dbUnique)
-}
