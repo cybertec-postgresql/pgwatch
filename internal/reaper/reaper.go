@@ -211,7 +211,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 							srcL.Error(err)
 						}
 
-						go r.reapMetricMeasurements(metricCtx, monitoredSource, metric, metricConfig)
+						go r.reapMetricMeasurements(metricCtx, monitoredSource, metric, metricConfig[metric])
 					}
 				} else if (!metricDefOk && chOk) || interval <= 0 {
 					// metric definition files were recently removed or interval set to zero
@@ -309,11 +309,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 }
 
 // metrics.ControlMessage notifies of shutdown + interval change
-func (r *Reaper) reapMetricMeasurements(ctx context.Context,
-	mdb *sources.SourceConn,
-	metricName string,
-	configMap map[string]float64) {
-
+func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.SourceConn, metricName string, interval float64) {
 	hostState := make(map[string]map[string]string)
 	var lastUptimeS int64 = -1 // used for "server restarted" event detection
 	var lastErrorNotificationTime time.Time
@@ -328,12 +324,11 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context,
 		MonitoredDatabasesSettingsLock.RLock()
 		realDbname := MonitoredDatabasesSettings[mdb.Name].RealDbname // to manage 2 sets of event counts - monitored DB + global
 		MonitoredDatabasesSettingsLock.RUnlock()
-		metrics.ParseLogs(ctx, mdb, realDbname, metricName, configMap, r.measurementCh) // no return
+		metrics.ParseLogs(ctx, mdb, realDbname, interval, r.measurementCh) // no return
 		return
 	}
 
 	for {
-		interval := configMap[metricName]
 		if lastDBVersionFetchTime.Add(time.Minute * time.Duration(5)).Before(time.Now()) {
 			vme, err = GetMonitoredDatabaseSettings(ctx, mdb, false) // in case of errors just ignore metric "disabled" time ranges
 			if err != nil {

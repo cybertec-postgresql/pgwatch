@@ -110,7 +110,7 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 	}}
 }
 
-func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname, metricName string, configMap map[string]float64, storeCh chan<- []MeasurementEnvelope) {
+func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, interval float64, storeCh chan<- []MeasurementEnvelope) {
 
 	var latest, previous, serverMessagesLang string
 	var latestHandle *os.File
@@ -121,8 +121,6 @@ func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname, metricN
 	var eventCounts = make(map[string]int64)      // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	var eventCountsTotal = make(map[string]int64) // for the whole instance
 	var hostConfig sources.HostConfigAttrs
-	var config = configMap
-	var interval float64
 	var err error
 	var firstRun = true
 	var csvlogRegex *regexp.Regexp
@@ -132,9 +130,6 @@ func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname, metricN
 		case <-ctx.Done():
 			return
 		default:
-			if interval == 0 {
-				interval = config[metricName]
-			}
 		}
 
 		if hostConfig.LogsMatchRegex != "" {
