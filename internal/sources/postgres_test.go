@@ -83,9 +83,9 @@ func TestSyncFromReader(t *testing.T) {
 	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
 	a.NoError(err)
 
-	md := &sources.MonitoredDatabase{}
+	md := &sources.SourceConn{}
 	md.Name = "db1"
-	dbs := sources.MonitoredDatabases{md}
+	dbs := sources.SourceConns{md}
 	dbs, err = dbs.SyncFromReader(pgrw)
 	a.NoError(err)
 	a.Len(dbs, 1)

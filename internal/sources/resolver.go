@@ -27,8 +27,8 @@ import (
 )
 
 // ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni
-func (srcs Sources) ResolveDatabases() (_ MonitoredDatabases, err error) {
-	resolvedDbs := make(MonitoredDatabases, 0, len(srcs))
+func (srcs Sources) ResolveDatabases() (_ SourceConns, err error) {
+	resolvedDbs := make(SourceConns, 0, len(srcs))
 	for _, s := range srcs {
 		if !s.IsEnabled {
 			continue
@@ -41,14 +41,14 @@ func (srcs Sources) ResolveDatabases() (_ MonitoredDatabases, err error) {
 }
 
 // ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni
-func (s Source) ResolveDatabases() (MonitoredDatabases, error) {
+func (s Source) ResolveDatabases() (SourceConns, error) {
 	switch s.Kind {
 	case SourcePatroni, SourcePatroniContinuous, SourcePatroniNamespace:
 		return ResolveDatabasesFromPatroni(s)
 	case SourcePostgresContinuous:
 		return ResolveDatabasesFromPostgres(s)
 	}
-	return MonitoredDatabases{&MonitoredDatabase{Source: *(&s).Clone()}}, nil
+	return SourceConns{&SourceConn{Source: *(&s).Clone()}}, nil
 }
 
 type PatroniClusterMember struct {
@@ -244,8 +244,8 @@ const (
 	dcsTypeConsul    = "consul"
 )
 
-func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error) {
-	var mds []*MonitoredDatabase
+func ResolveDatabasesFromPatroni(ce Source) ([]*SourceConn, error) {
+	var mds []*SourceConn
 	var clusterMembers []PatroniClusterMember
 	var err error
 	var ok bool
@@ -293,7 +293,7 @@ func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error) {
 			dbUnique = ce.Name + "_" + m.Name
 		}
 		if ce.GetDatabaseName() != "" {
-			c := &MonitoredDatabase{Source: *ce.Clone()}
+			c := &SourceConn{Source: *ce.Clone()}
 			c.Name = dbUnique
 			mds = append(mds, c)
 			continue
@@ -336,7 +336,7 @@ func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error) {
 			c := ce.Clone()
 			c.Name = dbUnique + "_" + d["datname_escaped"].(string)
 			c.ConnStr = connURL.String()
-			mds = append(mds, &MonitoredDatabase{Source: *c})
+			mds = append(mds, &SourceConn{Source: *c})
 		}
 
 	}
@@ -345,7 +345,7 @@ func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error) {
 }
 
 // "resolving" reads all the DB names from the given host/port, additionally matching/not matching specified regex patterns
-func ResolveDatabasesFromPostgres(s Source) (resolvedDbs MonitoredDatabases, err error) {
+func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error) {
 	var (
 		c      db.PgxPoolIface
 		dbname string
@@ -373,7 +373,7 @@ func ResolveDatabasesFromPostgres(s Source) (resolvedDbs MonitoredDatabases, err
 		if err = rows.Scan(&dbname); err != nil {
 			return nil, err
 		}
-		rdb := &MonitoredDatabase{Source: *s.Clone()}
+		rdb := &SourceConn{Source: *s.Clone()}
 		rdb.Name += "_" + dbname
 		rdb.SetDatabaseName(dbname)
 		resolvedDbs = append(resolvedDbs, rdb)

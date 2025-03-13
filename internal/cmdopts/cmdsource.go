@@ -54,7 +54,7 @@ func (cmd *SourcePingCommand) Execute(args []string) error {
 		case sources.SourcePostgresContinuous:
 			_, e = sources.ResolveDatabasesFromPostgres(s)
 		default:
-			mdb := &sources.MonitoredDatabase{Source: s}
+			mdb := &sources.SourceConn{Source: s}
 			e = mdb.Ping(context.Background())
 		}
 		if e != nil {

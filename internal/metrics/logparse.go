@@ -84,7 +84,7 @@ func getFileWithNextModTimestamp(logsGlobPath, currentFile string) (string, erro
 }
 
 // 1. add zero counts for severity levels that didn't have any occurrences in the log
-func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb *sources.MonitoredDatabase) []MeasurementEnvelope {
+func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb *sources.SourceConn) []MeasurementEnvelope {
 	allSeverityCounts := make(Measurement)
 	for _, s := range PgSeverities {
 		parsedCount, ok := eventCounts[s]
@@ -110,7 +110,7 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 	}}
 }
 
-func ParseLogs(ctx context.Context, mdb *sources.MonitoredDatabase, realDbname, metricName string, configMap map[string]float64, storeCh chan<- []MeasurementEnvelope) {
+func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname, metricName string, configMap map[string]float64, storeCh chan<- []MeasurementEnvelope) {
 
 	var latest, previous, serverMessagesLang string
 	var latestHandle *os.File
