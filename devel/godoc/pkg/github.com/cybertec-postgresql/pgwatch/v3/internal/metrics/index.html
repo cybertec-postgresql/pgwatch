@@ -130,7 +130,7 @@
 				<dd><a href="#GetDefaultBuiltInMetrics">func GetDefaultBuiltInMetrics() []string</a></dd>
 			
 				
-				<dd><a href="#ParseLogs">func ParseLogs(ctx context.Context, mdb *sources.MonitoredDatabase, realDbname, metricName string, configMap map[string]float64, storeCh chan&lt;- []MeasurementEnvelope)</a></dd>
+				<dd><a href="#ParseLogs">func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname, metricName string, configMap map[string]float64, storeCh chan&lt;- []MeasurementEnvelope)</a></dd>
 			
 				
 				<dd><a href="#getFileWithLatestTimestamp">func getFileWithLatestTimestamp(files []string) (string, error)</a></dd>
@@ -181,7 +181,7 @@
 				<dd><a href="#MeasurementEnvelope">type MeasurementEnvelope</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#eventCountsToMetricStoreMessages">func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb *sources.MonitoredDatabase) []MeasurementEnvelope</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#eventCountsToMetricStoreMessages">func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb *sources.SourceConn) []MeasurementEnvelope</a></dd>
 				
 				
 			
@@ -496,7 +496,7 @@
 				
 				
 			</h2>
-			<pre>func ParseLogs(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a>, realDbname, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, configMap map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a>, storeCh chan&lt;- []<a href="#MeasurementEnvelope">MeasurementEnvelope</a>)</pre>
+			<pre>func ParseLogs(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, realDbname, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, configMap map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a>, storeCh chan&lt;- []<a href="#MeasurementEnvelope">MeasurementEnvelope</a>)</pre>
 			
 			
 			
@@ -748,7 +748,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 					
 					
 				</h3>
-				<pre>func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#MonitoredDatabase">MonitoredDatabase</a>) []<a href="#MeasurementEnvelope">MeasurementEnvelope</a></pre>
+				<pre>func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>) []<a href="#MeasurementEnvelope">MeasurementEnvelope</a></pre>
 				<p>1. add zero counts for severity levels that didn&apos;t have any occurrences in the log
 
 				

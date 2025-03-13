@@ -73,7 +73,7 @@
 <span id="L16" class="ln">    16  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/sources&#34;
 <span id="L17" class="ln">    17  </span>)
 <span id="L18" class="ln">    18  </span>
-<span id="L19" class="ln">    19  </span>var monitoredSources = make(sources.MonitoredDatabases, 0)
+<span id="L19" class="ln">    19  </span>var monitoredSources = make(sources.SourceConns, 0)
 <span id="L20" class="ln">    20  </span>var hostLastKnownStatusInRecovery = make(map[string]bool) <span class="comment">// isInRecovery</span>
 <span id="L21" class="ln">    21  </span>var metricConfig map[string]float64                       <span class="comment">// set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state</span>
 <span id="L22" class="ln">    22  </span>var metricDefinitionMap *metrics.Metrics = &amp;metrics.Metrics{}
@@ -125,7 +125,7 @@
 <span id="L68" class="ln">    68  </span>
 <span id="L69" class="ln">    69  </span>		if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
 <span id="L70" class="ln">    70  </span>			logger.Warningf(&#34;Emergency pause triggerfile detected at %s, ignoring currently configured DBs&#34;, r.Metrics.EmergencyPauseTriggerfile)
-<span id="L71" class="ln">    71  </span>			monitoredSources = make([]*sources.MonitoredDatabase, 0)
+<span id="L71" class="ln">    71  </span>			monitoredSources = make([]*sources.SourceConn, 0)
 <span id="L72" class="ln">    72  </span>		}
 <span id="L73" class="ln">    73  </span>
 <span id="L74" class="ln">    74  </span>		UpdateMonitoredDBCache(monitoredSources)
@@ -307,7 +307,7 @@
 <span id="L250" class="ln">   250  </span>		logger.Debug(&#34;checking if any workers need to be shut down...&#34;)
 <span id="L251" class="ln">   251  </span>		for dbMetric, cancelFunc := range cancelFuncs {
 <span id="L252" class="ln">   252  </span>			var currentMetricConfig map[string]float64
-<span id="L253" class="ln">   253  </span>			var dbInfo *sources.MonitoredDatabase
+<span id="L253" class="ln">   253  </span>			var dbInfo *sources.SourceConn
 <span id="L254" class="ln">   254  </span>			var ok, dbRemovedFromConfig bool
 <span id="L255" class="ln">   255  </span>			singleMetricDisabled := false
 <span id="L256" class="ln">   256  </span>			splits := strings.Split(dbMetric, dbMetricJoinStr)
@@ -379,7 +379,7 @@
 <span id="L322" class="ln">   322  </span>
 <span id="L323" class="ln">   323  </span><span class="comment">// metrics.ControlMessage notifies of shutdown + interval change</span>
 <span id="L324" class="ln">   324  </span>func (r *Reaper) reapMetricMeasurements(ctx context.Context,
-<span id="L325" class="ln">   325  </span>	mdb *sources.MonitoredDatabase,
+<span id="L325" class="ln">   325  </span>	mdb *sources.SourceConn,
 <span id="L326" class="ln">   326  </span>	metricName string,
 <span id="L327" class="ln">   327  </span>	configMap map[string]float64) {
 <span id="L328" class="ln">   328  </span>
@@ -502,7 +502,7 @@
 <span id="L445" class="ln">   445  </span>	return 0, nil
 <span id="L446" class="ln">   446  </span>}
 <span id="L447" class="ln">   447  </span>
-<span id="L448" class="ln">   448  </span>func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.MonitoredDatabase, persistenceChannel chan []metrics.MeasurementEnvelope) {
+<span id="L448" class="ln">   448  </span>func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.SourceConn, persistenceChannel chan []metrics.MeasurementEnvelope) {
 <span id="L449" class="ln">   449  </span>	if len(monitoredDbs) &gt; 0 {
 <span id="L450" class="ln">   450  </span>		msms := make([]metrics.MeasurementEnvelope, len(monitoredDbs))
 <span id="L451" class="ln">   451  </span>		now := time.Now()
@@ -604,7 +604,7 @@
 <span id="L547" class="ln">   547  </span>	var err error
 <span id="L548" class="ln">   548  </span>	var sql string
 <span id="L549" class="ln">   549  </span>	var data, cachedData metrics.Measurements
-<span id="L550" class="ln">   550  </span>	var md *sources.MonitoredDatabase
+<span id="L550" class="ln">   550  </span>	var md *sources.SourceConn
 <span id="L551" class="ln">   551  </span>	var fromCache, isCacheable bool
 <span id="L552" class="ln">   552  </span>
 <span id="L553" class="ln">   553  </span>	md, err = GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)

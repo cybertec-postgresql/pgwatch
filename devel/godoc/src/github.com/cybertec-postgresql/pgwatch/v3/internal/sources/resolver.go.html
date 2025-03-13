@@ -84,8 +84,8 @@
 <span id="L27" class="ln">    27  </span>)
 <span id="L28" class="ln">    28  </span>
 <span id="L29" class="ln">    29  </span><span class="comment">// ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni</span>
-<span id="L30" class="ln">    30  </span>func (srcs Sources) ResolveDatabases() (_ MonitoredDatabases, err error) {
-<span id="L31" class="ln">    31  </span>	resolvedDbs := make(MonitoredDatabases, 0, len(srcs))
+<span id="L30" class="ln">    30  </span>func (srcs Sources) ResolveDatabases() (_ SourceConns, err error) {
+<span id="L31" class="ln">    31  </span>	resolvedDbs := make(SourceConns, 0, len(srcs))
 <span id="L32" class="ln">    32  </span>	for _, s := range srcs {
 <span id="L33" class="ln">    33  </span>		if !s.IsEnabled {
 <span id="L34" class="ln">    34  </span>			continue
@@ -98,14 +98,14 @@
 <span id="L41" class="ln">    41  </span>}
 <span id="L42" class="ln">    42  </span>
 <span id="L43" class="ln">    43  </span><span class="comment">// ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni</span>
-<span id="L44" class="ln">    44  </span>func (s Source) ResolveDatabases() (MonitoredDatabases, error) {
+<span id="L44" class="ln">    44  </span>func (s Source) ResolveDatabases() (SourceConns, error) {
 <span id="L45" class="ln">    45  </span>	switch s.Kind {
 <span id="L46" class="ln">    46  </span>	case SourcePatroni, SourcePatroniContinuous, SourcePatroniNamespace:
 <span id="L47" class="ln">    47  </span>		return ResolveDatabasesFromPatroni(s)
 <span id="L48" class="ln">    48  </span>	case SourcePostgresContinuous:
 <span id="L49" class="ln">    49  </span>		return ResolveDatabasesFromPostgres(s)
 <span id="L50" class="ln">    50  </span>	}
-<span id="L51" class="ln">    51  </span>	return MonitoredDatabases{&amp;MonitoredDatabase{Source: *(&amp;s).Clone()}}, nil
+<span id="L51" class="ln">    51  </span>	return SourceConns{&amp;SourceConn{Source: *(&amp;s).Clone()}}, nil
 <span id="L52" class="ln">    52  </span>}
 <span id="L53" class="ln">    53  </span>
 <span id="L54" class="ln">    54  </span>type PatroniClusterMember struct {
@@ -301,8 +301,8 @@
 <span id="L244" class="ln">   244  </span>	dcsTypeConsul    = &#34;consul&#34;
 <span id="L245" class="ln">   245  </span>)
 <span id="L246" class="ln">   246  </span>
-<span id="L247" class="ln">   247  </span>func ResolveDatabasesFromPatroni(ce Source) ([]*MonitoredDatabase, error) {
-<span id="L248" class="ln">   248  </span>	var mds []*MonitoredDatabase
+<span id="L247" class="ln">   247  </span>func ResolveDatabasesFromPatroni(ce Source) ([]*SourceConn, error) {
+<span id="L248" class="ln">   248  </span>	var mds []*SourceConn
 <span id="L249" class="ln">   249  </span>	var clusterMembers []PatroniClusterMember
 <span id="L250" class="ln">   250  </span>	var err error
 <span id="L251" class="ln">   251  </span>	var ok bool
@@ -350,7 +350,7 @@
 <span id="L293" class="ln">   293  </span>			dbUnique = ce.Name + &#34;_&#34; + m.Name
 <span id="L294" class="ln">   294  </span>		}
 <span id="L295" class="ln">   295  </span>		if ce.GetDatabaseName() != &#34;&#34; {
-<span id="L296" class="ln">   296  </span>			c := &amp;MonitoredDatabase{Source: *ce.Clone()}
+<span id="L296" class="ln">   296  </span>			c := &amp;SourceConn{Source: *ce.Clone()}
 <span id="L297" class="ln">   297  </span>			c.Name = dbUnique
 <span id="L298" class="ln">   298  </span>			mds = append(mds, c)
 <span id="L299" class="ln">   299  </span>			continue
@@ -393,7 +393,7 @@
 <span id="L336" class="ln">   336  </span>			c := ce.Clone()
 <span id="L337" class="ln">   337  </span>			c.Name = dbUnique + &#34;_&#34; + d[&#34;datname_escaped&#34;].(string)
 <span id="L338" class="ln">   338  </span>			c.ConnStr = connURL.String()
-<span id="L339" class="ln">   339  </span>			mds = append(mds, &amp;MonitoredDatabase{Source: *c})
+<span id="L339" class="ln">   339  </span>			mds = append(mds, &amp;SourceConn{Source: *c})
 <span id="L340" class="ln">   340  </span>		}
 <span id="L341" class="ln">   341  </span>
 <span id="L342" class="ln">   342  </span>	}
@@ -402,7 +402,7 @@
 <span id="L345" class="ln">   345  </span>}
 <span id="L346" class="ln">   346  </span>
 <span id="L347" class="ln">   347  </span><span class="comment">// &#34;resolving&#34; reads all the DB names from the given host/port, additionally matching/not matching specified regex patterns</span>
-<span id="L348" class="ln">   348  </span>func ResolveDatabasesFromPostgres(s Source) (resolvedDbs MonitoredDatabases, err error) {
+<span id="L348" class="ln">   348  </span>func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error) {
 <span id="L349" class="ln">   349  </span>	var (
 <span id="L350" class="ln">   350  </span>		c      db.PgxPoolIface
 <span id="L351" class="ln">   351  </span>		dbname string
@@ -430,7 +430,7 @@
 <span id="L373" class="ln">   373  </span>		if err = rows.Scan(&amp;dbname); err != nil {
 <span id="L374" class="ln">   374  </span>			return nil, err
 <span id="L375" class="ln">   375  </span>		}
-<span id="L376" class="ln">   376  </span>		rdb := &amp;MonitoredDatabase{Source: *s.Clone()}
+<span id="L376" class="ln">   376  </span>		rdb := &amp;SourceConn{Source: *s.Clone()}
 <span id="L377" class="ln">   377  </span>		rdb.Name += &#34;_&#34; + dbname
 <span id="L378" class="ln">   378  </span>		rdb.SetDatabaseName(dbname)
 <span id="L379" class="ln">   379  </span>		resolvedDbs = append(resolvedDbs, rdb)

@@ -141,7 +141,7 @@
 <span id="L84" class="ln">    84  </span>}
 <span id="L85" class="ln">    85  </span>
 <span id="L86" class="ln">    86  </span><span class="comment">// 1. add zero counts for severity levels that didn&#39;t have any occurrences in the log</span>
-<span id="L87" class="ln">    87  </span>func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb *sources.MonitoredDatabase) []MeasurementEnvelope {
+<span id="L87" class="ln">    87  </span>func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb *sources.SourceConn) []MeasurementEnvelope {
 <span id="L88" class="ln">    88  </span>	allSeverityCounts := make(Measurement)
 <span id="L89" class="ln">    89  </span>	for _, s := range PgSeverities {
 <span id="L90" class="ln">    90  </span>		parsedCount, ok := eventCounts[s]
@@ -167,7 +167,7 @@
 <span id="L110" class="ln">   110  </span>	}}
 <span id="L111" class="ln">   111  </span>}
 <span id="L112" class="ln">   112  </span>
-<span id="L113" class="ln">   113  </span>func ParseLogs(ctx context.Context, mdb *sources.MonitoredDatabase, realDbname, metricName string, configMap map[string]float64, storeCh chan&lt;- []MeasurementEnvelope) {
+<span id="L113" class="ln">   113  </span>func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname, metricName string, configMap map[string]float64, storeCh chan&lt;- []MeasurementEnvelope) {
 <span id="L114" class="ln">   114  </span>
 <span id="L115" class="ln">   115  </span>	var latest, previous, serverMessagesLang string
 <span id="L116" class="ln">   116  </span>	var latestHandle *os.File

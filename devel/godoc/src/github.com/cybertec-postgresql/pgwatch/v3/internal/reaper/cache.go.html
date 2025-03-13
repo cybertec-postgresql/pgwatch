@@ -69,7 +69,7 @@
 <span id="L12" class="ln">    12  </span>	&#34;github.com/sirupsen/logrus&#34;
 <span id="L13" class="ln">    13  </span>)
 <span id="L14" class="ln">    14  </span>
-<span id="L15" class="ln">    15  </span>var monitoredDbCache map[string]*sources.MonitoredDatabase
+<span id="L15" class="ln">    15  </span>var monitoredDbCache map[string]*sources.SourceConn
 <span id="L16" class="ln">    16  </span>var monitoredDbCacheLock sync.RWMutex
 <span id="L17" class="ln">    17  </span>var MonitoredDatabasesSettings = make(map[string]MonitoredDatabaseSettings)
 <span id="L18" class="ln">    18  </span>var MonitoredDatabasesSettingsLock = sync.RWMutex{}
@@ -82,8 +82,8 @@
 <span id="L25" class="ln">    25  </span>var lastDBSizeFetchTime = make(map[string]time.Time) <span class="comment">// cached for DB_SIZE_CACHING_INTERVAL</span>
 <span id="L26" class="ln">    26  </span>var lastDBSizeCheckLock sync.RWMutex
 <span id="L27" class="ln">    27  </span>
-<span id="L28" class="ln">    28  </span>var prevLoopMonitoredDBs sources.MonitoredDatabases <span class="comment">// to be able to detect DBs removed from config</span>
-<span id="L29" class="ln">    29  </span>var undersizedDBs = make(map[string]bool)           <span class="comment">// DBs below the --min-db-size-mb limit, if set</span>
+<span id="L28" class="ln">    28  </span>var prevLoopMonitoredDBs sources.SourceConns <span class="comment">// to be able to detect DBs removed from config</span>
+<span id="L29" class="ln">    29  </span>var undersizedDBs = make(map[string]bool)    <span class="comment">// DBs below the --min-db-size-mb limit, if set</span>
 <span id="L30" class="ln">    30  </span>var undersizedDBsLock = sync.RWMutex{}
 <span id="L31" class="ln">    31  </span>var recoveryIgnoredDBs = make(map[string]bool) <span class="comment">// DBs in recovery state and OnlyIfMaster specified in config</span>
 <span id="L32" class="ln">    32  </span>var recoveryIgnoredDBsLock = sync.RWMutex{}
@@ -92,7 +92,7 @@
 <span id="L35" class="ln">    35  </span>
 <span id="L36" class="ln">    36  </span>var lastSQLFetchError sync.Map
 <span id="L37" class="ln">    37  </span>
-<span id="L38" class="ln">    38  </span>func InitPGVersionInfoFetchingLockIfNil(md *sources.MonitoredDatabase) {
+<span id="L38" class="ln">    38  </span>func InitPGVersionInfoFetchingLockIfNil(md *sources.SourceConn) {
 <span id="L39" class="ln">    39  </span>	MonitoredDatabasesSettingsLock.Lock()
 <span id="L40" class="ln">    40  </span>	if _, ok := MonitoredDatabasesSettingsGetLock[md.Name]; !ok {
 <span id="L41" class="ln">    41  </span>		MonitoredDatabasesSettingsGetLock[md.Name] = &amp;sync.RWMutex{}
@@ -100,8 +100,8 @@
 <span id="L43" class="ln">    43  </span>	MonitoredDatabasesSettingsLock.Unlock()
 <span id="L44" class="ln">    44  </span>}
 <span id="L45" class="ln">    45  </span>
-<span id="L46" class="ln">    46  </span>func UpdateMonitoredDBCache(data sources.MonitoredDatabases) {
-<span id="L47" class="ln">    47  </span>	monitoredDbCacheNew := make(map[string]*sources.MonitoredDatabase)
+<span id="L46" class="ln">    46  </span>func UpdateMonitoredDBCache(data sources.SourceConns) {
+<span id="L47" class="ln">    47  </span>	monitoredDbCacheNew := make(map[string]*sources.SourceConn)
 <span id="L48" class="ln">    48  </span>	for _, row := range data {
 <span id="L49" class="ln">    49  </span>		monitoredDbCacheNew[row.Name] = row
 <span id="L50" class="ln">    50  </span>	}
@@ -110,7 +110,7 @@
 <span id="L53" class="ln">    53  </span>	monitoredDbCacheLock.Unlock()
 <span id="L54" class="ln">    54  </span>}
 <span id="L55" class="ln">    55  </span>
-<span id="L56" class="ln">    56  </span>func GetMonitoredDatabaseByUniqueName(name string) (*sources.MonitoredDatabase, error) {
+<span id="L56" class="ln">    56  </span>func GetMonitoredDatabaseByUniqueName(name string) (*sources.SourceConn, error) {
 <span id="L57" class="ln">    57  </span>	monitoredDbCacheLock.RLock()
 <span id="L58" class="ln">    58  </span>	defer monitoredDbCacheLock.RUnlock()
 <span id="L59" class="ln">    59  </span>	md, exists := monitoredDbCache[name]

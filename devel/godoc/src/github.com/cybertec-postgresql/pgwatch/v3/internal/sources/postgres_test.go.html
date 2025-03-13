@@ -140,9 +140,9 @@
 <span id="L83" class="ln">    83  </span>	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
 <span id="L84" class="ln">    84  </span>	a.NoError(err)
 <span id="L85" class="ln">    85  </span>
-<span id="L86" class="ln">    86  </span>	md := &amp;sources.MonitoredDatabase{}
+<span id="L86" class="ln">    86  </span>	md := &amp;sources.SourceConn{}
 <span id="L87" class="ln">    87  </span>	md.Name = &#34;db1&#34;
-<span id="L88" class="ln">    88  </span>	dbs := sources.MonitoredDatabases{md}
+<span id="L88" class="ln">    88  </span>	dbs := sources.SourceConns{md}
 <span id="L89" class="ln">    89  </span>	dbs, err = dbs.SyncFromReader(pgrw)
 <span id="L90" class="ln">    90  </span>	a.NoError(err)
 <span id="L91" class="ln">    91  </span>	a.Len(dbs, 1)
