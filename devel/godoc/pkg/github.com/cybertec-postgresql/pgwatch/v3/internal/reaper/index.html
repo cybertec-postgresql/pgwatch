@@ -120,9 +120,6 @@ and send measurements to sinks.
 				<dd><a href="#CheckForPGObjectChangesAndStore">func CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan&lt;- []metrics.MeasurementEnvelope, hostState map[string]map[string]string)</a></dd>
 			
 				
-				<dd><a href="#ClearDBUnreachableStateIfAny">func ClearDBUnreachableStateIfAny(dbUnique string)</a></dd>
-			
-				
 				<dd><a href="#CloseResourcesForRemovedMonitoredDBs">func CloseResourcesForRemovedMonitoredDBs(metricsWriter sinks.Writer, currentDBs, prevLoopDBs sources.SourceConns, shutDownDueToRoleChange map[string]bool)</a></dd>
 			
 				
@@ -187,9 +184,6 @@ and send measurements to sinks.
 			
 				
 				<dd><a href="#PutToInstanceCache">func PutToInstanceCache(msg MetricFetchConfig, data metrics.Measurements)</a></dd>
-			
-				
-				<dd><a href="#SetDBUnreachableState">func SetDBUnreachableState(dbUnique string)</a></dd>
 			
 				
 				<dd><a href="#SetRecoveryIgnoredDBState">func SetRecoveryIgnoredDBState(dbUnique string, state bool)</a></dd>
@@ -469,17 +463,11 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 				
 				<pre>var <span id="undersizedDBsLock">undersizedDBsLock</span> = <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a>{}</pre>
 			
-				
-				<pre>var <span id="unreachableDB">unreachableDB</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>)</pre>
-			
-				
-				<pre>var <span id="unreachableDBsLock">unreachableDBsLock</span> <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a></pre>
-			
 		
 		
 			
 			
-			<h2 id="AddDbnameSysinfoIfNotExistsToQueryResultData">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L478">AddDbnameSysinfoIfNotExistsToQueryResultData</a>
+			<h2 id="AddDbnameSysinfoIfNotExistsToQueryResultData">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L477">AddDbnameSysinfoIfNotExistsToQueryResultData</a>
 				<a class="permalink" href="#AddDbnameSysinfoIfNotExistsToQueryResultData">&#xb6;</a>
 				
 				
@@ -498,19 +486,6 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 				
 			</h2>
 			<pre>func CheckForPGObjectChangesAndStore(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, vme <a href="#MonitoredDatabaseSettings">MonitoredDatabaseSettings</a>, storageCh chan&lt;- []<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
-			
-			
-			
-
-		
-			
-			
-			<h2 id="ClearDBUnreachableStateIfAny">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L900">ClearDBUnreachableStateIfAny</a>
-				<a class="permalink" href="#ClearDBUnreachableStateIfAny">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func ClearDBUnreachableStateIfAny(dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
 			
 			
 			
@@ -597,7 +572,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="FetchMetrics">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L539">FetchMetrics</a>
+			<h2 id="FetchMetrics">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L538">FetchMetrics</a>
 				<a class="permalink" href="#FetchMetrics">&#xb6;</a>
 				
 				
@@ -654,7 +629,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="GetFromInstanceCacheIfNotOlderThanSeconds">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L126">GetFromInstanceCacheIfNotOlderThanSeconds</a>
+			<h2 id="GetFromInstanceCacheIfNotOlderThanSeconds">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L123">GetFromInstanceCacheIfNotOlderThanSeconds</a>
 				<a class="permalink" href="#GetFromInstanceCacheIfNotOlderThanSeconds">&#xb6;</a>
 				
 				
@@ -681,7 +656,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="GetMetricVersionProperties">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L67">GetMetricVersionProperties</a>
+			<h2 id="GetMetricVersionProperties">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L64">GetMetricVersionProperties</a>
 				<a class="permalink" href="#GetMetricVersionProperties">&#xb6;</a>
 				
 				
@@ -695,7 +670,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="GetMonitoredDatabaseByUniqueName">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L56">GetMonitoredDatabaseByUniqueName</a>
+			<h2 id="GetMonitoredDatabaseByUniqueName">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L53">GetMonitoredDatabaseByUniqueName</a>
 				<a class="permalink" href="#GetMonitoredDatabaseByUniqueName">&#xb6;</a>
 				
 				
@@ -721,7 +696,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="InitPGVersionInfoFetchingLockIfNil">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L38">InitPGVersionInfoFetchingLockIfNil</a>
+			<h2 id="InitPGVersionInfoFetchingLockIfNil">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L35">InitPGVersionInfoFetchingLockIfNil</a>
 				<a class="permalink" href="#InitPGVersionInfoFetchingLockIfNil">&#xb6;</a>
 				
 				
@@ -734,7 +709,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="IsCacheableMetric">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L504">IsCacheableMetric</a>
+			<h2 id="IsCacheableMetric">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L503">IsCacheableMetric</a>
 				<a class="permalink" href="#IsCacheableMetric">&#xb6;</a>
 				
 				
@@ -747,7 +722,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="IsDBDormant">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L938">IsDBDormant</a>
+			<h2 id="IsDBDormant">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L926">IsDBDormant</a>
 				<a class="permalink" href="#IsDBDormant">&#xb6;</a>
 				
 				
@@ -760,7 +735,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="IsDBIgnoredBasedOnRecoveryState">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L928">IsDBIgnoredBasedOnRecoveryState</a>
+			<h2 id="IsDBIgnoredBasedOnRecoveryState">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L916">IsDBIgnoredBasedOnRecoveryState</a>
 				<a class="permalink" href="#IsDBIgnoredBasedOnRecoveryState">&#xb6;</a>
 				
 				
@@ -773,7 +748,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="IsDBUndersized">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L912">IsDBUndersized</a>
+			<h2 id="IsDBUndersized">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L900">IsDBUndersized</a>
 				<a class="permalink" href="#IsDBUndersized">&#xb6;</a>
 				
 				
@@ -799,7 +774,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="PutToInstanceCache">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L511">PutToInstanceCache</a>
+			<h2 id="PutToInstanceCache">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L510">PutToInstanceCache</a>
 				<a class="permalink" href="#PutToInstanceCache">&#xb6;</a>
 				
 				
@@ -812,20 +787,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="SetDBUnreachableState">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L894">SetDBUnreachableState</a>
-				<a class="permalink" href="#SetDBUnreachableState">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func SetDBUnreachableState(dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
-			
-			
-			
-
-		
-			
-			
-			<h2 id="SetRecoveryIgnoredDBState">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L922">SetRecoveryIgnoredDBState</a>
+			<h2 id="SetRecoveryIgnoredDBState">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L910">SetRecoveryIgnoredDBState</a>
 				<a class="permalink" href="#SetRecoveryIgnoredDBState">&#xb6;</a>
 				
 				
@@ -838,7 +800,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="SetUndersizedDBState">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L906">SetUndersizedDBState</a>
+			<h2 id="SetUndersizedDBState">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L894">SetUndersizedDBState</a>
 				<a class="permalink" href="#SetUndersizedDBState">&#xb6;</a>
 				
 				
@@ -851,7 +813,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="StoreMetrics">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L440">StoreMetrics</a>
+			<h2 id="StoreMetrics">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L439">StoreMetrics</a>
 				<a class="permalink" href="#StoreMetrics">&#xb6;</a>
 				
 				
@@ -864,7 +826,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="SyncMonitoredDBsToDatastore">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L448">SyncMonitoredDBsToDatastore</a>
+			<h2 id="SyncMonitoredDBsToDatastore">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L447">SyncMonitoredDBsToDatastore</a>
 				<a class="permalink" href="#SyncMonitoredDBsToDatastore">&#xb6;</a>
 				
 				
@@ -907,7 +869,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="UpdateMonitoredDBCache">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L46">UpdateMonitoredDBCache</a>
+			<h2 id="UpdateMonitoredDBCache">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L43">UpdateMonitoredDBCache</a>
 				<a class="permalink" href="#UpdateMonitoredDBCache">&#xb6;</a>
 				
 				
@@ -933,7 +895,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="deepCopyMetricData">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L525">deepCopyMetricData</a>
+			<h2 id="deepCopyMetricData">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L524">deepCopyMetricData</a>
 				<a class="permalink" href="#deepCopyMetricData">&#xb6;</a>
 				
 				
@@ -1170,7 +1132,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="Reaper.LoadMetrics">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L81">LoadMetrics</a>
+				<h3 id="Reaper.LoadMetrics">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L78">LoadMetrics</a>
 					<a class="permalink" href="#Reaper.LoadMetrics">&#xb6;</a>
 					
 					
@@ -1183,7 +1145,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="Reaper.LoadSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L103">LoadSources</a>
+				<h3 id="Reaper.LoadSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L100">LoadSources</a>
 					<a class="permalink" href="#Reaper.LoadSources">&#xb6;</a>
 					
 					
@@ -1225,7 +1187,7 @@ start or stop the gatherers accordingly.
 				
 			
 				
-				<h3 id="Reaper.WriteMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L112">WriteMeasurements</a>
+				<h3 id="Reaper.WriteMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/cache.go.html#L109">WriteMeasurements</a>
 					<a class="permalink" href="#Reaper.WriteMeasurements">&#xb6;</a>
 					
 					
@@ -1238,7 +1200,7 @@ start or stop the gatherers accordingly.
 				
 			
 				
-				<h3 id="Reaper.reapMetricMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L324">reapMetricMeasurements</a>
+				<h3 id="Reaper.reapMetricMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L323">reapMetricMeasurements</a>
 					<a class="permalink" href="#Reaper.reapMetricMeasurements">&#xb6;</a>
 					
 					
