@@ -379,7 +379,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context,
 		}
 		t1 := time.Now()
 		if metricStoreMessages == nil {
-			metricStoreMessages, err = FetchMetrics(ctx, mfm, hostState, r.measurementCh, "", r.Options)
+			metricStoreMessages, err = FetchMetrics(ctx, mfm, hostState, r.measurementCh, r.Options)
 		}
 		t2 := time.Now()
 
@@ -540,7 +540,6 @@ func FetchMetrics(ctx context.Context,
 	msg MetricFetchConfig,
 	hostState map[string]map[string]string,
 	storageCh chan<- []metrics.MeasurementEnvelope,
-	context string,
 	opts *cmdopts.Options) ([]metrics.MeasurementEnvelope, error) {
 
 	var dbSettings MonitoredDatabaseSettings
@@ -613,9 +612,9 @@ func FetchMetrics(ctx context.Context,
 		return nil, nil
 	}
 
-	if msg.MetricName == specialMetricChangeEvents && context != contextPrometheusScrape { // special handling, multiple queries + stateful
+	if msg.MetricName == specialMetricChangeEvents { // special handling, multiple queries + stateful
 		CheckForPGObjectChangesAndStore(ctx, msg.DBUniqueName, dbSettings, storageCh, hostState) // TODO no hostState for Prometheus currently
-	} else if msg.MetricName == recoMetricName && context != contextPrometheusScrape {
+	} else if msg.MetricName == recoMetricName {
 		if data, err = GetRecommendations(ctx, msg.DBUniqueName, dbSettings); err != nil {
 			return nil, err
 		}
