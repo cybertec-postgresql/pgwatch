@@ -259,7 +259,7 @@ and send measurements to sinks.
 					<dd>&nbsp; &nbsp; <a href="#Reaper.WriteMeasurements">func (r *Reaper) WriteMeasurements(ctx context.Context)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.reapMetricMeasurements">func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.SourceConn, metricName string, configMap map[string]float64)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Reaper.reapMetricMeasurements">func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.SourceConn, metricName string, interval float64)</a></dd>
 				
 			
 			
@@ -434,7 +434,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="AddDbnameSysinfoIfNotExistsToQueryResultData">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L466">AddDbnameSysinfoIfNotExistsToQueryResultData</a>
+			<h2 id="AddDbnameSysinfoIfNotExistsToQueryResultData">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L461">AddDbnameSysinfoIfNotExistsToQueryResultData</a>
 				<a class="permalink" href="#AddDbnameSysinfoIfNotExistsToQueryResultData">&#xb6;</a>
 				
 				
@@ -539,7 +539,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="FetchMetrics">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L527">FetchMetrics</a>
+			<h2 id="FetchMetrics">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L522">FetchMetrics</a>
 				<a class="permalink" href="#FetchMetrics">&#xb6;</a>
 				
 				
@@ -676,7 +676,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="IsCacheableMetric">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L492">IsCacheableMetric</a>
+			<h2 id="IsCacheableMetric">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L487">IsCacheableMetric</a>
 				<a class="permalink" href="#IsCacheableMetric">&#xb6;</a>
 				
 				
@@ -702,7 +702,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="PutToInstanceCache">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L499">PutToInstanceCache</a>
+			<h2 id="PutToInstanceCache">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L494">PutToInstanceCache</a>
 				<a class="permalink" href="#PutToInstanceCache">&#xb6;</a>
 				
 				
@@ -715,7 +715,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="StoreMetrics">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L428">StoreMetrics</a>
+			<h2 id="StoreMetrics">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L423">StoreMetrics</a>
 				<a class="permalink" href="#StoreMetrics">&#xb6;</a>
 				
 				
@@ -728,7 +728,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="SyncMonitoredDBsToDatastore">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L436">SyncMonitoredDBsToDatastore</a>
+			<h2 id="SyncMonitoredDBsToDatastore">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L431">SyncMonitoredDBsToDatastore</a>
 				<a class="permalink" href="#SyncMonitoredDBsToDatastore">&#xb6;</a>
 				
 				
@@ -797,7 +797,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="deepCopyMetricData">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L513">deepCopyMetricData</a>
+			<h2 id="deepCopyMetricData">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L508">deepCopyMetricData</a>
 				<a class="permalink" href="#deepCopyMetricData">&#xb6;</a>
 				
 				
@@ -1107,10 +1107,7 @@ start or stop the gatherers accordingly.
 					
 					
 				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) reapMetricMeasurements(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>,
-    mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>,
-    metricName <a href="https://pkg.go.dev/builtin/#string">string</a>,
-    configMap map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a>)</pre>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) reapMetricMeasurements(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, interval <a href="https://pkg.go.dev/builtin/#float64">float64</a>)</pre>
 				<p>metrics.ControlMessage notifies of shutdown + interval change
 
 				

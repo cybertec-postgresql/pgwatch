@@ -167,7 +167,7 @@
 <span id="L110" class="ln">   110  </span>	}}
 <span id="L111" class="ln">   111  </span>}
 <span id="L112" class="ln">   112  </span>
-<span id="L113" class="ln">   113  </span>func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname, metricName string, configMap map[string]float64, storeCh chan&lt;- []MeasurementEnvelope) {
+<span id="L113" class="ln">   113  </span>func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, interval float64, storeCh chan&lt;- []MeasurementEnvelope) {
 <span id="L114" class="ln">   114  </span>
 <span id="L115" class="ln">   115  </span>	var latest, previous, serverMessagesLang string
 <span id="L116" class="ln">   116  </span>	var latestHandle *os.File
@@ -178,267 +178,262 @@
 <span id="L121" class="ln">   121  </span>	var eventCounts = make(map[string]int64)      <span class="comment">// for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send</span>
 <span id="L122" class="ln">   122  </span>	var eventCountsTotal = make(map[string]int64) <span class="comment">// for the whole instance</span>
 <span id="L123" class="ln">   123  </span>	var hostConfig sources.HostConfigAttrs
-<span id="L124" class="ln">   124  </span>	var config = configMap
-<span id="L125" class="ln">   125  </span>	var interval float64
-<span id="L126" class="ln">   126  </span>	var err error
-<span id="L127" class="ln">   127  </span>	var firstRun = true
-<span id="L128" class="ln">   128  </span>	var csvlogRegex *regexp.Regexp
-<span id="L129" class="ln">   129  </span>	logger := log.GetLogger(ctx).WithField(&#34;source&#34;, mdb.Name)
-<span id="L130" class="ln">   130  </span>	for { <span class="comment">// re-try loop. re-start in case of FS errors or just to refresh host config</span>
-<span id="L131" class="ln">   131  </span>		select {
-<span id="L132" class="ln">   132  </span>		case &lt;-ctx.Done():
-<span id="L133" class="ln">   133  </span>			return
-<span id="L134" class="ln">   134  </span>		default:
-<span id="L135" class="ln">   135  </span>			if interval == 0 {
-<span id="L136" class="ln">   136  </span>				interval = config[metricName]
-<span id="L137" class="ln">   137  </span>			}
-<span id="L138" class="ln">   138  </span>		}
-<span id="L139" class="ln">   139  </span>
-<span id="L140" class="ln">   140  </span>		if hostConfig.LogsMatchRegex != &#34;&#34; {
-<span id="L141" class="ln">   141  </span>			logsMatchRegex = hostConfig.LogsMatchRegex
-<span id="L142" class="ln">   142  </span>		}
-<span id="L143" class="ln">   143  </span>		if logsMatchRegex == &#34;&#34; {
-<span id="L144" class="ln">   144  </span>			logger.Debug(&#34;Log parsing enabled with default CSVLOG regex&#34;)
-<span id="L145" class="ln">   145  </span>			logsMatchRegex = CSVLogDefaultRegEx
-<span id="L146" class="ln">   146  </span>		}
-<span id="L147" class="ln">   147  </span>		if hostConfig.LogsGlobPath != &#34;&#34; {
-<span id="L148" class="ln">   148  </span>			logsGlobPath = hostConfig.LogsGlobPath
-<span id="L149" class="ln">   149  </span>		}
-<span id="L150" class="ln">   150  </span>		if logsGlobPath == &#34;&#34; {
-<span id="L151" class="ln">   151  </span>			logsGlobPath, err = tryDetermineLogFolder(ctx, mdb.Conn)
-<span id="L152" class="ln">   152  </span>			if err != nil {
-<span id="L153" class="ln">   153  </span>				logger.WithError(err).Print(&#34;Could not determine Postgres logs parsing folder. Configured logs_glob_path = &#34;, logsGlobPath)
-<span id="L154" class="ln">   154  </span>				time.Sleep(60 * time.Second)
-<span id="L155" class="ln">   155  </span>				continue
-<span id="L156" class="ln">   156  </span>			}
-<span id="L157" class="ln">   157  </span>		}
-<span id="L158" class="ln">   158  </span>		serverMessagesLang, err = tryDetermineLogMessagesLanguage(ctx, mdb.Conn)
-<span id="L159" class="ln">   159  </span>		if err != nil {
-<span id="L160" class="ln">   160  </span>			logger.WithError(err).Warning(&#34;Could not determine language (lc_collate) used for server logs, cannot parse logs...&#34;)
-<span id="L161" class="ln">   161  </span>			time.Sleep(60 * time.Second)
-<span id="L162" class="ln">   162  </span>			continue
-<span id="L163" class="ln">   163  </span>		}
-<span id="L164" class="ln">   164  </span>
-<span id="L165" class="ln">   165  </span>		if logsMatchRegexPrev != logsMatchRegex { <span class="comment">// avoid regex recompile if no changes</span>
-<span id="L166" class="ln">   166  </span>			csvlogRegex, err = regexp.Compile(logsMatchRegex)
-<span id="L167" class="ln">   167  </span>			if err != nil {
-<span id="L168" class="ln">   168  </span>				logger.WithError(err).Print(&#34;Invalid regex: &#34;, logsMatchRegex)
-<span id="L169" class="ln">   169  </span>				time.Sleep(60 * time.Second)
-<span id="L170" class="ln">   170  </span>				continue
-<span id="L171" class="ln">   171  </span>			}
-<span id="L172" class="ln">   172  </span>			logger.Infof(&#34;Changing logs parsing regex to: %s&#34;, logsMatchRegex)
-<span id="L173" class="ln">   173  </span>			logsMatchRegexPrev = logsMatchRegex
-<span id="L174" class="ln">   174  </span>		}
-<span id="L175" class="ln">   175  </span>
-<span id="L176" class="ln">   176  </span>		logger.Debugf(&#34;Considering log files determined by glob pattern: %s&#34;, logsGlobPath)
-<span id="L177" class="ln">   177  </span>
-<span id="L178" class="ln">   178  </span>		if latest == &#34;&#34; || firstRun {
-<span id="L179" class="ln">   179  </span>			globMatches, err := filepath.Glob(logsGlobPath)
-<span id="L180" class="ln">   180  </span>			if err != nil || len(globMatches) == 0 {
-<span id="L181" class="ln">   181  </span>				logger.Infof(&#34;No logfiles found to parse from glob &#39;%s&#39;. Sleeping 60s...&#34;, logsGlobPath)
-<span id="L182" class="ln">   182  </span>				time.Sleep(60 * time.Second)
-<span id="L183" class="ln">   183  </span>				continue
-<span id="L184" class="ln">   184  </span>			}
-<span id="L185" class="ln">   185  </span>
-<span id="L186" class="ln">   186  </span>			logger.Debugf(&#34;Found %v logfiles from glob pattern, picking the latest&#34;, len(globMatches))
-<span id="L187" class="ln">   187  </span>			if len(globMatches) &gt; 1 {
-<span id="L188" class="ln">   188  </span>				<span class="comment">// find latest timestamp</span>
-<span id="L189" class="ln">   189  </span>				latest, _ = getFileWithLatestTimestamp(globMatches)
-<span id="L190" class="ln">   190  </span>				if latest == &#34;&#34; {
-<span id="L191" class="ln">   191  </span>					logger.Warningf(&#34;Could not determine the latest logfile. Sleeping 60s...&#34;)
-<span id="L192" class="ln">   192  </span>					time.Sleep(60 * time.Second)
-<span id="L193" class="ln">   193  </span>					continue
-<span id="L194" class="ln">   194  </span>				}
-<span id="L195" class="ln">   195  </span>
-<span id="L196" class="ln">   196  </span>			} else if len(globMatches) == 1 {
-<span id="L197" class="ln">   197  </span>				latest = globMatches[0]
-<span id="L198" class="ln">   198  </span>			}
-<span id="L199" class="ln">   199  </span>			logger.Infof(&#34;Starting to parse logfile: %s &#34;, latest)
-<span id="L200" class="ln">   200  </span>		}
-<span id="L201" class="ln">   201  </span>
-<span id="L202" class="ln">   202  </span>		if latestHandle == nil {
-<span id="L203" class="ln">   203  </span>			latestHandle, err = os.Open(latest)
-<span id="L204" class="ln">   204  </span>			if err != nil {
-<span id="L205" class="ln">   205  </span>				logger.Warningf(&#34;Failed to open logfile %s: %s. Sleeping 60s...&#34;, latest, err)
-<span id="L206" class="ln">   206  </span>				time.Sleep(60 * time.Second)
-<span id="L207" class="ln">   207  </span>				continue
-<span id="L208" class="ln">   208  </span>			}
-<span id="L209" class="ln">   209  </span>			reader = bufio.NewReader(latestHandle)
-<span id="L210" class="ln">   210  </span>			if previous == latest &amp;&amp; linesRead &gt; 0 { <span class="comment">// handle postmaster restarts</span>
-<span id="L211" class="ln">   211  </span>				i := 1
-<span id="L212" class="ln">   212  </span>				for i &lt;= linesRead {
-<span id="L213" class="ln">   213  </span>					_, err = reader.ReadString(&#39;\n&#39;)
-<span id="L214" class="ln">   214  </span>					if err == io.EOF &amp;&amp; i &lt; linesRead {
-<span id="L215" class="ln">   215  </span>						logger.Warningf(&#34;Failed to open logfile %s: %s. Sleeping 60s...&#34;, latest, err)
-<span id="L216" class="ln">   216  </span>						linesRead = 0
+<span id="L124" class="ln">   124  </span>	var err error
+<span id="L125" class="ln">   125  </span>	var firstRun = true
+<span id="L126" class="ln">   126  </span>	var csvlogRegex *regexp.Regexp
+<span id="L127" class="ln">   127  </span>	logger := log.GetLogger(ctx).WithField(&#34;source&#34;, mdb.Name)
+<span id="L128" class="ln">   128  </span>	for { <span class="comment">// re-try loop. re-start in case of FS errors or just to refresh host config</span>
+<span id="L129" class="ln">   129  </span>		select {
+<span id="L130" class="ln">   130  </span>		case &lt;-ctx.Done():
+<span id="L131" class="ln">   131  </span>			return
+<span id="L132" class="ln">   132  </span>		default:
+<span id="L133" class="ln">   133  </span>		}
+<span id="L134" class="ln">   134  </span>
+<span id="L135" class="ln">   135  </span>		if hostConfig.LogsMatchRegex != &#34;&#34; {
+<span id="L136" class="ln">   136  </span>			logsMatchRegex = hostConfig.LogsMatchRegex
+<span id="L137" class="ln">   137  </span>		}
+<span id="L138" class="ln">   138  </span>		if logsMatchRegex == &#34;&#34; {
+<span id="L139" class="ln">   139  </span>			logger.Debug(&#34;Log parsing enabled with default CSVLOG regex&#34;)
+<span id="L140" class="ln">   140  </span>			logsMatchRegex = CSVLogDefaultRegEx
+<span id="L141" class="ln">   141  </span>		}
+<span id="L142" class="ln">   142  </span>		if hostConfig.LogsGlobPath != &#34;&#34; {
+<span id="L143" class="ln">   143  </span>			logsGlobPath = hostConfig.LogsGlobPath
+<span id="L144" class="ln">   144  </span>		}
+<span id="L145" class="ln">   145  </span>		if logsGlobPath == &#34;&#34; {
+<span id="L146" class="ln">   146  </span>			logsGlobPath, err = tryDetermineLogFolder(ctx, mdb.Conn)
+<span id="L147" class="ln">   147  </span>			if err != nil {
+<span id="L148" class="ln">   148  </span>				logger.WithError(err).Print(&#34;Could not determine Postgres logs parsing folder. Configured logs_glob_path = &#34;, logsGlobPath)
+<span id="L149" class="ln">   149  </span>				time.Sleep(60 * time.Second)
+<span id="L150" class="ln">   150  </span>				continue
+<span id="L151" class="ln">   151  </span>			}
+<span id="L152" class="ln">   152  </span>		}
+<span id="L153" class="ln">   153  </span>		serverMessagesLang, err = tryDetermineLogMessagesLanguage(ctx, mdb.Conn)
+<span id="L154" class="ln">   154  </span>		if err != nil {
+<span id="L155" class="ln">   155  </span>			logger.WithError(err).Warning(&#34;Could not determine language (lc_collate) used for server logs, cannot parse logs...&#34;)
+<span id="L156" class="ln">   156  </span>			time.Sleep(60 * time.Second)
+<span id="L157" class="ln">   157  </span>			continue
+<span id="L158" class="ln">   158  </span>		}
+<span id="L159" class="ln">   159  </span>
+<span id="L160" class="ln">   160  </span>		if logsMatchRegexPrev != logsMatchRegex { <span class="comment">// avoid regex recompile if no changes</span>
+<span id="L161" class="ln">   161  </span>			csvlogRegex, err = regexp.Compile(logsMatchRegex)
+<span id="L162" class="ln">   162  </span>			if err != nil {
+<span id="L163" class="ln">   163  </span>				logger.WithError(err).Print(&#34;Invalid regex: &#34;, logsMatchRegex)
+<span id="L164" class="ln">   164  </span>				time.Sleep(60 * time.Second)
+<span id="L165" class="ln">   165  </span>				continue
+<span id="L166" class="ln">   166  </span>			}
+<span id="L167" class="ln">   167  </span>			logger.Infof(&#34;Changing logs parsing regex to: %s&#34;, logsMatchRegex)
+<span id="L168" class="ln">   168  </span>			logsMatchRegexPrev = logsMatchRegex
+<span id="L169" class="ln">   169  </span>		}
+<span id="L170" class="ln">   170  </span>
+<span id="L171" class="ln">   171  </span>		logger.Debugf(&#34;Considering log files determined by glob pattern: %s&#34;, logsGlobPath)
+<span id="L172" class="ln">   172  </span>
+<span id="L173" class="ln">   173  </span>		if latest == &#34;&#34; || firstRun {
+<span id="L174" class="ln">   174  </span>			globMatches, err := filepath.Glob(logsGlobPath)
+<span id="L175" class="ln">   175  </span>			if err != nil || len(globMatches) == 0 {
+<span id="L176" class="ln">   176  </span>				logger.Infof(&#34;No logfiles found to parse from glob &#39;%s&#39;. Sleeping 60s...&#34;, logsGlobPath)
+<span id="L177" class="ln">   177  </span>				time.Sleep(60 * time.Second)
+<span id="L178" class="ln">   178  </span>				continue
+<span id="L179" class="ln">   179  </span>			}
+<span id="L180" class="ln">   180  </span>
+<span id="L181" class="ln">   181  </span>			logger.Debugf(&#34;Found %v logfiles from glob pattern, picking the latest&#34;, len(globMatches))
+<span id="L182" class="ln">   182  </span>			if len(globMatches) &gt; 1 {
+<span id="L183" class="ln">   183  </span>				<span class="comment">// find latest timestamp</span>
+<span id="L184" class="ln">   184  </span>				latest, _ = getFileWithLatestTimestamp(globMatches)
+<span id="L185" class="ln">   185  </span>				if latest == &#34;&#34; {
+<span id="L186" class="ln">   186  </span>					logger.Warningf(&#34;Could not determine the latest logfile. Sleeping 60s...&#34;)
+<span id="L187" class="ln">   187  </span>					time.Sleep(60 * time.Second)
+<span id="L188" class="ln">   188  </span>					continue
+<span id="L189" class="ln">   189  </span>				}
+<span id="L190" class="ln">   190  </span>
+<span id="L191" class="ln">   191  </span>			} else if len(globMatches) == 1 {
+<span id="L192" class="ln">   192  </span>				latest = globMatches[0]
+<span id="L193" class="ln">   193  </span>			}
+<span id="L194" class="ln">   194  </span>			logger.Infof(&#34;Starting to parse logfile: %s &#34;, latest)
+<span id="L195" class="ln">   195  </span>		}
+<span id="L196" class="ln">   196  </span>
+<span id="L197" class="ln">   197  </span>		if latestHandle == nil {
+<span id="L198" class="ln">   198  </span>			latestHandle, err = os.Open(latest)
+<span id="L199" class="ln">   199  </span>			if err != nil {
+<span id="L200" class="ln">   200  </span>				logger.Warningf(&#34;Failed to open logfile %s: %s. Sleeping 60s...&#34;, latest, err)
+<span id="L201" class="ln">   201  </span>				time.Sleep(60 * time.Second)
+<span id="L202" class="ln">   202  </span>				continue
+<span id="L203" class="ln">   203  </span>			}
+<span id="L204" class="ln">   204  </span>			reader = bufio.NewReader(latestHandle)
+<span id="L205" class="ln">   205  </span>			if previous == latest &amp;&amp; linesRead &gt; 0 { <span class="comment">// handle postmaster restarts</span>
+<span id="L206" class="ln">   206  </span>				i := 1
+<span id="L207" class="ln">   207  </span>				for i &lt;= linesRead {
+<span id="L208" class="ln">   208  </span>					_, err = reader.ReadString(&#39;\n&#39;)
+<span id="L209" class="ln">   209  </span>					if err == io.EOF &amp;&amp; i &lt; linesRead {
+<span id="L210" class="ln">   210  </span>						logger.Warningf(&#34;Failed to open logfile %s: %s. Sleeping 60s...&#34;, latest, err)
+<span id="L211" class="ln">   211  </span>						linesRead = 0
+<span id="L212" class="ln">   212  </span>						break
+<span id="L213" class="ln">   213  </span>					} else if err != nil {
+<span id="L214" class="ln">   214  </span>						logger.Warningf(&#34;Failed to skip %d logfile lines for %s, there might be duplicates reported. Error: %s&#34;, linesRead, latest, err)
+<span id="L215" class="ln">   215  </span>						time.Sleep(60 * time.Second)
+<span id="L216" class="ln">   216  </span>						linesRead = i
 <span id="L217" class="ln">   217  </span>						break
-<span id="L218" class="ln">   218  </span>					} else if err != nil {
-<span id="L219" class="ln">   219  </span>						logger.Warningf(&#34;Failed to skip %d logfile lines for %s, there might be duplicates reported. Error: %s&#34;, linesRead, latest, err)
-<span id="L220" class="ln">   220  </span>						time.Sleep(60 * time.Second)
-<span id="L221" class="ln">   221  </span>						linesRead = i
-<span id="L222" class="ln">   222  </span>						break
-<span id="L223" class="ln">   223  </span>					}
-<span id="L224" class="ln">   224  </span>					i++
-<span id="L225" class="ln">   225  </span>				}
-<span id="L226" class="ln">   226  </span>				logger.Debugf(&#34;Skipped %d already processed lines from %s&#34;, linesRead, latest)
-<span id="L227" class="ln">   227  </span>			} else if firstRun { <span class="comment">// seek to end</span>
-<span id="L228" class="ln">   228  </span>				_, _ = latestHandle.Seek(0, 2)
-<span id="L229" class="ln">   229  </span>				firstRun = false
-<span id="L230" class="ln">   230  </span>			}
-<span id="L231" class="ln">   231  </span>		}
-<span id="L232" class="ln">   232  </span>
-<span id="L233" class="ln">   233  </span>		var eofSleepMillis = 0
-<span id="L234" class="ln">   234  </span>		<span class="comment">// readLoopStart := time.Now()</span>
-<span id="L235" class="ln">   235  </span>
-<span id="L236" class="ln">   236  </span>		for {
-<span id="L237" class="ln">   237  </span>			<span class="comment">// if readLoopStart.Add(time.Second * time.Duration(opts.Source.Refresh)).Before(time.Now()) {</span>
-<span id="L238" class="ln">   238  </span>			<span class="comment">// 	break // refresh config</span>
-<span id="L239" class="ln">   239  </span>			<span class="comment">// }</span>
-<span id="L240" class="ln">   240  </span>			line, err := reader.ReadString(&#39;\n&#39;)
-<span id="L241" class="ln">   241  </span>			if err != nil &amp;&amp; err != io.EOF {
-<span id="L242" class="ln">   242  </span>				logger.Warningf(&#34;Failed to read logfile %s: %s. Sleeping 60s...&#34;, latest, err)
-<span id="L243" class="ln">   243  </span>				err = latestHandle.Close()
-<span id="L244" class="ln">   244  </span>				if err != nil {
-<span id="L245" class="ln">   245  </span>					logger.Warningf(&#34;Failed to close logfile %s properly: %s&#34;, latest, err)
-<span id="L246" class="ln">   246  </span>				}
-<span id="L247" class="ln">   247  </span>				latestHandle = nil
-<span id="L248" class="ln">   248  </span>				time.Sleep(60 * time.Second)
-<span id="L249" class="ln">   249  </span>				break
-<span id="L250" class="ln">   250  </span>			}
-<span id="L251" class="ln">   251  </span>
-<span id="L252" class="ln">   252  </span>			if err == io.EOF {
-<span id="L253" class="ln">   253  </span>				<span class="comment">//log.Debugf(&#34;EOF reached for logfile %s&#34;, latest)</span>
-<span id="L254" class="ln">   254  </span>				if eofSleepMillis &lt; 5000 &amp;&amp; float64(eofSleepMillis) &lt; interval*1000 {
-<span id="L255" class="ln">   255  </span>					eofSleepMillis += 100 <span class="comment">// progressively sleep more if nothing going on but not more that 5s or metric interval</span>
-<span id="L256" class="ln">   256  </span>				}
-<span id="L257" class="ln">   257  </span>				time.Sleep(time.Millisecond * time.Duration(eofSleepMillis))
-<span id="L258" class="ln">   258  </span>
-<span id="L259" class="ln">   259  </span>				<span class="comment">// check for newly opened logfiles</span>
-<span id="L260" class="ln">   260  </span>				file, _ := getFileWithNextModTimestamp(logsGlobPath, latest)
-<span id="L261" class="ln">   261  </span>				if file != &#34;&#34; {
-<span id="L262" class="ln">   262  </span>					previous = latest
-<span id="L263" class="ln">   263  </span>					latest = file
-<span id="L264" class="ln">   264  </span>					err = latestHandle.Close()
-<span id="L265" class="ln">   265  </span>					latestHandle = nil
-<span id="L266" class="ln">   266  </span>					if err != nil {
-<span id="L267" class="ln">   267  </span>						logger.Warningf(&#34;Failed to close logfile %s properly: %s&#34;, latest, err)
-<span id="L268" class="ln">   268  </span>					}
-<span id="L269" class="ln">   269  </span>					logger.Infof(&#34;Switching to new logfile: %s&#34;, file)
-<span id="L270" class="ln">   270  </span>					linesRead = 0
-<span id="L271" class="ln">   271  </span>					break
-<span id="L272" class="ln">   272  </span>				}
-<span id="L273" class="ln">   273  </span>			} else {
-<span id="L274" class="ln">   274  </span>				eofSleepMillis = 0
-<span id="L275" class="ln">   275  </span>				linesRead++
-<span id="L276" class="ln">   276  </span>			}
-<span id="L277" class="ln">   277  </span>
-<span id="L278" class="ln">   278  </span>			if err == nil &amp;&amp; line != &#34;&#34; {
-<span id="L279" class="ln">   279  </span>
-<span id="L280" class="ln">   280  </span>				matches := csvlogRegex.FindStringSubmatch(line)
-<span id="L281" class="ln">   281  </span>				if len(matches) == 0 {
-<span id="L282" class="ln">   282  </span>					<span class="comment">//log.Debugf(&#34;No logline regex match for line:&#34;) // normal case actually for queries spanning multiple loglines</span>
-<span id="L283" class="ln">   283  </span>					<span class="comment">//log.Debugf(line)</span>
-<span id="L284" class="ln">   284  </span>					goto send_to_storage_if_needed
-<span id="L285" class="ln">   285  </span>				}
-<span id="L286" class="ln">   286  </span>
-<span id="L287" class="ln">   287  </span>				result := regexMatchesToMap(csvlogRegex, matches)
-<span id="L288" class="ln">   288  </span>				<span class="comment">//log.Debugf(&#34;RegexMatchesToMap: %+v&#34;, result)</span>
-<span id="L289" class="ln">   289  </span>				errorSeverity, ok := result[&#34;error_severity&#34;]
-<span id="L290" class="ln">   290  </span>				if !ok {
-<span id="L291" class="ln">   291  </span>					logger.Error(&#34;error_severity group must be defined in parse regex:&#34;, csvlogRegex)
-<span id="L292" class="ln">   292  </span>					time.Sleep(time.Minute)
-<span id="L293" class="ln">   293  </span>					break
-<span id="L294" class="ln">   294  </span>				}
-<span id="L295" class="ln">   295  </span>				if serverMessagesLang != &#34;en&#34; {
-<span id="L296" class="ln">   296  </span>					errorSeverity = severityToEnglish(serverMessagesLang, errorSeverity)
-<span id="L297" class="ln">   297  </span>				}
-<span id="L298" class="ln">   298  </span>
-<span id="L299" class="ln">   299  </span>				databaseName, ok := result[&#34;database_name&#34;]
-<span id="L300" class="ln">   300  </span>				if !ok {
-<span id="L301" class="ln">   301  </span>					logger.Error(&#34;database_name group must be defined in parse regex:&#34;, csvlogRegex)
-<span id="L302" class="ln">   302  </span>					time.Sleep(time.Minute)
-<span id="L303" class="ln">   303  </span>					break
-<span id="L304" class="ln">   304  </span>				}
-<span id="L305" class="ln">   305  </span>				if realDbname == databaseName {
-<span id="L306" class="ln">   306  </span>					eventCounts[errorSeverity]++
-<span id="L307" class="ln">   307  </span>				}
-<span id="L308" class="ln">   308  </span>				eventCountsTotal[errorSeverity]++
-<span id="L309" class="ln">   309  </span>			}
-<span id="L310" class="ln">   310  </span>
-<span id="L311" class="ln">   311  </span>		send_to_storage_if_needed:
-<span id="L312" class="ln">   312  </span>			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-1*time.Second*time.Duration(interval))) {
-<span id="L313" class="ln">   313  </span>				logger.Debugf(&#34;Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v&#34;, eventCounts, eventCountsTotal)
-<span id="L314" class="ln">   314  </span>				metricStoreMessages := eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
-<span id="L315" class="ln">   315  </span>				storeCh &lt;- metricStoreMessages
-<span id="L316" class="ln">   316  </span>				zeroEventCounts(eventCounts)
-<span id="L317" class="ln">   317  </span>				zeroEventCounts(eventCountsTotal)
-<span id="L318" class="ln">   318  </span>				lastSendTime = time.Now()
-<span id="L319" class="ln">   319  </span>			}
+<span id="L218" class="ln">   218  </span>					}
+<span id="L219" class="ln">   219  </span>					i++
+<span id="L220" class="ln">   220  </span>				}
+<span id="L221" class="ln">   221  </span>				logger.Debugf(&#34;Skipped %d already processed lines from %s&#34;, linesRead, latest)
+<span id="L222" class="ln">   222  </span>			} else if firstRun { <span class="comment">// seek to end</span>
+<span id="L223" class="ln">   223  </span>				_, _ = latestHandle.Seek(0, 2)
+<span id="L224" class="ln">   224  </span>				firstRun = false
+<span id="L225" class="ln">   225  </span>			}
+<span id="L226" class="ln">   226  </span>		}
+<span id="L227" class="ln">   227  </span>
+<span id="L228" class="ln">   228  </span>		var eofSleepMillis = 0
+<span id="L229" class="ln">   229  </span>		<span class="comment">// readLoopStart := time.Now()</span>
+<span id="L230" class="ln">   230  </span>
+<span id="L231" class="ln">   231  </span>		for {
+<span id="L232" class="ln">   232  </span>			<span class="comment">// if readLoopStart.Add(time.Second * time.Duration(opts.Source.Refresh)).Before(time.Now()) {</span>
+<span id="L233" class="ln">   233  </span>			<span class="comment">// 	break // refresh config</span>
+<span id="L234" class="ln">   234  </span>			<span class="comment">// }</span>
+<span id="L235" class="ln">   235  </span>			line, err := reader.ReadString(&#39;\n&#39;)
+<span id="L236" class="ln">   236  </span>			if err != nil &amp;&amp; err != io.EOF {
+<span id="L237" class="ln">   237  </span>				logger.Warningf(&#34;Failed to read logfile %s: %s. Sleeping 60s...&#34;, latest, err)
+<span id="L238" class="ln">   238  </span>				err = latestHandle.Close()
+<span id="L239" class="ln">   239  </span>				if err != nil {
+<span id="L240" class="ln">   240  </span>					logger.Warningf(&#34;Failed to close logfile %s properly: %s&#34;, latest, err)
+<span id="L241" class="ln">   241  </span>				}
+<span id="L242" class="ln">   242  </span>				latestHandle = nil
+<span id="L243" class="ln">   243  </span>				time.Sleep(60 * time.Second)
+<span id="L244" class="ln">   244  </span>				break
+<span id="L245" class="ln">   245  </span>			}
+<span id="L246" class="ln">   246  </span>
+<span id="L247" class="ln">   247  </span>			if err == io.EOF {
+<span id="L248" class="ln">   248  </span>				<span class="comment">//log.Debugf(&#34;EOF reached for logfile %s&#34;, latest)</span>
+<span id="L249" class="ln">   249  </span>				if eofSleepMillis &lt; 5000 &amp;&amp; float64(eofSleepMillis) &lt; interval*1000 {
+<span id="L250" class="ln">   250  </span>					eofSleepMillis += 100 <span class="comment">// progressively sleep more if nothing going on but not more that 5s or metric interval</span>
+<span id="L251" class="ln">   251  </span>				}
+<span id="L252" class="ln">   252  </span>				time.Sleep(time.Millisecond * time.Duration(eofSleepMillis))
+<span id="L253" class="ln">   253  </span>
+<span id="L254" class="ln">   254  </span>				<span class="comment">// check for newly opened logfiles</span>
+<span id="L255" class="ln">   255  </span>				file, _ := getFileWithNextModTimestamp(logsGlobPath, latest)
+<span id="L256" class="ln">   256  </span>				if file != &#34;&#34; {
+<span id="L257" class="ln">   257  </span>					previous = latest
+<span id="L258" class="ln">   258  </span>					latest = file
+<span id="L259" class="ln">   259  </span>					err = latestHandle.Close()
+<span id="L260" class="ln">   260  </span>					latestHandle = nil
+<span id="L261" class="ln">   261  </span>					if err != nil {
+<span id="L262" class="ln">   262  </span>						logger.Warningf(&#34;Failed to close logfile %s properly: %s&#34;, latest, err)
+<span id="L263" class="ln">   263  </span>					}
+<span id="L264" class="ln">   264  </span>					logger.Infof(&#34;Switching to new logfile: %s&#34;, file)
+<span id="L265" class="ln">   265  </span>					linesRead = 0
+<span id="L266" class="ln">   266  </span>					break
+<span id="L267" class="ln">   267  </span>				}
+<span id="L268" class="ln">   268  </span>			} else {
+<span id="L269" class="ln">   269  </span>				eofSleepMillis = 0
+<span id="L270" class="ln">   270  </span>				linesRead++
+<span id="L271" class="ln">   271  </span>			}
+<span id="L272" class="ln">   272  </span>
+<span id="L273" class="ln">   273  </span>			if err == nil &amp;&amp; line != &#34;&#34; {
+<span id="L274" class="ln">   274  </span>
+<span id="L275" class="ln">   275  </span>				matches := csvlogRegex.FindStringSubmatch(line)
+<span id="L276" class="ln">   276  </span>				if len(matches) == 0 {
+<span id="L277" class="ln">   277  </span>					<span class="comment">//log.Debugf(&#34;No logline regex match for line:&#34;) // normal case actually for queries spanning multiple loglines</span>
+<span id="L278" class="ln">   278  </span>					<span class="comment">//log.Debugf(line)</span>
+<span id="L279" class="ln">   279  </span>					goto send_to_storage_if_needed
+<span id="L280" class="ln">   280  </span>				}
+<span id="L281" class="ln">   281  </span>
+<span id="L282" class="ln">   282  </span>				result := regexMatchesToMap(csvlogRegex, matches)
+<span id="L283" class="ln">   283  </span>				<span class="comment">//log.Debugf(&#34;RegexMatchesToMap: %+v&#34;, result)</span>
+<span id="L284" class="ln">   284  </span>				errorSeverity, ok := result[&#34;error_severity&#34;]
+<span id="L285" class="ln">   285  </span>				if !ok {
+<span id="L286" class="ln">   286  </span>					logger.Error(&#34;error_severity group must be defined in parse regex:&#34;, csvlogRegex)
+<span id="L287" class="ln">   287  </span>					time.Sleep(time.Minute)
+<span id="L288" class="ln">   288  </span>					break
+<span id="L289" class="ln">   289  </span>				}
+<span id="L290" class="ln">   290  </span>				if serverMessagesLang != &#34;en&#34; {
+<span id="L291" class="ln">   291  </span>					errorSeverity = severityToEnglish(serverMessagesLang, errorSeverity)
+<span id="L292" class="ln">   292  </span>				}
+<span id="L293" class="ln">   293  </span>
+<span id="L294" class="ln">   294  </span>				databaseName, ok := result[&#34;database_name&#34;]
+<span id="L295" class="ln">   295  </span>				if !ok {
+<span id="L296" class="ln">   296  </span>					logger.Error(&#34;database_name group must be defined in parse regex:&#34;, csvlogRegex)
+<span id="L297" class="ln">   297  </span>					time.Sleep(time.Minute)
+<span id="L298" class="ln">   298  </span>					break
+<span id="L299" class="ln">   299  </span>				}
+<span id="L300" class="ln">   300  </span>				if realDbname == databaseName {
+<span id="L301" class="ln">   301  </span>					eventCounts[errorSeverity]++
+<span id="L302" class="ln">   302  </span>				}
+<span id="L303" class="ln">   303  </span>				eventCountsTotal[errorSeverity]++
+<span id="L304" class="ln">   304  </span>			}
+<span id="L305" class="ln">   305  </span>
+<span id="L306" class="ln">   306  </span>		send_to_storage_if_needed:
+<span id="L307" class="ln">   307  </span>			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-1*time.Second*time.Duration(interval))) {
+<span id="L308" class="ln">   308  </span>				logger.Debugf(&#34;Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v&#34;, eventCounts, eventCountsTotal)
+<span id="L309" class="ln">   309  </span>				metricStoreMessages := eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
+<span id="L310" class="ln">   310  </span>				storeCh &lt;- metricStoreMessages
+<span id="L311" class="ln">   311  </span>				zeroEventCounts(eventCounts)
+<span id="L312" class="ln">   312  </span>				zeroEventCounts(eventCountsTotal)
+<span id="L313" class="ln">   313  </span>				lastSendTime = time.Now()
+<span id="L314" class="ln">   314  </span>			}
+<span id="L315" class="ln">   315  </span>
+<span id="L316" class="ln">   316  </span>		} <span class="comment">// file read loop</span>
+<span id="L317" class="ln">   317  </span>	} <span class="comment">// config loop</span>
+<span id="L318" class="ln">   318  </span>
+<span id="L319" class="ln">   319  </span>}
 <span id="L320" class="ln">   320  </span>
-<span id="L321" class="ln">   321  </span>		} <span class="comment">// file read loop</span>
-<span id="L322" class="ln">   322  </span>	} <span class="comment">// config loop</span>
-<span id="L323" class="ln">   323  </span>
-<span id="L324" class="ln">   324  </span>}
-<span id="L325" class="ln">   325  </span>
-<span id="L326" class="ln">   326  </span>func severityToEnglish(serverLang, errorSeverity string) string {
-<span id="L327" class="ln">   327  </span>	<span class="comment">//log.Debug(&#34;severityToEnglish&#34;, serverLang, errorSeverity)</span>
-<span id="L328" class="ln">   328  </span>	if serverLang == &#34;en&#34; {
+<span id="L321" class="ln">   321  </span>func severityToEnglish(serverLang, errorSeverity string) string {
+<span id="L322" class="ln">   322  </span>	<span class="comment">//log.Debug(&#34;severityToEnglish&#34;, serverLang, errorSeverity)</span>
+<span id="L323" class="ln">   323  </span>	if serverLang == &#34;en&#34; {
+<span id="L324" class="ln">   324  </span>		return errorSeverity
+<span id="L325" class="ln">   325  </span>	}
+<span id="L326" class="ln">   326  </span>	severityMap := PgSeveritiesLocale[serverLang]
+<span id="L327" class="ln">   327  </span>	severityEn, ok := severityMap[errorSeverity]
+<span id="L328" class="ln">   328  </span>	if !ok {
 <span id="L329" class="ln">   329  </span>		return errorSeverity
 <span id="L330" class="ln">   330  </span>	}
-<span id="L331" class="ln">   331  </span>	severityMap := PgSeveritiesLocale[serverLang]
-<span id="L332" class="ln">   332  </span>	severityEn, ok := severityMap[errorSeverity]
-<span id="L333" class="ln">   333  </span>	if !ok {
-<span id="L334" class="ln">   334  </span>		return errorSeverity
-<span id="L335" class="ln">   335  </span>	}
-<span id="L336" class="ln">   336  </span>	return severityEn
-<span id="L337" class="ln">   337  </span>}
-<span id="L338" class="ln">   338  </span>
-<span id="L339" class="ln">   339  </span>func zeroEventCounts(eventCounts map[string]int64) {
-<span id="L340" class="ln">   340  </span>	for _, severity := range PgSeverities {
-<span id="L341" class="ln">   341  </span>		eventCounts[severity] = 0
-<span id="L342" class="ln">   342  </span>	}
-<span id="L343" class="ln">   343  </span>}
-<span id="L344" class="ln">   344  </span>
-<span id="L345" class="ln">   345  </span>func tryDetermineLogFolder(ctx context.Context, conn db.PgxIface) (string, error) {
-<span id="L346" class="ln">   346  </span>	sql := `select current_setting(&#39;data_directory&#39;) as dd, current_setting(&#39;log_directory&#39;) as ld`
-<span id="L347" class="ln">   347  </span>	var dd, ld string
-<span id="L348" class="ln">   348  </span>	err := conn.QueryRow(ctx, sql).Scan(&amp;dd, &amp;ld)
-<span id="L349" class="ln">   349  </span>	if err != nil {
-<span id="L350" class="ln">   350  </span>		return &#34;&#34;, err
-<span id="L351" class="ln">   351  </span>	}
-<span id="L352" class="ln">   352  </span>	if strings.HasPrefix(ld, &#34;/&#34;) {
-<span id="L353" class="ln">   353  </span>		<span class="comment">// we have a full path we can use</span>
-<span id="L354" class="ln">   354  </span>		return path.Join(ld, CSVLogDefaultGlobSuffix), nil
-<span id="L355" class="ln">   355  </span>	}
-<span id="L356" class="ln">   356  </span>	return path.Join(dd, ld, CSVLogDefaultGlobSuffix), nil
-<span id="L357" class="ln">   357  </span>}
-<span id="L358" class="ln">   358  </span>
-<span id="L359" class="ln">   359  </span>func tryDetermineLogMessagesLanguage(ctx context.Context, conn db.PgxIface) (string, error) {
-<span id="L360" class="ln">   360  </span>	sql := `select current_setting(&#39;lc_messages&#39;)::varchar(2) as lc_messages;`
-<span id="L361" class="ln">   361  </span>	var lc string
-<span id="L362" class="ln">   362  </span>	err := conn.QueryRow(ctx, sql).Scan(&amp;lc)
-<span id="L363" class="ln">   363  </span>	if err != nil {
-<span id="L364" class="ln">   364  </span>		return &#34;&#34;, err
-<span id="L365" class="ln">   365  </span>	}
-<span id="L366" class="ln">   366  </span>	if _, ok := PgSeveritiesLocale[lc]; !ok {
-<span id="L367" class="ln">   367  </span>		return &#34;en&#34;, nil
-<span id="L368" class="ln">   368  </span>	}
-<span id="L369" class="ln">   369  </span>	return lc, nil
-<span id="L370" class="ln">   370  </span>}
-<span id="L371" class="ln">   371  </span>
-<span id="L372" class="ln">   372  </span>func regexMatchesToMap(csvlogRegex *regexp.Regexp, matches []string) map[string]string {
-<span id="L373" class="ln">   373  </span>	result := make(map[string]string)
-<span id="L374" class="ln">   374  </span>	if len(matches) == 0 || csvlogRegex == nil {
-<span id="L375" class="ln">   375  </span>		return result
+<span id="L331" class="ln">   331  </span>	return severityEn
+<span id="L332" class="ln">   332  </span>}
+<span id="L333" class="ln">   333  </span>
+<span id="L334" class="ln">   334  </span>func zeroEventCounts(eventCounts map[string]int64) {
+<span id="L335" class="ln">   335  </span>	for _, severity := range PgSeverities {
+<span id="L336" class="ln">   336  </span>		eventCounts[severity] = 0
+<span id="L337" class="ln">   337  </span>	}
+<span id="L338" class="ln">   338  </span>}
+<span id="L339" class="ln">   339  </span>
+<span id="L340" class="ln">   340  </span>func tryDetermineLogFolder(ctx context.Context, conn db.PgxIface) (string, error) {
+<span id="L341" class="ln">   341  </span>	sql := `select current_setting(&#39;data_directory&#39;) as dd, current_setting(&#39;log_directory&#39;) as ld`
+<span id="L342" class="ln">   342  </span>	var dd, ld string
+<span id="L343" class="ln">   343  </span>	err := conn.QueryRow(ctx, sql).Scan(&amp;dd, &amp;ld)
+<span id="L344" class="ln">   344  </span>	if err != nil {
+<span id="L345" class="ln">   345  </span>		return &#34;&#34;, err
+<span id="L346" class="ln">   346  </span>	}
+<span id="L347" class="ln">   347  </span>	if strings.HasPrefix(ld, &#34;/&#34;) {
+<span id="L348" class="ln">   348  </span>		<span class="comment">// we have a full path we can use</span>
+<span id="L349" class="ln">   349  </span>		return path.Join(ld, CSVLogDefaultGlobSuffix), nil
+<span id="L350" class="ln">   350  </span>	}
+<span id="L351" class="ln">   351  </span>	return path.Join(dd, ld, CSVLogDefaultGlobSuffix), nil
+<span id="L352" class="ln">   352  </span>}
+<span id="L353" class="ln">   353  </span>
+<span id="L354" class="ln">   354  </span>func tryDetermineLogMessagesLanguage(ctx context.Context, conn db.PgxIface) (string, error) {
+<span id="L355" class="ln">   355  </span>	sql := `select current_setting(&#39;lc_messages&#39;)::varchar(2) as lc_messages;`
+<span id="L356" class="ln">   356  </span>	var lc string
+<span id="L357" class="ln">   357  </span>	err := conn.QueryRow(ctx, sql).Scan(&amp;lc)
+<span id="L358" class="ln">   358  </span>	if err != nil {
+<span id="L359" class="ln">   359  </span>		return &#34;&#34;, err
+<span id="L360" class="ln">   360  </span>	}
+<span id="L361" class="ln">   361  </span>	if _, ok := PgSeveritiesLocale[lc]; !ok {
+<span id="L362" class="ln">   362  </span>		return &#34;en&#34;, nil
+<span id="L363" class="ln">   363  </span>	}
+<span id="L364" class="ln">   364  </span>	return lc, nil
+<span id="L365" class="ln">   365  </span>}
+<span id="L366" class="ln">   366  </span>
+<span id="L367" class="ln">   367  </span>func regexMatchesToMap(csvlogRegex *regexp.Regexp, matches []string) map[string]string {
+<span id="L368" class="ln">   368  </span>	result := make(map[string]string)
+<span id="L369" class="ln">   369  </span>	if len(matches) == 0 || csvlogRegex == nil {
+<span id="L370" class="ln">   370  </span>		return result
+<span id="L371" class="ln">   371  </span>	}
+<span id="L372" class="ln">   372  </span>	for i, name := range csvlogRegex.SubexpNames() {
+<span id="L373" class="ln">   373  </span>		if i != 0 &amp;&amp; name != &#34;&#34; {
+<span id="L374" class="ln">   374  </span>			result[name] = matches[i]
+<span id="L375" class="ln">   375  </span>		}
 <span id="L376" class="ln">   376  </span>	}
-<span id="L377" class="ln">   377  </span>	for i, name := range csvlogRegex.SubexpNames() {
-<span id="L378" class="ln">   378  </span>		if i != 0 &amp;&amp; name != &#34;&#34; {
-<span id="L379" class="ln">   379  </span>			result[name] = matches[i]
-<span id="L380" class="ln">   380  </span>		}
-<span id="L381" class="ln">   381  </span>	}
-<span id="L382" class="ln">   382  </span>	return result
-<span id="L383" class="ln">   383  </span>}
-<span id="L384" class="ln">   384  </span>
+<span id="L377" class="ln">   377  </span>	return result
+<span id="L378" class="ln">   378  </span>}
+<span id="L379" class="ln">   379  </span>
 </pre><p></p>
 
 <div id="footer">
