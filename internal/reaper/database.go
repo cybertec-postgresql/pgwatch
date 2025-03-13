@@ -891,18 +891,6 @@ func CloseResourcesForRemovedMonitoredDBs(metricsWriter sinks.Writer, currentDBs
 	}
 }
 
-func SetDBUnreachableState(dbUnique string) {
-	unreachableDBsLock.Lock()
-	unreachableDB[dbUnique] = time.Now()
-	unreachableDBsLock.Unlock()
-}
-
-func ClearDBUnreachableStateIfAny(dbUnique string) {
-	unreachableDBsLock.Lock()
-	delete(unreachableDB, dbUnique)
-	unreachableDBsLock.Unlock()
-}
-
 func SetUndersizedDBState(dbUnique string, state bool) {
 	undersizedDBsLock.Lock()
 	undersizedDBs[dbUnique] = state
