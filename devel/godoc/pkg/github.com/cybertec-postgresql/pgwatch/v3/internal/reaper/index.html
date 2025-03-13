@@ -144,7 +144,7 @@ and send measurements to sinks.
 				<dd><a href="#DoesFunctionExists">func DoesFunctionExists(ctx context.Context, dbUnique, functionName string) bool</a></dd>
 			
 				
-				<dd><a href="#FetchMetrics">func FetchMetrics(ctx context.Context, msg MetricFetchConfig, hostState map[string]map[string]string, storageCh chan&lt;- []metrics.MeasurementEnvelope, context string, opts *cmdopts.Options) ([]metrics.MeasurementEnvelope, error)</a></dd>
+				<dd><a href="#FetchMetrics">func FetchMetrics(ctx context.Context, msg MetricFetchConfig, hostState map[string]map[string]string, storageCh chan&lt;- []metrics.MeasurementEnvelope, opts *cmdopts.Options) ([]metrics.MeasurementEnvelope, error)</a></dd>
 			
 				
 				<dd><a href="#FetchMetricsPgpool">func FetchMetricsPgpool(ctx context.Context, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) (metrics.Measurements, error)</a></dd>
@@ -366,12 +366,6 @@ and send measurements to sinks.
     <span id="epochColumnName">epochColumnName</span>     <a href="https://pkg.go.dev/builtin/#string">string</a> = &#34;epoch_ns&#34; <span class="comment">// this column (epoch in nanoseconds) is expected in every metric query</span>
     <span id="tagPrefix">tagPrefix</span>           <a href="https://pkg.go.dev/builtin/#string">string</a> = &#34;tag_&#34;
     <span id="persistQueueMaxSize">persistQueueMaxSize</span>        = 10000 <span class="comment">// storage queue max elements. when reaching the limit, older metrics will be dropped.</span>
-
-    <span id="gathererStatusStart">gathererStatusStart</span>     = &#34;START&#34;
-    <span id="gathererStatusStop">gathererStatusStop</span>      = &#34;STOP&#34;
-    <span id="metricdbIdent">metricdbIdent</span>           = &#34;metricDb&#34;
-    <span id="configdbIdent">configdbIdent</span>           = &#34;configDb&#34;
-    <span id="contextPrometheusScrape">contextPrometheusScrape</span> = &#34;prometheus-scrape&#34;
 
     <span id="monitoredDbsDatastoreSyncIntervalSeconds">monitoredDbsDatastoreSyncIntervalSeconds</span> = 600              <span class="comment">// write actively monitored DBs listing to metrics store after so many seconds</span>
     <span id="monitoredDbsDatastoreSyncMetricName">monitoredDbsDatastoreSyncMetricName</span>      = &#34;configured_dbs&#34; <span class="comment">// FYI - for Postgres datastore there&#39;s also the admin.all_unique_dbnames table with all recent DB unique names with some metric data</span>
@@ -637,7 +631,6 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
     msg <a href="#MetricFetchConfig">MetricFetchConfig</a>,
     hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>,
     storageCh chan&lt;- []<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>,
-    context <a href="https://pkg.go.dev/builtin/#string">string</a>,
     opts *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/">cmdopts</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/#Options">Options</a>) ([]<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			
 			
@@ -1018,7 +1011,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="ChangeDetectionResults">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/types.go.html#L38">ChangeDetectionResults</a>
+			<h2 id="ChangeDetectionResults">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/types.go.html#L32">ChangeDetectionResults</a>
 				<a class="permalink" href="#ChangeDetectionResults">&#xb6;</a>
 				
 				
@@ -1100,7 +1093,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/types.go.html#L57">ExistingPartitionInfo</a>
+			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/types.go.html#L51">ExistingPartitionInfo</a>
 				<a class="permalink" href="#ExistingPartitionInfo">&#xb6;</a>
 				
 				
@@ -1126,7 +1119,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="MetricFetchConfig">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/types.go.html#L28">MetricFetchConfig</a>
+			<h2 id="MetricFetchConfig">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/types.go.html#L22">MetricFetchConfig</a>
 				<a class="permalink" href="#MetricFetchConfig">&#xb6;</a>
 				
 				
@@ -1157,7 +1150,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="MonitoredDatabaseSettings">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/types.go.html#L44">MonitoredDatabaseSettings</a>
+			<h2 id="MonitoredDatabaseSettings">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/types.go.html#L38">MonitoredDatabaseSettings</a>
 				<a class="permalink" href="#MonitoredDatabaseSettings">&#xb6;</a>
 				
 				

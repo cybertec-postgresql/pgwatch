@@ -436,7 +436,7 @@
 <span id="L379" class="ln">   379  </span>		}
 <span id="L380" class="ln">   380  </span>		t1 := time.Now()
 <span id="L381" class="ln">   381  </span>		if metricStoreMessages == nil {
-<span id="L382" class="ln">   382  </span>			metricStoreMessages, err = FetchMetrics(ctx, mfm, hostState, r.measurementCh, &#34;&#34;, r.Options)
+<span id="L382" class="ln">   382  </span>			metricStoreMessages, err = FetchMetrics(ctx, mfm, hostState, r.measurementCh, r.Options)
 <span id="L383" class="ln">   383  </span>		}
 <span id="L384" class="ln">   384  </span>		t2 := time.Now()
 <span id="L385" class="ln">   385  </span>
@@ -597,154 +597,153 @@
 <span id="L540" class="ln">   540  </span>	msg MetricFetchConfig,
 <span id="L541" class="ln">   541  </span>	hostState map[string]map[string]string,
 <span id="L542" class="ln">   542  </span>	storageCh chan&lt;- []metrics.MeasurementEnvelope,
-<span id="L543" class="ln">   543  </span>	context string,
-<span id="L544" class="ln">   544  </span>	opts *cmdopts.Options) ([]metrics.MeasurementEnvelope, error) {
-<span id="L545" class="ln">   545  </span>
-<span id="L546" class="ln">   546  </span>	var dbSettings MonitoredDatabaseSettings
-<span id="L547" class="ln">   547  </span>	var dbVersion int
-<span id="L548" class="ln">   548  </span>	var err error
-<span id="L549" class="ln">   549  </span>	var sql string
-<span id="L550" class="ln">   550  </span>	var data, cachedData metrics.Measurements
-<span id="L551" class="ln">   551  </span>	var md *sources.MonitoredDatabase
-<span id="L552" class="ln">   552  </span>	var fromCache, isCacheable bool
-<span id="L553" class="ln">   553  </span>
-<span id="L554" class="ln">   554  </span>	md, err = GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
-<span id="L555" class="ln">   555  </span>	if err != nil {
-<span id="L556" class="ln">   556  </span>		log.GetLogger(ctx).Errorf(&#34;[%s:%s] could not get monitored DB details&#34;, msg.DBUniqueName, err)
-<span id="L557" class="ln">   557  </span>		return nil, err
-<span id="L558" class="ln">   558  </span>	}
-<span id="L559" class="ln">   559  </span>
-<span id="L560" class="ln">   560  </span>	dbSettings, err = GetMonitoredDatabaseSettings(ctx, md, false)
-<span id="L561" class="ln">   561  </span>	if err != nil {
-<span id="L562" class="ln">   562  </span>		log.GetLogger(ctx).Error(&#34;failed to fetch pg version for &#34;, msg.DBUniqueName, msg.MetricName, err)
-<span id="L563" class="ln">   563  </span>		return nil, err
-<span id="L564" class="ln">   564  </span>	}
-<span id="L565" class="ln">   565  </span>	if msg.MetricName == specialMetricDbSize || msg.MetricName == specialMetricTableStats {
-<span id="L566" class="ln">   566  </span>		if dbSettings.ExecEnv == execEnvAzureSingle &amp;&amp; dbSettings.ApproxDBSizeB &gt; 1e12 { <span class="comment">// 1TB</span>
-<span id="L567" class="ln">   567  </span>			subsMetricName := msg.MetricName + &#34;_approx&#34;
-<span id="L568" class="ln">   568  </span>			mvpApprox, err := GetMetricVersionProperties(subsMetricName, dbSettings, nil)
-<span id="L569" class="ln">   569  </span>			if err == nil &amp;&amp; mvpApprox.StorageName == msg.MetricName {
-<span id="L570" class="ln">   570  </span>				log.GetLogger(ctx).Infof(&#34;[%s:%s] Transparently swapping metric to %s due to hard-coded rules...&#34;, msg.DBUniqueName, msg.MetricName, subsMetricName)
-<span id="L571" class="ln">   571  </span>				msg.MetricName = subsMetricName
-<span id="L572" class="ln">   572  </span>			}
-<span id="L573" class="ln">   573  </span>		}
-<span id="L574" class="ln">   574  </span>	}
-<span id="L575" class="ln">   575  </span>	dbVersion = dbSettings.Version
-<span id="L576" class="ln">   576  </span>
-<span id="L577" class="ln">   577  </span>	if msg.Source == sources.SourcePgBouncer {
-<span id="L578" class="ln">   578  </span>		dbVersion = 0 <span class="comment">// version is 0.0 for all pgbouncer sql per convention</span>
-<span id="L579" class="ln">   579  </span>	}
-<span id="L580" class="ln">   580  </span>
-<span id="L581" class="ln">   581  </span>	mvp, err := GetMetricVersionProperties(msg.MetricName, dbSettings, nil)
-<span id="L582" class="ln">   582  </span>	if err != nil &amp;&amp; msg.MetricName != recoMetricName {
-<span id="L583" class="ln">   583  </span>		epoch, ok := lastSQLFetchError.Load(msg.MetricName + dbMetricJoinStr + fmt.Sprintf(&#34;%v&#34;, dbVersion))
-<span id="L584" class="ln">   584  </span>		if !ok || ((time.Now().Unix() - epoch.(int64)) &gt; 3600) { <span class="comment">// complain only 1x per hour</span>
-<span id="L585" class="ln">   585  </span>			log.GetLogger(ctx).Infof(&#34;Failed to get SQL for metric &#39;%s&#39;, version &#39;%s&#39;: %v&#34;, msg.MetricName, dbSettings.VersionStr, err)
-<span id="L586" class="ln">   586  </span>			lastSQLFetchError.Store(msg.MetricName+dbMetricJoinStr+fmt.Sprintf(&#34;%v&#34;, dbVersion), time.Now().Unix())
-<span id="L587" class="ln">   587  </span>		}
-<span id="L588" class="ln">   588  </span>		if strings.Contains(err.Error(), &#34;too old&#34;) {
-<span id="L589" class="ln">   589  </span>			return nil, nil
-<span id="L590" class="ln">   590  </span>		}
-<span id="L591" class="ln">   591  </span>		return nil, err
-<span id="L592" class="ln">   592  </span>	}
-<span id="L593" class="ln">   593  </span>
-<span id="L594" class="ln">   594  </span>	isCacheable = IsCacheableMetric(msg, mvp)
-<span id="L595" class="ln">   595  </span>	if isCacheable &amp;&amp; opts.Metrics.InstanceLevelCacheMaxSeconds &gt; 0 &amp;&amp; msg.Interval.Seconds() &gt; float64(opts.Metrics.InstanceLevelCacheMaxSeconds) {
-<span id="L596" class="ln">   596  </span>		cachedData = GetFromInstanceCacheIfNotOlderThanSeconds(msg, opts.Metrics.InstanceLevelCacheMaxSeconds)
-<span id="L597" class="ln">   597  </span>		if len(cachedData) &gt; 0 {
-<span id="L598" class="ln">   598  </span>			fromCache = true
-<span id="L599" class="ln">   599  </span>			goto send_to_storageChannel
-<span id="L600" class="ln">   600  </span>		}
-<span id="L601" class="ln">   601  </span>	}
-<span id="L602" class="ln">   602  </span>
-<span id="L603" class="ln">   603  </span>	sql = mvp.GetSQL(dbVersion)
-<span id="L604" class="ln">   604  </span>
-<span id="L605" class="ln">   605  </span>	if sql == &#34;&#34; &amp;&amp; !(msg.MetricName == specialMetricChangeEvents || msg.MetricName == recoMetricName) {
-<span id="L606" class="ln">   606  </span>		<span class="comment">// let&#39;s ignore dummy SQLs</span>
-<span id="L607" class="ln">   607  </span>		log.GetLogger(ctx).Debugf(&#34;[%s:%s] Ignoring fetch message - got an empty/dummy SQL string&#34;, msg.DBUniqueName, msg.MetricName)
-<span id="L608" class="ln">   608  </span>		return nil, nil
-<span id="L609" class="ln">   609  </span>	}
-<span id="L610" class="ln">   610  </span>
-<span id="L611" class="ln">   611  </span>	if (mvp.PrimaryOnly() &amp;&amp; dbSettings.IsInRecovery) || (mvp.StandbyOnly() &amp;&amp; !dbSettings.IsInRecovery) {
-<span id="L612" class="ln">   612  </span>		log.GetLogger(ctx).Debugf(&#34;[%s:%s] Skipping fetching of  as server not in wanted state (IsInRecovery=%v)&#34;, msg.DBUniqueName, msg.MetricName, dbSettings.IsInRecovery)
-<span id="L613" class="ln">   613  </span>		return nil, nil
-<span id="L614" class="ln">   614  </span>	}
-<span id="L615" class="ln">   615  </span>
-<span id="L616" class="ln">   616  </span>	if msg.MetricName == specialMetricChangeEvents &amp;&amp; context != contextPrometheusScrape { <span class="comment">// special handling, multiple queries + stateful</span>
-<span id="L617" class="ln">   617  </span>		CheckForPGObjectChangesAndStore(ctx, msg.DBUniqueName, dbSettings, storageCh, hostState) <span class="comment">// TODO no hostState for Prometheus currently</span>
-<span id="L618" class="ln">   618  </span>	} else if msg.MetricName == recoMetricName &amp;&amp; context != contextPrometheusScrape {
-<span id="L619" class="ln">   619  </span>		if data, err = GetRecommendations(ctx, msg.DBUniqueName, dbSettings); err != nil {
-<span id="L620" class="ln">   620  </span>			return nil, err
-<span id="L621" class="ln">   621  </span>		}
-<span id="L622" class="ln">   622  </span>	} else if msg.Source == sources.SourcePgPool {
-<span id="L623" class="ln">   623  </span>		if data, err = FetchMetricsPgpool(ctx, msg, dbSettings, mvp); err != nil {
-<span id="L624" class="ln">   624  </span>			return nil, err
-<span id="L625" class="ln">   625  </span>		}
-<span id="L626" class="ln">   626  </span>	} else {
-<span id="L627" class="ln">   627  </span>		data, err = DBExecReadByDbUniqueName(ctx, msg.DBUniqueName, sql)
-<span id="L628" class="ln">   628  </span>
-<span id="L629" class="ln">   629  </span>		if err != nil {
-<span id="L630" class="ln">   630  </span>			<span class="comment">// let&#39;s soften errors to &#34;info&#34; from functions that expect the server to be a primary to reduce noise</span>
-<span id="L631" class="ln">   631  </span>			if strings.Contains(err.Error(), &#34;recovery is in progress&#34;) {
-<span id="L632" class="ln">   632  </span>				MonitoredDatabasesSettingsLock.RLock()
-<span id="L633" class="ln">   633  </span>				ver := MonitoredDatabasesSettings[msg.DBUniqueName]
-<span id="L634" class="ln">   634  </span>				MonitoredDatabasesSettingsLock.RUnlock()
-<span id="L635" class="ln">   635  </span>				if ver.IsInRecovery {
-<span id="L636" class="ln">   636  </span>					log.GetLogger(ctx).Debugf(&#34;[%s:%s] failed to fetch metrics: %s&#34;, msg.DBUniqueName, msg.MetricName, err)
-<span id="L637" class="ln">   637  </span>					return nil, err
-<span id="L638" class="ln">   638  </span>				}
-<span id="L639" class="ln">   639  </span>			}
-<span id="L640" class="ln">   640  </span>
-<span id="L641" class="ln">   641  </span>			if msg.MetricName == specialMetricInstanceUp {
-<span id="L642" class="ln">   642  </span>				log.GetLogger(ctx).WithError(err).Debugf(&#34;[%s:%s] failed to fetch metrics. marking instance as not up&#34;, msg.DBUniqueName, msg.MetricName)
-<span id="L643" class="ln">   643  </span>				data = make(metrics.Measurements, 1)
-<span id="L644" class="ln">   644  </span>				data[0] = metrics.Measurement{&#34;epoch_ns&#34;: time.Now().UnixNano(), &#34;is_up&#34;: 0} <span class="comment">// should be updated if the &#34;instance_up&#34; metric definition is changed</span>
-<span id="L645" class="ln">   645  </span>				goto send_to_storageChannel
-<span id="L646" class="ln">   646  </span>			}
-<span id="L647" class="ln">   647  </span>
-<span id="L648" class="ln">   648  </span>			if strings.Contains(err.Error(), &#34;connection refused&#34;) {
-<span id="L649" class="ln">   649  </span>				SetDBUnreachableState(msg.DBUniqueName)
-<span id="L650" class="ln">   650  </span>			}
-<span id="L651" class="ln">   651  </span>
-<span id="L652" class="ln">   652  </span>			log.GetLogger(ctx).
-<span id="L653" class="ln">   653  </span>				WithFields(map[string]any{&#34;source&#34;: msg.DBUniqueName, &#34;metric&#34;: msg.MetricName}).
-<span id="L654" class="ln">   654  </span>				WithError(err).Error(&#34;failed to fetch metrics&#34;)
-<span id="L655" class="ln">   655  </span>
-<span id="L656" class="ln">   656  </span>			return nil, err
-<span id="L657" class="ln">   657  </span>		}
-<span id="L658" class="ln">   658  </span>
-<span id="L659" class="ln">   659  </span>		log.GetLogger(ctx).WithFields(map[string]any{&#34;source&#34;: msg.DBUniqueName, &#34;metric&#34;: msg.MetricName, &#34;rows&#34;: len(data)}).Info(&#34;measurements fetched&#34;)
-<span id="L660" class="ln">   660  </span>		ClearDBUnreachableStateIfAny(msg.DBUniqueName)
-<span id="L661" class="ln">   661  </span>
-<span id="L662" class="ln">   662  </span>	}
-<span id="L663" class="ln">   663  </span>
-<span id="L664" class="ln">   664  </span>	if isCacheable &amp;&amp; opts.Metrics.InstanceLevelCacheMaxSeconds &gt; 0 &amp;&amp; msg.Interval.Seconds() &gt; float64(opts.Metrics.InstanceLevelCacheMaxSeconds) {
-<span id="L665" class="ln">   665  </span>		PutToInstanceCache(msg, data)
-<span id="L666" class="ln">   666  </span>	}
-<span id="L667" class="ln">   667  </span>
-<span id="L668" class="ln">   668  </span>send_to_storageChannel:
-<span id="L669" class="ln">   669  </span>
-<span id="L670" class="ln">   670  </span>	if (opts.Sinks.RealDbnameField &gt; &#34;&#34; || opts.Sinks.SystemIdentifierField &gt; &#34;&#34;) &amp;&amp; msg.Source == sources.SourcePostgres {
-<span id="L671" class="ln">   671  </span>		MonitoredDatabasesSettingsLock.RLock()
-<span id="L672" class="ln">   672  </span>		ver := MonitoredDatabasesSettings[msg.DBUniqueName]
-<span id="L673" class="ln">   673  </span>		MonitoredDatabasesSettingsLock.RUnlock()
-<span id="L674" class="ln">   674  </span>		data = AddDbnameSysinfoIfNotExistsToQueryResultData(data, ver, opts)
-<span id="L675" class="ln">   675  </span>	}
-<span id="L676" class="ln">   676  </span>
-<span id="L677" class="ln">   677  </span>	if mvp.StorageName != &#34;&#34; {
-<span id="L678" class="ln">   678  </span>		log.GetLogger(ctx).Debugf(&#34;[%s] rerouting metric %s data to %s based on metric attributes&#34;, msg.DBUniqueName, msg.MetricName, mvp.StorageName)
-<span id="L679" class="ln">   679  </span>		msg.MetricName = mvp.StorageName
-<span id="L680" class="ln">   680  </span>	}
-<span id="L681" class="ln">   681  </span>	if fromCache {
-<span id="L682" class="ln">   682  </span>		log.GetLogger(ctx).Infof(&#34;[%s:%s] loaded %d rows from the instance cache&#34;, msg.DBUniqueName, msg.MetricName, len(cachedData))
-<span id="L683" class="ln">   683  </span>		return []metrics.MeasurementEnvelope{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
-<span id="L684" class="ln">   684  </span>			MetricDef: mvp, RealDbname: dbSettings.RealDbname, SystemIdentifier: dbSettings.SystemIdentifier}}, nil
-<span id="L685" class="ln">   685  </span>	}
-<span id="L686" class="ln">   686  </span>	return []metrics.MeasurementEnvelope{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
-<span id="L687" class="ln">   687  </span>		MetricDef: mvp, RealDbname: dbSettings.RealDbname, SystemIdentifier: dbSettings.SystemIdentifier}}, nil
-<span id="L688" class="ln">   688  </span>
-<span id="L689" class="ln">   689  </span>}
-<span id="L690" class="ln">   690  </span>
+<span id="L543" class="ln">   543  </span>	opts *cmdopts.Options) ([]metrics.MeasurementEnvelope, error) {
+<span id="L544" class="ln">   544  </span>
+<span id="L545" class="ln">   545  </span>	var dbSettings MonitoredDatabaseSettings
+<span id="L546" class="ln">   546  </span>	var dbVersion int
+<span id="L547" class="ln">   547  </span>	var err error
+<span id="L548" class="ln">   548  </span>	var sql string
+<span id="L549" class="ln">   549  </span>	var data, cachedData metrics.Measurements
+<span id="L550" class="ln">   550  </span>	var md *sources.MonitoredDatabase
+<span id="L551" class="ln">   551  </span>	var fromCache, isCacheable bool
+<span id="L552" class="ln">   552  </span>
+<span id="L553" class="ln">   553  </span>	md, err = GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
+<span id="L554" class="ln">   554  </span>	if err != nil {
+<span id="L555" class="ln">   555  </span>		log.GetLogger(ctx).Errorf(&#34;[%s:%s] could not get monitored DB details&#34;, msg.DBUniqueName, err)
+<span id="L556" class="ln">   556  </span>		return nil, err
+<span id="L557" class="ln">   557  </span>	}
+<span id="L558" class="ln">   558  </span>
+<span id="L559" class="ln">   559  </span>	dbSettings, err = GetMonitoredDatabaseSettings(ctx, md, false)
+<span id="L560" class="ln">   560  </span>	if err != nil {
+<span id="L561" class="ln">   561  </span>		log.GetLogger(ctx).Error(&#34;failed to fetch pg version for &#34;, msg.DBUniqueName, msg.MetricName, err)
+<span id="L562" class="ln">   562  </span>		return nil, err
+<span id="L563" class="ln">   563  </span>	}
+<span id="L564" class="ln">   564  </span>	if msg.MetricName == specialMetricDbSize || msg.MetricName == specialMetricTableStats {
+<span id="L565" class="ln">   565  </span>		if dbSettings.ExecEnv == execEnvAzureSingle &amp;&amp; dbSettings.ApproxDBSizeB &gt; 1e12 { <span class="comment">// 1TB</span>
+<span id="L566" class="ln">   566  </span>			subsMetricName := msg.MetricName + &#34;_approx&#34;
+<span id="L567" class="ln">   567  </span>			mvpApprox, err := GetMetricVersionProperties(subsMetricName, dbSettings, nil)
+<span id="L568" class="ln">   568  </span>			if err == nil &amp;&amp; mvpApprox.StorageName == msg.MetricName {
+<span id="L569" class="ln">   569  </span>				log.GetLogger(ctx).Infof(&#34;[%s:%s] Transparently swapping metric to %s due to hard-coded rules...&#34;, msg.DBUniqueName, msg.MetricName, subsMetricName)
+<span id="L570" class="ln">   570  </span>				msg.MetricName = subsMetricName
+<span id="L571" class="ln">   571  </span>			}
+<span id="L572" class="ln">   572  </span>		}
+<span id="L573" class="ln">   573  </span>	}
+<span id="L574" class="ln">   574  </span>	dbVersion = dbSettings.Version
+<span id="L575" class="ln">   575  </span>
+<span id="L576" class="ln">   576  </span>	if msg.Source == sources.SourcePgBouncer {
+<span id="L577" class="ln">   577  </span>		dbVersion = 0 <span class="comment">// version is 0.0 for all pgbouncer sql per convention</span>
+<span id="L578" class="ln">   578  </span>	}
+<span id="L579" class="ln">   579  </span>
+<span id="L580" class="ln">   580  </span>	mvp, err := GetMetricVersionProperties(msg.MetricName, dbSettings, nil)
+<span id="L581" class="ln">   581  </span>	if err != nil &amp;&amp; msg.MetricName != recoMetricName {
+<span id="L582" class="ln">   582  </span>		epoch, ok := lastSQLFetchError.Load(msg.MetricName + dbMetricJoinStr + fmt.Sprintf(&#34;%v&#34;, dbVersion))
+<span id="L583" class="ln">   583  </span>		if !ok || ((time.Now().Unix() - epoch.(int64)) &gt; 3600) { <span class="comment">// complain only 1x per hour</span>
+<span id="L584" class="ln">   584  </span>			log.GetLogger(ctx).Infof(&#34;Failed to get SQL for metric &#39;%s&#39;, version &#39;%s&#39;: %v&#34;, msg.MetricName, dbSettings.VersionStr, err)
+<span id="L585" class="ln">   585  </span>			lastSQLFetchError.Store(msg.MetricName+dbMetricJoinStr+fmt.Sprintf(&#34;%v&#34;, dbVersion), time.Now().Unix())
+<span id="L586" class="ln">   586  </span>		}
+<span id="L587" class="ln">   587  </span>		if strings.Contains(err.Error(), &#34;too old&#34;) {
+<span id="L588" class="ln">   588  </span>			return nil, nil
+<span id="L589" class="ln">   589  </span>		}
+<span id="L590" class="ln">   590  </span>		return nil, err
+<span id="L591" class="ln">   591  </span>	}
+<span id="L592" class="ln">   592  </span>
+<span id="L593" class="ln">   593  </span>	isCacheable = IsCacheableMetric(msg, mvp)
+<span id="L594" class="ln">   594  </span>	if isCacheable &amp;&amp; opts.Metrics.InstanceLevelCacheMaxSeconds &gt; 0 &amp;&amp; msg.Interval.Seconds() &gt; float64(opts.Metrics.InstanceLevelCacheMaxSeconds) {
+<span id="L595" class="ln">   595  </span>		cachedData = GetFromInstanceCacheIfNotOlderThanSeconds(msg, opts.Metrics.InstanceLevelCacheMaxSeconds)
+<span id="L596" class="ln">   596  </span>		if len(cachedData) &gt; 0 {
+<span id="L597" class="ln">   597  </span>			fromCache = true
+<span id="L598" class="ln">   598  </span>			goto send_to_storageChannel
+<span id="L599" class="ln">   599  </span>		}
+<span id="L600" class="ln">   600  </span>	}
+<span id="L601" class="ln">   601  </span>
+<span id="L602" class="ln">   602  </span>	sql = mvp.GetSQL(dbVersion)
+<span id="L603" class="ln">   603  </span>
+<span id="L604" class="ln">   604  </span>	if sql == &#34;&#34; &amp;&amp; !(msg.MetricName == specialMetricChangeEvents || msg.MetricName == recoMetricName) {
+<span id="L605" class="ln">   605  </span>		<span class="comment">// let&#39;s ignore dummy SQLs</span>
+<span id="L606" class="ln">   606  </span>		log.GetLogger(ctx).Debugf(&#34;[%s:%s] Ignoring fetch message - got an empty/dummy SQL string&#34;, msg.DBUniqueName, msg.MetricName)
+<span id="L607" class="ln">   607  </span>		return nil, nil
+<span id="L608" class="ln">   608  </span>	}
+<span id="L609" class="ln">   609  </span>
+<span id="L610" class="ln">   610  </span>	if (mvp.PrimaryOnly() &amp;&amp; dbSettings.IsInRecovery) || (mvp.StandbyOnly() &amp;&amp; !dbSettings.IsInRecovery) {
+<span id="L611" class="ln">   611  </span>		log.GetLogger(ctx).Debugf(&#34;[%s:%s] Skipping fetching of  as server not in wanted state (IsInRecovery=%v)&#34;, msg.DBUniqueName, msg.MetricName, dbSettings.IsInRecovery)
+<span id="L612" class="ln">   612  </span>		return nil, nil
+<span id="L613" class="ln">   613  </span>	}
+<span id="L614" class="ln">   614  </span>
+<span id="L615" class="ln">   615  </span>	if msg.MetricName == specialMetricChangeEvents { <span class="comment">// special handling, multiple queries + stateful</span>
+<span id="L616" class="ln">   616  </span>		CheckForPGObjectChangesAndStore(ctx, msg.DBUniqueName, dbSettings, storageCh, hostState) <span class="comment">// TODO no hostState for Prometheus currently</span>
+<span id="L617" class="ln">   617  </span>	} else if msg.MetricName == recoMetricName {
+<span id="L618" class="ln">   618  </span>		if data, err = GetRecommendations(ctx, msg.DBUniqueName, dbSettings); err != nil {
+<span id="L619" class="ln">   619  </span>			return nil, err
+<span id="L620" class="ln">   620  </span>		}
+<span id="L621" class="ln">   621  </span>	} else if msg.Source == sources.SourcePgPool {
+<span id="L622" class="ln">   622  </span>		if data, err = FetchMetricsPgpool(ctx, msg, dbSettings, mvp); err != nil {
+<span id="L623" class="ln">   623  </span>			return nil, err
+<span id="L624" class="ln">   624  </span>		}
+<span id="L625" class="ln">   625  </span>	} else {
+<span id="L626" class="ln">   626  </span>		data, err = DBExecReadByDbUniqueName(ctx, msg.DBUniqueName, sql)
+<span id="L627" class="ln">   627  </span>
+<span id="L628" class="ln">   628  </span>		if err != nil {
+<span id="L629" class="ln">   629  </span>			<span class="comment">// let&#39;s soften errors to &#34;info&#34; from functions that expect the server to be a primary to reduce noise</span>
+<span id="L630" class="ln">   630  </span>			if strings.Contains(err.Error(), &#34;recovery is in progress&#34;) {
+<span id="L631" class="ln">   631  </span>				MonitoredDatabasesSettingsLock.RLock()
+<span id="L632" class="ln">   632  </span>				ver := MonitoredDatabasesSettings[msg.DBUniqueName]
+<span id="L633" class="ln">   633  </span>				MonitoredDatabasesSettingsLock.RUnlock()
+<span id="L634" class="ln">   634  </span>				if ver.IsInRecovery {
+<span id="L635" class="ln">   635  </span>					log.GetLogger(ctx).Debugf(&#34;[%s:%s] failed to fetch metrics: %s&#34;, msg.DBUniqueName, msg.MetricName, err)
+<span id="L636" class="ln">   636  </span>					return nil, err
+<span id="L637" class="ln">   637  </span>				}
+<span id="L638" class="ln">   638  </span>			}
+<span id="L639" class="ln">   639  </span>
+<span id="L640" class="ln">   640  </span>			if msg.MetricName == specialMetricInstanceUp {
+<span id="L641" class="ln">   641  </span>				log.GetLogger(ctx).WithError(err).Debugf(&#34;[%s:%s] failed to fetch metrics. marking instance as not up&#34;, msg.DBUniqueName, msg.MetricName)
+<span id="L642" class="ln">   642  </span>				data = make(metrics.Measurements, 1)
+<span id="L643" class="ln">   643  </span>				data[0] = metrics.Measurement{&#34;epoch_ns&#34;: time.Now().UnixNano(), &#34;is_up&#34;: 0} <span class="comment">// should be updated if the &#34;instance_up&#34; metric definition is changed</span>
+<span id="L644" class="ln">   644  </span>				goto send_to_storageChannel
+<span id="L645" class="ln">   645  </span>			}
+<span id="L646" class="ln">   646  </span>
+<span id="L647" class="ln">   647  </span>			if strings.Contains(err.Error(), &#34;connection refused&#34;) {
+<span id="L648" class="ln">   648  </span>				SetDBUnreachableState(msg.DBUniqueName)
+<span id="L649" class="ln">   649  </span>			}
+<span id="L650" class="ln">   650  </span>
+<span id="L651" class="ln">   651  </span>			log.GetLogger(ctx).
+<span id="L652" class="ln">   652  </span>				WithFields(map[string]any{&#34;source&#34;: msg.DBUniqueName, &#34;metric&#34;: msg.MetricName}).
+<span id="L653" class="ln">   653  </span>				WithError(err).Error(&#34;failed to fetch metrics&#34;)
+<span id="L654" class="ln">   654  </span>
+<span id="L655" class="ln">   655  </span>			return nil, err
+<span id="L656" class="ln">   656  </span>		}
+<span id="L657" class="ln">   657  </span>
+<span id="L658" class="ln">   658  </span>		log.GetLogger(ctx).WithFields(map[string]any{&#34;source&#34;: msg.DBUniqueName, &#34;metric&#34;: msg.MetricName, &#34;rows&#34;: len(data)}).Info(&#34;measurements fetched&#34;)
+<span id="L659" class="ln">   659  </span>		ClearDBUnreachableStateIfAny(msg.DBUniqueName)
+<span id="L660" class="ln">   660  </span>
+<span id="L661" class="ln">   661  </span>	}
+<span id="L662" class="ln">   662  </span>
+<span id="L663" class="ln">   663  </span>	if isCacheable &amp;&amp; opts.Metrics.InstanceLevelCacheMaxSeconds &gt; 0 &amp;&amp; msg.Interval.Seconds() &gt; float64(opts.Metrics.InstanceLevelCacheMaxSeconds) {
+<span id="L664" class="ln">   664  </span>		PutToInstanceCache(msg, data)
+<span id="L665" class="ln">   665  </span>	}
+<span id="L666" class="ln">   666  </span>
+<span id="L667" class="ln">   667  </span>send_to_storageChannel:
+<span id="L668" class="ln">   668  </span>
+<span id="L669" class="ln">   669  </span>	if (opts.Sinks.RealDbnameField &gt; &#34;&#34; || opts.Sinks.SystemIdentifierField &gt; &#34;&#34;) &amp;&amp; msg.Source == sources.SourcePostgres {
+<span id="L670" class="ln">   670  </span>		MonitoredDatabasesSettingsLock.RLock()
+<span id="L671" class="ln">   671  </span>		ver := MonitoredDatabasesSettings[msg.DBUniqueName]
+<span id="L672" class="ln">   672  </span>		MonitoredDatabasesSettingsLock.RUnlock()
+<span id="L673" class="ln">   673  </span>		data = AddDbnameSysinfoIfNotExistsToQueryResultData(data, ver, opts)
+<span id="L674" class="ln">   674  </span>	}
+<span id="L675" class="ln">   675  </span>
+<span id="L676" class="ln">   676  </span>	if mvp.StorageName != &#34;&#34; {
+<span id="L677" class="ln">   677  </span>		log.GetLogger(ctx).Debugf(&#34;[%s] rerouting metric %s data to %s based on metric attributes&#34;, msg.DBUniqueName, msg.MetricName, mvp.StorageName)
+<span id="L678" class="ln">   678  </span>		msg.MetricName = mvp.StorageName
+<span id="L679" class="ln">   679  </span>	}
+<span id="L680" class="ln">   680  </span>	if fromCache {
+<span id="L681" class="ln">   681  </span>		log.GetLogger(ctx).Infof(&#34;[%s:%s] loaded %d rows from the instance cache&#34;, msg.DBUniqueName, msg.MetricName, len(cachedData))
+<span id="L682" class="ln">   682  </span>		return []metrics.MeasurementEnvelope{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
+<span id="L683" class="ln">   683  </span>			MetricDef: mvp, RealDbname: dbSettings.RealDbname, SystemIdentifier: dbSettings.SystemIdentifier}}, nil
+<span id="L684" class="ln">   684  </span>	}
+<span id="L685" class="ln">   685  </span>	return []metrics.MeasurementEnvelope{{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
+<span id="L686" class="ln">   686  </span>		MetricDef: mvp, RealDbname: dbSettings.RealDbname, SystemIdentifier: dbSettings.SystemIdentifier}}, nil
+<span id="L687" class="ln">   687  </span>
+<span id="L688" class="ln">   688  </span>}
+<span id="L689" class="ln">   689  </span>
 </pre><p></p>
 
 <div id="footer">
