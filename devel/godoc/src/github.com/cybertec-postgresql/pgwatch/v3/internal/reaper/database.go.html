@@ -948,42 +948,6 @@
 <span id="L891" class="ln">   891  </span>	}
 <span id="L892" class="ln">   892  </span>}
 <span id="L893" class="ln">   893  </span>
-<span id="L894" class="ln">   894  </span>func SetUndersizedDBState(dbUnique string, state bool) {
-<span id="L895" class="ln">   895  </span>	undersizedDBsLock.Lock()
-<span id="L896" class="ln">   896  </span>	undersizedDBs[dbUnique] = state
-<span id="L897" class="ln">   897  </span>	undersizedDBsLock.Unlock()
-<span id="L898" class="ln">   898  </span>}
-<span id="L899" class="ln">   899  </span>
-<span id="L900" class="ln">   900  </span>func IsDBUndersized(dbUnique string) bool {
-<span id="L901" class="ln">   901  </span>	undersizedDBsLock.RLock()
-<span id="L902" class="ln">   902  </span>	defer undersizedDBsLock.RUnlock()
-<span id="L903" class="ln">   903  </span>	undersized, ok := undersizedDBs[dbUnique]
-<span id="L904" class="ln">   904  </span>	if ok {
-<span id="L905" class="ln">   905  </span>		return undersized
-<span id="L906" class="ln">   906  </span>	}
-<span id="L907" class="ln">   907  </span>	return false
-<span id="L908" class="ln">   908  </span>}
-<span id="L909" class="ln">   909  </span>
-<span id="L910" class="ln">   910  </span>func SetRecoveryIgnoredDBState(dbUnique string, state bool) {
-<span id="L911" class="ln">   911  </span>	recoveryIgnoredDBsLock.Lock()
-<span id="L912" class="ln">   912  </span>	recoveryIgnoredDBs[dbUnique] = state
-<span id="L913" class="ln">   913  </span>	recoveryIgnoredDBsLock.Unlock()
-<span id="L914" class="ln">   914  </span>}
-<span id="L915" class="ln">   915  </span>
-<span id="L916" class="ln">   916  </span>func IsDBIgnoredBasedOnRecoveryState(dbUnique string) bool {
-<span id="L917" class="ln">   917  </span>	recoveryIgnoredDBsLock.RLock()
-<span id="L918" class="ln">   918  </span>	defer recoveryIgnoredDBsLock.RUnlock()
-<span id="L919" class="ln">   919  </span>	recoveryIgnored, ok := recoveryIgnoredDBs[dbUnique]
-<span id="L920" class="ln">   920  </span>	if ok {
-<span id="L921" class="ln">   921  </span>		return recoveryIgnored
-<span id="L922" class="ln">   922  </span>	}
-<span id="L923" class="ln">   923  </span>	return false
-<span id="L924" class="ln">   924  </span>}
-<span id="L925" class="ln">   925  </span>
-<span id="L926" class="ln">   926  </span>func IsDBDormant(dbUnique string) bool {
-<span id="L927" class="ln">   927  </span>	return IsDBUndersized(dbUnique) || IsDBIgnoredBasedOnRecoveryState(dbUnique)
-<span id="L928" class="ln">   928  </span>}
-<span id="L929" class="ln">   929  </span>
 </pre><p></p>
 
 <div id="footer">
