@@ -23,12 +23,6 @@ var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHI
 var lastDBSizeCheckLock sync.RWMutex
 
 var prevLoopMonitoredDBs sources.SourceConns // to be able to detect DBs removed from config
-var undersizedDBs = make(map[string]bool)    // DBs below the --min-db-size-mb limit, if set
-var undersizedDBsLock = sync.RWMutex{}
-var recoveryIgnoredDBs = make(map[string]bool) // DBs in recovery state and OnlyIfMaster specified in config
-var recoveryIgnoredDBsLock = sync.RWMutex{}
-
-var hostMetricIntervalMap = make(map[string]float64) // [db1_metric] = 30
 
 var lastSQLFetchError sync.Map
 

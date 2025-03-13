@@ -139,10 +139,8 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 						if DBSizeMB < r.Sources.MinDbSizeMB {
 							srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
 							hostsToShutDownDueToRoleChange[monitoredSource.Name] = true // for the case when DB size was previosly above the threshold
-							SetUndersizedDBState(monitoredSource.Name, true)
 							continue
 						}
-						SetUndersizedDBState(monitoredSource.Name, false)
 					}
 				}
 				ver, err := GetMonitoredDatabaseSettings(ctx, monitoredSource, false)
@@ -151,7 +149,6 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 					if ver.IsInRecovery && monitoredSource.OnlyIfMaster {
 						srcL.Info("to be removed from monitoring due to 'master only' property and status change")
 						hostsToShutDownDueToRoleChange[monitoredSource.Name] = true
-						SetRecoveryIgnoredDBState(monitoredSource.Name, true)
 						continue
 					} else if lastKnownStatusInRecovery != ver.IsInRecovery {
 						if ver.IsInRecovery && len(monitoredSource.MetricsStandby) > 0 {
@@ -162,7 +159,6 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 							srcL.Warning("Switching metrics collection to primary config...")
 							metricConfig = monitoredSource.Metrics
 							hostLastKnownStatusInRecovery[monitoredSource.Name] = false
-							SetRecoveryIgnoredDBState(monitoredSource.Name, false)
 						}
 					}
 				}
@@ -192,7 +188,6 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 
 				if metricDefOk && !chOk { // initialize a new per db/per metric control channel
 					if interval > 0 {
-						hostMetricIntervalMap[dbMetric] = interval
 						srcL.WithField("metric", metric).WithField("interval", interval).Info("starting gatherer")
 						metricCtx, cancelFunc := context.WithCancel(ctx)
 						cancelFuncs[dbMetric] = cancelFunc
@@ -230,12 +225,6 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 					if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) { // complain only 1x per hour
 						srcL.WithField("metric", metric).Warning("metric definition not found")
 						lastSQLFetchError.Store(metric, time.Now().Unix())
-					}
-				} else {
-					// check if interval has changed
-					if hostMetricIntervalMap[dbMetric] != interval {
-						srcL.WithField("metric", metric).Info("updating interval...")
-						hostMetricIntervalMap[dbMetric] = interval
 					}
 				}
 			}
