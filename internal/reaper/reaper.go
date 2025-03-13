@@ -296,7 +296,6 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 				logger.WithField("source", db).WithField("metric", metric).Info("stoppin gatherer...")
 				cancelFunc()
 				delete(cancelFuncs, dbMetric)
-				ClearDBUnreachableStateIfAny(db)
 				if err := r.SinksWriter.SyncMetric(db, metric, "remove"); err != nil {
 					logger.Error(err)
 				}
@@ -644,10 +643,6 @@ func FetchMetrics(ctx context.Context,
 				goto send_to_storageChannel
 			}
 
-			if strings.Contains(err.Error(), "connection refused") {
-				SetDBUnreachableState(msg.DBUniqueName)
-			}
-
 			log.GetLogger(ctx).
 				WithFields(map[string]any{"source": msg.DBUniqueName, "metric": msg.MetricName}).
 				WithError(err).Error("failed to fetch metrics")
@@ -656,8 +651,6 @@ func FetchMetrics(ctx context.Context,
 		}
 
 		log.GetLogger(ctx).WithFields(map[string]any{"source": msg.DBUniqueName, "metric": msg.MetricName, "rows": len(data)}).Info("measurements fetched")
-		ClearDBUnreachableStateIfAny(msg.DBUniqueName)
-
 	}
 
 	if isCacheable && opts.Metrics.InstanceLevelCacheMaxSeconds > 0 && msg.Interval.Seconds() > float64(opts.Metrics.InstanceLevelCacheMaxSeconds) {

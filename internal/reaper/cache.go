@@ -18,9 +18,6 @@ var MonitoredDatabasesSettings = make(map[string]MonitoredDatabaseSettings)
 var MonitoredDatabasesSettingsLock = sync.RWMutex{}
 var MonitoredDatabasesSettingsGetLock = make(map[string]*sync.RWMutex) // synchronize initial PG version detection to 1 instance for each defined host
 
-var unreachableDBsLock sync.RWMutex
-var unreachableDB = make(map[string]time.Time)
-
 var lastDBSizeMB = make(map[string]int64)
 var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHING_INTERVAL
 var lastDBSizeCheckLock sync.RWMutex
