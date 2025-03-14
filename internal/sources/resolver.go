@@ -344,7 +344,8 @@ func ResolveDatabasesFromPatroni(ce Source) ([]*SourceConn, error) {
 	return mds, err
 }
 
-// "resolving" reads all the DB names from the given host/port, additionally matching/not matching specified regex patterns
+// ResolveDatabasesFromPostgres reads all the databases from the given cluster,
+// additionally matching/not matching specified regex patterns
 func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error) {
 	var (
 		c      db.PgxPoolIface
@@ -358,13 +359,13 @@ func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error)
 	defer c.Close()
 
 	sql := `select /* pgwatch_generated */
-		quote_ident(datname)::text as datname_escaped
-		from pg_database
-		where not datistemplate
-		and datallowconn
-		and has_database_privilege (datname, 'CONNECT')
-		and case when length(trim($1)) > 0 then datname ~ $1 else true end
-		and case when length(trim($2)) > 0 then not datname ~ $2 else true end`
+	datname
+	from pg_database
+	where not datistemplate
+	and datallowconn
+	and has_database_privilege (datname, 'CONNECT')
+	and case when length(trim($1)) > 0 then datname ~ $1 else true end
+	and case when length(trim($2)) > 0 then not datname ~ $2 else true end`
 
 	if rows, err = c.Query(context.TODO(), sql, s.IncludePattern, s.ExcludePattern); err != nil {
 		return nil, err
