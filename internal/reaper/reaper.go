@@ -3,6 +3,7 @@ package reaper
 import (
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"sync"
@@ -56,6 +57,8 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 	logger := r.logger
 
 	go r.WriteMeasurements(ctx)
+	go r.WriteMonitoredSources(ctx)
+
 	r.ready.Store(true)
 
 	for { //main loop
@@ -66,18 +69,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 			logger.WithError(err).Error("could not refresh metric definitions, using last valid cache")
 		}
 
-		if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
-			logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", r.Metrics.EmergencyPauseTriggerfile)
-			monitoredSources = make([]*sources.SourceConn, 0)
-		}
-
 		UpdateMonitoredDBCache(monitoredSources)
-
-		if lastMonitoredDBsUpdate.IsZero() || lastMonitoredDBsUpdate.Before(time.Now().Add(-1*time.Second*monitoredDbsDatastoreSyncIntervalSeconds)) {
-			go SyncMonitoredDBsToDatastore(ctx, monitoredSources, r.measurementCh)
-			lastMonitoredDBsUpdate = time.Now()
-		}
-
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
 		for _, monitoredSource := range monitoredSources {
 			srcL := logger.WithField("source", monitoredSource.Name)
@@ -362,7 +354,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.Source
 		}
 		t1 := time.Now()
 		if metricStoreMessages == nil {
-			metricStoreMessages, err = FetchMetrics(ctx, mfm, hostState, r.measurementCh, r.Options)
+			metricStoreMessages, err = r.FetchMetrics(ctx, mfm, hostState)
 		}
 		t2 := time.Now()
 
@@ -420,56 +412,56 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.Source
 	}
 }
 
-func StoreMetrics(metrics []metrics.MeasurementEnvelope, storageCh chan<- []metrics.MeasurementEnvelope) (int, error) {
-	if len(metrics) > 0 {
-		storageCh <- metrics
-		return len(metrics), nil
+// WriteMonitoredSources writes actively monitored DBs listing to sinks
+// every monitoredDbsDatastoreSyncIntervalSeconds (default 10min)
+func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
+	if len(monitoredDbCache) == 0 {
+		return
 	}
-	return 0, nil
+	msms := make([]metrics.MeasurementEnvelope, len(monitoredDbCache))
+	now := time.Now().UnixNano()
+
+	monitoredDbCacheLock.RLock()
+	for _, mdb := range monitoredDbCache {
+		db := metrics.Measurement{
+			"tag_group":   mdb.Group,
+			"master_only": mdb.OnlyIfMaster,
+			"epoch_ns":    now,
+		}
+		for k, v := range mdb.CustomTags {
+			db[tagPrefix+k] = v
+		}
+		msms = append(msms, metrics.MeasurementEnvelope{
+			DBName:     mdb.Name,
+			MetricName: monitoredDbsDatastoreSyncMetricName,
+			Data:       metrics.Measurements{db},
+		})
+	}
+	monitoredDbCacheLock.RUnlock()
+
+	select {
+	case <-time.After(time.Second * monitoredDbsDatastoreSyncIntervalSeconds):
+		// continue
+	case r.measurementCh <- msms:
+		//continue
+	case <-ctx.Done():
+		return
+	}
 }
 
-func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.SourceConn, persistenceChannel chan []metrics.MeasurementEnvelope) {
-	if len(monitoredDbs) > 0 {
-		msms := make([]metrics.MeasurementEnvelope, len(monitoredDbs))
-		now := time.Now()
-
-		for _, mdb := range monitoredDbs {
-			db := metrics.Measurement{
-				"tag_group":   mdb.Group,
-				"master_only": mdb.OnlyIfMaster,
-				"epoch_ns":    now.UnixNano(),
-			}
-			for k, v := range mdb.CustomTags {
-				db[tagPrefix+k] = v
-			}
-			msms = append(msms, metrics.MeasurementEnvelope{
-				DBName:     mdb.Name,
-				MetricName: monitoredDbsDatastoreSyncMetricName,
-				Data:       metrics.Measurements{db},
-			})
-		}
-		select {
-		case persistenceChannel <- msms:
-			//continue
-		case <-ctx.Done():
-			return
-		}
-	}
-}
-
-func AddDbnameSysinfoIfNotExistsToQueryResultData(data metrics.Measurements, ver MonitoredDatabaseSettings, opts *cmdopts.Options) metrics.Measurements {
+func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, ver MonitoredDatabaseSettings) metrics.Measurements {
 	enrichedData := make(metrics.Measurements, 0)
 	for _, dr := range data {
-		if opts.Sinks.RealDbnameField > "" && ver.RealDbname > "" {
-			old, ok := dr[opts.Sinks.RealDbnameField]
+		if r.Sinks.RealDbnameField > "" && ver.RealDbname > "" {
+			old, ok := dr[r.Sinks.RealDbnameField]
 			if !ok || old == "" {
-				dr[opts.Sinks.RealDbnameField] = ver.RealDbname
+				dr[r.Sinks.RealDbnameField] = ver.RealDbname
 			}
 		}
-		if opts.Sinks.SystemIdentifierField > "" && ver.SystemIdentifier > "" {
-			old, ok := dr[opts.Sinks.SystemIdentifierField]
+		if r.Sinks.SystemIdentifierField > "" && ver.SystemIdentifier > "" {
+			old, ok := dr[r.Sinks.SystemIdentifierField]
 			if !ok || old == "" {
-				dr[opts.Sinks.SystemIdentifierField] = ver.SystemIdentifier
+				dr[r.Sinks.SystemIdentifierField] = ver.SystemIdentifier
 			}
 		}
 		enrichedData = append(enrichedData, dr)
@@ -477,7 +469,6 @@ func AddDbnameSysinfoIfNotExistsToQueryResultData(data metrics.Measurements, ver
 	return enrichedData
 }
 
-var lastMonitoredDBsUpdate time.Time
 var instanceMetricCache = make(map[string](metrics.Measurements)) // [dbUnique+metric]lastly_fetched_data
 var instanceMetricCacheLock = sync.RWMutex{}
 var instanceMetricCacheTimestamp = make(map[string]time.Time) // [dbUnique+metric]last_fetch_time
@@ -506,23 +497,15 @@ func PutToInstanceCache(msg MetricFetchConfig, data metrics.Measurements) {
 
 func deepCopyMetricData(data metrics.Measurements) metrics.Measurements {
 	newData := make(metrics.Measurements, len(data))
-
 	for i, dr := range data {
-		newRow := make(map[string]any)
-		for k, v := range dr {
-			newRow[k] = v
-		}
-		newData[i] = newRow
+		newData[i] = maps.Clone(dr)
 	}
-
 	return newData
 }
 
-func FetchMetrics(ctx context.Context,
+func (r *Reaper) FetchMetrics(ctx context.Context,
 	msg MetricFetchConfig,
-	hostState map[string]map[string]string,
-	storageCh chan<- []metrics.MeasurementEnvelope,
-	opts *cmdopts.Options) ([]metrics.MeasurementEnvelope, error) {
+	hostState map[string]map[string]string) ([]metrics.MeasurementEnvelope, error) {
 
 	var dbSettings MonitoredDatabaseSettings
 	var dbVersion int
@@ -573,8 +556,8 @@ func FetchMetrics(ctx context.Context,
 	}
 
 	isCacheable = IsCacheableMetric(msg, mvp)
-	if isCacheable && opts.Metrics.InstanceLevelCacheMaxSeconds > 0 && msg.Interval.Seconds() > float64(opts.Metrics.InstanceLevelCacheMaxSeconds) {
-		cachedData = GetFromInstanceCacheIfNotOlderThanSeconds(msg, opts.Metrics.InstanceLevelCacheMaxSeconds)
+	if isCacheable && r.Metrics.InstanceLevelCacheMaxSeconds > 0 && msg.Interval.Seconds() > float64(r.Metrics.InstanceLevelCacheMaxSeconds) {
+		cachedData = GetFromInstanceCacheIfNotOlderThanSeconds(msg, r.Metrics.InstanceLevelCacheMaxSeconds)
 		if len(cachedData) > 0 {
 			fromCache = true
 			goto send_to_storageChannel
@@ -595,7 +578,7 @@ func FetchMetrics(ctx context.Context,
 	}
 
 	if msg.MetricName == specialMetricChangeEvents { // special handling, multiple queries + stateful
-		CheckForPGObjectChangesAndStore(ctx, msg.DBUniqueName, dbSettings, storageCh, hostState) // TODO no hostState for Prometheus currently
+		r.CheckForPGObjectChangesAndStore(ctx, msg.DBUniqueName, dbSettings, hostState) // TODO no hostState for Prometheus currently
 	} else if msg.MetricName == recoMetricName {
 		if data, err = GetRecommendations(ctx, msg.DBUniqueName, dbSettings); err != nil {
 			return nil, err
@@ -605,7 +588,7 @@ func FetchMetrics(ctx context.Context,
 			return nil, err
 		}
 	} else {
-		data, err = DBExecReadByDbUniqueName(ctx, msg.DBUniqueName, sql)
+		data, err = QueryMeasurements(ctx, msg.DBUniqueName, sql)
 
 		if err != nil {
 			// let's soften errors to "info" from functions that expect the server to be a primary to reduce noise
@@ -636,17 +619,17 @@ func FetchMetrics(ctx context.Context,
 		log.GetLogger(ctx).WithFields(map[string]any{"source": msg.DBUniqueName, "metric": msg.MetricName, "rows": len(data)}).Info("measurements fetched")
 	}
 
-	if isCacheable && opts.Metrics.InstanceLevelCacheMaxSeconds > 0 && msg.Interval.Seconds() > float64(opts.Metrics.InstanceLevelCacheMaxSeconds) {
+	if isCacheable && r.Metrics.InstanceLevelCacheMaxSeconds > 0 && msg.Interval.Seconds() > float64(r.Metrics.InstanceLevelCacheMaxSeconds) {
 		PutToInstanceCache(msg, data)
 	}
 
 send_to_storageChannel:
 
-	if (opts.Sinks.RealDbnameField > "" || opts.Sinks.SystemIdentifierField > "") && msg.Source == sources.SourcePostgres {
+	if (r.Sinks.RealDbnameField > "" || r.Sinks.SystemIdentifierField > "") && msg.Source == sources.SourcePostgres {
 		MonitoredDatabasesSettingsLock.RLock()
 		ver := MonitoredDatabasesSettings[msg.DBUniqueName]
 		MonitoredDatabasesSettingsLock.RUnlock()
-		data = AddDbnameSysinfoIfNotExistsToQueryResultData(data, ver, opts)
+		data = r.AddSysinfoToMeasurements(data, ver)
 	}
 
 	if mvp.StorageName != "" {

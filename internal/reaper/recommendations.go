@@ -49,7 +49,7 @@ func GetRecommendations(ctx context.Context, dbUnique string, vme MonitoredDatab
 		return nil, err
 	}
 	for _, mvp := range recoMetrics {
-		data, e := DBExecReadByDbUniqueName(ctx, dbUnique, mvp.GetSQL(vme.Version))
+		data, e := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(vme.Version))
 		if err != nil {
 			err = errors.Join(err, e)
 			continue

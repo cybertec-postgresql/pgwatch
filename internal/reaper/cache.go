@@ -92,6 +92,11 @@ func (r *Reaper) LoadMetrics() (err error) {
 
 // LoadSources loads sources from the reader
 func (r *Reaper) LoadSources() (err error) {
+	if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
+		r.logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", r.Metrics.EmergencyPauseTriggerfile)
+		monitoredSources = make([]*sources.SourceConn, 0)
+		return nil
+	}
 	if monitoredSources, err = monitoredSources.SyncFromReader(r.SourcesReaderWriter); err != nil {
 		return err
 	}
