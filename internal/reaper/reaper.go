@@ -435,10 +435,9 @@ func SyncMonitoredDBsToDatastore(ctx context.Context, monitoredDbs []*sources.So
 
 		for _, mdb := range monitoredDbs {
 			db := metrics.Measurement{
-				"tag_group":                   mdb.Group,
-				"master_only":                 mdb.OnlyIfMaster,
-				"epoch_ns":                    now.UnixNano(),
-				"continuous_discovery_prefix": mdb.GetDatabaseName(),
+				"tag_group":   mdb.Group,
+				"master_only": mdb.OnlyIfMaster,
+				"epoch_ns":    now.UnixNano(),
 			}
 			for k, v := range mdb.CustomTags {
 				db[tagPrefix+k] = v
