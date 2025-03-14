@@ -401,47 +401,48 @@
 <span id="L344" class="ln">   344  </span>	return mds, err
 <span id="L345" class="ln">   345  </span>}
 <span id="L346" class="ln">   346  </span>
-<span id="L347" class="ln">   347  </span><span class="comment">// &#34;resolving&#34; reads all the DB names from the given host/port, additionally matching/not matching specified regex patterns</span>
-<span id="L348" class="ln">   348  </span>func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error) {
-<span id="L349" class="ln">   349  </span>	var (
-<span id="L350" class="ln">   350  </span>		c      db.PgxPoolIface
-<span id="L351" class="ln">   351  </span>		dbname string
-<span id="L352" class="ln">   352  </span>		rows   pgx.Rows
-<span id="L353" class="ln">   353  </span>	)
-<span id="L354" class="ln">   354  </span>	c, err = db.New(context.TODO(), s.ConnStr)
-<span id="L355" class="ln">   355  </span>	if err != nil {
-<span id="L356" class="ln">   356  </span>		return
-<span id="L357" class="ln">   357  </span>	}
-<span id="L358" class="ln">   358  </span>	defer c.Close()
-<span id="L359" class="ln">   359  </span>
-<span id="L360" class="ln">   360  </span>	sql := `select /* pgwatch_generated */
-<span id="L361" class="ln">   361  </span>		quote_ident(datname)::text as datname_escaped
-<span id="L362" class="ln">   362  </span>		from pg_database
-<span id="L363" class="ln">   363  </span>		where not datistemplate
-<span id="L364" class="ln">   364  </span>		and datallowconn
-<span id="L365" class="ln">   365  </span>		and has_database_privilege (datname, &#39;CONNECT&#39;)
-<span id="L366" class="ln">   366  </span>		and case when length(trim($1)) &gt; 0 then datname ~ $1 else true end
-<span id="L367" class="ln">   367  </span>		and case when length(trim($2)) &gt; 0 then not datname ~ $2 else true end`
-<span id="L368" class="ln">   368  </span>
-<span id="L369" class="ln">   369  </span>	if rows, err = c.Query(context.TODO(), sql, s.IncludePattern, s.ExcludePattern); err != nil {
-<span id="L370" class="ln">   370  </span>		return nil, err
-<span id="L371" class="ln">   371  </span>	}
-<span id="L372" class="ln">   372  </span>	for rows.Next() {
-<span id="L373" class="ln">   373  </span>		if err = rows.Scan(&amp;dbname); err != nil {
-<span id="L374" class="ln">   374  </span>			return nil, err
-<span id="L375" class="ln">   375  </span>		}
-<span id="L376" class="ln">   376  </span>		rdb := &amp;SourceConn{Source: *s.Clone()}
-<span id="L377" class="ln">   377  </span>		rdb.Name += &#34;_&#34; + dbname
-<span id="L378" class="ln">   378  </span>		rdb.SetDatabaseName(dbname)
-<span id="L379" class="ln">   379  </span>		resolvedDbs = append(resolvedDbs, rdb)
-<span id="L380" class="ln">   380  </span>	}
-<span id="L381" class="ln">   381  </span>
-<span id="L382" class="ln">   382  </span>	if err := rows.Err(); err != nil {
-<span id="L383" class="ln">   383  </span>		return nil, err
-<span id="L384" class="ln">   384  </span>	}
-<span id="L385" class="ln">   385  </span>	return
-<span id="L386" class="ln">   386  </span>}
-<span id="L387" class="ln">   387  </span>
+<span id="L347" class="ln">   347  </span><span class="comment">// ResolveDatabasesFromPostgres reads all the databases from the given cluster,</span>
+<span id="L348" class="ln">   348  </span><span class="comment">// additionally matching/not matching specified regex patterns</span>
+<span id="L349" class="ln">   349  </span>func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error) {
+<span id="L350" class="ln">   350  </span>	var (
+<span id="L351" class="ln">   351  </span>		c      db.PgxPoolIface
+<span id="L352" class="ln">   352  </span>		dbname string
+<span id="L353" class="ln">   353  </span>		rows   pgx.Rows
+<span id="L354" class="ln">   354  </span>	)
+<span id="L355" class="ln">   355  </span>	c, err = db.New(context.TODO(), s.ConnStr)
+<span id="L356" class="ln">   356  </span>	if err != nil {
+<span id="L357" class="ln">   357  </span>		return
+<span id="L358" class="ln">   358  </span>	}
+<span id="L359" class="ln">   359  </span>	defer c.Close()
+<span id="L360" class="ln">   360  </span>
+<span id="L361" class="ln">   361  </span>	sql := `select /* pgwatch_generated */
+<span id="L362" class="ln">   362  </span>	datname
+<span id="L363" class="ln">   363  </span>	from pg_database
+<span id="L364" class="ln">   364  </span>	where not datistemplate
+<span id="L365" class="ln">   365  </span>	and datallowconn
+<span id="L366" class="ln">   366  </span>	and has_database_privilege (datname, &#39;CONNECT&#39;)
+<span id="L367" class="ln">   367  </span>	and case when length(trim($1)) &gt; 0 then datname ~ $1 else true end
+<span id="L368" class="ln">   368  </span>	and case when length(trim($2)) &gt; 0 then not datname ~ $2 else true end`
+<span id="L369" class="ln">   369  </span>
+<span id="L370" class="ln">   370  </span>	if rows, err = c.Query(context.TODO(), sql, s.IncludePattern, s.ExcludePattern); err != nil {
+<span id="L371" class="ln">   371  </span>		return nil, err
+<span id="L372" class="ln">   372  </span>	}
+<span id="L373" class="ln">   373  </span>	for rows.Next() {
+<span id="L374" class="ln">   374  </span>		if err = rows.Scan(&amp;dbname); err != nil {
+<span id="L375" class="ln">   375  </span>			return nil, err
+<span id="L376" class="ln">   376  </span>		}
+<span id="L377" class="ln">   377  </span>		rdb := &amp;SourceConn{Source: *s.Clone()}
+<span id="L378" class="ln">   378  </span>		rdb.Name += &#34;_&#34; + dbname
+<span id="L379" class="ln">   379  </span>		rdb.SetDatabaseName(dbname)
+<span id="L380" class="ln">   380  </span>		resolvedDbs = append(resolvedDbs, rdb)
+<span id="L381" class="ln">   381  </span>	}
+<span id="L382" class="ln">   382  </span>
+<span id="L383" class="ln">   383  </span>	if err := rows.Err(); err != nil {
+<span id="L384" class="ln">   384  </span>		return nil, err
+<span id="L385" class="ln">   385  </span>	}
+<span id="L386" class="ln">   386  </span>	return
+<span id="L387" class="ln">   387  </span>}
+<span id="L388" class="ln">   388  </span>
 </pre><p></p>
 
 <div id="footer">

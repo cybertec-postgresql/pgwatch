@@ -991,13 +991,14 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="ResolveDatabasesFromPostgres">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L348">ResolveDatabasesFromPostgres</a>
+				<h3 id="ResolveDatabasesFromPostgres">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L349">ResolveDatabasesFromPostgres</a>
 					<a class="permalink" href="#ResolveDatabasesFromPostgres">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func ResolveDatabasesFromPostgres(s <a href="#Source">Source</a>) (resolvedDbs <a href="#SourceConns">SourceConns</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				<p>&quot;resolving&quot; reads all the DB names from the given host/port, additionally matching/not matching specified regex patterns
+				<p>ResolveDatabasesFromPostgres reads all the databases from the given cluster,
+additionally matching/not matching specified regex patterns
 
 				
 				
