@@ -20,7 +20,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func QueryMeasurents(ctx context.Context, dbUnique string, sql string, args ...any) (metrics.Measurements, error) {
+func QueryMeasurements(ctx context.Context, dbUnique string, sql string, args ...any) (metrics.Measurements, error) {
 	var conn db.PgxIface
 	var md *sources.SourceConn
 	var err error
@@ -76,7 +76,7 @@ func DBGetSizeMB(ctx context.Context, dbUnique string) (int64, error) {
 		if err != nil || (ver.ExecEnv != execEnvAzureSingle) || (ver.ExecEnv == execEnvAzureSingle && ver.ApproxDBSizeB < 1e12) {
 			log.GetLogger(ctx).Debugf("[%s] determining DB size ...", dbUnique)
 
-			data, err := QueryMeasurents(ctx, dbUnique, sqlDbSize) // can take some time on ancient FS, use 300s stmt timeout
+			data, err := QueryMeasurements(ctx, dbUnique, sqlDbSize) // can take some time on ancient FS, use 300s stmt timeout
 			if err != nil {
 				log.GetLogger(ctx).Errorf("[%s] failed to determine DB size...cannot apply --min-db-size-mb flag. err: %v ...", dbUnique, err)
 				return 0, err
@@ -213,7 +213,7 @@ FROM
 		}
 
 		l.Debugf("[%s] determining installed extensions info...", md.Name)
-		data, err := QueryMeasurents(ctx, md.Name, sqlExtensions)
+		data, err := QueryMeasurements(ctx, md.Name, sqlExtensions)
 		if err != nil {
 			l.Errorf("[%s] failed to determine installed extensions info: %v", md.Name, err)
 		} else {
@@ -255,7 +255,7 @@ func DetectSprocChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 		return changeCounts
 	}
 
-	data, err := QueryMeasurents(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
+	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Error("could not read sproc_hashes from monitored host: ", dbUnique, ", err:", err)
 		return changeCounts
@@ -339,7 +339,7 @@ func DetectTableChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 		return changeCounts
 	}
 
-	data, err := QueryMeasurents(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
+	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Error("could not read table_hashes from monitored host:", dbUnique, ", err:", err)
 		return changeCounts
@@ -423,7 +423,7 @@ func DetectIndexChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 		return changeCounts
 	}
 
-	data, err := QueryMeasurents(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
+	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Error("could not read index_hashes from monitored host:", dbUnique, ", err:", err)
 		return changeCounts
@@ -506,7 +506,7 @@ func DetectPrivilegeChanges(ctx context.Context, dbUnique string, vme MonitoredD
 	}
 
 	// returns rows of: object_type, tag_role, tag_object, privilege_type
-	data, err := QueryMeasurents(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
+	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Errorf("[%s][%s] failed to fetch object privileges info: %v", dbUnique, specialMetricChangeEvents, err)
 		return changeCounts
@@ -587,7 +587,7 @@ func DetectConfigurationChanges(ctx context.Context, dbUnique string, vme Monito
 		return changeCounts
 	}
 
-	data, err := QueryMeasurents(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
+	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Errorf("[%s][%s] could not read configuration_hashes from monitored host: %v", dbUnique, specialMetricChangeEvents, err)
 		return changeCounts
@@ -688,7 +688,7 @@ func FetchMetricsPgpool(ctx context.Context, msg MetricFetchConfig, vme Monitore
 
 	for _, sql := range sqlLines {
 		if strings.HasPrefix(sql, "SHOW POOL_NODES") {
-			data, err := QueryMeasurents(ctx, msg.DBUniqueName, sql)
+			data, err := QueryMeasurements(ctx, msg.DBUniqueName, sql)
 			if err != nil {
 				log.GetLogger(ctx).Errorf("[%s][%s] Could not fetch PgPool statistics: %v", msg.DBUniqueName, msg.MetricName, err)
 				return data, err
@@ -742,7 +742,7 @@ func FetchMetricsPgpool(ctx context.Context, msg MetricFetchConfig, vme Monitore
 				continue
 			}
 
-			data, err := QueryMeasurents(ctx, msg.DBUniqueName, sql)
+			data, err := QueryMeasurements(ctx, msg.DBUniqueName, sql)
 			if err != nil {
 				log.GetLogger(ctx).Errorf("[%s][%s] Could not fetch PgPool statistics: %v", msg.DBUniqueName, msg.MetricName, err)
 				continue
@@ -780,7 +780,7 @@ func TryCreateMissingExtensions(ctx context.Context, dbUnique string, extensionN
 	extsCreated := make([]string, 0)
 
 	// For security reasons don't allow to execute random strings but check that it's an existing extension
-	data, err := QueryMeasurents(ctx, dbUnique, sqlAvailable)
+	data, err := QueryMeasurements(ctx, dbUnique, sqlAvailable)
 	if err != nil {
 		log.GetLogger(ctx).Infof("[%s] Failed to get a list of available extensions: %v", dbUnique, err)
 		return extsCreated
@@ -800,7 +800,7 @@ func TryCreateMissingExtensions(ctx context.Context, dbUnique string, extensionN
 			log.GetLogger(ctx).Errorf("[%s] Requested extension %s not available on instance, cannot try to create...", dbUnique, extToCreate)
 		} else {
 			sqlCreateExt := `create extension ` + extToCreate
-			_, err := QueryMeasurents(ctx, dbUnique, sqlCreateExt)
+			_, err := QueryMeasurements(ctx, dbUnique, sqlCreateExt)
 			if err != nil {
 				log.GetLogger(ctx).Errorf("[%s] Failed to create extension %s (based on --try-create-listed-exts-if-missing input): %v", dbUnique, extToCreate, err)
 			}
@@ -853,12 +853,12 @@ func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn
 func GetGoPsutilDiskPG(ctx context.Context, dbUnique string) (metrics.Measurements, error) {
 	sql := `select current_setting('data_directory') as dd, current_setting('log_directory') as ld, current_setting('server_version_num')::int as pgver`
 	sqlTS := `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E'pg\\_%'])`
-	data, err := QueryMeasurents(ctx, dbUnique, sql)
+	data, err := QueryMeasurements(ctx, dbUnique, sql)
 	if err != nil || len(data) == 0 {
 		log.GetLogger(ctx).Errorf("Failed to determine relevant PG disk paths via SQL: %v", err)
 		return nil, err
 	}
-	dataTblsp, err := QueryMeasurents(ctx, dbUnique, sqlTS)
+	dataTblsp, err := QueryMeasurements(ctx, dbUnique, sqlTS)
 	if err != nil {
 		log.GetLogger(ctx).Infof("Failed to determine relevant PG tablespace paths via SQL: %v", err)
 	}

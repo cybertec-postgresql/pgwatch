@@ -69,11 +69,6 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 			logger.WithError(err).Error("could not refresh metric definitions, using last valid cache")
 		}
 
-		if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
-			logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", r.Metrics.EmergencyPauseTriggerfile)
-			monitoredSources = make([]*sources.SourceConn, 0)
-		}
-
 		UpdateMonitoredDBCache(monitoredSources)
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
 		for _, monitoredSource := range monitoredSources {
@@ -593,7 +588,7 @@ func (r *Reaper) FetchMetrics(ctx context.Context,
 			return nil, err
 		}
 	} else {
-		data, err = QueryMeasurents(ctx, msg.DBUniqueName, sql)
+		data, err = QueryMeasurements(ctx, msg.DBUniqueName, sql)
 
 		if err != nil {
 			// let's soften errors to "info" from functions that expect the server to be a primary to reduce noise
