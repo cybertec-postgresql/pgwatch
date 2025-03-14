@@ -106,7 +106,7 @@
 <span id="L49" class="ln">    49  </span>		return nil, err
 <span id="L50" class="ln">    50  </span>	}
 <span id="L51" class="ln">    51  </span>	for _, mvp := range recoMetrics {
-<span id="L52" class="ln">    52  </span>		data, e := DBExecReadByDbUniqueName(ctx, dbUnique, mvp.GetSQL(vme.Version))
+<span id="L52" class="ln">    52  </span>		data, e := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(vme.Version))
 <span id="L53" class="ln">    53  </span>		if err != nil {
 <span id="L54" class="ln">    54  </span>			err = errors.Join(err, e)
 <span id="L55" class="ln">    55  </span>			continue
