@@ -33,7 +33,7 @@ changes.
 storage](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana/postgres/)
 
 [Screenshots of pgwatch default
-dashboards](https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/screenshots)
+dashboards](https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/gallery/dashboards.md)
 
 [The online Demo site](https://demo.pgwatch.com/)
 
@@ -41,7 +41,7 @@ dashboards](https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/scre
 
 Alerting is very conveniently also supported by Grafana in a simple
 point-and-click style - see
-[here](https://grafana.com/docs/grafana/latest/alerting/alerts-overview/)
+[here](https://grafana.com/docs/grafana/latest/alerting/#overview)
 for the official documentation. In general all more popular notification
 services are supported, and it's pretty much the easiest way to quickly
 start with PostgreSQL alerting on a smaller scale. For enterprise usage

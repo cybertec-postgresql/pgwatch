@@ -81,6 +81,6 @@ one can for example use the `wal_size` metrics.
 # Aiven for PostgreSQL
 
 The [Aiven developer
-documentation](https://developer.aiven.io/docs/products/postgresql/howto/monitor-with-pgwatch.html)
+documentation](https://aiven.io/docs/products/postgresql/howto/monitor-with-pgwatch2)
 contains information on how to monitor PostgreSQL instances running on
 the Aiven platform with pgwatch.
