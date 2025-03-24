@@ -1617,7 +1617,7 @@ the whole instance. The metric name to enable log parsing is
 destination / setting to work, the monitoring user needs superuser /
 pg_monitor privileges - if this is not possible then log settings need
 to be specified manually under "Host config" as seen for example
-<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sources/sample.sources.yaml">here</a>.</p>
+<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sources/sample.sources.yaml#L25">here</a>.</p>
 <p><strong>Sample configuration if not using CSVLOG logging:</strong></p>
 <p>On Postgres side (on the monitored DB)
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>    # Debian / Ubuntu default log_line_prefix actually
@@ -1645,7 +1645,7 @@ all pools. In latter case individual pools will be identified /
 separated via the "database" tag.</p>
 <p>There's also a built-in Grafana dashboard for PgBouncer data, looking
 like that:</p>
-<p><a href="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/master/docs/../gallery/pgbouncer_stats.png"><img alt="Grafana dash for PgBouncer stats" src="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/master/docs/../gallery/pgbouncer_stats.png" /></a></p>
+<p><a href="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgbouncer_stats.png"><img alt="Grafana dash for PgBouncer stats" src="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgbouncer_stats.png" /></a></p>
 <h2 id="pgpool-ii-support">Pgpool-II support</h2>
 <p>Quite similar to PgBouncer, also Pgpool offers some statistics on pool
 performance and status, which might be of interest especially if using
@@ -1654,7 +1654,7 @@ Type</em>, provide connection info to the pooler port and make sure the
 <strong>pgpool_stats</strong> metric / preset config is selected for the host.</p>
 <p>The built-in Grafana dashboard for Pgpool data looks something like
 that:</p>
-<p><a href="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/master/docs/../gallery/pgpool_status.png"><img alt="Grafana dash for PgPool stats" src="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/master/docs/../gallery/pgpool_status.png" /></a></p>
+<p><a href="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgpool_status.png"><img alt="Grafana dash for PgPool stats" src="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgpool_status.png" /></a></p>
 <h2 id="prometheus-scraping">Prometheus scraping</h2>
 <p>pgwatch was originally designed with direct metrics storage in mind,
 but later also support for externally controlled
