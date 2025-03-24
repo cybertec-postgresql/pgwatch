@@ -2,7 +2,7 @@
 title: Dashboarding and alerting
 ---
 
-# Grafana intro
+## Grafana intro
 
 To display the gathered and stored metrics the pgwatch project has
 decided to rely heavily on the popular Grafana dashboarding solution.
@@ -29,19 +29,19 @@ changes.
 
 **Links:**
 
-[Built-in dashboards for PostgreSQL (TimescaleDB)
+- [Built-in dashboards for PostgreSQL (TimescaleDB)
 storage](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana/postgres/)
 
-[Screenshots of pgwatch default
-dashboards](https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/screenshots)
+- [Screenshots of pgwatch default
+dashboards](../gallery/dashboards.md)
 
-[The online Demo site](https://demo.pgwatch.com/)
+- [The online Demo site](https://demo.pgwatch.com/)
 
-# Alerting
+## Alerting
 
 Alerting is very conveniently also supported by Grafana in a simple
 point-and-click style - see
-[here](https://grafana.com/docs/grafana/latest/alerting/alerts-overview/)
+[here](https://grafana.com/docs/grafana/latest/alerting/#overview)
 for the official documentation. In general all more popular notification
 services are supported, and it's pretty much the easiest way to quickly
 start with PostgreSQL alerting on a smaller scale. For enterprise usage

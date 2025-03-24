@@ -151,7 +151,7 @@ needed.
 - Some built-in metrics like `"cpu_load"` and others, that gather
     privileged or OS statistics, require installing *helper functions*
     (looking like
-    [that](https://github.com/cybertec-postgresql/pgwatch/blob/master/pgwatch/metrics/00_helpers/get_load_average/9.1/metric.sql)),
+    [that](https://github.com/cybertec-postgresql/pgwatch/blob/master/docs/tutorial/preparing_databases.md?plain=1#L111)),
     so it might be normal to see some blank panels or fetching errors in
     the logs. On how to prepare databases for monitoring see the
     [Monitoring preparations](preparing_databases.md) chapter.

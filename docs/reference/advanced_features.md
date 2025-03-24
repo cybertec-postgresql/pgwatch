@@ -65,7 +65,7 @@ the whole instance. The metric name to enable log parsing is
 destination / setting to work, the monitoring user needs superuser /
 pg_monitor privileges - if this is not possible then log settings need
 to be specified manually under "Host config" as seen for example
-[here](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sources/sample.sources.yaml).
+[here](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sources/sample.sources.yaml#L25).
 
 **Sample configuration if not using CSVLOG logging:**
 
@@ -101,7 +101,7 @@ separated via the "database" tag.
 There's also a built-in Grafana dashboard for PgBouncer data, looking
 like that:
 
-[![Grafana dash for PgBouncer stats](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/master/docs/../gallery/pgbouncer_stats.png)](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/master/docs/../gallery/pgbouncer_stats.png)
+[![Grafana dash for PgBouncer stats](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgbouncer_stats.png)](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgbouncer_stats.png)
 
 ## Pgpool-II support
 
@@ -114,7 +114,7 @@ Type*, provide connection info to the pooler port and make sure the
 The built-in Grafana dashboard for Pgpool data looks something like
 that:
 
-[![Grafana dash for PgPool stats](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/master/docs/../gallery/pgpool_status.png)](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/master/docs/../gallery/pgpool_status.png)
+[![Grafana dash for PgPool stats](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgpool_status.png)](https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgpool_status.png)
 
 ## Prometheus scraping
 
