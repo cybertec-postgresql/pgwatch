@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "Based on 'server_log_event_counts' metric. Assumes local (on DB server) setup and CSVLOG output format",
       "fieldConfig": {
@@ -142,7 +142,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -176,7 +176,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "Based on 'server_log_event_counts' metric. Assumes local (on DB server) setup and CSVLOG output format",
       "fieldConfig": {
@@ -294,7 +294,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -328,7 +328,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -447,7 +447,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "table",
           "group": [],
@@ -489,7 +489,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -608,7 +608,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "table",
           "group": [],
@@ -650,7 +650,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "gridPos": {
         "h": 8,
@@ -673,7 +673,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "refId": "A"
         }
@@ -700,7 +700,7 @@
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
-          "uid": "P13C0491EC2EA1DB8"
+          "uid": "pgwatch-metrics"
         },
         "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'server_log_event_counts' ORDER BY 1;",
         "hide": 0,

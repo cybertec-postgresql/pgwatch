@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -111,7 +111,7 @@
           "alias": "avg_runtime",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -181,7 +181,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -266,7 +266,7 @@
           "alias": "calls",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -341,7 +341,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -427,7 +427,7 @@
           "alias": "total_runtime",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -502,7 +502,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -588,7 +588,7 @@
           "alias": "sb_hit_ratio",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -658,7 +658,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -742,7 +742,7 @@
           "alias": "temp_blks_written",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -817,7 +817,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "FYI - blk_write_time can easily be 0 as normally changes happen only in the shared buffers and are written out by the checkpointer / background writer.",
       "fieldConfig": {
@@ -904,7 +904,7 @@
           "alias": "blk_read_time",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -979,7 +979,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -1065,7 +1065,7 @@
           "alias": "io_time_pct",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -1122,7 +1122,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -1231,7 +1231,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "table",
           "group": [],
@@ -1295,7 +1295,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "gridPos": {
         "h": 7,
@@ -1318,7 +1318,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "refId": "A"
         }
@@ -1342,7 +1342,7 @@
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
-          "uid": "P13C0491EC2EA1DB8"
+          "uid": "pgwatch-metrics"
         },
         "definition": "",
         "hide": 0,
@@ -1369,7 +1369,7 @@
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
-          "uid": "P13C0491EC2EA1DB8"
+          "uid": "pgwatch-metrics"
         },
         "definition": "select distinct tag_data->>'queryid' from stat_statements WHERE time > current_date -3 and dbname = '$dbname' order by 1;",
         "hide": 0,

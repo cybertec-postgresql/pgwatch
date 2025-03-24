@@ -23,7 +23,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "As per  \"settings\" metric.",
       "fieldConfig": {
@@ -122,7 +122,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "table",
           "group": [],
@@ -188,7 +188,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "gridPos": {
         "h": 8,
@@ -211,7 +211,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -260,7 +260,7 @@
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
-          "uid": "P13C0491EC2EA1DB8"
+          "uid": "pgwatch-metrics"
         },
         "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'settings' ORDER BY 1;",
         "hide": 0,
@@ -286,7 +286,7 @@
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
-          "uid": "P13C0491EC2EA1DB8"
+          "uid": "pgwatch-metrics"
         },
         "definition": "SELECT DISTINCT (data->'server_version_num')::int FROM settings WHERE time > now() - '24h'::interval ORDER BY 1 DESC",
         "hide": 0,

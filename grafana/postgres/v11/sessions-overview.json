@@ -23,7 +23,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -108,7 +108,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -138,7 +138,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -172,7 +172,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -287,7 +287,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -321,7 +321,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -437,7 +437,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -471,7 +471,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -601,7 +601,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -635,7 +635,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -735,7 +735,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -769,7 +769,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -885,7 +885,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -915,7 +915,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -949,7 +949,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "Max. value per $agg_interval",
       "fieldConfig": {
@@ -1035,7 +1035,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -1069,7 +1069,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -1171,7 +1171,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -1205,7 +1205,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "gridPos": {
         "h": 3,
@@ -1228,7 +1228,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -1274,7 +1274,7 @@
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
-          "uid": "P13C0491EC2EA1DB8"
+          "uid": "pgwatch-metrics"
         },
         "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'backends' ORDER BY 1;",
         "hide": 0,

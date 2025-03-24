@@ -23,7 +23,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "Avg. of all DBs over the whole selected period",
       "fieldConfig": {
@@ -91,7 +91,7 @@
           "alias": "TPS",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -148,7 +148,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "Avg. of all DBs over the whole selected period",
       "fieldConfig": {
@@ -217,7 +217,7 @@
           "alias": "QPS",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -274,7 +274,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "Avg. of all DBs over the whole selected period for regular (>10 calls) queries",
       "fieldConfig": {
@@ -342,7 +342,7 @@
           "alias": "avg_query_runtime_per_db",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -399,7 +399,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "Sum of all DB changes over the whole selected period",
       "fieldConfig": {
@@ -467,7 +467,7 @@
           "alias": "db_size_change_last_hour",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -524,7 +524,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "Sum of all DBs. Based on a SQL based approximate.",
       "fieldConfig": {
@@ -592,7 +592,7 @@
           "alias": "Bloat size",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -656,7 +656,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "Avg. of all selected DB-s for the whole period",
       "fieldConfig": {
@@ -724,7 +724,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -758,7 +758,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "",
       "fieldConfig": {
@@ -883,7 +883,7 @@
           "alias": "$tag_dbname",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -942,7 +942,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "Based on pg_stat_statements.calls",
       "fieldConfig": {
@@ -1067,7 +1067,7 @@
           "alias": "$tag_dbname",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -1126,7 +1126,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "Requires \"pg_stat_statements\" on server. For regular queries (calls >10)",
       "fieldConfig": {
@@ -1250,7 +1250,7 @@
           "alias": "$tag_dbname",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -1309,7 +1309,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -1433,7 +1433,7 @@
           "alias": "$tag_dbname",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -1491,7 +1491,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "",
       "fieldConfig": {
@@ -1616,7 +1616,7 @@
           "alias": "$tag_dbname",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -1674,7 +1674,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "Requires according \"metric fetching helpers\" on the monitored server",
       "fieldConfig": {
@@ -1814,7 +1814,7 @@
           "alias": "$tag_dbname",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -1872,7 +1872,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -2010,7 +2010,7 @@
           "alias": "$tag_dbname",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -2067,7 +2067,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -2206,7 +2206,7 @@
           "alias": "$tag_dbname",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -2276,7 +2276,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "",
       "fieldConfig": {
@@ -2381,7 +2381,7 @@
           "alias": "$tag_dbname",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -2439,7 +2439,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "description": "Based on pg_stat_activity info",
       "fieldConfig": {
@@ -2550,7 +2550,7 @@
           "alias": "$tag_dbname",
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "format": "time_series",
           "group": [],
@@ -2614,7 +2614,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "P13C0491EC2EA1DB8"
+        "uid": "pgwatch-metrics"
       },
       "editable": true,
       "error": false,
@@ -2639,7 +2639,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "P13C0491EC2EA1DB8"
+            "uid": "pgwatch-metrics"
           },
           "refId": "A"
         }
@@ -2692,7 +2692,7 @@
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
-          "uid": "P13C0491EC2EA1DB8"
+          "uid": "pgwatch-metrics"
         },
         "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics a WHERE case when '$current_primaries_only' = 'yes' then (select (data->'in_recovery_int')::int as in_recovery_int from db_stats where dbname = a.dbname and time > now() - '1h'::interval order by time desc limit 1) = 0 else true end ORDER BY 1;",
         "hide": 0,
