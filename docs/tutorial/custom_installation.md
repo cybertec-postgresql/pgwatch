@@ -4,7 +4,7 @@ title: Custom installation
 
 As described in the [Components](../concept/components.md)
 chapter, there is a couple of ways how to set up pgwatch.
-Two most common ways though are using the central **configurartion database**
+Two most common ways though are using the central **configuration database**
 approach and the **YAML file** based approach, plus Grafana to
 visualize the gathered metrics.
 
@@ -29,11 +29,11 @@ visualize the gathered metrics.
 1. Make sure that there are auto-start services for all
     components in place and optionally set up also backups.
 
-### Detailed steps for the configurartion database approach with Postgres sink
+### Detailed steps for the configuration database approach with Postgres sink
 
 Below are the sample steps for a custom installation from scratch using
-Postgres for the pgwatch configurartion database, measurements database and Grafana
-configurartion database.
+Postgres for the pgwatch configuration database, measurements database and Grafana
+configuration database.
 
 All examples here assume Ubuntu as OS but it's basically the same for
 RedHat family of operations systems also, minus package installation

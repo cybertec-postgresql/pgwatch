@@ -78,7 +78,7 @@ YAML schema has default values for everything and there are no other
 
 The update process for Grafana looks pretty much like the installation
 so take a look at the according
-[chapter](custom_installation.md#detailed-steps-for-the-configurartion-database-approach-with-postgres-sink).
+[chapter](custom_installation.md#detailed-steps-for-the-configuration-database-approach-with-postgres-sink).
 If using Grafana package repository it should happen automatically along
 with other system packages. Grafana has a built-in database schema
 migrator, so updating the binaries and restarting is enough.
