@@ -139,7 +139,7 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 	var cfg client.Config
 
 	if len(s.HostConfig.DcsEndpoints) == 0 {
-		return ret, errors.New("Missing ETCD connect info, make sure host config has a 'dcs_endpoints' key")
+		return ret, errors.New("missing ETCD connect info, make sure host config has a 'dcs_endpoints' key")
 	}
 
 	tlsConfig, err := getTransport(s.HostConfig)
@@ -168,10 +168,10 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 
 	if s.Kind == SourcePatroniNamespace { // all scopes, all DBs (regex filtering applies if defined)
 		if len(s.GetDatabaseName()) > 0 {
-			return ret, fmt.Errorf("Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", s.Name)
+			return ret, fmt.Errorf("skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)", s.Name)
 		}
 		if s.HostConfig.Namespace == "" {
-			return ret, fmt.Errorf("Skipping Patroni entry %s - search 'namespace' not specified", s.Name)
+			return ret, fmt.Errorf("skipping Patroni entry %s - search 'namespace' not specified", s.Name)
 		}
 		resp, err := kapi.Get(ctx, s.HostConfig.Namespace, client.WithPrefix(), client.WithKeysOnly())
 		if err != nil {

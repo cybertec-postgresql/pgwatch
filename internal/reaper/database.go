@@ -154,7 +154,7 @@ func GetMonitoredDatabaseSettings(ctx context.Context, md *sources.SourceConn, n
 		}
 		matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(dbNewSettings.VersionStr)
 		if len(matches) != 1 {
-			return dbSettings, fmt.Errorf("Unexpected PgBouncer version input: %s", dbNewSettings.VersionStr)
+			return dbSettings, fmt.Errorf("unexpected PgBouncer version input: %s", dbNewSettings.VersionStr)
 		}
 		dbNewSettings.Version = VersionToInt(matches[0])
 	case sources.SourcePgPool:
@@ -164,7 +164,7 @@ func GetMonitoredDatabaseSettings(ctx context.Context, md *sources.SourceConn, n
 
 		matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(dbNewSettings.VersionStr)
 		if len(matches) != 1 {
-			return dbSettings, fmt.Errorf("Unexpected PgPool version input: %s", dbNewSettings.VersionStr)
+			return dbSettings, fmt.Errorf("unexpected PgPool version input: %s", dbNewSettings.VersionStr)
 		}
 		dbNewSettings.Version = VersionToInt(matches[0])
 	default:
