@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"reflect"
 	"slices"
 	"strconv"
 	"strings"
@@ -230,21 +229,17 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Measu
 				tag := k[4:]
 				labels[tag] = fmt.Sprintf("%v", v)
 			} else {
-				dataType := reflect.TypeOf(v).String()
-				if dataType == "float64" || dataType == "float32" || dataType == "int64" || dataType == "int32" || dataType == "int" {
+				switch t := v.(type) {
+				case int, int32, int64, float32, float64:
 					f, err := strconv.ParseFloat(fmt.Sprintf("%v", v), 64)
 					if err != nil {
-						logger.Debugf("Skipping scraping column %s of [%s:%s]: %v", k, msg.DBName, msg.MetricName, err)
+						logger.Debugf("skipping scraping column %s of [%s:%s]: %v", k, msg.DBName, msg.MetricName, err)
 					}
 					fields[k] = f
-				} else if dataType == "bool" {
-					if v.(bool) {
-						fields[k] = 1
-					} else {
-						fields[k] = 0
-					}
-				} else {
-					logger.Debugf("Skipping scraping column %s of [%s:%s], unsupported datatype: %s", k, msg.DBName, msg.MetricName, dataType)
+				case bool:
+					fields[k] = map[bool]float64{true: 1, false: 0}[t]
+				default:
+					logger.Debugf("skipping scraping column %s of [%s:%s], unsupported datatype: %v", k, msg.DBName, msg.MetricName, t)
 					continue
 				}
 			}

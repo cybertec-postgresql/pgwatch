@@ -708,11 +708,12 @@ func FetchMetricsPgpool(ctx context.Context, msg MetricFetchConfig, vme Monitore
 					retRow[k] = vs
 					if k == "status" { // was changed from numeric to string at some pgpool version so leave the string
 						// but also add "status_num" field
-						if vs == "up" {
+						switch vs {
+						case "up":
 							retRow["status_num"] = 1
-						} else if vs == "down" {
+						case "down":
 							retRow["status_num"] = 0
-						} else {
+						default:
 							i, err := strconv.ParseInt(vs, 10, 64)
 							if err == nil {
 								retRow["status_num"] = i
