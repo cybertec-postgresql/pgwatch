@@ -23,7 +23,7 @@ jobs:
     - name: Set up Golang
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23'
+        go-version: '1.24'
         cache-dependency-path: 'go.sum'
 
     - name: Set up Node.js
@@ -71,7 +71,7 @@ jobs:
     - name: Set up Golang
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23'
+        go-version: '1.24'
         cache-dependency-path: 'go.sum'
 
     - name: Download webui artifact
@@ -102,7 +102,7 @@ jobs:
     - name: Set up Golang
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23'
+        go-version: '1.24'
         cache-dependency-path: 'go.sum'
 
     - name: Set up Node.js
@@ -154,7 +154,7 @@ jobs:
     - name: Set up Golang
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23'      
+        go-version: '1.24'      
     
     - name: Set up gopages
       run: go install github.com/johnstarich/go/gopages@v0.1.28
