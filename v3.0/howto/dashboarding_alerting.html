@@ -864,8 +864,18 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Dashboarding and Alerting
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="dashboarding_alerting.html" class="md-nav__link md-nav__link--active">
         
@@ -877,6 +887,41 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#grafana-intro" class="md-nav__link">
+    <span class="md-ellipsis">
+      Grafana intro
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alerting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alerting
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1397,8 +1442,32 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#grafana-intro" class="md-nav__link">
+    <span class="md-ellipsis">
+      Grafana intro
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alerting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alerting
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -1422,7 +1491,9 @@
   
 
 
-<h1 id="grafana-intro">Grafana intro</h1>
+  <h1>Dashboarding and Alerting</h1>
+
+<h2 id="grafana-intro">Grafana intro</h2>
 <p>To display the gathered and stored metrics the pgwatch project has
 decided to rely heavily on the popular Grafana dashboarding solution.
 This means only though that it's installed in the default Docker images
@@ -1443,15 +1514,23 @@ but use the <em>Save as</em> features - this will allow later to easily update
 all the dashboards <em>en masse</em> per script, without losing any custom user
 changes.</p>
 <p><strong>Links:</strong></p>
+<ul>
+<li>
 <p><a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana/postgres/">Built-in dashboards for PostgreSQL (TimescaleDB)
 storage</a></p>
-<p><a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/screenshots">Screenshots of pgwatch default
+</li>
+<li>
+<p><a href="../gallery/dashboards.html">Screenshots of pgwatch default
 dashboards</a></p>
+</li>
+<li>
 <p><a href="https://demo.pgwatch.com/">The online Demo site</a></p>
-<h1 id="alerting">Alerting</h1>
+</li>
+</ul>
+<h2 id="alerting">Alerting</h2>
 <p>Alerting is very conveniently also supported by Grafana in a simple
 point-and-click style - see
-<a href="https://grafana.com/docs/grafana/latest/alerting/alerts-overview/">here</a>
+<a href="https://grafana.com/docs/grafana/latest/alerting/#overview">here</a>
 for the official documentation. In general all more popular notification
 services are supported, and it's pretty much the easiest way to quickly
 start with PostgreSQL alerting on a smaller scale. For enterprise usage
