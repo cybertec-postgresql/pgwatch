@@ -62,10 +62,9 @@ So in short, for plain Docker setups would be best to do something like:
 # let's create volumes for Postgres, Grafana and pgwatch marker files / SSL certificates
 for v in pg  grafana pw3 ; do docker volume create $v ; done
 
-# launch pgwatch with fully exposed Grafana and Health-check ports
-# and local Postgres and subnet level Web UI ports
+# launch pgwatch with fully exposed Grafana, Web UI, Postgres
 docker run -d --restart=unless-stopped --name pw3 \
-    -p 3000:3000 -p 8081:8081 -p 127.0.0.1:5432:5432 -p 192.168.1.XYZ:8080:8080 \
+    -p 3000:3000 -p 127.0.0.1:5432:5432 -p 192.168.1.XYZ:8080:8080 \
     -v pg:/var/lib/postgresql -v grafana:/var/lib/grafana -v pw3:/pgwatch/persistent-config \
     cybertecpostgresql/pgwatch-demo:X.Y.Z
 ```
@@ -185,8 +184,6 @@ needed.
     cybertec/pgwatch image)
 - *8080* - Management Web UI (monitored hosts, metrics, metrics
     configurations)
-- *8081* - Gatherer healthcheck / statistics on number of gathered
-    metrics (JSON).
 - *3000* - Grafana dashboarding
 
 ## Docker Compose
