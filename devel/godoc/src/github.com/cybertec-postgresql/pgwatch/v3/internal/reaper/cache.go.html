@@ -106,7 +106,7 @@
 <span id="L49" class="ln">    49  </span>	defer monitoredDbCacheLock.RUnlock()
 <span id="L50" class="ln">    50  </span>	md, exists := monitoredDbCache[name]
 <span id="L51" class="ln">    51  </span>	if !exists || md == nil {
-<span id="L52" class="ln">    52  </span>		return nil, fmt.Errorf(&#34;Database %s not found in cache&#34;, name)
+<span id="L52" class="ln">    52  </span>		return nil, fmt.Errorf(&#34;database %s not found in cache&#34;, name)
 <span id="L53" class="ln">    53  </span>	}
 <span id="L54" class="ln">    54  </span>	return md, nil
 <span id="L55" class="ln">    55  </span>}

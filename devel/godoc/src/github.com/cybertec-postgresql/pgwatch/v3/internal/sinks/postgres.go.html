@@ -352,365 +352,368 @@
 <span id="L295" class="ln">   295  </span>
 <span id="L296" class="ln">   296  </span>			rowsBatched++
 <span id="L297" class="ln">   297  </span>
-<span id="L298" class="ln">   298  </span>			if pgw.metricSchema == DbStorageSchemaTimescale {
-<span id="L299" class="ln">   299  </span>				<span class="comment">// set min/max timestamps to check/create partitions</span>
-<span id="L300" class="ln">   300  </span>				bounds, ok := pgPartBounds[msg.MetricName]
-<span id="L301" class="ln">   301  </span>				if !ok || (ok &amp;&amp; epochTime.Before(bounds.StartTime)) {
-<span id="L302" class="ln">   302  </span>					bounds.StartTime = epochTime
-<span id="L303" class="ln">   303  </span>					pgPartBounds[msg.MetricName] = bounds
-<span id="L304" class="ln">   304  </span>				}
-<span id="L305" class="ln">   305  </span>				if !ok || (ok &amp;&amp; epochTime.After(bounds.EndTime)) {
-<span id="L306" class="ln">   306  </span>					bounds.EndTime = epochTime
-<span id="L307" class="ln">   307  </span>					pgPartBounds[msg.MetricName] = bounds
-<span id="L308" class="ln">   308  </span>				}
-<span id="L309" class="ln">   309  </span>			} else if pgw.metricSchema == DbStorageSchemaPostgres {
-<span id="L310" class="ln">   310  </span>				_, ok := pgPartBoundsDbName[msg.MetricName]
-<span id="L311" class="ln">   311  </span>				if !ok {
-<span id="L312" class="ln">   312  </span>					pgPartBoundsDbName[msg.MetricName] = make(map[string]ExistingPartitionInfo)
-<span id="L313" class="ln">   313  </span>				}
-<span id="L314" class="ln">   314  </span>				bounds, ok := pgPartBoundsDbName[msg.MetricName][msg.DBName]
-<span id="L315" class="ln">   315  </span>				if !ok || (ok &amp;&amp; epochTime.Before(bounds.StartTime)) {
-<span id="L316" class="ln">   316  </span>					bounds.StartTime = epochTime
-<span id="L317" class="ln">   317  </span>					pgPartBoundsDbName[msg.MetricName][msg.DBName] = bounds
-<span id="L318" class="ln">   318  </span>				}
-<span id="L319" class="ln">   319  </span>				if !ok || (ok &amp;&amp; epochTime.After(bounds.EndTime)) {
-<span id="L320" class="ln">   320  </span>					bounds.EndTime = epochTime
-<span id="L321" class="ln">   321  </span>					pgPartBoundsDbName[msg.MetricName][msg.DBName] = bounds
-<span id="L322" class="ln">   322  </span>				}
-<span id="L323" class="ln">   323  </span>			}
-<span id="L324" class="ln">   324  </span>		}
-<span id="L325" class="ln">   325  </span>	}
-<span id="L326" class="ln">   326  </span>
-<span id="L327" class="ln">   327  </span>	switch pgw.metricSchema {
-<span id="L328" class="ln">   328  </span>	case DbStorageSchemaPostgres:
-<span id="L329" class="ln">   329  </span>		err = pgw.EnsureMetricDbnameTime(pgPartBoundsDbName, forceRecreatePartitions)
-<span id="L330" class="ln">   330  </span>	case DbStorageSchemaTimescale:
-<span id="L331" class="ln">   331  </span>		err = pgw.EnsureMetricTimescale(pgPartBounds, forceRecreatePartitions)
-<span id="L332" class="ln">   332  </span>	default:
-<span id="L333" class="ln">   333  </span>		logger.Fatal(&#34;unknown storage schema...&#34;)
-<span id="L334" class="ln">   334  </span>	}
-<span id="L335" class="ln">   335  </span>	if forceRecreatePartitions {
-<span id="L336" class="ln">   336  </span>		forceRecreatePartitions = false
+<span id="L298" class="ln">   298  </span>			switch pgw.metricSchema {
+<span id="L299" class="ln">   299  </span>			case DbStorageSchemaTimescale:
+<span id="L300" class="ln">   300  </span>				<span class="comment">// set min/max timestamps to check/create partitions</span>
+<span id="L301" class="ln">   301  </span>				bounds, ok := pgPartBounds[msg.MetricName]
+<span id="L302" class="ln">   302  </span>				if !ok || (ok &amp;&amp; epochTime.Before(bounds.StartTime)) {
+<span id="L303" class="ln">   303  </span>					bounds.StartTime = epochTime
+<span id="L304" class="ln">   304  </span>					pgPartBounds[msg.MetricName] = bounds
+<span id="L305" class="ln">   305  </span>				}
+<span id="L306" class="ln">   306  </span>				if !ok || (ok &amp;&amp; epochTime.After(bounds.EndTime)) {
+<span id="L307" class="ln">   307  </span>					bounds.EndTime = epochTime
+<span id="L308" class="ln">   308  </span>					pgPartBounds[msg.MetricName] = bounds
+<span id="L309" class="ln">   309  </span>				}
+<span id="L310" class="ln">   310  </span>			case DbStorageSchemaPostgres:
+<span id="L311" class="ln">   311  </span>				_, ok := pgPartBoundsDbName[msg.MetricName]
+<span id="L312" class="ln">   312  </span>				if !ok {
+<span id="L313" class="ln">   313  </span>					pgPartBoundsDbName[msg.MetricName] = make(map[string]ExistingPartitionInfo)
+<span id="L314" class="ln">   314  </span>				}
+<span id="L315" class="ln">   315  </span>				bounds, ok := pgPartBoundsDbName[msg.MetricName][msg.DBName]
+<span id="L316" class="ln">   316  </span>				if !ok || (ok &amp;&amp; epochTime.Before(bounds.StartTime)) {
+<span id="L317" class="ln">   317  </span>					bounds.StartTime = epochTime
+<span id="L318" class="ln">   318  </span>					pgPartBoundsDbName[msg.MetricName][msg.DBName] = bounds
+<span id="L319" class="ln">   319  </span>				}
+<span id="L320" class="ln">   320  </span>				if !ok || (ok &amp;&amp; epochTime.After(bounds.EndTime)) {
+<span id="L321" class="ln">   321  </span>					bounds.EndTime = epochTime
+<span id="L322" class="ln">   322  </span>					pgPartBoundsDbName[msg.MetricName][msg.DBName] = bounds
+<span id="L323" class="ln">   323  </span>				}
+<span id="L324" class="ln">   324  </span>			default:
+<span id="L325" class="ln">   325  </span>				logger.Fatal(&#34;unknown storage schema...&#34;)
+<span id="L326" class="ln">   326  </span>			}
+<span id="L327" class="ln">   327  </span>		}
+<span id="L328" class="ln">   328  </span>	}
+<span id="L329" class="ln">   329  </span>
+<span id="L330" class="ln">   330  </span>	switch pgw.metricSchema {
+<span id="L331" class="ln">   331  </span>	case DbStorageSchemaPostgres:
+<span id="L332" class="ln">   332  </span>		err = pgw.EnsureMetricDbnameTime(pgPartBoundsDbName, forceRecreatePartitions)
+<span id="L333" class="ln">   333  </span>	case DbStorageSchemaTimescale:
+<span id="L334" class="ln">   334  </span>		err = pgw.EnsureMetricTimescale(pgPartBounds, forceRecreatePartitions)
+<span id="L335" class="ln">   335  </span>	default:
+<span id="L336" class="ln">   336  </span>		logger.Fatal(&#34;unknown storage schema...&#34;)
 <span id="L337" class="ln">   337  </span>	}
-<span id="L338" class="ln">   338  </span>	if err != nil {
-<span id="L339" class="ln">   339  </span>		pgw.lastError &lt;- err
+<span id="L338" class="ln">   338  </span>	if forceRecreatePartitions {
+<span id="L339" class="ln">   339  </span>		forceRecreatePartitions = false
 <span id="L340" class="ln">   340  </span>	}
-<span id="L341" class="ln">   341  </span>
-<span id="L342" class="ln">   342  </span>	<span class="comment">// send data to PG, with a separate COPY for all metrics</span>
-<span id="L343" class="ln">   343  </span>	logger.Debugf(&#34;COPY-ing %d metrics to Postgres metricsDB...&#34;, rowsBatched)
-<span id="L344" class="ln">   344  </span>	t1 := time.Now()
-<span id="L345" class="ln">   345  </span>
-<span id="L346" class="ln">   346  </span>	for metricName, metrics := range metricsToStorePerMetric {
-<span id="L347" class="ln">   347  </span>
-<span id="L348" class="ln">   348  </span>		getTargetTable := func() pgx.Identifier {
-<span id="L349" class="ln">   349  </span>			return pgx.Identifier{metricName}
-<span id="L350" class="ln">   350  </span>		}
-<span id="L351" class="ln">   351  </span>
-<span id="L352" class="ln">   352  </span>		getTargetColumns := func() []string {
-<span id="L353" class="ln">   353  </span>			return []string{&#34;time&#34;, &#34;dbname&#34;, &#34;data&#34;, &#34;tag_data&#34;}
-<span id="L354" class="ln">   354  </span>		}
-<span id="L355" class="ln">   355  </span>
-<span id="L356" class="ln">   356  </span>		for _, m := range metrics {
-<span id="L357" class="ln">   357  </span>			l := logger.WithField(&#34;db&#34;, m.DBName).WithField(&#34;metric&#34;, m.Metric)
-<span id="L358" class="ln">   358  </span>			jsonBytes, err := json.Marshal(m.Data)
-<span id="L359" class="ln">   359  </span>			if err != nil {
-<span id="L360" class="ln">   360  </span>				logger.Errorf(&#34;Skipping 1 metric for [%s:%s] due to JSON conversion error: %s&#34;, m.DBName, m.Metric, err)
-<span id="L361" class="ln">   361  </span>				continue
-<span id="L362" class="ln">   362  </span>			}
-<span id="L363" class="ln">   363  </span>
-<span id="L364" class="ln">   364  </span>			getTagData := func() any {
-<span id="L365" class="ln">   365  </span>				if len(m.TagData) &gt; 0 {
-<span id="L366" class="ln">   366  </span>					jsonBytesTags, err := json.Marshal(m.TagData)
-<span id="L367" class="ln">   367  </span>					if err != nil {
-<span id="L368" class="ln">   368  </span>						l.Error(err)
-<span id="L369" class="ln">   369  </span>						return nil
-<span id="L370" class="ln">   370  </span>					}
-<span id="L371" class="ln">   371  </span>					return string(jsonBytesTags)
-<span id="L372" class="ln">   372  </span>				}
-<span id="L373" class="ln">   373  </span>				return nil
-<span id="L374" class="ln">   374  </span>			}
-<span id="L375" class="ln">   375  </span>
-<span id="L376" class="ln">   376  </span>			rows := [][]any{{m.Time, m.DBName, string(jsonBytes), getTagData()}}
-<span id="L377" class="ln">   377  </span>
-<span id="L378" class="ln">   378  </span>			if _, err = pgw.sinkDb.CopyFrom(context.Background(), getTargetTable(), getTargetColumns(), pgx.CopyFromRows(rows)); err != nil {
-<span id="L379" class="ln">   379  </span>				l.Error(err)
-<span id="L380" class="ln">   380  </span>				forceRecreatePartitions = strings.Contains(err.Error(), &#34;no partition&#34;)
-<span id="L381" class="ln">   381  </span>				if forceRecreatePartitions {
-<span id="L382" class="ln">   382  </span>					logger.Warning(&#34;Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run&#34;)
-<span id="L383" class="ln">   383  </span>				}
-<span id="L384" class="ln">   384  </span>			}
-<span id="L385" class="ln">   385  </span>		}
-<span id="L386" class="ln">   386  </span>	}
-<span id="L387" class="ln">   387  </span>
-<span id="L388" class="ln">   388  </span>	diff := time.Since(t1)
-<span id="L389" class="ln">   389  </span>	if err == nil {
-<span id="L390" class="ln">   390  </span>		logger.WithField(&#34;rows&#34;, rowsBatched).WithField(&#34;elapsed&#34;, diff).Info(&#34;measurements written&#34;)
-<span id="L391" class="ln">   391  </span>		return
-<span id="L392" class="ln">   392  </span>	}
-<span id="L393" class="ln">   393  </span>	pgw.lastError &lt;- err
-<span id="L394" class="ln">   394  </span>}
-<span id="L395" class="ln">   395  </span>
-<span id="L396" class="ln">   396  </span><span class="comment">// EnsureMetricTime creates special partitions if Timescale used for realtime metrics</span>
-<span id="L397" class="ln">   397  </span>func (pgw *PostgresWriter) EnsureMetricTime(pgPartBounds map[string]ExistingPartitionInfo, force bool) error {
-<span id="L398" class="ln">   398  </span>	logger := log.GetLogger(pgw.ctx)
-<span id="L399" class="ln">   399  </span>	sqlEnsure := `select part_available_from, part_available_to from admin.ensure_partition_metric_time($1, $2)`
-<span id="L400" class="ln">   400  </span>	for metric, pb := range pgPartBounds {
-<span id="L401" class="ln">   401  </span>		if !strings.HasSuffix(metric, &#34;_realtime&#34;) {
-<span id="L402" class="ln">   402  </span>			continue
-<span id="L403" class="ln">   403  </span>		}
-<span id="L404" class="ln">   404  </span>		if pb.StartTime.IsZero() || pb.EndTime.IsZero() {
-<span id="L405" class="ln">   405  </span>			return fmt.Errorf(&#34;zero StartTime/EndTime in partitioning request: [%s:%v]&#34;, metric, pb)
+<span id="L341" class="ln">   341  </span>	if err != nil {
+<span id="L342" class="ln">   342  </span>		pgw.lastError &lt;- err
+<span id="L343" class="ln">   343  </span>	}
+<span id="L344" class="ln">   344  </span>
+<span id="L345" class="ln">   345  </span>	<span class="comment">// send data to PG, with a separate COPY for all metrics</span>
+<span id="L346" class="ln">   346  </span>	logger.Debugf(&#34;COPY-ing %d metrics to Postgres metricsDB...&#34;, rowsBatched)
+<span id="L347" class="ln">   347  </span>	t1 := time.Now()
+<span id="L348" class="ln">   348  </span>
+<span id="L349" class="ln">   349  </span>	for metricName, metrics := range metricsToStorePerMetric {
+<span id="L350" class="ln">   350  </span>
+<span id="L351" class="ln">   351  </span>		getTargetTable := func() pgx.Identifier {
+<span id="L352" class="ln">   352  </span>			return pgx.Identifier{metricName}
+<span id="L353" class="ln">   353  </span>		}
+<span id="L354" class="ln">   354  </span>
+<span id="L355" class="ln">   355  </span>		getTargetColumns := func() []string {
+<span id="L356" class="ln">   356  </span>			return []string{&#34;time&#34;, &#34;dbname&#34;, &#34;data&#34;, &#34;tag_data&#34;}
+<span id="L357" class="ln">   357  </span>		}
+<span id="L358" class="ln">   358  </span>
+<span id="L359" class="ln">   359  </span>		for _, m := range metrics {
+<span id="L360" class="ln">   360  </span>			l := logger.WithField(&#34;db&#34;, m.DBName).WithField(&#34;metric&#34;, m.Metric)
+<span id="L361" class="ln">   361  </span>			jsonBytes, err := json.Marshal(m.Data)
+<span id="L362" class="ln">   362  </span>			if err != nil {
+<span id="L363" class="ln">   363  </span>				logger.Errorf(&#34;Skipping 1 metric for [%s:%s] due to JSON conversion error: %s&#34;, m.DBName, m.Metric, err)
+<span id="L364" class="ln">   364  </span>				continue
+<span id="L365" class="ln">   365  </span>			}
+<span id="L366" class="ln">   366  </span>
+<span id="L367" class="ln">   367  </span>			getTagData := func() any {
+<span id="L368" class="ln">   368  </span>				if len(m.TagData) &gt; 0 {
+<span id="L369" class="ln">   369  </span>					jsonBytesTags, err := json.Marshal(m.TagData)
+<span id="L370" class="ln">   370  </span>					if err != nil {
+<span id="L371" class="ln">   371  </span>						l.Error(err)
+<span id="L372" class="ln">   372  </span>						return nil
+<span id="L373" class="ln">   373  </span>					}
+<span id="L374" class="ln">   374  </span>					return string(jsonBytesTags)
+<span id="L375" class="ln">   375  </span>				}
+<span id="L376" class="ln">   376  </span>				return nil
+<span id="L377" class="ln">   377  </span>			}
+<span id="L378" class="ln">   378  </span>
+<span id="L379" class="ln">   379  </span>			rows := [][]any{{m.Time, m.DBName, string(jsonBytes), getTagData()}}
+<span id="L380" class="ln">   380  </span>
+<span id="L381" class="ln">   381  </span>			if _, err = pgw.sinkDb.CopyFrom(context.Background(), getTargetTable(), getTargetColumns(), pgx.CopyFromRows(rows)); err != nil {
+<span id="L382" class="ln">   382  </span>				l.Error(err)
+<span id="L383" class="ln">   383  </span>				forceRecreatePartitions = strings.Contains(err.Error(), &#34;no partition&#34;)
+<span id="L384" class="ln">   384  </span>				if forceRecreatePartitions {
+<span id="L385" class="ln">   385  </span>					logger.Warning(&#34;Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run&#34;)
+<span id="L386" class="ln">   386  </span>				}
+<span id="L387" class="ln">   387  </span>			}
+<span id="L388" class="ln">   388  </span>		}
+<span id="L389" class="ln">   389  </span>	}
+<span id="L390" class="ln">   390  </span>
+<span id="L391" class="ln">   391  </span>	diff := time.Since(t1)
+<span id="L392" class="ln">   392  </span>	if err == nil {
+<span id="L393" class="ln">   393  </span>		logger.WithField(&#34;rows&#34;, rowsBatched).WithField(&#34;elapsed&#34;, diff).Info(&#34;measurements written&#34;)
+<span id="L394" class="ln">   394  </span>		return
+<span id="L395" class="ln">   395  </span>	}
+<span id="L396" class="ln">   396  </span>	pgw.lastError &lt;- err
+<span id="L397" class="ln">   397  </span>}
+<span id="L398" class="ln">   398  </span>
+<span id="L399" class="ln">   399  </span><span class="comment">// EnsureMetricTime creates special partitions if Timescale used for realtime metrics</span>
+<span id="L400" class="ln">   400  </span>func (pgw *PostgresWriter) EnsureMetricTime(pgPartBounds map[string]ExistingPartitionInfo, force bool) error {
+<span id="L401" class="ln">   401  </span>	logger := log.GetLogger(pgw.ctx)
+<span id="L402" class="ln">   402  </span>	sqlEnsure := `select part_available_from, part_available_to from admin.ensure_partition_metric_time($1, $2)`
+<span id="L403" class="ln">   403  </span>	for metric, pb := range pgPartBounds {
+<span id="L404" class="ln">   404  </span>		if !strings.HasSuffix(metric, &#34;_realtime&#34;) {
+<span id="L405" class="ln">   405  </span>			continue
 <span id="L406" class="ln">   406  </span>		}
-<span id="L407" class="ln">   407  </span>
-<span id="L408" class="ln">   408  </span>		partInfo, ok := partitionMapMetric[metric]
-<span id="L409" class="ln">   409  </span>		if !ok || (ok &amp;&amp; (pb.StartTime.Before(partInfo.StartTime))) || force {
-<span id="L410" class="ln">   410  </span>			err := pgw.sinkDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.StartTime).
-<span id="L411" class="ln">   411  </span>				Scan(&amp;partInfo.StartTime, &amp;partInfo.EndTime)
-<span id="L412" class="ln">   412  </span>			if err != nil {
-<span id="L413" class="ln">   413  </span>				logger.Error(&#34;Failed to create partition on &#39;metrics&#39;: &#34;, err)
-<span id="L414" class="ln">   414  </span>				return err
-<span id="L415" class="ln">   415  </span>			}
-<span id="L416" class="ln">   416  </span>			partitionMapMetric[metric] = partInfo
-<span id="L417" class="ln">   417  </span>		}
-<span id="L418" class="ln">   418  </span>		if pb.EndTime.After(partInfo.EndTime) || force {
-<span id="L419" class="ln">   419  </span>			err := pgw.sinkDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.EndTime).Scan(nil, &amp;partInfo.EndTime)
-<span id="L420" class="ln">   420  </span>			if err != nil {
-<span id="L421" class="ln">   421  </span>				logger.Error(&#34;Failed to create partition on &#39;metrics&#39;: &#34;, err)
-<span id="L422" class="ln">   422  </span>				return err
-<span id="L423" class="ln">   423  </span>			}
-<span id="L424" class="ln">   424  </span>			partitionMapMetric[metric] = partInfo
-<span id="L425" class="ln">   425  </span>		}
-<span id="L426" class="ln">   426  </span>	}
-<span id="L427" class="ln">   427  </span>	return nil
-<span id="L428" class="ln">   428  </span>}
-<span id="L429" class="ln">   429  </span>
-<span id="L430" class="ln">   430  </span>func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]ExistingPartitionInfo, force bool) (err error) {
-<span id="L431" class="ln">   431  </span>	logger := log.GetLogger(pgw.ctx)
-<span id="L432" class="ln">   432  </span>	sqlEnsure := `select * from admin.ensure_partition_timescale($1)`
-<span id="L433" class="ln">   433  </span>	for metric := range pgPartBounds {
-<span id="L434" class="ln">   434  </span>		if strings.HasSuffix(metric, &#34;_realtime&#34;) {
-<span id="L435" class="ln">   435  </span>			continue
-<span id="L436" class="ln">   436  </span>		}
-<span id="L437" class="ln">   437  </span>		if _, ok := partitionMapMetric[metric]; !ok {
-<span id="L438" class="ln">   438  </span>			if _, err = pgw.sinkDb.Exec(pgw.ctx, sqlEnsure, metric); err != nil {
-<span id="L439" class="ln">   439  </span>				logger.Errorf(&#34;Failed to create a TimescaleDB table for metric &#39;%s&#39;: %v&#34;, metric, err)
-<span id="L440" class="ln">   440  </span>				return err
-<span id="L441" class="ln">   441  </span>			}
-<span id="L442" class="ln">   442  </span>			partitionMapMetric[metric] = ExistingPartitionInfo{}
-<span id="L443" class="ln">   443  </span>		}
-<span id="L444" class="ln">   444  </span>	}
-<span id="L445" class="ln">   445  </span>	return pgw.EnsureMetricTime(pgPartBounds, force)
-<span id="L446" class="ln">   446  </span>}
-<span id="L447" class="ln">   447  </span>
-<span id="L448" class="ln">   448  </span>func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[string]map[string]ExistingPartitionInfo, force bool) (err error) {
-<span id="L449" class="ln">   449  </span>	var rows pgx.Rows
-<span id="L450" class="ln">   450  </span>	sqlEnsure := `select * from admin.ensure_partition_metric_dbname_time($1, $2, $3)`
-<span id="L451" class="ln">   451  </span>	for metric, dbnameTimestampMap := range metricDbnamePartBounds {
-<span id="L452" class="ln">   452  </span>		_, ok := partitionMapMetricDbname[metric]
-<span id="L453" class="ln">   453  </span>		if !ok {
-<span id="L454" class="ln">   454  </span>			partitionMapMetricDbname[metric] = make(map[string]ExistingPartitionInfo)
-<span id="L455" class="ln">   455  </span>		}
-<span id="L456" class="ln">   456  </span>
-<span id="L457" class="ln">   457  </span>		for dbname, pb := range dbnameTimestampMap {
-<span id="L458" class="ln">   458  </span>			if pb.StartTime.IsZero() || pb.EndTime.IsZero() {
-<span id="L459" class="ln">   459  </span>				return fmt.Errorf(&#34;zero StartTime/EndTime in partitioning request: [%s:%v]&#34;, metric, pb)
-<span id="L460" class="ln">   460  </span>			}
-<span id="L461" class="ln">   461  </span>			partInfo, ok := partitionMapMetricDbname[metric][dbname]
-<span id="L462" class="ln">   462  </span>			if !ok || (ok &amp;&amp; (pb.StartTime.Before(partInfo.StartTime))) || force {
-<span id="L463" class="ln">   463  </span>				if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.StartTime); err != nil {
-<span id="L464" class="ln">   464  </span>					return
-<span id="L465" class="ln">   465  </span>				}
-<span id="L466" class="ln">   466  </span>				if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
-<span id="L467" class="ln">   467  </span>					return err
+<span id="L407" class="ln">   407  </span>		if pb.StartTime.IsZero() || pb.EndTime.IsZero() {
+<span id="L408" class="ln">   408  </span>			return fmt.Errorf(&#34;zero StartTime/EndTime in partitioning request: [%s:%v]&#34;, metric, pb)
+<span id="L409" class="ln">   409  </span>		}
+<span id="L410" class="ln">   410  </span>
+<span id="L411" class="ln">   411  </span>		partInfo, ok := partitionMapMetric[metric]
+<span id="L412" class="ln">   412  </span>		if !ok || (ok &amp;&amp; (pb.StartTime.Before(partInfo.StartTime))) || force {
+<span id="L413" class="ln">   413  </span>			err := pgw.sinkDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.StartTime).
+<span id="L414" class="ln">   414  </span>				Scan(&amp;partInfo.StartTime, &amp;partInfo.EndTime)
+<span id="L415" class="ln">   415  </span>			if err != nil {
+<span id="L416" class="ln">   416  </span>				logger.Error(&#34;Failed to create partition on &#39;metrics&#39;: &#34;, err)
+<span id="L417" class="ln">   417  </span>				return err
+<span id="L418" class="ln">   418  </span>			}
+<span id="L419" class="ln">   419  </span>			partitionMapMetric[metric] = partInfo
+<span id="L420" class="ln">   420  </span>		}
+<span id="L421" class="ln">   421  </span>		if pb.EndTime.After(partInfo.EndTime) || force {
+<span id="L422" class="ln">   422  </span>			err := pgw.sinkDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.EndTime).Scan(nil, &amp;partInfo.EndTime)
+<span id="L423" class="ln">   423  </span>			if err != nil {
+<span id="L424" class="ln">   424  </span>				logger.Error(&#34;Failed to create partition on &#39;metrics&#39;: &#34;, err)
+<span id="L425" class="ln">   425  </span>				return err
+<span id="L426" class="ln">   426  </span>			}
+<span id="L427" class="ln">   427  </span>			partitionMapMetric[metric] = partInfo
+<span id="L428" class="ln">   428  </span>		}
+<span id="L429" class="ln">   429  </span>	}
+<span id="L430" class="ln">   430  </span>	return nil
+<span id="L431" class="ln">   431  </span>}
+<span id="L432" class="ln">   432  </span>
+<span id="L433" class="ln">   433  </span>func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]ExistingPartitionInfo, force bool) (err error) {
+<span id="L434" class="ln">   434  </span>	logger := log.GetLogger(pgw.ctx)
+<span id="L435" class="ln">   435  </span>	sqlEnsure := `select * from admin.ensure_partition_timescale($1)`
+<span id="L436" class="ln">   436  </span>	for metric := range pgPartBounds {
+<span id="L437" class="ln">   437  </span>		if strings.HasSuffix(metric, &#34;_realtime&#34;) {
+<span id="L438" class="ln">   438  </span>			continue
+<span id="L439" class="ln">   439  </span>		}
+<span id="L440" class="ln">   440  </span>		if _, ok := partitionMapMetric[metric]; !ok {
+<span id="L441" class="ln">   441  </span>			if _, err = pgw.sinkDb.Exec(pgw.ctx, sqlEnsure, metric); err != nil {
+<span id="L442" class="ln">   442  </span>				logger.Errorf(&#34;Failed to create a TimescaleDB table for metric &#39;%s&#39;: %v&#34;, metric, err)
+<span id="L443" class="ln">   443  </span>				return err
+<span id="L444" class="ln">   444  </span>			}
+<span id="L445" class="ln">   445  </span>			partitionMapMetric[metric] = ExistingPartitionInfo{}
+<span id="L446" class="ln">   446  </span>		}
+<span id="L447" class="ln">   447  </span>	}
+<span id="L448" class="ln">   448  </span>	return pgw.EnsureMetricTime(pgPartBounds, force)
+<span id="L449" class="ln">   449  </span>}
+<span id="L450" class="ln">   450  </span>
+<span id="L451" class="ln">   451  </span>func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[string]map[string]ExistingPartitionInfo, force bool) (err error) {
+<span id="L452" class="ln">   452  </span>	var rows pgx.Rows
+<span id="L453" class="ln">   453  </span>	sqlEnsure := `select * from admin.ensure_partition_metric_dbname_time($1, $2, $3)`
+<span id="L454" class="ln">   454  </span>	for metric, dbnameTimestampMap := range metricDbnamePartBounds {
+<span id="L455" class="ln">   455  </span>		_, ok := partitionMapMetricDbname[metric]
+<span id="L456" class="ln">   456  </span>		if !ok {
+<span id="L457" class="ln">   457  </span>			partitionMapMetricDbname[metric] = make(map[string]ExistingPartitionInfo)
+<span id="L458" class="ln">   458  </span>		}
+<span id="L459" class="ln">   459  </span>
+<span id="L460" class="ln">   460  </span>		for dbname, pb := range dbnameTimestampMap {
+<span id="L461" class="ln">   461  </span>			if pb.StartTime.IsZero() || pb.EndTime.IsZero() {
+<span id="L462" class="ln">   462  </span>				return fmt.Errorf(&#34;zero StartTime/EndTime in partitioning request: [%s:%v]&#34;, metric, pb)
+<span id="L463" class="ln">   463  </span>			}
+<span id="L464" class="ln">   464  </span>			partInfo, ok := partitionMapMetricDbname[metric][dbname]
+<span id="L465" class="ln">   465  </span>			if !ok || (ok &amp;&amp; (pb.StartTime.Before(partInfo.StartTime))) || force {
+<span id="L466" class="ln">   466  </span>				if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.StartTime); err != nil {
+<span id="L467" class="ln">   467  </span>					return
 <span id="L468" class="ln">   468  </span>				}
-<span id="L469" class="ln">   469  </span>				partitionMapMetricDbname[metric][dbname] = partInfo
-<span id="L470" class="ln">   470  </span>			}
-<span id="L471" class="ln">   471  </span>			if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || force {
-<span id="L472" class="ln">   472  </span>				if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.StartTime); err != nil {
-<span id="L473" class="ln">   473  </span>					return
-<span id="L474" class="ln">   474  </span>				}
-<span id="L475" class="ln">   475  </span>				if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
-<span id="L476" class="ln">   476  </span>					return err
+<span id="L469" class="ln">   469  </span>				if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
+<span id="L470" class="ln">   470  </span>					return err
+<span id="L471" class="ln">   471  </span>				}
+<span id="L472" class="ln">   472  </span>				partitionMapMetricDbname[metric][dbname] = partInfo
+<span id="L473" class="ln">   473  </span>			}
+<span id="L474" class="ln">   474  </span>			if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || force {
+<span id="L475" class="ln">   475  </span>				if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.StartTime); err != nil {
+<span id="L476" class="ln">   476  </span>					return
 <span id="L477" class="ln">   477  </span>				}
-<span id="L478" class="ln">   478  </span>				partitionMapMetricDbname[metric][dbname] = partInfo
-<span id="L479" class="ln">   479  </span>			}
-<span id="L480" class="ln">   480  </span>		}
-<span id="L481" class="ln">   481  </span>	}
-<span id="L482" class="ln">   482  </span>	return nil
-<span id="L483" class="ln">   483  </span>}
-<span id="L484" class="ln">   484  </span>
-<span id="L485" class="ln">   485  </span><span class="comment">// deleteOldPartitions is a background task that deletes old partitions from the measurements DB</span>
-<span id="L486" class="ln">   486  </span>func (pgw *PostgresWriter) deleteOldPartitions(delay time.Duration) {
-<span id="L487" class="ln">   487  </span>	metricAgeDaysThreshold := pgw.opts.Retention
-<span id="L488" class="ln">   488  </span>	if metricAgeDaysThreshold &lt;= 0 {
-<span id="L489" class="ln">   489  </span>		return
-<span id="L490" class="ln">   490  </span>	}
-<span id="L491" class="ln">   491  </span>	logger := log.GetLogger(pgw.ctx)
-<span id="L492" class="ln">   492  </span>	select {
-<span id="L493" class="ln">   493  </span>	case &lt;-pgw.ctx.Done():
-<span id="L494" class="ln">   494  </span>		return
-<span id="L495" class="ln">   495  </span>	case &lt;-time.After(delay):
-<span id="L496" class="ln">   496  </span>		<span class="comment">// to reduce distracting log messages at startup</span>
-<span id="L497" class="ln">   497  </span>	}
-<span id="L498" class="ln">   498  </span>
-<span id="L499" class="ln">   499  </span>	for {
-<span id="L500" class="ln">   500  </span>		if pgw.metricSchema == DbStorageSchemaTimescale {
-<span id="L501" class="ln">   501  </span>			partsDropped, err := pgw.DropOldTimePartitions(metricAgeDaysThreshold)
-<span id="L502" class="ln">   502  </span>			if err != nil {
-<span id="L503" class="ln">   503  </span>				logger.Errorf(&#34;Failed to drop old partitions (&gt;%d days) from Postgres: %v&#34;, metricAgeDaysThreshold, err)
-<span id="L504" class="ln">   504  </span>				continue
-<span id="L505" class="ln">   505  </span>			}
-<span id="L506" class="ln">   506  </span>			logger.Infof(&#34;Dropped %d old metric partitions...&#34;, partsDropped)
-<span id="L507" class="ln">   507  </span>		} else if pgw.metricSchema == DbStorageSchemaPostgres {
-<span id="L508" class="ln">   508  </span>			partsToDrop, err := pgw.GetOldTimePartitions(metricAgeDaysThreshold)
-<span id="L509" class="ln">   509  </span>			if err != nil {
-<span id="L510" class="ln">   510  </span>				logger.Errorf(&#34;Failed to get a listing of old (&gt;%d days) time partitions from Postgres metrics DB - check that the admin.get_old_time_partitions() function is rolled out: %v&#34;, metricAgeDaysThreshold, err)
-<span id="L511" class="ln">   511  </span>				time.Sleep(time.Second * 300)
-<span id="L512" class="ln">   512  </span>				continue
-<span id="L513" class="ln">   513  </span>			}
-<span id="L514" class="ln">   514  </span>			if len(partsToDrop) &gt; 0 {
-<span id="L515" class="ln">   515  </span>				logger.Infof(&#34;Dropping %d old metric partitions one by one...&#34;, len(partsToDrop))
-<span id="L516" class="ln">   516  </span>				for _, toDrop := range partsToDrop {
-<span id="L517" class="ln">   517  </span>					sqlDropTable := `DROP TABLE IF EXISTS ` + toDrop
-<span id="L518" class="ln">   518  </span>					logger.Debugf(&#34;Dropping old metric data partition: %s&#34;, toDrop)
-<span id="L519" class="ln">   519  </span>
-<span id="L520" class="ln">   520  </span>					if _, err := pgw.sinkDb.Exec(pgw.ctx, sqlDropTable); err != nil {
-<span id="L521" class="ln">   521  </span>						logger.Errorf(&#34;Failed to drop old partition %s from Postgres metrics DB: %w&#34;, toDrop, err)
-<span id="L522" class="ln">   522  </span>						time.Sleep(time.Second * 300)
-<span id="L523" class="ln">   523  </span>					} else {
-<span id="L524" class="ln">   524  </span>						time.Sleep(time.Second * 5)
-<span id="L525" class="ln">   525  </span>					}
-<span id="L526" class="ln">   526  </span>				}
-<span id="L527" class="ln">   527  </span>			} else {
-<span id="L528" class="ln">   528  </span>				logger.Infof(&#34;No old metric partitions found to drop...&#34;)
-<span id="L529" class="ln">   529  </span>			}
-<span id="L530" class="ln">   530  </span>		}
-<span id="L531" class="ln">   531  </span>		select {
-<span id="L532" class="ln">   532  </span>		case &lt;-pgw.ctx.Done():
-<span id="L533" class="ln">   533  </span>			return
-<span id="L534" class="ln">   534  </span>		case &lt;-time.After(time.Hour * 12):
-<span id="L535" class="ln">   535  </span>		}
-<span id="L536" class="ln">   536  </span>	}
-<span id="L537" class="ln">   537  </span>}
-<span id="L538" class="ln">   538  </span>
-<span id="L539" class="ln">   539  </span><span class="comment">// maintainUniqueSources is a background task that maintains a listing of unique sources for each metric.</span>
-<span id="L540" class="ln">   540  </span><span class="comment">// This is used to avoid listing the same source multiple times in Grafana dropdowns.</span>
-<span id="L541" class="ln">   541  </span>func (pgw *PostgresWriter) maintainUniqueSources() {
-<span id="L542" class="ln">   542  </span>	logger := log.GetLogger(pgw.ctx)
-<span id="L543" class="ln">   543  </span>	<span class="comment">// due to metrics deletion the listing can go out of sync (a trigger not really wanted)</span>
-<span id="L544" class="ln">   544  </span>	sqlGetAdvisoryLock := `SELECT pg_try_advisory_lock(1571543679778230000) AS have_lock` <span class="comment">// 1571543679778230000 is just a random bigint</span>
-<span id="L545" class="ln">   545  </span>	sqlTopLevelMetrics := `SELECT table_name FROM admin.get_top_level_metric_tables()`
-<span id="L546" class="ln">   546  </span>	sqlDistinct := `
-<span id="L547" class="ln">   547  </span>	WITH RECURSIVE t(dbname) AS (
-<span id="L548" class="ln">   548  </span>		SELECT MIN(dbname) AS dbname FROM %s
-<span id="L549" class="ln">   549  </span>		UNION
-<span id="L550" class="ln">   550  </span>		SELECT (SELECT MIN(dbname) FROM %s WHERE dbname &gt; t.dbname) FROM t )
-<span id="L551" class="ln">   551  </span>	SELECT dbname FROM t WHERE dbname NOTNULL ORDER BY 1`
-<span id="L552" class="ln">   552  </span>	sqlDelete := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT dbname = ANY($1) and metric = $2`
-<span id="L553" class="ln">   553  </span>	sqlDeleteAll := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric = $1`
-<span id="L554" class="ln">   554  </span>	sqlAdd := `
-<span id="L555" class="ln">   555  </span>		INSERT INTO admin.all_distinct_dbname_metrics SELECT u, $2 FROM (select unnest($1::text[]) as u) x
-<span id="L556" class="ln">   556  </span>		WHERE NOT EXISTS (select * from admin.all_distinct_dbname_metrics where dbname = u and metric = $2)
-<span id="L557" class="ln">   557  </span>		RETURNING *`
-<span id="L558" class="ln">   558  </span>
-<span id="L559" class="ln">   559  </span>	for {
-<span id="L560" class="ln">   560  </span>		select {
-<span id="L561" class="ln">   561  </span>		case &lt;-pgw.ctx.Done():
-<span id="L562" class="ln">   562  </span>			return
-<span id="L563" class="ln">   563  </span>		case &lt;-time.After(time.Hour * 24):
-<span id="L564" class="ln">   564  </span>		}
-<span id="L565" class="ln">   565  </span>		var lock bool
-<span id="L566" class="ln">   566  </span>		logger.Infof(&#34;Trying to get metricsDb listing maintainer advisory lock...&#34;) <span class="comment">// to only have one &#34;maintainer&#34; in case of a &#34;push&#34; setup, as can get costly</span>
-<span id="L567" class="ln">   567  </span>		if err := pgw.sinkDb.QueryRow(pgw.ctx, sqlGetAdvisoryLock).Scan(&amp;lock); err != nil {
-<span id="L568" class="ln">   568  </span>			logger.Error(&#34;Getting metricsDb listing maintainer advisory lock failed:&#34;, err)
-<span id="L569" class="ln">   569  </span>			continue
-<span id="L570" class="ln">   570  </span>		}
-<span id="L571" class="ln">   571  </span>		if !lock {
-<span id="L572" class="ln">   572  </span>			logger.Info(&#34;Skipping admin.all_distinct_dbname_metrics maintenance as another instance has the advisory lock...&#34;)
-<span id="L573" class="ln">   573  </span>			continue
-<span id="L574" class="ln">   574  </span>		}
-<span id="L575" class="ln">   575  </span>
-<span id="L576" class="ln">   576  </span>		logger.Info(&#34;Refreshing admin.all_distinct_dbname_metrics listing table...&#34;)
-<span id="L577" class="ln">   577  </span>		rows, _ := pgw.sinkDb.Query(pgw.ctx, sqlTopLevelMetrics)
-<span id="L578" class="ln">   578  </span>		allDistinctMetricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
-<span id="L579" class="ln">   579  </span>		if err != nil {
-<span id="L580" class="ln">   580  </span>			logger.Error(err)
-<span id="L581" class="ln">   581  </span>			continue
-<span id="L582" class="ln">   582  </span>		}
-<span id="L583" class="ln">   583  </span>
-<span id="L584" class="ln">   584  </span>		for _, tableName := range allDistinctMetricTables {
-<span id="L585" class="ln">   585  </span>			foundDbnamesMap := make(map[string]bool)
-<span id="L586" class="ln">   586  </span>			foundDbnamesArr := make([]string, 0)
-<span id="L587" class="ln">   587  </span>			metricName := strings.Replace(tableName, &#34;public.&#34;, &#34;&#34;, 1)
-<span id="L588" class="ln">   588  </span>
-<span id="L589" class="ln">   589  </span>			logger.Debugf(&#34;Refreshing all_distinct_dbname_metrics listing for metric: %s&#34;, metricName)
-<span id="L590" class="ln">   590  </span>			rows, _ := pgw.sinkDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, tableName, tableName))
-<span id="L591" class="ln">   591  </span>			ret, err := pgx.CollectRows(rows, pgx.RowTo[string])
-<span id="L592" class="ln">   592  </span>			<span class="comment">// ret, err := DBExecRead(mainContext, metricDb, fmt.Sprintf(sqlDistinct, tableName, tableName))</span>
-<span id="L593" class="ln">   593  </span>			if err != nil {
-<span id="L594" class="ln">   594  </span>				logger.Errorf(&#34;Could not refresh Postgres all_distinct_dbname_metrics listing table for &#39;%s&#39;: %s&#34;, metricName, err)
-<span id="L595" class="ln">   595  </span>				break
-<span id="L596" class="ln">   596  </span>			}
-<span id="L597" class="ln">   597  </span>			for _, drDbname := range ret {
-<span id="L598" class="ln">   598  </span>				foundDbnamesMap[drDbname] = true <span class="comment">// &#34;set&#34; behaviour, don&#39;t want duplicates</span>
+<span id="L478" class="ln">   478  </span>				if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
+<span id="L479" class="ln">   479  </span>					return err
+<span id="L480" class="ln">   480  </span>				}
+<span id="L481" class="ln">   481  </span>				partitionMapMetricDbname[metric][dbname] = partInfo
+<span id="L482" class="ln">   482  </span>			}
+<span id="L483" class="ln">   483  </span>		}
+<span id="L484" class="ln">   484  </span>	}
+<span id="L485" class="ln">   485  </span>	return nil
+<span id="L486" class="ln">   486  </span>}
+<span id="L487" class="ln">   487  </span>
+<span id="L488" class="ln">   488  </span><span class="comment">// deleteOldPartitions is a background task that deletes old partitions from the measurements DB</span>
+<span id="L489" class="ln">   489  </span>func (pgw *PostgresWriter) deleteOldPartitions(delay time.Duration) {
+<span id="L490" class="ln">   490  </span>	metricAgeDaysThreshold := pgw.opts.Retention
+<span id="L491" class="ln">   491  </span>	if metricAgeDaysThreshold &lt;= 0 {
+<span id="L492" class="ln">   492  </span>		return
+<span id="L493" class="ln">   493  </span>	}
+<span id="L494" class="ln">   494  </span>	logger := log.GetLogger(pgw.ctx)
+<span id="L495" class="ln">   495  </span>	select {
+<span id="L496" class="ln">   496  </span>	case &lt;-pgw.ctx.Done():
+<span id="L497" class="ln">   497  </span>		return
+<span id="L498" class="ln">   498  </span>	case &lt;-time.After(delay):
+<span id="L499" class="ln">   499  </span>		<span class="comment">// to reduce distracting log messages at startup</span>
+<span id="L500" class="ln">   500  </span>	}
+<span id="L501" class="ln">   501  </span>
+<span id="L502" class="ln">   502  </span>	for {
+<span id="L503" class="ln">   503  </span>		if pgw.metricSchema == DbStorageSchemaTimescale {
+<span id="L504" class="ln">   504  </span>			partsDropped, err := pgw.DropOldTimePartitions(metricAgeDaysThreshold)
+<span id="L505" class="ln">   505  </span>			if err != nil {
+<span id="L506" class="ln">   506  </span>				logger.Errorf(&#34;Failed to drop old partitions (&gt;%d days) from Postgres: %v&#34;, metricAgeDaysThreshold, err)
+<span id="L507" class="ln">   507  </span>				continue
+<span id="L508" class="ln">   508  </span>			}
+<span id="L509" class="ln">   509  </span>			logger.Infof(&#34;Dropped %d old metric partitions...&#34;, partsDropped)
+<span id="L510" class="ln">   510  </span>		} else if pgw.metricSchema == DbStorageSchemaPostgres {
+<span id="L511" class="ln">   511  </span>			partsToDrop, err := pgw.GetOldTimePartitions(metricAgeDaysThreshold)
+<span id="L512" class="ln">   512  </span>			if err != nil {
+<span id="L513" class="ln">   513  </span>				logger.Errorf(&#34;Failed to get a listing of old (&gt;%d days) time partitions from Postgres metrics DB - check that the admin.get_old_time_partitions() function is rolled out: %v&#34;, metricAgeDaysThreshold, err)
+<span id="L514" class="ln">   514  </span>				time.Sleep(time.Second * 300)
+<span id="L515" class="ln">   515  </span>				continue
+<span id="L516" class="ln">   516  </span>			}
+<span id="L517" class="ln">   517  </span>			if len(partsToDrop) &gt; 0 {
+<span id="L518" class="ln">   518  </span>				logger.Infof(&#34;Dropping %d old metric partitions one by one...&#34;, len(partsToDrop))
+<span id="L519" class="ln">   519  </span>				for _, toDrop := range partsToDrop {
+<span id="L520" class="ln">   520  </span>					sqlDropTable := `DROP TABLE IF EXISTS ` + toDrop
+<span id="L521" class="ln">   521  </span>					logger.Debugf(&#34;Dropping old metric data partition: %s&#34;, toDrop)
+<span id="L522" class="ln">   522  </span>
+<span id="L523" class="ln">   523  </span>					if _, err := pgw.sinkDb.Exec(pgw.ctx, sqlDropTable); err != nil {
+<span id="L524" class="ln">   524  </span>						logger.Errorf(&#34;Failed to drop old partition %s from Postgres metrics DB: %w&#34;, toDrop, err)
+<span id="L525" class="ln">   525  </span>						time.Sleep(time.Second * 300)
+<span id="L526" class="ln">   526  </span>					} else {
+<span id="L527" class="ln">   527  </span>						time.Sleep(time.Second * 5)
+<span id="L528" class="ln">   528  </span>					}
+<span id="L529" class="ln">   529  </span>				}
+<span id="L530" class="ln">   530  </span>			} else {
+<span id="L531" class="ln">   531  </span>				logger.Infof(&#34;No old metric partitions found to drop...&#34;)
+<span id="L532" class="ln">   532  </span>			}
+<span id="L533" class="ln">   533  </span>		}
+<span id="L534" class="ln">   534  </span>		select {
+<span id="L535" class="ln">   535  </span>		case &lt;-pgw.ctx.Done():
+<span id="L536" class="ln">   536  </span>			return
+<span id="L537" class="ln">   537  </span>		case &lt;-time.After(time.Hour * 12):
+<span id="L538" class="ln">   538  </span>		}
+<span id="L539" class="ln">   539  </span>	}
+<span id="L540" class="ln">   540  </span>}
+<span id="L541" class="ln">   541  </span>
+<span id="L542" class="ln">   542  </span><span class="comment">// maintainUniqueSources is a background task that maintains a listing of unique sources for each metric.</span>
+<span id="L543" class="ln">   543  </span><span class="comment">// This is used to avoid listing the same source multiple times in Grafana dropdowns.</span>
+<span id="L544" class="ln">   544  </span>func (pgw *PostgresWriter) maintainUniqueSources() {
+<span id="L545" class="ln">   545  </span>	logger := log.GetLogger(pgw.ctx)
+<span id="L546" class="ln">   546  </span>	<span class="comment">// due to metrics deletion the listing can go out of sync (a trigger not really wanted)</span>
+<span id="L547" class="ln">   547  </span>	sqlGetAdvisoryLock := `SELECT pg_try_advisory_lock(1571543679778230000) AS have_lock` <span class="comment">// 1571543679778230000 is just a random bigint</span>
+<span id="L548" class="ln">   548  </span>	sqlTopLevelMetrics := `SELECT table_name FROM admin.get_top_level_metric_tables()`
+<span id="L549" class="ln">   549  </span>	sqlDistinct := `
+<span id="L550" class="ln">   550  </span>	WITH RECURSIVE t(dbname) AS (
+<span id="L551" class="ln">   551  </span>		SELECT MIN(dbname) AS dbname FROM %s
+<span id="L552" class="ln">   552  </span>		UNION
+<span id="L553" class="ln">   553  </span>		SELECT (SELECT MIN(dbname) FROM %s WHERE dbname &gt; t.dbname) FROM t )
+<span id="L554" class="ln">   554  </span>	SELECT dbname FROM t WHERE dbname NOTNULL ORDER BY 1`
+<span id="L555" class="ln">   555  </span>	sqlDelete := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT dbname = ANY($1) and metric = $2`
+<span id="L556" class="ln">   556  </span>	sqlDeleteAll := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric = $1`
+<span id="L557" class="ln">   557  </span>	sqlAdd := `
+<span id="L558" class="ln">   558  </span>		INSERT INTO admin.all_distinct_dbname_metrics SELECT u, $2 FROM (select unnest($1::text[]) as u) x
+<span id="L559" class="ln">   559  </span>		WHERE NOT EXISTS (select * from admin.all_distinct_dbname_metrics where dbname = u and metric = $2)
+<span id="L560" class="ln">   560  </span>		RETURNING *`
+<span id="L561" class="ln">   561  </span>
+<span id="L562" class="ln">   562  </span>	for {
+<span id="L563" class="ln">   563  </span>		select {
+<span id="L564" class="ln">   564  </span>		case &lt;-pgw.ctx.Done():
+<span id="L565" class="ln">   565  </span>			return
+<span id="L566" class="ln">   566  </span>		case &lt;-time.After(time.Hour * 24):
+<span id="L567" class="ln">   567  </span>		}
+<span id="L568" class="ln">   568  </span>		var lock bool
+<span id="L569" class="ln">   569  </span>		logger.Infof(&#34;Trying to get metricsDb listing maintainer advisory lock...&#34;) <span class="comment">// to only have one &#34;maintainer&#34; in case of a &#34;push&#34; setup, as can get costly</span>
+<span id="L570" class="ln">   570  </span>		if err := pgw.sinkDb.QueryRow(pgw.ctx, sqlGetAdvisoryLock).Scan(&amp;lock); err != nil {
+<span id="L571" class="ln">   571  </span>			logger.Error(&#34;Getting metricsDb listing maintainer advisory lock failed:&#34;, err)
+<span id="L572" class="ln">   572  </span>			continue
+<span id="L573" class="ln">   573  </span>		}
+<span id="L574" class="ln">   574  </span>		if !lock {
+<span id="L575" class="ln">   575  </span>			logger.Info(&#34;Skipping admin.all_distinct_dbname_metrics maintenance as another instance has the advisory lock...&#34;)
+<span id="L576" class="ln">   576  </span>			continue
+<span id="L577" class="ln">   577  </span>		}
+<span id="L578" class="ln">   578  </span>
+<span id="L579" class="ln">   579  </span>		logger.Info(&#34;Refreshing admin.all_distinct_dbname_metrics listing table...&#34;)
+<span id="L580" class="ln">   580  </span>		rows, _ := pgw.sinkDb.Query(pgw.ctx, sqlTopLevelMetrics)
+<span id="L581" class="ln">   581  </span>		allDistinctMetricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
+<span id="L582" class="ln">   582  </span>		if err != nil {
+<span id="L583" class="ln">   583  </span>			logger.Error(err)
+<span id="L584" class="ln">   584  </span>			continue
+<span id="L585" class="ln">   585  </span>		}
+<span id="L586" class="ln">   586  </span>
+<span id="L587" class="ln">   587  </span>		for _, tableName := range allDistinctMetricTables {
+<span id="L588" class="ln">   588  </span>			foundDbnamesMap := make(map[string]bool)
+<span id="L589" class="ln">   589  </span>			foundDbnamesArr := make([]string, 0)
+<span id="L590" class="ln">   590  </span>			metricName := strings.Replace(tableName, &#34;public.&#34;, &#34;&#34;, 1)
+<span id="L591" class="ln">   591  </span>
+<span id="L592" class="ln">   592  </span>			logger.Debugf(&#34;Refreshing all_distinct_dbname_metrics listing for metric: %s&#34;, metricName)
+<span id="L593" class="ln">   593  </span>			rows, _ := pgw.sinkDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, tableName, tableName))
+<span id="L594" class="ln">   594  </span>			ret, err := pgx.CollectRows(rows, pgx.RowTo[string])
+<span id="L595" class="ln">   595  </span>			<span class="comment">// ret, err := DBExecRead(mainContext, metricDb, fmt.Sprintf(sqlDistinct, tableName, tableName))</span>
+<span id="L596" class="ln">   596  </span>			if err != nil {
+<span id="L597" class="ln">   597  </span>				logger.Errorf(&#34;Could not refresh Postgres all_distinct_dbname_metrics listing table for &#39;%s&#39;: %s&#34;, metricName, err)
+<span id="L598" class="ln">   598  </span>				break
 <span id="L599" class="ln">   599  </span>			}
-<span id="L600" class="ln">   600  </span>
-<span id="L601" class="ln">   601  </span>			<span class="comment">// delete all that are not known and add all that are not there</span>
-<span id="L602" class="ln">   602  </span>			for k := range foundDbnamesMap {
-<span id="L603" class="ln">   603  </span>				foundDbnamesArr = append(foundDbnamesArr, k)
-<span id="L604" class="ln">   604  </span>			}
-<span id="L605" class="ln">   605  </span>			if len(foundDbnamesArr) == 0 { <span class="comment">// delete all entries for given metric</span>
-<span id="L606" class="ln">   606  </span>				logger.Debugf(&#34;Deleting Postgres all_distinct_dbname_metrics listing table entries for metric &#39;%s&#39;:&#34;, metricName)
-<span id="L607" class="ln">   607  </span>
-<span id="L608" class="ln">   608  </span>				_, err = pgw.sinkDb.Exec(pgw.ctx, sqlDeleteAll, metricName)
-<span id="L609" class="ln">   609  </span>				if err != nil {
-<span id="L610" class="ln">   610  </span>					logger.Errorf(&#34;Could not delete Postgres all_distinct_dbname_metrics listing table entries for metric &#39;%s&#39;: %s&#34;, metricName, err)
-<span id="L611" class="ln">   611  </span>				}
-<span id="L612" class="ln">   612  </span>				continue
-<span id="L613" class="ln">   613  </span>			}
-<span id="L614" class="ln">   614  </span>			cmdTag, err := pgw.sinkDb.Exec(pgw.ctx, sqlDelete, foundDbnamesArr, metricName)
-<span id="L615" class="ln">   615  </span>			if err != nil {
-<span id="L616" class="ln">   616  </span>				logger.Errorf(&#34;Could not refresh Postgres all_distinct_dbname_metrics listing table for metric &#39;%s&#39;: %s&#34;, metricName, err)
-<span id="L617" class="ln">   617  </span>			} else if cmdTag.RowsAffected() &gt; 0 {
-<span id="L618" class="ln">   618  </span>				logger.Infof(&#34;Removed %d stale entries from all_distinct_dbname_metrics listing table for metric: %s&#34;, cmdTag.RowsAffected(), metricName)
-<span id="L619" class="ln">   619  </span>			}
-<span id="L620" class="ln">   620  </span>			cmdTag, err = pgw.sinkDb.Exec(pgw.ctx, sqlAdd, foundDbnamesArr, metricName)
-<span id="L621" class="ln">   621  </span>			if err != nil {
-<span id="L622" class="ln">   622  </span>				logger.Errorf(&#34;Could not refresh Postgres all_distinct_dbname_metrics listing table for metric &#39;%s&#39;: %s&#34;, metricName, err)
-<span id="L623" class="ln">   623  </span>			} else if cmdTag.RowsAffected() &gt; 0 {
-<span id="L624" class="ln">   624  </span>				logger.Infof(&#34;Added %d entry to the Postgres all_distinct_dbname_metrics listing table for metric: %s&#34;, cmdTag.RowsAffected(), metricName)
-<span id="L625" class="ln">   625  </span>			}
-<span id="L626" class="ln">   626  </span>			time.Sleep(time.Minute)
-<span id="L627" class="ln">   627  </span>		}
-<span id="L628" class="ln">   628  </span>
-<span id="L629" class="ln">   629  </span>	}
-<span id="L630" class="ln">   630  </span>}
+<span id="L600" class="ln">   600  </span>			for _, drDbname := range ret {
+<span id="L601" class="ln">   601  </span>				foundDbnamesMap[drDbname] = true <span class="comment">// &#34;set&#34; behaviour, don&#39;t want duplicates</span>
+<span id="L602" class="ln">   602  </span>			}
+<span id="L603" class="ln">   603  </span>
+<span id="L604" class="ln">   604  </span>			<span class="comment">// delete all that are not known and add all that are not there</span>
+<span id="L605" class="ln">   605  </span>			for k := range foundDbnamesMap {
+<span id="L606" class="ln">   606  </span>				foundDbnamesArr = append(foundDbnamesArr, k)
+<span id="L607" class="ln">   607  </span>			}
+<span id="L608" class="ln">   608  </span>			if len(foundDbnamesArr) == 0 { <span class="comment">// delete all entries for given metric</span>
+<span id="L609" class="ln">   609  </span>				logger.Debugf(&#34;Deleting Postgres all_distinct_dbname_metrics listing table entries for metric &#39;%s&#39;:&#34;, metricName)
+<span id="L610" class="ln">   610  </span>
+<span id="L611" class="ln">   611  </span>				_, err = pgw.sinkDb.Exec(pgw.ctx, sqlDeleteAll, metricName)
+<span id="L612" class="ln">   612  </span>				if err != nil {
+<span id="L613" class="ln">   613  </span>					logger.Errorf(&#34;Could not delete Postgres all_distinct_dbname_metrics listing table entries for metric &#39;%s&#39;: %s&#34;, metricName, err)
+<span id="L614" class="ln">   614  </span>				}
+<span id="L615" class="ln">   615  </span>				continue
+<span id="L616" class="ln">   616  </span>			}
+<span id="L617" class="ln">   617  </span>			cmdTag, err := pgw.sinkDb.Exec(pgw.ctx, sqlDelete, foundDbnamesArr, metricName)
+<span id="L618" class="ln">   618  </span>			if err != nil {
+<span id="L619" class="ln">   619  </span>				logger.Errorf(&#34;Could not refresh Postgres all_distinct_dbname_metrics listing table for metric &#39;%s&#39;: %s&#34;, metricName, err)
+<span id="L620" class="ln">   620  </span>			} else if cmdTag.RowsAffected() &gt; 0 {
+<span id="L621" class="ln">   621  </span>				logger.Infof(&#34;Removed %d stale entries from all_distinct_dbname_metrics listing table for metric: %s&#34;, cmdTag.RowsAffected(), metricName)
+<span id="L622" class="ln">   622  </span>			}
+<span id="L623" class="ln">   623  </span>			cmdTag, err = pgw.sinkDb.Exec(pgw.ctx, sqlAdd, foundDbnamesArr, metricName)
+<span id="L624" class="ln">   624  </span>			if err != nil {
+<span id="L625" class="ln">   625  </span>				logger.Errorf(&#34;Could not refresh Postgres all_distinct_dbname_metrics listing table for metric &#39;%s&#39;: %s&#34;, metricName, err)
+<span id="L626" class="ln">   626  </span>			} else if cmdTag.RowsAffected() &gt; 0 {
+<span id="L627" class="ln">   627  </span>				logger.Infof(&#34;Added %d entry to the Postgres all_distinct_dbname_metrics listing table for metric: %s&#34;, cmdTag.RowsAffected(), metricName)
+<span id="L628" class="ln">   628  </span>			}
+<span id="L629" class="ln">   629  </span>			time.Sleep(time.Minute)
+<span id="L630" class="ln">   630  </span>		}
 <span id="L631" class="ln">   631  </span>
-<span id="L632" class="ln">   632  </span>func (pgw *PostgresWriter) DropOldTimePartitions(metricAgeDaysThreshold int) (res int, err error) {
-<span id="L633" class="ln">   633  </span>	sqlOldPart := `select admin.drop_old_time_partitions($1, $2)`
-<span id="L634" class="ln">   634  </span>	err = pgw.sinkDb.QueryRow(pgw.ctx, sqlOldPart, metricAgeDaysThreshold, false).Scan(&amp;res)
-<span id="L635" class="ln">   635  </span>	return
-<span id="L636" class="ln">   636  </span>}
-<span id="L637" class="ln">   637  </span>
-<span id="L638" class="ln">   638  </span>func (pgw *PostgresWriter) GetOldTimePartitions(metricAgeDaysThreshold int) ([]string, error) {
-<span id="L639" class="ln">   639  </span>	sqlGetOldParts := `select admin.get_old_time_partitions($1)`
-<span id="L640" class="ln">   640  </span>	rows, err := pgw.sinkDb.Query(pgw.ctx, sqlGetOldParts, metricAgeDaysThreshold)
-<span id="L641" class="ln">   641  </span>	if err == nil {
-<span id="L642" class="ln">   642  </span>		return pgx.CollectRows(rows, pgx.RowTo[string])
-<span id="L643" class="ln">   643  </span>	}
-<span id="L644" class="ln">   644  </span>	return nil, err
-<span id="L645" class="ln">   645  </span>}
-<span id="L646" class="ln">   646  </span>
-<span id="L647" class="ln">   647  </span>func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
-<span id="L648" class="ln">   648  </span>	sql := `insert into admin.all_distinct_dbname_metrics
-<span id="L649" class="ln">   649  </span>			select $1, $2
-<span id="L650" class="ln">   650  </span>			where not exists (
-<span id="L651" class="ln">   651  </span>				select * from admin.all_distinct_dbname_metrics where dbname = $1 and metric = $2
-<span id="L652" class="ln">   652  </span>			)`
-<span id="L653" class="ln">   653  </span>	_, err := pgw.sinkDb.Exec(pgw.ctx, sql, dbUnique, metric)
-<span id="L654" class="ln">   654  </span>	return err
-<span id="L655" class="ln">   655  </span>}
-<span id="L656" class="ln">   656  </span>
+<span id="L632" class="ln">   632  </span>	}
+<span id="L633" class="ln">   633  </span>}
+<span id="L634" class="ln">   634  </span>
+<span id="L635" class="ln">   635  </span>func (pgw *PostgresWriter) DropOldTimePartitions(metricAgeDaysThreshold int) (res int, err error) {
+<span id="L636" class="ln">   636  </span>	sqlOldPart := `select admin.drop_old_time_partitions($1, $2)`
+<span id="L637" class="ln">   637  </span>	err = pgw.sinkDb.QueryRow(pgw.ctx, sqlOldPart, metricAgeDaysThreshold, false).Scan(&amp;res)
+<span id="L638" class="ln">   638  </span>	return
+<span id="L639" class="ln">   639  </span>}
+<span id="L640" class="ln">   640  </span>
+<span id="L641" class="ln">   641  </span>func (pgw *PostgresWriter) GetOldTimePartitions(metricAgeDaysThreshold int) ([]string, error) {
+<span id="L642" class="ln">   642  </span>	sqlGetOldParts := `select admin.get_old_time_partitions($1)`
+<span id="L643" class="ln">   643  </span>	rows, err := pgw.sinkDb.Query(pgw.ctx, sqlGetOldParts, metricAgeDaysThreshold)
+<span id="L644" class="ln">   644  </span>	if err == nil {
+<span id="L645" class="ln">   645  </span>		return pgx.CollectRows(rows, pgx.RowTo[string])
+<span id="L646" class="ln">   646  </span>	}
+<span id="L647" class="ln">   647  </span>	return nil, err
+<span id="L648" class="ln">   648  </span>}
+<span id="L649" class="ln">   649  </span>
+<span id="L650" class="ln">   650  </span>func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
+<span id="L651" class="ln">   651  </span>	sql := `insert into admin.all_distinct_dbname_metrics
+<span id="L652" class="ln">   652  </span>			select $1, $2
+<span id="L653" class="ln">   653  </span>			where not exists (
+<span id="L654" class="ln">   654  </span>				select * from admin.all_distinct_dbname_metrics where dbname = $1 and metric = $2
+<span id="L655" class="ln">   655  </span>			)`
+<span id="L656" class="ln">   656  </span>	_, err := pgw.sinkDb.Exec(pgw.ctx, sql, dbUnique, metric)
+<span id="L657" class="ln">   657  </span>	return err
+<span id="L658" class="ln">   658  </span>}
+<span id="L659" class="ln">   659  </span>
 </pre><p></p>
 
 <div id="footer">

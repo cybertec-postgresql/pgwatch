@@ -196,7 +196,7 @@
 <span id="L139" class="ln">   139  </span>	var cfg client.Config
 <span id="L140" class="ln">   140  </span>
 <span id="L141" class="ln">   141  </span>	if len(s.HostConfig.DcsEndpoints) == 0 {
-<span id="L142" class="ln">   142  </span>		return ret, errors.New(&#34;Missing ETCD connect info, make sure host config has a &#39;dcs_endpoints&#39; key&#34;)
+<span id="L142" class="ln">   142  </span>		return ret, errors.New(&#34;missing ETCD connect info, make sure host config has a &#39;dcs_endpoints&#39; key&#34;)
 <span id="L143" class="ln">   143  </span>	}
 <span id="L144" class="ln">   144  </span>
 <span id="L145" class="ln">   145  </span>	tlsConfig, err := getTransport(s.HostConfig)
@@ -225,10 +225,10 @@
 <span id="L168" class="ln">   168  </span>
 <span id="L169" class="ln">   169  </span>	if s.Kind == SourcePatroniNamespace { <span class="comment">// all scopes, all DBs (regex filtering applies if defined)</span>
 <span id="L170" class="ln">   170  </span>		if len(s.GetDatabaseName()) &gt; 0 {
-<span id="L171" class="ln">   171  </span>			return ret, fmt.Errorf(&#34;Skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)&#34;, s.Name)
+<span id="L171" class="ln">   171  </span>			return ret, fmt.Errorf(&#34;skipping Patroni entry %s - cannot specify a DB name when monitoring all scopes (regex patterns are supported though)&#34;, s.Name)
 <span id="L172" class="ln">   172  </span>		}
 <span id="L173" class="ln">   173  </span>		if s.HostConfig.Namespace == &#34;&#34; {
-<span id="L174" class="ln">   174  </span>			return ret, fmt.Errorf(&#34;Skipping Patroni entry %s - search &#39;namespace&#39; not specified&#34;, s.Name)
+<span id="L174" class="ln">   174  </span>			return ret, fmt.Errorf(&#34;skipping Patroni entry %s - search &#39;namespace&#39; not specified&#34;, s.Name)
 <span id="L175" class="ln">   175  </span>		}
 <span id="L176" class="ln">   176  </span>		resp, err := kapi.Get(ctx, s.HostConfig.Namespace, client.WithPrefix(), client.WithKeysOnly())
 <span id="L177" class="ln">   177  </span>		if err != nil {

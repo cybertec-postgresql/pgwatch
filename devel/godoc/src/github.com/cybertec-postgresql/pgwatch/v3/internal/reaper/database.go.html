@@ -211,7 +211,7 @@
 <span id="L154" class="ln">   154  </span>		}
 <span id="L155" class="ln">   155  </span>		matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(dbNewSettings.VersionStr)
 <span id="L156" class="ln">   156  </span>		if len(matches) != 1 {
-<span id="L157" class="ln">   157  </span>			return dbSettings, fmt.Errorf(&#34;Unexpected PgBouncer version input: %s&#34;, dbNewSettings.VersionStr)
+<span id="L157" class="ln">   157  </span>			return dbSettings, fmt.Errorf(&#34;unexpected PgBouncer version input: %s&#34;, dbNewSettings.VersionStr)
 <span id="L158" class="ln">   158  </span>		}
 <span id="L159" class="ln">   159  </span>		dbNewSettings.Version = VersionToInt(matches[0])
 <span id="L160" class="ln">   160  </span>	case sources.SourcePgPool:
@@ -221,7 +221,7 @@
 <span id="L164" class="ln">   164  </span>
 <span id="L165" class="ln">   165  </span>		matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(dbNewSettings.VersionStr)
 <span id="L166" class="ln">   166  </span>		if len(matches) != 1 {
-<span id="L167" class="ln">   167  </span>			return dbSettings, fmt.Errorf(&#34;Unexpected PgPool version input: %s&#34;, dbNewSettings.VersionStr)
+<span id="L167" class="ln">   167  </span>			return dbSettings, fmt.Errorf(&#34;unexpected PgPool version input: %s&#34;, dbNewSettings.VersionStr)
 <span id="L168" class="ln">   168  </span>		}
 <span id="L169" class="ln">   169  </span>		dbNewSettings.Version = VersionToInt(matches[0])
 <span id="L170" class="ln">   170  </span>	default:
@@ -765,186 +765,187 @@
 <span id="L708" class="ln">   708  </span>					retRow[k] = vs
 <span id="L709" class="ln">   709  </span>					if k == &#34;status&#34; { <span class="comment">// was changed from numeric to string at some pgpool version so leave the string</span>
 <span id="L710" class="ln">   710  </span>						<span class="comment">// but also add &#34;status_num&#34; field</span>
-<span id="L711" class="ln">   711  </span>						if vs == &#34;up&#34; {
-<span id="L712" class="ln">   712  </span>							retRow[&#34;status_num&#34;] = 1
-<span id="L713" class="ln">   713  </span>						} else if vs == &#34;down&#34; {
-<span id="L714" class="ln">   714  </span>							retRow[&#34;status_num&#34;] = 0
-<span id="L715" class="ln">   715  </span>						} else {
-<span id="L716" class="ln">   716  </span>							i, err := strconv.ParseInt(vs, 10, 64)
-<span id="L717" class="ln">   717  </span>							if err == nil {
-<span id="L718" class="ln">   718  </span>								retRow[&#34;status_num&#34;] = i
-<span id="L719" class="ln">   719  </span>							}
-<span id="L720" class="ln">   720  </span>						}
-<span id="L721" class="ln">   721  </span>						continue
-<span id="L722" class="ln">   722  </span>					}
-<span id="L723" class="ln">   723  </span>					<span class="comment">// everything is returned as text, so try to convert all numerics into ints / floats</span>
-<span id="L724" class="ln">   724  </span>					if k != &#34;lb_weight&#34; {
-<span id="L725" class="ln">   725  </span>						i, err := strconv.ParseInt(vs, 10, 64)
-<span id="L726" class="ln">   726  </span>						if err == nil {
-<span id="L727" class="ln">   727  </span>							retRow[k] = i
-<span id="L728" class="ln">   728  </span>							continue
-<span id="L729" class="ln">   729  </span>						}
-<span id="L730" class="ln">   730  </span>					}
-<span id="L731" class="ln">   731  </span>					f, err := strconv.ParseFloat(vs, 64)
-<span id="L732" class="ln">   732  </span>					if err == nil {
-<span id="L733" class="ln">   733  </span>						retRow[k] = f
-<span id="L734" class="ln">   734  </span>						continue
-<span id="L735" class="ln">   735  </span>					}
-<span id="L736" class="ln">   736  </span>				}
-<span id="L737" class="ln">   737  </span>				retData = append(retData, retRow)
-<span id="L738" class="ln">   738  </span>			}
-<span id="L739" class="ln">   739  </span>		} else if strings.HasPrefix(sql, &#34;SHOW POOL_PROCESSES&#34;) {
-<span id="L740" class="ln">   740  </span>			if len(retData) == 0 {
-<span id="L741" class="ln">   741  </span>				log.GetLogger(ctx).Warningf(&#34;[%s][%s] SHOW POOL_NODES needs to be placed before SHOW POOL_PROCESSES. ignoring SHOW POOL_PROCESSES&#34;, msg.DBUniqueName, msg.MetricName)
-<span id="L742" class="ln">   742  </span>				continue
-<span id="L743" class="ln">   743  </span>			}
-<span id="L744" class="ln">   744  </span>
-<span id="L745" class="ln">   745  </span>			data, err := QueryMeasurements(ctx, msg.DBUniqueName, sql)
-<span id="L746" class="ln">   746  </span>			if err != nil {
-<span id="L747" class="ln">   747  </span>				log.GetLogger(ctx).Errorf(&#34;[%s][%s] Could not fetch PgPool statistics: %v&#34;, msg.DBUniqueName, msg.MetricName, err)
-<span id="L748" class="ln">   748  </span>				continue
-<span id="L749" class="ln">   749  </span>			}
-<span id="L750" class="ln">   750  </span>
-<span id="L751" class="ln">   751  </span>			<span class="comment">// summarize processesTotal / processes_active over all rows</span>
-<span id="L752" class="ln">   752  </span>			processesTotal := 0
-<span id="L753" class="ln">   753  </span>			processesActive := 0
-<span id="L754" class="ln">   754  </span>			for _, row := range data {
-<span id="L755" class="ln">   755  </span>				processesTotal++
-<span id="L756" class="ln">   756  </span>				v, ok := row[&#34;database&#34;]
-<span id="L757" class="ln">   757  </span>				if !ok {
-<span id="L758" class="ln">   758  </span>					log.GetLogger(ctx).Infof(&#34;[%s][%s] column &#39;database&#39; not found from data returned by SHOW POOL_PROCESSES, check pool version / SQL definition&#34;, msg.DBUniqueName, msg.MetricName)
-<span id="L759" class="ln">   759  </span>					continue
-<span id="L760" class="ln">   760  </span>				}
-<span id="L761" class="ln">   761  </span>				if len(v.([]byte)) &gt; 0 {
-<span id="L762" class="ln">   762  </span>					processesActive++
-<span id="L763" class="ln">   763  </span>				}
-<span id="L764" class="ln">   764  </span>			}
-<span id="L765" class="ln">   765  </span>
-<span id="L766" class="ln">   766  </span>			for _, retRow := range retData {
-<span id="L767" class="ln">   767  </span>				retRow[&#34;processes_total&#34;] = processesTotal
-<span id="L768" class="ln">   768  </span>				retRow[&#34;processes_active&#34;] = processesActive
-<span id="L769" class="ln">   769  </span>			}
-<span id="L770" class="ln">   770  </span>		}
-<span id="L771" class="ln">   771  </span>	}
-<span id="L772" class="ln">   772  </span>	return retData, nil
-<span id="L773" class="ln">   773  </span>}
-<span id="L774" class="ln">   774  </span>
-<span id="L775" class="ln">   775  </span><span class="comment">// Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.</span>
-<span id="L776" class="ln">   776  </span><span class="comment">// With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific</span>
-<span id="L777" class="ln">   777  </span><span class="comment">// whitelisting or &#34;trusted extensions&#34; (a feature from v13). Ignores errors.</span>
-<span id="L778" class="ln">   778  </span>func TryCreateMissingExtensions(ctx context.Context, dbUnique string, extensionNames []string, existingExtensions map[string]int) []string {
-<span id="L779" class="ln">   779  </span>	sqlAvailable := `select name::text from pg_available_extensions`
-<span id="L780" class="ln">   780  </span>	extsCreated := make([]string, 0)
-<span id="L781" class="ln">   781  </span>
-<span id="L782" class="ln">   782  </span>	<span class="comment">// For security reasons don&#39;t allow to execute random strings but check that it&#39;s an existing extension</span>
-<span id="L783" class="ln">   783  </span>	data, err := QueryMeasurements(ctx, dbUnique, sqlAvailable)
-<span id="L784" class="ln">   784  </span>	if err != nil {
-<span id="L785" class="ln">   785  </span>		log.GetLogger(ctx).Infof(&#34;[%s] Failed to get a list of available extensions: %v&#34;, dbUnique, err)
-<span id="L786" class="ln">   786  </span>		return extsCreated
-<span id="L787" class="ln">   787  </span>	}
-<span id="L788" class="ln">   788  </span>
-<span id="L789" class="ln">   789  </span>	availableExts := make(map[string]bool)
-<span id="L790" class="ln">   790  </span>	for _, row := range data {
-<span id="L791" class="ln">   791  </span>		availableExts[row[&#34;name&#34;].(string)] = true
-<span id="L792" class="ln">   792  </span>	}
-<span id="L793" class="ln">   793  </span>
-<span id="L794" class="ln">   794  </span>	for _, extToCreate := range extensionNames {
-<span id="L795" class="ln">   795  </span>		if _, ok := existingExtensions[extToCreate]; ok {
-<span id="L796" class="ln">   796  </span>			continue
-<span id="L797" class="ln">   797  </span>		}
-<span id="L798" class="ln">   798  </span>		_, ok := availableExts[extToCreate]
-<span id="L799" class="ln">   799  </span>		if !ok {
-<span id="L800" class="ln">   800  </span>			log.GetLogger(ctx).Errorf(&#34;[%s] Requested extension %s not available on instance, cannot try to create...&#34;, dbUnique, extToCreate)
-<span id="L801" class="ln">   801  </span>		} else {
-<span id="L802" class="ln">   802  </span>			sqlCreateExt := `create extension ` + extToCreate
-<span id="L803" class="ln">   803  </span>			_, err := QueryMeasurements(ctx, dbUnique, sqlCreateExt)
-<span id="L804" class="ln">   804  </span>			if err != nil {
-<span id="L805" class="ln">   805  </span>				log.GetLogger(ctx).Errorf(&#34;[%s] Failed to create extension %s (based on --try-create-listed-exts-if-missing input): %v&#34;, dbUnique, extToCreate, err)
-<span id="L806" class="ln">   806  </span>			}
-<span id="L807" class="ln">   807  </span>			extsCreated = append(extsCreated, extToCreate)
-<span id="L808" class="ln">   808  </span>		}
-<span id="L809" class="ln">   809  </span>	}
-<span id="L810" class="ln">   810  </span>
-<span id="L811" class="ln">   811  </span>	return extsCreated
-<span id="L812" class="ln">   812  </span>}
-<span id="L813" class="ln">   813  </span>
-<span id="L814" class="ln">   814  </span><span class="comment">// Called once on daemon startup to try to create &#34;metric fething helper&#34; functions automatically</span>
-<span id="L815" class="ln">   815  </span>func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn) (err error) {
-<span id="L816" class="ln">   816  </span>	metricConfig := func() map[string]float64 {
-<span id="L817" class="ln">   817  </span>		if len(md.Metrics) &gt; 0 {
-<span id="L818" class="ln">   818  </span>			return md.Metrics
-<span id="L819" class="ln">   819  </span>		}
-<span id="L820" class="ln">   820  </span>		if md.PresetMetrics &gt; &#34;&#34; {
-<span id="L821" class="ln">   821  </span>			return metricDefinitionMap.PresetDefs[md.PresetMetrics].Metrics
-<span id="L822" class="ln">   822  </span>		}
-<span id="L823" class="ln">   823  </span>		return nil
-<span id="L824" class="ln">   824  </span>	}()
-<span id="L825" class="ln">   825  </span>	conf, err := pgx.ParseConfig(md.ConnStr)
-<span id="L826" class="ln">   826  </span>	if err != nil {
-<span id="L827" class="ln">   827  </span>		return err
-<span id="L828" class="ln">   828  </span>	}
-<span id="L829" class="ln">   829  </span>	conf.DefaultQueryExecMode = pgx.QueryExecModeExec
-<span id="L830" class="ln">   830  </span>	c, err := pgx.ConnectConfig(ctx, conf)
-<span id="L831" class="ln">   831  </span>	if err != nil {
-<span id="L832" class="ln">   832  </span>		return nil
-<span id="L833" class="ln">   833  </span>	}
-<span id="L834" class="ln">   834  </span>	defer c.Close(ctx)
-<span id="L835" class="ln">   835  </span>
-<span id="L836" class="ln">   836  </span>	for metricName := range metricConfig {
-<span id="L837" class="ln">   837  </span>		Metric := metricDefinitionMap.MetricDefs[metricName]
-<span id="L838" class="ln">   838  </span>		if Metric.InitSQL == &#34;&#34; {
-<span id="L839" class="ln">   839  </span>			continue
-<span id="L840" class="ln">   840  </span>		}
-<span id="L841" class="ln">   841  </span>
-<span id="L842" class="ln">   842  </span>		_, err = c.Exec(ctx, Metric.InitSQL)
-<span id="L843" class="ln">   843  </span>		if err != nil {
-<span id="L844" class="ln">   844  </span>			log.GetLogger(ctx).Warningf(&#34;Failed to create a metric fetching helper for %s in %s: %v&#34;, md.Name, metricName, err)
-<span id="L845" class="ln">   845  </span>		} else {
-<span id="L846" class="ln">   846  </span>			log.GetLogger(ctx).Info(&#34;Successfully created metric fetching helper for&#34;, md.Name, metricName)
-<span id="L847" class="ln">   847  </span>		}
-<span id="L848" class="ln">   848  </span>	}
-<span id="L849" class="ln">   849  </span>	return nil
-<span id="L850" class="ln">   850  </span>}
-<span id="L851" class="ln">   851  </span>
-<span id="L852" class="ln">   852  </span><span class="comment">// connects actually to the instance to determine PG relevant disk paths / mounts</span>
-<span id="L853" class="ln">   853  </span>func GetGoPsutilDiskPG(ctx context.Context, dbUnique string) (metrics.Measurements, error) {
-<span id="L854" class="ln">   854  </span>	sql := `select current_setting(&#39;data_directory&#39;) as dd, current_setting(&#39;log_directory&#39;) as ld, current_setting(&#39;server_version_num&#39;)::int as pgver`
-<span id="L855" class="ln">   855  </span>	sqlTS := `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E&#39;pg\\_%&#39;])`
-<span id="L856" class="ln">   856  </span>	data, err := QueryMeasurements(ctx, dbUnique, sql)
-<span id="L857" class="ln">   857  </span>	if err != nil || len(data) == 0 {
-<span id="L858" class="ln">   858  </span>		log.GetLogger(ctx).Errorf(&#34;Failed to determine relevant PG disk paths via SQL: %v&#34;, err)
-<span id="L859" class="ln">   859  </span>		return nil, err
-<span id="L860" class="ln">   860  </span>	}
-<span id="L861" class="ln">   861  </span>	dataTblsp, err := QueryMeasurements(ctx, dbUnique, sqlTS)
-<span id="L862" class="ln">   862  </span>	if err != nil {
-<span id="L863" class="ln">   863  </span>		log.GetLogger(ctx).Infof(&#34;Failed to determine relevant PG tablespace paths via SQL: %v&#34;, err)
-<span id="L864" class="ln">   864  </span>	}
-<span id="L865" class="ln">   865  </span>	return psutil.GetGoPsutilDiskPG(data, dataTblsp)
-<span id="L866" class="ln">   866  </span>}
-<span id="L867" class="ln">   867  </span>
-<span id="L868" class="ln">   868  </span>func CloseResourcesForRemovedMonitoredDBs(metricsWriter sinks.Writer, currentDBs, prevLoopDBs sources.SourceConns, shutDownDueToRoleChange map[string]bool) {
-<span id="L869" class="ln">   869  </span>	var curDBsMap = make(map[string]bool)
-<span id="L870" class="ln">   870  </span>
-<span id="L871" class="ln">   871  </span>	for _, curDB := range currentDBs {
-<span id="L872" class="ln">   872  </span>		curDBsMap[curDB.Name] = true
-<span id="L873" class="ln">   873  </span>	}
-<span id="L874" class="ln">   874  </span>
-<span id="L875" class="ln">   875  </span>	for _, prevDB := range prevLoopDBs {
-<span id="L876" class="ln">   876  </span>		if _, ok := curDBsMap[prevDB.Name]; !ok { <span class="comment">// removed from config</span>
-<span id="L877" class="ln">   877  </span>			prevDB.Conn.Close()
-<span id="L878" class="ln">   878  </span>			_ = metricsWriter.SyncMetric(prevDB.Name, &#34;&#34;, &#34;remove&#34;)
-<span id="L879" class="ln">   879  </span>		}
-<span id="L880" class="ln">   880  </span>	}
-<span id="L881" class="ln">   881  </span>
-<span id="L882" class="ln">   882  </span>	<span class="comment">// or to be ignored due to current instance state</span>
-<span id="L883" class="ln">   883  </span>	for roleChangedDB := range shutDownDueToRoleChange {
-<span id="L884" class="ln">   884  </span>		if db := currentDBs.GetMonitoredDatabase(roleChangedDB); db != nil {
-<span id="L885" class="ln">   885  </span>			db.Conn.Close()
-<span id="L886" class="ln">   886  </span>		}
-<span id="L887" class="ln">   887  </span>		_ = metricsWriter.SyncMetric(roleChangedDB, &#34;&#34;, &#34;remove&#34;)
-<span id="L888" class="ln">   888  </span>	}
-<span id="L889" class="ln">   889  </span>}
-<span id="L890" class="ln">   890  </span>
+<span id="L711" class="ln">   711  </span>						switch vs {
+<span id="L712" class="ln">   712  </span>						case &#34;up&#34;:
+<span id="L713" class="ln">   713  </span>							retRow[&#34;status_num&#34;] = 1
+<span id="L714" class="ln">   714  </span>						case &#34;down&#34;:
+<span id="L715" class="ln">   715  </span>							retRow[&#34;status_num&#34;] = 0
+<span id="L716" class="ln">   716  </span>						default:
+<span id="L717" class="ln">   717  </span>							i, err := strconv.ParseInt(vs, 10, 64)
+<span id="L718" class="ln">   718  </span>							if err == nil {
+<span id="L719" class="ln">   719  </span>								retRow[&#34;status_num&#34;] = i
+<span id="L720" class="ln">   720  </span>							}
+<span id="L721" class="ln">   721  </span>						}
+<span id="L722" class="ln">   722  </span>						continue
+<span id="L723" class="ln">   723  </span>					}
+<span id="L724" class="ln">   724  </span>					<span class="comment">// everything is returned as text, so try to convert all numerics into ints / floats</span>
+<span id="L725" class="ln">   725  </span>					if k != &#34;lb_weight&#34; {
+<span id="L726" class="ln">   726  </span>						i, err := strconv.ParseInt(vs, 10, 64)
+<span id="L727" class="ln">   727  </span>						if err == nil {
+<span id="L728" class="ln">   728  </span>							retRow[k] = i
+<span id="L729" class="ln">   729  </span>							continue
+<span id="L730" class="ln">   730  </span>						}
+<span id="L731" class="ln">   731  </span>					}
+<span id="L732" class="ln">   732  </span>					f, err := strconv.ParseFloat(vs, 64)
+<span id="L733" class="ln">   733  </span>					if err == nil {
+<span id="L734" class="ln">   734  </span>						retRow[k] = f
+<span id="L735" class="ln">   735  </span>						continue
+<span id="L736" class="ln">   736  </span>					}
+<span id="L737" class="ln">   737  </span>				}
+<span id="L738" class="ln">   738  </span>				retData = append(retData, retRow)
+<span id="L739" class="ln">   739  </span>			}
+<span id="L740" class="ln">   740  </span>		} else if strings.HasPrefix(sql, &#34;SHOW POOL_PROCESSES&#34;) {
+<span id="L741" class="ln">   741  </span>			if len(retData) == 0 {
+<span id="L742" class="ln">   742  </span>				log.GetLogger(ctx).Warningf(&#34;[%s][%s] SHOW POOL_NODES needs to be placed before SHOW POOL_PROCESSES. ignoring SHOW POOL_PROCESSES&#34;, msg.DBUniqueName, msg.MetricName)
+<span id="L743" class="ln">   743  </span>				continue
+<span id="L744" class="ln">   744  </span>			}
+<span id="L745" class="ln">   745  </span>
+<span id="L746" class="ln">   746  </span>			data, err := QueryMeasurements(ctx, msg.DBUniqueName, sql)
+<span id="L747" class="ln">   747  </span>			if err != nil {
+<span id="L748" class="ln">   748  </span>				log.GetLogger(ctx).Errorf(&#34;[%s][%s] Could not fetch PgPool statistics: %v&#34;, msg.DBUniqueName, msg.MetricName, err)
+<span id="L749" class="ln">   749  </span>				continue
+<span id="L750" class="ln">   750  </span>			}
+<span id="L751" class="ln">   751  </span>
+<span id="L752" class="ln">   752  </span>			<span class="comment">// summarize processesTotal / processes_active over all rows</span>
+<span id="L753" class="ln">   753  </span>			processesTotal := 0
+<span id="L754" class="ln">   754  </span>			processesActive := 0
+<span id="L755" class="ln">   755  </span>			for _, row := range data {
+<span id="L756" class="ln">   756  </span>				processesTotal++
+<span id="L757" class="ln">   757  </span>				v, ok := row[&#34;database&#34;]
+<span id="L758" class="ln">   758  </span>				if !ok {
+<span id="L759" class="ln">   759  </span>					log.GetLogger(ctx).Infof(&#34;[%s][%s] column &#39;database&#39; not found from data returned by SHOW POOL_PROCESSES, check pool version / SQL definition&#34;, msg.DBUniqueName, msg.MetricName)
+<span id="L760" class="ln">   760  </span>					continue
+<span id="L761" class="ln">   761  </span>				}
+<span id="L762" class="ln">   762  </span>				if len(v.([]byte)) &gt; 0 {
+<span id="L763" class="ln">   763  </span>					processesActive++
+<span id="L764" class="ln">   764  </span>				}
+<span id="L765" class="ln">   765  </span>			}
+<span id="L766" class="ln">   766  </span>
+<span id="L767" class="ln">   767  </span>			for _, retRow := range retData {
+<span id="L768" class="ln">   768  </span>				retRow[&#34;processes_total&#34;] = processesTotal
+<span id="L769" class="ln">   769  </span>				retRow[&#34;processes_active&#34;] = processesActive
+<span id="L770" class="ln">   770  </span>			}
+<span id="L771" class="ln">   771  </span>		}
+<span id="L772" class="ln">   772  </span>	}
+<span id="L773" class="ln">   773  </span>	return retData, nil
+<span id="L774" class="ln">   774  </span>}
+<span id="L775" class="ln">   775  </span>
+<span id="L776" class="ln">   776  </span><span class="comment">// Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.</span>
+<span id="L777" class="ln">   777  </span><span class="comment">// With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific</span>
+<span id="L778" class="ln">   778  </span><span class="comment">// whitelisting or &#34;trusted extensions&#34; (a feature from v13). Ignores errors.</span>
+<span id="L779" class="ln">   779  </span>func TryCreateMissingExtensions(ctx context.Context, dbUnique string, extensionNames []string, existingExtensions map[string]int) []string {
+<span id="L780" class="ln">   780  </span>	sqlAvailable := `select name::text from pg_available_extensions`
+<span id="L781" class="ln">   781  </span>	extsCreated := make([]string, 0)
+<span id="L782" class="ln">   782  </span>
+<span id="L783" class="ln">   783  </span>	<span class="comment">// For security reasons don&#39;t allow to execute random strings but check that it&#39;s an existing extension</span>
+<span id="L784" class="ln">   784  </span>	data, err := QueryMeasurements(ctx, dbUnique, sqlAvailable)
+<span id="L785" class="ln">   785  </span>	if err != nil {
+<span id="L786" class="ln">   786  </span>		log.GetLogger(ctx).Infof(&#34;[%s] Failed to get a list of available extensions: %v&#34;, dbUnique, err)
+<span id="L787" class="ln">   787  </span>		return extsCreated
+<span id="L788" class="ln">   788  </span>	}
+<span id="L789" class="ln">   789  </span>
+<span id="L790" class="ln">   790  </span>	availableExts := make(map[string]bool)
+<span id="L791" class="ln">   791  </span>	for _, row := range data {
+<span id="L792" class="ln">   792  </span>		availableExts[row[&#34;name&#34;].(string)] = true
+<span id="L793" class="ln">   793  </span>	}
+<span id="L794" class="ln">   794  </span>
+<span id="L795" class="ln">   795  </span>	for _, extToCreate := range extensionNames {
+<span id="L796" class="ln">   796  </span>		if _, ok := existingExtensions[extToCreate]; ok {
+<span id="L797" class="ln">   797  </span>			continue
+<span id="L798" class="ln">   798  </span>		}
+<span id="L799" class="ln">   799  </span>		_, ok := availableExts[extToCreate]
+<span id="L800" class="ln">   800  </span>		if !ok {
+<span id="L801" class="ln">   801  </span>			log.GetLogger(ctx).Errorf(&#34;[%s] Requested extension %s not available on instance, cannot try to create...&#34;, dbUnique, extToCreate)
+<span id="L802" class="ln">   802  </span>		} else {
+<span id="L803" class="ln">   803  </span>			sqlCreateExt := `create extension ` + extToCreate
+<span id="L804" class="ln">   804  </span>			_, err := QueryMeasurements(ctx, dbUnique, sqlCreateExt)
+<span id="L805" class="ln">   805  </span>			if err != nil {
+<span id="L806" class="ln">   806  </span>				log.GetLogger(ctx).Errorf(&#34;[%s] Failed to create extension %s (based on --try-create-listed-exts-if-missing input): %v&#34;, dbUnique, extToCreate, err)
+<span id="L807" class="ln">   807  </span>			}
+<span id="L808" class="ln">   808  </span>			extsCreated = append(extsCreated, extToCreate)
+<span id="L809" class="ln">   809  </span>		}
+<span id="L810" class="ln">   810  </span>	}
+<span id="L811" class="ln">   811  </span>
+<span id="L812" class="ln">   812  </span>	return extsCreated
+<span id="L813" class="ln">   813  </span>}
+<span id="L814" class="ln">   814  </span>
+<span id="L815" class="ln">   815  </span><span class="comment">// Called once on daemon startup to try to create &#34;metric fething helper&#34; functions automatically</span>
+<span id="L816" class="ln">   816  </span>func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn) (err error) {
+<span id="L817" class="ln">   817  </span>	metricConfig := func() map[string]float64 {
+<span id="L818" class="ln">   818  </span>		if len(md.Metrics) &gt; 0 {
+<span id="L819" class="ln">   819  </span>			return md.Metrics
+<span id="L820" class="ln">   820  </span>		}
+<span id="L821" class="ln">   821  </span>		if md.PresetMetrics &gt; &#34;&#34; {
+<span id="L822" class="ln">   822  </span>			return metricDefinitionMap.PresetDefs[md.PresetMetrics].Metrics
+<span id="L823" class="ln">   823  </span>		}
+<span id="L824" class="ln">   824  </span>		return nil
+<span id="L825" class="ln">   825  </span>	}()
+<span id="L826" class="ln">   826  </span>	conf, err := pgx.ParseConfig(md.ConnStr)
+<span id="L827" class="ln">   827  </span>	if err != nil {
+<span id="L828" class="ln">   828  </span>		return err
+<span id="L829" class="ln">   829  </span>	}
+<span id="L830" class="ln">   830  </span>	conf.DefaultQueryExecMode = pgx.QueryExecModeExec
+<span id="L831" class="ln">   831  </span>	c, err := pgx.ConnectConfig(ctx, conf)
+<span id="L832" class="ln">   832  </span>	if err != nil {
+<span id="L833" class="ln">   833  </span>		return nil
+<span id="L834" class="ln">   834  </span>	}
+<span id="L835" class="ln">   835  </span>	defer c.Close(ctx)
+<span id="L836" class="ln">   836  </span>
+<span id="L837" class="ln">   837  </span>	for metricName := range metricConfig {
+<span id="L838" class="ln">   838  </span>		Metric := metricDefinitionMap.MetricDefs[metricName]
+<span id="L839" class="ln">   839  </span>		if Metric.InitSQL == &#34;&#34; {
+<span id="L840" class="ln">   840  </span>			continue
+<span id="L841" class="ln">   841  </span>		}
+<span id="L842" class="ln">   842  </span>
+<span id="L843" class="ln">   843  </span>		_, err = c.Exec(ctx, Metric.InitSQL)
+<span id="L844" class="ln">   844  </span>		if err != nil {
+<span id="L845" class="ln">   845  </span>			log.GetLogger(ctx).Warningf(&#34;Failed to create a metric fetching helper for %s in %s: %v&#34;, md.Name, metricName, err)
+<span id="L846" class="ln">   846  </span>		} else {
+<span id="L847" class="ln">   847  </span>			log.GetLogger(ctx).Info(&#34;Successfully created metric fetching helper for&#34;, md.Name, metricName)
+<span id="L848" class="ln">   848  </span>		}
+<span id="L849" class="ln">   849  </span>	}
+<span id="L850" class="ln">   850  </span>	return nil
+<span id="L851" class="ln">   851  </span>}
+<span id="L852" class="ln">   852  </span>
+<span id="L853" class="ln">   853  </span><span class="comment">// connects actually to the instance to determine PG relevant disk paths / mounts</span>
+<span id="L854" class="ln">   854  </span>func GetGoPsutilDiskPG(ctx context.Context, dbUnique string) (metrics.Measurements, error) {
+<span id="L855" class="ln">   855  </span>	sql := `select current_setting(&#39;data_directory&#39;) as dd, current_setting(&#39;log_directory&#39;) as ld, current_setting(&#39;server_version_num&#39;)::int as pgver`
+<span id="L856" class="ln">   856  </span>	sqlTS := `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E&#39;pg\\_%&#39;])`
+<span id="L857" class="ln">   857  </span>	data, err := QueryMeasurements(ctx, dbUnique, sql)
+<span id="L858" class="ln">   858  </span>	if err != nil || len(data) == 0 {
+<span id="L859" class="ln">   859  </span>		log.GetLogger(ctx).Errorf(&#34;Failed to determine relevant PG disk paths via SQL: %v&#34;, err)
+<span id="L860" class="ln">   860  </span>		return nil, err
+<span id="L861" class="ln">   861  </span>	}
+<span id="L862" class="ln">   862  </span>	dataTblsp, err := QueryMeasurements(ctx, dbUnique, sqlTS)
+<span id="L863" class="ln">   863  </span>	if err != nil {
+<span id="L864" class="ln">   864  </span>		log.GetLogger(ctx).Infof(&#34;Failed to determine relevant PG tablespace paths via SQL: %v&#34;, err)
+<span id="L865" class="ln">   865  </span>	}
+<span id="L866" class="ln">   866  </span>	return psutil.GetGoPsutilDiskPG(data, dataTblsp)
+<span id="L867" class="ln">   867  </span>}
+<span id="L868" class="ln">   868  </span>
+<span id="L869" class="ln">   869  </span>func CloseResourcesForRemovedMonitoredDBs(metricsWriter sinks.Writer, currentDBs, prevLoopDBs sources.SourceConns, shutDownDueToRoleChange map[string]bool) {
+<span id="L870" class="ln">   870  </span>	var curDBsMap = make(map[string]bool)
+<span id="L871" class="ln">   871  </span>
+<span id="L872" class="ln">   872  </span>	for _, curDB := range currentDBs {
+<span id="L873" class="ln">   873  </span>		curDBsMap[curDB.Name] = true
+<span id="L874" class="ln">   874  </span>	}
+<span id="L875" class="ln">   875  </span>
+<span id="L876" class="ln">   876  </span>	for _, prevDB := range prevLoopDBs {
+<span id="L877" class="ln">   877  </span>		if _, ok := curDBsMap[prevDB.Name]; !ok { <span class="comment">// removed from config</span>
+<span id="L878" class="ln">   878  </span>			prevDB.Conn.Close()
+<span id="L879" class="ln">   879  </span>			_ = metricsWriter.SyncMetric(prevDB.Name, &#34;&#34;, &#34;remove&#34;)
+<span id="L880" class="ln">   880  </span>		}
+<span id="L881" class="ln">   881  </span>	}
+<span id="L882" class="ln">   882  </span>
+<span id="L883" class="ln">   883  </span>	<span class="comment">// or to be ignored due to current instance state</span>
+<span id="L884" class="ln">   884  </span>	for roleChangedDB := range shutDownDueToRoleChange {
+<span id="L885" class="ln">   885  </span>		if db := currentDBs.GetMonitoredDatabase(roleChangedDB); db != nil {
+<span id="L886" class="ln">   886  </span>			db.Conn.Close()
+<span id="L887" class="ln">   887  </span>		}
+<span id="L888" class="ln">   888  </span>		_ = metricsWriter.SyncMetric(roleChangedDB, &#34;&#34;, &#34;remove&#34;)
+<span id="L889" class="ln">   889  </span>	}
+<span id="L890" class="ln">   890  </span>}
+<span id="L891" class="ln">   891  </span>
 </pre><p></p>
 
 <div id="footer">
