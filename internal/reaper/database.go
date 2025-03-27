@@ -154,7 +154,7 @@ func GetMonitoredDatabaseSettings(ctx context.Context, md *sources.SourceConn, n
 		}
 		matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(dbNewSettings.VersionStr)
 		if len(matches) != 1 {
-			return dbSettings, fmt.Errorf("Unexpected PgBouncer version input: %s", dbNewSettings.VersionStr)
+			return dbSettings, fmt.Errorf("unexpected PgBouncer version input: %s", dbNewSettings.VersionStr)
 		}
 		dbNewSettings.Version = VersionToInt(matches[0])
 	case sources.SourcePgPool:
@@ -164,7 +164,7 @@ func GetMonitoredDatabaseSettings(ctx context.Context, md *sources.SourceConn, n
 
 		matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(dbNewSettings.VersionStr)
 		if len(matches) != 1 {
-			return dbSettings, fmt.Errorf("Unexpected PgPool version input: %s", dbNewSettings.VersionStr)
+			return dbSettings, fmt.Errorf("unexpected PgPool version input: %s", dbNewSettings.VersionStr)
 		}
 		dbNewSettings.Version = VersionToInt(matches[0])
 	default:
@@ -708,11 +708,12 @@ func FetchMetricsPgpool(ctx context.Context, msg MetricFetchConfig, vme Monitore
 					retRow[k] = vs
 					if k == "status" { // was changed from numeric to string at some pgpool version so leave the string
 						// but also add "status_num" field
-						if vs == "up" {
+						switch vs {
+						case "up":
 							retRow["status_num"] = 1
-						} else if vs == "down" {
+						case "down":
 							retRow["status_num"] = 0
-						} else {
+						default:
 							i, err := strconv.ParseInt(vs, 10, 64)
 							if err == nil {
 								retRow["status_num"] = i

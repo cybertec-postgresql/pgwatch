@@ -1,21 +1,35 @@
+version: "2"
 linters:
   enable:
+    - misspell
     - revive
-    - misspell 
   disable:
     - gocyclo
-
-    
-linters-settings:
-  gocyclo:
-    # minimal code complexity to report, 30 by default (but we recommend 10-20)
-    min-complexity: 20
-
-issues:
-  # List of regexps of issue texts to exclude, empty list by default.
-  # But independently of this option we use default exclude patterns,
-  # it can be disabled by `exclude-use-default: false`. To list all
-  # excluded by default patterns execute `golangci-lint run --help`
-  exclude:
-    - SA1019  # CPUTimesStat.Total is deprecated
-    - SA5008  # duplicate struct tag "choice" (staticcheck)
+  settings:
+    gocyclo:
+      min-complexity: 20
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - path: (.+)\.go$
+        text: SA1019    # CPUTimesStat.Total is deprecated
+      - path: (.+)\.go$
+        text: SA5008    # duplicate struct tag "choice" (staticcheck)
+      - path: (.+)\.go$
+        text: QF1001    # could apply De Morgan's law
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

@@ -49,7 +49,7 @@ func GetMonitoredDatabaseByUniqueName(name string) (*sources.SourceConn, error) 
 	defer monitoredDbCacheLock.RUnlock()
 	md, exists := monitoredDbCache[name]
 	if !exists || md == nil {
-		return nil, fmt.Errorf("Database %s not found in cache", name)
+		return nil, fmt.Errorf("database %s not found in cache", name)
 	}
 	return md, nil
 }

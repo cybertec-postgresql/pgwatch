@@ -54,9 +54,9 @@ jobs:
         path: internal/webui/build
 
     - name: GolangCI-Lint
-      uses: golangci/golangci-lint-action@v6
+      uses: golangci/golangci-lint-action@v7
       with:
-        version: v1.64
+        version: latest
   
   test:
     if: true # false to skip job during debug

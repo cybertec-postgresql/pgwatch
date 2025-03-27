@@ -295,7 +295,8 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 
 			rowsBatched++
 
-			if pgw.metricSchema == DbStorageSchemaTimescale {
+			switch pgw.metricSchema {
+			case DbStorageSchemaTimescale:
 				// set min/max timestamps to check/create partitions
 				bounds, ok := pgPartBounds[msg.MetricName]
 				if !ok || (ok && epochTime.Before(bounds.StartTime)) {
@@ -306,7 +307,7 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 					bounds.EndTime = epochTime
 					pgPartBounds[msg.MetricName] = bounds
 				}
-			} else if pgw.metricSchema == DbStorageSchemaPostgres {
+			case DbStorageSchemaPostgres:
 				_, ok := pgPartBoundsDbName[msg.MetricName]
 				if !ok {
 					pgPartBoundsDbName[msg.MetricName] = make(map[string]ExistingPartitionInfo)
@@ -320,6 +321,8 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 					bounds.EndTime = epochTime
 					pgPartBoundsDbName[msg.MetricName][msg.DBName] = bounds
 				}
+			default:
+				logger.Fatal("unknown storage schema...")
 			}
 		}
 	}
