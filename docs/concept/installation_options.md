@@ -23,7 +23,7 @@ The default Docker demo image `cybertecpostgresql/pgwatch-demo` uses this approa
 One can deploy the gatherer daemon(s) decentralized with
 *sources to be monitored* defined in simple YAML files. In that case there
 is no need for the central Postgres configuration database. See the
-[sample.sources.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sources/sample.sources.yaml)
+[sample.sources.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.sources.yaml)
 config file for an example.
 
 !!! Note
