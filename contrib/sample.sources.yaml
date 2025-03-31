@@ -1,5 +1,5 @@
 - name: test1       # An arbitrary unique name for the monitored source
-  conn_str: postgresql://pgwatch:pgwatchadmin@somehost/mydb
+  conn_str: postgresql://postgres@localhost/postgres
   kind: postgres              # One of the:
                               # - postgres
                               # - postgres-continuous-discovery

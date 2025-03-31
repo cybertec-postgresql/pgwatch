@@ -3,7 +3,6 @@ package sources_test
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,24 +13,14 @@ import (
 // the number of entries in the sample.sources.yaml file
 const sampleEntriesNumber = 4
 
-var (
-	currentDir string
-	sampleFile string
+const (
+	contribDir = "../../contrib/"
+	sampleFile = "../../contrib/sample.sources.yaml"
 )
-
-func init() {
-	// setup the test environment
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		panic("Cannot get the current file path")
-	}
-	currentDir = filepath.Dir(filename)
-	sampleFile = filepath.Join(currentDir, "sample.sources.yaml")
-}
 
 func TestNewYAMLSourcesReaderWriter(t *testing.T) {
 	a := assert.New(t)
-	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, "../sample.sources.yaml")
+	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, sampleFile)
 	a.NoError(err)
 	a.NotNil(t, yamlrw)
 }
@@ -49,7 +38,7 @@ func TestYAMLGetMonitoredDatabases(t *testing.T) {
 	})
 
 	t.Run("folder with yaml files", func(*testing.T) {
-		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, currentDir)
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, contribDir)
 		a.NoError(err)
 
 		dbs, err := yamlrw.GetSources()
@@ -66,7 +55,7 @@ func TestYAMLGetMonitoredDatabases(t *testing.T) {
 	})
 
 	t.Run("garbage file", func(*testing.T) {
-		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, filepath.Join(currentDir, "yaml.go"))
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, filepath.Join(contribDir, "yaml.go"))
 		a.NoError(err)
 		dbs, err := yamlrw.GetSources()
 		a.Error(err)

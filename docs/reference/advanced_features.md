@@ -34,7 +34,7 @@ config (for Config DB based setups) looks like:
 ```
 
 For YAML based setups an example can be found from the
-[instances.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sources/sample.sources.yaml#L21)
+[instances.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.sources.yaml#L21)
 file.
 
 If Patroni is powered by *etcd*, then also username, password, ca_file,
@@ -65,7 +65,7 @@ the whole instance. The metric name to enable log parsing is
 destination / setting to work, the monitoring user needs superuser /
 pg_monitor privileges - if this is not possible then log settings need
 to be specified manually under "Host config" as seen for example
-[here](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/sources/sample.sources.yaml#L25).
+[here](https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.sources.yaml#L25).
 
 **Sample configuration if not using CSVLOG logging:**
 

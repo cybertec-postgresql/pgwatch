@@ -28,12 +28,14 @@ archives:
     - goos: windows
       formats: ['zip']
   files:
-    - ./grafana/**/*
-    - ./README.md
-    - src: ./internal/sources/sample.sources.yaml
-      dst: sample.sources.yaml
-    - src: ./internal/metrics/metrics.yaml
-      dst: metrics.yaml
+    - "./grafana/**/*"
+    - "./README.md"
+    - src: "./internal/metrics/metrics.yaml"
+      dst: "metrics.yaml"
+    - src: "./contrib/sample.sources.yaml"
+      dst: "sample.sources.yaml"
+    - src: "./contrib/sample.systemd.service"
+      dst: "/etc/pgwatch/sample.systemd.service"
 
 
 checksum:
@@ -63,9 +65,11 @@ nfpms:
     contents:
       - src: "./grafana/*"
         dst: "/etc/pgwatch/grafana"
-      - src: "./internal/sources/sample.sources.yaml"
+      - src: "./contrib/sample.sources.yaml"
         dst: "/etc/pgwatch/sample.sources.yaml"
       - src: "./internal/metrics/metrics.yaml"
         dst: "/etc/pgwatch/metrics.yaml"
       - src: "./README.md"
         dst: "/etc/pgwatch/README.md"
+      - src: "./contrib/sample.systemd.service"
+        dst: "/etc/pgwatch/sample.systemd.service"
