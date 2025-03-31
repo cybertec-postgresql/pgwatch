@@ -3,7 +3,6 @@ package sources_test
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,23 +14,13 @@ import (
 const sampleEntriesNumber = 4
 
 var (
-	currentDir string
-	sampleFile string
+	currentDir string = "../../contrib/"
+	sampleFile string = "../../contrib/sample.sources.yaml"
 )
-
-func init() {
-	// setup the test environment
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		panic("Cannot get the current file path")
-	}
-	currentDir = filepath.Dir(filename)
-	sampleFile = filepath.Join(currentDir, "sample.sources.yaml")
-}
 
 func TestNewYAMLSourcesReaderWriter(t *testing.T) {
 	a := assert.New(t)
-	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, "../sample.sources.yaml")
+	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, sampleFile)
 	a.NoError(err)
 	a.NotNil(t, yamlrw)
 }
