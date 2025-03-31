@@ -34,6 +34,8 @@ archives:
       dst: sample.sources.yaml
     - src: ./internal/metrics/metrics.yaml
       dst: metrics.yaml
+    - src: "./internal/sources/sample.systemd.service"
+      dst: "/etc/pgwatch/sample.systemd.service"
 
 
 checksum:
@@ -69,3 +71,5 @@ nfpms:
         dst: "/etc/pgwatch/metrics.yaml"
       - src: "./README.md"
         dst: "/etc/pgwatch/README.md"
+      - src: "./internal/sources/sample.systemd.service"
+        dst: "/etc/pgwatch/sample.systemd.service"

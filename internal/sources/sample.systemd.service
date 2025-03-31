@@ -1,0 +1,20 @@
+# This is an example of a systemD config file for pgwatch.
+# You can copy it to "/etc/systemd/system/pgwatch.service", adjust as necessary and then call
+# systemctl daemon-reload && systemctl start pgwatch && systemctl enable pgwatch
+# to start and also enable auto-start after reboot.
+
+[Unit]
+Description=Pgwatch Gathering Daemon
+After=network-online.target
+# When on the monitored node then it's a good idea to only launch after Postgres
+# After=postgresql
+
+[Service]
+User=postgres
+Type=simple
+ExecStart=/usr/bin/pgwatch --sources /etc/pgwatch/sample.sources.yaml --sink=prometheus://0.0.0.0:9187
+Restart=on-failure
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
