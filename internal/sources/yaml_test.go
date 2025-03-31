@@ -13,9 +13,9 @@ import (
 // the number of entries in the sample.sources.yaml file
 const sampleEntriesNumber = 4
 
-var (
-	currentDir string = "../../contrib/"
-	sampleFile string = "../../contrib/sample.sources.yaml"
+const (
+	contribDir = "../../contrib/"
+	sampleFile = "../../contrib/sample.sources.yaml"
 )
 
 func TestNewYAMLSourcesReaderWriter(t *testing.T) {
@@ -38,7 +38,7 @@ func TestYAMLGetMonitoredDatabases(t *testing.T) {
 	})
 
 	t.Run("folder with yaml files", func(*testing.T) {
-		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, currentDir)
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, contribDir)
 		a.NoError(err)
 
 		dbs, err := yamlrw.GetSources()
@@ -55,7 +55,7 @@ func TestYAMLGetMonitoredDatabases(t *testing.T) {
 	})
 
 	t.Run("garbage file", func(*testing.T) {
-		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, filepath.Join(currentDir, "yaml.go"))
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, filepath.Join(contribDir, "yaml.go"))
 		a.NoError(err)
 		dbs, err := yamlrw.GetSources()
 		a.Error(err)
