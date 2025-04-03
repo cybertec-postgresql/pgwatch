@@ -52,7 +52,6 @@ type (
 		ExcludePattern       string             `yaml:"exclude_pattern" db:"exclude_pattern"`
 		PresetMetrics        string             `yaml:"preset_metrics" db:"preset_config"`
 		PresetMetricsStandby string             `yaml:"preset_metrics_standby" db:"preset_config_standby"`
-		IsSuperuser          bool               `yaml:"is_superuser" db:"is_superuser"`
 		IsEnabled            bool               `yaml:"is_enabled" db:"is_enabled"`
 		CustomTags           map[string]string  `yaml:"custom_tags" db:"custom_tags"`
 		HostConfig           HostConfigAttrs    `yaml:"host_config" db:"host_config"`

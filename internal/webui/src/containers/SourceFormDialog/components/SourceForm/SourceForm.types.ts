@@ -10,7 +10,6 @@ type SourceFormGeneral = {
   IncludePattern?: string | null;
   ExcludePattern?: string | null;
   IsEnabled: boolean;
-  IsSuperuser: boolean;
 };
 
 type SourceFormMetrics = {

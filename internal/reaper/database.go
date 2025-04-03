@@ -173,14 +173,15 @@ func GetMonitoredDatabaseSettings(ctx context.Context, md *sources.SourceConn, n
 	version(), 
 	pg_is_in_recovery(), 
 	current_database()::TEXT,
-	system_identifier
+	system_identifier,
+	current_setting('is_superuser')::bool
 FROM
 	pg_control_system()`
 
 		err := md.Conn.QueryRow(ctx, sql).
 			Scan(&dbNewSettings.Version, &dbNewSettings.VersionStr,
 				&dbNewSettings.IsInRecovery, &dbNewSettings.RealDbname,
-				&dbNewSettings.SystemIdentifier)
+				&dbNewSettings.SystemIdentifier, &dbNewSettings.IsSuperuser)
 		if err != nil {
 			if noCache {
 				return dbSettings, err
@@ -203,13 +204,6 @@ FROM
 			} else {
 				dbNewSettings.ApproxDBSizeB = dbSettings.ApproxDBSizeB
 			}
-		}
-
-		l.Debugf("[%s] determining if monitoring user is a superuser...", md.Name)
-		sqlSu := `select /* pgwatch_generated */ rolsuper from pg_roles r where rolname = session_user`
-
-		if err = md.Conn.QueryRow(ctx, sqlSu).Scan(&dbNewSettings.IsSuperuser); err != nil {
-			l.Errorf("[%s] failed to determine if monitoring user is a superuser: %v", md.Name, err)
 		}
 
 		l.Debugf("[%s] determining installed extensions info...", md.Name)

@@ -9,7 +9,6 @@ export type Source = {
   ExcludePattern: string;
   PresetMetrics: string;
   PresetMetricsStandby: string;
-  IsSuperuser: boolean;
   IsEnabled: boolean;
   CustomTags: Record<string, string> | null;
   HostConfig: object;

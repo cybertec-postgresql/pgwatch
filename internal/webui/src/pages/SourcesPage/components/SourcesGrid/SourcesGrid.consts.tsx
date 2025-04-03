@@ -90,14 +90,6 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     hide: true,
   },
   {
-    field: "IsSuperuser",
-    headerName: "Superuser",
-    width: 120,
-    align: "center",
-    headerAlign: "center",
-    renderCell: ({ row }) => getIcon(row.IsSuperuser),
-  },
-  {
     field: "IsEnabled",
     headerName: "Enabled",
     width: 120,

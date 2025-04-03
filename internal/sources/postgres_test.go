@@ -43,12 +43,12 @@ func TestGetMonitoredDatabases(t *testing.T) {
 	conn.ExpectPing()
 	conn.ExpectQuery(`select \/\* pgwatch_generated \*\/`).WillReturnRows(pgxmock.NewRows([]string{
 		"name", "group", "dbtype", "connstr", "config", "config_standby", "preset_config",
-		"preset_config_standby", "is_superuser", "include_pattern", "exclude_pattern",
+		"preset_config_standby", "include_pattern", "exclude_pattern",
 		"custom_tags", "host_config", "only_if_master", "is_enabled",
 	}).AddRow(
 		"db1", "group1", sources.Kind("postgres"), "postgres://user:pass@localhost:5432/db1",
 		map[string]float64{"metric": 60}, map[string]float64{"standby_metric": 60}, "exhaustive", "exhaustive",
-		true, ".*", `\_.+`, map[string]string{"tag": "value"}, nil, true, true,
+		".*", `\_.+`, map[string]string{"tag": "value"}, nil, true, true,
 	))
 	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
 	a.NoError(err)
@@ -73,12 +73,12 @@ func TestSyncFromReader(t *testing.T) {
 	conn.ExpectPing()
 	conn.ExpectQuery(`select \/\* pgwatch_generated \*\/`).WillReturnRows(pgxmock.NewRows([]string{
 		"name", "group", "dbtype", "connstr", "config", "config_standby", "preset_config",
-		"preset_config_standby", "is_superuser", "include_pattern", "exclude_pattern",
+		"preset_config_standby", "include_pattern", "exclude_pattern",
 		"custom_tags", "host_config", "only_if_master", "is_enabled",
 	}).AddRow(
 		"db1", "group1", sources.Kind("postgres"), "postgres://user:pass@localhost:5432/db1",
 		map[string]float64{"metric": 60}, map[string]float64{"standby_metric": 60}, "exhaustive", "exhaustive",
-		true, ".*", `\_.+`, map[string]string{"tag": "value"}, nil, true, true,
+		".*", `\_.+`, map[string]string{"tag": "value"}, nil, true, true,
 	))
 	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
 	a.NoError(err)
@@ -118,7 +118,6 @@ func TestUpdateDatabase(t *testing.T) {
 		ConnStr:        "postgres://user:pass@localhost:5432/db1",
 		Metrics:        map[string]float64{"metric": 60},
 		MetricsStandby: map[string]float64{"standby_metric": 60},
-		IsSuperuser:    true,
 		IncludePattern: ".*",
 		ExcludePattern: `\_.+`,
 		CustomTags:     map[string]string{"tag": "value"},
@@ -128,7 +127,7 @@ func TestUpdateDatabase(t *testing.T) {
 		md.Name, md.Group, md.Kind,
 		md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`,
 		md.PresetMetrics, md.PresetMetricsStandby,
-		md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
+		md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
 		nil, md.OnlyIfMaster,
 	).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
@@ -154,7 +153,6 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 		ConnStr:        "postgres://user:pass@localhost:5432/db1",
 		Metrics:        map[string]float64{"metric": 60},
 		MetricsStandby: map[string]float64{"standby_metric": 60},
-		IsSuperuser:    true,
 		IncludePattern: ".*",
 		ExcludePattern: `\_.+`,
 		CustomTags:     map[string]string{"tag": "value"},
@@ -168,7 +166,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 		conn.ExpectExec(`insert into pgwatch\.source`).WithArgs(
 			md.Name, md.Group, md.Kind,
 			md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`, md.PresetMetrics, md.PresetMetricsStandby,
-			md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
+			md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
 			nil, md.OnlyIfMaster,
 		).WillReturnResult(pgxmock.NewResult("INSERT", 1))
 		conn.ExpectCommit()
@@ -204,7 +202,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 		conn.ExpectExec(`insert into pgwatch\.source`).WithArgs(
 			md.Name, md.Group, md.Kind,
 			md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`, md.PresetMetrics, md.PresetMetricsStandby,
-			md.IsSuperuser, md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
+			md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
 			nil, md.OnlyIfMaster,
 		).WillReturnError(errors.New("failed insert"))
 		conn.ExpectRollback()

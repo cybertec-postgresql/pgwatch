@@ -59,14 +59,13 @@ func (r *dbSourcesReaderWriter) updateDatabase(conn db.PgxIface, md Source) (err
 	config_standby, 
 	preset_config, 
 	preset_config_standby, 
-	is_superuser, 
 	include_pattern, 
 	exclude_pattern, 
 	custom_tags, 
 	host_config, 
 	only_if_master) 
 values 
-	($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), $9, $10, $11, $12, $13, $14) 
+	($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), $9, $10, $11, $12, $13) 
 on conflict (name) do update set
 	"group" = $2, 
 	dbtype = $3, 
@@ -75,16 +74,15 @@ on conflict (name) do update set
 	config_standby = $6, 
 	preset_config = NULLIF($7, ''),
 	preset_config_standby = NULLIF($8, ''), 
-	is_superuser = $9, 
-	include_pattern = $10, 
-	exclude_pattern = $11, 
-	custom_tags = $12,
-	host_config = $13, 
-	only_if_master = $14`
+	include_pattern = $9, 
+	exclude_pattern = $10, 
+	custom_tags = $11, 
+	host_config = $12,
+	only_if_master = $13`
 	_, err = conn.Exec(context.Background(), sql,
 		md.Name, md.Group, md.Kind,
 		md.ConnStr, m(md.Metrics), m(md.MetricsStandby), md.PresetMetrics, md.PresetMetricsStandby,
-		md.IsSuperuser, md.IncludePattern, md.ExcludePattern, m(md.CustomTags),
+		md.IncludePattern, md.ExcludePattern, m(md.CustomTags),
 		m(md.HostConfig), md.OnlyIfMaster)
 	return err
 }
@@ -108,7 +106,6 @@ func (r *dbSourcesReaderWriter) GetSources() (dbs Sources, err error) {
 	coalesce(config_standby, '{}'::jsonb) as config_standby,
 	coalesce(preset_config, '') as preset_config,
 	coalesce(preset_config_standby, '') as preset_config_standby,
-	is_superuser,
 	coalesce(include_pattern, '') as include_pattern, 
 	coalesce(exclude_pattern, '') as exclude_pattern,
 	coalesce(custom_tags, '{}'::jsonb) as custom_tags, 

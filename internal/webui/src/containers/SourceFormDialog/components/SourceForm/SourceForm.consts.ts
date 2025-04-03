@@ -31,7 +31,6 @@ export const sourceFormValuesValidationSchema = Yup.object({
   IncludePattern: Yup.string().optional().nullable(),
   ExcludePattern: Yup.string().optional().nullable(),
   IsEnabled: Yup.boolean().required(),
-  IsSuperuser: Yup.boolean().required(),
   Metrics: Yup.array().of(metricsValidationSchema).test((arr, context) => {
     if (!arr) {
       return;
