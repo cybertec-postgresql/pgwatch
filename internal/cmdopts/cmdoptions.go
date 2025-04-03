@@ -52,6 +52,8 @@ type Options struct {
 
 	ExitCode         int32
 	CommandCompleted bool
+
+	OutputWriter io.Writer
 }
 
 func addCommands(parser *flags.Parser, opts *Options) {
@@ -69,6 +71,7 @@ func New(writer io.Writer) (cmdOpts *Options, err error) {
 	cmdOpts = new(Options)
 	parser := flags.NewParser(cmdOpts, flags.HelpFlag)
 	parser.SubcommandsOptional = true // if not command specified, start monitoring
+	cmdOpts.OutputWriter = writer
 	addCommands(parser, cmdOpts)
 	nonParsedArgs, err := parser.Parse() // parse and execute subcommand if any
 	if err != nil {

@@ -36,6 +36,7 @@ func (cmd *MetricPrintInitCommand) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
+	w := cmd.owner.OutputWriter
 	for _, name := range args {
 		if preset, ok := metrics.PresetDefs[name]; ok {
 			args = append(args, maps.Keys(preset.Metrics)...)
@@ -45,8 +46,9 @@ func (cmd *MetricPrintInitCommand) Execute(args []string) error {
 	args = slices.Compact(args)
 	for _, mname := range args {
 		if m, ok := metrics.MetricDefs[mname]; ok && m.InitSQL != "" {
-			fmt.Println("-- ", mname)
-			fmt.Println(m.InitSQL)
+
+			fmt.Fprintln(w, "--", mname)
+			fmt.Fprintln(w, m.InitSQL)
 		}
 	}
 	cmd.owner.CompleteCommand(ExitCodeOK)
@@ -67,13 +69,15 @@ func (cmd *MetricPrintSQLCommand) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
+	w := cmd.owner.OutputWriter
 	if cmd.Version == 0 {
 		cmd.Version = math.MaxInt32
 	}
 	for _, name := range args {
 		if m, ok := metrics.MetricDefs[name]; ok {
-			fmt.Println("-- ", name)
-			fmt.Println(m.GetSQL(cmd.Version))
+			if v := m.GetSQL(cmd.Version); v > "" {
+				fmt.Fprintln(w, "--", name, v)
+			}
 		}
 	}
 	cmd.owner.CompleteCommand(ExitCodeOK)
