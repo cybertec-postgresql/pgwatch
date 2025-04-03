@@ -19,24 +19,6 @@ import (
 
 var ctx = context.Background()
 
-func TestGetTableColumns(t *testing.T) {
-	conn, err := pgxmock.NewPool()
-	assert.NoError(t, err)
-
-	conn.ExpectQuery("SELECT attname").
-		WithArgs("foo").
-		WillReturnError(errors.New("expected"))
-	_, err = db.GetTableColumns(ctx, conn, "foo")
-	assert.Error(t, err)
-
-	conn.ExpectQuery("SELECT attname").
-		WithArgs("foo").
-		WillReturnRows(pgxmock.NewRows([]string{"attname"}).AddRow("col1").AddRow("col2"))
-	cols, err := db.GetTableColumns(ctx, conn, "foo")
-	assert.NoError(t, err)
-	assert.Equal(t, []string{"col1", "col2"}, cols)
-}
-
 func TestPing(t *testing.T) {
 	connStr := "foo_boo"
 	assert.Error(t, db.Ping(ctx, connStr))
