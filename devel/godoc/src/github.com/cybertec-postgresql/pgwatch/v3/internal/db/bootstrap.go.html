@@ -120,7 +120,7 @@
 <span id="L63" class="ln">    63  </span>
 <span id="L64" class="ln">    64  </span>type ConnInitCallback = func(context.Context, PgxIface) error
 <span id="L65" class="ln">    65  </span>
-<span id="L66" class="ln">    66  </span><span class="comment">// Init creates a new pool, check connection is establised. If not retries connection 3 times with delay 1s</span>
+<span id="L66" class="ln">    66  </span><span class="comment">// Init checks if connection is establised. If not, retries connection 3 times with delay 1s</span>
 <span id="L67" class="ln">    67  </span>func Init(ctx context.Context, db PgxPoolIface, init ConnInitCallback) error {
 <span id="L68" class="ln">    68  </span>	var backoff = retry.WithMaxRetries(3, retry.NewConstant(1*time.Second))
 <span id="L69" class="ln">    69  </span>	logger := log.GetLogger(ctx)
@@ -145,16 +145,6 @@
 <span id="L88" class="ln">    88  </span>	return exists, err
 <span id="L89" class="ln">    89  </span>}
 <span id="L90" class="ln">    90  </span>
-<span id="L91" class="ln">    91  </span><span class="comment">// GetTableColumns returns the list of columns for a given table</span>
-<span id="L92" class="ln">    92  </span>func GetTableColumns(ctx context.Context, conn PgxIface, table string) (cols []string, err error) {
-<span id="L93" class="ln">    93  </span>	sql := `SELECT attname FROM pg_attribute a WHERE a.attrelid = to_regclass($1) and a.attnum &gt; 0 and not a.attisdropped`
-<span id="L94" class="ln">    94  </span>	r, err := conn.Query(ctx, sql, table)
-<span id="L95" class="ln">    95  </span>	if err != nil {
-<span id="L96" class="ln">    96  </span>		return
-<span id="L97" class="ln">    97  </span>	}
-<span id="L98" class="ln">    98  </span>	return pgx.CollectRows(r, pgx.RowTo[string])
-<span id="L99" class="ln">    99  </span>}
-<span id="L100" class="ln">   100  </span>
 </pre><p></p>
 
 <div id="footer">

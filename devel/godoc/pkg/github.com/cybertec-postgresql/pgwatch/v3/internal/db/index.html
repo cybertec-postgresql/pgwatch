@@ -114,9 +114,6 @@
 				<dd><a href="#DoesSchemaExist">func DoesSchemaExist(ctx context.Context, conn PgxIface, schema string) (bool, error)</a></dd>
 			
 				
-				<dd><a href="#GetTableColumns">func GetTableColumns(ctx context.Context, conn PgxIface, table string) (cols []string, err error)</a></dd>
-			
-				
 				<dd><a href="#Init">func Init(ctx context.Context, db PgxPoolIface, init ConnInitCallback) error</a></dd>
 			
 				
@@ -215,27 +212,13 @@
 		
 			
 			
-			<h2 id="GetTableColumns">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/db/bootstrap.go.html#L92">GetTableColumns</a>
-				<a class="permalink" href="#GetTableColumns">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func GetTableColumns(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="#PgxIface">PgxIface</a>, table <a href="https://pkg.go.dev/builtin/#string">string</a>) (cols []<a href="https://pkg.go.dev/builtin/#string">string</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-			<p>GetTableColumns returns the list of columns for a given table
-
-			
-			
-
-		
-			
-			
 			<h2 id="Init">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/db/bootstrap.go.html#L67">Init</a>
 				<a class="permalink" href="#Init">&#xb6;</a>
 				
 				
 			</h2>
 			<pre>func Init(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, db <a href="#PgxPoolIface">PgxPoolIface</a>, init <a href="#ConnInitCallback">ConnInitCallback</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-			<p>Init creates a new pool, check connection is establised. If not retries connection 3 times with delay 1s
+			<p>Init checks if connection is establised. If not, retries connection 3 times with delay 1s
 
 			
 			
