@@ -24,17 +24,13 @@ const (
 
 var specialMetrics = map[string]bool{recoMetricName: true, specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 
-func GetAllRecoMetricsForVersion(vme MonitoredDatabaseSettings) (map[string]metrics.Metric, error) {
-	mvpMap := make(map[string]metrics.Metric)
-	metricDefMapLock.RLock()
-	defer metricDefMapLock.RUnlock()
-	for m := range metricDefinitionMap.MetricDefs {
-		if strings.HasPrefix(m, recoPrefix) {
-			mvp, err := GetMetricVersionProperties(m, vme, metricDefinitionMap)
-			if err != nil {
-				return nil, err
-			}
-			mvpMap[m] = mvp
+func GetAllRecoMetricsForVersion() (metrics.MetricDefs, error) {
+	mvpMap := make(metrics.MetricDefs)
+	metricDefs.RLock()
+	defer metricDefs.RUnlock()
+	for name, m := range metricDefs.MetricDefs {
+		if strings.HasPrefix(name, recoPrefix) {
+			mvpMap[name] = m
 		}
 	}
 	return mvpMap, nil
@@ -44,7 +40,7 @@ func GetRecommendations(ctx context.Context, dbUnique string, vme MonitoredDatab
 	retData := make(metrics.Measurements, 0)
 	startTimeEpochNs := time.Now().UnixNano()
 
-	recoMetrics, err := GetAllRecoMetricsForVersion(vme)
+	recoMetrics, err := GetAllRecoMetricsForVersion()
 	if err != nil {
 		return nil, err
 	}

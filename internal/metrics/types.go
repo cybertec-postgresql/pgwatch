@@ -32,11 +32,6 @@ type (
 	}
 
 	MetricDefs map[string]Metric
-
-	Metrics struct {
-		MetricDefs MetricDefs `yaml:"metrics"`
-		PresetDefs PresetDefs `yaml:"presets"`
-	}
 )
 
 func (m Metric) PrimaryOnly() bool {
@@ -84,6 +79,10 @@ type MeasurementEnvelope struct {
 	SystemIdentifier string
 }
 
+type Metrics struct {
+	MetricDefs MetricDefs `yaml:"metrics"`
+	PresetDefs PresetDefs `yaml:"presets"`
+}
 type Reader interface {
 	GetMetrics() (*Metrics, error)
 }

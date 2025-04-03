@@ -20,8 +20,7 @@ import (
 var monitoredSources = make(sources.SourceConns, 0)
 var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 var metricConfig map[string]float64                       // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
-var metricDefinitionMap *metrics.Metrics = &metrics.Metrics{}
-var metricDefMapLock = sync.RWMutex{}
+var metricDefs = NewConcurrentMetricDefs()
 
 // Reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks
 type Reaper struct {
@@ -98,7 +97,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 					return monitoredSource.Metrics
 				}
 				if monitoredSource.PresetMetrics > "" {
-					return metricDefinitionMap.PresetDefs[monitoredSource.PresetMetrics].Metrics
+					return metricDefs.GetPresetMetrics(monitoredSource.PresetMetrics)
 				}
 				return nil
 			}()
@@ -109,7 +108,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 						return monitoredSource.MetricsStandby
 					}
 					if monitoredSource.PresetMetricsStandby > "" {
-						return metricDefinitionMap.PresetDefs[monitoredSource.PresetMetricsStandby].Metrics
+						return metricDefs.GetPresetMetrics(monitoredSource.PresetMetricsStandby)
 					}
 					return nil
 				}()
@@ -165,14 +164,13 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 			for metricName, interval := range metricConfig {
 				metric := metricName
 				metricDefOk := false
+				var mvp metrics.Metric
 
 				if strings.HasPrefix(metric, recoPrefix) {
 					metric = recoMetricName
 					metricDefOk = true
 				} else {
-					metricDefMapLock.RLock()
-					_, metricDefOk = metricDefinitionMap.MetricDefs[metric]
-					metricDefMapLock.RUnlock()
+					mvp, metricDefOk = metricDefs.GetMetricDef(metric)
 				}
 
 				dbMetric := monitoredSource.Name + dbMetricJoinStr + metric
@@ -186,17 +184,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 
 						metricNameForStorage := metricName
 						if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
-							vme, err := GetMonitoredDatabaseSettings(ctx, monitoredSource, false)
-							if err != nil {
-								srcL.WithError(err).Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
-							} else {
-								mvp, err := GetMetricVersionProperties(metricName, vme, nil)
-								if err != nil && !strings.Contains(err.Error(), "too old") {
-									srcL.WithError(err).Warning("Failed to determine possible re-routing name, Grafana dashboards with re-routed metrics might not show all hosts")
-								} else if mvp.StorageName != "" {
-									metricNameForStorage = mvp.StorageName
-								}
-							}
+							metricNameForStorage = mvp.StorageName
 						}
 
 						if err := r.SinksWriter.SyncMetric(monitoredSource.Name, metricNameForStorage, "add"); err != nil {
@@ -237,7 +225,6 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 			splits := strings.Split(dbMetric, dbMetricJoinStr)
 			db := splits[0]
 			metric := splits[1]
-			//log.Debugf("Checking if need to shut down worker for [%s:%s]...", db, metric)
 
 			_, wholeDbShutDownDueToRoleChange := hostsToShutDownDueToRoleChange[db]
 			if !wholeDbShutDownDueToRoleChange {
@@ -308,6 +295,8 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.Source
 	var vme MonitoredDatabaseSettings
 	var mvp metrics.Metric
 	var err error
+	var ok bool
+
 	failedFetches := 0
 	lastDBVersionFetchTime := time.Unix(0, 0) // check DB ver. ev. 5 min
 
@@ -327,15 +316,14 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.Source
 				lastDBVersionFetchTime = time.Now()
 			}
 
-			mvp, err = GetMetricVersionProperties(metricName, vme, nil)
-			if err != nil {
-				l.Errorf("Could not get metric version properties: %v", err)
+			mvp, ok = metricDefs.GetMetricDef(metricName)
+			if !ok {
+				l.Errorf("Could not get metric version properties: %s", metricName)
 				return
 			}
 		}
 
 		var metricStoreMessages []metrics.MeasurementEnvelope
-		var err error
 		mfm := MetricFetchConfig{
 			DBUniqueName:        mdb.Name,
 			DBUniqueNameOrig:    mdb.GetDatabaseName(),
@@ -529,8 +517,8 @@ func (r *Reaper) FetchMetrics(ctx context.Context,
 	if msg.MetricName == specialMetricDbSize || msg.MetricName == specialMetricTableStats {
 		if dbSettings.ExecEnv == execEnvAzureSingle && dbSettings.ApproxDBSizeB > 1e12 { // 1TB
 			subsMetricName := msg.MetricName + "_approx"
-			mvpApprox, err := GetMetricVersionProperties(subsMetricName, dbSettings, nil)
-			if err == nil && mvpApprox.StorageName == msg.MetricName {
+			mvpApprox, ok := metricDefs.GetMetricDef(subsMetricName)
+			if ok && mvpApprox.StorageName == msg.MetricName {
 				log.GetLogger(ctx).Infof("[%s:%s] Transparently swapping metric to %s due to hard-coded rules...", msg.DBUniqueName, msg.MetricName, subsMetricName)
 				msg.MetricName = subsMetricName
 			}
@@ -542,17 +530,14 @@ func (r *Reaper) FetchMetrics(ctx context.Context,
 		dbVersion = 0 // version is 0.0 for all pgbouncer sql per convention
 	}
 
-	mvp, err := GetMetricVersionProperties(msg.MetricName, dbSettings, nil)
-	if err != nil && msg.MetricName != recoMetricName {
+	mvp, ok := metricDefs.GetMetricDef(msg.MetricName)
+	if !ok && msg.MetricName != recoMetricName {
 		epoch, ok := lastSQLFetchError.Load(msg.MetricName + dbMetricJoinStr + fmt.Sprintf("%v", dbVersion))
 		if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) { // complain only 1x per hour
 			log.GetLogger(ctx).Infof("Failed to get SQL for metric '%s', version '%s': %v", msg.MetricName, dbSettings.VersionStr, err)
 			lastSQLFetchError.Store(msg.MetricName+dbMetricJoinStr+fmt.Sprintf("%v", dbVersion), time.Now().Unix())
 		}
-		if strings.Contains(err.Error(), "too old") {
-			return nil, nil
-		}
-		return nil, err
+		return nil, metrics.ErrMetricNotFound
 	}
 
 	isCacheable = IsCacheableMetric(msg, mvp)
