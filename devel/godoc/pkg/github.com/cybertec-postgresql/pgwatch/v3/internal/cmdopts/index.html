@@ -276,7 +276,7 @@
 		
 			
 			
-			<h2 id="addCommands">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L57">addCommands</a>
+			<h2 id="addCommands">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L59">addCommands</a>
 				<a class="permalink" href="#addCommands">&#xb6;</a>
 				
 				
@@ -535,7 +535,7 @@
 		
 			
 			
-			<h2 id="MetricPrintSQLCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdmetric.go.html#L56">MetricPrintSQLCommand</a>
+			<h2 id="MetricPrintSQLCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdmetric.go.html#L58">MetricPrintSQLCommand</a>
 				<a class="permalink" href="#MetricPrintSQLCommand">&#xb6;</a>
 				
 				
@@ -559,7 +559,7 @@
 
 			
 				
-				<h3 id="MetricPrintSQLCommand.Execute">func (*MetricPrintSQLCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdmetric.go.html#L61">Execute</a>
+				<h3 id="MetricPrintSQLCommand.Execute">func (*MetricPrintSQLCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdmetric.go.html#L63">Execute</a>
 					<a class="permalink" href="#MetricPrintSQLCommand.Execute">&#xb6;</a>
 					
 					
@@ -594,6 +594,8 @@
 
 <span id="Options.ExitCode"></span>    ExitCode         <a href="https://pkg.go.dev/builtin/#int32">int32</a>
 <span id="Options.CommandCompleted"></span>    CommandCompleted <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+
+<span id="Options.OutputWriter"></span>    OutputWriter <a href="https://pkg.go.dev/io/">io</a>.<a href="https://pkg.go.dev/io/#Writer">Writer</a>
 }
 </pre>
 
@@ -607,7 +609,7 @@
 
 			
 				
-				<h3 id="New">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L68">New</a>
+				<h3 id="New">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L70">New</a>
 					<a class="permalink" href="#New">&#xb6;</a>
 					
 					
@@ -625,7 +627,7 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 
 			
 				
-				<h3 id="Options.CompleteCommand">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L93">CompleteCommand</a>
+				<h3 id="Options.CompleteCommand">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L96">CompleteCommand</a>
 					<a class="permalink" href="#Options.CompleteCommand">&#xb6;</a>
 					
 					
@@ -637,7 +639,7 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 				
 			
 				
-				<h3 id="Options.GetConfigKind">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L103">GetConfigKind</a>
+				<h3 id="Options.GetConfigKind">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L106">GetConfigKind</a>
 					<a class="permalink" href="#Options.GetConfigKind">&#xb6;</a>
 					
 					
@@ -649,7 +651,7 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 				
 			
 				
-				<h3 id="Options.InitConfigReaders">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L155">InitConfigReaders</a>
+				<h3 id="Options.InitConfigReaders">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L158">InitConfigReaders</a>
 					<a class="permalink" href="#Options.InitConfigReaders">&#xb6;</a>
 					
 					
@@ -662,7 +664,7 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 				
 			
 				
-				<h3 id="Options.InitMetricReader">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L126">InitMetricReader</a>
+				<h3 id="Options.InitMetricReader">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L129">InitMetricReader</a>
 					<a class="permalink" href="#Options.InitMetricReader">&#xb6;</a>
 					
 					
@@ -675,7 +677,7 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 				
 			
 				
-				<h3 id="Options.InitSinkWriter">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L160">InitSinkWriter</a>
+				<h3 id="Options.InitSinkWriter">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L163">InitSinkWriter</a>
 					<a class="permalink" href="#Options.InitSinkWriter">&#xb6;</a>
 					
 					
@@ -688,7 +690,7 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 				
 			
 				
-				<h3 id="Options.InitSourceReader">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L140">InitSourceReader</a>
+				<h3 id="Options.InitSourceReader">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L143">InitSourceReader</a>
 					<a class="permalink" href="#Options.InitSourceReader">&#xb6;</a>
 					
 					
@@ -701,7 +703,7 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 				
 			
 				
-				<h3 id="Options.IsPgConnStr">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L120">IsPgConnStr</a>
+				<h3 id="Options.IsPgConnStr">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L123">IsPgConnStr</a>
 					<a class="permalink" href="#Options.IsPgConnStr">&#xb6;</a>
 					
 					
@@ -713,7 +715,7 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 				
 			
 				
-				<h3 id="Options.NeedsSchemaUpgrade">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L170">NeedsSchemaUpgrade</a>
+				<h3 id="Options.NeedsSchemaUpgrade">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L173">NeedsSchemaUpgrade</a>
 					<a class="permalink" href="#Options.NeedsSchemaUpgrade">&#xb6;</a>
 					
 					
@@ -726,7 +728,7 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 				
 			
 				
-				<h3 id="Options.ValidateConfig">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L186">ValidateConfig</a>
+				<h3 id="Options.ValidateConfig">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L189">ValidateConfig</a>
 					<a class="permalink" href="#Options.ValidateConfig">&#xb6;</a>
 					
 					
@@ -741,7 +743,7 @@ If one is specified, the other one is set to the same value.
 				
 			
 				
-				<h3 id="Options.Verbose">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L99">Verbose</a>
+				<h3 id="Options.Verbose">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdoptions.go.html#L102">Verbose</a>
 					<a class="permalink" href="#Options.Verbose">&#xb6;</a>
 					
 					

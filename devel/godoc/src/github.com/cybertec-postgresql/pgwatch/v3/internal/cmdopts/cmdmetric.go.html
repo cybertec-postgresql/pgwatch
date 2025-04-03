@@ -93,50 +93,54 @@
 <span id="L36" class="ln">    36  </span>	if err != nil {
 <span id="L37" class="ln">    37  </span>		return err
 <span id="L38" class="ln">    38  </span>	}
-<span id="L39" class="ln">    39  </span>	for _, name := range args {
-<span id="L40" class="ln">    40  </span>		if preset, ok := metrics.PresetDefs[name]; ok {
-<span id="L41" class="ln">    41  </span>			args = append(args, maps.Keys(preset.Metrics)...)
-<span id="L42" class="ln">    42  </span>		}
-<span id="L43" class="ln">    43  </span>	}
-<span id="L44" class="ln">    44  </span>	slices.Sort(args)
-<span id="L45" class="ln">    45  </span>	args = slices.Compact(args)
-<span id="L46" class="ln">    46  </span>	for _, mname := range args {
-<span id="L47" class="ln">    47  </span>		if m, ok := metrics.MetricDefs[mname]; ok &amp;&amp; m.InitSQL != &#34;&#34; {
-<span id="L48" class="ln">    48  </span>			fmt.Println(&#34;-- &#34;, mname)
-<span id="L49" class="ln">    49  </span>			fmt.Println(m.InitSQL)
-<span id="L50" class="ln">    50  </span>		}
-<span id="L51" class="ln">    51  </span>	}
-<span id="L52" class="ln">    52  </span>	cmd.owner.CompleteCommand(ExitCodeOK)
-<span id="L53" class="ln">    53  </span>	return nil
-<span id="L54" class="ln">    54  </span>}
-<span id="L55" class="ln">    55  </span>
-<span id="L56" class="ln">    56  </span>type MetricPrintSQLCommand struct {
-<span id="L57" class="ln">    57  </span>	owner   *Options
-<span id="L58" class="ln">    58  </span>	Version int `short:&#34;v&#34; long:&#34;version&#34; description:&#34;PostgreSQL version to get SQL for&#34;`
-<span id="L59" class="ln">    59  </span>}
-<span id="L60" class="ln">    60  </span>
-<span id="L61" class="ln">    61  </span>func (cmd *MetricPrintSQLCommand) Execute(args []string) error {
-<span id="L62" class="ln">    62  </span>	err := cmd.owner.InitMetricReader(context.Background())
-<span id="L63" class="ln">    63  </span>	if err != nil {
-<span id="L64" class="ln">    64  </span>		return err
-<span id="L65" class="ln">    65  </span>	}
-<span id="L66" class="ln">    66  </span>	metrics, err := cmd.owner.MetricsReaderWriter.GetMetrics()
-<span id="L67" class="ln">    67  </span>	if err != nil {
-<span id="L68" class="ln">    68  </span>		return err
-<span id="L69" class="ln">    69  </span>	}
-<span id="L70" class="ln">    70  </span>	if cmd.Version == 0 {
-<span id="L71" class="ln">    71  </span>		cmd.Version = math.MaxInt32
-<span id="L72" class="ln">    72  </span>	}
-<span id="L73" class="ln">    73  </span>	for _, name := range args {
-<span id="L74" class="ln">    74  </span>		if m, ok := metrics.MetricDefs[name]; ok {
-<span id="L75" class="ln">    75  </span>			fmt.Println(&#34;-- &#34;, name)
-<span id="L76" class="ln">    76  </span>			fmt.Println(m.GetSQL(cmd.Version))
-<span id="L77" class="ln">    77  </span>		}
-<span id="L78" class="ln">    78  </span>	}
-<span id="L79" class="ln">    79  </span>	cmd.owner.CompleteCommand(ExitCodeOK)
-<span id="L80" class="ln">    80  </span>	return nil
-<span id="L81" class="ln">    81  </span>}
-<span id="L82" class="ln">    82  </span>
+<span id="L39" class="ln">    39  </span>	w := cmd.owner.OutputWriter
+<span id="L40" class="ln">    40  </span>	for _, name := range args {
+<span id="L41" class="ln">    41  </span>		if preset, ok := metrics.PresetDefs[name]; ok {
+<span id="L42" class="ln">    42  </span>			args = append(args, maps.Keys(preset.Metrics)...)
+<span id="L43" class="ln">    43  </span>		}
+<span id="L44" class="ln">    44  </span>	}
+<span id="L45" class="ln">    45  </span>	slices.Sort(args)
+<span id="L46" class="ln">    46  </span>	args = slices.Compact(args)
+<span id="L47" class="ln">    47  </span>	for _, mname := range args {
+<span id="L48" class="ln">    48  </span>		if m, ok := metrics.MetricDefs[mname]; ok &amp;&amp; m.InitSQL != &#34;&#34; {
+<span id="L49" class="ln">    49  </span>
+<span id="L50" class="ln">    50  </span>			fmt.Fprintln(w, &#34;--&#34;, mname)
+<span id="L51" class="ln">    51  </span>			fmt.Fprintln(w, m.InitSQL)
+<span id="L52" class="ln">    52  </span>		}
+<span id="L53" class="ln">    53  </span>	}
+<span id="L54" class="ln">    54  </span>	cmd.owner.CompleteCommand(ExitCodeOK)
+<span id="L55" class="ln">    55  </span>	return nil
+<span id="L56" class="ln">    56  </span>}
+<span id="L57" class="ln">    57  </span>
+<span id="L58" class="ln">    58  </span>type MetricPrintSQLCommand struct {
+<span id="L59" class="ln">    59  </span>	owner   *Options
+<span id="L60" class="ln">    60  </span>	Version int `short:&#34;v&#34; long:&#34;version&#34; description:&#34;PostgreSQL version to get SQL for&#34;`
+<span id="L61" class="ln">    61  </span>}
+<span id="L62" class="ln">    62  </span>
+<span id="L63" class="ln">    63  </span>func (cmd *MetricPrintSQLCommand) Execute(args []string) error {
+<span id="L64" class="ln">    64  </span>	err := cmd.owner.InitMetricReader(context.Background())
+<span id="L65" class="ln">    65  </span>	if err != nil {
+<span id="L66" class="ln">    66  </span>		return err
+<span id="L67" class="ln">    67  </span>	}
+<span id="L68" class="ln">    68  </span>	metrics, err := cmd.owner.MetricsReaderWriter.GetMetrics()
+<span id="L69" class="ln">    69  </span>	if err != nil {
+<span id="L70" class="ln">    70  </span>		return err
+<span id="L71" class="ln">    71  </span>	}
+<span id="L72" class="ln">    72  </span>	w := cmd.owner.OutputWriter
+<span id="L73" class="ln">    73  </span>	if cmd.Version == 0 {
+<span id="L74" class="ln">    74  </span>		cmd.Version = math.MaxInt32
+<span id="L75" class="ln">    75  </span>	}
+<span id="L76" class="ln">    76  </span>	for _, name := range args {
+<span id="L77" class="ln">    77  </span>		if m, ok := metrics.MetricDefs[name]; ok {
+<span id="L78" class="ln">    78  </span>			if v := m.GetSQL(cmd.Version); v &gt; &#34;&#34; {
+<span id="L79" class="ln">    79  </span>				fmt.Fprintln(w, &#34;--&#34;, name, v)
+<span id="L80" class="ln">    80  </span>			}
+<span id="L81" class="ln">    81  </span>		}
+<span id="L82" class="ln">    82  </span>	}
+<span id="L83" class="ln">    83  </span>	cmd.owner.CompleteCommand(ExitCodeOK)
+<span id="L84" class="ln">    84  </span>	return nil
+<span id="L85" class="ln">    85  </span>}
+<span id="L86" class="ln">    86  </span>
 </pre><p></p>
 
 <div id="footer">
