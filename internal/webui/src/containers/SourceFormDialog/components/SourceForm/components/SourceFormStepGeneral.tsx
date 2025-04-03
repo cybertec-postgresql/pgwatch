@@ -130,19 +130,6 @@ export const SourceFormStepGeneral = () => {
           />
         }
       />
-      <FormControlLabel
-        className={classes.formControlCheckbox}
-        label="Is superuser"
-        labelPlacement="start"
-        disabled
-        control={
-          <Checkbox
-            disabled
-            size="medium"
-            checked={getValues("IsSuperuser")}
-          />
-        }
-      />
     </div>
   );
 };
