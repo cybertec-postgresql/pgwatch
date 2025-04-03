@@ -8,7 +8,7 @@ import { SourceFormValues } from "../SourceForm.types";
 import { TestConnection } from "./TestConnection/TestConnection";
 
 export const SourceFormStepGeneral = () => {
-  const { register, formState: { errors }, control, getValues, watch } = useFormContext<SourceFormValues>();
+  const { register, formState: { errors }, control, watch } = useFormContext<SourceFormValues>();
   const { classes, cx } = useFormStyles();
 
   const kindValue = watch("Kind");
