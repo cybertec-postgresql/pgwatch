@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="theme-color" content="#375EAB"/>
 
-  <title>src/github.com/cybertec-postgresql/pgwatch/v3/internal/webui/embed.go - GoPages</title>
+  <title>src/github.com/cybertec-postgresql/pgwatch/v3/internal/webui/embed_test.go - GoPages</title>
 
 <link type="text/css" rel="stylesheet" href="/devel/godoc/lib/godoc/style.css"/>
 
@@ -38,7 +38,7 @@
 
   <h1>
     Source file
-    <a href="/devel/godoc/src">src</a>/<a href="/devel/godoc/src/github.com">github.com</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3">v3</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal">internal</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/webui">webui</a>/<span class="text-muted">embed.go</span>
+    <a href="/devel/godoc/src">src</a>/<a href="/devel/godoc/src/github.com">github.com</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3">v3</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal">internal</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/webui">webui</a>/<span class="text-muted">embed_test.go</span>
   </h1>
 
 
@@ -58,17 +58,17 @@
 <pre><span id="L1" class="ln">     1  </span>package webui
 <span id="L2" class="ln">     2  </span>
 <span id="L3" class="ln">     3  </span>import (
-<span id="L4" class="ln">     4  </span>	&#34;embed&#34;
-<span id="L5" class="ln">     5  </span>	&#34;io/fs&#34;
+<span id="L4" class="ln">     4  </span>	&#34;io/fs&#34;
+<span id="L5" class="ln">     5  </span>	&#34;testing&#34;
 <span id="L6" class="ln">     6  </span>)
 <span id="L7" class="ln">     7  </span>
-<span id="L8" class="ln">     8  </span><span class="comment">//go:embed build</span>
-<span id="L9" class="ln">     9  </span>var efs embed.FS
-<span id="L10" class="ln">    10  </span>
-<span id="L11" class="ln">    11  </span>var WebUIFs fs.FS
-<span id="L12" class="ln">    12  </span>
-<span id="L13" class="ln">    13  </span>func init() {
-<span id="L14" class="ln">    14  </span>	WebUIFs, _ = fs.Sub(efs, &#34;build&#34;)
+<span id="L8" class="ln">     8  </span>func TestWebUIInit(t *testing.T) {
+<span id="L9" class="ln">     9  </span>	if WebUIFs == nil {
+<span id="L10" class="ln">    10  </span>		t.Error(&#34;WebUIFs is nil&#34;)
+<span id="L11" class="ln">    11  </span>	}
+<span id="L12" class="ln">    12  </span>	if _, err := fs.Stat(WebUIFs, &#34;index.html&#34;); err != nil {
+<span id="L13" class="ln">    13  </span>		t.Errorf(&#34;WebUIFs does not contain index.html: %v&#34;, err)
+<span id="L14" class="ln">    14  </span>	}
 <span id="L15" class="ln">    15  </span>}
 <span id="L16" class="ln">    16  </span>
 </pre><p></p>
