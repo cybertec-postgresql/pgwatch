@@ -63,7 +63,7 @@ func NewWithConfig(ctx context.Context, connConfig *pgxpool.Config, callbacks ..
 
 type ConnInitCallback = func(context.Context, PgxIface) error
 
-// Init creates a new pool, check connection is establised. If not retries connection 3 times with delay 1s
+// Init checks if connection is establised. If not, retries connection 3 times with delay 1s
 func Init(ctx context.Context, db PgxPoolIface, init ConnInitCallback) error {
 	var backoff = retry.WithMaxRetries(3, retry.NewConstant(1*time.Second))
 	logger := log.GetLogger(ctx)
@@ -86,14 +86,4 @@ func DoesSchemaExist(ctx context.Context, conn PgxIface, schema string) (bool, e
 	sqlSchemaExists := "SELECT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = $1)"
 	err := conn.QueryRow(ctx, sqlSchemaExists, schema).Scan(&exists)
 	return exists, err
-}
-
-// GetTableColumns returns the list of columns for a given table
-func GetTableColumns(ctx context.Context, conn PgxIface, table string) (cols []string, err error) {
-	sql := `SELECT attname FROM pg_attribute a WHERE a.attrelid = to_regclass($1) and a.attnum > 0 and not a.attisdropped`
-	r, err := conn.Query(ctx, sql, table)
-	if err != nil {
-		return
-	}
-	return pgx.CollectRows(r, pgx.RowTo[string])
 }
