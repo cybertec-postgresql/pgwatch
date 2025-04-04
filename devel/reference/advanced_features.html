@@ -1680,17 +1680,17 @@ pg_monitor privileges - if this is not possible then log settings need
 to be specified manually under "Host config" as seen for example
 <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.sources.yaml#L25">here</a>.</p>
 <p><strong>Sample configuration if not using CSVLOG logging:</strong></p>
-<p>On Postgres side (on the monitored DB)
+<p>On Postgres side (on the monitored DB)</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>    # Debian / Ubuntu default log_line_prefix actually
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    log_line_prefix = &#39;%m [%p] %q%u@%d &#39;
 </span></code></pre></div>
-YAML config (recommended when "pushing" metrics from DB nodes to a
-central metrics DB)
+<p>YAML config (recommended when "pushing" metrics from DB nodes to a
+central metrics DB)</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>    ## logs_glob_path is only needed if the monitoring user is cannot auto-detect it (i.e. not a superuser / pg_monitor role)
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    # logs_glob_path:
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    logs_match_regex: &#39;^(?P&lt;log_time&gt;.*) \[(?P&lt;process_id&gt;\d+)\] (?P&lt;user_name&gt;.*)@(?P&lt;database_name&gt;.*?) (?P&lt;error_severity&gt;.*?): &#39;
 </span></code></pre></div>
-For log parsing to work the metric <strong>server_log_event_counts</strong> needs to
+<p>For log parsing to work the metric <strong>server_log_event_counts</strong> needs to
 be enabled or a <em>preset config</em> including it used - like the "full"
 preset.</p>
 <h2 id="pgbouncer-support">PgBouncer support</h2>
@@ -1722,7 +1722,7 @@ but later also support for externally controlled
 <a href="https://prometheus.io/">Prometheus</a> scraping was added.</p>
 <p>To enable the scraping endpoint, add this commandline parameter:
 <code>--sink=prometheus://&lt;host&gt;:&lt;port&gt;/&lt;namespace&gt;</code>.
-If you omit host (Ex: <code>--sink=prometheus://:8080</code>), server listens on all
+If you omit host (Ex: <code>--sink=prometheus://:9187</code>), server listens on all
 interfaces and supplied port. If you omit namespace, default is <code>pgwatch</code>.</p>
 <p>Additionally, note that you still need to
 specify some metrics config as usual - only metrics with interval
