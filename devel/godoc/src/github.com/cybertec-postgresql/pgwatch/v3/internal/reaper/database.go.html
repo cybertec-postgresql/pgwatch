@@ -300,9 +300,9 @@
 <span id="L243" class="ln">   243  </span>		hostState[&#34;sproc_hashes&#34;] = make(map[string]string)
 <span id="L244" class="ln">   244  </span>	}
 <span id="L245" class="ln">   245  </span>
-<span id="L246" class="ln">   246  </span>	mvp, err := GetMetricVersionProperties(&#34;sproc_hashes&#34;, vme, nil)
-<span id="L247" class="ln">   247  </span>	if err != nil {
-<span id="L248" class="ln">   248  </span>		log.GetLogger(ctx).Error(&#34;could not get sproc_hashes sql:&#34;, err)
+<span id="L246" class="ln">   246  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;sproc_hashes&#34;)
+<span id="L247" class="ln">   247  </span>	if !ok {
+<span id="L248" class="ln">   248  </span>		log.GetLogger(ctx).Error(&#34;could not get sproc_hashes sql&#34;)
 <span id="L249" class="ln">   249  </span>		return changeCounts
 <span id="L250" class="ln">   250  </span>	}
 <span id="L251" class="ln">   251  </span>
@@ -384,9 +384,9 @@
 <span id="L327" class="ln">   327  </span>		hostState[&#34;table_hashes&#34;] = make(map[string]string)
 <span id="L328" class="ln">   328  </span>	}
 <span id="L329" class="ln">   329  </span>
-<span id="L330" class="ln">   330  </span>	mvp, err := GetMetricVersionProperties(&#34;table_hashes&#34;, vme, nil)
-<span id="L331" class="ln">   331  </span>	if err != nil {
-<span id="L332" class="ln">   332  </span>		log.GetLogger(ctx).Error(&#34;could not get table_hashes sql:&#34;, err)
+<span id="L330" class="ln">   330  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;table_hashes&#34;)
+<span id="L331" class="ln">   331  </span>	if !ok {
+<span id="L332" class="ln">   332  </span>		log.GetLogger(ctx).Error(&#34;could not get table_hashes sql&#34;)
 <span id="L333" class="ln">   333  </span>		return changeCounts
 <span id="L334" class="ln">   334  </span>	}
 <span id="L335" class="ln">   335  </span>
@@ -468,9 +468,9 @@
 <span id="L411" class="ln">   411  </span>		hostState[&#34;index_hashes&#34;] = make(map[string]string)
 <span id="L412" class="ln">   412  </span>	}
 <span id="L413" class="ln">   413  </span>
-<span id="L414" class="ln">   414  </span>	mvp, err := GetMetricVersionProperties(&#34;index_hashes&#34;, vme, nil)
-<span id="L415" class="ln">   415  </span>	if err != nil {
-<span id="L416" class="ln">   416  </span>		log.GetLogger(ctx).Error(&#34;could not get index_hashes sql:&#34;, err)
+<span id="L414" class="ln">   414  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;index_hashes&#34;)
+<span id="L415" class="ln">   415  </span>	if !ok {
+<span id="L416" class="ln">   416  </span>		log.GetLogger(ctx).Error(&#34;could not get index_hashes sql&#34;)
 <span id="L417" class="ln">   417  </span>		return changeCounts
 <span id="L418" class="ln">   418  </span>	}
 <span id="L419" class="ln">   419  </span>
@@ -550,8 +550,8 @@
 <span id="L493" class="ln">   493  </span>		hostState[&#34;object_privileges&#34;] = make(map[string]string)
 <span id="L494" class="ln">   494  </span>	}
 <span id="L495" class="ln">   495  </span>
-<span id="L496" class="ln">   496  </span>	mvp, err := GetMetricVersionProperties(&#34;privilege_changes&#34;, vme, nil)
-<span id="L497" class="ln">   497  </span>	if err != nil || mvp.GetSQL(int(vme.Version)) == &#34;&#34; {
+<span id="L496" class="ln">   496  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;privilege_changes&#34;)
+<span id="L497" class="ln">   497  </span>	if !ok || mvp.GetSQL(int(vme.Version)) == &#34;&#34; {
 <span id="L498" class="ln">   498  </span>		log.GetLogger(ctx).Warningf(&#34;[%s][%s] could not get SQL for &#39;privilege_changes&#39;. cannot detect privilege changes&#34;, dbUnique, specialMetricChangeEvents)
 <span id="L499" class="ln">   499  </span>		return changeCounts
 <span id="L500" class="ln">   500  </span>	}
@@ -632,9 +632,9 @@
 <span id="L575" class="ln">   575  </span>		hostState[&#34;configuration_hashes&#34;] = make(map[string]string)
 <span id="L576" class="ln">   576  </span>	}
 <span id="L577" class="ln">   577  </span>
-<span id="L578" class="ln">   578  </span>	mvp, err := GetMetricVersionProperties(&#34;configuration_hashes&#34;, vme, nil)
-<span id="L579" class="ln">   579  </span>	if err != nil {
-<span id="L580" class="ln">   580  </span>		log.GetLogger(ctx).Errorf(&#34;[%s][%s] could not get configuration_hashes sql: %v&#34;, dbUnique, specialMetricChangeEvents, err)
+<span id="L578" class="ln">   578  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;configuration_hashes&#34;)
+<span id="L579" class="ln">   579  </span>	if !ok {
+<span id="L580" class="ln">   580  </span>		log.GetLogger(ctx).Errorf(&#34;[%s][%s] could not get configuration_hashes sql&#34;, dbUnique, specialMetricChangeEvents)
 <span id="L581" class="ln">   581  </span>		return changeCounts
 <span id="L582" class="ln">   582  </span>	}
 <span id="L583" class="ln">   583  </span>
@@ -870,7 +870,7 @@
 <span id="L813" class="ln">   813  </span>			return md.Metrics
 <span id="L814" class="ln">   814  </span>		}
 <span id="L815" class="ln">   815  </span>		if md.PresetMetrics &gt; &#34;&#34; {
-<span id="L816" class="ln">   816  </span>			return metricDefinitionMap.PresetDefs[md.PresetMetrics].Metrics
+<span id="L816" class="ln">   816  </span>			return metricDefs.GetPresetMetrics(md.PresetMetrics)
 <span id="L817" class="ln">   817  </span>		}
 <span id="L818" class="ln">   818  </span>		return nil
 <span id="L819" class="ln">   819  </span>	}()
@@ -886,8 +886,8 @@
 <span id="L829" class="ln">   829  </span>	defer c.Close(ctx)
 <span id="L830" class="ln">   830  </span>
 <span id="L831" class="ln">   831  </span>	for metricName := range metricConfig {
-<span id="L832" class="ln">   832  </span>		Metric := metricDefinitionMap.MetricDefs[metricName]
-<span id="L833" class="ln">   833  </span>		if Metric.InitSQL == &#34;&#34; {
+<span id="L832" class="ln">   832  </span>		Metric, ok := metricDefs.GetMetricDef(metricName)
+<span id="L833" class="ln">   833  </span>		if !ok {
 <span id="L834" class="ln">   834  </span>			continue
 <span id="L835" class="ln">   835  </span>		}
 <span id="L836" class="ln">   836  </span>
