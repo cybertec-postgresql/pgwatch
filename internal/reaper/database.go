@@ -243,9 +243,9 @@ func DetectSprocChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 		hostState["sproc_hashes"] = make(map[string]string)
 	}
 
-	mvp, err := GetMetricVersionProperties("sproc_hashes", vme, nil)
-	if err != nil {
-		log.GetLogger(ctx).Error("could not get sproc_hashes sql:", err)
+	mvp, ok := metricDefs.GetMetricDef("sproc_hashes")
+	if !ok {
+		log.GetLogger(ctx).Error("could not get sproc_hashes sql")
 		return changeCounts
 	}
 
@@ -327,9 +327,9 @@ func DetectTableChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 		hostState["table_hashes"] = make(map[string]string)
 	}
 
-	mvp, err := GetMetricVersionProperties("table_hashes", vme, nil)
-	if err != nil {
-		log.GetLogger(ctx).Error("could not get table_hashes sql:", err)
+	mvp, ok := metricDefs.GetMetricDef("table_hashes")
+	if !ok {
+		log.GetLogger(ctx).Error("could not get table_hashes sql")
 		return changeCounts
 	}
 
@@ -411,9 +411,9 @@ func DetectIndexChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 		hostState["index_hashes"] = make(map[string]string)
 	}
 
-	mvp, err := GetMetricVersionProperties("index_hashes", vme, nil)
-	if err != nil {
-		log.GetLogger(ctx).Error("could not get index_hashes sql:", err)
+	mvp, ok := metricDefs.GetMetricDef("index_hashes")
+	if !ok {
+		log.GetLogger(ctx).Error("could not get index_hashes sql")
 		return changeCounts
 	}
 
@@ -493,8 +493,8 @@ func DetectPrivilegeChanges(ctx context.Context, dbUnique string, vme MonitoredD
 		hostState["object_privileges"] = make(map[string]string)
 	}
 
-	mvp, err := GetMetricVersionProperties("privilege_changes", vme, nil)
-	if err != nil || mvp.GetSQL(int(vme.Version)) == "" {
+	mvp, ok := metricDefs.GetMetricDef("privilege_changes")
+	if !ok || mvp.GetSQL(int(vme.Version)) == "" {
 		log.GetLogger(ctx).Warningf("[%s][%s] could not get SQL for 'privilege_changes'. cannot detect privilege changes", dbUnique, specialMetricChangeEvents)
 		return changeCounts
 	}
@@ -575,9 +575,9 @@ func DetectConfigurationChanges(ctx context.Context, dbUnique string, vme Monito
 		hostState["configuration_hashes"] = make(map[string]string)
 	}
 
-	mvp, err := GetMetricVersionProperties("configuration_hashes", vme, nil)
-	if err != nil {
-		log.GetLogger(ctx).Errorf("[%s][%s] could not get configuration_hashes sql: %v", dbUnique, specialMetricChangeEvents, err)
+	mvp, ok := metricDefs.GetMetricDef("configuration_hashes")
+	if !ok {
+		log.GetLogger(ctx).Errorf("[%s][%s] could not get configuration_hashes sql", dbUnique, specialMetricChangeEvents)
 		return changeCounts
 	}
 
@@ -813,7 +813,7 @@ func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn
 			return md.Metrics
 		}
 		if md.PresetMetrics > "" {
-			return metricDefinitionMap.PresetDefs[md.PresetMetrics].Metrics
+			return metricDefs.GetPresetMetrics(md.PresetMetrics)
 		}
 		return nil
 	}()
@@ -829,8 +829,8 @@ func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn
 	defer c.Close(ctx)
 
 	for metricName := range metricConfig {
-		Metric := metricDefinitionMap.MetricDefs[metricName]
-		if Metric.InitSQL == "" {
+		Metric, ok := metricDefs.GetMetricDef(metricName)
+		if !ok {
 			continue
 		}
 

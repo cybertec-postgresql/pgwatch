@@ -1,8 +1,11 @@
 package reaper
 
 import (
+	"maps"
+	"sync"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
@@ -18,6 +21,47 @@ const (
 	dbMetricJoinStr       = "¤¤¤" // just some unlikely string for a DB name to avoid using maps of maps for DB+metric data
 
 )
+
+type ConcurrentMetricDefs struct {
+	*metrics.Metrics
+	sync.RWMutex
+}
+
+func NewConcurrentMetricDefs() *ConcurrentMetricDefs {
+	return &ConcurrentMetricDefs{
+		Metrics: &metrics.Metrics{
+			MetricDefs: make(metrics.MetricDefs),
+			PresetDefs: make(metrics.PresetDefs),
+		},
+	}
+}
+
+func (cmd *ConcurrentMetricDefs) GetMetricDef(name string) (m metrics.Metric, ok bool) {
+	cmd.RLock()
+	defer cmd.RUnlock()
+	m, ok = cmd.MetricDefs[name]
+	return
+}
+
+func (cmd *ConcurrentMetricDefs) GetPresetDef(name string) (m metrics.Preset, ok bool) {
+	cmd.RLock()
+	defer cmd.RUnlock()
+	m, ok = cmd.PresetDefs[name]
+	return
+}
+
+func (cmd *ConcurrentMetricDefs) GetPresetMetrics(name string) (m map[string]float64) {
+	cmd.RLock()
+	defer cmd.RUnlock()
+	return cmd.PresetDefs[name].Metrics
+}
+
+func (cmd *ConcurrentMetricDefs) Assign(newDefs *metrics.Metrics) {
+	cmd.Lock()
+	defer cmd.Unlock()
+	cmd.MetricDefs = maps.Clone(newDefs.MetricDefs)
+	cmd.PresetDefs = maps.Clone(newDefs.PresetDefs)
+}
 
 type MetricFetchConfig struct {
 	DBUniqueName        string

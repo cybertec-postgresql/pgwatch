@@ -3,7 +3,6 @@ package reaper
 import (
 	"context"
 	"fmt"
-	"maps"
 	"sync"
 	"time"
 
@@ -54,35 +53,18 @@ func GetMonitoredDatabaseByUniqueName(name string) (*sources.SourceConn, error) 
 	return md, nil
 }
 
-// assumes upwards compatibility for versions
-func GetMetricVersionProperties(metric string, _ MonitoredDatabaseSettings, metricDefMap *metrics.Metrics) (metrics.Metric, error) {
-	mdm := new(metrics.Metrics)
-	if metricDefMap != nil {
-		mdm = metricDefMap
-	} else {
-		metricDefMapLock.RLock()
-		mdm.MetricDefs = maps.Clone(metricDefinitionMap.MetricDefs) // copy of global cache
-		metricDefMapLock.RUnlock()
-	}
-
-	return mdm.MetricDefs[metric], nil
-}
-
 // LoadMetrics loads metric definitions from the reader
 func (r *Reaper) LoadMetrics() (err error) {
-	var metricDefs *metrics.Metrics
-	if metricDefs, err = r.MetricsReaderWriter.GetMetrics(); err != nil {
+	var newDefs *metrics.Metrics
+	if newDefs, err = r.MetricsReaderWriter.GetMetrics(); err != nil {
 		return
 	}
-	metricDefMapLock.Lock()
-	metricDefinitionMap.MetricDefs = maps.Clone(metricDefs.MetricDefs)
-	metricDefinitionMap.PresetDefs = maps.Clone(metricDefs.PresetDefs)
-	metricDefMapLock.Unlock()
+	metricDefs.Assign(newDefs)
 	r.logger.
-		WithField("metrics", len(metricDefinitionMap.MetricDefs)).
-		WithField("presets", len(metricDefinitionMap.PresetDefs)).
+		WithField("metrics", len(newDefs.MetricDefs)).
+		WithField("presets", len(newDefs.PresetDefs)).
 		Log(func() logrus.Level {
-			if len(metricDefinitionMap.PresetDefs)*len(metricDefinitionMap.MetricDefs) == 0 {
+			if len(newDefs.PresetDefs)*len(newDefs.MetricDefs) == 0 {
 				return logrus.WarnLevel
 			}
 			return logrus.InfoLevel
