@@ -4,7 +4,7 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     ports:
-      - 9090:9090
+      - 9187:9187
     restart: unless-stopped
     volumes:
       - "./bootstrap/prometheus.yml:/etc/prometheus/prometheus.yml"

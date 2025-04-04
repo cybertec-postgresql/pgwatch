@@ -70,17 +70,21 @@ to be specified manually under "Host config" as seen for example
 **Sample configuration if not using CSVLOG logging:**
 
 On Postgres side (on the monitored DB)
+
 ```
     # Debian / Ubuntu default log_line_prefix actually
     log_line_prefix = '%m [%p] %q%u@%d '
 ```
+
 YAML config (recommended when "pushing" metrics from DB nodes to a
 central metrics DB)
+
 ```
     ## logs_glob_path is only needed if the monitoring user is cannot auto-detect it (i.e. not a superuser / pg_monitor role)
     # logs_glob_path:
     logs_match_regex: '^(?P<log_time>.*) \[(?P<process_id>\d+)\] (?P<user_name>.*)@(?P<database_name>.*?) (?P<error_severity>.*?): '
 ```
+
 For log parsing to work the metric **server_log_event_counts** needs to
 be enabled or a *preset config* including it used - like the "full"
 preset.
@@ -124,7 +128,7 @@ but later also support for externally controlled
 
 To enable the scraping endpoint, add this commandline parameter:
 `--sink=prometheus://<host>:<port>/<namespace>`.
-If you omit host (Ex: `--sink=prometheus://:8080`), server listens on all
+If you omit host (Ex: `--sink=prometheus://:9187`), server listens on all
 interfaces and supplied port. If you omit namespace, default is `pgwatch`.
 
 Additionally, note that you still need to
@@ -145,7 +149,7 @@ doesn't have access to all metrics or some features have just been
 plain removed. Thus, to reduce server log errors and save time on
 experimenting there are following presets available:
 
--   **aws** - for standard AWS RDS managed PostgreSQL databases
--   **aurora** - for AWS Aurora managed PostgreSQL service
--   **azure** - for Azure Database for PostgreSQL managed databases
--   **gce** - for Google Cloud SQL for PostgreSQL managed databases
+- **aws** - for standard AWS RDS managed PostgreSQL databases
+- **aurora** - for AWS Aurora managed PostgreSQL service
+- **azure** - for Azure Database for PostgreSQL managed databases
+- **gce** - for Google Cloud SQL for PostgreSQL managed databases
