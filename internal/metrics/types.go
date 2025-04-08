@@ -93,7 +93,7 @@ type Measurements []map[string]any
 
 func (m Measurements) GetEpoch() int64 {
 	if len(m) == 0 {
-		time.Now().UnixNano()
+		return time.Now().UnixNano()
 	}
 	return Measurement(m[0]).GetEpoch()
 }
