@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/psutil"
 )
 
 func DoesEmergencyTriggerfileExist(fname string) bool {
@@ -28,6 +27,18 @@ const (
 	metricPsutilMem         = "psutil_mem"
 )
 
+const (
+	sqlPgDirs = `select 
+current_setting('data_directory') as dd, 
+current_setting('log_directory') as ld, 
+current_setting('server_version_num')::int as pgver`
+	sqlTsDirs = `select 
+spcname::text as name, 
+pg_catalog.pg_tablespace_location(oid) as location 
+from pg_catalog.pg_tablespace 
+where not spcname like any(array[E'pg\\_%'])`
+)
+
 var directlyFetchableOSMetrics = map[string]bool{metricPsutilCPU: true, metricPsutilDisk: true, metricPsutilDiskIoTotal: true, metricPsutilMem: true, metricCPULoad: true}
 
 func IsDirectlyFetchableMetric(metric string) bool {
@@ -36,26 +47,32 @@ func IsDirectlyFetchableMetric(metric string) bool {
 }
 
 func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) ([]metrics.MeasurementEnvelope, error) {
-	var data metrics.Measurements
+	var data, dataDirs, dataTblspDirs metrics.Measurements
 	var err error
 
 	switch msg.MetricName {
 	case metricCPULoad:
-		data, err = psutil.GetLoadAvgLocal()
+		data, err = GetLoadAvgLocal()
 	case metricPsutilCPU:
-		data, err = psutil.GetGoPsutilCPU(msg.Interval)
+		data, err = GetGoPsutilCPU(msg.Interval)
 	case metricPsutilDisk:
-		data, err = GetGoPsutilDiskPG(ctx, msg.DBUniqueName)
+		if dataDirs, err = QueryMeasurements(ctx, msg.DBUniqueName, sqlPgDirs); err != nil {
+			return nil, err
+		}
+		if dataTblspDirs, err = QueryMeasurements(ctx, msg.DBUniqueName, sqlTsDirs); err != nil {
+			return nil, err
+		}
+		data, err = GetGoPsutilDiskPG(dataDirs, dataTblspDirs)
 	case metricPsutilDiskIoTotal:
-		data, err = psutil.GetGoPsutilDiskTotals()
+		data, err = GetGoPsutilDiskTotals()
 	case metricPsutilMem:
-		data, err = psutil.GetGoPsutilMem()
+		data, err = GetGoPsutilMem()
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	msm, err := DatarowsToMetricstoreMessage(data, msg, vme, mvp)
+	msm, err := DataRowsToMeasurementEnvelope(data, msg, vme, mvp)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +80,7 @@ func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme Mo
 }
 
 // data + custom tags + counters
-func DatarowsToMetricstoreMessage(data metrics.Measurements, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) (metrics.MeasurementEnvelope, error) {
+func DataRowsToMeasurementEnvelope(data metrics.Measurements, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) (metrics.MeasurementEnvelope, error) {
 	md, err := GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
 	if err != nil {
 		return metrics.MeasurementEnvelope{}, err
