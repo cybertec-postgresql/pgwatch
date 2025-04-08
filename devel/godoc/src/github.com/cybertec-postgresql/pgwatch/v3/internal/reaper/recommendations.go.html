@@ -108,23 +108,22 @@
 <span id="L51" class="ln">    51  </span>			continue
 <span id="L52" class="ln">    52  </span>		}
 <span id="L53" class="ln">    53  </span>		for _, d := range data {
-<span id="L54" class="ln">    54  </span>			d[epochColumnName] = startTimeEpochNs
+<span id="L54" class="ln">    54  </span>			d[metrics.EpochColumnName] = startTimeEpochNs
 <span id="L55" class="ln">    55  </span>			d[&#34;major_ver&#34;] = vme.Version / 10
 <span id="L56" class="ln">    56  </span>			retData = append(retData, d)
 <span id="L57" class="ln">    57  </span>		}
 <span id="L58" class="ln">    58  </span>	}
 <span id="L59" class="ln">    59  </span>	if len(retData) == 0 { <span class="comment">// insert a dummy entry minimally so that Grafana can show at least a dropdown</span>
-<span id="L60" class="ln">    60  </span>		dummy := make(metrics.Measurement)
+<span id="L60" class="ln">    60  </span>		dummy := metrics.NewMeasurement(startTimeEpochNs)
 <span id="L61" class="ln">    61  </span>		dummy[&#34;tag_reco_topic&#34;] = &#34;dummy&#34;
 <span id="L62" class="ln">    62  </span>		dummy[&#34;tag_object_name&#34;] = &#34;-&#34;
 <span id="L63" class="ln">    63  </span>		dummy[&#34;recommendation&#34;] = &#34;no recommendations&#34;
-<span id="L64" class="ln">    64  </span>		dummy[epochColumnName] = startTimeEpochNs
-<span id="L65" class="ln">    65  </span>		dummy[&#34;major_ver&#34;] = vme.Version / 10
-<span id="L66" class="ln">    66  </span>		retData = append(retData, dummy)
-<span id="L67" class="ln">    67  </span>	}
-<span id="L68" class="ln">    68  </span>	return retData, err
-<span id="L69" class="ln">    69  </span>}
-<span id="L70" class="ln">    70  </span>
+<span id="L64" class="ln">    64  </span>		dummy[&#34;major_ver&#34;] = vme.Version / 10
+<span id="L65" class="ln">    65  </span>		retData = append(retData, dummy)
+<span id="L66" class="ln">    66  </span>	}
+<span id="L67" class="ln">    67  </span>	return retData, err
+<span id="L68" class="ln">    68  </span>}
+<span id="L69" class="ln">    69  </span>
 </pre><p></p>
 
 <div id="footer">
