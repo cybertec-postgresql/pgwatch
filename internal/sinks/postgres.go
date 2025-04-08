@@ -141,11 +141,6 @@ func (pgw *PostgresWriter) ReadMetricSchemaType() (err error) {
 	return
 }
 
-const (
-	epochColumnName string = "epoch_ns" // this column (epoch in nanoseconds) is expected in every metric query
-	tagPrefix       string = "tag_"
-)
-
 var (
 	forceRecreatePartitions  = false                                             // to signal override PG metrics storage cache
 	partitionMapMetric       = make(map[string]ExistingPartitionInfo)            // metric = min/max bounds
@@ -247,7 +242,6 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 
 		for _, dataRow := range msg.Data {
 			var epochTime time.Time
-			var epochNs int64
 
 			tags := make(map[string]any)
 			fields := make(map[string]any)
@@ -259,25 +253,17 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 					tags[k] = fmt.Sprintf("%v", v)
 				}
 			}
-
+			epochTime = time.Unix(0, metrics.Measurement(dataRow).GetEpoch())
 			for k, v := range dataRow {
-				if v == nil || v == "" {
+				if v == nil || v == "" || k == metrics.EpochColumnName {
 					continue // not storing NULLs
 				}
-				if k == epochColumnName {
-					epochNs = v.(int64)
-				} else if strings.HasPrefix(k, tagPrefix) {
+				if strings.HasPrefix(k, metrics.TagPrefix) {
 					tag := k[4:]
 					tags[tag] = fmt.Sprintf("%v", v)
 				} else {
 					fields[k] = v
 				}
-			}
-
-			if epochNs == 0 {
-				epochTime = time.Now()
-			} else {
-				epochTime = time.Unix(0, epochNs)
 			}
 
 			var metricsArr []MeasurementMessagePostgres

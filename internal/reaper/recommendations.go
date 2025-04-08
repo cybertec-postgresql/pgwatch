@@ -51,17 +51,16 @@ func GetRecommendations(ctx context.Context, dbUnique string, vme MonitoredDatab
 			continue
 		}
 		for _, d := range data {
-			d[epochColumnName] = startTimeEpochNs
+			d[metrics.EpochColumnName] = startTimeEpochNs
 			d["major_ver"] = vme.Version / 10
 			retData = append(retData, d)
 		}
 	}
 	if len(retData) == 0 { // insert a dummy entry minimally so that Grafana can show at least a dropdown
-		dummy := make(metrics.Measurement)
+		dummy := metrics.NewMeasurement(startTimeEpochNs)
 		dummy["tag_reco_topic"] = "dummy"
 		dummy["tag_object_name"] = "-"
 		dummy["recommendation"] = "no recommendations"
-		dummy[epochColumnName] = startTimeEpochNs
 		dummy["major_ver"] = vme.Version / 10
 		retData = append(retData, dummy)
 	}
