@@ -14,7 +14,6 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/psutil"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 	"github.com/jackc/pgx/v5"
@@ -820,22 +819,6 @@ func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn
 		}
 	}
 	return nil
-}
-
-// connects actually to the instance to determine PG relevant disk paths / mounts
-func GetGoPsutilDiskPG(ctx context.Context, dbUnique string) (metrics.Measurements, error) {
-	sql := `select current_setting('data_directory') as dd, current_setting('log_directory') as ld, current_setting('server_version_num')::int as pgver`
-	sqlTS := `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E'pg\\_%'])`
-	data, err := QueryMeasurements(ctx, dbUnique, sql)
-	if err != nil || len(data) == 0 {
-		log.GetLogger(ctx).Errorf("Failed to determine relevant PG disk paths via SQL: %v", err)
-		return nil, err
-	}
-	dataTblsp, err := QueryMeasurements(ctx, dbUnique, sqlTS)
-	if err != nil {
-		log.GetLogger(ctx).Infof("Failed to determine relevant PG tablespace paths via SQL: %v", err)
-	}
-	return psutil.GetGoPsutilDiskPG(data, dataTblsp)
 }
 
 func CloseResourcesForRemovedMonitoredDBs(metricsWriter sinks.Writer, currentDBs, prevLoopDBs sources.SourceConns, shutDownDueToRoleChange map[string]bool) {

@@ -1,4 +1,4 @@
-package psutil
+package reaper
 
 import (
 	"os"
