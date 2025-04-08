@@ -3,10 +3,8 @@ package reaper
 import (
 	"context"
 	"fmt"
-	"maps"
 	"slices"
 	"strings"
-	"sync"
 	"time"
 
 	"sync/atomic"
@@ -372,7 +370,8 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.Source
 								message := "Detected server restart (or failover) of \"" + mdb.Name + "\""
 								l.Warning(message)
 								detectedChangesSummary := make(metrics.Measurements, 0)
-								entry := metrics.Measurement{"details": message, "epoch_ns": (metricStoreMessages[0].Data)[0]["epoch_ns"]}
+								entry := metrics.NewMeasurement(metricStoreMessages[0].Data.GetEpoch())
+								entry["details"] = message
 								detectedChangesSummary = append(detectedChangesSummary, entry)
 								metricStoreMessages = append(metricStoreMessages,
 									metrics.MeasurementEnvelope{
@@ -400,6 +399,20 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.Source
 	}
 }
 
+// LoadSources loads sources from the reader
+func (r *Reaper) LoadSources() (err error) {
+	if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
+		r.logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", r.Metrics.EmergencyPauseTriggerfile)
+		monitoredSources = make([]*sources.SourceConn, 0)
+		return nil
+	}
+	if monitoredSources, err = monitoredSources.SyncFromReader(r.SourcesReaderWriter); err != nil {
+		return err
+	}
+	r.logger.WithField("sources", len(monitoredSources)).Info("sources refreshed")
+	return nil
+}
+
 // WriteMonitoredSources writes actively monitored DBs listing to sinks
 // every monitoredDbsDatastoreSyncIntervalSeconds (default 10min)
 func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
@@ -411,13 +424,11 @@ func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
 
 	monitoredDbCacheLock.RLock()
 	for _, mdb := range monitoredDbCache {
-		db := metrics.Measurement{
-			"tag_group":   mdb.Group,
-			"master_only": mdb.OnlyIfMaster,
-			"epoch_ns":    now,
-		}
+		db := metrics.NewMeasurement(now)
+		db["tag_group"] = mdb.Group
+		db["master_only"] = mdb.OnlyIfMaster
 		for k, v := range mdb.CustomTags {
-			db[tagPrefix+k] = v
+			db[metrics.TagPrefix+k] = v
 		}
 		msms = append(msms, metrics.MeasurementEnvelope{
 			DBName:     mdb.Name,
@@ -434,6 +445,21 @@ func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
 		//continue
 	case <-ctx.Done():
 		return
+	}
+}
+
+// WriteMeasurements() writes the metrics to the sinks
+func (r *Reaper) WriteMeasurements(ctx context.Context) {
+	var err error
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case msg := <-r.measurementCh:
+			if err = r.SinksWriter.Write(msg); err != nil {
+				r.logger.Error(err)
+			}
+		}
 	}
 }
 
@@ -455,40 +481,6 @@ func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, ver Monitor
 		enrichedData = append(enrichedData, dr)
 	}
 	return enrichedData
-}
-
-var instanceMetricCache = make(map[string](metrics.Measurements)) // [dbUnique+metric]lastly_fetched_data
-var instanceMetricCacheLock = sync.RWMutex{}
-var instanceMetricCacheTimestamp = make(map[string]time.Time) // [dbUnique+metric]last_fetch_time
-var instanceMetricCacheTimestampLock = sync.RWMutex{}
-
-func IsCacheableMetric(msg MetricFetchConfig, mvp metrics.Metric) bool {
-	if !(msg.Source == sources.SourcePostgresContinuous || msg.Source == sources.SourcePatroniContinuous) {
-		return false
-	}
-	return mvp.IsInstanceLevel
-}
-
-func PutToInstanceCache(msg MetricFetchConfig, data metrics.Measurements) {
-	if len(data) == 0 {
-		return
-	}
-	dataCopy := deepCopyMetricData(data)
-	instanceMetricCacheLock.Lock()
-	instanceMetricCache[msg.DBUniqueNameOrig+msg.MetricName] = dataCopy
-	instanceMetricCacheLock.Unlock()
-
-	instanceMetricCacheTimestampLock.Lock()
-	instanceMetricCacheTimestamp[msg.DBUniqueNameOrig+msg.MetricName] = time.Now()
-	instanceMetricCacheTimestampLock.Unlock()
-}
-
-func deepCopyMetricData(data metrics.Measurements) metrics.Measurements {
-	newData := make(metrics.Measurements, len(data))
-	for i, dr := range data {
-		newData[i] = maps.Clone(dr)
-	}
-	return newData
 }
 
 func (r *Reaper) FetchMetrics(ctx context.Context,
@@ -590,7 +582,8 @@ func (r *Reaper) FetchMetrics(ctx context.Context,
 			if msg.MetricName == specialMetricInstanceUp {
 				log.GetLogger(ctx).WithError(err).Debugf("[%s:%s] failed to fetch metrics. marking instance as not up", msg.DBUniqueName, msg.MetricName)
 				data = make(metrics.Measurements, 1)
-				data[0] = metrics.Measurement{"epoch_ns": time.Now().UnixNano(), "is_up": 0} // should be updated if the "instance_up" metric definition is changed
+				data[0] = metrics.NewMeasurement(time.Now().UnixNano())
+				data[0]["is_up"] = 0 // should be updated if the "instance_up" metric definition is changed
 				goto send_to_storageChannel
 			}
 

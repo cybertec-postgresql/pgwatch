@@ -170,9 +170,8 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 
 func (promw *PrometheusWriter) setInstanceUpDownState(ch chan<- prometheus.Metric, dbName string) {
 	logger := log.GetLogger(promw.ctx)
-	data := make(metrics.Measurement)
+	data := metrics.NewMeasurement(time.Now().UnixNano())
 	data[promInstanceUpStateMetric] = 1
-	data[epochColumnName] = time.Now().UnixNano()
 
 	pm := promw.MetricStoreMessageToPromMetrics(metrics.MeasurementEnvelope{
 		DBName:           dbName,
@@ -195,24 +194,17 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Measu
 	promMetrics := make([]prometheus.Metric, 0)
 	logger := log.GetLogger(promw.ctx)
 	var epochTime time.Time
-	var epochNs int64
-	var epochNow = time.Now()
 
 	if len(msg.Data) == 0 {
 		return promMetrics
 	}
 
-	epochNs, ok := (msg.Data[0][epochColumnName]).(int64)
-	if !ok {
-		epochTime = time.Now()
-	} else {
-		epochTime = time.Unix(0, epochNs)
+	epochTime = time.Unix(0, msg.Data.GetEpoch())
 
-		if epochTime.Before(epochNow.Add(-1 * promScrapingStalenessHardDropLimit)) {
-			logger.Warningf("[%s][%s] Dropping metric set due to staleness (>%v) ...", msg.DBName, msg.MetricName, promScrapingStalenessHardDropLimit)
-			promw.PurgeMetricsFromPromAsyncCacheIfAny(msg.DBName, msg.MetricName)
-			return promMetrics
-		}
+	if epochTime.Before(time.Now().Add(-promScrapingStalenessHardDropLimit)) {
+		logger.Warningf("[%s][%s] Dropping metric set due to staleness (>%v) ...", msg.DBName, msg.MetricName, promScrapingStalenessHardDropLimit)
+		promw.PurgeMetricsFromPromAsyncCacheIfAny(msg.DBName, msg.MetricName)
+		return promMetrics
 	}
 
 	for _, dr := range msg.Data {
@@ -221,7 +213,7 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Measu
 		labels["dbname"] = msg.DBName
 
 		for k, v := range dr {
-			if v == nil || v == "" || k == epochColumnName {
+			if v == nil || v == "" || k == metrics.EpochColumnName {
 				continue // not storing NULLs. epoch checked/assigned once
 			}
 

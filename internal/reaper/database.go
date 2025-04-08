@@ -289,15 +289,10 @@ func DetectSprocChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 			if !ok {
 				splits := strings.Split(sprocIdent, dbMetricJoinStr)
 				log.GetLogger(ctx).Info("detected delete of sproc:", splits[0], ", oid:", splits[1])
-				influxEntry := make(metrics.Measurement)
+				influxEntry := metrics.NewMeasurement(data.GetEpoch())
 				influxEntry["event"] = "drop"
 				influxEntry["tag_sproc"] = splits[0]
 				influxEntry["tag_oid"] = splits[1]
-				if len(data) > 0 {
-					influxEntry["epoch_ns"] = data[0]["epoch_ns"]
-				} else {
-					influxEntry["epoch_ns"] = time.Now().UnixNano()
-				}
 				detectedChanges = append(detectedChanges, influxEntry)
 				deletedSProcs = append(deletedSProcs, sprocIdent)
 				changeCounts.Dropped++
@@ -373,14 +368,9 @@ func DetectTableChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 			_, ok := currentTableMap[table]
 			if !ok {
 				log.GetLogger(ctx).Info("detected drop of table:", table)
-				influxEntry := make(metrics.Measurement)
+				influxEntry := metrics.NewMeasurement(data.GetEpoch())
 				influxEntry["event"] = "drop"
 				influxEntry["tag_table"] = table
-				if len(data) > 0 {
-					influxEntry["epoch_ns"] = data[0]["epoch_ns"]
-				} else {
-					influxEntry["epoch_ns"] = time.Now().UnixNano()
-				}
 				detectedChanges = append(detectedChanges, influxEntry)
 				deletedTables = append(deletedTables, table)
 				changeCounts.Dropped++
@@ -456,14 +446,9 @@ func DetectIndexChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 			_, ok := currentIndexMap[indexName]
 			if !ok {
 				log.GetLogger(ctx).Info("detected drop of index_name:", indexName)
-				influxEntry := make(metrics.Measurement)
+				influxEntry := metrics.NewMeasurement(data.GetEpoch())
 				influxEntry["event"] = "drop"
 				influxEntry["tag_index"] = indexName
-				if len(data) > 0 {
-					influxEntry["epoch_ns"] = data[0]["epoch_ns"]
-				} else {
-					influxEntry["epoch_ns"] = time.Now().UnixNano()
-				}
 				detectedChanges = append(detectedChanges, influxEntry)
 				deletedIndexes = append(deletedIndexes, indexName)
 				changeCounts.Dropped++
@@ -531,12 +516,7 @@ func DetectPrivilegeChanges(ctx context.Context, dbUnique string, vme MonitoredD
 				splits := strings.Split(objPrevRun, "#:#")
 				log.GetLogger(ctx).Infof("[%s][%s] detected removed object privileges: role=%s, object_type=%s, object=%s, privilege_type=%s",
 					dbUnique, specialMetricChangeEvents, splits[1], splits[0], splits[2], splits[3])
-				revokeEntry := make(metrics.Measurement)
-				if epochNs, ok := data[0]["epoch_ns"]; ok {
-					revokeEntry["epoch_ns"] = epochNs
-				} else {
-					revokeEntry["epoch_ns"] = time.Now().UnixNano()
-				}
+				revokeEntry := metrics.NewMeasurement(data.GetEpoch())
 				revokeEntry["object_type"] = splits[0]
 				revokeEntry["tag_role"] = splits[1]
 				revokeEntry["tag_object"] = splits[2]
@@ -658,9 +638,8 @@ func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique s
 		message = "Detected changes for \"" + dbUnique + "\" [Created/Altered/Dropped]:" + message
 		log.GetLogger(ctx).Info(message)
 		detectedChangesSummary := make(metrics.Measurements, 0)
-		influxEntry := make(metrics.Measurement)
+		influxEntry := metrics.NewMeasurement(time.Now().UnixNano())
 		influxEntry["details"] = message
-		influxEntry["epoch_ns"] = time.Now().UnixNano()
 		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
 		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storageCh <- []metrics.MeasurementEnvelope{{DBName: dbUnique,
@@ -689,8 +668,7 @@ func FetchMetricsPgpool(ctx context.Context, msg MetricFetchConfig, vme Monitore
 			}
 
 			for _, row := range data {
-				retRow := make(metrics.Measurement)
-				retRow[epochColumnName] = epochNs
+				retRow := metrics.NewMeasurement(epochNs)
 				for k, v := range row {
 					vs := string(v.([]byte))
 					// need 1 tag so that Influx would not merge rows

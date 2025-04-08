@@ -1,14 +1,13 @@
 package reaper
 
 import (
-	"context"
 	"fmt"
+	"maps"
 	"sync"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
-	"github.com/sirupsen/logrus"
 )
 
 var monitoredDbCache map[string]*sources.SourceConn
@@ -53,53 +52,10 @@ func GetMonitoredDatabaseByUniqueName(name string) (*sources.SourceConn, error) 
 	return md, nil
 }
 
-// LoadMetrics loads metric definitions from the reader
-func (r *Reaper) LoadMetrics() (err error) {
-	var newDefs *metrics.Metrics
-	if newDefs, err = r.MetricsReaderWriter.GetMetrics(); err != nil {
-		return
-	}
-	metricDefs.Assign(newDefs)
-	r.logger.
-		WithField("metrics", len(newDefs.MetricDefs)).
-		WithField("presets", len(newDefs.PresetDefs)).
-		Log(func() logrus.Level {
-			if len(newDefs.PresetDefs)*len(newDefs.MetricDefs) == 0 {
-				return logrus.WarnLevel
-			}
-			return logrus.InfoLevel
-		}(), "metrics and presets refreshed")
-	return
-}
-
-// LoadSources loads sources from the reader
-func (r *Reaper) LoadSources() (err error) {
-	if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
-		r.logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", r.Metrics.EmergencyPauseTriggerfile)
-		monitoredSources = make([]*sources.SourceConn, 0)
-		return nil
-	}
-	if monitoredSources, err = monitoredSources.SyncFromReader(r.SourcesReaderWriter); err != nil {
-		return err
-	}
-	r.logger.WithField("sources", len(monitoredSources)).Info("sources refreshed")
-	return nil
-}
-
-// WriteMeasurements() writes the metrics to the sinks
-func (r *Reaper) WriteMeasurements(ctx context.Context) {
-	var err error
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case msg := <-r.measurementCh:
-			if err = r.SinksWriter.Write(msg); err != nil {
-				r.logger.Error(err)
-			}
-		}
-	}
-}
+var instanceMetricCache = make(map[string](metrics.Measurements)) // [dbUnique+metric]lastly_fetched_data
+var instanceMetricCacheLock = sync.RWMutex{}
+var instanceMetricCacheTimestamp = make(map[string]time.Time) // [dbUnique+metric]last_fetch_time
+var instanceMetricCacheTimestampLock = sync.RWMutex{}
 
 func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchConfig, maxAgeSeconds int64) metrics.Measurements {
 	var clonedData metrics.Measurements
@@ -120,4 +76,35 @@ func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchConfig, maxAgeSeco
 	instanceMetricCacheLock.RUnlock()
 
 	return clonedData
+}
+
+func IsCacheableMetric(msg MetricFetchConfig, mvp metrics.Metric) bool {
+	switch msg.Source {
+	case sources.SourcePostgresContinuous, sources.SourcePatroniContinuous:
+		return false
+	default:
+		return mvp.IsInstanceLevel
+	}
+}
+
+func PutToInstanceCache(msg MetricFetchConfig, data metrics.Measurements) {
+	if len(data) == 0 {
+		return
+	}
+	dataCopy := deepCopyMetricData(data)
+	instanceMetricCacheLock.Lock()
+	instanceMetricCache[msg.DBUniqueNameOrig+msg.MetricName] = dataCopy
+	instanceMetricCacheLock.Unlock()
+
+	instanceMetricCacheTimestampLock.Lock()
+	instanceMetricCacheTimestamp[msg.DBUniqueNameOrig+msg.MetricName] = time.Now()
+	instanceMetricCacheTimestampLock.Unlock()
+}
+
+func deepCopyMetricData(data metrics.Measurements) metrics.Measurements {
+	newData := make(metrics.Measurements, len(data))
+	for i, dr := range data {
+		newData[i] = maps.Clone(dr)
+	}
+	return newData
 }

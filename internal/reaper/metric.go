@@ -7,12 +7,11 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
+	"github.com/sirupsen/logrus"
 )
 
 const (
-	epochColumnName     string = "epoch_ns" // this column (epoch in nanoseconds) is expected in every metric query
-	tagPrefix           string = "tag_"
-	persistQueueMaxSize        = 10000 // storage queue max elements. when reaching the limit, older metrics will be dropped.
+	persistQueueMaxSize = 10000 // storage queue max elements. when reaching the limit, older metrics will be dropped.
 
 	monitoredDbsDatastoreSyncIntervalSeconds = 600              // write actively monitored DBs listing to metrics store after so many seconds
 	monitoredDbsDatastoreSyncMetricName      = "configured_dbs" // FYI - for Postgres datastore there's also the admin.all_unique_dbnames table with all recent DB unique names with some metric data
@@ -95,4 +94,23 @@ type MonitoredDatabaseSettings struct {
 type ExistingPartitionInfo struct {
 	StartTime time.Time
 	EndTime   time.Time
+}
+
+// LoadMetrics loads metric definitions from the reader
+func (r *Reaper) LoadMetrics() (err error) {
+	var newDefs *metrics.Metrics
+	if newDefs, err = r.MetricsReaderWriter.GetMetrics(); err != nil {
+		return
+	}
+	metricDefs.Assign(newDefs)
+	r.logger.
+		WithField("metrics", len(newDefs.MetricDefs)).
+		WithField("presets", len(newDefs.PresetDefs)).
+		Log(func() logrus.Level {
+			if len(newDefs.PresetDefs)*len(newDefs.MetricDefs) == 0 {
+				return logrus.WarnLevel
+			}
+			return logrus.InfoLevel
+		}(), "metrics and presets refreshed")
+	return
 }

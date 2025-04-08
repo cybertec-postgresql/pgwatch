@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/load"
@@ -60,8 +61,7 @@ func GetGoPsutilCPU(interval time.Duration) ([]map[string]any, error) {
 		return nil, err
 	}
 
-	retMap := make(map[string]any)
-	retMap["epoch_ns"] = time.Now().UnixNano()
+	retMap := metrics.NewMeasurement(time.Now().UnixNano())
 	retMap["cpu_utilization"] = math.Round(100*goPsutilCalcCPUUtilization(prevTimeStat, curCallStats[0])) / 100
 	retMap["load_1m_norm"] = math.Round(100*la.Load1/float64(cpus)) / 100
 	retMap["load_1m"] = math.Round(100*la.Load1) / 100
@@ -83,8 +83,7 @@ func GetGoPsutilMem() ([]map[string]any, error) {
 		return nil, err
 	}
 
-	retMap := make(map[string]any)
-	retMap["epoch_ns"] = time.Now().UnixNano()
+	retMap := metrics.NewMeasurement(time.Now().UnixNano())
 	retMap["total"] = int64(vm.Total)
 	retMap["used"] = int64(vm.Used)
 	retMap["free"] = int64(vm.Free)
@@ -105,10 +104,9 @@ func GetGoPsutilDiskTotals() ([]map[string]any, error) {
 		return nil, err
 	}
 
-	retMap := make(map[string]any)
+	retMap := metrics.NewMeasurement(time.Now().UnixNano())
 	var readBytes, writeBytes, reads, writes float64
 
-	retMap["epoch_ns"] = time.Now().UnixNano()
 	for _, v := range d { // summarize all disk devices
 		readBytes += float64(v.ReadBytes) // datatype float is just an oversight in the original psutil helper
 		// but can't change it without causing problems on storage level (InfluxDB)
@@ -130,8 +128,7 @@ func GetLoadAvgLocal() ([]map[string]any, error) {
 		return nil, err
 	}
 
-	row := make(map[string]any)
-	row["epoch_ns"] = time.Now().UnixNano()
+	row := metrics.NewMeasurement(time.Now().UnixNano())
 	row["load_1min"] = la.Load1
 	row["load_5min"] = la.Load5
 	row["load_15min"] = la.Load15
@@ -157,8 +154,7 @@ func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]an
 
 	retRows := make([]map[string]any, 0)
 	epochNs := time.Now().UnixNano()
-	dd := make(map[string]any)
-	dd["epoch_ns"] = epochNs
+	dd := metrics.NewMeasurement(epochNs)
 	dd["tag_dir_or_tablespace"] = "data_directory"
 	dd["tag_path"] = dataDirPath
 	dd["total"] = float64(ddUsage.Total)
@@ -182,13 +178,12 @@ func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]an
 			return nil, err
 		}
 		if ldDevice != ddDevice { // no point to report same data in case of single folder configuration
-			ld := make(map[string]any)
+			ld := metrics.NewMeasurement(epochNs)
 			ldUsage, err := disk.Usage(logDirPath)
 			if err != nil {
 				return nil, err
 			}
 
-			ld["epoch_ns"] = epochNs
 			ld["tag_dir_or_tablespace"] = "log_directory"
 			ld["tag_path"] = logDirPath
 			ld["total"] = float64(ldUsage.Total)
@@ -218,8 +213,7 @@ func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]an
 				return nil, err
 			}
 
-			wd := make(map[string]any)
-			wd["epoch_ns"] = epochNs
+			wd := metrics.NewMeasurement(epochNs)
 			wd["tag_dir_or_tablespace"] = "pg_wal"
 			wd["tag_path"] = walDirPath
 			wd["total"] = float64(walUsage.Total)
@@ -248,8 +242,7 @@ func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]an
 			if err != nil {
 				return nil, err
 			}
-			ts := make(map[string]any)
-			ts["epoch_ns"] = epochNs
+			ts := metrics.NewMeasurement(epochNs)
 			ts["tag_dir_or_tablespace"] = tsName
 			ts["tag_path"] = tsPath
 			ts["total"] = float64(tsUsage.Total)

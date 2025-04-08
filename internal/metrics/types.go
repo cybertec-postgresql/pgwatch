@@ -1,5 +1,7 @@
 package metrics
 
+import "time"
+
 type (
 	ExtensionInfo struct {
 		ExtName       string `yaml:"ext_name"`
@@ -65,8 +67,36 @@ type Preset struct {
 	Metrics     map[string]float64
 }
 
+const (
+	EpochColumnName string = "epoch_ns" // this column (epoch in nanoseconds) is expected in every metric query
+	TagPrefix       string = "tag_"
+)
+
 type Measurement map[string]any
+
+func NewMeasurement(epoch int64) Measurement {
+	m := make(Measurement)
+	m[EpochColumnName] = epoch
+	return m
+}
+
+func (m Measurement) GetEpoch() int64 {
+	if v, ok := m[EpochColumnName]; ok {
+		if epoch, ok := v.(int64); ok {
+			return epoch
+		}
+	}
+	return time.Now().UnixNano()
+}
+
 type Measurements []map[string]any
+
+func (m Measurements) GetEpoch() int64 {
+	if len(m) == 0 {
+		time.Now().UnixNano()
+	}
+	return Measurement(m[0]).GetEpoch()
+}
 
 type MeasurementEnvelope struct {
 	DBName           string
