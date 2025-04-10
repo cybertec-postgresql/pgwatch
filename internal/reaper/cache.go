@@ -2,7 +2,6 @@ package reaper
 
 import (
 	"fmt"
-	"maps"
 	"sync"
 	"time"
 
@@ -52,59 +51,44 @@ func GetMonitoredDatabaseByUniqueName(name string) (*sources.SourceConn, error) 
 	return md, nil
 }
 
-var instanceMetricCache = make(map[string](metrics.Measurements)) // [dbUnique+metric]lastly_fetched_data
-var instanceMetricCacheLock = sync.RWMutex{}
-var instanceMetricCacheTimestamp = make(map[string]time.Time) // [dbUnique+metric]last_fetch_time
-var instanceMetricCacheTimestampLock = sync.RWMutex{}
+type InstanceMetricCache struct {
+	cache map[string](metrics.Measurements) // [dbUnique+metric]lastly_fetched_data
+	sync.RWMutex
+}
 
-func GetFromInstanceCacheIfNotOlderThanSeconds(msg MetricFetchConfig, maxAgeSeconds int64) metrics.Measurements {
-	var clonedData metrics.Measurements
-	instanceMetricCacheTimestampLock.RLock()
-	instanceMetricTS, ok := instanceMetricCacheTimestamp[msg.DBUniqueNameOrig+msg.MetricName]
-	instanceMetricCacheTimestampLock.RUnlock()
-	if !ok || time.Now().Unix()-instanceMetricTS.Unix() > maxAgeSeconds {
+func NewInstanceMetricCache() *InstanceMetricCache {
+	return &InstanceMetricCache{
+		cache: make(map[string](metrics.Measurements)),
+	}
+}
+
+func (imc *InstanceMetricCache) Get(key string, age time.Duration) metrics.Measurements {
+	if key == "" {
 		return nil
 	}
+	imc.RLock()
+	defer imc.RUnlock()
+	instanceMetricEpochNs := (imc.cache[key]).GetEpoch()
 
-	instanceMetricCacheLock.RLock()
-	instanceMetricData, ok := instanceMetricCache[msg.DBUniqueNameOrig+msg.MetricName]
+	if time.Now().UnixNano()-instanceMetricEpochNs > age.Nanoseconds() {
+		return nil
+	}
+	instanceMetricData, ok := imc.cache[key]
 	if !ok {
-		instanceMetricCacheLock.RUnlock()
 		return nil
 	}
-	clonedData = deepCopyMetricData(instanceMetricData)
-	instanceMetricCacheLock.RUnlock()
-
-	return clonedData
+	return instanceMetricData.DeepCopy()
 }
 
-func IsCacheableMetric(msg MetricFetchConfig, mvp metrics.Metric) bool {
-	switch msg.Source {
-	case sources.SourcePostgresContinuous, sources.SourcePatroniContinuous:
-		return false
-	default:
-		return mvp.IsInstanceLevel
-	}
-}
-
-func PutToInstanceCache(msg MetricFetchConfig, data metrics.Measurements) {
-	if len(data) == 0 {
+func (imc *InstanceMetricCache) Put(key string, data metrics.Measurements) {
+	if len(data) == 0 || key == "" {
 		return
 	}
-	dataCopy := deepCopyMetricData(data)
-	instanceMetricCacheLock.Lock()
-	instanceMetricCache[msg.DBUniqueNameOrig+msg.MetricName] = dataCopy
-	instanceMetricCacheLock.Unlock()
-
-	instanceMetricCacheTimestampLock.Lock()
-	instanceMetricCacheTimestamp[msg.DBUniqueNameOrig+msg.MetricName] = time.Now()
-	instanceMetricCacheTimestampLock.Unlock()
-}
-
-func deepCopyMetricData(data metrics.Measurements) metrics.Measurements {
-	newData := make(metrics.Measurements, len(data))
-	for i, dr := range data {
-		newData[i] = maps.Clone(dr)
+	imc.Lock()
+	defer imc.Unlock()
+	m := data.DeepCopy()
+	if !m.IsEpochSet() {
+		m.Touch()
 	}
-	return newData
+	imc.cache[key] = m
 }

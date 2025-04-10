@@ -6,6 +6,7 @@ import (
 
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 	testcontainers "github.com/testcontainers/testcontainers-go"
@@ -13,15 +14,17 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
+const ImageName = "docker.io/postgres:17-alpine"
+
 func TestMonitoredDatabase_Connect(t *testing.T) {
 	pgContainer, err := postgres.Run(ctx,
-		"docker.io/postgres:16-alpine",
+		ImageName,
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).
 				WithStartupTimeout(5*time.Second)),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer func() { assert.NoError(t, pgContainer.Terminate(ctx)) }()
 
 	// Create a new MonitoredDatabase instance
