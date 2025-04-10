@@ -103,7 +103,7 @@
 <span id="L46" class="ln">    46  </span>	return ok
 <span id="L47" class="ln">    47  </span>}
 <span id="L48" class="ln">    48  </span>
-<span id="L49" class="ln">    49  </span>func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) ([]metrics.MeasurementEnvelope, error) {
+<span id="L49" class="ln">    49  </span>func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) (*metrics.MeasurementEnvelope, error) {
 <span id="L50" class="ln">    50  </span>	var data, dataDirs, dataTblspDirs metrics.Measurements
 <span id="L51" class="ln">    51  </span>	var err error
 <span id="L52" class="ln">    52  </span>
@@ -133,7 +133,7 @@
 <span id="L76" class="ln">    76  </span>	if err != nil {
 <span id="L77" class="ln">    77  </span>		return nil, err
 <span id="L78" class="ln">    78  </span>	}
-<span id="L79" class="ln">    79  </span>	return []metrics.MeasurementEnvelope{msm}, nil
+<span id="L79" class="ln">    79  </span>	return &amp;msm, nil
 <span id="L80" class="ln">    80  </span>}
 <span id="L81" class="ln">    81  </span>
 <span id="L82" class="ln">    82  </span><span class="comment">// data + custom tags + counters</span>

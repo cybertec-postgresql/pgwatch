@@ -72,7 +72,7 @@
 <span id="L15" class="ln">    15  </span>
 <span id="L16" class="ln">    16  </span>func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
 <span id="L17" class="ln">    17  </span>	pgContainer, err := postgres.Run(ctx,
-<span id="L18" class="ln">    18  </span>		&#34;docker.io/postgres:16-alpine&#34;,
+<span id="L18" class="ln">    18  </span>		ImageName,
 <span id="L19" class="ln">    19  </span>		postgres.WithDatabase(&#34;mydatabase&#34;),
 <span id="L20" class="ln">    20  </span>		testcontainers.WithWaitStrategy(
 <span id="L21" class="ln">    21  </span>			wait.ForLog(&#34;database system is ready to accept connections&#34;).
