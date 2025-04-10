@@ -15,7 +15,7 @@ import (
 
 func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
 	pgContainer, err := postgres.Run(ctx,
-		"docker.io/postgres:16-alpine",
+		ImageName,
 		postgres.WithDatabase("mydatabase"),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").

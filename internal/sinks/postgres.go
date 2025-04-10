@@ -13,6 +13,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var (
@@ -366,7 +367,9 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 
 			if _, err = pgw.sinkDb.CopyFrom(context.Background(), getTargetTable(), getTargetColumns(), pgx.CopyFromRows(rows)); err != nil {
 				l.Error(err)
-				forceRecreatePartitions = strings.Contains(err.Error(), "no partition")
+				if PgError, ok := err.(*pgconn.PgError); ok {
+					forceRecreatePartitions = PgError.Code == "23514"
+				}
 				if forceRecreatePartitions {
 					logger.Warning("Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run")
 				}

@@ -1,6 +1,9 @@
 package metrics
 
-import "time"
+import (
+	"maps"
+	"time"
+)
 
 type (
 	ExtensionInfo struct {
@@ -96,6 +99,30 @@ func (m Measurements) GetEpoch() int64 {
 		return time.Now().UnixNano()
 	}
 	return Measurement(m[0]).GetEpoch()
+}
+
+func (m Measurements) IsEpochSet() bool {
+	if len(m) == 0 {
+		return false
+	}
+	_, ok := m[0][EpochColumnName]
+	return ok
+}
+
+func (m Measurements) DeepCopy() Measurements {
+	newData := make(Measurements, len(m))
+	for i, dr := range m {
+		newData[i] = maps.Clone(dr)
+	}
+	return newData
+}
+
+// Touch updates the last modified time of the metric definitions
+func (m Measurements) Touch() {
+	ns := time.Now().UnixNano()
+	for _, measurement := range m {
+		measurement[EpochColumnName] = ns
+	}
 }
 
 type MeasurementEnvelope struct {

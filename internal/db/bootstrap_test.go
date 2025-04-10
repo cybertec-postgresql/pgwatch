@@ -17,6 +17,8 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
+const ImageName = "docker.io/postgres:17-alpine"
+
 var ctx = context.Background()
 
 func TestPing(t *testing.T) {
@@ -73,7 +75,7 @@ func initTestContainer() (*postgres.PostgresContainer, error) {
 	dbPassword := "pgwatchadmin"
 
 	return postgres.Run(ctx,
-		"docker.io/postgres:16-alpine",
+		ImageName,
 		postgres.WithDatabase(dbName),
 		postgres.WithUsername(dbUser),
 		postgres.WithPassword(dbPassword),
@@ -83,9 +85,10 @@ func initTestContainer() (*postgres.PostgresContainer, error) {
 				WithStartupTimeout(5*time.Second)),
 	)
 }
+
 func TestNew(t *testing.T) {
 	pg, err := initTestContainer()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer func() { assert.NoError(t, pg.Terminate(ctx)) }()
 	connStr, err := pg.ConnectionString(ctx)
 	t.Log(connStr)

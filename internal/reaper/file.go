@@ -46,7 +46,7 @@ func IsDirectlyFetchableMetric(metric string) bool {
 	return ok
 }
 
-func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) ([]metrics.MeasurementEnvelope, error) {
+func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) (*metrics.MeasurementEnvelope, error) {
 	var data, dataDirs, dataTblspDirs metrics.Measurements
 	var err error
 
@@ -76,7 +76,7 @@ func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme Mo
 	if err != nil {
 		return nil, err
 	}
-	return []metrics.MeasurementEnvelope{msm}, nil
+	return &msm, nil
 }
 
 // data + custom tags + counters
