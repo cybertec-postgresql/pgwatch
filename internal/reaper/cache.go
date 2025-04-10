@@ -70,7 +70,7 @@ func (imc *InstanceMetricCache) Get(key string, age time.Duration) metrics.Measu
 	defer imc.RUnlock()
 	instanceMetricEpochNs := (imc.cache[key]).GetEpoch()
 
-	if time.Now().UnixNano()-instanceMetricEpochNs < age.Nanoseconds() {
+	if time.Now().UnixNano()-instanceMetricEpochNs > age.Nanoseconds() {
 		return nil
 	}
 	instanceMetricData, ok := imc.cache[key]
