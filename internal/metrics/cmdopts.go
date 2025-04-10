@@ -1,6 +1,8 @@
 package metrics
 
-import "time"
+import (
+	"time"
+)
 
 // CmdOpts specifies metric command-line options
 type CmdOpts struct {
@@ -12,8 +14,8 @@ type CmdOpts struct {
 }
 
 func (c CmdOpts) CacheAge() time.Duration {
-	if c.InstanceLevelCacheMaxSeconds > 0 {
-		return time.Duration(c.InstanceLevelCacheMaxSeconds) * time.Second
+	if c.InstanceLevelCacheMaxSeconds < 0 {
+		c.InstanceLevelCacheMaxSeconds = 0
 	}
-	return 0
+	return time.Duration(c.InstanceLevelCacheMaxSeconds) * time.Second
 }
