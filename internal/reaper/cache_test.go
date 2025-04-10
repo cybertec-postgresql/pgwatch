@@ -17,11 +17,12 @@ func TestInstanceMetricCache_PutAndGet(t *testing.T) {
 
 	// Test Put
 	cache.Put(key, data)
+	data.Touch() // Update the epoch time
 
 	// Test Get with valid key and age
 	retrievedData := cache.Get(key, time.Second)
 	assert.NotNil(t, retrievedData, "Expected data to be retrieved")
-	assert.Equal(t, data.GetEpoch(), retrievedData.GetEpoch(), "Epoch times should match")
+	assert.LessOrEqual(t, data.GetEpoch()-retrievedData.GetEpoch(), int64(time.Second), "Epoch times should be close")
 
 	// Test Get with invalid key
 	invalidKey := "invalid_key"

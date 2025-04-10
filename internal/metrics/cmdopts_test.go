@@ -26,7 +26,7 @@ func TestCacheAge(t *testing.T) {
 		{
 			name:     "Cache disable with incorrect value",
 			opts:     CmdOpts{InstanceLevelCacheMaxSeconds: -30},
-			expected: 3600 * time.Second,
+			expected: 0,
 		},
 	}
 

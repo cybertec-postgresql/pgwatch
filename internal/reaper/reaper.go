@@ -417,35 +417,34 @@ func (r *Reaper) LoadSources() (err error) {
 // WriteMonitoredSources writes actively monitored DBs listing to sinks
 // every monitoredDbsDatastoreSyncIntervalSeconds (default 10min)
 func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
-	if len(monitoredDbCache) == 0 {
-		return
-	}
-	msms := make([]metrics.MeasurementEnvelope, len(monitoredDbCache))
-	now := time.Now().UnixNano()
+	for {
+		if len(monitoredDbCache) > 0 {
+			msms := make([]metrics.MeasurementEnvelope, len(monitoredDbCache))
+			now := time.Now().UnixNano()
 
-	monitoredDbCacheLock.RLock()
-	for _, mdb := range monitoredDbCache {
-		db := metrics.NewMeasurement(now)
-		db["tag_group"] = mdb.Group
-		db["master_only"] = mdb.OnlyIfMaster
-		for k, v := range mdb.CustomTags {
-			db[metrics.TagPrefix+k] = v
+			monitoredDbCacheLock.RLock()
+			for _, mdb := range monitoredDbCache {
+				db := metrics.NewMeasurement(now)
+				db["tag_group"] = mdb.Group
+				db["master_only"] = mdb.OnlyIfMaster
+				for k, v := range mdb.CustomTags {
+					db[metrics.TagPrefix+k] = v
+				}
+				msms = append(msms, metrics.MeasurementEnvelope{
+					DBName:     mdb.Name,
+					MetricName: monitoredDbsDatastoreSyncMetricName,
+					Data:       metrics.Measurements{db},
+				})
+			}
+			monitoredDbCacheLock.RUnlock()
+			r.measurementCh <- msms
 		}
-		msms = append(msms, metrics.MeasurementEnvelope{
-			DBName:     mdb.Name,
-			MetricName: monitoredDbsDatastoreSyncMetricName,
-			Data:       metrics.Measurements{db},
-		})
-	}
-	monitoredDbCacheLock.RUnlock()
-
-	select {
-	case <-time.After(time.Second * monitoredDbsDatastoreSyncIntervalSeconds):
-		// continue
-	case r.measurementCh <- msms:
-		//continue
-	case <-ctx.Done():
-		return
+		select {
+		case <-time.After(time.Second * monitoredDbsDatastoreSyncIntervalSeconds):
+			// continue
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
