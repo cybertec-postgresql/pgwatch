@@ -94,7 +94,7 @@ func validateToken(r *http.Request) (err error) {
 	}
 
 	_, err = jwt.Parse(t,
-		func(token *jwt.Token) (any, error) {
+		func(_ *jwt.Token) (any, error) {
 			return sampleSecretKey, nil
 		},
 		jwt.WithExpirationRequired(),
