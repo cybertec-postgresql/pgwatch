@@ -22,24 +22,14 @@ type (
 	SourceConns []*SourceConn
 )
 
-// ping will try to ping the server to ensure the connection is still alive
-func (md *SourceConn) ping(ctx context.Context) (err error) {
+// Ping will try to ping the server to ensure the connection is still alive
+func (md *SourceConn) Ping(ctx context.Context) (err error) {
 	if md.Kind == SourcePgBouncer {
 		// pgbouncer is very picky about the queries it accepts
 		_, err = md.Conn.Exec(ctx, "SHOW VERSION")
 		return
 	}
 	return md.Conn.Ping(ctx)
-}
-
-// Ping will try to establish a brand new connection to the server and return any error
-func (md *SourceConn) Ping(ctx context.Context) error {
-	c, err := pgx.Connect(ctx, md.ConnStr)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = c.Close(ctx) }()
-	return md.ping(ctx)
 }
 
 // Connect will establish a connection to the database if it's not already connected.
@@ -60,7 +50,7 @@ func (md *SourceConn) Connect(ctx context.Context, opts CmdOpts) (err error) {
 			return err
 		}
 	}
-	return md.ping(ctx)
+	return md.Ping(ctx)
 }
 
 // ParseConfig will parse the connection string and store the result in the connection config
