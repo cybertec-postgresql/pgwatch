@@ -64,7 +64,7 @@
 <span id="L7" class="ln">     7  </span>	&#34;net/http&#34;
 <span id="L8" class="ln">     8  </span>	&#34;time&#34;
 <span id="L9" class="ln">     9  </span>
-<span id="L10" class="ln">    10  </span>	&#34;github.com/golang-jwt/jwt&#34;
+<span id="L10" class="ln">    10  </span>	&#34;github.com/golang-jwt/jwt/v5&#34;
 <span id="L11" class="ln">    11  </span>)
 <span id="L12" class="ln">    12  </span>
 <span id="L13" class="ln">    13  </span>type loginReq struct {
@@ -149,28 +149,16 @@
 <span id="L92" class="ln">    92  </span>	if t == &#34;&#34; {
 <span id="L93" class="ln">    93  </span>		return errors.New(&#34;can not find token in header&#34;)
 <span id="L94" class="ln">    94  </span>	}
-<span id="L95" class="ln">    95  </span>	token, err := jwt.Parse(t, func(token *jwt.Token) (interface{}, error) {
-<span id="L96" class="ln">    96  </span>		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-<span id="L97" class="ln">    97  </span>			return nil, errors.New(&#34;there was an error in parsing&#34;)
-<span id="L98" class="ln">    98  </span>		}
-<span id="L99" class="ln">    99  </span>		return sampleSecretKey, nil
-<span id="L100" class="ln">   100  </span>	})
-<span id="L101" class="ln">   101  </span>	if err != nil {
-<span id="L102" class="ln">   102  </span>		return err
-<span id="L103" class="ln">   103  </span>	}
-<span id="L104" class="ln">   104  </span>	if token == nil {
-<span id="L105" class="ln">   105  </span>		return errors.New(&#34;invalid token&#34;)
-<span id="L106" class="ln">   106  </span>	}
-<span id="L107" class="ln">   107  </span>	claims, ok := token.Claims.(jwt.MapClaims)
-<span id="L108" class="ln">   108  </span>	if !ok {
-<span id="L109" class="ln">   109  </span>		return errors.New(&#34;cannot parse token claims&#34;)
-<span id="L110" class="ln">   110  </span>	}
-<span id="L111" class="ln">   111  </span>	if !claims.VerifyExpiresAt(time.Now().Local().Unix(), true) {
-<span id="L112" class="ln">   112  </span>		return errors.New(&#34;token expired&#34;)
-<span id="L113" class="ln">   113  </span>	}
-<span id="L114" class="ln">   114  </span>	return nil
-<span id="L115" class="ln">   115  </span>}
-<span id="L116" class="ln">   116  </span>
+<span id="L95" class="ln">    95  </span>
+<span id="L96" class="ln">    96  </span>	_, err = jwt.Parse(t,
+<span id="L97" class="ln">    97  </span>		func(_ *jwt.Token) (any, error) {
+<span id="L98" class="ln">    98  </span>			return sampleSecretKey, nil
+<span id="L99" class="ln">    99  </span>		},
+<span id="L100" class="ln">   100  </span>		jwt.WithExpirationRequired(),
+<span id="L101" class="ln">   101  </span>		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+<span id="L102" class="ln">   102  </span>	return err
+<span id="L103" class="ln">   103  </span>}
+<span id="L104" class="ln">   104  </span>
 </pre><p></p>
 
 <div id="footer">
