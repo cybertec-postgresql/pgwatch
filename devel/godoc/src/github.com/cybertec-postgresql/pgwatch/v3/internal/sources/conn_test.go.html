@@ -58,170 +58,227 @@
 <pre><span id="L1" class="ln">     1  </span>package sources_test
 <span id="L2" class="ln">     2  </span>
 <span id="L3" class="ln">     3  </span>import (
-<span id="L4" class="ln">     4  </span>	&#34;testing&#34;
-<span id="L5" class="ln">     5  </span>	&#34;time&#34;
+<span id="L4" class="ln">     4  </span>	&#34;context&#34;
+<span id="L5" class="ln">     5  </span>	&#34;testing&#34;
 <span id="L6" class="ln">     6  </span>
 <span id="L7" class="ln">     7  </span>	&#34;github.com/jackc/pgx/v5/pgconn&#34;
-<span id="L8" class="ln">     8  </span>	&#34;github.com/pashagolub/pgxmock/v4&#34;
-<span id="L9" class="ln">     9  </span>	&#34;github.com/stretchr/testify/assert&#34;
-<span id="L10" class="ln">    10  </span>	&#34;github.com/stretchr/testify/require&#34;
-<span id="L11" class="ln">    11  </span>
-<span id="L12" class="ln">    12  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/sources&#34;
-<span id="L13" class="ln">    13  </span>	testcontainers &#34;github.com/testcontainers/testcontainers-go&#34;
-<span id="L14" class="ln">    14  </span>	&#34;github.com/testcontainers/testcontainers-go/modules/postgres&#34;
-<span id="L15" class="ln">    15  </span>	&#34;github.com/testcontainers/testcontainers-go/wait&#34;
-<span id="L16" class="ln">    16  </span>)
-<span id="L17" class="ln">    17  </span>
-<span id="L18" class="ln">    18  </span>const ImageName = &#34;docker.io/postgres:17-alpine&#34;
-<span id="L19" class="ln">    19  </span>
-<span id="L20" class="ln">    20  </span>func TestSourceConn_Connect(t *testing.T) {
-<span id="L21" class="ln">    21  </span>	pgContainer, err := postgres.Run(ctx,
-<span id="L22" class="ln">    22  </span>		ImageName,
-<span id="L23" class="ln">    23  </span>		testcontainers.WithWaitStrategy(
-<span id="L24" class="ln">    24  </span>			wait.ForLog(&#34;database system is ready to accept connections&#34;).
-<span id="L25" class="ln">    25  </span>				WithOccurrence(2).
-<span id="L26" class="ln">    26  </span>				WithStartupTimeout(5*time.Second)),
-<span id="L27" class="ln">    27  </span>	)
-<span id="L28" class="ln">    28  </span>	require.NoError(t, err)
-<span id="L29" class="ln">    29  </span>	defer func() { assert.NoError(t, pgContainer.Terminate(ctx)) }()
-<span id="L30" class="ln">    30  </span>
-<span id="L31" class="ln">    31  </span>	<span class="comment">// Create a new MonitoredDatabase instance</span>
-<span id="L32" class="ln">    32  </span>	md := &amp;sources.SourceConn{}
-<span id="L33" class="ln">    33  </span>	md.ConnStr, err = pgContainer.ConnectionString(ctx)
-<span id="L34" class="ln">    34  </span>	assert.NoError(t, err)
-<span id="L35" class="ln">    35  </span>
-<span id="L36" class="ln">    36  </span>	<span class="comment">// Call the Connect method</span>
-<span id="L37" class="ln">    37  </span>	err = md.Connect(ctx, sources.CmdOpts{})
-<span id="L38" class="ln">    38  </span>	assert.NoError(t, err)
-<span id="L39" class="ln">    39  </span>
-<span id="L40" class="ln">    40  </span>	<span class="comment">// Check cached connection</span>
-<span id="L41" class="ln">    41  </span>	err = md.Connect(ctx, sources.CmdOpts{})
-<span id="L42" class="ln">    42  </span>	assert.NoError(t, err)
-<span id="L43" class="ln">    43  </span>}
-<span id="L44" class="ln">    44  </span>func TestSourceConn_GetDatabaseName(t *testing.T) {
-<span id="L45" class="ln">    45  </span>	md := &amp;sources.SourceConn{}
-<span id="L46" class="ln">    46  </span>	md.ConnStr = &#34;postgres://user:password@localhost:5432/mydatabase&#34;
-<span id="L47" class="ln">    47  </span>	expected := &#34;mydatabase&#34;
-<span id="L48" class="ln">    48  </span>	<span class="comment">// check pgx.ConnConfig related code</span>
-<span id="L49" class="ln">    49  </span>	got := md.GetDatabaseName()
-<span id="L50" class="ln">    50  </span>	assert.Equal(t, expected, got, &#34;GetDatabaseName() = %v, want %v&#34;, got, expected)
-<span id="L51" class="ln">    51  </span>	<span class="comment">// check ConnStr parsing</span>
-<span id="L52" class="ln">    52  </span>	got = md.Source.GetDatabaseName()
-<span id="L53" class="ln">    53  </span>	assert.Equal(t, expected, got, &#34;GetDatabaseName() = %v, want %v&#34;, got, expected)
+<span id="L8" class="ln">     8  </span>	&#34;github.com/jackc/pgx/v5/pgxpool&#34;
+<span id="L9" class="ln">     9  </span>	&#34;github.com/pashagolub/pgxmock/v4&#34;
+<span id="L10" class="ln">    10  </span>	&#34;github.com/stretchr/testify/assert&#34;
+<span id="L11" class="ln">    11  </span>	&#34;github.com/stretchr/testify/require&#34;
+<span id="L12" class="ln">    12  </span>
+<span id="L13" class="ln">    13  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/db&#34;
+<span id="L14" class="ln">    14  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/sources&#34;
+<span id="L15" class="ln">    15  </span>)
+<span id="L16" class="ln">    16  </span>
+<span id="L17" class="ln">    17  </span>const ImageName = &#34;docker.io/postgres:17-alpine&#34;
+<span id="L18" class="ln">    18  </span>
+<span id="L19" class="ln">    19  </span>func TestSourceConn_Connect(t *testing.T) {
+<span id="L20" class="ln">    20  </span>
+<span id="L21" class="ln">    21  </span>	t.Run(&#34;failed config parsing&#34;, func(t *testing.T) {
+<span id="L22" class="ln">    22  </span>		md := &amp;sources.SourceConn{}
+<span id="L23" class="ln">    23  </span>		md.ConnStr = &#34;invalid connection string&#34;
+<span id="L24" class="ln">    24  </span>		err := md.Connect(ctx, sources.CmdOpts{})
+<span id="L25" class="ln">    25  </span>		assert.Error(t, err)
+<span id="L26" class="ln">    26  </span>	})
+<span id="L27" class="ln">    27  </span>
+<span id="L28" class="ln">    28  </span>	t.Run(&#34;failed connection&#34;, func(t *testing.T) {
+<span id="L29" class="ln">    29  </span>		md := &amp;sources.SourceConn{}
+<span id="L30" class="ln">    30  </span>		sources.NewWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
+<span id="L31" class="ln">    31  </span>			return nil, assert.AnError
+<span id="L32" class="ln">    32  </span>		}
+<span id="L33" class="ln">    33  </span>		err := md.Connect(ctx, sources.CmdOpts{})
+<span id="L34" class="ln">    34  </span>		assert.ErrorIs(t, err, assert.AnError)
+<span id="L35" class="ln">    35  </span>	})
+<span id="L36" class="ln">    36  </span>
+<span id="L37" class="ln">    37  </span>	t.Run(&#34;successful connection to pgbouncer&#34;, func(t *testing.T) {
+<span id="L38" class="ln">    38  </span>		mock, err := pgxmock.NewPool()
+<span id="L39" class="ln">    39  </span>		require.NoError(t, err)
+<span id="L40" class="ln">    40  </span>		sources.NewWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
+<span id="L41" class="ln">    41  </span>			return mock, nil
+<span id="L42" class="ln">    42  </span>		}
+<span id="L43" class="ln">    43  </span>
+<span id="L44" class="ln">    44  </span>		md := &amp;sources.SourceConn{}
+<span id="L45" class="ln">    45  </span>		md.Kind = sources.SourcePgBouncer
+<span id="L46" class="ln">    46  </span>
+<span id="L47" class="ln">    47  </span>		opts := sources.CmdOpts{}
+<span id="L48" class="ln">    48  </span>		opts.MaxParallelConnectionsPerDb = 3
+<span id="L49" class="ln">    49  </span>
+<span id="L50" class="ln">    50  </span>		mock.ExpectExec(&#34;SHOW VERSION&#34;).WillReturnResult(pgconn.NewCommandTag(&#34;SELECT 1&#34;))
+<span id="L51" class="ln">    51  </span>
+<span id="L52" class="ln">    52  </span>		err = md.Connect(ctx, opts)
+<span id="L53" class="ln">    53  </span>		assert.NoError(t, err)
 <span id="L54" class="ln">    54  </span>
-<span id="L55" class="ln">    55  </span>	md = &amp;sources.SourceConn{}
-<span id="L56" class="ln">    56  </span>	md.ConnStr = &#34;foo boo&#34;
-<span id="L57" class="ln">    57  </span>	expected = &#34;&#34;
-<span id="L58" class="ln">    58  </span>	got = md.GetDatabaseName()
-<span id="L59" class="ln">    59  </span>	assert.Equal(t, expected, got, &#34;GetDatabaseName() = %v, want %v&#34;, got, expected)
-<span id="L60" class="ln">    60  </span>}
-<span id="L61" class="ln">    61  </span>
-<span id="L62" class="ln">    62  </span>func TestSourceConn_SetDatabaseName(t *testing.T) {
-<span id="L63" class="ln">    63  </span>	md := &amp;sources.SourceConn{}
-<span id="L64" class="ln">    64  </span>	md.ConnStr = &#34;postgres://user:password@localhost:5432/mydatabase&#34;
-<span id="L65" class="ln">    65  </span>	expected := &#34;mydatabase&#34;
-<span id="L66" class="ln">    66  </span>	<span class="comment">// check ConnStr parsing</span>
-<span id="L67" class="ln">    67  </span>	md.SetDatabaseName(expected)
-<span id="L68" class="ln">    68  </span>	got := md.GetDatabaseName()
-<span id="L69" class="ln">    69  </span>	assert.Equal(t, expected, got, &#34;GetDatabaseName() = %v, want %v&#34;, got, expected)
+<span id="L55" class="ln">    55  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L56" class="ln">    56  </span>	})
+<span id="L57" class="ln">    57  </span>}
+<span id="L58" class="ln">    58  </span>
+<span id="L59" class="ln">    59  </span>func TestSourceConn_ParseConfig(t *testing.T) {
+<span id="L60" class="ln">    60  </span>	md := &amp;sources.SourceConn{}
+<span id="L61" class="ln">    61  </span>	assert.NoError(t, md.ParseConfig())
+<span id="L62" class="ln">    62  </span>	<span class="comment">//cached config</span>
+<span id="L63" class="ln">    63  </span>	assert.NoError(t, md.ParseConfig())
+<span id="L64" class="ln">    64  </span>}
+<span id="L65" class="ln">    65  </span>
+<span id="L66" class="ln">    66  </span>func TestSourceConn_GetDatabaseName(t *testing.T) {
+<span id="L67" class="ln">    67  </span>	md := &amp;sources.SourceConn{}
+<span id="L68" class="ln">    68  </span>	md.ConnStr = &#34;postgres://user:password@localhost:5432/mydatabase&#34;
+<span id="L69" class="ln">    69  </span>	expected := &#34;mydatabase&#34;
 <span id="L70" class="ln">    70  </span>	<span class="comment">// check pgx.ConnConfig related code</span>
-<span id="L71" class="ln">    71  </span>	expected = &#34;newdatabase&#34;
-<span id="L72" class="ln">    72  </span>	md.SetDatabaseName(expected)
-<span id="L73" class="ln">    73  </span>	got = md.GetDatabaseName()
-<span id="L74" class="ln">    74  </span>	assert.Equal(t, expected, got, &#34;GetDatabaseName() = %v, want %v&#34;, got, expected)
-<span id="L75" class="ln">    75  </span>
-<span id="L76" class="ln">    76  </span>	md = &amp;sources.SourceConn{}
-<span id="L77" class="ln">    77  </span>	md.ConnStr = &#34;foo boo&#34;
-<span id="L78" class="ln">    78  </span>	expected = &#34;&#34;
-<span id="L79" class="ln">    79  </span>	md.SetDatabaseName(&#34;ingored due to invalid ConnStr&#34;)
+<span id="L71" class="ln">    71  </span>	got := md.GetDatabaseName()
+<span id="L72" class="ln">    72  </span>	assert.Equal(t, expected, got, &#34;GetDatabaseName() = %v, want %v&#34;, got, expected)
+<span id="L73" class="ln">    73  </span>	<span class="comment">// check ConnStr parsing</span>
+<span id="L74" class="ln">    74  </span>	got = md.Source.GetDatabaseName()
+<span id="L75" class="ln">    75  </span>	assert.Equal(t, expected, got, &#34;GetDatabaseName() = %v, want %v&#34;, got, expected)
+<span id="L76" class="ln">    76  </span>
+<span id="L77" class="ln">    77  </span>	md = &amp;sources.SourceConn{}
+<span id="L78" class="ln">    78  </span>	md.ConnStr = &#34;foo boo&#34;
+<span id="L79" class="ln">    79  </span>	expected = &#34;&#34;
 <span id="L80" class="ln">    80  </span>	got = md.GetDatabaseName()
 <span id="L81" class="ln">    81  </span>	assert.Equal(t, expected, got, &#34;GetDatabaseName() = %v, want %v&#34;, got, expected)
 <span id="L82" class="ln">    82  </span>}
 <span id="L83" class="ln">    83  </span>
-<span id="L84" class="ln">    84  </span>func TestSourceConn_IsPostgresSource(t *testing.T) {
+<span id="L84" class="ln">    84  </span>func TestSourceConn_SetDatabaseName(t *testing.T) {
 <span id="L85" class="ln">    85  </span>	md := &amp;sources.SourceConn{}
-<span id="L86" class="ln">    86  </span>	md.Kind = sources.SourcePostgres
-<span id="L87" class="ln">    87  </span>	assert.True(t, md.IsPostgresSource(), &#34;IsPostgresSource() = false, want true&#34;)
-<span id="L88" class="ln">    88  </span>
-<span id="L89" class="ln">    89  </span>	md.Kind = sources.SourcePgBouncer
-<span id="L90" class="ln">    90  </span>	assert.False(t, md.IsPostgresSource(), &#34;IsPostgresSource() = true, want false&#34;)
-<span id="L91" class="ln">    91  </span>
-<span id="L92" class="ln">    92  </span>	md.Kind = sources.SourcePgPool
-<span id="L93" class="ln">    93  </span>	assert.False(t, md.IsPostgresSource(), &#34;IsPostgresSource() = true, want false&#34;)
-<span id="L94" class="ln">    94  </span>
-<span id="L95" class="ln">    95  </span>	md.Kind = sources.SourcePatroni
-<span id="L96" class="ln">    96  </span>	assert.True(t, md.IsPostgresSource(), &#34;IsPostgresSource() = false, want true&#34;)
-<span id="L97" class="ln">    97  </span>}
-<span id="L98" class="ln">    98  </span>
-<span id="L99" class="ln">    99  </span>func TestSourceConn_Ping(t *testing.T) {
-<span id="L100" class="ln">   100  </span>	db, err := pgxmock.NewPool()
-<span id="L101" class="ln">   101  </span>	require.NoError(t, err)
-<span id="L102" class="ln">   102  </span>	md := &amp;sources.SourceConn{Conn: db}
-<span id="L103" class="ln">   103  </span>
-<span id="L104" class="ln">   104  </span>	db.ExpectPing()
-<span id="L105" class="ln">   105  </span>	md.Kind = sources.SourcePostgres
-<span id="L106" class="ln">   106  </span>	assert.NoError(t, md.Ping(ctx), &#34;Ping() = error, want nil&#34;)
-<span id="L107" class="ln">   107  </span>
-<span id="L108" class="ln">   108  </span>	db.ExpectExec(&#34;SHOW VERSION&#34;).WillReturnResult(pgconn.NewCommandTag(&#34;SELECT 1&#34;))
-<span id="L109" class="ln">   109  </span>	md.Conn = db
-<span id="L110" class="ln">   110  </span>	md.Kind = sources.SourcePgBouncer
-<span id="L111" class="ln">   111  </span>	assert.NoError(t, md.Ping(ctx), &#34;Ping() = error, want nil&#34;)
-<span id="L112" class="ln">   112  </span>}
-<span id="L113" class="ln">   113  </span>
-<span id="L114" class="ln">   114  </span>type testSourceReader struct {
-<span id="L115" class="ln">   115  </span>	sources.Sources
-<span id="L116" class="ln">   116  </span>	error
-<span id="L117" class="ln">   117  </span>}
-<span id="L118" class="ln">   118  </span>
-<span id="L119" class="ln">   119  </span>func (r testSourceReader) GetSources() (sources.Sources, error) {
-<span id="L120" class="ln">   120  </span>	return r.Sources, r.error
-<span id="L121" class="ln">   121  </span>}
-<span id="L122" class="ln">   122  </span>
-<span id="L123" class="ln">   123  </span>func TestMonitoredDatabases_SyncFromReader_error(t *testing.T) {
-<span id="L124" class="ln">   124  </span>	reader := testSourceReader{error: assert.AnError}
-<span id="L125" class="ln">   125  </span>	mds := sources.SourceConns{}
-<span id="L126" class="ln">   126  </span>	_, err := mds.SyncFromReader(reader)
-<span id="L127" class="ln">   127  </span>	assert.Error(t, err)
+<span id="L86" class="ln">    86  </span>	md.ConnStr = &#34;postgres://user:password@localhost:5432/mydatabase&#34;
+<span id="L87" class="ln">    87  </span>	expected := &#34;mydatabase&#34;
+<span id="L88" class="ln">    88  </span>	<span class="comment">// check ConnStr parsing</span>
+<span id="L89" class="ln">    89  </span>	md.SetDatabaseName(expected)
+<span id="L90" class="ln">    90  </span>	got := md.GetDatabaseName()
+<span id="L91" class="ln">    91  </span>	assert.Equal(t, expected, got, &#34;GetDatabaseName() = %v, want %v&#34;, got, expected)
+<span id="L92" class="ln">    92  </span>	<span class="comment">// check pgx.ConnConfig related code</span>
+<span id="L93" class="ln">    93  </span>	expected = &#34;newdatabase&#34;
+<span id="L94" class="ln">    94  </span>	md.SetDatabaseName(expected)
+<span id="L95" class="ln">    95  </span>	got = md.GetDatabaseName()
+<span id="L96" class="ln">    96  </span>	assert.Equal(t, expected, got, &#34;GetDatabaseName() = %v, want %v&#34;, got, expected)
+<span id="L97" class="ln">    97  </span>
+<span id="L98" class="ln">    98  </span>	md = &amp;sources.SourceConn{}
+<span id="L99" class="ln">    99  </span>	md.ConnStr = &#34;foo boo&#34;
+<span id="L100" class="ln">   100  </span>	expected = &#34;&#34;
+<span id="L101" class="ln">   101  </span>	md.SetDatabaseName(&#34;ingored due to invalid ConnStr&#34;)
+<span id="L102" class="ln">   102  </span>	got = md.GetDatabaseName()
+<span id="L103" class="ln">   103  </span>	assert.Equal(t, expected, got, &#34;GetDatabaseName() = %v, want %v&#34;, got, expected)
+<span id="L104" class="ln">   104  </span>}
+<span id="L105" class="ln">   105  </span>
+<span id="L106" class="ln">   106  </span>func TestSourceConn_DiscoverPlatform(t *testing.T) {
+<span id="L107" class="ln">   107  </span>	mock, err := pgxmock.NewPool()
+<span id="L108" class="ln">   108  </span>	require.NoError(t, err)
+<span id="L109" class="ln">   109  </span>	md := &amp;sources.SourceConn{Conn: mock}
+<span id="L110" class="ln">   110  </span>
+<span id="L111" class="ln">   111  </span>	mock.ExpectQuery(&#34;select&#34;).WillReturnRows(pgxmock.NewRows([]string{&#34;exec_env&#34;}).AddRow(&#34;AZURE_SINGLE&#34;))
+<span id="L112" class="ln">   112  </span>
+<span id="L113" class="ln">   113  </span>	assert.Equal(t, &#34;AZURE_SINGLE&#34;, md.DiscoverPlatform(ctx))
+<span id="L114" class="ln">   114  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L115" class="ln">   115  </span>}
+<span id="L116" class="ln">   116  </span>
+<span id="L117" class="ln">   117  </span>func TestSourceConn_GetApproxSize(t *testing.T) {
+<span id="L118" class="ln">   118  </span>	mock, err := pgxmock.NewPool()
+<span id="L119" class="ln">   119  </span>	require.NoError(t, err)
+<span id="L120" class="ln">   120  </span>	md := &amp;sources.SourceConn{Conn: mock}
+<span id="L121" class="ln">   121  </span>
+<span id="L122" class="ln">   122  </span>	mock.ExpectQuery(&#34;select&#34;).WillReturnRows(pgxmock.NewRows([]string{&#34;size&#34;}).AddRow(42))
+<span id="L123" class="ln">   123  </span>
+<span id="L124" class="ln">   124  </span>	size, err := md.GetApproxSize(ctx)
+<span id="L125" class="ln">   125  </span>	assert.EqualValues(t, 42, size)
+<span id="L126" class="ln">   126  </span>	assert.NoError(t, err)
+<span id="L127" class="ln">   127  </span>	assert.NoError(t, mock.ExpectationsWereMet())
 <span id="L128" class="ln">   128  </span>}
 <span id="L129" class="ln">   129  </span>
-<span id="L130" class="ln">   130  </span>func TestMonitoredDatabases_SyncFromReader(t *testing.T) {
-<span id="L131" class="ln">   131  </span>	db, _ := pgxmock.NewPool()
-<span id="L132" class="ln">   132  </span>	src := sources.Source{
-<span id="L133" class="ln">   133  </span>		Name:      &#34;test&#34;,
-<span id="L134" class="ln">   134  </span>		Kind:      sources.SourcePostgres,
-<span id="L135" class="ln">   135  </span>		IsEnabled: true,
-<span id="L136" class="ln">   136  </span>		ConnStr:   &#34;postgres://user:password@localhost:5432/mydatabase&#34;,
-<span id="L137" class="ln">   137  </span>	}
-<span id="L138" class="ln">   138  </span>	reader := testSourceReader{Sources: sources.Sources{src}}
-<span id="L139" class="ln">   139  </span>	<span class="comment">// first read the sources</span>
-<span id="L140" class="ln">   140  </span>	mds, _ := reader.GetSources()
-<span id="L141" class="ln">   141  </span>	assert.NotNil(t, mds, &#34;GetSources() = nil, want not nil&#34;)
-<span id="L142" class="ln">   142  </span>	<span class="comment">// then resolve the databases</span>
-<span id="L143" class="ln">   143  </span>	mdbs, _ := mds.ResolveDatabases()
-<span id="L144" class="ln">   144  </span>	assert.NotNil(t, mdbs, &#34;ResolveDatabases() = nil, want not nil&#34;)
-<span id="L145" class="ln">   145  </span>	<span class="comment">// pretend that we have a connection</span>
-<span id="L146" class="ln">   146  </span>	mdbs[0].Conn = db
-<span id="L147" class="ln">   147  </span>	db.ExpectClose()
-<span id="L148" class="ln">   148  </span>	<span class="comment">// sync the databases and make sure they are the same</span>
-<span id="L149" class="ln">   149  </span>	newmdbs, _ := mdbs.SyncFromReader(reader)
-<span id="L150" class="ln">   150  </span>	assert.NotNil(t, newmdbs)
-<span id="L151" class="ln">   151  </span>	assert.Equal(t, mdbs[0].ConnStr, newmdbs[0].ConnStr)
-<span id="L152" class="ln">   152  </span>	assert.Equal(t, db, newmdbs[0].Conn)
-<span id="L153" class="ln">   153  </span>	<span class="comment">// change the connection string and check if databases are updated</span>
-<span id="L154" class="ln">   154  </span>	reader.Sources[0].ConnStr = &#34;postgres://user:password@localhost:5432/anotherdatabase&#34;
-<span id="L155" class="ln">   155  </span>	newmdbs, _ = mdbs.SyncFromReader(reader)
-<span id="L156" class="ln">   156  </span>	assert.NotNil(t, newmdbs)
-<span id="L157" class="ln">   157  </span>	assert.NotEqual(t, mdbs[0].ConnStr, newmdbs[0].ConnStr)
-<span id="L158" class="ln">   158  </span>	assert.Nil(t, newmdbs[0].Conn)
-<span id="L159" class="ln">   159  </span>	assert.NoError(t, db.ExpectationsWereMet())
-<span id="L160" class="ln">   160  </span>	<span class="comment">// change the unique name of the source and check if it&#39;s updated</span>
-<span id="L161" class="ln">   161  </span>	reader.Sources[0].Name = &#34;another&#34;
-<span id="L162" class="ln">   162  </span>	newmdbs, _ = mdbs.SyncFromReader(reader)
-<span id="L163" class="ln">   163  </span>	assert.NotNil(t, newmdbs)
-<span id="L164" class="ln">   164  </span>	assert.NotEqual(t, mdbs[0].Name, newmdbs[0].Name)
-<span id="L165" class="ln">   165  </span>	assert.Nil(t, newmdbs[0].Conn)
-<span id="L166" class="ln">   166  </span>}
-<span id="L167" class="ln">   167  </span>
+<span id="L130" class="ln">   130  </span>func TestSourceConn_FunctionExists(t *testing.T) {
+<span id="L131" class="ln">   131  </span>	mock, err := pgxmock.NewPool()
+<span id="L132" class="ln">   132  </span>	require.NoError(t, err)
+<span id="L133" class="ln">   133  </span>	md := &amp;sources.SourceConn{Conn: mock}
+<span id="L134" class="ln">   134  </span>
+<span id="L135" class="ln">   135  </span>	mock.ExpectQuery(&#34;select&#34;).WithArgs(&#34;get_foo&#34;).WillReturnRows(pgxmock.NewRows([]string{&#34;exists&#34;}))
+<span id="L136" class="ln">   136  </span>
+<span id="L137" class="ln">   137  </span>	assert.False(t, md.FunctionExists(ctx, &#34;get_foo&#34;))
+<span id="L138" class="ln">   138  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L139" class="ln">   139  </span>}
+<span id="L140" class="ln">   140  </span>
+<span id="L141" class="ln">   141  </span>func TestSourceConn_IsPostgresSource(t *testing.T) {
+<span id="L142" class="ln">   142  </span>	md := &amp;sources.SourceConn{}
+<span id="L143" class="ln">   143  </span>	md.Kind = sources.SourcePostgres
+<span id="L144" class="ln">   144  </span>	assert.True(t, md.IsPostgresSource(), &#34;IsPostgresSource() = false, want true&#34;)
+<span id="L145" class="ln">   145  </span>
+<span id="L146" class="ln">   146  </span>	md.Kind = sources.SourcePgBouncer
+<span id="L147" class="ln">   147  </span>	assert.False(t, md.IsPostgresSource(), &#34;IsPostgresSource() = true, want false&#34;)
+<span id="L148" class="ln">   148  </span>
+<span id="L149" class="ln">   149  </span>	md.Kind = sources.SourcePgPool
+<span id="L150" class="ln">   150  </span>	assert.False(t, md.IsPostgresSource(), &#34;IsPostgresSource() = true, want false&#34;)
+<span id="L151" class="ln">   151  </span>
+<span id="L152" class="ln">   152  </span>	md.Kind = sources.SourcePatroni
+<span id="L153" class="ln">   153  </span>	assert.True(t, md.IsPostgresSource(), &#34;IsPostgresSource() = false, want true&#34;)
+<span id="L154" class="ln">   154  </span>}
+<span id="L155" class="ln">   155  </span>
+<span id="L156" class="ln">   156  </span>func TestSourceConn_Ping(t *testing.T) {
+<span id="L157" class="ln">   157  </span>	db, err := pgxmock.NewPool()
+<span id="L158" class="ln">   158  </span>	require.NoError(t, err)
+<span id="L159" class="ln">   159  </span>	md := &amp;sources.SourceConn{Conn: db}
+<span id="L160" class="ln">   160  </span>
+<span id="L161" class="ln">   161  </span>	db.ExpectPing()
+<span id="L162" class="ln">   162  </span>	md.Kind = sources.SourcePostgres
+<span id="L163" class="ln">   163  </span>	assert.NoError(t, md.Ping(ctx), &#34;Ping() = error, want nil&#34;)
+<span id="L164" class="ln">   164  </span>
+<span id="L165" class="ln">   165  </span>	db.ExpectExec(&#34;SHOW VERSION&#34;).WillReturnResult(pgconn.NewCommandTag(&#34;SELECT 1&#34;))
+<span id="L166" class="ln">   166  </span>	md.Conn = db
+<span id="L167" class="ln">   167  </span>	md.Kind = sources.SourcePgBouncer
+<span id="L168" class="ln">   168  </span>	assert.NoError(t, md.Ping(ctx), &#34;Ping() = error, want nil&#34;)
+<span id="L169" class="ln">   169  </span>}
+<span id="L170" class="ln">   170  </span>
+<span id="L171" class="ln">   171  </span>type testSourceReader struct {
+<span id="L172" class="ln">   172  </span>	sources.Sources
+<span id="L173" class="ln">   173  </span>	error
+<span id="L174" class="ln">   174  </span>}
+<span id="L175" class="ln">   175  </span>
+<span id="L176" class="ln">   176  </span>func (r testSourceReader) GetSources() (sources.Sources, error) {
+<span id="L177" class="ln">   177  </span>	return r.Sources, r.error
+<span id="L178" class="ln">   178  </span>}
+<span id="L179" class="ln">   179  </span>
+<span id="L180" class="ln">   180  </span>func TestMonitoredDatabases_SyncFromReader_error(t *testing.T) {
+<span id="L181" class="ln">   181  </span>	reader := testSourceReader{error: assert.AnError}
+<span id="L182" class="ln">   182  </span>	mds := sources.SourceConns{}
+<span id="L183" class="ln">   183  </span>	_, err := mds.SyncFromReader(reader)
+<span id="L184" class="ln">   184  </span>	assert.Error(t, err)
+<span id="L185" class="ln">   185  </span>}
+<span id="L186" class="ln">   186  </span>
+<span id="L187" class="ln">   187  </span>func TestMonitoredDatabases_SyncFromReader(t *testing.T) {
+<span id="L188" class="ln">   188  </span>	db, _ := pgxmock.NewPool()
+<span id="L189" class="ln">   189  </span>	src := sources.Source{
+<span id="L190" class="ln">   190  </span>		Name:      &#34;test&#34;,
+<span id="L191" class="ln">   191  </span>		Kind:      sources.SourcePostgres,
+<span id="L192" class="ln">   192  </span>		IsEnabled: true,
+<span id="L193" class="ln">   193  </span>		ConnStr:   &#34;postgres://user:password@localhost:5432/mydatabase&#34;,
+<span id="L194" class="ln">   194  </span>	}
+<span id="L195" class="ln">   195  </span>	reader := testSourceReader{Sources: sources.Sources{src}}
+<span id="L196" class="ln">   196  </span>	<span class="comment">// first read the sources</span>
+<span id="L197" class="ln">   197  </span>	mds, _ := reader.GetSources()
+<span id="L198" class="ln">   198  </span>	assert.NotNil(t, mds, &#34;GetSources() = nil, want not nil&#34;)
+<span id="L199" class="ln">   199  </span>	<span class="comment">// then resolve the databases</span>
+<span id="L200" class="ln">   200  </span>	mdbs, _ := mds.ResolveDatabases()
+<span id="L201" class="ln">   201  </span>	assert.NotNil(t, mdbs, &#34;ResolveDatabases() = nil, want not nil&#34;)
+<span id="L202" class="ln">   202  </span>	<span class="comment">// pretend that we have a connection</span>
+<span id="L203" class="ln">   203  </span>	mdbs[0].Conn = db
+<span id="L204" class="ln">   204  </span>	db.ExpectClose()
+<span id="L205" class="ln">   205  </span>	<span class="comment">// sync the databases and make sure they are the same</span>
+<span id="L206" class="ln">   206  </span>	newmdbs, _ := mdbs.SyncFromReader(reader)
+<span id="L207" class="ln">   207  </span>	assert.NotNil(t, newmdbs)
+<span id="L208" class="ln">   208  </span>	assert.Equal(t, mdbs[0].ConnStr, newmdbs[0].ConnStr)
+<span id="L209" class="ln">   209  </span>	assert.Equal(t, db, newmdbs[0].Conn)
+<span id="L210" class="ln">   210  </span>	<span class="comment">// change the connection string and check if databases are updated</span>
+<span id="L211" class="ln">   211  </span>	reader.Sources[0].ConnStr = &#34;postgres://user:password@localhost:5432/anotherdatabase&#34;
+<span id="L212" class="ln">   212  </span>	newmdbs, _ = mdbs.SyncFromReader(reader)
+<span id="L213" class="ln">   213  </span>	assert.NotNil(t, newmdbs)
+<span id="L214" class="ln">   214  </span>	assert.NotEqual(t, mdbs[0].ConnStr, newmdbs[0].ConnStr)
+<span id="L215" class="ln">   215  </span>	assert.Nil(t, newmdbs[0].Conn)
+<span id="L216" class="ln">   216  </span>	assert.NoError(t, db.ExpectationsWereMet())
+<span id="L217" class="ln">   217  </span>	<span class="comment">// change the unique name of the source and check if it&#39;s updated</span>
+<span id="L218" class="ln">   218  </span>	reader.Sources[0].Name = &#34;another&#34;
+<span id="L219" class="ln">   219  </span>	newmdbs, _ = mdbs.SyncFromReader(reader)
+<span id="L220" class="ln">   220  </span>	assert.NotNil(t, newmdbs)
+<span id="L221" class="ln">   221  </span>	assert.NotEqual(t, mdbs[0].Name, newmdbs[0].Name)
+<span id="L222" class="ln">   222  </span>	assert.Nil(t, newmdbs[0].Conn)
+<span id="L223" class="ln">   223  </span>}
+<span id="L224" class="ln">   224  </span>
 </pre><p></p>
 
 <div id="footer">
