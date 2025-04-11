@@ -34,12 +34,13 @@ func (md *SourceConn) ping(ctx context.Context) (err error) {
 
 // Ping will try to establish a brand new connection to the server and return any error
 func (md *SourceConn) Ping(ctx context.Context) error {
-	c, err := pgx.Connect(ctx, md.ConnStr)
+	c, err := pgxpool.New(ctx, md.ConnStr)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = c.Close(ctx) }()
-	return md.ping(ctx)
+	defer c.Close()
+	t := &SourceConn{Conn: c, Source: md.Source}
+	return t.ping(ctx)
 }
 
 // Connect will establish a connection to the database if it's not already connected.
