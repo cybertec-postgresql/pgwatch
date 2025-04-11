@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,7 +17,7 @@ import (
 
 const ImageName = "docker.io/postgres:17-alpine"
 
-func TestMonitoredDatabase_Connect(t *testing.T) {
+func TestSourceConn_Connect(t *testing.T) {
 	pgContainer, err := postgres.Run(ctx,
 		ImageName,
 		testcontainers.WithWaitStrategy(
@@ -40,7 +41,7 @@ func TestMonitoredDatabase_Connect(t *testing.T) {
 	err = md.Connect(ctx, sources.CmdOpts{})
 	assert.NoError(t, err)
 }
-func TestMonitoredDatabase_GetDatabaseName(t *testing.T) {
+func TestSourceConn_GetDatabaseName(t *testing.T) {
 	md := &sources.SourceConn{}
 	md.ConnStr = "postgres://user:password@localhost:5432/mydatabase"
 	expected := "mydatabase"
@@ -58,7 +59,7 @@ func TestMonitoredDatabase_GetDatabaseName(t *testing.T) {
 	assert.Equal(t, expected, got, "GetDatabaseName() = %v, want %v", got, expected)
 }
 
-func TestMonitoredDatabase_SetDatabaseName(t *testing.T) {
+func TestSourceConn_SetDatabaseName(t *testing.T) {
 	md := &sources.SourceConn{}
 	md.ConnStr = "postgres://user:password@localhost:5432/mydatabase"
 	expected := "mydatabase"
@@ -80,7 +81,7 @@ func TestMonitoredDatabase_SetDatabaseName(t *testing.T) {
 	assert.Equal(t, expected, got, "GetDatabaseName() = %v, want %v", got, expected)
 }
 
-func TestMonitoredDatabase_IsPostgresSource(t *testing.T) {
+func TestSourceConn_IsPostgresSource(t *testing.T) {
 	md := &sources.SourceConn{}
 	md.Kind = sources.SourcePostgres
 	assert.True(t, md.IsPostgresSource(), "IsPostgresSource() = false, want true")
@@ -93,6 +94,21 @@ func TestMonitoredDatabase_IsPostgresSource(t *testing.T) {
 
 	md.Kind = sources.SourcePatroni
 	assert.True(t, md.IsPostgresSource(), "IsPostgresSource() = false, want true")
+}
+
+func TestSourceConn_Ping(t *testing.T) {
+	db, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	md := &sources.SourceConn{Conn: db}
+
+	db.ExpectPing()
+	md.Kind = sources.SourcePostgres
+	assert.NoError(t, md.Ping(ctx), "Ping() = error, want nil")
+
+	db.ExpectExec("SHOW VERSION").WillReturnResult(pgconn.NewCommandTag("SELECT 1"))
+	md.Conn = db
+	md.Kind = sources.SourcePgBouncer
+	assert.NoError(t, md.Ping(ctx), "Ping() = error, want nil")
 }
 
 type testSourceReader struct {
