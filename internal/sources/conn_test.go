@@ -1,46 +1,68 @@
 package sources_test
 
 import (
+	"context"
 	"testing"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
-	testcontainers "github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const ImageName = "docker.io/postgres:17-alpine"
 
 func TestSourceConn_Connect(t *testing.T) {
-	pgContainer, err := postgres.Run(ctx,
-		ImageName,
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
-	require.NoError(t, err)
-	defer func() { assert.NoError(t, pgContainer.Terminate(ctx)) }()
 
-	// Create a new MonitoredDatabase instance
-	md := &sources.SourceConn{}
-	md.ConnStr, err = pgContainer.ConnectionString(ctx)
-	assert.NoError(t, err)
+	t.Run("failed config parsing", func(t *testing.T) {
+		md := &sources.SourceConn{}
+		md.ConnStr = "invalid connection string"
+		err := md.Connect(ctx, sources.CmdOpts{})
+		assert.Error(t, err)
+	})
 
-	// Call the Connect method
-	err = md.Connect(ctx, sources.CmdOpts{})
-	assert.NoError(t, err)
+	t.Run("failed connection", func(t *testing.T) {
+		md := &sources.SourceConn{}
+		sources.NewWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
+			return nil, assert.AnError
+		}
+		err := md.Connect(ctx, sources.CmdOpts{})
+		assert.ErrorIs(t, err, assert.AnError)
+	})
 
-	// Check cached connection
-	err = md.Connect(ctx, sources.CmdOpts{})
-	assert.NoError(t, err)
+	t.Run("successful connection to pgbouncer", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		sources.NewWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
+			return mock, nil
+		}
+
+		md := &sources.SourceConn{}
+		md.Kind = sources.SourcePgBouncer
+
+		opts := sources.CmdOpts{}
+		opts.MaxParallelConnectionsPerDb = 3
+
+		mock.ExpectExec("SHOW VERSION").WillReturnResult(pgconn.NewCommandTag("SELECT 1"))
+
+		err = md.Connect(ctx, opts)
+		assert.NoError(t, err)
+
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
 }
+
+func TestSourceConn_ParseConfig(t *testing.T) {
+	md := &sources.SourceConn{}
+	assert.NoError(t, md.ParseConfig())
+	//cached config
+	assert.NoError(t, md.ParseConfig())
+}
+
 func TestSourceConn_GetDatabaseName(t *testing.T) {
 	md := &sources.SourceConn{}
 	md.ConnStr = "postgres://user:password@localhost:5432/mydatabase"
@@ -79,6 +101,41 @@ func TestSourceConn_SetDatabaseName(t *testing.T) {
 	md.SetDatabaseName("ingored due to invalid ConnStr")
 	got = md.GetDatabaseName()
 	assert.Equal(t, expected, got, "GetDatabaseName() = %v, want %v", got, expected)
+}
+
+func TestSourceConn_DiscoverPlatform(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	md := &sources.SourceConn{Conn: mock}
+
+	mock.ExpectQuery("select").WillReturnRows(pgxmock.NewRows([]string{"exec_env"}).AddRow("AZURE_SINGLE"))
+
+	assert.Equal(t, "AZURE_SINGLE", md.DiscoverPlatform(ctx))
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSourceConn_GetApproxSize(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	md := &sources.SourceConn{Conn: mock}
+
+	mock.ExpectQuery("select").WillReturnRows(pgxmock.NewRows([]string{"size"}).AddRow(42))
+
+	size, err := md.GetApproxSize(ctx)
+	assert.EqualValues(t, 42, size)
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSourceConn_FunctionExists(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	md := &sources.SourceConn{Conn: mock}
+
+	mock.ExpectQuery("select").WithArgs("get_foo").WillReturnRows(pgxmock.NewRows([]string{"exists"}))
+
+	assert.False(t, md.FunctionExists(ctx, "get_foo"))
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestSourceConn_IsPostgresSource(t *testing.T) {
