@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type loginReq struct {
@@ -92,24 +92,12 @@ func validateToken(r *http.Request) (err error) {
 	if t == "" {
 		return errors.New("can not find token in header")
 	}
-	token, err := jwt.Parse(t, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("there was an error in parsing")
-		}
-		return sampleSecretKey, nil
-	})
-	if err != nil {
-		return err
-	}
-	if token == nil {
-		return errors.New("invalid token")
-	}
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return errors.New("cannot parse token claims")
-	}
-	if !claims.VerifyExpiresAt(time.Now().Local().Unix(), true) {
-		return errors.New("token expired")
-	}
-	return nil
+
+	_, err = jwt.Parse(t,
+		func(_ *jwt.Token) (any, error) {
+			return sampleSecretKey, nil
+		},
+		jwt.WithExpirationRequired(),
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+	return err
 }
