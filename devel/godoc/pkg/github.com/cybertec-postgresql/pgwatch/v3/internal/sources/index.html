@@ -233,13 +233,10 @@ At the moment, sources definitions support two storages:
 					<dd>&nbsp; &nbsp; <a href="#SourceConn.ParseConfig">func (md *SourceConn) ParseConfig() (err error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#SourceConn.Ping">func (md *SourceConn) Ping(ctx context.Context) error</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#SourceConn.Ping">func (md *SourceConn) Ping(ctx context.Context) (err error)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#SourceConn.SetDatabaseName">func (md *SourceConn) SetDatabaseName(name string)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceConn.ping">func (md *SourceConn) ping(ctx context.Context) (err error)</a></dd>
 				
 			
 				
@@ -836,7 +833,7 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="SourceConn.Connect">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L47">Connect</a>
+				<h3 id="SourceConn.Connect">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L37">Connect</a>
 					<a class="permalink" href="#SourceConn.Connect">&#xb6;</a>
 					
 					
@@ -850,7 +847,7 @@ If the connection is already established, it pings the server to ensure it&apos;
 				
 			
 				
-				<h3 id="SourceConn.DiscoverPlatform">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L98">DiscoverPlatform</a>
+				<h3 id="SourceConn.DiscoverPlatform">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L88">DiscoverPlatform</a>
 					<a class="permalink" href="#SourceConn.DiscoverPlatform">&#xb6;</a>
 					
 					
@@ -864,7 +861,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.FunctionExists">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L124">FunctionExists</a>
+				<h3 id="SourceConn.FunctionExists">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L114">FunctionExists</a>
 					<a class="permalink" href="#SourceConn.FunctionExists">&#xb6;</a>
 					
 					
@@ -877,7 +874,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.GetApproxSize">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L112">GetApproxSize</a>
+				<h3 id="SourceConn.GetApproxSize">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L102">GetApproxSize</a>
 					<a class="permalink" href="#SourceConn.GetApproxSize">&#xb6;</a>
 					
 					
@@ -890,7 +887,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.GetDatabaseName">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L76">GetDatabaseName</a>
+				<h3 id="SourceConn.GetDatabaseName">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L66">GetDatabaseName</a>
 					<a class="permalink" href="#SourceConn.GetDatabaseName">&#xb6;</a>
 					
 					
@@ -903,7 +900,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.IsPostgresSource">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L92">IsPostgresSource</a>
+				<h3 id="SourceConn.IsPostgresSource">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L82">IsPostgresSource</a>
 					<a class="permalink" href="#SourceConn.IsPostgresSource">&#xb6;</a>
 					
 					
@@ -915,7 +912,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.ParseConfig">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L67">ParseConfig</a>
+				<h3 id="SourceConn.ParseConfig">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L57">ParseConfig</a>
 					<a class="permalink" href="#SourceConn.ParseConfig">&#xb6;</a>
 					
 					
@@ -928,39 +925,26 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.Ping">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L36">Ping</a>
+				<h3 id="SourceConn.Ping">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L26">Ping</a>
 					<a class="permalink" href="#SourceConn.Ping">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (md *<a href="#SourceConn">SourceConn</a>) Ping(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				<p>Ping will try to establish a brand new connection to the server and return any error
+				<pre>func (md *<a href="#SourceConn">SourceConn</a>) Ping(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>Ping will try to ping the server to ensure the connection is still alive
 
 				
 				
 				
 			
 				
-				<h3 id="SourceConn.SetDatabaseName">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L84">SetDatabaseName</a>
+				<h3 id="SourceConn.SetDatabaseName">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L74">SetDatabaseName</a>
 					<a class="permalink" href="#SourceConn.SetDatabaseName">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (md *<a href="#SourceConn">SourceConn</a>) SetDatabaseName(name <a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
 				<p>SetDatabaseName sets the database name in the connection config for resolved databases
-
-				
-				
-				
-			
-				
-				<h3 id="SourceConn.ping">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L26">ping</a>
-					<a class="permalink" href="#SourceConn.ping">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (md *<a href="#SourceConn">SourceConn</a>) ping(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				<p>ping will try to ping the server to ensure the connection is still alive
 
 				
 				
@@ -1005,7 +989,7 @@ additionally matching/not matching specified regex patterns
 
 			
 				
-				<h3 id="SourceConns.GetMonitoredDatabase">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L134">GetMonitoredDatabase</a>
+				<h3 id="SourceConns.GetMonitoredDatabase">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L124">GetMonitoredDatabase</a>
 					<a class="permalink" href="#SourceConns.GetMonitoredDatabase">&#xb6;</a>
 					
 					
@@ -1017,7 +1001,7 @@ additionally matching/not matching specified regex patterns
 				
 			
 				
-				<h3 id="SourceConns.SyncFromReader">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L146">SyncFromReader</a>
+				<h3 id="SourceConns.SyncFromReader">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L136">SyncFromReader</a>
 					<a class="permalink" href="#SourceConns.SyncFromReader">&#xb6;</a>
 					
 					
