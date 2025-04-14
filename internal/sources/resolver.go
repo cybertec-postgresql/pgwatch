@@ -37,7 +37,7 @@ func (srcs Sources) ResolveDatabases() (_ SourceConns, err error) {
 		err = errors.Join(err, e)
 		resolvedDbs = append(resolvedDbs, dbs...)
 	}
-	return resolvedDbs, nil
+	return resolvedDbs, err
 }
 
 // ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni
@@ -352,7 +352,7 @@ func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error)
 		dbname string
 		rows   pgx.Rows
 	)
-	c, err = db.New(context.TODO(), s.ConnStr)
+	c, err = NewConn(context.TODO(), s.ConnStr)
 	if err != nil {
 		return
 	}
