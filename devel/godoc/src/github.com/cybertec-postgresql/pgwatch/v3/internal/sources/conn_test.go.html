@@ -84,7 +84,7 @@
 <span id="L27" class="ln">    27  </span>
 <span id="L28" class="ln">    28  </span>	t.Run(&#34;failed connection&#34;, func(t *testing.T) {
 <span id="L29" class="ln">    29  </span>		md := &amp;sources.SourceConn{}
-<span id="L30" class="ln">    30  </span>		sources.NewWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
+<span id="L30" class="ln">    30  </span>		sources.NewConnWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
 <span id="L31" class="ln">    31  </span>			return nil, assert.AnError
 <span id="L32" class="ln">    32  </span>		}
 <span id="L33" class="ln">    33  </span>		err := md.Connect(ctx, sources.CmdOpts{})
@@ -94,7 +94,7 @@
 <span id="L37" class="ln">    37  </span>	t.Run(&#34;successful connection to pgbouncer&#34;, func(t *testing.T) {
 <span id="L38" class="ln">    38  </span>		mock, err := pgxmock.NewPool()
 <span id="L39" class="ln">    39  </span>		require.NoError(t, err)
-<span id="L40" class="ln">    40  </span>		sources.NewWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
+<span id="L40" class="ln">    40  </span>		sources.NewConnWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
 <span id="L41" class="ln">    41  </span>			return mock, nil
 <span id="L42" class="ln">    42  </span>		}
 <span id="L43" class="ln">    43  </span>

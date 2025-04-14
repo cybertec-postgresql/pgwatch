@@ -227,6 +227,14 @@
 					<dd>&nbsp; &nbsp; <a href="#SourcePingCommand.Execute">func (cmd *SourcePingCommand) Execute(args []string) error</a></dd>
 				
 			
+				
+				<dd><a href="#SourceResolveCommand">type SourceResolveCommand</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SourceResolveCommand.Execute">func (cmd *SourceResolveCommand) Execute(args []string) error</a></dd>
+				
+			
 			
 			</dl>
 			</div><!-- #manual-nav -->
@@ -758,15 +766,16 @@ If one is specified, the other one is set to the same value.
 		
 			
 			
-			<h2 id="SourceCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdsource.go.html#L11">SourceCommand</a>
+			<h2 id="SourceCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdsource.go.html#L12">SourceCommand</a>
 				<a class="permalink" href="#SourceCommand">&#xb6;</a>
 				
 				
 			</h2>
 			
 			<pre>type SourceCommand struct {
-<span id="SourceCommand.owner"></span>    owner *<a href="#Options">Options</a>
-<span id="SourceCommand.Ping"></span>    Ping  <a href="#SourcePingCommand">SourcePingCommand</a> `command:&#34;ping&#34; description:&#34;Try to connect to configured sources, report errors if any and then exit&#34;`
+<span id="SourceCommand.owner"></span>    owner   *<a href="#Options">Options</a>
+<span id="SourceCommand.Ping"></span>    Ping    <a href="#SourcePingCommand">SourcePingCommand</a>    `command:&#34;ping&#34; description:&#34;Try to connect to configured sources, report errors if any and then exit&#34;`
+<span id="SourceCommand.Resolve"></span>    Resolve <a href="#SourceResolveCommand">SourceResolveCommand</a> `command:&#34;resolve&#34; description:&#34;Resolve monitored connections for a given sources (all by default)&#34;`
 }
 </pre>
 
@@ -780,7 +789,7 @@ If one is specified, the other one is set to the same value.
 
 			
 				
-				<h3 id="NewSourceCommand">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdsource.go.html#L17">NewSourceCommand</a>
+				<h3 id="NewSourceCommand">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdsource.go.html#L19">NewSourceCommand</a>
 					<a class="permalink" href="#NewSourceCommand">&#xb6;</a>
 					
 					
@@ -795,7 +804,7 @@ If one is specified, the other one is set to the same value.
 		
 			
 			
-			<h2 id="SourcePingCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdsource.go.html#L24">SourcePingCommand</a>
+			<h2 id="SourcePingCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdsource.go.html#L27">SourcePingCommand</a>
 				<a class="permalink" href="#SourcePingCommand">&#xb6;</a>
 				
 				
@@ -818,12 +827,49 @@ If one is specified, the other one is set to the same value.
 
 			
 				
-				<h3 id="SourcePingCommand.Execute">func (*SourcePingCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdsource.go.html#L28">Execute</a>
+				<h3 id="SourcePingCommand.Execute">func (*SourcePingCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdsource.go.html#L31">Execute</a>
 					<a class="permalink" href="#SourcePingCommand.Execute">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (cmd *<a href="#SourcePingCommand">SourcePingCommand</a>) Execute(args []<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="SourceResolveCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdsource.go.html#L77">SourceResolveCommand</a>
+				<a class="permalink" href="#SourceResolveCommand">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type SourceResolveCommand struct {
+<span id="SourceResolveCommand.owner"></span>    owner *<a href="#Options">Options</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="SourceResolveCommand.Execute">func (*SourceResolveCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts/cmdsource.go.html#L81">Execute</a>
+					<a class="permalink" href="#SourceResolveCommand.Execute">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (cmd *<a href="#SourceResolveCommand">SourceResolveCommand</a>) Execute(args []<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				
 				
 				

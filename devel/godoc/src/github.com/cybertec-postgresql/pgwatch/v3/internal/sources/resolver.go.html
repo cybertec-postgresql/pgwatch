@@ -94,7 +94,7 @@
 <span id="L37" class="ln">    37  </span>		err = errors.Join(err, e)
 <span id="L38" class="ln">    38  </span>		resolvedDbs = append(resolvedDbs, dbs...)
 <span id="L39" class="ln">    39  </span>	}
-<span id="L40" class="ln">    40  </span>	return resolvedDbs, nil
+<span id="L40" class="ln">    40  </span>	return resolvedDbs, err
 <span id="L41" class="ln">    41  </span>}
 <span id="L42" class="ln">    42  </span>
 <span id="L43" class="ln">    43  </span><span class="comment">// ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni</span>
@@ -409,7 +409,7 @@
 <span id="L352" class="ln">   352  </span>		dbname string
 <span id="L353" class="ln">   353  </span>		rows   pgx.Rows
 <span id="L354" class="ln">   354  </span>	)
-<span id="L355" class="ln">   355  </span>	c, err = db.New(context.TODO(), s.ConnStr)
+<span id="L355" class="ln">   355  </span>	c, err = NewConn(context.TODO(), s.ConnStr)
 <span id="L356" class="ln">   356  </span>	if err != nil {
 <span id="L357" class="ln">   357  </span>		return
 <span id="L358" class="ln">   358  </span>	}
