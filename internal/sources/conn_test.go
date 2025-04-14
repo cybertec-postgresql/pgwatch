@@ -27,7 +27,7 @@ func TestSourceConn_Connect(t *testing.T) {
 
 	t.Run("failed connection", func(t *testing.T) {
 		md := &sources.SourceConn{}
-		sources.NewWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
+		sources.NewConnWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
 			return nil, assert.AnError
 		}
 		err := md.Connect(ctx, sources.CmdOpts{})
@@ -37,7 +37,7 @@ func TestSourceConn_Connect(t *testing.T) {
 	t.Run("successful connection to pgbouncer", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		sources.NewWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
+		sources.NewConnWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
 			return mock, nil
 		}
 
