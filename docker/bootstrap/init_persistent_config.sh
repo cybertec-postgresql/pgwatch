@@ -37,10 +37,5 @@ fi
 sed -i 's/url: postgres/url: localhost/' /etc/grafana/provisioning/datasources/pg_ds.yml
 
 if [ -n "$PW_GRAFANANOANONYMOUS" ] ; then
-CFG=$(cat <<-'HERE'
-[auth.anonymous]
-enabled = false
-HERE
-)
-echo "$CFG" >> /etc/grafana/grafana.ini
+   sed -i '/^\[auth\.anonymous\]/,/^\[/ s/^[[:space:]]*enabled[[:space:]]*=[[:space:]]*true[[:space:]]*$/enabled = false/' /etc/grafana/grafana.ini
 fi
