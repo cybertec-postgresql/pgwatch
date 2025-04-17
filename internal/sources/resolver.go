@@ -21,6 +21,7 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
+	consul_api "github.com/hashicorp/consul/api"
 	pgx "github.com/jackc/pgx/v5"
 	client "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
@@ -63,8 +64,80 @@ var logger log.LoggerIface = log.FallbackLogger
 var lastFoundClusterMembers = make(map[string][]PatroniClusterMember) // needed for cases where DCS is temporarily down
 // don't want to immediately remove monitoring of DBs
 
-func getConsulClusterMembers(Source) ([]PatroniClusterMember, error) {
-	return nil, errors.ErrUnsupported
+func getConsulClusterMembers(s Source) ([]PatroniClusterMember, error) {
+	var ret = make([]PatroniClusterMember, 0)
+
+	if len(s.HostConfig.DcsEndpoints) == 0 {
+		return ret, errors.New("missing Consul connect info, make sure host config has a 'dcs_endpoints' key")
+	}
+
+	config := consul_api.Config{}
+	config.Address = s.HostConfig.DcsEndpoints[0]
+	if config.Address[0] == '/' { // Consul doesn't have leading slashes
+		config.Address = config.Address[1 : len(config.Address)-1]
+	}
+	client, err := consul_api.NewClient(&config)
+	if err != nil {
+		logger.Error("Could not connect to Consul:", err)
+		return nil, err
+	}
+
+	kv := client.KV()
+
+	if s.Kind == SourcePatroniNamespace {
+		separator := "/"
+		namespace := s.HostConfig.Namespace + "/"
+		scopes, _, err := kv.Keys(namespace, separator, nil)
+		if err != nil {
+			logger.Error("Could not get Patroni scopes list from Consul:", err)
+			return nil, err
+		}
+		for _, scope := range scopes {
+			scopeMembers, err := extractConsulScopeMembers(scope, kv, false)
+			if err != nil {
+				continue
+			}
+			ret = append(ret, scopeMembers...)
+		}
+	} else {
+		ret, err = extractConsulScopeMembers(s.HostConfig.Scope, kv, false)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return ret, nil
+}
+
+func extractConsulScopeMembers(scope string, kv *consul_api.KV, addScopeToName bool) ([]PatroniClusterMember, error) {
+	var ret = make([]PatroniClusterMember, 0)
+
+	membersPath := path.Join(scope, "members")
+	members, _, err := kv.List(membersPath, nil)
+	if err != nil {
+		logger.Error("Could not read Patroni members from Consul:", err)
+		return nil, err
+	}
+	for _, member := range members {
+		name := path.Base(member.Key)
+		logger.Debugf("Found a cluster member from Consul: %+v", name)
+		nodeData, err := jsonTextToStringMap(string(member.Value))
+		if err != nil {
+			logger.Errorf("Could not parse Consul node data for node \"%s\": %s", name, err)
+			continue
+		}
+		role := nodeData["role"]
+		connUrl := nodeData["conn_url"]
+		if addScopeToName {
+			name = scope + "_" + path.Base(string(member.Key))
+		} else {
+			name = path.Base(string(member.Key))
+		}
+
+		ret = append(ret, PatroniClusterMember{Scope: scope, ConnURL: connUrl, Role: role, Name: name})
+	}
+
+	return ret, nil
 }
 
 func getZookeeperClusterMembers(Source) ([]PatroniClusterMember, error) {
