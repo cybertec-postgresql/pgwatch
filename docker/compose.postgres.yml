@@ -9,6 +9,7 @@ services:
     # If you want pure PostgreSQL vanilla experience use:
     # image: &pgimage "postgres:latest"
     image: &pgimage postgres-plpython3u:latest
+    container_name: postgres
     command:
       - "-cshared_preload_libraries=pg_stat_statements"
       - "-cpg_stat_statements.track=all"
@@ -19,12 +20,34 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
+      - "./bootstrap/init_replication.sh:/docker-entrypoint-initdb.d/init_replication.sh"
       - "./bootstrap/create_role_db.sql:/docker-entrypoint-initdb.d/create_role_db.sql"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  standby:
+    user: postgres
+    image: *pgimage
+    container_name: postgres-standby
+    environment:
+      POSTGRES_PASSWORD: standbypass
+      POSTGRES_USER: postgres
+    ports:
+      - "5433:5432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      bash -c "
+      rm -rf /var/lib/postgresql/data/* &&
+      pg_basebackup -h postgres --pgdata=/var/lib/postgresql/data --wal-method=stream --progress --write-recovery-conf --create-slot --slot=standby_slot &&
+      chmod 0700 /var/lib/postgresql/data &&
+      postgres"
+    links:
+      - postgres
 
   pgbouncer:
     image: bitnami/pgbouncer:latest
