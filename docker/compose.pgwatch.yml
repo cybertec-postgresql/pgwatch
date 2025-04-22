@@ -5,6 +5,7 @@ services:
       context: ..
       dockerfile: ./docker/Dockerfile
     image: cybertecpostgresql/pgwatch:latest
+    container_name: pgwatch
     environment:
       PW_SOURCES: postgresql://pgwatch@postgres:5432/pgwatch
     command:
