@@ -8,6 +8,7 @@ import (
 	"errors"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
 const (
@@ -36,7 +37,7 @@ func GetAllRecoMetricsForVersion() (metrics.MetricDefs, error) {
 	return mvpMap, nil
 }
 
-func GetRecommendations(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings) (metrics.Measurements, error) {
+func GetRecommendations(ctx context.Context, dbUnique string, md *sources.SourceConn) (metrics.Measurements, error) {
 	retData := make(metrics.Measurements, 0)
 	startTimeEpochNs := time.Now().UnixNano()
 
@@ -45,14 +46,14 @@ func GetRecommendations(ctx context.Context, dbUnique string, vme MonitoredDatab
 		return nil, err
 	}
 	for _, mvp := range recoMetrics {
-		data, e := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(vme.Version))
+		data, e := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(md.Version))
 		if err != nil {
 			err = errors.Join(err, e)
 			continue
 		}
 		for _, d := range data {
 			d[metrics.EpochColumnName] = startTimeEpochNs
-			d["major_ver"] = vme.Version / 10
+			d["major_ver"] = md.Version / 10
 			retData = append(retData, d)
 		}
 	}
@@ -61,7 +62,7 @@ func GetRecommendations(ctx context.Context, dbUnique string, vme MonitoredDatab
 		dummy["tag_reco_topic"] = "dummy"
 		dummy["tag_object_name"] = "-"
 		dummy["recommendation"] = "no recommendations"
-		dummy["major_ver"] = vme.Version / 10
+		dummy["major_ver"] = md.Version / 10
 		retData = append(retData, dummy)
 	}
 	return retData, err

@@ -2,7 +2,12 @@ package sources
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"reflect"
+	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/jackc/pgx/v5"
@@ -15,6 +20,26 @@ var (
 	NewConnWithConfig = db.NewWithConfig
 )
 
+const (
+	EnvUnknown       = "UNKNOWN"
+	EnvAzureSingle   = "AZURE_SINGLE"
+	EnvAzureFlexible = "AZURE_FLEXIBLE"
+	EnvGoogle        = "GOOGLE"
+)
+
+type RuntimeInfo struct {
+	LastCheckedOn    time.Time
+	IsInRecovery     bool
+	VersionStr       string
+	Version          int
+	RealDbname       string
+	SystemIdentifier string
+	IsSuperuser      bool
+	Extensions       map[string]int
+	ExecEnv          string
+	ApproxDBSizeB    int64
+}
+
 // SourceConn represents a single connection to monitor. Unlike source, it contains a database connection.
 // Continuous discovery sources (postgres-continuous-discovery, patroni-continuous-discovery, patroni-namespace-discovery)
 // will produce multiple monitored databases structs based on the discovered databases.
@@ -23,6 +48,7 @@ type (
 		Source
 		Conn       db.PgxPoolIface
 		ConnConfig *pgxpool.Config
+		RuntimeInfo
 	}
 
 	SourceConns []*SourceConn
@@ -87,6 +113,113 @@ func (md *SourceConn) SetDatabaseName(name string) {
 
 func (md *SourceConn) IsPostgresSource() bool {
 	return md.Kind != SourcePgBouncer && md.Kind != SourcePgPool
+}
+
+// VersionToInt parses a given version and returns an integer  or
+// an error if unable to parse the version. Only parses valid semantic versions.
+// Performs checking that can find errors within the version.
+// Examples: v1.2 -> 01_02_00, v9.6.3 -> 09_06_03, v11 -> 11_00_00
+var regVer = regexp.MustCompile(`(\d+).?(\d*).?(\d*)`)
+
+func VersionToInt(version string) (v int) {
+	if matches := regVer.FindStringSubmatch(version); len(matches) > 1 {
+		for i, match := range matches[1:] {
+			v += func() (m int) { m, _ = strconv.Atoi(match); return }() * int(math.Pow10(4-i*2))
+		}
+	}
+	return
+}
+
+var rBouncerAndPgpoolVerMatch = regexp.MustCompile(`\d+\.+\d+`) // extract $major.minor from "4.1.2 (karasukiboshi)" or "PgBouncer 1.12.0"
+
+func (md *SourceConn) GetMonitoredDatabaseSettings(ctx context.Context, forceRefetch bool) (_ RuntimeInfo, err error) {
+	var dbNewSettings RuntimeInfo
+	var ok bool
+
+	if !forceRefetch && ok && md.LastCheckedOn.After(time.Now().Add(time.Minute*-2)) { // use cached version for 2 min
+		return md.RuntimeInfo, nil
+	}
+
+	if dbNewSettings.Extensions == nil {
+		dbNewSettings.Extensions = make(map[string]int)
+	}
+
+	switch md.Kind {
+	case SourcePgBouncer:
+		if err = md.Conn.QueryRow(ctx, "SHOW VERSION").Scan(&dbNewSettings.VersionStr); err != nil {
+			return dbNewSettings, err
+		}
+		matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(dbNewSettings.VersionStr)
+		if len(matches) != 1 {
+			return md.RuntimeInfo, fmt.Errorf("unexpected PgBouncer version input: %s", dbNewSettings.VersionStr)
+		}
+		dbNewSettings.Version = VersionToInt(matches[0])
+	case SourcePgPool:
+		if err = md.Conn.QueryRow(ctx, "SHOW POOL_VERSION").Scan(&dbNewSettings.VersionStr); err != nil {
+			return dbNewSettings, err
+		}
+
+		matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(dbNewSettings.VersionStr)
+		if len(matches) != 1 {
+			return md.RuntimeInfo, fmt.Errorf("unexpected PgPool version input: %s", dbNewSettings.VersionStr)
+		}
+		dbNewSettings.Version = VersionToInt(matches[0])
+	default:
+		sql := `select /* pgwatch_generated */ 
+	div(current_setting('server_version_num')::int, 10000) as ver, 
+	version(), 
+	pg_is_in_recovery(), 
+	current_database()::TEXT,
+	system_identifier,
+	current_setting('is_superuser')::bool
+FROM
+	pg_control_system()`
+
+		err = md.Conn.QueryRow(ctx, sql).
+			Scan(&dbNewSettings.Version, &dbNewSettings.VersionStr,
+				&dbNewSettings.IsInRecovery, &dbNewSettings.RealDbname,
+				&dbNewSettings.SystemIdentifier, &dbNewSettings.IsSuperuser)
+		if err != nil {
+			return md.RuntimeInfo, err
+		}
+
+		if md.ExecEnv != "" {
+			dbNewSettings.ExecEnv = md.ExecEnv // carry over as not likely to change ever
+		} else {
+			dbNewSettings.ExecEnv = md.DiscoverPlatform(ctx)
+		}
+
+		// to work around poor Azure Single Server FS functions performance for some metrics + the --min-db-size-mb filter
+		if dbNewSettings.ExecEnv == EnvAzureSingle {
+			if approxSize, err := md.GetApproxSize(ctx); err == nil {
+				dbNewSettings.ApproxDBSizeB = approxSize
+			} else {
+				dbNewSettings.ApproxDBSizeB = md.ApproxDBSizeB
+			}
+		}
+
+		sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
+		var res pgx.Rows
+		res, err = md.Conn.Query(ctx, sqlExtensions)
+
+		if err != nil {
+			var ext string
+			var ver string
+			_, err = pgx.ForEachRow(res, []any{&ext, &ver}, func() error {
+				extver := VersionToInt(ver)
+				if extver == 0 {
+					return fmt.Errorf("unexpected extension %s version input: %s", ext, ver)
+				}
+				dbNewSettings.Extensions[ext] = extver
+				return nil
+			})
+		}
+
+	}
+
+	dbNewSettings.LastCheckedOn = time.Now()
+	md.RuntimeInfo = dbNewSettings // store the new settings in the struct
+	return md.RuntimeInfo, err
 }
 
 // TryDiscoverPlatform tries to discover the platform based on the database version string and some special settings

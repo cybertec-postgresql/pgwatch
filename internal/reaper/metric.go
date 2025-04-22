@@ -76,19 +76,6 @@ type ChangeDetectionResults struct { // for passing around DDL/index/config chan
 	Dropped int
 }
 
-type MonitoredDatabaseSettings struct {
-	LastCheckedOn    time.Time
-	IsInRecovery     bool
-	VersionStr       string
-	Version          int
-	RealDbname       string
-	SystemIdentifier string
-	IsSuperuser      bool // if true and no helpers are installed, use superuser SQL version of metric if available
-	Extensions       map[string]int
-	ExecEnv          string
-	ApproxDBSizeB    int64
-}
-
 type ExistingPartitionInfo struct {
 	StartTime time.Time
 	EndTime   time.Time

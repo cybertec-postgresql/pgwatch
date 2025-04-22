@@ -4,11 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
-	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
@@ -50,13 +47,6 @@ func QueryMeasurements(ctx context.Context, dbUnique string, sql string, args ..
 	return nil, err
 }
 
-const (
-	execEnvUnknown       = "UNKNOWN"
-	execEnvAzureSingle   = "AZURE_SINGLE"
-	execEnvAzureFlexible = "AZURE_FLEXIBLE"
-	execEnvGoogle        = "GOOGLE"
-)
-
 func DBGetSizeMB(ctx context.Context, dbUnique string) (int64, error) {
 	sqlDbSize := `select /* pgwatch_generated */ pg_database_size(current_database());`
 	var sizeMB int64
@@ -71,8 +61,8 @@ func DBGetSizeMB(ctx context.Context, dbUnique string) (int64, error) {
 		if err != nil {
 			return 0, err
 		}
-		ver, err := GetMonitoredDatabaseSettings(ctx, md, false)
-		if err != nil || (ver.ExecEnv != execEnvAzureSingle) || (ver.ExecEnv == execEnvAzureSingle && ver.ApproxDBSizeB < 1e12) {
+		ver, err := md.GetMonitoredDatabaseSettings(ctx, false)
+		if err != nil || (ver.ExecEnv != sources.EnvAzureSingle) || (ver.ExecEnv == sources.EnvAzureSingle && ver.ApproxDBSizeB < 1e12) {
 			log.GetLogger(ctx).Debugf("[%s] determining DB size ...", dbUnique)
 
 			data, err := QueryMeasurements(ctx, dbUnique, sqlDbSize) // can take some time on ancient FS, use 300s stmt timeout
@@ -100,138 +90,7 @@ func DBGetSizeMB(ctx context.Context, dbUnique string) (int64, error) {
 	return lastDBSize, nil
 }
 
-// VersionToInt parses a given version and returns an integer  or
-// an error if unable to parse the version. Only parses valid semantic versions.
-// Performs checking that can find errors within the version.
-// Examples: v1.2 -> 01_02_00, v9.6.3 -> 09_06_03, v11 -> 11_00_00
-var regVer = regexp.MustCompile(`(\d+).?(\d*).?(\d*)`)
-
-func VersionToInt(version string) (v int) {
-	if matches := regVer.FindStringSubmatch(version); len(matches) > 1 {
-		for i, match := range matches[1:] {
-			v += func() (m int) { m, _ = strconv.Atoi(match); return }() * int(math.Pow10(4-i*2))
-		}
-	}
-	return
-}
-
-var rBouncerAndPgpoolVerMatch = regexp.MustCompile(`\d+\.+\d+`) // extract $major.minor from "4.1.2 (karasukiboshi)" or "PgBouncer 1.12.0"
-
-func GetMonitoredDatabaseSettings(ctx context.Context, md *sources.SourceConn, noCache bool) (MonitoredDatabaseSettings, error) {
-	var dbSettings MonitoredDatabaseSettings
-	var dbNewSettings MonitoredDatabaseSettings
-	var ok bool
-
-	l := log.GetLogger(ctx).WithField("source", md.Name).WithField("kind", md.Kind)
-
-	sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
-
-	MonitoredDatabasesSettingsLock.Lock()
-	getVerLock, ok := MonitoredDatabasesSettingsGetLock[md.Name]
-	if !ok {
-		MonitoredDatabasesSettingsGetLock[md.Name] = &sync.RWMutex{}
-		getVerLock = MonitoredDatabasesSettingsGetLock[md.Name]
-	}
-	dbSettings, ok = MonitoredDatabasesSettings[md.Name]
-	MonitoredDatabasesSettingsLock.Unlock()
-
-	if !noCache && ok && dbSettings.LastCheckedOn.After(time.Now().Add(time.Minute*-2)) { // use cached version for 2 min
-		return dbSettings, nil
-	}
-	getVerLock.Lock() // limit to 1 concurrent version info fetch per DB
-	defer getVerLock.Unlock()
-	l.Debug("determining DB version and recovery status...")
-
-	if dbNewSettings.Extensions == nil {
-		dbNewSettings.Extensions = make(map[string]int)
-	}
-
-	switch md.Kind {
-	case sources.SourcePgBouncer:
-		if err := md.Conn.QueryRow(ctx, "SHOW VERSION").Scan(&dbNewSettings.VersionStr); err != nil {
-			return dbNewSettings, err
-		}
-		matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(dbNewSettings.VersionStr)
-		if len(matches) != 1 {
-			return dbSettings, fmt.Errorf("unexpected PgBouncer version input: %s", dbNewSettings.VersionStr)
-		}
-		dbNewSettings.Version = VersionToInt(matches[0])
-	case sources.SourcePgPool:
-		if err := md.Conn.QueryRow(ctx, "SHOW POOL_VERSION").Scan(&dbNewSettings.VersionStr); err != nil {
-			return dbNewSettings, err
-		}
-
-		matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(dbNewSettings.VersionStr)
-		if len(matches) != 1 {
-			return dbSettings, fmt.Errorf("unexpected PgPool version input: %s", dbNewSettings.VersionStr)
-		}
-		dbNewSettings.Version = VersionToInt(matches[0])
-	default:
-		sql := `select /* pgwatch_generated */ 
-	div(current_setting('server_version_num')::int, 10000) as ver, 
-	version(), 
-	pg_is_in_recovery(), 
-	current_database()::TEXT,
-	system_identifier,
-	current_setting('is_superuser')::bool
-FROM
-	pg_control_system()`
-
-		err := md.Conn.QueryRow(ctx, sql).
-			Scan(&dbNewSettings.Version, &dbNewSettings.VersionStr,
-				&dbNewSettings.IsInRecovery, &dbNewSettings.RealDbname,
-				&dbNewSettings.SystemIdentifier, &dbNewSettings.IsSuperuser)
-		if err != nil {
-			if noCache {
-				return dbSettings, err
-			}
-			l.Error("DBGetPGVersion failed, using old cached value: ", err)
-			return dbSettings, nil
-		}
-
-		if dbSettings.ExecEnv != "" {
-			dbNewSettings.ExecEnv = dbSettings.ExecEnv // carry over as not likely to change ever
-		} else {
-			l.Debugf("determining the execution env...")
-			dbNewSettings.ExecEnv = md.DiscoverPlatform(ctx)
-		}
-
-		// to work around poor Azure Single Server FS functions performance for some metrics + the --min-db-size-mb filter
-		if dbNewSettings.ExecEnv == execEnvAzureSingle {
-			if approxSize, err := md.GetApproxSize(ctx); err == nil {
-				dbNewSettings.ApproxDBSizeB = approxSize
-			} else {
-				dbNewSettings.ApproxDBSizeB = dbSettings.ApproxDBSizeB
-			}
-		}
-
-		l.Debugf("[%s] determining installed extensions info...", md.Name)
-		data, err := QueryMeasurements(ctx, md.Name, sqlExtensions)
-		if err != nil {
-			l.Errorf("[%s] failed to determine installed extensions info: %v", md.Name, err)
-		} else {
-			for _, dr := range data {
-				extver := VersionToInt(dr["extversion"].(string))
-				if extver == 0 {
-					l.Error("failed to determine extension version info for extension: ", dr["extname"])
-					continue
-				}
-				dbNewSettings.Extensions[dr["extname"].(string)] = extver
-			}
-			l.Debugf("[%s] installed extensions: %+v", md.Name, dbNewSettings.Extensions)
-		}
-
-	}
-
-	dbNewSettings.LastCheckedOn = time.Now()
-	MonitoredDatabasesSettingsLock.Lock()
-	MonitoredDatabasesSettings[md.Name] = dbNewSettings
-	MonitoredDatabasesSettingsLock.Unlock()
-
-	return dbNewSettings, nil
-}
-
-func DetectSprocChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectSprocChanges(ctx context.Context, dbUnique string, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -248,7 +107,7 @@ func DetectSprocChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 		return changeCounts
 	}
 
-	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
+	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Error("could not read sproc_hashes from monitored host: ", dbUnique, ", err:", err)
 		return changeCounts
@@ -310,7 +169,7 @@ func DetectSprocChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 	return changeCounts
 }
 
-func DetectTableChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectTableChanges(ctx context.Context, dbUnique string, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -327,7 +186,7 @@ func DetectTableChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 		return changeCounts
 	}
 
-	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
+	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Error("could not read table_hashes from monitored host:", dbUnique, ", err:", err)
 		return changeCounts
@@ -389,7 +248,7 @@ func DetectTableChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 	return changeCounts
 }
 
-func DetectIndexChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectIndexChanges(ctx context.Context, dbUnique string, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -406,7 +265,7 @@ func DetectIndexChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 		return changeCounts
 	}
 
-	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
+	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Error("could not read index_hashes from monitored host:", dbUnique, ", err:", err)
 		return changeCounts
@@ -466,7 +325,7 @@ func DetectIndexChanges(ctx context.Context, dbUnique string, vme MonitoredDatab
 	return changeCounts
 }
 
-func DetectPrivilegeChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectPrivilegeChanges(ctx context.Context, dbUnique string, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -478,13 +337,13 @@ func DetectPrivilegeChanges(ctx context.Context, dbUnique string, vme MonitoredD
 	}
 
 	mvp, ok := metricDefs.GetMetricDef("privilege_changes")
-	if !ok || mvp.GetSQL(int(vme.Version)) == "" {
+	if !ok || mvp.GetSQL(int(md.Version)) == "" {
 		log.GetLogger(ctx).Warningf("[%s][%s] could not get SQL for 'privilege_changes'. cannot detect privilege changes", dbUnique, specialMetricChangeEvents)
 		return changeCounts
 	}
 
 	// returns rows of: object_type, tag_role, tag_object, privilege_type
-	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
+	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Errorf("[%s][%s] failed to fetch object privileges info: %v", dbUnique, specialMetricChangeEvents, err)
 		return changeCounts
@@ -543,7 +402,7 @@ func DetectPrivilegeChanges(ctx context.Context, dbUnique string, vme MonitoredD
 	return changeCounts
 }
 
-func DetectConfigurationChanges(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectConfigurationChanges(ctx context.Context, dbUnique string, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -560,7 +419,7 @@ func DetectConfigurationChanges(ctx context.Context, dbUnique string, vme Monito
 		return changeCounts
 	}
 
-	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(vme.Version)))
+	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Errorf("[%s][%s] could not read configuration_hashes from monitored host: %v", dbUnique, specialMetricChangeEvents, err)
 		return changeCounts
@@ -607,13 +466,13 @@ func DetectConfigurationChanges(ctx context.Context, dbUnique string, vme Monito
 	return changeCounts
 }
 
-func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, vme MonitoredDatabaseSettings, hostState map[string]map[string]string) {
+func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, md *sources.SourceConn, hostState map[string]map[string]string) {
 	storageCh := r.measurementCh
-	sprocCounts := DetectSprocChanges(ctx, dbUnique, vme, storageCh, hostState) // TODO some of Detect*() code could be unified...
-	tableCounts := DetectTableChanges(ctx, dbUnique, vme, storageCh, hostState)
-	indexCounts := DetectIndexChanges(ctx, dbUnique, vme, storageCh, hostState)
-	confCounts := DetectConfigurationChanges(ctx, dbUnique, vme, storageCh, hostState)
-	privChangeCounts := DetectPrivilegeChanges(ctx, dbUnique, vme, storageCh, hostState)
+	sprocCounts := DetectSprocChanges(ctx, dbUnique, md, storageCh, hostState) // TODO some of Detect*() code could be unified...
+	tableCounts := DetectTableChanges(ctx, dbUnique, md, storageCh, hostState)
+	indexCounts := DetectIndexChanges(ctx, dbUnique, md, storageCh, hostState)
+	confCounts := DetectConfigurationChanges(ctx, dbUnique, md, storageCh, hostState)
+	privChangeCounts := DetectPrivilegeChanges(ctx, dbUnique, md, storageCh, hostState)
 
 	// need to send info on all object changes as one message as Grafana applies "last wins" for annotations with similar timestamp
 	message := ""
@@ -652,11 +511,11 @@ func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique s
 }
 
 // some extra work needed as pgpool SHOW commands don't specify the return data types for some reason
-func FetchMetricsPgpool(ctx context.Context, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) (metrics.Measurements, error) {
+func FetchMetricsPgpool(ctx context.Context, msg MetricFetchConfig, md *sources.SourceConn, mvp metrics.Metric) (metrics.Measurements, error) {
 	var retData = make(metrics.Measurements, 0)
 	epochNs := time.Now().UnixNano()
 
-	sqlLines := strings.Split(strings.ToUpper(mvp.GetSQL(int(vme.Version))), "\n")
+	sqlLines := strings.Split(strings.ToUpper(mvp.GetSQL(int(md.Version))), "\n")
 
 	for _, sql := range sqlLines {
 		if strings.HasPrefix(sql, "SHOW POOL_NODES") {
