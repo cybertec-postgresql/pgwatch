@@ -90,12 +90,12 @@ func DBGetSizeMB(ctx context.Context, dbUnique string) (int64, error) {
 	return lastDBSize, nil
 }
 
-func DetectSprocChanges(ctx context.Context, dbUnique string, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectSprocChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
-	log.GetLogger(ctx).Debugf("[%s][%s] checking for sproc changes...", dbUnique, specialMetricChangeEvents)
+	log.GetLogger(ctx).Debugf("[%s][%s] checking for sproc changes...", md.Name, specialMetricChangeEvents)
 	if _, ok := hostState["sproc_hashes"]; !ok {
 		firstRun = true
 		hostState["sproc_hashes"] = make(map[string]string)
@@ -107,9 +107,9 @@ func DetectSprocChanges(ctx context.Context, dbUnique string, md *sources.Source
 		return changeCounts
 	}
 
-	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(md.Version)))
+	data, err := QueryMeasurements(ctx, md.Name, mvp.GetSQL(int(md.Version)))
 	if err != nil {
-		log.GetLogger(ctx).Error("could not read sproc_hashes from monitored host: ", dbUnique, ", err:", err)
+		log.GetLogger(ctx).Error("could not read sproc_hashes from monitored host: ", md.Name, ", err:", err)
 		return changeCounts
 	}
 
@@ -160,21 +160,20 @@ func DetectSprocChanges(ctx context.Context, dbUnique string, md *sources.Source
 			delete(hostState["sproc_hashes"], deletedSProc)
 		}
 	}
-	log.GetLogger(ctx).Debugf("[%s][%s] detected %d sproc changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
+	log.GetLogger(ctx).Debugf("[%s][%s] detected %d sproc changes", md.Name, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []metrics.MeasurementEnvelope{{DBName: dbUnique, MetricName: "sproc_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- []metrics.MeasurementEnvelope{{DBName: md.Name, MetricName: "sproc_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
 	}
 
 	return changeCounts
 }
 
-func DetectTableChanges(ctx context.Context, dbUnique string, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectTableChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
-	log.GetLogger(ctx).Debugf("[%s][%s] checking for table changes...", dbUnique, specialMetricChangeEvents)
+	log.GetLogger(ctx).Debugf("[%s][%s] checking for table changes...", md.Name, specialMetricChangeEvents)
 	if _, ok := hostState["table_hashes"]; !ok {
 		firstRun = true
 		hostState["table_hashes"] = make(map[string]string)
@@ -186,9 +185,9 @@ func DetectTableChanges(ctx context.Context, dbUnique string, md *sources.Source
 		return changeCounts
 	}
 
-	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(md.Version)))
+	data, err := QueryMeasurements(ctx, md.Name, mvp.GetSQL(int(md.Version)))
 	if err != nil {
-		log.GetLogger(ctx).Error("could not read table_hashes from monitored host:", dbUnique, ", err:", err)
+		log.GetLogger(ctx).Error("could not read table_hashes from monitored host:", md.Name, ", err:", err)
 		return changeCounts
 	}
 
@@ -239,21 +238,20 @@ func DetectTableChanges(ctx context.Context, dbUnique string, md *sources.Source
 		}
 	}
 
-	log.GetLogger(ctx).Debugf("[%s][%s] detected %d table changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
+	log.GetLogger(ctx).Debugf("[%s][%s] detected %d table changes", md.Name, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []metrics.MeasurementEnvelope{{DBName: dbUnique, MetricName: "table_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- []metrics.MeasurementEnvelope{{DBName: md.Name, MetricName: "table_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
 	}
 
 	return changeCounts
 }
 
-func DetectIndexChanges(ctx context.Context, dbUnique string, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectIndexChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
-	log.GetLogger(ctx).Debugf("[%s][%s] checking for index changes...", dbUnique, specialMetricChangeEvents)
+	log.GetLogger(ctx).Debugf("[%s][%s] checking for index changes...", md.Name, specialMetricChangeEvents)
 	if _, ok := hostState["index_hashes"]; !ok {
 		firstRun = true
 		hostState["index_hashes"] = make(map[string]string)
@@ -265,9 +263,9 @@ func DetectIndexChanges(ctx context.Context, dbUnique string, md *sources.Source
 		return changeCounts
 	}
 
-	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(md.Version)))
+	data, err := QueryMeasurements(ctx, md.Name, mvp.GetSQL(int(md.Version)))
 	if err != nil {
-		log.GetLogger(ctx).Error("could not read index_hashes from monitored host:", dbUnique, ", err:", err)
+		log.GetLogger(ctx).Error("could not read index_hashes from monitored host:", md.Name, ", err:", err)
 		return changeCounts
 	}
 
@@ -316,21 +314,20 @@ func DetectIndexChanges(ctx context.Context, dbUnique string, md *sources.Source
 			delete(hostState["index_hashes"], deletedIndex)
 		}
 	}
-	log.GetLogger(ctx).Debugf("[%s][%s] detected %d index changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
+	log.GetLogger(ctx).Debugf("[%s][%s] detected %d index changes", md.Name, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
-		storageCh <- []metrics.MeasurementEnvelope{{DBName: dbUnique, MetricName: "index_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- []metrics.MeasurementEnvelope{{DBName: md.Name, MetricName: "index_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
 	}
 
 	return changeCounts
 }
 
-func DetectPrivilegeChanges(ctx context.Context, dbUnique string, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
-	log.GetLogger(ctx).Debugf("[%s][%s] checking object privilege changes...", dbUnique, specialMetricChangeEvents)
+	log.GetLogger(ctx).Debugf("[%s][%s] checking object privilege changes...", md.Name, specialMetricChangeEvents)
 	if _, ok := hostState["object_privileges"]; !ok {
 		firstRun = true
 		hostState["object_privileges"] = make(map[string]string)
@@ -338,14 +335,14 @@ func DetectPrivilegeChanges(ctx context.Context, dbUnique string, md *sources.So
 
 	mvp, ok := metricDefs.GetMetricDef("privilege_changes")
 	if !ok || mvp.GetSQL(int(md.Version)) == "" {
-		log.GetLogger(ctx).Warningf("[%s][%s] could not get SQL for 'privilege_changes'. cannot detect privilege changes", dbUnique, specialMetricChangeEvents)
+		log.GetLogger(ctx).Warningf("[%s][%s] could not get SQL for 'privilege_changes'. cannot detect privilege changes", md.Name, specialMetricChangeEvents)
 		return changeCounts
 	}
 
 	// returns rows of: object_type, tag_role, tag_object, privilege_type
-	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(md.Version)))
+	data, err := QueryMeasurements(ctx, md.Name, mvp.GetSQL(int(md.Version)))
 	if err != nil {
-		log.GetLogger(ctx).Errorf("[%s][%s] failed to fetch object privileges info: %v", dbUnique, specialMetricChangeEvents, err)
+		log.GetLogger(ctx).Errorf("[%s][%s] failed to fetch object privileges info: %v", md.Name, specialMetricChangeEvents, err)
 		return changeCounts
 	}
 
@@ -358,7 +355,7 @@ func DetectPrivilegeChanges(ctx context.Context, dbUnique string, md *sources.So
 			_, ok := hostState["object_privileges"][objIdent]
 			if !ok {
 				log.GetLogger(ctx).Infof("[%s][%s] detected new object privileges: role=%s, object_type=%s, object=%s, privilege_type=%s",
-					dbUnique, specialMetricChangeEvents, dr["tag_role"], dr["object_type"], dr["tag_object"], dr["privilege_type"])
+					md.Name, specialMetricChangeEvents, dr["tag_role"], dr["object_type"], dr["tag_object"], dr["privilege_type"])
 				dr["event"] = "GRANT"
 				detectedChanges = append(detectedChanges, dr)
 				changeCounts.Created++
@@ -373,7 +370,7 @@ func DetectPrivilegeChanges(ctx context.Context, dbUnique string, md *sources.So
 			if _, ok := currentState[objPrevRun]; !ok {
 				splits := strings.Split(objPrevRun, "#:#")
 				log.GetLogger(ctx).Infof("[%s][%s] detected removed object privileges: role=%s, object_type=%s, object=%s, privilege_type=%s",
-					dbUnique, specialMetricChangeEvents, splits[1], splits[0], splits[2], splits[3])
+					md.Name, specialMetricChangeEvents, splits[1], splits[0], splits[2], splits[3])
 				revokeEntry := metrics.NewMeasurement(data.GetEpoch())
 				revokeEntry["object_type"] = splits[0]
 				revokeEntry["tag_role"] = splits[1]
@@ -387,12 +384,11 @@ func DetectPrivilegeChanges(ctx context.Context, dbUnique string, md *sources.So
 		}
 	}
 
-	log.GetLogger(ctx).Debugf("[%s][%s] detected %d object privilege changes...", dbUnique, specialMetricChangeEvents, len(detectedChanges))
+	log.GetLogger(ctx).Debugf("[%s][%s] detected %d object privilege changes...", md.Name, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storageCh <- []metrics.MeasurementEnvelope{
 			{
-				DBName:     dbUnique,
+				DBName:     md.Name,
 				MetricName: "privilege_changes",
 				Data:       detectedChanges,
 				CustomTags: md.CustomTags,
@@ -402,12 +398,12 @@ func DetectPrivilegeChanges(ctx context.Context, dbUnique string, md *sources.So
 	return changeCounts
 }
 
-func DetectConfigurationChanges(ctx context.Context, dbUnique string, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
-	log.GetLogger(ctx).Debugf("[%s][%s] checking for configuration changes...", dbUnique, specialMetricChangeEvents)
+	log.GetLogger(ctx).Debugf("[%s][%s] checking for configuration changes...", md.Name, specialMetricChangeEvents)
 	if _, ok := hostState["configuration_hashes"]; !ok {
 		firstRun = true
 		hostState["configuration_hashes"] = make(map[string]string)
@@ -415,13 +411,13 @@ func DetectConfigurationChanges(ctx context.Context, dbUnique string, md *source
 
 	mvp, ok := metricDefs.GetMetricDef("configuration_hashes")
 	if !ok {
-		log.GetLogger(ctx).Errorf("[%s][%s] could not get configuration_hashes sql", dbUnique, specialMetricChangeEvents)
+		log.GetLogger(ctx).Errorf("[%s][%s] could not get configuration_hashes sql", md.Name, specialMetricChangeEvents)
 		return changeCounts
 	}
 
-	data, err := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(int(md.Version)))
+	data, err := QueryMeasurements(ctx, md.Name, mvp.GetSQL(int(md.Version)))
 	if err != nil {
-		log.GetLogger(ctx).Errorf("[%s][%s] could not read configuration_hashes from monitored host: %v", dbUnique, specialMetricChangeEvents, err)
+		log.GetLogger(ctx).Errorf("[%s][%s] could not read configuration_hashes from monitored host: %v", md.Name, specialMetricChangeEvents, err)
 		return changeCounts
 	}
 
@@ -435,7 +431,7 @@ func DetectConfigurationChanges(ctx context.Context, dbUnique string, md *source
 					continue // ignore some weird Azure managed PG service setting
 				}
 				log.GetLogger(ctx).Warningf("[%s][%s] detected settings change: %s = %s (prev: %s)",
-					dbUnique, specialMetricChangeEvents, objIdent, objValue, prevРash)
+					md.Name, specialMetricChangeEvents, objIdent, objValue, prevРash)
 				dr["event"] = "alter"
 				detectedChanges = append(detectedChanges, dr)
 				hostState["configuration_hashes"][objIdent] = objValue
@@ -443,7 +439,7 @@ func DetectConfigurationChanges(ctx context.Context, dbUnique string, md *source
 			}
 		} else { // check for new, delete not relevant here (pg_upgrade)
 			if !firstRun {
-				log.GetLogger(ctx).Warningf("[%s][%s] detected new setting: %s", dbUnique, specialMetricChangeEvents, objIdent)
+				log.GetLogger(ctx).Warningf("[%s][%s] detected new setting: %s", md.Name, specialMetricChangeEvents, objIdent)
 				dr["event"] = "create"
 				detectedChanges = append(detectedChanges, dr)
 				changeCounts.Created++
@@ -452,11 +448,10 @@ func DetectConfigurationChanges(ctx context.Context, dbUnique string, md *source
 		}
 	}
 
-	log.GetLogger(ctx).Debugf("[%s][%s] detected %d configuration changes", dbUnique, specialMetricChangeEvents, len(detectedChanges))
+	log.GetLogger(ctx).Debugf("[%s][%s] detected %d configuration changes", md.Name, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
 		storageCh <- []metrics.MeasurementEnvelope{{
-			DBName:     dbUnique,
+			DBName:     md.Name,
 			MetricName: "configuration_changes",
 			Data:       detectedChanges,
 			CustomTags: md.CustomTags,
@@ -468,11 +463,11 @@ func DetectConfigurationChanges(ctx context.Context, dbUnique string, md *source
 
 func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, md *sources.SourceConn, hostState map[string]map[string]string) {
 	storageCh := r.measurementCh
-	sprocCounts := DetectSprocChanges(ctx, dbUnique, md, storageCh, hostState) // TODO some of Detect*() code could be unified...
-	tableCounts := DetectTableChanges(ctx, dbUnique, md, storageCh, hostState)
-	indexCounts := DetectIndexChanges(ctx, dbUnique, md, storageCh, hostState)
-	confCounts := DetectConfigurationChanges(ctx, dbUnique, md, storageCh, hostState)
-	privChangeCounts := DetectPrivilegeChanges(ctx, dbUnique, md, storageCh, hostState)
+	sprocCounts := DetectSprocChanges(ctx, md, storageCh, hostState) // TODO some of Detect*() code could be unified...
+	tableCounts := DetectTableChanges(ctx, md, storageCh, hostState)
+	indexCounts := DetectIndexChanges(ctx, md, storageCh, hostState)
+	confCounts := DetectConfigurationChanges(ctx, md, storageCh, hostState)
+	privChangeCounts := DetectPrivilegeChanges(ctx, md, storageCh, hostState)
 
 	// need to send info on all object changes as one message as Grafana applies "last wins" for annotations with similar timestamp
 	message := ""
