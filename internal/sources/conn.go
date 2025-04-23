@@ -102,6 +102,14 @@ func (md *SourceConn) GetDatabaseName() string {
 	return md.ConnConfig.ConnConfig.Database
 }
 
+// GetMetricInterval returns the metric interval for the connection
+func (md *SourceConn) GetMetricInterval(name string) float64 {
+	if md.IsInRecovery && len(md.MetricsStandby) > 0 {
+		return md.MetricsStandby[name]
+	}
+	return md.Metrics[name]
+}
+
 // SetDatabaseName sets the database name in the connection config for resolved databases
 func (md *SourceConn) SetDatabaseName(name string) {
 	if err := md.ParseConfig(); err != nil {
