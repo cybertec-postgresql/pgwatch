@@ -91,27 +91,12 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 				continue
 			}
 
-			metricsConfig = func() map[string]float64 {
-				if len(monitoredSource.Metrics) > 0 {
-					return monitoredSource.Metrics
-				}
-				if monitoredSource.PresetMetrics > "" {
-					return metricDefs.GetPresetMetrics(monitoredSource.PresetMetrics)
-				}
-				return nil
-			}()
-			hostLastKnownStatusInRecovery[monitoredSource.Name] = monitoredSource.IsInRecovery
-			if monitoredSource.IsInRecovery {
-				metricsConfig = func() map[string]float64 {
-					if len(monitoredSource.MetricsStandby) > 0 {
-						return monitoredSource.MetricsStandby
-					}
-					if monitoredSource.PresetMetricsStandby > "" {
-						return metricDefs.GetPresetMetrics(monitoredSource.PresetMetricsStandby)
-					}
-					return nil
-				}()
+			if monitoredSource.IsInRecovery && len(monitoredSource.MetricsStandby) > 0 {
+				metricsConfig = monitoredSource.MetricsStandby
+			} else {
+				metricsConfig = monitoredSource.Metrics
 			}
+			hostLastKnownStatusInRecovery[monitoredSource.Name] = monitoredSource.IsInRecovery
 
 			r.CreateSourceHelpers(ctx, srcL, monitoredSource)
 
@@ -178,7 +163,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 							srcL.Error(err)
 						}
 
-						go r.reapMetricMeasurements(metricCtx, monitoredSource, metric, metricsConfig[metric])
+						go r.reapMetricMeasurements(metricCtx, monitoredSource, metric)
 					}
 				} else if (!metricDefExists && cancelFuncExists) || interval <= 0 {
 					// metric definition files were recently removed or interval set to zero
@@ -260,23 +245,17 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 		}
 
 		if !(wholeDbShutDownDueToRoleChange || dbRemovedFromConfig) { // maybe some single metric was disabled
-			if md.IsInRecovery && md.PresetMetricsStandby > "" || !md.IsInRecovery && md.PresetMetrics > "" {
-				continue // no need to check presets for single metric disabling
-			}
 			if md.IsInRecovery && len(md.MetricsStandby) > 0 {
 				currentMetricConfig = md.MetricsStandby
 			} else {
 				currentMetricConfig = md.Metrics
 			}
-
 			interval, isMetricActive := currentMetricConfig[metric]
-			if !isMetricActive || interval <= 0 {
-				singleMetricDisabled = true
-			}
+			singleMetricDisabled = !isMetricActive || interval <= 0
 		}
 
 		if ctx.Err() != nil || wholeDbShutDownDueToRoleChange || dbRemovedFromConfig || singleMetricDisabled {
-			logger.WithField("source", db).WithField("metric", metric).Info("stoppin gatherer...")
+			logger.WithField("source", db).WithField("metric", metric).Info("stopping gatherer...")
 			cancelFunc()
 			delete(r.cancelFuncs, dbMetric)
 			if err := r.SinksWriter.SyncMetric(db, metric, "remove"); err != nil {
@@ -290,7 +269,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 }
 
 // metrics.ControlMessage notifies of shutdown + interval change
-func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.SourceConn, metricName string, interval float64) {
+func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceConn, metricName string) {
 	hostState := make(map[string]map[string]string)
 	var lastUptimeS int64 = -1 // used for "server restarted" event detection
 	var lastErrorNotificationTime time.Time
@@ -303,21 +282,21 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.Source
 	failedFetches := 0
 	lastDBVersionFetchTime := time.Unix(0, 0) // check DB ver. ev. 5 min
 
-	l := r.logger.WithField("source", mdb.Name).WithField("metric", metricName)
+	l := r.logger.WithField("source", md.Name).WithField("metric", metricName)
 	if metricName == specialMetricServerLogEventCounts {
-		metrics.ParseLogs(ctx, mdb, mdb.RealDbname, interval, r.measurementCh) // no return
+		metrics.ParseLogs(ctx, md, md.RealDbname, md.GetMetricInterval(metricName), r.measurementCh) // no return
 		return
 	}
 
 	for {
+		interval := md.GetMetricInterval(metricName)
 		if lastDBVersionFetchTime.Add(time.Minute * time.Duration(5)).Before(time.Now()) {
-			_, err = mdb.GetMonitoredDatabaseSettings(ctx, false) // in case of errors just ignore metric "disabled" time ranges
-			if err != nil {
+			// in case of errors just ignore metric "disabled" time ranges
+			if _, err = md.GetMonitoredDatabaseSettings(ctx, false); err != nil {
 				lastDBVersionFetchTime = time.Now()
 			}
 
-			mvp, ok = metricDefs.GetMetricDef(metricName)
-			if !ok {
+			if mvp, ok = metricDefs.GetMetricDef(metricName); !ok {
 				l.Errorf("Could not get metric version properties: %s", metricName)
 				return
 			}
@@ -325,17 +304,17 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.Source
 
 		var metricStoreMessages *metrics.MeasurementEnvelope
 		mfm := MetricFetchConfig{
-			DBUniqueName:        mdb.Name,
-			DBUniqueNameOrig:    mdb.GetDatabaseName(),
+			DBUniqueName:        md.Name,
+			DBUniqueNameOrig:    md.GetDatabaseName(),
 			MetricName:          metricName,
-			Source:              mdb.Kind,
+			Source:              md.Kind,
 			Interval:            time.Second * time.Duration(interval),
 			StmtTimeoutOverride: 0,
 		}
 
 		// 1st try local overrides for some metrics if operating in push mode
 		if r.Metrics.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
-			metricStoreMessages, err = FetchStatsDirectlyFromOS(ctx, mfm, mdb, mvp)
+			metricStoreMessages, err = FetchStatsDirectlyFromOS(ctx, mfm, md, mvp)
 			if err != nil {
 				l.WithError(err).Errorf("Could not reader metric directly from OS")
 			}
@@ -368,7 +347,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.Source
 				if ok {
 					if lastUptimeS != -1 {
 						if postmasterUptimeS.(int64) < lastUptimeS { // restart (or possibly also failover when host is routed) happened
-							message := "Detected server restart (or failover) of \"" + mdb.Name + "\""
+							message := "Detected server restart (or failover) of \"" + md.Name + "\""
 							l.Warning(message)
 							detectedChangesSummary := make(metrics.Measurements, 0)
 							entry := metrics.NewMeasurement(metricStoreMessages.Data.GetEpoch())
@@ -376,8 +355,8 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.Source
 							detectedChangesSummary = append(detectedChangesSummary, entry)
 							envelopes = append(envelopes,
 								metrics.MeasurementEnvelope{
-									DBName:     mdb.Name,
-									SourceType: string(mdb.Kind),
+									DBName:     md.Name,
+									SourceType: string(md.Kind),
 									MetricName: "object_changes",
 									Data:       detectedChangesSummary,
 									CustomTags: metricStoreMessages.CustomTags,
