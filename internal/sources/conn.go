@@ -201,8 +201,7 @@ FROM
 		sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
 		var res pgx.Rows
 		res, err = md.Conn.Query(ctx, sqlExtensions)
-
-		if err != nil {
+		if err == nil {
 			var ext string
 			var ver string
 			_, err = pgx.ForEachRow(res, []any{&ext, &ver}, func() error {
