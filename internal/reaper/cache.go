@@ -12,7 +12,6 @@ import (
 
 var monitoredDbCache map[string]*sources.SourceConn
 var monitoredDbCacheLock sync.RWMutex
-var MonitoredDatabasesSettings = make(map[string]sources.RuntimeInfo)
 
 var lastDBSizeMB = make(map[string]int64)
 var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHING_INTERVAL
