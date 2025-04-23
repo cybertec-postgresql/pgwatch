@@ -1,6 +1,7 @@
 package reaper
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -39,7 +40,10 @@ func UpdateMonitoredDBCache(data sources.SourceConns) {
 	monitoredDbCacheLock.Unlock()
 }
 
-func GetMonitoredDatabaseByUniqueName(name string) (*sources.SourceConn, error) {
+func GetMonitoredDatabaseByUniqueName(ctx context.Context, name string) (*sources.SourceConn, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	monitoredDbCacheLock.RLock()
 	defer monitoredDbCacheLock.RUnlock()
 	md, exists := monitoredDbCache[name]

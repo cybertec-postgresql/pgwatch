@@ -133,10 +133,13 @@ func VersionToInt(version string) (v int) {
 var rBouncerAndPgpoolVerMatch = regexp.MustCompile(`\d+\.+\d+`) // extract $major.minor from "4.1.2 (karasukiboshi)" or "PgBouncer 1.12.0"
 
 func (md *SourceConn) GetMonitoredDatabaseSettings(ctx context.Context, forceRefetch bool) (_ RuntimeInfo, err error) {
-	var dbNewSettings RuntimeInfo
-	var ok bool
+	if ctx.Err() != nil {
+		return md.RuntimeInfo, ctx.Err()
+	}
 
-	if !forceRefetch && ok && md.LastCheckedOn.After(time.Now().Add(time.Minute*-2)) { // use cached version for 2 min
+	var dbNewSettings RuntimeInfo
+
+	if !forceRefetch && md.LastCheckedOn.After(time.Now().Add(time.Minute*-2)) { // use cached version for 2 min
 		return md.RuntimeInfo, nil
 	}
 
