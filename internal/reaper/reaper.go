@@ -81,12 +81,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 				continue
 			}
 
-			InitPGVersionInfoFetchingLockIfNil(monitoredSource)
-
-			// var dbSettings sources.RuntimeInfo
-
-			_, err = monitoredSource.GetMonitoredDatabaseSettings(ctx, true)
-			if err != nil {
+			if _, err = monitoredSource.GetMonitoredDatabaseSettings(ctx, true); err != nil {
 				srcL.WithError(err).Error("could not start metric gathering")
 				continue
 			}
@@ -95,6 +90,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 				srcL.Info("not added to monitoring due to 'master only' property")
 				continue
 			}
+
 			metricsConfig = func() map[string]float64 {
 				if len(monitoredSource.Metrics) > 0 {
 					return monitoredSource.Metrics
@@ -117,7 +113,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 				}()
 			}
 
-			r.CreateSourceObjects(ctx, srcL, monitoredSource)
+			r.CreateSourceHelpers(ctx, srcL, monitoredSource)
 
 			if monitoredSource.IsPostgresSource() {
 				var DBSizeMB int64
@@ -174,7 +170,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 						r.cancelFuncs[dbMetric] = cancelFunc
 
 						metricNameForStorage := metricName
-						if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric {
+						if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric && mvp.StorageName > "" {
 							metricNameForStorage = mvp.StorageName
 						}
 
@@ -213,8 +209,8 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 	}
 }
 
-// CreateSourceObjects creates the extensions and metric helpers for the monitored source
-func (r *Reaper) CreateSourceObjects(ctx context.Context, srcL log.LoggerIface, monitoredSource *sources.SourceConn) {
+// CreateSourceHelpers creates the extensions and metric helpers for the monitored source
+func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.LoggerIface, monitoredSource *sources.SourceConn) {
 	if r.prevLoopMonitoredDBs.GetMonitoredDatabase(monitoredSource.Name) != nil {
 		return // already created
 	}
@@ -245,7 +241,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 	logger.Debug("checking if any workers need to be shut down...")
 	for dbMetric, cancelFunc := range r.cancelFuncs {
 		var currentMetricConfig map[string]float64
-		var dbInfo *sources.SourceConn
+		var md *sources.SourceConn
 		var ok, dbRemovedFromConfig bool
 		singleMetricDisabled := false
 		splits := strings.Split(dbMetric, dbMetricJoinStr)
@@ -255,7 +251,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 		_, wholeDbShutDownDueToRoleChange := hostsToShutDownDueToRoleChange[db]
 		if !wholeDbShutDownDueToRoleChange {
 			monitoredDbCacheLock.RLock()
-			dbInfo, ok = monitoredDbCache[db]
+			md, ok = monitoredDbCache[db]
 			monitoredDbCacheLock.RUnlock()
 			if !ok { // normal removing of DB from config
 				dbRemovedFromConfig = true
@@ -264,20 +260,13 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 		}
 
 		if !(wholeDbShutDownDueToRoleChange || dbRemovedFromConfig) { // maybe some single metric was disabled
-			MonitoredDatabasesSettingsLock.RLock()
-			verInfo, ok := MonitoredDatabasesSettings[db]
-			MonitoredDatabasesSettingsLock.RUnlock()
-			if !ok {
-				logger.Warningf("Could not find PG version info for DB %s, skipping shutdown check of metric worker process for %s", db, metric)
-				continue
-			}
-			if verInfo.IsInRecovery && dbInfo.PresetMetricsStandby > "" || !verInfo.IsInRecovery && dbInfo.PresetMetrics > "" {
+			if md.IsInRecovery && md.PresetMetricsStandby > "" || !md.IsInRecovery && md.PresetMetrics > "" {
 				continue // no need to check presets for single metric disabling
 			}
-			if verInfo.IsInRecovery && len(dbInfo.MetricsStandby) > 0 {
-				currentMetricConfig = dbInfo.MetricsStandby
+			if md.IsInRecovery && len(md.MetricsStandby) > 0 {
+				currentMetricConfig = md.MetricsStandby
 			} else {
-				currentMetricConfig = dbInfo.Metrics
+				currentMetricConfig = md.Metrics
 			}
 
 			interval, isMetricActive := currentMetricConfig[metric]
@@ -297,7 +286,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 	}
 
 	// Destroy conn pools and metric writers
-	CloseResourcesForRemovedMonitoredDBs(r.SinksWriter, r.monitoredSources, r.prevLoopMonitoredDBs, hostsToShutDownDueToRoleChange)
+	r.CloseResourcesForRemovedMonitoredDBs(hostsToShutDownDueToRoleChange)
 }
 
 // metrics.ControlMessage notifies of shutdown + interval change
@@ -316,10 +305,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, mdb *sources.Source
 
 	l := r.logger.WithField("source", mdb.Name).WithField("metric", metricName)
 	if metricName == specialMetricServerLogEventCounts {
-		MonitoredDatabasesSettingsLock.RLock()
-		realDbname := MonitoredDatabasesSettings[mdb.Name].RealDbname // to manage 2 sets of event counts - monitored DB + global
-		MonitoredDatabasesSettingsLock.RUnlock()
-		metrics.ParseLogs(ctx, mdb, realDbname, interval, r.measurementCh) // no return
+		metrics.ParseLogs(ctx, mdb, mdb.RealDbname, interval, r.measurementCh) // no return
 		return
 	}
 
@@ -477,6 +463,7 @@ func (r *Reaper) WriteMeasurements(ctx context.Context) {
 }
 
 func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, ver *sources.SourceConn) metrics.Measurements {
+	// TODO: rewrite to remove extra checks
 	enrichedData := make(metrics.Measurements, 0)
 	for _, dr := range data {
 		if r.Sinks.RealDbnameField > "" && ver.RealDbname > "" {
@@ -509,7 +496,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, msg MetricFetchConfig, hostSta
 	var cacheKey string
 	var ok bool
 
-	if md, err = GetMonitoredDatabaseByUniqueName(msg.DBUniqueName); err != nil {
+	if md, err = GetMonitoredDatabaseByUniqueName(ctx, msg.DBUniqueName); err != nil {
 		return nil, err
 	}
 
@@ -577,14 +564,9 @@ func (r *Reaper) FetchMetric(ctx context.Context, msg MetricFetchConfig, hostSta
 
 		if err != nil {
 			// let's soften errors to "info" from functions that expect the server to be a primary to reduce noise
-			if strings.Contains(err.Error(), "recovery is in progress") {
-				MonitoredDatabasesSettingsLock.RLock()
-				ver := MonitoredDatabasesSettings[msg.DBUniqueName]
-				MonitoredDatabasesSettingsLock.RUnlock()
-				if ver.IsInRecovery {
-					log.GetLogger(ctx).Debugf("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
-					return nil, err
-				}
+			if strings.Contains(err.Error(), "recovery is in progress") && md.IsInRecovery {
+				log.GetLogger(ctx).Debugf("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
+				return nil, err
 			}
 
 			if msg.MetricName == specialMetricInstanceUp {

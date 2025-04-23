@@ -13,22 +13,12 @@ import (
 var monitoredDbCache map[string]*sources.SourceConn
 var monitoredDbCacheLock sync.RWMutex
 var MonitoredDatabasesSettings = make(map[string]sources.RuntimeInfo)
-var MonitoredDatabasesSettingsLock = sync.RWMutex{}
-var MonitoredDatabasesSettingsGetLock = make(map[string]*sync.RWMutex) // synchronize initial PG version detection to 1 instance for each defined host
 
 var lastDBSizeMB = make(map[string]int64)
 var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHING_INTERVAL
 var lastDBSizeCheckLock sync.RWMutex
 
 var lastSQLFetchError sync.Map
-
-func InitPGVersionInfoFetchingLockIfNil(md *sources.SourceConn) {
-	MonitoredDatabasesSettingsLock.Lock()
-	if _, ok := MonitoredDatabasesSettingsGetLock[md.Name]; !ok {
-		MonitoredDatabasesSettingsGetLock[md.Name] = &sync.RWMutex{}
-	}
-	MonitoredDatabasesSettingsLock.Unlock()
-}
 
 func UpdateMonitoredDBCache(data sources.SourceConns) {
 	monitoredDbCacheNew := make(map[string]*sources.SourceConn)

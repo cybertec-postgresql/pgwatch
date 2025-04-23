@@ -11,7 +11,6 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 	"github.com/jackc/pgx/v5"
 )
@@ -24,7 +23,7 @@ func QueryMeasurements(ctx context.Context, dbUnique string, sql string, args ..
 	if strings.TrimSpace(sql) == "" {
 		return nil, errors.New("empty SQL")
 	}
-	if md, err = GetMonitoredDatabaseByUniqueName(dbUnique); err != nil {
+	if md, err = GetMonitoredDatabaseByUniqueName(ctx, dbUnique); err != nil {
 		return nil, err
 	}
 	conn = md.Conn
@@ -57,7 +56,7 @@ func DBGetSizeMB(ctx context.Context, dbUnique string) (int64, error) {
 	lastDBSizeCheckLock.RUnlock()
 
 	if !ok || lastDBSizeCheckTime.Add(dbSizeCachingInterval).Before(time.Now()) {
-		md, err := GetMonitoredDatabaseByUniqueName(dbUnique)
+		md, err := GetMonitoredDatabaseByUniqueName(ctx, dbUnique)
 		if err != nil {
 			return 0, err
 		}
@@ -494,7 +493,7 @@ func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique s
 		influxEntry := metrics.NewMeasurement(time.Now().UnixNano())
 		influxEntry["details"] = message
 		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
-		md, _ := GetMonitoredDatabaseByUniqueName(dbUnique)
+		md, _ := GetMonitoredDatabaseByUniqueName(ctx, dbUnique)
 		storageCh <- []metrics.MeasurementEnvelope{{DBName: dbUnique,
 			SourceType: string(md.Kind),
 			MetricName: "object_changes",
@@ -675,25 +674,18 @@ func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn
 	return nil
 }
 
-func CloseResourcesForRemovedMonitoredDBs(metricsWriter sinks.Writer, currentDBs, prevLoopDBs sources.SourceConns, shutDownDueToRoleChange map[string]bool) {
-	var curDBsMap = make(map[string]bool)
-
-	for _, curDB := range currentDBs {
-		curDBsMap[curDB.Name] = true
-	}
-
-	for _, prevDB := range prevLoopDBs {
-		if _, ok := curDBsMap[prevDB.Name]; !ok { // removed from config
+func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(shutDownDueToRoleChange map[string]bool) {
+	for _, prevDB := range r.prevLoopMonitoredDBs {
+		if r.monitoredSources.GetMonitoredDatabase(prevDB.Name) == nil { // removed from config
 			prevDB.Conn.Close()
-			_ = metricsWriter.SyncMetric(prevDB.Name, "", "remove")
+			_ = r.SinksWriter.SyncMetric(prevDB.Name, "", "remove")
 		}
 	}
 
-	// or to be ignored due to current instance state
 	for roleChangedDB := range shutDownDueToRoleChange {
-		if db := currentDBs.GetMonitoredDatabase(roleChangedDB); db != nil {
+		if db := r.monitoredSources.GetMonitoredDatabase(roleChangedDB); db != nil {
 			db.Conn.Close()
 		}
-		_ = metricsWriter.SyncMetric(roleChangedDB, "", "remove")
+		_ = r.SinksWriter.SyncMetric(roleChangedDB, "", "remove")
 	}
 }
