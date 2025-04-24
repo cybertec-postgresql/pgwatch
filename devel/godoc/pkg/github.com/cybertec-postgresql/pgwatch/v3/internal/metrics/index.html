@@ -645,7 +645,6 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 
 			<pre>type CmdOpts struct {
 <span id="CmdOpts.Metrics"></span>    Metrics                      <a href="https://pkg.go.dev/builtin/#string">string</a> `short:&#34;m&#34; long:&#34;metrics&#34; mapstructure:&#34;metrics&#34; description:&#34;File or folder of YAML files with metrics definitions&#34; env:&#34;PW_METRICS&#34;`
-<span id="CmdOpts.CreateHelpers"></span>    CreateHelpers                <a href="https://pkg.go.dev/builtin/#bool">bool</a>   `long:&#34;create-helpers&#34; mapstructure:&#34;create-helpers&#34; description:&#34;Create helper database objects from metric definitions&#34; env:&#34;PW_CREATE_HELPERS&#34;`
 <span id="CmdOpts.DirectOSStats"></span>    DirectOSStats                <a href="https://pkg.go.dev/builtin/#bool">bool</a>   `long:&#34;direct-os-stats&#34; mapstructure:&#34;direct-os-stats&#34; description:&#34;Extract OS related psutil statistics not via PL/Python wrappers but directly on host&#34; env:&#34;PW_DIRECT_OS_STATS&#34;`
 <span id="CmdOpts.InstanceLevelCacheMaxSeconds"></span>    InstanceLevelCacheMaxSeconds <a href="https://pkg.go.dev/builtin/#int64">int64</a>  `long:&#34;instance-level-cache-max-seconds&#34; mapstructure:&#34;instance-level-cache-max-seconds&#34; description:&#34;Max allowed staleness for instance level metric data shared between DBs of an instance. Set to 0 to disable&#34; env:&#34;PW_INSTANCE_LEVEL_CACHE_MAX_SECONDS&#34; default:&#34;30&#34;`
 <span id="CmdOpts.EmergencyPauseTriggerfile"></span>    EmergencyPauseTriggerfile    <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;emergency-pause-triggerfile&#34; mapstructure:&#34;emergency-pause-triggerfile&#34; description:&#34;When the file exists no metrics will be temporarily fetched / scraped&#34; env:&#34;PW_EMERGENCY_PAUSE_TRIGGERFILE&#34; default:&#34;/tmp/pgwatch-emergency-pause&#34;`
@@ -664,7 +663,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 
 			
 				
-				<h3 id="CmdOpts.CacheAge">func (CmdOpts) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/cmdopts.go.html#L16">CacheAge</a>
+				<h3 id="CmdOpts.CacheAge">func (CmdOpts) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/cmdopts.go.html#L15">CacheAge</a>
 					<a class="permalink" href="#CmdOpts.CacheAge">&#xb6;</a>
 					
 					

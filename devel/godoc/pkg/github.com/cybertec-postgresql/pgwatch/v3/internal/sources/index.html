@@ -122,6 +122,9 @@ At the moment, sources definitions support two storages:
 			
 			
 				
+				<dd><a href="#VersionToInt">func VersionToInt(version string) (v int)</a></dd>
+			
+				
 				<dd><a href="#getTransport">func getTransport(conf HostConfigAttrs) (*tls.Config, error)</a></dd>
 			
 				
@@ -191,6 +194,11 @@ At the moment, sources definitions support two storages:
 				
 			
 				
+				<dd><a href="#RuntimeInfo">type RuntimeInfo</a></dd>
+				
+				
+			
+				
 				<dd><a href="#Source">type Source</a></dd>
 				
 				
@@ -218,13 +226,22 @@ At the moment, sources definitions support two storages:
 					<dd>&nbsp; &nbsp; <a href="#SourceConn.DiscoverPlatform">func (md *SourceConn) DiscoverPlatform(ctx context.Context) (platform string)</a></dd>
 				
 					
+					<dd>&nbsp; &nbsp; <a href="#SourceConn.FetchApproxSize">func (md *SourceConn) FetchApproxSize(ctx context.Context) (size int64)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SourceConn.FetchRuntimeInfo">func (md *SourceConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SourceConn.FetchVersion">func (md *SourceConn) FetchVersion(ctx context.Context, sql string) (version string, ver int, err error)</a></dd>
+				
+					
 					<dd>&nbsp; &nbsp; <a href="#SourceConn.FunctionExists">func (md *SourceConn) FunctionExists(ctx context.Context, functionName string) (exists bool)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#SourceConn.GetApproxSize">func (md *SourceConn) GetApproxSize(ctx context.Context) (size int64, err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#SourceConn.GetDatabaseName">func (md *SourceConn) GetDatabaseName() string</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#SourceConn.GetDatabaseName">func (md *SourceConn) GetDatabaseName() string</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#SourceConn.GetMetricInterval">func (md *SourceConn) GetMetricInterval(name string) float64</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#SourceConn.IsPostgresSource">func (md *SourceConn) IsPostgresSource() bool</a></dd>
@@ -277,7 +294,7 @@ At the moment, sources definitions support two storages:
 					<dd>&nbsp; &nbsp; <a href="#dbSourcesReaderWriter.DeleteSource">func (r *dbSourcesReaderWriter) DeleteSource(name string) error</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#dbSourcesReaderWriter.GetSources">func (r *dbSourcesReaderWriter) GetSources() (dbs Sources, err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#dbSourcesReaderWriter.GetSources">func (r *dbSourcesReaderWriter) GetSources() (Sources, error)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#dbSourcesReaderWriter.UpdateSource">func (r *dbSourcesReaderWriter) UpdateSource(md Source) error</a></dd>
@@ -350,6 +367,14 @@ At the moment, sources definitions support two storages:
 			
 				
 				<pre>const (
+    <span id="EnvUnknown">EnvUnknown</span>       = &#34;UNKNOWN&#34;
+    <span id="EnvAzureSingle">EnvAzureSingle</span>   = &#34;AZURE_SINGLE&#34; <span class="comment">//discontinued</span>
+    <span id="EnvAzureFlexible">EnvAzureFlexible</span> = &#34;AZURE_FLEXIBLE&#34;
+    <span id="EnvGoogle">EnvGoogle</span>        = &#34;GOOGLE&#34;
+)</pre>
+			
+				
+				<pre>const (
     <span id="dcsTypeEtcd">dcsTypeEtcd</span>      = &#34;etcd&#34;
     <span id="dcsTypeZookeeper">dcsTypeZookeeper</span> = &#34;zookeeper&#34;
     <span id="dcsTypeConsul">dcsTypeConsul</span>    = &#34;consul&#34;
@@ -384,7 +409,27 @@ At the moment, sources definitions support two storages:
 				
 				<pre>var <span id="logger">logger</span> <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#LoggerIface">LoggerIface</a> = <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#FallbackLogger">FallbackLogger</a></pre>
 			
+				<p>VersionToInt parses a given version and returns an integer  or
+an error if unable to parse the version. Only parses valid semantic versions.
+Performs checking that can find errors within the version.
+Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
+
+				<pre>var <span id="regVer">regVer</span> = <a href="https://pkg.go.dev/regexp/">regexp</a>.<a href="https://pkg.go.dev/regexp/#MustCompile">MustCompile</a>(`(\d+).?(\d*).?(\d*)`)</pre>
+			
 		
+		
+			
+			
+			<h2 id="VersionToInt">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L132">VersionToInt</a>
+				<a class="permalink" href="#VersionToInt">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func VersionToInt(version <a href="https://pkg.go.dev/builtin/#string">string</a>) (v <a href="https://pkg.go.dev/builtin/#int">int</a>)</pre>
+			
+			
+			
+
 		
 			
 			
@@ -442,6 +487,7 @@ At the moment, sources definitions support two storages:
 <span id="CmdOpts.MinDbSizeMB"></span>    MinDbSizeMB                  <a href="https://pkg.go.dev/builtin/#int64">int64</a>    `long:&#34;min-db-size-mb&#34; mapstructure:&#34;min-db-size-mb&#34; description:&#34;Smaller size DBs will be ignored and not monitored until they reach the threshold.&#34; env:&#34;PW_MIN_DB_SIZE_MB&#34; default:&#34;0&#34;`
 <span id="CmdOpts.MaxParallelConnectionsPerDb"></span>    MaxParallelConnectionsPerDb  <a href="https://pkg.go.dev/builtin/#int">int</a>      `long:&#34;max-parallel-connections-per-db&#34; mapstructure:&#34;max-parallel-connections-per-db&#34; description:&#34;Max parallel metric fetches per DB. Note the multiplication effect on multi-DB instances&#34; env:&#34;PW_MAX_PARALLEL_CONNECTIONS_PER_DB&#34; default:&#34;4&#34;`
 <span id="CmdOpts.TryCreateListedExtsIfMissing"></span>    TryCreateListedExtsIfMissing <a href="https://pkg.go.dev/builtin/#string">string</a>   `long:&#34;try-create-listed-exts-if-missing&#34; mapstructure:&#34;try-create-listed-exts-if-missing&#34; description:&#34;Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements&#34; env:&#34;PW_TRY_CREATE_LISTED_EXTS_IF_MISSING&#34; default:&#34;&#34;`
+<span id="CmdOpts.CreateHelpers"></span>    CreateHelpers                <a href="https://pkg.go.dev/builtin/#bool">bool</a>     `long:&#34;create-helpers&#34; mapstructure:&#34;create-helpers&#34; description:&#34;Create helper database objects from metric definitions&#34; env:&#34;PW_CREATE_HELPERS&#34;`
 }
 </pre>
 
@@ -721,6 +767,40 @@ At the moment, sources definitions support two storages:
 		
 			
 			
+			<h2 id="RuntimeInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L30">RuntimeInfo</a>
+				<a class="permalink" href="#RuntimeInfo">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type RuntimeInfo struct {
+<span id="RuntimeInfo.LastCheckedOn"></span>    LastCheckedOn    <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>
+<span id="RuntimeInfo.IsInRecovery"></span>    IsInRecovery     <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+<span id="RuntimeInfo.VersionStr"></span>    VersionStr       <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="RuntimeInfo.Version"></span>    Version          <a href="https://pkg.go.dev/builtin/#int">int</a>
+<span id="RuntimeInfo.RealDbname"></span>    RealDbname       <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="RuntimeInfo.SystemIdentifier"></span>    SystemIdentifier <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="RuntimeInfo.IsSuperuser"></span>    IsSuperuser      <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+<span id="RuntimeInfo.Extensions"></span>    Extensions       map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int">int</a>
+<span id="RuntimeInfo.ExecEnv"></span>    ExecEnv          <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="RuntimeInfo.ApproxDBSizeB"></span>    ApproxDBSizeB    <a href="https://pkg.go.dev/builtin/#int64">int64</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
 			<h2 id="Source">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L44">Source</a>
 				<a class="permalink" href="#Source">&#xb6;</a>
 				
@@ -801,7 +881,7 @@ those additional metrics, it is ok to specify the connection details as a regula
 		
 			
 			
-			<h2 id="SourceConn">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L22">SourceConn</a>
+			<h2 id="SourceConn">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L47">SourceConn</a>
 				<a class="permalink" href="#SourceConn">&#xb6;</a>
 				
 				
@@ -814,6 +894,7 @@ will produce multiple monitored databases structs based on the discovered databa
     <a href="#Source">Source</a>
 <span id="SourceConn.Conn"></span>    Conn       <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxPoolIface">PgxPoolIface</a>
 <span id="SourceConn.ConnConfig"></span>    ConnConfig *<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgxpool/">pgxpool</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgxpool/#Config">Config</a>
+    <a href="#RuntimeInfo">RuntimeInfo</a>
 }
 </pre>
 
@@ -840,7 +921,7 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="SourceConn.Connect">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L43">Connect</a>
+				<h3 id="SourceConn.Connect">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L69">Connect</a>
 					<a class="permalink" href="#SourceConn.Connect">&#xb6;</a>
 					
 					
@@ -854,7 +935,7 @@ If the connection is already established, it pings the server to ensure it&apos;
 				
 			
 				
-				<h3 id="SourceConn.DiscoverPlatform">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L94">DiscoverPlatform</a>
+				<h3 id="SourceConn.DiscoverPlatform">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L218">DiscoverPlatform</a>
 					<a class="permalink" href="#SourceConn.DiscoverPlatform">&#xb6;</a>
 					
 					
@@ -868,7 +949,44 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.FunctionExists">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L120">FunctionExists</a>
+				<h3 id="SourceConn.FetchApproxSize">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L235">FetchApproxSize</a>
+					<a class="permalink" href="#SourceConn.FetchApproxSize">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (md *<a href="#SourceConn">SourceConn</a>) FetchApproxSize(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (size <a href="https://pkg.go.dev/builtin/#int64">int64</a>)</pre>
+				<p>FetchApproxSize returns the approximate size of the database in bytes
+
+				
+				
+				
+			
+				
+				<h3 id="SourceConn.FetchRuntimeInfo">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L141">FetchRuntimeInfo</a>
+					<a class="permalink" href="#SourceConn.FetchRuntimeInfo">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (md *<a href="#SourceConn">SourceConn</a>) FetchRuntimeInfo(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, forceRefetch <a href="https://pkg.go.dev/builtin/#bool">bool</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="SourceConn.FetchVersion">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L208">FetchVersion</a>
+					<a class="permalink" href="#SourceConn.FetchVersion">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (md *<a href="#SourceConn">SourceConn</a>) FetchVersion(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, sql <a href="https://pkg.go.dev/builtin/#string">string</a>) (version <a href="https://pkg.go.dev/builtin/#string">string</a>, ver <a href="https://pkg.go.dev/builtin/#int">int</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="SourceConn.FunctionExists">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L242">FunctionExists</a>
 					<a class="permalink" href="#SourceConn.FunctionExists">&#xb6;</a>
 					
 					
@@ -881,20 +999,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.GetApproxSize">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L108">GetApproxSize</a>
-					<a class="permalink" href="#SourceConn.GetApproxSize">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (md *<a href="#SourceConn">SourceConn</a>) GetApproxSize(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (size <a href="https://pkg.go.dev/builtin/#int64">int64</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				<p>GetApproxSize returns the approximate size of the database in bytes
-
-				
-				
-				
-			
-				
-				<h3 id="SourceConn.GetDatabaseName">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L72">GetDatabaseName</a>
+				<h3 id="SourceConn.GetDatabaseName">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L98">GetDatabaseName</a>
 					<a class="permalink" href="#SourceConn.GetDatabaseName">&#xb6;</a>
 					
 					
@@ -907,7 +1012,20 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.IsPostgresSource">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L88">IsPostgresSource</a>
+				<h3 id="SourceConn.GetMetricInterval">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L106">GetMetricInterval</a>
+					<a class="permalink" href="#SourceConn.GetMetricInterval">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (md *<a href="#SourceConn">SourceConn</a>) GetMetricInterval(name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#float64">float64</a></pre>
+				<p>GetMetricInterval returns the metric interval for the connection
+
+				
+				
+				
+			
+				
+				<h3 id="SourceConn.IsPostgresSource">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L122">IsPostgresSource</a>
 					<a class="permalink" href="#SourceConn.IsPostgresSource">&#xb6;</a>
 					
 					
@@ -919,7 +1037,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.ParseConfig">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L63">ParseConfig</a>
+				<h3 id="SourceConn.ParseConfig">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L89">ParseConfig</a>
 					<a class="permalink" href="#SourceConn.ParseConfig">&#xb6;</a>
 					
 					
@@ -932,7 +1050,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.Ping">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L32">Ping</a>
+				<h3 id="SourceConn.Ping">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L58">Ping</a>
 					<a class="permalink" href="#SourceConn.Ping">&#xb6;</a>
 					
 					
@@ -945,7 +1063,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.SetDatabaseName">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L80">SetDatabaseName</a>
+				<h3 id="SourceConn.SetDatabaseName">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L114">SetDatabaseName</a>
 					<a class="permalink" href="#SourceConn.SetDatabaseName">&#xb6;</a>
 					
 					
@@ -960,7 +1078,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 		
 			
 			
-			<h2 id="SourceConns">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L28">SourceConns</a>
+			<h2 id="SourceConns">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L54">SourceConns</a>
 				<a class="permalink" href="#SourceConns">&#xb6;</a>
 				
 				
@@ -996,7 +1114,7 @@ additionally matching/not matching specified regex patterns
 
 			
 				
-				<h3 id="SourceConns.GetMonitoredDatabase">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L130">GetMonitoredDatabase</a>
+				<h3 id="SourceConns.GetMonitoredDatabase">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L252">GetMonitoredDatabase</a>
 					<a class="permalink" href="#SourceConns.GetMonitoredDatabase">&#xb6;</a>
 					
 					
@@ -1008,7 +1126,7 @@ additionally matching/not matching specified regex patterns
 				
 			
 				
-				<h3 id="SourceConns.SyncFromReader">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L142">SyncFromReader</a>
+				<h3 id="SourceConns.SyncFromReader">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L264">SyncFromReader</a>
 					<a class="permalink" href="#SourceConns.SyncFromReader">&#xb6;</a>
 					
 					
@@ -1139,7 +1257,7 @@ It&apos;s up to the caller to proceed with the databases available or stop the e
 					
 					
 				</h3>
-				<pre>func (r *dbSourcesReaderWriter) GetSources() (dbs <a href="#Sources">Sources</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func (r *dbSourcesReaderWriter) GetSources() (<a href="#Sources">Sources</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
