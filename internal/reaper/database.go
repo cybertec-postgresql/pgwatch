@@ -46,46 +46,6 @@ func QueryMeasurements(ctx context.Context, dbUnique string, sql string, args ..
 	return nil, err
 }
 
-func DBGetSizeMB(ctx context.Context, dbUnique string) (sizeMB int64, err error) {
-	sqlDbSize := `select /* pgwatch_generated */ pg_database_size(current_database());`
-
-	lastDBSizeCheckLock.RLock()
-	lastDBSizeCheckTime := lastDBSizeFetchTime[dbUnique]
-	lastDBSize, ok := lastDBSizeMB[dbUnique]
-	lastDBSizeCheckLock.RUnlock()
-
-	if !ok || lastDBSizeCheckTime.Add(dbSizeCachingInterval).Before(time.Now()) {
-		md, err := GetMonitoredDatabaseByUniqueName(ctx, dbUnique)
-		if err != nil {
-			return 0, err
-		}
-		err = md.FetchRuntimeInfo(ctx, false)
-		if err != nil || (md.ExecEnv != sources.EnvAzureSingle) || (md.ExecEnv == sources.EnvAzureSingle && md.ApproxDBSizeB < 1e12) {
-			log.GetLogger(ctx).Debugf("[%s] determining DB size ...", dbUnique)
-			err = md.Conn.QueryRow(ctx, sqlDbSize).Scan(&sizeMB)
-			if err != nil {
-				log.GetLogger(ctx).Errorf("[%s] failed to determine DB size...cannot apply --min-db-size-mb flag. err: %v ...", dbUnique, err)
-				return 0, err
-			}
-		} else {
-			log.GetLogger(ctx).Debugf("[%s] Using approx DB size for the --min-db-size-mb filter ...", dbUnique)
-			sizeMB = md.ApproxDBSizeB / 1048576
-		}
-
-		log.GetLogger(ctx).Debugf("[%s] DB size = %d MB, caching for %v ...", dbUnique, sizeMB, dbSizeCachingInterval)
-
-		lastDBSizeCheckLock.Lock()
-		lastDBSizeFetchTime[dbUnique] = time.Now()
-		lastDBSizeMB[dbUnique] = sizeMB
-		lastDBSizeCheckLock.Unlock()
-
-		return sizeMB, nil
-
-	}
-	log.GetLogger(ctx).Debugf("[%s] using cached DBsize %d MB for the --min-db-size-mb filter check", dbUnique, lastDBSize)
-	return lastDBSize, nil
-}
-
 func DetectSprocChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool

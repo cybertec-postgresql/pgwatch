@@ -18,9 +18,6 @@ const (
 	specialMetricServerLogEventCounts = "server_log_event_counts"
 	specialMetricPgpoolStats          = "pgpool_stats"
 	specialMetricInstanceUp           = "instance_up"
-	specialMetricDbSize               = "db_size"     // can be transparently switched to db_size_approx on instances with very slow FS access (Azure Single Server)
-	specialMetricTableStats           = "table_stats" // can be transparently switched to table_stats_approx on instances with very slow FS (Azure Single Server)
-
 )
 
 var specialMetrics = map[string]bool{recoMetricName: true, specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
