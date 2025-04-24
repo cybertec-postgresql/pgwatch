@@ -168,6 +168,33 @@ func TestSourceConn_Ping(t *testing.T) {
 	assert.NoError(t, md.Ping(ctx), "Ping() = error, want nil")
 }
 
+func TestSourceConn_GetMetricInterval(t *testing.T) {
+	md := &sources.SourceConn{
+		Source: sources.Source{
+			Metrics:        map[string]float64{"foo": 1.5, "bar": 2.5},
+			MetricsStandby: map[string]float64{"foo": 3.5},
+		},
+	}
+
+	t.Run("primary uses Metrics", func(t *testing.T) {
+		md.IsInRecovery = false
+		assert.Equal(t, 1.5, md.GetMetricInterval("foo"))
+		assert.Equal(t, 2.5, md.GetMetricInterval("bar"))
+	})
+
+	t.Run("standby uses MetricsStandby if present", func(t *testing.T) {
+		md.IsInRecovery = true
+		assert.Equal(t, 3.5, md.GetMetricInterval("foo"))
+		assert.Equal(t, 0.0, md.GetMetricInterval("bar"))
+	})
+
+	t.Run("standby with empty MetricsStandby falls back to Metrics", func(t *testing.T) {
+		md.IsInRecovery = true
+		md.MetricsStandby = map[string]float64{}
+		assert.Equal(t, 1.5, md.GetMetricInterval("foo"))
+	})
+}
+
 type testSourceReader struct {
 	sources.Sources
 	error
