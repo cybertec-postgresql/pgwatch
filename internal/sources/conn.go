@@ -2,7 +2,12 @@ package sources
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"reflect"
+	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/jackc/pgx/v5"
@@ -15,6 +20,26 @@ var (
 	NewConnWithConfig = db.NewWithConfig
 )
 
+const (
+	EnvUnknown       = "UNKNOWN"
+	EnvAzureSingle   = "AZURE_SINGLE" //discontinued
+	EnvAzureFlexible = "AZURE_FLEXIBLE"
+	EnvGoogle        = "GOOGLE"
+)
+
+type RuntimeInfo struct {
+	LastCheckedOn    time.Time
+	IsInRecovery     bool
+	VersionStr       string
+	Version          int
+	RealDbname       string
+	SystemIdentifier string
+	IsSuperuser      bool
+	Extensions       map[string]int
+	ExecEnv          string
+	ApproxDBSizeB    int64
+}
+
 // SourceConn represents a single connection to monitor. Unlike source, it contains a database connection.
 // Continuous discovery sources (postgres-continuous-discovery, patroni-continuous-discovery, patroni-namespace-discovery)
 // will produce multiple monitored databases structs based on the discovered databases.
@@ -23,6 +48,7 @@ type (
 		Source
 		Conn       db.PgxPoolIface
 		ConnConfig *pgxpool.Config
+		RuntimeInfo
 	}
 
 	SourceConns []*SourceConn
@@ -76,6 +102,14 @@ func (md *SourceConn) GetDatabaseName() string {
 	return md.ConnConfig.ConnConfig.Database
 }
 
+// GetMetricInterval returns the metric interval for the connection
+func (md *SourceConn) GetMetricInterval(name string) float64 {
+	if md.IsInRecovery && len(md.MetricsStandby) > 0 {
+		return md.MetricsStandby[name]
+	}
+	return md.Metrics[name]
+}
+
 // SetDatabaseName sets the database name in the connection config for resolved databases
 func (md *SourceConn) SetDatabaseName(name string) {
 	if err := md.ParseConfig(); err != nil {
@@ -89,9 +123,102 @@ func (md *SourceConn) IsPostgresSource() bool {
 	return md.Kind != SourcePgBouncer && md.Kind != SourcePgPool
 }
 
+// VersionToInt parses a given version and returns an integer  or
+// an error if unable to parse the version. Only parses valid semantic versions.
+// Performs checking that can find errors within the version.
+// Examples: v1.2 -> 01_02_00, v9.6.3 -> 09_06_03, v11 -> 11_00_00
+var regVer = regexp.MustCompile(`(\d+).?(\d*).?(\d*)`)
+
+func VersionToInt(version string) (v int) {
+	if matches := regVer.FindStringSubmatch(version); len(matches) > 1 {
+		for i, match := range matches[1:] {
+			v += func() (m int) { m, _ = strconv.Atoi(match); return }() * int(math.Pow10(4-i*2))
+		}
+	}
+	return
+}
+
+func (md *SourceConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error) {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
+	if !forceRefetch && md.LastCheckedOn.After(time.Now().Add(time.Minute*-2)) { // use cached version for 2 min
+		return nil
+	}
+
+	dbNewSettings := RuntimeInfo{
+		Extensions: make(map[string]int),
+	}
+
+	switch md.Kind {
+	case SourcePgBouncer, SourcePgPool:
+		if dbNewSettings.VersionStr, dbNewSettings.Version, err = md.FetchVersion(ctx, func() string {
+			if md.Kind == SourcePgBouncer {
+				return "SHOW VERSION"
+			}
+			return "SHOW POOL_VERSION"
+		}()); err != nil {
+			return
+		}
+	default:
+		sql := `select /* pgwatch_generated */ 
+	div(current_setting('server_version_num')::int, 10000) as ver, 
+	version(), 
+	pg_is_in_recovery(), 
+	current_database()::TEXT,
+	system_identifier,
+	current_setting('is_superuser')::bool
+FROM
+	pg_control_system()`
+
+		err = md.Conn.QueryRow(ctx, sql).
+			Scan(&dbNewSettings.Version, &dbNewSettings.VersionStr,
+				&dbNewSettings.IsInRecovery, &dbNewSettings.RealDbname,
+				&dbNewSettings.SystemIdentifier, &dbNewSettings.IsSuperuser)
+		if err != nil {
+			return err
+		}
+
+		dbNewSettings.ExecEnv = md.DiscoverPlatform(ctx)
+		dbNewSettings.ApproxDBSizeB = md.FetchApproxSize(ctx)
+
+		sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
+		var res pgx.Rows
+		res, err = md.Conn.Query(ctx, sqlExtensions)
+		if err == nil {
+			var ext string
+			var ver string
+			_, err = pgx.ForEachRow(res, []any{&ext, &ver}, func() error {
+				extver := VersionToInt(ver)
+				if extver == 0 {
+					return fmt.Errorf("unexpected extension %s version input: %s", ext, ver)
+				}
+				dbNewSettings.Extensions[ext] = extver
+				return nil
+			})
+		}
+
+	}
+	dbNewSettings.LastCheckedOn = time.Now()
+	md.RuntimeInfo = dbNewSettings // store the new settings in the struct
+	return err
+}
+
+func (md *SourceConn) FetchVersion(ctx context.Context, sql string) (version string, ver int, err error) {
+	if err = md.Conn.QueryRow(ctx, sql).Scan(&version); err != nil {
+		return
+	}
+	ver = VersionToInt(version)
+	return
+}
+
 // TryDiscoverPlatform tries to discover the platform based on the database version string and some special settings
 // that are only available on certain platforms. Returns the platform name or "UNKNOWN" if not sure.
 func (md *SourceConn) DiscoverPlatform(ctx context.Context) (platform string) {
+	if md.ExecEnv != "" {
+		return md.ExecEnv // carry over as not likely to change ever
+	}
 	sql := `select /* pgwatch_generated */
 	case
 	  when exists (select * from pg_settings where name = 'pg_qs.host_database' and setting = 'azure_sys') and version() ~* 'compiled by Visual C' then 'AZURE_SINGLE'
@@ -104,15 +231,10 @@ func (md *SourceConn) DiscoverPlatform(ctx context.Context) (platform string) {
 	return
 }
 
-// GetApproxSize returns the approximate size of the database in bytes
-func (md *SourceConn) GetApproxSize(ctx context.Context) (size int64, err error) {
-	sqlApproxDBSize := `select /* pgwatch_generated */ 
-	current_setting('block_size')::int8 * sum(relpages)
-from 
-	pg_class c
-where
-	c.relpersistence != 't'`
-	err = md.Conn.QueryRow(ctx, sqlApproxDBSize).Scan(&size)
+// FetchApproxSize returns the approximate size of the database in bytes
+func (md *SourceConn) FetchApproxSize(ctx context.Context) (size int64) {
+	sqlApproxDBSize := `select /* pgwatch_generated */ current_setting('block_size')::int8 * sum(relpages) from pg_class c where c.relpersistence != 't'`
+	_ = md.Conn.QueryRow(ctx, sqlApproxDBSize).Scan(&size)
 	return
 }
 

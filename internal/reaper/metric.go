@@ -76,19 +76,6 @@ type ChangeDetectionResults struct { // for passing around DDL/index/config chan
 	Dropped int
 }
 
-type MonitoredDatabaseSettings struct {
-	LastCheckedOn    time.Time
-	IsInRecovery     bool
-	VersionStr       string
-	Version          int
-	RealDbname       string
-	SystemIdentifier string
-	IsSuperuser      bool // if true and no helpers are installed, use superuser SQL version of metric if available
-	Extensions       map[string]int
-	ExecEnv          string
-	ApproxDBSizeB    int64
-}
-
 type ExistingPartitionInfo struct {
 	StartTime time.Time
 	EndTime   time.Time
@@ -110,5 +97,14 @@ func (r *Reaper) LoadMetrics() (err error) {
 			}
 			return logrus.InfoLevel
 		}(), "metrics and presets refreshed")
+	// update the monitored sources with real metric definitions from presets
+	for _, md := range r.monitoredSources {
+		if md.PresetMetrics > "" {
+			md.Metrics = metricDefs.GetPresetMetrics(md.PresetMetrics)
+		}
+		if md.PresetMetricsStandby > "" {
+			md.MetricsStandby = metricDefs.GetPresetMetrics(md.PresetMetricsStandby)
+		}
+	}
 	return
 }

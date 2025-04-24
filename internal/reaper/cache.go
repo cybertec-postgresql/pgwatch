@@ -1,6 +1,7 @@
 package reaper
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -11,25 +12,12 @@ import (
 
 var monitoredDbCache map[string]*sources.SourceConn
 var monitoredDbCacheLock sync.RWMutex
-var MonitoredDatabasesSettings = make(map[string]MonitoredDatabaseSettings)
-var MonitoredDatabasesSettingsLock = sync.RWMutex{}
-var MonitoredDatabasesSettingsGetLock = make(map[string]*sync.RWMutex) // synchronize initial PG version detection to 1 instance for each defined host
 
 var lastDBSizeMB = make(map[string]int64)
 var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHING_INTERVAL
 var lastDBSizeCheckLock sync.RWMutex
 
-var prevLoopMonitoredDBs sources.SourceConns // to be able to detect DBs removed from config
-
 var lastSQLFetchError sync.Map
-
-func InitPGVersionInfoFetchingLockIfNil(md *sources.SourceConn) {
-	MonitoredDatabasesSettingsLock.Lock()
-	if _, ok := MonitoredDatabasesSettingsGetLock[md.Name]; !ok {
-		MonitoredDatabasesSettingsGetLock[md.Name] = &sync.RWMutex{}
-	}
-	MonitoredDatabasesSettingsLock.Unlock()
-}
 
 func UpdateMonitoredDBCache(data sources.SourceConns) {
 	monitoredDbCacheNew := make(map[string]*sources.SourceConn)
@@ -41,7 +29,10 @@ func UpdateMonitoredDBCache(data sources.SourceConns) {
 	monitoredDbCacheLock.Unlock()
 }
 
-func GetMonitoredDatabaseByUniqueName(name string) (*sources.SourceConn, error) {
+func GetMonitoredDatabaseByUniqueName(ctx context.Context, name string) (*sources.SourceConn, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	monitoredDbCacheLock.RLock()
 	defer monitoredDbCacheLock.RUnlock()
 	md, exists := monitoredDbCache[name]

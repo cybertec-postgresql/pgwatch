@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
 func DoesEmergencyTriggerfileExist(fname string) bool {
@@ -46,7 +47,7 @@ func IsDirectlyFetchableMetric(metric string) bool {
 	return ok
 }
 
-func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) (*metrics.MeasurementEnvelope, error) {
+func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, md *sources.SourceConn, metric metrics.Metric) (*metrics.MeasurementEnvelope, error) {
 	var data, dataDirs, dataTblspDirs metrics.Measurements
 	var err error
 
@@ -72,27 +73,14 @@ func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, vme Mo
 		return nil, err
 	}
 
-	msm, err := DataRowsToMeasurementEnvelope(data, msg, vme, mvp)
-	if err != nil {
-		return nil, err
-	}
-	return &msm, nil
-}
-
-// data + custom tags + counters
-func DataRowsToMeasurementEnvelope(data metrics.Measurements, msg MetricFetchConfig, vme MonitoredDatabaseSettings, mvp metrics.Metric) (metrics.MeasurementEnvelope, error) {
-	md, err := GetMonitoredDatabaseByUniqueName(msg.DBUniqueName)
-	if err != nil {
-		return metrics.MeasurementEnvelope{}, err
-	}
-	return metrics.MeasurementEnvelope{
+	return &metrics.MeasurementEnvelope{
 		DBName:           msg.DBUniqueName,
 		SourceType:       string(msg.Source),
 		MetricName:       msg.MetricName,
 		CustomTags:       md.CustomTags,
 		Data:             data,
-		MetricDef:        mvp,
-		RealDbname:       vme.RealDbname,
-		SystemIdentifier: vme.SystemIdentifier,
+		MetricDef:        metric,
+		RealDbname:       md.RealDbname,
+		SystemIdentifier: md.SystemIdentifier,
 	}, nil
 }

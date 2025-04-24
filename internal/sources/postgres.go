@@ -96,7 +96,7 @@ func (r *dbSourcesReaderWriter) DeleteSource(name string) error {
 	return err
 }
 
-func (r *dbSourcesReaderWriter) GetSources() (dbs Sources, err error) {
+func (r *dbSourcesReaderWriter) GetSources() (Sources, error) {
 	sqlLatest := `select /* pgwatch_generated */
 	name, 
 	"group", 
@@ -118,6 +118,5 @@ from
 	if err != nil {
 		return nil, err
 	}
-	dbs, err = pgx.CollectRows[Source](rows, pgx.RowToStructByNameLax)
-	return
+	return pgx.CollectRows[Source](rows, pgx.RowToStructByNameLax)
 }
