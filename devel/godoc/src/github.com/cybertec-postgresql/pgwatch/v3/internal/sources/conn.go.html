@@ -94,7 +94,7 @@
 <span id="L37" class="ln">    37  </span>	IsSuperuser      bool
 <span id="L38" class="ln">    38  </span>	Extensions       map[string]int
 <span id="L39" class="ln">    39  </span>	ExecEnv          string
-<span id="L40" class="ln">    40  </span>	ApproxDBSizeB    int64
+<span id="L40" class="ln">    40  </span>	ApproxDbSize     int64
 <span id="L41" class="ln">    41  </span>}
 <span id="L42" class="ln">    42  </span>
 <span id="L43" class="ln">    43  </span><span class="comment">// SourceConn represents a single connection to monitor. Unlike source, it contains a database connection.</span>
@@ -238,7 +238,7 @@
 <span id="L181" class="ln">   181  </span>		}
 <span id="L182" class="ln">   182  </span>
 <span id="L183" class="ln">   183  </span>		dbNewSettings.ExecEnv = md.DiscoverPlatform(ctx)
-<span id="L184" class="ln">   184  </span>		dbNewSettings.ApproxDBSizeB = md.FetchApproxSize(ctx)
+<span id="L184" class="ln">   184  </span>		dbNewSettings.ApproxDbSize = md.FetchApproxSize(ctx)
 <span id="L185" class="ln">   185  </span>
 <span id="L186" class="ln">   186  </span>		sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
 <span id="L187" class="ln">   187  </span>		var res pgx.Rows
