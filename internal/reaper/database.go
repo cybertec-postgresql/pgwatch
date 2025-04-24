@@ -46,9 +46,8 @@ func QueryMeasurements(ctx context.Context, dbUnique string, sql string, args ..
 	return nil, err
 }
 
-func DBGetSizeMB(ctx context.Context, dbUnique string) (int64, error) {
+func DBGetSizeMB(ctx context.Context, dbUnique string) (sizeMB int64, err error) {
 	sqlDbSize := `select /* pgwatch_generated */ pg_database_size(current_database());`
-	var sizeMB int64
 
 	lastDBSizeCheckLock.RLock()
 	lastDBSizeCheckTime := lastDBSizeFetchTime[dbUnique]
@@ -60,19 +59,17 @@ func DBGetSizeMB(ctx context.Context, dbUnique string) (int64, error) {
 		if err != nil {
 			return 0, err
 		}
-		ver, err := md.GetMonitoredDatabaseSettings(ctx, false)
-		if err != nil || (ver.ExecEnv != sources.EnvAzureSingle) || (ver.ExecEnv == sources.EnvAzureSingle && ver.ApproxDBSizeB < 1e12) {
+		err = md.FetchRuntimeInfo(ctx, false)
+		if err != nil || (md.ExecEnv != sources.EnvAzureSingle) || (md.ExecEnv == sources.EnvAzureSingle && md.ApproxDBSizeB < 1e12) {
 			log.GetLogger(ctx).Debugf("[%s] determining DB size ...", dbUnique)
-
-			data, err := QueryMeasurements(ctx, dbUnique, sqlDbSize) // can take some time on ancient FS, use 300s stmt timeout
+			err = md.Conn.QueryRow(ctx, sqlDbSize).Scan(&sizeMB)
 			if err != nil {
 				log.GetLogger(ctx).Errorf("[%s] failed to determine DB size...cannot apply --min-db-size-mb flag. err: %v ...", dbUnique, err)
 				return 0, err
 			}
-			sizeMB = data[0]["pg_database_size"].(int64) / 1048576
 		} else {
 			log.GetLogger(ctx).Debugf("[%s] Using approx DB size for the --min-db-size-mb filter ...", dbUnique)
-			sizeMB = ver.ApproxDBSizeB / 1048576
+			sizeMB = md.ApproxDBSizeB / 1048576
 		}
 
 		log.GetLogger(ctx).Debugf("[%s] DB size = %d MB, caching for %v ...", dbUnique, sizeMB, dbSizeCachingInterval)
