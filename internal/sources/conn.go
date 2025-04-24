@@ -22,7 +22,7 @@ var (
 
 const (
 	EnvUnknown       = "UNKNOWN"
-	EnvAzureSingle   = "AZURE_SINGLE"
+	EnvAzureSingle   = "AZURE_SINGLE" //discontinued
 	EnvAzureFlexible = "AZURE_FLEXIBLE"
 	EnvGoogle        = "GOOGLE"
 )
@@ -138,43 +138,29 @@ func VersionToInt(version string) (v int) {
 	return
 }
 
-var rBouncerAndPgpoolVerMatch = regexp.MustCompile(`\d+\.+\d+`) // extract $major.minor from "4.1.2 (karasukiboshi)" or "PgBouncer 1.12.0"
-
-func (md *SourceConn) GetMonitoredDatabaseSettings(ctx context.Context, forceRefetch bool) (_ RuntimeInfo, err error) {
+func (md *SourceConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error) {
 	if ctx.Err() != nil {
-		return md.RuntimeInfo, ctx.Err()
+		return ctx.Err()
 	}
-
-	var dbNewSettings RuntimeInfo
 
 	if !forceRefetch && md.LastCheckedOn.After(time.Now().Add(time.Minute*-2)) { // use cached version for 2 min
-		return md.RuntimeInfo, nil
+		return nil
 	}
 
-	if dbNewSettings.Extensions == nil {
-		dbNewSettings.Extensions = make(map[string]int)
+	dbNewSettings := RuntimeInfo{
+		Extensions: make(map[string]int),
 	}
 
 	switch md.Kind {
-	case SourcePgBouncer:
-		if err = md.Conn.QueryRow(ctx, "SHOW VERSION").Scan(&dbNewSettings.VersionStr); err != nil {
-			return dbNewSettings, err
+	case SourcePgBouncer, SourcePgPool:
+		if dbNewSettings.VersionStr, dbNewSettings.Version, err = md.FetchVersion(ctx, func() string {
+			if md.Kind == SourcePgBouncer {
+				return "SHOW VERSION"
+			}
+			return "SHOW POOL_VERSION"
+		}()); err != nil {
+			return
 		}
-		matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(dbNewSettings.VersionStr)
-		if len(matches) != 1 {
-			return md.RuntimeInfo, fmt.Errorf("unexpected PgBouncer version input: %s", dbNewSettings.VersionStr)
-		}
-		dbNewSettings.Version = VersionToInt(matches[0])
-	case SourcePgPool:
-		if err = md.Conn.QueryRow(ctx, "SHOW POOL_VERSION").Scan(&dbNewSettings.VersionStr); err != nil {
-			return dbNewSettings, err
-		}
-
-		matches := rBouncerAndPgpoolVerMatch.FindStringSubmatch(dbNewSettings.VersionStr)
-		if len(matches) != 1 {
-			return md.RuntimeInfo, fmt.Errorf("unexpected PgPool version input: %s", dbNewSettings.VersionStr)
-		}
-		dbNewSettings.Version = VersionToInt(matches[0])
 	default:
 		sql := `select /* pgwatch_generated */ 
 	div(current_setting('server_version_num')::int, 10000) as ver, 
@@ -191,23 +177,11 @@ FROM
 				&dbNewSettings.IsInRecovery, &dbNewSettings.RealDbname,
 				&dbNewSettings.SystemIdentifier, &dbNewSettings.IsSuperuser)
 		if err != nil {
-			return md.RuntimeInfo, err
+			return err
 		}
 
-		if md.ExecEnv != "" {
-			dbNewSettings.ExecEnv = md.ExecEnv // carry over as not likely to change ever
-		} else {
-			dbNewSettings.ExecEnv = md.DiscoverPlatform(ctx)
-		}
-
-		// to work around poor Azure Single Server FS functions performance for some metrics + the --min-db-size-mb filter
-		if dbNewSettings.ExecEnv == EnvAzureSingle {
-			if approxSize, err := md.GetApproxSize(ctx); err == nil {
-				dbNewSettings.ApproxDBSizeB = approxSize
-			} else {
-				dbNewSettings.ApproxDBSizeB = md.ApproxDBSizeB
-			}
-		}
+		dbNewSettings.ExecEnv = md.DiscoverPlatform(ctx)
+		dbNewSettings.ApproxDBSizeB = md.FetchApproxSize(ctx)
 
 		sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
 		var res pgx.Rows
@@ -226,15 +200,25 @@ FROM
 		}
 
 	}
-
 	dbNewSettings.LastCheckedOn = time.Now()
 	md.RuntimeInfo = dbNewSettings // store the new settings in the struct
-	return md.RuntimeInfo, err
+	return err
+}
+
+func (md *SourceConn) FetchVersion(ctx context.Context, sql string) (version string, ver int, err error) {
+	if err = md.Conn.QueryRow(ctx, sql).Scan(&version); err != nil {
+		return
+	}
+	ver = VersionToInt(version)
+	return
 }
 
 // TryDiscoverPlatform tries to discover the platform based on the database version string and some special settings
 // that are only available on certain platforms. Returns the platform name or "UNKNOWN" if not sure.
 func (md *SourceConn) DiscoverPlatform(ctx context.Context) (platform string) {
+	if md.ExecEnv != "" {
+		return md.ExecEnv // carry over as not likely to change ever
+	}
 	sql := `select /* pgwatch_generated */
 	case
 	  when exists (select * from pg_settings where name = 'pg_qs.host_database' and setting = 'azure_sys') and version() ~* 'compiled by Visual C' then 'AZURE_SINGLE'
@@ -247,15 +231,10 @@ func (md *SourceConn) DiscoverPlatform(ctx context.Context) (platform string) {
 	return
 }
 
-// GetApproxSize returns the approximate size of the database in bytes
-func (md *SourceConn) GetApproxSize(ctx context.Context) (size int64, err error) {
-	sqlApproxDBSize := `select /* pgwatch_generated */ 
-	current_setting('block_size')::int8 * sum(relpages)
-from 
-	pg_class c
-where
-	c.relpersistence != 't'`
-	err = md.Conn.QueryRow(ctx, sqlApproxDBSize).Scan(&size)
+// FetchApproxSize returns the approximate size of the database in bytes
+func (md *SourceConn) FetchApproxSize(ctx context.Context) (size int64) {
+	sqlApproxDBSize := `select /* pgwatch_generated */ current_setting('block_size')::int8 * sum(relpages) from pg_class c where c.relpersistence != 't'`
+	_ = md.Conn.QueryRow(ctx, sqlApproxDBSize).Scan(&size)
 	return
 }
 

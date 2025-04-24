@@ -81,7 +81,7 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 				continue
 			}
 
-			if _, err = monitoredSource.GetMonitoredDatabaseSettings(ctx, true); err != nil {
+			if err = monitoredSource.FetchRuntimeInfo(ctx, true); err != nil {
 				srcL.WithError(err).Error("could not start metric gathering")
 				continue
 			}
@@ -292,7 +292,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 		interval := md.GetMetricInterval(metricName)
 		if lastDBVersionFetchTime.Add(time.Minute * time.Duration(5)).Before(time.Now()) {
 			// in case of errors just ignore metric "disabled" time ranges
-			if _, err = md.GetMonitoredDatabaseSettings(ctx, false); err != nil {
+			if err = md.FetchRuntimeInfo(ctx, false); err != nil {
 				lastDBVersionFetchTime = time.Now()
 			}
 
@@ -483,7 +483,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, msg MetricFetchConfig, hostSta
 		return nil, metrics.ErrMetricNotFound
 	}
 
-	_, err = md.GetMonitoredDatabaseSettings(ctx, false)
+	err = md.FetchRuntimeInfo(ctx, false)
 	if err != nil {
 		log.GetLogger(ctx).Error("failed to fetch pg version for ", msg.DBUniqueName, msg.MetricName, err)
 		return nil, err
