@@ -101,16 +101,12 @@ func (r *Reaper) Reap(ctx context.Context) (err error) {
 			r.CreateSourceHelpers(ctx, srcL, monitoredSource)
 
 			if monitoredSource.IsPostgresSource() {
-				var DBSizeMB int64
-
 				if r.Sources.MinDbSizeMB >= 8 { // an empty DB is a bit less than 8MB
-					DBSizeMB, _ = DBGetSizeMB(ctx, monitoredSource.Name) // ignore errors, i.e. only remove from monitoring when we're certain it's under the threshold
-					if DBSizeMB != 0 {
-						if DBSizeMB < r.Sources.MinDbSizeMB {
-							srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
-							hostsToShutDownDueToRoleChange[monitoredSource.Name] = true // for the case when DB size was previosly above the threshold
-							continue
-						}
+					DBSizeMB := monitoredSource.ApproxDbSize / 1048576 // only remove from monitoring when we're certain it's under the threshold
+					if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
+						srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
+						hostsToShutDownDueToRoleChange[monitoredSource.Name] = true // for the case when DB size was previosly above the threshold
+						continue
 					}
 				}
 
@@ -463,8 +459,6 @@ func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, ver *source
 }
 
 func (r *Reaper) FetchMetric(ctx context.Context, msg MetricFetchConfig, hostState map[string]map[string]string) (*metrics.MeasurementEnvelope, error) {
-
-	// var dbSettings MonitoredDatabaseSettings
 	var dbVersion int
 	var err error
 	var sql string
@@ -486,18 +480,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, msg MetricFetchConfig, hostSta
 	if err = md.FetchRuntimeInfo(ctx, false); err != nil {
 		return nil, err
 	}
-	if msg.MetricName == specialMetricDbSize || msg.MetricName == specialMetricTableStats {
-		if md.ExecEnv == sources.EnvAzureSingle && md.ApproxDBSizeB > 1e12 { // 1TB
-			subsMetricName := msg.MetricName + "_approx"
-			mvpApprox, ok := metricDefs.GetMetricDef(subsMetricName)
-			if ok && mvpApprox.StorageName == msg.MetricName {
-				log.GetLogger(ctx).Infof("[%s:%s] Transparently swapping metric to %s due to hard-coded rules...", msg.DBUniqueName, msg.MetricName, subsMetricName)
-				msg.MetricName = subsMetricName
-			}
-		}
-	}
 	dbVersion = md.Version
-
 	if msg.Source == sources.SourcePgBouncer {
 		dbVersion = 0 // version is 0.0 for all pgbouncer sql per convention
 	}

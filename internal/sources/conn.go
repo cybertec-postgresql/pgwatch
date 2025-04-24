@@ -37,7 +37,7 @@ type RuntimeInfo struct {
 	IsSuperuser      bool
 	Extensions       map[string]int
 	ExecEnv          string
-	ApproxDBSizeB    int64
+	ApproxDbSize     int64
 }
 
 // SourceConn represents a single connection to monitor. Unlike source, it contains a database connection.
@@ -181,7 +181,7 @@ FROM
 		}
 
 		dbNewSettings.ExecEnv = md.DiscoverPlatform(ctx)
-		dbNewSettings.ApproxDBSizeB = md.FetchApproxSize(ctx)
+		dbNewSettings.ApproxDbSize = md.FetchApproxSize(ctx)
 
 		sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
 		var res pgx.Rows

@@ -13,10 +13,6 @@ import (
 var monitoredDbCache map[string]*sources.SourceConn
 var monitoredDbCacheLock sync.RWMutex
 
-var lastDBSizeMB = make(map[string]int64)
-var lastDBSizeFetchTime = make(map[string]time.Time) // cached for DB_SIZE_CACHING_INTERVAL
-var lastDBSizeCheckLock sync.RWMutex
-
 var lastSQLFetchError sync.Map
 
 func UpdateMonitoredDBCache(data sources.SourceConns) {
