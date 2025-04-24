@@ -483,9 +483,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, msg MetricFetchConfig, hostSta
 		return nil, metrics.ErrMetricNotFound
 	}
 
-	err = md.FetchRuntimeInfo(ctx, false)
-	if err != nil {
-		log.GetLogger(ctx).Error("failed to fetch pg version for ", msg.DBUniqueName, msg.MetricName, err)
+	if err = md.FetchRuntimeInfo(ctx, false); err != nil {
 		return nil, err
 	}
 	if msg.MetricName == specialMetricDbSize || msg.MetricName == specialMetricTableStats {
