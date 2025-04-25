@@ -1,5 +1,7 @@
 include:
   - path: compose.postgres.yml
+  - path: compose.pgpool.yml
+  - path: compose.pgbouncer.yml
   - path: compose.grafana.yml
   - path: compose.pgwatch.yml
   - path: compose.pgadmin.yml

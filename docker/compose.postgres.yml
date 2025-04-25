@@ -28,7 +28,7 @@ services:
       timeout: 5s
       retries: 5
 
-  standby:
+  postgres-standby:
     user: postgres
     image: *pgimage
     container_name: postgres-standby
@@ -48,14 +48,3 @@ services:
       postgres"
     links:
       - postgres
-
-  pgbouncer:
-    image: bitnami/pgbouncer:latest
-    ports:
-      - "6432:6432"
-    environment:
-      POSTGRESQL_HOST: postgres
-      PGBOUNCER_AUTH_TYPE: trust
-    depends_on:
-      postgres:
-        condition: service_healthy
