@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pashagolub/pgxmock/v4"
@@ -300,7 +301,9 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 			Conn:   mock,
 			Source: sources.Source{Kind: sources.SourcePgBouncer},
 		}
-		mock.ExpectQuery("SHOW VERSION").WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("PgBouncer 1.12.0"))
+		mock.ExpectQuery("SHOW VERSION").
+			WithArgs(pgx.QueryExecModeSimpleProtocol).
+			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("PgBouncer 1.12.0"))
 		err = md.FetchRuntimeInfo(ctx, true)
 		assert.NoError(t, err)
 		assert.Contains(t, md.VersionStr, "PgBouncer")
@@ -315,7 +318,9 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 			Conn:   mock,
 			Source: sources.Source{Kind: sources.SourcePgPool},
 		}
-		mock.ExpectQuery("SHOW POOL_VERSION").WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("4.1.2"))
+		mock.ExpectQuery("SHOW POOL_VERSION").
+			WithArgs(pgx.QueryExecModeSimpleProtocol).
+			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("4.1.2"))
 		err = md.FetchRuntimeInfo(ctx, true)
 		assert.NoError(t, err)
 		assert.Contains(t, md.VersionStr, "4.1.2")
@@ -359,7 +364,9 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 			Conn:   mock,
 			Source: sources.Source{Kind: sources.SourcePgBouncer},
 		}
-		mock.ExpectQuery("SHOW VERSION").WillReturnError(fmt.Errorf("db error"))
+		mock.ExpectQuery("SHOW VERSION").
+			WithArgs(pgx.QueryExecModeSimpleProtocol).
+			WillReturnError(fmt.Errorf("db error"))
 		err = md.FetchRuntimeInfo(ctx, true)
 		assert.Error(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -373,7 +380,9 @@ func TestSourceConn_FetchVersion(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		md := &sources.SourceConn{Conn: mock}
-		mock.ExpectQuery("SHOW VERSION").WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("FooBar 1.12.0"))
+		mock.ExpectQuery("SHOW VERSION").
+			WithArgs(pgx.QueryExecModeSimpleProtocol).
+			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("FooBar 1.12.0"))
 		verStr, verInt, err := md.FetchVersion(ctx, "SHOW VERSION")
 		assert.NoError(t, err)
 		assert.Equal(t, "FooBar 1.12.0", verStr)
@@ -385,7 +394,9 @@ func TestSourceConn_FetchVersion(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		md := &sources.SourceConn{Conn: mock}
-		mock.ExpectQuery("SHOW VERSION").WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("invalid version"))
+		mock.ExpectQuery("SHOW VERSION").
+			WithArgs(pgx.QueryExecModeSimpleProtocol).
+			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("invalid version"))
 		_, verInt, err := md.FetchVersion(ctx, "SHOW VERSION")
 		assert.Equal(t, 0, verInt)
 		assert.NoError(t, err)
@@ -396,7 +407,9 @@ func TestSourceConn_FetchVersion(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		md := &sources.SourceConn{Conn: mock}
-		mock.ExpectQuery("SHOW VERSION").WillReturnError(assert.AnError)
+		mock.ExpectQuery("SHOW VERSION").
+			WithArgs(pgx.QueryExecModeSimpleProtocol).
+			WillReturnError(assert.AnError)
 		_, _, err = md.FetchVersion(ctx, "SHOW VERSION")
 		assert.Error(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())

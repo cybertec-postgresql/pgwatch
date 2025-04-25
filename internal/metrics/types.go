@@ -3,6 +3,8 @@ package metrics
 import (
 	"maps"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type (
@@ -76,6 +78,25 @@ const (
 )
 
 type Measurement map[string]any
+
+// RowToMap returns a map scanned from row.
+func RowToMeasurement(row pgx.CollectableRow) (map[string]any, error) {
+	value := NewMeasurement(time.Now().UnixNano())
+	err := row.Scan((*Measurement)(&value))
+	return value, err
+}
+
+func (m *Measurement) ScanRow(rows pgx.Rows) error {
+	values, err := rows.Values()
+	if err != nil {
+		return err
+	}
+	// *rs = make(Measurement, len(values))
+	for i := range values {
+		(*m)[string(rows.FieldDescriptions()[i].Name)] = values[i]
+	}
+	return nil
+}
 
 func NewMeasurement(epoch int64) Measurement {
 	m := make(Measurement)

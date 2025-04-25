@@ -206,7 +206,7 @@ FROM
 }
 
 func (md *SourceConn) FetchVersion(ctx context.Context, sql string) (version string, ver int, err error) {
-	if err = md.Conn.QueryRow(ctx, sql).Scan(&version); err != nil {
+	if err = md.Conn.QueryRow(ctx, sql, pgx.QueryExecModeSimpleProtocol).Scan(&version); err != nil {
 		return
 	}
 	ver = VersionToInt(version)
