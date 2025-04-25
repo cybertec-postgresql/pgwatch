@@ -39,6 +39,7 @@ func (jw *JSONWriter) Write(msgs []metrics.MeasurementEnvelope) error {
 	}
 	enc := json.NewEncoder(jw.lw)
 	t1 := time.Now()
+	written := 0
 	for _, msg := range msgs {
 		dataRow := map[string]any{
 			"metric":      msg.MetricName,
@@ -49,9 +50,10 @@ func (jw *JSONWriter) Write(msgs []metrics.MeasurementEnvelope) error {
 		if err := enc.Encode(dataRow); err != nil {
 			return err
 		}
+		written += len(msg.Data)
 	}
 	diff := time.Since(t1)
-	log.GetLogger(jw.ctx).WithField("rows", len(msgs)).WithField("elapsed", diff).Info("measurements written")
+	log.GetLogger(jw.ctx).WithField("rows", written).WithField("elapsed", diff).Info("measurements written")
 	return nil
 }
 
