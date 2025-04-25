@@ -457,6 +457,7 @@ func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, ver *source
 }
 
 func (r *Reaper) FetchMetric(ctx context.Context, msg MetricFetchConfig, hostState map[string]map[string]string) (*metrics.MeasurementEnvelope, error) {
+	// TODO: replace MetricFetchConfig with SourceConn
 	var err error
 	var sql string
 	var data, cachedData metrics.Measurements
@@ -498,22 +499,21 @@ func (r *Reaper) FetchMetric(ctx context.Context, msg MetricFetchConfig, hostSta
 		return nil, nil
 	}
 
-	if msg.MetricName == specialMetricChangeEvents { // special handling, multiple queries + stateful
+	switch msg.MetricName {
+	case specialMetricChangeEvents:
 		r.CheckForPGObjectChangesAndStore(ctx, msg.DBUniqueName, md, hostState) // TODO no hostState for Prometheus currently
-	} else if msg.MetricName == recoMetricName {
+		return nil, nil
+	case recoMetricName:
 		if data, err = GetRecommendations(ctx, msg.DBUniqueName, md); err != nil {
 			return nil, err
 		}
-	} else {
-		data, err = QueryMeasurements(ctx, msg.DBUniqueName, sql)
-
-		if err != nil {
+	default:
+		if data, err = QueryMeasurements(ctx, msg.DBUniqueName, sql); err != nil {
 			// let's soften errors to "info" from functions that expect the server to be a primary to reduce noise
 			if strings.Contains(err.Error(), "recovery is in progress") && md.IsInRecovery {
 				log.GetLogger(ctx).Debugf("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
 				return nil, err
 			}
-
 			if msg.MetricName == specialMetricInstanceUp {
 				log.GetLogger(ctx).WithError(err).Debugf("[%s:%s] failed to fetch metrics. marking instance as not up", msg.DBUniqueName, msg.MetricName)
 				data = make(metrics.Measurements, 1)
@@ -521,16 +521,14 @@ func (r *Reaper) FetchMetric(ctx context.Context, msg MetricFetchConfig, hostSta
 				data[0]["is_up"] = 0 // should be updated if the "instance_up" metric definition is changed
 				goto send_to_storageChannel
 			}
-
 			log.GetLogger(ctx).
 				WithFields(map[string]any{"source": msg.DBUniqueName, "metric": msg.MetricName}).
 				WithError(err).Error("failed to fetch metrics")
 
 			return nil, err
 		}
-
-		log.GetLogger(ctx).WithFields(map[string]any{"source": msg.DBUniqueName, "metric": msg.MetricName, "rows": len(data)}).Info("measurements fetched")
 	}
+	log.GetLogger(ctx).WithFields(map[string]any{"source": msg.DBUniqueName, "metric": msg.MetricName, "rows": len(data)}).Info("measurements fetched")
 
 	r.measurementCache.Put(cacheKey, data)
 
