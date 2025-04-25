@@ -96,35 +96,37 @@
 <span id="L39" class="ln">    39  </span>	}
 <span id="L40" class="ln">    40  </span>	enc := json.NewEncoder(jw.lw)
 <span id="L41" class="ln">    41  </span>	t1 := time.Now()
-<span id="L42" class="ln">    42  </span>	for _, msg := range msgs {
-<span id="L43" class="ln">    43  </span>		dataRow := map[string]any{
-<span id="L44" class="ln">    44  </span>			&#34;metric&#34;:      msg.MetricName,
-<span id="L45" class="ln">    45  </span>			&#34;data&#34;:        msg.Data,
-<span id="L46" class="ln">    46  </span>			&#34;dbname&#34;:      msg.DBName,
-<span id="L47" class="ln">    47  </span>			&#34;custom_tags&#34;: msg.CustomTags,
-<span id="L48" class="ln">    48  </span>		}
-<span id="L49" class="ln">    49  </span>		if err := enc.Encode(dataRow); err != nil {
-<span id="L50" class="ln">    50  </span>			return err
-<span id="L51" class="ln">    51  </span>		}
-<span id="L52" class="ln">    52  </span>	}
-<span id="L53" class="ln">    53  </span>	diff := time.Since(t1)
-<span id="L54" class="ln">    54  </span>	log.GetLogger(jw.ctx).WithField(&#34;rows&#34;, len(msgs)).WithField(&#34;elapsed&#34;, diff).Info(&#34;measurements written&#34;)
-<span id="L55" class="ln">    55  </span>	return nil
-<span id="L56" class="ln">    56  </span>}
-<span id="L57" class="ln">    57  </span>
-<span id="L58" class="ln">    58  </span>func (jw *JSONWriter) watchCtx() {
-<span id="L59" class="ln">    59  </span>	&lt;-jw.ctx.Done()
-<span id="L60" class="ln">    60  </span>	jw.lw.Close()
-<span id="L61" class="ln">    61  </span>}
-<span id="L62" class="ln">    62  </span>
-<span id="L63" class="ln">    63  </span>func (jw *JSONWriter) SyncMetric(_, _, _ string) error {
-<span id="L64" class="ln">    64  </span>	if jw.ctx.Err() != nil {
-<span id="L65" class="ln">    65  </span>		return jw.ctx.Err()
-<span id="L66" class="ln">    66  </span>	}
-<span id="L67" class="ln">    67  </span>	<span class="comment">// do nothing, we don&#39;t care</span>
-<span id="L68" class="ln">    68  </span>	return nil
-<span id="L69" class="ln">    69  </span>}
-<span id="L70" class="ln">    70  </span>
+<span id="L42" class="ln">    42  </span>	written := 0
+<span id="L43" class="ln">    43  </span>	for _, msg := range msgs {
+<span id="L44" class="ln">    44  </span>		dataRow := map[string]any{
+<span id="L45" class="ln">    45  </span>			&#34;metric&#34;:      msg.MetricName,
+<span id="L46" class="ln">    46  </span>			&#34;data&#34;:        msg.Data,
+<span id="L47" class="ln">    47  </span>			&#34;dbname&#34;:      msg.DBName,
+<span id="L48" class="ln">    48  </span>			&#34;custom_tags&#34;: msg.CustomTags,
+<span id="L49" class="ln">    49  </span>		}
+<span id="L50" class="ln">    50  </span>		if err := enc.Encode(dataRow); err != nil {
+<span id="L51" class="ln">    51  </span>			return err
+<span id="L52" class="ln">    52  </span>		}
+<span id="L53" class="ln">    53  </span>		written += len(msg.Data)
+<span id="L54" class="ln">    54  </span>	}
+<span id="L55" class="ln">    55  </span>	diff := time.Since(t1)
+<span id="L56" class="ln">    56  </span>	log.GetLogger(jw.ctx).WithField(&#34;rows&#34;, written).WithField(&#34;elapsed&#34;, diff).Info(&#34;measurements written&#34;)
+<span id="L57" class="ln">    57  </span>	return nil
+<span id="L58" class="ln">    58  </span>}
+<span id="L59" class="ln">    59  </span>
+<span id="L60" class="ln">    60  </span>func (jw *JSONWriter) watchCtx() {
+<span id="L61" class="ln">    61  </span>	&lt;-jw.ctx.Done()
+<span id="L62" class="ln">    62  </span>	jw.lw.Close()
+<span id="L63" class="ln">    63  </span>}
+<span id="L64" class="ln">    64  </span>
+<span id="L65" class="ln">    65  </span>func (jw *JSONWriter) SyncMetric(_, _, _ string) error {
+<span id="L66" class="ln">    66  </span>	if jw.ctx.Err() != nil {
+<span id="L67" class="ln">    67  </span>		return jw.ctx.Err()
+<span id="L68" class="ln">    68  </span>	}
+<span id="L69" class="ln">    69  </span>	<span class="comment">// do nothing, we don&#39;t care</span>
+<span id="L70" class="ln">    70  </span>	return nil
+<span id="L71" class="ln">    71  </span>}
+<span id="L72" class="ln">    72  </span>
 </pre><p></p>
 
 <div id="footer">
