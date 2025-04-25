@@ -86,14 +86,14 @@ func RowToMeasurement(row pgx.CollectableRow) (map[string]any, error) {
 	return value, err
 }
 
-func (rs *Measurement) ScanRow(rows pgx.Rows) error {
+func (m *Measurement) ScanRow(rows pgx.Rows) error {
 	values, err := rows.Values()
 	if err != nil {
 		return err
 	}
 	// *rs = make(Measurement, len(values))
 	for i := range values {
-		(*rs)[string(rows.FieldDescriptions()[i].Name)] = values[i]
+		(*m)[string(rows.FieldDescriptions()[i].Name)] = values[i]
 	}
 	return nil
 }
