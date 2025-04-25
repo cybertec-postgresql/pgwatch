@@ -319,10 +319,9 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 		if metricStoreMessages == nil {
 			metricStoreMessages, err = r.FetchMetric(ctx, mfm, hostState)
 		}
-		t2 := time.Now()
 
-		if t2.Sub(t1) > (time.Second * time.Duration(interval)) {
-			l.Warningf("Total fetching time of %vs bigger than %vs interval", t2.Sub(t1).Truncate(time.Millisecond*100).Seconds(), interval)
+		if time.Since(t1) > (time.Second * time.Duration(interval)) {
+			l.Warningf("Total fetching time of %v bigger than %vs interval", time.Since(t1), interval)
 		}
 
 		if err != nil {
@@ -336,7 +335,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 				lastErrorNotificationTime = time.Now()
 			}
 		} else if metricStoreMessages != nil && len(metricStoreMessages.Data) > 0 {
-			envelopes = append(envelopes, *metricStoreMessages)
+			envelopes = []metrics.MeasurementEnvelope{*metricStoreMessages}
 			// pick up "server restarted" events here to avoid doing extra selects from CheckForPGObjectChangesAndStore code
 			if metricName == "db_stats" {
 				postmasterUptimeS, ok := (metricStoreMessages.Data)[0]["postmaster_uptime_s"]
