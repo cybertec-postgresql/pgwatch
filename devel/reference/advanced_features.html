@@ -1638,8 +1638,8 @@ though - cluster members can come and go, making monitoring in the
 standard way a bit tricky. But luckily Patroni cluster members
 information is stored in a DCS (Distributed Consensus Store), like
 <em>etcd</em>, so it can be fetched from there periodically.</p>
-<p>When 'patroni' is selected as a <strong>source type</strong> then the usual Postgres 
-host/port fields should be left empty ("dbname" can still be filled if only a 
+<p>When 'patroni' is selected as a <strong>source type</strong> then the usual Postgres
+host/port fields should be left empty ("dbname" can still be filled if only a
 specific single database is
 to be monitored) and instead "Host config" JSON field should be filled
 with DCS address, type and scope (cluster name) information. A sample
@@ -1681,14 +1681,14 @@ to be specified manually under "Host config" as seen for example
 <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.sources.yaml#L25">here</a>.</p>
 <p><strong>Sample configuration if not using CSVLOG logging:</strong></p>
 <p>On Postgres side (on the monitored DB)</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>    # Debian / Ubuntu default log_line_prefix actually
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    log_line_prefix = &#39;%m [%p] %q%u@%d &#39;
+<div class="language-ini highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="w">    </span><span class="c1"># Debian / Ubuntu default log_line_prefix actually</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="na">log_line_prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&#39;%m [%p] %q%u@%d &#39;</span>
 </span></code></pre></div>
 <p>YAML config (recommended when "pushing" metrics from DB nodes to a
 central metrics DB)</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>    ## logs_glob_path is only needed if the monitoring user is cannot auto-detect it (i.e. not a superuser / pg_monitor role)
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    # logs_glob_path:
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    logs_match_regex: &#39;^(?P&lt;log_time&gt;.*) \[(?P&lt;process_id&gt;\d+)\] (?P&lt;user_name&gt;.*)@(?P&lt;database_name&gt;.*?) (?P&lt;error_severity&gt;.*?): &#39;
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="w">    </span><span class="c1">## logs_glob_path is only needed if the monitoring user is cannot auto-detect it (i.e. not a superuser / pg_monitor role)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="c1"># logs_glob_path:</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">logs_match_regex</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;^(?P&lt;log_time&gt;.*)</span><span class="nv"> </span><span class="s">\[(?P&lt;process_id&gt;\d+)\]</span><span class="nv"> </span><span class="s">(?P&lt;user_name&gt;.*)@(?P&lt;database_name&gt;.*?)</span><span class="nv"> </span><span class="s">(?P&lt;error_severity&gt;.*?):</span><span class="nv"> </span><span class="s">&#39;</span>
 </span></code></pre></div>
 <p>For log parsing to work the metric <strong>server_log_event_counts</strong> needs to
 be enabled or a <em>preset config</em> including it used - like the "full"
@@ -1712,7 +1712,8 @@ like that:</p>
 performance and status, which might be of interest especially if using
 the load balancing features. To enable it choose the according <em>DB
 Type</em>, provide connection info to the pooler port and make sure the
-<strong>pgpool_stats</strong> metric / preset config is selected for the host.</p>
+<strong>pgpool_stats</strong> and <strong>pgpool_processes</strong> metrics or <strong>pgpool</strong> preset config
+is selected for the host.</p>
 <p>The built-in Grafana dashboard for Pgpool data looks something like
 that:</p>
 <p><a href="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgpool_status.png"><img alt="Grafana dash for PgPool stats" src="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgpool_status.png" /></a></p>

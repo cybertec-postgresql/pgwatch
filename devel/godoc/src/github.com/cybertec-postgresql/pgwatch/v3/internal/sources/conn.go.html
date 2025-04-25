@@ -263,7 +263,7 @@
 <span id="L206" class="ln">   206  </span>}
 <span id="L207" class="ln">   207  </span>
 <span id="L208" class="ln">   208  </span>func (md *SourceConn) FetchVersion(ctx context.Context, sql string) (version string, ver int, err error) {
-<span id="L209" class="ln">   209  </span>	if err = md.Conn.QueryRow(ctx, sql).Scan(&amp;version); err != nil {
+<span id="L209" class="ln">   209  </span>	if err = md.Conn.QueryRow(ctx, sql, pgx.QueryExecModeSimpleProtocol).Scan(&amp;version); err != nil {
 <span id="L210" class="ln">   210  </span>		return
 <span id="L211" class="ln">   211  </span>	}
 <span id="L212" class="ln">   212  </span>	ver = VersionToInt(version)
