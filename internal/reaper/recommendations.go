@@ -16,7 +16,6 @@ const (
 	recoMetricName                    = "recommendations"
 	specialMetricChangeEvents         = "change_events"
 	specialMetricServerLogEventCounts = "server_log_event_counts"
-	specialMetricPgpoolStats          = "pgpool_stats"
 	specialMetricInstanceUp           = "instance_up"
 )
 

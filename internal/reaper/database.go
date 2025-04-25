@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -38,10 +37,13 @@ func QueryMeasurements(ctx context.Context, dbUnique string, sql string, args ..
 			return nil, err
 		}
 		conn = tx
+	} else {
+		// we want simple protocol for non-postgres connections, e.g. pgpool
+		args = append([]any{pgx.QueryExecModeSimpleProtocol}, args...)
 	}
 	rows, err := conn.Query(ctx, sql, args...)
 	if err == nil {
-		return pgx.CollectRows(rows, pgx.RowToMap)
+		return pgx.CollectRows(rows, metrics.RowToMeasurement)
 	}
 	return nil, err
 }
@@ -461,103 +463,11 @@ func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique s
 	}
 }
 
-// some extra work needed as pgpool SHOW commands don't specify the return data types for some reason
-func FetchMetricsPgpool(ctx context.Context, msg MetricFetchConfig, md *sources.SourceConn, mvp metrics.Metric) (metrics.Measurements, error) {
-	var retData = make(metrics.Measurements, 0)
-	epochNs := time.Now().UnixNano()
-
-	sqlLines := strings.Split(strings.ToUpper(mvp.GetSQL(int(md.Version))), "\n")
-
-	for _, sql := range sqlLines {
-		if strings.HasPrefix(sql, "SHOW POOL_NODES") {
-			data, err := QueryMeasurements(ctx, msg.DBUniqueName, sql)
-			if err != nil {
-				log.GetLogger(ctx).Errorf("[%s][%s] Could not fetch PgPool statistics: %v", msg.DBUniqueName, msg.MetricName, err)
-				return data, err
-			}
-
-			for _, row := range data {
-				retRow := metrics.NewMeasurement(epochNs)
-				for k, v := range row {
-					vs := string(v.([]byte))
-					// need 1 tag so that Influx would not merge rows
-					if k == "node_id" {
-						retRow["tag_node_id"] = vs
-						continue
-					}
-
-					retRow[k] = vs
-					if k == "status" { // was changed from numeric to string at some pgpool version so leave the string
-						// but also add "status_num" field
-						switch vs {
-						case "up":
-							retRow["status_num"] = 1
-						case "down":
-							retRow["status_num"] = 0
-						default:
-							i, err := strconv.ParseInt(vs, 10, 64)
-							if err == nil {
-								retRow["status_num"] = i
-							}
-						}
-						continue
-					}
-					// everything is returned as text, so try to convert all numerics into ints / floats
-					if k != "lb_weight" {
-						i, err := strconv.ParseInt(vs, 10, 64)
-						if err == nil {
-							retRow[k] = i
-							continue
-						}
-					}
-					f, err := strconv.ParseFloat(vs, 64)
-					if err == nil {
-						retRow[k] = f
-						continue
-					}
-				}
-				retData = append(retData, retRow)
-			}
-		} else if strings.HasPrefix(sql, "SHOW POOL_PROCESSES") {
-			if len(retData) == 0 {
-				log.GetLogger(ctx).Warningf("[%s][%s] SHOW POOL_NODES needs to be placed before SHOW POOL_PROCESSES. ignoring SHOW POOL_PROCESSES", msg.DBUniqueName, msg.MetricName)
-				continue
-			}
-
-			data, err := QueryMeasurements(ctx, msg.DBUniqueName, sql)
-			if err != nil {
-				log.GetLogger(ctx).Errorf("[%s][%s] Could not fetch PgPool statistics: %v", msg.DBUniqueName, msg.MetricName, err)
-				continue
-			}
-
-			// summarize processesTotal / processes_active over all rows
-			processesTotal := 0
-			processesActive := 0
-			for _, row := range data {
-				processesTotal++
-				v, ok := row["database"]
-				if !ok {
-					log.GetLogger(ctx).Infof("[%s][%s] column 'database' not found from data returned by SHOW POOL_PROCESSES, check pool version / SQL definition", msg.DBUniqueName, msg.MetricName)
-					continue
-				}
-				if len(v.([]byte)) > 0 {
-					processesActive++
-				}
-			}
-
-			for _, retRow := range retData {
-				retRow["processes_total"] = processesTotal
-				retRow["processes_active"] = processesActive
-			}
-		}
-	}
-	return retData, nil
-}
-
 // Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
 // With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific
 // whitelisting or "trusted extensions" (a feature from v13). Ignores errors.
 func TryCreateMissingExtensions(ctx context.Context, dbUnique string, extensionNames []string, existingExtensions map[string]int) []string {
+	// TODO: move to sources package and use direct pgx connection
 	sqlAvailable := `select name::text from pg_available_extensions`
 	extsCreated := make([]string, 0)
 
@@ -595,6 +505,7 @@ func TryCreateMissingExtensions(ctx context.Context, dbUnique string, extensionN
 
 // Called once on daemon startup to try to create "metric fething helper" functions automatically
 func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn) (err error) {
+	// TODO: replace with md.GetMetricDefs() and move to sources package
 	metricConfig := func() map[string]float64 {
 		if len(md.Metrics) > 0 {
 			return md.Metrics

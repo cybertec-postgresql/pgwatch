@@ -17,8 +17,8 @@ standard way a bit tricky. But luckily Patroni cluster members
 information is stored in a DCS (Distributed Consensus Store), like
 *etcd*, so it can be fetched from there periodically.
 
-When 'patroni' is selected as a **source type** then the usual Postgres 
-host/port fields should be left empty ("dbname" can still be filled if only a 
+When 'patroni' is selected as a **source type** then the usual Postgres
+host/port fields should be left empty ("dbname" can still be filled if only a
 specific single database is
 to be monitored) and instead "Host config" JSON field should be filled
 with DCS address, type and scope (cluster name) information. A sample
@@ -71,7 +71,7 @@ to be specified manually under "Host config" as seen for example
 
 On Postgres side (on the monitored DB)
 
-```
+```ini
     # Debian / Ubuntu default log_line_prefix actually
     log_line_prefix = '%m [%p] %q%u@%d '
 ```
@@ -79,7 +79,7 @@ On Postgres side (on the monitored DB)
 YAML config (recommended when "pushing" metrics from DB nodes to a
 central metrics DB)
 
-```
+```yaml
     ## logs_glob_path is only needed if the monitoring user is cannot auto-detect it (i.e. not a superuser / pg_monitor role)
     # logs_glob_path:
     logs_match_regex: '^(?P<log_time>.*) \[(?P<process_id>\d+)\] (?P<user_name>.*)@(?P<database_name>.*?) (?P<error_severity>.*?): '
@@ -113,7 +113,8 @@ Quite similar to PgBouncer, also Pgpool offers some statistics on pool
 performance and status, which might be of interest especially if using
 the load balancing features. To enable it choose the according *DB
 Type*, provide connection info to the pooler port and make sure the
-**pgpool_stats** metric / preset config is selected for the host.
+**pgpool_stats** and **pgpool_processes** metrics or **pgpool** preset config
+is selected for the host.
 
 The built-in Grafana dashboard for Pgpool data looks something like
 that:

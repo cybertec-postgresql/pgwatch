@@ -992,14 +992,12 @@ metrics:
     pgbouncer_clients:
         sqls:
             0: show clients
+    pgpool_processes:
+        sqls:
+            3: show pool_processes
     pgpool_stats:
         sqls:
-            3: |-
-                /* SHOW POOL_NODES expected to be 1st "command" */
-                SHOW POOL_NODES;
-                /* special handling in code - when below SHOW POOL_PROCESSES line is defined pgpool_stats will have additional summary columns:
-                 processes_total, processes_active */
-                SHOW POOL_PROCESSES
+            3: show pool_nodes
     privilege_changes:
         sqls:
             11: |-
@@ -4161,9 +4159,10 @@ presets:
             pgbouncer_stats: 60
             pgbouncer_clients: 60
     pgpool:
-        description: pool global stats, 1 row per node ID
+        description: pool global stats
         metrics:
             pgpool_stats: 60
+            pgpool_processes: 60
     prometheus:
         description: similar to "exhaustive" but without some possibly longer-running metrics and those keeping state
         metrics:
