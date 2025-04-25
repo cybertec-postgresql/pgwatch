@@ -1,0 +1,12 @@
+services:
+  pgbouncer:
+    image: bitnami/pgbouncer:latest
+    container_name: pgbouncer
+    ports:
+      - "6432:6432"
+    environment:
+      POSTGRESQL_HOST: postgres
+      PGBOUNCER_AUTH_TYPE: trust
+    depends_on:
+      postgres:
+        condition: service_healthy

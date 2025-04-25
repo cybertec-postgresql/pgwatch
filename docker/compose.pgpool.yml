@@ -1,0 +1,18 @@
+services:
+  pgpool:
+    image: bitnami/pgpool:latest
+    container_name: pgpool
+    ports:
+      - "7432:5432"
+    environment:
+      PGPOOL_BACKEND_NODES: 0:postgres:5432,1:postgres-standby:5432
+      PGPOOL_SR_CHECK_USER: postgres
+      PGPOOL_SR_CHECK_PASSWORD: standbypass
+      PGPOOL_ENABLE_LDAP: no
+      PGPOOL_POSTGRES_USERNAME: postgres
+      PGPOOL_POSTGRES_PASSWORD: adminpassword
+      PGPOOL_ADMIN_USERNAME: admin
+      PGPOOL_ADMIN_PASSWORD: adminpassword
+    depends_on:
+      postgres:
+        condition: service_healthy

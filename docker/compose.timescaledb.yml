@@ -21,7 +21,7 @@ services:
       timeout: 5s
       retries: 5
 
-  standby:
+  postgres-standby:
     user: postgres
     image: *pgimage
     container_name: postgres-standby
