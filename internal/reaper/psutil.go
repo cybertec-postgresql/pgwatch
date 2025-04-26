@@ -197,8 +197,6 @@ func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]an
 	var walDirPath string
 	if CheckFolderExistsAndReadable(path.Join(dataDirPath, "pg_wal")) {
 		walDirPath = path.Join(dataDirPath, "pg_wal")
-	} else if CheckFolderExistsAndReadable(path.Join(dataDirPath, "pg_xlog")) {
-		walDirPath = path.Join(dataDirPath, "pg_xlog") // < v10
 	}
 
 	if len(walDirPath) > 0 {
