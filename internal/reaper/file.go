@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 
+	"slices"
+
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
@@ -29,38 +31,30 @@ const (
 )
 
 const (
-	sqlPgDirs = `select 
-current_setting('data_directory') as dd, 
-current_setting('log_directory') as ld, 
-current_setting('server_version_num')::int as pgver`
-	sqlTsDirs = `select 
-spcname::text as name, 
-pg_catalog.pg_tablespace_location(oid) as location 
-from pg_catalog.pg_tablespace 
-where not spcname like any(array[E'pg\\_%'])`
+	sqlPgDirs = `select current_setting('data_directory') as dd, current_setting('log_directory') as ld`
+	sqlTsDirs = `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E'pg\\_%'])`
 )
 
-var directlyFetchableOSMetrics = map[string]bool{metricPsutilCPU: true, metricPsutilDisk: true, metricPsutilDiskIoTotal: true, metricPsutilMem: true, metricCPULoad: true}
+var directlyFetchableOSMetrics = []string{metricPsutilCPU, metricPsutilDisk, metricPsutilDiskIoTotal, metricPsutilMem, metricCPULoad}
 
 func IsDirectlyFetchableMetric(metric string) bool {
-	_, ok := directlyFetchableOSMetrics[metric]
-	return ok
+	return slices.Contains(directlyFetchableOSMetrics, metric)
 }
 
-func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, md *sources.SourceConn, metric metrics.Metric) (*metrics.MeasurementEnvelope, error) {
+func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.SourceConn, metricName string) (*metrics.MeasurementEnvelope, error) {
 	var data, dataDirs, dataTblspDirs metrics.Measurements
 	var err error
 
-	switch msg.MetricName {
+	switch metricName {
 	case metricCPULoad:
 		data, err = GetLoadAvgLocal()
 	case metricPsutilCPU:
-		data, err = GetGoPsutilCPU(msg.Interval)
+		data, err = GetGoPsutilCPU(md.GetMetricInterval(metricName))
 	case metricPsutilDisk:
-		if dataDirs, err = QueryMeasurements(ctx, msg.DBUniqueName, sqlPgDirs); err != nil {
+		if dataDirs, err = QueryMeasurements(ctx, md.Name, sqlPgDirs); err != nil {
 			return nil, err
 		}
-		if dataTblspDirs, err = QueryMeasurements(ctx, msg.DBUniqueName, sqlTsDirs); err != nil {
+		if dataTblspDirs, err = QueryMeasurements(ctx, md.Name, sqlTsDirs); err != nil {
 			return nil, err
 		}
 		data, err = GetGoPsutilDiskPG(dataDirs, dataTblspDirs)
@@ -72,14 +66,14 @@ func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, md *so
 	if err != nil {
 		return nil, err
 	}
-
+	m, _ := metricDefs.GetMetricDef(metricName)
 	return &metrics.MeasurementEnvelope{
-		DBName:           msg.DBUniqueName,
-		SourceType:       string(msg.Source),
-		MetricName:       msg.MetricName,
+		DBName:           md.Name,
+		SourceType:       string(md.Kind),
+		MetricName:       metricName,
 		CustomTags:       md.CustomTags,
 		Data:             data,
-		MetricDef:        metric,
+		MetricDef:        m,
 		RealDbname:       md.RealDbname,
 		SystemIdentifier: md.SystemIdentifier,
 	}, nil

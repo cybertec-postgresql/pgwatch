@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"math"
 	"slices"
-
-	"golang.org/x/exp/maps"
 )
 
 type MetricCommand struct {
@@ -39,7 +37,9 @@ func (cmd *MetricPrintInitCommand) Execute(args []string) error {
 	w := cmd.owner.OutputWriter
 	for _, name := range args {
 		if preset, ok := metrics.PresetDefs[name]; ok {
-			args = append(args, maps.Keys(preset.Metrics)...)
+			for k := range preset.Metrics {
+				args = append(args, k)
+			}
 		}
 	}
 	slices.Sort(args)

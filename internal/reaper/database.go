@@ -15,6 +15,7 @@ import (
 )
 
 func QueryMeasurements(ctx context.Context, dbUnique string, sql string, args ...any) (metrics.Measurements, error) {
+	// TODO: move to sources package and use direct pgx connection
 	var conn db.PgxIface
 	var md *sources.SourceConn
 	var err error

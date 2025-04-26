@@ -1,6 +1,7 @@
 package reaper
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"slices"
@@ -269,7 +270,6 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 	hostState := make(map[string]map[string]string)
 	var lastUptimeS int64 = -1 // used for "server restarted" event detection
 	var lastErrorNotificationTime time.Time
-	var mvp metrics.Metric
 	var err error
 	var ok bool
 	var envelopes []metrics.MeasurementEnvelope
@@ -291,32 +291,24 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 				lastDBVersionFetchTime = time.Now()
 			}
 
-			if mvp, ok = metricDefs.GetMetricDef(metricName); !ok {
-				l.Errorf("Could not get metric version properties: %s", metricName)
+			if _, ok = metricDefs.GetMetricDef(metricName); !ok {
+				l.Error("Could not get metric version properties")
 				return
 			}
 		}
 
 		var metricStoreMessages *metrics.MeasurementEnvelope
-		mfm := MetricFetchConfig{
-			DBUniqueName:        md.Name,
-			DBUniqueNameOrig:    md.GetDatabaseName(),
-			MetricName:          metricName,
-			Source:              md.Kind,
-			Interval:            time.Second * time.Duration(interval),
-			StmtTimeoutOverride: 0,
-		}
 
 		// 1st try local overrides for some metrics if operating in push mode
 		if r.Metrics.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
-			metricStoreMessages, err = FetchStatsDirectlyFromOS(ctx, mfm, md, mvp)
+			metricStoreMessages, err = r.FetchStatsDirectlyFromOS(ctx, md, metricName)
 			if err != nil {
 				l.WithError(err).Errorf("Could not reader metric directly from OS")
 			}
 		}
 		t1 := time.Now()
 		if metricStoreMessages == nil {
-			metricStoreMessages, err = r.FetchMetric(ctx, mfm, hostState)
+			metricStoreMessages, err = r.FetchMetric(ctx, md, metricName, hostState)
 		}
 
 		if time.Since(t1) > (time.Second * time.Duration(interval)) {
@@ -326,11 +318,8 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 		if err != nil {
 			failedFetches++
 			// complain only 1x per 10min per host/metric...
-			if lastErrorNotificationTime.IsZero() || lastErrorNotificationTime.Add(time.Second*time.Duration(600)).Before(time.Now()) {
-				l.WithError(err).Error("failed to fetch metric data")
-				if failedFetches > 1 {
-					l.Errorf("Total failed fetches: %d", failedFetches)
-				}
+			if time.Since(lastErrorNotificationTime) > time.Minute*10 {
+				l.WithError(err).WithField("count", failedFetches).Error("failed to fetch metric data")
 				lastErrorNotificationTime = time.Now()
 			}
 		} else if metricStoreMessages != nil && len(metricStoreMessages.Data) > 0 {
@@ -341,7 +330,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 				if ok {
 					if lastUptimeS != -1 {
 						if postmasterUptimeS.(int64) < lastUptimeS { // restart (or possibly also failover when host is routed) happened
-							message := "Detected server restart (or failover) of \"" + md.Name + "\""
+							message := "Detected server restart (or failover)"
 							l.Warning(message)
 							detectedChangesSummary := make(metrics.Measurements, 0)
 							entry := metrics.NewMeasurement(metricStoreMessages.Data.GetEpoch())
@@ -435,119 +424,89 @@ func (r *Reaper) WriteMeasurements(ctx context.Context) {
 	}
 }
 
-func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, ver *sources.SourceConn) metrics.Measurements {
-	// TODO: rewrite to remove extra checks
-	enrichedData := make(metrics.Measurements, 0)
+func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, md *sources.SourceConn) {
 	for _, dr := range data {
-		if r.Sinks.RealDbnameField > "" && ver.RealDbname > "" {
-			old, ok := dr[r.Sinks.RealDbnameField]
-			if !ok || old == "" {
-				dr[r.Sinks.RealDbnameField] = ver.RealDbname
-			}
+		if r.Sinks.RealDbnameField > "" && md.RealDbname > "" {
+			dr[r.Sinks.RealDbnameField] = md.RealDbname
 		}
-		if r.Sinks.SystemIdentifierField > "" && ver.SystemIdentifier > "" {
-			old, ok := dr[r.Sinks.SystemIdentifierField]
-			if !ok || old == "" {
-				dr[r.Sinks.SystemIdentifierField] = ver.SystemIdentifier
-			}
+		if r.Sinks.SystemIdentifierField > "" && md.SystemIdentifier > "" {
+			dr[r.Sinks.SystemIdentifierField] = md.SystemIdentifier
 		}
-		enrichedData = append(enrichedData, dr)
 	}
-	return enrichedData
 }
 
-func (r *Reaper) FetchMetric(ctx context.Context, msg MetricFetchConfig, hostState map[string]map[string]string) (*metrics.MeasurementEnvelope, error) {
-	// TODO: replace MetricFetchConfig with SourceConn
-	var err error
+func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metricName string, hostState map[string]map[string]string) (_ *metrics.MeasurementEnvelope, err error) {
 	var sql string
-	var data, cachedData metrics.Measurements
-	var md *sources.SourceConn
+	var data metrics.Measurements
 	var metric metrics.Metric
 	var fromCache bool
 	var cacheKey string
 	var ok bool
 
-	if md, err = GetMonitoredDatabaseByUniqueName(ctx, msg.DBUniqueName); err != nil {
-		return nil, err
-	}
-
-	if metric, ok = metricDefs.GetMetricDef(msg.MetricName); !ok {
+	if metric, ok = metricDefs.GetMetricDef(metricName); !ok {
 		return nil, metrics.ErrMetricNotFound
 	}
+	l := r.logger.WithField("source", md.Name).WithField("metric", metricName)
 
-	if metric.IsInstanceLevel && r.Metrics.InstanceLevelCacheMaxSeconds > 0 && msg.Interval < r.Metrics.CacheAge() {
-		cacheKey = fmt.Sprintf("%s:%s:%d:%s",
-			md.SystemIdentifier,
-			md.ConnConfig.ConnConfig.Host,
-			md.ConnConfig.ConnConfig.Port,
-			msg.MetricName)
+	if metric.IsInstanceLevel && r.Metrics.InstanceLevelCacheMaxSeconds > 0 && time.Second*time.Duration(md.GetMetricInterval(metricName)) < r.Metrics.CacheAge() {
+		cacheKey = fmt.Sprintf("%s:%s", md.GetClusterIdentifier(), metricName)
 	}
-	if cachedData = r.measurementCache.Get(cacheKey, r.Metrics.CacheAge()); len(cachedData) > 0 {
+	if data = r.measurementCache.Get(cacheKey, r.Metrics.CacheAge()); len(data) > 0 {
 		fromCache = true
 		goto send_to_storageChannel
 	}
 
 	sql = metric.GetSQL(md.Version)
-	if sql == "" && !(msg.MetricName == specialMetricChangeEvents || msg.MetricName == recoMetricName) {
-		// let's ignore dummy SQLs
-		log.GetLogger(ctx).Debugf("[%s:%s] Ignoring fetch message - got an empty/dummy SQL string", msg.DBUniqueName, msg.MetricName)
+	if sql == "" && !(metricName == specialMetricChangeEvents || metricName == recoMetricName) {
+		l.Warning("Ignoring fetching because of empty SQL")
 		return nil, nil
 	}
 
 	if (metric.PrimaryOnly() && md.IsInRecovery) || (metric.StandbyOnly() && !md.IsInRecovery) {
-		log.GetLogger(ctx).Debugf("[%s:%s] Skipping fetching of  as server not in wanted state (IsInRecovery=%v)", msg.DBUniqueName, msg.MetricName, md.IsInRecovery)
+		l.Debug("Skipping fetching of as server in wrong IsInRecovery: ", md.IsInRecovery)
 		return nil, nil
 	}
 
-	switch msg.MetricName {
+	switch metricName {
 	case specialMetricChangeEvents:
-		r.CheckForPGObjectChangesAndStore(ctx, msg.DBUniqueName, md, hostState) // TODO no hostState for Prometheus currently
+		r.CheckForPGObjectChangesAndStore(ctx, md.Name, md, hostState) // TODO no hostState for Prometheus currently
 		return nil, nil
 	case recoMetricName:
-		if data, err = GetRecommendations(ctx, msg.DBUniqueName, md); err != nil {
+		if data, err = GetRecommendations(ctx, md.Name, md); err != nil {
 			return nil, err
 		}
 	default:
-		if data, err = QueryMeasurements(ctx, msg.DBUniqueName, sql); err != nil {
+		if data, err = QueryMeasurements(ctx, md.Name, sql); err != nil {
 			// let's soften errors to "info" from functions that expect the server to be a primary to reduce noise
 			if strings.Contains(err.Error(), "recovery is in progress") && md.IsInRecovery {
-				log.GetLogger(ctx).Debugf("[%s:%s] failed to fetch metrics: %s", msg.DBUniqueName, msg.MetricName, err)
+				l.Debugf("[%s:%s] failed to fetch metrics: %s", md.Name, metricName, err)
 				return nil, err
 			}
-			if msg.MetricName == specialMetricInstanceUp {
-				log.GetLogger(ctx).WithError(err).Debugf("[%s:%s] failed to fetch metrics. marking instance as not up", msg.DBUniqueName, msg.MetricName)
+			if metricName == specialMetricInstanceUp {
+				l.WithError(err).Debugf("[%s:%s] failed to fetch metrics. marking instance as not up", md.Name, metricName)
 				data = make(metrics.Measurements, 1)
 				data[0] = metrics.NewMeasurement(time.Now().UnixNano())
 				data[0]["is_up"] = 0 // should be updated if the "instance_up" metric definition is changed
 				goto send_to_storageChannel
 			}
-			log.GetLogger(ctx).
-				WithFields(map[string]any{"source": msg.DBUniqueName, "metric": msg.MetricName}).
+			l.
+				WithFields(map[string]any{"source": md.Name, "metric": metricName}).
 				WithError(err).Error("failed to fetch metrics")
 
 			return nil, err
 		}
 	}
-	log.GetLogger(ctx).WithFields(map[string]any{"source": msg.DBUniqueName, "metric": msg.MetricName, "rows": len(data)}).Info("measurements fetched")
-
 	r.measurementCache.Put(cacheKey, data)
 
 send_to_storageChannel:
-
-	if (r.Sinks.RealDbnameField > "" || r.Sinks.SystemIdentifierField > "") && msg.Source == sources.SourcePostgres {
-		data = r.AddSysinfoToMeasurements(data, md)
-	}
-
-	if metric.StorageName != "" {
-		log.GetLogger(ctx).Debugf("[%s] rerouting metric %s data to %s based on metric attributes", msg.DBUniqueName, msg.MetricName, metric.StorageName)
-		msg.MetricName = metric.StorageName
-	}
-	if fromCache {
-		log.GetLogger(ctx).Infof("[%s:%s] loaded %d rows from the instance cache", msg.DBUniqueName, msg.MetricName, len(cachedData))
-		return &metrics.MeasurementEnvelope{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: cachedData, CustomTags: md.CustomTags,
-			MetricDef: metric, RealDbname: md.RealDbname, SystemIdentifier: md.SystemIdentifier}, nil
-	}
-	return &metrics.MeasurementEnvelope{DBName: msg.DBUniqueName, MetricName: msg.MetricName, Data: data, CustomTags: md.CustomTags,
-		MetricDef: metric, RealDbname: md.RealDbname, SystemIdentifier: md.SystemIdentifier}, nil
-
+	r.AddSysinfoToMeasurements(data, md)
+	l.WithField("cache", fromCache).WithField("rows", len(data)).Info("measurements fetched")
+	return &metrics.MeasurementEnvelope{
+		DBName:           md.Name,
+		MetricName:       cmp.Or(metric.StorageName, metricName),
+		Data:             data,
+		CustomTags:       md.CustomTags,
+		MetricDef:        metric,
+		RealDbname:       md.RealDbname,
+		SystemIdentifier: md.SystemIdentifier}, nil
 }

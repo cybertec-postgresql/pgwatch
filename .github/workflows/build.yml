@@ -91,7 +91,7 @@ jobs:
 
   goreleaser:
     if: true # false to skip job during debug    
-    needs: build
+    needs: [build, test]
     runs-on: ubuntu-latest
     name: GoReleaser
     steps:
@@ -118,7 +118,7 @@ jobs:
 
   test-docker-images:
     if: true # false to skip job during debug
-    needs: build
+    needs: [build, test, goreleaser]
     name: Build Docker Image
     runs-on: ubuntu-latest
     steps:
@@ -138,7 +138,7 @@ jobs:
 
   build-docs:
     if: true # false to skip job during debug
-    needs: build
+    needs: [build, test]
     name: Build Docs
     runs-on: ubuntu-latest
     steps:

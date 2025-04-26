@@ -25,7 +25,7 @@ func goPsutilCalcCPUUtilization(probe0, probe1 cpu.TimesStat) float64 {
 }
 
 // Simulates "psutil" metric output. Assumes the result from last call as input, otherwise uses a 1s measurement
-func GetGoPsutilCPU(interval time.Duration) ([]map[string]any, error) {
+func GetGoPsutilCPU(interval float64) ([]map[string]any, error) {
 	prevCPULoadTimeStatsLock.RLock()
 	prevTime := prevCPULoadTimestamp
 	prevTimeStat := prevCPULoadTimeStats
@@ -44,7 +44,7 @@ func GetGoPsutilCPU(interval time.Duration) ([]map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	if prevTime.IsZero() || time.Now().UnixNano()-prevTime.UnixNano() < 1e9 || time.Now().Unix()-prevTime.Unix() >= int64(interval.Seconds()) {
+	if prevTime.IsZero() || time.Now().UnixNano()-prevTime.UnixNano() < 1e9 || time.Now().Unix()-prevTime.Unix() >= int64(interval) {
 		prevCPULoadTimeStatsLock.Lock() // update the cache
 		prevCPULoadTimeStats = curCallStats[0]
 		prevCPULoadTimestamp = time.Now()
@@ -197,8 +197,6 @@ func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]an
 	var walDirPath string
 	if CheckFolderExistsAndReadable(path.Join(dataDirPath, "pg_wal")) {
 		walDirPath = path.Join(dataDirPath, "pg_wal")
-	} else if CheckFolderExistsAndReadable(path.Join(dataDirPath, "pg_xlog")) {
-		walDirPath = path.Join(dataDirPath, "pg_xlog") // < v10
 	}
 
 	if len(walDirPath) > 0 {

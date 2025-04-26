@@ -415,3 +415,26 @@ func TestSourceConn_FetchVersion(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
+
+func TestSourceConn_GetClusterIdentifier(t *testing.T) {
+	md := &sources.SourceConn{
+		Source: sources.Source{
+			Name:    "test",
+			Kind:    sources.SourcePostgres,
+			ConnStr: "postgres://user:password@localhost:5432/mydatabase",
+		},
+		RuntimeInfo: sources.RuntimeInfo{
+			SystemIdentifier: "42424242",
+		},
+	}
+	assert.Equal(t, "42424242:localhost:5432", md.GetClusterIdentifier())
+
+	md = &sources.SourceConn{
+		Source: sources.Source{
+			Name:    "test",
+			Kind:    sources.SourcePostgres,
+			ConnStr: "foo boo",
+		},
+	}
+	assert.Equal(t, "", md.GetClusterIdentifier())
+}
