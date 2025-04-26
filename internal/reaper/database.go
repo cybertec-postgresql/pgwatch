@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 	"time"
 
@@ -506,41 +507,20 @@ func TryCreateMissingExtensions(ctx context.Context, dbUnique string, extensionN
 
 // Called once on daemon startup to try to create "metric fething helper" functions automatically
 func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn) (err error) {
-	// TODO: replace with md.GetMetricDefs() and move to sources package
-	metricConfig := func() map[string]float64 {
-		if len(md.Metrics) > 0 {
-			return md.Metrics
-		}
-		if md.PresetMetrics > "" {
-			return metricDefs.GetPresetMetrics(md.PresetMetrics)
-		}
-		return nil
-	}()
-	conf, err := pgx.ParseConfig(md.ConnStr)
-	if err != nil {
-		return err
-	}
-	conf.DefaultQueryExecMode = pgx.QueryExecModeExec
-	c, err := pgx.ConnectConfig(ctx, conf)
-	if err != nil {
-		return nil
-	}
-	defer c.Close(ctx)
-
-	for metricName := range metricConfig {
-		Metric, ok := metricDefs.GetMetricDef(metricName)
+	sl := log.GetLogger(ctx).WithField("source", md.Name)
+	metrics := maps.Clone(md.Metrics)
+	maps.Insert(metrics, maps.All(md.MetricsStandby))
+	for metricName := range metrics {
+		metric, ok := metricDefs.GetMetricDef(metricName)
 		if !ok {
 			continue
 		}
-
-		_, err = c.Exec(ctx, Metric.InitSQL)
-		if err != nil {
-			log.GetLogger(ctx).Warningf("Failed to create a metric fetching helper for %s in %s: %v", md.Name, metricName, err)
-		} else {
-			log.GetLogger(ctx).Info("Successfully created metric fetching helper for", md.Name, metricName)
+		if _, err = md.Conn.Exec(ctx, metric.InitSQL); err != nil {
+			return
 		}
+		sl.WithField("metric", metricName).Info("Successfully created metric fetching helpers")
 	}
-	return nil
+	return
 }
 
 func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(shutDownDueToRoleChange map[string]bool) {
