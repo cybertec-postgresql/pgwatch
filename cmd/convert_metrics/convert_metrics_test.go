@@ -57,14 +57,14 @@ func downloadAndExtractMetrics(t *testing.T, dest string) string {
 			rel := strings.TrimPrefix(f.Name, metricsRoot)
 			if rel == "" {
 				extracted = filepath.Join(dest, "metrics")
-				os.MkdirAll(extracted, 0755)
+				_ = os.MkdirAll(extracted, 0755)
 				continue
 			}
 			path := filepath.Join(dest, "metrics", rel)
 			if f.FileInfo().IsDir() {
-				os.MkdirAll(path, 0755)
+				_ = os.MkdirAll(path, 0755)
 			} else {
-				os.MkdirAll(filepath.Dir(path), 0755)
+				_ = os.MkdirAll(filepath.Dir(path), 0755)
 				out, err := os.Create(path)
 				if err != nil {
 					t.Fatalf("failed to create file: %v", err)
@@ -74,9 +74,9 @@ func downloadAndExtractMetrics(t *testing.T, dest string) string {
 					out.Close()
 					t.Fatalf("failed to open file in zip: %v", err)
 				}
-				io.Copy(out, rc)
-				out.Close()
-				rc.Close()
+				_, _ = io.Copy(out, rc)
+				_ = out.Close()
+				_ = rc.Close()
 			}
 		}
 	}

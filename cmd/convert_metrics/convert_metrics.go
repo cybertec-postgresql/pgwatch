@@ -55,12 +55,6 @@ const (
 	PresetConfigYAMLFile      = "preset-configs.yaml"
 )
 
-// VersionToInt parses a given version and returns an integer  or
-// an error if unable to parse the version. Only parses valid semantic versions.
-// Performs checking that can find errors within the version.
-// Examples: v1.2 -> 01_02_00, v9.6.3 -> 09_06_03, v11 -> 11_00_00
-var regVer = regexp.MustCompile(`(\d+).?(\d*).?(\d*)`)
-
 // expected is following structure: metric_name/pg_ver/metric(_master|standby).sql
 func ReadMetricsFromFolder(folder string) (metricsMap Metrics, err error) {
 	metricFolders, err := os.ReadDir(folder)
@@ -220,10 +214,10 @@ new_helper:
 func getArgs(src *string, dst *string) (err error) {
 	flag.Parse()
 	if src == nil || *src == "" {
-		err = errors.New("Error: src option is required")
+		err = errors.New("-src option is required")
 	}
 	if dst == nil || *dst == "" {
-		err = errors.Join(err, errors.New("Error: dst option is required"))
+		err = errors.Join(err, errors.New("-dst option is required"))
 	}
 	if err != nil {
 		fmt.Println(err)
