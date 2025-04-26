@@ -120,13 +120,10 @@ and send measurements to sinks.
 				<dd><a href="#DoesEmergencyTriggerfileExist">func DoesEmergencyTriggerfileExist(fname string) bool</a></dd>
 			
 				
-				<dd><a href="#FetchStatsDirectlyFromOS">func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, md *sources.SourceConn, metric metrics.Metric) (*metrics.MeasurementEnvelope, error)</a></dd>
-			
-				
 				<dd><a href="#GetAllRecoMetricsForVersion">func GetAllRecoMetricsForVersion() (metrics.MetricDefs, error)</a></dd>
 			
 				
-				<dd><a href="#GetGoPsutilCPU">func GetGoPsutilCPU(interval time.Duration) ([]map[string]any, error)</a></dd>
+				<dd><a href="#GetGoPsutilCPU">func GetGoPsutilCPU(interval float64) ([]map[string]any, error)</a></dd>
 			
 				
 				<dd><a href="#GetGoPsutilDiskPG">func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]any, error)</a></dd>
@@ -228,11 +225,6 @@ and send measurements to sinks.
 				
 			
 				
-				<dd><a href="#MetricFetchConfig">type MetricFetchConfig</a></dd>
-				
-				
-			
-				
 				<dd><a href="#Reaper">type Reaper</a></dd>
 				
 					
@@ -240,7 +232,7 @@ and send measurements to sinks.
 				
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.AddSysinfoToMeasurements">func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, ver *sources.SourceConn) metrics.Measurements</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Reaper.AddSysinfoToMeasurements">func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, md *sources.SourceConn)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#Reaper.CheckForPGObjectChangesAndStore">func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, md *sources.SourceConn, hostState map[string]map[string]string)</a></dd>
@@ -252,7 +244,10 @@ and send measurements to sinks.
 					<dd>&nbsp; &nbsp; <a href="#Reaper.CreateSourceHelpers">func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.LoggerIface, monitoredSource *sources.SourceConn)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.FetchMetric">func (r *Reaper) FetchMetric(ctx context.Context, msg MetricFetchConfig, hostState map[string]map[string]string) (*metrics.MeasurementEnvelope, error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Reaper.FetchMetric">func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metricName string, hostState map[string]map[string]string) (_ *metrics.MeasurementEnvelope, err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reaper.FetchStatsDirectlyFromOS">func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.SourceConn, metricName string) (*metrics.MeasurementEnvelope, error)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#Reaper.LoadMetrics">func (r *Reaper) LoadMetrics() (err error)</a></dd>
@@ -330,15 +325,8 @@ and send measurements to sinks.
 			
 				
 				<pre>const (
-    <span id="sqlPgDirs">sqlPgDirs</span> = `select 
-current_setting(&#39;data_directory&#39;) as dd, 
-current_setting(&#39;log_directory&#39;) as ld, 
-current_setting(&#39;server_version_num&#39;)::int as pgver`
-    <span id="sqlTsDirs">sqlTsDirs</span> = `select 
-spcname::text as name, 
-pg_catalog.pg_tablespace_location(oid) as location 
-from pg_catalog.pg_tablespace 
-where not spcname like any(array[E&#39;pg\\_%&#39;])`
+    <span id="sqlPgDirs">sqlPgDirs</span> = `select current_setting(&#39;data_directory&#39;) as dd, current_setting(&#39;log_directory&#39;) as ld`
+    <span id="sqlTsDirs">sqlTsDirs</span> = `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E&#39;pg\\_%&#39;])`
 )</pre>
 			
 				
@@ -365,7 +353,7 @@ where not spcname like any(array[E&#39;pg\\_%&#39;])`
 			<h2 id="pkg-variables">Variables</h2>
 			
 				
-				<pre>var <span id="directlyFetchableOSMetrics">directlyFetchableOSMetrics</span> = map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#bool">bool</a>{metricPsutilCPU: <a href="https://pkg.go.dev/builtin/#true">true</a>, metricPsutilDisk: <a href="https://pkg.go.dev/builtin/#true">true</a>, metricPsutilDiskIoTotal: <a href="https://pkg.go.dev/builtin/#true">true</a>, metricPsutilMem: <a href="https://pkg.go.dev/builtin/#true">true</a>, metricCPULoad: <a href="https://pkg.go.dev/builtin/#true">true</a>}</pre>
+				<pre>var <span id="directlyFetchableOSMetrics">directlyFetchableOSMetrics</span> = []<a href="https://pkg.go.dev/builtin/#string">string</a>{metricPsutilCPU, metricPsutilDisk, metricPsutilDiskIoTotal, metricPsutilMem, metricCPULoad}</pre>
 			
 				
 				<pre>var <span id="hostLastKnownStatusInRecovery">hostLastKnownStatusInRecovery</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#bool">bool</a>) <span class="comment">// isInRecovery</span>
@@ -417,25 +405,12 @@ where not spcname like any(array[E&#39;pg\\_%&#39;])`
 		
 			
 			
-			<h2 id="DoesEmergencyTriggerfileExist">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/file.go.html#L11">DoesEmergencyTriggerfileExist</a>
+			<h2 id="DoesEmergencyTriggerfileExist">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/file.go.html#L13">DoesEmergencyTriggerfileExist</a>
 				<a class="permalink" href="#DoesEmergencyTriggerfileExist">&#xb6;</a>
 				
 				
 			</h2>
 			<pre>func DoesEmergencyTriggerfileExist(fname <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
-			
-			
-			
-
-		
-			
-			
-			<h2 id="FetchStatsDirectlyFromOS">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/file.go.html#L50">FetchStatsDirectlyFromOS</a>
-				<a class="permalink" href="#FetchStatsDirectlyFromOS">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func FetchStatsDirectlyFromOS(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, msg <a href="#MetricFetchConfig">MetricFetchConfig</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, metric <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Metric">Metric</a>) (*<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			
 			
 			
@@ -461,7 +436,7 @@ where not spcname like any(array[E&#39;pg\\_%&#39;])`
 				
 				
 			</h2>
-			<pre>func GetGoPsutilCPU(interval <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>) ([]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#any">any</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<pre>func GetGoPsutilCPU(interval <a href="https://pkg.go.dev/builtin/#float64">float64</a>) ([]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#any">any</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			<p>Simulates &quot;psutil&quot; metric output. Assumes the result from last call as input, otherwise uses a 1s measurement
 
 			
@@ -561,7 +536,7 @@ where not spcname like any(array[E&#39;pg\\_%&#39;])`
 		
 			
 			
-			<h2 id="IsDirectlyFetchableMetric">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/file.go.html#L45">IsDirectlyFetchableMetric</a>
+			<h2 id="IsDirectlyFetchableMetric">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/file.go.html#L40">IsDirectlyFetchableMetric</a>
 				<a class="permalink" href="#IsDirectlyFetchableMetric">&#xb6;</a>
 				
 				
@@ -587,7 +562,7 @@ where not spcname like any(array[E&#39;pg\\_%&#39;])`
 		
 			
 			
-			<h2 id="TryCreateMetricsFetchingHelpers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L507">TryCreateMetricsFetchingHelpers</a>
+			<h2 id="TryCreateMetricsFetchingHelpers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L508">TryCreateMetricsFetchingHelpers</a>
 				<a class="permalink" href="#TryCreateMetricsFetchingHelpers">&#xb6;</a>
 				
 				
@@ -601,7 +576,7 @@ where not spcname like any(array[E&#39;pg\\_%&#39;])`
 		
 			
 			
-			<h2 id="TryCreateMissingExtensions">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L469">TryCreateMissingExtensions</a>
+			<h2 id="TryCreateMissingExtensions">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L470">TryCreateMissingExtensions</a>
 				<a class="permalink" href="#TryCreateMissingExtensions">&#xb6;</a>
 				
 				
@@ -644,7 +619,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="ChangeDetectionResults">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L73">ChangeDetectionResults</a>
+			<h2 id="ChangeDetectionResults">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L62">ChangeDetectionResults</a>
 				<a class="permalink" href="#ChangeDetectionResults">&#xb6;</a>
 				
 				
@@ -667,7 +642,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="DetectConfigurationChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L359">DetectConfigurationChanges</a>
+				<h3 id="DetectConfigurationChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L360">DetectConfigurationChanges</a>
 					<a class="permalink" href="#DetectConfigurationChanges">&#xb6;</a>
 					
 					
@@ -678,7 +653,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="DetectIndexChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L207">DetectIndexChanges</a>
+				<h3 id="DetectIndexChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L208">DetectIndexChanges</a>
 					<a class="permalink" href="#DetectIndexChanges">&#xb6;</a>
 					
 					
@@ -689,7 +664,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="DetectPrivilegeChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L283">DetectPrivilegeChanges</a>
+				<h3 id="DetectPrivilegeChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L284">DetectPrivilegeChanges</a>
 					<a class="permalink" href="#DetectPrivilegeChanges">&#xb6;</a>
 					
 					
@@ -700,7 +675,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="DetectSprocChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L51">DetectSprocChanges</a>
+				<h3 id="DetectSprocChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L52">DetectSprocChanges</a>
 					<a class="permalink" href="#DetectSprocChanges">&#xb6;</a>
 					
 					
@@ -711,7 +686,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="DetectTableChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L129">DetectTableChanges</a>
+				<h3 id="DetectTableChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L130">DetectTableChanges</a>
 					<a class="permalink" href="#DetectTableChanges">&#xb6;</a>
 					
 					
@@ -726,7 +701,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="ConcurrentMetricDefs">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L22">ConcurrentMetricDefs</a>
+			<h2 id="ConcurrentMetricDefs">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L21">ConcurrentMetricDefs</a>
 				<a class="permalink" href="#ConcurrentMetricDefs">&#xb6;</a>
 				
 				
@@ -748,7 +723,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="NewConcurrentMetricDefs">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L27">NewConcurrentMetricDefs</a>
+				<h3 id="NewConcurrentMetricDefs">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L26">NewConcurrentMetricDefs</a>
 					<a class="permalink" href="#NewConcurrentMetricDefs">&#xb6;</a>
 					
 					
@@ -761,7 +736,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="ConcurrentMetricDefs.Assign">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L56">Assign</a>
+				<h3 id="ConcurrentMetricDefs.Assign">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L55">Assign</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.Assign">&#xb6;</a>
 					
 					
@@ -773,7 +748,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="ConcurrentMetricDefs.GetMetricDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L36">GetMetricDef</a>
+				<h3 id="ConcurrentMetricDefs.GetMetricDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L35">GetMetricDef</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.GetMetricDef">&#xb6;</a>
 					
 					
@@ -785,7 +760,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="ConcurrentMetricDefs.GetPresetDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L43">GetPresetDef</a>
+				<h3 id="ConcurrentMetricDefs.GetPresetDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L42">GetPresetDef</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.GetPresetDef">&#xb6;</a>
 					
 					
@@ -797,7 +772,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="ConcurrentMetricDefs.GetPresetMetrics">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L50">GetPresetMetrics</a>
+				<h3 id="ConcurrentMetricDefs.GetPresetMetrics">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L49">GetPresetMetrics</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.GetPresetMetrics">&#xb6;</a>
 					
 					
@@ -811,7 +786,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L79">ExistingPartitionInfo</a>
+			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L68">ExistingPartitionInfo</a>
 				<a class="permalink" href="#ExistingPartitionInfo">&#xb6;</a>
 				
 				
@@ -898,38 +873,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="MetricFetchConfig">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L63">MetricFetchConfig</a>
-				<a class="permalink" href="#MetricFetchConfig">&#xb6;</a>
-				
-				
-			</h2>
-			
-			<pre>type MetricFetchConfig struct {
-<span id="MetricFetchConfig.DBUniqueName"></span>    DBUniqueName        <a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="MetricFetchConfig.DBUniqueNameOrig"></span>    DBUniqueNameOrig    <a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="MetricFetchConfig.MetricName"></span>    MetricName          <a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="MetricFetchConfig.Source"></span>    Source              <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#Kind">Kind</a>
-<span id="MetricFetchConfig.Interval"></span>    Interval            <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>
-<span id="MetricFetchConfig.CreatedOn"></span>    CreatedOn           <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>
-<span id="MetricFetchConfig.StmtTimeoutOverride"></span>    StmtTimeoutOverride <a href="https://pkg.go.dev/builtin/#int64">int64</a>
-}
-</pre>
-
-			
-
-			
-
-			
-			
-			
-
-			
-
-			
-		
-			
-			
-			<h2 id="Reaper">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L23">Reaper</a>
+			<h2 id="Reaper">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L24">Reaper</a>
 				<a class="permalink" href="#Reaper">&#xb6;</a>
 				
 				
@@ -958,7 +902,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="NewReaper">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L35">NewReaper</a>
+				<h3 id="NewReaper">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L36">NewReaper</a>
 					<a class="permalink" href="#NewReaper">&#xb6;</a>
 					
 					
@@ -972,19 +916,19 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="Reaper.AddSysinfoToMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L438">AddSysinfoToMeasurements</a>
+				<h3 id="Reaper.AddSysinfoToMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L427">AddSysinfoToMeasurements</a>
 					<a class="permalink" href="#Reaper.AddSysinfoToMeasurements">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) AddSysinfoToMeasurements(data <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a>, ver *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>) <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a></pre>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) AddSysinfoToMeasurements(data <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#Measurements">Measurements</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>)</pre>
 				
 				
 				
 				
 			
 				
-				<h3 id="Reaper.CheckForPGObjectChangesAndStore">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L422">CheckForPGObjectChangesAndStore</a>
+				<h3 id="Reaper.CheckForPGObjectChangesAndStore">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L423">CheckForPGObjectChangesAndStore</a>
 					<a class="permalink" href="#Reaper.CheckForPGObjectChangesAndStore">&#xb6;</a>
 					
 					
@@ -996,7 +940,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="Reaper.CloseResourcesForRemovedMonitoredDBs">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L545">CloseResourcesForRemovedMonitoredDBs</a>
+				<h3 id="Reaper.CloseResourcesForRemovedMonitoredDBs">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L546">CloseResourcesForRemovedMonitoredDBs</a>
 					<a class="permalink" href="#Reaper.CloseResourcesForRemovedMonitoredDBs">&#xb6;</a>
 					
 					
@@ -1008,7 +952,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="Reaper.CreateSourceHelpers">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L194">CreateSourceHelpers</a>
+				<h3 id="Reaper.CreateSourceHelpers">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L195">CreateSourceHelpers</a>
 					<a class="permalink" href="#Reaper.CreateSourceHelpers">&#xb6;</a>
 					
 					
@@ -1021,19 +965,31 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="Reaper.FetchMetric">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L459">FetchMetric</a>
+				<h3 id="Reaper.FetchMetric">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L438">FetchMetric</a>
 					<a class="permalink" href="#Reaper.FetchMetric">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) FetchMetric(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, msg <a href="#MetricFetchConfig">MetricFetchConfig</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>) (*<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) FetchMetric(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>) (_ *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
 				
 			
 				
-				<h3 id="Reaper.LoadMetrics">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L85">LoadMetrics</a>
+				<h3 id="Reaper.FetchStatsDirectlyFromOS">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/file.go.html#L44">FetchStatsDirectlyFromOS</a>
+					<a class="permalink" href="#Reaper.FetchStatsDirectlyFromOS">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) FetchStatsDirectlyFromOS(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>) (*<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Reaper.LoadMetrics">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L74">LoadMetrics</a>
 					<a class="permalink" href="#Reaper.LoadMetrics">&#xb6;</a>
 					
 					
@@ -1046,7 +1002,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="Reaper.LoadSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L376">LoadSources</a>
+				<h3 id="Reaper.LoadSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L365">LoadSources</a>
 					<a class="permalink" href="#Reaper.LoadSources">&#xb6;</a>
 					
 					
@@ -1059,7 +1015,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="Reaper.Ready">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L49">Ready</a>
+				<h3 id="Reaper.Ready">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L50">Ready</a>
 					<a class="permalink" href="#Reaper.Ready">&#xb6;</a>
 					
 					
@@ -1072,7 +1028,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="Reaper.Reap">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L57">Reap</a>
+				<h3 id="Reaper.Reap">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L58">Reap</a>
 					<a class="permalink" href="#Reaper.Reap">&#xb6;</a>
 					
 					
@@ -1088,7 +1044,7 @@ start or stop the gatherers accordingly.
 				
 			
 				
-				<h3 id="Reaper.ShutdownOldWorkers">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L218">ShutdownOldWorkers</a>
+				<h3 id="Reaper.ShutdownOldWorkers">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L219">ShutdownOldWorkers</a>
 					<a class="permalink" href="#Reaper.ShutdownOldWorkers">&#xb6;</a>
 					
 					
@@ -1100,7 +1056,7 @@ start or stop the gatherers accordingly.
 				
 			
 				
-				<h3 id="Reaper.WriteMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L424">WriteMeasurements</a>
+				<h3 id="Reaper.WriteMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L413">WriteMeasurements</a>
 					<a class="permalink" href="#Reaper.WriteMeasurements">&#xb6;</a>
 					
 					
@@ -1113,7 +1069,7 @@ start or stop the gatherers accordingly.
 				
 			
 				
-				<h3 id="Reaper.WriteMonitoredSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L391">WriteMonitoredSources</a>
+				<h3 id="Reaper.WriteMonitoredSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L380">WriteMonitoredSources</a>
 					<a class="permalink" href="#Reaper.WriteMonitoredSources">&#xb6;</a>
 					
 					
@@ -1127,7 +1083,7 @@ every monitoredDbsDatastoreSyncIntervalSeconds (default 10min)
 				
 			
 				
-				<h3 id="Reaper.reapMetricMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L268">reapMetricMeasurements</a>
+				<h3 id="Reaper.reapMetricMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L269">reapMetricMeasurements</a>
 					<a class="permalink" href="#Reaper.reapMetricMeasurements">&#xb6;</a>
 					
 					

@@ -473,6 +473,29 @@
 <span id="L416" class="ln">   416  </span>	})
 <span id="L417" class="ln">   417  </span>}
 <span id="L418" class="ln">   418  </span>
+<span id="L419" class="ln">   419  </span>func TestSourceConn_GetClusterIdentifier(t *testing.T) {
+<span id="L420" class="ln">   420  </span>	md := &amp;sources.SourceConn{
+<span id="L421" class="ln">   421  </span>		Source: sources.Source{
+<span id="L422" class="ln">   422  </span>			Name:    &#34;test&#34;,
+<span id="L423" class="ln">   423  </span>			Kind:    sources.SourcePostgres,
+<span id="L424" class="ln">   424  </span>			ConnStr: &#34;postgres://user:password@localhost:5432/mydatabase&#34;,
+<span id="L425" class="ln">   425  </span>		},
+<span id="L426" class="ln">   426  </span>		RuntimeInfo: sources.RuntimeInfo{
+<span id="L427" class="ln">   427  </span>			SystemIdentifier: &#34;42424242&#34;,
+<span id="L428" class="ln">   428  </span>		},
+<span id="L429" class="ln">   429  </span>	}
+<span id="L430" class="ln">   430  </span>	assert.Equal(t, &#34;42424242:localhost:5432&#34;, md.GetClusterIdentifier())
+<span id="L431" class="ln">   431  </span>
+<span id="L432" class="ln">   432  </span>	md = &amp;sources.SourceConn{
+<span id="L433" class="ln">   433  </span>		Source: sources.Source{
+<span id="L434" class="ln">   434  </span>			Name:    &#34;test&#34;,
+<span id="L435" class="ln">   435  </span>			Kind:    sources.SourcePostgres,
+<span id="L436" class="ln">   436  </span>			ConnStr: &#34;foo boo&#34;,
+<span id="L437" class="ln">   437  </span>		},
+<span id="L438" class="ln">   438  </span>	}
+<span id="L439" class="ln">   439  </span>	assert.Equal(t, &#34;&#34;, md.GetClusterIdentifier())
+<span id="L440" class="ln">   440  </span>}
+<span id="L441" class="ln">   441  </span>
 </pre><p></p>
 
 <div id="footer">

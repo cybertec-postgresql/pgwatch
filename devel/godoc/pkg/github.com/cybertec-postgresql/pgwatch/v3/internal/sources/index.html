@@ -238,6 +238,9 @@ At the moment, sources definitions support two storages:
 					<dd>&nbsp; &nbsp; <a href="#SourceConn.FunctionExists">func (md *SourceConn) FunctionExists(ctx context.Context, functionName string) (exists bool)</a></dd>
 				
 					
+					<dd>&nbsp; &nbsp; <a href="#SourceConn.GetClusterIdentifier">func (md *SourceConn) GetClusterIdentifier() string</a></dd>
+				
+					
 					<dd>&nbsp; &nbsp; <a href="#SourceConn.GetDatabaseName">func (md *SourceConn) GetDatabaseName() string</a></dd>
 				
 					
@@ -420,7 +423,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="VersionToInt">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L132">VersionToInt</a>
+			<h2 id="VersionToInt">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L141">VersionToInt</a>
 				<a class="permalink" href="#VersionToInt">&#xb6;</a>
 				
 				
@@ -935,7 +938,7 @@ If the connection is already established, it pings the server to ensure it&apos;
 				
 			
 				
-				<h3 id="SourceConn.DiscoverPlatform">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L218">DiscoverPlatform</a>
+				<h3 id="SourceConn.DiscoverPlatform">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L227">DiscoverPlatform</a>
 					<a class="permalink" href="#SourceConn.DiscoverPlatform">&#xb6;</a>
 					
 					
@@ -949,7 +952,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.FetchApproxSize">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L235">FetchApproxSize</a>
+				<h3 id="SourceConn.FetchApproxSize">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L244">FetchApproxSize</a>
 					<a class="permalink" href="#SourceConn.FetchApproxSize">&#xb6;</a>
 					
 					
@@ -962,7 +965,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.FetchRuntimeInfo">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L141">FetchRuntimeInfo</a>
+				<h3 id="SourceConn.FetchRuntimeInfo">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L150">FetchRuntimeInfo</a>
 					<a class="permalink" href="#SourceConn.FetchRuntimeInfo">&#xb6;</a>
 					
 					
@@ -974,7 +977,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.FetchVersion">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L208">FetchVersion</a>
+				<h3 id="SourceConn.FetchVersion">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L217">FetchVersion</a>
 					<a class="permalink" href="#SourceConn.FetchVersion">&#xb6;</a>
 					
 					
@@ -986,7 +989,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.FunctionExists">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L242">FunctionExists</a>
+				<h3 id="SourceConn.FunctionExists">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L251">FunctionExists</a>
 					<a class="permalink" href="#SourceConn.FunctionExists">&#xb6;</a>
 					
 					
@@ -999,7 +1002,21 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.GetDatabaseName">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L98">GetDatabaseName</a>
+				<h3 id="SourceConn.GetClusterIdentifier">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L99">GetClusterIdentifier</a>
+					<a class="permalink" href="#SourceConn.GetClusterIdentifier">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (md *<a href="#SourceConn">SourceConn</a>) GetClusterIdentifier() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				<p>GetUniqueIdentifier returns a unique identifier for the host assuming SysId is the same for
+primary and all replicas but connection information is different
+
+				
+				
+				
+			
+				
+				<h3 id="SourceConn.GetDatabaseName">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L107">GetDatabaseName</a>
 					<a class="permalink" href="#SourceConn.GetDatabaseName">&#xb6;</a>
 					
 					
@@ -1012,7 +1029,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.GetMetricInterval">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L106">GetMetricInterval</a>
+				<h3 id="SourceConn.GetMetricInterval">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L115">GetMetricInterval</a>
 					<a class="permalink" href="#SourceConn.GetMetricInterval">&#xb6;</a>
 					
 					
@@ -1025,7 +1042,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.IsPostgresSource">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L122">IsPostgresSource</a>
+				<h3 id="SourceConn.IsPostgresSource">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L131">IsPostgresSource</a>
 					<a class="permalink" href="#SourceConn.IsPostgresSource">&#xb6;</a>
 					
 					
@@ -1063,7 +1080,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="SourceConn.SetDatabaseName">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L114">SetDatabaseName</a>
+				<h3 id="SourceConn.SetDatabaseName">func (*SourceConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L123">SetDatabaseName</a>
 					<a class="permalink" href="#SourceConn.SetDatabaseName">&#xb6;</a>
 					
 					
@@ -1114,7 +1131,7 @@ additionally matching/not matching specified regex patterns
 
 			
 				
-				<h3 id="SourceConns.GetMonitoredDatabase">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L252">GetMonitoredDatabase</a>
+				<h3 id="SourceConns.GetMonitoredDatabase">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L261">GetMonitoredDatabase</a>
 					<a class="permalink" href="#SourceConns.GetMonitoredDatabase">&#xb6;</a>
 					
 					
@@ -1126,7 +1143,7 @@ additionally matching/not matching specified regex patterns
 				
 			
 				
-				<h3 id="SourceConns.SyncFromReader">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L264">SyncFromReader</a>
+				<h3 id="SourceConns.SyncFromReader">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L273">SyncFromReader</a>
 					<a class="permalink" href="#SourceConns.SyncFromReader">&#xb6;</a>
 					
 					

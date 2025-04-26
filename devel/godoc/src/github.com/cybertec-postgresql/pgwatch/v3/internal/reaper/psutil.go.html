@@ -82,7 +82,7 @@
 <span id="L25" class="ln">    25  </span>}
 <span id="L26" class="ln">    26  </span>
 <span id="L27" class="ln">    27  </span><span class="comment">// Simulates &#34;psutil&#34; metric output. Assumes the result from last call as input, otherwise uses a 1s measurement</span>
-<span id="L28" class="ln">    28  </span>func GetGoPsutilCPU(interval time.Duration) ([]map[string]any, error) {
+<span id="L28" class="ln">    28  </span>func GetGoPsutilCPU(interval float64) ([]map[string]any, error) {
 <span id="L29" class="ln">    29  </span>	prevCPULoadTimeStatsLock.RLock()
 <span id="L30" class="ln">    30  </span>	prevTime := prevCPULoadTimestamp
 <span id="L31" class="ln">    31  </span>	prevTimeStat := prevCPULoadTimeStats
@@ -101,7 +101,7 @@
 <span id="L44" class="ln">    44  </span>	if err != nil {
 <span id="L45" class="ln">    45  </span>		return nil, err
 <span id="L46" class="ln">    46  </span>	}
-<span id="L47" class="ln">    47  </span>	if prevTime.IsZero() || time.Now().UnixNano()-prevTime.UnixNano() &lt; 1e9 || time.Now().Unix()-prevTime.Unix() &gt;= int64(interval.Seconds()) {
+<span id="L47" class="ln">    47  </span>	if prevTime.IsZero() || time.Now().UnixNano()-prevTime.UnixNano() &lt; 1e9 || time.Now().Unix()-prevTime.Unix() &gt;= int64(interval) {
 <span id="L48" class="ln">    48  </span>		prevCPULoadTimeStatsLock.Lock() <span class="comment">// update the cache</span>
 <span id="L49" class="ln">    49  </span>		prevCPULoadTimeStats = curCallStats[0]
 <span id="L50" class="ln">    50  </span>		prevCPULoadTimestamp = time.Now()
@@ -254,65 +254,63 @@
 <span id="L197" class="ln">   197  </span>	var walDirPath string
 <span id="L198" class="ln">   198  </span>	if CheckFolderExistsAndReadable(path.Join(dataDirPath, &#34;pg_wal&#34;)) {
 <span id="L199" class="ln">   199  </span>		walDirPath = path.Join(dataDirPath, &#34;pg_wal&#34;)
-<span id="L200" class="ln">   200  </span>	} else if CheckFolderExistsAndReadable(path.Join(dataDirPath, &#34;pg_xlog&#34;)) {
-<span id="L201" class="ln">   201  </span>		walDirPath = path.Join(dataDirPath, &#34;pg_xlog&#34;) <span class="comment">// &lt; v10</span>
-<span id="L202" class="ln">   202  </span>	}
-<span id="L203" class="ln">   203  </span>
-<span id="L204" class="ln">   204  </span>	if len(walDirPath) &gt; 0 {
-<span id="L205" class="ln">   205  </span>		walDevice, err = GetPathUnderlyingDeviceID(walDirPath)
-<span id="L206" class="ln">   206  </span>		if err != nil {
-<span id="L207" class="ln">   207  </span>			return nil, err
-<span id="L208" class="ln">   208  </span>		}
-<span id="L209" class="ln">   209  </span>
-<span id="L210" class="ln">   210  </span>		if walDevice != ddDevice || walDevice != ldDevice { <span class="comment">// no point to report same data in case of single folder configuration</span>
-<span id="L211" class="ln">   211  </span>			walUsage, err := disk.Usage(walDirPath)
-<span id="L212" class="ln">   212  </span>			if err != nil {
-<span id="L213" class="ln">   213  </span>				return nil, err
-<span id="L214" class="ln">   214  </span>			}
-<span id="L215" class="ln">   215  </span>
-<span id="L216" class="ln">   216  </span>			wd := metrics.NewMeasurement(epochNs)
-<span id="L217" class="ln">   217  </span>			wd[&#34;tag_dir_or_tablespace&#34;] = &#34;pg_wal&#34;
-<span id="L218" class="ln">   218  </span>			wd[&#34;tag_path&#34;] = walDirPath
-<span id="L219" class="ln">   219  </span>			wd[&#34;total&#34;] = float64(walUsage.Total)
-<span id="L220" class="ln">   220  </span>			wd[&#34;used&#34;] = float64(walUsage.Used)
-<span id="L221" class="ln">   221  </span>			wd[&#34;free&#34;] = float64(walUsage.Free)
-<span id="L222" class="ln">   222  </span>			wd[&#34;percent&#34;] = math.Round(100*walUsage.UsedPercent) / 100
-<span id="L223" class="ln">   223  </span>			retRows = append(retRows, wd)
-<span id="L224" class="ln">   224  </span>		}
-<span id="L225" class="ln">   225  </span>	}
-<span id="L226" class="ln">   226  </span>
-<span id="L227" class="ln">   227  </span>	data = TblspaceDirs
-<span id="L228" class="ln">   228  </span>	if len(data) &gt; 0 {
-<span id="L229" class="ln">   229  </span>		for _, row := range data {
-<span id="L230" class="ln">   230  </span>			tsPath := row[&#34;location&#34;].(string)
-<span id="L231" class="ln">   231  </span>			tsName := row[&#34;name&#34;].(string)
-<span id="L232" class="ln">   232  </span>
-<span id="L233" class="ln">   233  </span>			tsDevice, err := GetPathUnderlyingDeviceID(tsPath)
-<span id="L234" class="ln">   234  </span>			if err != nil {
-<span id="L235" class="ln">   235  </span>				return nil, err
-<span id="L236" class="ln">   236  </span>			}
-<span id="L237" class="ln">   237  </span>
-<span id="L238" class="ln">   238  </span>			if tsDevice == ddDevice || tsDevice == ldDevice || tsDevice == walDevice {
-<span id="L239" class="ln">   239  </span>				continue
-<span id="L240" class="ln">   240  </span>			}
-<span id="L241" class="ln">   241  </span>			tsUsage, err := disk.Usage(tsPath)
-<span id="L242" class="ln">   242  </span>			if err != nil {
-<span id="L243" class="ln">   243  </span>				return nil, err
-<span id="L244" class="ln">   244  </span>			}
-<span id="L245" class="ln">   245  </span>			ts := metrics.NewMeasurement(epochNs)
-<span id="L246" class="ln">   246  </span>			ts[&#34;tag_dir_or_tablespace&#34;] = tsName
-<span id="L247" class="ln">   247  </span>			ts[&#34;tag_path&#34;] = tsPath
-<span id="L248" class="ln">   248  </span>			ts[&#34;total&#34;] = float64(tsUsage.Total)
-<span id="L249" class="ln">   249  </span>			ts[&#34;used&#34;] = float64(tsUsage.Used)
-<span id="L250" class="ln">   250  </span>			ts[&#34;free&#34;] = float64(tsUsage.Free)
-<span id="L251" class="ln">   251  </span>			ts[&#34;percent&#34;] = math.Round(100*tsUsage.UsedPercent) / 100
-<span id="L252" class="ln">   252  </span>			retRows = append(retRows, ts)
-<span id="L253" class="ln">   253  </span>		}
-<span id="L254" class="ln">   254  </span>	}
-<span id="L255" class="ln">   255  </span>
-<span id="L256" class="ln">   256  </span>	return retRows, nil
-<span id="L257" class="ln">   257  </span>}
-<span id="L258" class="ln">   258  </span>
+<span id="L200" class="ln">   200  </span>	}
+<span id="L201" class="ln">   201  </span>
+<span id="L202" class="ln">   202  </span>	if len(walDirPath) &gt; 0 {
+<span id="L203" class="ln">   203  </span>		walDevice, err = GetPathUnderlyingDeviceID(walDirPath)
+<span id="L204" class="ln">   204  </span>		if err != nil {
+<span id="L205" class="ln">   205  </span>			return nil, err
+<span id="L206" class="ln">   206  </span>		}
+<span id="L207" class="ln">   207  </span>
+<span id="L208" class="ln">   208  </span>		if walDevice != ddDevice || walDevice != ldDevice { <span class="comment">// no point to report same data in case of single folder configuration</span>
+<span id="L209" class="ln">   209  </span>			walUsage, err := disk.Usage(walDirPath)
+<span id="L210" class="ln">   210  </span>			if err != nil {
+<span id="L211" class="ln">   211  </span>				return nil, err
+<span id="L212" class="ln">   212  </span>			}
+<span id="L213" class="ln">   213  </span>
+<span id="L214" class="ln">   214  </span>			wd := metrics.NewMeasurement(epochNs)
+<span id="L215" class="ln">   215  </span>			wd[&#34;tag_dir_or_tablespace&#34;] = &#34;pg_wal&#34;
+<span id="L216" class="ln">   216  </span>			wd[&#34;tag_path&#34;] = walDirPath
+<span id="L217" class="ln">   217  </span>			wd[&#34;total&#34;] = float64(walUsage.Total)
+<span id="L218" class="ln">   218  </span>			wd[&#34;used&#34;] = float64(walUsage.Used)
+<span id="L219" class="ln">   219  </span>			wd[&#34;free&#34;] = float64(walUsage.Free)
+<span id="L220" class="ln">   220  </span>			wd[&#34;percent&#34;] = math.Round(100*walUsage.UsedPercent) / 100
+<span id="L221" class="ln">   221  </span>			retRows = append(retRows, wd)
+<span id="L222" class="ln">   222  </span>		}
+<span id="L223" class="ln">   223  </span>	}
+<span id="L224" class="ln">   224  </span>
+<span id="L225" class="ln">   225  </span>	data = TblspaceDirs
+<span id="L226" class="ln">   226  </span>	if len(data) &gt; 0 {
+<span id="L227" class="ln">   227  </span>		for _, row := range data {
+<span id="L228" class="ln">   228  </span>			tsPath := row[&#34;location&#34;].(string)
+<span id="L229" class="ln">   229  </span>			tsName := row[&#34;name&#34;].(string)
+<span id="L230" class="ln">   230  </span>
+<span id="L231" class="ln">   231  </span>			tsDevice, err := GetPathUnderlyingDeviceID(tsPath)
+<span id="L232" class="ln">   232  </span>			if err != nil {
+<span id="L233" class="ln">   233  </span>				return nil, err
+<span id="L234" class="ln">   234  </span>			}
+<span id="L235" class="ln">   235  </span>
+<span id="L236" class="ln">   236  </span>			if tsDevice == ddDevice || tsDevice == ldDevice || tsDevice == walDevice {
+<span id="L237" class="ln">   237  </span>				continue
+<span id="L238" class="ln">   238  </span>			}
+<span id="L239" class="ln">   239  </span>			tsUsage, err := disk.Usage(tsPath)
+<span id="L240" class="ln">   240  </span>			if err != nil {
+<span id="L241" class="ln">   241  </span>				return nil, err
+<span id="L242" class="ln">   242  </span>			}
+<span id="L243" class="ln">   243  </span>			ts := metrics.NewMeasurement(epochNs)
+<span id="L244" class="ln">   244  </span>			ts[&#34;tag_dir_or_tablespace&#34;] = tsName
+<span id="L245" class="ln">   245  </span>			ts[&#34;tag_path&#34;] = tsPath
+<span id="L246" class="ln">   246  </span>			ts[&#34;total&#34;] = float64(tsUsage.Total)
+<span id="L247" class="ln">   247  </span>			ts[&#34;used&#34;] = float64(tsUsage.Used)
+<span id="L248" class="ln">   248  </span>			ts[&#34;free&#34;] = float64(tsUsage.Free)
+<span id="L249" class="ln">   249  </span>			ts[&#34;percent&#34;] = math.Round(100*tsUsage.UsedPercent) / 100
+<span id="L250" class="ln">   250  </span>			retRows = append(retRows, ts)
+<span id="L251" class="ln">   251  </span>		}
+<span id="L252" class="ln">   252  </span>	}
+<span id="L253" class="ln">   253  </span>
+<span id="L254" class="ln">   254  </span>	return retRows, nil
+<span id="L255" class="ln">   255  </span>}
+<span id="L256" class="ln">   256  </span>
 </pre><p></p>
 
 <div id="footer">
