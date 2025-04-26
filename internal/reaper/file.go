@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 
+	"slices"
+
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
@@ -29,22 +31,14 @@ const (
 )
 
 const (
-	sqlPgDirs = `select 
-current_setting('data_directory') as dd, 
-current_setting('log_directory') as ld, 
-current_setting('server_version_num')::int as pgver`
-	sqlTsDirs = `select 
-spcname::text as name, 
-pg_catalog.pg_tablespace_location(oid) as location 
-from pg_catalog.pg_tablespace 
-where not spcname like any(array[E'pg\\_%'])`
+	sqlPgDirs = `select current_setting('data_directory') as dd, current_setting('log_directory') as ld`
+	sqlTsDirs = `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E'pg\\_%'])`
 )
 
-var directlyFetchableOSMetrics = map[string]bool{metricPsutilCPU: true, metricPsutilDisk: true, metricPsutilDiskIoTotal: true, metricPsutilMem: true, metricCPULoad: true}
+var directlyFetchableOSMetrics = []string{metricPsutilCPU, metricPsutilDisk, metricPsutilDiskIoTotal, metricPsutilMem, metricCPULoad}
 
 func IsDirectlyFetchableMetric(metric string) bool {
-	_, ok := directlyFetchableOSMetrics[metric]
-	return ok
+	return slices.Contains(directlyFetchableOSMetrics, metric)
 }
 
 func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.SourceConn, metricName string) (*metrics.MeasurementEnvelope, error) {

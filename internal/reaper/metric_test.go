@@ -1,9 +1,11 @@
 package reaper
 
 import (
+	"context"
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,6 +24,18 @@ var (
 		"preset2": metrics.Preset{Description: "preset2", Metrics: map[string]float64{"metric2": 2.0}},
 	}
 )
+
+func TestReaper_FetchStatsDirectlyFromOS(t *testing.T) {
+	a := assert.New(t)
+	r := &Reaper{}
+	md := &sources.SourceConn{}
+	for _, m := range directlyFetchableOSMetrics {
+		a.True(IsDirectlyFetchableMetric(m), "Expected %s to be directly fetchable", m)
+		a.NotPanics(func() {
+			_, _ = r.FetchStatsDirectlyFromOS(context.Background(), md, m)
+		})
+	}
+}
 
 func TestConcurrentMetricDefs_Assign(t *testing.T) {
 	concurrentDefs := NewConcurrentMetricDefs()
