@@ -94,6 +94,12 @@ func (md *SourceConn) ParseConfig() (err error) {
 	return
 }
 
+// GetUniqueIdentifier returns a unique identifier for the host assuming SysId is the same for
+// primary and all replicas but connection information is different
+func (md *SourceConn) GetClusterIdentifier() string {
+	return fmt.Sprintf("%s:%s:%d", md.SystemIdentifier, md.ConnConfig.ConnConfig.Host, md.ConnConfig.ConnConfig.Port)
+}
+
 // GetDatabaseName returns the database name from the connection string
 func (md *SourceConn) GetDatabaseName() string {
 	if err := md.ParseConfig(); err != nil {

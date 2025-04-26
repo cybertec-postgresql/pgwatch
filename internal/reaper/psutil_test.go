@@ -2,7 +2,6 @@ package reaper
 
 import (
 	"testing"
-	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 
@@ -14,7 +13,7 @@ func TestGetGoPsutilCPU(t *testing.T) {
 	a := assert.New(t)
 
 	// Call the GetGoPsutilCPU function with a 1-second interval
-	result, err := GetGoPsutilCPU(1 * time.Second)
+	result, err := GetGoPsutilCPU(1.0)
 	a.NoError(err)
 	a.NotEmpty(result)
 

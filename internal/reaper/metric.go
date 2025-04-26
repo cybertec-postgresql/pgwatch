@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 	"github.com/sirupsen/logrus"
 )
 
@@ -58,16 +57,6 @@ func (cmd *ConcurrentMetricDefs) Assign(newDefs *metrics.Metrics) {
 	defer cmd.Unlock()
 	cmd.MetricDefs = maps.Clone(newDefs.MetricDefs)
 	cmd.PresetDefs = maps.Clone(newDefs.PresetDefs)
-}
-
-type MetricFetchConfig struct {
-	DBUniqueName        string
-	DBUniqueNameOrig    string
-	MetricName          string
-	Source              sources.Kind
-	Interval            time.Duration
-	CreatedOn           time.Time
-	StmtTimeoutOverride int64
 }
 
 type ChangeDetectionResults struct { // for passing around DDL/index/config change detection results

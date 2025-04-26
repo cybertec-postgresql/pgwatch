@@ -47,20 +47,20 @@ func IsDirectlyFetchableMetric(metric string) bool {
 	return ok
 }
 
-func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, md *sources.SourceConn, metric metrics.Metric) (*metrics.MeasurementEnvelope, error) {
+func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.SourceConn, metricName string) (*metrics.MeasurementEnvelope, error) {
 	var data, dataDirs, dataTblspDirs metrics.Measurements
 	var err error
 
-	switch msg.MetricName {
+	switch metricName {
 	case metricCPULoad:
 		data, err = GetLoadAvgLocal()
 	case metricPsutilCPU:
-		data, err = GetGoPsutilCPU(msg.Interval)
+		data, err = GetGoPsutilCPU(md.GetMetricInterval(metricName))
 	case metricPsutilDisk:
-		if dataDirs, err = QueryMeasurements(ctx, msg.DBUniqueName, sqlPgDirs); err != nil {
+		if dataDirs, err = QueryMeasurements(ctx, md.Name, sqlPgDirs); err != nil {
 			return nil, err
 		}
-		if dataTblspDirs, err = QueryMeasurements(ctx, msg.DBUniqueName, sqlTsDirs); err != nil {
+		if dataTblspDirs, err = QueryMeasurements(ctx, md.Name, sqlTsDirs); err != nil {
 			return nil, err
 		}
 		data, err = GetGoPsutilDiskPG(dataDirs, dataTblspDirs)
@@ -72,14 +72,14 @@ func FetchStatsDirectlyFromOS(ctx context.Context, msg MetricFetchConfig, md *so
 	if err != nil {
 		return nil, err
 	}
-
+	m, _ := metricDefs.GetMetricDef(metricName)
 	return &metrics.MeasurementEnvelope{
-		DBName:           msg.DBUniqueName,
-		SourceType:       string(msg.Source),
-		MetricName:       msg.MetricName,
+		DBName:           md.Name,
+		SourceType:       string(md.Kind),
+		MetricName:       metricName,
 		CustomTags:       md.CustomTags,
 		Data:             data,
-		MetricDef:        metric,
+		MetricDef:        m,
 		RealDbname:       md.RealDbname,
 		SystemIdentifier: md.SystemIdentifier,
 	}, nil
