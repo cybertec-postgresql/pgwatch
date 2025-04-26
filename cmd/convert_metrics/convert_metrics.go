@@ -1,8 +1,8 @@
 package main
 
 import (
+	"errors"
 	"io/fs"
-	"math"
 	"os"
 	"path"
 	"regexp"
@@ -54,21 +54,6 @@ const (
 	FileBasedMetricHelpersDir = "00_helpers"
 	PresetConfigYAMLFile      = "preset-configs.yaml"
 )
-
-// VersionToInt parses a given version and returns an integer  or
-// an error if unable to parse the version. Only parses valid semantic versions.
-// Performs checking that can find errors within the version.
-// Examples: v1.2 -> 01_02_00, v9.6.3 -> 09_06_03, v11 -> 11_00_00
-var regVer = regexp.MustCompile(`(\d+).?(\d*).?(\d*)`)
-
-func VersionToInt(version string) (v int) {
-	if matches := regVer.FindStringSubmatch(version); len(matches) > 1 {
-		for i, match := range matches[1:] {
-			v += func() (m int) { m, _ = strconv.Atoi(match); return }() * int(math.Pow10(4-i*2))
-		}
-	}
-	return
-}
 
 // expected is following structure: metric_name/pg_ver/metric(_master|standby).sql
 func ReadMetricsFromFolder(folder string) (metricsMap Metrics, err error) {
@@ -226,25 +211,27 @@ new_helper:
 	}
 }
 
+func getArgs(src *string, dst *string) (err error) {
+	flag.Parse()
+	if src == nil || *src == "" {
+		err = errors.New("-src option is required")
+	}
+	if dst == nil || *dst == "" {
+		err = errors.Join(err, errors.New("-dst option is required"))
+	}
+	if err != nil {
+		fmt.Println(err)
+	}
+	return err
+}
+
 func main() {
-	// Define command-line flags
 	src := flag.String("src", "", "pgwatch v2 metric folder, e.g. `./metrics/sql`")
 	dst := flag.String("dst", "", "pgwatch v3 output metric file, e.g. `metrics.yaml`")
-
-	// Parse command-line flags
-	flag.Parse()
-
-	// Check if src flag is provided
-	if *src == "" {
-		fmt.Println("Error: src option is required")
+	if err := getArgs(src, dst); err != nil {
 		return
 	}
 
-	// Check if dst flag is provided
-	if *dst == "" {
-		fmt.Println("Error: dst option is required")
-		return
-	}
 	helpers, err := ReadMetricsFromFolder(path.Join(*src, FileBasedMetricHelpersDir))
 	if err != nil {
 		panic(err)
