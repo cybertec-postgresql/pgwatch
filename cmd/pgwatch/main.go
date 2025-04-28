@@ -34,22 +34,22 @@ func setupCloseHandler(cancel context.CancelFunc) {
 var (
 	exitCode atomic.Int32          // Exit code to be returned to the OS
 	mainCtx  context.Context       // Main context for the application
+	cancel   context.CancelFunc    // Cancel function to stop the main context
 	logger   log.LoggerHookerIface // Logger for the application
 	opts     *cmdopts.Options      // Command line options for the application
+	err      error
 )
 
+var Exit = os.Exit
+
 func main() {
-	var (
-		err    error
-		cancel context.CancelFunc
-	)
 	exitCode.Store(cmdopts.ExitCodeOK)
 	defer func() {
 		if err := recover(); err != nil {
 			exitCode.Store(cmdopts.ExitCodeFatalError)
 			log.GetLogger(mainCtx).WithField("callstack", string(debug.Stack())).Error(err)
 		}
-		os.Exit(int(exitCode.Load()))
+		Exit(int(exitCode.Load()))
 	}()
 
 	mainCtx, cancel = context.WithCancel(context.Background())
@@ -77,13 +77,13 @@ func main() {
 	logger.Debugf("opts: %+v", opts)
 
 	if err := opts.InitConfigReaders(mainCtx); err != nil {
-		exitCode.Store(cmdopts.ExitCodeCmdError)
+		exitCode.Store(cmdopts.ExitCodeConfigError)
 		logger.Error(err)
 		return
 	}
 
 	if err := opts.InitSinkWriter(mainCtx); err != nil {
-		exitCode.Store(cmdopts.ExitCodeCmdError)
+		exitCode.Store(cmdopts.ExitCodeConfigError)
 		logger.Error(err)
 		return
 	}
@@ -97,11 +97,7 @@ func main() {
 		return
 	}
 
-	reaper, err := reaper.NewReaper(mainCtx, opts)
-	if err != nil {
-		logger.Error(err)
-		exitCode.Store(cmdopts.ExitCodeFatalError)
-	}
+	reaper := reaper.NewReaper(mainCtx, opts)
 
 	if _, err = webserver.Init(mainCtx, opts.WebUI, webui.WebUIFs, opts.MetricsReaderWriter,
 		opts.SourcesReaderWriter, reaper); err != nil {
@@ -110,8 +106,5 @@ func main() {
 		return
 	}
 
-	if err = reaper.Reap(mainCtx); err != nil {
-		logger.Error(err)
-		exitCode.Store(cmdopts.ExitCodeFatalError)
-	}
+	reaper.Reap(mainCtx)
 }

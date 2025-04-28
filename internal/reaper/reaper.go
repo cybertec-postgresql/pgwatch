@@ -33,8 +33,8 @@ type Reaper struct {
 }
 
 // NewReaper creates a new Reaper instance
-func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper, err error) {
-	r = &Reaper{
+func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper) {
+	return &Reaper{
 		Options:              opts,
 		measurementCh:        make(chan []metrics.MeasurementEnvelope, 10000),
 		measurementCache:     NewInstanceMetricCache(),
@@ -43,7 +43,6 @@ func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper, err error
 		prevLoopMonitoredDBs: make(sources.SourceConns, 0),
 		cancelFuncs:          make(map[string]context.CancelFunc), // [db1+metric1]cancel()
 	}
-	return r, nil
 }
 
 // Ready() returns true if the service is healthy and operating correctly
@@ -55,8 +54,8 @@ func (r *Reaper) Ready() bool {
 // from the sources and storing them to the sinks. It also manages the lifecycle of
 // the metric gatherers. In case of a source or metric definition change, it will
 // start or stop the gatherers accordingly.
-func (r *Reaper) Reap(ctx context.Context) (err error) {
-
+func (r *Reaper) Reap(ctx context.Context) {
+	var err error
 	logger := r.logger
 
 	go r.WriteMeasurements(ctx)
