@@ -119,7 +119,7 @@ metrics:
 	})
 
 	t.Run("failed web init", func(t *testing.T) {
-		os.Args = []string{"pgwatch", "--sources", sourcesYaml, "--sink", "jsonfile://" + jsonSink, "--web-addr", ":5432"}
+		os.Args = []string{"pgwatch", "--sources", sourcesYaml, "--sink", "jsonfile://" + jsonSink, "--web-addr", "localhost:-42"}
 		go main()
 		<-time.After(1 * time.Second) // Wait for main to fetch some metrics
 		cancel()
