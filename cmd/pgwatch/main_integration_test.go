@@ -44,12 +44,12 @@ func TestMain_Integration(t *testing.T) {
 	// Prepare minimal metrics and sources YAML files
 	metricsYaml := filepath.Join(tempDir, "metrics.yaml")
 	sourcesYaml := filepath.Join(tempDir, "sources.yaml")
-	os.WriteFile(metricsYaml, []byte(`
+	require.NoError(t, os.WriteFile(metricsYaml, []byte(`
 metrics:
     test_metric:
         sqls:
             11:  select (extract(epoch from now()) * 1e9)::int8 as epoch_ns, 42 as test_metric
-`), 0644)
+`), 0644))
 
 	pg, err := initTestContainer()
 	require.NoError(t, err)
@@ -58,14 +58,14 @@ metrics:
 	t.Log(connStr)
 	require.NoError(t, err)
 
-	os.WriteFile(sourcesYaml, []byte(`
+	require.NoError(t, os.WriteFile(sourcesYaml, []byte(`
 - name: test1
   conn_str: `+connStr+`
   kind: postgres
   is_enabled: true
   custom_metrics:
     test_metric: 60
-`), 0644)
+`), 0644))
 
 	// Mock Exit to capture exit code
 	var gotExit int32
