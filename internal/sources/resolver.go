@@ -164,6 +164,7 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 
 	ctx, cancel := context.WithTimeoutCause(context.Background(), 5*time.Second, errors.New("etcd client timeout"))
 	defer cancel()
+
 	kapi := c.KV
 
 	if s.Kind == SourcePatroniNamespace { // all scopes, all DBs (regex filtering applies if defined)
@@ -244,7 +245,7 @@ const (
 	dcsTypeConsul    = "consul"
 )
 
-func ResolveDatabasesFromPatroni(ce Source) ([]*SourceConn, error) {
+func ResolveDatabasesFromPatroni(ce Source) (SourceConns, error) {
 	var mds []*SourceConn
 	var clusterMembers []PatroniClusterMember
 	var err error
