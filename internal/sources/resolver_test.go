@@ -2,6 +2,7 @@ package sources_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -37,7 +38,7 @@ func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Call the ResolveDatabasesFromPostgres method
-	dbs, err := sources.ResolveDatabasesFromPostgres(md)
+	dbs, err := md.ResolveDatabases()
 	assert.NoError(t, err)
 	assert.True(t, len(dbs) == 2) //postgres and mydatabase
 
@@ -101,19 +102,52 @@ func TestMonitoredDatabase_ResolveDatabasesFromPatroni(t *testing.T) {
 	cancel()
 	require.NoError(t, err)
 
-	// Set up Source to use embedded etcd
 	md := sources.Source{}
 	md.Name = "continuous"
-	md.Kind = sources.SourcePatroni
 	md.OnlyIfMaster = true
 	md.HostConfig.DcsType = "etcd"
 	md.HostConfig.DcsEndpoints = []string{"http://" + endpoint}
-	md.HostConfig.Scope = "/batman/"
-	md.HostConfig.Namespace = "/service"
 
-	// Run ResolveDatabasesFromPatroni
-	dbs, err := sources.ResolveDatabasesFromPatroni(md)
-	assert.NoError(t, err)
-	assert.NotNil(t, dbs)
-	assert.Len(t, dbs, 4) // postgres, mydatrabase, pgwatch, pgwatch_metrics
+	t.Run("simple patroni discovery", func(t *testing.T) {
+		md.Kind = sources.SourcePatroni
+		md.HostConfig.Scope = "/batman/"
+		md.HostConfig.Namespace = "/service"
+
+		// Run ResolveDatabasesFromPatroni
+		dbs, err := md.ResolveDatabases()
+		assert.NoError(t, err)
+		assert.NotNil(t, dbs)
+		assert.Len(t, dbs, 4) // postgres, mydatrabase, pgwatch, pgwatch_metrics}
+	})
+
+	t.Run("namespace patroni discovery", func(t *testing.T) {
+		md.Kind = sources.SourcePatroniNamespace
+		md.HostConfig.Scope = ""
+		md.HostConfig.Namespace = ""
+
+		// Run ResolveDatabasesFromPatroni
+		dbs, err := md.ResolveDatabases()
+		assert.NoError(t, err)
+		assert.NotNil(t, dbs)
+		assert.Len(t, dbs, 4) // postgres, mydatrabase, pgwatch, pgwatch_metrics}
+	})
+}
+
+func TestMonitoredDatabase_UnsupportedDCS(t *testing.T) {
+	md := sources.Source{}
+	md.Name = "continuous"
+	md.Kind = sources.SourcePatroni
+
+	md.HostConfig.DcsType = "consul"
+	_, err := md.ResolveDatabases()
+	assert.ErrorIs(t, err, errors.ErrUnsupported)
+
+	md.HostConfig.DcsType = "zookeeper"
+	_, err = md.ResolveDatabases()
+	assert.ErrorIs(t, err, errors.ErrUnsupported)
+
+	md.HostConfig.DcsType = "unknown"
+	_, err = md.ResolveDatabases()
+	assert.EqualError(t, err, "unknown DCS")
+
 }

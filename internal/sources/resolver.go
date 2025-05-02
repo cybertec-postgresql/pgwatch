@@ -153,53 +153,14 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 	ctx, cancel := context.WithTimeoutCause(context.Background(), 5*time.Second, errors.New("etcd client timeout"))
 	defer cancel()
 
-	kapi := c.KV
+	// etcd3 does not have a dir node.
+	// Key="/namespace/scope/leader", e.g. "/service/batman/leader"
+	// Key="/namespace/scope/members/node", e.g. "/service/batman/members/pg1"
 
-	if s.Kind == SourcePatroniNamespace { // all scopes, all DBs (regex filtering applies if defined)
-		namespace := cmp.Or(s.HostConfig.Namespace, "/service")
-		resp, err := kapi.Get(ctx, namespace, client.WithPrefix(), client.WithKeysOnly())
-		if err != nil {
-			return ret, cmp.Or(context.Cause(ctx), err)
-		}
-
-		// etcd3 does not have a dir node.
-		// Key="/namespace/scope/leader", e.g. "/service/batman/leader"
-		// Key="/namespace/scope/members/node", e.g. "/service/batman/members/pg1"
-		//
-		// create unique map of first level items without Namespace
-		scopes := make(map[string]bool, len(resp.Kvs))
-		for _, node := range resp.Kvs {
-			pathSuffix := strings.TrimPrefix(string(node.Key), namespace)
-			scope := strings.SplitN(pathSuffix, "/", 2)[0]
-			scopes[scope] = true
-		}
-
-		for scope := range scopes {
-			scopeMembers, err := extractEtcdScopeMembers(ctx, s, scope, kapi, true)
-			if err != nil {
-				continue
-			}
-			ret = append(ret, scopeMembers...)
-		}
-	} else {
-		ret, err = extractEtcdScopeMembers(ctx, s, s.HostConfig.Scope, kapi, false)
-		if err != nil {
-			return ret, cmp.Or(context.Cause(ctx), err)
-		}
-	}
-	lastFoundClusterMembers[s.Name] = ret
-	return ret, nil
-}
-
-func extractEtcdScopeMembers(ctx context.Context, s Source, scope string, kapi client.KV, addScopeToName bool) ([]PatroniClusterMember, error) {
-	var ret = make([]PatroniClusterMember, 0)
-	var name string
-	namespace := cmp.Or(s.HostConfig.Namespace, "/service")
-	membersPath := path.Join(namespace, scope, "members")
-
-	resp, err := kapi.Get(ctx, membersPath, client.WithPrefix())
+	p := path.Join(cmp.Or(s.HostConfig.Namespace, "/service"), s.HostConfig.Scope)
+	resp, err := c.Get(ctx, p, client.WithPrefix())
 	if err != nil {
-		return nil, err
+		return ret, cmp.Or(context.Cause(ctx), err)
 	}
 
 	for _, node := range resp.Kvs {
@@ -208,16 +169,22 @@ func extractEtcdScopeMembers(ctx context.Context, s Source, scope string, kapi c
 			logger.Errorf("Could not parse ETCD node data for node \"%s\": %s", node, err)
 			continue
 		}
+		// remove leading slash and split by "/"
+		parts := strings.Split(strings.TrimPrefix(string(node.Key), "/"), "/")
+		if len(parts) < 3 {
+			return nil, errors.New("invalid ETCD key format")
+		}
 		role := nodeData["role"]
 		connURL := nodeData["conn_url"]
-		if addScopeToName {
-			name = scope + "_" + path.Base(string(node.Key))
-		} else {
-			name = path.Base(string(node.Key))
+		scope := parts[1]
+		name := parts[3]
+		if s.Kind == SourcePatroniNamespace {
+			name = parts[1] + "_" + name
 		}
-
 		ret = append(ret, PatroniClusterMember{Scope: scope, ConnURL: connURL, Role: role, Name: name})
 	}
+
+	lastFoundClusterMembers[s.Name] = ret
 	return ret, nil
 }
 
@@ -245,6 +212,9 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 	}
 	logger := logger.WithField("sorce", source.Name)
 	if err != nil {
+		if errors.Is(err, errors.ErrUnsupported) {
+			return nil, err
+		}
 		logger.Debug("Failed to get info from DCS, using previous member info if any")
 		if clusterMembers, ok = lastFoundClusterMembers[source.Name]; ok { // mask error from main loop not to remove monitored DBs due to "jitter"
 			err = nil
