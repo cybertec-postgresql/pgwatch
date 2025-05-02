@@ -274,228 +274,236 @@
 <span id="L217" class="ln">   217  </span>
 <span id="L218" class="ln">   218  </span>func TestMonitoredDatabases_SyncFromReader(t *testing.T) {
 <span id="L219" class="ln">   219  </span>	db, _ := pgxmock.NewPool()
-<span id="L220" class="ln">   220  </span>	src := sources.Source{
-<span id="L221" class="ln">   221  </span>		Name:      &#34;test&#34;,
-<span id="L222" class="ln">   222  </span>		Kind:      sources.SourcePostgres,
-<span id="L223" class="ln">   223  </span>		IsEnabled: true,
-<span id="L224" class="ln">   224  </span>		ConnStr:   &#34;postgres://user:password@localhost:5432/mydatabase&#34;,
-<span id="L225" class="ln">   225  </span>	}
-<span id="L226" class="ln">   226  </span>	reader := testSourceReader{Sources: sources.Sources{src}}
-<span id="L227" class="ln">   227  </span>	<span class="comment">// first read the sources</span>
-<span id="L228" class="ln">   228  </span>	mds, _ := reader.GetSources()
-<span id="L229" class="ln">   229  </span>	assert.NotNil(t, mds, &#34;GetSources() = nil, want not nil&#34;)
-<span id="L230" class="ln">   230  </span>	<span class="comment">// then resolve the databases</span>
-<span id="L231" class="ln">   231  </span>	mdbs, _ := mds.ResolveDatabases()
-<span id="L232" class="ln">   232  </span>	assert.NotNil(t, mdbs, &#34;ResolveDatabases() = nil, want not nil&#34;)
-<span id="L233" class="ln">   233  </span>	<span class="comment">// pretend that we have a connection</span>
-<span id="L234" class="ln">   234  </span>	mdbs[0].Conn = db
-<span id="L235" class="ln">   235  </span>	db.ExpectClose()
-<span id="L236" class="ln">   236  </span>	<span class="comment">// sync the databases and make sure they are the same</span>
-<span id="L237" class="ln">   237  </span>	newmdbs, _ := mdbs.SyncFromReader(reader)
-<span id="L238" class="ln">   238  </span>	assert.NotNil(t, newmdbs)
-<span id="L239" class="ln">   239  </span>	assert.Equal(t, mdbs[0].ConnStr, newmdbs[0].ConnStr)
-<span id="L240" class="ln">   240  </span>	assert.Equal(t, db, newmdbs[0].Conn)
-<span id="L241" class="ln">   241  </span>	<span class="comment">// change the connection string and check if databases are updated</span>
-<span id="L242" class="ln">   242  </span>	reader.Sources[0].ConnStr = &#34;postgres://user:password@localhost:5432/anotherdatabase&#34;
-<span id="L243" class="ln">   243  </span>	newmdbs, _ = mdbs.SyncFromReader(reader)
-<span id="L244" class="ln">   244  </span>	assert.NotNil(t, newmdbs)
-<span id="L245" class="ln">   245  </span>	assert.NotEqual(t, mdbs[0].ConnStr, newmdbs[0].ConnStr)
-<span id="L246" class="ln">   246  </span>	assert.Nil(t, newmdbs[0].Conn)
-<span id="L247" class="ln">   247  </span>	assert.NoError(t, db.ExpectationsWereMet())
-<span id="L248" class="ln">   248  </span>	<span class="comment">// change the unique name of the source and check if it&#39;s updated</span>
-<span id="L249" class="ln">   249  </span>	reader.Sources[0].Name = &#34;another&#34;
-<span id="L250" class="ln">   250  </span>	newmdbs, _ = mdbs.SyncFromReader(reader)
-<span id="L251" class="ln">   251  </span>	assert.NotNil(t, newmdbs)
-<span id="L252" class="ln">   252  </span>	assert.NotEqual(t, mdbs[0].Name, newmdbs[0].Name)
-<span id="L253" class="ln">   253  </span>	assert.Nil(t, newmdbs[0].Conn)
-<span id="L254" class="ln">   254  </span>}
-<span id="L255" class="ln">   255  </span>
-<span id="L256" class="ln">   256  </span>func TestVersionToInt(t *testing.T) {
-<span id="L257" class="ln">   257  </span>	tests := []struct {
-<span id="L258" class="ln">   258  </span>		arg  string
-<span id="L259" class="ln">   259  </span>		want int
-<span id="L260" class="ln">   260  </span>	}{
-<span id="L261" class="ln">   261  </span>		{&#34;&#34;, 0},
-<span id="L262" class="ln">   262  </span>		{&#34;foo&#34;, 0},
-<span id="L263" class="ln">   263  </span>		{&#34;13&#34;, 13_00_00},
-<span id="L264" class="ln">   264  </span>		{&#34;3.0&#34;, 3_00_00},
-<span id="L265" class="ln">   265  </span>		{&#34;9.6.3&#34;, 9_06_03},
-<span id="L266" class="ln">   266  </span>		{&#34;v9.6-beta2&#34;, 9_06_00},
-<span id="L267" class="ln">   267  </span>	}
-<span id="L268" class="ln">   268  </span>	for _, tt := range tests {
-<span id="L269" class="ln">   269  </span>		if got := sources.VersionToInt(tt.arg); got != tt.want {
-<span id="L270" class="ln">   270  </span>			t.Errorf(&#34;VersionToInt() = %v, want %v&#34;, got, tt.want)
-<span id="L271" class="ln">   271  </span>		}
-<span id="L272" class="ln">   272  </span>	}
-<span id="L273" class="ln">   273  </span>}
-<span id="L274" class="ln">   274  </span>
-<span id="L275" class="ln">   275  </span>func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
-<span id="L276" class="ln">   276  </span>	ctx := context.Background()
-<span id="L277" class="ln">   277  </span>
-<span id="L278" class="ln">   278  </span>	t.Run(&#34;cancelled context&#34;, func(t *testing.T) {
-<span id="L279" class="ln">   279  </span>		ctxNew, cancel := context.WithCancel(ctx)
-<span id="L280" class="ln">   280  </span>		cancel()
-<span id="L281" class="ln">   281  </span>		err := (&amp;sources.SourceConn{}).FetchRuntimeInfo(ctxNew, true)
-<span id="L282" class="ln">   282  </span>		assert.Error(t, err)
-<span id="L283" class="ln">   283  </span>	})
-<span id="L284" class="ln">   284  </span>
-<span id="L285" class="ln">   285  </span>	t.Run(&#34;cached version&#34;, func(t *testing.T) {
-<span id="L286" class="ln">   286  </span>		md := &amp;sources.SourceConn{
-<span id="L287" class="ln">   287  </span>			RuntimeInfo: sources.RuntimeInfo{
-<span id="L288" class="ln">   288  </span>				LastCheckedOn: time.Now().Add(-time.Minute),
-<span id="L289" class="ln">   289  </span>				Version:       42,
-<span id="L290" class="ln">   290  </span>			},
-<span id="L291" class="ln">   291  </span>		}
-<span id="L292" class="ln">   292  </span>		err := md.FetchRuntimeInfo(ctx, false)
-<span id="L293" class="ln">   293  </span>		assert.NoError(t, err)
-<span id="L294" class="ln">   294  </span>		assert.Equal(t, 42, md.Version)
-<span id="L295" class="ln">   295  </span>	})
-<span id="L296" class="ln">   296  </span>
-<span id="L297" class="ln">   297  </span>	t.Run(&#34;pgbouncer version fetch&#34;, func(t *testing.T) {
-<span id="L298" class="ln">   298  </span>		mock, err := pgxmock.NewPool()
-<span id="L299" class="ln">   299  </span>		require.NoError(t, err)
-<span id="L300" class="ln">   300  </span>		md := &amp;sources.SourceConn{
-<span id="L301" class="ln">   301  </span>			Conn:   mock,
-<span id="L302" class="ln">   302  </span>			Source: sources.Source{Kind: sources.SourcePgBouncer},
-<span id="L303" class="ln">   303  </span>		}
-<span id="L304" class="ln">   304  </span>		mock.ExpectQuery(&#34;SHOW VERSION&#34;).
-<span id="L305" class="ln">   305  </span>			WithArgs(pgx.QueryExecModeSimpleProtocol).
-<span id="L306" class="ln">   306  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;version&#34;}).AddRow(&#34;PgBouncer 1.12.0&#34;))
-<span id="L307" class="ln">   307  </span>		err = md.FetchRuntimeInfo(ctx, true)
-<span id="L308" class="ln">   308  </span>		assert.NoError(t, err)
-<span id="L309" class="ln">   309  </span>		assert.Contains(t, md.VersionStr, &#34;PgBouncer&#34;)
-<span id="L310" class="ln">   310  </span>		assert.True(t, md.Version &gt; 0)
-<span id="L311" class="ln">   311  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L312" class="ln">   312  </span>	})
-<span id="L313" class="ln">   313  </span>
-<span id="L314" class="ln">   314  </span>	t.Run(&#34;pgpool version fetch&#34;, func(t *testing.T) {
-<span id="L315" class="ln">   315  </span>		mock, err := pgxmock.NewPool()
-<span id="L316" class="ln">   316  </span>		require.NoError(t, err)
-<span id="L317" class="ln">   317  </span>		md := &amp;sources.SourceConn{
-<span id="L318" class="ln">   318  </span>			Conn:   mock,
-<span id="L319" class="ln">   319  </span>			Source: sources.Source{Kind: sources.SourcePgPool},
-<span id="L320" class="ln">   320  </span>		}
-<span id="L321" class="ln">   321  </span>		mock.ExpectQuery(&#34;SHOW POOL_VERSION&#34;).
-<span id="L322" class="ln">   322  </span>			WithArgs(pgx.QueryExecModeSimpleProtocol).
-<span id="L323" class="ln">   323  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;version&#34;}).AddRow(&#34;4.1.2&#34;))
-<span id="L324" class="ln">   324  </span>		err = md.FetchRuntimeInfo(ctx, true)
-<span id="L325" class="ln">   325  </span>		assert.NoError(t, err)
-<span id="L326" class="ln">   326  </span>		assert.Contains(t, md.VersionStr, &#34;4.1.2&#34;)
-<span id="L327" class="ln">   327  </span>		assert.True(t, md.Version &gt; 0)
-<span id="L328" class="ln">   328  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L329" class="ln">   329  </span>	})
-<span id="L330" class="ln">   330  </span>
-<span id="L331" class="ln">   331  </span>	t.Run(&#34;postgres version and extensions&#34;, func(t *testing.T) {
-<span id="L332" class="ln">   332  </span>		mock, err := pgxmock.NewPool()
-<span id="L333" class="ln">   333  </span>		require.NoError(t, err)
-<span id="L334" class="ln">   334  </span>		md := &amp;sources.SourceConn{
-<span id="L335" class="ln">   335  </span>			Conn:   mock,
-<span id="L336" class="ln">   336  </span>			Source: sources.Source{Kind: sources.SourcePostgres},
-<span id="L337" class="ln">   337  </span>		}
-<span id="L338" class="ln">   338  </span>		mock.ExpectQuery(&#34;select&#34;).WillReturnRows(
-<span id="L339" class="ln">   339  </span>			pgxmock.NewRows([]string{&#34;ver&#34;, &#34;version&#34;, &#34;pg_is_in_recovery&#34;, &#34;current_database&#34;, &#34;system_identifier&#34;, &#34;is_superuser&#34;}).
-<span id="L340" class="ln">   340  </span>				AddRow(13, &#34;PostgreSQL 13.3&#34;, false, &#34;testdb&#34;, &#34;42424242&#34;, true),
-<span id="L341" class="ln">   341  </span>		)
-<span id="L342" class="ln">   342  </span>		mock.ExpectQuery(&#34;select&#34;).WillReturnRows(
-<span id="L343" class="ln">   343  </span>			pgxmock.NewRows([]string{&#34;exec_env&#34;}).AddRow(&#34;UNKNOWN&#34;),
-<span id="L344" class="ln">   344  </span>		)
-<span id="L345" class="ln">   345  </span>		mock.ExpectQuery(&#34;select&#34;).WillReturnRows(
-<span id="L346" class="ln">   346  </span>			pgxmock.NewRows([]string{&#34;approx_size&#34;}).AddRow(42),
-<span id="L347" class="ln">   347  </span>		)
-<span id="L348" class="ln">   348  </span>
-<span id="L349" class="ln">   349  </span>		mock.ExpectQuery(&#34;select&#34;).WillReturnRows(
-<span id="L350" class="ln">   350  </span>			pgxmock.NewRows([]string{&#34;extname&#34;, &#34;extversion&#34;}).AddRow(&#34;pg_stat_statements&#34;, &#34;1.8&#34;),
-<span id="L351" class="ln">   351  </span>		)
-<span id="L352" class="ln">   352  </span>		err = md.FetchRuntimeInfo(ctx, true)
-<span id="L353" class="ln">   353  </span>		assert.NoError(t, err)
-<span id="L354" class="ln">   354  </span>		assert.Equal(t, 13, md.Version)
-<span id="L355" class="ln">   355  </span>		assert.Equal(t, &#34;testdb&#34;, md.RealDbname)
-<span id="L356" class="ln">   356  </span>		assert.Contains(t, md.Extensions, &#34;pg_stat_statements&#34;)
-<span id="L357" class="ln">   357  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L358" class="ln">   358  </span>	})
-<span id="L359" class="ln">   359  </span>
-<span id="L360" class="ln">   360  </span>	t.Run(&#34;query error&#34;, func(t *testing.T) {
-<span id="L361" class="ln">   361  </span>		mock, err := pgxmock.NewPool()
-<span id="L362" class="ln">   362  </span>		require.NoError(t, err)
-<span id="L363" class="ln">   363  </span>		md := &amp;sources.SourceConn{
-<span id="L364" class="ln">   364  </span>			Conn:   mock,
-<span id="L365" class="ln">   365  </span>			Source: sources.Source{Kind: sources.SourcePgBouncer},
-<span id="L366" class="ln">   366  </span>		}
-<span id="L367" class="ln">   367  </span>		mock.ExpectQuery(&#34;SHOW VERSION&#34;).
-<span id="L368" class="ln">   368  </span>			WithArgs(pgx.QueryExecModeSimpleProtocol).
-<span id="L369" class="ln">   369  </span>			WillReturnError(fmt.Errorf(&#34;db error&#34;))
-<span id="L370" class="ln">   370  </span>		err = md.FetchRuntimeInfo(ctx, true)
-<span id="L371" class="ln">   371  </span>		assert.Error(t, err)
-<span id="L372" class="ln">   372  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L373" class="ln">   373  </span>	})
-<span id="L374" class="ln">   374  </span>}
-<span id="L375" class="ln">   375  </span>
-<span id="L376" class="ln">   376  </span>func TestSourceConn_FetchVersion(t *testing.T) {
-<span id="L377" class="ln">   377  </span>	ctx := context.Background()
-<span id="L378" class="ln">   378  </span>
-<span id="L379" class="ln">   379  </span>	t.Run(&#34;valid version string&#34;, func(t *testing.T) {
-<span id="L380" class="ln">   380  </span>		mock, err := pgxmock.NewPool()
-<span id="L381" class="ln">   381  </span>		require.NoError(t, err)
-<span id="L382" class="ln">   382  </span>		md := &amp;sources.SourceConn{Conn: mock}
-<span id="L383" class="ln">   383  </span>		mock.ExpectQuery(&#34;SHOW VERSION&#34;).
-<span id="L384" class="ln">   384  </span>			WithArgs(pgx.QueryExecModeSimpleProtocol).
-<span id="L385" class="ln">   385  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;version&#34;}).AddRow(&#34;FooBar 1.12.0&#34;))
-<span id="L386" class="ln">   386  </span>		verStr, verInt, err := md.FetchVersion(ctx, &#34;SHOW VERSION&#34;)
-<span id="L387" class="ln">   387  </span>		assert.NoError(t, err)
-<span id="L388" class="ln">   388  </span>		assert.Equal(t, &#34;FooBar 1.12.0&#34;, verStr)
-<span id="L389" class="ln">   389  </span>		assert.Equal(t, 1_12_00, verInt)
-<span id="L390" class="ln">   390  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L391" class="ln">   391  </span>	})
-<span id="L392" class="ln">   392  </span>
-<span id="L393" class="ln">   393  </span>	t.Run(&#34;invalid version string&#34;, func(t *testing.T) {
-<span id="L394" class="ln">   394  </span>		mock, err := pgxmock.NewPool()
-<span id="L395" class="ln">   395  </span>		require.NoError(t, err)
-<span id="L396" class="ln">   396  </span>		md := &amp;sources.SourceConn{Conn: mock}
-<span id="L397" class="ln">   397  </span>		mock.ExpectQuery(&#34;SHOW VERSION&#34;).
-<span id="L398" class="ln">   398  </span>			WithArgs(pgx.QueryExecModeSimpleProtocol).
-<span id="L399" class="ln">   399  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;version&#34;}).AddRow(&#34;invalid version&#34;))
-<span id="L400" class="ln">   400  </span>		_, verInt, err := md.FetchVersion(ctx, &#34;SHOW VERSION&#34;)
-<span id="L401" class="ln">   401  </span>		assert.Equal(t, 0, verInt)
-<span id="L402" class="ln">   402  </span>		assert.NoError(t, err)
-<span id="L403" class="ln">   403  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L404" class="ln">   404  </span>	})
-<span id="L405" class="ln">   405  </span>
-<span id="L406" class="ln">   406  </span>	t.Run(&#34;query error&#34;, func(t *testing.T) {
-<span id="L407" class="ln">   407  </span>		mock, err := pgxmock.NewPool()
-<span id="L408" class="ln">   408  </span>		require.NoError(t, err)
-<span id="L409" class="ln">   409  </span>		md := &amp;sources.SourceConn{Conn: mock}
-<span id="L410" class="ln">   410  </span>		mock.ExpectQuery(&#34;SHOW VERSION&#34;).
-<span id="L411" class="ln">   411  </span>			WithArgs(pgx.QueryExecModeSimpleProtocol).
-<span id="L412" class="ln">   412  </span>			WillReturnError(assert.AnError)
-<span id="L413" class="ln">   413  </span>		_, _, err = md.FetchVersion(ctx, &#34;SHOW VERSION&#34;)
-<span id="L414" class="ln">   414  </span>		assert.Error(t, err)
-<span id="L415" class="ln">   415  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L416" class="ln">   416  </span>	})
-<span id="L417" class="ln">   417  </span>}
-<span id="L418" class="ln">   418  </span>
-<span id="L419" class="ln">   419  </span>func TestSourceConn_GetClusterIdentifier(t *testing.T) {
-<span id="L420" class="ln">   420  </span>	md := &amp;sources.SourceConn{
-<span id="L421" class="ln">   421  </span>		Source: sources.Source{
-<span id="L422" class="ln">   422  </span>			Name:    &#34;test&#34;,
-<span id="L423" class="ln">   423  </span>			Kind:    sources.SourcePostgres,
-<span id="L424" class="ln">   424  </span>			ConnStr: &#34;postgres://user:password@localhost:5432/mydatabase&#34;,
-<span id="L425" class="ln">   425  </span>		},
-<span id="L426" class="ln">   426  </span>		RuntimeInfo: sources.RuntimeInfo{
-<span id="L427" class="ln">   427  </span>			SystemIdentifier: &#34;42424242&#34;,
-<span id="L428" class="ln">   428  </span>		},
-<span id="L429" class="ln">   429  </span>	}
-<span id="L430" class="ln">   430  </span>	assert.Equal(t, &#34;42424242:localhost:5432&#34;, md.GetClusterIdentifier())
-<span id="L431" class="ln">   431  </span>
-<span id="L432" class="ln">   432  </span>	md = &amp;sources.SourceConn{
-<span id="L433" class="ln">   433  </span>		Source: sources.Source{
-<span id="L434" class="ln">   434  </span>			Name:    &#34;test&#34;,
-<span id="L435" class="ln">   435  </span>			Kind:    sources.SourcePostgres,
-<span id="L436" class="ln">   436  </span>			ConnStr: &#34;foo boo&#34;,
-<span id="L437" class="ln">   437  </span>		},
-<span id="L438" class="ln">   438  </span>	}
-<span id="L439" class="ln">   439  </span>	assert.Equal(t, &#34;&#34;, md.GetClusterIdentifier())
-<span id="L440" class="ln">   440  </span>}
-<span id="L441" class="ln">   441  </span>
+<span id="L220" class="ln">   220  </span>
+<span id="L221" class="ln">   221  </span>	reader := testSourceReader{Sources: sources.Sources{
+<span id="L222" class="ln">   222  </span>		sources.Source{
+<span id="L223" class="ln">   223  </span>			Name:      &#34;test&#34;,
+<span id="L224" class="ln">   224  </span>			Kind:      sources.SourcePostgres,
+<span id="L225" class="ln">   225  </span>			IsEnabled: true,
+<span id="L226" class="ln">   226  </span>			ConnStr:   &#34;postgres://user:password@localhost:5432/mydatabase&#34;,
+<span id="L227" class="ln">   227  </span>		},
+<span id="L228" class="ln">   228  </span>		sources.Source{
+<span id="L229" class="ln">   229  </span>			Name:      &#34;test2&#34;,
+<span id="L230" class="ln">   230  </span>			Kind:      sources.SourcePostgres,
+<span id="L231" class="ln">   231  </span>			IsEnabled: false,
+<span id="L232" class="ln">   232  </span>		},
+<span id="L233" class="ln">   233  </span>	},
+<span id="L234" class="ln">   234  </span>	}
+<span id="L235" class="ln">   235  </span>	<span class="comment">// first read the sources</span>
+<span id="L236" class="ln">   236  </span>	mds, _ := reader.GetSources()
+<span id="L237" class="ln">   237  </span>	assert.NotNil(t, mds, &#34;GetSources() = nil, want not nil&#34;)
+<span id="L238" class="ln">   238  </span>	<span class="comment">// then resolve the databases</span>
+<span id="L239" class="ln">   239  </span>	mdbs, _ := mds.ResolveDatabases()
+<span id="L240" class="ln">   240  </span>	assert.NotNil(t, mdbs, &#34;ResolveDatabases() = nil, want not nil&#34;)
+<span id="L241" class="ln">   241  </span>	<span class="comment">// pretend that we have a connection</span>
+<span id="L242" class="ln">   242  </span>	mdbs[0].Conn = db
+<span id="L243" class="ln">   243  </span>	db.ExpectClose()
+<span id="L244" class="ln">   244  </span>	<span class="comment">// sync the databases and make sure they are the same</span>
+<span id="L245" class="ln">   245  </span>	newmdbs, _ := mdbs.SyncFromReader(reader)
+<span id="L246" class="ln">   246  </span>	assert.NotNil(t, newmdbs)
+<span id="L247" class="ln">   247  </span>	assert.Equal(t, mdbs[0].ConnStr, newmdbs[0].ConnStr)
+<span id="L248" class="ln">   248  </span>	assert.Equal(t, db, newmdbs[0].Conn)
+<span id="L249" class="ln">   249  </span>	<span class="comment">// change the connection string and check if databases are updated</span>
+<span id="L250" class="ln">   250  </span>	reader.Sources[0].ConnStr = &#34;postgres://user:password@localhost:5432/anotherdatabase&#34;
+<span id="L251" class="ln">   251  </span>	newmdbs, _ = mdbs.SyncFromReader(reader)
+<span id="L252" class="ln">   252  </span>	assert.NotNil(t, newmdbs)
+<span id="L253" class="ln">   253  </span>	assert.NotEqual(t, mdbs[0].ConnStr, newmdbs[0].ConnStr)
+<span id="L254" class="ln">   254  </span>	assert.Nil(t, newmdbs[0].Conn)
+<span id="L255" class="ln">   255  </span>	assert.NoError(t, db.ExpectationsWereMet())
+<span id="L256" class="ln">   256  </span>	<span class="comment">// change the unique name of the source and check if it&#39;s updated</span>
+<span id="L257" class="ln">   257  </span>	reader.Sources[0].Name = &#34;another&#34;
+<span id="L258" class="ln">   258  </span>	newmdbs, _ = mdbs.SyncFromReader(reader)
+<span id="L259" class="ln">   259  </span>	assert.NotNil(t, newmdbs)
+<span id="L260" class="ln">   260  </span>	assert.NotEqual(t, mdbs[0].Name, newmdbs[0].Name)
+<span id="L261" class="ln">   261  </span>	assert.Nil(t, newmdbs[0].Conn)
+<span id="L262" class="ln">   262  </span>}
+<span id="L263" class="ln">   263  </span>
+<span id="L264" class="ln">   264  </span>func TestVersionToInt(t *testing.T) {
+<span id="L265" class="ln">   265  </span>	tests := []struct {
+<span id="L266" class="ln">   266  </span>		arg  string
+<span id="L267" class="ln">   267  </span>		want int
+<span id="L268" class="ln">   268  </span>	}{
+<span id="L269" class="ln">   269  </span>		{&#34;&#34;, 0},
+<span id="L270" class="ln">   270  </span>		{&#34;foo&#34;, 0},
+<span id="L271" class="ln">   271  </span>		{&#34;13&#34;, 13_00_00},
+<span id="L272" class="ln">   272  </span>		{&#34;3.0&#34;, 3_00_00},
+<span id="L273" class="ln">   273  </span>		{&#34;9.6.3&#34;, 9_06_03},
+<span id="L274" class="ln">   274  </span>		{&#34;v9.6-beta2&#34;, 9_06_00},
+<span id="L275" class="ln">   275  </span>	}
+<span id="L276" class="ln">   276  </span>	for _, tt := range tests {
+<span id="L277" class="ln">   277  </span>		if got := sources.VersionToInt(tt.arg); got != tt.want {
+<span id="L278" class="ln">   278  </span>			t.Errorf(&#34;VersionToInt() = %v, want %v&#34;, got, tt.want)
+<span id="L279" class="ln">   279  </span>		}
+<span id="L280" class="ln">   280  </span>	}
+<span id="L281" class="ln">   281  </span>}
+<span id="L282" class="ln">   282  </span>
+<span id="L283" class="ln">   283  </span>func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
+<span id="L284" class="ln">   284  </span>	ctx := context.Background()
+<span id="L285" class="ln">   285  </span>
+<span id="L286" class="ln">   286  </span>	t.Run(&#34;cancelled context&#34;, func(t *testing.T) {
+<span id="L287" class="ln">   287  </span>		ctxNew, cancel := context.WithCancel(ctx)
+<span id="L288" class="ln">   288  </span>		cancel()
+<span id="L289" class="ln">   289  </span>		err := (&amp;sources.SourceConn{}).FetchRuntimeInfo(ctxNew, true)
+<span id="L290" class="ln">   290  </span>		assert.Error(t, err)
+<span id="L291" class="ln">   291  </span>	})
+<span id="L292" class="ln">   292  </span>
+<span id="L293" class="ln">   293  </span>	t.Run(&#34;cached version&#34;, func(t *testing.T) {
+<span id="L294" class="ln">   294  </span>		md := &amp;sources.SourceConn{
+<span id="L295" class="ln">   295  </span>			RuntimeInfo: sources.RuntimeInfo{
+<span id="L296" class="ln">   296  </span>				LastCheckedOn: time.Now().Add(-time.Minute),
+<span id="L297" class="ln">   297  </span>				Version:       42,
+<span id="L298" class="ln">   298  </span>			},
+<span id="L299" class="ln">   299  </span>		}
+<span id="L300" class="ln">   300  </span>		err := md.FetchRuntimeInfo(ctx, false)
+<span id="L301" class="ln">   301  </span>		assert.NoError(t, err)
+<span id="L302" class="ln">   302  </span>		assert.Equal(t, 42, md.Version)
+<span id="L303" class="ln">   303  </span>	})
+<span id="L304" class="ln">   304  </span>
+<span id="L305" class="ln">   305  </span>	t.Run(&#34;pgbouncer version fetch&#34;, func(t *testing.T) {
+<span id="L306" class="ln">   306  </span>		mock, err := pgxmock.NewPool()
+<span id="L307" class="ln">   307  </span>		require.NoError(t, err)
+<span id="L308" class="ln">   308  </span>		md := &amp;sources.SourceConn{
+<span id="L309" class="ln">   309  </span>			Conn:   mock,
+<span id="L310" class="ln">   310  </span>			Source: sources.Source{Kind: sources.SourcePgBouncer},
+<span id="L311" class="ln">   311  </span>		}
+<span id="L312" class="ln">   312  </span>		mock.ExpectQuery(&#34;SHOW VERSION&#34;).
+<span id="L313" class="ln">   313  </span>			WithArgs(pgx.QueryExecModeSimpleProtocol).
+<span id="L314" class="ln">   314  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;version&#34;}).AddRow(&#34;PgBouncer 1.12.0&#34;))
+<span id="L315" class="ln">   315  </span>		err = md.FetchRuntimeInfo(ctx, true)
+<span id="L316" class="ln">   316  </span>		assert.NoError(t, err)
+<span id="L317" class="ln">   317  </span>		assert.Contains(t, md.VersionStr, &#34;PgBouncer&#34;)
+<span id="L318" class="ln">   318  </span>		assert.True(t, md.Version &gt; 0)
+<span id="L319" class="ln">   319  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L320" class="ln">   320  </span>	})
+<span id="L321" class="ln">   321  </span>
+<span id="L322" class="ln">   322  </span>	t.Run(&#34;pgpool version fetch&#34;, func(t *testing.T) {
+<span id="L323" class="ln">   323  </span>		mock, err := pgxmock.NewPool()
+<span id="L324" class="ln">   324  </span>		require.NoError(t, err)
+<span id="L325" class="ln">   325  </span>		md := &amp;sources.SourceConn{
+<span id="L326" class="ln">   326  </span>			Conn:   mock,
+<span id="L327" class="ln">   327  </span>			Source: sources.Source{Kind: sources.SourcePgPool},
+<span id="L328" class="ln">   328  </span>		}
+<span id="L329" class="ln">   329  </span>		mock.ExpectQuery(&#34;SHOW POOL_VERSION&#34;).
+<span id="L330" class="ln">   330  </span>			WithArgs(pgx.QueryExecModeSimpleProtocol).
+<span id="L331" class="ln">   331  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;version&#34;}).AddRow(&#34;4.1.2&#34;))
+<span id="L332" class="ln">   332  </span>		err = md.FetchRuntimeInfo(ctx, true)
+<span id="L333" class="ln">   333  </span>		assert.NoError(t, err)
+<span id="L334" class="ln">   334  </span>		assert.Contains(t, md.VersionStr, &#34;4.1.2&#34;)
+<span id="L335" class="ln">   335  </span>		assert.True(t, md.Version &gt; 0)
+<span id="L336" class="ln">   336  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L337" class="ln">   337  </span>	})
+<span id="L338" class="ln">   338  </span>
+<span id="L339" class="ln">   339  </span>	t.Run(&#34;postgres version and extensions&#34;, func(t *testing.T) {
+<span id="L340" class="ln">   340  </span>		mock, err := pgxmock.NewPool()
+<span id="L341" class="ln">   341  </span>		require.NoError(t, err)
+<span id="L342" class="ln">   342  </span>		md := &amp;sources.SourceConn{
+<span id="L343" class="ln">   343  </span>			Conn:   mock,
+<span id="L344" class="ln">   344  </span>			Source: sources.Source{Kind: sources.SourcePostgres},
+<span id="L345" class="ln">   345  </span>		}
+<span id="L346" class="ln">   346  </span>		mock.ExpectQuery(&#34;select&#34;).WillReturnRows(
+<span id="L347" class="ln">   347  </span>			pgxmock.NewRows([]string{&#34;ver&#34;, &#34;version&#34;, &#34;pg_is_in_recovery&#34;, &#34;current_database&#34;, &#34;system_identifier&#34;, &#34;is_superuser&#34;}).
+<span id="L348" class="ln">   348  </span>				AddRow(13, &#34;PostgreSQL 13.3&#34;, false, &#34;testdb&#34;, &#34;42424242&#34;, true),
+<span id="L349" class="ln">   349  </span>		)
+<span id="L350" class="ln">   350  </span>		mock.ExpectQuery(&#34;select&#34;).WillReturnRows(
+<span id="L351" class="ln">   351  </span>			pgxmock.NewRows([]string{&#34;exec_env&#34;}).AddRow(&#34;UNKNOWN&#34;),
+<span id="L352" class="ln">   352  </span>		)
+<span id="L353" class="ln">   353  </span>		mock.ExpectQuery(&#34;select&#34;).WillReturnRows(
+<span id="L354" class="ln">   354  </span>			pgxmock.NewRows([]string{&#34;approx_size&#34;}).AddRow(42),
+<span id="L355" class="ln">   355  </span>		)
+<span id="L356" class="ln">   356  </span>
+<span id="L357" class="ln">   357  </span>		mock.ExpectQuery(&#34;select&#34;).WillReturnRows(
+<span id="L358" class="ln">   358  </span>			pgxmock.NewRows([]string{&#34;extname&#34;, &#34;extversion&#34;}).AddRow(&#34;pg_stat_statements&#34;, &#34;1.8&#34;),
+<span id="L359" class="ln">   359  </span>		)
+<span id="L360" class="ln">   360  </span>		err = md.FetchRuntimeInfo(ctx, true)
+<span id="L361" class="ln">   361  </span>		assert.NoError(t, err)
+<span id="L362" class="ln">   362  </span>		assert.Equal(t, 13, md.Version)
+<span id="L363" class="ln">   363  </span>		assert.Equal(t, &#34;testdb&#34;, md.RealDbname)
+<span id="L364" class="ln">   364  </span>		assert.Contains(t, md.Extensions, &#34;pg_stat_statements&#34;)
+<span id="L365" class="ln">   365  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L366" class="ln">   366  </span>	})
+<span id="L367" class="ln">   367  </span>
+<span id="L368" class="ln">   368  </span>	t.Run(&#34;query error&#34;, func(t *testing.T) {
+<span id="L369" class="ln">   369  </span>		mock, err := pgxmock.NewPool()
+<span id="L370" class="ln">   370  </span>		require.NoError(t, err)
+<span id="L371" class="ln">   371  </span>		md := &amp;sources.SourceConn{
+<span id="L372" class="ln">   372  </span>			Conn:   mock,
+<span id="L373" class="ln">   373  </span>			Source: sources.Source{Kind: sources.SourcePgBouncer},
+<span id="L374" class="ln">   374  </span>		}
+<span id="L375" class="ln">   375  </span>		mock.ExpectQuery(&#34;SHOW VERSION&#34;).
+<span id="L376" class="ln">   376  </span>			WithArgs(pgx.QueryExecModeSimpleProtocol).
+<span id="L377" class="ln">   377  </span>			WillReturnError(fmt.Errorf(&#34;db error&#34;))
+<span id="L378" class="ln">   378  </span>		err = md.FetchRuntimeInfo(ctx, true)
+<span id="L379" class="ln">   379  </span>		assert.Error(t, err)
+<span id="L380" class="ln">   380  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L381" class="ln">   381  </span>	})
+<span id="L382" class="ln">   382  </span>}
+<span id="L383" class="ln">   383  </span>
+<span id="L384" class="ln">   384  </span>func TestSourceConn_FetchVersion(t *testing.T) {
+<span id="L385" class="ln">   385  </span>	ctx := context.Background()
+<span id="L386" class="ln">   386  </span>
+<span id="L387" class="ln">   387  </span>	t.Run(&#34;valid version string&#34;, func(t *testing.T) {
+<span id="L388" class="ln">   388  </span>		mock, err := pgxmock.NewPool()
+<span id="L389" class="ln">   389  </span>		require.NoError(t, err)
+<span id="L390" class="ln">   390  </span>		md := &amp;sources.SourceConn{Conn: mock}
+<span id="L391" class="ln">   391  </span>		mock.ExpectQuery(&#34;SHOW VERSION&#34;).
+<span id="L392" class="ln">   392  </span>			WithArgs(pgx.QueryExecModeSimpleProtocol).
+<span id="L393" class="ln">   393  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;version&#34;}).AddRow(&#34;FooBar 1.12.0&#34;))
+<span id="L394" class="ln">   394  </span>		verStr, verInt, err := md.FetchVersion(ctx, &#34;SHOW VERSION&#34;)
+<span id="L395" class="ln">   395  </span>		assert.NoError(t, err)
+<span id="L396" class="ln">   396  </span>		assert.Equal(t, &#34;FooBar 1.12.0&#34;, verStr)
+<span id="L397" class="ln">   397  </span>		assert.Equal(t, 1_12_00, verInt)
+<span id="L398" class="ln">   398  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L399" class="ln">   399  </span>	})
+<span id="L400" class="ln">   400  </span>
+<span id="L401" class="ln">   401  </span>	t.Run(&#34;invalid version string&#34;, func(t *testing.T) {
+<span id="L402" class="ln">   402  </span>		mock, err := pgxmock.NewPool()
+<span id="L403" class="ln">   403  </span>		require.NoError(t, err)
+<span id="L404" class="ln">   404  </span>		md := &amp;sources.SourceConn{Conn: mock}
+<span id="L405" class="ln">   405  </span>		mock.ExpectQuery(&#34;SHOW VERSION&#34;).
+<span id="L406" class="ln">   406  </span>			WithArgs(pgx.QueryExecModeSimpleProtocol).
+<span id="L407" class="ln">   407  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;version&#34;}).AddRow(&#34;invalid version&#34;))
+<span id="L408" class="ln">   408  </span>		_, verInt, err := md.FetchVersion(ctx, &#34;SHOW VERSION&#34;)
+<span id="L409" class="ln">   409  </span>		assert.Equal(t, 0, verInt)
+<span id="L410" class="ln">   410  </span>		assert.NoError(t, err)
+<span id="L411" class="ln">   411  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L412" class="ln">   412  </span>	})
+<span id="L413" class="ln">   413  </span>
+<span id="L414" class="ln">   414  </span>	t.Run(&#34;query error&#34;, func(t *testing.T) {
+<span id="L415" class="ln">   415  </span>		mock, err := pgxmock.NewPool()
+<span id="L416" class="ln">   416  </span>		require.NoError(t, err)
+<span id="L417" class="ln">   417  </span>		md := &amp;sources.SourceConn{Conn: mock}
+<span id="L418" class="ln">   418  </span>		mock.ExpectQuery(&#34;SHOW VERSION&#34;).
+<span id="L419" class="ln">   419  </span>			WithArgs(pgx.QueryExecModeSimpleProtocol).
+<span id="L420" class="ln">   420  </span>			WillReturnError(assert.AnError)
+<span id="L421" class="ln">   421  </span>		_, _, err = md.FetchVersion(ctx, &#34;SHOW VERSION&#34;)
+<span id="L422" class="ln">   422  </span>		assert.Error(t, err)
+<span id="L423" class="ln">   423  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L424" class="ln">   424  </span>	})
+<span id="L425" class="ln">   425  </span>}
+<span id="L426" class="ln">   426  </span>
+<span id="L427" class="ln">   427  </span>func TestSourceConn_GetClusterIdentifier(t *testing.T) {
+<span id="L428" class="ln">   428  </span>	md := &amp;sources.SourceConn{
+<span id="L429" class="ln">   429  </span>		Source: sources.Source{
+<span id="L430" class="ln">   430  </span>			Name:    &#34;test&#34;,
+<span id="L431" class="ln">   431  </span>			Kind:    sources.SourcePostgres,
+<span id="L432" class="ln">   432  </span>			ConnStr: &#34;postgres://user:password@localhost:5432/mydatabase&#34;,
+<span id="L433" class="ln">   433  </span>		},
+<span id="L434" class="ln">   434  </span>		RuntimeInfo: sources.RuntimeInfo{
+<span id="L435" class="ln">   435  </span>			SystemIdentifier: &#34;42424242&#34;,
+<span id="L436" class="ln">   436  </span>		},
+<span id="L437" class="ln">   437  </span>	}
+<span id="L438" class="ln">   438  </span>	assert.Equal(t, &#34;42424242:localhost:5432&#34;, md.GetClusterIdentifier())
+<span id="L439" class="ln">   439  </span>
+<span id="L440" class="ln">   440  </span>	md = &amp;sources.SourceConn{
+<span id="L441" class="ln">   441  </span>		Source: sources.Source{
+<span id="L442" class="ln">   442  </span>			Name:    &#34;test&#34;,
+<span id="L443" class="ln">   443  </span>			Kind:    sources.SourcePostgres,
+<span id="L444" class="ln">   444  </span>			ConnStr: &#34;foo boo&#34;,
+<span id="L445" class="ln">   445  </span>		},
+<span id="L446" class="ln">   446  </span>	}
+<span id="L447" class="ln">   447  </span>	assert.Equal(t, &#34;&#34;, md.GetClusterIdentifier())
+<span id="L448" class="ln">   448  </span>}
+<span id="L449" class="ln">   449  </span>
 </pre><p></p>
 
 <div id="footer">

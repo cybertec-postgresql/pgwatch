@@ -130,9 +130,6 @@ At the moment, sources definitions support two storages:
 				
 				<dd><a href="#jsonTextToStringMap">func jsonTextToStringMap(jsonText string) (map[string]string, error)</a></dd>
 			
-				
-				<dd><a href="#parseHostAndPortFromJdbcConnStr">func parseHostAndPortFromJdbcConnStr(connStr string) (string, string, error)</a></dd>
-			
 			
 				
 				<dd><a href="#CmdOpts">type CmdOpts</a></dd>
@@ -159,9 +156,6 @@ At the moment, sources definitions support two storages:
 			
 				
 				<dd><a href="#PatroniClusterMember">type PatroniClusterMember</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#extractEtcdScopeMembers">func extractEtcdScopeMembers(ctx context.Context, s Source, scope string, kapi client.KV, addScopeToName bool) ([]PatroniClusterMember, error)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#getConsulClusterMembers">func getConsulClusterMembers(Source) ([]PatroniClusterMember, error)</a></dd>
@@ -215,9 +209,6 @@ At the moment, sources definitions support two storages:
 				
 				<dd><a href="#SourceConn">type SourceConn</a></dd>
 				
-					
-					<dd>&nbsp; &nbsp; <a href="#ResolveDatabasesFromPatroni">func ResolveDatabasesFromPatroni(ce Source) ([]*SourceConn, error)</a></dd>
-				
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#SourceConn.Connect">func (md *SourceConn) Connect(ctx context.Context, opts CmdOpts) (err error)</a></dd>
@@ -261,6 +252,9 @@ At the moment, sources definitions support two storages:
 			
 				
 				<dd><a href="#SourceConns">type SourceConns</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#ResolveDatabasesFromPatroni">func ResolveDatabasesFromPatroni(source Source) (SourceConns, error)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#ResolveDatabasesFromPostgres">func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error)</a></dd>
@@ -436,7 +430,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="getTransport">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L99">getTransport</a>
+			<h2 id="getTransport">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L87">getTransport</a>
 				<a class="permalink" href="#getTransport">&#xb6;</a>
 				
 				
@@ -449,25 +443,12 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="jsonTextToStringMap">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L84">jsonTextToStringMap</a>
+			<h2 id="jsonTextToStringMap">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L72">jsonTextToStringMap</a>
 				<a class="permalink" href="#jsonTextToStringMap">&#xb6;</a>
 				
 				
 			</h2>
 			<pre>func jsonTextToStringMap(jsonText <a href="https://pkg.go.dev/builtin/#string">string</a>) (map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-			
-			
-			
-
-		
-			
-			
-			<h2 id="parseHostAndPortFromJdbcConnStr">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L74">parseHostAndPortFromJdbcConnStr</a>
-				<a class="permalink" href="#parseHostAndPortFromJdbcConnStr">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func parseHostAndPortFromJdbcConnStr(connStr <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			
 			
 			
@@ -616,7 +597,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="PatroniClusterMember">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L54">PatroniClusterMember</a>
+			<h2 id="PatroniClusterMember">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L52">PatroniClusterMember</a>
 				<a class="permalink" href="#PatroniClusterMember">&#xb6;</a>
 				
 				
@@ -640,18 +621,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 
 			
 				
-				<h3 id="extractEtcdScopeMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L210">extractEtcdScopeMembers</a>
-					<a class="permalink" href="#extractEtcdScopeMembers">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func extractEtcdScopeMembers(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, s <a href="#Source">Source</a>, scope <a href="https://pkg.go.dev/builtin/#string">string</a>, kapi <a href="https://pkg.go.dev/go.etcd.io/etcd/client/v3/">client</a>.<a href="https://pkg.go.dev/go.etcd.io/etcd/client/v3/#KV">KV</a>, addScopeToName <a href="https://pkg.go.dev/builtin/#bool">bool</a>) ([]<a href="#PatroniClusterMember">PatroniClusterMember</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				
-				
-				
-			
-				
-				<h3 id="getConsulClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L66">getConsulClusterMembers</a>
+				<h3 id="getConsulClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L64">getConsulClusterMembers</a>
 					<a class="permalink" href="#getConsulClusterMembers">&#xb6;</a>
 					
 					
@@ -662,7 +632,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 				
 			
 				
-				<h3 id="getEtcdClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L137">getEtcdClusterMembers</a>
+				<h3 id="getEtcdClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L125">getEtcdClusterMembers</a>
 					<a class="permalink" href="#getEtcdClusterMembers">&#xb6;</a>
 					
 					
@@ -673,7 +643,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 				
 			
 				
-				<h3 id="getZookeeperClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L70">getZookeeperClusterMembers</a>
+				<h3 id="getZookeeperClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L68">getZookeeperClusterMembers</a>
 					<a class="permalink" href="#getZookeeperClusterMembers">&#xb6;</a>
 					
 					
@@ -869,7 +839,7 @@ those additional metrics, it is ok to specify the connection details as a regula
 				
 			
 				
-				<h3 id="Source.ResolveDatabases">func (Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L44">ResolveDatabases</a>
+				<h3 id="Source.ResolveDatabases">func (Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L42">ResolveDatabases</a>
 					<a class="permalink" href="#Source.ResolveDatabases">&#xb6;</a>
 					
 					
@@ -909,17 +879,6 @@ will produce multiple monitored databases structs based on the discovered databa
 			
 			
 
-			
-				
-				<h3 id="ResolveDatabasesFromPatroni">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L247">ResolveDatabasesFromPatroni</a>
-					<a class="permalink" href="#ResolveDatabasesFromPatroni">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func ResolveDatabasesFromPatroni(ce <a href="#Source">Source</a>) ([]*<a href="#SourceConn">SourceConn</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				
-				
-				
 			
 
 			
@@ -1116,7 +1075,18 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="ResolveDatabasesFromPostgres">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L349">ResolveDatabasesFromPostgres</a>
+				<h3 id="ResolveDatabasesFromPatroni">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L194">ResolveDatabasesFromPatroni</a>
+					<a class="permalink" href="#ResolveDatabasesFromPatroni">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func ResolveDatabasesFromPatroni(source <a href="#Source">Source</a>) (<a href="#SourceConns">SourceConns</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+			
+				
+				<h3 id="ResolveDatabasesFromPostgres">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L248">ResolveDatabasesFromPostgres</a>
 					<a class="permalink" href="#ResolveDatabasesFromPostgres">&#xb6;</a>
 					
 					
@@ -1180,7 +1150,7 @@ It&apos;s up to the caller to proceed with the databases available or stop the e
 
 			
 				
-				<h3 id="Sources.ResolveDatabases">func (Sources) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L30">ResolveDatabases</a>
+				<h3 id="Sources.ResolveDatabases">func (Sources) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/resolver.go.html#L28">ResolveDatabases</a>
 					<a class="permalink" href="#Sources.ResolveDatabases">&#xb6;</a>
 					
 					
