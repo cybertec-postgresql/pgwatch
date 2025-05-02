@@ -178,9 +178,6 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 		connURL := nodeData["conn_url"]
 		scope := parts[1]
 		name := parts[3]
-		if s.Kind == SourcePatroniNamespace {
-			name = parts[1] + "_" + name
-		}
 		ret = append(ret, PatroniClusterMember{Scope: scope, ConnURL: connURL, Role: role, Name: name})
 	}
 

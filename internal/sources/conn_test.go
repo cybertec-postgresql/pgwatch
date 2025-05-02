@@ -217,13 +217,21 @@ func TestMonitoredDatabases_SyncFromReader_error(t *testing.T) {
 
 func TestMonitoredDatabases_SyncFromReader(t *testing.T) {
 	db, _ := pgxmock.NewPool()
-	src := sources.Source{
-		Name:      "test",
-		Kind:      sources.SourcePostgres,
-		IsEnabled: true,
-		ConnStr:   "postgres://user:password@localhost:5432/mydatabase",
+
+	reader := testSourceReader{Sources: sources.Sources{
+		sources.Source{
+			Name:      "test",
+			Kind:      sources.SourcePostgres,
+			IsEnabled: true,
+			ConnStr:   "postgres://user:password@localhost:5432/mydatabase",
+		},
+		sources.Source{
+			Name:      "test2",
+			Kind:      sources.SourcePostgres,
+			IsEnabled: false,
+		},
+	},
 	}
-	reader := testSourceReader{Sources: sources.Sources{src}}
 	// first read the sources
 	mds, _ := reader.GetSources()
 	assert.NotNil(t, mds, "GetSources() = nil, want not nil")
