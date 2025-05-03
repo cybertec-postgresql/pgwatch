@@ -8,11 +8,11 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
-func (Server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request) {
+func (server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		// return monitored databases
-		dbs, err := Server.GetSources()
+		dbs, err := server.GetSources()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -26,13 +26,13 @@ func (Server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err := Server.UpdateSource(p); err != nil {
+		if err := server.UpdateSource(p); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 
 	case http.MethodDelete:
 		// delete monitored database
-		if err := Server.DeleteSource(r.URL.Query().Get("name")); err != nil {
+		if err := server.DeleteSource(r.URL.Query().Get("name")); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 
