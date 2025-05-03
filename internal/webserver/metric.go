@@ -8,7 +8,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 )
 
-func (Server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request) {
+func (server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	var (
 		err    error
 		params []byte
@@ -24,7 +24,7 @@ func (Server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request)
 	switch r.Method {
 	case http.MethodGet:
 		// return stored metrics
-		if res, err = Server.GetMetrics(); err != nil {
+		if res, err = server.GetMetrics(); err != nil {
 			return
 		}
 		_, err = w.Write([]byte(res))
@@ -34,11 +34,11 @@ func (Server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request)
 		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		err = Server.UpdateMetric(r.URL.Query().Get("name"), params)
+		err = server.UpdateMetric(r.URL.Query().Get("name"), params)
 
 	case http.MethodDelete:
 		// delete stored metric
-		err = Server.DeleteMetric(r.URL.Query().Get("name"))
+		err = server.DeleteMetric(r.URL.Query().Get("name"))
 
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")
@@ -76,7 +76,7 @@ func (server *WebUIServer) DeleteMetric(name string) error {
 	return server.metricsReaderWriter.DeleteMetric(name)
 }
 
-func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request) {
+func (server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request) {
 	var (
 		err    error
 		params []byte
@@ -92,7 +92,7 @@ func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 	switch r.Method {
 	case http.MethodGet:
 		// return stored Presets
-		if res, err = Server.GetPresets(); err != nil {
+		if res, err = server.GetPresets(); err != nil {
 			return
 		}
 		_, err = w.Write([]byte(res))
@@ -102,11 +102,11 @@ func (Server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		err = Server.UpdatePreset(r.URL.Query().Get("name"), params)
+		err = server.UpdatePreset(r.URL.Query().Get("name"), params)
 
 	case http.MethodDelete:
 		// delete stored Preset
-		err = Server.DeletePreset(r.URL.Query().Get("name"))
+		err = server.DeletePreset(r.URL.Query().Get("name"))
 
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
