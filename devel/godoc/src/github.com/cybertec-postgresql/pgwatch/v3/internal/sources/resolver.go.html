@@ -113,7 +113,7 @@
 <span id="L56" class="ln">    56  </span>	Role    string
 <span id="L57" class="ln">    57  </span>}
 <span id="L58" class="ln">    58  </span>
-<span id="L59" class="ln">    59  </span>var logger log.LoggerIface = log.FallbackLogger
+<span id="L59" class="ln">    59  </span>var logger log.Logger = log.FallbackLogger
 <span id="L60" class="ln">    60  </span>
 <span id="L61" class="ln">    61  </span>var lastFoundClusterMembers = make(map[string][]PatroniClusterMember) <span class="comment">// needed for cases where DCS is temporarily down</span>
 <span id="L62" class="ln">    62  </span><span class="comment">// don&#39;t want to immediately remove monitoring of DBs</span>

@@ -83,7 +83,7 @@
 <span id="L26" class="ln">    26  </span>	ready                atomic.Bool
 <span id="L27" class="ln">    27  </span>	measurementCh        chan []metrics.MeasurementEnvelope
 <span id="L28" class="ln">    28  </span>	measurementCache     *InstanceMetricCache
-<span id="L29" class="ln">    29  </span>	logger               log.LoggerIface
+<span id="L29" class="ln">    29  </span>	logger               log.Logger
 <span id="L30" class="ln">    30  </span>	monitoredSources     sources.SourceConns
 <span id="L31" class="ln">    31  </span>	prevLoopMonitoredDBs sources.SourceConns
 <span id="L32" class="ln">    32  </span>	cancelFuncs          map[string]context.CancelFunc
@@ -248,7 +248,7 @@
 <span id="L191" class="ln">   191  </span>}
 <span id="L192" class="ln">   192  </span>
 <span id="L193" class="ln">   193  </span><span class="comment">// CreateSourceHelpers creates the extensions and metric helpers for the monitored source</span>
-<span id="L194" class="ln">   194  </span>func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.LoggerIface, monitoredSource *sources.SourceConn) {
+<span id="L194" class="ln">   194  </span>func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monitoredSource *sources.SourceConn) {
 <span id="L195" class="ln">   195  </span>	if r.prevLoopMonitoredDBs.GetMonitoredDatabase(monitoredSource.Name) != nil {
 <span id="L196" class="ln">   196  </span>		return <span class="comment">// already created</span>
 <span id="L197" class="ln">   197  </span>	}

@@ -115,7 +115,7 @@
 			
 			
 				
-				<dd><a href="#WithLogger">func WithLogger(ctx context.Context, logger LoggerIface) context.Context</a></dd>
+				<dd><a href="#WithLogger">func WithLogger(ctx context.Context, logger Logger) context.Context</a></dd>
 			
 				
 				<dd><a href="#getColorByLevel">func getColorByLevel(level logrus.Level) int</a></dd>
@@ -188,18 +188,18 @@
 				
 			
 				
-				<dd><a href="#LoggerHookerIface">type LoggerHookerIface</a></dd>
+				<dd><a href="#Logger">type Logger</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Init">func Init(opts CmdOpts) LoggerHookerIface</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#GetLogger">func GetLogger(ctx context.Context) Logger</a></dd>
 				
 				
 			
 				
-				<dd><a href="#LoggerIface">type LoggerIface</a></dd>
+				<dd><a href="#LoggerHooker">type LoggerHooker</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#GetLogger">func GetLogger(ctx context.Context) LoggerIface</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Init">func Init(opts CmdOpts) LoggerHooker</a></dd>
 				
 				
 			
@@ -217,7 +217,7 @@
 				<dd><a href="#PgxLogger">type PgxLogger</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#NewPgxLogger">func NewPgxLogger(l LoggerIface) *PgxLogger</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#NewPgxLogger">func NewPgxLogger(l Logger) *PgxLogger</a></dd>
 				
 				
 					
@@ -316,7 +316,7 @@
 				
 				
 			</h2>
-			<pre>func WithLogger(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, logger <a href="#LoggerIface">LoggerIface</a>) <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a></pre>
+			<pre>func WithLogger(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, logger <a href="#Logger">Logger</a>) <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a></pre>
 			<p>WithLogger returns a new context with the provided logger. Use in
 combination with logger.WithField(s) for great effect
 
@@ -713,15 +713,51 @@ l.Error(&#34;test4&#34;)
 		
 			
 			
-			<h2 id="LoggerHookerIface">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/log/log.go.html#L17">LoggerHookerIface</a>
-				<a class="permalink" href="#LoggerHookerIface">&#xb6;</a>
+			<h2 id="Logger">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/log/log.go.html#L15">Logger</a>
+				<a class="permalink" href="#Logger">&#xb6;</a>
 				
 				
 			</h2>
-			<p>LoggerHookerIface adds AddHook method to LoggerIface for database logging hook
+			<p>Logger is the interface used by all components
 
-			<pre>type LoggerHookerIface interface {
-    <a href="#LoggerIface">LoggerIface</a>
+			<pre>type Logger <a href="https://pkg.go.dev/github.com/sirupsen/logrus/">logrus</a>.<a href="https://pkg.go.dev/github.com/sirupsen/logrus/#FieldLogger">FieldLogger</a></pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="GetLogger">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/log/log.go.html#L119">GetLogger</a>
+					<a class="permalink" href="#GetLogger">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func GetLogger(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) <a href="#Logger">Logger</a></pre>
+				<p>GetLogger retrieves the current logger from the context. If no logger is
+available, the default logger is returned
+
+				
+				
+			
+
+			
+		
+			
+			
+			<h2 id="LoggerHooker">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/log/log.go.html#L17">LoggerHooker</a>
+				<a class="permalink" href="#LoggerHooker">&#xb6;</a>
+				
+				
+			</h2>
+			<p>LoggerHooker adds AddHook method to LoggerIface for database logging hook
+
+			<pre>type LoggerHooker interface {
+    <a href="#Logger">Logger</a>
     AddHook(hook <a href="https://pkg.go.dev/github.com/sirupsen/logrus/">logrus</a>.<a href="https://pkg.go.dev/github.com/sirupsen/logrus/#Hook">Hook</a>)
     AddSubscriber(msgCh <a href="#MessageChanType">MessageChanType</a>)
     RemoveSubscriber(msgCh <a href="#MessageChanType">MessageChanType</a>)
@@ -742,44 +778,8 @@ l.Error(&#34;test4&#34;)
 					
 					
 				</h3>
-				<pre>func Init(opts <a href="#CmdOpts">CmdOpts</a>) <a href="#LoggerHookerIface">LoggerHookerIface</a></pre>
+				<pre>func Init(opts <a href="#CmdOpts">CmdOpts</a>) <a href="#LoggerHooker">LoggerHooker</a></pre>
 				<p>Init creates logging facilities for the application
-
-				
-				
-			
-
-			
-		
-			
-			
-			<h2 id="LoggerIface">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/log/log.go.html#L15">LoggerIface</a>
-				<a class="permalink" href="#LoggerIface">&#xb6;</a>
-				
-				
-			</h2>
-			<p>LoggerIface is the interface used by all components
-
-			<pre>type LoggerIface <a href="https://pkg.go.dev/github.com/sirupsen/logrus/">logrus</a>.<a href="https://pkg.go.dev/github.com/sirupsen/logrus/#FieldLogger">FieldLogger</a></pre>
-
-			
-
-			
-
-			
-			
-			
-
-			
-				
-				<h3 id="GetLogger">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/log/log.go.html#L119">GetLogger</a>
-					<a class="permalink" href="#GetLogger">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func GetLogger(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) <a href="#LoggerIface">LoggerIface</a></pre>
-				<p>GetLogger retrieves the current logger from the context. If no logger is
-available, the default logger is returned
 
 				
 				
@@ -843,7 +843,7 @@ available, the default logger is returned
 			<p>PgxLogger is the struct used to log using pgx postgres driver
 
 			<pre>type PgxLogger struct {
-<span id="PgxLogger.l"></span>    l <a href="#LoggerIface">LoggerIface</a>
+<span id="PgxLogger.l"></span>    l <a href="#Logger">Logger</a>
 }
 </pre>
 
@@ -862,7 +862,7 @@ available, the default logger is returned
 					
 					
 				</h3>
-				<pre>func NewPgxLogger(l <a href="#LoggerIface">LoggerIface</a>) *<a href="#PgxLogger">PgxLogger</a></pre>
+				<pre>func NewPgxLogger(l <a href="#Logger">Logger</a>) *<a href="#PgxLogger">PgxLogger</a></pre>
 				<p>NewPgxLogger returns a new instance of PgxLogger
 
 				

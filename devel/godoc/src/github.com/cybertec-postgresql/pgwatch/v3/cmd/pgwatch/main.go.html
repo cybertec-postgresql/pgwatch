@@ -89,11 +89,11 @@
 <span id="L32" class="ln">    32  </span>}
 <span id="L33" class="ln">    33  </span>
 <span id="L34" class="ln">    34  </span>var (
-<span id="L35" class="ln">    35  </span>	exitCode atomic.Int32          <span class="comment">// Exit code to be returned to the OS</span>
-<span id="L36" class="ln">    36  </span>	mainCtx  context.Context       <span class="comment">// Main context for the application</span>
-<span id="L37" class="ln">    37  </span>	cancel   context.CancelFunc    <span class="comment">// Cancel function to stop the main context</span>
-<span id="L38" class="ln">    38  </span>	logger   log.LoggerHookerIface <span class="comment">// Logger for the application</span>
-<span id="L39" class="ln">    39  </span>	opts     *cmdopts.Options      <span class="comment">// Command line options for the application</span>
+<span id="L35" class="ln">    35  </span>	exitCode atomic.Int32       <span class="comment">// Exit code to be returned to the OS</span>
+<span id="L36" class="ln">    36  </span>	mainCtx  context.Context    <span class="comment">// Main context for the application</span>
+<span id="L37" class="ln">    37  </span>	cancel   context.CancelFunc <span class="comment">// Cancel function to stop the main context</span>
+<span id="L38" class="ln">    38  </span>	logger   log.LoggerHooker   <span class="comment">// Logger for the application</span>
+<span id="L39" class="ln">    39  </span>	opts     *cmdopts.Options   <span class="comment">// Command line options for the application</span>
 <span id="L40" class="ln">    40  </span>	err      error
 <span id="L41" class="ln">    41  </span>)
 <span id="L42" class="ln">    42  </span>

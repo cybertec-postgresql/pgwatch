@@ -241,7 +241,7 @@ and send measurements to sinks.
 					<dd>&nbsp; &nbsp; <a href="#Reaper.CloseResourcesForRemovedMonitoredDBs">func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(shutDownDueToRoleChange map[string]bool)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.CreateSourceHelpers">func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.LoggerIface, monitoredSource *sources.SourceConn)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Reaper.CreateSourceHelpers">func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monitoredSource *sources.SourceConn)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#Reaper.FetchMetric">func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metricName string, hostState map[string]map[string]string) (_ *metrics.MeasurementEnvelope, err error)</a></dd>
@@ -885,7 +885,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 <span id="Reaper.ready"></span>    ready                <a href="https://pkg.go.dev/sync/atomic/">atomic</a>.<a href="https://pkg.go.dev/sync/atomic/#Bool">Bool</a>
 <span id="Reaper.measurementCh"></span>    measurementCh        chan []<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>
 <span id="Reaper.measurementCache"></span>    measurementCache     *<a href="#InstanceMetricCache">InstanceMetricCache</a>
-<span id="Reaper.logger"></span>    logger               <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#LoggerIface">LoggerIface</a>
+<span id="Reaper.logger"></span>    logger               <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#Logger">Logger</a>
 <span id="Reaper.monitoredSources"></span>    monitoredSources     <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConns">SourceConns</a>
 <span id="Reaper.prevLoopMonitoredDBs"></span>    prevLoopMonitoredDBs <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConns">SourceConns</a>
 <span id="Reaper.cancelFuncs"></span>    cancelFuncs          map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#CancelFunc">CancelFunc</a>
@@ -957,7 +957,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 					
 					
 				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) CreateSourceHelpers(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, srcL <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#LoggerIface">LoggerIface</a>, monitoredSource *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>)</pre>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) CreateSourceHelpers(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, srcL <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#Logger">Logger</a>, monitoredSource *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>)</pre>
 				<p>CreateSourceHelpers creates the extensions and metric helpers for the monitored source
 
 				

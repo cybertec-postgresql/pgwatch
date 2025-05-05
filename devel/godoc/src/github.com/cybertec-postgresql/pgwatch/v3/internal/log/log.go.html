@@ -68,11 +68,11 @@
 <span id="L11" class="ln">    11  </span>)
 <span id="L12" class="ln">    12  </span>
 <span id="L13" class="ln">    13  </span>type (
-<span id="L14" class="ln">    14  </span>	<span class="comment">// LoggerIface is the interface used by all components</span>
-<span id="L15" class="ln">    15  </span>	LoggerIface logrus.FieldLogger
-<span id="L16" class="ln">    16  </span>	<span class="comment">//LoggerHookerIface adds AddHook method to LoggerIface for database logging hook</span>
-<span id="L17" class="ln">    17  </span>	LoggerHookerIface interface {
-<span id="L18" class="ln">    18  </span>		LoggerIface
+<span id="L14" class="ln">    14  </span>	<span class="comment">// Logger is the interface used by all components</span>
+<span id="L15" class="ln">    15  </span>	Logger logrus.FieldLogger
+<span id="L16" class="ln">    16  </span>	<span class="comment">//LoggerHooker adds AddHook method to LoggerIface for database logging hook</span>
+<span id="L17" class="ln">    17  </span>	LoggerHooker interface {
+<span id="L18" class="ln">    18  </span>		Logger
 <span id="L19" class="ln">    19  </span>		AddHook(hook logrus.Hook)
 <span id="L20" class="ln">    20  </span>		AddSubscriber(msgCh MessageChanType)
 <span id="L21" class="ln">    21  </span>		RemoveSubscriber(msgCh MessageChanType)
@@ -111,7 +111,7 @@
 <span id="L54" class="ln">    54  </span>}
 <span id="L55" class="ln">    55  </span>
 <span id="L56" class="ln">    56  </span><span class="comment">// Init creates logging facilities for the application</span>
-<span id="L57" class="ln">    57  </span>func Init(opts CmdOpts) LoggerHookerIface {
+<span id="L57" class="ln">    57  </span>func Init(opts CmdOpts) LoggerHooker {
 <span id="L58" class="ln">    58  </span>	var err error
 <span id="L59" class="ln">    59  </span>	l := logger{logrus.New(), NewBrokerHook(context.Background(), opts.LogLevel)}
 <span id="L60" class="ln">    60  </span>	l.AddHook(l.BrokerHook)
@@ -131,11 +131,11 @@
 <span id="L74" class="ln">    74  </span>
 <span id="L75" class="ln">    75  </span><span class="comment">// PgxLogger is the struct used to log using pgx postgres driver</span>
 <span id="L76" class="ln">    76  </span>type PgxLogger struct {
-<span id="L77" class="ln">    77  </span>	l LoggerIface
+<span id="L77" class="ln">    77  </span>	l Logger
 <span id="L78" class="ln">    78  </span>}
 <span id="L79" class="ln">    79  </span>
 <span id="L80" class="ln">    80  </span><span class="comment">// NewPgxLogger returns a new instance of PgxLogger</span>
-<span id="L81" class="ln">    81  </span>func NewPgxLogger(l LoggerIface) *PgxLogger {
+<span id="L81" class="ln">    81  </span>func NewPgxLogger(l Logger) *PgxLogger {
 <span id="L82" class="ln">    82  </span>	return &amp;PgxLogger{l}
 <span id="L83" class="ln">    83  </span>}
 <span id="L84" class="ln">    84  </span>
@@ -164,7 +164,7 @@
 <span id="L107" class="ln">   107  </span>
 <span id="L108" class="ln">   108  </span><span class="comment">// WithLogger returns a new context with the provided logger. Use in</span>
 <span id="L109" class="ln">   109  </span><span class="comment">// combination with logger.WithField(s) for great effect</span>
-<span id="L110" class="ln">   110  </span>func WithLogger(ctx context.Context, logger LoggerIface) context.Context {
+<span id="L110" class="ln">   110  </span>func WithLogger(ctx context.Context, logger Logger) context.Context {
 <span id="L111" class="ln">   111  </span>	return context.WithValue(ctx, loggerKey{}, logger)
 <span id="L112" class="ln">   112  </span>}
 <span id="L113" class="ln">   113  </span>
@@ -173,12 +173,12 @@
 <span id="L116" class="ln">   116  </span>
 <span id="L117" class="ln">   117  </span><span class="comment">// GetLogger retrieves the current logger from the context. If no logger is</span>
 <span id="L118" class="ln">   118  </span><span class="comment">// available, the default logger is returned</span>
-<span id="L119" class="ln">   119  </span>func GetLogger(ctx context.Context) LoggerIface {
+<span id="L119" class="ln">   119  </span>func GetLogger(ctx context.Context) Logger {
 <span id="L120" class="ln">   120  </span>	logger := ctx.Value(loggerKey{})
 <span id="L121" class="ln">   121  </span>	if logger == nil {
 <span id="L122" class="ln">   122  </span>		return FallbackLogger
 <span id="L123" class="ln">   123  </span>	}
-<span id="L124" class="ln">   124  </span>	return logger.(LoggerIface)
+<span id="L124" class="ln">   124  </span>	return logger.(Logger)
 <span id="L125" class="ln">   125  </span>}
 <span id="L126" class="ln">   126  </span>
 </pre><p></p>
