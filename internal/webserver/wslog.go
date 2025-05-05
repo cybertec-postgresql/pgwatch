@@ -42,7 +42,7 @@ func reader(ws *websocket.Conn) {
 	}
 }
 
-func writer(ws *websocket.Conn, l log.LoggerHookerIface) {
+func writer(ws *websocket.Conn, l log.LoggerHooker) {
 	pingTicker := time.NewTicker(pingPeriod)
 	defer func() {
 		pingTicker.Stop()
@@ -70,15 +70,12 @@ func writer(ws *websocket.Conn, l log.LoggerHookerIface) {
 func (Server *WebUIServer) serveWsLog(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		Server.l.Error(err)
+		Server.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	Server.l.WithField("reguest", r.URL.String()).Debugf("established websocket connection")
-	l, ok := Server.l.(log.LoggerHookerIface)
-	if !ok {
-		Server.l.Error("cannot cast WebUIServer.l to log.LoggerHookerIface")
-		return
-	}
+	Server.WithField("reguest", r.URL.String()).Debugf("established websocket connection")
+	l, _ := Server.Logger.(log.LoggerHooker)
 	go writer(ws, l)
 	reader(ws)
 }

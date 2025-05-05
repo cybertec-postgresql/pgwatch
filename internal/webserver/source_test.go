@@ -54,7 +54,7 @@ func TestHandleSources_GET(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	body, _ := io.ReadAll(resp.Body)
 	var got []sources.Source
-	json.Unmarshal(body, &got)
+	assert.NoError(t, json.Unmarshal(body, &got))
 	assert.Equal(t, "foo", got[0].Name)
 }
 
@@ -114,7 +114,7 @@ func TestHandleSources_POST_ReaderFail(t *testing.T) {
 
 func TestHandleSources_POST_Fail(t *testing.T) {
 	mock := &mockSourcesReaderWriter{
-		UpdateSourceFunc: func(md sources.Source) error {
+		UpdateSourceFunc: func(sources.Source) error {
 			return errors.New("fail")
 		},
 	}
@@ -186,7 +186,7 @@ func TestGetSources_Error(t *testing.T) {
 
 func TestUpdateSource_Error(t *testing.T) {
 	mock := &mockSourcesReaderWriter{
-		UpdateSourceFunc: func(md sources.Source) error {
+		UpdateSourceFunc: func(sources.Source) error {
 			return errors.New("fail")
 		},
 	}
@@ -197,7 +197,7 @@ func TestUpdateSource_Error(t *testing.T) {
 
 func TestDeleteSource_Error(t *testing.T) {
 	mock := &mockSourcesReaderWriter{
-		DeleteSourceFunc: func(name string) error {
+		DeleteSourceFunc: func(string) error {
 			return errors.New("fail")
 		},
 	}

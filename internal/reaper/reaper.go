@@ -26,7 +26,7 @@ type Reaper struct {
 	ready                atomic.Bool
 	measurementCh        chan []metrics.MeasurementEnvelope
 	measurementCache     *InstanceMetricCache
-	logger               log.LoggerIface
+	logger               log.Logger
 	monitoredSources     sources.SourceConns
 	prevLoopMonitoredDBs sources.SourceConns
 	cancelFuncs          map[string]context.CancelFunc
@@ -191,7 +191,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 }
 
 // CreateSourceHelpers creates the extensions and metric helpers for the monitored source
-func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.LoggerIface, monitoredSource *sources.SourceConn) {
+func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monitoredSource *sources.SourceConn) {
 	if r.prevLoopMonitoredDBs.GetMonitoredDatabase(monitoredSource.Name) != nil {
 		return // already created
 	}

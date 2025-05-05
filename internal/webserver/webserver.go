@@ -25,10 +25,10 @@ type ReadyChecker interface {
 }
 
 type WebUIServer struct {
-	http.Server
 	CmdOpts
+	http.Server
+	log.Logger
 	ctx                 context.Context
-	l                   log.LoggerIface
 	uiFS                fs.FS // webui files
 	metricsReaderWriter metrics.ReaderWriter
 	sourcesReaderWriter sources.ReaderWriter
@@ -49,7 +49,7 @@ func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWr
 			Handler:        corsMiddleware(mux),
 		},
 		ctx:                 ctx,
-		l:                   log.GetLogger(ctx),
+		Logger:              log.GetLogger(ctx),
 		CmdOpts:             opts,
 		uiFS:                webuifs,
 		metricsReaderWriter: mrw,
@@ -95,11 +95,11 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	file, err := Server.uiFS.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			Server.l.Println("file", path, "not found:", err)
+			Server.Println("file", path, "not found:", err)
 			http.NotFound(w, r)
 			return
 		}
-		Server.l.Println("file", path, "cannot be read:", err)
+		Server.Println("file", path, "cannot be read:", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -116,7 +116,7 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	}
 
 	n, _ := io.Copy(w, file)
-	Server.l.Debug("file", path, "copied", n, "bytes")
+	Server.Debug("file", path, "copied", n, "bytes")
 }
 
 func (Server *WebUIServer) handleLiveness(w http.ResponseWriter, _ *http.Request) {

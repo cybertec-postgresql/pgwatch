@@ -28,7 +28,7 @@ func TestServer_handleStatic(t *testing.T) {
 	tempFile := path.Join(t.TempDir(), "file.ext")
 	assert.NoError(t, os.WriteFile(tempFile, []byte(`{"foo": {"bar": 1}}`), 0644))
 	ts := &WebUIServer{
-		l: logrus.StandardLogger(),
+		Logger: logrus.StandardLogger(),
 		uiFS: mockFS{
 			OpenFunc: func(name string) (fs.File, error) {
 				switch name {
@@ -103,7 +103,7 @@ func TestServer_handleStatic(t *testing.T) {
 
 func TestServer_handleTestConnect(t *testing.T) {
 	ts := &WebUIServer{
-		l: logrus.StandardLogger(),
+		Logger: logrus.StandardLogger(),
 	}
 
 	t.Run("POST", func(t *testing.T) {
