@@ -77,29 +77,39 @@ func TestServerNoAuth(t *testing.T) {
 	restsrv, _ := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8081"}, os.DirFS("../webui/build"), nil, nil, nil)
 	assert.NotNil(t, restsrv)
 	rr := httptest.NewRecorder()
+	// cors OPTIONS
+	reqOpts, err := http.NewRequest("OPTIONS", host, nil)
+	assert.NoError(t, err)
+	restsrv.Handler.ServeHTTP(rr, reqOpts)
+	assert.Equal(t, http.StatusOK, rr.Code)
+
 	// test request metrics
+	rr = httptest.NewRecorder()
 	reqMetric, err := http.NewRequest("GET", host+"/metric", nil)
 	restsrv.Handler.ServeHTTP(rr, reqMetric)
-	assert.Equal(t, err, nil)
-	assert.Equal(t, rr.Code, http.StatusUnauthorized, "REQUEST WITHOUT AUTHENTICATION")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "REQUEST WITHOUT AUTHENTICATION")
 
 	// test request database
-	reqDb, err := http.NewRequest("GET", host+"/db", nil)
-	assert.Equal(t, err, nil)
+	rr = httptest.NewRecorder()
+	reqDb, err := http.NewRequest("GET", host+"/source", nil)
+	assert.NoError(t, err)
 	restsrv.Handler.ServeHTTP(rr, reqDb)
-	assert.Equal(t, rr.Code, http.StatusUnauthorized, "REQUEST WITHOUT AUTHENTICATION")
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "REQUEST WITHOUT AUTHENTICATION")
 
 	// test request
+	rr = httptest.NewRecorder()
 	reqLog, err := http.NewRequest("GET", host+"/log", nil)
-	assert.Equal(t, err, nil)
+	assert.NoError(t, err)
 	restsrv.Handler.ServeHTTP(rr, reqLog)
-	assert.Equal(t, rr.Code, http.StatusUnauthorized, "REQUEST WITHOUT AUTHENTICATION")
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "REQUEST WITHOUT AUTHENTICATION")
 
 	// request metrics
+	rr = httptest.NewRecorder()
 	reqConnect, err := http.NewRequest("GET", host+"/test-connect", nil)
-	assert.Equal(t, err, nil)
+	assert.NoError(t, err)
 	restsrv.Handler.ServeHTTP(rr, reqConnect)
-	assert.Equal(t, rr.Code, http.StatusUnauthorized, "REQUEST WITHOUT AUTHENTICATION")
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "REQUEST WITHOUT AUTHENTICATION")
 
 }
 

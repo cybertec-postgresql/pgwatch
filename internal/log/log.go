@@ -11,11 +11,11 @@ import (
 )
 
 type (
-	// LoggerIface is the interface used by all components
-	LoggerIface logrus.FieldLogger
-	//LoggerHookerIface adds AddHook method to LoggerIface for database logging hook
-	LoggerHookerIface interface {
-		LoggerIface
+	// Logger is the interface used by all components
+	Logger logrus.FieldLogger
+	//LoggerHooker adds AddHook method to LoggerIface for database logging hook
+	LoggerHooker interface {
+		Logger
 		AddHook(hook logrus.Hook)
 		AddSubscriber(msgCh MessageChanType)
 		RemoveSubscriber(msgCh MessageChanType)
@@ -54,7 +54,7 @@ func getLogFileFormatter(opts CmdOpts) logrus.Formatter {
 }
 
 // Init creates logging facilities for the application
-func Init(opts CmdOpts) LoggerHookerIface {
+func Init(opts CmdOpts) LoggerHooker {
 	var err error
 	l := logger{logrus.New(), NewBrokerHook(context.Background(), opts.LogLevel)}
 	l.AddHook(l.BrokerHook)
@@ -74,11 +74,11 @@ func Init(opts CmdOpts) LoggerHookerIface {
 
 // PgxLogger is the struct used to log using pgx postgres driver
 type PgxLogger struct {
-	l LoggerIface
+	l Logger
 }
 
 // NewPgxLogger returns a new instance of PgxLogger
-func NewPgxLogger(l LoggerIface) *PgxLogger {
+func NewPgxLogger(l Logger) *PgxLogger {
 	return &PgxLogger{l}
 }
 
@@ -107,7 +107,7 @@ func (pgxlogger *PgxLogger) Log(ctx context.Context, level tracelog.LogLevel, ms
 
 // WithLogger returns a new context with the provided logger. Use in
 // combination with logger.WithField(s) for great effect
-func WithLogger(ctx context.Context, logger LoggerIface) context.Context {
+func WithLogger(ctx context.Context, logger Logger) context.Context {
 	return context.WithValue(ctx, loggerKey{}, logger)
 }
 
@@ -116,10 +116,10 @@ var FallbackLogger = Init(CmdOpts{})
 
 // GetLogger retrieves the current logger from the context. If no logger is
 // available, the default logger is returned
-func GetLogger(ctx context.Context) LoggerIface {
+func GetLogger(ctx context.Context) Logger {
 	logger := ctx.Value(loggerKey{})
 	if logger == nil {
 		return FallbackLogger
 	}
-	return logger.(LoggerIface)
+	return logger.(Logger)
 }

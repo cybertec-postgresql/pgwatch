@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
@@ -24,10 +25,10 @@ type ReadyChecker interface {
 }
 
 type WebUIServer struct {
-	http.Server
 	CmdOpts
+	http.Server
+	log.Logger
 	ctx                 context.Context
-	l                   log.LoggerIface
 	uiFS                fs.FS // webui files
 	metricsReaderWriter metrics.ReaderWriter
 	sourcesReaderWriter sources.ReaderWriter
@@ -48,7 +49,7 @@ func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWr
 			Handler:        corsMiddleware(mux),
 		},
 		ctx:                 ctx,
-		l:                   log.GetLogger(ctx),
+		Logger:              log.GetLogger(ctx),
 		CmdOpts:             opts,
 		uiFS:                webuifs,
 		metricsReaderWriter: mrw,
@@ -94,14 +95,15 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	file, err := Server.uiFS.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			Server.l.Println("file", path, "not found:", err)
+			Server.Println("file", path, "not found:", err)
 			http.NotFound(w, r)
 			return
 		}
-		Server.l.Println("file", path, "cannot be read:", err)
+		Server.Println("file", path, "cannot be read:", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	defer file.Close()
 
 	contentType := mime.TypeByExtension(filepath.Ext(path))
 	w.Header().Set("Content-Type", contentType)
@@ -114,7 +116,7 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	}
 
 	n, _ := io.Copy(w, file)
-	Server.l.Debug("file", path, "copied", n, "bytes")
+	Server.Debug("file", path, "copied", n, "bytes")
 }
 
 func (Server *WebUIServer) handleLiveness(w http.ResponseWriter, _ *http.Request) {
@@ -146,11 +148,25 @@ func (Server *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Requ
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err := Server.TryConnectToDB(p); err != nil {
+		if err := db.Ping(context.TODO(), string(p)); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	default:
 		w.Header().Set("Allow", "POST")
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
 	}
+}
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:4000") //check internal/webui/.env
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, token")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

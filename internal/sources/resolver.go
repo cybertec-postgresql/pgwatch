@@ -56,7 +56,7 @@ type PatroniClusterMember struct {
 	Role    string
 }
 
-var logger log.LoggerIface = log.FallbackLogger
+var logger log.Logger = log.FallbackLogger
 
 var lastFoundClusterMembers = make(map[string][]PatroniClusterMember) // needed for cases where DCS is temporarily down
 // don't want to immediately remove monitoring of DBs

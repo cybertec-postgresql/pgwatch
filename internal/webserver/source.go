@@ -1,37 +1,44 @@
 package webserver
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
+
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
-func (Server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request) {
+func (server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request) {
+	var (
+		err    error
+		params []byte
+		res    string
+	)
+
+	defer func() {
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}()
+
 	switch r.Method {
 	case http.MethodGet:
 		// return monitored databases
-		dbs, err := Server.GetSources()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if res, err = server.GetSources(); err != nil {
 			return
 		}
-		_, _ = w.Write([]byte(dbs))
+		_, err = w.Write([]byte(res))
 
 	case http.MethodPost:
 		// add new monitored database
-		p, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		if err := Server.UpdateSource(p); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
+		err = server.UpdateSource(params)
 
 	case http.MethodDelete:
 		// delete monitored database
-		if err := Server.DeleteSource(r.URL.Query().Get("name")); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
+		err = server.DeleteSource(r.URL.Query().Get("name"))
 
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")
@@ -41,4 +48,30 @@ func (Server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request)
 		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+// GetSources returns the list of sources fo find databases for monitoring
+func (server *WebUIServer) GetSources() (res string, err error) {
+	var dbs sources.Sources
+	if dbs, err = server.sourcesReaderWriter.GetSources(); err != nil {
+		return
+	}
+	b, _ := json.Marshal(dbs)
+	res = string(b)
+	return
+}
+
+// DeleteSource removes the source from the list of configured sources
+func (server *WebUIServer) DeleteSource(database string) error {
+	return server.sourcesReaderWriter.DeleteSource(database)
+}
+
+// UpdateSource updates the configured source information
+func (server *WebUIServer) UpdateSource(params []byte) error {
+	var md sources.Source
+	err := json.Unmarshal(params, &md)
+	if err != nil {
+		return err
+	}
+	return server.sourcesReaderWriter.UpdateSource(md)
 }

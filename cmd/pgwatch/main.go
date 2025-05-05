@@ -32,11 +32,11 @@ func setupCloseHandler(cancel context.CancelFunc) {
 }
 
 var (
-	exitCode atomic.Int32          // Exit code to be returned to the OS
-	mainCtx  context.Context       // Main context for the application
-	cancel   context.CancelFunc    // Cancel function to stop the main context
-	logger   log.LoggerHookerIface // Logger for the application
-	opts     *cmdopts.Options      // Command line options for the application
+	exitCode atomic.Int32       // Exit code to be returned to the OS
+	mainCtx  context.Context    // Main context for the application
+	cancel   context.CancelFunc // Cancel function to stop the main context
+	logger   log.LoggerHooker   // Logger for the application
+	opts     *cmdopts.Options   // Command line options for the application
 	err      error
 )
 
