@@ -26,7 +26,7 @@ var (
 	}
 )
 
-func reader(ws *websocket.Conn) {
+func reader(ws *websocket.Conn, done chan struct{}) {
 	defer ws.Close()
 	ws.SetReadLimit(512)
 	err := ws.SetReadDeadline(time.Now().Add(pongWait))
@@ -37,12 +37,13 @@ func reader(ws *websocket.Conn) {
 	for {
 		_, _, err = ws.ReadMessage()
 		if err != nil {
+			close(done)
 			break
 		}
 	}
 }
 
-func writer(ws *websocket.Conn, l log.LoggerHooker) {
+func writer(ws *websocket.Conn, l log.LoggerHooker, done <-chan struct{}) {
 	pingTicker := time.NewTicker(pingPeriod)
 	defer func() {
 		pingTicker.Stop()
@@ -63,6 +64,8 @@ func writer(ws *websocket.Conn, l log.LoggerHooker) {
 				ws.WriteMessage(websocket.PingMessage, []byte{}) != nil {
 				return
 			}
+		case <-done:
+			return
 		}
 	}
 }
@@ -76,6 +79,7 @@ func (Server *WebUIServer) serveWsLog(w http.ResponseWriter, r *http.Request) {
 	}
 	Server.WithField("reguest", r.URL.String()).Debugf("established websocket connection")
 	l, _ := Server.Logger.(log.LoggerHooker)
-	go writer(ws, l)
-	reader(ws)
+	done := make(chan struct{})
+	go writer(ws, l, done)
+	go reader(ws, done)
 }

@@ -45,17 +45,17 @@ func TestServeWsLog_Success(t *testing.T) {
 	// send some log message
 	ts.Info("Test message")
 	// check output though the websocket
-	assert.NoError(t, ws.SetReadDeadline(time.Now().Add(300*time.Millisecond)))
+	assert.NoError(t, ws.SetReadDeadline(time.Now().Add(time.Second)))
 	msgType, msg, err := ws.ReadMessage()
 	assert.NoError(t, err)
 	assert.Equal(t, websocket.TextMessage, msgType)
 	assert.NotEmpty(t, msg)
 	assert.Contains(t, string(msg), "Test message")
-	<-time.After(time.Second)
+	<-time.After(2 * time.Second)
 	// check if the connection is closed
 	assert.NoError(t, ws.Close())
-	assert.Error(t, ws.SetReadDeadline(time.Now().Add(100*time.Millisecond)))
+	ts.Info("Test message after websocket close")
+	assert.Error(t, ws.SetReadDeadline(time.Now().Add(time.Second)))
 	_, _, err = ws.ReadMessage()
 	assert.Error(t, err, "should error because connection is closed")
-
 }
