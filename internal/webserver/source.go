@@ -9,32 +9,36 @@ import (
 )
 
 func (server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request) {
+	var (
+		err    error
+		params []byte
+		res    string
+	)
+
+	defer func() {
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}()
+
 	switch r.Method {
 	case http.MethodGet:
 		// return monitored databases
-		dbs, err := server.GetSources()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if res, err = server.GetSources(); err != nil {
 			return
 		}
-		_, _ = w.Write([]byte(dbs))
+		_, err = w.Write([]byte(res))
 
 	case http.MethodPost:
 		// add new monitored database
-		p, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		if err := server.UpdateSource(p); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
+		err = server.UpdateSource(params)
 
 	case http.MethodDelete:
 		// delete monitored database
-		if err := server.DeleteSource(r.URL.Query().Get("name")); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
+		err = server.DeleteSource(r.URL.Query().Get("name"))
 
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")

@@ -41,7 +41,7 @@ func (m *mockMetricsReaderWriter) WriteMetrics(metricDefs *metrics.Metrics) erro
 	return m.WriteMetricsFunc(metricDefs)
 }
 
-func newTestServer(mrw *mockMetricsReaderWriter) *WebUIServer {
+func newTestMetricServer(mrw *mockMetricsReaderWriter) *WebUIServer {
 	return &WebUIServer{
 		metricsReaderWriter: mrw,
 	}
@@ -53,7 +53,7 @@ func TestHandleMetrics_GET(t *testing.T) {
 			return &metrics.Metrics{MetricDefs: map[string]metrics.Metric{"foo": {Description: "foo"}}}, nil
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	r := httptest.NewRequest(http.MethodGet, "/metric", nil)
 	w := httptest.NewRecorder()
 	ts.handleMetrics(w, r)
@@ -72,7 +72,7 @@ func TestHandleMetrics_GET_Fail(t *testing.T) {
 			return nil, errors.New("fail")
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	r := httptest.NewRequest(http.MethodGet, "/metric", nil)
 	w := httptest.NewRecorder()
 	ts.handleMetrics(w, r)
@@ -93,7 +93,7 @@ func TestHandleMetrics_POST(t *testing.T) {
 			return nil
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	m := metrics.Metric{Description: "bar"}
 	b, _ := json.Marshal(m)
 	r := httptest.NewRequest(http.MethodPost, "/metric?name=bar", bytes.NewReader(b))
@@ -118,7 +118,7 @@ func TestHandleMetrics_POST_ReaderFail(t *testing.T) {
 			return nil
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	r := httptest.NewRequest(http.MethodPost, "/metric?name=bar", &errorReader{})
 	w := httptest.NewRecorder()
 	ts.handleMetrics(w, r)
@@ -135,7 +135,7 @@ func TestHandleMetrics_POST_Fail(t *testing.T) {
 			return errors.New("fail")
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	m := metrics.Metric{Description: "bar"}
 	b, _ := json.Marshal(m)
 	r := httptest.NewRequest(http.MethodPost, "/metric?name=bar", bytes.NewReader(b))
@@ -156,7 +156,7 @@ func TestHandleMetrics_DELETE(t *testing.T) {
 			return nil
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	r := httptest.NewRequest(http.MethodDelete, "/metric?name=foo", nil)
 	w := httptest.NewRecorder()
 	ts.handleMetrics(w, r)
@@ -168,7 +168,7 @@ func TestHandleMetrics_DELETE(t *testing.T) {
 
 func TestHandleMetrics_Options(t *testing.T) {
 	mock := &mockMetricsReaderWriter{}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	r := httptest.NewRequest(http.MethodOptions, "/metric", nil)
 	w := httptest.NewRecorder()
 	ts.handleMetrics(w, r)
@@ -180,7 +180,7 @@ func TestHandleMetrics_Options(t *testing.T) {
 
 func TestHandleMetrics_MethodNotAllowed(t *testing.T) {
 	mock := &mockMetricsReaderWriter{}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	r := httptest.NewRequest(http.MethodPut, "/metric", nil)
 	w := httptest.NewRecorder()
 	ts.handleMetrics(w, r)
@@ -196,7 +196,7 @@ func TestGetMetrics_Error(t *testing.T) {
 			return nil, errors.New("fail")
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	_, err := ts.GetMetrics()
 	assert.Error(t, err)
 }
@@ -207,7 +207,7 @@ func TestUpdateMetric_Error(t *testing.T) {
 			return errors.New("fail")
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	err := ts.UpdateMetric("foo", []byte("notjson"))
 	assert.Error(t, err)
 }
@@ -218,7 +218,7 @@ func TestDeleteMetric_Error(t *testing.T) {
 			return errors.New("fail")
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	err := ts.DeleteMetric("foo")
 	assert.Error(t, err)
 }
@@ -229,7 +229,7 @@ func TestHandlePreset_GET(t *testing.T) {
 			return &metrics.Metrics{PresetDefs: map[string]metrics.Preset{"foo": {Description: "foo"}}}, nil
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	r := httptest.NewRequest(http.MethodGet, "/preset", nil)
 	w := httptest.NewRecorder()
 	ts.handlePresets(w, r)
@@ -248,7 +248,7 @@ func TestHandlePreset_GET_Fail(t *testing.T) {
 			return nil, errors.New("fail")
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	r := httptest.NewRequest(http.MethodGet, "/preset", nil)
 	w := httptest.NewRecorder()
 	ts.handlePresets(w, r)
@@ -269,7 +269,7 @@ func TestHandlePreset_POST(t *testing.T) {
 			return nil
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	p := metrics.Preset{Description: "bar"}
 	b, _ := json.Marshal(p)
 	r := httptest.NewRequest(http.MethodPost, "/preset?name=bar", bytes.NewReader(b))
@@ -288,7 +288,7 @@ func TestHandlePreset_POST_ReaderFail(t *testing.T) {
 			return nil
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	r := httptest.NewRequest(http.MethodPost, "/preset?name=bar", &errorReader{})
 	w := httptest.NewRecorder()
 	ts.handlePresets(w, r)
@@ -305,7 +305,7 @@ func TestHandlePreset_POST_Fail(t *testing.T) {
 			return errors.New("fail")
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	p := metrics.Preset{Description: "bar"}
 	b, _ := json.Marshal(p)
 	r := httptest.NewRequest(http.MethodPost, "/preset?name=bar", bytes.NewReader(b))
@@ -326,7 +326,7 @@ func TestHandlePreset_DELETE(t *testing.T) {
 			return nil
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	r := httptest.NewRequest(http.MethodDelete, "/preset?name=foo", nil)
 	w := httptest.NewRecorder()
 	ts.handlePresets(w, r)
@@ -338,7 +338,7 @@ func TestHandlePreset_DELETE(t *testing.T) {
 
 func TestHandlePreset_Options(t *testing.T) {
 	mock := &mockMetricsReaderWriter{}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	r := httptest.NewRequest(http.MethodOptions, "/preset", nil)
 	w := httptest.NewRecorder()
 	ts.handlePresets(w, r)
@@ -350,7 +350,7 @@ func TestHandlePreset_Options(t *testing.T) {
 
 func TestHandlePreset_MethodNotAllowed(t *testing.T) {
 	mock := &mockMetricsReaderWriter{}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	r := httptest.NewRequest(http.MethodPut, "/preset", nil)
 	w := httptest.NewRecorder()
 	ts.handlePresets(w, r)
@@ -366,7 +366,7 @@ func TestGetPresets_Error(t *testing.T) {
 			return nil, errors.New("fail")
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	_, err := ts.GetPresets()
 	assert.Error(t, err)
 }
@@ -377,7 +377,7 @@ func TestUpdatePreset_Error(t *testing.T) {
 			return errors.New("fail")
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	err := ts.UpdatePreset("foo", []byte("notjson"))
 	assert.Error(t, err)
 }
@@ -388,7 +388,7 @@ func TestDeletePreset_Error(t *testing.T) {
 			return errors.New("fail")
 		},
 	}
-	ts := newTestServer(mock)
+	ts := newTestMetricServer(mock)
 	err := ts.DeletePreset("foo")
 	assert.Error(t, err)
 }
