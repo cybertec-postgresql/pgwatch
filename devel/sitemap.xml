@@ -13,7 +13,15 @@
          <lastmod>2025-05-06</lastmod>
     </url>
     <url>
+         <loc>https://pgwat.ch/devel/concept/kubernetes.html</loc>
+         <lastmod>2025-05-06</lastmod>
+    </url>
+    <url>
          <loc>https://pgwat.ch/devel/concept/long_term_installations.html</loc>
+         <lastmod>2025-05-06</lastmod>
+    </url>
+    <url>
+         <loc>https://pgwat.ch/devel/concept/security.html</loc>
          <lastmod>2025-05-06</lastmod>
     </url>
     <url>
@@ -77,23 +85,15 @@
          <lastmod>2025-05-06</lastmod>
     </url>
     <url>
+         <loc>https://pgwat.ch/devel/reference/cli_env.html</loc>
+         <lastmod>2025-05-06</lastmod>
+    </url>
+    <url>
          <loc>https://pgwat.ch/devel/reference/env_variables.html</loc>
          <lastmod>2025-05-06</lastmod>
     </url>
     <url>
-         <loc>https://pgwat.ch/devel/reference/kubernetes.html</loc>
-         <lastmod>2025-05-06</lastmod>
-    </url>
-    <url>
          <loc>https://pgwat.ch/devel/reference/metric_definitions.html</loc>
-         <lastmod>2025-05-06</lastmod>
-    </url>
-    <url>
-         <loc>https://pgwat.ch/devel/reference/security.html</loc>
-         <lastmod>2025-05-06</lastmod>
-    </url>
-    <url>
-         <loc>https://pgwat.ch/devel/reference/technical_details.html</loc>
          <lastmod>2025-05-06</lastmod>
     </url>
     <url>

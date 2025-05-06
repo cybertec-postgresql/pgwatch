@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://pgwat.ch/devel/reference/security.html">
+        <link rel="canonical" href="https://pgwat.ch/devel/reference/cli_env.html">
       
       
-        <link rel="prev" href="technical_details.html">
+        <link rel="prev" href="../howto/migrate_v2_to_v3.html">
       
       
-        <link rel="next" href="kubernetes.html">
+        <link rel="next" href="advanced_features.html">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Security aspects - 🔬 pgwatch</title>
+        <title>Command-Line Options & Environment Variables - 🔬 pgwatch</title>
       
     
     
@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#general-security-information" class="md-skip">
+        <a href="#general-usage" class="md-skip">
           Skip to content
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Security aspects
+              Command-Line Options & Environment Variables
             
           </span>
         </div>
@@ -325,7 +325,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="advanced_features.html" class="md-tabs__link">
+        <a href="cli_env.html" class="md-tabs__link">
           
   
   
@@ -656,6 +656,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../concept/security.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../howto/sizing_recommendations.html" class="md-nav__link">
         
   
@@ -685,6 +708,29 @@
   
   <span class="md-ellipsis">
     Web UI
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/kubernetes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Kubernetes
     
   </span>
   
@@ -964,7 +1010,7 @@
   
   
   <span class="md-ellipsis">
-    Bootstraping the Metrics Measurements Database (Sink)
+    Bootstraping the Measurements Database (Sink)
     
   </span>
   
@@ -1055,6 +1101,187 @@
                 
   
   
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    CLI & Environment Variables
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="cli_env.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    CLI & Environment Variables
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#general-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      General Usage
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Options
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sources
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Metrics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sinks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sinks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Logging
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#webui" class="md-nav__link">
+    <span class="md-ellipsis">
+      WebUI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#help-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Help Options
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available commands
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Available commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#manage-configurations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manage configurations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manage-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manage metrics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manage-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manage sources
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
   
   
     <li class="md-nav__item">
@@ -1104,137 +1331,12 @@
   
   
     <li class="md-nav__item">
-      <a href="technical_details.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Technical Details
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Security
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="security.html" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    Security
-    
-  </span>
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#general-security-information" class="md-nav__link">
-    <span class="md-ellipsis">
-      General security information
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#launching-a-more-secure-docker-container" class="md-nav__link">
-    <span class="md-ellipsis">
-      Launching a more secure Docker container
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="kubernetes.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Kubernetes
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="env_variables.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Environment Variables
+    Docker Variables
     
   </span>
   
@@ -1511,20 +1613,122 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#general-security-information" class="md-nav__link">
+  <a href="#general-usage" class="md-nav__link">
     <span class="md-ellipsis">
-      General security information
+      General Usage
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#launching-a-more-secure-docker-container" class="md-nav__link">
+  <a href="#options" class="md-nav__link">
     <span class="md-ellipsis">
-      Launching a more secure Docker container
+      Options
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sources
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Metrics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sinks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sinks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Logging
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#webui" class="md-nav__link">
+    <span class="md-ellipsis">
+      WebUI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#help-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Help Options
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available commands
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Available commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#manage-configurations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manage configurations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manage-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manage metrics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manage-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manage sources
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1544,7 +1748,7 @@
 
 
   
-    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/reference/security.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/reference/cli_env.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1552,72 +1756,233 @@
   
 
 
-  <h1>Security</h1>
+  <h1>CLI & Environment Variables</h1>
 
-<h2 id="general-security-information">General security information</h2>
-<p>Security can be tightened for most pgwatch components quite granularly,
-but the default values for the Docker image don't focus on security
-though but rather on being quickly usable for ad-hoc performance
-troubleshooting, which is where the roots of pgwatch lie.</p>
-<p>Some points on security:</p>
+<h2 id="general-usage">General Usage</h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>  pgwatch [OPTIONS] [config | metric | source]
+</span></code></pre></div>
+<p>When no command is specified, the default is to start in a monitoring mode. pgwatch will read the
+configuration from the specified sources and metrics first, and then will start the measurements collection
+from resolved databases.</p>
+<h2 id="options">Options</h2>
+<h3 id="sources">Sources</h3>
 <ul>
 <li>
-<p>The administrative Web UI doesn't have by default any security.
-    Configurable via env. variables.</p>
+<p><code>-s</code>, <code>--sources=</code></p>
+<p>Postgres URI, file or folder of YAML files containing info on which DBs to monitor.<br />
+ENV: <code>$PW_SOURCES</code></p>
+<p>Examples: <code>postgresql://pgwatch@localhost:5432/pgwatch</code>,<br />
+<code>/etc/sources.yaml</code>,<br />
+<code>/etc/pgwatch/sources/</code></p>
 </li>
 <li>
-<p>Viewing Grafana dashboards by default doesn't require login.
-    Editing needs a password. Configurable via env. variables.</p>
+<p><code>--refresh=</code></p>
+<p>How frequently to resync sources and metrics (default: 120).<br />
+ENV: <code>$PW_REFRESH</code></p>
 </li>
 <li>
-<p>Dashboards based on the "stat_statements" metric (Stat Statement
-    Overview / Top) expose actual queries.</p>
-<p>They should be "mostly" stripped of details though and replaced by
-placeholders by Postgres, but if no risks can be taken such
-dashboards (or at least according panels) should be deleted. Or as
-an alternative the <code>stat_statements_no_query_text</code> and
-<code>pg_stat_statements_calls</code> metrics could be used, which don't
-store query texts in the first place.</p>
+<p><code>-g</code>, <code>--group=</code></p>
+<p>Groups for filtering which databases to monitor. By default all are monitored.<br />
+ENV: <code>$PW_GROUP</code></p>
 </li>
 <li>
-<p>Safe certificate connections to Postgres are supported. According 
-    <em>sslmode</em> (verify-ca, verify-full) and cert file paths
-    need to be specified then in connection string on Web UI "/dbs" page 
-    or in the YAML config.</p>
+<p><code>--min-db-size-mb=</code></p>
+<p>Smaller size databases will be ignored and not monitored until they reach the threshold (default: 0).<br />
+ENV: <code>$PW_MIN_DB_SIZE_MB</code></p>
 </li>
 <li>
-<p>Note that although pgwatch can handle password security, in many
-    cases it's better to still use the standard LibPQ <em>.pgpass</em> file to
-    store passwords.</p>
+<p><code>--max-parallel-connections-per-db=</code></p>
+<p>Max parallel metric fetches per monitored database. Note the multiplication effect on multi-DB instances (default: 4).<br />
+ENV: <code>$PW_MAX_PARALLEL_CONNECTIONS_PER_DB</code></p>
+</li>
+<li>
+<p><code>--try-create-listed-exts-if-missing=</code></p>
+<p>Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements.<br />
+ENV: <code>$PW_TRY_CREATE_LISTED_EXTS_IF_MISSING</code></p>
+<p>Example: <code>pg_stat_statements,pg_hint_plan</code></p>
 </li>
 </ul>
-<h2 id="launching-a-more-secure-docker-container">Launching a more secure Docker container</h2>
-<p>Some common sense security is built into default Docker images for all
-components but not activated by default. A sample command to launch
-pgwatch with following security "checkpoints" enabled:</p>
-<ol>
-<li>HTTPS for both Grafana and the Web UI with self-signed certificates</li>
-<li>No anonymous viewing of graphs in Grafana</li>
-<li>Custom user / password for the Grafana "admin" account</li>
-<li>No anonymous access / editing over the admin Web UI</li>
-<li>No viewing of internal logs of components running inside Docker</li>
+<h3 id="metrics">Metrics</h3>
+<ul>
 <li>
-<p>Password encryption for connect strings stored in the Config DB</p>
-<div class="language-properties highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">docker</span><span class="w"> </span><span class="s">run --name pw3 -d --restart=unless-stopped </span><span class="se">\</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="s">-p 3000:3000 -p 8080:8080 </span><span class="se">\</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="s">-e PW_GRAFANASSL=1 -e PW_WEBSSL=1 </span><span class="se">\</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="s">-e PW_GRAFANANOANONYMOUS=1 -e PW_GRAFANAUSER=myuser </span><span class="se">\</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="s">-e PW_GRAFANAPASSWORD=mypass </span><span class="se">\</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="s">-e PW_WEBNOANONYMOUS=1 -e PW_WEBNOCOMPONENTLOGS=1 </span><span class="se">\</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="s">-e PW_WEBUSER=myuser -e PW_WEBPASSWORD=mypass </span><span class="se">\</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="s">-e PW_AES_GCM_KEYPHRASE=qwerty </span><span class="se">\</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="s">cybertec/pgwatch</span>
-</span></code></pre></div>
+<p><code>-m</code>, <code>--metrics=</code></p>
+<p>Postgres URI, YAML file or folder of YAML files with metrics definitions.<br />
+ENV: <code>$PW_METRICS</code></p>
 </li>
-</ol>
-<p>For custom installs it's up to the user though. A hint - Docker
-<em>launcher</em> files can also be inspected to see which config parameters
-are being touched.</p>
+<li>
+<p><code>--create-helpers</code></p>
+<p>Create helper database objects from metric definitions.<br />
+ENV: <code>$PW_CREATE_HELPERS</code></p>
+</li>
+<li>
+<p><code>--direct-os-stats</code></p>
+<p>Extract OS related psutil statistics not via PL/Python wrappers but directly on host.<br />
+ENV: <code>$PW_DIRECT_OS_STATS</code></p>
+</li>
+<li>
+<p><code>--instance-level-cache-max-seconds=</code></p>
+<p>Max allowed staleness for instance level metric data shared between DBs of an instance. Set to 0 to disable (default: 30).<br />
+ENV: <code>$PW_INSTANCE_LEVEL_CACHE_MAX_SECONDS</code></p>
+</li>
+<li>
+<p><code>--emergency-pause-triggerfile=</code></p>
+<p>When the file exists no metrics will be temporarily fetched / scraped (default: /tmp/pgwatch-emergency-pause).<br />
+ENV: <code>$PW_EMERGENCY_PAUSE_TRIGGERFILE</code></p>
+</li>
+</ul>
+<h3 id="sinks">Sinks</h3>
+<ul>
+<li>
+<p><code>--sink=</code></p>
+<p>URI where metrics will be stored, can be used multiple times.<br />
+ENV: <code>$PW_SINK</code></p>
+<p>Examples: <code>postgresql://pgwatch@localhost:5432/metrics</code>,<br />
+<code>prometheus://localhost:9090</code>,<br />
+<code>jsonfile:///tmp/metrics.json</code>,<br />
+<code>rpc://localhost:5000/</code></p>
+</li>
+<li>
+<p><code>--batching-delay=</code></p>
+<p>Max milliseconds to wait for a batched metrics flush (default: 250ms).<br />
+ENV: <code>$PW_BATCHING_DELAY</code></p>
+</li>
+<li>
+<p><code>--retention=</code></p>
+<p>If set, metrics older than that will be deleted (default: 14).<br />
+ENV: <code>$PW_RETENTION</code></p>
+</li>
+<li>
+<p><code>--real-dbname-field=</code></p>
+<p>Tag key for real database name (default: real_dbname).<br />
+ENV: <code>$PW_REAL_DBNAME_FIELD</code></p>
+</li>
+<li>
+<p><code>--system-identifier-field=</code></p>
+<p>Tag key for system identifier value (default: sys_id).<br />
+ENV: <code>$PW_SYSTEM_IDENTIFIER_FIELD</code></p>
+</li>
+</ul>
+<h3 id="logging">Logging</h3>
+<ul>
+<li>
+<p><code>--log-level=[debug|info|error]</code></p>
+<p>Verbosity level for stdout and log file (default: info)</p>
+</li>
+<li>
+<p><code>--log-file=</code></p>
+<p>File name to store logs</p>
+</li>
+<li>
+<p><code>--log-file-format=[json|text]</code></p>
+<p>Format of file logs (default: json)</p>
+</li>
+<li>
+<p><code>--log-file-rotate</code></p>
+<p>Rotate log files</p>
+</li>
+<li>
+<p><code>--log-file-size=</code></p>
+<p>Maximum size in MB of the log file before it gets rotated (default: 100)</p>
+</li>
+<li>
+<p><code>--log-file-age=</code></p>
+<p>Number of days to retain old log files, 0 means forever (default: 0)</p>
+</li>
+<li>
+<p><code>--log-file-number=</code></p>
+<p>Maximum number of old log files to retain, 0 to retain all (default: 0)</p>
+</li>
+</ul>
+<h3 id="webui">WebUI</h3>
+<ul>
+<li>
+<p><code>--web-disable=[all|ui]</code></p>
+<p>Disable REST API and/or web UI.<br />
+ENV: <code>$PW_WEBDISABLE</code></p>
+</li>
+<li>
+<p><code>--web-addr=</code></p>
+<p>TCP address in the form 'host:port' to listen on (default: :8080).<br />
+ENV: <code>$PW_WEBADDR</code></p>
+</li>
+<li>
+<p><code>--web-user=</code></p>
+<p>Admin login.<br />
+ENV: <code>$PW_WEBUSER</code></p>
+</li>
+<li>
+<p><code>--web-password=</code></p>
+<p>Admin password.<br />
+ENV: <code>$PW_WEBPASSWORD</code></p>
+</li>
+</ul>
+<h3 id="help-options">Help Options</h3>
+<ul>
+<li>
+<p><code>-h</code>, <code>--help</code></p>
+<p>Show this help message</p>
+</li>
+</ul>
+<h2 id="available-commands">Available commands</h2>
+<h3 id="manage-configurations">Manage configurations</h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  pgwatch [OPTIONS] config &lt;init | upgrade&gt;
+</span></code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>To use <code>config</code> command, you need to specify the <code>-s</code>, <code>--sources</code> and\or <code>-m</code>, <code>--metrics</code> options.</p>
+</div>
+<ul>
+<li>
+<p><code>init</code></p>
+<p>Initialize the configuration database with the required tables and functions. If file is used, it will
+be created in the specified location and filled with built-in defaults.</p>
+</li>
+<li>
+<p><code>upgrade</code></p>
+<p>Upgrade the database to the latest version. File or folder based configurations are not supported yet.</p>
+</li>
+</ul>
+<h3 id="manage-metrics">Manage metrics</h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>  pgwatch [OPTIONS] metric &lt;print-init | print-sql&gt;
+</span></code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>To use <code>config</code> command, you need to specify the <code>-m</code>, <code>--metrics</code> option.</p>
+</div>
+<ul>
+<li>
+<p><code>print-init</code></p>
+<p>Get and print init SQL for a given metric(s) or preset(s)</p>
+<p>Examples: <code>pgwatch metric print-init bgwriter cpu_load</code>,<br />
+<code>pgwatch metric print-init exhaustive</code></p>
+</li>
+<li>
+<p><code>print-sql</code></p>
+<p>Get and print SQL for a given metric. Optional parameter <code>-v, --version=</code> specifies
+PostgreSQL version to get SQL for.</p>
+<p>Examples: <code>pgwatch metric print-sql bgwriter</code>,<br />
+<code>pgwatch metric print-sql bgwriter -v 14</code></p>
+</li>
+</ul>
+<h3 id="manage-sources">Manage sources</h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>    pgwatch [OPTIONS] source &lt;ping | resolve&gt;
+</span></code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>To use <code>source</code> command, you need to specify the <code>-s</code>, <code>--sources</code> option.</p>
+</div>
+<ul>
+<li>
+<p><code>ping</code></p>
+<p>Ping the sources (databases, patroni clusters, poolers, etc.) to check if they are reachable.  </p>
+</li>
+<li>
+<p><code>resolve</code></p>
+<p>Resolve the monitored databases from sources (postgres clusters and patroni clusters) to check
+if they are reachableand if the configuration is correct. The output will be a list of the
+resolved databases with their connection strings.</p>
+</li>
+</ul>
 
 
 
@@ -1652,7 +2017,7 @@ are being touched.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="technical_details.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Technical Details">
+          <a href="../howto/migrate_v2_to_v3.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Migration from pgwatch v2">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1662,20 +2027,20 @@ are being touched.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Technical Details
+                Migration from pgwatch v2
               </div>
             </div>
           </a>
         
         
           
-          <a href="kubernetes.html" class="md-footer__link md-footer__link--next" aria-label="Next: Kubernetes">
+          <a href="advanced_features.html" class="md-footer__link md-footer__link--next" aria-label="Next: Advanced Features">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Kubernetes
+                Advanced Features
               </div>
             </div>
             <div class="md-footer__button md-icon">
