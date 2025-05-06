@@ -29,10 +29,6 @@ COPY internal/metrics/metrics.yaml /pgwatch/metrics/metrics.yaml
 
 # Admin UI for configuring servers to be monitored
 EXPOSE 8080
-# Gatherer healthcheck port / metric statistics (JSON)
-EXPOSE 8081
-# Prometheus metrics scraping port
-EXPOSE 9187
 
 # Command to run the executable
 ENTRYPOINT ["/pgwatch/pgwatch"]
