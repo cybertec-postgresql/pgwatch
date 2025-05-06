@@ -11,13 +11,13 @@ troubleshooting, which is where the roots of pgwatch lie.
 
 Some points on security:
 
--   The administrative Web UI doesn't have by default any security.
+- The administrative Web UI doesn't have by default any security.
     Configurable via env. variables.
 
--   Viewing Grafana dashboards by default doesn't require login.
+- Viewing Grafana dashboards by default doesn't require login.
     Editing needs a password. Configurable via env. variables.
 
--   Dashboards based on the "stat_statements" metric (Stat Statement
+- Dashboards based on the "stat_statements" metric (Stat Statement
     Overview / Top) expose actual queries.
 
     They should be "mostly" stripped of details though and replaced by
@@ -27,12 +27,12 @@ Some points on security:
     `pg_stat_statements_calls` metrics could be used, which don't
     store query texts in the first place.
 
--   Safe certificate connections to Postgres are supported. According 
+- Safe certificate connections to Postgres are supported. According
     *sslmode* (verify-ca, verify-full) and cert file paths
-    need to be specified then in connection string on Web UI "/dbs" page 
+    need to be specified then in connection string on Web UI "/dbs" page
     or in the YAML config.
 
--   Note that although pgwatch can handle password security, in many
+- Note that although pgwatch can handle password security, in many
     cases it's better to still use the standard LibPQ *.pgpass* file to
     store passwords.
 
@@ -42,13 +42,12 @@ Some common sense security is built into default Docker images for all
 components but not activated by default. A sample command to launch
 pgwatch with following security "checkpoints" enabled:
 
-1.  HTTPS for both Grafana and the Web UI with self-signed certificates
-1.  No anonymous viewing of graphs in Grafana
-1.  Custom user / password for the Grafana "admin" account
-1.  No anonymous access / editing over the admin Web UI
-1.  No viewing of internal logs of components running inside Docker
-1.  Password encryption for connect strings stored in the Config DB
-
+1. HTTPS for both Grafana and the Web UI with self-signed certificates
+1. No anonymous viewing of graphs in Grafana
+1. Custom user / password for the Grafana "admin" account
+1. No anonymous access / editing over the admin Web UI
+1. No viewing of internal logs of components running inside Docker
+1. Password encryption for connect strings stored in the Config DB
 
     ```properties
     docker run --name pw3 -d --restart=unless-stopped \

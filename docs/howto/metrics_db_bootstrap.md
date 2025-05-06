@@ -1,5 +1,5 @@
 ---
-title: Bootstrapping the Metrics Measurements Database (Sink)
+title: Bootstrapping the Measurements Database (Sink)
 ---
 
 ## Choosing a Database

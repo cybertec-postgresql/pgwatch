@@ -16,4 +16,4 @@ See `pgwatch --help` output for details.
 - **PW_GRAFANAUSER** Administrative user. Default: admin
 - **PW_GRAFANAPASSWORD** Administrative user password. Default: pgwatchadmin
 - **PW_GRAFANASSL** Use SSL. Default: -
-- **PW_GRAFANA_BASEURL** For linking to Grafana "Query details" dashboard from "Stat_stmt. overview". Default: http://0.0.0.0:3000
+- **PW_GRAFANA_BASEURL** For linking to Grafana "Query details" dashboard from "Stat_stmt. overview". Default: <http://0.0.0.0:3000>

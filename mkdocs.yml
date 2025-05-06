@@ -52,8 +52,10 @@ nav:
     - Components: concept/components.md
     - Installation Options: concept/installation_options.md
     - Long Term Installations: concept/long_term_installations.md
+    - Security: concept/security.md    
     - Sizing Recommendations: howto/sizing_recommendations.md
     - Web UI: concept/web_ui.md
+    - Kubernetes: concept/kubernetes.md
   - Tutorials:
     - Docker Installation: tutorial/docker_installation.md
     - Custom Installation: tutorial/custom_installation.md
@@ -63,15 +65,13 @@ nav:
     - Dashboarding and Alerting: howto/dashboarding_alerting.md
     - Using Managed Services: howto/using_managed_services.md
     - Bootstrapping the Configuration Database: howto/config_db_bootstrap.md
-    - Bootstraping the Metrics Measurements Database (Sink): howto/metrics_db_bootstrap.md
+    - Bootstraping the Measurements Database (Sink): howto/metrics_db_bootstrap.md
     - Migration from pgwatch v2: howto/migrate_v2_to_v3.md
   - Reference:
+    - CLI & Environment Variables: reference/cli_env.md
     - Advanced Features: reference/advanced_features.md
     - Metric Definitions: reference/metric_definitions.md
-    - Technical Details: reference/technical_details.md
-    - Security: reference/security.md
-    - Kubernetes: reference/kubernetes.md
-    - Environment Variables: reference/env_variables.md
+    - Docker Variables: reference/env_variables.md
   - Gallery: 
     - Dashboards: gallery/dashboards.md
     - Web UI: gallery/webui.md
