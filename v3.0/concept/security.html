@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://pgwat.ch/v3.0/reference/kubernetes.html">
+        <link rel="canonical" href="https://pgwat.ch/v3.0/concept/security.html">
       
       
-        <link rel="prev" href="security.html">
+        <link rel="prev" href="long_term_installations.html">
       
       
-        <link rel="next" href="env_variables.html">
+        <link rel="next" href="../howto/sizing_recommendations.html">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Kubernetes - 🔬 pgwatch</title>
+        <title>Security aspects - 🔬 pgwatch</title>
       
     
     
@@ -84,6 +84,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#general-security-information" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -118,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Kubernetes
+              Security aspects
             
           </span>
         </div>
@@ -248,11 +253,13 @@
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../concept/components.html" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="components.html" class="md-tabs__link">
           
   
   Concepts
@@ -302,13 +309,11 @@
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="advanced_features.html" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../reference/cli_env.html" class="md-tabs__link">
           
   
   Reference
@@ -516,23 +521,28 @@
       
   
   
+    
   
   
+  
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -544,7 +554,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Concepts
@@ -558,7 +568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/components.html" class="md-nav__link">
+      <a href="components.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -580,7 +590,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/installation_options.html" class="md-nav__link">
+      <a href="installation_options.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -602,7 +612,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/long_term_installations.html" class="md-nav__link">
+      <a href="long_term_installations.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -612,6 +622,83 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="security.html" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#general-security-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      General security information
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#launching-a-more-secure-docker-container" class="md-nav__link">
+    <span class="md-ellipsis">
+      Launching a more secure Docker container
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -646,11 +733,33 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/web_ui.html" class="md-nav__link">
+      <a href="web_ui.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     Web UI
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="kubernetes.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kubernetes
     
   </span>
   
@@ -918,7 +1027,7 @@
         
   
   <span class="md-ellipsis">
-    Bootstraping the Metrics Measurements Database (Sink)
+    Bootstraping the Measurements Database (Sink)
     
   </span>
   
@@ -962,28 +1071,23 @@
       
   
   
-    
   
   
-  
     
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -995,7 +1099,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Reference
@@ -1009,7 +1113,29 @@
   
   
     <li class="md-nav__item">
-      <a href="advanced_features.html" class="md-nav__link">
+      <a href="../reference/cli_env.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CLI & Environment Variables
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/advanced_features.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1031,7 +1157,7 @@
   
   
     <li class="md-nav__item">
-      <a href="metric_definitions.html" class="md-nav__link">
+      <a href="../reference/metric_definitions.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1053,85 +1179,11 @@
   
   
     <li class="md-nav__item">
-      <a href="technical_details.html" class="md-nav__link">
+      <a href="../reference/env_variables.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Technical Details
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="security.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Security
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-      <a href="kubernetes.html" class="md-nav__link md-nav__link--active">
-        
-  
-  <span class="md-ellipsis">
-    Kubernetes
-    
-  </span>
-  
-
-      </a>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="env_variables.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Environment Variables
+    Docker Variables
     
   </span>
   
@@ -1391,6 +1443,32 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#general-security-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      General security information
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#launching-a-more-secure-docker-container" class="md-nav__link">
+    <span class="md-ellipsis">
+      Launching a more secure Docker container
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1405,7 +1483,7 @@
 
 
   
-    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/reference/kubernetes.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/concept/security.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1413,21 +1491,72 @@
   
 
 
-  <h1>Kubernetes</h1>
+  <h1>Security</h1>
 
-<p>A basic Helm chart templates for installing pgwatch to a Kubernetes
-cluster are available as a standalone <a href="https://github.com/cybertec-postgresql/pgwatch-charts">repository</a>. </p>
-<div class="admonition notice">
-<p class="admonition-title">Notice</p>
-<p>Charts are not considered as a part of pgwatch and
-are not maintained by pgwatch developers.</p>
-</div>
-<p>The corresponding setup can be found in <a href="https://github.com/cybertec-postgresql/pgwatch-charts">repository</a>, 
-whereas installation is done via the following commands:</p>
-<div class="language-text highlight"><pre><span></span><code>cd openshift_k8s
-helm install -f chart-values.yml pgwatch ./helm-chart
-</code></pre></div>
-<p>Please have a look at <code>helm-chart/values.yaml</code> to get additional information of configurable options. </p>
+<h2 id="general-security-information">General security information</h2>
+<p>Security can be tightened for most pgwatch components quite granularly,
+but the default values for the Docker image don't focus on security
+though but rather on being quickly usable for ad-hoc performance
+troubleshooting, which is where the roots of pgwatch lie.</p>
+<p>Some points on security:</p>
+<ul>
+<li>
+<p>The administrative Web UI doesn't have by default any security.
+    Configurable via env. variables.</p>
+</li>
+<li>
+<p>Viewing Grafana dashboards by default doesn't require login.
+    Editing needs a password. Configurable via env. variables.</p>
+</li>
+<li>
+<p>Dashboards based on the "stat_statements" metric (Stat Statement
+    Overview / Top) expose actual queries.</p>
+<p>They should be "mostly" stripped of details though and replaced by
+placeholders by Postgres, but if no risks can be taken such
+dashboards (or at least according panels) should be deleted. Or as
+an alternative the <code>stat_statements_no_query_text</code> and
+<code>pg_stat_statements_calls</code> metrics could be used, which don't
+store query texts in the first place.</p>
+</li>
+<li>
+<p>Safe certificate connections to Postgres are supported. According
+    <em>sslmode</em> (verify-ca, verify-full) and cert file paths
+    need to be specified then in connection string on Web UI "/dbs" page
+    or in the YAML config.</p>
+</li>
+<li>
+<p>Note that although pgwatch can handle password security, in many
+    cases it's better to still use the standard LibPQ <em>.pgpass</em> file to
+    store passwords.</p>
+</li>
+</ul>
+<h2 id="launching-a-more-secure-docker-container">Launching a more secure Docker container</h2>
+<p>Some common sense security is built into default Docker images for all
+components but not activated by default. A sample command to launch
+pgwatch with following security "checkpoints" enabled:</p>
+<ol>
+<li>HTTPS for both Grafana and the Web UI with self-signed certificates</li>
+<li>No anonymous viewing of graphs in Grafana</li>
+<li>Custom user / password for the Grafana "admin" account</li>
+<li>No anonymous access / editing over the admin Web UI</li>
+<li>No viewing of internal logs of components running inside Docker</li>
+<li>
+<p>Password encryption for connect strings stored in the Config DB</p>
+<div class="language-properties highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">docker</span><span class="w"> </span><span class="s">run --name pw3 -d --restart=unless-stopped </span><span class="se">\</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="s">-p 3000:3000 -p 8080:8080 </span><span class="se">\</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="s">-e PW_GRAFANASSL=1 -e PW_WEBSSL=1 </span><span class="se">\</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="s">-e PW_GRAFANANOANONYMOUS=1 -e PW_GRAFANAUSER=myuser </span><span class="se">\</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="s">-e PW_GRAFANAPASSWORD=mypass </span><span class="se">\</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="s">-e PW_WEBNOANONYMOUS=1 -e PW_WEBNOCOMPONENTLOGS=1 </span><span class="se">\</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="s">-e PW_WEBUSER=myuser -e PW_WEBPASSWORD=mypass </span><span class="se">\</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="s">-e PW_AES_GCM_KEYPHRASE=qwerty </span><span class="se">\</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="s">cybertec/pgwatch</span>
+</span></code></pre></div>
+</li>
+</ol>
+<p>For custom installs it's up to the user though. A hint - Docker
+<em>launcher</em> files can also be inspected to see which config parameters
+are being touched.</p>
 
 
 
@@ -1462,7 +1591,7 @@ helm install -f chart-values.yml pgwatch ./helm-chart
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="security.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Security">
+          <a href="long_term_installations.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Long Term Installations">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1472,20 +1601,20 @@ helm install -f chart-values.yml pgwatch ./helm-chart
                 Previous
               </span>
               <div class="md-ellipsis">
-                Security
+                Long Term Installations
               </div>
             </div>
           </a>
         
         
           
-          <a href="env_variables.html" class="md-footer__link md-footer__link--next" aria-label="Next: Environment Variables">
+          <a href="../howto/sizing_recommendations.html" class="md-footer__link md-footer__link--next" aria-label="Next: Sizing Recommendations">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Environment Variables
+                Sizing Recommendations
               </div>
             </div>
             <div class="md-footer__button md-icon">
