@@ -185,7 +185,7 @@
 <span id="L128" class="ln">   128  </span>		md.ConnStr, `{&#34;metric&#34;:60}`, `{&#34;standby_metric&#34;:60}`,
 <span id="L129" class="ln">   129  </span>		md.PresetMetrics, md.PresetMetricsStandby,
 <span id="L130" class="ln">   130  </span>		md.IncludePattern, md.ExcludePattern, `{&#34;tag&#34;:&#34;value&#34;}`,
-<span id="L131" class="ln">   131  </span>		nil, md.OnlyIfMaster,
+<span id="L131" class="ln">   131  </span>		nil, md.OnlyIfMaster, md.IsEnabled,
 <span id="L132" class="ln">   132  </span>	).WillReturnResult(pgxmock.NewResult(&#34;UPDATE&#34;, 1))
 <span id="L133" class="ln">   133  </span>
 <span id="L134" class="ln">   134  </span>	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
@@ -224,7 +224,7 @@
 <span id="L167" class="ln">   167  </span>			md.Name, md.Group, md.Kind,
 <span id="L168" class="ln">   168  </span>			md.ConnStr, `{&#34;metric&#34;:60}`, `{&#34;standby_metric&#34;:60}`, md.PresetMetrics, md.PresetMetricsStandby,
 <span id="L169" class="ln">   169  </span>			md.IncludePattern, md.ExcludePattern, `{&#34;tag&#34;:&#34;value&#34;}`,
-<span id="L170" class="ln">   170  </span>			nil, md.OnlyIfMaster,
+<span id="L170" class="ln">   170  </span>			nil, md.OnlyIfMaster, md.IsEnabled,
 <span id="L171" class="ln">   171  </span>		).WillReturnResult(pgxmock.NewResult(&#34;INSERT&#34;, 1))
 <span id="L172" class="ln">   172  </span>		conn.ExpectCommit()
 <span id="L173" class="ln">   173  </span>		conn.ExpectRollback() <span class="comment">// deferred rollback</span>
@@ -260,7 +260,7 @@
 <span id="L203" class="ln">   203  </span>			md.Name, md.Group, md.Kind,
 <span id="L204" class="ln">   204  </span>			md.ConnStr, `{&#34;metric&#34;:60}`, `{&#34;standby_metric&#34;:60}`, md.PresetMetrics, md.PresetMetricsStandby,
 <span id="L205" class="ln">   205  </span>			md.IncludePattern, md.ExcludePattern, `{&#34;tag&#34;:&#34;value&#34;}`,
-<span id="L206" class="ln">   206  </span>			nil, md.OnlyIfMaster,
+<span id="L206" class="ln">   206  </span>			nil, md.OnlyIfMaster, md.IsEnabled,
 <span id="L207" class="ln">   207  </span>		).WillReturnError(errors.New(&#34;failed insert&#34;))
 <span id="L208" class="ln">   208  </span>		conn.ExpectRollback()
 <span id="L209" class="ln">   209  </span>
