@@ -63,9 +63,10 @@ func (r *dbSourcesReaderWriter) updateDatabase(conn db.PgxIface, md Source) (err
 	exclude_pattern, 
 	custom_tags, 
 	host_config, 
-	only_if_master) 
+	only_if_master,
+	is_enabled) 
 values 
-	($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), $9, $10, $11, $12, $13) 
+	($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), $9, $10, $11, $12, $13, $14) 
 on conflict (name) do update set
 	"group" = $2, 
 	dbtype = $3, 
@@ -78,12 +79,13 @@ on conflict (name) do update set
 	exclude_pattern = $10, 
 	custom_tags = $11, 
 	host_config = $12,
-	only_if_master = $13`
+	only_if_master = $13,
+	is_enabled = $14`
 	_, err = conn.Exec(context.Background(), sql,
 		md.Name, md.Group, md.Kind,
 		md.ConnStr, m(md.Metrics), m(md.MetricsStandby), md.PresetMetrics, md.PresetMetricsStandby,
 		md.IncludePattern, md.ExcludePattern, m(md.CustomTags),
-		m(md.HostConfig), md.OnlyIfMaster)
+		m(md.HostConfig), md.OnlyIfMaster, md.IsEnabled)
 	return err
 }
 

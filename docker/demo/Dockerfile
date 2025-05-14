@@ -34,7 +34,6 @@ RUN apt-get update \
     && sh /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
     && curl -L "https://www.postgresql.org/media/keys/ACCC4CF8.asc" | apt-key add - \
     && curl -s https://packagecloud.io/install/repositories/timescale/timescaledb/script.deb.sh | bash \
-    
     && apt-get -qy install \
         timescaledb-2-postgresql-17 postgresql-plpython3-17 postgresql-17-pg-qualstats \
         supervisor python3-psutil libfontconfig1 \

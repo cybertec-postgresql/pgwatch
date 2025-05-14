@@ -164,8 +164,6 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 	ch <- promw.totalScrapeFailures
 	promw.lastScrapeErrors.Set(lastScrapeErrors)
 	ch <- promw.lastScrapeErrors
-
-	// atomic.StoreInt64(&lastSuccessfulDatastoreWriteTimeEpoch, time.Now().Unix())
 }
 
 func (promw *PrometheusWriter) setInstanceUpDownState(ch chan<- prometheus.Metric, dbName string) {
