@@ -128,7 +128,7 @@ func TestUpdateDatabase(t *testing.T) {
 		md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`,
 		md.PresetMetrics, md.PresetMetricsStandby,
 		md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
-		nil, md.OnlyIfMaster,
+		nil, md.OnlyIfMaster, md.IsEnabled,
 	).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
@@ -167,7 +167,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 			md.Name, md.Group, md.Kind,
 			md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`, md.PresetMetrics, md.PresetMetricsStandby,
 			md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
-			nil, md.OnlyIfMaster,
+			nil, md.OnlyIfMaster, md.IsEnabled,
 		).WillReturnResult(pgxmock.NewResult("INSERT", 1))
 		conn.ExpectCommit()
 		conn.ExpectRollback() // deferred rollback
@@ -203,7 +203,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 			md.Name, md.Group, md.Kind,
 			md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`, md.PresetMetrics, md.PresetMetricsStandby,
 			md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
-			nil, md.OnlyIfMaster,
+			nil, md.OnlyIfMaster, md.IsEnabled,
 		).WillReturnError(errors.New("failed insert"))
 		conn.ExpectRollback()
 
