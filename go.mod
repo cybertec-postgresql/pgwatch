@@ -6,7 +6,7 @@ require (
 	github.com/cybertec-postgresql/pgx-migrator v1.2.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/gorilla/websocket v1.5.3
-	github.com/jackc/pgx/v5 v5.7.4
+	github.com/jackc/pgx/v5 v5.7.5
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/pashagolub/pgxmock/v4 v4.7.0
 	github.com/prometheus/client_golang v1.22.0
