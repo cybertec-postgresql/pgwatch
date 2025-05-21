@@ -82,7 +82,7 @@ syntax differences.
             git clone https://github.com/cybertec-postgresql/pgwatch.git
             cd pgwatch/internal/webui
             yarn install --network-timeout 100000 && yarn build
-            cd ..
+            cd ../..
             go build ./cmd/pgwatch/
             ```
 
@@ -102,7 +102,7 @@ syntax differences.
         [Service]
         User=pgwatch
         Type=exec
-        ExecStart=/usr/bin/pgwatch --sources=postgresql://pgwatch@localhost:5432/pgwatch --sink=postgresql://pgwatch@localhost:5432/pgwatch_metrics
+        ExecStart=/usr/bin/pgwatch --sources=postgresql://pgwatch:xyz@localhost:5432/pgwatch --sink=postgresql://pgwatch:xyz@localhost:5432/pgwatch_metrics
         Restart=on-failure
         TimeoutStartSec=0
 
@@ -110,7 +110,7 @@ syntax differences.
         WantedBy=multi-user.target
         ```
 
-1. **Boostrap the configuration database**
+1. **Bootstrap the configuration database**
 
     !!! note
         The detailed steps are described in the
@@ -132,7 +132,7 @@ syntax differences.
         you want to create the schema as a separate step, you can use the `config init` command-line command:
 
         ```terminal
-        pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch config init
+        pgwatch --sources=postgresql://pgwatch:xyz@localhost/pgwatch config init
         ```
 
 1. **Bootstrap the measurements storage database (sink)**
@@ -176,8 +176,8 @@ syntax differences.
 
         ```terminal
         pgwatch \
-            --sources=postgresql://pgwatch@localhost:5432/pgwatch \
-            --sink=postgresql://pgwatch@localhost:5432/pgwatch_metrics \
+            --sources=postgresql://pgwatch:xyz@localhost:5432/pgwatch \
+            --sink=postgresql://pgwatch:xyz@localhost:5432/pgwatch_metrics \
             --log-level=debug
         ```
 
@@ -326,7 +326,7 @@ The content of a file is a array of sources definitions, like this:
                       # - patroni-continuous-discovery
                       # - patroni-namespace-discover
                       # Defaults to postgres if not specified
-  conn_str: postgresql://pgwatch:pgwatchadmin@somehost/mydb
+  conn_str: postgresql://pgwatch:xyz@somehost/mydb
   preset_metrics: exhaustive # from list of presets defined in "metrics/preset-configs.yaml"
   custom_metrics:    # if both preset and custom are specified, custom wins
   preset_metrics_standby: # optional metrics configuration for standby / replica state, v1.8.1+
