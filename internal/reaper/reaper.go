@@ -69,6 +69,17 @@ func (r *Reaper) Reap(ctx context.Context) {
 		}
 		if err = r.LoadMetrics(); err != nil {
 			logger.WithError(err).Error("could not refresh metric definitions, using last valid cache")
+		} else {
+			// Clear lastSQLFetchError for metrics that are now defined
+			if metricDefs != nil { // metricDefs is global in the package
+				metricDefs.Range(func(key, value interface{}) bool {
+					metricName, ok := key.(string)
+					if ok {
+						lastSQLFetchError.Delete(metricName)
+					}
+					return true
+				})
+			}
 		}
 
 		UpdateMonitoredDBCache(r.monitoredSources)
@@ -256,6 +267,11 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 			delete(r.cancelFuncs, dbMetric)
 			if err := r.SinksWriter.SyncMetric(db, metric, "remove"); err != nil {
 				logger.Error(err)
+			}
+			// If the whole DB is being shut down, remove it from hostLastKnownStatusInRecovery
+			if wholeDbShutDownDueToRoleChange || dbRemovedFromConfig {
+				logger.Debugf("DB %s shut down, removing from hostLastKnownStatusInRecovery map", db)
+				delete(hostLastKnownStatusInRecovery, db)
 			}
 		}
 	}

@@ -488,6 +488,11 @@ func (pgw *PostgresWriter) deleteOldPartitions(delay time.Duration) {
 		// to reduce distracting log messages at startup
 	}
 
+	// Clear in-memory partition caches periodically
+	logger.Info("Re-initializing in-memory partition caches...")
+	partitionMapMetric = make(map[string]ExistingPartitionInfo)
+	partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo)
+
 	for {
 		if pgw.metricSchema == DbStorageSchemaTimescale {
 			partsDropped, err := pgw.DropOldTimePartitions(metricAgeDaysThreshold)

@@ -53,17 +53,20 @@ func (imc *InstanceMetricCache) Get(key string, age time.Duration) metrics.Measu
 	if key == "" {
 		return nil
 	}
-	imc.RLock()
-	defer imc.RUnlock()
-	instanceMetricEpochNs := (imc.cache[key]).GetEpoch()
+	imc.Lock() // Changed RLock to Lock
+	defer imc.Unlock() // Changed RUnlock to Unlock
 
-	if time.Now().UnixNano()-instanceMetricEpochNs > age.Nanoseconds() {
-		return nil
-	}
 	instanceMetricData, ok := imc.cache[key]
 	if !ok {
 		return nil
 	}
+
+	instanceMetricEpochNs := instanceMetricData.GetEpoch()
+	if time.Now().UnixNano()-instanceMetricEpochNs > age.Nanoseconds() {
+		delete(imc.cache, key) // Delete stale entry
+		return nil
+	}
+
 	return instanceMetricData.DeepCopy()
 }
 
