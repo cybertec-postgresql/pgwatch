@@ -276,19 +276,15 @@ func (mds SourceConns) SyncFromReader(r Reader) (newmds SourceConns, err error) 
 		return nil, err
 	}
 	newmds, err = srcs.ResolveDatabases()
-	for _, newMD := range newmds {
+	for i, newMD := range newmds {
 		md := mds.GetMonitoredDatabase(newMD.Name)
 		if md == nil {
 			continue
 		}
 		if reflect.DeepEqual(md.Source, newMD.Source) {
-			// keep the existing connection if the source is the same
-			newMD.Conn = md.Conn
-			newMD.ConnConfig = md.ConnConfig
+			// replace with the existing connection if the source is the same
+			newmds[i] = md
 			continue
-		}
-		if md.Conn != nil {
-			md.Conn.Close()
 		}
 	}
 	return newmds, err
