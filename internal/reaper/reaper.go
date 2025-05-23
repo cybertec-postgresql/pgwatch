@@ -264,7 +264,6 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 	r.CloseResourcesForRemovedMonitoredDBs(hostsToShutDownDueToRoleChange)
 }
 
-// metrics.ControlMessage notifies of shutdown + interval change
 func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceConn, metricName string) {
 	hostState := make(map[string]map[string]string)
 	var lastUptimeS int64 = -1 // used for "server restarted" event detection

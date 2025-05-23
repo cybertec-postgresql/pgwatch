@@ -240,7 +240,6 @@ func TestMonitoredDatabases_SyncFromReader(t *testing.T) {
 	assert.NotNil(t, mdbs, "ResolveDatabases() = nil, want not nil")
 	// pretend that we have a connection
 	mdbs[0].Conn = db
-	db.ExpectClose()
 	// sync the databases and make sure they are the same
 	newmdbs, _ := mdbs.SyncFromReader(reader)
 	assert.NotNil(t, newmdbs)
