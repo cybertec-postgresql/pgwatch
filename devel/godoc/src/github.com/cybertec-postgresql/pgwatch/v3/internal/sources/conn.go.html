@@ -333,24 +333,20 @@
 <span id="L276" class="ln">   276  </span>		return nil, err
 <span id="L277" class="ln">   277  </span>	}
 <span id="L278" class="ln">   278  </span>	newmds, err = srcs.ResolveDatabases()
-<span id="L279" class="ln">   279  </span>	for _, newMD := range newmds {
+<span id="L279" class="ln">   279  </span>	for i, newMD := range newmds {
 <span id="L280" class="ln">   280  </span>		md := mds.GetMonitoredDatabase(newMD.Name)
 <span id="L281" class="ln">   281  </span>		if md == nil {
 <span id="L282" class="ln">   282  </span>			continue
 <span id="L283" class="ln">   283  </span>		}
 <span id="L284" class="ln">   284  </span>		if reflect.DeepEqual(md.Source, newMD.Source) {
-<span id="L285" class="ln">   285  </span>			<span class="comment">// keep the existing connection if the source is the same</span>
-<span id="L286" class="ln">   286  </span>			newMD.Conn = md.Conn
-<span id="L287" class="ln">   287  </span>			newMD.ConnConfig = md.ConnConfig
-<span id="L288" class="ln">   288  </span>			continue
-<span id="L289" class="ln">   289  </span>		}
-<span id="L290" class="ln">   290  </span>		if md.Conn != nil {
-<span id="L291" class="ln">   291  </span>			md.Conn.Close()
-<span id="L292" class="ln">   292  </span>		}
-<span id="L293" class="ln">   293  </span>	}
-<span id="L294" class="ln">   294  </span>	return newmds, err
-<span id="L295" class="ln">   295  </span>}
-<span id="L296" class="ln">   296  </span>
+<span id="L285" class="ln">   285  </span>			<span class="comment">// replace with the existing connection if the source is the same</span>
+<span id="L286" class="ln">   286  </span>			newmds[i] = md
+<span id="L287" class="ln">   287  </span>			continue
+<span id="L288" class="ln">   288  </span>		}
+<span id="L289" class="ln">   289  </span>	}
+<span id="L290" class="ln">   290  </span>	return newmds, err
+<span id="L291" class="ln">   291  </span>}
+<span id="L292" class="ln">   292  </span>
 </pre><p></p>
 
 <div id="footer">

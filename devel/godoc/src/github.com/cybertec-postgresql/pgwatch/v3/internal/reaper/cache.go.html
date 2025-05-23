@@ -89,7 +89,7 @@
 <span id="L32" class="ln">    32  </span>	monitoredDbCacheLock.RLock()
 <span id="L33" class="ln">    33  </span>	defer monitoredDbCacheLock.RUnlock()
 <span id="L34" class="ln">    34  </span>	md, exists := monitoredDbCache[name]
-<span id="L35" class="ln">    35  </span>	if !exists || md == nil {
+<span id="L35" class="ln">    35  </span>	if !exists || md == nil || md.Conn == nil {
 <span id="L36" class="ln">    36  </span>		return nil, fmt.Errorf(&#34;database %s not found in cache&#34;, name)
 <span id="L37" class="ln">    37  </span>	}
 <span id="L38" class="ln">    38  </span>	return md, nil
