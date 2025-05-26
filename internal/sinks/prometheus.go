@@ -77,20 +77,19 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 	return
 }
 
-func (promw *PrometheusWriter) Write(msgs []metrics.MeasurementEnvelope) error {
-	if len(msgs) == 0 || len(msgs[0].Data) == 0 { // no batching in async prom mode, so using 0 indexing ok
+func (promw *PrometheusWriter) Write(msg metrics.MeasurementEnvelope) error {
+	if len(msg.Data) == 0 { // no batching in async prom mode, so using 0 indexing ok
 		return nil
 	}
-	msg := msgs[0]
-	promw.PromAsyncCacheAddMetricData(msg.DBName, msg.MetricName, msgs)
+	promw.PromAsyncCacheAddMetricData(msg.DBName, msg.MetricName, msg)
 	return nil
 }
 
 // Async Prom cache
-var promAsyncMetricCache = make(map[string]map[string][]metrics.MeasurementEnvelope) // [dbUnique][metric]lastly_fetched_data
+var promAsyncMetricCache = make(map[string]map[string]metrics.MeasurementEnvelope) // [dbUnique][metric]lastly_fetched_data
 var promAsyncMetricCacheLock = sync.RWMutex{}
 
-func (promw *PrometheusWriter) PromAsyncCacheAddMetricData(dbUnique, metric string, msgArr []metrics.MeasurementEnvelope) { // cache structure: [dbUnique][metric]lastly_fetched_data
+func (promw *PrometheusWriter) PromAsyncCacheAddMetricData(dbUnique, metric string, msgArr metrics.MeasurementEnvelope) { // cache structure: [dbUnique][metric]lastly_fetched_data
 	promAsyncMetricCacheLock.Lock()
 	defer promAsyncMetricCacheLock.Unlock()
 	if _, ok := promAsyncMetricCache[dbUnique]; ok {
@@ -102,7 +101,7 @@ func (promw *PrometheusWriter) PromAsyncCacheInitIfRequired(dbUnique, _ string) 
 	promAsyncMetricCacheLock.Lock()
 	defer promAsyncMetricCacheLock.Unlock()
 	if _, ok := promAsyncMetricCache[dbUnique]; !ok {
-		metricMap := make(map[string][]metrics.MeasurementEnvelope)
+		metricMap := make(map[string]metrics.MeasurementEnvelope)
 		promAsyncMetricCache[dbUnique] = metricMap
 	}
 }
@@ -151,11 +150,9 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 			if metric == "change_events" {
 				continue // not supported
 			}
-			if len(metricMessages) > 0 {
-				promMetrics := promw.MetricStoreMessageToPromMetrics(metricMessages[0])
-				for _, pm := range promMetrics { // collect & send later in batch? capMetricChan = 1000 limit in prometheus code
-					ch <- pm
-				}
+			promMetrics := promw.MetricStoreMessageToPromMetrics(metricMessages)
+			for _, pm := range promMetrics { // collect & send later in batch? capMetricChan = 1000 limit in prometheus code
+				ch <- pm
 			}
 		}
 

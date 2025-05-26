@@ -35,21 +35,16 @@ func NewRPCWriter(ctx context.Context, address string) (*RPCWriter, error) {
 }
 
 // Sends Measurement Message to RPC Sink
-func (rw *RPCWriter) Write(msgs []metrics.MeasurementEnvelope) error {
+func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error {
 	if rw.ctx.Err() != nil {
 		return rw.ctx.Err()
 	}
-	if len(msgs) == 0 {
-		return nil
+	var logMsg string
+	if err := rw.client.Call("Receiver.UpdateMeasurements", &msg, &logMsg); err != nil {
+		return err
 	}
-	for _, msg := range msgs {
-		var logMsg string
-		if err := rw.client.Call("Receiver.UpdateMeasurements", &msg, &logMsg); err != nil {
-			return err
-		}
-		if len(logMsg) > 0 {
-			log.GetLogger(rw.ctx).Info(logMsg)
-		}
+	if len(logMsg) > 0 {
+		log.GetLogger(rw.ctx).Info(logMsg)
 	}
 	return nil
 }

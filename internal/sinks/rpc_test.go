@@ -20,7 +20,7 @@ type Receiver struct {
 var ctxt = context.Background()
 
 func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementEnvelope, logMsg *string) error {
-	if msg == nil {
+	if msg == nil || len(msg.Data) == 0 {
 		return errors.New("msgs is nil")
 	}
 	if msg.DBName != "Db" {
@@ -69,26 +69,23 @@ func TestRPCWrite(t *testing.T) {
 	a.NoError(err)
 
 	// no error for valid messages
-	msgs := []metrics.MeasurementEnvelope{
-		{
-			DBName: "Db",
-		},
+	msgs := metrics.MeasurementEnvelope{
+		DBName: "Db",
+		Data:   metrics.Measurements{{"test": 1}},
 	}
 	err = rw.Write(msgs)
 	a.NoError(err)
 
 	// error for invalid messages
-	msgs = []metrics.MeasurementEnvelope{
-		{
-			DBName: "invalid",
-		},
+	msgs = metrics.MeasurementEnvelope{
+		DBName: "invalid",
 	}
 	err = rw.Write(msgs)
 	a.Error(err)
 
-	// no error for empty messages
-	err = rw.Write([]metrics.MeasurementEnvelope{})
-	a.NoError(err)
+	// error for empty messages
+	err = rw.Write(metrics.MeasurementEnvelope{})
+	a.Error(err)
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctxt)

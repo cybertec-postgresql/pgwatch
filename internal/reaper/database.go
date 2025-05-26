@@ -50,7 +50,7 @@ func QueryMeasurements(ctx context.Context, dbUnique string, sql string, args ..
 	return nil, err
 }
 
-func DetectSprocChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectSprocChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -122,13 +122,18 @@ func DetectSprocChanges(ctx context.Context, md *sources.SourceConn, storageCh c
 	}
 	log.GetLogger(ctx).Debugf("[%s][%s] detected %d sproc changes", md.Name, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		storageCh <- []metrics.MeasurementEnvelope{{DBName: md.Name, MetricName: "sproc_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- metrics.MeasurementEnvelope{
+			DBName:     md.Name,
+			MetricName: "sproc_changes",
+			Data:       detectedChanges,
+			CustomTags: md.CustomTags,
+		}
 	}
 
 	return changeCounts
 }
 
-func DetectTableChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectTableChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -200,13 +205,18 @@ func DetectTableChanges(ctx context.Context, md *sources.SourceConn, storageCh c
 
 	log.GetLogger(ctx).Debugf("[%s][%s] detected %d table changes", md.Name, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		storageCh <- []metrics.MeasurementEnvelope{{DBName: md.Name, MetricName: "table_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- metrics.MeasurementEnvelope{
+			DBName:     md.Name,
+			MetricName: "table_changes",
+			Data:       detectedChanges,
+			CustomTags: md.CustomTags,
+		}
 	}
 
 	return changeCounts
 }
 
-func DetectIndexChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectIndexChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -276,13 +286,18 @@ func DetectIndexChanges(ctx context.Context, md *sources.SourceConn, storageCh c
 	}
 	log.GetLogger(ctx).Debugf("[%s][%s] detected %d index changes", md.Name, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		storageCh <- []metrics.MeasurementEnvelope{{DBName: md.Name, MetricName: "index_changes", Data: detectedChanges, CustomTags: md.CustomTags}}
+		storageCh <- metrics.MeasurementEnvelope{
+			DBName:     md.Name,
+			MetricName: "index_changes",
+			Data:       detectedChanges,
+			CustomTags: md.CustomTags,
+		}
 	}
 
 	return changeCounts
 }
 
-func DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -346,19 +361,18 @@ func DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn, storage
 
 	log.GetLogger(ctx).Debugf("[%s][%s] detected %d object privilege changes...", md.Name, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		storageCh <- []metrics.MeasurementEnvelope{
-			{
-				DBName:     md.Name,
-				MetricName: "privilege_changes",
-				Data:       detectedChanges,
-				CustomTags: md.CustomTags,
-			}}
+		storageCh <- metrics.MeasurementEnvelope{
+			DBName:     md.Name,
+			MetricName: "privilege_changes",
+			Data:       detectedChanges,
+			CustomTags: md.CustomTags,
+		}
 	}
 
 	return changeCounts
 }
 
-func DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- []metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -410,12 +424,12 @@ func DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn, sto
 
 	log.GetLogger(ctx).Debugf("[%s][%s] detected %d configuration changes", md.Name, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		storageCh <- []metrics.MeasurementEnvelope{{
+		storageCh <- metrics.MeasurementEnvelope{
 			DBName:     md.Name,
 			MetricName: "configuration_changes",
 			Data:       detectedChanges,
 			CustomTags: md.CustomTags,
-		}}
+		}
 	}
 
 	return changeCounts
@@ -455,12 +469,13 @@ func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique s
 		influxEntry["details"] = message
 		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
 		md, _ := GetMonitoredDatabaseByUniqueName(ctx, dbUnique)
-		storageCh <- []metrics.MeasurementEnvelope{{DBName: dbUnique,
+		storageCh <- metrics.MeasurementEnvelope{
+			DBName:     dbUnique,
 			SourceType: string(md.Kind),
 			MetricName: "object_changes",
 			Data:       detectedChangesSummary,
 			CustomTags: md.CustomTags,
-		}}
+		}
 
 	}
 }

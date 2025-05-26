@@ -8,10 +8,12 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestJSONWriter_Write(t *testing.T) {
 	a := assert.New(t)
+	r := require.New(t)
 	// Define test data
 	msg := metrics.MeasurementEnvelope{
 		MetricName: "test_metric",
@@ -25,23 +27,23 @@ func TestJSONWriter_Write(t *testing.T) {
 	tempFile := t.TempDir() + "/test.json"
 	ctx, cancel := context.WithCancel(context.Background())
 	jw, err := NewJSONWriter(ctx, tempFile)
-	a.NoError(err)
+	r.NoError(err)
 
-	err = jw.Write([]metrics.MeasurementEnvelope{msg})
+	err = jw.Write(msg)
 	a.NoError(err, "write successful")
-	err = jw.Write([]metrics.MeasurementEnvelope{})
-	a.NoError(err, "empty write successful")
+	err = jw.Write(metrics.MeasurementEnvelope{})
+	r.NoError(err, "empty write successful")
 
 	cancel()
-	err = jw.Write([]metrics.MeasurementEnvelope{msg})
+	err = jw.Write(msg)
 	a.Error(err, "context canceled")
 
 	// Read the contents of the file
 	var data map[string]any
 	file, err := os.ReadFile(tempFile)
-	a.NoError(err)
+	r.NoError(err)
 	err = json.Unmarshal(file, &data)
-	a.NoError(err)
+	r.NoError(err)
 	a.Equal(msg.MetricName, data["metric"])
 	a.Equal(len(msg.Data), len(data["data"].([]any)))
 	a.Equal(msg.DBName, data["dbname"])
