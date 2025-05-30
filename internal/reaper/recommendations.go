@@ -33,7 +33,7 @@ func GetAllRecoMetricsForVersion() (metrics.MetricDefs, error) {
 	return mvpMap, nil
 }
 
-func GetRecommendations(ctx context.Context, dbUnique string, md *sources.SourceConn) (metrics.Measurements, error) {
+func GetRecommendations(ctx context.Context, md *sources.SourceConn) (metrics.Measurements, error) {
 	retData := make(metrics.Measurements, 0)
 	startTimeEpochNs := time.Now().UnixNano()
 
@@ -42,7 +42,7 @@ func GetRecommendations(ctx context.Context, dbUnique string, md *sources.Source
 		return nil, err
 	}
 	for _, mvp := range recoMetrics {
-		data, e := QueryMeasurements(ctx, dbUnique, mvp.GetSQL(md.Version))
+		data, e := QueryMeasurements(ctx, md, mvp.GetSQL(md.Version))
 		if err != nil {
 			err = errors.Join(err, e)
 			continue

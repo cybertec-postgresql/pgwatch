@@ -238,13 +238,10 @@ func TestMonitoredDatabases_SyncFromReader(t *testing.T) {
 	// then resolve the databases
 	mdbs, _ := mds.ResolveDatabases()
 	assert.NotNil(t, mdbs, "ResolveDatabases() = nil, want not nil")
-	// pretend that we have a connection
-	mdbs[0].Conn = db
 	// sync the databases and make sure they are the same
 	newmdbs, _ := mdbs.SyncFromReader(reader)
 	assert.NotNil(t, newmdbs)
 	assert.Equal(t, mdbs[0].ConnStr, newmdbs[0].ConnStr)
-	assert.Equal(t, db, newmdbs[0].Conn)
 	// change the connection string and check if databases are updated
 	reader.Sources[0].ConnStr = "postgres://user:password@localhost:5432/anotherdatabase"
 	newmdbs, _ = mdbs.SyncFromReader(reader)

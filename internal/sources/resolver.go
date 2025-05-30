@@ -46,7 +46,7 @@ func (s Source) ResolveDatabases() (SourceConns, error) {
 	case SourcePostgresContinuous:
 		return ResolveDatabasesFromPostgres(s)
 	}
-	return SourceConns{&SourceConn{Source: *(&s).Clone()}}, nil
+	return SourceConns{&SourceConn{Source: s}}, nil
 }
 
 type PatroniClusterMember struct {

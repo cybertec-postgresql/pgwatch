@@ -71,7 +71,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 			logger.WithError(err).Error("could not refresh metric definitions, using last valid cache")
 		}
 
-		UpdateMonitoredDBCache(r.monitoredSources)
+		// UpdateMonitoredDBCache(r.monitoredSources)
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
 		for _, monitoredSource := range r.monitoredSources {
 			srcL := logger.WithField("source", monitoredSource.Name)
@@ -202,7 +202,7 @@ func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monit
 	if r.Sources.TryCreateListedExtsIfMissing > "" {
 		srcL.Info("trying to create extensions if missing")
 		extsToCreate := strings.Split(r.Sources.TryCreateListedExtsIfMissing, ",")
-		extsCreated := TryCreateMissingExtensions(ctx, monitoredSource.Name, extsToCreate, monitoredSource.Extensions)
+		extsCreated := TryCreateMissingExtensions(ctx, monitoredSource, extsToCreate, monitoredSource.Extensions)
 		srcL.Infof("%d/%d extensions created based on --try-create-listed-exts-if-missing input %v", len(extsCreated), len(extsToCreate), extsCreated)
 	}
 
@@ -223,7 +223,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 	for dbMetric, cancelFunc := range r.cancelFuncs {
 		var currentMetricConfig map[string]float64
 		var md *sources.SourceConn
-		var ok, dbRemovedFromConfig bool
+		var dbRemovedFromConfig bool
 		singleMetricDisabled := false
 		splits := strings.Split(dbMetric, dbMetricJoinStr)
 		db := splits[0]
@@ -231,10 +231,8 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 
 		_, wholeDbShutDownDueToRoleChange := hostsToShutDownDueToRoleChange[db]
 		if !wholeDbShutDownDueToRoleChange {
-			monitoredDbCacheLock.RLock()
-			md, ok = monitoredDbCache[db]
-			monitoredDbCacheLock.RUnlock()
-			if !ok { // normal removing of DB from config
+			md = r.monitoredSources.GetMonitoredDatabase(db)
+			if md == nil { // normal removing of DB from config
 				dbRemovedFromConfig = true
 				logger.Debugf("DB %s removed from config, shutting down all metric worker processes...", db)
 			}
@@ -363,9 +361,22 @@ func (r *Reaper) LoadSources() (err error) {
 		r.monitoredSources = make([]*sources.SourceConn, 0)
 		return nil
 	}
-	if r.monitoredSources, err = r.monitoredSources.SyncFromReader(r.SourcesReaderWriter); err != nil {
+	var newSrcs sources.SourceConns
+	if newSrcs, err = r.monitoredSources.SyncFromReader(r.SourcesReaderWriter); err != nil {
 		return err
 	}
+	for i, newMD := range newSrcs {
+		md := r.monitoredSources.GetMonitoredDatabase(newMD.Name)
+		if md == nil {
+			continue
+		}
+		if md.Equal(newMD.Source) {
+			// replace with the existing connection if the source is the same
+			newSrcs[i] = md
+			continue
+		}
+	}
+	r.monitoredSources = newSrcs
 	r.logger.WithField("sources", len(r.monitoredSources)).Info("sources refreshed")
 	return nil
 }
@@ -374,10 +385,9 @@ func (r *Reaper) LoadSources() (err error) {
 // every monitoredDbsDatastoreSyncIntervalSeconds (default 10min)
 func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
 	for {
-		if len(monitoredDbCache) > 0 {
+		if len(r.monitoredSources) > 0 {
 			now := time.Now().UnixNano()
-			monitoredDbCacheLock.RLock()
-			for _, mdb := range monitoredDbCache {
+			for _, mdb := range r.monitoredSources {
 				db := metrics.NewMeasurement(now)
 				db["tag_group"] = mdb.Group
 				db["master_only"] = mdb.OnlyIfMaster
@@ -390,7 +400,6 @@ func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
 					Data:       metrics.Measurements{db},
 				}
 			}
-			monitoredDbCacheLock.RUnlock()
 		}
 		select {
 		case <-time.After(time.Second * monitoredDbsDatastoreSyncIntervalSeconds):
@@ -464,11 +473,11 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 		r.CheckForPGObjectChangesAndStore(ctx, md.Name, md, hostState) // TODO no hostState for Prometheus currently
 		return nil, nil
 	case recoMetricName:
-		if data, err = GetRecommendations(ctx, md.Name, md); err != nil {
+		if data, err = GetRecommendations(ctx, md); err != nil {
 			return nil, err
 		}
 	default:
-		if data, err = QueryMeasurements(ctx, md.Name, sql); err != nil {
+		if data, err = QueryMeasurements(ctx, md, sql); err != nil {
 			// let's soften errors to "info" from functions that expect the server to be a primary to reduce noise
 			if strings.Contains(err.Error(), "recovery is in progress") && md.IsInRecovery {
 				l.Debugf("[%s:%s] failed to fetch metrics: %s", md.Name, metricName, err)

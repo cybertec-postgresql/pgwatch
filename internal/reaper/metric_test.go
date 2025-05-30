@@ -6,6 +6,7 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
+	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,7 +29,8 @@ var (
 func TestReaper_FetchStatsDirectlyFromOS(t *testing.T) {
 	a := assert.New(t)
 	r := &Reaper{}
-	md := &sources.SourceConn{}
+	conn, _ := pgxmock.NewPool()
+	md := &sources.SourceConn{Conn: conn}
 	for _, m := range directlyFetchableOSMetrics {
 		a.True(IsDirectlyFetchableMetric(m), "Expected %s to be directly fetchable", m)
 		a.NotPanics(func() {

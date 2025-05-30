@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"reflect"
 	"regexp"
 	"strconv"
 	"time"
@@ -275,17 +274,5 @@ func (mds SourceConns) SyncFromReader(r Reader) (newmds SourceConns, err error) 
 	if err != nil {
 		return nil, err
 	}
-	newmds, err = srcs.ResolveDatabases()
-	for i, newMD := range newmds {
-		md := mds.GetMonitoredDatabase(newMD.Name)
-		if md == nil {
-			continue
-		}
-		if reflect.DeepEqual(md.Source, newMD.Source) {
-			// replace with the existing connection if the source is the same
-			newmds[i] = md
-			continue
-		}
-	}
-	return newmds, err
+	return srcs.ResolveDatabases()
 }

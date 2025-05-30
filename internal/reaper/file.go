@@ -51,10 +51,10 @@ func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.Sourc
 	case metricPsutilCPU:
 		data, err = GetGoPsutilCPU(md.GetMetricInterval(metricName))
 	case metricPsutilDisk:
-		if dataDirs, err = QueryMeasurements(ctx, md.Name, sqlPgDirs); err != nil {
+		if dataDirs, err = QueryMeasurements(ctx, md, sqlPgDirs); err != nil {
 			return nil, err
 		}
-		if dataTblspDirs, err = QueryMeasurements(ctx, md.Name, sqlTsDirs); err != nil {
+		if dataTblspDirs, err = QueryMeasurements(ctx, md, sqlTsDirs); err != nil {
 			return nil, err
 		}
 		data, err = GetGoPsutilDiskPG(dataDirs, dataTblspDirs)
