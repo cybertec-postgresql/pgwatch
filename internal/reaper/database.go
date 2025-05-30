@@ -15,18 +15,14 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func QueryMeasurements(ctx context.Context, dbUnique string, sql string, args ...any) (metrics.Measurements, error) {
-	// TODO: move to sources package and use direct pgx connection
+func QueryMeasurements(ctx context.Context, md *sources.SourceConn, sql string, args ...any) (metrics.Measurements, error) {
 	var conn db.PgxIface
-	var md *sources.SourceConn
 	var err error
 	var tx pgx.Tx
 	if strings.TrimSpace(sql) == "" {
 		return nil, errors.New("empty SQL")
 	}
-	if md, err = GetMonitoredDatabaseByUniqueName(ctx, dbUnique); err != nil {
-		return nil, err
-	}
+
 	conn = md.Conn
 	if md.IsPostgresSource() {
 		// we don't want transaction for non-postgres sources, e.g. pgbouncer
@@ -67,7 +63,7 @@ func DetectSprocChanges(ctx context.Context, md *sources.SourceConn, storageCh c
 		return changeCounts
 	}
 
-	data, err := QueryMeasurements(ctx, md.Name, mvp.GetSQL(int(md.Version)))
+	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Error("could not read sproc_hashes from monitored host: ", md.Name, ", err:", err)
 		return changeCounts
@@ -150,7 +146,7 @@ func DetectTableChanges(ctx context.Context, md *sources.SourceConn, storageCh c
 		return changeCounts
 	}
 
-	data, err := QueryMeasurements(ctx, md.Name, mvp.GetSQL(int(md.Version)))
+	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Error("could not read table_hashes from monitored host:", md.Name, ", err:", err)
 		return changeCounts
@@ -233,7 +229,7 @@ func DetectIndexChanges(ctx context.Context, md *sources.SourceConn, storageCh c
 		return changeCounts
 	}
 
-	data, err := QueryMeasurements(ctx, md.Name, mvp.GetSQL(int(md.Version)))
+	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Error("could not read index_hashes from monitored host:", md.Name, ", err:", err)
 		return changeCounts
@@ -315,7 +311,7 @@ func DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn, storage
 	}
 
 	// returns rows of: object_type, tag_role, tag_object, privilege_type
-	data, err := QueryMeasurements(ctx, md.Name, mvp.GetSQL(int(md.Version)))
+	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Errorf("[%s][%s] failed to fetch object privileges info: %v", md.Name, specialMetricChangeEvents, err)
 		return changeCounts
@@ -389,7 +385,7 @@ func DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn, sto
 		return changeCounts
 	}
 
-	data, err := QueryMeasurements(ctx, md.Name, mvp.GetSQL(int(md.Version)))
+	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		log.GetLogger(ctx).Errorf("[%s][%s] could not read configuration_hashes from monitored host: %v", md.Name, specialMetricChangeEvents, err)
 		return changeCounts
@@ -468,7 +464,6 @@ func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique s
 		influxEntry := metrics.NewMeasurement(time.Now().UnixNano())
 		influxEntry["details"] = message
 		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
-		md, _ := GetMonitoredDatabaseByUniqueName(ctx, dbUnique)
 		storageCh <- metrics.MeasurementEnvelope{
 			DBName:     dbUnique,
 			SourceType: string(md.Kind),
@@ -483,15 +478,15 @@ func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique s
 // Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
 // With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific
 // whitelisting or "trusted extensions" (a feature from v13). Ignores errors.
-func TryCreateMissingExtensions(ctx context.Context, dbUnique string, extensionNames []string, existingExtensions map[string]int) []string {
+func TryCreateMissingExtensions(ctx context.Context, md *sources.SourceConn, extensionNames []string, existingExtensions map[string]int) []string {
 	// TODO: move to sources package and use direct pgx connection
 	sqlAvailable := `select name::text from pg_available_extensions`
 	extsCreated := make([]string, 0)
 
 	// For security reasons don't allow to execute random strings but check that it's an existing extension
-	data, err := QueryMeasurements(ctx, dbUnique, sqlAvailable)
+	data, err := QueryMeasurements(ctx, md, sqlAvailable)
 	if err != nil {
-		log.GetLogger(ctx).Infof("[%s] Failed to get a list of available extensions: %v", dbUnique, err)
+		log.GetLogger(ctx).Infof("[%s] Failed to get a list of available extensions: %v", md, err)
 		return extsCreated
 	}
 
@@ -506,12 +501,12 @@ func TryCreateMissingExtensions(ctx context.Context, dbUnique string, extensionN
 		}
 		_, ok := availableExts[extToCreate]
 		if !ok {
-			log.GetLogger(ctx).Errorf("[%s] Requested extension %s not available on instance, cannot try to create...", dbUnique, extToCreate)
+			log.GetLogger(ctx).Errorf("[%s] Requested extension %s not available on instance, cannot try to create...", md, extToCreate)
 		} else {
 			sqlCreateExt := `create extension ` + extToCreate
-			_, err := QueryMeasurements(ctx, dbUnique, sqlCreateExt)
+			_, err := QueryMeasurements(ctx, md, sqlCreateExt)
 			if err != nil {
-				log.GetLogger(ctx).Errorf("[%s] Failed to create extension %s (based on --try-create-listed-exts-if-missing input): %v", dbUnique, extToCreate, err)
+				log.GetLogger(ctx).Errorf("[%s] Failed to create extension %s (based on --try-create-listed-exts-if-missing input): %v", md, extToCreate, err)
 			}
 			extsCreated = append(extsCreated, extToCreate)
 		}

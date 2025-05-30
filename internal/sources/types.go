@@ -3,6 +3,7 @@ package sources
 import (
 	"fmt"
 	"maps"
+	"reflect"
 	"slices"
 
 	"github.com/jackc/pgx/v5"
@@ -80,6 +81,21 @@ func (s *Source) GetDatabaseName() string {
 		return с.Database
 	}
 	return ""
+}
+
+func (s Source) Equal(s2 Source) bool {
+	return s.Name == s2.Name &&
+		s.Group == s2.Group &&
+		s.ConnStr == s2.ConnStr &&
+		s.Kind == s2.Kind &&
+		s.IsEnabled == s2.IsEnabled &&
+		s.IncludePattern == s2.IncludePattern &&
+		s.ExcludePattern == s2.ExcludePattern &&
+		(s.PresetMetrics == s2.PresetMetrics || reflect.DeepEqual(s.Metrics, s2.Metrics)) &&
+		(s.PresetMetricsStandby == s2.PresetMetricsStandby || reflect.DeepEqual(s.MetricsStandby, s2.MetricsStandby)) &&
+		s.OnlyIfMaster == s2.OnlyIfMaster &&
+		reflect.DeepEqual(s.CustomTags, s2.CustomTags) &&
+		reflect.DeepEqual(s.HostConfig, s2.HostConfig)
 }
 
 func (s *Source) Clone() *Source {
