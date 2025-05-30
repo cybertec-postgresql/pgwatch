@@ -1,5 +1,14 @@
 FROM postgres:17
 
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+
+ENV HTTP_PROXY=$HTTP_PROXY
+ENV HTTPS_PROXY=$HTTPS_PROXY
+ENV NO_PROXY=$NO_PROXY
+
 # Install the necessary packages for plpython3u
 RUN apt-get update && apt-get install -y \
     postgresql-plpython3-17 postgresql-17-pg-qualstats python3-psutil \
