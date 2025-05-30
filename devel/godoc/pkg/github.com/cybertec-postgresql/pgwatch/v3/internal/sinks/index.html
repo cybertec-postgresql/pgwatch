@@ -494,6 +494,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 			<pre>type JSONWriter struct {
 <span id="JSONWriter.ctx"></span>    ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
 <span id="JSONWriter.lw"></span>    lw  *lumberjack.<a href="#Logger">Logger</a>
+<span id="JSONWriter.enc"></span>    enc *<a href="https://pkg.go.dev/encoding/json/">json</a>.<a href="https://pkg.go.dev/encoding/json/#Encoder">Encoder</a>
 }
 </pre>
 
@@ -507,7 +508,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 
 			
 				
-				<h3 id="NewJSONWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/json.go.html#L22">NewJSONWriter</a>
+				<h3 id="NewJSONWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/json.go.html#L23">NewJSONWriter</a>
 					<a class="permalink" href="#NewJSONWriter">&#xb6;</a>
 					
 					
@@ -520,7 +521,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 
 			
 				
-				<h3 id="JSONWriter.SyncMetric">func (*JSONWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/json.go.html#L65">SyncMetric</a>
+				<h3 id="JSONWriter.SyncMetric">func (*JSONWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/json.go.html#L66">SyncMetric</a>
 					<a class="permalink" href="#JSONWriter.SyncMetric">&#xb6;</a>
 					
 					
@@ -532,7 +533,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 				
 			
 				
-				<h3 id="JSONWriter.Write">func (*JSONWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/json.go.html#L33">Write</a>
+				<h3 id="JSONWriter.Write">func (*JSONWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/json.go.html#L35">Write</a>
 					<a class="permalink" href="#JSONWriter.Write">&#xb6;</a>
 					
 					
@@ -544,7 +545,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 				
 			
 				
-				<h3 id="JSONWriter.watchCtx">func (*JSONWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/json.go.html#L60">watchCtx</a>
+				<h3 id="JSONWriter.watchCtx">func (*JSONWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/json.go.html#L61">watchCtx</a>
 					<a class="permalink" href="#JSONWriter.watchCtx">&#xb6;</a>
 					
 					
