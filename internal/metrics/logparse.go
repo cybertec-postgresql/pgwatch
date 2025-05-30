@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"io"
 	"os"
@@ -74,7 +75,6 @@ func getFileWithNextModTimestamp(logsGlobPath, currentFile string) (string, erro
 		if err != nil {
 			continue
 		}
-		//log.Debugf("Stat().ModTime() for %s: %v", f, fi.ModTime())
 		if (nextMod.IsZero() || fi.ModTime().Before(nextMod)) && fi.ModTime().After(fiCurrent.ModTime()) {
 			nextMod = fi.ModTime()
 			nextFile = f
@@ -91,13 +91,13 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 		if ok {
 			allSeverityCounts[strings.ToLower(s)] = parsedCount
 		} else {
-			allSeverityCounts[strings.ToLower(s)] = 0
+			allSeverityCounts[strings.ToLower(s)] = int64(0)
 		}
 		parsedCount, ok = eventCountsTotal[s]
 		if ok {
 			allSeverityCounts[strings.ToLower(s)+"_total"] = parsedCount
 		} else {
-			allSeverityCounts[strings.ToLower(s)+"_total"] = 0
+			allSeverityCounts[strings.ToLower(s)+"_total"] = int64(0)
 		}
 	}
 	return MeasurementEnvelope{
@@ -114,66 +114,54 @@ func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, 
 	var latest, previous, serverMessagesLang string
 	var latestHandle *os.File
 	var reader *bufio.Reader
-	var linesRead = 0 // to skip over already parsed lines on Postgres server restart for example
-	var logsMatchRegex, logsMatchRegexPrev, logsGlobPath string
+	var linesRead int // to skip over already parsed lines on Postgres server restart for example
+	var logsMatchRegex, logsGlobPath string
 	var lastSendTime time.Time                    // to storage channel
 	var eventCounts = make(map[string]int64)      // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	var eventCountsTotal = make(map[string]int64) // for the whole instance
-	var hostConfig sources.HostConfigAttrs
 	var err error
 	var firstRun = true
 	var csvlogRegex *regexp.Regexp
-	logger := log.GetLogger(ctx).WithField("source", mdb.Name)
+	var currInterval time.Duration
+
+	logger := log.GetLogger(ctx).WithField("source", mdb.Name).WithField("metric", specialMetricServerLogEventCounts)
+
+	csvlogRegex, err = regexp.Compile(cmp.Or(mdb.HostConfig.LogsMatchRegex, CSVLogDefaultRegEx))
+	if err != nil {
+		logger.WithError(err).Print("Invalid regex: ", logsMatchRegex)
+		return
+	}
+	logger.Debugf("Changing logs parsing regex to: %s", logsMatchRegex)
+
+	if mdb.HostConfig.LogsGlobPath != "" {
+		logsGlobPath = mdb.HostConfig.LogsGlobPath
+	} else {
+		if logsGlobPath, err = tryDetermineLogFolder(ctx, mdb.Conn); err != nil {
+			logger.WithError(err).Print("Could not determine Postgres logs parsing folder in ", logsGlobPath)
+			return
+		}
+	}
+	logger.Debugf("Considering log files determined by glob pattern: %s", logsGlobPath)
+
+	if serverMessagesLang, err = tryDetermineLogMessagesLanguage(ctx, mdb.Conn); err != nil {
+		logger.WithError(err).Print("Could not determine language (lc_collate) used for server logs")
+		return
+	}
+
 	for { // re-try loop. re-start in case of FS errors or just to refresh host config
 		select {
 		case <-ctx.Done():
 			return
-		default:
-		}
-
-		if hostConfig.LogsMatchRegex != "" {
-			logsMatchRegex = hostConfig.LogsMatchRegex
-		}
-		if logsMatchRegex == "" {
-			logger.Debug("Log parsing enabled with default CSVLOG regex")
-			logsMatchRegex = CSVLogDefaultRegEx
-		}
-		if hostConfig.LogsGlobPath != "" {
-			logsGlobPath = hostConfig.LogsGlobPath
-		}
-		if logsGlobPath == "" {
-			logsGlobPath, err = tryDetermineLogFolder(ctx, mdb.Conn)
-			if err != nil {
-				logger.WithError(err).Print("Could not determine Postgres logs parsing folder. Configured logs_glob_path = ", logsGlobPath)
-				time.Sleep(60 * time.Second)
-				continue
+		case <-time.After(currInterval):
+			if currInterval == 0 {
+				currInterval = time.Second * time.Duration(interval)
 			}
 		}
-		serverMessagesLang, err = tryDetermineLogMessagesLanguage(ctx, mdb.Conn)
-		if err != nil {
-			logger.WithError(err).Warning("Could not determine language (lc_collate) used for server logs, cannot parse logs...")
-			time.Sleep(60 * time.Second)
-			continue
-		}
-
-		if logsMatchRegexPrev != logsMatchRegex { // avoid regex recompile if no changes
-			csvlogRegex, err = regexp.Compile(logsMatchRegex)
-			if err != nil {
-				logger.WithError(err).Print("Invalid regex: ", logsMatchRegex)
-				time.Sleep(60 * time.Second)
-				continue
-			}
-			logger.Infof("Changing logs parsing regex to: %s", logsMatchRegex)
-			logsMatchRegexPrev = logsMatchRegex
-		}
-
-		logger.Debugf("Considering log files determined by glob pattern: %s", logsGlobPath)
 
 		if latest == "" || firstRun {
 			globMatches, err := filepath.Glob(logsGlobPath)
 			if err != nil || len(globMatches) == 0 {
-				logger.Infof("No logfiles found to parse from glob '%s'. Sleeping 60s...", logsGlobPath)
-				time.Sleep(60 * time.Second)
+				logger.Infof("No logfiles found to parse from glob '%s'", logsGlobPath)
 				continue
 			}
 
@@ -182,8 +170,7 @@ func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, 
 				// find latest timestamp
 				latest, _ = getFileWithLatestTimestamp(globMatches)
 				if latest == "" {
-					logger.Warningf("Could not determine the latest logfile. Sleeping 60s...")
-					time.Sleep(60 * time.Second)
+					logger.Warningf("Could not determine the latest logfile")
 					continue
 				}
 
@@ -196,22 +183,21 @@ func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, 
 		if latestHandle == nil {
 			latestHandle, err = os.Open(latest)
 			if err != nil {
-				logger.Warningf("Failed to open logfile %s: %s. Sleeping 60s...", latest, err)
-				time.Sleep(60 * time.Second)
+				logger.Warningf("Failed to open logfile %s: %s", latest, err)
 				continue
 			}
+			defer latestHandle.Close()
 			reader = bufio.NewReader(latestHandle)
 			if previous == latest && linesRead > 0 { // handle postmaster restarts
 				i := 1
 				for i <= linesRead {
 					_, err = reader.ReadString('\n')
 					if err == io.EOF && i < linesRead {
-						logger.Warningf("Failed to open logfile %s: %s. Sleeping 60s...", latest, err)
+						logger.Warningf("Failed to open logfile %s: %s", latest, err)
 						linesRead = 0
 						break
 					} else if err != nil {
 						logger.Warningf("Failed to skip %d logfile lines for %s, there might be duplicates reported. Error: %s", linesRead, latest, err)
-						time.Sleep(60 * time.Second)
 						linesRead = i
 						break
 					}
@@ -224,62 +210,37 @@ func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, 
 			}
 		}
 
-		var eofSleepMillis = 0
-		// readLoopStart := time.Now()
-
 		for {
-			// if readLoopStart.Add(time.Second * time.Duration(opts.Source.Refresh)).Before(time.Now()) {
-			// 	break // refresh config
-			// }
 			line, err := reader.ReadString('\n')
 			if err != nil && err != io.EOF {
-				logger.Warningf("Failed to read logfile %s: %s. Sleeping 60s...", latest, err)
-				err = latestHandle.Close()
-				if err != nil {
-					logger.Warningf("Failed to close logfile %s properly: %s", latest, err)
-				}
+				logger.Warningf("Failed to read logfile %s: %s", latest, err)
+				_ = latestHandle.Close()
 				latestHandle = nil
-				time.Sleep(60 * time.Second)
 				break
 			}
 
 			if err == io.EOF {
-				//log.Debugf("EOF reached for logfile %s", latest)
-				if eofSleepMillis < 5000 && float64(eofSleepMillis) < interval*1000 {
-					eofSleepMillis += 100 // progressively sleep more if nothing going on but not more that 5s or metric interval
-				}
-				time.Sleep(time.Millisecond * time.Duration(eofSleepMillis))
-
 				// check for newly opened logfiles
 				file, _ := getFileWithNextModTimestamp(logsGlobPath, latest)
 				if file != "" {
 					previous = latest
 					latest = file
-					err = latestHandle.Close()
+					_ = latestHandle.Close()
 					latestHandle = nil
-					if err != nil {
-						logger.Warningf("Failed to close logfile %s properly: %s", latest, err)
-					}
 					logger.Infof("Switching to new logfile: %s", file)
 					linesRead = 0
 					break
 				}
 			} else {
-				eofSleepMillis = 0
 				linesRead++
 			}
 
 			if err == nil && line != "" {
-
 				matches := csvlogRegex.FindStringSubmatch(line)
 				if len(matches) == 0 {
-					//log.Debugf("No logline regex match for line:") // normal case actually for queries spanning multiple loglines
-					//log.Debugf(line)
 					goto send_to_storage_if_needed
 				}
-
 				result := regexMatchesToMap(csvlogRegex, matches)
-				//log.Debugf("RegexMatchesToMap: %+v", result)
 				errorSeverity, ok := result["error_severity"]
 				if !ok {
 					logger.Error("error_severity group must be defined in parse regex:", csvlogRegex)
@@ -303,12 +264,16 @@ func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, 
 			}
 
 		send_to_storage_if_needed:
-			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-1*time.Second*time.Duration(interval))) {
+			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(interval))) {
 				logger.Debugf("Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v", eventCounts, eventCountsTotal)
-				storeCh <- eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
-				zeroEventCounts(eventCounts)
-				zeroEventCounts(eventCountsTotal)
-				lastSendTime = time.Now()
+				select {
+				case <-ctx.Done():
+					return
+				case storeCh <- eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb):
+					zeroEventCounts(eventCounts)
+					zeroEventCounts(eventCountsTotal)
+					lastSendTime = time.Now()
+				}
 			}
 
 		} // file read loop
