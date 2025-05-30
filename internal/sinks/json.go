@@ -30,28 +30,28 @@ func NewJSONWriter(ctx context.Context, fname string) (*JSONWriter, error) {
 	return jw, nil
 }
 
-func (jw *JSONWriter) Write(msgs []metrics.MeasurementEnvelope) error {
+func (jw *JSONWriter) Write(msg metrics.MeasurementEnvelope) error {
 	if jw.ctx.Err() != nil {
 		return jw.ctx.Err()
 	}
-	if len(msgs) == 0 {
+	if len(msg.Data) == 0 {
 		return nil
 	}
 	enc := json.NewEncoder(jw.lw)
 	t1 := time.Now()
 	written := 0
-	for _, msg := range msgs {
-		dataRow := map[string]any{
-			"metric":      msg.MetricName,
-			"data":        msg.Data,
-			"dbname":      msg.DBName,
-			"custom_tags": msg.CustomTags,
-		}
-		if err := enc.Encode(dataRow); err != nil {
-			return err
-		}
-		written += len(msg.Data)
+
+	dataRow := map[string]any{
+		"metric":      msg.MetricName,
+		"data":        msg.Data,
+		"dbname":      msg.DBName,
+		"custom_tags": msg.CustomTags,
 	}
+	if err := enc.Encode(dataRow); err != nil {
+		return err
+	}
+	written += len(msg.Data)
+
 	diff := time.Since(t1)
 	log.GetLogger(jw.ctx).WithField("rows", written).WithField("elapsed", diff).Info("measurements written")
 	return nil

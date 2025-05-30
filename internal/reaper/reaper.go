@@ -24,7 +24,7 @@ var metricDefs = NewConcurrentMetricDefs()
 type Reaper struct {
 	*cmdopts.Options
 	ready                atomic.Bool
-	measurementCh        chan []metrics.MeasurementEnvelope
+	measurementCh        chan metrics.MeasurementEnvelope
 	measurementCache     *InstanceMetricCache
 	logger               log.Logger
 	monitoredSources     sources.SourceConns
@@ -36,7 +36,7 @@ type Reaper struct {
 func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper) {
 	return &Reaper{
 		Options:              opts,
-		measurementCh:        make(chan []metrics.MeasurementEnvelope, 10000),
+		measurementCh:        make(chan metrics.MeasurementEnvelope, 10000),
 		measurementCache:     NewInstanceMetricCache(),
 		logger:               log.GetLogger(ctx),
 		monitoredSources:     make(sources.SourceConns, 0),
@@ -270,7 +270,6 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 	var lastErrorNotificationTime time.Time
 	var err error
 	var ok bool
-	var envelopes []metrics.MeasurementEnvelope
 
 	failedFetches := 0
 	lastDBVersionFetchTime := time.Unix(0, 0) // check DB ver. ev. 5 min
@@ -321,7 +320,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 				lastErrorNotificationTime = time.Now()
 			}
 		} else if metricStoreMessages != nil && len(metricStoreMessages.Data) > 0 {
-			envelopes = []metrics.MeasurementEnvelope{*metricStoreMessages}
+			r.measurementCh <- *metricStoreMessages
 			// pick up "server restarted" events here to avoid doing extra selects from CheckForPGObjectChangesAndStore code
 			if metricName == "db_stats" {
 				postmasterUptimeS, ok := (metricStoreMessages.Data)[0]["postmaster_uptime_s"]
@@ -334,20 +333,18 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 							entry := metrics.NewMeasurement(metricStoreMessages.Data.GetEpoch())
 							entry["details"] = message
 							detectedChangesSummary = append(detectedChangesSummary, entry)
-							envelopes = append(envelopes,
-								metrics.MeasurementEnvelope{
-									DBName:     md.Name,
-									SourceType: string(md.Kind),
-									MetricName: "object_changes",
-									Data:       detectedChangesSummary,
-									CustomTags: metricStoreMessages.CustomTags,
-								})
+							r.measurementCh <- metrics.MeasurementEnvelope{
+								DBName:     md.Name,
+								SourceType: string(md.Kind),
+								MetricName: "object_changes",
+								Data:       detectedChangesSummary,
+								CustomTags: metricStoreMessages.CustomTags,
+							}
 						}
 					}
 					lastUptimeS = postmasterUptimeS.(int64)
 				}
 			}
-			r.measurementCh <- envelopes
 		}
 
 		select {
@@ -378,9 +375,7 @@ func (r *Reaper) LoadSources() (err error) {
 func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
 	for {
 		if len(monitoredDbCache) > 0 {
-			msms := make([]metrics.MeasurementEnvelope, len(monitoredDbCache))
 			now := time.Now().UnixNano()
-
 			monitoredDbCacheLock.RLock()
 			for _, mdb := range monitoredDbCache {
 				db := metrics.NewMeasurement(now)
@@ -389,14 +384,13 @@ func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
 				for k, v := range mdb.CustomTags {
 					db[metrics.TagPrefix+k] = v
 				}
-				msms = append(msms, metrics.MeasurementEnvelope{
+				r.measurementCh <- metrics.MeasurementEnvelope{
 					DBName:     mdb.Name,
 					MetricName: monitoredDbsDatastoreSyncMetricName,
 					Data:       metrics.Measurements{db},
-				})
+				}
 			}
 			monitoredDbCacheLock.RUnlock()
-			r.measurementCh <- msms
 		}
 		select {
 		case <-time.After(time.Second * monitoredDbsDatastoreSyncIntervalSeconds):

@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	cacheLimit      = 512
+	cacheLimit      = 256
 	highLoadTimeout = time.Second * 5
 	deleterDelay    = time.Hour
 )
@@ -37,7 +37,7 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		ctx:        ctx,
 		metricDefs: metricDefs,
 		opts:       opts,
-		input:      make(chan []metrics.MeasurementEnvelope, cacheLimit),
+		input:      make(chan metrics.MeasurementEnvelope, cacheLimit),
 		lastError:  make(chan error),
 		sinkDb:     conn,
 	}
@@ -108,7 +108,7 @@ type PostgresWriter struct {
 	metricSchema DbStorageSchemaType
 	metricDefs   *metrics.Metrics
 	opts         *CmdOpts
-	input        chan []metrics.MeasurementEnvelope
+	input        chan metrics.MeasurementEnvelope
 	lastError    chan error
 }
 
@@ -174,12 +174,12 @@ func (pgw *PostgresWriter) EnsureMetricDummy(metric string) (err error) {
 }
 
 // Write sends the measurements to the cache channel
-func (pgw *PostgresWriter) Write(msgs []metrics.MeasurementEnvelope) error {
+func (pgw *PostgresWriter) Write(msg metrics.MeasurementEnvelope) error {
 	if pgw.ctx.Err() != nil {
 		return pgw.ctx.Err()
 	}
 	select {
-	case pgw.input <- msgs:
+	case pgw.input <- msg:
 		// msgs sent
 	case <-time.After(highLoadTimeout):
 		// msgs dropped due to a huge load, check stdout or file for detailed log
@@ -204,7 +204,7 @@ func (pgw *PostgresWriter) poll() {
 		default:
 			select {
 			case entry := <-pgw.input:
-				cache = append(cache, entry...)
+				cache = append(cache, entry)
 				if len(cache) < cacheLimit {
 					break
 				}

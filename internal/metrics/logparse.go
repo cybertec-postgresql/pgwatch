@@ -84,7 +84,7 @@ func getFileWithNextModTimestamp(logsGlobPath, currentFile string) (string, erro
 }
 
 // 1. add zero counts for severity levels that didn't have any occurrences in the log
-func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb *sources.SourceConn) []MeasurementEnvelope {
+func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb *sources.SourceConn) MeasurementEnvelope {
 	allSeverityCounts := NewMeasurement(time.Now().UnixNano())
 	for _, s := range PgSeverities {
 		parsedCount, ok := eventCounts[s]
@@ -100,16 +100,16 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 			allSeverityCounts[strings.ToLower(s)+"_total"] = 0
 		}
 	}
-	return []MeasurementEnvelope{{
+	return MeasurementEnvelope{
 		DBName:     mdb.Name,
 		SourceType: string(mdb.Kind),
 		MetricName: specialMetricServerLogEventCounts,
 		Data:       Measurements{allSeverityCounts},
 		CustomTags: mdb.CustomTags,
-	}}
+	}
 }
 
-func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, interval float64, storeCh chan<- []MeasurementEnvelope) {
+func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, interval float64, storeCh chan<- MeasurementEnvelope) {
 
 	var latest, previous, serverMessagesLang string
 	var latestHandle *os.File
@@ -305,8 +305,7 @@ func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, 
 		send_to_storage_if_needed:
 			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-1*time.Second*time.Duration(interval))) {
 				logger.Debugf("Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v", eventCounts, eventCountsTotal)
-				metricStoreMessages := eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
-				storeCh <- metricStoreMessages
+				storeCh <- eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
 				zeroEventCounts(eventCounts)
 				zeroEventCounts(eventCountsTotal)
 				lastSendTime = time.Now()

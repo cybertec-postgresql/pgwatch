@@ -80,28 +80,26 @@ func TestWrite(t *testing.T) {
 		ctx:    ctx,
 		sinkDb: conn,
 	}
-	messages := []metrics.MeasurementEnvelope{
-		{
-			MetricName: "test_metric",
-			Data: metrics.Measurements{
-				{"number": 1, "string": "test_data"},
-			},
-			DBName:     "test_db",
-			CustomTags: map[string]string{"foo": "boo"},
+	message := metrics.MeasurementEnvelope{
+		MetricName: "test_metric",
+		Data: metrics.Measurements{
+			{"number": 1, "string": "test_data"},
 		},
+		DBName:     "test_db",
+		CustomTags: map[string]string{"foo": "boo"},
 	}
 
 	highLoadTimeout = 0
-	err = pgw.Write(messages)
+	err = pgw.Write(message)
 	assert.NoError(t, err, "messages skipped due to high load")
 
 	highLoadTimeout = time.Second * 5
-	pgw.input = make(chan []metrics.MeasurementEnvelope, cacheLimit)
-	err = pgw.Write(messages)
+	pgw.input = make(chan metrics.MeasurementEnvelope, cacheLimit)
+	err = pgw.Write(message)
 	assert.NoError(t, err, "write successful")
 
 	cancel()
-	err = pgw.Write(messages)
+	err = pgw.Write(message)
 	assert.Error(t, err, "context canceled")
 }
 
