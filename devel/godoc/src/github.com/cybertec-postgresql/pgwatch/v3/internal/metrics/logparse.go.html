@@ -141,7 +141,7 @@
 <span id="L84" class="ln">    84  </span>}
 <span id="L85" class="ln">    85  </span>
 <span id="L86" class="ln">    86  </span><span class="comment">// 1. add zero counts for severity levels that didn&#39;t have any occurrences in the log</span>
-<span id="L87" class="ln">    87  </span>func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb *sources.SourceConn) []MeasurementEnvelope {
+<span id="L87" class="ln">    87  </span>func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb *sources.SourceConn) MeasurementEnvelope {
 <span id="L88" class="ln">    88  </span>	allSeverityCounts := NewMeasurement(time.Now().UnixNano())
 <span id="L89" class="ln">    89  </span>	for _, s := range PgSeverities {
 <span id="L90" class="ln">    90  </span>		parsedCount, ok := eventCounts[s]
@@ -157,16 +157,16 @@
 <span id="L100" class="ln">   100  </span>			allSeverityCounts[strings.ToLower(s)+&#34;_total&#34;] = 0
 <span id="L101" class="ln">   101  </span>		}
 <span id="L102" class="ln">   102  </span>	}
-<span id="L103" class="ln">   103  </span>	return []MeasurementEnvelope{{
+<span id="L103" class="ln">   103  </span>	return MeasurementEnvelope{
 <span id="L104" class="ln">   104  </span>		DBName:     mdb.Name,
 <span id="L105" class="ln">   105  </span>		SourceType: string(mdb.Kind),
 <span id="L106" class="ln">   106  </span>		MetricName: specialMetricServerLogEventCounts,
 <span id="L107" class="ln">   107  </span>		Data:       Measurements{allSeverityCounts},
 <span id="L108" class="ln">   108  </span>		CustomTags: mdb.CustomTags,
-<span id="L109" class="ln">   109  </span>	}}
+<span id="L109" class="ln">   109  </span>	}
 <span id="L110" class="ln">   110  </span>}
 <span id="L111" class="ln">   111  </span>
-<span id="L112" class="ln">   112  </span>func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, interval float64, storeCh chan&lt;- []MeasurementEnvelope) {
+<span id="L112" class="ln">   112  </span>func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, interval float64, storeCh chan&lt;- MeasurementEnvelope) {
 <span id="L113" class="ln">   113  </span>
 <span id="L114" class="ln">   114  </span>	var latest, previous, serverMessagesLang string
 <span id="L115" class="ln">   115  </span>	var latestHandle *os.File
@@ -362,77 +362,76 @@
 <span id="L305" class="ln">   305  </span>		send_to_storage_if_needed:
 <span id="L306" class="ln">   306  </span>			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-1*time.Second*time.Duration(interval))) {
 <span id="L307" class="ln">   307  </span>				logger.Debugf(&#34;Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v&#34;, eventCounts, eventCountsTotal)
-<span id="L308" class="ln">   308  </span>				metricStoreMessages := eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
-<span id="L309" class="ln">   309  </span>				storeCh &lt;- metricStoreMessages
-<span id="L310" class="ln">   310  </span>				zeroEventCounts(eventCounts)
-<span id="L311" class="ln">   311  </span>				zeroEventCounts(eventCountsTotal)
-<span id="L312" class="ln">   312  </span>				lastSendTime = time.Now()
-<span id="L313" class="ln">   313  </span>			}
-<span id="L314" class="ln">   314  </span>
-<span id="L315" class="ln">   315  </span>		} <span class="comment">// file read loop</span>
-<span id="L316" class="ln">   316  </span>	} <span class="comment">// config loop</span>
-<span id="L317" class="ln">   317  </span>
-<span id="L318" class="ln">   318  </span>}
-<span id="L319" class="ln">   319  </span>
-<span id="L320" class="ln">   320  </span>func severityToEnglish(serverLang, errorSeverity string) string {
-<span id="L321" class="ln">   321  </span>	<span class="comment">//log.Debug(&#34;severityToEnglish&#34;, serverLang, errorSeverity)</span>
-<span id="L322" class="ln">   322  </span>	if serverLang == &#34;en&#34; {
-<span id="L323" class="ln">   323  </span>		return errorSeverity
-<span id="L324" class="ln">   324  </span>	}
-<span id="L325" class="ln">   325  </span>	severityMap := PgSeveritiesLocale[serverLang]
-<span id="L326" class="ln">   326  </span>	severityEn, ok := severityMap[errorSeverity]
-<span id="L327" class="ln">   327  </span>	if !ok {
-<span id="L328" class="ln">   328  </span>		return errorSeverity
-<span id="L329" class="ln">   329  </span>	}
-<span id="L330" class="ln">   330  </span>	return severityEn
-<span id="L331" class="ln">   331  </span>}
-<span id="L332" class="ln">   332  </span>
-<span id="L333" class="ln">   333  </span>func zeroEventCounts(eventCounts map[string]int64) {
-<span id="L334" class="ln">   334  </span>	for _, severity := range PgSeverities {
-<span id="L335" class="ln">   335  </span>		eventCounts[severity] = 0
-<span id="L336" class="ln">   336  </span>	}
-<span id="L337" class="ln">   337  </span>}
-<span id="L338" class="ln">   338  </span>
-<span id="L339" class="ln">   339  </span>func tryDetermineLogFolder(ctx context.Context, conn db.PgxIface) (string, error) {
-<span id="L340" class="ln">   340  </span>	sql := `select current_setting(&#39;data_directory&#39;) as dd, current_setting(&#39;log_directory&#39;) as ld`
-<span id="L341" class="ln">   341  </span>	var dd, ld string
-<span id="L342" class="ln">   342  </span>	err := conn.QueryRow(ctx, sql).Scan(&amp;dd, &amp;ld)
-<span id="L343" class="ln">   343  </span>	if err != nil {
-<span id="L344" class="ln">   344  </span>		return &#34;&#34;, err
-<span id="L345" class="ln">   345  </span>	}
-<span id="L346" class="ln">   346  </span>	if strings.HasPrefix(ld, &#34;/&#34;) {
-<span id="L347" class="ln">   347  </span>		<span class="comment">// we have a full path we can use</span>
-<span id="L348" class="ln">   348  </span>		return path.Join(ld, CSVLogDefaultGlobSuffix), nil
-<span id="L349" class="ln">   349  </span>	}
-<span id="L350" class="ln">   350  </span>	return path.Join(dd, ld, CSVLogDefaultGlobSuffix), nil
-<span id="L351" class="ln">   351  </span>}
-<span id="L352" class="ln">   352  </span>
-<span id="L353" class="ln">   353  </span>func tryDetermineLogMessagesLanguage(ctx context.Context, conn db.PgxIface) (string, error) {
-<span id="L354" class="ln">   354  </span>	sql := `select current_setting(&#39;lc_messages&#39;)::varchar(2) as lc_messages;`
-<span id="L355" class="ln">   355  </span>	var lc string
-<span id="L356" class="ln">   356  </span>	err := conn.QueryRow(ctx, sql).Scan(&amp;lc)
-<span id="L357" class="ln">   357  </span>	if err != nil {
-<span id="L358" class="ln">   358  </span>		return &#34;&#34;, err
-<span id="L359" class="ln">   359  </span>	}
-<span id="L360" class="ln">   360  </span>	if _, ok := PgSeveritiesLocale[lc]; !ok {
-<span id="L361" class="ln">   361  </span>		return &#34;en&#34;, nil
-<span id="L362" class="ln">   362  </span>	}
-<span id="L363" class="ln">   363  </span>	return lc, nil
-<span id="L364" class="ln">   364  </span>}
-<span id="L365" class="ln">   365  </span>
-<span id="L366" class="ln">   366  </span>func regexMatchesToMap(csvlogRegex *regexp.Regexp, matches []string) map[string]string {
-<span id="L367" class="ln">   367  </span>	result := make(map[string]string)
-<span id="L368" class="ln">   368  </span>	if len(matches) == 0 || csvlogRegex == nil {
-<span id="L369" class="ln">   369  </span>		return result
-<span id="L370" class="ln">   370  </span>	}
-<span id="L371" class="ln">   371  </span>	for i, name := range csvlogRegex.SubexpNames() {
-<span id="L372" class="ln">   372  </span>		if i != 0 &amp;&amp; name != &#34;&#34; {
-<span id="L373" class="ln">   373  </span>			result[name] = matches[i]
-<span id="L374" class="ln">   374  </span>		}
-<span id="L375" class="ln">   375  </span>	}
-<span id="L376" class="ln">   376  </span>	return result
-<span id="L377" class="ln">   377  </span>}
-<span id="L378" class="ln">   378  </span>
+<span id="L308" class="ln">   308  </span>				storeCh &lt;- eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
+<span id="L309" class="ln">   309  </span>				zeroEventCounts(eventCounts)
+<span id="L310" class="ln">   310  </span>				zeroEventCounts(eventCountsTotal)
+<span id="L311" class="ln">   311  </span>				lastSendTime = time.Now()
+<span id="L312" class="ln">   312  </span>			}
+<span id="L313" class="ln">   313  </span>
+<span id="L314" class="ln">   314  </span>		} <span class="comment">// file read loop</span>
+<span id="L315" class="ln">   315  </span>	} <span class="comment">// config loop</span>
+<span id="L316" class="ln">   316  </span>
+<span id="L317" class="ln">   317  </span>}
+<span id="L318" class="ln">   318  </span>
+<span id="L319" class="ln">   319  </span>func severityToEnglish(serverLang, errorSeverity string) string {
+<span id="L320" class="ln">   320  </span>	<span class="comment">//log.Debug(&#34;severityToEnglish&#34;, serverLang, errorSeverity)</span>
+<span id="L321" class="ln">   321  </span>	if serverLang == &#34;en&#34; {
+<span id="L322" class="ln">   322  </span>		return errorSeverity
+<span id="L323" class="ln">   323  </span>	}
+<span id="L324" class="ln">   324  </span>	severityMap := PgSeveritiesLocale[serverLang]
+<span id="L325" class="ln">   325  </span>	severityEn, ok := severityMap[errorSeverity]
+<span id="L326" class="ln">   326  </span>	if !ok {
+<span id="L327" class="ln">   327  </span>		return errorSeverity
+<span id="L328" class="ln">   328  </span>	}
+<span id="L329" class="ln">   329  </span>	return severityEn
+<span id="L330" class="ln">   330  </span>}
+<span id="L331" class="ln">   331  </span>
+<span id="L332" class="ln">   332  </span>func zeroEventCounts(eventCounts map[string]int64) {
+<span id="L333" class="ln">   333  </span>	for _, severity := range PgSeverities {
+<span id="L334" class="ln">   334  </span>		eventCounts[severity] = 0
+<span id="L335" class="ln">   335  </span>	}
+<span id="L336" class="ln">   336  </span>}
+<span id="L337" class="ln">   337  </span>
+<span id="L338" class="ln">   338  </span>func tryDetermineLogFolder(ctx context.Context, conn db.PgxIface) (string, error) {
+<span id="L339" class="ln">   339  </span>	sql := `select current_setting(&#39;data_directory&#39;) as dd, current_setting(&#39;log_directory&#39;) as ld`
+<span id="L340" class="ln">   340  </span>	var dd, ld string
+<span id="L341" class="ln">   341  </span>	err := conn.QueryRow(ctx, sql).Scan(&amp;dd, &amp;ld)
+<span id="L342" class="ln">   342  </span>	if err != nil {
+<span id="L343" class="ln">   343  </span>		return &#34;&#34;, err
+<span id="L344" class="ln">   344  </span>	}
+<span id="L345" class="ln">   345  </span>	if strings.HasPrefix(ld, &#34;/&#34;) {
+<span id="L346" class="ln">   346  </span>		<span class="comment">// we have a full path we can use</span>
+<span id="L347" class="ln">   347  </span>		return path.Join(ld, CSVLogDefaultGlobSuffix), nil
+<span id="L348" class="ln">   348  </span>	}
+<span id="L349" class="ln">   349  </span>	return path.Join(dd, ld, CSVLogDefaultGlobSuffix), nil
+<span id="L350" class="ln">   350  </span>}
+<span id="L351" class="ln">   351  </span>
+<span id="L352" class="ln">   352  </span>func tryDetermineLogMessagesLanguage(ctx context.Context, conn db.PgxIface) (string, error) {
+<span id="L353" class="ln">   353  </span>	sql := `select current_setting(&#39;lc_messages&#39;)::varchar(2) as lc_messages;`
+<span id="L354" class="ln">   354  </span>	var lc string
+<span id="L355" class="ln">   355  </span>	err := conn.QueryRow(ctx, sql).Scan(&amp;lc)
+<span id="L356" class="ln">   356  </span>	if err != nil {
+<span id="L357" class="ln">   357  </span>		return &#34;&#34;, err
+<span id="L358" class="ln">   358  </span>	}
+<span id="L359" class="ln">   359  </span>	if _, ok := PgSeveritiesLocale[lc]; !ok {
+<span id="L360" class="ln">   360  </span>		return &#34;en&#34;, nil
+<span id="L361" class="ln">   361  </span>	}
+<span id="L362" class="ln">   362  </span>	return lc, nil
+<span id="L363" class="ln">   363  </span>}
+<span id="L364" class="ln">   364  </span>
+<span id="L365" class="ln">   365  </span>func regexMatchesToMap(csvlogRegex *regexp.Regexp, matches []string) map[string]string {
+<span id="L366" class="ln">   366  </span>	result := make(map[string]string)
+<span id="L367" class="ln">   367  </span>	if len(matches) == 0 || csvlogRegex == nil {
+<span id="L368" class="ln">   368  </span>		return result
+<span id="L369" class="ln">   369  </span>	}
+<span id="L370" class="ln">   370  </span>	for i, name := range csvlogRegex.SubexpNames() {
+<span id="L371" class="ln">   371  </span>		if i != 0 &amp;&amp; name != &#34;&#34; {
+<span id="L372" class="ln">   372  </span>			result[name] = matches[i]
+<span id="L373" class="ln">   373  </span>		}
+<span id="L374" class="ln">   374  </span>	}
+<span id="L375" class="ln">   375  </span>	return result
+<span id="L376" class="ln">   376  </span>}
+<span id="L377" class="ln">   377  </span>
 </pre><p></p>
 
 <div id="footer">

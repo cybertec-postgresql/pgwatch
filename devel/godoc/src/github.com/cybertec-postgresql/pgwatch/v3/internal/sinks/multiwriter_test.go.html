@@ -71,7 +71,7 @@
 <span id="L14" class="ln">    14  </span>	return nil
 <span id="L15" class="ln">    15  </span>}
 <span id="L16" class="ln">    16  </span>
-<span id="L17" class="ln">    17  </span>func (mw *MockWriter) Write(_ []metrics.MeasurementEnvelope) error {
+<span id="L17" class="ln">    17  </span>func (mw *MockWriter) Write(_ metrics.MeasurementEnvelope) error {
 <span id="L18" class="ln">    18  </span>	return nil
 <span id="L19" class="ln">    19  </span>}
 <span id="L20" class="ln">    20  </span>
@@ -139,7 +139,7 @@
 <span id="L82" class="ln">    82  </span>	mw := &amp;MultiWriter{}
 <span id="L83" class="ln">    83  </span>	mockWriter := &amp;MockWriter{}
 <span id="L84" class="ln">    84  </span>	mw.AddWriter(mockWriter)
-<span id="L85" class="ln">    85  </span>	err := mw.Write([]metrics.MeasurementEnvelope{{}})
+<span id="L85" class="ln">    85  </span>	err := mw.Write(metrics.MeasurementEnvelope{})
 <span id="L86" class="ln">    86  </span>	assert.NoError(t, err)
 <span id="L87" class="ln">    87  </span>}
 <span id="L88" class="ln">    88  </span>

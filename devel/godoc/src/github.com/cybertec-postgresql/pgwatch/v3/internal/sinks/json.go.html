@@ -87,28 +87,28 @@
 <span id="L30" class="ln">    30  </span>	return jw, nil
 <span id="L31" class="ln">    31  </span>}
 <span id="L32" class="ln">    32  </span>
-<span id="L33" class="ln">    33  </span>func (jw *JSONWriter) Write(msgs []metrics.MeasurementEnvelope) error {
+<span id="L33" class="ln">    33  </span>func (jw *JSONWriter) Write(msg metrics.MeasurementEnvelope) error {
 <span id="L34" class="ln">    34  </span>	if jw.ctx.Err() != nil {
 <span id="L35" class="ln">    35  </span>		return jw.ctx.Err()
 <span id="L36" class="ln">    36  </span>	}
-<span id="L37" class="ln">    37  </span>	if len(msgs) == 0 {
+<span id="L37" class="ln">    37  </span>	if len(msg.Data) == 0 {
 <span id="L38" class="ln">    38  </span>		return nil
 <span id="L39" class="ln">    39  </span>	}
 <span id="L40" class="ln">    40  </span>	enc := json.NewEncoder(jw.lw)
 <span id="L41" class="ln">    41  </span>	t1 := time.Now()
 <span id="L42" class="ln">    42  </span>	written := 0
-<span id="L43" class="ln">    43  </span>	for _, msg := range msgs {
-<span id="L44" class="ln">    44  </span>		dataRow := map[string]any{
-<span id="L45" class="ln">    45  </span>			&#34;metric&#34;:      msg.MetricName,
-<span id="L46" class="ln">    46  </span>			&#34;data&#34;:        msg.Data,
-<span id="L47" class="ln">    47  </span>			&#34;dbname&#34;:      msg.DBName,
-<span id="L48" class="ln">    48  </span>			&#34;custom_tags&#34;: msg.CustomTags,
-<span id="L49" class="ln">    49  </span>		}
-<span id="L50" class="ln">    50  </span>		if err := enc.Encode(dataRow); err != nil {
-<span id="L51" class="ln">    51  </span>			return err
-<span id="L52" class="ln">    52  </span>		}
-<span id="L53" class="ln">    53  </span>		written += len(msg.Data)
-<span id="L54" class="ln">    54  </span>	}
+<span id="L43" class="ln">    43  </span>
+<span id="L44" class="ln">    44  </span>	dataRow := map[string]any{
+<span id="L45" class="ln">    45  </span>		&#34;metric&#34;:      msg.MetricName,
+<span id="L46" class="ln">    46  </span>		&#34;data&#34;:        msg.Data,
+<span id="L47" class="ln">    47  </span>		&#34;dbname&#34;:      msg.DBName,
+<span id="L48" class="ln">    48  </span>		&#34;custom_tags&#34;: msg.CustomTags,
+<span id="L49" class="ln">    49  </span>	}
+<span id="L50" class="ln">    50  </span>	if err := enc.Encode(dataRow); err != nil {
+<span id="L51" class="ln">    51  </span>		return err
+<span id="L52" class="ln">    52  </span>	}
+<span id="L53" class="ln">    53  </span>	written += len(msg.Data)
+<span id="L54" class="ln">    54  </span>
 <span id="L55" class="ln">    55  </span>	diff := time.Since(t1)
 <span id="L56" class="ln">    56  </span>	log.GetLogger(jw.ctx).WithField(&#34;rows&#34;, written).WithField(&#34;elapsed&#34;, diff).Info(&#34;measurements written&#34;)
 <span id="L57" class="ln">    57  </span>	return nil

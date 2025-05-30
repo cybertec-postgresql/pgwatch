@@ -70,7 +70,7 @@
 <span id="L13" class="ln">    13  </span><span class="comment">// Writer is an interface that writes metrics values</span>
 <span id="L14" class="ln">    14  </span>type Writer interface {
 <span id="L15" class="ln">    15  </span>	SyncMetric(dbUnique, metricName, op string) error
-<span id="L16" class="ln">    16  </span>	Write(msgs []metrics.MeasurementEnvelope) error
+<span id="L16" class="ln">    16  </span>	Write(msgs metrics.MeasurementEnvelope) error
 <span id="L17" class="ln">    17  </span>}
 <span id="L18" class="ln">    18  </span>
 <span id="L19" class="ln">    19  </span><span class="comment">// MultiWriter ensures the simultaneous storage of data in several storages.</span>
@@ -126,9 +126,9 @@
 <span id="L69" class="ln">    69  </span>	return
 <span id="L70" class="ln">    70  </span>}
 <span id="L71" class="ln">    71  </span>
-<span id="L72" class="ln">    72  </span>func (mw *MultiWriter) Write(msgs []metrics.MeasurementEnvelope) (err error) {
+<span id="L72" class="ln">    72  </span>func (mw *MultiWriter) Write(msg metrics.MeasurementEnvelope) (err error) {
 <span id="L73" class="ln">    73  </span>	for _, w := range mw.writers {
-<span id="L74" class="ln">    74  </span>		err = errors.Join(err, w.Write(msgs))
+<span id="L74" class="ln">    74  </span>		err = errors.Join(err, w.Write(msg))
 <span id="L75" class="ln">    75  </span>	}
 <span id="L76" class="ln">    76  </span>	return
 <span id="L77" class="ln">    77  </span>}

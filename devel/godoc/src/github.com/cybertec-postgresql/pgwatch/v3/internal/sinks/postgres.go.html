@@ -74,7 +74,7 @@
 <span id="L17" class="ln">    17  </span>)
 <span id="L18" class="ln">    18  </span>
 <span id="L19" class="ln">    19  </span>var (
-<span id="L20" class="ln">    20  </span>	cacheLimit      = 512
+<span id="L20" class="ln">    20  </span>	cacheLimit      = 256
 <span id="L21" class="ln">    21  </span>	highLoadTimeout = time.Second * 5
 <span id="L22" class="ln">    22  </span>	deleterDelay    = time.Hour
 <span id="L23" class="ln">    23  </span>)
@@ -94,7 +94,7 @@
 <span id="L37" class="ln">    37  </span>		ctx:        ctx,
 <span id="L38" class="ln">    38  </span>		metricDefs: metricDefs,
 <span id="L39" class="ln">    39  </span>		opts:       opts,
-<span id="L40" class="ln">    40  </span>		input:      make(chan []metrics.MeasurementEnvelope, cacheLimit),
+<span id="L40" class="ln">    40  </span>		input:      make(chan metrics.MeasurementEnvelope, cacheLimit),
 <span id="L41" class="ln">    41  </span>		lastError:  make(chan error),
 <span id="L42" class="ln">    42  </span>		sinkDb:     conn,
 <span id="L43" class="ln">    43  </span>	}
@@ -165,7 +165,7 @@
 <span id="L108" class="ln">   108  </span>	metricSchema DbStorageSchemaType
 <span id="L109" class="ln">   109  </span>	metricDefs   *metrics.Metrics
 <span id="L110" class="ln">   110  </span>	opts         *CmdOpts
-<span id="L111" class="ln">   111  </span>	input        chan []metrics.MeasurementEnvelope
+<span id="L111" class="ln">   111  </span>	input        chan metrics.MeasurementEnvelope
 <span id="L112" class="ln">   112  </span>	lastError    chan error
 <span id="L113" class="ln">   113  </span>}
 <span id="L114" class="ln">   114  </span>
@@ -231,12 +231,12 @@
 <span id="L174" class="ln">   174  </span>}
 <span id="L175" class="ln">   175  </span>
 <span id="L176" class="ln">   176  </span><span class="comment">// Write sends the measurements to the cache channel</span>
-<span id="L177" class="ln">   177  </span>func (pgw *PostgresWriter) Write(msgs []metrics.MeasurementEnvelope) error {
+<span id="L177" class="ln">   177  </span>func (pgw *PostgresWriter) Write(msg metrics.MeasurementEnvelope) error {
 <span id="L178" class="ln">   178  </span>	if pgw.ctx.Err() != nil {
 <span id="L179" class="ln">   179  </span>		return pgw.ctx.Err()
 <span id="L180" class="ln">   180  </span>	}
 <span id="L181" class="ln">   181  </span>	select {
-<span id="L182" class="ln">   182  </span>	case pgw.input &lt;- msgs:
+<span id="L182" class="ln">   182  </span>	case pgw.input &lt;- msg:
 <span id="L183" class="ln">   183  </span>		<span class="comment">// msgs sent</span>
 <span id="L184" class="ln">   184  </span>	case &lt;-time.After(highLoadTimeout):
 <span id="L185" class="ln">   185  </span>		<span class="comment">// msgs dropped due to a huge load, check stdout or file for detailed log</span>
@@ -261,7 +261,7 @@
 <span id="L204" class="ln">   204  </span>		default:
 <span id="L205" class="ln">   205  </span>			select {
 <span id="L206" class="ln">   206  </span>			case entry := &lt;-pgw.input:
-<span id="L207" class="ln">   207  </span>				cache = append(cache, entry...)
+<span id="L207" class="ln">   207  </span>				cache = append(cache, entry)
 <span id="L208" class="ln">   208  </span>				if len(cache) &lt; cacheLimit {
 <span id="L209" class="ln">   209  </span>					break
 <span id="L210" class="ln">   210  </span>				}
