@@ -108,10 +108,10 @@
 <span id="L51" class="ln">    51  </span>	case metricPsutilCPU:
 <span id="L52" class="ln">    52  </span>		data, err = GetGoPsutilCPU(md.GetMetricInterval(metricName))
 <span id="L53" class="ln">    53  </span>	case metricPsutilDisk:
-<span id="L54" class="ln">    54  </span>		if dataDirs, err = QueryMeasurements(ctx, md.Name, sqlPgDirs); err != nil {
+<span id="L54" class="ln">    54  </span>		if dataDirs, err = QueryMeasurements(ctx, md, sqlPgDirs); err != nil {
 <span id="L55" class="ln">    55  </span>			return nil, err
 <span id="L56" class="ln">    56  </span>		}
-<span id="L57" class="ln">    57  </span>		if dataTblspDirs, err = QueryMeasurements(ctx, md.Name, sqlTsDirs); err != nil {
+<span id="L57" class="ln">    57  </span>		if dataTblspDirs, err = QueryMeasurements(ctx, md, sqlTsDirs); err != nil {
 <span id="L58" class="ln">    58  </span>			return nil, err
 <span id="L59" class="ln">    59  </span>		}
 <span id="L60" class="ln">    60  </span>		data, err = GetGoPsutilDiskPG(dataDirs, dataTblspDirs)

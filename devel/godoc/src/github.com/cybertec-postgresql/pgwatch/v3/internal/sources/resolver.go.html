@@ -103,7 +103,7 @@
 <span id="L46" class="ln">    46  </span>	case SourcePostgresContinuous:
 <span id="L47" class="ln">    47  </span>		return ResolveDatabasesFromPostgres(s)
 <span id="L48" class="ln">    48  </span>	}
-<span id="L49" class="ln">    49  </span>	return SourceConns{&amp;SourceConn{Source: *(&amp;s).Clone()}}, nil
+<span id="L49" class="ln">    49  </span>	return SourceConns{&amp;SourceConn{Source: s}}, nil
 <span id="L50" class="ln">    50  </span>}
 <span id="L51" class="ln">    51  </span>
 <span id="L52" class="ln">    52  </span>type PatroniClusterMember struct {

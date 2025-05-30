@@ -63,86 +63,88 @@
 <span id="L6" class="ln">     6  </span>
 <span id="L7" class="ln">     7  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/metrics&#34;
 <span id="L8" class="ln">     8  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/sources&#34;
-<span id="L9" class="ln">     9  </span>	&#34;github.com/stretchr/testify/assert&#34;
-<span id="L10" class="ln">    10  </span>)
-<span id="L11" class="ln">    11  </span>
-<span id="L12" class="ln">    12  </span>var (
-<span id="L13" class="ln">    13  </span>	initialMetricDefs = metrics.MetricDefs{
-<span id="L14" class="ln">    14  </span>		&#34;metric1&#34;: metrics.Metric{Description: &#34;metric1&#34;},
-<span id="L15" class="ln">    15  </span>	}
-<span id="L16" class="ln">    16  </span>	initialPresetDefs = metrics.PresetDefs{
-<span id="L17" class="ln">    17  </span>		&#34;preset1&#34;: metrics.Preset{Description: &#34;preset1&#34;, Metrics: map[string]float64{&#34;metric1&#34;: 1.0}},
-<span id="L18" class="ln">    18  </span>	}
-<span id="L19" class="ln">    19  </span>
-<span id="L20" class="ln">    20  </span>	newMetricDefs = metrics.MetricDefs{
-<span id="L21" class="ln">    21  </span>		&#34;metric2&#34;: metrics.Metric{Description: &#34;metric2&#34;},
-<span id="L22" class="ln">    22  </span>	}
-<span id="L23" class="ln">    23  </span>	newPresetDefs = metrics.PresetDefs{
-<span id="L24" class="ln">    24  </span>		&#34;preset2&#34;: metrics.Preset{Description: &#34;preset2&#34;, Metrics: map[string]float64{&#34;metric2&#34;: 2.0}},
-<span id="L25" class="ln">    25  </span>	}
-<span id="L26" class="ln">    26  </span>)
-<span id="L27" class="ln">    27  </span>
-<span id="L28" class="ln">    28  </span>func TestReaper_FetchStatsDirectlyFromOS(t *testing.T) {
-<span id="L29" class="ln">    29  </span>	a := assert.New(t)
-<span id="L30" class="ln">    30  </span>	r := &amp;Reaper{}
-<span id="L31" class="ln">    31  </span>	md := &amp;sources.SourceConn{}
-<span id="L32" class="ln">    32  </span>	for _, m := range directlyFetchableOSMetrics {
-<span id="L33" class="ln">    33  </span>		a.True(IsDirectlyFetchableMetric(m), &#34;Expected %s to be directly fetchable&#34;, m)
-<span id="L34" class="ln">    34  </span>		a.NotPanics(func() {
-<span id="L35" class="ln">    35  </span>			_, _ = r.FetchStatsDirectlyFromOS(context.Background(), md, m)
-<span id="L36" class="ln">    36  </span>		})
-<span id="L37" class="ln">    37  </span>	}
-<span id="L38" class="ln">    38  </span>}
-<span id="L39" class="ln">    39  </span>
-<span id="L40" class="ln">    40  </span>func TestConcurrentMetricDefs_Assign(t *testing.T) {
-<span id="L41" class="ln">    41  </span>	concurrentDefs := NewConcurrentMetricDefs()
-<span id="L42" class="ln">    42  </span>	concurrentDefs.Assign(&amp;metrics.Metrics{
-<span id="L43" class="ln">    43  </span>		MetricDefs: initialMetricDefs,
-<span id="L44" class="ln">    44  </span>		PresetDefs: initialPresetDefs,
-<span id="L45" class="ln">    45  </span>	})
-<span id="L46" class="ln">    46  </span>
-<span id="L47" class="ln">    47  </span>	concurrentDefs.Assign(&amp;metrics.Metrics{
-<span id="L48" class="ln">    48  </span>		MetricDefs: newMetricDefs,
-<span id="L49" class="ln">    49  </span>		PresetDefs: newPresetDefs,
-<span id="L50" class="ln">    50  </span>	})
-<span id="L51" class="ln">    51  </span>
-<span id="L52" class="ln">    52  </span>	assert.Equal(t, newMetricDefs, concurrentDefs.MetricDefs, &#34;MetricDefs should be updated&#34;)
-<span id="L53" class="ln">    53  </span>	assert.Equal(t, newPresetDefs, concurrentDefs.PresetDefs, &#34;PresetDefs should be updated&#34;)
-<span id="L54" class="ln">    54  </span>}
-<span id="L55" class="ln">    55  </span>
-<span id="L56" class="ln">    56  </span>func TestConcurrentMetricDefs_RandomAccess(t *testing.T) {
-<span id="L57" class="ln">    57  </span>	a := assert.New(t)
-<span id="L58" class="ln">    58  </span>
-<span id="L59" class="ln">    59  </span>	concurrentDefs := NewConcurrentMetricDefs()
-<span id="L60" class="ln">    60  </span>	concurrentDefs.Assign(&amp;metrics.Metrics{
-<span id="L61" class="ln">    61  </span>		MetricDefs: initialMetricDefs,
-<span id="L62" class="ln">    62  </span>		PresetDefs: initialPresetDefs,
-<span id="L63" class="ln">    63  </span>	})
-<span id="L64" class="ln">    64  </span>
-<span id="L65" class="ln">    65  </span>	go a.NotPanics(func() {
-<span id="L66" class="ln">    66  </span>		for range 1000 {
-<span id="L67" class="ln">    67  </span>			_, ok1 := concurrentDefs.GetMetricDef(&#34;metric1&#34;)
-<span id="L68" class="ln">    68  </span>			_, ok2 := concurrentDefs.GetMetricDef(&#34;metric2&#34;)
-<span id="L69" class="ln">    69  </span>			a.True(ok1 || ok2, &#34;Expected metric1 or metric3 to exist at any time&#34;)
-<span id="L70" class="ln">    70  </span>			_, ok1 = concurrentDefs.GetPresetDef(&#34;preset1&#34;)
-<span id="L71" class="ln">    71  </span>			_, ok2 = concurrentDefs.GetPresetDef(&#34;preset2&#34;)
-<span id="L72" class="ln">    72  </span>			a.True(ok1 || ok2, &#34;Expected preset1 or preset2 to exist at any time&#34;)
-<span id="L73" class="ln">    73  </span>			m1 := concurrentDefs.GetPresetMetrics(&#34;preset1&#34;)
-<span id="L74" class="ln">    74  </span>			m2 := concurrentDefs.GetPresetMetrics(&#34;preset2&#34;)
-<span id="L75" class="ln">    75  </span>			a.True(m1 != nil || m2 != nil, &#34;Expected preset1 or preset2 metrics to be non-empty&#34;)
-<span id="L76" class="ln">    76  </span>		}
-<span id="L77" class="ln">    77  </span>	})
-<span id="L78" class="ln">    78  </span>
-<span id="L79" class="ln">    79  </span>	go a.NotPanics(func() {
-<span id="L80" class="ln">    80  </span>		for range 1000 {
-<span id="L81" class="ln">    81  </span>			concurrentDefs.Assign(&amp;metrics.Metrics{
-<span id="L82" class="ln">    82  </span>				MetricDefs: newMetricDefs,
-<span id="L83" class="ln">    83  </span>				PresetDefs: newPresetDefs,
-<span id="L84" class="ln">    84  </span>			})
-<span id="L85" class="ln">    85  </span>		}
-<span id="L86" class="ln">    86  </span>	})
-<span id="L87" class="ln">    87  </span>}
-<span id="L88" class="ln">    88  </span>
+<span id="L9" class="ln">     9  </span>	&#34;github.com/pashagolub/pgxmock/v4&#34;
+<span id="L10" class="ln">    10  </span>	&#34;github.com/stretchr/testify/assert&#34;
+<span id="L11" class="ln">    11  </span>)
+<span id="L12" class="ln">    12  </span>
+<span id="L13" class="ln">    13  </span>var (
+<span id="L14" class="ln">    14  </span>	initialMetricDefs = metrics.MetricDefs{
+<span id="L15" class="ln">    15  </span>		&#34;metric1&#34;: metrics.Metric{Description: &#34;metric1&#34;},
+<span id="L16" class="ln">    16  </span>	}
+<span id="L17" class="ln">    17  </span>	initialPresetDefs = metrics.PresetDefs{
+<span id="L18" class="ln">    18  </span>		&#34;preset1&#34;: metrics.Preset{Description: &#34;preset1&#34;, Metrics: map[string]float64{&#34;metric1&#34;: 1.0}},
+<span id="L19" class="ln">    19  </span>	}
+<span id="L20" class="ln">    20  </span>
+<span id="L21" class="ln">    21  </span>	newMetricDefs = metrics.MetricDefs{
+<span id="L22" class="ln">    22  </span>		&#34;metric2&#34;: metrics.Metric{Description: &#34;metric2&#34;},
+<span id="L23" class="ln">    23  </span>	}
+<span id="L24" class="ln">    24  </span>	newPresetDefs = metrics.PresetDefs{
+<span id="L25" class="ln">    25  </span>		&#34;preset2&#34;: metrics.Preset{Description: &#34;preset2&#34;, Metrics: map[string]float64{&#34;metric2&#34;: 2.0}},
+<span id="L26" class="ln">    26  </span>	}
+<span id="L27" class="ln">    27  </span>)
+<span id="L28" class="ln">    28  </span>
+<span id="L29" class="ln">    29  </span>func TestReaper_FetchStatsDirectlyFromOS(t *testing.T) {
+<span id="L30" class="ln">    30  </span>	a := assert.New(t)
+<span id="L31" class="ln">    31  </span>	r := &amp;Reaper{}
+<span id="L32" class="ln">    32  </span>	conn, _ := pgxmock.NewPool()
+<span id="L33" class="ln">    33  </span>	md := &amp;sources.SourceConn{Conn: conn}
+<span id="L34" class="ln">    34  </span>	for _, m := range directlyFetchableOSMetrics {
+<span id="L35" class="ln">    35  </span>		a.True(IsDirectlyFetchableMetric(m), &#34;Expected %s to be directly fetchable&#34;, m)
+<span id="L36" class="ln">    36  </span>		a.NotPanics(func() {
+<span id="L37" class="ln">    37  </span>			_, _ = r.FetchStatsDirectlyFromOS(context.Background(), md, m)
+<span id="L38" class="ln">    38  </span>		})
+<span id="L39" class="ln">    39  </span>	}
+<span id="L40" class="ln">    40  </span>}
+<span id="L41" class="ln">    41  </span>
+<span id="L42" class="ln">    42  </span>func TestConcurrentMetricDefs_Assign(t *testing.T) {
+<span id="L43" class="ln">    43  </span>	concurrentDefs := NewConcurrentMetricDefs()
+<span id="L44" class="ln">    44  </span>	concurrentDefs.Assign(&amp;metrics.Metrics{
+<span id="L45" class="ln">    45  </span>		MetricDefs: initialMetricDefs,
+<span id="L46" class="ln">    46  </span>		PresetDefs: initialPresetDefs,
+<span id="L47" class="ln">    47  </span>	})
+<span id="L48" class="ln">    48  </span>
+<span id="L49" class="ln">    49  </span>	concurrentDefs.Assign(&amp;metrics.Metrics{
+<span id="L50" class="ln">    50  </span>		MetricDefs: newMetricDefs,
+<span id="L51" class="ln">    51  </span>		PresetDefs: newPresetDefs,
+<span id="L52" class="ln">    52  </span>	})
+<span id="L53" class="ln">    53  </span>
+<span id="L54" class="ln">    54  </span>	assert.Equal(t, newMetricDefs, concurrentDefs.MetricDefs, &#34;MetricDefs should be updated&#34;)
+<span id="L55" class="ln">    55  </span>	assert.Equal(t, newPresetDefs, concurrentDefs.PresetDefs, &#34;PresetDefs should be updated&#34;)
+<span id="L56" class="ln">    56  </span>}
+<span id="L57" class="ln">    57  </span>
+<span id="L58" class="ln">    58  </span>func TestConcurrentMetricDefs_RandomAccess(t *testing.T) {
+<span id="L59" class="ln">    59  </span>	a := assert.New(t)
+<span id="L60" class="ln">    60  </span>
+<span id="L61" class="ln">    61  </span>	concurrentDefs := NewConcurrentMetricDefs()
+<span id="L62" class="ln">    62  </span>	concurrentDefs.Assign(&amp;metrics.Metrics{
+<span id="L63" class="ln">    63  </span>		MetricDefs: initialMetricDefs,
+<span id="L64" class="ln">    64  </span>		PresetDefs: initialPresetDefs,
+<span id="L65" class="ln">    65  </span>	})
+<span id="L66" class="ln">    66  </span>
+<span id="L67" class="ln">    67  </span>	go a.NotPanics(func() {
+<span id="L68" class="ln">    68  </span>		for range 1000 {
+<span id="L69" class="ln">    69  </span>			_, ok1 := concurrentDefs.GetMetricDef(&#34;metric1&#34;)
+<span id="L70" class="ln">    70  </span>			_, ok2 := concurrentDefs.GetMetricDef(&#34;metric2&#34;)
+<span id="L71" class="ln">    71  </span>			a.True(ok1 || ok2, &#34;Expected metric1 or metric3 to exist at any time&#34;)
+<span id="L72" class="ln">    72  </span>			_, ok1 = concurrentDefs.GetPresetDef(&#34;preset1&#34;)
+<span id="L73" class="ln">    73  </span>			_, ok2 = concurrentDefs.GetPresetDef(&#34;preset2&#34;)
+<span id="L74" class="ln">    74  </span>			a.True(ok1 || ok2, &#34;Expected preset1 or preset2 to exist at any time&#34;)
+<span id="L75" class="ln">    75  </span>			m1 := concurrentDefs.GetPresetMetrics(&#34;preset1&#34;)
+<span id="L76" class="ln">    76  </span>			m2 := concurrentDefs.GetPresetMetrics(&#34;preset2&#34;)
+<span id="L77" class="ln">    77  </span>			a.True(m1 != nil || m2 != nil, &#34;Expected preset1 or preset2 metrics to be non-empty&#34;)
+<span id="L78" class="ln">    78  </span>		}
+<span id="L79" class="ln">    79  </span>	})
+<span id="L80" class="ln">    80  </span>
+<span id="L81" class="ln">    81  </span>	go a.NotPanics(func() {
+<span id="L82" class="ln">    82  </span>		for range 1000 {
+<span id="L83" class="ln">    83  </span>			concurrentDefs.Assign(&amp;metrics.Metrics{
+<span id="L84" class="ln">    84  </span>				MetricDefs: newMetricDefs,
+<span id="L85" class="ln">    85  </span>				PresetDefs: newPresetDefs,
+<span id="L86" class="ln">    86  </span>			})
+<span id="L87" class="ln">    87  </span>		}
+<span id="L88" class="ln">    88  </span>	})
+<span id="L89" class="ln">    89  </span>}
+<span id="L90" class="ln">    90  </span>
 </pre><p></p>
 
 <div id="footer">
