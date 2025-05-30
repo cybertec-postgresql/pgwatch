@@ -17,6 +17,7 @@ import (
 type JSONWriter struct {
 	ctx context.Context
 	lw  *lumberjack.Logger
+	enc *json.Encoder
 }
 
 func NewJSONWriter(ctx context.Context, fname string) (*JSONWriter, error) {
@@ -26,6 +27,7 @@ func NewJSONWriter(ctx context.Context, fname string) (*JSONWriter, error) {
 		ctx: ctx,
 		lw:  &lumberjack.Logger{Filename: fname, Compress: true},
 	}
+	jw.enc = json.NewEncoder(jw.lw)
 	go jw.watchCtx()
 	return jw, nil
 }
@@ -37,7 +39,6 @@ func (jw *JSONWriter) Write(msg metrics.MeasurementEnvelope) error {
 	if len(msg.Data) == 0 {
 		return nil
 	}
-	enc := json.NewEncoder(jw.lw)
 	t1 := time.Now()
 	written := 0
 
@@ -47,7 +48,7 @@ func (jw *JSONWriter) Write(msg metrics.MeasurementEnvelope) error {
 		"dbname":      msg.DBName,
 		"custom_tags": msg.CustomTags,
 	}
-	if err := enc.Encode(dataRow); err != nil {
+	if err := jw.enc.Encode(dataRow); err != nil {
 		return err
 	}
 	written += len(msg.Data)
