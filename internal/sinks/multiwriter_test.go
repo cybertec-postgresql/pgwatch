@@ -49,7 +49,7 @@ func TestNewMultiWriter(t *testing.T) {
 	}
 
 	for _, i := range input {
-		mw, err := NewSinkWriter(context.Background(), i.opts, metrics.GetDefaultMetrics())
+		mw, err := NewSinkWriter(context.Background(), i.opts)
 		if i.err {
 			assert.Error(t, err)
 		} else {

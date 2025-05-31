@@ -44,7 +44,7 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 	}
 
 	opts := &CmdOpts{BatchingDelay: time.Hour, Retention: 356}
-	pgw, err := NewWriterFromPostgresConn(ctx, conn, opts, metrics.GetDefaultMetrics())
+	pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
 	assert.NoError(t, err)
 	assert.NotNil(t, pgw)
 

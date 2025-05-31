@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 	"time"
 
@@ -22,24 +23,23 @@ var (
 	deleterDelay    = time.Hour
 )
 
-func NewPostgresWriter(ctx context.Context, connstr string, opts *CmdOpts, metricDefs *metrics.Metrics) (pgw *PostgresWriter, err error) {
+func NewPostgresWriter(ctx context.Context, connstr string, opts *CmdOpts) (pgw *PostgresWriter, err error) {
 	var conn db.PgxPoolIface
 	if conn, err = db.New(ctx, connstr); err != nil {
 		return
 	}
-	return NewWriterFromPostgresConn(ctx, conn, opts, metricDefs)
+	return NewWriterFromPostgresConn(ctx, conn, opts)
 }
 
-func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *CmdOpts, metricDefs *metrics.Metrics) (pgw *PostgresWriter, err error) {
+func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *CmdOpts) (pgw *PostgresWriter, err error) {
 	l := log.GetLogger(ctx).WithField("sink", "postgres").WithField("db", conn.Config().ConnConfig.Database)
 	ctx = log.WithLogger(ctx, l)
 	pgw = &PostgresWriter{
-		ctx:        ctx,
-		metricDefs: metricDefs,
-		opts:       opts,
-		input:      make(chan metrics.MeasurementEnvelope, cacheLimit),
-		lastError:  make(chan error),
-		sinkDb:     conn,
+		ctx:       ctx,
+		opts:      opts,
+		input:     make(chan metrics.MeasurementEnvelope, cacheLimit),
+		lastError: make(chan error),
+		sinkDb:    conn,
 	}
 	if err = db.Init(ctx, pgw.sinkDb, func(ctx context.Context, conn db.PgxIface) error {
 		l.Info("initialising measurements database...")
@@ -106,7 +106,6 @@ type PostgresWriter struct {
 	ctx          context.Context
 	sinkDb       db.PgxPoolIface
 	metricSchema DbStorageSchemaType
-	metricDefs   *metrics.Metrics
 	opts         *CmdOpts
 	input        chan metrics.MeasurementEnvelope
 	lastError    chan error
@@ -122,7 +121,7 @@ type MeasurementMessagePostgres struct {
 	DBName  string
 	Metric  string
 	Data    map[string]any
-	TagData map[string]any
+	TagData map[string]string
 }
 
 type DbStorageSchemaType int
@@ -239,20 +238,16 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 		if len(msg.Data) == 0 {
 			continue
 		}
-		logger.WithField("data", msg.Data).WithField("len", len(msg.Data)).Debug("sending to postgres")
-
 		for _, dataRow := range msg.Data {
 			var epochTime time.Time
 
-			tags := make(map[string]any)
+			tags := make(map[string]string)
 			fields := make(map[string]any)
 
 			totalRows++
 
 			if msg.CustomTags != nil {
-				for k, v := range msg.CustomTags {
-					tags[k] = fmt.Sprintf("%v", v)
-				}
+				tags = maps.Clone(msg.CustomTags)
 			}
 			epochTime = time.Unix(0, metrics.Measurement(dataRow).GetEpoch())
 			for k, v := range dataRow {
@@ -330,7 +325,6 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	}
 
 	// send data to PG, with a separate COPY for all metrics
-	logger.Debugf("COPY-ing %d metrics to Postgres metricsDB...", rowsBatched)
 	t1 := time.Now()
 
 	for metricName, metrics := range metricsToStorePerMetric {
@@ -507,7 +501,6 @@ func (pgw *PostgresWriter) deleteOldPartitions(delay time.Duration) {
 				logger.Infof("Dropping %d old metric partitions one by one...", len(partsToDrop))
 				for _, toDrop := range partsToDrop {
 					sqlDropTable := `DROP TABLE IF EXISTS ` + toDrop
-					logger.Debugf("Dropping old metric data partition: %s", toDrop)
 
 					if _, err := pgw.sinkDb.Exec(pgw.ctx, sqlDropTable); err != nil {
 						logger.Errorf("Failed to drop old partition %s from Postgres metrics DB: %w", toDrop, err)

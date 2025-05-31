@@ -161,11 +161,7 @@ func (c *Options) InitConfigReaders(ctx context.Context) error {
 
 // InitSinkWriter creates a new MultiWriter instance if needed.
 func (c *Options) InitSinkWriter(ctx context.Context) (err error) {
-	metricDefs, err := c.MetricsReaderWriter.GetMetrics()
-	if err != nil {
-		return err
-	}
-	c.SinksWriter, err = sinks.NewSinkWriter(ctx, &c.Sinks, metricDefs)
+	c.SinksWriter, err = sinks.NewSinkWriter(ctx, &c.Sinks)
 	return
 }
 
