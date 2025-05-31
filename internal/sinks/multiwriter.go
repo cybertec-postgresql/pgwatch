@@ -23,7 +23,7 @@ type MultiWriter struct {
 }
 
 // NewSinkWriter creates and returns new instance of MultiWriter struct.
-func NewSinkWriter(ctx context.Context, opts *CmdOpts, metricDefs *metrics.Metrics) (w Writer, err error) {
+func NewSinkWriter(ctx context.Context, opts *CmdOpts) (w Writer, err error) {
 	if len(opts.Sinks) == 0 {
 		return nil, errors.New("no sinks specified for measurements")
 	}
@@ -37,7 +37,7 @@ func NewSinkWriter(ctx context.Context, opts *CmdOpts, metricDefs *metrics.Metri
 		case "jsonfile":
 			w, err = NewJSONWriter(ctx, path)
 		case "postgres", "postgresql":
-			w, err = NewPostgresWriter(ctx, s, opts, metricDefs)
+			w, err = NewPostgresWriter(ctx, s, opts)
 		case "prometheus":
 			w, err = NewPrometheusWriter(ctx, path)
 		case "rpc":
