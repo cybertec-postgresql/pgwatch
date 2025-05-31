@@ -101,7 +101,7 @@
 <span id="L44" class="ln">    44  </span>	}
 <span id="L45" class="ln">    45  </span>
 <span id="L46" class="ln">    46  </span>	opts := &amp;CmdOpts{BatchingDelay: time.Hour, Retention: 356}
-<span id="L47" class="ln">    47  </span>	pgw, err := NewWriterFromPostgresConn(ctx, conn, opts, metrics.GetDefaultMetrics())
+<span id="L47" class="ln">    47  </span>	pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
 <span id="L48" class="ln">    48  </span>	assert.NoError(t, err)
 <span id="L49" class="ln">    49  </span>	assert.NotNil(t, pgw)
 <span id="L50" class="ln">    50  </span>

@@ -80,7 +80,7 @@
 <span id="L23" class="ln">    23  </span>}
 <span id="L24" class="ln">    24  </span>
 <span id="L25" class="ln">    25  </span><span class="comment">// NewSinkWriter creates and returns new instance of MultiWriter struct.</span>
-<span id="L26" class="ln">    26  </span>func NewSinkWriter(ctx context.Context, opts *CmdOpts, metricDefs *metrics.Metrics) (w Writer, err error) {
+<span id="L26" class="ln">    26  </span>func NewSinkWriter(ctx context.Context, opts *CmdOpts) (w Writer, err error) {
 <span id="L27" class="ln">    27  </span>	if len(opts.Sinks) == 0 {
 <span id="L28" class="ln">    28  </span>		return nil, errors.New(&#34;no sinks specified for measurements&#34;)
 <span id="L29" class="ln">    29  </span>	}
@@ -94,7 +94,7 @@
 <span id="L37" class="ln">    37  </span>		case &#34;jsonfile&#34;:
 <span id="L38" class="ln">    38  </span>			w, err = NewJSONWriter(ctx, path)
 <span id="L39" class="ln">    39  </span>		case &#34;postgres&#34;, &#34;postgresql&#34;:
-<span id="L40" class="ln">    40  </span>			w, err = NewPostgresWriter(ctx, s, opts, metricDefs)
+<span id="L40" class="ln">    40  </span>			w, err = NewPostgresWriter(ctx, s, opts)
 <span id="L41" class="ln">    41  </span>		case &#34;prometheus&#34;:
 <span id="L42" class="ln">    42  </span>			w, err = NewPrometheusWriter(ctx, path)
 <span id="L43" class="ln">    43  </span>		case &#34;rpc&#34;:

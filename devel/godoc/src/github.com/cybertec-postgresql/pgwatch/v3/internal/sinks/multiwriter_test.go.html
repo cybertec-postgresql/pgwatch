@@ -106,7 +106,7 @@
 <span id="L49" class="ln">    49  </span>	}
 <span id="L50" class="ln">    50  </span>
 <span id="L51" class="ln">    51  </span>	for _, i := range input {
-<span id="L52" class="ln">    52  </span>		mw, err := NewSinkWriter(context.Background(), i.opts, metrics.GetDefaultMetrics())
+<span id="L52" class="ln">    52  </span>		mw, err := NewSinkWriter(context.Background(), i.opts)
 <span id="L53" class="ln">    53  </span>		if i.err {
 <span id="L54" class="ln">    54  </span>			assert.Error(t, err)
 <span id="L55" class="ln">    55  </span>		} else {
