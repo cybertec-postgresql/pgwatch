@@ -3,12 +3,13 @@ package sinks
 import (
 	"context"
 	_ "embed"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"maps"
+	"slices"
 	"strings"
 	"time"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
@@ -21,6 +22,7 @@ var (
 	cacheLimit      = 256
 	highLoadTimeout = time.Second * 5
 	deleterDelay    = time.Hour
+	targetColumns   = [...]string{"time", "dbname", "data", "tag_data"}
 )
 
 func NewPostgresWriter(ctx context.Context, connstr string, opts *CmdOpts) (pgw *PostgresWriter, err error) {
@@ -221,62 +223,105 @@ func (pgw *PostgresWriter) poll() {
 	}
 }
 
+func newCopyFromMeasurements(rows []metrics.MeasurementEnvelope) *copyFromMeasurements {
+	return &copyFromMeasurements{envelopes: rows, envelopeIdx: -1, measurementIdx: -1}
+}
+
+type copyFromMeasurements struct {
+	envelopes      []metrics.MeasurementEnvelope
+	envelopeIdx    int
+	measurementIdx int // index of the current measurement in the envelope
+	metricName     string
+}
+
+func (c *copyFromMeasurements) Next() bool {
+	for {
+		// Check if we need to advance to the next envelope
+		if c.envelopeIdx < 0 || c.measurementIdx+1 >= len(c.envelopes[c.envelopeIdx].Data) {
+			// Advance to next envelope
+			c.envelopeIdx++
+			if c.envelopeIdx >= len(c.envelopes) {
+				return false // No more envelopes
+			}
+			c.measurementIdx = -1 // Reset measurement index for new envelope
+
+			// Set metric name from first envelope, or detect metric boundary
+			if c.metricName == "" {
+				c.metricName = c.envelopes[c.envelopeIdx].MetricName
+			} else if c.metricName != c.envelopes[c.envelopeIdx].MetricName {
+				// We've hit a different metric - we're done with current metric
+				// Reset position to process this envelope on next call
+				c.envelopeIdx--
+				c.measurementIdx = len(c.envelopes[c.envelopeIdx].Data) // Set to length so we've "finished" this envelope
+				c.metricName = ""                                       // Reset for next metric
+				return false
+			}
+		}
+
+		// Advance to next measurement in current envelope
+		c.measurementIdx++
+		if c.measurementIdx < len(c.envelopes[c.envelopeIdx].Data) {
+			return true // Found valid measurement
+		}
+		// If we reach here, we've exhausted current envelope, loop will advance to next envelope
+	}
+}
+
+func (c *copyFromMeasurements) EOF() bool {
+	return c.envelopeIdx >= len(c.envelopes)
+}
+
+func (c *copyFromMeasurements) Values() ([]any, error) {
+	row := c.envelopes[c.envelopeIdx].Data[c.measurementIdx]
+	tagRow := c.envelopes[c.envelopeIdx].CustomTags
+	if tagRow == nil {
+		tagRow = make(map[string]string)
+	}
+	for k, v := range row {
+		if strings.HasPrefix(k, metrics.TagPrefix) {
+			tagRow[strings.TrimPrefix(k, metrics.TagPrefix)] = fmt.Sprintf("%v", v)
+			delete(row, k)
+		}
+	}
+	jsonTags, terr := jsoniter.ConfigFastest.MarshalToString(tagRow)
+	json, err := jsoniter.ConfigFastest.MarshalToString(row)
+	if err != nil || terr != nil {
+		return nil, errors.Join(err, terr)
+	}
+	return []any{time.Unix(0, c.envelopes[c.envelopeIdx].Data.GetEpoch()), c.envelopes[c.envelopeIdx].DBName, json, jsonTags}, nil
+}
+
+func (c *copyFromMeasurements) Err() error {
+	return nil
+}
+
+func (c *copyFromMeasurements) MetricName() pgx.Identifier {
+	return pgx.Identifier{c.envelopes[c.envelopeIdx+1].MetricName} // Metric name is taken from the next envelope
+}
+
 // flush sends the cached measurements to the database
 func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	if len(msgs) == 0 {
 		return
 	}
 	logger := log.GetLogger(pgw.ctx)
-	metricsToStorePerMetric := make(map[string][]MeasurementMessagePostgres)
-	rowsBatched := 0
-	totalRows := 0
+	// metricsToStorePerMetric := make(map[string][]MeasurementMessagePostgres)
 	pgPartBounds := make(map[string]ExistingPartitionInfo)                  // metric=min/max
 	pgPartBoundsDbName := make(map[string]map[string]ExistingPartitionInfo) // metric=[dbname=min/max]
 	var err error
 
-	for _, msg := range msgs {
-		if len(msg.Data) == 0 {
-			continue
+	slices.SortFunc(msgs, func(a, b metrics.MeasurementEnvelope) int {
+		if a.MetricName < b.MetricName {
+			return -1
+		} else if a.MetricName > b.MetricName {
+			return 1
 		}
+		return 0
+	})
+
+	for _, msg := range msgs {
 		for _, dataRow := range msg.Data {
-			var epochTime time.Time
-
-			tags := make(map[string]string)
-			fields := make(map[string]any)
-
-			totalRows++
-
-			if msg.CustomTags != nil {
-				tags = maps.Clone(msg.CustomTags)
-			}
-			epochTime = time.Unix(0, metrics.Measurement(dataRow).GetEpoch())
-			for k, v := range dataRow {
-				if v == nil || v == "" || k == metrics.EpochColumnName {
-					continue // not storing NULLs
-				}
-				if strings.HasPrefix(k, metrics.TagPrefix) {
-					tag := k[4:]
-					tags[tag] = fmt.Sprintf("%v", v)
-				} else {
-					fields[k] = v
-				}
-			}
-
-			var metricsArr []MeasurementMessagePostgres
-			var ok bool
-
-			metricNameTemp := msg.MetricName
-
-			metricsArr, ok = metricsToStorePerMetric[metricNameTemp]
-			if !ok {
-				metricsToStorePerMetric[metricNameTemp] = make([]MeasurementMessagePostgres, 0)
-			}
-			metricsArr = append(metricsArr, MeasurementMessagePostgres{Time: epochTime, DBName: msg.DBName,
-				Metric: msg.MetricName, Data: fields, TagData: tags})
-			metricsToStorePerMetric[metricNameTemp] = metricsArr
-
-			rowsBatched++
-
+			epochTime := time.Unix(0, metrics.Measurement(dataRow).GetEpoch())
 			switch pgw.metricSchema {
 			case DbStorageSchemaTimescale:
 				// set min/max timestamps to check/create partitions
@@ -317,60 +362,27 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	default:
 		logger.Fatal("unknown storage schema...")
 	}
-	if forceRecreatePartitions {
-		forceRecreatePartitions = false
-	}
+	forceRecreatePartitions = false
 	if err != nil {
 		pgw.lastError <- err
 	}
 
-	// send data to PG, with a separate COPY for all metrics
+	var rowsBatched, n int64
 	t1 := time.Now()
-
-	for metricName, metrics := range metricsToStorePerMetric {
-
-		getTargetTable := func() pgx.Identifier {
-			return pgx.Identifier{metricName}
-		}
-
-		getTargetColumns := func() []string {
-			return []string{"time", "dbname", "data", "tag_data"}
-		}
-
-		for _, m := range metrics {
-			l := logger.WithField("db", m.DBName).WithField("metric", m.Metric)
-			jsonBytes, err := json.Marshal(m.Data)
-			if err != nil {
-				logger.Errorf("Skipping 1 metric for [%s:%s] due to JSON conversion error: %s", m.DBName, m.Metric, err)
-				continue
+	cfm := newCopyFromMeasurements(msgs)
+	for !cfm.EOF() {
+		n, err = pgw.sinkDb.CopyFrom(context.Background(), cfm.MetricName(), targetColumns[:], cfm)
+		rowsBatched += n
+		if err != nil {
+			logger.Error(err)
+			if PgError, ok := err.(*pgconn.PgError); ok {
+				forceRecreatePartitions = PgError.Code == "23514"
 			}
-
-			getTagData := func() any {
-				if len(m.TagData) > 0 {
-					jsonBytesTags, err := json.Marshal(m.TagData)
-					if err != nil {
-						l.Error(err)
-						return nil
-					}
-					return string(jsonBytesTags)
-				}
-				return nil
-			}
-
-			rows := [][]any{{m.Time, m.DBName, string(jsonBytes), getTagData()}}
-
-			if _, err = pgw.sinkDb.CopyFrom(context.Background(), getTargetTable(), getTargetColumns(), pgx.CopyFromRows(rows)); err != nil {
-				l.Error(err)
-				if PgError, ok := err.(*pgconn.PgError); ok {
-					forceRecreatePartitions = PgError.Code == "23514"
-				}
-				if forceRecreatePartitions {
-					logger.Warning("Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run")
-				}
+			if forceRecreatePartitions {
+				logger.Warning("Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run")
 			}
 		}
 	}
-
 	diff := time.Since(t1)
 	if err == nil {
 		logger.WithField("rows", rowsBatched).WithField("elapsed", diff).Info("measurements written")

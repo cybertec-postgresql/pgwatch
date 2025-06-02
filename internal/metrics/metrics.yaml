@@ -334,6 +334,8 @@ metrics:
                   coalesce(reset_val, '') as value
                 from
                   pg_settings
+                where
+                  name <> 'connection_ID'
     cpu_load:
         sqls:
             11: |-
