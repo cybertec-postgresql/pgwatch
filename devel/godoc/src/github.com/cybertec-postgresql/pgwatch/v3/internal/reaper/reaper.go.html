@@ -547,28 +547,26 @@
 <span id="L490" class="ln">   490  </span>				data[0][&#34;is_up&#34;] = 0 <span class="comment">// should be updated if the &#34;instance_up&#34; metric definition is changed</span>
 <span id="L491" class="ln">   491  </span>				goto send_to_storageChannel
 <span id="L492" class="ln">   492  </span>			}
-<span id="L493" class="ln">   493  </span>			l.
-<span id="L494" class="ln">   494  </span>				WithFields(map[string]any{&#34;source&#34;: md.Name, &#34;metric&#34;: metricName}).
-<span id="L495" class="ln">   495  </span>				WithError(err).Error(&#34;failed to fetch metrics&#34;)
-<span id="L496" class="ln">   496  </span>
-<span id="L497" class="ln">   497  </span>			return nil, err
-<span id="L498" class="ln">   498  </span>		}
-<span id="L499" class="ln">   499  </span>	}
-<span id="L500" class="ln">   500  </span>	r.measurementCache.Put(cacheKey, data)
-<span id="L501" class="ln">   501  </span>
-<span id="L502" class="ln">   502  </span>send_to_storageChannel:
-<span id="L503" class="ln">   503  </span>	r.AddSysinfoToMeasurements(data, md)
-<span id="L504" class="ln">   504  </span>	l.WithField(&#34;cache&#34;, fromCache).WithField(&#34;rows&#34;, len(data)).Info(&#34;measurements fetched&#34;)
-<span id="L505" class="ln">   505  </span>	return &amp;metrics.MeasurementEnvelope{
-<span id="L506" class="ln">   506  </span>		DBName:           md.Name,
-<span id="L507" class="ln">   507  </span>		MetricName:       cmp.Or(metric.StorageName, metricName),
-<span id="L508" class="ln">   508  </span>		Data:             data,
-<span id="L509" class="ln">   509  </span>		CustomTags:       md.CustomTags,
-<span id="L510" class="ln">   510  </span>		MetricDef:        metric,
-<span id="L511" class="ln">   511  </span>		RealDbname:       md.RealDbname,
-<span id="L512" class="ln">   512  </span>		SystemIdentifier: md.SystemIdentifier}, nil
-<span id="L513" class="ln">   513  </span>}
-<span id="L514" class="ln">   514  </span>
+<span id="L493" class="ln">   493  </span>			l.WithError(err).Error(&#34;failed to fetch metrics&#34;)
+<span id="L494" class="ln">   494  </span>
+<span id="L495" class="ln">   495  </span>			return nil, err
+<span id="L496" class="ln">   496  </span>		}
+<span id="L497" class="ln">   497  </span>	}
+<span id="L498" class="ln">   498  </span>	r.measurementCache.Put(cacheKey, data)
+<span id="L499" class="ln">   499  </span>
+<span id="L500" class="ln">   500  </span>send_to_storageChannel:
+<span id="L501" class="ln">   501  </span>	r.AddSysinfoToMeasurements(data, md)
+<span id="L502" class="ln">   502  </span>	l.WithField(&#34;cache&#34;, fromCache).WithField(&#34;rows&#34;, len(data)).Info(&#34;measurements fetched&#34;)
+<span id="L503" class="ln">   503  </span>	return &amp;metrics.MeasurementEnvelope{
+<span id="L504" class="ln">   504  </span>		DBName:           md.Name,
+<span id="L505" class="ln">   505  </span>		MetricName:       cmp.Or(metric.StorageName, metricName),
+<span id="L506" class="ln">   506  </span>		Data:             data,
+<span id="L507" class="ln">   507  </span>		CustomTags:       md.CustomTags,
+<span id="L508" class="ln">   508  </span>		MetricDef:        metric,
+<span id="L509" class="ln">   509  </span>		RealDbname:       md.RealDbname,
+<span id="L510" class="ln">   510  </span>		SystemIdentifier: md.SystemIdentifier}, nil
+<span id="L511" class="ln">   511  </span>}
+<span id="L512" class="ln">   512  </span>
 </pre><p></p>
 
 <div id="footer">
