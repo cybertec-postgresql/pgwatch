@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"runtime"
 	"slices"
 	"strings"
 	"time"
@@ -36,7 +37,7 @@ type Reaper struct {
 func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper) {
 	return &Reaper{
 		Options:              opts,
-		measurementCh:        make(chan metrics.MeasurementEnvelope, 10000),
+		measurementCh:        make(chan metrics.MeasurementEnvelope, 256),
 		measurementCache:     NewInstanceMetricCache(),
 		logger:               log.GetLogger(ctx),
 		monitoredSources:     make(sources.SourceConns, 0),
@@ -48,6 +49,17 @@ func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper) {
 // Ready() returns true if the service is healthy and operating correctly
 func (r *Reaper) Ready() bool {
 	return r.ready.Load()
+}
+
+func (r *Reaper) PrintMemStats() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	bToKb := func(b uint64) uint64 {
+		return b / 1024
+	}
+	r.logger.Debugf("Alloc: %d Kb, TotalAlloc: %d Kb, Sys: %d Kb, NumGC: %d, HeapAlloc: %d Kb, HeapSys: %d Kb",
+		bToKb(m.Alloc), bToKb(m.TotalAlloc), bToKb(m.Sys), m.NumGC, bToKb(m.HeapAlloc), bToKb(m.HeapSys))
 }
 
 // Reap() starts the main monitoring loop. It is responsible for fetching metrics measurements
@@ -64,6 +76,9 @@ func (r *Reaper) Reap(ctx context.Context) {
 	r.ready.Store(true)
 
 	for { //main loop
+		if r.Options.Logging.LogLevel == "debug" {
+			r.PrintMemStats()
+		}
 		if err = r.LoadSources(); err != nil {
 			logger.WithError(err).Error("could not refresh active sources, using last valid cache")
 		}
