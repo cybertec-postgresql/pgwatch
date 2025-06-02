@@ -146,6 +146,7 @@ func TestCopyFromMeasurements_Basic(t *testing.T) {
 	cfm := newCopyFromMeasurements(data)
 
 	// Test Next() and Values() for each measurement
+	assert.Equal(t, "metric1", cfm.MetricName()[0], "Metric name should be obtained before Next()")
 	assert.True(t, cfm.Next(), "Should have first measurement")
 	values, err := cfm.Values()
 	assert.NoError(t, err)
@@ -164,7 +165,6 @@ func TestCopyFromMeasurements_Basic(t *testing.T) {
 
 	assert.False(t, cfm.Next(), "Should not have more measurements")
 	assert.True(t, cfm.EOF(), "Should be at end")
-	assert.Equal(t, "metric1", cfm.MetricName()[0])
 }
 
 func TestCopyFromMeasurements_MultipleEnvelopes(t *testing.T) {
@@ -203,13 +203,13 @@ func TestCopyFromMeasurements_MultipleEnvelopes(t *testing.T) {
 	assert.Equal(t, "db1", values[1])
 
 	// Second envelope, first measurement
+	assert.Equal(t, "metric1", cfm.MetricName()[0])
 	assert.True(t, cfm.Next())
 	values, err = cfm.Values()
 	assert.NoError(t, err)
 	assert.Equal(t, "db2", values[1])
 
 	assert.False(t, cfm.Next())
-	assert.Equal(t, "metric1", cfm.MetricName()[0])
 }
 
 func TestCopyFromMeasurements_MetricBoundaries(t *testing.T) {
@@ -245,24 +245,17 @@ func TestCopyFromMeasurements_MetricBoundaries(t *testing.T) {
 	cfm := newCopyFromMeasurements(data)
 
 	// Process metric1 completely
-	assert.True(t, cfm.Next())
 	assert.Equal(t, "metric1", cfm.MetricName()[0])
-
 	assert.True(t, cfm.Next())
-	assert.Equal(t, "metric1", cfm.MetricName()[0])
+	assert.True(t, cfm.Next())
 
 	// Should stop at metric boundary
 	assert.False(t, cfm.Next())
-	// After hitting metric boundary, metricName is reset for next metric
-	assert.Empty(t, cfm.MetricName()[0])
-
 	assert.False(t, cfm.EOF(), "Should not be at EOF yet, there's more data")
 
-	assert.True(t, cfm.Next())
 	assert.Equal(t, "metric2", cfm.MetricName()[0])
-
 	assert.True(t, cfm.Next())
-	assert.Equal(t, "metric2", cfm.MetricName()[0])
+	assert.True(t, cfm.Next())
 
 	assert.False(t, cfm.Next())
 	assert.True(t, cfm.EOF(), "Should be at EOF after processing all measurements")
@@ -429,31 +422,6 @@ func TestCopyFromMeasurements_ErrorHandling(t *testing.T) {
 	// Test Err() method
 	cfm := newCopyFromMeasurements([]metrics.MeasurementEnvelope{})
 	assert.NoError(t, cfm.Err(), "Err() should always return nil")
-}
-
-func TestCopyFromMeasurements_MetricNameMethod(t *testing.T) {
-	// Test MetricName() method returns correct identifier
-	data := []metrics.MeasurementEnvelope{
-		{
-			MetricName: "test_metric_name",
-			DBName:     "db1",
-			CustomTags: map[string]string{},
-			Data: metrics.Measurements{
-				{"epoch_ns": int64(1000), "value": 1},
-			},
-		},
-	}
-
-	cfm := newCopyFromMeasurements(data)
-
-	// Before calling Next(), should have empty metric name
-	identifier := cfm.MetricName()
-	assert.Equal(t, "", identifier[0])
-
-	// After calling Next(), should have correct metric name
-	assert.True(t, cfm.Next())
-	identifier = cfm.MetricName()
-	assert.Equal(t, "test_metric_name", identifier[0])
 }
 
 func TestCopyFromMeasurements_StateManagement(t *testing.T) {
