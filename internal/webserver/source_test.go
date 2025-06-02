@@ -2,7 +2,6 @@ package webserver
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"

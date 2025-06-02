@@ -2,9 +2,10 @@ package sinks
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"testing"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +43,7 @@ func TestJSONWriter_Write(t *testing.T) {
 	var data map[string]any
 	file, err := os.ReadFile(tempFile)
 	r.NoError(err)
-	err = json.Unmarshal(file, &data)
+	err = jsoniter.ConfigFastest.Unmarshal(file, &data)
 	r.NoError(err)
 	a.Equal(msg.MetricName, data["metric"])
 	a.Equal(len(msg.Data), len(data["data"].([]any)))

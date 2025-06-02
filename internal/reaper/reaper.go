@@ -490,9 +490,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 				data[0]["is_up"] = 0 // should be updated if the "instance_up" metric definition is changed
 				goto send_to_storageChannel
 			}
-			l.
-				WithFields(map[string]any{"source": md.Name, "metric": metricName}).
-				WithError(err).Error("failed to fetch metrics")
+			l.WithError(err).Error("failed to fetch metrics")
 
 			return nil, err
 		}

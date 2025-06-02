@@ -2,8 +2,9 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 	"reflect"
+
+	jsoniter "github.com/json-iterator/go"
 
 	pgx "github.com/jackc/pgx/v5"
 	pgconn "github.com/jackc/pgx/v5/pgconn"
@@ -57,7 +58,7 @@ func MarshallParamToJSONB(v any) any {
 			return nil
 		}
 	}
-	if b, err := json.Marshal(v); err == nil {
+	if b, err := jsoniter.ConfigFastest.Marshal(v); err == nil {
 		return string(b)
 	}
 	return nil

@@ -2,8 +2,9 @@ package sinks
 
 import (
 	"context"
-	"encoding/json"
 	"time"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
@@ -17,7 +18,7 @@ import (
 type JSONWriter struct {
 	ctx context.Context
 	lw  *lumberjack.Logger
-	enc *json.Encoder
+	enc *jsoniter.Encoder
 }
 
 func NewJSONWriter(ctx context.Context, fname string) (*JSONWriter, error) {
@@ -27,7 +28,7 @@ func NewJSONWriter(ctx context.Context, fname string) (*JSONWriter, error) {
 		ctx: ctx,
 		lw:  &lumberjack.Logger{Filename: fname, Compress: true},
 	}
-	jw.enc = json.NewEncoder(jw.lw)
+	jw.enc = jsoniter.ConfigFastest.NewEncoder(jw.lw)
 	go jw.watchCtx()
 	return jw, nil
 }

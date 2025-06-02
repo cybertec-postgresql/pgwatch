@@ -1,9 +1,10 @@
 package webserver
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 )
@@ -56,7 +57,7 @@ func (server *WebUIServer) GetMetrics() (res string, err error) {
 	if mr, err = server.metricsReaderWriter.GetMetrics(); err != nil {
 		return
 	}
-	b, _ := json.Marshal(mr.MetricDefs)
+	b, _ := jsoniter.ConfigFastest.Marshal(mr.MetricDefs)
 	res = string(b)
 	return
 }
@@ -64,7 +65,7 @@ func (server *WebUIServer) GetMetrics() (res string, err error) {
 // UpdateMetric updates the stored metric information
 func (server *WebUIServer) UpdateMetric(name string, params []byte) error {
 	var m metrics.Metric
-	err := json.Unmarshal(params, &m)
+	err := jsoniter.ConfigFastest.Unmarshal(params, &m)
 	if err != nil {
 		return err
 	}
@@ -121,7 +122,7 @@ func (server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 // UpdatePreset updates the stored preset
 func (server *WebUIServer) UpdatePreset(name string, params []byte) error {
 	var p metrics.Preset
-	err := json.Unmarshal(params, &p)
+	err := jsoniter.ConfigFastest.Unmarshal(params, &p)
 	if err != nil {
 		return err
 	}
@@ -134,7 +135,7 @@ func (server *WebUIServer) GetPresets() (res string, err error) {
 	if mr, err = server.metricsReaderWriter.GetMetrics(); err != nil {
 		return
 	}
-	b, _ := json.Marshal(mr.PresetDefs)
+	b, _ := jsoniter.ConfigFastest.Marshal(mr.PresetDefs)
 	res = string(b)
 	return
 }
