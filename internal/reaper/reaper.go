@@ -76,7 +76,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 	r.ready.Store(true)
 
 	for { //main loop
-		if r.Options.Logging.LogLevel == "debug" {
+		if r.Logging.LogLevel == "debug" {
 			r.PrintMemStats()
 		}
 		if err = r.LoadSources(); err != nil {
