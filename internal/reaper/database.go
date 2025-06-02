@@ -155,7 +155,6 @@ func DetectTableChanges(ctx context.Context, md *sources.SourceConn, storageCh c
 	for _, dr := range data {
 		objIdent := dr["tag_table"].(string)
 		prevHash, ok := hostState["table_hashes"][objIdent]
-		//log.Debug("inspecting table:", objIdent, "hash:", prev_hash)
 		if ok { // we have existing state
 			if prevHash != dr["md5"].(string) {
 				log.GetLogger(ctx).Info("detected DDL change in table:", dr["tag_table"])
@@ -373,7 +372,8 @@ func DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn, sto
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 
-	log.GetLogger(ctx).Debugf("[%s][%s] checking for configuration changes...", md.Name, specialMetricChangeEvents)
+	logger := log.GetLogger(ctx).WithField("source", md.Name).WithField("metric", specialMetricChangeEvents)
+
 	if _, ok := hostState["configuration_hashes"]; !ok {
 		firstRun = true
 		hostState["configuration_hashes"] = make(map[string]string)
@@ -381,44 +381,51 @@ func DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn, sto
 
 	mvp, ok := metricDefs.GetMetricDef("configuration_hashes")
 	if !ok {
-		log.GetLogger(ctx).Errorf("[%s][%s] could not get configuration_hashes sql", md.Name, specialMetricChangeEvents)
+		logger.Error("could not get configuration_hashes sql")
 		return changeCounts
 	}
 
-	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
+	rows, err := md.Conn.Query(ctx, mvp.GetSQL(md.Version))
 	if err != nil {
-		log.GetLogger(ctx).Errorf("[%s][%s] could not read configuration_hashes from monitored host: %v", md.Name, specialMetricChangeEvents, err)
+		logger.Error("could not read configuration_hashes from monitored host: ", err)
 		return changeCounts
 	}
-
-	for _, dr := range data {
-		objIdent := dr["tag_setting"].(string)
-		objValue := dr["value"].(string)
+	defer rows.Close()
+	var (
+		objIdent, objValue string
+		epoch              int64
+	)
+	for rows.Next() {
+		if rows.Scan(&epoch, &objIdent, &objValue) != nil {
+			return changeCounts
+		}
 		prevРash, ok := hostState["configuration_hashes"][objIdent]
 		if ok { // we have existing state
 			if prevРash != objValue {
-				if objIdent == "connection_ID" {
-					continue // ignore some weird Azure managed PG service setting
-				}
-				log.GetLogger(ctx).Warningf("[%s][%s] detected settings change: %s = %s (prev: %s)",
-					md.Name, specialMetricChangeEvents, objIdent, objValue, prevРash)
-				dr["event"] = "alter"
-				detectedChanges = append(detectedChanges, dr)
+				logger.Warningf("detected settings change: %s = %s (prev: %s)", objIdent, objValue, prevРash)
+				detectedChanges = append(detectedChanges, metrics.Measurement{
+					metrics.EpochColumnName: epoch,
+					"tag_setting":           objIdent,
+					"value":                 objValue,
+					"event":                 "alter"})
 				hostState["configuration_hashes"][objIdent] = objValue
 				changeCounts.Altered++
 			}
 		} else { // check for new, delete not relevant here (pg_upgrade)
-			if !firstRun {
-				log.GetLogger(ctx).Warningf("[%s][%s] detected new setting: %s", md.Name, specialMetricChangeEvents, objIdent)
-				dr["event"] = "create"
-				detectedChanges = append(detectedChanges, dr)
-				changeCounts.Created++
-			}
 			hostState["configuration_hashes"][objIdent] = objValue
+			if firstRun {
+				continue
+			}
+			logger.Warning("detected new setting: ", objIdent)
+			detectedChanges = append(detectedChanges, metrics.Measurement{
+				metrics.EpochColumnName: epoch,
+				"tag_setting":           objIdent,
+				"value":                 objValue,
+				"event":                 "create"})
+			changeCounts.Created++
 		}
 	}
 
-	log.GetLogger(ctx).Debugf("[%s][%s] detected %d configuration changes", md.Name, specialMetricChangeEvents, len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		storageCh <- metrics.MeasurementEnvelope{
 			DBName:     md.Name,
@@ -427,7 +434,6 @@ func DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn, sto
 			CustomTags: md.CustomTags,
 		}
 	}
-
 	return changeCounts
 }
 
