@@ -2,7 +2,6 @@ package webserver_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,6 +9,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/webserver"
 	"github.com/stretchr/testify/assert"
@@ -123,7 +124,7 @@ func TestGetToken(t *testing.T) {
 		Password: "admin",
 	}
 
-	payload, err := json.Marshal(credentials)
+	payload, err := jsoniter.ConfigFastest.Marshal(credentials)
 	if err != nil {
 		fmt.Println("Error marshaling ", err)
 	}

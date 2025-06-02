@@ -2,7 +2,6 @@ package webserver
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,8 +9,11 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"
 )
+
+var json = jsoniter.ConfigFastest
 
 func TestIsCorrectPassword(t *testing.T) {
 	ts := &WebUIServer{CmdOpts: CmdOpts{WebUser: "user", WebPassword: "pass"}}

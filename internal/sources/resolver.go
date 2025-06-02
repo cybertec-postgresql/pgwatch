@@ -9,13 +9,14 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
@@ -75,7 +76,7 @@ func jsonTextToStringMap(jsonText string) (map[string]string, error) {
 		return retmap, nil
 	}
 	var iMap map[string]any
-	if err := json.Unmarshal([]byte(jsonText), &iMap); err != nil {
+	if err := jsoniter.ConfigFastest.Unmarshal([]byte(jsonText), &iMap); err != nil {
 		return nil, err
 	}
 	for k, v := range iMap {

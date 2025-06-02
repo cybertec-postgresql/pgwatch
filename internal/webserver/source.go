@@ -1,9 +1,10 @@
 package webserver
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
@@ -56,7 +57,7 @@ func (server *WebUIServer) GetSources() (res string, err error) {
 	if dbs, err = server.sourcesReaderWriter.GetSources(); err != nil {
 		return
 	}
-	b, _ := json.Marshal(dbs)
+	b, _ := jsoniter.ConfigFastest.Marshal(dbs)
 	res = string(b)
 	return
 }
@@ -69,7 +70,7 @@ func (server *WebUIServer) DeleteSource(database string) error {
 // UpdateSource updates the configured source information
 func (server *WebUIServer) UpdateSource(params []byte) error {
 	var md sources.Source
-	err := json.Unmarshal(params, &md)
+	err := jsoniter.ConfigFastest.Unmarshal(params, &md)
 	if err != nil {
 		return err
 	}

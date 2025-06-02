@@ -1,11 +1,12 @@
 package webserver
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -35,7 +36,7 @@ func (Server *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "POST":
-		if err = json.NewDecoder(r.Body).Decode(&lr); err != nil {
+		if err = jsoniter.ConfigFastest.NewDecoder(r.Body).Decode(&lr); err != nil {
 			return
 		}
 		if !Server.IsCorrectPassword(lr) {

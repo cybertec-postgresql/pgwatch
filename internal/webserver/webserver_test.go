@@ -1,7 +1,6 @@
 package webserver
 
 import (
-	"encoding/json"
 	"io"
 	"io/fs"
 	"net/http"
