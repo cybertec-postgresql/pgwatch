@@ -336,7 +336,7 @@
 <span id="L279" class="ln">   279  </span>	}
 <span id="L280" class="ln">   280  </span>	for k, v := range row {
 <span id="L281" class="ln">   281  </span>		if strings.HasPrefix(k, metrics.TagPrefix) {
-<span id="L282" class="ln">   282  </span>			tagRow[strings.TrimPrefix(k, metrics.TagPrefix)] = v.(string)
+<span id="L282" class="ln">   282  </span>			tagRow[strings.TrimPrefix(k, metrics.TagPrefix)] = fmt.Sprintf(&#34;%v&#34;, v)
 <span id="L283" class="ln">   283  </span>			delete(row, k)
 <span id="L284" class="ln">   284  </span>		}
 <span id="L285" class="ln">   285  </span>	}
