@@ -44,11 +44,6 @@ var Exit = os.Exit
 
 func main() {
 
-	// Uncomment the following lines to enable the pprof HTTP server for debugging
-	// go func() {
-	// 	panic(http.ListenAndServe(":6060", nil))
-	// }()
-
 	exitCode.Store(cmdopts.ExitCodeOK)
 	defer func() {
 		if err := recover(); err != nil {

@@ -14,6 +14,7 @@ services:
     ports:
       - "8080:8080"
       - "9187:9187"
+      # - "6060:6060" # Uncomment for profiling
     depends_on:
       postgres:
         condition: service_healthy
