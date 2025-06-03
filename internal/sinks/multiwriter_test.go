@@ -10,7 +10,7 @@ import (
 
 type MockWriter struct{}
 
-func (mw *MockWriter) SyncMetric(_, _, _ string) error {
+func (mw *MockWriter) SyncMetric(_, _ string, _ OpType) error {
 	return nil
 }
 
@@ -74,7 +74,7 @@ func TestSyncMetrics(t *testing.T) {
 	mw := &MultiWriter{}
 	mockWriter := &MockWriter{}
 	mw.AddWriter(mockWriter)
-	err := mw.SyncMetric("db", "metric", "op")
+	err := mw.SyncMetric("db", "metric", invalidOp)
 	assert.NoError(t, err)
 }
 

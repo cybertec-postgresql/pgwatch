@@ -64,7 +64,7 @@ func (jw *JSONWriter) watchCtx() {
 	jw.lw.Close()
 }
 
-func (jw *JSONWriter) SyncMetric(_, _, _ string) error {
+func (jw *JSONWriter) SyncMetric(_, _ string, _ OpType) error {
 	if jw.ctx.Err() != nil {
 		return jw.ctx.Err()
 	}

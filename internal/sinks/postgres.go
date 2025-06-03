@@ -150,8 +150,8 @@ var (
 )
 
 // SyncMetric ensures that tables exist for newly added metrics and/or sources
-func (pgw *PostgresWriter) SyncMetric(dbUnique, metricName, op string) error {
-	if op == "add" {
+func (pgw *PostgresWriter) SyncMetric(dbUnique, metricName string, op OpType) error {
+	if op == AddOp {
 		return errors.Join(
 			pgw.AddDBUniqueMetricToListingTable(dbUnique, metricName),
 			pgw.EnsureMetricDummy(metricName), // ensure that there is at least an empty top-level table not to get ugly Grafana notifications

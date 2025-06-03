@@ -8,16 +8,6 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 )
 
-// RPCWriter is a sink that sends metric measurements to a remote server using the RPC protocol.
-// Remote server should implement the Receiver interface. It's up to the implementer to define the
-// behavior of the server. It can be a simple logger, external storage, alerting system,
-// or an analytics system.
-type RPCWriter struct {
-	ctx     context.Context
-	address string
-	client  *rpc.Client
-}
-
 func NewRPCWriter(ctx context.Context, address string) (*RPCWriter, error) {
 	client, err := rpc.DialHTTP("tcp", address)
 	if err != nil {
@@ -49,13 +39,7 @@ func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error {
 	return nil
 }
 
-type SyncReq struct {
-	DbName     string
-	MetricName string
-	Operation  string
-}
-
-func (rw *RPCWriter) SyncMetric(dbUnique string, metricName string, op string) error {
+func (rw *RPCWriter) SyncMetric(dbUnique, metricName string, op OpType) error {
 	var logMsg string
 	if err := rw.client.Call("Receiver.SyncMetric", &SyncReq{
 		Operation:  op,
