@@ -65,7 +65,7 @@ for v in pg  grafana pw3 ; do docker volume create $v ; done
 # launch pgwatch with fully exposed Grafana, Web UI, Postgres
 docker run -d --restart=unless-stopped --name pw3 \
     -p 3000:3000 -p 127.0.0.1:5432:5432 -p 192.168.1.XYZ:8080:8080 \
-    -v pg:/var/lib/postgresql -v grafana:/var/lib/grafana -v pw3:/pgwatch/persistent-config \
+    -v pg:/var/lib/postgresql/data -v grafana:/var/lib/grafana -v pw3:/pgwatch/persistent-config \
     cybertecpostgresql/pgwatch-demo:X.Y.Z
 ```
 
