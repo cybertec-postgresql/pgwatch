@@ -86,7 +86,6 @@ EXPOSE 9187
 ### using traditional means is still recommended before updating - see "Updating to a newer Docker version" from README
 
 VOLUME /pgwatch/persistent-config
-VOLUME /var/lib/postgresql
 VOLUME /var/lib/grafana
 
 
