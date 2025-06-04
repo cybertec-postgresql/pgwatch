@@ -14,6 +14,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
@@ -170,7 +171,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 							metricNameForStorage = mvp.StorageName
 						}
 
-						if err := r.SinksWriter.SyncMetric(monitoredSource.Name, metricNameForStorage, "add"); err != nil {
+						if err := r.SinksWriter.SyncMetric(monitoredSource.Name, metricNameForStorage, sinks.AddOp); err != nil {
 							srcL.Error(err)
 						}
 
@@ -267,7 +268,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 			logger.WithField("source", db).WithField("metric", metric).Info("stopping gatherer...")
 			cancelFunc()
 			delete(r.cancelFuncs, dbMetric)
-			if err := r.SinksWriter.SyncMetric(db, metric, "remove"); err != nil {
+			if err := r.SinksWriter.SyncMetric(db, metric, sinks.DeleteOp); err != nil {
 				logger.Error(err)
 			}
 		}

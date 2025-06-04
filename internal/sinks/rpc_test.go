@@ -1,4 +1,4 @@
-package sinks_test
+package sinks
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,11 +29,11 @@ func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementEnvelope, l
 	return nil
 }
 
-func (receiver *Receiver) SyncMetric(syncReq *sinks.SyncReq, logMsg *string) error {
+func (receiver *Receiver) SyncMetric(syncReq *SyncReq, logMsg *string) error {
 	if syncReq == nil {
 		return errors.New("msgs is nil")
 	}
-	if syncReq.Operation == "invalid" {
+	if syncReq.Operation == invalidOp {
 		return errors.New("invalid message")
 	}
 	*logMsg = fmt.Sprintf("Received: %+v", *syncReq)
@@ -59,13 +58,13 @@ func init() {
 // Test begin from here ---------------------------------------------------------
 func TestNewRPCWriter(t *testing.T) {
 	a := assert.New(t)
-	_, err := sinks.NewRPCWriter(ctxt, "foo")
+	_, err := NewRPCWriter(ctxt, "foo")
 	a.Error(err)
 }
 
 func TestRPCWrite(t *testing.T) {
 	a := assert.New(t)
-	rw, err := sinks.NewRPCWriter(ctxt, "0.0.0.0:5050")
+	rw, err := NewRPCWriter(ctxt, "0.0.0.0:5050")
 	a.NoError(err)
 
 	// no error for valid messages
@@ -89,7 +88,7 @@ func TestRPCWrite(t *testing.T) {
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctxt)
-	rw, err = sinks.NewRPCWriter(ctx, "0.0.0.0:5050")
+	rw, err = NewRPCWriter(ctx, "0.0.0.0:5050")
 	a.NoError(err)
 	cancel()
 	err = rw.Write(msgs)
@@ -99,24 +98,24 @@ func TestRPCWrite(t *testing.T) {
 func TestRPCSyncMetric(t *testing.T) {
 	port := 5050
 	a := assert.New(t)
-	rw, err := sinks.NewRPCWriter(ctxt, "0.0.0.0:"+fmt.Sprint(port))
+	rw, err := NewRPCWriter(ctxt, "0.0.0.0:"+fmt.Sprint(port))
 	if err != nil {
 		t.Error("Unable to send sync metric signal")
 	}
 
 	// no error for valid messages
-	err = rw.SyncMetric("Test-DB", "DB-Metric", "Add")
+	err = rw.SyncMetric("Test-DB", "DB-Metric", AddOp)
 	a.NoError(err)
 
 	// error for invalid messages
-	err = rw.SyncMetric("", "", "invalid")
+	err = rw.SyncMetric("", "", invalidOp)
 	a.Error(err)
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctxt)
-	rw, err = sinks.NewRPCWriter(ctx, "0.0.0.0:5050")
+	rw, err = NewRPCWriter(ctx, "0.0.0.0:5050")
 	a.NoError(err)
 	cancel()
-	err = rw.SyncMetric("Test-DB", "DB-Metric", "Add")
+	err = rw.SyncMetric("Test-DB", "DB-Metric", AddOp)
 	a.Error(err)
 }

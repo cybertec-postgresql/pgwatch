@@ -12,5 +12,6 @@ type (
 	// with metadata such as metric name, source type, etc.
 	MeasurementEnvelope = metrics.MeasurementEnvelope
 	// RPCSyncRequest represents a request to sync metrics with the remote RPC sink
+	OpType         = sinks.SyncOp
 	RPCSyncRequest = sinks.SyncReq
 )
