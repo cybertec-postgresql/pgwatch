@@ -12,7 +12,7 @@ import (
 
 // Writer is an interface that writes metrics values
 type Writer interface {
-	SyncMetric(dbUnique, metricName string, op OpType) error
+	SyncMetric(dbUnique, metricName string, op SyncOp) error
 	Write(msgs metrics.MeasurementEnvelope) error
 }
 
@@ -62,7 +62,7 @@ func (mw *MultiWriter) AddWriter(w Writer) {
 	mw.Unlock()
 }
 
-func (mw *MultiWriter) SyncMetric(dbUnique, metricName string, op OpType) (err error) {
+func (mw *MultiWriter) SyncMetric(dbUnique, metricName string, op SyncOp) (err error) {
 	for _, w := range mw.writers {
 		err = errors.Join(err, w.SyncMetric(dbUnique, metricName, op))
 	}

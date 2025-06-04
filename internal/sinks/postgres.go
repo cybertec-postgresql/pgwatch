@@ -150,7 +150,7 @@ var (
 )
 
 // SyncMetric ensures that tables exist for newly added metrics and/or sources
-func (pgw *PostgresWriter) SyncMetric(dbUnique, metricName string, op OpType) error {
+func (pgw *PostgresWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error {
 	if op == AddOp {
 		return errors.Join(
 			pgw.AddDBUniqueMetricToListingTable(dbUnique, metricName),

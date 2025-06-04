@@ -117,7 +117,7 @@ func (promw *PrometheusWriter) PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, met
 	}
 }
 
-func (promw *PrometheusWriter) SyncMetric(dbUnique, metricName string, op OpType) error {
+func (promw *PrometheusWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error {
 	switch op {
 	case DeleteOp:
 		promw.PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, metricName)

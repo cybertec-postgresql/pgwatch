@@ -10,7 +10,7 @@ import (
 
 type MockWriter struct{}
 
-func (mw *MockWriter) SyncMetric(_, _ string, _ OpType) error {
+func (mw *MockWriter) SyncMetric(_, _ string, _ SyncOp) error {
 	return nil
 }
 

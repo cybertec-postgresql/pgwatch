@@ -39,7 +39,7 @@ func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error {
 	return nil
 }
 
-func (rw *RPCWriter) SyncMetric(dbUnique, metricName string, op OpType) error {
+func (rw *RPCWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error {
 	var logMsg string
 	if err := rw.client.Call("Receiver.SyncMetric", &SyncReq{
 		Operation:  op,

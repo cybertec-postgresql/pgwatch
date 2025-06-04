@@ -15,10 +15,10 @@ type RPCWriter struct {
 	client  *rpc.Client
 }
 
-type OpType int
+type SyncOp int
 
 const (
-	AddOp OpType = iota 
+	AddOp SyncOp = iota
 	DeleteOp
 	invalidOp
 )
@@ -26,5 +26,5 @@ const (
 type SyncReq struct {
 	DbName     string
 	MetricName string
-	Operation  OpType
+	Operation  SyncOp
 }
