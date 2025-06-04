@@ -15,3 +15,8 @@ type (
 	OpType         = sinks.SyncOp
 	RPCSyncRequest = sinks.SyncReq
 )
+
+const (
+	AddOp = sinks.AddOp
+	DeleteOp = sinks.DeleteOp
+)
