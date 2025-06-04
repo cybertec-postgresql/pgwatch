@@ -118,14 +118,14 @@
 <span id="L61" class="ln">    61  </span>	}
 <span id="L62" class="ln">    62  </span>	dbUnique := &#34;mydb&#34;
 <span id="L63" class="ln">    63  </span>	metricName := &#34;mymetric&#34;
-<span id="L64" class="ln">    64  </span>	op := &#34;add&#34;
+<span id="L64" class="ln">    64  </span>	op := AddOp 
 <span id="L65" class="ln">    65  </span>	conn.ExpectExec(&#34;insert into admin\\.all_distinct_dbname_metrics&#34;).WithArgs(dbUnique, metricName).WillReturnResult(pgxmock.NewResult(&#34;EXECUTE&#34;, 1))
 <span id="L66" class="ln">    66  </span>	conn.ExpectExec(&#34;select admin\\.ensure_dummy_metrics_table&#34;).WithArgs(metricName).WillReturnResult(pgxmock.NewResult(&#34;EXECUTE&#34;, 1))
 <span id="L67" class="ln">    67  </span>	err = pgw.SyncMetric(dbUnique, metricName, op)
 <span id="L68" class="ln">    68  </span>	assert.NoError(t, err)
 <span id="L69" class="ln">    69  </span>	assert.NoError(t, conn.ExpectationsWereMet())
 <span id="L70" class="ln">    70  </span>
-<span id="L71" class="ln">    71  </span>	op = &#34;foo&#34;
+<span id="L71" class="ln">    71  </span>	op = invalidOp
 <span id="L72" class="ln">    72  </span>	err = pgw.SyncMetric(dbUnique, metricName, op)
 <span id="L73" class="ln">    73  </span>	assert.NoError(t, err, &#34;ignore unknown operation&#34;)
 <span id="L74" class="ln">    74  </span>}

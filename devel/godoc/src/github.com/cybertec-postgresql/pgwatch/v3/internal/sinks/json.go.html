@@ -121,7 +121,7 @@
 <span id="L64" class="ln">    64  </span>	jw.lw.Close()
 <span id="L65" class="ln">    65  </span>}
 <span id="L66" class="ln">    66  </span>
-<span id="L67" class="ln">    67  </span>func (jw *JSONWriter) SyncMetric(_, _, _ string) error {
+<span id="L67" class="ln">    67  </span>func (jw *JSONWriter) SyncMetric(_, _ string, _ SyncOp) error {
 <span id="L68" class="ln">    68  </span>	if jw.ctx.Err() != nil {
 <span id="L69" class="ln">    69  </span>		return jw.ctx.Err()
 <span id="L70" class="ln">    70  </span>	}

@@ -69,7 +69,7 @@
 <span id="L12" class="ln">    12  </span>
 <span id="L13" class="ln">    13  </span><span class="comment">// Writer is an interface that writes metrics values</span>
 <span id="L14" class="ln">    14  </span>type Writer interface {
-<span id="L15" class="ln">    15  </span>	SyncMetric(dbUnique, metricName, op string) error
+<span id="L15" class="ln">    15  </span>	SyncMetric(dbUnique, metricName string, op SyncOp) error
 <span id="L16" class="ln">    16  </span>	Write(msgs metrics.MeasurementEnvelope) error
 <span id="L17" class="ln">    17  </span>}
 <span id="L18" class="ln">    18  </span>
@@ -119,7 +119,7 @@
 <span id="L62" class="ln">    62  </span>	mw.Unlock()
 <span id="L63" class="ln">    63  </span>}
 <span id="L64" class="ln">    64  </span>
-<span id="L65" class="ln">    65  </span>func (mw *MultiWriter) SyncMetric(dbUnique, metricName, op string) (err error) {
+<span id="L65" class="ln">    65  </span>func (mw *MultiWriter) SyncMetric(dbUnique, metricName string, op SyncOp) (err error) {
 <span id="L66" class="ln">    66  </span>	for _, w := range mw.writers {
 <span id="L67" class="ln">    67  </span>		err = errors.Join(err, w.SyncMetric(dbUnique, metricName, op))
 <span id="L68" class="ln">    68  </span>	}

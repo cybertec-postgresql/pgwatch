@@ -117,11 +117,11 @@
 <span id="L60" class="ln">    60  </span>	assert.NoError(t, err)
 <span id="L61" class="ln">    61  </span>
 <span id="L62" class="ln">    62  </span>	<span class="comment">// Call the function being tested</span>
-<span id="L63" class="ln">    63  </span>	err = jw.SyncMetric(&#34;&#34;, &#34;&#34;, &#34;&#34;)
+<span id="L63" class="ln">    63  </span>	err = jw.SyncMetric(&#34;&#34;, &#34;&#34;, invalidOp)
 <span id="L64" class="ln">    64  </span>	assert.NoError(t, err)
 <span id="L65" class="ln">    65  </span>
 <span id="L66" class="ln">    66  </span>	cancel()
-<span id="L67" class="ln">    67  </span>	err = jw.SyncMetric(&#34;&#34;, &#34;&#34;, &#34;&#34;)
+<span id="L67" class="ln">    67  </span>	err = jw.SyncMetric(&#34;&#34;, &#34;&#34;, invalidOp)
 <span id="L68" class="ln">    68  </span>	assert.Error(t, err, &#34;context canceled&#34;)
 <span id="L69" class="ln">    69  </span>
 <span id="L70" class="ln">    70  </span>}

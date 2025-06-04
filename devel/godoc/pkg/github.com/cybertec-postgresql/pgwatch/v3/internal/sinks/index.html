@@ -144,7 +144,7 @@
 				
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#JSONWriter.SyncMetric">func (jw *JSONWriter) SyncMetric(_, _, _ string) error</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#JSONWriter.SyncMetric">func (jw *JSONWriter) SyncMetric(_, _ string, _ SyncOp) error</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#JSONWriter.Write">func (jw *JSONWriter) Write(msg metrics.MeasurementEnvelope) error</a></dd>
@@ -166,7 +166,7 @@
 					<dd>&nbsp; &nbsp; <a href="#MultiWriter.AddWriter">func (mw *MultiWriter) AddWriter(w Writer)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#MultiWriter.SyncMetric">func (mw *MultiWriter) SyncMetric(dbUnique, metricName, op string) (err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#MultiWriter.SyncMetric">func (mw *MultiWriter) SyncMetric(dbUnique, metricName string, op SyncOp) (err error)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#MultiWriter.Write">func (mw *MultiWriter) Write(msg metrics.MeasurementEnvelope) (err error)</a></dd>
@@ -210,7 +210,7 @@
 					<dd>&nbsp; &nbsp; <a href="#PostgresWriter.ReadMetricSchemaType">func (pgw *PostgresWriter) ReadMetricSchemaType() (err error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#PostgresWriter.SyncMetric">func (pgw *PostgresWriter) SyncMetric(dbUnique, metricName, op string) error</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#PostgresWriter.SyncMetric">func (pgw *PostgresWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#PostgresWriter.Write">func (pgw *PostgresWriter) Write(msg metrics.MeasurementEnvelope) error</a></dd>
@@ -254,7 +254,7 @@
 					<dd>&nbsp; &nbsp; <a href="#PrometheusWriter.PurgeMetricsFromPromAsyncCacheIfAny">func (promw *PrometheusWriter) PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, metric string)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#PrometheusWriter.SyncMetric">func (promw *PrometheusWriter) SyncMetric(dbUnique, metricName, op string) error</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#PrometheusWriter.SyncMetric">func (promw *PrometheusWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#PrometheusWriter.Write">func (promw *PrometheusWriter) Write(msg metrics.MeasurementEnvelope) error</a></dd>
@@ -271,13 +271,18 @@
 				
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#RPCWriter.SyncMetric">func (rw *RPCWriter) SyncMetric(dbUnique string, metricName string, op string) error</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#RPCWriter.SyncMetric">func (rw *RPCWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#RPCWriter.Write">func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#RPCWriter.watchCtx">func (rw *RPCWriter) watchCtx()</a></dd>
+				
+			
+				
+				<dd><a href="#SyncOp">type SyncOp</a></dd>
+				
 				
 			
 				
@@ -340,6 +345,8 @@
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/prometheus.go.html">prometheus.go</a>
 			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html">rpc.go</a>
+			
+				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/types.go.html">types.go</a>
 			
 			</span>
 			</p>
@@ -550,7 +557,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 					
 					
 				</h3>
-				<pre>func (jw *<a href="#JSONWriter">JSONWriter</a>) SyncMetric(_, _, _ <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<pre>func (jw *<a href="#JSONWriter">JSONWriter</a>) SyncMetric(_, _ <a href="https://pkg.go.dev/builtin/#string">string</a>, _ <a href="#SyncOp">SyncOp</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				
 				
 				
@@ -654,7 +661,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 					
 					
 				</h3>
-				<pre>func (mw *<a href="#MultiWriter">MultiWriter</a>) SyncMetric(dbUnique, metricName, op <a href="https://pkg.go.dev/builtin/#string">string</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func (mw *<a href="#MultiWriter">MultiWriter</a>) SyncMetric(dbUnique, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, op <a href="#SyncOp">SyncOp</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
@@ -845,7 +852,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 					
 					
 				</h3>
-				<pre>func (pgw *<a href="#PostgresWriter">PostgresWriter</a>) SyncMetric(dbUnique, metricName, op <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<pre>func (pgw *<a href="#PostgresWriter">PostgresWriter</a>) SyncMetric(dbUnique, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, op <a href="#SyncOp">SyncOp</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				<p>SyncMetric ensures that tables exist for newly added metrics and/or sources
 
 				
@@ -1037,7 +1044,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 					
 					
 				</h3>
-				<pre>func (promw *<a href="#PrometheusWriter">PrometheusWriter</a>) SyncMetric(dbUnique, metricName, op <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<pre>func (promw *<a href="#PrometheusWriter">PrometheusWriter</a>) SyncMetric(dbUnique, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, op <a href="#SyncOp">SyncOp</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				
 				
 				
@@ -1070,7 +1077,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 		
 			
 			
-			<h2 id="RPCWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L15">RPCWriter</a>
+			<h2 id="RPCWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/types.go.html#L12">RPCWriter</a>
 				<a class="permalink" href="#RPCWriter">&#xb6;</a>
 				
 				
@@ -1097,7 +1104,7 @@ or an analytics system.
 
 			
 				
-				<h3 id="NewRPCWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L21">NewRPCWriter</a>
+				<h3 id="NewRPCWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L11">NewRPCWriter</a>
 					<a class="permalink" href="#NewRPCWriter">&#xb6;</a>
 					
 					
@@ -1110,19 +1117,19 @@ or an analytics system.
 
 			
 				
-				<h3 id="RPCWriter.SyncMetric">func (*RPCWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L58">SyncMetric</a>
+				<h3 id="RPCWriter.SyncMetric">func (*RPCWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L42">SyncMetric</a>
 					<a class="permalink" href="#RPCWriter.SyncMetric">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (rw *<a href="#RPCWriter">RPCWriter</a>) SyncMetric(dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, op <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<pre>func (rw *<a href="#RPCWriter">RPCWriter</a>) SyncMetric(dbUnique, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, op <a href="#SyncOp">SyncOp</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				
 				
 				
 				
 			
 				
-				<h3 id="RPCWriter.Write">func (*RPCWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L38">Write</a>
+				<h3 id="RPCWriter.Write">func (*RPCWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L28">Write</a>
 					<a class="permalink" href="#RPCWriter.Write">&#xb6;</a>
 					
 					
@@ -1135,7 +1142,7 @@ or an analytics system.
 				
 			
 				
-				<h3 id="RPCWriter.watchCtx">func (*RPCWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L73">watchCtx</a>
+				<h3 id="RPCWriter.watchCtx">func (*RPCWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L57">watchCtx</a>
 					<a class="permalink" href="#RPCWriter.watchCtx">&#xb6;</a>
 					
 					
@@ -1149,7 +1156,36 @@ or an analytics system.
 		
 			
 			
-			<h2 id="SyncReq">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L52">SyncReq</a>
+			<h2 id="SyncOp">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/types.go.html#L18">SyncOp</a>
+				<a class="permalink" href="#SyncOp">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type SyncOp <a href="https://pkg.go.dev/builtin/#int">int</a></pre>
+
+			
+				
+				<pre>const (
+    <span id="AddOp">AddOp</span> <a href="#SyncOp">SyncOp</a> = <a href="https://pkg.go.dev/builtin/#iota">iota</a>
+    <span id="DeleteOp">DeleteOp</span>
+    <span id="invalidOp">invalidOp</span>
+)</pre>
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="SyncReq">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/types.go.html#L26">SyncReq</a>
 				<a class="permalink" href="#SyncReq">&#xb6;</a>
 				
 				
@@ -1158,7 +1194,7 @@ or an analytics system.
 			<pre>type SyncReq struct {
 <span id="SyncReq.DbName"></span>    DbName     <a href="https://pkg.go.dev/builtin/#string">string</a>
 <span id="SyncReq.MetricName"></span>    MetricName <a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="SyncReq.Operation"></span>    Operation  <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="SyncReq.Operation"></span>    Operation  <a href="#SyncOp">SyncOp</a>
 }
 </pre>
 
@@ -1184,7 +1220,7 @@ or an analytics system.
 			<p>Writer is an interface that writes metrics values
 
 			<pre>type Writer interface {
-    SyncMetric(dbUnique, metricName, op <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+    SyncMetric(dbUnique, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, op <a href="#SyncOp">SyncOp</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
     Write(msgs <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
 }</pre>
 
