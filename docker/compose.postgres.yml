@@ -6,10 +6,6 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile.postgres-plpython3u
-      args:
-        HTTP_PROXY: $HTTP_PROXY
-        HTTPS_PROXY: $HTTPS_PROXY
-        NO_PROXY: $NO_PROXY
     # If you want pure PostgreSQL vanilla experience use:
     # image: &pgimage "postgres:latest"
     image: &pgimage postgres-plpython3u:latest
@@ -23,9 +19,6 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
-      HTTP_PROXY: $HTTP_PROXY
-      HTTPS_PROXY: $HTTPS_PROXY
-      NO_PROXY: $NO_PROXY
     volumes:
       - "./bootstrap/init_replication.sh:/docker-entrypoint-initdb.d/init_replication.sh"
       - "./bootstrap/create_role_db.sql:/docker-entrypoint-initdb.d/create_role_db.sql"
