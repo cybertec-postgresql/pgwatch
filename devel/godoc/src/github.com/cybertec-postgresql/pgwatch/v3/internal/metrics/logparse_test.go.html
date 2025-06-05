@@ -441,55 +441,58 @@
 <span id="L384" class="ln">   384  </span>	require.NoError(t, err)
 <span id="L385" class="ln">   385  </span>	defer mock.Close()
 <span id="L386" class="ln">   386  </span>
-<span id="L387" class="ln">   387  </span>	<span class="comment">// Mock the language detection query</span>
-<span id="L388" class="ln">   388  </span>	mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L389" class="ln">   389  </span>		WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;en&#34;))
-<span id="L390" class="ln">   390  </span>
-<span id="L391" class="ln">   391  </span>	<span class="comment">// Create a SourceConn for testing</span>
-<span id="L392" class="ln">   392  </span>	sourceConn := &amp;sources.SourceConn{
-<span id="L393" class="ln">   393  </span>		Source: sources.Source{
-<span id="L394" class="ln">   394  </span>			Name: &#34;test-source&#34;,
-<span id="L395" class="ln">   395  </span>			HostConfig: sources.HostConfigAttrs{
-<span id="L396" class="ln">   396  </span>				LogsGlobPath: filepath.Join(tempDir, &#34;*.csv&#34;),
-<span id="L397" class="ln">   397  </span>				<span class="comment">// Use default regex by leaving LogsMatchRegex empty</span>
-<span id="L398" class="ln">   398  </span>			},
-<span id="L399" class="ln">   399  </span>		},
-<span id="L400" class="ln">   400  </span>		Conn: mock,
-<span id="L401" class="ln">   401  </span>	}
-<span id="L402" class="ln">   402  </span>
-<span id="L403" class="ln">   403  </span>	<span class="comment">// Create a context with timeout to prevent test from hanging</span>
-<span id="L404" class="ln">   404  </span>	ctx, cancel := context.WithTimeout(testCtx, 3*time.Second)
-<span id="L405" class="ln">   405  </span>	defer cancel()
-<span id="L406" class="ln">   406  </span>
-<span id="L407" class="ln">   407  </span>	<span class="comment">// Create a channel to receive measurement envelopes</span>
-<span id="L408" class="ln">   408  </span>	storeCh := make(chan MeasurementEnvelope, 10)
+<span id="L387" class="ln">   387  </span>	<span class="comment">// pretend we&#39;re connected via UNIX socket</span>
+<span id="L388" class="ln">   388  </span>	mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
+<span id="L389" class="ln">   389  </span>		pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(true))
+<span id="L390" class="ln">   390  </span>	<span class="comment">// Mock the language detection query</span>
+<span id="L391" class="ln">   391  </span>	mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
+<span id="L392" class="ln">   392  </span>		WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;en&#34;))
+<span id="L393" class="ln">   393  </span>
+<span id="L394" class="ln">   394  </span>	<span class="comment">// Create a SourceConn for testing</span>
+<span id="L395" class="ln">   395  </span>	sourceConn := &amp;sources.SourceConn{
+<span id="L396" class="ln">   396  </span>		Source: sources.Source{
+<span id="L397" class="ln">   397  </span>			Name: &#34;test-source&#34;,
+<span id="L398" class="ln">   398  </span>			HostConfig: sources.HostConfigAttrs{
+<span id="L399" class="ln">   399  </span>				LogsGlobPath: filepath.Join(tempDir, &#34;*.csv&#34;),
+<span id="L400" class="ln">   400  </span>				<span class="comment">// Use default regex by leaving LogsMatchRegex empty</span>
+<span id="L401" class="ln">   401  </span>			},
+<span id="L402" class="ln">   402  </span>		},
+<span id="L403" class="ln">   403  </span>		Conn: mock,
+<span id="L404" class="ln">   404  </span>	}
+<span id="L405" class="ln">   405  </span>
+<span id="L406" class="ln">   406  </span>	<span class="comment">// Create a context with timeout to prevent test from hanging</span>
+<span id="L407" class="ln">   407  </span>	ctx, cancel := context.WithTimeout(testCtx, 3*time.Second)
+<span id="L408" class="ln">   408  </span>	defer cancel()
 <span id="L409" class="ln">   409  </span>
-<span id="L410" class="ln">   410  </span>	<span class="comment">// Use a short interval for testing (0.5 seconds)</span>
-<span id="L411" class="ln">   411  </span>	ParseLogs(ctx, sourceConn, &#34;testdb&#34;, 0.5, storeCh)
+<span id="L410" class="ln">   410  </span>	<span class="comment">// Create a channel to receive measurement envelopes</span>
+<span id="L411" class="ln">   411  </span>	storeCh := make(chan MeasurementEnvelope, 10)
 <span id="L412" class="ln">   412  </span>
-<span id="L413" class="ln">   413  </span>	<span class="comment">// Wait for measurements to be sent or timeout</span>
-<span id="L414" class="ln">   414  </span>	var measurement MeasurementEnvelope
-<span id="L415" class="ln">   415  </span>	select {
-<span id="L416" class="ln">   416  </span>	case measurement = &lt;-storeCh:
-<span id="L417" class="ln">   417  </span>		assert.NotEmpty(t, measurement.Data, &#34;Measurement data should not be empty&#34;)
-<span id="L418" class="ln">   418  </span>	case &lt;-time.After(2 * time.Second):
-<span id="L419" class="ln">   419  </span>		break
-<span id="L420" class="ln">   420  </span>	}
-<span id="L421" class="ln">   421  </span>
-<span id="L422" class="ln">   422  </span>	assert.Equal(t, &#34;test-source&#34;, measurement.DBName)
-<span id="L423" class="ln">   423  </span>	assert.Equal(t, specialMetricServerLogEventCounts, measurement.MetricName)
+<span id="L413" class="ln">   413  </span>	<span class="comment">// Use a short interval for testing (0.5 seconds)</span>
+<span id="L414" class="ln">   414  </span>	ParseLogs(ctx, sourceConn, &#34;testdb&#34;, 0.5, storeCh)
+<span id="L415" class="ln">   415  </span>
+<span id="L416" class="ln">   416  </span>	<span class="comment">// Wait for measurements to be sent or timeout</span>
+<span id="L417" class="ln">   417  </span>	var measurement MeasurementEnvelope
+<span id="L418" class="ln">   418  </span>	select {
+<span id="L419" class="ln">   419  </span>	case measurement = &lt;-storeCh:
+<span id="L420" class="ln">   420  </span>		assert.NotEmpty(t, measurement.Data, &#34;Measurement data should not be empty&#34;)
+<span id="L421" class="ln">   421  </span>	case &lt;-time.After(2 * time.Second):
+<span id="L422" class="ln">   422  </span>		break
+<span id="L423" class="ln">   423  </span>	}
 <span id="L424" class="ln">   424  </span>
-<span id="L425" class="ln">   425  </span>	<span class="comment">// Verify the data contains expected fields for both local and total counts</span>
-<span id="L426" class="ln">   426  </span>	data := measurement.Data[0]
-<span id="L427" class="ln">   427  </span>	<span class="comment">// Check that severity counts are present</span>
-<span id="L428" class="ln">   428  </span>	_, hasError := data[&#34;error&#34;]
-<span id="L429" class="ln">   429  </span>	_, hasWarning := data[&#34;warning&#34;]
-<span id="L430" class="ln">   430  </span>	assert.True(t, hasError &amp;&amp; hasWarning, &#34;Should have at least error and warning&#34;)
-<span id="L431" class="ln">   431  </span>
-<span id="L432" class="ln">   432  </span>	<span class="comment">// Ensure mock expectations were met</span>
-<span id="L433" class="ln">   433  </span>	assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L434" class="ln">   434  </span>}
-<span id="L435" class="ln">   435  </span>
+<span id="L425" class="ln">   425  </span>	assert.Equal(t, &#34;test-source&#34;, measurement.DBName)
+<span id="L426" class="ln">   426  </span>	assert.Equal(t, specialMetricServerLogEventCounts, measurement.MetricName)
+<span id="L427" class="ln">   427  </span>
+<span id="L428" class="ln">   428  </span>	<span class="comment">// Verify the data contains expected fields for both local and total counts</span>
+<span id="L429" class="ln">   429  </span>	data := measurement.Data[0]
+<span id="L430" class="ln">   430  </span>	<span class="comment">// Check that severity counts are present</span>
+<span id="L431" class="ln">   431  </span>	_, hasError := data[&#34;error&#34;]
+<span id="L432" class="ln">   432  </span>	_, hasWarning := data[&#34;warning&#34;]
+<span id="L433" class="ln">   433  </span>	assert.True(t, hasError &amp;&amp; hasWarning, &#34;Should have at least error and warning&#34;)
+<span id="L434" class="ln">   434  </span>
+<span id="L435" class="ln">   435  </span>	<span class="comment">// Ensure mock expectations were met</span>
+<span id="L436" class="ln">   436  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L437" class="ln">   437  </span>}
+<span id="L438" class="ln">   438  </span>
 </pre><p></p>
 
 <div id="footer">

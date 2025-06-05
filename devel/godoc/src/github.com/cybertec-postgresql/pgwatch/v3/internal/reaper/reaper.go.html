@@ -347,7 +347,7 @@
 <span id="L290" class="ln">   290  </span>
 <span id="L291" class="ln">   291  </span>	l := r.logger.WithField(&#34;source&#34;, md.Name).WithField(&#34;metric&#34;, metricName)
 <span id="L292" class="ln">   292  </span>	if metricName == specialMetricServerLogEventCounts {
-<span id="L293" class="ln">   293  </span>		metrics.ParseLogs(ctx, md, md.RealDbname, md.GetMetricInterval(metricName), r.measurementCh) <span class="comment">// no return</span>
+<span id="L293" class="ln">   293  </span>		metrics.ParseLogs(ctx, md, md.RealDbname, md.GetMetricInterval(metricName), r.measurementCh)
 <span id="L294" class="ln">   294  </span>		return
 <span id="L295" class="ln">   295  </span>	}
 <span id="L296" class="ln">   296  </span>

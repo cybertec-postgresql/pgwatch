@@ -117,6 +117,9 @@
 				<dd><a href="#Init">func Init(ctx context.Context, db PgxPoolIface, init ConnInitCallback) error</a></dd>
 			
 				
+				<dd><a href="#IsClientOnSameHost">func IsClientOnSameHost(conn PgxIface) (bool, error)</a></dd>
+			
+				
 				<dd><a href="#MarshallParamToJSONB">func MarshallParamToJSONB(v any) any</a></dd>
 			
 				
@@ -226,7 +229,21 @@
 		
 			
 			
-			<h2 id="MarshallParamToJSONB">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/db/conn.go.html#L46">MarshallParamToJSONB</a>
+			<h2 id="IsClientOnSameHost">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/db/conn.go.html#L71">IsClientOnSameHost</a>
+				<a class="permalink" href="#IsClientOnSameHost">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func IsClientOnSameHost(conn <a href="#PgxIface">PgxIface</a>) (<a href="https://pkg.go.dev/builtin/#bool">bool</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>Function to determine if the client is connected to the same host as the PostgreSQL server
+
+			
+			
+
+		
+			
+			
+			<h2 id="MarshallParamToJSONB">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/db/conn.go.html#L49">MarshallParamToJSONB</a>
 				<a class="permalink" href="#MarshallParamToJSONB">&#xb6;</a>
 				
 				
@@ -297,7 +314,7 @@
 		
 			
 			
-			<h2 id="PgxConnIface">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/db/conn.go.html#L28">PgxConnIface</a>
+			<h2 id="PgxConnIface">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/db/conn.go.html#L31">PgxConnIface</a>
 				<a class="permalink" href="#PgxConnIface">&#xb6;</a>
 				
 				
@@ -325,7 +342,7 @@
 		
 			
 			
-			<h2 id="PgxIface">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/db/conn.go.html#L19">PgxIface</a>
+			<h2 id="PgxIface">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/db/conn.go.html#L22">PgxIface</a>
 				<a class="permalink" href="#PgxIface">&#xb6;</a>
 				
 				
@@ -354,7 +371,7 @@
 		
 			
 			
-			<h2 id="PgxPoolIface">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/db/conn.go.html#L36">PgxPoolIface</a>
+			<h2 id="PgxPoolIface">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/db/conn.go.html#L39">PgxPoolIface</a>
 				<a class="permalink" href="#PgxPoolIface">&#xb6;</a>
 				
 				
@@ -409,7 +426,7 @@
 		
 			
 			
-			<h2 id="Querier">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/db/conn.go.html#L14">Querier</a>
+			<h2 id="Querier">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/db/conn.go.html#L17">Querier</a>
 				<a class="permalink" href="#Querier">&#xb6;</a>
 				
 				
