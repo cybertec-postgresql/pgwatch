@@ -126,6 +126,14 @@ func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, 
 
 	logger := log.GetLogger(ctx).WithField("source", mdb.Name).WithField("metric", specialMetricServerLogEventCounts)
 
+	if ok, err := db.IsClientOnSameHost(mdb.Conn); !ok || err != nil {
+		if err != nil {
+			logger = logger.WithError(err)
+		}
+		logger.Warning("Cannot parse logs, client is not on the same host as the Postgres server")
+		return
+	}
+
 	csvlogRegex, err = regexp.Compile(cmp.Or(mdb.HostConfig.LogsMatchRegex, CSVLogDefaultRegEx))
 	if err != nil {
 		logger.WithError(err).Print("Invalid regex: ", logsMatchRegex)
@@ -220,6 +228,12 @@ func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, 
 			}
 
 			if err == io.EOF {
+				// // EOF reached, wait for new files to be added
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(currInterval):
+				}
 				// check for newly opened logfiles
 				file, _ := getFileWithNextModTimestamp(logsGlobPath, latest)
 				if file != "" {

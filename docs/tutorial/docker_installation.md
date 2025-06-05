@@ -192,8 +192,8 @@ As mentioned in the [Components](../concept/components.md) chapter, remember tha
 one example how your monitoring setup around the pgwatch metrics
 collector could be organized. For another example how various components
 (as Docker images here) can work together, see a *Docker Compose*
-example with loosely coupled components
-[here](https://github.com/cybertec-postgresql/pgwatch/blob/master/docker-compose.yml).
+[example](https://github.com/cybertec-postgresql/pgwatch/blob/master/docker-compose.yml)
+with loosely coupled components.
 
 ## Example of advanced setup using YAML files and dual sinks
 

@@ -16,7 +16,7 @@ ARG GIT_TIME
 
 COPY . /pgwatch
 COPY --from=uibuilder /webui/build /pgwatch/internal/webui/build
-RUN cd /pgwatch && CGO_ENABLED=0 go build -ldflags "-X 'main.commit=${GIT_HASH}' -X 'main.date=${GIT_TIME}' -X 'main.version=${VERSION}'" ./cmd/pgwatch
+RUN cd /pgwatch && CGO_ENABLED=0 go build -tags=pprof -ldflags "-X 'main.commit=${GIT_HASH}' -X 'main.date=${GIT_TIME}' -X 'main.version=${VERSION}'" ./cmd/pgwatch
 
 # ----------------------------------------------------------------
 # 3. Build the final image
@@ -80,6 +80,8 @@ EXPOSE 5432
 EXPOSE 3000
 # Prometheus scraping port
 EXPOSE 9187
+# pprof port
+EXPOSE 6060
 
 ### Volumes for easier updating to newer to newer pgwatch containers
 ### Backwards compatibility is not 100% guaranteed so a backup
