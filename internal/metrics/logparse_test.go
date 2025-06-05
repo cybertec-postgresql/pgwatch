@@ -384,6 +384,9 @@ func TestLogParse(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
+	// pretend we're connected via UNIX socket
+	mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
+		pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(true))
 	// Mock the language detection query
 	mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 		WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))

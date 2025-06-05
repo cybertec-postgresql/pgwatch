@@ -290,7 +290,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 
 	l := r.logger.WithField("source", md.Name).WithField("metric", metricName)
 	if metricName == specialMetricServerLogEventCounts {
-		metrics.ParseLogs(ctx, md, md.RealDbname, md.GetMetricInterval(metricName), r.measurementCh) // no return
+		metrics.ParseLogs(ctx, md, md.RealDbname, md.GetMetricInterval(metricName), r.measurementCh)
 		return
 	}
 

@@ -2,6 +2,9 @@ package db
 
 import (
 	"context"
+	"encoding/binary"
+	"os"
+	"path/filepath"
 	"reflect"
 
 	jsoniter "github.com/json-iterator/go"
@@ -62,4 +65,42 @@ func MarshallParamToJSONB(v any) any {
 		return string(b)
 	}
 	return nil
+}
+
+// Function to determine if the client is connected to the same host as the PostgreSQL server
+func IsClientOnSameHost(conn PgxIface) (bool, error) {
+	ctx := context.Background()
+
+	// Step 1: Check connection type using SQL
+	var isUnixSocket bool
+	err := conn.QueryRow(ctx, "SELECT COALESCE(inet_client_addr(), inet_server_addr()) IS NULL").Scan(&isUnixSocket)
+	if err != nil || isUnixSocket {
+		return isUnixSocket, err
+	}
+
+	// Step 2: Retrieve unique cluster identifier
+	var dataDirectory string
+	if err := conn.QueryRow(ctx, "SHOW data_directory").Scan(&dataDirectory); err != nil {
+		return false, err
+	}
+
+	var systemIdentifier uint64
+	if err := conn.QueryRow(ctx, "SELECT system_identifier FROM pg_control_system()").Scan(&systemIdentifier); err != nil {
+		return false, err
+	}
+
+	// Step 3: Compare system identifier from file system
+	pgControlFile := filepath.Join(dataDirectory, "global", "pg_control")
+	file, err := os.Open(pgControlFile)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	var fileSystemIdentifier uint64
+	if err := binary.Read(file, binary.LittleEndian, &fileSystemIdentifier); err != nil {
+		return false, err
+	}
+
+	return fileSystemIdentifier == systemIdentifier, nil
 }
