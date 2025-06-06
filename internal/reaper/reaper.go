@@ -500,7 +500,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 				return nil, err
 			}
 			if metricName == specialMetricInstanceUp {
-				l.WithError(err).Debugf("[%s:%s] failed to fetch metrics. marking instance as not up", md.Name, metricName)
+				l.WithError(err).Debugf("failed to fetch metrics. marking instance as not up")
 				data = make(metrics.Measurements, 1)
 				data[0] = metrics.NewMeasurement(time.Now().UnixNano())
 				data[0]["is_up"] = 0 // should be updated if the "instance_up" metric definition is changed
@@ -521,7 +521,6 @@ send_to_storageChannel:
 		MetricName:       cmp.Or(metric.StorageName, metricName),
 		Data:             data,
 		CustomTags:       md.CustomTags,
-		MetricDef:        metric,
 		RealDbname:       md.RealDbname,
 		SystemIdentifier: md.SystemIdentifier}, nil
 }

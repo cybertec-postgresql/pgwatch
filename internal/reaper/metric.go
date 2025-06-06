@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/sirupsen/logrus"
 )
 
@@ -77,6 +78,9 @@ func (r *Reaper) LoadMetrics() (err error) {
 		return
 	}
 	metricDefs.Assign(newDefs)
+	if definer, ok := r.SinksWriter.(sinks.MetricsDefiner); ok {
+		err = definer.DefineMetrics(newDefs)
+	}
 	r.logger.
 		WithField("metrics", len(newDefs.MetricDefs)).
 		WithField("presets", len(newDefs.PresetDefs)).
