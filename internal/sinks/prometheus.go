@@ -24,6 +24,7 @@ type PrometheusWriter struct {
 	lastScrapeErrors                  prometheus.Gauge
 	totalScrapes, totalScrapeFailures prometheus.Counter
 	PrometheusNamespace               string
+	gauges                            map[string]([]string) // map of metric names to their gauge names, used for Prometheus gauge metrics
 }
 
 const promInstanceUpStateMetric = "instance_up"
@@ -75,6 +76,14 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 
 	l.Info(`measurements sink is activated`)
 	return
+}
+
+func (promw *PrometheusWriter) DefineMetrics(metrics *metrics.Metrics) (err error) {
+	promw.gauges = make(map[string]([]string))
+	for name, m := range metrics.MetricDefs {
+		promw.gauges[name] = m.Gauges
+	}
+	return nil
 }
 
 func (promw *PrometheusWriter) Write(msg metrics.MeasurementEnvelope) error {
@@ -194,6 +203,8 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Measu
 		return promMetrics
 	}
 
+	gauges := promw.gauges[msg.MetricName]
+
 	epochTime = time.Unix(0, msg.Data.GetEpoch())
 
 	if epochTime.Before(time.Now().Add(-promScrapingStalenessHardDropLimit)) {
@@ -247,8 +258,7 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Measu
 		for field, value := range fields {
 			fieldPromDataType := prometheus.CounterValue
 			if msg.MetricName == promInstanceUpStateMetric ||
-				len(msg.MetricDef.Gauges) > 0 &&
-					(msg.MetricDef.Gauges[0] == "*" || slices.Contains(msg.MetricDef.Gauges, field)) {
+				len(gauges) > 0 && (gauges[0] == "*" || slices.Contains(gauges, field)) {
 				fieldPromDataType = prometheus.GaugeValue
 			}
 			var desc *prometheus.Desc
