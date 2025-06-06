@@ -152,7 +152,6 @@ type MeasurementEnvelope struct {
 	MetricName       string
 	CustomTags       map[string]string
 	Data             Measurements
-	MetricDef        Metric
 	RealDbname       string
 	SystemIdentifier string
 }
