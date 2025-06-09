@@ -557,7 +557,7 @@
 <span id="L500" class="ln">   500  </span>				return nil, err
 <span id="L501" class="ln">   501  </span>			}
 <span id="L502" class="ln">   502  </span>			if metricName == specialMetricInstanceUp {
-<span id="L503" class="ln">   503  </span>				l.WithError(err).Debugf(&#34;[%s:%s] failed to fetch metrics. marking instance as not up&#34;, md.Name, metricName)
+<span id="L503" class="ln">   503  </span>				l.WithError(err).Debugf(&#34;failed to fetch metrics. marking instance as not up&#34;)
 <span id="L504" class="ln">   504  </span>				data = make(metrics.Measurements, 1)
 <span id="L505" class="ln">   505  </span>				data[0] = metrics.NewMeasurement(time.Now().UnixNano())
 <span id="L506" class="ln">   506  </span>				data[0][&#34;is_up&#34;] = 0 <span class="comment">// should be updated if the &#34;instance_up&#34; metric definition is changed</span>
@@ -578,11 +578,10 @@
 <span id="L521" class="ln">   521  </span>		MetricName:       cmp.Or(metric.StorageName, metricName),
 <span id="L522" class="ln">   522  </span>		Data:             data,
 <span id="L523" class="ln">   523  </span>		CustomTags:       md.CustomTags,
-<span id="L524" class="ln">   524  </span>		MetricDef:        metric,
-<span id="L525" class="ln">   525  </span>		RealDbname:       md.RealDbname,
-<span id="L526" class="ln">   526  </span>		SystemIdentifier: md.SystemIdentifier}, nil
-<span id="L527" class="ln">   527  </span>}
-<span id="L528" class="ln">   528  </span>
+<span id="L524" class="ln">   524  </span>		RealDbname:       md.RealDbname,
+<span id="L525" class="ln">   525  </span>		SystemIdentifier: md.SystemIdentifier}, nil
+<span id="L526" class="ln">   526  </span>}
+<span id="L527" class="ln">   527  </span>
 </pre><p></p>
 
 <div id="footer">
