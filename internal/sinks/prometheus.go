@@ -3,6 +3,7 @@ package sinks
 import (
 	"context"
 	"fmt"
+	"maps"
 	"net"
 	"net/http"
 	"slices"
@@ -20,6 +21,7 @@ import (
 // PrometheusWriter is a sink that allows to expose metric measurements to Prometheus scrapper.
 // Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints.
 type PrometheusWriter struct {
+	logger                            log.Logger
 	ctx                               context.Context
 	lastScrapeErrors                  prometheus.Gauge
 	totalScrapes, totalScrapeFailures prometheus.Counter
@@ -32,6 +34,10 @@ const promInstanceUpStateMetric = "instance_up"
 // timestamps older than that will be ignored on the Prom scraper side anyway, so better don't emit at all and just log a notice
 const promScrapingStalenessHardDropLimit = time.Minute * time.Duration(10)
 
+func (promw *PrometheusWriter) Println(v ...any) {
+	promw.logger.Errorln(v...)
+}
+
 func NewPrometheusWriter(ctx context.Context, connstr string) (promw *PrometheusWriter, err error) {
 	addr, namespace, found := strings.Cut(connstr, "/")
 	if !found {
@@ -41,6 +47,7 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 	ctx = log.WithLogger(ctx, l)
 	promw = &PrometheusWriter{
 		ctx:                 ctx,
+		logger:              l,
 		PrometheusNamespace: namespace,
 		lastScrapeErrors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -62,9 +69,16 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 	if err = prometheus.Register(promw); err != nil {
 		return
 	}
+
 	promServer := &http.Server{
-		Addr:    addr,
-		Handler: promhttp.Handler(),
+		Addr: addr,
+		Handler: promhttp.HandlerFor(
+			prometheus.DefaultGatherer,
+			promhttp.HandlerOpts{
+				ErrorLog:      promw,
+				ErrorHandling: promhttp.ContinueOnError,
+			},
+		),
 	}
 
 	ln, err := net.Listen("tcp", promServer.Addr)
@@ -140,19 +154,19 @@ func (promw *PrometheusWriter) Describe(_ chan<- *prometheus.Desc) {
 }
 
 func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
+	var rows int
 	var lastScrapeErrors float64
-	logger := log.GetLogger(promw.ctx)
 	promw.totalScrapes.Add(1)
 	ch <- promw.totalScrapes
 
 	if len(promAsyncMetricCache) == 0 {
-		logger.Warning("No dbs configured for monitoring. Check config")
+		promw.logger.Warning("No dbs configured for monitoring. Check config")
 		ch <- promw.totalScrapeFailures
 		promw.lastScrapeErrors.Set(0)
 		ch <- promw.lastScrapeErrors
 		return
 	}
-
+	t1 := time.Now()
 	for dbname, metricsMessages := range promAsyncMetricCache {
 		promw.setInstanceUpDownState(ch, dbname)
 		for metric, metricMessages := range metricsMessages {
@@ -160,20 +174,22 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 				continue // not supported
 			}
 			promMetrics := promw.MetricStoreMessageToPromMetrics(metricMessages)
+			rows += len(promMetrics)
 			for _, pm := range promMetrics { // collect & send later in batch? capMetricChan = 1000 limit in prometheus code
 				ch <- pm
 			}
 		}
-
+		promAsyncMetricCacheLock.Lock()
+		promAsyncMetricCache[dbname] = make(map[string]metrics.MeasurementEnvelope) // clear the cache for this db after metrics are collected
+		promAsyncMetricCacheLock.Unlock()
 	}
-
+	promw.logger.WithField("count", rows).WithField("elapsed", time.Since(t1)).Info("measurements written")
 	ch <- promw.totalScrapeFailures
 	promw.lastScrapeErrors.Set(lastScrapeErrors)
 	ch <- promw.lastScrapeErrors
 }
 
 func (promw *PrometheusWriter) setInstanceUpDownState(ch chan<- prometheus.Metric, dbName string) {
-	logger := log.GetLogger(promw.ctx)
 	data := metrics.NewMeasurement(time.Now().UnixNano())
 	data[promInstanceUpStateMetric] = 1
 
@@ -190,15 +206,13 @@ func (promw *PrometheusWriter) setInstanceUpDownState(ch chan<- prometheus.Metri
 	if len(pm) > 0 {
 		ch <- pm[0]
 	} else {
-		logger.Error("Could not formulate an instance state report - should not happen")
+		promw.logger.Error("Could not formulate an instance state report - should not happen")
 	}
 }
 
 func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.MeasurementEnvelope) []prometheus.Metric {
 	promMetrics := make([]prometheus.Metric, 0)
-	logger := log.GetLogger(promw.ctx)
 	var epochTime time.Time
-
 	if len(msg.Data) == 0 {
 		return promMetrics
 	}
@@ -208,7 +222,7 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Measu
 	epochTime = time.Unix(0, msg.Data.GetEpoch())
 
 	if epochTime.Before(time.Now().Add(-promScrapingStalenessHardDropLimit)) {
-		logger.Warningf("[%s][%s] Dropping metric set due to staleness (>%v) ...", msg.DBName, msg.MetricName, promScrapingStalenessHardDropLimit)
+		promw.logger.Warningf("Dropping metric %s:%s cache set due to staleness (>%v)...", msg.DBName, msg.MetricName, promScrapingStalenessHardDropLimit)
 		promw.PurgeMetricsFromPromAsyncCacheIfAny(msg.DBName, msg.MetricName)
 		return promMetrics
 	}
@@ -216,6 +230,9 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Measu
 	for _, dr := range msg.Data {
 		labels := make(map[string]string)
 		fields := make(map[string]float64)
+		if msg.CustomTags != nil {
+			labels = maps.Clone(msg.CustomTags)
+		}
 		labels["dbname"] = msg.DBName
 
 		for k, v := range dr {
@@ -228,23 +245,20 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Measu
 				labels[tag] = fmt.Sprintf("%v", v)
 			} else {
 				switch t := v.(type) {
+				case string:
+					labels[k] = t
 				case int, int32, int64, float32, float64:
 					f, err := strconv.ParseFloat(fmt.Sprintf("%v", v), 64)
 					if err != nil {
-						logger.Debugf("skipping scraping column %s of [%s:%s]: %v", k, msg.DBName, msg.MetricName, err)
+						promw.logger.Debugf("skipping scraping column %s of [%s:%s]: %v", k, msg.DBName, msg.MetricName, err)
 					}
 					fields[k] = f
 				case bool:
 					fields[k] = map[bool]float64{true: 1, false: 0}[t]
 				default:
-					logger.Debugf("skipping scraping column %s of [%s:%s], unsupported datatype: %v", k, msg.DBName, msg.MetricName, t)
+					promw.logger.Debugf("skipping scraping column %s of [%s:%s], unsupported datatype: %v", k, msg.DBName, msg.MetricName, t)
 					continue
 				}
-			}
-		}
-		if msg.CustomTags != nil {
-			for k, v := range msg.CustomTags {
-				labels[k] = fmt.Sprintf("%v", v)
 			}
 		}
 
