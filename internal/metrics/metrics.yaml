@@ -4165,23 +4165,6 @@ presets:
         metrics:
             pgpool_stats: 60
             pgpool_processes: 60
-    prometheus:
-        description: similar to "exhaustive" but without some possibly longer-running metrics and those keeping state
-        metrics:
-            archiver: 1
-            backends: 1
-            bgwriter: 1
-            cpu_load: 1
-            db_size: 1
-            db_stats: 1
-            locks_mode: 1
-            replication: 1
-            replication_slots: 1
-            sproc_stats: 1
-            stat_statements_calls: 1
-            table_stats: 1
-            wal: 1
-            wal_receiver: 1
     prometheus-async:
         description: tuned for the new async (background collection) Prom feature. Prom tolerates max. 10min time lag, so intervals should be smaller than 600
         metrics:
