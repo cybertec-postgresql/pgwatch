@@ -67,12 +67,9 @@ func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.Sourc
 		return nil, err
 	}
 	return &metrics.MeasurementEnvelope{
-		DBName:           md.Name,
-		SourceType:       string(md.Kind),
-		MetricName:       metricName,
-		CustomTags:       md.CustomTags,
-		Data:             data,
-		RealDbname:       md.RealDbname,
-		SystemIdentifier: md.SystemIdentifier,
+		DBName:     md.Name,
+		MetricName: metricName,
+		CustomTags: md.CustomTags,
+		Data:       data,
 	}, nil
 }

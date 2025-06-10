@@ -490,7 +490,6 @@ func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique s
 		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
 		storageCh <- metrics.MeasurementEnvelope{
 			DBName:     dbUnique,
-			SourceType: string(md.Kind),
 			MetricName: "object_changes",
 			Data:       detectedChangesSummary,
 			CustomTags: md.CustomTags,

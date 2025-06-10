@@ -349,7 +349,6 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 							detectedChangesSummary = append(detectedChangesSummary, entry)
 							r.measurementCh <- metrics.MeasurementEnvelope{
 								DBName:     md.Name,
-								SourceType: string(md.Kind),
 								MetricName: "object_changes",
 								Data:       detectedChangesSummary,
 								CustomTags: metricStoreMessages.CustomTags,
@@ -499,10 +498,8 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 	r.AddSysinfoToMeasurements(data, md)
 	l.WithField("cache", fromCache).WithField("rows", len(data)).Info("measurements fetched")
 	return &metrics.MeasurementEnvelope{
-		DBName:           md.Name,
-		MetricName:       cmp.Or(metric.StorageName, metricName),
-		Data:             data,
-		CustomTags:       md.CustomTags,
-		RealDbname:       md.RealDbname,
-		SystemIdentifier: md.SystemIdentifier}, nil
+		DBName:     md.Name,
+		MetricName: cmp.Or(metric.StorageName, metricName),
+		Data:       data,
+		CustomTags: md.CustomTags}, nil
 }
