@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -272,8 +273,8 @@ func (c *copyFromMeasurements) EOF() bool {
 }
 
 func (c *copyFromMeasurements) Values() ([]any, error) {
-	row := c.envelopes[c.envelopeIdx].Data[c.measurementIdx]
-	tagRow := c.envelopes[c.envelopeIdx].CustomTags
+	row := maps.Clone(c.envelopes[c.envelopeIdx].Data[c.measurementIdx])
+	tagRow := maps.Clone(c.envelopes[c.envelopeIdx].CustomTags)
 	if tagRow == nil {
 		tagRow = make(map[string]string)
 	}

@@ -438,6 +438,23 @@ func DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn, sto
 	return changeCounts
 }
 
+// GetInstanceUpMeasurement returns a single measurement with "instance_up" metric
+// used to detect if the instance is up or down
+func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.SourceConn) (metrics.Measurements, error) {
+	err := md.Conn.Ping(ctx)
+	return metrics.Measurements{
+		metrics.Measurement{
+			metrics.EpochColumnName: time.Now().UnixNano(),
+			"instance_up": func() int {
+				if err == nil {
+					return 1
+				}
+				return 0
+			}(), // true if connection is up
+		},
+	}, err
+}
+
 func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, md *sources.SourceConn, hostState map[string]map[string]string) {
 	storageCh := r.measurementCh
 	sprocCounts := DetectSprocChanges(ctx, md, storageCh, hostState) // TODO some of Detect*() code could be unified...
@@ -473,7 +490,6 @@ func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique s
 		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
 		storageCh <- metrics.MeasurementEnvelope{
 			DBName:     dbUnique,
-			SourceType: string(md.Kind),
 			MetricName: "object_changes",
 			Data:       detectedChangesSummary,
 			CustomTags: md.CustomTags,

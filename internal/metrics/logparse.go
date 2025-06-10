@@ -102,7 +102,6 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 	}
 	return MeasurementEnvelope{
 		DBName:     mdb.Name,
-		SourceType: string(mdb.Kind),
 		MetricName: specialMetricServerLogEventCounts,
 		Data:       Measurements{allSeverityCounts},
 		CustomTags: mdb.CustomTags,

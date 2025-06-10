@@ -23,6 +23,11 @@
 
 metrics:
     archiver:
+        description: >
+            This metric retrieves key statistics from the PostgreSQL `pg_stat_archiver` view providing insights into the status of WAL file archiving.
+            It returns the total number of successfully archived files and failed archiving attempts. Additionally, it identifies if the most recent
+            attempt resulted in a failure and calculates how many seconds have passed since the last failure. The metric only considers data if WAL
+            archiving is enabled in the system, helping administrators monitor and diagnose issues related to the archiving process.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -40,6 +45,13 @@ metrics:
             - seconds_since_last_failure
         is_instance_level: true
     backends:
+        description: >
+            This metric gathers detailed information from the PostgreSQL pg_stat_activity view, providing an overview of the database's current session
+            and activity state. It tracks the total number of client backends, active sessions, idle sessions, sessions waiting on locks, and background workers.
+            The metric also calculates statistics on blocked sessions, most extended waiting times, average and longest session durations, transaction times,
+            and query durations. Additionally, it monitors autovacuum worker activity and provides the age of the oldest transaction (measured by xmin).
+            This metric helps administrators monitor session states, detect bottlenecks, and ensure the system is within its connection limits,
+            providing visibility into database performance and contention.
         sqls:
             11: |
                 with sa_snapshot as (
@@ -72,6 +84,11 @@ metrics:
         gauges:
             - '*'
     backup_age_pgbackrest:
+        description: >
+            This metric retrieves the age of the last successful pgBackRest backup in seconds. It uses the `pgbackrest --output=json info` command to fetch
+            the backup information and calculates the age based on the current time and the timestamp of the last backup. The metric returns a retcode of 0
+            on success, along with the age in seconds and a message indicating the status.
+            Expects pgBackRest is correctly configured on monitored DB and "jq" tool is installed on the DB server.
         sqls:
             11: |
                 select /* pgwatch_generated */
@@ -83,10 +100,7 @@ metrics:
                   get_backup_age_pgbackrest()
         init_sql: |-
             CREATE EXTENSION IF NOT EXISTS plpython3u;
-            /*
-              Gets age of last successful pgBackRest backup via "pgbackrest --output=json info" unix timestamp. Returns 0 retcode on success.
-              Expects pgBackRest is correctly configured on monitored DB and "jq" tool is installed on the DB server.
-            */
+
             CREATE OR REPLACE FUNCTION get_backup_age_pgbackrest(OUT retcode int, OUT backup_age_seconds int, OUT message text) AS
             $$
             import time
@@ -124,7 +138,6 @@ metrics:
                 return error('Failed to parse pgbackrest output')
             $$ LANGUAGE plpython3u VOLATILE;
 
-            /* contacting S3 could be laggy depending on location */
             ALTER FUNCTION get_backup_age_pgbackrest() SET statement_timeout TO '30s';
 
             GRANT EXECUTE ON FUNCTION get_backup_age_pgbackrest() TO pgwatch;
@@ -132,6 +145,11 @@ metrics:
             COMMENT ON FUNCTION get_backup_age_pgbackrest() is 'created for pgwatch';
         is_instance_level: true
     backup_age_walg:
+        description: >
+            Retrieves the age of the last successful WAL-G backup in seconds. It uses the `wal-g backup-list --json` command to fetch
+            the backup information and calculates the age based on the current time and the timestamp of the last backup. 
+            The metric returns a retcode of 0 on success, along with the age in seconds and a message indicating the status.
+            Expects .wal-g.json is correctly configured with all necessary credentials and "jq" tool is installed on the DB server.
         sqls:
             11: |
                 select /* pgwatch_generated */
@@ -143,10 +161,7 @@ metrics:
                   get_backup_age_walg()
         init_sql: |-
             CREATE EXTENSION IF NOT EXISTS plpython3u;
-            /*
-              Gets age of last successful WAL-G backup via "wal-g backup-list" timestamp. Returns 0 retcode on success.
-              Expects .wal-g.json is correctly configured with all necessary credentials and "jq" tool is installed on the DB server.
-            */
+
             CREATE OR REPLACE FUNCTION get_backup_age_walg(OUT retcode int, OUT backup_age_seconds int, OUT message text) AS
             $$
             import subprocess
@@ -184,6 +199,10 @@ metrics:
             COMMENT ON FUNCTION get_backup_age_walg() is 'created for pgwatch';
         is_instance_level: true
     bgwriter:
+        description: >
+            Retrieves key statistics from the PostgreSQL `pg_stat_bgwriter` view, providing insights into the background writer's performance.
+            It returns the number of timed and requested checkpoints, checkpoint write and sync times, buffer statistics, and the last reset time.
+            This metric helps administrators monitor the background writer's activity and its impact on database performance.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -212,6 +231,11 @@ metrics:
         node_status: primary
         is_instance_level: true
     blocking_locks:
+        description: >
+            Identifies blocking locks in the PostgreSQL database by analyzing the `pg_locks` and `pg_stat_activity` views.
+            It retrieves information about waiting locks, including the lock type, user, mode, and the table involved,
+            as well as details about the blocking lock. The metric helps administrators identify contention issues and
+            understand which queries are causing blocks in the system.
         sqls:
             11: |-
                 WITH sa_snapshot AS (
@@ -266,6 +290,10 @@ metrics:
         gauges:
             - '*'
     buffercache_by_db:
+        description: >
+            Retrieves buffer cache statistics grouped by database, providing insights into the size of buffers used by each database.
+            It calculates the total size of buffers in bytes for each database.
+            This metric helps administrators monitor buffer usage across different databases in the PostgreSQL instance.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -283,6 +311,11 @@ metrics:
             - '*'
         is_instance_level: true
     buffercache_by_type:
+        description: >
+            Retrieves buffer cache statistics grouped by relation type, providing insights into the size of buffers used
+            by different relation kinds. It calculates the total size of buffers in bytes for each relation kind
+            (e.g., Table, Index, Toast, Materialized view). This metric helps administrators monitor buffer usage across
+            different relation types in the PostgreSQL instance.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -306,9 +339,16 @@ metrics:
             - '*'
         is_instance_level: true
     change_events:
+        description: >
+            The "change_events" built-in metric tracks DDL & config changes. Internally, it uses some other *
+            _hashes metrics that are not meant to be used independently. Such metrics should not be removed.
         sqls:
             11: ""
     checkpointer:
+        description: >
+            Retrieves key statistics from the PostgreSQL `pg_stat_checkpointer` view, providing insights into the checkpointer's performance.
+            It returns the number of timed and requested checkpoints, restart points, write and sync times, and buffer statistics.
+            This metric helps administrators monitor the checkpointer's activity and its impact on database performance.
         sqls:
             11: "; -- covered by bgwriter"
             17: |-
@@ -326,6 +366,9 @@ metrics:
                 from
                   pg_stat_checkpointer
     configuration_hashes:
+        description: >
+            Retrieves configuration settings from the PostgreSQL `pg_settings` view, providing insights into the current configuration of the database.
+            This metric helps administrators monitor changes applied to the database configuration.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -337,6 +380,10 @@ metrics:
                 where
                   name <> 'connection_ID'
     cpu_load:
+        description: >
+            Retrieves the system load average for the last 1, 5, and 15 minutes using a custom PL/Python function.
+            This metric provides insights into the CPU load on the PostgreSQL server, helping administrators monitor system performance.
+            The function uses the `os.getloadavg()` method to fetch the load averages.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -345,7 +392,7 @@ metrics:
                   round(load_5min::numeric, 2)::float as load_5min,
                   round(load_15min::numeric, 2)::float as load_15min
                 from
-                  get_load_average();   -- needs the plpythonu proc from "metric_fetching_helpers" folder
+                  get_load_average();
         init_sql: |-
             CREATE EXTENSION IF NOT EXISTS plpython3u;
             CREATE OR REPLACE FUNCTION get_load_average(OUT load_1min float, OUT load_5min float, OUT load_15min float) AS
@@ -360,6 +407,10 @@ metrics:
             - '*'
         is_instance_level: true
     database_conflicts:
+        description: >
+            Retrieves conflict statistics from the PostgreSQL `pg_stat_database_conflicts` view, providing insights into conflicts that have occurred
+            in the current database. It returns the number of conflicts related to tablespace, lock, snapshot, buffer pin, and deadlock.
+            This metric helps administrators monitor and diagnose issues related to database conflicts.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -375,6 +426,10 @@ metrics:
                   datname = current_database()
         node_status: standby
     db_size:
+        description: >
+            Retrieves the size of the current database and the size of the `pg_catalog` schema, providing insights into the storage usage of the database.
+            It returns the size in bytes for both the current database and the catalog schema.
+            This metric helps administrators monitor database size and storage consumption.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -388,6 +443,10 @@ metrics:
             - '*'
         statement_timeout_seconds: 300
     db_size_approx:
+        description: >
+            Retrieves an approximate size of the current database and the size of the `pg_catalog` schema, providing insights into the storage usage of the database.
+            It returns the size in bytes for both the current database and the catalog schema.
+            This metric helps administrators monitor database size and storage consumption.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -412,6 +471,11 @@ metrics:
             - '*'
         metric_storage_name: db_size
     db_stats:
+        description: >
+            Retrieves key statistics from the PostgreSQL `pg_stat_database` view, providing insights into the current database's performance.
+            It returns the number of backends, transaction commits and rollbacks, buffer reads and hits, tuple statistics, conflicts, temporary files and bytes,
+            deadlocks, block read and write times, postmaster uptime, backup duration, recovery status, system identifier, and invalid indexes.
+            This metric helps administrators monitor database activity and performance.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -583,6 +647,11 @@ metrics:
             - backup_duration_s
             - checksum_last_failure_s
     db_stats_aurora:
+        description: >
+            Retrieves key statistics from the PostgreSQL `pg_stat_database` view for Amazon Aurora PostgreSQL, providing insights into the current database's performance.
+            It returns the number of backends, transaction commits and rollbacks, buffer reads and hits, tuple statistics, conflicts, temporary files and bytes,
+            deadlocks, block read and write times, postmaster uptime, recovery status, system identifier, and invalid indexes.
+            This metric helps administrators monitor database activity and performance in an Aurora PostgreSQL environment.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -617,6 +686,9 @@ metrics:
             - checksum_last_failure_s
         metric_storage_name: db_stats
     index_hashes:
+        description: >
+            Retrieves the hash of index definitions in the PostgreSQL database, providing a way to track changes in index definitions over time.
+            This metric helps administrators monitor index changes and ensure consistency in index definitions.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -636,6 +708,10 @@ metrics:
                 where
                   c.relnamespace not in (select oid from pg_namespace where nspname like any(array[E'pg\\_%', 'information_schema']))
     index_stats:
+        description: >
+            Retrieves detailed statistics about indexes in the PostgreSQL database, including index size, scan counts, tuple read and fetch counts,
+            block read and hit counts, and index validity. It also identifies the largest, most scanned, and unused indexes.
+            This metric helps administrators monitor index performance and identify potential issues with unused or invalid indexes.
         sqls:
             11: |-
                 /* does not return all index stats but biggest, top scanned and biggest unused ones */
@@ -844,15 +920,20 @@ metrics:
                 ORDER BY
                   id.schemaname, id.relname, id.indexrelname
     instance_up:
+        description: > 
+            This metric has some special handling attached to it - it will store a 0 value if the database is not accessible.
+            Thus it can be used to for example calculate some percentual "uptime" indicator.
+            For standard metrics there will be no data rows stored when the DB is not reachable, but for this one,
+            there will be a zero stored for the "is_up" column that, under normal operations, would always be 1.
         sqls:
             11: |
-                /* This metric has some special handling attached to it - it will store a 0 value if the DB is not accessible.
-                   Thus it can be used to for example calculate some percentual "uptime" indicator.
-                */
                 select /* pgwatch_generated */
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     1::int as is_up
     invalid_indexes:
+        description: >
+            Retrieves a list of invalid indexes in the PostgreSQL database, providing insights into indexes that are not valid.
+            It returns the index name, schema, and whether the index is valid or not. This metric helps administrators identify and address issues with invalid indexes.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -877,6 +958,12 @@ metrics:
                 order by index_size_b desc
                 limit 100
     kpi:
+        description: >
+            Retrieves key performance indicators (KPIs) from the PostgreSQL `pg_stat_database` view, providing insights into the current database's performance.
+            It returns the number of backends, active and blocked backends, oldest transaction age, transactions per second (TPS), commit and rollback counts,
+            buffer read and hit counts, temporary bytes, sequence scans on tables larger than 10MB, tuple statistics, stored procedure calls,
+            block read and write times, deadlocks, recovery status, and postmaster uptime.
+            This metric helps administrators monitor database activity and performance.
         sqls:
             11: |
                 WITH q_stat_tables AS (
@@ -928,6 +1015,9 @@ metrics:
             - blocked_backends
             - kpi_oldest_tx_s
     locks:
+        description: >
+            Retrieves lock statistics from the PostgreSQL `pg_locks` view, providing insights into the types and modes of locks currently held in the database.
+            It returns the lock type, lock mode, and the count of locks for each type and mode. This metric helps administrators monitor lock contention and performance.
         sqls:
             11: |-
                 WITH q_locks AS (
@@ -948,6 +1038,9 @@ metrics:
         gauges:
             - '*'
     locks_mode:
+        description: >
+            Retrieves lock mode statistics from the PostgreSQL `pg_locks` view, providing insights into the different lock modes currently held in the database.
+            It returns the lock mode and the count of locks for each mode. This metric helps administrators monitor lock contention and performance.
         sqls:
             11: |-
                 WITH q_locks AS (
@@ -968,6 +1061,10 @@ metrics:
         gauges:
             - '*'
     logical_subscriptions:
+        description: >
+            Retrieves information about logical subscriptions in the PostgreSQL database, including their names, enabled status, and the number of relations in each subscription.
+            It also provides counts of relations in different states (inserted, deleted, synchronized, and replicated).
+            This metric helps administrators monitor logical replication subscriptions and their statuses.
         sqls:
             11: |
                 with q_sr as (
@@ -989,18 +1086,37 @@ metrics:
         gauges:
             - '*'
     pgbouncer_stats:
+        description: >
+            Retrieves statistics from the PgBouncer connection pooler.
+            This metric helps administrators monitor PgBouncer performance and connection pooling efficiency.
         sqls:
             0: show stats
     pgbouncer_clients:
+        description: >
+            Retrieves client connection statistics from the PgBouncer connection pooler, providing insights into the current state of client connections.
+            It returns the number of active, idle, and total client connections, as well as transaction counts and memory usage statistics.
+            This metric helps administrators monitor PgBouncer client connections and performance.
         sqls:
             0: show clients
     pgpool_processes:
+        description: >
+            Retrieves process statistics from the PgPool connection pooler, providing insights into the current state of PgPool processes.
+            It returns the number of active, idle, and total processes, as well as memory usage statistics.
+            This metric helps administrators monitor PgPool process performance and resource utilization.
         sqls:
             3: show pool_processes
     pgpool_stats:
+        description: >
+            Retrieves statistics from the PgPool connection pooler, providing insights into the current state of PgPool connections and transactions.
+            It returns the number of active, idle, and total connections, as well as transaction counts and memory usage statistics.
+            This metric helps administrators monitor PgPool performance and connection pooling efficiency.
         sqls:
             3: show pool_nodes
     privilege_changes:
+        description: >
+            Retrieves information about privileges granted to roles on various database objects, including tables, functions, schemas, and databases.
+            It returns the object type, role name, object name, and privilege type for each privilege granted.
+            This metric helps administrators monitor and manage database access control and privileges.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -1131,6 +1247,11 @@ metrics:
                                             WHERE
                                                 rolcanlogin) y
     psutil_cpu:
+        description: >
+            This metric requires the "psutil" Python package to be installed on the PostgreSQL server.
+            It provides CPU utilization and load averages using the "psutil" library.
+            "psutil" is known to behave differently depending on the used version and operating system, so if getting
+            errors please adjust to your needs. "psutil" documentation here: https://psutil.readthedocs.io/en/latest/
         sqls:
             11: |
                 select /* pgwatch_generated */
@@ -1148,12 +1269,8 @@ metrics:
                   round(other::numeric, 2)::float as other
                 from
                   get_psutil_cpu()
-        init_sql: |-
-            /*  Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil)
-                "psutil" is known to behave differently depending on the used version and operating system, so if getting
-                errors please adjust to your needs. "psutil" documentation here: https://psutil.readthedocs.io/en/latest/
-            */
-            CREATE EXTENSION IF NOT EXISTS plpython3u; /* "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
+        init_sql: |
+            CREATE EXTENSION IF NOT EXISTS plpython3u;
 
             CREATE OR REPLACE FUNCTION get_psutil_cpu(
             	OUT cpu_utilization float8, OUT load_1m_norm float8, OUT load_1m float8, OUT load_5m_norm float8, OUT load_5m float8,
@@ -1193,6 +1310,11 @@ metrics:
             - '*'
         is_instance_level: true
     psutil_disk:
+        description: >
+            This metric requires the "psutil" Python package to be installed on the PostgreSQL server.
+            It provides disk usage statistics using the "psutil" library.
+            "psutil" is known to behave differently depending on the used version and operating system, so if getting
+            errors please adjust to your needs. "psutil" documentation here: https://psutil.readthedocs.io/en/latest/
         sqls:
             11: |
                 select /* pgwatch_generated */
@@ -1203,8 +1325,7 @@ metrics:
                 from
                   get_psutil_disk()
         init_sql: |-
-            /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
-            CREATE EXTENSION IF NOT EXISTS plpython3u; /* "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
+            CREATE EXTENSION IF NOT EXISTS plpython3u; 
 
             CREATE OR REPLACE FUNCTION get_psutil_disk(
             	OUT dir_or_tablespace text, OUT path text, OUT total float8, OUT used float8, OUT free float8, OUT percent float8
@@ -1268,6 +1389,11 @@ metrics:
             - '*'
         is_instance_level: true
     psutil_disk_io_total:
+        description: >
+            This metric requires the "psutil" Python package to be installed on the PostgreSQL server.
+            It provides total disk I/O statistics using the "psutil" library.
+            "psutil" is known to behave differently depending on the used version and operating system, so if getting
+            errors please adjust to your needs. "psutil" documentation here: https://psutil.readthedocs.io/en/latest/
         sqls:
             11: |
                 select /* pgwatch_generated */
@@ -1279,8 +1405,7 @@ metrics:
                 from
                   get_psutil_disk_io_total()
         init_sql: |-
-            /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
-            CREATE EXTENSION IF NOT EXISTS plpython3u; /* "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
+            CREATE EXTENSION IF NOT EXISTS plpython3u; 
 
             CREATE OR REPLACE FUNCTION get_psutil_disk_io_total(
             	OUT read_count float8, OUT write_count float8, OUT read_bytes float8, OUT write_bytes float8
@@ -1299,6 +1424,11 @@ metrics:
             COMMENT ON FUNCTION get_psutil_disk_io_total() IS 'created for pgwatch';
         is_instance_level: true
     psutil_mem:
+        description: >
+            This metric requires the "psutil" Python package to be installed on the PostgreSQL server.
+            It provides memory usage statistics using the "psutil" library.
+            "psutil" is known to behave differently depending on the used version and operating system, so if getting
+            errors please adjust to your needs. "psutil" documentation here: https://psutil.readthedocs.io/en/latest/
         sqls:
             11: |
                 select /* pgwatch_generated */
@@ -1308,7 +1438,6 @@ metrics:
                 from
                   get_psutil_mem()
         init_sql: |-
-            /* Pre-requisites: PL/Pythonu and "psutil" Python package (e.g. pip install psutil) */
             CREATE EXTENSION IF NOT EXISTS plpython3u; /* "plpython3u" might need changing to "plpythonu" (Python 2 everywhere for new OS-es */
 
             CREATE OR REPLACE FUNCTION get_psutil_mem(
@@ -1329,9 +1458,12 @@ metrics:
             - '*'
         is_instance_level: true
     reco_add_index:
+        description: >
+            Retrieves recommendations for creating indexes based on the `pg_qualstats_index_advisor()` function.
+            It provides insights into potential index creation opportunities to improve query performance.
+            This metric helps administrators optimize database performance by suggesting index creation.
         sqls:
             11: |-
-                /* assumes the pg_qualstats extension and superuser or select grant on pg_qualstats_index_advisor() function */
                 select /* pgwatch_generated */
                   epoch_ns,
                   tag_reco_topic,
@@ -1354,6 +1486,9 @@ metrics:
         node_status: primary
         is_private: true
     reco_default_public_schema:
+        description: >
+            Retrieves recommendations for revoking the CREATE privilege on the public schema from PUBLIC.
+            This metric helps enhance security by ensuring that only authorized users can create new objects in the public schema.
         sqls:
             11: |
                 select /* pgwatch_generated */
@@ -1369,6 +1504,10 @@ metrics:
                   and nspacl::text ~ E'[,\\{]+=U?C/'
         node_status: primary
     reco_disabled_triggers:
+        description: >
+            Retrieves recommendations for reviewing and potentially dropping disabled triggers in the PostgreSQL database.
+            It provides insights into triggers that are currently disabled, helping administrators identify and manage unused or unnecessary triggers.
+            This metric helps maintain database performance and reduce clutter by suggesting the removal of unused triggers.
         sqls:
             11: |
                 /* "temporarily" disabled triggers might be forgotten about... */
@@ -1388,6 +1527,10 @@ metrics:
                     tgenabled = 'D'
         node_status: primary
     reco_drop_index:
+        description: >
+            Retrieves recommendations for dropping unused or invalid indexes in the PostgreSQL database.
+            It provides insights into indexes that have not been scanned and are consuming a significant portion of the database size.
+            This metric helps administrators optimize database performance by suggesting the removal of unnecessary indexes.
         sqls:
             11: |
                 /* assumes the pg_qualstats extension */
@@ -1415,6 +1558,10 @@ metrics:
                   and not schemaname like '_timescaledb%'
         node_status: primary
     reco_nested_views:
+        description: >
+            Retrieves recommendations for overly nested views in the PostgreSQL database.
+            It identifies views that depend on other views and have a nesting depth greater than 3.
+            This metric helps administrators optimize query performance by suggesting the reduction of view nesting.
         sqls:
             11: |-
                 WITH RECURSIVE views AS (
@@ -1468,6 +1615,10 @@ metrics:
                 ORDER BY max(level) DESC, full_name::text
         node_status: primary
     reco_partial_index_candidates:
+        description: >
+            Retrieves recommendations for creating partial indexes on columns with a high fraction of NULL values.
+            It identifies single-column indexes that could potentially be declared as partial indexes, leaving out NULL values.
+            This metric helps optimize index usage and improve query performance by suggesting the creation of partial indexes.
         sqls:
             11: |
                 select distinct /* pgwatch_generated */
@@ -1496,6 +1647,10 @@ metrics:
                       select * from pg_inherits where inhrelid = c.oid
                     )
     reco_sprocs_wo_search_path:
+        description: >
+            Retrieves recommendations for stored procedures that do not have a fixed `search_path` set.
+            It identifies stored procedures that could potentially be abused by malicious users if used objects are not fully qualified.
+            This metric helps enhance security by suggesting the setting of a fixed search_path for stored procedures.
         sqls:
             11: |-
                 with q_sprocs as (
@@ -1520,11 +1675,12 @@ metrics:
                    tag_object_name, extra_info
         node_status: primary
     reco_superusers:
+        description: >
+            Retrieves recommendations for reviewing the number of superusers in the PostgreSQL database.
+            It identifies if there are too many superusers, which can pose a security risk.
+            This metric helps maintain database security by suggesting a review of superuser accounts.
         sqls:
             11: |
-                /* reco_* metrics have special handling - all results are stored actually under one 'recommendations' metric  and
-                 following text columns are expected:  reco_topic, object_name, recommendation, extra_info.
-                */
                 with q_su as (
                   select count(*) from pg_roles where rolcanlogin and rolsuper
                 ),
@@ -1543,10 +1699,18 @@ metrics:
                   q_su.count >= 10
         node_status: primary
     recommendations:
+        description: >
+            When enabled, this metric will find all other metrics starting with `reco_*` and execute those queries.
+            The metric targets performance, security, and other "best practices" violations.
+            Users can add new `reco_*` queries freely.
         init_sql: CREATE EXTENSION IF NOT EXISTS pg_qualstats;
         sqls:
             11: /* dummy placeholder - special handling in code to collect other metrics named reco_* */
     replication:
+        description: >
+            This metric collects replication statistics from the `pg_stat_replication` view.
+            It provides insights into the status of replication connections, including lag times and states.
+            This metric is useful for monitoring replication health and performance.
         sqls:
             11: |
                 select /* pgwatch_generated */
@@ -1573,6 +1737,10 @@ metrics:
             - '*'
         is_instance_level: true
     replication_slot_stats:
+        description: >
+            This metric collects statistics from the `pg_stat_replication_slots` view.
+            It provides insights into the status of replication slots, including transaction counts and byte usage.
+            This metric is useful for monitoring replication slot health and performance.
         sqls:
             14: |-
                 select /* pgwatch_generated */
@@ -1589,6 +1757,10 @@ metrics:
                 from
                   pg_stat_replication_slots
     replication_slots:
+        description: >
+            This metric collects information about replication slots from the `pg_replication_slots` view.
+            It provides insights into the status of replication slots, including their activity and lag times.
+            This metric is useful for monitoring replication slot health and performance.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -1606,6 +1778,10 @@ metrics:
             - '*'
         is_instance_level: true
     sequence_health:
+        description: >
+            This metric collects health statistics for sequences in the PostgreSQL database.
+            It provides insights into the usage and status of sequences, including maximum usage percentages and counts of sequences that are heavily used.
+            This metric is useful for monitoring sequence health and performance.
         sqls:
             11: |-
                 with q_seq_data as (
@@ -1617,12 +1793,19 @@ metrics:
                     (select count(*) from q_seq_data where not cycle and last_value::numeric / max_value > 0.5) as p50_used_seq_count,
                     (select count(*) from q_seq_data where not cycle and last_value::numeric / max_value > 0.75) as p75_used_seq_count
     server_log_event_counts:
+        description: >
+            This metric enables the Postgres server log "tailing" for errors. It can't be used for remote setups, though,
+            unless the DB logs are somehow mounted or copied over, as real file access is needed!
         sqls:
             11: |-
                 /*
                   Dummy placeholder - special handling in gatherer code for log parsing
                 */
     settings:
+        description: >
+            This metric collects various PostgreSQL server settings and configurations.
+            It provides insights into the server's configuration, including version, memory settings, and other important parameters.
+            This metric is useful for monitoring server settings and ensuring optimal performance.
         sqls:
             11: |
                 with qs as (
@@ -1680,6 +1863,10 @@ metrics:
                   (select setting::float8 from qs where name = 'autovacuum_analyze_scale_factor') as autovacuum_analyze_scale_factor,
                   (select setting::float8 from qs where name = 'autovacuum_analyze_threshold') as autovacuum_analyze_scale_factor
     show_plans_realtime:
+        description: >
+            This metric collects real-time query plans from the `pg_show_plans` extension.
+            It provides insights into the execution plans of currently running queries, helping to identify performance issues and optimize query execution.
+            This metric is useful for monitoring query performance and understanding how queries are executed in real-time.
         sqls:
             11: |
                 /* assumes pg_show_plans extension */
@@ -1709,6 +1896,12 @@ metrics:
                 limit
                   10
     smart_health_per_disk:
+        description: >
+            This metric collects SMART health status for all disk devices using the `smartmontools` utility.
+            It provides insights into the health of disk devices, including their SMART status and return codes.
+            This metric is useful for monitoring disk health and identifying potential issues with disk devices.
+            This helper is always meant to be tested and adjusted to make sure all disk are detected.
+            Most likely smartctl privileges must be escalated to give postgres access: `sudo chmod u+s /usr/local/sbin/smartctl`
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -1720,14 +1913,8 @@ metrics:
         init_sql: |-
             CREATE EXTENSION IF NOT EXISTS plpython3u;
 
-            /*
-              A wrapper around smartmontools to verify disk SMART health for all disk devices. 0 = SMART check PASSED.
-              This helper is always meant to be tested / adjusted to make sure all disk are detected etc.
-              Most likely smartctl privileges must be escalated to give postgres access: sudo chmod u+s /usr/local/sbin/smartctl
-            */
             CREATE OR REPLACE FUNCTION get_smart_health_per_device(OUT device text, OUT retcode int) RETURNS SETOF record AS
             $$
-
             import subprocess
             ret_list = []
 
@@ -1752,6 +1939,10 @@ metrics:
 
             COMMENT ON FUNCTION get_smart_health_per_device() is 'created for pgwatch';
     sproc_hashes:
+        description: >
+            This metric collects hashes of all stored procedures in the database.
+            It provides a way to track changes in stored procedures over time by comparing their hashes.
+            This metric is useful for monitoring stored procedure integrity and detecting changes.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -1766,6 +1957,10 @@ metrics:
                 where
                   not nspname like any(array[E'pg\\_%', 'information_schema'])
     sproc_stats:
+        description: >
+            This metric collects statistics about user-defined functions (stored procedures) in the database.
+            It provides insights into function usage, including call counts and execution times.
+            This metric is useful for monitoring function performance and identifying potential bottlenecks.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -1786,6 +1981,10 @@ metrics:
                 LIMIT
                   300
     stat_activity:
+        description: >
+            This metric collects statistics about currently active queries in the database.
+            It provides insights into the state of active queries, including their duration and blocking status.
+            This metric is useful for monitoring query performance and identifying long-running or blocked queries.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -1800,6 +1999,10 @@ metrics:
                   and now() - s.query_start > '100ms'::interval
                 group by s.query
     stat_activity_realtime:
+        description: >
+            This metric collects real-time statistics about currently active queries in the database.
+            It provides insights into the state of active queries, including their duration and blocking status.
+            This metric is useful for monitoring query performance and identifying long-running or blocked queries in real-time.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -1824,6 +2027,10 @@ metrics:
                   now() - query_start DESC
                 LIMIT 25
     stat_io:
+        description: >
+            This metric collects I/O statistics from the `pg_stat_io` view.
+            It provides insights into read and write operations, including the number of reads, writes, and their associated times.
+            This metric is useful for monitoring I/O performance and identifying potential bottlenecks in disk operations.
         sqls:
             16: |-
                 SELECT /* pgwatch_generated */
@@ -1847,6 +2054,10 @@ metrics:
                    ROLLUP (backend_type)
         is_instance_level: true
     stat_ssl:
+        description: >
+            This metric collects SSL connection statistics from the `pg_stat_ssl` view.
+            It provides insights into the number of SSL connections, including those that are encrypted and those that are not.
+            This metric is useful for monitoring SSL usage and ensuring secure connections in the PostgreSQL database.
         sqls:
             11: |
                 select /* pgwatch_generated */
@@ -1865,6 +2076,10 @@ metrics:
         gauges:
             - '*'
     stat_statements:
+        description: >
+            This metric collects statistics from the `pg_stat_statements` extension.
+            It provides insights into query performance, including execution times, block reads/writes, and user information.
+            This metric is useful for monitoring query performance and identifying slow or resource-intensive queries.
         init_sql: CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
         sqls:
             11: |-
@@ -2437,6 +2652,10 @@ metrics:
                         temp_blks_written DESC
                     LIMIT 100) a) b;
     stat_statements_calls:
+        description: >
+            This metric collects statistics from the `pg_stat_statements` extension, focusing on the number of calls and total execution time.
+            It provides insights into query performance, including execution times and call counts.
+            This metric is useful for monitoring query performance and identifying slow or resource-intensive queries.
         init_sql: CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
         sqls:
             11: |
@@ -2459,6 +2678,11 @@ metrics:
                 where
                   dbid = (select oid from pg_database where datname = current_database())
     stat_statements_no_query_text:
+        description: >
+            This metric collects statistics from the `pg_stat_statements` extension without including the query text.
+            It provides insights into query performance, including execution times, block reads/writes, and user information,
+            while omitting the actual query text for security or privacy reasons.
+            This metric is useful for monitoring query performance without exposing sensitive query details.
         init_sql: CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
         sqls:
             11: |-
@@ -2864,6 +3088,9 @@ metrics:
                 ) a;
         metric_storage_name: stat_statements
     subscription_stats:
+        description: >
+            This metric collects statistics from the `pg_stat_subscription_stats` view, which provides information about the status of logical replication subscriptions.
+            It includes details such as the number of apply and sync errors, which can help in monitoring the health of logical replication.
         sqls:
             15: |-
                 select /* pgwatch_generated */
@@ -2874,9 +3101,11 @@ metrics:
                 from
                   pg_stat_subscription_stats
     table_bloat_approx_stattuple:
+        description: >
+            This metric collects approximate table bloat statistics using the `pgstattuple_approx` function.
+            It provides insights into the amount of free space and dead tuples in tables, which can help in identifying bloat issues.
         sqls:
             11: |-
-                /* accessing pgstattuple_approx directly requires superuser or pg_stat_scan_tables/pg_monitor builtin roles */
                 select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   quote_ident(n.nspname)||'.'||quote_ident(c.relname) as tag_full_table_name,
@@ -2897,6 +3126,9 @@ metrics:
         gauges:
             - '*'
     table_bloat_approx_summary:
+        description: >
+            This metric provides a summary of approximate table bloat statistics, including the total bloat size and percentage for the current database.
+            It aggregates data from multiple tables to give an overview of bloat across the database.
         sqls:
             11: |-
                 /* accessing pgstattuple_approx directly requires superuser or pg_stat_scan_tables/pg_monitor builtin roles or
@@ -2931,6 +3163,9 @@ metrics:
         gauges:
             - '*'
     table_bloat_approx_summary_sql:
+        description: >
+            This metric provides a summary of approximate table bloat statistics, including the total bloat size and percentage for the current database.
+            It aggregates data from multiple tables to give an overview of bloat across the database.
         sqls:
             11: |
                 WITH q_bloat AS (
@@ -3171,6 +3406,10 @@ metrics:
         gauges:
             - '*'
     table_hashes:
+        description: >
+            This metric collects hashes of table definitions to detect changes in the schema.
+            It uses the `pg_catalog.pg_tables` view to gather information about tables and their columns.
+            The hash is computed based on the table schema, name, and column definitions.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -3273,6 +3512,9 @@ metrics:
                 order by
                   table_schema, table_name
     table_io_stats:
+        description: >
+            This metric collects I/O statistics for tables, including heap and index block reads and hits.
+            It provides insights into the performance of table access patterns.
         sqls:
             11: |-
                 select * from (
@@ -3370,6 +3612,9 @@ metrics:
                   coalesce(tidx_blks_hit, 0)
                   desc limit 300
     table_stats:
+        description: >
+            This metric collects statistics about user tables, including size, vacuum status, and transaction freeze age.
+            It provides insights into the health and performance of tables in the database.
         sqls:
             11: |-
                 with recursive
@@ -3655,6 +3900,9 @@ metrics:
             - n_dead_tup
         statement_timeout_seconds: 300
     table_stats_approx:
+        description: >
+            This metric collects approximate statistics about user tables, including size, vacuum status, and transaction freeze age.
+            It provides insights into the health and performance of tables in the database.
         sqls:
             11: |-
                 with recursive /* pgwatch_generated */
@@ -3815,6 +4063,9 @@ metrics:
             - n_dead_tup
         metric_storage_name: table_stats
     unused_indexes:
+        description: >
+            This metric collects information about unused indexes in the database.
+            It helps identify indexes that are not being used and can potentially be dropped to improve performance.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -3839,6 +4090,9 @@ metrics:
                 order by index_size_b desc
                 limit 25
     vmstat:
+        description: >
+            This metric collects system-level statistics using the `vmstat` command.
+            It provides insights into memory usage, CPU load, and other system metrics.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -3847,14 +4101,7 @@ metrics:
                 from
                     get_vmstat()
         init_sql: |-
-            /*
-              vmstat + some extra infos like CPU count, 1m/5m/15m load avg. and total memory
-              Memory and disk info returned in bytes!
-            */
-
-            CREATE EXTENSION IF NOT EXISTS plpython3u; /* "plpython3u" might need changing to "plpythonu" (Python 2) everywhere for older OS-es */
-
-            -- DROP FUNCTION get_vmstat(int);
+            CREATE EXTENSION IF NOT EXISTS plpython3u; 
 
             CREATE OR REPLACE FUNCTION get_vmstat(
                 IN delay int default 1,
@@ -3894,6 +4141,9 @@ metrics:
             GRANT EXECUTE ON FUNCTION get_vmstat(int) TO pgwatch;
             COMMENT ON FUNCTION get_vmstat(int) IS 'created for pgwatch';
     wait_events:
+        description: >
+            This metric collects information about active queries that are waiting for events in the database.
+            It provides insights into query performance and potential bottlenecks.
         sqls:
             11: |-
                 with q_sa as (
@@ -3916,6 +4166,9 @@ metrics:
                 group by
                   1, 2, 3
     wal:
+        description: >
+            This metric collects information about the Write-Ahead Logging (WAL) system in PostgreSQL.
+            It provides insights into WAL activity, including the current WAL location, replay lag, and other related metrics.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -3940,6 +4193,9 @@ metrics:
             - '*'
         is_instance_level: true
     wal_receiver:
+        description: >
+            This metric collects information about the WAL receiver process in PostgreSQL.
+            It provides insights into the status of the WAL receiver, including replay lag and last replay timestamp.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -3951,6 +4207,9 @@ metrics:
             - '*'
         is_instance_level: true
     wal_size:
+        description: >
+            This metric collects the size of the Write-Ahead Log (WAL) directory in PostgreSQL.
+            It provides insights into the total size of WAL files currently stored in the database.
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -3961,6 +4220,9 @@ metrics:
             - '*'
         is_instance_level: true
     wal_stats:
+        description: >
+            This metric collects statistics about the Write-Ahead Logging (WAL) system in PostgreSQL.
+            It provides insights into WAL activity, including the number of records, full page images, and write/sync times.
         sqls:
             14: |-
                 select /* pgwatch_generated */
@@ -4057,6 +4319,7 @@ presets:
     basic:
         description: only the most important metrics - WAL, DB-level statistics (size, tx and backend counts)
         metrics:
+            instance_up: 60
             db_size: 300
             db_stats: 60
             wal: 60
@@ -4072,6 +4335,7 @@ presets:
             db_size: 300
             db_stats: 60
             index_stats: 900
+            instance_up: 60
             locks: 60
             locks_mode: 60
             replication: 120
@@ -4154,36 +4418,20 @@ presets:
     minimal:
         description: single "Key Performance Indicators" query for fast cluster/db overview
         metrics:
+            instance_up: 60
             kpi: 60
     pgbouncer:
-        description: per DB stats
+        description: pgbouncer stats
         metrics:
             pgbouncer_stats: 60
             pgbouncer_clients: 60
     pgpool:
-        description: pool global stats
+        description: pgpool stats
         metrics:
             pgpool_stats: 60
             pgpool_processes: 60
-    prometheus:
-        description: similar to "exhaustive" but without some possibly longer-running metrics and those keeping state
-        metrics:
-            archiver: 1
-            backends: 1
-            bgwriter: 1
-            cpu_load: 1
-            db_size: 1
-            db_stats: 1
-            locks_mode: 1
-            replication: 1
-            replication_slots: 1
-            sproc_stats: 1
-            stat_statements_calls: 1
-            table_stats: 1
-            wal: 1
-            wal_receiver: 1
     prometheus-async:
-        description: tuned for the new async (background collection) Prom feature. Prom tolerates max. 10min time lag, so intervals should be smaller than 600
+        description: Tuned for the Prometheus async scrapping
         metrics:
             backends: 30
             bgwriter: 60
@@ -4233,12 +4481,13 @@ presets:
             db_size: 300
             db_stats: 60
             index_stats: 900
+            instance_up: 60
             sequence_health: 3600
             sproc_stats: 180
             stat_statements: 180
             table_stats: 300
             wal: 60
-    superuser_no_python:
+    exhaustive_no_python:
         description: like exhaustive, but no PL/Python helpers
         metrics:
             archiver: 60
@@ -4249,6 +4498,7 @@ presets:
             db_size: 300
             db_stats: 60
             index_stats: 900
+            instance_up: 60
             locks: 60
             locks_mode: 60
             replication: 120
@@ -4275,6 +4525,7 @@ presets:
             db_size: 300
             db_stats: 60
             index_stats: 900
+            instance_up: 60
             locks: 60
             locks_mode: 60
             replication: 120

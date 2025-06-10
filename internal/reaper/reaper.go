@@ -349,7 +349,6 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 							detectedChangesSummary = append(detectedChangesSummary, entry)
 							r.measurementCh <- metrics.MeasurementEnvelope{
 								DBName:     md.Name,
-								SourceType: string(md.Kind),
 								MetricName: "object_changes",
 								Data:       detectedChangesSummary,
 								CustomTags: metricStoreMessages.CustomTags,
@@ -468,60 +467,39 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 	if metric.IsInstanceLevel && r.Metrics.InstanceLevelCacheMaxSeconds > 0 && time.Second*time.Duration(md.GetMetricInterval(metricName)) < r.Metrics.CacheAge() {
 		cacheKey = fmt.Sprintf("%s:%s", md.GetClusterIdentifier(), metricName)
 	}
-	if data = r.measurementCache.Get(cacheKey, r.Metrics.CacheAge()); len(data) > 0 {
-		fromCache = true
-		goto send_to_storageChannel
-	}
-
-	sql = metric.GetSQL(md.Version)
-	if sql == "" && !(metricName == specialMetricChangeEvents || metricName == recoMetricName) {
-		l.Warning("Ignoring fetching because of empty SQL")
-		return nil, nil
-	}
-
-	if (metric.PrimaryOnly() && md.IsInRecovery) || (metric.StandbyOnly() && !md.IsInRecovery) {
-		l.Debug("Skipping fetching of as server in wrong IsInRecovery: ", md.IsInRecovery)
-		return nil, nil
-	}
-
-	switch metricName {
-	case specialMetricChangeEvents:
-		r.CheckForPGObjectChangesAndStore(ctx, md.Name, md, hostState) // TODO no hostState for Prometheus currently
-		return nil, nil
-	case recoMetricName:
-		if data, err = GetRecommendations(ctx, md); err != nil {
+	data = r.measurementCache.Get(cacheKey, r.Metrics.CacheAge())
+	fromCache = len(data) > 0
+	if !fromCache {
+		if (metric.PrimaryOnly() && md.IsInRecovery) || (metric.StandbyOnly() && !md.IsInRecovery) {
+			l.Debug("Skipping fetching of as server in wrong IsInRecovery: ", md.IsInRecovery)
+			return nil, nil
+		}
+		switch metricName {
+		case specialMetricChangeEvents:
+			r.CheckForPGObjectChangesAndStore(ctx, md.Name, md, hostState)
+			return nil, nil
+		case recoMetricName:
+			data, err = GetRecommendations(ctx, md)
+		case specialMetricInstanceUp:
+			data, err = r.GetInstanceUpMeasurement(ctx, md)
+		default:
+			sql = metric.GetSQL(md.Version)
+			if sql == "" && !(metricName == specialMetricChangeEvents || metricName == recoMetricName) {
+				l.Warning("Ignoring fetching because of empty SQL")
+				return nil, nil
+			}
+			data, err = QueryMeasurements(ctx, md, sql)
+		}
+		if err != nil {
 			return nil, err
 		}
-	default:
-		if data, err = QueryMeasurements(ctx, md, sql); err != nil {
-			// let's soften errors to "info" from functions that expect the server to be a primary to reduce noise
-			if strings.Contains(err.Error(), "recovery is in progress") && md.IsInRecovery {
-				l.Debugf("[%s:%s] failed to fetch metrics: %s", md.Name, metricName, err)
-				return nil, err
-			}
-			if metricName == specialMetricInstanceUp {
-				l.WithError(err).Debugf("[%s:%s] failed to fetch metrics. marking instance as not up", md.Name, metricName)
-				data = make(metrics.Measurements, 1)
-				data[0] = metrics.NewMeasurement(time.Now().UnixNano())
-				data[0]["is_up"] = 0 // should be updated if the "instance_up" metric definition is changed
-				goto send_to_storageChannel
-			}
-			l.WithError(err).Error("failed to fetch metrics")
-
-			return nil, err
-		}
+		r.measurementCache.Put(cacheKey, data)
 	}
-	r.measurementCache.Put(cacheKey, data)
-
-send_to_storageChannel:
 	r.AddSysinfoToMeasurements(data, md)
 	l.WithField("cache", fromCache).WithField("rows", len(data)).Info("measurements fetched")
 	return &metrics.MeasurementEnvelope{
-		DBName:           md.Name,
-		MetricName:       cmp.Or(metric.StorageName, metricName),
-		Data:             data,
-		CustomTags:       md.CustomTags,
-		MetricDef:        metric,
-		RealDbname:       md.RealDbname,
-		SystemIdentifier: md.SystemIdentifier}, nil
+		DBName:     md.Name,
+		MetricName: cmp.Or(metric.StorageName, metricName),
+		Data:       data,
+		CustomTags: md.CustomTags}, nil
 }
