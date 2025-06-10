@@ -168,7 +168,6 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 	}
 	t1 := time.Now()
 	for dbname, metricsMessages := range promAsyncMetricCache {
-		promw.setInstanceUpDownState(ch, dbname)
 		for metric, metricMessages := range metricsMessages {
 			if metric == "change_events" {
 				continue // not supported
@@ -187,27 +186,6 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 	ch <- promw.totalScrapeFailures
 	promw.lastScrapeErrors.Set(lastScrapeErrors)
 	ch <- promw.lastScrapeErrors
-}
-
-func (promw *PrometheusWriter) setInstanceUpDownState(ch chan<- prometheus.Metric, dbName string) {
-	data := metrics.NewMeasurement(time.Now().UnixNano())
-	data[promInstanceUpStateMetric] = 1
-
-	pm := promw.MetricStoreMessageToPromMetrics(metrics.MeasurementEnvelope{
-		DBName:           dbName,
-		SourceType:       "postgres",
-		MetricName:       promInstanceUpStateMetric,
-		CustomTags:       nil, //md.CustomTags,
-		Data:             metrics.Measurements{data},
-		RealDbname:       dbName, //vme.RealDbname,
-		SystemIdentifier: dbName, //vme.SystemIdentifier,
-	})
-
-	if len(pm) > 0 {
-		ch <- pm[0]
-	} else {
-		promw.logger.Error("Could not formulate an instance state report - should not happen")
-	}
 }
 
 func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.MeasurementEnvelope) []prometheus.Metric {
