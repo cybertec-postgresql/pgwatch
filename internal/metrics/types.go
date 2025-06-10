@@ -147,8 +147,7 @@ func (m Measurements) Touch() {
 }
 
 type MeasurementEnvelope struct {
-	DBName string
-	// SourceType string
+	DBName     string
 	MetricName string
 	CustomTags map[string]string
 	Data       Measurements

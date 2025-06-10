@@ -265,14 +265,3 @@ func (mds SourceConns) GetMonitoredDatabase(DBUniqueName string) *SourceConn {
 	}
 	return nil
 }
-
-// SyncFromReader will update the monitored databases with the latest configuration from the reader.
-// Any resolution errors will be returned, e.g. etcd unavailability.
-// It's up to the caller to proceed with the databases available or stop the execution due to errors.
-func (mds SourceConns) SyncFromReader(r Reader) (newmds SourceConns, err error) {
-	srcs, err := r.GetSources()
-	if err != nil {
-		return nil, err
-	}
-	return srcs.ResolveDatabases()
-}
