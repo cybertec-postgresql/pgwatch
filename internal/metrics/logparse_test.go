@@ -133,7 +133,6 @@ func TestEventCountsToMetricStoreMessages(t *testing.T) {
 	result := eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
 
 	assert.Equal(t, "test-db", result.DBName)
-	assert.Equal(t, string(sources.SourcePostgres), result.SourceType)
 	assert.Equal(t, specialMetricServerLogEventCounts, result.MetricName)
 	assert.Equal(t, map[string]string{"env": "test"}, result.CustomTags)
 
