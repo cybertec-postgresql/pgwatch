@@ -18,7 +18,10 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+<<<<<<< HEAD
   "id": 23,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
   "links": [],
   "panels": [
     {
@@ -39,7 +42,10 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+<<<<<<< HEAD
             "barWidthFactor": 0.6,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -72,7 +78,12 @@
             "mode": "absolute",
             "steps": [
               {
+<<<<<<< HEAD
                 "color": "green"
+=======
+                "color": "green",
+                "value": null
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
               },
               {
                 "color": "red",
@@ -91,6 +102,10 @@
         "y": 0
       },
       "id": 12,
+<<<<<<< HEAD
+=======
+      "interval": "",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {
         "legend": {
           "calcs": [
@@ -101,12 +116,19 @@
           "showLegend": true
         },
         "tooltip": {
+<<<<<<< HEAD
           "hideZeros": false,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
           "mode": "multi",
           "sort": "desc"
         }
       },
+<<<<<<< HEAD
       "pluginVersion": "12.0.0",
+=======
+      "pluginVersion": "10.4.1",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "targets": [
         {
           "datasource": {
@@ -191,7 +213,10 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+<<<<<<< HEAD
             "barWidthFactor": 0.6,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -223,7 +248,12 @@
             "mode": "absolute",
             "steps": [
               {
+<<<<<<< HEAD
                 "color": "green"
+=======
+                "color": "green",
+                "value": null
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
               },
               {
                 "color": "red",
@@ -242,6 +272,10 @@
         "y": 8
       },
       "id": 2,
+<<<<<<< HEAD
+=======
+      "interval": "",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {
         "legend": {
           "calcs": [
@@ -252,12 +286,19 @@
           "showLegend": true
         },
         "tooltip": {
+<<<<<<< HEAD
           "hideZeros": false,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
           "mode": "multi",
           "sort": "desc"
         }
       },
+<<<<<<< HEAD
       "pluginVersion": "12.0.0",
+=======
+      "pluginVersion": "10.4.1",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "targets": [
         {
           "datasource": {
@@ -342,7 +383,10 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+<<<<<<< HEAD
             "barWidthFactor": 0.6,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -374,7 +418,12 @@
             "mode": "absolute",
             "steps": [
               {
+<<<<<<< HEAD
                 "color": "green"
+=======
+                "color": "green",
+                "value": null
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
               },
               {
                 "color": "red",
@@ -393,6 +442,10 @@
         "y": 16
       },
       "id": 3,
+<<<<<<< HEAD
+=======
+      "interval": "",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {
         "legend": {
           "calcs": [
@@ -403,12 +456,19 @@
           "showLegend": true
         },
         "tooltip": {
+<<<<<<< HEAD
           "hideZeros": false,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
           "mode": "multi",
           "sort": "desc"
         }
       },
+<<<<<<< HEAD
       "pluginVersion": "12.0.0",
+=======
+      "pluginVersion": "10.4.1",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "targets": [
         {
           "datasource": {
@@ -494,7 +554,10 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+<<<<<<< HEAD
             "barWidthFactor": 0.6,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -526,7 +589,12 @@
             "mode": "absolute",
             "steps": [
               {
+<<<<<<< HEAD
                 "color": "green"
+=======
+                "color": "green",
+                "value": null
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
               },
               {
                 "color": "red",
@@ -545,6 +613,10 @@
         "y": 24
       },
       "id": 4,
+<<<<<<< HEAD
+=======
+      "interval": "",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {
         "legend": {
           "calcs": [
@@ -555,12 +627,19 @@
           "showLegend": true
         },
         "tooltip": {
+<<<<<<< HEAD
           "hideZeros": false,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
           "mode": "multi",
           "sort": "desc"
         }
       },
+<<<<<<< HEAD
       "pluginVersion": "12.0.0",
+=======
+      "pluginVersion": "10.4.1",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "targets": [
         {
           "datasource": {
@@ -646,7 +725,10 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+<<<<<<< HEAD
             "barWidthFactor": 0.6,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -678,7 +760,12 @@
             "mode": "absolute",
             "steps": [
               {
+<<<<<<< HEAD
                 "color": "green"
+=======
+                "color": "green",
+                "value": null
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
               },
               {
                 "color": "red",
@@ -697,6 +784,10 @@
         "y": 32
       },
       "id": 5,
+<<<<<<< HEAD
+=======
+      "interval": "",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {
         "legend": {
           "calcs": [
@@ -707,12 +798,19 @@
           "showLegend": true
         },
         "tooltip": {
+<<<<<<< HEAD
           "hideZeros": false,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
           "mode": "multi",
           "sort": "desc"
         }
       },
+<<<<<<< HEAD
       "pluginVersion": "12.0.0",
+=======
+      "pluginVersion": "10.4.1",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "targets": [
         {
           "datasource": {
@@ -798,7 +896,10 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+<<<<<<< HEAD
             "barWidthFactor": 0.6,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -831,7 +932,12 @@
             "mode": "absolute",
             "steps": [
               {
+<<<<<<< HEAD
                 "color": "green"
+=======
+                "color": "green",
+                "value": null
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
               },
               {
                 "color": "red",
@@ -850,6 +956,10 @@
         "y": 40
       },
       "id": 6,
+<<<<<<< HEAD
+=======
+      "interval": "",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {
         "legend": {
           "calcs": [
@@ -860,12 +970,19 @@
           "showLegend": true
         },
         "tooltip": {
+<<<<<<< HEAD
           "hideZeros": false,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
           "mode": "multi",
           "sort": "desc"
         }
       },
+<<<<<<< HEAD
       "pluginVersion": "12.0.0",
+=======
+      "pluginVersion": "10.4.1",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "targets": [
         {
           "datasource": {
@@ -951,7 +1068,10 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+<<<<<<< HEAD
             "barWidthFactor": 0.6,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -984,7 +1104,12 @@
             "mode": "absolute",
             "steps": [
               {
+<<<<<<< HEAD
                 "color": "green"
+=======
+                "color": "green",
+                "value": null
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
               },
               {
                 "color": "red",
@@ -1003,6 +1128,10 @@
         "y": 48
       },
       "id": 7,
+<<<<<<< HEAD
+=======
+      "interval": "",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {
         "legend": {
           "calcs": [
@@ -1013,12 +1142,19 @@
           "showLegend": true
         },
         "tooltip": {
+<<<<<<< HEAD
           "hideZeros": false,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
           "mode": "multi",
           "sort": "desc"
         }
       },
+<<<<<<< HEAD
       "pluginVersion": "12.0.0",
+=======
+      "pluginVersion": "10.4.1",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "targets": [
         {
           "datasource": {
@@ -1104,7 +1240,10 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+<<<<<<< HEAD
             "barWidthFactor": 0.6,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1137,7 +1276,12 @@
             "mode": "absolute",
             "steps": [
               {
+<<<<<<< HEAD
                 "color": "green"
+=======
+                "color": "green",
+                "value": null
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
               },
               {
                 "color": "red",
@@ -1156,6 +1300,10 @@
         "y": 56
       },
       "id": 8,
+<<<<<<< HEAD
+=======
+      "interval": "",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {
         "legend": {
           "calcs": [
@@ -1166,12 +1314,19 @@
           "showLegend": true
         },
         "tooltip": {
+<<<<<<< HEAD
           "hideZeros": false,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
           "mode": "multi",
           "sort": "desc"
         }
       },
+<<<<<<< HEAD
       "pluginVersion": "12.0.0",
+=======
+      "pluginVersion": "10.4.1",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "targets": [
         {
           "datasource": {
@@ -1257,7 +1412,10 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+<<<<<<< HEAD
             "barWidthFactor": 0.6,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1290,7 +1448,12 @@
             "mode": "absolute",
             "steps": [
               {
+<<<<<<< HEAD
                 "color": "green"
+=======
+                "color": "green",
+                "value": null
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
               },
               {
                 "color": "red",
@@ -1309,6 +1472,10 @@
         "y": 64
       },
       "id": 9,
+<<<<<<< HEAD
+=======
+      "interval": "",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {
         "legend": {
           "calcs": [
@@ -1319,12 +1486,19 @@
           "showLegend": true
         },
         "tooltip": {
+<<<<<<< HEAD
           "hideZeros": false,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
           "mode": "multi",
           "sort": "desc"
         }
       },
+<<<<<<< HEAD
       "pluginVersion": "12.0.0",
+=======
+      "pluginVersion": "10.4.1",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "targets": [
         {
           "datasource": {
@@ -1410,7 +1584,10 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+<<<<<<< HEAD
             "barWidthFactor": 0.6,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1443,7 +1620,12 @@
             "mode": "absolute",
             "steps": [
               {
+<<<<<<< HEAD
                 "color": "green"
+=======
+                "color": "green",
+                "value": null
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
               },
               {
                 "color": "red",
@@ -1462,6 +1644,10 @@
         "y": 72
       },
       "id": 10,
+<<<<<<< HEAD
+=======
+      "interval": "",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {
         "legend": {
           "calcs": [
@@ -1472,12 +1658,19 @@
           "showLegend": true
         },
         "tooltip": {
+<<<<<<< HEAD
           "hideZeros": false,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
           "mode": "multi",
           "sort": "desc"
         }
       },
+<<<<<<< HEAD
       "pluginVersion": "12.0.0",
+=======
+      "pluginVersion": "10.4.1",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "targets": [
         {
           "datasource": {
@@ -1563,7 +1756,10 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+<<<<<<< HEAD
             "barWidthFactor": 0.6,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1595,7 +1791,12 @@
             "mode": "absolute",
             "steps": [
               {
+<<<<<<< HEAD
                 "color": "green"
+=======
+                "color": "green",
+                "value": null
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
               },
               {
                 "color": "red",
@@ -1614,6 +1815,10 @@
         "y": 80
       },
       "id": 11,
+<<<<<<< HEAD
+=======
+      "interval": "",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {
         "legend": {
           "calcs": [
@@ -1624,12 +1829,19 @@
           "showLegend": true
         },
         "tooltip": {
+<<<<<<< HEAD
           "hideZeros": false,
+=======
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
           "mode": "multi",
           "sort": "desc"
         }
       },
+<<<<<<< HEAD
       "pluginVersion": "12.0.0",
+=======
+      "pluginVersion": "10.4.1",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "targets": [
         {
           "datasource": {
@@ -1698,9 +1910,15 @@
       "type": "timeseries"
     },
     {
+<<<<<<< HEAD
       "fieldConfig": {
         "defaults": {},
         "overrides": []
+=======
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       },
       "gridPos": {
         "h": 8,
@@ -1715,18 +1933,38 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
+<<<<<<< HEAD
         "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
         "mode": "markdown"
       },
       "pluginVersion": "12.0.0",
       "title": "",
+=======
+        "content": "<h2>Brought to you by</h2><div style=\"padding: 25px;\"><a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\"></a></div>",
+        "mode": "html"
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "refId": "A"
+        }
+      ],
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "transparent": true,
       "type": "text"
     }
   ],
+<<<<<<< HEAD
   "preload": false,
   "refresh": "",
   "schemaVersion": 41,
+=======
+  "schemaVersion": 39,
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
   "tags": [
     "pgwatch"
   ],
@@ -1734,30 +1972,60 @@
     "list": [
       {
         "current": {
+<<<<<<< HEAD
           "text": "demo",
           "value": "demo"
+=======
+          "isNone": true,
+          "selected": false,
+          "text": "None",
+          "value": ""
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
         },
         "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics ORDER BY 1;",
+<<<<<<< HEAD
         "includeAll": false,
+=======
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
         "name": "dbname",
         "options": [],
         "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics ORDER BY 1;",
         "refresh": 1,
         "regex": "",
+<<<<<<< HEAD
         "type": "query"
+=======
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       },
       {
         "auto": false,
         "auto_count": 30,
         "auto_min": "10s",
         "current": {
+<<<<<<< HEAD
           "text": "10m",
           "value": "10m"
         },
+=======
+          "selected": false,
+          "text": "10m",
+          "value": "10m"
+        },
+        "hide": 0,
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
         "name": "agg_interval",
         "options": [
           {
@@ -1813,6 +2081,10 @@
         ],
         "query": "1s,1m,5m,10m,15m,30m,1h,6h,12h,1d",
         "refresh": 2,
+<<<<<<< HEAD
+=======
+        "skipUrlSync": false,
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
         "type": "interval"
       },
       {
@@ -1820,9 +2092,17 @@
         "auto_count": 30,
         "auto_min": "10s",
         "current": {
+<<<<<<< HEAD
           "text": "1d",
           "value": "1d"
         },
+=======
+          "selected": false,
+          "text": "1d",
+          "value": "1d"
+        },
+        "hide": 0,
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
         "name": "lag_interval",
         "options": [
           {
@@ -1863,6 +2143,10 @@
         ],
         "query": "1h,6h,12h,1d,7d,14d,30d",
         "refresh": 2,
+<<<<<<< HEAD
+=======
+        "skipUrlSync": false,
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
         "type": "interval"
       }
     ]
@@ -1871,9 +2155,31 @@
     "from": "now-6h",
     "to": "now"
   },
+<<<<<<< HEAD
   "timepicker": {},
   "timezone": "",
   "title": "DB overview time lag comparison",
   "uid": "db-overview-time-lag",
   "version": 1
+=======
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "DB overview time lag comparison",
+  "uid": "db-overview-time-lag",
+  "version": 1,
+  "weekStart": ""
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
 }

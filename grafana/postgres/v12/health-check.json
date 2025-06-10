@@ -4967,7 +4967,11 @@
       "valueName": "current"
     },
     {
+<<<<<<< HEAD
       "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+=======
+      "content": "<h2>Brought to you by</h2><div style=\"padding: 25px;\"><a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\"></a></div>",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "gridPos": {
         "h": 4,
         "w": 12,
@@ -4976,14 +4980,22 @@
       },
       "id": 12,
       "links": [],
+<<<<<<< HEAD
       "mode": "markdown",
+=======
+      "mode": "html",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {},
       "title": "",
       "transparent": true,
       "type": "text"
     },
     {
+<<<<<<< HEAD
       "content": "### The preset threshold values (green / yellow / red) should be reviewed / adjusted!",
+=======
+      "content": "<br/><h3>The preset threshold values (green / yellow / red) should be reviewed / adjusted!</h3>",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "gridPos": {
         "h": 4,
         "w": 12,
@@ -4992,7 +5004,11 @@
       },
       "id": 48,
       "links": [],
+<<<<<<< HEAD
       "mode": "markdown",
+=======
+      "mode": "html",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {},
       "title": "",
       "transparent": true,

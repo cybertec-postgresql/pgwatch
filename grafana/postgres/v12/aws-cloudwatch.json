@@ -22,14 +22,14 @@
   "panels": [
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
+        "uid": "aws"
       },
-      "description": "Current \"Transaction Per Second\" based on total_xact_count",
+      "description": "The percentage of CPU utilization.\n\nUnits: Percent",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "fixedColor": "rgb(31, 120, 193)",
+            "mode": "fixed"
           },
           "decimals": 1,
           "mappings": [
@@ -56,23 +56,21 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "none"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 3,
+        "h": 4,
         "w": 4,
         "x": 0,
         "y": 0
       },
-      "hideTimeOverride": true,
       "id": 1,
-      "interval": "2m",
       "maxDataPoints": 100,
       "options": {
-        "colorMode": "value",
-        "graphMode": "none",
+        "colorMode": "none",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "horizontal",
         "reduceOptions": {
@@ -89,293 +87,14 @@
       "pluginVersion": "10.4.1",
       "targets": [
         {
-          "alias": "TPS",
+          "alias": "CPU %",
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
+            "uid": "aws"
           },
-          "format": "time_series",
-          "group": [],
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "none"
-              ],
-              "type": "fill"
-            }
-          ],
-          "measurement": "pgbouncer_stats",
-          "metricColumn": "none",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "",
-          "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_xact_count')::int8 as c, lag((data->>'total_xact_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "total_xact_count"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              },
-              {
-                "params": [
-                  "1s"
-                ],
-                "type": "non_negative_derivative"
-              }
-            ]
-          ],
-          "tags": [
-            {
-              "key": "dbname",
-              "operator": "=~",
-              "value": "/^$dbname$/"
-            }
-          ],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
-        }
-      ],
-      "timeFrom": "15m",
-      "title": "TPS",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
-      },
-      "description": "Current \"Queries Per Second\" based on total_query_count",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
           },
-          "decimals": 1,
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 3,
-        "w": 4,
-        "x": 4,
-        "y": 0
-      },
-      "hideTimeOverride": true,
-      "id": 2,
-      "interval": "2m",
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "alias": "QPS",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
-          },
-          "format": "time_series",
-          "group": [],
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "none"
-              ],
-              "type": "fill"
-            }
-          ],
-          "measurement": "pgbouncer_stats",
-          "metricColumn": "none",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "",
-          "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "total_query_count"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              },
-              {
-                "params": [
-                  "1s"
-                ],
-                "type": "non_negative_derivative"
-              }
-            ]
-          ],
-          "tags": [
-            {
-              "key": "dbname",
-              "operator": "=~",
-              "value": "/^$dbname$/"
-            }
-          ],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
-        }
-      ],
-      "timeFrom": "15m",
-      "title": "QPS",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
-      },
-      "description": "Current value based on derivative of total_query_time /  total_query_count",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 1,
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "µs"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 3,
-        "w": 4,
-        "x": 8,
-        "y": 0
-      },
-      "hideTimeOverride": true,
-      "id": 3,
-      "interval": "2m",
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "alias": "avg_query_runtime",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
-          },
-          "format": "time_series",
-          "group": [],
+          "expression": "",
           "groupBy": [
             {
               "params": [
@@ -390,14 +109,21 @@
               "type": "fill"
             }
           ],
-          "metricColumn": "none",
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "CPUUtilization",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
           "orderByTime": "ASC",
+          "period": "600",
           "policy": "default",
-          "query": "SELECT non_negative_derivative(last(\"total_query_time\"), 1h) / non_negative_derivative(last(\"total_query_count\"), 1h) FROM \"pgbouncer_stats\" WHERE \"dbname\" =~ /^$dbname$/ AND $timeFilter GROUP BY time($__interval) fill(none)",
+          "query": "SELECT non_negative_derivative(mean(\"xact_commit\"), 1s) + non_negative_derivative(mean(\"xact_rollback\"), 1s) FROM \"db_stats\" WHERE \"dbname\" =~ /^$dbname$/ AND  $timeFilter GROUP BY time($interval) fill(none)",
           "rawQuery": true,
-          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag))\n\nfrom (\n\n        select \n          (data->>'total_query_time')::float8 as tt, lag((data->>'total_query_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
           "refId": "A",
+          "region": "$region",
           "resultFormat": "time_series",
+          "returnData": false,
           "select": [
             [
               {
@@ -412,31 +138,150 @@
               }
             ]
           ],
-          "tags": [],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
+          "statistic": "Average",
+          "tags": []
         }
       ],
-      "timeFrom": "15m",
-      "title": "Avg. query runtime",
+      "timeFrom": "6h",
+      "title": "CPU load %",
       "type": "stat"
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
+        "uid": "aws"
       },
-      "description": "Current avg. wait time to get a connection, per query",
+      "description": "The average number of bytes written to disk per second.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "fixedColor": "rgb(31, 120, 193)",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      },
+      "id": 2,
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "alias": "Write bytes/s",
+          "datasource": {
+            "uid": "aws"
+          },
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "groupBy": [
+            {
+              "params": [
+                "$interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "WriteThroughput",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "orderByTime": "ASC",
+          "period": "600",
+          "policy": "default",
+          "query": "SELECT non_negative_derivative(mean(\"calls\"), 1s) FROM \"stat_statements_calls\" WHERE $timeFilter AND \"dbname\" =~ /^$dbname$/ GROUP BY time(1s) fill(none)",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "resultFormat": "time_series",
+          "returnData": false,
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "statistic": "Average",
+          "tags": []
+        }
+      ],
+      "timeFrom": "6h",
+      "title": "Write IO",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "uid": "aws"
+      },
+      "description": "The average number of bytes read from disk per second.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "rgb(31, 120, 193)",
+            "mode": "fixed"
           },
           "decimals": 1,
           "mappings": [
@@ -463,23 +308,21 @@
               }
             ]
           },
-          "unit": "µs"
+          "unit": "Bps"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 3,
+        "h": 4,
         "w": 4,
-        "x": 12,
+        "x": 8,
         "y": 0
       },
-      "hideTimeOverride": true,
       "id": 4,
-      "interval": "2m",
       "maxDataPoints": 100,
       "options": {
-        "colorMode": "value",
-        "graphMode": "none",
+        "colorMode": "none",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "horizontal",
         "reduceOptions": {
@@ -496,13 +339,265 @@
       "pluginVersion": "10.4.1",
       "targets": [
         {
-          "alias": "db_size_change_last_hour",
+          "alias": "Read bytes/s",
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
+            "uid": "aws"
           },
-          "format": "time_series",
-          "group": [],
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "groupBy": [
+            {
+              "params": [
+                "$interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "ReadThroughput",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "orderByTime": "ASC",
+          "period": "600",
+          "policy": "default",
+          "query": "SELECT last(\"size_b\")  - first(\"size_b\") FROM \"db_stats\" WHERE \"dbname\" =~ /^$dbname$/ AND $timeFilter GROUP BY time(1h) fill(none)",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "resultFormat": "time_series",
+          "returnData": false,
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "statistic": "Average",
+          "tags": []
+        }
+      ],
+      "timeFrom": "6h",
+      "title": "Read IO",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "uid": "aws"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "rgb(31, 120, 193)",
+            "mode": "fixed"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "alias": "Connections",
+          "datasource": {
+            "uid": "aws"
+          },
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "groupBy": [
+            {
+              "params": [
+                "$interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "DatabaseConnections",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "orderByTime": "ASC",
+          "period": "600",
+          "policy": "default",
+          "query": "SELECT non_negative_derivative(last(\"total_time\"), 1h) / non_negative_derivative(last(\"calls\"), 1h) FROM \"stat_statements\" WHERE \"dbname\" =~ /^$dbname$/ AND $timeFilter GROUP BY time($interval) fill(none)",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "resultFormat": "time_series",
+          "returnData": false,
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "statistic": "Average",
+          "tags": []
+        }
+      ],
+      "timeFrom": "6h",
+      "title": "Connections",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "uid": "aws"
+      },
+      "description": "The amount of available random access memory.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "rgb(31, 120, 193)",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "id": 5,
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "alias": "Free mem",
+          "datasource": {
+            "uid": "aws"
+          },
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
           "groupBy": [
             {
               "params": [
@@ -517,205 +612,60 @@
               "type": "fill"
             }
           ],
-          "measurement": "pgbouncer_stats",
-          "metricColumn": "none",
+          "highResolution": false,
+          "id": "",
+          "measurement": "table_bloat_approx_summary",
+          "metricEditorMode": 0,
+          "metricName": "FreeableMemory",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
           "orderByTime": "ASC",
+          "period": "600",
           "policy": "default",
-          "query": "SELECT non_negative_derivative(last(\"total_wait_time\")) / non_negative_derivative(last(\"total_query_count\")) FROM \"pgbouncer_stats\" WHERE \"dbname\" =~ /^$dbname$/ AND $timeFilter GROUP BY time($__interval) fill(none)",
-          "rawQuery": true,
-          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag))\n\nfrom (\n\n        select \n          (data->>'total_wait_time')::float8 as tt, lag((data->>'total_wait_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
+          "query": "SELECT \"load_5\"  FROM \"db_stats\" WHERE \"dbname\" =~ /^$dbname$/ AND $timeFilter GROUP BY time(1h) fill(none)",
+          "rawQuery": false,
           "refId": "A",
+          "region": "$region",
           "resultFormat": "time_series",
+          "returnData": false,
           "select": [
             [
               {
                 "params": [
-                  "total_wait_time"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "last"
-              },
-              {
-                "params": [
-                  "1m"
-                ],
-                "type": "non_negative_derivative"
-              }
-            ]
-          ],
-          "tags": [
-            {
-              "key": "dbname",
-              "operator": "=~",
-              "value": "/^$dbname$/"
-            }
-          ],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
-        }
-      ],
-      "timeFrom": "1h",
-      "title": "Pool wait time",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
-      },
-      "description": "Current Incoming traffic  based on total_received.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 1,
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "Bps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 3,
-        "w": 4,
-        "x": 16,
-        "y": 0
-      },
-      "hideTimeOverride": true,
-      "id": 5,
-      "interval": "2m",
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "alias": "bytes_received",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
-          },
-          "format": "time_series",
-          "group": [],
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "none"
-              ],
-              "type": "fill"
-            }
-          ],
-          "measurement": "pgbouncer_stats",
-          "metricColumn": "none",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_received')::int8 as c, lag((data->>'total_received')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "total_received"
+                  "approx_free_space_b"
                 ],
                 "type": "field"
               },
               {
                 "params": [],
                 "type": "mean"
-              },
-              {
-                "params": [
-                  "1s"
-                ],
-                "type": "non_negative_derivative"
               }
             ]
           ],
+          "statistic": "Average",
           "tags": [
             {
               "key": "dbname",
               "operator": "=~",
               "value": "/^$dbname$/"
             }
-          ],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
           ]
         }
       ],
-      "timeFrom": "15m",
-      "title": "Incoming traffic",
+      "timeFrom": "6h",
+      "title": "Free RAM",
       "type": "stat"
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
+        "uid": "aws"
       },
-      "description": "Based on total_sent",
+      "description": "The amount of available storage space.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "fixedColor": "rgb(31, 120, 193)",
+            "mode": "fixed"
           },
           "decimals": 1,
           "mappings": [
@@ -742,23 +692,21 @@
               }
             ]
           },
-          "unit": "Bps"
+          "unit": "bytes"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 3,
+        "h": 4,
         "w": 4,
         "x": 20,
         "y": 0
       },
-      "hideTimeOverride": true,
       "id": 6,
-      "interval": "2m",
       "maxDataPoints": 100,
       "options": {
-        "colorMode": "value",
-        "graphMode": "none",
+        "colorMode": "none",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "horizontal",
         "reduceOptions": {
@@ -775,16 +723,18 @@
       "pluginVersion": "10.4.1",
       "targets": [
         {
+          "alias": "Free storage",
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
+            "uid": "aws"
           },
-          "format": "time_series",
-          "group": [],
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
           "groupBy": [
             {
               "params": [
-                "$__interval"
+                "$interval"
               ],
               "type": "time"
             },
@@ -795,61 +745,55 @@
               "type": "fill"
             }
           ],
-          "measurement": "pgbouncer_stats",
-          "metricColumn": "none",
+          "highResolution": false,
+          "id": "",
+          "measurement": "cpu_load",
+          "metricEditorMode": 0,
+          "metricName": "FreeStorageSpace",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
           "orderByTime": "ASC",
+          "period": "1800",
           "policy": "default",
-          "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_sent')::int8 as c, lag((data->>'total_sent')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "query": "SELECT \"load_5\"  FROM \"db_stats\" WHERE \"dbname\" =~ /^$dbname$/ AND $timeFilter GROUP BY time(1h) fill(none)",
+          "rawQuery": false,
           "refId": "A",
+          "region": "$region",
           "resultFormat": "time_series",
+          "returnData": false,
           "select": [
             [
               {
                 "params": [
-                  "total_sent"
+                  "load_5min"
                 ],
                 "type": "field"
               },
               {
                 "params": [],
                 "type": "mean"
-              },
-              {
-                "params": [
-                  "1s"
-                ],
-                "type": "non_negative_derivative"
               }
             ]
           ],
+          "statistic": "Average",
           "tags": [
             {
               "key": "dbname",
               "operator": "=~",
               "value": "/^$dbname$/"
             }
-          ],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
           ]
         }
       ],
-      "timeFrom": "15m",
-      "title": "Outgoing traffic",
+      "timeFrom": "6h",
+      "title": "Free disk",
       "type": "stat"
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
+        "uid": "aws"
       },
-      "description": "Based on total_query_count",
+      "description": "Credit balance/usage apply only to T2 instances",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -887,6 +831,7 @@
               "mode": "off"
             }
           },
+          "decimals": 1,
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -902,34 +847,114 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "TPS"
+              "options": "db_stats.mean"
             },
             "properties": [
               {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#584477",
-                  "mode": "fixed"
-                }
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "DB size"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "blk_read_time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "blk_write_time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU credit usage"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU credit balance"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
               }
             ]
           }
         ]
       },
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 12,
         "x": 0,
-        "y": 3
+        "y": 4
       },
       "id": 7,
-      "interval": "2m",
       "options": {
         "legend": {
           "calcs": [
@@ -947,79 +972,75 @@
       "pluginVersion": "10.4.1",
       "targets": [
         {
-          "alias": "TPS",
+          "alias": "CPU load",
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
+            "uid": "aws"
           },
-          "format": "time_series",
-          "group": [],
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "none"
-              ],
-              "type": "fill"
-            }
-          ],
-          "measurement": "pgbouncer_stats",
-          "metricColumn": "none",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"TPS\"\nfrom (\n        select \n          (data->>'total_xact_count')::int8 as c, lag((data->>'total_xact_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "CPUUtilization",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "period": "300",
+          "refId": "B",
+          "region": "$region",
+          "returnData": false,
+          "statistic": "Average"
+        },
+        {
+          "alias": "CPU credit balance",
+          "datasource": {
+            "uid": "aws"
+          },
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "CPUCreditBalance",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "period": "300",
           "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "total_xact_count"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              },
-              {
-                "params": [
-                  "1s"
-                ],
-                "type": "non_negative_derivative"
-              }
-            ]
-          ],
-          "tags": [
-            {
-              "key": "dbname",
-              "operator": "=~",
-              "value": "/^$dbname$/"
-            }
-          ],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
+          "region": "$region",
+          "returnData": false,
+          "statistic": "Average"
+        },
+        {
+          "alias": "CPU credit usage",
+          "datasource": {
+            "uid": "aws"
+          },
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "CPUCreditUsage",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "period": "300",
+          "refId": "C",
+          "region": "$region",
+          "returnData": false,
+          "statistic": "Average"
         }
       ],
-      "title": "TPS",
+      "title": "CPU details",
       "type": "timeseries"
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
+        "uid": "aws"
       },
       "fieldConfig": {
         "defaults": {
@@ -1058,8 +1079,8 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1073,19 +1094,19 @@
               }
             ]
           },
-          "unit": "µs"
+          "unit": "none"
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "Pool wait time"
+              "options": "IO queue depth"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#890f02",
+                  "fixedColor": "#bf1b00",
                   "mode": "fixed"
                 }
               }
@@ -1105,17 +1126,32 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "IO queue depth"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
           }
         ]
       },
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 3
+        "y": 4
       },
       "id": 8,
-      "interval": "2m",
       "options": {
         "legend": {
           "calcs": [
@@ -1133,69 +1169,75 @@
       "pluginVersion": "10.4.1",
       "targets": [
         {
-          "alias": "Pool wait time",
+          "alias": "Write ops/s",
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
+            "uid": "aws"
           },
-          "format": "time_series",
-          "group": [],
-          "groupBy": [
-            {
-              "params": [
-                "$interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "null"
-              ],
-              "type": "fill"
-            }
-          ],
-          "hide": false,
-          "measurement": "db_stats",
-          "metricColumn": "none",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT non_negative_derivative(mean(\"total_wait_time\")) / non_negative_derivative(mean(\"total_query_count\")) FROM \"pgbouncer_stats\" WHERE \"dbname\" =~ /^$dbname$/ AND $timeFilter GROUP BY time($__interval) fill(none)",
-          "rawQuery": true,
-          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag)) as \"Pool wait time\"\n\nfrom (\n\n        select \n          (data->>'total_wait_time')::float8 as tt, lag((data->>'total_wait_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "WriteIOPS",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "period": "300",
           "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "blks_hit"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": [],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
+          "region": "$region",
+          "returnData": false,
+          "statistic": "Average"
+        },
+        {
+          "alias": "Read ops/s",
+          "datasource": {
+            "uid": "aws"
+          },
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "ReadIOPS",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "period": "300",
+          "refId": "B",
+          "region": "$region",
+          "returnData": false,
+          "statistic": "Average"
+        },
+        {
+          "alias": "IO queue depth",
+          "datasource": {
+            "uid": "aws"
+          },
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "DiskQueueDepth",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "period": "300",
+          "refId": "C",
+          "region": "$region",
+          "returnData": false,
+          "statistic": "Average"
         }
       ],
-      "title": "Pool wait time per Query",
+      "title": "IOPS details",
       "type": "timeseries"
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
+        "uid": "aws"
       },
       "fieldConfig": {
         "defaults": {
@@ -1234,6 +1276,7 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1248,7 +1291,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": [
           {
@@ -1280,48 +1323,16 @@
                 }
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "QPS"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#508642",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Temp bytes written"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "Bps"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "hidden"
-              }
-            ]
           }
         ]
       },
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 12,
         "x": 0,
-        "y": 9
+        "y": 11
       },
       "id": 9,
-      "interval": "2m",
       "options": {
         "legend": {
           "calcs": [
@@ -1339,73 +1350,75 @@
       "pluginVersion": "10.4.1",
       "targets": [
         {
-          "alias": "QPS",
+          "alias": "Free disk space",
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
+            "uid": "aws"
           },
-          "format": "time_series",
-          "group": [],
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "none"
-              ],
-              "type": "fill"
-            }
-          ],
-          "measurement": "pgbouncer_stats",
-          "metricColumn": "none",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"QPS\"\nfrom (\n        select \n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "FreeStorageSpace",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "period": "300",
+          "refId": "B",
+          "region": "$region",
+          "returnData": false,
+          "statistic": "Average"
+        },
+        {
+          "alias": "WAL size",
+          "datasource": {
+            "uid": "aws"
+          },
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "TransactionLogsDiskUsage",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "period": "300",
+          "refId": "C",
+          "region": "$region",
+          "returnData": false,
+          "statistic": "Average"
+        },
+        {
+          "alias": "Free RAM",
+          "datasource": {
+            "uid": "aws"
+          },
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "FreeableMemory",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "period": "300",
           "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "total_query_count"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              },
-              {
-                "params": [
-                  "1s"
-                ],
-                "type": "non_negative_derivative"
-              }
-            ]
-          ],
-          "tags": [],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
+          "region": "$region",
+          "returnData": false,
+          "statistic": "Average"
         }
       ],
-      "title": "QPS",
+      "title": "Disk/RAM details",
       "type": "timeseries"
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
+        "uid": "aws"
       },
       "fieldConfig": {
         "defaults": {
@@ -1444,6 +1457,7 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1479,36 +1493,6 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Incoming byterate"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#65c5db",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Incoming rate"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#6ed0e0",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "WAL rate"
             },
             "properties": [
@@ -1524,13 +1508,12 @@
         ]
       },
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 9
+        "y": 11
       },
       "id": 10,
-      "interval": "2m",
       "options": {
         "legend": {
           "calcs": [
@@ -1548,13 +1531,14 @@
       "pluginVersion": "10.4.1",
       "targets": [
         {
-          "alias": "Incoming rate",
+          "alias": "Write bytes/s",
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
+            "uid": "aws"
           },
-          "format": "time_series",
-          "group": [],
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
           "groupBy": [
             {
               "params": [
@@ -1564,59 +1548,155 @@
             },
             {
               "params": [
-                "none"
+                "null"
               ],
               "type": "fill"
             }
           ],
-          "measurement": "pgbouncer_stats",
-          "metricColumn": "none",
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "WriteThroughput",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
           "orderByTime": "ASC",
+          "period": "300",
           "policy": "default",
-          "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"Incoming rate\"\nfrom (\n        select \n          (data->>'total_received')::int8 as c, lag((data->>'total_received')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
+          "region": "$region",
           "resultFormat": "time_series",
+          "returnData": false,
           "select": [
             [
               {
                 "params": [
-                  "total_received"
+                  "value"
                 ],
                 "type": "field"
               },
               {
                 "params": [],
                 "type": "mean"
-              },
-              {
-                "params": [
-                  "1s"
-                ],
-                "type": "non_negative_derivative"
               }
             ]
           ],
-          "tags": [],
-          "timeColumn": "time",
-          "where": [
+          "statistic": "Average",
+          "tags": []
+        },
+        {
+          "alias": "Read bytes/s",
+          "datasource": {
+            "uid": "aws"
+          },
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "groupBy": [
             {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
             }
-          ]
+          ],
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "ReadThroughput",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "orderByTime": "ASC",
+          "period": "300",
+          "policy": "default",
+          "refId": "B",
+          "region": "$region",
+          "resultFormat": "time_series",
+          "returnData": false,
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "statistic": "Average",
+          "tags": []
+        },
+        {
+          "alias": "WAL bytes/s",
+          "datasource": {
+            "uid": "aws"
+          },
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "TransactionLogsGeneration",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "orderByTime": "ASC",
+          "period": "300",
+          "policy": "default",
+          "refId": "C",
+          "region": "$region",
+          "resultFormat": "time_series",
+          "returnData": false,
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "statistic": "Average",
+          "tags": []
         }
       ],
-      "title": "Incoming traffic rate",
+      "title": "IO throughput",
       "type": "timeseries"
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
+        "uid": "aws"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1648,14 +1728,13 @@
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "normal"
+              "mode": "none"
             },
             "thresholdsStyle": {
               "mode": "off"
             }
           },
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1669,39 +1748,20 @@
               }
             ]
           },
-          "unit": "µs"
+          "unit": "short"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Avg. runtime"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#ef843c",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 12,
         "x": 0,
-        "y": 15
+        "y": 18
       },
-      "id": 11,
-      "interval": "2m",
+      "id": 15,
       "options": {
         "legend": {
-          "calcs": [
-            "mean"
-          ],
+          "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -1714,69 +1774,35 @@
       "pluginVersion": "10.4.1",
       "targets": [
         {
-          "alias": "Avg. runtime",
+          "alias": "Connections",
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
+            "uid": "aws"
           },
-          "format": "time_series",
-          "group": [],
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "null"
-              ],
-              "type": "fill"
-            }
-          ],
-          "metricColumn": "none",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT non_negative_derivative(mean(\"total_query_time\"), 1h) / non_negative_derivative(mean(\"total_query_count\"), 1h) FROM \"pgbouncer_stats\" WHERE \"dbname\" =~ /^$dbname$/ AND $timeFilter GROUP BY time($__interval) fill(none)",
-          "rawQuery": true,
-          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag)) as \"Avg. runtime\"\n\nfrom (\n\n        select \n          (data->>'total_query_time')::float8 as tt, lag((data->>'total_query_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": [],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "DatabaseConnections",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "period": "300",
+          "refId": "B",
+          "region": "$region",
+          "returnData": false,
+          "statistic": "Average"
         }
       ],
-      "title": "Avg. query runtime",
+      "title": "Connections",
       "type": "timeseries"
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
+        "uid": "aws"
       },
-      "description": "",
+      "description": "For replicas only!",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1799,7 +1825,7 @@
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
@@ -1814,6 +1840,7 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -1829,69 +1856,20 @@
               }
             ]
           },
-          "unit": "Bps"
+          "unit": "s"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Outgoing byterate"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#e24d42",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Outgoing rate"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#e24d42",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "load_5"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#BA43A9",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 15
+        "y": 18
       },
-      "id": 12,
-      "interval": "2m",
+      "id": 16,
       "options": {
         "legend": {
-          "calcs": [
-            "mean"
-          ],
+          "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -1904,67 +1882,28 @@
       "pluginVersion": "10.4.1",
       "targets": [
         {
-          "alias": "Outgoing rate",
+          "alias": "Replication lag",
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
+            "uid": "aws"
           },
-          "format": "time_series",
-          "group": [],
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "none"
-              ],
-              "type": "fill"
-            }
-          ],
-          "measurement": "pgbouncer_stats",
-          "metricColumn": "none",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"Outgoing rate\"\nfrom (\n        select \n          (data->>'total_sent')::int8 as c, lag((data->>'total_sent')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "total_sent"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              },
-              {
-                "params": [
-                  "1s"
-                ],
-                "type": "non_negative_derivative"
-              }
-            ]
-          ],
-          "tags": [],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
+          "dimensions": {
+            "DBInstanceIdentifier": "$dbname"
+          },
+          "expression": "",
+          "highResolution": false,
+          "id": "",
+          "metricEditorMode": 0,
+          "metricName": "ReplicaLag",
+          "metricQueryType": 0,
+          "namespace": "AWS/RDS",
+          "period": "300",
+          "refId": "B",
+          "region": "$region",
+          "returnData": false,
+          "statistic": "Average"
         }
       ],
-      "title": "Outgoing traffic rate",
+      "title": "Replication lag",
       "type": "timeseries"
     },
     {
@@ -1978,7 +1917,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 21
+        "y": 25
       },
       "id": 14,
       "options": {
@@ -1987,13 +1926,8 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-<<<<<<< HEAD
-        "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
-       "mode": "markdown"
-=======
         "content": "<h2>Brought to you by</h2><div style=\"padding: 25px;\"><a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\"></a></div>",
         "mode": "html"
->>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       },
       "pluginVersion": "10.4.1",
       "targets": [
@@ -2009,7 +1943,6 @@
       "type": "text"
     }
   ],
-  "refresh": false,
   "schemaVersion": 39,
   "tags": [
     "pgwatch"
@@ -2017,15 +1950,30 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "isNone": true,
-          "selected": false,
-          "text": "None",
-          "value": ""
-        },
+        "current": {},
         "datasource": {
-          "type": "grafana-postgresql-datasource",
-          "uid": "pgwatch-metrics"
+          "uid": "aws"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "region",
+        "options": [],
+        "query": "regions()",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 2,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "current": {},
+        "datasource": {
+          "uid": "aws"
         },
         "definition": "",
         "hide": 0,
@@ -2033,11 +1981,13 @@
         "multi": false,
         "name": "dbname",
         "options": [],
-        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'pgbouncer_stats' ORDER BY 1;",
+        "query": "dimension_values($region,AWS/RDS,CPUUtilization,DBInstanceIdentifier)",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
         "type": "query",
         "useTags": false
       }
@@ -2073,8 +2023,8 @@
     ]
   },
   "timezone": "browser",
-  "title": "PgBouncer stats",
-  "uid": "pgbouncer-stats",
+  "title": "AWS CloudWatch overview",
+  "uid": "aws-cloudwatch-overview",
   "version": 1,
   "weekStart": ""
 }

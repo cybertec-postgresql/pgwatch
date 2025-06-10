@@ -125,7 +125,11 @@
       "type": "table"
     },
     {
+<<<<<<< HEAD
       "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+=======
+      "content": "<h2>Brought to you by</h2><div style=\"padding: 25px;\"><a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\"></a></div>",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "datasource": null,
       "gridPos": {
         "h": 4,
@@ -134,7 +138,11 @@
         "y": 22
       },
       "id": 4,
+<<<<<<< HEAD
       "mode": "markdown",
+=======
+      "mode": "html",
+>>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
       "options": {},
       "timeFrom": null,
       "timeShift": null,

@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 22,
+  "id": 21,
   "links": [],
   "panels": [
     {
@@ -2769,5 +2769,5 @@
   "timezone": "browser",
   "title": "Global DB overview",
   "uid": "global-db-overview",
-  "version": 1
+  "version": 4
 }

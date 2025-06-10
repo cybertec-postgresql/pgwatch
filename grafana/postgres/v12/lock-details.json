@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 24,
+  "id": 2,
   "links": [],
   "panels": [
     {
@@ -216,5 +216,5 @@
   "timezone": "browser",
   "title": "Lock details",
   "uid": "lock-details",
-  "version": 1
+  "version": 3
 }
