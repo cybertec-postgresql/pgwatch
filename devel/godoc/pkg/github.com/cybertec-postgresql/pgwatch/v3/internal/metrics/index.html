@@ -522,7 +522,7 @@
 		
 			
 			
-			<h2 id="ParseLogs">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L112">ParseLogs</a>
+			<h2 id="ParseLogs">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L111">ParseLogs</a>
 				<a class="permalink" href="#ParseLogs">&#xb6;</a>
 				
 				
@@ -575,7 +575,7 @@
 		
 			
 			
-			<h2 id="regexMatchesToMap">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L344">regexMatchesToMap</a>
+			<h2 id="regexMatchesToMap">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L343">regexMatchesToMap</a>
 				<a class="permalink" href="#regexMatchesToMap">&#xb6;</a>
 				
 				
@@ -588,7 +588,7 @@
 		
 			
 			
-			<h2 id="severityToEnglish">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L298">severityToEnglish</a>
+			<h2 id="severityToEnglish">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L297">severityToEnglish</a>
 				<a class="permalink" href="#severityToEnglish">&#xb6;</a>
 				
 				
@@ -601,7 +601,7 @@
 		
 			
 			
-			<h2 id="tryDetermineLogFolder">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L317">tryDetermineLogFolder</a>
+			<h2 id="tryDetermineLogFolder">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L316">tryDetermineLogFolder</a>
 				<a class="permalink" href="#tryDetermineLogFolder">&#xb6;</a>
 				
 				
@@ -614,7 +614,7 @@
 		
 			
 			
-			<h2 id="tryDetermineLogMessagesLanguage">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L331">tryDetermineLogMessagesLanguage</a>
+			<h2 id="tryDetermineLogMessagesLanguage">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L330">tryDetermineLogMessagesLanguage</a>
 				<a class="permalink" href="#tryDetermineLogMessagesLanguage">&#xb6;</a>
 				
 				
@@ -642,7 +642,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 		
 			
 			
-			<h2 id="zeroEventCounts">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L311">zeroEventCounts</a>
+			<h2 id="zeroEventCounts">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L310">zeroEventCounts</a>
 				<a class="permalink" href="#zeroEventCounts">&#xb6;</a>
 				
 				
@@ -813,13 +813,11 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 			</h2>
 			
 			<pre>type MeasurementEnvelope struct {
-<span id="MeasurementEnvelope.DBName"></span>    DBName           <a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="MeasurementEnvelope.SourceType"></span>    SourceType       <a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="MeasurementEnvelope.MetricName"></span>    MetricName       <a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="MeasurementEnvelope.CustomTags"></span>    CustomTags       map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="MeasurementEnvelope.Data"></span>    Data             <a href="#Measurements">Measurements</a>
-<span id="MeasurementEnvelope.RealDbname"></span>    RealDbname       <a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="MeasurementEnvelope.SystemIdentifier"></span>    SystemIdentifier <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MeasurementEnvelope.DBName"></span>    DBName <a href="https://pkg.go.dev/builtin/#string">string</a>
+    <span class="comment">// SourceType string</span>
+<span id="MeasurementEnvelope.MetricName"></span>    MetricName <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MeasurementEnvelope.CustomTags"></span>    CustomTags map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MeasurementEnvelope.Data"></span>    Data       <a href="#Measurements">Measurements</a>
 }
 </pre>
 
@@ -1038,7 +1036,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 		
 			
 			
-			<h2 id="Metrics">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L159">Metrics</a>
+			<h2 id="Metrics">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L157">Metrics</a>
 				<a class="permalink" href="#Metrics">&#xb6;</a>
 				
 				
@@ -1075,7 +1073,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 		
 			
 			
-			<h2 id="Migrator">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L175">Migrator</a>
+			<h2 id="Migrator">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L173">Migrator</a>
 				<a class="permalink" href="#Migrator">&#xb6;</a>
 				
 				
@@ -1152,7 +1150,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 		
 			
 			
-			<h2 id="Reader">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L163">Reader</a>
+			<h2 id="Reader">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L161">Reader</a>
 				<a class="permalink" href="#Reader">&#xb6;</a>
 				
 				
@@ -1176,7 +1174,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 		
 			
 			
-			<h2 id="ReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L180">ReaderWriter</a>
+			<h2 id="ReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L178">ReaderWriter</a>
 				<a class="permalink" href="#ReaderWriter">&#xb6;</a>
 				
 				
@@ -1268,7 +1266,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 		
 			
 			
-			<h2 id="Writer">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L167">Writer</a>
+			<h2 id="Writer">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L165">Writer</a>
 				<a class="permalink" href="#Writer">&#xb6;</a>
 				
 				

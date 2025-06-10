@@ -547,89 +547,88 @@
 <span id="L490" class="ln">   490  </span>		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
 <span id="L491" class="ln">   491  </span>		storageCh &lt;- metrics.MeasurementEnvelope{
 <span id="L492" class="ln">   492  </span>			DBName:     dbUnique,
-<span id="L493" class="ln">   493  </span>			SourceType: string(md.Kind),
-<span id="L494" class="ln">   494  </span>			MetricName: &#34;object_changes&#34;,
-<span id="L495" class="ln">   495  </span>			Data:       detectedChangesSummary,
-<span id="L496" class="ln">   496  </span>			CustomTags: md.CustomTags,
-<span id="L497" class="ln">   497  </span>		}
-<span id="L498" class="ln">   498  </span>
-<span id="L499" class="ln">   499  </span>	}
-<span id="L500" class="ln">   500  </span>}
-<span id="L501" class="ln">   501  </span>
-<span id="L502" class="ln">   502  </span><span class="comment">// Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.</span>
-<span id="L503" class="ln">   503  </span><span class="comment">// With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific</span>
-<span id="L504" class="ln">   504  </span><span class="comment">// whitelisting or &#34;trusted extensions&#34; (a feature from v13). Ignores errors.</span>
-<span id="L505" class="ln">   505  </span>func TryCreateMissingExtensions(ctx context.Context, md *sources.SourceConn, extensionNames []string, existingExtensions map[string]int) []string {
-<span id="L506" class="ln">   506  </span>	<span class="comment">// TODO: move to sources package and use direct pgx connection</span>
-<span id="L507" class="ln">   507  </span>	sqlAvailable := `select name::text from pg_available_extensions`
-<span id="L508" class="ln">   508  </span>	extsCreated := make([]string, 0)
-<span id="L509" class="ln">   509  </span>
-<span id="L510" class="ln">   510  </span>	<span class="comment">// For security reasons don&#39;t allow to execute random strings but check that it&#39;s an existing extension</span>
-<span id="L511" class="ln">   511  </span>	data, err := QueryMeasurements(ctx, md, sqlAvailable)
-<span id="L512" class="ln">   512  </span>	if err != nil {
-<span id="L513" class="ln">   513  </span>		log.GetLogger(ctx).Infof(&#34;[%s] Failed to get a list of available extensions: %v&#34;, md, err)
-<span id="L514" class="ln">   514  </span>		return extsCreated
-<span id="L515" class="ln">   515  </span>	}
-<span id="L516" class="ln">   516  </span>
-<span id="L517" class="ln">   517  </span>	availableExts := make(map[string]bool)
-<span id="L518" class="ln">   518  </span>	for _, row := range data {
-<span id="L519" class="ln">   519  </span>		availableExts[row[&#34;name&#34;].(string)] = true
-<span id="L520" class="ln">   520  </span>	}
-<span id="L521" class="ln">   521  </span>
-<span id="L522" class="ln">   522  </span>	for _, extToCreate := range extensionNames {
-<span id="L523" class="ln">   523  </span>		if _, ok := existingExtensions[extToCreate]; ok {
-<span id="L524" class="ln">   524  </span>			continue
-<span id="L525" class="ln">   525  </span>		}
-<span id="L526" class="ln">   526  </span>		_, ok := availableExts[extToCreate]
-<span id="L527" class="ln">   527  </span>		if !ok {
-<span id="L528" class="ln">   528  </span>			log.GetLogger(ctx).Errorf(&#34;[%s] Requested extension %s not available on instance, cannot try to create...&#34;, md, extToCreate)
-<span id="L529" class="ln">   529  </span>		} else {
-<span id="L530" class="ln">   530  </span>			sqlCreateExt := `create extension ` + extToCreate
-<span id="L531" class="ln">   531  </span>			_, err := QueryMeasurements(ctx, md, sqlCreateExt)
-<span id="L532" class="ln">   532  </span>			if err != nil {
-<span id="L533" class="ln">   533  </span>				log.GetLogger(ctx).Errorf(&#34;[%s] Failed to create extension %s (based on --try-create-listed-exts-if-missing input): %v&#34;, md, extToCreate, err)
-<span id="L534" class="ln">   534  </span>			}
-<span id="L535" class="ln">   535  </span>			extsCreated = append(extsCreated, extToCreate)
-<span id="L536" class="ln">   536  </span>		}
-<span id="L537" class="ln">   537  </span>	}
-<span id="L538" class="ln">   538  </span>
-<span id="L539" class="ln">   539  </span>	return extsCreated
-<span id="L540" class="ln">   540  </span>}
-<span id="L541" class="ln">   541  </span>
-<span id="L542" class="ln">   542  </span><span class="comment">// Called once on daemon startup to try to create &#34;metric fething helper&#34; functions automatically</span>
-<span id="L543" class="ln">   543  </span>func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn) (err error) {
-<span id="L544" class="ln">   544  </span>	sl := log.GetLogger(ctx).WithField(&#34;source&#34;, md.Name)
-<span id="L545" class="ln">   545  </span>	metrics := maps.Clone(md.Metrics)
-<span id="L546" class="ln">   546  </span>	maps.Insert(metrics, maps.All(md.MetricsStandby))
-<span id="L547" class="ln">   547  </span>	for metricName := range metrics {
-<span id="L548" class="ln">   548  </span>		metric, ok := metricDefs.GetMetricDef(metricName)
-<span id="L549" class="ln">   549  </span>		if !ok {
-<span id="L550" class="ln">   550  </span>			continue
-<span id="L551" class="ln">   551  </span>		}
-<span id="L552" class="ln">   552  </span>		if _, err = md.Conn.Exec(ctx, metric.InitSQL); err != nil {
-<span id="L553" class="ln">   553  </span>			return
-<span id="L554" class="ln">   554  </span>		}
-<span id="L555" class="ln">   555  </span>		sl.WithField(&#34;metric&#34;, metricName).Info(&#34;Successfully created metric fetching helpers&#34;)
-<span id="L556" class="ln">   556  </span>	}
-<span id="L557" class="ln">   557  </span>	return
-<span id="L558" class="ln">   558  </span>}
-<span id="L559" class="ln">   559  </span>
-<span id="L560" class="ln">   560  </span>func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(shutDownDueToRoleChange map[string]bool) {
-<span id="L561" class="ln">   561  </span>	for _, prevDB := range r.prevLoopMonitoredDBs {
-<span id="L562" class="ln">   562  </span>		if r.monitoredSources.GetMonitoredDatabase(prevDB.Name) == nil { <span class="comment">// removed from config</span>
-<span id="L563" class="ln">   563  </span>			prevDB.Conn.Close()
-<span id="L564" class="ln">   564  </span>			_ = r.SinksWriter.SyncMetric(prevDB.Name, &#34;&#34;, sinks.DeleteOp)
-<span id="L565" class="ln">   565  </span>		}
-<span id="L566" class="ln">   566  </span>	}
-<span id="L567" class="ln">   567  </span>
-<span id="L568" class="ln">   568  </span>	for roleChangedDB := range shutDownDueToRoleChange {
-<span id="L569" class="ln">   569  </span>		if db := r.monitoredSources.GetMonitoredDatabase(roleChangedDB); db != nil {
-<span id="L570" class="ln">   570  </span>			db.Conn.Close()
-<span id="L571" class="ln">   571  </span>		}
-<span id="L572" class="ln">   572  </span>		_ = r.SinksWriter.SyncMetric(roleChangedDB, &#34;&#34;, sinks.DeleteOp)
-<span id="L573" class="ln">   573  </span>	}
-<span id="L574" class="ln">   574  </span>}
-<span id="L575" class="ln">   575  </span>
+<span id="L493" class="ln">   493  </span>			MetricName: &#34;object_changes&#34;,
+<span id="L494" class="ln">   494  </span>			Data:       detectedChangesSummary,
+<span id="L495" class="ln">   495  </span>			CustomTags: md.CustomTags,
+<span id="L496" class="ln">   496  </span>		}
+<span id="L497" class="ln">   497  </span>
+<span id="L498" class="ln">   498  </span>	}
+<span id="L499" class="ln">   499  </span>}
+<span id="L500" class="ln">   500  </span>
+<span id="L501" class="ln">   501  </span><span class="comment">// Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.</span>
+<span id="L502" class="ln">   502  </span><span class="comment">// With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific</span>
+<span id="L503" class="ln">   503  </span><span class="comment">// whitelisting or &#34;trusted extensions&#34; (a feature from v13). Ignores errors.</span>
+<span id="L504" class="ln">   504  </span>func TryCreateMissingExtensions(ctx context.Context, md *sources.SourceConn, extensionNames []string, existingExtensions map[string]int) []string {
+<span id="L505" class="ln">   505  </span>	<span class="comment">// TODO: move to sources package and use direct pgx connection</span>
+<span id="L506" class="ln">   506  </span>	sqlAvailable := `select name::text from pg_available_extensions`
+<span id="L507" class="ln">   507  </span>	extsCreated := make([]string, 0)
+<span id="L508" class="ln">   508  </span>
+<span id="L509" class="ln">   509  </span>	<span class="comment">// For security reasons don&#39;t allow to execute random strings but check that it&#39;s an existing extension</span>
+<span id="L510" class="ln">   510  </span>	data, err := QueryMeasurements(ctx, md, sqlAvailable)
+<span id="L511" class="ln">   511  </span>	if err != nil {
+<span id="L512" class="ln">   512  </span>		log.GetLogger(ctx).Infof(&#34;[%s] Failed to get a list of available extensions: %v&#34;, md, err)
+<span id="L513" class="ln">   513  </span>		return extsCreated
+<span id="L514" class="ln">   514  </span>	}
+<span id="L515" class="ln">   515  </span>
+<span id="L516" class="ln">   516  </span>	availableExts := make(map[string]bool)
+<span id="L517" class="ln">   517  </span>	for _, row := range data {
+<span id="L518" class="ln">   518  </span>		availableExts[row[&#34;name&#34;].(string)] = true
+<span id="L519" class="ln">   519  </span>	}
+<span id="L520" class="ln">   520  </span>
+<span id="L521" class="ln">   521  </span>	for _, extToCreate := range extensionNames {
+<span id="L522" class="ln">   522  </span>		if _, ok := existingExtensions[extToCreate]; ok {
+<span id="L523" class="ln">   523  </span>			continue
+<span id="L524" class="ln">   524  </span>		}
+<span id="L525" class="ln">   525  </span>		_, ok := availableExts[extToCreate]
+<span id="L526" class="ln">   526  </span>		if !ok {
+<span id="L527" class="ln">   527  </span>			log.GetLogger(ctx).Errorf(&#34;[%s] Requested extension %s not available on instance, cannot try to create...&#34;, md, extToCreate)
+<span id="L528" class="ln">   528  </span>		} else {
+<span id="L529" class="ln">   529  </span>			sqlCreateExt := `create extension ` + extToCreate
+<span id="L530" class="ln">   530  </span>			_, err := QueryMeasurements(ctx, md, sqlCreateExt)
+<span id="L531" class="ln">   531  </span>			if err != nil {
+<span id="L532" class="ln">   532  </span>				log.GetLogger(ctx).Errorf(&#34;[%s] Failed to create extension %s (based on --try-create-listed-exts-if-missing input): %v&#34;, md, extToCreate, err)
+<span id="L533" class="ln">   533  </span>			}
+<span id="L534" class="ln">   534  </span>			extsCreated = append(extsCreated, extToCreate)
+<span id="L535" class="ln">   535  </span>		}
+<span id="L536" class="ln">   536  </span>	}
+<span id="L537" class="ln">   537  </span>
+<span id="L538" class="ln">   538  </span>	return extsCreated
+<span id="L539" class="ln">   539  </span>}
+<span id="L540" class="ln">   540  </span>
+<span id="L541" class="ln">   541  </span><span class="comment">// Called once on daemon startup to try to create &#34;metric fething helper&#34; functions automatically</span>
+<span id="L542" class="ln">   542  </span>func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn) (err error) {
+<span id="L543" class="ln">   543  </span>	sl := log.GetLogger(ctx).WithField(&#34;source&#34;, md.Name)
+<span id="L544" class="ln">   544  </span>	metrics := maps.Clone(md.Metrics)
+<span id="L545" class="ln">   545  </span>	maps.Insert(metrics, maps.All(md.MetricsStandby))
+<span id="L546" class="ln">   546  </span>	for metricName := range metrics {
+<span id="L547" class="ln">   547  </span>		metric, ok := metricDefs.GetMetricDef(metricName)
+<span id="L548" class="ln">   548  </span>		if !ok {
+<span id="L549" class="ln">   549  </span>			continue
+<span id="L550" class="ln">   550  </span>		}
+<span id="L551" class="ln">   551  </span>		if _, err = md.Conn.Exec(ctx, metric.InitSQL); err != nil {
+<span id="L552" class="ln">   552  </span>			return
+<span id="L553" class="ln">   553  </span>		}
+<span id="L554" class="ln">   554  </span>		sl.WithField(&#34;metric&#34;, metricName).Info(&#34;Successfully created metric fetching helpers&#34;)
+<span id="L555" class="ln">   555  </span>	}
+<span id="L556" class="ln">   556  </span>	return
+<span id="L557" class="ln">   557  </span>}
+<span id="L558" class="ln">   558  </span>
+<span id="L559" class="ln">   559  </span>func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(shutDownDueToRoleChange map[string]bool) {
+<span id="L560" class="ln">   560  </span>	for _, prevDB := range r.prevLoopMonitoredDBs {
+<span id="L561" class="ln">   561  </span>		if r.monitoredSources.GetMonitoredDatabase(prevDB.Name) == nil { <span class="comment">// removed from config</span>
+<span id="L562" class="ln">   562  </span>			prevDB.Conn.Close()
+<span id="L563" class="ln">   563  </span>			_ = r.SinksWriter.SyncMetric(prevDB.Name, &#34;&#34;, sinks.DeleteOp)
+<span id="L564" class="ln">   564  </span>		}
+<span id="L565" class="ln">   565  </span>	}
+<span id="L566" class="ln">   566  </span>
+<span id="L567" class="ln">   567  </span>	for roleChangedDB := range shutDownDueToRoleChange {
+<span id="L568" class="ln">   568  </span>		if db := r.monitoredSources.GetMonitoredDatabase(roleChangedDB); db != nil {
+<span id="L569" class="ln">   569  </span>			db.Conn.Close()
+<span id="L570" class="ln">   570  </span>		}
+<span id="L571" class="ln">   571  </span>		_ = r.SinksWriter.SyncMetric(roleChangedDB, &#34;&#34;, sinks.DeleteOp)
+<span id="L572" class="ln">   572  </span>	}
+<span id="L573" class="ln">   573  </span>}
+<span id="L574" class="ln">   574  </span>
 </pre><p></p>
 
 <div id="footer">

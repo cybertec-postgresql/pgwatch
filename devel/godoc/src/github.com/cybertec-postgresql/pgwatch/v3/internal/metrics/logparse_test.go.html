@@ -190,309 +190,308 @@
 <span id="L133" class="ln">   133  </span>	result := eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
 <span id="L134" class="ln">   134  </span>
 <span id="L135" class="ln">   135  </span>	assert.Equal(t, &#34;test-db&#34;, result.DBName)
-<span id="L136" class="ln">   136  </span>	assert.Equal(t, string(sources.SourcePostgres), result.SourceType)
-<span id="L137" class="ln">   137  </span>	assert.Equal(t, specialMetricServerLogEventCounts, result.MetricName)
-<span id="L138" class="ln">   138  </span>	assert.Equal(t, map[string]string{&#34;env&#34;: &#34;test&#34;}, result.CustomTags)
-<span id="L139" class="ln">   139  </span>
-<span id="L140" class="ln">   140  </span>	<span class="comment">// Check that all severities are present in the measurement</span>
-<span id="L141" class="ln">   141  </span>	assert.Len(t, result.Data, 1)
-<span id="L142" class="ln">   142  </span>	measurement := result.Data[0]
-<span id="L143" class="ln">   143  </span>
-<span id="L144" class="ln">   144  </span>	<span class="comment">// Check individual severities</span>
-<span id="L145" class="ln">   145  </span>	assert.Equal(t, int64(5), measurement[&#34;error&#34;])
-<span id="L146" class="ln">   146  </span>	assert.Equal(t, int64(10), measurement[&#34;warning&#34;])
-<span id="L147" class="ln">   147  </span>	assert.Equal(t, int64(0), measurement[&#34;info&#34;])  <span class="comment">// Not in eventCounts</span>
-<span id="L148" class="ln">   148  </span>	assert.Equal(t, int64(0), measurement[&#34;debug&#34;]) <span class="comment">// Not in either map</span>
-<span id="L149" class="ln">   149  </span>
-<span id="L150" class="ln">   150  </span>	<span class="comment">// Check total counts</span>
-<span id="L151" class="ln">   151  </span>	assert.Equal(t, int64(15), measurement[&#34;error_total&#34;])
-<span id="L152" class="ln">   152  </span>	assert.Equal(t, int64(25), measurement[&#34;warning_total&#34;])
-<span id="L153" class="ln">   153  </span>	assert.Equal(t, int64(50), measurement[&#34;info_total&#34;])
-<span id="L154" class="ln">   154  </span>	assert.Equal(t, int64(0), measurement[&#34;debug_total&#34;])
-<span id="L155" class="ln">   155  </span>}
-<span id="L156" class="ln">   156  </span>
-<span id="L157" class="ln">   157  </span>func TestSeverityToEnglish(t *testing.T) {
-<span id="L158" class="ln">   158  </span>	tests := []struct {
-<span id="L159" class="ln">   159  </span>		serverLang    string
-<span id="L160" class="ln">   160  </span>		errorSeverity string
-<span id="L161" class="ln">   161  </span>		expected      string
-<span id="L162" class="ln">   162  </span>	}{
-<span id="L163" class="ln">   163  </span>		{&#34;en&#34;, &#34;ERROR&#34;, &#34;ERROR&#34;},
-<span id="L164" class="ln">   164  </span>		{&#34;de&#34;, &#34;FEHLER&#34;, &#34;ERROR&#34;},
-<span id="L165" class="ln">   165  </span>		{&#34;fr&#34;, &#34;ERREUR&#34;, &#34;ERROR&#34;},
-<span id="L166" class="ln">   166  </span>		{&#34;de&#34;, &#34;WARNUNG&#34;, &#34;WARNING&#34;},
-<span id="L167" class="ln">   167  </span>		{&#34;ru&#34;, &#34;ОШИБКА&#34;, &#34;ERROR&#34;},
-<span id="L168" class="ln">   168  </span>		{&#34;zh&#34;, &#34;错误&#34;, &#34;ERROR&#34;},
-<span id="L169" class="ln">   169  </span>		{&#34;unknown&#34;, &#34;ERROR&#34;, &#34;ERROR&#34;},                  <span class="comment">// Unknown language, return as-is</span>
-<span id="L170" class="ln">   170  </span>		{&#34;de&#34;, &#34;UNKNOWN_SEVERITY&#34;, &#34;UNKNOWN_SEVERITY&#34;}, <span class="comment">// Unknown severity in known language</span>
-<span id="L171" class="ln">   171  </span>	}
-<span id="L172" class="ln">   172  </span>
-<span id="L173" class="ln">   173  </span>	for _, tt := range tests {
-<span id="L174" class="ln">   174  </span>		t.Run(tt.serverLang+&#34;_&#34;+tt.errorSeverity, func(t *testing.T) {
-<span id="L175" class="ln">   175  </span>			result := severityToEnglish(tt.serverLang, tt.errorSeverity)
-<span id="L176" class="ln">   176  </span>			assert.Equal(t, tt.expected, result)
-<span id="L177" class="ln">   177  </span>		})
-<span id="L178" class="ln">   178  </span>	}
-<span id="L179" class="ln">   179  </span>}
-<span id="L180" class="ln">   180  </span>
-<span id="L181" class="ln">   181  </span>func TestZeroEventCounts(t *testing.T) {
-<span id="L182" class="ln">   182  </span>	eventCounts := map[string]int64{
-<span id="L183" class="ln">   183  </span>		&#34;ERROR&#34;:   5,
-<span id="L184" class="ln">   184  </span>		&#34;WARNING&#34;: 10,
-<span id="L185" class="ln">   185  </span>		&#34;INFO&#34;:    15,
-<span id="L186" class="ln">   186  </span>	}
-<span id="L187" class="ln">   187  </span>
-<span id="L188" class="ln">   188  </span>	zeroEventCounts(eventCounts)
-<span id="L189" class="ln">   189  </span>
-<span id="L190" class="ln">   190  </span>	<span class="comment">// Check that all PgSeverities are zeroed</span>
-<span id="L191" class="ln">   191  </span>	for _, severity := range PgSeverities {
-<span id="L192" class="ln">   192  </span>		assert.Equal(t, int64(0), eventCounts[severity])
-<span id="L193" class="ln">   193  </span>	}
-<span id="L194" class="ln">   194  </span>}
-<span id="L195" class="ln">   195  </span>
-<span id="L196" class="ln">   196  </span>func TestTryDetermineLogFolder(t *testing.T) {
-<span id="L197" class="ln">   197  </span>	t.Run(&#34;absolute log directory&#34;, func(t *testing.T) {
-<span id="L198" class="ln">   198  </span>		mock, err := pgxmock.NewPool()
-<span id="L199" class="ln">   199  </span>		require.NoError(t, err)
-<span id="L200" class="ln">   200  </span>		defer mock.Close()
-<span id="L201" class="ln">   201  </span>
-<span id="L202" class="ln">   202  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L203" class="ln">   203  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).
-<span id="L204" class="ln">   204  </span>				AddRow(&#34;/data&#34;, &#34;/var/log/postgresql&#34;))
-<span id="L205" class="ln">   205  </span>
-<span id="L206" class="ln">   206  </span>		logPath, err := tryDetermineLogFolder(testCtx, mock)
-<span id="L207" class="ln">   207  </span>		assert.NoError(t, err)
-<span id="L208" class="ln">   208  </span>		assert.Equal(t, &#34;/var/log/postgresql/*.csv&#34;, logPath)
-<span id="L209" class="ln">   209  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L210" class="ln">   210  </span>	})
-<span id="L211" class="ln">   211  </span>
-<span id="L212" class="ln">   212  </span>	t.Run(&#34;relative log directory&#34;, func(t *testing.T) {
-<span id="L213" class="ln">   213  </span>		mock, err := pgxmock.NewPool()
-<span id="L214" class="ln">   214  </span>		require.NoError(t, err)
-<span id="L215" class="ln">   215  </span>		defer mock.Close()
-<span id="L216" class="ln">   216  </span>
-<span id="L217" class="ln">   217  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L218" class="ln">   218  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).
-<span id="L219" class="ln">   219  </span>				AddRow(&#34;/data&#34;, &#34;log&#34;))
-<span id="L220" class="ln">   220  </span>
-<span id="L221" class="ln">   221  </span>		logPath, err := tryDetermineLogFolder(testCtx, mock)
-<span id="L222" class="ln">   222  </span>		assert.NoError(t, err)
-<span id="L223" class="ln">   223  </span>		assert.Equal(t, &#34;/data/log/*.csv&#34;, logPath)
-<span id="L224" class="ln">   224  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L225" class="ln">   225  </span>	})
-<span id="L226" class="ln">   226  </span>
-<span id="L227" class="ln">   227  </span>	t.Run(&#34;query error&#34;, func(t *testing.T) {
-<span id="L228" class="ln">   228  </span>		mock, err := pgxmock.NewPool()
-<span id="L229" class="ln">   229  </span>		require.NoError(t, err)
-<span id="L230" class="ln">   230  </span>		defer mock.Close()
-<span id="L231" class="ln">   231  </span>
-<span id="L232" class="ln">   232  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L233" class="ln">   233  </span>			WillReturnError(assert.AnError)
-<span id="L234" class="ln">   234  </span>
-<span id="L235" class="ln">   235  </span>		logPath, err := tryDetermineLogFolder(testCtx, mock)
-<span id="L236" class="ln">   236  </span>		assert.Error(t, err)
-<span id="L237" class="ln">   237  </span>		assert.Equal(t, &#34;&#34;, logPath)
-<span id="L238" class="ln">   238  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L239" class="ln">   239  </span>	})
-<span id="L240" class="ln">   240  </span>}
-<span id="L241" class="ln">   241  </span>
-<span id="L242" class="ln">   242  </span>func TestTryDetermineLogMessagesLanguage(t *testing.T) {
-<span id="L243" class="ln">   243  </span>	t.Run(&#34;known language&#34;, func(t *testing.T) {
-<span id="L244" class="ln">   244  </span>		mock, err := pgxmock.NewPool()
-<span id="L245" class="ln">   245  </span>		require.NoError(t, err)
-<span id="L246" class="ln">   246  </span>		defer mock.Close()
-<span id="L247" class="ln">   247  </span>
-<span id="L248" class="ln">   248  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L249" class="ln">   249  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;de&#34;))
-<span id="L250" class="ln">   250  </span>
-<span id="L251" class="ln">   251  </span>		lang, err := tryDetermineLogMessagesLanguage(testCtx, mock)
-<span id="L252" class="ln">   252  </span>		assert.NoError(t, err)
-<span id="L253" class="ln">   253  </span>		assert.Equal(t, &#34;de&#34;, lang)
-<span id="L254" class="ln">   254  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L255" class="ln">   255  </span>	})
-<span id="L256" class="ln">   256  </span>
-<span id="L257" class="ln">   257  </span>	t.Run(&#34;unknown language defaults to en&#34;, func(t *testing.T) {
-<span id="L258" class="ln">   258  </span>		mock, err := pgxmock.NewPool()
-<span id="L259" class="ln">   259  </span>		require.NoError(t, err)
-<span id="L260" class="ln">   260  </span>		defer mock.Close()
-<span id="L261" class="ln">   261  </span>
-<span id="L262" class="ln">   262  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L263" class="ln">   263  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;xx&#34;))
-<span id="L264" class="ln">   264  </span>
-<span id="L265" class="ln">   265  </span>		lang, err := tryDetermineLogMessagesLanguage(testCtx, mock)
-<span id="L266" class="ln">   266  </span>		assert.NoError(t, err)
-<span id="L267" class="ln">   267  </span>		assert.Equal(t, &#34;en&#34;, lang)
-<span id="L268" class="ln">   268  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L269" class="ln">   269  </span>	})
-<span id="L270" class="ln">   270  </span>
-<span id="L271" class="ln">   271  </span>	t.Run(&#34;query error&#34;, func(t *testing.T) {
-<span id="L272" class="ln">   272  </span>		mock, err := pgxmock.NewPool()
-<span id="L273" class="ln">   273  </span>		require.NoError(t, err)
-<span id="L274" class="ln">   274  </span>		defer mock.Close()
-<span id="L275" class="ln">   275  </span>
-<span id="L276" class="ln">   276  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L277" class="ln">   277  </span>			WillReturnError(assert.AnError)
-<span id="L278" class="ln">   278  </span>
-<span id="L279" class="ln">   279  </span>		lang, err := tryDetermineLogMessagesLanguage(testCtx, mock)
-<span id="L280" class="ln">   280  </span>		assert.Error(t, err)
-<span id="L281" class="ln">   281  </span>		assert.Equal(t, &#34;&#34;, lang)
-<span id="L282" class="ln">   282  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L283" class="ln">   283  </span>	})
-<span id="L284" class="ln">   284  </span>}
-<span id="L285" class="ln">   285  </span>
-<span id="L286" class="ln">   286  </span>func TestRegexMatchesToMap(t *testing.T) {
-<span id="L287" class="ln">   287  </span>	t.Run(&#34;successful match&#34;, func(t *testing.T) {
-<span id="L288" class="ln">   288  </span>		regex := regexp.MustCompile(`(?P&lt;severity&gt;\w+): (?P&lt;message&gt;.+)`)
-<span id="L289" class="ln">   289  </span>		matches := []string{&#34;ERROR: Something went wrong&#34;, &#34;ERROR&#34;, &#34;Something went wrong&#34;}
-<span id="L290" class="ln">   290  </span>
-<span id="L291" class="ln">   291  </span>		result := regexMatchesToMap(regex, matches)
-<span id="L292" class="ln">   292  </span>		expected := map[string]string{
-<span id="L293" class="ln">   293  </span>			&#34;severity&#34;: &#34;ERROR&#34;,
-<span id="L294" class="ln">   294  </span>			&#34;message&#34;:  &#34;Something went wrong&#34;,
-<span id="L295" class="ln">   295  </span>		}
-<span id="L296" class="ln">   296  </span>
-<span id="L297" class="ln">   297  </span>		assert.Equal(t, expected, result)
-<span id="L298" class="ln">   298  </span>	})
-<span id="L299" class="ln">   299  </span>
-<span id="L300" class="ln">   300  </span>	t.Run(&#34;no matches&#34;, func(t *testing.T) {
-<span id="L301" class="ln">   301  </span>		regex := regexp.MustCompile(`(?P&lt;severity&gt;\w+): (?P&lt;message&gt;.+)`)
-<span id="L302" class="ln">   302  </span>		matches := []string{}
-<span id="L303" class="ln">   303  </span>
-<span id="L304" class="ln">   304  </span>		result := regexMatchesToMap(regex, matches)
-<span id="L305" class="ln">   305  </span>		assert.Empty(t, result)
-<span id="L306" class="ln">   306  </span>	})
-<span id="L307" class="ln">   307  </span>
-<span id="L308" class="ln">   308  </span>	t.Run(&#34;nil regex&#34;, func(t *testing.T) {
-<span id="L309" class="ln">   309  </span>		matches := []string{&#34;test&#34;}
-<span id="L310" class="ln">   310  </span>
-<span id="L311" class="ln">   311  </span>		result := regexMatchesToMap(nil, matches)
-<span id="L312" class="ln">   312  </span>		assert.Empty(t, result)
-<span id="L313" class="ln">   313  </span>	})
-<span id="L314" class="ln">   314  </span>}
-<span id="L315" class="ln">   315  </span>
-<span id="L316" class="ln">   316  </span>func TestCSVLogRegex(t *testing.T) {
-<span id="L317" class="ln">   317  </span>	<span class="comment">// Test the default CSV log regex with sample log lines</span>
-<span id="L318" class="ln">   318  </span>	regex, err := regexp.Compile(CSVLogDefaultRegEx)
-<span id="L319" class="ln">   319  </span>	require.NoError(t, err)
-<span id="L320" class="ln">   320  </span>
-<span id="L321" class="ln">   321  </span>	testLines := []struct {
-<span id="L322" class="ln">   322  </span>		line     string
-<span id="L323" class="ln">   323  </span>		expected map[string]string
-<span id="L324" class="ln">   324  </span>	}{
-<span id="L325" class="ln">   325  </span>		{
-<span id="L326" class="ln">   326  </span>			line: `2023-12-01 10:30:45.123 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,1,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,ERROR,`,
-<span id="L327" class="ln">   327  </span>			expected: map[string]string{
-<span id="L328" class="ln">   328  </span>				&#34;log_time&#34;:         &#34;2023-12-01 10:30:45.123 UTC&#34;,
-<span id="L329" class="ln">   329  </span>				&#34;user_name&#34;:        &#34;postgres&#34;,
-<span id="L330" class="ln">   330  </span>				&#34;database_name&#34;:    &#34;testdb&#34;,
-<span id="L331" class="ln">   331  </span>				&#34;process_id&#34;:       &#34;12345&#34;,
-<span id="L332" class="ln">   332  </span>				&#34;connection_from&#34;:  &#34;127.0.0.1:54321&#34;,
-<span id="L333" class="ln">   333  </span>				&#34;session_id&#34;:       &#34;session123&#34;,
-<span id="L334" class="ln">   334  </span>				&#34;session_line_num&#34;: &#34;1&#34;,
-<span id="L335" class="ln">   335  </span>				&#34;command_tag&#34;:      &#34;SELECT&#34;,
-<span id="L336" class="ln">   336  </span>				&#34;error_severity&#34;:   &#34;ERROR&#34;,
-<span id="L337" class="ln">   337  </span>			},
-<span id="L338" class="ln">   338  </span>		},
-<span id="L339" class="ln">   339  </span>		{
-<span id="L340" class="ln">   340  </span>			line: `2023-12-01 10:30:45.123 UTC,postgres,testdb,12345,127.0.0.1:54321,session123,1,SELECT,2023-12-01 10:30:00 UTC,1/234,567,WARNING,`,
-<span id="L341" class="ln">   341  </span>			expected: map[string]string{
-<span id="L342" class="ln">   342  </span>				&#34;log_time&#34;:         &#34;2023-12-01 10:30:45.123 UTC&#34;,
-<span id="L343" class="ln">   343  </span>				&#34;user_name&#34;:        &#34;postgres&#34;,
-<span id="L344" class="ln">   344  </span>				&#34;database_name&#34;:    &#34;testdb&#34;,
-<span id="L345" class="ln">   345  </span>				&#34;process_id&#34;:       &#34;12345&#34;,
-<span id="L346" class="ln">   346  </span>				&#34;connection_from&#34;:  &#34;127.0.0.1:54321&#34;,
-<span id="L347" class="ln">   347  </span>				&#34;session_id&#34;:       &#34;session123&#34;,
-<span id="L348" class="ln">   348  </span>				&#34;session_line_num&#34;: &#34;1&#34;,
-<span id="L349" class="ln">   349  </span>				&#34;command_tag&#34;:      &#34;SELECT&#34;,
-<span id="L350" class="ln">   350  </span>				&#34;error_severity&#34;:   &#34;WARNING&#34;,
-<span id="L351" class="ln">   351  </span>			},
-<span id="L352" class="ln">   352  </span>		},
-<span id="L353" class="ln">   353  </span>	}
-<span id="L354" class="ln">   354  </span>
-<span id="L355" class="ln">   355  </span>	for i, tt := range testLines {
-<span id="L356" class="ln">   356  </span>		t.Run(string(rune(&#39;A&#39;+i)), func(t *testing.T) {
-<span id="L357" class="ln">   357  </span>			matches := regex.FindStringSubmatch(tt.line)
-<span id="L358" class="ln">   358  </span>			assert.NotEmpty(t, matches, &#34;regex should match the log line&#34;)
-<span id="L359" class="ln">   359  </span>
-<span id="L360" class="ln">   360  </span>			result := regexMatchesToMap(regex, matches)
-<span id="L361" class="ln">   361  </span>			for key, expected := range tt.expected {
-<span id="L362" class="ln">   362  </span>				assert.Equal(t, expected, result[key], &#34;mismatch for key %s&#34;, key)
-<span id="L363" class="ln">   363  </span>			}
-<span id="L364" class="ln">   364  </span>		})
-<span id="L365" class="ln">   365  </span>	}
-<span id="L366" class="ln">   366  </span>}
-<span id="L367" class="ln">   367  </span>
-<span id="L368" class="ln">   368  </span><span class="comment">// Integration test that creates actual log files and tests the ParseLogs function</span>
-<span id="L369" class="ln">   369  </span>func TestLogParse(t *testing.T) {
-<span id="L370" class="ln">   370  </span>	tempDir := t.TempDir()
-<span id="L371" class="ln">   371  </span>	logFile := filepath.Join(tempDir, &#34;test.csv&#34;)
-<span id="L372" class="ln">   372  </span>
-<span id="L373" class="ln">   373  </span>	<span class="comment">// Create a test log file with CSV format entries</span>
-<span id="L374" class="ln">   374  </span>	logContent := `2023-12-01 10:30:45.123 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,1,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,ERROR,&#34;duplicate key value violates unique constraint&#34;
-<span id="L375" class="ln">   375  </span>2023-12-01 10:30:46.124 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,2,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,WARNING,&#34;this is a warning message&#34;
-<span id="L376" class="ln">   376  </span>2023-12-01 10:30:47.125 UTC,&#34;postgres&#34;,&#34;otherdb&#34;,12346,&#34;127.0.0.1:54322&#34;,session124,1,&#34;INSERT&#34;,2023-12-01 10:30:00 UTC,1/235,568,ERROR,&#34;another error message&#34;
-<span id="L377" class="ln">   377  </span>`
-<span id="L378" class="ln">   378  </span>
-<span id="L379" class="ln">   379  </span>	err := os.WriteFile(logFile, []byte(logContent), 0644)
-<span id="L380" class="ln">   380  </span>	require.NoError(t, err)
-<span id="L381" class="ln">   381  </span>
-<span id="L382" class="ln">   382  </span>	<span class="comment">// Create a mock database connection</span>
-<span id="L383" class="ln">   383  </span>	mock, err := pgxmock.NewPool()
-<span id="L384" class="ln">   384  </span>	require.NoError(t, err)
-<span id="L385" class="ln">   385  </span>	defer mock.Close()
-<span id="L386" class="ln">   386  </span>
-<span id="L387" class="ln">   387  </span>	<span class="comment">// pretend we&#39;re connected via UNIX socket</span>
-<span id="L388" class="ln">   388  </span>	mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
-<span id="L389" class="ln">   389  </span>		pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(true))
-<span id="L390" class="ln">   390  </span>	<span class="comment">// Mock the language detection query</span>
-<span id="L391" class="ln">   391  </span>	mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L392" class="ln">   392  </span>		WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;en&#34;))
-<span id="L393" class="ln">   393  </span>
-<span id="L394" class="ln">   394  </span>	<span class="comment">// Create a SourceConn for testing</span>
-<span id="L395" class="ln">   395  </span>	sourceConn := &amp;sources.SourceConn{
-<span id="L396" class="ln">   396  </span>		Source: sources.Source{
-<span id="L397" class="ln">   397  </span>			Name: &#34;test-source&#34;,
-<span id="L398" class="ln">   398  </span>			HostConfig: sources.HostConfigAttrs{
-<span id="L399" class="ln">   399  </span>				LogsGlobPath: filepath.Join(tempDir, &#34;*.csv&#34;),
-<span id="L400" class="ln">   400  </span>				<span class="comment">// Use default regex by leaving LogsMatchRegex empty</span>
-<span id="L401" class="ln">   401  </span>			},
-<span id="L402" class="ln">   402  </span>		},
-<span id="L403" class="ln">   403  </span>		Conn: mock,
-<span id="L404" class="ln">   404  </span>	}
-<span id="L405" class="ln">   405  </span>
-<span id="L406" class="ln">   406  </span>	<span class="comment">// Create a context with timeout to prevent test from hanging</span>
-<span id="L407" class="ln">   407  </span>	ctx, cancel := context.WithTimeout(testCtx, 3*time.Second)
-<span id="L408" class="ln">   408  </span>	defer cancel()
-<span id="L409" class="ln">   409  </span>
-<span id="L410" class="ln">   410  </span>	<span class="comment">// Create a channel to receive measurement envelopes</span>
-<span id="L411" class="ln">   411  </span>	storeCh := make(chan MeasurementEnvelope, 10)
-<span id="L412" class="ln">   412  </span>
-<span id="L413" class="ln">   413  </span>	<span class="comment">// Use a short interval for testing (0.5 seconds)</span>
-<span id="L414" class="ln">   414  </span>	ParseLogs(ctx, sourceConn, &#34;testdb&#34;, 0.5, storeCh)
-<span id="L415" class="ln">   415  </span>
-<span id="L416" class="ln">   416  </span>	<span class="comment">// Wait for measurements to be sent or timeout</span>
-<span id="L417" class="ln">   417  </span>	var measurement MeasurementEnvelope
-<span id="L418" class="ln">   418  </span>	select {
-<span id="L419" class="ln">   419  </span>	case measurement = &lt;-storeCh:
-<span id="L420" class="ln">   420  </span>		assert.NotEmpty(t, measurement.Data, &#34;Measurement data should not be empty&#34;)
-<span id="L421" class="ln">   421  </span>	case &lt;-time.After(2 * time.Second):
-<span id="L422" class="ln">   422  </span>		break
-<span id="L423" class="ln">   423  </span>	}
-<span id="L424" class="ln">   424  </span>
-<span id="L425" class="ln">   425  </span>	assert.Equal(t, &#34;test-source&#34;, measurement.DBName)
-<span id="L426" class="ln">   426  </span>	assert.Equal(t, specialMetricServerLogEventCounts, measurement.MetricName)
-<span id="L427" class="ln">   427  </span>
-<span id="L428" class="ln">   428  </span>	<span class="comment">// Verify the data contains expected fields for both local and total counts</span>
-<span id="L429" class="ln">   429  </span>	data := measurement.Data[0]
-<span id="L430" class="ln">   430  </span>	<span class="comment">// Check that severity counts are present</span>
-<span id="L431" class="ln">   431  </span>	_, hasError := data[&#34;error&#34;]
-<span id="L432" class="ln">   432  </span>	_, hasWarning := data[&#34;warning&#34;]
-<span id="L433" class="ln">   433  </span>	assert.True(t, hasError &amp;&amp; hasWarning, &#34;Should have at least error and warning&#34;)
-<span id="L434" class="ln">   434  </span>
-<span id="L435" class="ln">   435  </span>	<span class="comment">// Ensure mock expectations were met</span>
-<span id="L436" class="ln">   436  </span>	assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L437" class="ln">   437  </span>}
-<span id="L438" class="ln">   438  </span>
+<span id="L136" class="ln">   136  </span>	assert.Equal(t, specialMetricServerLogEventCounts, result.MetricName)
+<span id="L137" class="ln">   137  </span>	assert.Equal(t, map[string]string{&#34;env&#34;: &#34;test&#34;}, result.CustomTags)
+<span id="L138" class="ln">   138  </span>
+<span id="L139" class="ln">   139  </span>	<span class="comment">// Check that all severities are present in the measurement</span>
+<span id="L140" class="ln">   140  </span>	assert.Len(t, result.Data, 1)
+<span id="L141" class="ln">   141  </span>	measurement := result.Data[0]
+<span id="L142" class="ln">   142  </span>
+<span id="L143" class="ln">   143  </span>	<span class="comment">// Check individual severities</span>
+<span id="L144" class="ln">   144  </span>	assert.Equal(t, int64(5), measurement[&#34;error&#34;])
+<span id="L145" class="ln">   145  </span>	assert.Equal(t, int64(10), measurement[&#34;warning&#34;])
+<span id="L146" class="ln">   146  </span>	assert.Equal(t, int64(0), measurement[&#34;info&#34;])  <span class="comment">// Not in eventCounts</span>
+<span id="L147" class="ln">   147  </span>	assert.Equal(t, int64(0), measurement[&#34;debug&#34;]) <span class="comment">// Not in either map</span>
+<span id="L148" class="ln">   148  </span>
+<span id="L149" class="ln">   149  </span>	<span class="comment">// Check total counts</span>
+<span id="L150" class="ln">   150  </span>	assert.Equal(t, int64(15), measurement[&#34;error_total&#34;])
+<span id="L151" class="ln">   151  </span>	assert.Equal(t, int64(25), measurement[&#34;warning_total&#34;])
+<span id="L152" class="ln">   152  </span>	assert.Equal(t, int64(50), measurement[&#34;info_total&#34;])
+<span id="L153" class="ln">   153  </span>	assert.Equal(t, int64(0), measurement[&#34;debug_total&#34;])
+<span id="L154" class="ln">   154  </span>}
+<span id="L155" class="ln">   155  </span>
+<span id="L156" class="ln">   156  </span>func TestSeverityToEnglish(t *testing.T) {
+<span id="L157" class="ln">   157  </span>	tests := []struct {
+<span id="L158" class="ln">   158  </span>		serverLang    string
+<span id="L159" class="ln">   159  </span>		errorSeverity string
+<span id="L160" class="ln">   160  </span>		expected      string
+<span id="L161" class="ln">   161  </span>	}{
+<span id="L162" class="ln">   162  </span>		{&#34;en&#34;, &#34;ERROR&#34;, &#34;ERROR&#34;},
+<span id="L163" class="ln">   163  </span>		{&#34;de&#34;, &#34;FEHLER&#34;, &#34;ERROR&#34;},
+<span id="L164" class="ln">   164  </span>		{&#34;fr&#34;, &#34;ERREUR&#34;, &#34;ERROR&#34;},
+<span id="L165" class="ln">   165  </span>		{&#34;de&#34;, &#34;WARNUNG&#34;, &#34;WARNING&#34;},
+<span id="L166" class="ln">   166  </span>		{&#34;ru&#34;, &#34;ОШИБКА&#34;, &#34;ERROR&#34;},
+<span id="L167" class="ln">   167  </span>		{&#34;zh&#34;, &#34;错误&#34;, &#34;ERROR&#34;},
+<span id="L168" class="ln">   168  </span>		{&#34;unknown&#34;, &#34;ERROR&#34;, &#34;ERROR&#34;},                  <span class="comment">// Unknown language, return as-is</span>
+<span id="L169" class="ln">   169  </span>		{&#34;de&#34;, &#34;UNKNOWN_SEVERITY&#34;, &#34;UNKNOWN_SEVERITY&#34;}, <span class="comment">// Unknown severity in known language</span>
+<span id="L170" class="ln">   170  </span>	}
+<span id="L171" class="ln">   171  </span>
+<span id="L172" class="ln">   172  </span>	for _, tt := range tests {
+<span id="L173" class="ln">   173  </span>		t.Run(tt.serverLang+&#34;_&#34;+tt.errorSeverity, func(t *testing.T) {
+<span id="L174" class="ln">   174  </span>			result := severityToEnglish(tt.serverLang, tt.errorSeverity)
+<span id="L175" class="ln">   175  </span>			assert.Equal(t, tt.expected, result)
+<span id="L176" class="ln">   176  </span>		})
+<span id="L177" class="ln">   177  </span>	}
+<span id="L178" class="ln">   178  </span>}
+<span id="L179" class="ln">   179  </span>
+<span id="L180" class="ln">   180  </span>func TestZeroEventCounts(t *testing.T) {
+<span id="L181" class="ln">   181  </span>	eventCounts := map[string]int64{
+<span id="L182" class="ln">   182  </span>		&#34;ERROR&#34;:   5,
+<span id="L183" class="ln">   183  </span>		&#34;WARNING&#34;: 10,
+<span id="L184" class="ln">   184  </span>		&#34;INFO&#34;:    15,
+<span id="L185" class="ln">   185  </span>	}
+<span id="L186" class="ln">   186  </span>
+<span id="L187" class="ln">   187  </span>	zeroEventCounts(eventCounts)
+<span id="L188" class="ln">   188  </span>
+<span id="L189" class="ln">   189  </span>	<span class="comment">// Check that all PgSeverities are zeroed</span>
+<span id="L190" class="ln">   190  </span>	for _, severity := range PgSeverities {
+<span id="L191" class="ln">   191  </span>		assert.Equal(t, int64(0), eventCounts[severity])
+<span id="L192" class="ln">   192  </span>	}
+<span id="L193" class="ln">   193  </span>}
+<span id="L194" class="ln">   194  </span>
+<span id="L195" class="ln">   195  </span>func TestTryDetermineLogFolder(t *testing.T) {
+<span id="L196" class="ln">   196  </span>	t.Run(&#34;absolute log directory&#34;, func(t *testing.T) {
+<span id="L197" class="ln">   197  </span>		mock, err := pgxmock.NewPool()
+<span id="L198" class="ln">   198  </span>		require.NoError(t, err)
+<span id="L199" class="ln">   199  </span>		defer mock.Close()
+<span id="L200" class="ln">   200  </span>
+<span id="L201" class="ln">   201  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
+<span id="L202" class="ln">   202  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).
+<span id="L203" class="ln">   203  </span>				AddRow(&#34;/data&#34;, &#34;/var/log/postgresql&#34;))
+<span id="L204" class="ln">   204  </span>
+<span id="L205" class="ln">   205  </span>		logPath, err := tryDetermineLogFolder(testCtx, mock)
+<span id="L206" class="ln">   206  </span>		assert.NoError(t, err)
+<span id="L207" class="ln">   207  </span>		assert.Equal(t, &#34;/var/log/postgresql/*.csv&#34;, logPath)
+<span id="L208" class="ln">   208  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L209" class="ln">   209  </span>	})
+<span id="L210" class="ln">   210  </span>
+<span id="L211" class="ln">   211  </span>	t.Run(&#34;relative log directory&#34;, func(t *testing.T) {
+<span id="L212" class="ln">   212  </span>		mock, err := pgxmock.NewPool()
+<span id="L213" class="ln">   213  </span>		require.NoError(t, err)
+<span id="L214" class="ln">   214  </span>		defer mock.Close()
+<span id="L215" class="ln">   215  </span>
+<span id="L216" class="ln">   216  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
+<span id="L217" class="ln">   217  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).
+<span id="L218" class="ln">   218  </span>				AddRow(&#34;/data&#34;, &#34;log&#34;))
+<span id="L219" class="ln">   219  </span>
+<span id="L220" class="ln">   220  </span>		logPath, err := tryDetermineLogFolder(testCtx, mock)
+<span id="L221" class="ln">   221  </span>		assert.NoError(t, err)
+<span id="L222" class="ln">   222  </span>		assert.Equal(t, &#34;/data/log/*.csv&#34;, logPath)
+<span id="L223" class="ln">   223  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L224" class="ln">   224  </span>	})
+<span id="L225" class="ln">   225  </span>
+<span id="L226" class="ln">   226  </span>	t.Run(&#34;query error&#34;, func(t *testing.T) {
+<span id="L227" class="ln">   227  </span>		mock, err := pgxmock.NewPool()
+<span id="L228" class="ln">   228  </span>		require.NoError(t, err)
+<span id="L229" class="ln">   229  </span>		defer mock.Close()
+<span id="L230" class="ln">   230  </span>
+<span id="L231" class="ln">   231  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
+<span id="L232" class="ln">   232  </span>			WillReturnError(assert.AnError)
+<span id="L233" class="ln">   233  </span>
+<span id="L234" class="ln">   234  </span>		logPath, err := tryDetermineLogFolder(testCtx, mock)
+<span id="L235" class="ln">   235  </span>		assert.Error(t, err)
+<span id="L236" class="ln">   236  </span>		assert.Equal(t, &#34;&#34;, logPath)
+<span id="L237" class="ln">   237  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L238" class="ln">   238  </span>	})
+<span id="L239" class="ln">   239  </span>}
+<span id="L240" class="ln">   240  </span>
+<span id="L241" class="ln">   241  </span>func TestTryDetermineLogMessagesLanguage(t *testing.T) {
+<span id="L242" class="ln">   242  </span>	t.Run(&#34;known language&#34;, func(t *testing.T) {
+<span id="L243" class="ln">   243  </span>		mock, err := pgxmock.NewPool()
+<span id="L244" class="ln">   244  </span>		require.NoError(t, err)
+<span id="L245" class="ln">   245  </span>		defer mock.Close()
+<span id="L246" class="ln">   246  </span>
+<span id="L247" class="ln">   247  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
+<span id="L248" class="ln">   248  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;de&#34;))
+<span id="L249" class="ln">   249  </span>
+<span id="L250" class="ln">   250  </span>		lang, err := tryDetermineLogMessagesLanguage(testCtx, mock)
+<span id="L251" class="ln">   251  </span>		assert.NoError(t, err)
+<span id="L252" class="ln">   252  </span>		assert.Equal(t, &#34;de&#34;, lang)
+<span id="L253" class="ln">   253  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L254" class="ln">   254  </span>	})
+<span id="L255" class="ln">   255  </span>
+<span id="L256" class="ln">   256  </span>	t.Run(&#34;unknown language defaults to en&#34;, func(t *testing.T) {
+<span id="L257" class="ln">   257  </span>		mock, err := pgxmock.NewPool()
+<span id="L258" class="ln">   258  </span>		require.NoError(t, err)
+<span id="L259" class="ln">   259  </span>		defer mock.Close()
+<span id="L260" class="ln">   260  </span>
+<span id="L261" class="ln">   261  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
+<span id="L262" class="ln">   262  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;xx&#34;))
+<span id="L263" class="ln">   263  </span>
+<span id="L264" class="ln">   264  </span>		lang, err := tryDetermineLogMessagesLanguage(testCtx, mock)
+<span id="L265" class="ln">   265  </span>		assert.NoError(t, err)
+<span id="L266" class="ln">   266  </span>		assert.Equal(t, &#34;en&#34;, lang)
+<span id="L267" class="ln">   267  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L268" class="ln">   268  </span>	})
+<span id="L269" class="ln">   269  </span>
+<span id="L270" class="ln">   270  </span>	t.Run(&#34;query error&#34;, func(t *testing.T) {
+<span id="L271" class="ln">   271  </span>		mock, err := pgxmock.NewPool()
+<span id="L272" class="ln">   272  </span>		require.NoError(t, err)
+<span id="L273" class="ln">   273  </span>		defer mock.Close()
+<span id="L274" class="ln">   274  </span>
+<span id="L275" class="ln">   275  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
+<span id="L276" class="ln">   276  </span>			WillReturnError(assert.AnError)
+<span id="L277" class="ln">   277  </span>
+<span id="L278" class="ln">   278  </span>		lang, err := tryDetermineLogMessagesLanguage(testCtx, mock)
+<span id="L279" class="ln">   279  </span>		assert.Error(t, err)
+<span id="L280" class="ln">   280  </span>		assert.Equal(t, &#34;&#34;, lang)
+<span id="L281" class="ln">   281  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L282" class="ln">   282  </span>	})
+<span id="L283" class="ln">   283  </span>}
+<span id="L284" class="ln">   284  </span>
+<span id="L285" class="ln">   285  </span>func TestRegexMatchesToMap(t *testing.T) {
+<span id="L286" class="ln">   286  </span>	t.Run(&#34;successful match&#34;, func(t *testing.T) {
+<span id="L287" class="ln">   287  </span>		regex := regexp.MustCompile(`(?P&lt;severity&gt;\w+): (?P&lt;message&gt;.+)`)
+<span id="L288" class="ln">   288  </span>		matches := []string{&#34;ERROR: Something went wrong&#34;, &#34;ERROR&#34;, &#34;Something went wrong&#34;}
+<span id="L289" class="ln">   289  </span>
+<span id="L290" class="ln">   290  </span>		result := regexMatchesToMap(regex, matches)
+<span id="L291" class="ln">   291  </span>		expected := map[string]string{
+<span id="L292" class="ln">   292  </span>			&#34;severity&#34;: &#34;ERROR&#34;,
+<span id="L293" class="ln">   293  </span>			&#34;message&#34;:  &#34;Something went wrong&#34;,
+<span id="L294" class="ln">   294  </span>		}
+<span id="L295" class="ln">   295  </span>
+<span id="L296" class="ln">   296  </span>		assert.Equal(t, expected, result)
+<span id="L297" class="ln">   297  </span>	})
+<span id="L298" class="ln">   298  </span>
+<span id="L299" class="ln">   299  </span>	t.Run(&#34;no matches&#34;, func(t *testing.T) {
+<span id="L300" class="ln">   300  </span>		regex := regexp.MustCompile(`(?P&lt;severity&gt;\w+): (?P&lt;message&gt;.+)`)
+<span id="L301" class="ln">   301  </span>		matches := []string{}
+<span id="L302" class="ln">   302  </span>
+<span id="L303" class="ln">   303  </span>		result := regexMatchesToMap(regex, matches)
+<span id="L304" class="ln">   304  </span>		assert.Empty(t, result)
+<span id="L305" class="ln">   305  </span>	})
+<span id="L306" class="ln">   306  </span>
+<span id="L307" class="ln">   307  </span>	t.Run(&#34;nil regex&#34;, func(t *testing.T) {
+<span id="L308" class="ln">   308  </span>		matches := []string{&#34;test&#34;}
+<span id="L309" class="ln">   309  </span>
+<span id="L310" class="ln">   310  </span>		result := regexMatchesToMap(nil, matches)
+<span id="L311" class="ln">   311  </span>		assert.Empty(t, result)
+<span id="L312" class="ln">   312  </span>	})
+<span id="L313" class="ln">   313  </span>}
+<span id="L314" class="ln">   314  </span>
+<span id="L315" class="ln">   315  </span>func TestCSVLogRegex(t *testing.T) {
+<span id="L316" class="ln">   316  </span>	<span class="comment">// Test the default CSV log regex with sample log lines</span>
+<span id="L317" class="ln">   317  </span>	regex, err := regexp.Compile(CSVLogDefaultRegEx)
+<span id="L318" class="ln">   318  </span>	require.NoError(t, err)
+<span id="L319" class="ln">   319  </span>
+<span id="L320" class="ln">   320  </span>	testLines := []struct {
+<span id="L321" class="ln">   321  </span>		line     string
+<span id="L322" class="ln">   322  </span>		expected map[string]string
+<span id="L323" class="ln">   323  </span>	}{
+<span id="L324" class="ln">   324  </span>		{
+<span id="L325" class="ln">   325  </span>			line: `2023-12-01 10:30:45.123 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,1,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,ERROR,`,
+<span id="L326" class="ln">   326  </span>			expected: map[string]string{
+<span id="L327" class="ln">   327  </span>				&#34;log_time&#34;:         &#34;2023-12-01 10:30:45.123 UTC&#34;,
+<span id="L328" class="ln">   328  </span>				&#34;user_name&#34;:        &#34;postgres&#34;,
+<span id="L329" class="ln">   329  </span>				&#34;database_name&#34;:    &#34;testdb&#34;,
+<span id="L330" class="ln">   330  </span>				&#34;process_id&#34;:       &#34;12345&#34;,
+<span id="L331" class="ln">   331  </span>				&#34;connection_from&#34;:  &#34;127.0.0.1:54321&#34;,
+<span id="L332" class="ln">   332  </span>				&#34;session_id&#34;:       &#34;session123&#34;,
+<span id="L333" class="ln">   333  </span>				&#34;session_line_num&#34;: &#34;1&#34;,
+<span id="L334" class="ln">   334  </span>				&#34;command_tag&#34;:      &#34;SELECT&#34;,
+<span id="L335" class="ln">   335  </span>				&#34;error_severity&#34;:   &#34;ERROR&#34;,
+<span id="L336" class="ln">   336  </span>			},
+<span id="L337" class="ln">   337  </span>		},
+<span id="L338" class="ln">   338  </span>		{
+<span id="L339" class="ln">   339  </span>			line: `2023-12-01 10:30:45.123 UTC,postgres,testdb,12345,127.0.0.1:54321,session123,1,SELECT,2023-12-01 10:30:00 UTC,1/234,567,WARNING,`,
+<span id="L340" class="ln">   340  </span>			expected: map[string]string{
+<span id="L341" class="ln">   341  </span>				&#34;log_time&#34;:         &#34;2023-12-01 10:30:45.123 UTC&#34;,
+<span id="L342" class="ln">   342  </span>				&#34;user_name&#34;:        &#34;postgres&#34;,
+<span id="L343" class="ln">   343  </span>				&#34;database_name&#34;:    &#34;testdb&#34;,
+<span id="L344" class="ln">   344  </span>				&#34;process_id&#34;:       &#34;12345&#34;,
+<span id="L345" class="ln">   345  </span>				&#34;connection_from&#34;:  &#34;127.0.0.1:54321&#34;,
+<span id="L346" class="ln">   346  </span>				&#34;session_id&#34;:       &#34;session123&#34;,
+<span id="L347" class="ln">   347  </span>				&#34;session_line_num&#34;: &#34;1&#34;,
+<span id="L348" class="ln">   348  </span>				&#34;command_tag&#34;:      &#34;SELECT&#34;,
+<span id="L349" class="ln">   349  </span>				&#34;error_severity&#34;:   &#34;WARNING&#34;,
+<span id="L350" class="ln">   350  </span>			},
+<span id="L351" class="ln">   351  </span>		},
+<span id="L352" class="ln">   352  </span>	}
+<span id="L353" class="ln">   353  </span>
+<span id="L354" class="ln">   354  </span>	for i, tt := range testLines {
+<span id="L355" class="ln">   355  </span>		t.Run(string(rune(&#39;A&#39;+i)), func(t *testing.T) {
+<span id="L356" class="ln">   356  </span>			matches := regex.FindStringSubmatch(tt.line)
+<span id="L357" class="ln">   357  </span>			assert.NotEmpty(t, matches, &#34;regex should match the log line&#34;)
+<span id="L358" class="ln">   358  </span>
+<span id="L359" class="ln">   359  </span>			result := regexMatchesToMap(regex, matches)
+<span id="L360" class="ln">   360  </span>			for key, expected := range tt.expected {
+<span id="L361" class="ln">   361  </span>				assert.Equal(t, expected, result[key], &#34;mismatch for key %s&#34;, key)
+<span id="L362" class="ln">   362  </span>			}
+<span id="L363" class="ln">   363  </span>		})
+<span id="L364" class="ln">   364  </span>	}
+<span id="L365" class="ln">   365  </span>}
+<span id="L366" class="ln">   366  </span>
+<span id="L367" class="ln">   367  </span><span class="comment">// Integration test that creates actual log files and tests the ParseLogs function</span>
+<span id="L368" class="ln">   368  </span>func TestLogParse(t *testing.T) {
+<span id="L369" class="ln">   369  </span>	tempDir := t.TempDir()
+<span id="L370" class="ln">   370  </span>	logFile := filepath.Join(tempDir, &#34;test.csv&#34;)
+<span id="L371" class="ln">   371  </span>
+<span id="L372" class="ln">   372  </span>	<span class="comment">// Create a test log file with CSV format entries</span>
+<span id="L373" class="ln">   373  </span>	logContent := `2023-12-01 10:30:45.123 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,1,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,ERROR,&#34;duplicate key value violates unique constraint&#34;
+<span id="L374" class="ln">   374  </span>2023-12-01 10:30:46.124 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,2,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,WARNING,&#34;this is a warning message&#34;
+<span id="L375" class="ln">   375  </span>2023-12-01 10:30:47.125 UTC,&#34;postgres&#34;,&#34;otherdb&#34;,12346,&#34;127.0.0.1:54322&#34;,session124,1,&#34;INSERT&#34;,2023-12-01 10:30:00 UTC,1/235,568,ERROR,&#34;another error message&#34;
+<span id="L376" class="ln">   376  </span>`
+<span id="L377" class="ln">   377  </span>
+<span id="L378" class="ln">   378  </span>	err := os.WriteFile(logFile, []byte(logContent), 0644)
+<span id="L379" class="ln">   379  </span>	require.NoError(t, err)
+<span id="L380" class="ln">   380  </span>
+<span id="L381" class="ln">   381  </span>	<span class="comment">// Create a mock database connection</span>
+<span id="L382" class="ln">   382  </span>	mock, err := pgxmock.NewPool()
+<span id="L383" class="ln">   383  </span>	require.NoError(t, err)
+<span id="L384" class="ln">   384  </span>	defer mock.Close()
+<span id="L385" class="ln">   385  </span>
+<span id="L386" class="ln">   386  </span>	<span class="comment">// pretend we&#39;re connected via UNIX socket</span>
+<span id="L387" class="ln">   387  </span>	mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
+<span id="L388" class="ln">   388  </span>		pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(true))
+<span id="L389" class="ln">   389  </span>	<span class="comment">// Mock the language detection query</span>
+<span id="L390" class="ln">   390  </span>	mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
+<span id="L391" class="ln">   391  </span>		WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;en&#34;))
+<span id="L392" class="ln">   392  </span>
+<span id="L393" class="ln">   393  </span>	<span class="comment">// Create a SourceConn for testing</span>
+<span id="L394" class="ln">   394  </span>	sourceConn := &amp;sources.SourceConn{
+<span id="L395" class="ln">   395  </span>		Source: sources.Source{
+<span id="L396" class="ln">   396  </span>			Name: &#34;test-source&#34;,
+<span id="L397" class="ln">   397  </span>			HostConfig: sources.HostConfigAttrs{
+<span id="L398" class="ln">   398  </span>				LogsGlobPath: filepath.Join(tempDir, &#34;*.csv&#34;),
+<span id="L399" class="ln">   399  </span>				<span class="comment">// Use default regex by leaving LogsMatchRegex empty</span>
+<span id="L400" class="ln">   400  </span>			},
+<span id="L401" class="ln">   401  </span>		},
+<span id="L402" class="ln">   402  </span>		Conn: mock,
+<span id="L403" class="ln">   403  </span>	}
+<span id="L404" class="ln">   404  </span>
+<span id="L405" class="ln">   405  </span>	<span class="comment">// Create a context with timeout to prevent test from hanging</span>
+<span id="L406" class="ln">   406  </span>	ctx, cancel := context.WithTimeout(testCtx, 3*time.Second)
+<span id="L407" class="ln">   407  </span>	defer cancel()
+<span id="L408" class="ln">   408  </span>
+<span id="L409" class="ln">   409  </span>	<span class="comment">// Create a channel to receive measurement envelopes</span>
+<span id="L410" class="ln">   410  </span>	storeCh := make(chan MeasurementEnvelope, 10)
+<span id="L411" class="ln">   411  </span>
+<span id="L412" class="ln">   412  </span>	<span class="comment">// Use a short interval for testing (0.5 seconds)</span>
+<span id="L413" class="ln">   413  </span>	ParseLogs(ctx, sourceConn, &#34;testdb&#34;, 0.5, storeCh)
+<span id="L414" class="ln">   414  </span>
+<span id="L415" class="ln">   415  </span>	<span class="comment">// Wait for measurements to be sent or timeout</span>
+<span id="L416" class="ln">   416  </span>	var measurement MeasurementEnvelope
+<span id="L417" class="ln">   417  </span>	select {
+<span id="L418" class="ln">   418  </span>	case measurement = &lt;-storeCh:
+<span id="L419" class="ln">   419  </span>		assert.NotEmpty(t, measurement.Data, &#34;Measurement data should not be empty&#34;)
+<span id="L420" class="ln">   420  </span>	case &lt;-time.After(2 * time.Second):
+<span id="L421" class="ln">   421  </span>		break
+<span id="L422" class="ln">   422  </span>	}
+<span id="L423" class="ln">   423  </span>
+<span id="L424" class="ln">   424  </span>	assert.Equal(t, &#34;test-source&#34;, measurement.DBName)
+<span id="L425" class="ln">   425  </span>	assert.Equal(t, specialMetricServerLogEventCounts, measurement.MetricName)
+<span id="L426" class="ln">   426  </span>
+<span id="L427" class="ln">   427  </span>	<span class="comment">// Verify the data contains expected fields for both local and total counts</span>
+<span id="L428" class="ln">   428  </span>	data := measurement.Data[0]
+<span id="L429" class="ln">   429  </span>	<span class="comment">// Check that severity counts are present</span>
+<span id="L430" class="ln">   430  </span>	_, hasError := data[&#34;error&#34;]
+<span id="L431" class="ln">   431  </span>	_, hasWarning := data[&#34;warning&#34;]
+<span id="L432" class="ln">   432  </span>	assert.True(t, hasError &amp;&amp; hasWarning, &#34;Should have at least error and warning&#34;)
+<span id="L433" class="ln">   433  </span>
+<span id="L434" class="ln">   434  </span>	<span class="comment">// Ensure mock expectations were met</span>
+<span id="L435" class="ln">   435  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L436" class="ln">   436  </span>}
+<span id="L437" class="ln">   437  </span>
 </pre><p></p>
 
 <div id="footer">

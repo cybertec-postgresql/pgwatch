@@ -124,16 +124,13 @@
 <span id="L67" class="ln">    67  </span>		return nil, err
 <span id="L68" class="ln">    68  </span>	}
 <span id="L69" class="ln">    69  </span>	return &amp;metrics.MeasurementEnvelope{
-<span id="L70" class="ln">    70  </span>		DBName:           md.Name,
-<span id="L71" class="ln">    71  </span>		SourceType:       string(md.Kind),
-<span id="L72" class="ln">    72  </span>		MetricName:       metricName,
-<span id="L73" class="ln">    73  </span>		CustomTags:       md.CustomTags,
-<span id="L74" class="ln">    74  </span>		Data:             data,
-<span id="L75" class="ln">    75  </span>		RealDbname:       md.RealDbname,
-<span id="L76" class="ln">    76  </span>		SystemIdentifier: md.SystemIdentifier,
-<span id="L77" class="ln">    77  </span>	}, nil
-<span id="L78" class="ln">    78  </span>}
-<span id="L79" class="ln">    79  </span>
+<span id="L70" class="ln">    70  </span>		DBName:     md.Name,
+<span id="L71" class="ln">    71  </span>		MetricName: metricName,
+<span id="L72" class="ln">    72  </span>		CustomTags: md.CustomTags,
+<span id="L73" class="ln">    73  </span>		Data:       data,
+<span id="L74" class="ln">    74  </span>	}, nil
+<span id="L75" class="ln">    75  </span>}
+<span id="L76" class="ln">    76  </span>
 </pre><p></p>
 
 <div id="footer">
