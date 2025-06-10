@@ -495,124 +495,141 @@
 <span id="L438" class="ln">   438  </span>	return changeCounts
 <span id="L439" class="ln">   439  </span>}
 <span id="L440" class="ln">   440  </span>
-<span id="L441" class="ln">   441  </span>func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, md *sources.SourceConn, hostState map[string]map[string]string) {
-<span id="L442" class="ln">   442  </span>	storageCh := r.measurementCh
-<span id="L443" class="ln">   443  </span>	sprocCounts := DetectSprocChanges(ctx, md, storageCh, hostState) <span class="comment">// TODO some of Detect*() code could be unified...</span>
-<span id="L444" class="ln">   444  </span>	tableCounts := DetectTableChanges(ctx, md, storageCh, hostState)
-<span id="L445" class="ln">   445  </span>	indexCounts := DetectIndexChanges(ctx, md, storageCh, hostState)
-<span id="L446" class="ln">   446  </span>	confCounts := DetectConfigurationChanges(ctx, md, storageCh, hostState)
-<span id="L447" class="ln">   447  </span>	privChangeCounts := DetectPrivilegeChanges(ctx, md, storageCh, hostState)
-<span id="L448" class="ln">   448  </span>
-<span id="L449" class="ln">   449  </span>	<span class="comment">// need to send info on all object changes as one message as Grafana applies &#34;last wins&#34; for annotations with similar timestamp</span>
-<span id="L450" class="ln">   450  </span>	message := &#34;&#34;
-<span id="L451" class="ln">   451  </span>	if sprocCounts.Altered &gt; 0 || sprocCounts.Created &gt; 0 || sprocCounts.Dropped &gt; 0 {
-<span id="L452" class="ln">   452  </span>		message += fmt.Sprintf(&#34; sprocs %d/%d/%d&#34;, sprocCounts.Created, sprocCounts.Altered, sprocCounts.Dropped)
-<span id="L453" class="ln">   453  </span>	}
-<span id="L454" class="ln">   454  </span>	if tableCounts.Altered &gt; 0 || tableCounts.Created &gt; 0 || tableCounts.Dropped &gt; 0 {
-<span id="L455" class="ln">   455  </span>		message += fmt.Sprintf(&#34; tables/views %d/%d/%d&#34;, tableCounts.Created, tableCounts.Altered, tableCounts.Dropped)
-<span id="L456" class="ln">   456  </span>	}
-<span id="L457" class="ln">   457  </span>	if indexCounts.Altered &gt; 0 || indexCounts.Created &gt; 0 || indexCounts.Dropped &gt; 0 {
-<span id="L458" class="ln">   458  </span>		message += fmt.Sprintf(&#34; indexes %d/%d/%d&#34;, indexCounts.Created, indexCounts.Altered, indexCounts.Dropped)
-<span id="L459" class="ln">   459  </span>	}
-<span id="L460" class="ln">   460  </span>	if confCounts.Altered &gt; 0 || confCounts.Created &gt; 0 {
-<span id="L461" class="ln">   461  </span>		message += fmt.Sprintf(&#34; configuration %d/%d/%d&#34;, confCounts.Created, confCounts.Altered, confCounts.Dropped)
-<span id="L462" class="ln">   462  </span>	}
-<span id="L463" class="ln">   463  </span>	if privChangeCounts.Dropped &gt; 0 || privChangeCounts.Created &gt; 0 {
-<span id="L464" class="ln">   464  </span>		message += fmt.Sprintf(&#34; privileges %d/%d/%d&#34;, privChangeCounts.Created, privChangeCounts.Altered, privChangeCounts.Dropped)
-<span id="L465" class="ln">   465  </span>	}
-<span id="L466" class="ln">   466  </span>
-<span id="L467" class="ln">   467  </span>	if message &gt; &#34;&#34; {
-<span id="L468" class="ln">   468  </span>		message = &#34;Detected changes for \&#34;&#34; + dbUnique + &#34;\&#34; [Created/Altered/Dropped]:&#34; + message
-<span id="L469" class="ln">   469  </span>		log.GetLogger(ctx).Info(message)
-<span id="L470" class="ln">   470  </span>		detectedChangesSummary := make(metrics.Measurements, 0)
-<span id="L471" class="ln">   471  </span>		influxEntry := metrics.NewMeasurement(time.Now().UnixNano())
-<span id="L472" class="ln">   472  </span>		influxEntry[&#34;details&#34;] = message
-<span id="L473" class="ln">   473  </span>		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
-<span id="L474" class="ln">   474  </span>		storageCh &lt;- metrics.MeasurementEnvelope{
-<span id="L475" class="ln">   475  </span>			DBName:     dbUnique,
-<span id="L476" class="ln">   476  </span>			SourceType: string(md.Kind),
-<span id="L477" class="ln">   477  </span>			MetricName: &#34;object_changes&#34;,
-<span id="L478" class="ln">   478  </span>			Data:       detectedChangesSummary,
-<span id="L479" class="ln">   479  </span>			CustomTags: md.CustomTags,
-<span id="L480" class="ln">   480  </span>		}
-<span id="L481" class="ln">   481  </span>
+<span id="L441" class="ln">   441  </span><span class="comment">// GetInstanceUpMeasurement returns a single measurement with &#34;instance_up&#34; metric</span>
+<span id="L442" class="ln">   442  </span><span class="comment">// used to detect if the instance is up or down</span>
+<span id="L443" class="ln">   443  </span>func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.SourceConn) (metrics.Measurements, error) {
+<span id="L444" class="ln">   444  </span>	err := md.Conn.Ping(ctx)
+<span id="L445" class="ln">   445  </span>	return metrics.Measurements{
+<span id="L446" class="ln">   446  </span>		metrics.Measurement{
+<span id="L447" class="ln">   447  </span>			metrics.EpochColumnName: time.Now().UnixNano(),
+<span id="L448" class="ln">   448  </span>			&#34;instance_up&#34;: func() int {
+<span id="L449" class="ln">   449  </span>				if err == nil {
+<span id="L450" class="ln">   450  </span>					return 1
+<span id="L451" class="ln">   451  </span>				}
+<span id="L452" class="ln">   452  </span>				return 0
+<span id="L453" class="ln">   453  </span>			}(), <span class="comment">// true if connection is up</span>
+<span id="L454" class="ln">   454  </span>		},
+<span id="L455" class="ln">   455  </span>	}, err
+<span id="L456" class="ln">   456  </span>}
+<span id="L457" class="ln">   457  </span>
+<span id="L458" class="ln">   458  </span>func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, md *sources.SourceConn, hostState map[string]map[string]string) {
+<span id="L459" class="ln">   459  </span>	storageCh := r.measurementCh
+<span id="L460" class="ln">   460  </span>	sprocCounts := DetectSprocChanges(ctx, md, storageCh, hostState) <span class="comment">// TODO some of Detect*() code could be unified...</span>
+<span id="L461" class="ln">   461  </span>	tableCounts := DetectTableChanges(ctx, md, storageCh, hostState)
+<span id="L462" class="ln">   462  </span>	indexCounts := DetectIndexChanges(ctx, md, storageCh, hostState)
+<span id="L463" class="ln">   463  </span>	confCounts := DetectConfigurationChanges(ctx, md, storageCh, hostState)
+<span id="L464" class="ln">   464  </span>	privChangeCounts := DetectPrivilegeChanges(ctx, md, storageCh, hostState)
+<span id="L465" class="ln">   465  </span>
+<span id="L466" class="ln">   466  </span>	<span class="comment">// need to send info on all object changes as one message as Grafana applies &#34;last wins&#34; for annotations with similar timestamp</span>
+<span id="L467" class="ln">   467  </span>	message := &#34;&#34;
+<span id="L468" class="ln">   468  </span>	if sprocCounts.Altered &gt; 0 || sprocCounts.Created &gt; 0 || sprocCounts.Dropped &gt; 0 {
+<span id="L469" class="ln">   469  </span>		message += fmt.Sprintf(&#34; sprocs %d/%d/%d&#34;, sprocCounts.Created, sprocCounts.Altered, sprocCounts.Dropped)
+<span id="L470" class="ln">   470  </span>	}
+<span id="L471" class="ln">   471  </span>	if tableCounts.Altered &gt; 0 || tableCounts.Created &gt; 0 || tableCounts.Dropped &gt; 0 {
+<span id="L472" class="ln">   472  </span>		message += fmt.Sprintf(&#34; tables/views %d/%d/%d&#34;, tableCounts.Created, tableCounts.Altered, tableCounts.Dropped)
+<span id="L473" class="ln">   473  </span>	}
+<span id="L474" class="ln">   474  </span>	if indexCounts.Altered &gt; 0 || indexCounts.Created &gt; 0 || indexCounts.Dropped &gt; 0 {
+<span id="L475" class="ln">   475  </span>		message += fmt.Sprintf(&#34; indexes %d/%d/%d&#34;, indexCounts.Created, indexCounts.Altered, indexCounts.Dropped)
+<span id="L476" class="ln">   476  </span>	}
+<span id="L477" class="ln">   477  </span>	if confCounts.Altered &gt; 0 || confCounts.Created &gt; 0 {
+<span id="L478" class="ln">   478  </span>		message += fmt.Sprintf(&#34; configuration %d/%d/%d&#34;, confCounts.Created, confCounts.Altered, confCounts.Dropped)
+<span id="L479" class="ln">   479  </span>	}
+<span id="L480" class="ln">   480  </span>	if privChangeCounts.Dropped &gt; 0 || privChangeCounts.Created &gt; 0 {
+<span id="L481" class="ln">   481  </span>		message += fmt.Sprintf(&#34; privileges %d/%d/%d&#34;, privChangeCounts.Created, privChangeCounts.Altered, privChangeCounts.Dropped)
 <span id="L482" class="ln">   482  </span>	}
-<span id="L483" class="ln">   483  </span>}
-<span id="L484" class="ln">   484  </span>
-<span id="L485" class="ln">   485  </span><span class="comment">// Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.</span>
-<span id="L486" class="ln">   486  </span><span class="comment">// With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific</span>
-<span id="L487" class="ln">   487  </span><span class="comment">// whitelisting or &#34;trusted extensions&#34; (a feature from v13). Ignores errors.</span>
-<span id="L488" class="ln">   488  </span>func TryCreateMissingExtensions(ctx context.Context, md *sources.SourceConn, extensionNames []string, existingExtensions map[string]int) []string {
-<span id="L489" class="ln">   489  </span>	<span class="comment">// TODO: move to sources package and use direct pgx connection</span>
-<span id="L490" class="ln">   490  </span>	sqlAvailable := `select name::text from pg_available_extensions`
-<span id="L491" class="ln">   491  </span>	extsCreated := make([]string, 0)
-<span id="L492" class="ln">   492  </span>
-<span id="L493" class="ln">   493  </span>	<span class="comment">// For security reasons don&#39;t allow to execute random strings but check that it&#39;s an existing extension</span>
-<span id="L494" class="ln">   494  </span>	data, err := QueryMeasurements(ctx, md, sqlAvailable)
-<span id="L495" class="ln">   495  </span>	if err != nil {
-<span id="L496" class="ln">   496  </span>		log.GetLogger(ctx).Infof(&#34;[%s] Failed to get a list of available extensions: %v&#34;, md, err)
-<span id="L497" class="ln">   497  </span>		return extsCreated
-<span id="L498" class="ln">   498  </span>	}
-<span id="L499" class="ln">   499  </span>
-<span id="L500" class="ln">   500  </span>	availableExts := make(map[string]bool)
-<span id="L501" class="ln">   501  </span>	for _, row := range data {
-<span id="L502" class="ln">   502  </span>		availableExts[row[&#34;name&#34;].(string)] = true
-<span id="L503" class="ln">   503  </span>	}
-<span id="L504" class="ln">   504  </span>
-<span id="L505" class="ln">   505  </span>	for _, extToCreate := range extensionNames {
-<span id="L506" class="ln">   506  </span>		if _, ok := existingExtensions[extToCreate]; ok {
-<span id="L507" class="ln">   507  </span>			continue
-<span id="L508" class="ln">   508  </span>		}
-<span id="L509" class="ln">   509  </span>		_, ok := availableExts[extToCreate]
-<span id="L510" class="ln">   510  </span>		if !ok {
-<span id="L511" class="ln">   511  </span>			log.GetLogger(ctx).Errorf(&#34;[%s] Requested extension %s not available on instance, cannot try to create...&#34;, md, extToCreate)
-<span id="L512" class="ln">   512  </span>		} else {
-<span id="L513" class="ln">   513  </span>			sqlCreateExt := `create extension ` + extToCreate
-<span id="L514" class="ln">   514  </span>			_, err := QueryMeasurements(ctx, md, sqlCreateExt)
-<span id="L515" class="ln">   515  </span>			if err != nil {
-<span id="L516" class="ln">   516  </span>				log.GetLogger(ctx).Errorf(&#34;[%s] Failed to create extension %s (based on --try-create-listed-exts-if-missing input): %v&#34;, md, extToCreate, err)
-<span id="L517" class="ln">   517  </span>			}
-<span id="L518" class="ln">   518  </span>			extsCreated = append(extsCreated, extToCreate)
-<span id="L519" class="ln">   519  </span>		}
+<span id="L483" class="ln">   483  </span>
+<span id="L484" class="ln">   484  </span>	if message &gt; &#34;&#34; {
+<span id="L485" class="ln">   485  </span>		message = &#34;Detected changes for \&#34;&#34; + dbUnique + &#34;\&#34; [Created/Altered/Dropped]:&#34; + message
+<span id="L486" class="ln">   486  </span>		log.GetLogger(ctx).Info(message)
+<span id="L487" class="ln">   487  </span>		detectedChangesSummary := make(metrics.Measurements, 0)
+<span id="L488" class="ln">   488  </span>		influxEntry := metrics.NewMeasurement(time.Now().UnixNano())
+<span id="L489" class="ln">   489  </span>		influxEntry[&#34;details&#34;] = message
+<span id="L490" class="ln">   490  </span>		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
+<span id="L491" class="ln">   491  </span>		storageCh &lt;- metrics.MeasurementEnvelope{
+<span id="L492" class="ln">   492  </span>			DBName:     dbUnique,
+<span id="L493" class="ln">   493  </span>			SourceType: string(md.Kind),
+<span id="L494" class="ln">   494  </span>			MetricName: &#34;object_changes&#34;,
+<span id="L495" class="ln">   495  </span>			Data:       detectedChangesSummary,
+<span id="L496" class="ln">   496  </span>			CustomTags: md.CustomTags,
+<span id="L497" class="ln">   497  </span>		}
+<span id="L498" class="ln">   498  </span>
+<span id="L499" class="ln">   499  </span>	}
+<span id="L500" class="ln">   500  </span>}
+<span id="L501" class="ln">   501  </span>
+<span id="L502" class="ln">   502  </span><span class="comment">// Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.</span>
+<span id="L503" class="ln">   503  </span><span class="comment">// With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific</span>
+<span id="L504" class="ln">   504  </span><span class="comment">// whitelisting or &#34;trusted extensions&#34; (a feature from v13). Ignores errors.</span>
+<span id="L505" class="ln">   505  </span>func TryCreateMissingExtensions(ctx context.Context, md *sources.SourceConn, extensionNames []string, existingExtensions map[string]int) []string {
+<span id="L506" class="ln">   506  </span>	<span class="comment">// TODO: move to sources package and use direct pgx connection</span>
+<span id="L507" class="ln">   507  </span>	sqlAvailable := `select name::text from pg_available_extensions`
+<span id="L508" class="ln">   508  </span>	extsCreated := make([]string, 0)
+<span id="L509" class="ln">   509  </span>
+<span id="L510" class="ln">   510  </span>	<span class="comment">// For security reasons don&#39;t allow to execute random strings but check that it&#39;s an existing extension</span>
+<span id="L511" class="ln">   511  </span>	data, err := QueryMeasurements(ctx, md, sqlAvailable)
+<span id="L512" class="ln">   512  </span>	if err != nil {
+<span id="L513" class="ln">   513  </span>		log.GetLogger(ctx).Infof(&#34;[%s] Failed to get a list of available extensions: %v&#34;, md, err)
+<span id="L514" class="ln">   514  </span>		return extsCreated
+<span id="L515" class="ln">   515  </span>	}
+<span id="L516" class="ln">   516  </span>
+<span id="L517" class="ln">   517  </span>	availableExts := make(map[string]bool)
+<span id="L518" class="ln">   518  </span>	for _, row := range data {
+<span id="L519" class="ln">   519  </span>		availableExts[row[&#34;name&#34;].(string)] = true
 <span id="L520" class="ln">   520  </span>	}
 <span id="L521" class="ln">   521  </span>
-<span id="L522" class="ln">   522  </span>	return extsCreated
-<span id="L523" class="ln">   523  </span>}
-<span id="L524" class="ln">   524  </span>
-<span id="L525" class="ln">   525  </span><span class="comment">// Called once on daemon startup to try to create &#34;metric fething helper&#34; functions automatically</span>
-<span id="L526" class="ln">   526  </span>func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn) (err error) {
-<span id="L527" class="ln">   527  </span>	sl := log.GetLogger(ctx).WithField(&#34;source&#34;, md.Name)
-<span id="L528" class="ln">   528  </span>	metrics := maps.Clone(md.Metrics)
-<span id="L529" class="ln">   529  </span>	maps.Insert(metrics, maps.All(md.MetricsStandby))
-<span id="L530" class="ln">   530  </span>	for metricName := range metrics {
-<span id="L531" class="ln">   531  </span>		metric, ok := metricDefs.GetMetricDef(metricName)
-<span id="L532" class="ln">   532  </span>		if !ok {
-<span id="L533" class="ln">   533  </span>			continue
-<span id="L534" class="ln">   534  </span>		}
-<span id="L535" class="ln">   535  </span>		if _, err = md.Conn.Exec(ctx, metric.InitSQL); err != nil {
-<span id="L536" class="ln">   536  </span>			return
-<span id="L537" class="ln">   537  </span>		}
-<span id="L538" class="ln">   538  </span>		sl.WithField(&#34;metric&#34;, metricName).Info(&#34;Successfully created metric fetching helpers&#34;)
-<span id="L539" class="ln">   539  </span>	}
-<span id="L540" class="ln">   540  </span>	return
-<span id="L541" class="ln">   541  </span>}
-<span id="L542" class="ln">   542  </span>
-<span id="L543" class="ln">   543  </span>func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(shutDownDueToRoleChange map[string]bool) {
-<span id="L544" class="ln">   544  </span>	for _, prevDB := range r.prevLoopMonitoredDBs {
-<span id="L545" class="ln">   545  </span>		if r.monitoredSources.GetMonitoredDatabase(prevDB.Name) == nil { <span class="comment">// removed from config</span>
-<span id="L546" class="ln">   546  </span>			prevDB.Conn.Close()
-<span id="L547" class="ln">   547  </span>			_ = r.SinksWriter.SyncMetric(prevDB.Name, &#34;&#34;, sinks.DeleteOp)
-<span id="L548" class="ln">   548  </span>		}
-<span id="L549" class="ln">   549  </span>	}
-<span id="L550" class="ln">   550  </span>
-<span id="L551" class="ln">   551  </span>	for roleChangedDB := range shutDownDueToRoleChange {
-<span id="L552" class="ln">   552  </span>		if db := r.monitoredSources.GetMonitoredDatabase(roleChangedDB); db != nil {
-<span id="L553" class="ln">   553  </span>			db.Conn.Close()
+<span id="L522" class="ln">   522  </span>	for _, extToCreate := range extensionNames {
+<span id="L523" class="ln">   523  </span>		if _, ok := existingExtensions[extToCreate]; ok {
+<span id="L524" class="ln">   524  </span>			continue
+<span id="L525" class="ln">   525  </span>		}
+<span id="L526" class="ln">   526  </span>		_, ok := availableExts[extToCreate]
+<span id="L527" class="ln">   527  </span>		if !ok {
+<span id="L528" class="ln">   528  </span>			log.GetLogger(ctx).Errorf(&#34;[%s] Requested extension %s not available on instance, cannot try to create...&#34;, md, extToCreate)
+<span id="L529" class="ln">   529  </span>		} else {
+<span id="L530" class="ln">   530  </span>			sqlCreateExt := `create extension ` + extToCreate
+<span id="L531" class="ln">   531  </span>			_, err := QueryMeasurements(ctx, md, sqlCreateExt)
+<span id="L532" class="ln">   532  </span>			if err != nil {
+<span id="L533" class="ln">   533  </span>				log.GetLogger(ctx).Errorf(&#34;[%s] Failed to create extension %s (based on --try-create-listed-exts-if-missing input): %v&#34;, md, extToCreate, err)
+<span id="L534" class="ln">   534  </span>			}
+<span id="L535" class="ln">   535  </span>			extsCreated = append(extsCreated, extToCreate)
+<span id="L536" class="ln">   536  </span>		}
+<span id="L537" class="ln">   537  </span>	}
+<span id="L538" class="ln">   538  </span>
+<span id="L539" class="ln">   539  </span>	return extsCreated
+<span id="L540" class="ln">   540  </span>}
+<span id="L541" class="ln">   541  </span>
+<span id="L542" class="ln">   542  </span><span class="comment">// Called once on daemon startup to try to create &#34;metric fething helper&#34; functions automatically</span>
+<span id="L543" class="ln">   543  </span>func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn) (err error) {
+<span id="L544" class="ln">   544  </span>	sl := log.GetLogger(ctx).WithField(&#34;source&#34;, md.Name)
+<span id="L545" class="ln">   545  </span>	metrics := maps.Clone(md.Metrics)
+<span id="L546" class="ln">   546  </span>	maps.Insert(metrics, maps.All(md.MetricsStandby))
+<span id="L547" class="ln">   547  </span>	for metricName := range metrics {
+<span id="L548" class="ln">   548  </span>		metric, ok := metricDefs.GetMetricDef(metricName)
+<span id="L549" class="ln">   549  </span>		if !ok {
+<span id="L550" class="ln">   550  </span>			continue
+<span id="L551" class="ln">   551  </span>		}
+<span id="L552" class="ln">   552  </span>		if _, err = md.Conn.Exec(ctx, metric.InitSQL); err != nil {
+<span id="L553" class="ln">   553  </span>			return
 <span id="L554" class="ln">   554  </span>		}
-<span id="L555" class="ln">   555  </span>		_ = r.SinksWriter.SyncMetric(roleChangedDB, &#34;&#34;, sinks.DeleteOp)
+<span id="L555" class="ln">   555  </span>		sl.WithField(&#34;metric&#34;, metricName).Info(&#34;Successfully created metric fetching helpers&#34;)
 <span id="L556" class="ln">   556  </span>	}
-<span id="L557" class="ln">   557  </span>}
-<span id="L558" class="ln">   558  </span>
+<span id="L557" class="ln">   557  </span>	return
+<span id="L558" class="ln">   558  </span>}
+<span id="L559" class="ln">   559  </span>
+<span id="L560" class="ln">   560  </span>func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(shutDownDueToRoleChange map[string]bool) {
+<span id="L561" class="ln">   561  </span>	for _, prevDB := range r.prevLoopMonitoredDBs {
+<span id="L562" class="ln">   562  </span>		if r.monitoredSources.GetMonitoredDatabase(prevDB.Name) == nil { <span class="comment">// removed from config</span>
+<span id="L563" class="ln">   563  </span>			prevDB.Conn.Close()
+<span id="L564" class="ln">   564  </span>			_ = r.SinksWriter.SyncMetric(prevDB.Name, &#34;&#34;, sinks.DeleteOp)
+<span id="L565" class="ln">   565  </span>		}
+<span id="L566" class="ln">   566  </span>	}
+<span id="L567" class="ln">   567  </span>
+<span id="L568" class="ln">   568  </span>	for roleChangedDB := range shutDownDueToRoleChange {
+<span id="L569" class="ln">   569  </span>		if db := r.monitoredSources.GetMonitoredDatabase(roleChangedDB); db != nil {
+<span id="L570" class="ln">   570  </span>			db.Conn.Close()
+<span id="L571" class="ln">   571  </span>		}
+<span id="L572" class="ln">   572  </span>		_ = r.SinksWriter.SyncMetric(roleChangedDB, &#34;&#34;, sinks.DeleteOp)
+<span id="L573" class="ln">   573  </span>	}
+<span id="L574" class="ln">   574  </span>}
+<span id="L575" class="ln">   575  </span>
 </pre><p></p>
 
 <div id="footer">

@@ -525,63 +525,45 @@
 <span id="L468" class="ln">   468  </span>	if metric.IsInstanceLevel &amp;&amp; r.Metrics.InstanceLevelCacheMaxSeconds &gt; 0 &amp;&amp; time.Second*time.Duration(md.GetMetricInterval(metricName)) &lt; r.Metrics.CacheAge() {
 <span id="L469" class="ln">   469  </span>		cacheKey = fmt.Sprintf(&#34;%s:%s&#34;, md.GetClusterIdentifier(), metricName)
 <span id="L470" class="ln">   470  </span>	}
-<span id="L471" class="ln">   471  </span>	if data = r.measurementCache.Get(cacheKey, r.Metrics.CacheAge()); len(data) &gt; 0 {
-<span id="L472" class="ln">   472  </span>		fromCache = true
-<span id="L473" class="ln">   473  </span>		goto send_to_storageChannel
-<span id="L474" class="ln">   474  </span>	}
-<span id="L475" class="ln">   475  </span>
-<span id="L476" class="ln">   476  </span>	sql = metric.GetSQL(md.Version)
-<span id="L477" class="ln">   477  </span>	if sql == &#34;&#34; &amp;&amp; !(metricName == specialMetricChangeEvents || metricName == recoMetricName) {
-<span id="L478" class="ln">   478  </span>		l.Warning(&#34;Ignoring fetching because of empty SQL&#34;)
-<span id="L479" class="ln">   479  </span>		return nil, nil
-<span id="L480" class="ln">   480  </span>	}
-<span id="L481" class="ln">   481  </span>
-<span id="L482" class="ln">   482  </span>	if (metric.PrimaryOnly() &amp;&amp; md.IsInRecovery) || (metric.StandbyOnly() &amp;&amp; !md.IsInRecovery) {
-<span id="L483" class="ln">   483  </span>		l.Debug(&#34;Skipping fetching of as server in wrong IsInRecovery: &#34;, md.IsInRecovery)
-<span id="L484" class="ln">   484  </span>		return nil, nil
-<span id="L485" class="ln">   485  </span>	}
-<span id="L486" class="ln">   486  </span>
-<span id="L487" class="ln">   487  </span>	switch metricName {
-<span id="L488" class="ln">   488  </span>	case specialMetricChangeEvents:
-<span id="L489" class="ln">   489  </span>		r.CheckForPGObjectChangesAndStore(ctx, md.Name, md, hostState) <span class="comment">// TODO no hostState for Prometheus currently</span>
-<span id="L490" class="ln">   490  </span>		return nil, nil
-<span id="L491" class="ln">   491  </span>	case recoMetricName:
-<span id="L492" class="ln">   492  </span>		if data, err = GetRecommendations(ctx, md); err != nil {
-<span id="L493" class="ln">   493  </span>			return nil, err
-<span id="L494" class="ln">   494  </span>		}
-<span id="L495" class="ln">   495  </span>	default:
-<span id="L496" class="ln">   496  </span>		if data, err = QueryMeasurements(ctx, md, sql); err != nil {
-<span id="L497" class="ln">   497  </span>			<span class="comment">// let&#39;s soften errors to &#34;info&#34; from functions that expect the server to be a primary to reduce noise</span>
-<span id="L498" class="ln">   498  </span>			if strings.Contains(err.Error(), &#34;recovery is in progress&#34;) &amp;&amp; md.IsInRecovery {
-<span id="L499" class="ln">   499  </span>				l.Debugf(&#34;[%s:%s] failed to fetch metrics: %s&#34;, md.Name, metricName, err)
-<span id="L500" class="ln">   500  </span>				return nil, err
-<span id="L501" class="ln">   501  </span>			}
-<span id="L502" class="ln">   502  </span>			if metricName == specialMetricInstanceUp {
-<span id="L503" class="ln">   503  </span>				l.WithError(err).Debugf(&#34;failed to fetch metrics. marking instance as not up&#34;)
-<span id="L504" class="ln">   504  </span>				data = make(metrics.Measurements, 1)
-<span id="L505" class="ln">   505  </span>				data[0] = metrics.NewMeasurement(time.Now().UnixNano())
-<span id="L506" class="ln">   506  </span>				data[0][&#34;is_up&#34;] = 0 <span class="comment">// should be updated if the &#34;instance_up&#34; metric definition is changed</span>
-<span id="L507" class="ln">   507  </span>				goto send_to_storageChannel
-<span id="L508" class="ln">   508  </span>			}
-<span id="L509" class="ln">   509  </span>			l.WithError(err).Error(&#34;failed to fetch metrics&#34;)
-<span id="L510" class="ln">   510  </span>
-<span id="L511" class="ln">   511  </span>			return nil, err
-<span id="L512" class="ln">   512  </span>		}
-<span id="L513" class="ln">   513  </span>	}
-<span id="L514" class="ln">   514  </span>	r.measurementCache.Put(cacheKey, data)
-<span id="L515" class="ln">   515  </span>
-<span id="L516" class="ln">   516  </span>send_to_storageChannel:
-<span id="L517" class="ln">   517  </span>	r.AddSysinfoToMeasurements(data, md)
-<span id="L518" class="ln">   518  </span>	l.WithField(&#34;cache&#34;, fromCache).WithField(&#34;rows&#34;, len(data)).Info(&#34;measurements fetched&#34;)
-<span id="L519" class="ln">   519  </span>	return &amp;metrics.MeasurementEnvelope{
-<span id="L520" class="ln">   520  </span>		DBName:           md.Name,
-<span id="L521" class="ln">   521  </span>		MetricName:       cmp.Or(metric.StorageName, metricName),
-<span id="L522" class="ln">   522  </span>		Data:             data,
-<span id="L523" class="ln">   523  </span>		CustomTags:       md.CustomTags,
-<span id="L524" class="ln">   524  </span>		RealDbname:       md.RealDbname,
-<span id="L525" class="ln">   525  </span>		SystemIdentifier: md.SystemIdentifier}, nil
-<span id="L526" class="ln">   526  </span>}
-<span id="L527" class="ln">   527  </span>
+<span id="L471" class="ln">   471  </span>	data = r.measurementCache.Get(cacheKey, r.Metrics.CacheAge())
+<span id="L472" class="ln">   472  </span>	fromCache = len(data) &gt; 0
+<span id="L473" class="ln">   473  </span>	if !fromCache {
+<span id="L474" class="ln">   474  </span>		if (metric.PrimaryOnly() &amp;&amp; md.IsInRecovery) || (metric.StandbyOnly() &amp;&amp; !md.IsInRecovery) {
+<span id="L475" class="ln">   475  </span>			l.Debug(&#34;Skipping fetching of as server in wrong IsInRecovery: &#34;, md.IsInRecovery)
+<span id="L476" class="ln">   476  </span>			return nil, nil
+<span id="L477" class="ln">   477  </span>		}
+<span id="L478" class="ln">   478  </span>		switch metricName {
+<span id="L479" class="ln">   479  </span>		case specialMetricChangeEvents:
+<span id="L480" class="ln">   480  </span>			r.CheckForPGObjectChangesAndStore(ctx, md.Name, md, hostState)
+<span id="L481" class="ln">   481  </span>			return nil, nil
+<span id="L482" class="ln">   482  </span>		case recoMetricName:
+<span id="L483" class="ln">   483  </span>			data, err = GetRecommendations(ctx, md)
+<span id="L484" class="ln">   484  </span>		case specialMetricInstanceUp:
+<span id="L485" class="ln">   485  </span>			data, err = r.GetInstanceUpMeasurement(ctx, md)
+<span id="L486" class="ln">   486  </span>		default:
+<span id="L487" class="ln">   487  </span>			sql = metric.GetSQL(md.Version)
+<span id="L488" class="ln">   488  </span>			if sql == &#34;&#34; &amp;&amp; !(metricName == specialMetricChangeEvents || metricName == recoMetricName) {
+<span id="L489" class="ln">   489  </span>				l.Warning(&#34;Ignoring fetching because of empty SQL&#34;)
+<span id="L490" class="ln">   490  </span>				return nil, nil
+<span id="L491" class="ln">   491  </span>			}
+<span id="L492" class="ln">   492  </span>			data, err = QueryMeasurements(ctx, md, sql)
+<span id="L493" class="ln">   493  </span>		}
+<span id="L494" class="ln">   494  </span>		if err != nil {
+<span id="L495" class="ln">   495  </span>			return nil, err
+<span id="L496" class="ln">   496  </span>		}
+<span id="L497" class="ln">   497  </span>		r.measurementCache.Put(cacheKey, data)
+<span id="L498" class="ln">   498  </span>	}
+<span id="L499" class="ln">   499  </span>	r.AddSysinfoToMeasurements(data, md)
+<span id="L500" class="ln">   500  </span>	l.WithField(&#34;cache&#34;, fromCache).WithField(&#34;rows&#34;, len(data)).Info(&#34;measurements fetched&#34;)
+<span id="L501" class="ln">   501  </span>	return &amp;metrics.MeasurementEnvelope{
+<span id="L502" class="ln">   502  </span>		DBName:           md.Name,
+<span id="L503" class="ln">   503  </span>		MetricName:       cmp.Or(metric.StorageName, metricName),
+<span id="L504" class="ln">   504  </span>		Data:             data,
+<span id="L505" class="ln">   505  </span>		CustomTags:       md.CustomTags,
+<span id="L506" class="ln">   506  </span>		RealDbname:       md.RealDbname,
+<span id="L507" class="ln">   507  </span>		SystemIdentifier: md.SystemIdentifier}, nil
+<span id="L508" class="ln">   508  </span>}
+<span id="L509" class="ln">   509  </span>
 </pre><p></p>
 
 <div id="footer">

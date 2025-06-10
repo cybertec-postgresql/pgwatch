@@ -225,136 +225,114 @@
 <span id="L168" class="ln">   168  </span>	}
 <span id="L169" class="ln">   169  </span>	t1 := time.Now()
 <span id="L170" class="ln">   170  </span>	for dbname, metricsMessages := range promAsyncMetricCache {
-<span id="L171" class="ln">   171  </span>		promw.setInstanceUpDownState(ch, dbname)
-<span id="L172" class="ln">   172  </span>		for metric, metricMessages := range metricsMessages {
-<span id="L173" class="ln">   173  </span>			if metric == &#34;change_events&#34; {
-<span id="L174" class="ln">   174  </span>				continue <span class="comment">// not supported</span>
-<span id="L175" class="ln">   175  </span>			}
-<span id="L176" class="ln">   176  </span>			promMetrics := promw.MetricStoreMessageToPromMetrics(metricMessages)
-<span id="L177" class="ln">   177  </span>			rows += len(promMetrics)
-<span id="L178" class="ln">   178  </span>			for _, pm := range promMetrics { <span class="comment">// collect &amp; send later in batch? capMetricChan = 1000 limit in prometheus code</span>
-<span id="L179" class="ln">   179  </span>				ch &lt;- pm
-<span id="L180" class="ln">   180  </span>			}
-<span id="L181" class="ln">   181  </span>		}
-<span id="L182" class="ln">   182  </span>		promAsyncMetricCacheLock.Lock()
-<span id="L183" class="ln">   183  </span>		promAsyncMetricCache[dbname] = make(map[string]metrics.MeasurementEnvelope) <span class="comment">// clear the cache for this db after metrics are collected</span>
-<span id="L184" class="ln">   184  </span>		promAsyncMetricCacheLock.Unlock()
-<span id="L185" class="ln">   185  </span>	}
-<span id="L186" class="ln">   186  </span>	promw.logger.WithField(&#34;count&#34;, rows).WithField(&#34;elapsed&#34;, time.Since(t1)).Info(&#34;measurements written&#34;)
-<span id="L187" class="ln">   187  </span>	ch &lt;- promw.totalScrapeFailures
-<span id="L188" class="ln">   188  </span>	promw.lastScrapeErrors.Set(lastScrapeErrors)
-<span id="L189" class="ln">   189  </span>	ch &lt;- promw.lastScrapeErrors
-<span id="L190" class="ln">   190  </span>}
-<span id="L191" class="ln">   191  </span>
-<span id="L192" class="ln">   192  </span>func (promw *PrometheusWriter) setInstanceUpDownState(ch chan&lt;- prometheus.Metric, dbName string) {
-<span id="L193" class="ln">   193  </span>	data := metrics.NewMeasurement(time.Now().UnixNano())
-<span id="L194" class="ln">   194  </span>	data[promInstanceUpStateMetric] = 1
-<span id="L195" class="ln">   195  </span>
-<span id="L196" class="ln">   196  </span>	pm := promw.MetricStoreMessageToPromMetrics(metrics.MeasurementEnvelope{
-<span id="L197" class="ln">   197  </span>		DBName:           dbName,
-<span id="L198" class="ln">   198  </span>		SourceType:       &#34;postgres&#34;,
-<span id="L199" class="ln">   199  </span>		MetricName:       promInstanceUpStateMetric,
-<span id="L200" class="ln">   200  </span>		CustomTags:       nil, <span class="comment">//md.CustomTags,</span>
-<span id="L201" class="ln">   201  </span>		Data:             metrics.Measurements{data},
-<span id="L202" class="ln">   202  </span>		RealDbname:       dbName, <span class="comment">//vme.RealDbname,</span>
-<span id="L203" class="ln">   203  </span>		SystemIdentifier: dbName, <span class="comment">//vme.SystemIdentifier,</span>
-<span id="L204" class="ln">   204  </span>	})
-<span id="L205" class="ln">   205  </span>
-<span id="L206" class="ln">   206  </span>	if len(pm) &gt; 0 {
-<span id="L207" class="ln">   207  </span>		ch &lt;- pm[0]
-<span id="L208" class="ln">   208  </span>	} else {
-<span id="L209" class="ln">   209  </span>		promw.logger.Error(&#34;Could not formulate an instance state report - should not happen&#34;)
-<span id="L210" class="ln">   210  </span>	}
-<span id="L211" class="ln">   211  </span>}
-<span id="L212" class="ln">   212  </span>
-<span id="L213" class="ln">   213  </span>func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.MeasurementEnvelope) []prometheus.Metric {
-<span id="L214" class="ln">   214  </span>	promMetrics := make([]prometheus.Metric, 0)
-<span id="L215" class="ln">   215  </span>	var epochTime time.Time
-<span id="L216" class="ln">   216  </span>	if len(msg.Data) == 0 {
-<span id="L217" class="ln">   217  </span>		return promMetrics
-<span id="L218" class="ln">   218  </span>	}
-<span id="L219" class="ln">   219  </span>
-<span id="L220" class="ln">   220  </span>	gauges := promw.gauges[msg.MetricName]
-<span id="L221" class="ln">   221  </span>
-<span id="L222" class="ln">   222  </span>	epochTime = time.Unix(0, msg.Data.GetEpoch())
-<span id="L223" class="ln">   223  </span>
-<span id="L224" class="ln">   224  </span>	if epochTime.Before(time.Now().Add(-promScrapingStalenessHardDropLimit)) {
-<span id="L225" class="ln">   225  </span>		promw.logger.Warningf(&#34;Dropping metric %s:%s cache set due to staleness (&gt;%v)...&#34;, msg.DBName, msg.MetricName, promScrapingStalenessHardDropLimit)
-<span id="L226" class="ln">   226  </span>		promw.PurgeMetricsFromPromAsyncCacheIfAny(msg.DBName, msg.MetricName)
-<span id="L227" class="ln">   227  </span>		return promMetrics
-<span id="L228" class="ln">   228  </span>	}
-<span id="L229" class="ln">   229  </span>
-<span id="L230" class="ln">   230  </span>	for _, dr := range msg.Data {
-<span id="L231" class="ln">   231  </span>		labels := make(map[string]string)
-<span id="L232" class="ln">   232  </span>		fields := make(map[string]float64)
-<span id="L233" class="ln">   233  </span>		if msg.CustomTags != nil {
-<span id="L234" class="ln">   234  </span>			labels = maps.Clone(msg.CustomTags)
-<span id="L235" class="ln">   235  </span>		}
-<span id="L236" class="ln">   236  </span>		labels[&#34;dbname&#34;] = msg.DBName
-<span id="L237" class="ln">   237  </span>
-<span id="L238" class="ln">   238  </span>		for k, v := range dr {
-<span id="L239" class="ln">   239  </span>			if v == nil || v == &#34;&#34; || k == metrics.EpochColumnName {
-<span id="L240" class="ln">   240  </span>				continue <span class="comment">// not storing NULLs. epoch checked/assigned once</span>
-<span id="L241" class="ln">   241  </span>			}
+<span id="L171" class="ln">   171  </span>		for metric, metricMessages := range metricsMessages {
+<span id="L172" class="ln">   172  </span>			if metric == &#34;change_events&#34; {
+<span id="L173" class="ln">   173  </span>				continue <span class="comment">// not supported</span>
+<span id="L174" class="ln">   174  </span>			}
+<span id="L175" class="ln">   175  </span>			promMetrics := promw.MetricStoreMessageToPromMetrics(metricMessages)
+<span id="L176" class="ln">   176  </span>			rows += len(promMetrics)
+<span id="L177" class="ln">   177  </span>			for _, pm := range promMetrics { <span class="comment">// collect &amp; send later in batch? capMetricChan = 1000 limit in prometheus code</span>
+<span id="L178" class="ln">   178  </span>				ch &lt;- pm
+<span id="L179" class="ln">   179  </span>			}
+<span id="L180" class="ln">   180  </span>		}
+<span id="L181" class="ln">   181  </span>		promAsyncMetricCacheLock.Lock()
+<span id="L182" class="ln">   182  </span>		promAsyncMetricCache[dbname] = make(map[string]metrics.MeasurementEnvelope) <span class="comment">// clear the cache for this db after metrics are collected</span>
+<span id="L183" class="ln">   183  </span>		promAsyncMetricCacheLock.Unlock()
+<span id="L184" class="ln">   184  </span>	}
+<span id="L185" class="ln">   185  </span>	promw.logger.WithField(&#34;count&#34;, rows).WithField(&#34;elapsed&#34;, time.Since(t1)).Info(&#34;measurements written&#34;)
+<span id="L186" class="ln">   186  </span>	ch &lt;- promw.totalScrapeFailures
+<span id="L187" class="ln">   187  </span>	promw.lastScrapeErrors.Set(lastScrapeErrors)
+<span id="L188" class="ln">   188  </span>	ch &lt;- promw.lastScrapeErrors
+<span id="L189" class="ln">   189  </span>}
+<span id="L190" class="ln">   190  </span>
+<span id="L191" class="ln">   191  </span>func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.MeasurementEnvelope) []prometheus.Metric {
+<span id="L192" class="ln">   192  </span>	promMetrics := make([]prometheus.Metric, 0)
+<span id="L193" class="ln">   193  </span>	var epochTime time.Time
+<span id="L194" class="ln">   194  </span>	if len(msg.Data) == 0 {
+<span id="L195" class="ln">   195  </span>		return promMetrics
+<span id="L196" class="ln">   196  </span>	}
+<span id="L197" class="ln">   197  </span>
+<span id="L198" class="ln">   198  </span>	gauges := promw.gauges[msg.MetricName]
+<span id="L199" class="ln">   199  </span>
+<span id="L200" class="ln">   200  </span>	epochTime = time.Unix(0, msg.Data.GetEpoch())
+<span id="L201" class="ln">   201  </span>
+<span id="L202" class="ln">   202  </span>	if epochTime.Before(time.Now().Add(-promScrapingStalenessHardDropLimit)) {
+<span id="L203" class="ln">   203  </span>		promw.logger.Warningf(&#34;Dropping metric %s:%s cache set due to staleness (&gt;%v)...&#34;, msg.DBName, msg.MetricName, promScrapingStalenessHardDropLimit)
+<span id="L204" class="ln">   204  </span>		promw.PurgeMetricsFromPromAsyncCacheIfAny(msg.DBName, msg.MetricName)
+<span id="L205" class="ln">   205  </span>		return promMetrics
+<span id="L206" class="ln">   206  </span>	}
+<span id="L207" class="ln">   207  </span>
+<span id="L208" class="ln">   208  </span>	for _, dr := range msg.Data {
+<span id="L209" class="ln">   209  </span>		labels := make(map[string]string)
+<span id="L210" class="ln">   210  </span>		fields := make(map[string]float64)
+<span id="L211" class="ln">   211  </span>		if msg.CustomTags != nil {
+<span id="L212" class="ln">   212  </span>			labels = maps.Clone(msg.CustomTags)
+<span id="L213" class="ln">   213  </span>		}
+<span id="L214" class="ln">   214  </span>		labels[&#34;dbname&#34;] = msg.DBName
+<span id="L215" class="ln">   215  </span>
+<span id="L216" class="ln">   216  </span>		for k, v := range dr {
+<span id="L217" class="ln">   217  </span>			if v == nil || v == &#34;&#34; || k == metrics.EpochColumnName {
+<span id="L218" class="ln">   218  </span>				continue <span class="comment">// not storing NULLs. epoch checked/assigned once</span>
+<span id="L219" class="ln">   219  </span>			}
+<span id="L220" class="ln">   220  </span>
+<span id="L221" class="ln">   221  </span>			if strings.HasPrefix(k, &#34;tag_&#34;) {
+<span id="L222" class="ln">   222  </span>				tag := k[4:]
+<span id="L223" class="ln">   223  </span>				labels[tag] = fmt.Sprintf(&#34;%v&#34;, v)
+<span id="L224" class="ln">   224  </span>			} else {
+<span id="L225" class="ln">   225  </span>				switch t := v.(type) {
+<span id="L226" class="ln">   226  </span>				case string:
+<span id="L227" class="ln">   227  </span>					labels[k] = t
+<span id="L228" class="ln">   228  </span>				case int, int32, int64, float32, float64:
+<span id="L229" class="ln">   229  </span>					f, err := strconv.ParseFloat(fmt.Sprintf(&#34;%v&#34;, v), 64)
+<span id="L230" class="ln">   230  </span>					if err != nil {
+<span id="L231" class="ln">   231  </span>						promw.logger.Debugf(&#34;skipping scraping column %s of [%s:%s]: %v&#34;, k, msg.DBName, msg.MetricName, err)
+<span id="L232" class="ln">   232  </span>					}
+<span id="L233" class="ln">   233  </span>					fields[k] = f
+<span id="L234" class="ln">   234  </span>				case bool:
+<span id="L235" class="ln">   235  </span>					fields[k] = map[bool]float64{true: 1, false: 0}[t]
+<span id="L236" class="ln">   236  </span>				default:
+<span id="L237" class="ln">   237  </span>					promw.logger.Debugf(&#34;skipping scraping column %s of [%s:%s], unsupported datatype: %v&#34;, k, msg.DBName, msg.MetricName, t)
+<span id="L238" class="ln">   238  </span>					continue
+<span id="L239" class="ln">   239  </span>				}
+<span id="L240" class="ln">   240  </span>			}
+<span id="L241" class="ln">   241  </span>		}
 <span id="L242" class="ln">   242  </span>
-<span id="L243" class="ln">   243  </span>			if strings.HasPrefix(k, &#34;tag_&#34;) {
-<span id="L244" class="ln">   244  </span>				tag := k[4:]
-<span id="L245" class="ln">   245  </span>				labels[tag] = fmt.Sprintf(&#34;%v&#34;, v)
-<span id="L246" class="ln">   246  </span>			} else {
-<span id="L247" class="ln">   247  </span>				switch t := v.(type) {
-<span id="L248" class="ln">   248  </span>				case string:
-<span id="L249" class="ln">   249  </span>					labels[k] = t
-<span id="L250" class="ln">   250  </span>				case int, int32, int64, float32, float64:
-<span id="L251" class="ln">   251  </span>					f, err := strconv.ParseFloat(fmt.Sprintf(&#34;%v&#34;, v), 64)
-<span id="L252" class="ln">   252  </span>					if err != nil {
-<span id="L253" class="ln">   253  </span>						promw.logger.Debugf(&#34;skipping scraping column %s of [%s:%s]: %v&#34;, k, msg.DBName, msg.MetricName, err)
-<span id="L254" class="ln">   254  </span>					}
-<span id="L255" class="ln">   255  </span>					fields[k] = f
-<span id="L256" class="ln">   256  </span>				case bool:
-<span id="L257" class="ln">   257  </span>					fields[k] = map[bool]float64{true: 1, false: 0}[t]
-<span id="L258" class="ln">   258  </span>				default:
-<span id="L259" class="ln">   259  </span>					promw.logger.Debugf(&#34;skipping scraping column %s of [%s:%s], unsupported datatype: %v&#34;, k, msg.DBName, msg.MetricName, t)
-<span id="L260" class="ln">   260  </span>					continue
-<span id="L261" class="ln">   261  </span>				}
-<span id="L262" class="ln">   262  </span>			}
-<span id="L263" class="ln">   263  </span>		}
-<span id="L264" class="ln">   264  </span>
-<span id="L265" class="ln">   265  </span>		labelKeys := make([]string, 0)
-<span id="L266" class="ln">   266  </span>		labelValues := make([]string, 0)
-<span id="L267" class="ln">   267  </span>		for k, v := range labels {
-<span id="L268" class="ln">   268  </span>			labelKeys = append(labelKeys, k)
-<span id="L269" class="ln">   269  </span>			labelValues = append(labelValues, v)
-<span id="L270" class="ln">   270  </span>		}
-<span id="L271" class="ln">   271  </span>
-<span id="L272" class="ln">   272  </span>		for field, value := range fields {
-<span id="L273" class="ln">   273  </span>			fieldPromDataType := prometheus.CounterValue
-<span id="L274" class="ln">   274  </span>			if msg.MetricName == promInstanceUpStateMetric ||
-<span id="L275" class="ln">   275  </span>				len(gauges) &gt; 0 &amp;&amp; (gauges[0] == &#34;*&#34; || slices.Contains(gauges, field)) {
-<span id="L276" class="ln">   276  </span>				fieldPromDataType = prometheus.GaugeValue
-<span id="L277" class="ln">   277  </span>			}
-<span id="L278" class="ln">   278  </span>			var desc *prometheus.Desc
-<span id="L279" class="ln">   279  </span>			if promw.PrometheusNamespace != &#34;&#34; {
-<span id="L280" class="ln">   280  </span>				if msg.MetricName == promInstanceUpStateMetric { <span class="comment">// handle the special &#34;instance_up&#34; check</span>
-<span id="L281" class="ln">   281  </span>					desc = prometheus.NewDesc(fmt.Sprintf(&#34;%s_%s&#34;, promw.PrometheusNamespace, msg.MetricName),
-<span id="L282" class="ln">   282  </span>						msg.MetricName, labelKeys, nil)
-<span id="L283" class="ln">   283  </span>				} else {
-<span id="L284" class="ln">   284  </span>					desc = prometheus.NewDesc(fmt.Sprintf(&#34;%s_%s_%s&#34;, promw.PrometheusNamespace, msg.MetricName, field),
-<span id="L285" class="ln">   285  </span>						msg.MetricName, labelKeys, nil)
-<span id="L286" class="ln">   286  </span>				}
-<span id="L287" class="ln">   287  </span>			} else {
-<span id="L288" class="ln">   288  </span>				if msg.MetricName == promInstanceUpStateMetric { <span class="comment">// handle the special &#34;instance_up&#34; check</span>
-<span id="L289" class="ln">   289  </span>					desc = prometheus.NewDesc(field, msg.MetricName, labelKeys, nil)
-<span id="L290" class="ln">   290  </span>				} else {
-<span id="L291" class="ln">   291  </span>					desc = prometheus.NewDesc(fmt.Sprintf(&#34;%s_%s&#34;, msg.MetricName, field), msg.MetricName, labelKeys, nil)
-<span id="L292" class="ln">   292  </span>				}
-<span id="L293" class="ln">   293  </span>			}
-<span id="L294" class="ln">   294  </span>			m := prometheus.MustNewConstMetric(desc, fieldPromDataType, value, labelValues...)
-<span id="L295" class="ln">   295  </span>			promMetrics = append(promMetrics, prometheus.NewMetricWithTimestamp(epochTime, m))
-<span id="L296" class="ln">   296  </span>		}
-<span id="L297" class="ln">   297  </span>	}
-<span id="L298" class="ln">   298  </span>	return promMetrics
-<span id="L299" class="ln">   299  </span>}
-<span id="L300" class="ln">   300  </span>
+<span id="L243" class="ln">   243  </span>		labelKeys := make([]string, 0)
+<span id="L244" class="ln">   244  </span>		labelValues := make([]string, 0)
+<span id="L245" class="ln">   245  </span>		for k, v := range labels {
+<span id="L246" class="ln">   246  </span>			labelKeys = append(labelKeys, k)
+<span id="L247" class="ln">   247  </span>			labelValues = append(labelValues, v)
+<span id="L248" class="ln">   248  </span>		}
+<span id="L249" class="ln">   249  </span>
+<span id="L250" class="ln">   250  </span>		for field, value := range fields {
+<span id="L251" class="ln">   251  </span>			fieldPromDataType := prometheus.CounterValue
+<span id="L252" class="ln">   252  </span>			if msg.MetricName == promInstanceUpStateMetric ||
+<span id="L253" class="ln">   253  </span>				len(gauges) &gt; 0 &amp;&amp; (gauges[0] == &#34;*&#34; || slices.Contains(gauges, field)) {
+<span id="L254" class="ln">   254  </span>				fieldPromDataType = prometheus.GaugeValue
+<span id="L255" class="ln">   255  </span>			}
+<span id="L256" class="ln">   256  </span>			var desc *prometheus.Desc
+<span id="L257" class="ln">   257  </span>			if promw.PrometheusNamespace != &#34;&#34; {
+<span id="L258" class="ln">   258  </span>				if msg.MetricName == promInstanceUpStateMetric { <span class="comment">// handle the special &#34;instance_up&#34; check</span>
+<span id="L259" class="ln">   259  </span>					desc = prometheus.NewDesc(fmt.Sprintf(&#34;%s_%s&#34;, promw.PrometheusNamespace, msg.MetricName),
+<span id="L260" class="ln">   260  </span>						msg.MetricName, labelKeys, nil)
+<span id="L261" class="ln">   261  </span>				} else {
+<span id="L262" class="ln">   262  </span>					desc = prometheus.NewDesc(fmt.Sprintf(&#34;%s_%s_%s&#34;, promw.PrometheusNamespace, msg.MetricName, field),
+<span id="L263" class="ln">   263  </span>						msg.MetricName, labelKeys, nil)
+<span id="L264" class="ln">   264  </span>				}
+<span id="L265" class="ln">   265  </span>			} else {
+<span id="L266" class="ln">   266  </span>				if msg.MetricName == promInstanceUpStateMetric { <span class="comment">// handle the special &#34;instance_up&#34; check</span>
+<span id="L267" class="ln">   267  </span>					desc = prometheus.NewDesc(field, msg.MetricName, labelKeys, nil)
+<span id="L268" class="ln">   268  </span>				} else {
+<span id="L269" class="ln">   269  </span>					desc = prometheus.NewDesc(fmt.Sprintf(&#34;%s_%s&#34;, msg.MetricName, field), msg.MetricName, labelKeys, nil)
+<span id="L270" class="ln">   270  </span>				}
+<span id="L271" class="ln">   271  </span>			}
+<span id="L272" class="ln">   272  </span>			m := prometheus.MustNewConstMetric(desc, fieldPromDataType, value, labelValues...)
+<span id="L273" class="ln">   273  </span>			promMetrics = append(promMetrics, prometheus.NewMetricWithTimestamp(epochTime, m))
+<span id="L274" class="ln">   274  </span>		}
+<span id="L275" class="ln">   275  </span>	}
+<span id="L276" class="ln">   276  </span>	return promMetrics
+<span id="L277" class="ln">   277  </span>}
+<span id="L278" class="ln">   278  </span>
 </pre><p></p>
 
 <div id="footer">

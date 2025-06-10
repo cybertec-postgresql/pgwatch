@@ -273,9 +273,6 @@
 					
 					<dd>&nbsp; &nbsp; <a href="#PrometheusWriter.Write">func (promw *PrometheusWriter) Write(msg metrics.MeasurementEnvelope) error</a></dd>
 				
-					
-					<dd>&nbsp; &nbsp; <a href="#PrometheusWriter.setInstanceUpDownState">func (promw *PrometheusWriter) setInstanceUpDownState(ch chan&lt;- prometheus.Metric, dbName string)</a></dd>
-				
 			
 				
 				<dd><a href="#RPCWriter">type RPCWriter</a></dd>
@@ -1056,7 +1053,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.MetricStoreMessageToPromMetrics">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/prometheus.go.html#L213">MetricStoreMessageToPromMetrics</a>
+				<h3 id="PrometheusWriter.MetricStoreMessageToPromMetrics">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/prometheus.go.html#L191">MetricStoreMessageToPromMetrics</a>
 					<a class="permalink" href="#PrometheusWriter.MetricStoreMessageToPromMetrics">&#xb6;</a>
 					
 					
@@ -1134,18 +1131,6 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 					
 				</h3>
 				<pre>func (promw *<a href="#PrometheusWriter">PrometheusWriter</a>) Write(msg <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="PrometheusWriter.setInstanceUpDownState">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/prometheus.go.html#L192">setInstanceUpDownState</a>
-					<a class="permalink" href="#PrometheusWriter.setInstanceUpDownState">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (promw *<a href="#PrometheusWriter">PrometheusWriter</a>) setInstanceUpDownState(ch chan&lt;- <a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/">prometheus</a>.<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/#Metric">Metric</a>, dbName <a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
 				
 				
 				
