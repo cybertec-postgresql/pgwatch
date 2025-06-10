@@ -209,6 +209,7 @@ Here is the structure of a metric definition in YAML format:
 
 ```yaml
     metric_name:
+        description: "A short description of the metric"
         init_sql: |
             CREATE EXTENSION IF NOT EXISTS some_extension;
             CREATE OR REPLACE FUNCTION get_some_stat(OUT some_stat int)
