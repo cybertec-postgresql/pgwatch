@@ -131,7 +131,7 @@
 <span id="L74" class="ln">    74  </span>	mw := &amp;MultiWriter{}
 <span id="L75" class="ln">    75  </span>	mockWriter := &amp;MockWriter{}
 <span id="L76" class="ln">    76  </span>	mw.AddWriter(mockWriter)
-<span id="L77" class="ln">    77  </span>	err := mw.SyncMetric(&#34;db&#34;, &#34;metric&#34;, invalidOp)
+<span id="L77" class="ln">    77  </span>	err := mw.SyncMetric(&#34;db&#34;, &#34;metric&#34;, InvalidOp)
 <span id="L78" class="ln">    78  </span>	assert.NoError(t, err)
 <span id="L79" class="ln">    79  </span>}
 <span id="L80" class="ln">    80  </span>
