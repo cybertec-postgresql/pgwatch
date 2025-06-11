@@ -373,13 +373,22 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 func (r *Reaper) LoadSources() (err error) {
 	if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
 		r.logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", r.Metrics.EmergencyPauseTriggerfile)
-		r.monitoredSources = make([]*sources.SourceConn, 0)
+		r.monitoredSources = make(sources.SourceConns, 0)
 		return nil
 	}
+
 	var newSrcs sources.SourceConns
-	if newSrcs, err = r.monitoredSources.SyncFromReader(r.SourcesReaderWriter); err != nil {
+	srcs, err := r.SourcesReaderWriter.GetSources()
+	if err != nil {
 		return err
 	}
+	srcs = slices.DeleteFunc(srcs, func(s sources.Source) bool {
+		return !s.IsEnabled || s.Group != "" && !slices.Contains(r.Sources.Groups, s.Group)
+	})
+	if newSrcs, err = srcs.ResolveDatabases(); err != nil {
+		return err
+	}
+
 	for i, newMD := range newSrcs {
 		md := r.monitoredSources.GetMonitoredDatabase(newMD.Name)
 		if md == nil {
