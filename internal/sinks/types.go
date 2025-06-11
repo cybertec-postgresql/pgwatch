@@ -20,7 +20,7 @@ type SyncOp int
 const (
 	AddOp SyncOp = iota
 	DeleteOp
-	invalidOp
+	InvalidOp
 )
 
 type SyncReq struct {
