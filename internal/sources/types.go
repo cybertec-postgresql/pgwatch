@@ -62,6 +62,10 @@ type (
 	Sources []Source
 )
 
+func (s Source) IsDefaultGroup() bool {
+	return s.Group == "" || s.Group == "default"
+}
+
 func (srcs Sources) Validate() (Sources, error) {
 	names := map[string]any{}
 	for _, src := range srcs {

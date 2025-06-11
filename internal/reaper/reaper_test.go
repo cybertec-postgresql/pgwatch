@@ -76,13 +76,14 @@ func TestReaper_LoadSources(t *testing.T) {
 		source1 := sources.Source{Name: "Source 1", IsEnabled: true, Kind: sources.SourcePostgres, Group: ""} // Empty group should not filter
 		source2 := sources.Source{Name: "Source 2", IsEnabled: true, Kind: sources.SourcePostgres, Group: "group1"}
 		source3 := sources.Source{Name: "Source 3", IsEnabled: true, Kind: sources.SourcePostgres, Group: "group2"}
-		reader := &mockReader{toReturn: sources.Sources{source1, source2, source3}}
+		source4 := sources.Source{Name: "Source 4", IsEnabled: true, Kind: sources.SourcePostgres, Group: "default"} // Default group should not filter
+		reader := &mockReader{toReturn: sources.Sources{source1, source2, source3, source4}}
 		r := NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader, Sources: sources.CmdOpts{Groups: []string{"group1", "group2"}}})
 		assert.NoError(t, r.LoadSources())
-		assert.Equal(t, 3, len(r.monitoredSources), "Expected three monitored sources after load")
+		assert.Equal(t, 4, len(r.monitoredSources), "Expected three monitored sources after load")
 
 		r.Sources.Groups = []string{"group1"}
 		assert.NoError(t, r.LoadSources())
-		assert.Equal(t, 2, len(r.monitoredSources), "Expected two monitored sources after group filtering")
+		assert.Equal(t, 3, len(r.monitoredSources), "Expected three monitored sources after group filtering")
 	})
 }
