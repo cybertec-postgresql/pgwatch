@@ -2,11 +2,11 @@ package sinks_test
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
-	"net"
-	"net/http"
 	"net/rpc"
+	"os"
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
@@ -14,10 +14,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type Receiver struct {
-}
+type Receiver struct {}
 
 var ctxt = context.Background()
+var address = "localhost:5050" // the CN in server test cert is set to `localhost`
+
+const CA = "./rpc_tests_certs/ca.crt"
+const SERVER_CERT = "./rpc_tests_certs/server.crt"
+const SERVER_KEY = "./rpc_tests_certs/server.key"
+
+var opts = &sinks.CmdOpts{RootCA: CA}
 
 func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementEnvelope, logMsg *string) error {
 	if msg == nil || len(msg.Data) == 0 {
@@ -46,26 +52,59 @@ func init() {
 	if err := rpc.Register(recv); err != nil {
 		panic(err)
 	}
-	rpc.HandleHTTP()
-	if listener, err := net.Listen("tcp", "0.0.0.0:5050"); err == nil {
-		go func() {
-			_ = http.Serve(listener, nil)
-		}()
-	} else {
+	
+	cert, err := tls.LoadX509KeyPair(SERVER_CERT, SERVER_KEY)
+	if err != nil {
+		return 
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+	}
+
+	listener, err := tls.Listen("tcp", address, tlsConfig) 
+	if err != nil {
 		panic(err)
 	}
+
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				continue
+			}
+			go rpc.ServeConn(conn)
+		}
+	}()
 }
 
 // Test begin from here ---------------------------------------------------------
+
+func TestCACertValidation(t *testing.T) {
+	a := assert.New(t)
+	_, err := sinks.NewRPCWriter(ctxt, address, opts)
+	a.NoError(err)
+
+	_, err = sinks.NewRPCWriter(ctxt, address, &sinks.CmdOpts{RootCA: ""})
+	a.Error(err)
+
+	fileName := "invalid_CA_file.txt"
+	os.Create(fileName)
+	_, err = sinks.NewRPCWriter(ctxt, address, &sinks.CmdOpts{RootCA: fileName})
+	a.Error(err)
+
+	os.Remove(fileName)
+}
+
 func TestNewRPCWriter(t *testing.T) {
 	a := assert.New(t)
-	_, err := sinks.NewRPCWriter(ctxt, "foo")
+	_, err := sinks.NewRPCWriter(ctxt, "foo", opts)
 	a.Error(err)
 }
 
 func TestRPCWrite(t *testing.T) {
 	a := assert.New(t)
-	rw, err := sinks.NewRPCWriter(ctxt, "0.0.0.0:5050")
+	rw, err := sinks.NewRPCWriter(ctxt, address, opts)
 	a.NoError(err)
 
 	// no error for valid messages
@@ -89,7 +128,7 @@ func TestRPCWrite(t *testing.T) {
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctxt)
-	rw, err = sinks.NewRPCWriter(ctx, "0.0.0.0:5050")
+	rw, err = sinks.NewRPCWriter(ctx, address, opts)
 	a.NoError(err)
 	cancel()
 	err = rw.Write(msgs)
@@ -97,9 +136,8 @@ func TestRPCWrite(t *testing.T) {
 }
 
 func TestRPCSyncMetric(t *testing.T) {
-	port := 5050
 	a := assert.New(t)
-	rw, err := sinks.NewRPCWriter(ctxt, "0.0.0.0:"+fmt.Sprint(port))
+	rw, err := sinks.NewRPCWriter(ctxt, address, opts)
 	if err != nil {
 		t.Error("Unable to send sync metric signal")
 	}
@@ -114,7 +152,7 @@ func TestRPCSyncMetric(t *testing.T) {
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctxt)
-	rw, err = sinks.NewRPCWriter(ctx, "0.0.0.0:5050")
+	rw, err = sinks.NewRPCWriter(ctx, address, opts)
 	a.NoError(err)
 	cancel()
 	err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)

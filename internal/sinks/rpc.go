@@ -2,23 +2,41 @@ package sinks
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"net/rpc"
+	"os"
+	"fmt"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 )
 
-func NewRPCWriter(ctx context.Context, address string) (*RPCWriter, error) {
-	client, err := rpc.DialHTTP("tcp", address)
+func NewRPCWriter(ctx context.Context, address string, opts *CmdOpts) (*RPCWriter, error) {
+	ca, err := os.ReadFile(opts.RootCA)
+	if err != nil {
+		return nil, fmt.Errorf("cannot load CA file: %s", err)
+	}
+
+	certPool := x509.NewCertPool()
+	certPool.AppendCertsFromPEM(ca)
+
+	tlsClientConfig := &tls.Config{
+		RootCAs: certPool,
+	}
+
+	conn, err := tls.Dial("tcp", address, tlsClientConfig)
+
 	if err != nil {
 		return nil, err
 	}
+
 	l := log.GetLogger(ctx).WithField("sink", "rpc").WithField("address", address)
 	ctx = log.WithLogger(ctx, l)
 	rw := &RPCWriter{
 		ctx:     ctx,
 		address: address,
-		client:  client,
+		client:  rpc.NewClient(conn),
 	}
 	go rw.watchCtx()
 	return rw, nil
