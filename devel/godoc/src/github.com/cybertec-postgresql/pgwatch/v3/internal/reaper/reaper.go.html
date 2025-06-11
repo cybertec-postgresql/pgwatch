@@ -440,7 +440,7 @@
 <span id="L383" class="ln">   383  </span>		return err
 <span id="L384" class="ln">   384  </span>	}
 <span id="L385" class="ln">   385  </span>	srcs = slices.DeleteFunc(srcs, func(s sources.Source) bool {
-<span id="L386" class="ln">   386  </span>		return !s.IsEnabled || s.Group != &#34;&#34; &amp;&amp; !slices.Contains(r.Sources.Groups, s.Group)
+<span id="L386" class="ln">   386  </span>		return !s.IsEnabled || !s.IsDefaultGroup() &amp;&amp; !slices.Contains(r.Sources.Groups, s.Group)
 <span id="L387" class="ln">   387  </span>	})
 <span id="L388" class="ln">   388  </span>	if newSrcs, err = srcs.ResolveDatabases(); err != nil {
 <span id="L389" class="ln">   389  </span>		return err

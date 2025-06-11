@@ -206,6 +206,9 @@ At the moment, sources definitions support two storages:
 					<dd>&nbsp; &nbsp; <a href="#Source.GetDatabaseName">func (s *Source) GetDatabaseName() string</a></dd>
 				
 					
+					<dd>&nbsp; &nbsp; <a href="#Source.IsDefaultGroup">func (s Source) IsDefaultGroup() bool</a></dd>
+				
+					
 					<dd>&nbsp; &nbsp; <a href="#Source.ResolveDatabases">func (s Source) ResolveDatabases() (SourceConns, error)</a></dd>
 				
 			
@@ -489,7 +492,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="HostConfigAttrs">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L110">HostConfigAttrs</a>
+			<h2 id="HostConfigAttrs">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L114">HostConfigAttrs</a>
 				<a class="permalink" href="#HostConfigAttrs">&#xb6;</a>
 				
 				
@@ -525,7 +528,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="HostConfigPerMetricDisabledTimes">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L125">HostConfigPerMetricDisabledTimes</a>
+			<h2 id="HostConfigPerMetricDisabledTimes">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L129">HostConfigPerMetricDisabledTimes</a>
 				<a class="permalink" href="#HostConfigPerMetricDisabledTimes">&#xb6;</a>
 				
 				
@@ -658,7 +661,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="Reader">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L131">Reader</a>
+			<h2 id="Reader">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L135">Reader</a>
 				<a class="permalink" href="#Reader">&#xb6;</a>
 				
 				
@@ -682,7 +685,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="ReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L141">ReaderWriter</a>
+			<h2 id="ReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L145">ReaderWriter</a>
 				<a class="permalink" href="#ReaderWriter">&#xb6;</a>
 				
 				
@@ -815,7 +818,7 @@ those additional metrics, it is ok to specify the connection details as a regula
 
 			
 				
-				<h3 id="Source.Clone">func (*Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L101">Clone</a>
+				<h3 id="Source.Clone">func (*Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L105">Clone</a>
 					<a class="permalink" href="#Source.Clone">&#xb6;</a>
 					
 					
@@ -827,7 +830,7 @@ those additional metrics, it is ok to specify the connection details as a regula
 				
 			
 				
-				<h3 id="Source.Equal">func (Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L86">Equal</a>
+				<h3 id="Source.Equal">func (Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L90">Equal</a>
 					<a class="permalink" href="#Source.Equal">&#xb6;</a>
 					
 					
@@ -839,12 +842,24 @@ those additional metrics, it is ok to specify the connection details as a regula
 				
 			
 				
-				<h3 id="Source.GetDatabaseName">func (*Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L79">GetDatabaseName</a>
+				<h3 id="Source.GetDatabaseName">func (*Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L83">GetDatabaseName</a>
 					<a class="permalink" href="#Source.GetDatabaseName">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (s *<a href="#Source">Source</a>) GetDatabaseName() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Source.IsDefaultGroup">func (Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L65">IsDefaultGroup</a>
+					<a class="permalink" href="#Source.IsDefaultGroup">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (s <a href="#Source">Source</a>) IsDefaultGroup() <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
 				
 				
 				
@@ -1160,7 +1175,7 @@ additionally matching/not matching specified regex patterns
 				
 			
 				
-				<h3 id="Sources.Validate">func (Sources) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L65">Validate</a>
+				<h3 id="Sources.Validate">func (Sources) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L69">Validate</a>
 					<a class="permalink" href="#Sources.Validate">&#xb6;</a>
 					
 					
@@ -1174,7 +1189,7 @@ additionally matching/not matching specified regex patterns
 		
 			
 			
-			<h2 id="Writer">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L135">Writer</a>
+			<h2 id="Writer">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/types.go.html#L139">Writer</a>
 				<a class="permalink" href="#Writer">&#xb6;</a>
 				
 				
