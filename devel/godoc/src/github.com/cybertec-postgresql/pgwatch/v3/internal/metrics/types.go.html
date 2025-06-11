@@ -204,39 +204,38 @@
 <span id="L147" class="ln">   147  </span>}
 <span id="L148" class="ln">   148  </span>
 <span id="L149" class="ln">   149  </span>type MeasurementEnvelope struct {
-<span id="L150" class="ln">   150  </span>	DBName string
-<span id="L151" class="ln">   151  </span>	<span class="comment">// SourceType string</span>
-<span id="L152" class="ln">   152  </span>	MetricName string
-<span id="L153" class="ln">   153  </span>	CustomTags map[string]string
-<span id="L154" class="ln">   154  </span>	Data       Measurements
-<span id="L155" class="ln">   155  </span>}
-<span id="L156" class="ln">   156  </span>
-<span id="L157" class="ln">   157  </span>type Metrics struct {
-<span id="L158" class="ln">   158  </span>	MetricDefs MetricDefs `yaml:&#34;metrics&#34;`
-<span id="L159" class="ln">   159  </span>	PresetDefs PresetDefs `yaml:&#34;presets&#34;`
-<span id="L160" class="ln">   160  </span>}
-<span id="L161" class="ln">   161  </span>type Reader interface {
-<span id="L162" class="ln">   162  </span>	GetMetrics() (*Metrics, error)
-<span id="L163" class="ln">   163  </span>}
-<span id="L164" class="ln">   164  </span>
-<span id="L165" class="ln">   165  </span>type Writer interface {
-<span id="L166" class="ln">   166  </span>	WriteMetrics(metricDefs *Metrics) error
-<span id="L167" class="ln">   167  </span>	DeleteMetric(metricName string) error
-<span id="L168" class="ln">   168  </span>	DeletePreset(presetName string) error
-<span id="L169" class="ln">   169  </span>	UpdateMetric(metricName string, metric Metric) error
-<span id="L170" class="ln">   170  </span>	UpdatePreset(presetName string, preset Preset) error
-<span id="L171" class="ln">   171  </span>}
-<span id="L172" class="ln">   172  </span>
-<span id="L173" class="ln">   173  </span>type Migrator interface {
-<span id="L174" class="ln">   174  </span>	Migrate() error
-<span id="L175" class="ln">   175  </span>	NeedsMigration() (bool, error)
-<span id="L176" class="ln">   176  </span>}
-<span id="L177" class="ln">   177  </span>
-<span id="L178" class="ln">   178  </span>type ReaderWriter interface {
-<span id="L179" class="ln">   179  </span>	Reader
-<span id="L180" class="ln">   180  </span>	Writer
-<span id="L181" class="ln">   181  </span>}
-<span id="L182" class="ln">   182  </span>
+<span id="L150" class="ln">   150  </span>	DBName     string
+<span id="L151" class="ln">   151  </span>	MetricName string
+<span id="L152" class="ln">   152  </span>	CustomTags map[string]string
+<span id="L153" class="ln">   153  </span>	Data       Measurements
+<span id="L154" class="ln">   154  </span>}
+<span id="L155" class="ln">   155  </span>
+<span id="L156" class="ln">   156  </span>type Metrics struct {
+<span id="L157" class="ln">   157  </span>	MetricDefs MetricDefs `yaml:&#34;metrics&#34;`
+<span id="L158" class="ln">   158  </span>	PresetDefs PresetDefs `yaml:&#34;presets&#34;`
+<span id="L159" class="ln">   159  </span>}
+<span id="L160" class="ln">   160  </span>type Reader interface {
+<span id="L161" class="ln">   161  </span>	GetMetrics() (*Metrics, error)
+<span id="L162" class="ln">   162  </span>}
+<span id="L163" class="ln">   163  </span>
+<span id="L164" class="ln">   164  </span>type Writer interface {
+<span id="L165" class="ln">   165  </span>	WriteMetrics(metricDefs *Metrics) error
+<span id="L166" class="ln">   166  </span>	DeleteMetric(metricName string) error
+<span id="L167" class="ln">   167  </span>	DeletePreset(presetName string) error
+<span id="L168" class="ln">   168  </span>	UpdateMetric(metricName string, metric Metric) error
+<span id="L169" class="ln">   169  </span>	UpdatePreset(presetName string, preset Preset) error
+<span id="L170" class="ln">   170  </span>}
+<span id="L171" class="ln">   171  </span>
+<span id="L172" class="ln">   172  </span>type Migrator interface {
+<span id="L173" class="ln">   173  </span>	Migrate() error
+<span id="L174" class="ln">   174  </span>	NeedsMigration() (bool, error)
+<span id="L175" class="ln">   175  </span>}
+<span id="L176" class="ln">   176  </span>
+<span id="L177" class="ln">   177  </span>type ReaderWriter interface {
+<span id="L178" class="ln">   178  </span>	Reader
+<span id="L179" class="ln">   179  </span>	Writer
+<span id="L180" class="ln">   180  </span>}
+<span id="L181" class="ln">   181  </span>
 </pre><p></p>
 
 <div id="footer">

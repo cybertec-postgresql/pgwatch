@@ -266,9 +266,6 @@ At the moment, sources definitions support two storages:
 					
 					<dd>&nbsp; &nbsp; <a href="#SourceConns.GetMonitoredDatabase">func (mds SourceConns) GetMonitoredDatabase(DBUniqueName string) *SourceConn</a></dd>
 				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceConns.SyncFromReader">func (mds SourceConns) SyncFromReader(r Reader) (newmds SourceConns, err error)</a></dd>
-				
 			
 				
 				<dd><a href="#Sources">type Sources</a></dd>
@@ -1123,21 +1120,6 @@ additionally matching/not matching specified regex patterns
 				</h3>
 				<pre>func (mds <a href="#SourceConns">SourceConns</a>) GetMonitoredDatabase(DBUniqueName <a href="https://pkg.go.dev/builtin/#string">string</a>) *<a href="#SourceConn">SourceConn</a></pre>
 				
-				
-				
-				
-			
-				
-				<h3 id="SourceConns.SyncFromReader">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/conn.go.html#L272">SyncFromReader</a>
-					<a class="permalink" href="#SourceConns.SyncFromReader">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (mds <a href="#SourceConns">SourceConns</a>) SyncFromReader(r <a href="#Reader">Reader</a>) (newmds <a href="#SourceConns">SourceConns</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				<p>SyncFromReader will update the monitored databases with the latest configuration from the reader.
-Any resolution errors will be returned, e.g. etcd unavailability.
-It&apos;s up to the caller to proceed with the databases available or stop the execution due to errors.
-
 				
 				
 				

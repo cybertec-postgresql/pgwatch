@@ -323,17 +323,6 @@
 <span id="L266" class="ln">   266  </span>	return nil
 <span id="L267" class="ln">   267  </span>}
 <span id="L268" class="ln">   268  </span>
-<span id="L269" class="ln">   269  </span><span class="comment">// SyncFromReader will update the monitored databases with the latest configuration from the reader.</span>
-<span id="L270" class="ln">   270  </span><span class="comment">// Any resolution errors will be returned, e.g. etcd unavailability.</span>
-<span id="L271" class="ln">   271  </span><span class="comment">// It&#39;s up to the caller to proceed with the databases available or stop the execution due to errors.</span>
-<span id="L272" class="ln">   272  </span>func (mds SourceConns) SyncFromReader(r Reader) (newmds SourceConns, err error) {
-<span id="L273" class="ln">   273  </span>	srcs, err := r.GetSources()
-<span id="L274" class="ln">   274  </span>	if err != nil {
-<span id="L275" class="ln">   275  </span>		return nil, err
-<span id="L276" class="ln">   276  </span>	}
-<span id="L277" class="ln">   277  </span>	return srcs.ResolveDatabases()
-<span id="L278" class="ln">   278  </span>}
-<span id="L279" class="ln">   279  </span>
 </pre><p></p>
 
 <div id="footer">
