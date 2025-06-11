@@ -20,8 +20,8 @@ var ctxt = context.Background()
 var address = "localhost:5050" // the CN in server test cert is set to `localhost`
 
 const CA = "./rpc_tests_certs/ca.crt"
-const SERVER_CERT = "./rpc_tests_certs/server.crt"
-const SERVER_KEY = "./rpc_tests_certs/server.key"
+const ServerCert = "./rpc_tests_certs/server.crt"
+const ServerKey = "./rpc_tests_certs/server.key"
 
 var opts = &sinks.CmdOpts{RootCA: CA}
 
@@ -53,7 +53,7 @@ func init() {
 		panic(err)
 	}
 	
-	cert, err := tls.LoadX509KeyPair(SERVER_CERT, SERVER_KEY)
+	cert, err := tls.LoadX509KeyPair(ServerCert, ServerKey)
 	if err != nil {
 		return 
 	}
@@ -89,7 +89,9 @@ func TestCACertValidation(t *testing.T) {
 	a.Error(err)
 
 	fileName := "invalid_CA_file.txt"
-	os.Create(fileName)
+	_, err = os.Create(fileName)
+	a.NoError(err)
+
 	_, err = sinks.NewRPCWriter(ctxt, address, &sinks.CmdOpts{RootCA: fileName})
 	a.Error(err)
 
