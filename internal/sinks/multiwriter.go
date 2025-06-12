@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
+	"strings"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 )
@@ -46,7 +46,7 @@ func NewSinkWriter(ctx context.Context, opts *CmdOpts) (w Writer, err error) {
 		case "prometheus":
 			w, err = NewPrometheusWriter(ctx, path)
 		case "rpc":
-			w, err = NewRPCWriter(ctx, path)
+			w, err = NewRPCWriter(ctx, s)
 		default:
 			return nil, fmt.Errorf("unknown schema %s in sink URI %s", scheme, s)
 		}
