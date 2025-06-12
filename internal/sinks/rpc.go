@@ -4,16 +4,27 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"net/rpc"
 	"os"
-	"fmt"
+	"strings"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 )
 
-func NewRPCWriter(ctx context.Context, address string, opts *CmdOpts) (*RPCWriter, error) {
-	ca, err := os.ReadFile(opts.RootCA)
+func NewRPCWriter(ctx context.Context, path string) (*RPCWriter, error) {
+	address, params, found := strings.Cut(path, "?")
+	if (!found) {
+		return nil, fmt.Errorf("invalid RPC connection string, Usage: rpc://host?sslrootca=[CA_file]")
+	}
+
+	key, RootCA, found := strings.Cut(params, "=")
+	if (!found || key != "sslrootca") {
+		return nil, fmt.Errorf("invalid RPC parameter %s", key)
+	}
+
+	ca, err := os.ReadFile(RootCA)
 	if err != nil {
 		return nil, fmt.Errorf("cannot load CA file: %s", err)
 	}
