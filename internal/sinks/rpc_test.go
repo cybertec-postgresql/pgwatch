@@ -21,7 +21,7 @@ const CA = "./rpc_tests_certs/ca.crt"
 const ServerCert = "./rpc_tests_certs/server.crt"
 const ServerKey = "./rpc_tests_certs/server.key"
 
-var ClientConnStr = fmt.Sprintf("localhost:5050?sslrootca=%s", CA) // the CN in server test cert is set to `localhost`
+var ClientConnStr = fmt.Sprintf("rpc://localhost:5050?sslrootca=%s", CA) // the CN in server test cert is set to `localhost`
 var ServerAddress = "localhost:5050"
 
 func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementEnvelope, logMsg *string) error {

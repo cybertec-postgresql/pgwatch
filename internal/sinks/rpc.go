@@ -21,11 +21,33 @@ func NewRPCWriter(ctx context.Context, ConnStr string) (*RPCWriter, error) {
 
 	params, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing RPC URI: %s", err)
+		return nil, fmt.Errorf("error parsing RPC URI parameters: %s", err)
 	}
 
-	RootCA := params["sslrootca"]
-	ca, err := os.ReadFile(RootCA[0])
+	RootCA, exists := params["sslrootca"]
+	var client *rpc.Client
+	if exists {
+		client, err = connectViaTLS(uri.Host, RootCA[0])
+	} else {
+		client, err = rpc.DialHTTP("tcp", uri.Host)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	l := log.GetLogger(ctx).WithField("sink", "rpc").WithField("address", uri.Host)
+	ctx = log.WithLogger(ctx, l)
+	rw := &RPCWriter{
+		ctx:     ctx,
+		client:  client,
+	}
+	go rw.watchCtx()
+	return rw, nil
+}
+
+func connectViaTLS(address, RootCA string) (*rpc.Client, error) {
+	ca, err := os.ReadFile(RootCA)
 	if err != nil {
 		return nil, fmt.Errorf("cannot load CA file: %s", err)
 	}
@@ -37,19 +59,11 @@ func NewRPCWriter(ctx context.Context, ConnStr string) (*RPCWriter, error) {
 		RootCAs: certPool,
 	}
 
-	conn, err := tls.Dial("tcp", uri.Host, tlsClientConfig)
+	conn, err := tls.Dial("tcp", address, tlsClientConfig)
 	if err != nil {
 		return nil, err
 	}
-
-	l := log.GetLogger(ctx).WithField("sink", "rpc").WithField("address", uri.Host)
-	ctx = log.WithLogger(ctx, l)
-	rw := &RPCWriter{
-		ctx:     ctx,
-		client:  rpc.NewClient(conn),
-	}
-	go rw.watchCtx()
-	return rw, nil
+	return rpc.NewClient(conn), nil
 }
 
 // Sends Measurement Message to RPC Sink
