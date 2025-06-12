@@ -7,24 +7,25 @@ import (
 	"fmt"
 	"net/rpc"
 	"os"
-	"strings"
+	"net/url"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 )
 
-func NewRPCWriter(ctx context.Context, path string) (*RPCWriter, error) {
-	address, params, found := strings.Cut(path, "?")
-	if (!found) {
-		return nil, fmt.Errorf("invalid RPC connection string, Usage: rpc://host?sslrootca=[CA_file]")
+func NewRPCWriter(ctx context.Context, ConnStr string) (*RPCWriter, error) {
+	uri, err := url.Parse(ConnStr)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing RPC URI: %s", err)
 	}
 
-	key, RootCA, found := strings.Cut(params, "=")
-	if (!found || key != "sslrootca") {
-		return nil, fmt.Errorf("invalid RPC parameter %s", key)
+	params, err := url.ParseQuery(uri.RawQuery)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing RPC URI: %s", err)
 	}
 
-	ca, err := os.ReadFile(RootCA)
+	RootCA := params["sslrootca"]
+	ca, err := os.ReadFile(RootCA[0])
 	if err != nil {
 		return nil, fmt.Errorf("cannot load CA file: %s", err)
 	}
@@ -36,17 +37,15 @@ func NewRPCWriter(ctx context.Context, path string) (*RPCWriter, error) {
 		RootCAs: certPool,
 	}
 
-	conn, err := tls.Dial("tcp", address, tlsClientConfig)
-
+	conn, err := tls.Dial("tcp", uri.Host, tlsClientConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	l := log.GetLogger(ctx).WithField("sink", "rpc").WithField("address", address)
+	l := log.GetLogger(ctx).WithField("sink", "rpc").WithField("address", uri.Host)
 	ctx = log.WithLogger(ctx, l)
 	rw := &RPCWriter{
 		ctx:     ctx,
-		address: address,
 		client:  rpc.NewClient(conn),
 	}
 	go rw.watchCtx()
