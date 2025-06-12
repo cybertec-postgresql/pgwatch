@@ -11,7 +11,6 @@ import (
 // or an analytics system.
 type RPCWriter struct {
 	ctx     context.Context
-	address string
 	client  *rpc.Client
 }
 
