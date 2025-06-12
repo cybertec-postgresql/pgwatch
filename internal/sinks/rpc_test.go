@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/rpc"
-	"os"
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
@@ -17,13 +16,13 @@ import (
 type Receiver struct {}
 
 var ctxt = context.Background()
-var address = "localhost:5050" // the CN in server test cert is set to `localhost`
 
 const CA = "./rpc_tests_certs/ca.crt"
 const ServerCert = "./rpc_tests_certs/server.crt"
 const ServerKey = "./rpc_tests_certs/server.key"
 
-var opts = &sinks.CmdOpts{RootCA: CA}
+var ClientConnStr = fmt.Sprintf("localhost:5050?sslrootca=%s", CA) // the CN in server test cert is set to `localhost`
+var ServerAddress = "localhost:5050"
 
 func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementEnvelope, logMsg *string) error {
 	if msg == nil || len(msg.Data) == 0 {
@@ -62,7 +61,7 @@ func init() {
 		Certificates: []tls.Certificate{cert},
 	}
 
-	listener, err := tls.Listen("tcp", address, tlsConfig) 
+	listener, err := tls.Listen("tcp", ServerAddress, tlsConfig) 
 	if err != nil {
 		panic(err)
 	}
@@ -82,31 +81,31 @@ func init() {
 
 func TestCACertValidation(t *testing.T) {
 	a := assert.New(t)
-	_, err := sinks.NewRPCWriter(ctxt, address, opts)
+
+	_, err := sinks.NewRPCWriter(ctxt, ClientConnStr)
 	a.NoError(err)
 
-	_, err = sinks.NewRPCWriter(ctxt, address, &sinks.CmdOpts{RootCA: ""})
-	a.Error(err)
+	BadRPCParams := [...]string{
+			"", "?sslrootca=file.txt",
+			"?", "?sslrootca=",
+			"?invalidkey=",
+	}
 
-	fileName := "invalid_CA_file.txt"
-	_, err = os.Create(fileName)
-	a.NoError(err)
-
-	_, err = sinks.NewRPCWriter(ctxt, address, &sinks.CmdOpts{RootCA: fileName})
-	a.Error(err)
-
-	os.Remove(fileName)
+	for _, value := range BadRPCParams {
+		_, err = sinks.NewRPCWriter(ctxt, fmt.Sprintf("localhost:5050%s", value))
+		a.Error(err)
+	}
 }
 
 func TestNewRPCWriter(t *testing.T) {
 	a := assert.New(t)
-	_, err := sinks.NewRPCWriter(ctxt, "foo", opts)
+	_, err := sinks.NewRPCWriter(ctxt, "foo")
 	a.Error(err)
 }
 
 func TestRPCWrite(t *testing.T) {
 	a := assert.New(t)
-	rw, err := sinks.NewRPCWriter(ctxt, address, opts)
+	rw, err := sinks.NewRPCWriter(ctxt, ClientConnStr)
 	a.NoError(err)
 
 	// no error for valid messages
@@ -130,7 +129,7 @@ func TestRPCWrite(t *testing.T) {
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctxt)
-	rw, err = sinks.NewRPCWriter(ctx, address, opts)
+	rw, err = sinks.NewRPCWriter(ctx, ClientConnStr)
 	a.NoError(err)
 	cancel()
 	err = rw.Write(msgs)
@@ -139,7 +138,7 @@ func TestRPCWrite(t *testing.T) {
 
 func TestRPCSyncMetric(t *testing.T) {
 	a := assert.New(t)
-	rw, err := sinks.NewRPCWriter(ctxt, address, opts)
+	rw, err := sinks.NewRPCWriter(ctxt, ClientConnStr)
 	if err != nil {
 		t.Error("Unable to send sync metric signal")
 	}
@@ -154,7 +153,7 @@ func TestRPCSyncMetric(t *testing.T) {
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctxt)
-	rw, err = sinks.NewRPCWriter(ctx, address, opts)
+	rw, err = sinks.NewRPCWriter(ctx, ClientConnStr)
 	a.NoError(err)
 	cancel()
 	err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
