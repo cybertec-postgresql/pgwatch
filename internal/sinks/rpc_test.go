@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"net"
+	"net/http"
 	"net/rpc"
 	"testing"
 
@@ -21,8 +23,13 @@ const CA = "./rpc_tests_certs/ca.crt"
 const ServerCert = "./rpc_tests_certs/server.crt"
 const ServerKey = "./rpc_tests_certs/server.key"
 
-var ClientConnStr = fmt.Sprintf("rpc://localhost:5050?sslrootca=%s", CA) // the CN in server test cert is set to `localhost`
-var ServerAddress = "localhost:5050"
+var ClientTLSConnStr = fmt.Sprintf("rpc://localhost:5050?sslrootca=%s", CA) // the CN in server test cert is set to `localhost`
+const TLSServerAddress = "localhost:5050"
+
+const ServerAddress = "localhost:6060"
+const ClientConnStr = "rpc://localhost:6060"
+
+var ConnStrs = [2]string{ClientConnStr, ClientTLSConnStr}
 
 func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementEnvelope, logMsg *string) error {
 	if msg == nil || len(msg.Data) == 0 {
@@ -51,24 +58,33 @@ func init() {
 	if err := rpc.Register(recv); err != nil {
 		panic(err)
 	}
+
+	rpc.HandleHTTP()
+	if listener, err := net.Listen("tcp", ServerAddress); err == nil {
+		go func() {
+			_ = http.Serve(listener, nil)
+		}()
+	} else {
+		panic(err)
+	}	
 	
 	cert, err := tls.LoadX509KeyPair(ServerCert, ServerKey)
 	if err != nil {
-		return 
+		panic(err) 
 	}
 
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 	}
 
-	listener, err := tls.Listen("tcp", ServerAddress, tlsConfig) 
+	TLSListener, err := tls.Listen("tcp", TLSServerAddress, tlsConfig) 
 	if err != nil {
 		panic(err)
 	}
 
 	go func() {
 		for {
-			conn, err := listener.Accept()
+			conn, err := TLSListener.Accept()
 			if err != nil {
 				continue
 			}
@@ -81,16 +97,10 @@ func init() {
 
 func TestCACertValidation(t *testing.T) {
 	a := assert.New(t)
-
 	_, err := sinks.NewRPCWriter(ctxt, ClientConnStr)
 	a.NoError(err)
 
-	BadRPCParams := [...]string{
-			"", "?sslrootca=file.txt",
-			"?", "?sslrootca=",
-			"?invalidkey=",
-	}
-
+	BadRPCParams := [...]string{"?sslrootca=file.txt", "?sslrootca="}
 	for _, value := range BadRPCParams {
 		_, err = sinks.NewRPCWriter(ctxt, fmt.Sprintf("localhost:5050%s", value))
 		a.Error(err)
@@ -105,57 +115,63 @@ func TestNewRPCWriter(t *testing.T) {
 
 func TestRPCWrite(t *testing.T) {
 	a := assert.New(t)
-	rw, err := sinks.NewRPCWriter(ctxt, ClientConnStr)
-	a.NoError(err)
 
-	// no error for valid messages
-	msgs := metrics.MeasurementEnvelope{
-		DBName: "Db",
-		Data:   metrics.Measurements{{"test": 1}},
-	}
-	err = rw.Write(msgs)
-	a.NoError(err)
+	for _, ConnStr := range ConnStrs {
+		rw, err := sinks.NewRPCWriter(ctxt, ConnStr)
+		a.NoError(err)
 
-	// error for invalid messages
-	msgs = metrics.MeasurementEnvelope{
-		DBName: "invalid",
-	}
-	err = rw.Write(msgs)
-	a.Error(err)
+		// no error for valid messages
+		msgs := metrics.MeasurementEnvelope{
+			DBName: "Db",
+			Data:   metrics.Measurements{{"test": 1}},
+		}
+		err = rw.Write(msgs)
+		a.NoError(err)
 
-	// error for empty messages
-	err = rw.Write(metrics.MeasurementEnvelope{})
-	a.Error(err)
+		// error for invalid messages
+		msgs = metrics.MeasurementEnvelope{
+			DBName: "invalid",
+		}
 
-	// error for cancelled context
-	ctx, cancel := context.WithCancel(ctxt)
-	rw, err = sinks.NewRPCWriter(ctx, ClientConnStr)
-	a.NoError(err)
-	cancel()
-	err = rw.Write(msgs)
-	a.Error(err)
+		err = rw.Write(msgs)
+		a.Error(err)
+
+		// error for empty messages
+		err = rw.Write(metrics.MeasurementEnvelope{})
+		a.Error(err)
+
+		// error for cancelled context
+		ctx, cancel := context.WithCancel(ctxt)
+		rw, err = sinks.NewRPCWriter(ctx, ConnStr)
+		a.NoError(err)
+		cancel()
+		err = rw.Write(msgs)
+		a.Error(err)
+	}	
 }
 
 func TestRPCSyncMetric(t *testing.T) {
 	a := assert.New(t)
-	rw, err := sinks.NewRPCWriter(ctxt, ClientConnStr)
-	if err != nil {
-		t.Error("Unable to send sync metric signal")
+	for _, ConnStr := range ConnStrs {
+		rw, err := sinks.NewRPCWriter(ctxt, ConnStr)
+		if err != nil {
+			t.Error("Unable to send sync metric signal")
+		}
+
+		// no error for valid messages
+		err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
+		a.NoError(err)
+
+		// error for invalid messages
+		err = rw.SyncMetric("", "", sinks.InvalidOp)
+		a.Error(err)
+
+		// error for cancelled context
+		ctx, cancel := context.WithCancel(ctxt)
+		rw, err = sinks.NewRPCWriter(ctx, ConnStr)
+		a.NoError(err)
+		cancel()
+		err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
+		a.Error(err)
 	}
-
-	// no error for valid messages
-	err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
-	a.NoError(err)
-
-	// error for invalid messages
-	err = rw.SyncMetric("", "", sinks.InvalidOp)
-	a.Error(err)
-
-	// error for cancelled context
-	ctx, cancel := context.WithCancel(ctxt)
-	rw, err = sinks.NewRPCWriter(ctx, ClientConnStr)
-	a.NoError(err)
-	cancel()
-	err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
-	a.Error(err)
 }
