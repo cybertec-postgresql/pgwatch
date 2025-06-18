@@ -1,0 +1,87 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            79:34:3e:e0:ce:f1:c3:27:5f:ec:cb:eb:0e:70:dd:b1
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: CN=pgwatch
+        Validity
+            Not Before: Jun 11 05:25:18 2025 GMT
+            Not After : Sep 14 05:25:18 2027 GMT
+        Subject: CN=localhost
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    00:eb:d2:5a:f4:ae:19:1e:82:1d:04:af:b7:e1:81:
+                    35:fb:46:bf:b0:1e:d8:29:92:5b:df:e8:18:15:a8:
+                    6f:b3:34:b7:ec:e6:ba:87:fd:3e:77:d4:c2:63:9f:
+                    1b:32:93:d0:49:04:1d:be:11:bf:b3:51:fa:61:ce:
+                    01:59:37:c7:fe:cb:11:98:38:4a:72:23:26:75:f3:
+                    23:fe:5a:fc:4f:2b:60:94:85:0f:3d:2c:db:3c:ac:
+                    b6:b7:d8:9d:a6:4d:f4:3f:08:95:d5:49:62:8e:39:
+                    45:67:1a:31:70:ed:c0:89:af:26:9a:b0:c9:ce:4a:
+                    07:b1:02:fd:e8:f8:43:4f:6e:58:46:29:e7:7e:58:
+                    3c:bd:5b:61:6a:c5:6a:18:81:cd:24:85:ce:47:2c:
+                    f9:96:09:01:5b:73:5e:79:93:c4:51:2c:5b:be:6a:
+                    3a:dc:00:75:94:52:59:33:3e:31:96:97:4d:fc:b5:
+                    6c:10:ec:20:16:ba:d8:cd:be:26:a4:69:00:71:37:
+                    a7:90:e7:d4:e1:6e:e6:ed:bc:69:b2:eb:16:d8:90:
+                    e6:d8:ef:1b:b3:1f:af:dd:c6:b3:3a:a2:69:08:b3:
+                    07:3f:75:6a:9f:37:25:96:86:26:79:06:ae:05:ea:
+                    7a:1f:4c:2c:a6:27:74:63:33:15:cd:ae:f9:a4:3c:
+                    7b:ad
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: 
+                CA:FALSE
+            X509v3 Subject Key Identifier: 
+                57:03:8C:F6:99:31:E9:50:22:E7:9A:B8:84:5F:A3:82:F8:C0:C7:A1
+            X509v3 Authority Key Identifier: 
+                keyid:28:62:6C:EC:E5:C8:35:DD:96:2F:A5:F6:99:E1:FD:D1:E2:0D:A0:94
+                DirName:/CN=pgwatch
+                serial:78:43:50:95:01:55:1F:98:7B:1E:CC:C5:24:B2:D6:A3:E2:82:43:04
+            X509v3 Extended Key Usage: 
+                TLS Web Server Authentication
+            X509v3 Key Usage: 
+                Digital Signature, Key Encipherment
+            X509v3 Subject Alternative Name: 
+                DNS:localhost
+    Signature Algorithm: sha256WithRSAEncryption
+    Signature Value:
+        8c:ea:d6:0d:c6:83:f6:19:ba:77:68:03:e3:a0:0d:fe:53:58:
+        16:1c:f1:d7:38:e8:32:85:a4:30:e2:32:7b:c4:ad:4c:52:5a:
+        c5:81:21:ba:70:98:0e:ec:84:52:08:86:69:ec:60:d9:98:88:
+        e8:f8:fa:96:46:03:0d:2b:6a:45:09:40:aa:8e:b0:15:e8:dc:
+        0c:8c:0a:4b:cc:37:52:cd:af:71:29:bd:e7:59:73:0a:9d:5e:
+        a3:de:d3:54:15:40:92:eb:c0:87:00:ce:d0:13:58:ae:7a:98:
+        c8:cb:65:51:78:57:e3:26:83:ee:86:9f:4e:40:15:a8:6d:3a:
+        37:1f:d1:7b:e1:28:fe:1a:eb:b4:94:37:07:59:bc:27:e5:8f:
+        76:a6:72:a4:d2:f3:a1:bf:50:09:ea:fc:1d:32:97:7a:0c:03:
+        e5:c2:66:37:39:c6:48:d8:51:98:ca:83:cf:d8:29:f3:1c:81:
+        8f:e5:1a:15:16:9d:73:90:9c:e8:16:f9:ce:1e:7b:11:30:1c:
+        b3:1e:91:8a:a9:81:50:54:94:80:38:c0:ad:2f:63:8c:88:ff:
+        0c:c6:d8:82:b1:dc:fa:8f:f7:b7:fd:53:94:42:e6:28:33:a7:
+        d7:16:16:4e:eb:8c:5e:91:97:65:87:f6:51:82:5b:1a:31:74:
+        0f:5a:f1:d7
+-----BEGIN CERTIFICATE-----
+MIIDZTCCAk2gAwIBAgIQeTQ+4M7xwydf7MvrDnDdsTANBgkqhkiG9w0BAQsFADAS
+MRAwDgYDVQQDDAdwZ3dhdGNoMB4XDTI1MDYxMTA1MjUxOFoXDTI3MDkxNDA1MjUx
+OFowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+MIIBCgKCAQEA69Ja9K4ZHoIdBK+34YE1+0a/sB7YKZJb3+gYFahvszS37Oa6h/0+
+d9TCY58bMpPQSQQdvhG/s1H6Yc4BWTfH/ssRmDhKciMmdfMj/lr8TytglIUPPSzb
+PKy2t9idpk30PwiV1UlijjlFZxoxcO3Aia8mmrDJzkoHsQL96PhDT25YRinnflg8
+vVthasVqGIHNJIXORyz5lgkBW3NeeZPEUSxbvmo63AB1lFJZMz4xlpdN/LVsEOwg
+FrrYzb4mpGkAcTenkOfU4W7m7bxpsusW2JDm2O8bsx+v3cazOqJpCLMHP3Vqnzcl
+loYmeQauBep6H0wspid0YzMVza75pDx7rQIDAQABo4G0MIGxMAkGA1UdEwQCMAAw
+HQYDVR0OBBYEFFcDjPaZMelQIueauIRfo4L4wMehME0GA1UdIwRGMESAFChibOzl
+yDXdli+l9pnh/dHiDaCUoRakFDASMRAwDgYDVQQDDAdwZ3dhdGNoghR4Q1CVAVUf
+mHsezMUkstaj4oJDBDATBgNVHSUEDDAKBggrBgEFBQcDATALBgNVHQ8EBAMCBaAw
+FAYDVR0RBA0wC4IJbG9jYWxob3N0MA0GCSqGSIb3DQEBCwUAA4IBAQCM6tYNxoP2
+Gbp3aAPjoA3+U1gWHPHXOOgyhaQw4jJ7xK1MUlrFgSG6cJgO7IRSCIZp7GDZmIjo
++PqWRgMNK2pFCUCqjrAV6NwMjApLzDdSza9xKb3nWXMKnV6j3tNUFUCS68CHAM7Q
+E1iuepjIy2VReFfjJoPuhp9OQBWobTo3H9F74Sj+Guu0lDcHWbwn5Y92pnKk0vOh
+v1AJ6vwdMpd6DAPlwmY3OcZI2FGYyoPP2CnzHIGP5RoVFp1zkJzoFvnOHnsRMByz
+HpGKqYFQVJSAOMCtL2OMiP8MxtiCsdz6j/e3/VOUQuYoM6fXFhZO64xekZdlh/ZR
+glsaMXQPWvHX
+-----END CERTIFICATE-----
