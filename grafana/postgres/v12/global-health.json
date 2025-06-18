@@ -1966,12 +1966,17 @@
           "showMiniMap": false
         },
 <<<<<<< HEAD
+<<<<<<< HEAD
         "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
        "mode": "markdown"
 =======
         "content": "<h2>Brought to you by</h2><div style=\"padding: 25px;\"><a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\"></a></div>",
         "mode": "html"
 >>>>>>> added Grafana 12 image to docker compose file, copied v11 dashboards to v12 for updating them as v12
+=======
+        "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+       "mode": "markdown"
+>>>>>>> depreciated AngularJS panels removal pr updated
       },
       "pluginVersion": "10.4.1",
       "targets": [

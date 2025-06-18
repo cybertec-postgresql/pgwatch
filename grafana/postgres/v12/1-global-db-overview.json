@@ -2640,7 +2640,11 @@
           "showMiniMap": false
         },
         "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+<<<<<<< HEAD
         "mode": "markdown"
+=======
+       "mode": "markdown"
+>>>>>>> depreciated AngularJS panels removal pr updated
       },
       "pluginVersion": "12.0.0",
       "title": "",
