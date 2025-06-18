@@ -120,6 +120,9 @@
 				<dd><a href="#pkg-variables">Variables</a></dd>
 			
 			
+				
+				<dd><a href="#connectViaTLS">func connectViaTLS(address, RootCA string) (*rpc.Client, error)</a></dd>
+			
 			
 				
 				<dd><a href="#CmdOpts">type CmdOpts</a></dd>
@@ -278,7 +281,7 @@
 				<dd><a href="#RPCWriter">type RPCWriter</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#NewRPCWriter">func NewRPCWriter(ctx context.Context, address string) (*RPCWriter, error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#NewRPCWriter">func NewRPCWriter(ctx context.Context, ConnStr string) (*RPCWriter, error)</a></dd>
 				
 				
 					
@@ -435,6 +438,19 @@
 				<pre>var <span id="sqlMetricEnsurePartitionTimescale">sqlMetricEnsurePartitionTimescale</span> <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
 			
 		
+		
+			
+			
+			<h2 id="connectViaTLS">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L49">connectViaTLS</a>
+				<a class="permalink" href="#connectViaTLS">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func connectViaTLS(address, RootCA <a href="https://pkg.go.dev/builtin/#string">string</a>) (*<a href="https://pkg.go.dev/net/rpc/">rpc</a>.<a href="https://pkg.go.dev/net/rpc/#Client">Client</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
 		
 		
 			
@@ -1150,9 +1166,8 @@ behavior of the server. It can be a simple logger, external storage, alerting sy
 or an analytics system.
 
 			<pre>type RPCWriter struct {
-<span id="RPCWriter.ctx"></span>    ctx     <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
-<span id="RPCWriter.address"></span>    address <a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="RPCWriter.client"></span>    client  *<a href="https://pkg.go.dev/net/rpc/">rpc</a>.<a href="https://pkg.go.dev/net/rpc/#Client">Client</a>
+<span id="RPCWriter.ctx"></span>    ctx    <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
+<span id="RPCWriter.client"></span>    client *<a href="https://pkg.go.dev/net/rpc/">rpc</a>.<a href="https://pkg.go.dev/net/rpc/#Client">Client</a>
 }
 </pre>
 
@@ -1166,12 +1181,12 @@ or an analytics system.
 
 			
 				
-				<h3 id="NewRPCWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L11">NewRPCWriter</a>
+				<h3 id="NewRPCWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L16">NewRPCWriter</a>
 					<a class="permalink" href="#NewRPCWriter">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func NewRPCWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, address <a href="https://pkg.go.dev/builtin/#string">string</a>) (*<a href="#RPCWriter">RPCWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func NewRPCWriter(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, ConnStr <a href="https://pkg.go.dev/builtin/#string">string</a>) (*<a href="#RPCWriter">RPCWriter</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
@@ -1179,7 +1194,7 @@ or an analytics system.
 
 			
 				
-				<h3 id="RPCWriter.SyncMetric">func (*RPCWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L42">SyncMetric</a>
+				<h3 id="RPCWriter.SyncMetric">func (*RPCWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L84">SyncMetric</a>
 					<a class="permalink" href="#RPCWriter.SyncMetric">&#xb6;</a>
 					
 					
@@ -1191,7 +1206,7 @@ or an analytics system.
 				
 			
 				
-				<h3 id="RPCWriter.Write">func (*RPCWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L28">Write</a>
+				<h3 id="RPCWriter.Write">func (*RPCWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L70">Write</a>
 					<a class="permalink" href="#RPCWriter.Write">&#xb6;</a>
 					
 					
@@ -1204,7 +1219,7 @@ or an analytics system.
 				
 			
 				
-				<h3 id="RPCWriter.watchCtx">func (*RPCWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L57">watchCtx</a>
+				<h3 id="RPCWriter.watchCtx">func (*RPCWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/rpc.go.html#L99">watchCtx</a>
 					<a class="permalink" href="#RPCWriter.watchCtx">&#xb6;</a>
 					
 					
@@ -1218,7 +1233,7 @@ or an analytics system.
 		
 			
 			
-			<h2 id="SyncOp">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/types.go.html#L18">SyncOp</a>
+			<h2 id="SyncOp">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/types.go.html#L17">SyncOp</a>
 				<a class="permalink" href="#SyncOp">&#xb6;</a>
 				
 				
@@ -1247,7 +1262,7 @@ or an analytics system.
 		
 			
 			
-			<h2 id="SyncReq">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/types.go.html#L26">SyncReq</a>
+			<h2 id="SyncReq">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/types.go.html#L25">SyncReq</a>
 				<a class="permalink" href="#SyncReq">&#xb6;</a>
 				
 				

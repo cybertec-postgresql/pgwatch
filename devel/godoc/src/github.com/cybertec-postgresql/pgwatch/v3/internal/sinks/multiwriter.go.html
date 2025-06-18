@@ -61,8 +61,8 @@
 <span id="L4" class="ln">     4  </span>	&#34;context&#34;
 <span id="L5" class="ln">     5  </span>	&#34;errors&#34;
 <span id="L6" class="ln">     6  </span>	&#34;fmt&#34;
-<span id="L7" class="ln">     7  </span>	&#34;strings&#34;
-<span id="L8" class="ln">     8  </span>	&#34;sync&#34;
+<span id="L7" class="ln">     7  </span>	&#34;sync&#34;
+<span id="L8" class="ln">     8  </span>	&#34;strings&#34;
 <span id="L9" class="ln">     9  </span>
 <span id="L10" class="ln">    10  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/metrics&#34;
 <span id="L11" class="ln">    11  </span>)
@@ -103,7 +103,7 @@
 <span id="L46" class="ln">    46  </span>		case &#34;prometheus&#34;:
 <span id="L47" class="ln">    47  </span>			w, err = NewPrometheusWriter(ctx, path)
 <span id="L48" class="ln">    48  </span>		case &#34;rpc&#34;:
-<span id="L49" class="ln">    49  </span>			w, err = NewRPCWriter(ctx, path)
+<span id="L49" class="ln">    49  </span>			w, err = NewRPCWriter(ctx, s)
 <span id="L50" class="ln">    50  </span>		default:
 <span id="L51" class="ln">    51  </span>			return nil, fmt.Errorf(&#34;unknown schema %s in sink URI %s&#34;, scheme, s)
 <span id="L52" class="ln">    52  </span>		}
