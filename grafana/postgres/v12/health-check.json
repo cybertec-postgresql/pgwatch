@@ -4967,7 +4967,7 @@
       "valueName": "current"
     },
     {
-      "content": "<h2>Brought to you by</h2><div style=\"padding: 25px;\"><a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\"></a></div>",
+      "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
       "gridPos": {
         "h": 4,
         "w": 12,
@@ -4976,14 +4976,14 @@
       },
       "id": 12,
       "links": [],
-      "mode": "html",
+      "mode": "markdown",
       "options": {},
       "title": "",
       "transparent": true,
       "type": "text"
     },
     {
-      "content": "<br/><h3>The preset threshold values (green / yellow / red) should be reviewed / adjusted!</h3>",
+      "content": "### The preset threshold values (green / yellow / red) should be reviewed / adjusted!",
       "gridPos": {
         "h": 4,
         "w": 12,
@@ -4992,7 +4992,7 @@
       },
       "id": 48,
       "links": [],
-      "mode": "html",
+      "mode": "markdown",
       "options": {},
       "title": "",
       "transparent": true,

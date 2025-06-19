@@ -261,7 +261,7 @@
       }
     },
     {
-      "content": "<h2>Brought to you by</h2><div style=\"padding: 25px;\"><a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\"></a></div>",
+      "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
       "datasource": null,
       "gridPos": {
         "h": 8,
@@ -270,7 +270,7 @@
         "y": 24
       },
       "id": 5,
-      "mode": "html",
+      "mode": "markdown",
       "options": {},
       "timeFrom": null,
       "timeShift": null,

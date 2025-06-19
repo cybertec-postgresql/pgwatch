@@ -18,6 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": 22,
   "links": [],
   "panels": [
     {
@@ -47,8 +48,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -74,6 +74,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -85,7 +86,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "TPS",
@@ -173,8 +174,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -200,6 +200,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -211,7 +212,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "QPS",
@@ -298,8 +299,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -325,6 +325,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -336,7 +337,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "avg_query_runtime_per_db",
@@ -424,8 +425,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -450,6 +450,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "diff"
@@ -461,7 +462,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "db_size_change_last_hour",
@@ -549,8 +550,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -575,6 +575,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "diff"
@@ -586,7 +587,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "Bloat size",
@@ -681,8 +682,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -708,6 +708,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -719,7 +720,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "datasource": {
@@ -773,6 +774,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -806,8 +808,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -873,11 +874,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "$tag_dbname",
@@ -957,6 +959,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -990,8 +993,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1046,7 +1048,6 @@
         "y": 10
       },
       "id": 17,
-      "interval": "",
       "options": {
         "legend": {
           "calcs": [
@@ -1057,11 +1058,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "$tag_dbname",
@@ -1141,6 +1143,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1173,8 +1176,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1240,11 +1242,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "$tag_dbname",
@@ -1323,6 +1326,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1356,8 +1360,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1423,11 +1426,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "$tag_dbname",
@@ -1506,6 +1510,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1539,8 +1544,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1606,11 +1610,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "$tag_dbname",
@@ -1689,6 +1694,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1721,8 +1727,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1804,11 +1809,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "$tag_dbname",
@@ -1886,6 +1892,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1918,8 +1925,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2000,11 +2006,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "$tag_dbname",
@@ -2081,6 +2088,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -2114,8 +2122,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2196,11 +2203,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "$tag_dbname",
@@ -2291,6 +2299,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -2324,8 +2333,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2371,11 +2379,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "asc"
         }
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "$tag_dbname",
@@ -2454,6 +2463,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -2488,8 +2498,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2540,11 +2549,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.0.0",
       "targets": [
         {
           "alias": "$tag_dbname",
@@ -2612,12 +2622,10 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
-      "editable": true,
-      "error": false,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -2632,23 +2640,17 @@
           "showMiniMap": false
         },
         "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
-       "mode": "markdown"
+        "mode": "markdown"
       },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
-          },
-          "refId": "A"
-        }
-      ],
+      "pluginVersion": "12.0.0",
+      "title": "",
       "transparent": true,
       "type": "text"
     }
   ],
-  "schemaVersion": 39,
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 41,
   "tags": [
     "pgwatch"
   ],
@@ -2656,13 +2658,10 @@
     "list": [
       {
         "current": {
-          "selected": false,
           "text": "yes",
           "value": "yes"
         },
-        "hide": 0,
         "includeAll": false,
-        "multi": false,
         "name": "current_primaries_only",
         "options": [
           {
@@ -2677,15 +2676,11 @@
           }
         ],
         "query": "yes,no",
-        "skipUrlSync": false,
         "type": "custom"
       },
       {
         "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
+          "text": "All",
           "value": [
             "$__all"
           ]
@@ -2695,7 +2690,6 @@
           "uid": "pgwatch-metrics"
         },
         "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics a WHERE case when '$current_primaries_only' = 'yes' then (select (data->'in_recovery_int')::int as in_recovery_int from db_stats where dbname = a.dbname and time > now() - '1h'::interval order by time desc limit 1) = 0 else true end ORDER BY 1;",
-        "hide": 0,
         "includeAll": true,
         "multi": true,
         "name": "dbname",
@@ -2703,23 +2697,16 @@
         "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics a WHERE case when '$current_primaries_only' = 'yes' then (select (data->'in_recovery_int')::int as in_recovery_int from db_stats where dbname = a.dbname and time > now() - '1h'::interval order by time desc limit 1) = 0 else true end ORDER BY 1;",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
+        "type": "query"
       },
       {
         "auto": false,
         "auto_count": 30,
         "auto_min": "10s",
         "current": {
-          "selected": false,
           "text": "15m",
           "value": "15m"
         },
-        "hide": 0,
         "name": "agg_interval",
         "options": [
           {
@@ -2770,7 +2757,6 @@
         ],
         "query": "1m,5m,10m,15m,30m,1h,6h,12h,1d",
         "refresh": 2,
-        "skipUrlSync": false,
         "type": "interval"
       }
     ]
@@ -2779,34 +2765,9 @@
     "from": "now-6h",
     "to": "now"
   },
-  "timepicker": {
-    "refresh_intervals": [
-      "5s",
-      "10s",
-      "30s",
-      "1m",
-      "5m",
-      "15m",
-      "30m",
-      "1h",
-      "2h",
-      "1d"
-    ],
-    "time_options": [
-      "5m",
-      "15m",
-      "1h",
-      "6h",
-      "12h",
-      "24h",
-      "2d",
-      "7d",
-      "30d"
-    ]
-  },
+  "timepicker": {},
   "timezone": "browser",
   "title": "Global DB overview",
   "uid": "global-db-overview",
-  "version": 1,
-  "weekStart": ""
+  "version": 1
 }
