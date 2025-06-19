@@ -19,7 +19,11 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+<<<<<<< HEAD
   "id": 22,
+=======
+  "id": 16,
+>>>>>>> updating grafana dashboards for v12
   "links": [],
   "panels": [
     {

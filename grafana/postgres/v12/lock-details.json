@@ -18,7 +18,11 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+<<<<<<< HEAD
   "id": 2,
+=======
+  "id": 24,
+>>>>>>> updating grafana dashboards for v12
   "links": [],
   "panels": [
     {
@@ -216,5 +220,9 @@
   "timezone": "browser",
   "title": "Lock details",
   "uid": "lock-details",
+<<<<<<< HEAD
   "version": 3
+=======
+  "version": 1
+>>>>>>> updating grafana dashboards for v12
 }

@@ -18,7 +18,11 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+<<<<<<< HEAD
   "id": 21,
+=======
+  "id": 22,
+>>>>>>> updating grafana dashboards for v12
   "links": [],
   "panels": [
     {
@@ -2641,10 +2645,14 @@
         },
         "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
 <<<<<<< HEAD
+<<<<<<< HEAD
         "mode": "markdown"
 =======
        "mode": "markdown"
 >>>>>>> depreciated AngularJS panels removal pr updated
+=======
+        "mode": "markdown"
+>>>>>>> updating grafana dashboards for v12
       },
       "pluginVersion": "12.0.0",
       "title": "",
@@ -2773,5 +2781,9 @@
   "timezone": "browser",
   "title": "Global DB overview",
   "uid": "global-db-overview",
+<<<<<<< HEAD
   "version": 4
+=======
+  "version": 1
+>>>>>>> updating grafana dashboards for v12
 }

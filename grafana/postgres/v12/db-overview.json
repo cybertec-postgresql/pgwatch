@@ -18,7 +18,11 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+<<<<<<< HEAD
   "id": 1,
+=======
+  "id": 7,
+>>>>>>> updating grafana dashboards for v12
   "links": [],
   "panels": [
     {
@@ -2775,5 +2779,9 @@
   "timezone": "browser",
   "title": "DB overview",
   "uid": "db-overview",
+<<<<<<< HEAD
   "version": 3
+=======
+  "version": 1
+>>>>>>> updating grafana dashboards for v12
 }
