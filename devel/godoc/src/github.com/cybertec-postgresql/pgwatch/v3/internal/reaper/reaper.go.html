@@ -550,7 +550,7 @@
 <span id="L493" class="ln">   493  </span>			data, err = r.GetInstanceUpMeasurement(ctx, md)
 <span id="L494" class="ln">   494  </span>		default:
 <span id="L495" class="ln">   495  </span>			sql = metric.GetSQL(md.Version)
-<span id="L496" class="ln">   496  </span>			if sql == &#34;&#34; &amp;&amp; !(metricName == specialMetricChangeEvents || metricName == recoMetricName) {
+<span id="L496" class="ln">   496  </span>			if sql == &#34;&#34; {
 <span id="L497" class="ln">   497  </span>				l.Warning(&#34;Ignoring fetching because of empty SQL&#34;)
 <span id="L498" class="ln">   498  </span>				return nil, nil
 <span id="L499" class="ln">   499  </span>			}
