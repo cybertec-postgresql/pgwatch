@@ -493,7 +493,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 			data, err = r.GetInstanceUpMeasurement(ctx, md)
 		default:
 			sql = metric.GetSQL(md.Version)
-			if sql == "" && !(metricName == specialMetricChangeEvents || metricName == recoMetricName) {
+			if sql == "" {
 				l.Warning("Ignoring fetching because of empty SQL")
 				return nil, nil
 			}
