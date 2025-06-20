@@ -143,8 +143,8 @@ github.com/opencontainers/image-spec v1.1.1 h1:y0fUlFfIZhPF1W537XOLg0/fcx6zcHCJw
 github.com/opencontainers/image-spec v1.1.1/go.mod h1:qpqAh3Dmcf36wStyyWU+kCeDgrGnAve2nCC8+7h8Q0M=
 github.com/pashagolub/pgxmock/v3 v3.4.0 h1:87VMr2q7m2+6VzXo4Tsp9kMklGlj6mMN19Hp/bp2Rwo=
 github.com/pashagolub/pgxmock/v3 v3.4.0/go.mod h1:FvCl7xqPbLLI3XohihJ1NzXnikjM3q/NWSixg4t9hrU=
-github.com/pashagolub/pgxmock/v4 v4.7.0 h1:de2ORuFYyjwOQR7NBm57+321RnZxpYiuUjsmqRiqgh8=
-github.com/pashagolub/pgxmock/v4 v4.7.0/go.mod h1:9L57pC193h2aKRHVyiiE817avasIPZnPwPlw3JczWvM=
+github.com/pashagolub/pgxmock/v4 v4.8.0 h1:RBtNUZXNG/ZwyOT7sJdSEx9RlAw19sgVPlnmEdlpT08=
+github.com/pashagolub/pgxmock/v4 v4.8.0/go.mod h1:9L57pC193h2aKRHVyiiE817avasIPZnPwPlw3JczWvM=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
