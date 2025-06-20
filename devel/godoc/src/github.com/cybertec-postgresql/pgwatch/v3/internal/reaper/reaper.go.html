@@ -371,7 +371,7 @@
 <span id="L314" class="ln">   314  </span>		if r.Metrics.DirectOSStats &amp;&amp; IsDirectlyFetchableMetric(metricName) {
 <span id="L315" class="ln">   315  </span>			metricStoreMessages, err = r.FetchStatsDirectlyFromOS(ctx, md, metricName)
 <span id="L316" class="ln">   316  </span>			if err != nil {
-<span id="L317" class="ln">   317  </span>				l.WithError(err).Errorf(&#34;Could not reader metric directly from OS&#34;)
+<span id="L317" class="ln">   317  </span>				l.WithError(err).Errorf(&#34;Could not read metric directly from OS&#34;)
 <span id="L318" class="ln">   318  </span>			}
 <span id="L319" class="ln">   319  </span>		}
 <span id="L320" class="ln">   320  </span>		t1 := time.Now()
