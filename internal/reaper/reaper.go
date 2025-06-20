@@ -314,7 +314,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 		if r.Metrics.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
 			metricStoreMessages, err = r.FetchStatsDirectlyFromOS(ctx, md, metricName)
 			if err != nil {
-				l.WithError(err).Errorf("Could not reader metric directly from OS")
+				l.WithError(err).Errorf("Could not read metric directly from OS")
 			}
 		}
 		t1 := time.Now()
