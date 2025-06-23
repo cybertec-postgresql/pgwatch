@@ -160,49 +160,52 @@ syntax differences.
 
     To get most out of your metrics some `SECURITY DEFINER` wrappers
     functions called "helpers" are recommended on the DB-s under
-    monitoring. See the detailed chapter on the "preparation" topic
-    [here](preparing_databases.md) for more
-    details.
+    monitoring. See the detailed chapter on the ["preparation" topic](preparing_databases.md)
+    for more details.
+
+1. **Start the pgwatch metrics collection agent**
+
+    The gatherer has quite some parameters (use the `--help` flag
+    to show them all), but simplest form would be:
+
+    ```terminal
+    pgwatch \
+        --sources=postgresql://pgwatch:xyz@localhost:5432/pgwatch \
+        --sink=postgresql://pgwatch:xyz@localhost:5432/pgwatch_metrics \
+        --log-level=debug
+    ```
+
+    Or via SystemD if set up in previous steps
+
+    ```terminal
+    useradd -m -s /bin/bash pgwatch # default SystemD templates run under the pgwatch user
+    sudo systemctl start pgwatch
+    sudo systemctl status pgwatch
+    ```
+
+    After initial verification that all works, it's usually good
+    idea to set verbosity back to default by removing the *--log-level=debug*
+    flag.
 
 1. **Configure sources and metrics with intervals to be monitored**
 
     - from the Web UI "Sources" page
     - via direct inserts into the Config DB `pgwatch.source` table
 
-1. **Start the pgwatch metrics collection agent**
+1. **Monitor the console or log output for any problems**
 
-    1. The gatherer has quite some parameters (use the `--help` flag
-        to show them all), but simplest form would be:
+    Wait for a few minutes or restart the gatherer daemon to reread
+    the monitored sources and metrics configuration. You can control
+    the refresh timeout via the `--refresh` parameter,
+    default is 120 seconds.
 
-        ```terminal
-        pgwatch \
-            --sources=postgresql://pgwatch:xyz@localhost:5432/pgwatch \
-            --sink=postgresql://pgwatch:xyz@localhost:5432/pgwatch_metrics \
-            --log-level=debug
-        ```
-
-        Or via SystemD if set up in previous steps
-
-        ```terminal
-        useradd -m -s /bin/bash pgwatch # default SystemD templates run under the pgwatch user
-        sudo systemctl start pgwatch
-        sudo systemctl status pgwatch
-        ```
-
-        After initial verification that all works, it's usually good
-        idea to set verbosity back to default by removing the *--log-level=debug*
-        flag.
-
-    1. Monitor the console or log output for any problems
-
-        If you see metrics trickling into the "pgwatch_metrics"
-        database (metric names are mapped to table names and tables are
-        auto-created), then congratulations - the deployment is working!
-        When using some more aggressive *preset metrics config* then
-        there are usually still some errors though, due to the fact that
-        some more extensions or privileges are missing on the monitored
-        database side. See the according chapter
-        [here](preparing_databases.md).
+    If you see metrics trickling into the "pgwatch_metrics"
+    database (metric names are mapped to table names and tables are
+    auto-created), then congratulations - the deployment is working!
+    When using some more aggressive *preset metrics config* then
+    there are usually still some errors though, due to the fact that
+    some more extensions or privileges are missing on the monitored
+    database side. See the [according chapter](preparing_databases.md).
 
 1. **Install Grafana**
 
