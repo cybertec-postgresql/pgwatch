@@ -112,7 +112,6 @@ func (r *Reaper) Reap(ctx context.Context) {
 			} else {
 				metricsConfig = monitoredSource.Metrics
 			}
-			hostLastKnownStatusInRecovery[monitoredSource.Name] = monitoredSource.IsInRecovery
 
 			r.CreateSourceHelpers(ctx, srcL, monitoredSource)
 
@@ -133,15 +132,14 @@ func (r *Reaper) Reap(ctx context.Context) {
 					if monitoredSource.IsInRecovery && len(monitoredSource.MetricsStandby) > 0 {
 						srcL.Warning("Switching metrics collection to standby config...")
 						metricsConfig = monitoredSource.MetricsStandby
-						hostLastKnownStatusInRecovery[monitoredSource.Name] = true
-					} else {
+					} else if !monitoredSource.IsInRecovery {
 						srcL.Warning("Switching metrics collection to primary config...")
 						metricsConfig = monitoredSource.Metrics
-						hostLastKnownStatusInRecovery[monitoredSource.Name] = false
 					}
+					// else: it already has primary config do nothing + no warn
 				}
-
 			}
+			hostLastKnownStatusInRecovery[monitoredSource.Name] = monitoredSource.IsInRecovery
 
 			for metricName, interval := range metricsConfig {
 				metric := metricName
