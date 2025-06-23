@@ -1647,7 +1647,7 @@ security environments or some slight code changes are required.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git clone https://github.com/cybertec-postgresql/pgwatch.git
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>cd pgwatch/internal/webui
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>yarn install --network-timeout 100000 &amp;&amp; yarn build
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>cd ..
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>cd ../..
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>go build ./cmd/pgwatch/
 </span></code></pre></div>
 <p>After fetching all the Go library dependencies (can take minutes)
@@ -1667,7 +1667,7 @@ to copy it to <code>/usr/bin/pgwatch</code>.</p>
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="k">[Service]</span>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="na">User</span><span class="o">=</span><span class="s">pgwatch</span>
 </span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="na">Type</span><span class="o">=</span><span class="s">exec</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/pgwatch --sources=postgresql://pgwatch@localhost:5432/pgwatch --sink=postgresql://pgwatch@localhost:5432/pgwatch_metrics</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/pgwatch --sources=postgresql://pgwatch:xyz@localhost:5432/pgwatch --sink=postgresql://pgwatch:xyz@localhost:5432/pgwatch_metrics</span>
 </span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="na">Restart</span><span class="o">=</span><span class="s">on-failure</span>
 </span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="na">TimeoutStartSec</span><span class="o">=</span><span class="s">0</span>
 </span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
@@ -1678,7 +1678,7 @@ to copy it to <code>/usr/bin/pgwatch</code>.</p>
 </ul>
 </li>
 <li>
-<p><strong>Boostrap the configuration database</strong></p>
+<p><strong>Bootstrap the configuration database</strong></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The detailed steps are described in the
@@ -1697,7 +1697,7 @@ schema creation file is adjusted accordingly.</p>
 <p>Roll out the pgwatch config schema (optional)</p>
 <p>pgwatch will automatically create the necessary tables and indexes in the database when it starts. But in case
 you want to create the schema as a separate step, you can use the <code>config init</code> command-line command:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch config init
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pgwatch --sources=postgresql://pgwatch:xyz@localhost/pgwatch config init
 </span></code></pre></div>
 </li>
 </ul>
@@ -1725,26 +1725,16 @@ can make the initial preparation (automatic <em>helper</em> rollouts) a bit
 easier still, given superuser privileges are later stripped.</p>
 <p>To get most out of your metrics some <code>SECURITY DEFINER</code> wrappers
 functions called "helpers" are recommended on the DB-s under
-monitoring. See the detailed chapter on the "preparation" topic
-<a href="preparing_databases.html">here</a> for more
-details.</p>
-</li>
-<li>
-<p><strong>Configure sources and metrics with intervals to be monitored</strong></p>
-<ul>
-<li>from the Web UI "Sources" page</li>
-<li>via direct inserts into the Config DB <code>pgwatch.source</code> table</li>
-</ul>
+monitoring. See the detailed chapter on the <a href="preparing_databases.html">"preparation" topic</a>
+for more details.</p>
 </li>
 <li>
 <p><strong>Start the pgwatch metrics collection agent</strong></p>
-<ol>
-<li>
 <p>The gatherer has quite some parameters (use the <code>--help</code> flag
-    to show them all), but simplest form would be:</p>
+to show them all), but simplest form would be:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pgwatch \
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    --sources=postgresql://pgwatch@localhost:5432/pgwatch \
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    --sink=postgresql://pgwatch@localhost:5432/pgwatch_metrics \
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    --sources=postgresql://pgwatch:xyz@localhost:5432/pgwatch \
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    --sink=postgresql://pgwatch:xyz@localhost:5432/pgwatch_metrics \
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    --log-level=debug
 </span></code></pre></div>
 <p>Or via SystemD if set up in previous steps</p>
@@ -1757,17 +1747,25 @@ idea to set verbosity back to default by removing the <em>--log-level=debug</em>
 flag.</p>
 </li>
 <li>
-<p>Monitor the console or log output for any problems</p>
+<p><strong>Configure sources and metrics with intervals to be monitored</strong></p>
+<ul>
+<li>from the Web UI "Sources" page</li>
+<li>via direct inserts into the Config DB <code>pgwatch.source</code> table</li>
+</ul>
+</li>
+<li>
+<p><strong>Monitor the console or log output for any problems</strong></p>
+<p>Wait for a few minutes or restart the gatherer daemon to reread
+the monitored sources and metrics configuration. You can control
+the refresh timeout via the <code>--refresh</code> parameter,
+default is 120 seconds.</p>
 <p>If you see metrics trickling into the "pgwatch_metrics"
 database (metric names are mapped to table names and tables are
 auto-created), then congratulations - the deployment is working!
 When using some more aggressive <em>preset metrics config</em> then
 there are usually still some errors though, due to the fact that
 some more extensions or privileges are missing on the monitored
-database side. See the according chapter
-<a href="preparing_databases.html">here</a>.</p>
-</li>
-</ol>
+database side. See the <a href="preparing_databases.html">according chapter</a>.</p>
 </li>
 <li>
 <p><strong>Install Grafana</strong></p>
@@ -1882,7 +1880,7 @@ paragraph.</p>
 </span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">                      </span><span class="c1"># - patroni-continuous-discovery</span>
 </span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">                      </span><span class="c1"># - patroni-namespace-discover</span>
 </span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">                      </span><span class="c1"># Defaults to postgres if not specified</span>
-</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="w">  </span><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgresql://pgwatch:pgwatchadmin@somehost/mydb</span>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="w">  </span><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgresql://pgwatch:xyz@somehost/mydb</span>
 </span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="w">  </span><span class="nt">preset_metrics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">exhaustive</span><span class="w"> </span><span class="c1"># from list of presets defined in &quot;metrics/preset-configs.yaml&quot;</span>
 </span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="w">  </span><span class="nt">custom_metrics</span><span class="p">:</span><span class="w">    </span><span class="c1"># if both preset and custom are specified, custom wins</span>
 </span><span id="__span-12-14"><a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="w">  </span><span class="nt">preset_metrics_standby</span><span class="p">:</span><span class="w"> </span><span class="c1"># optional metrics configuration for standby / replica state, v1.8.1+</span>

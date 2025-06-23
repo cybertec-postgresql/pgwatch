@@ -1704,7 +1704,7 @@ best to do a custom setup though - see the next
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># launch pgwatch with fully exposed Grafana, Web UI, Postgres</span>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--restart<span class="o">=</span>unless-stopped<span class="w"> </span>--name<span class="w"> </span>pw3<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span>-p<span class="w"> </span><span class="m">3000</span>:3000<span class="w"> </span>-p<span class="w"> </span><span class="m">127</span>.0.0.1:5432:5432<span class="w"> </span>-p<span class="w"> </span><span class="m">192</span>.168.1.XYZ:8080:8080<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span>-v<span class="w"> </span>pg:/var/lib/postgresql<span class="w"> </span>-v<span class="w"> </span>grafana:/var/lib/grafana<span class="w"> </span>-v<span class="w"> </span>pw3:/pgwatch/persistent-config<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span>-v<span class="w"> </span>pg:/var/lib/postgresql/data<span class="w"> </span>-v<span class="w"> </span>grafana:/var/lib/grafana<span class="w"> </span>-v<span class="w"> </span>pw3:/pgwatch/persistent-config<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span>cybertecpostgresql/pgwatch-demo:X.Y.Z
 </span></code></pre></div>
 <p>Note that in non-trusted environments it's a good idea to specify more
@@ -1829,8 +1829,8 @@ successful container startup in pgwatch case.</p>
 one example how your monitoring setup around the pgwatch metrics
 collector could be organized. For another example how various components
 (as Docker images here) can work together, see a <em>Docker Compose</em>
-example with loosely coupled components
-<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/docker-compose.yml">here</a>.</p>
+<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/docker-compose.yml">example</a>
+with loosely coupled components.</p>
 <h2 id="example-of-advanced-setup-using-yaml-files-and-dual-sinks">Example of advanced setup using YAML files and dual sinks</h2>
 <p>pgwatch service in file <code>docker/docker-compose.yml</code> can look like this:</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="w">  </span><span class="nt">pgwatch</span><span class="p">:</span>
