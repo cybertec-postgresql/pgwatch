@@ -104,6 +104,10 @@ func (r *Reaper) Reap(ctx context.Context) {
 			srcL.WithField("recovery", monitoredSource.IsInRecovery).Infof("Connect OK. Version: %s", monitoredSource.VersionStr)
 			if monitoredSource.IsInRecovery && monitoredSource.OnlyIfMaster {
 				srcL.Info("not added to monitoring due to 'master only' property")
+				if monitoredSource.IsPostgresSource() {
+					srcL.Info("to be removed from monitoring due to 'master only' property and status change")
+					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true
+				}
 				continue
 			}
 
@@ -124,11 +128,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 				}
 
 				lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[monitoredSource.Name]
-				if monitoredSource.IsInRecovery && monitoredSource.OnlyIfMaster {
-					srcL.Info("to be removed from monitoring due to 'master only' property and status change")
-					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true
-					continue
-				} else if lastKnownStatusInRecovery != monitoredSource.IsInRecovery {
+				if lastKnownStatusInRecovery != monitoredSource.IsInRecovery {
 					if monitoredSource.IsInRecovery && len(monitoredSource.MetricsStandby) > 0 {
 						srcL.Warning("Switching metrics collection to standby config...")
 						metricsConfig = monitoredSource.MetricsStandby
