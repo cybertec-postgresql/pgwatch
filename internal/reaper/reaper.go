@@ -117,13 +117,11 @@ func (r *Reaper) Reap(ctx context.Context) {
 			r.CreateSourceHelpers(ctx, srcL, monitoredSource)
 
 			if monitoredSource.IsPostgresSource() {
-				if r.Sources.MinDbSizeMB >= 8 { // an empty DB is a bit less than 8MB
-					DBSizeMB := monitoredSource.ApproxDbSize / 1048576 // only remove from monitoring when we're certain it's under the threshold
-					if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
-						srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
-						hostsToShutDownDueToRoleChange[monitoredSource.Name] = true // for the case when DB size was previosly above the threshold
-						continue
-					}
+				DBSizeMB := monitoredSource.ApproxDbSize / 1048576 // only remove from monitoring when we're certain it's under the threshold
+				if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
+					srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
+					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true // for the case when DB size was previosly above the threshold
+					continue
 				}
 
 				lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[monitoredSource.Name]
