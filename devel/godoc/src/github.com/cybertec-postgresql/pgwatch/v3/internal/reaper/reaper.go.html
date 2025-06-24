@@ -161,31 +161,31 @@
 <span id="L104" class="ln">   104  </span>			srcL.WithField(&#34;recovery&#34;, monitoredSource.IsInRecovery).Infof(&#34;Connect OK. Version: %s&#34;, monitoredSource.VersionStr)
 <span id="L105" class="ln">   105  </span>			if monitoredSource.IsInRecovery &amp;&amp; monitoredSource.OnlyIfMaster {
 <span id="L106" class="ln">   106  </span>				srcL.Info(&#34;not added to monitoring due to &#39;master only&#39; property&#34;)
-<span id="L107" class="ln">   107  </span>				continue
-<span id="L108" class="ln">   108  </span>			}
-<span id="L109" class="ln">   109  </span>
-<span id="L110" class="ln">   110  </span>			if monitoredSource.IsInRecovery &amp;&amp; len(monitoredSource.MetricsStandby) &gt; 0 {
-<span id="L111" class="ln">   111  </span>				metricsConfig = monitoredSource.MetricsStandby
-<span id="L112" class="ln">   112  </span>			} else {
-<span id="L113" class="ln">   113  </span>				metricsConfig = monitoredSource.Metrics
-<span id="L114" class="ln">   114  </span>			}
-<span id="L115" class="ln">   115  </span>
-<span id="L116" class="ln">   116  </span>			r.CreateSourceHelpers(ctx, srcL, monitoredSource)
-<span id="L117" class="ln">   117  </span>
-<span id="L118" class="ln">   118  </span>			if monitoredSource.IsPostgresSource() {
-<span id="L119" class="ln">   119  </span>				DBSizeMB := monitoredSource.ApproxDbSize / 1048576 <span class="comment">// only remove from monitoring when we&#39;re certain it&#39;s under the threshold</span>
-<span id="L120" class="ln">   120  </span>				if DBSizeMB != 0 &amp;&amp; DBSizeMB &lt; r.Sources.MinDbSizeMB {
-<span id="L121" class="ln">   121  </span>					srcL.Infof(&#34;ignored due to the --min-db-size-mb filter, current size %d MB&#34;, DBSizeMB)
-<span id="L122" class="ln">   122  </span>					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true <span class="comment">// for the case when DB size was previosly above the threshold</span>
-<span id="L123" class="ln">   123  </span>					continue
-<span id="L124" class="ln">   124  </span>				}
-<span id="L125" class="ln">   125  </span>
-<span id="L126" class="ln">   126  </span>				lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[monitoredSource.Name]
-<span id="L127" class="ln">   127  </span>				if monitoredSource.IsInRecovery &amp;&amp; monitoredSource.OnlyIfMaster {
-<span id="L128" class="ln">   128  </span>					srcL.Info(&#34;to be removed from monitoring due to &#39;master only&#39; property and status change&#34;)
-<span id="L129" class="ln">   129  </span>					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true
-<span id="L130" class="ln">   130  </span>					continue
-<span id="L131" class="ln">   131  </span>				} else if lastKnownStatusInRecovery != monitoredSource.IsInRecovery {
+<span id="L107" class="ln">   107  </span>				if monitoredSource.IsPostgresSource() {
+<span id="L108" class="ln">   108  </span>					srcL.Info(&#34;to be removed from monitoring due to &#39;master only&#39; property and status change&#34;)
+<span id="L109" class="ln">   109  </span>					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true
+<span id="L110" class="ln">   110  </span>				}
+<span id="L111" class="ln">   111  </span>				continue
+<span id="L112" class="ln">   112  </span>			}
+<span id="L113" class="ln">   113  </span>
+<span id="L114" class="ln">   114  </span>			if monitoredSource.IsInRecovery &amp;&amp; len(monitoredSource.MetricsStandby) &gt; 0 {
+<span id="L115" class="ln">   115  </span>				metricsConfig = monitoredSource.MetricsStandby
+<span id="L116" class="ln">   116  </span>			} else {
+<span id="L117" class="ln">   117  </span>				metricsConfig = monitoredSource.Metrics
+<span id="L118" class="ln">   118  </span>			}
+<span id="L119" class="ln">   119  </span>
+<span id="L120" class="ln">   120  </span>			r.CreateSourceHelpers(ctx, srcL, monitoredSource)
+<span id="L121" class="ln">   121  </span>
+<span id="L122" class="ln">   122  </span>			if monitoredSource.IsPostgresSource() {
+<span id="L123" class="ln">   123  </span>				DBSizeMB := monitoredSource.ApproxDbSize / 1048576 <span class="comment">// only remove from monitoring when we&#39;re certain it&#39;s under the threshold</span>
+<span id="L124" class="ln">   124  </span>				if DBSizeMB != 0 &amp;&amp; DBSizeMB &lt; r.Sources.MinDbSizeMB {
+<span id="L125" class="ln">   125  </span>					srcL.Infof(&#34;ignored due to the --min-db-size-mb filter, current size %d MB&#34;, DBSizeMB)
+<span id="L126" class="ln">   126  </span>					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true <span class="comment">// for the case when DB size was previosly above the threshold</span>
+<span id="L127" class="ln">   127  </span>					continue
+<span id="L128" class="ln">   128  </span>				}
+<span id="L129" class="ln">   129  </span>
+<span id="L130" class="ln">   130  </span>				lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[monitoredSource.Name]
+<span id="L131" class="ln">   131  </span>				if lastKnownStatusInRecovery != monitoredSource.IsInRecovery {
 <span id="L132" class="ln">   132  </span>					if monitoredSource.IsInRecovery &amp;&amp; len(monitoredSource.MetricsStandby) &gt; 0 {
 <span id="L133" class="ln">   133  </span>						srcL.Warning(&#34;Switching metrics collection to standby config...&#34;)
 <span id="L134" class="ln">   134  </span>						metricsConfig = monitoredSource.MetricsStandby
