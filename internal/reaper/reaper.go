@@ -21,6 +21,7 @@ import (
 var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 var metricsConfig map[string]float64                      // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 var metricDefs = NewConcurrentMetricDefs()
+var cacheLimit = 256
 
 // Reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks
 type Reaper struct {
@@ -38,7 +39,7 @@ type Reaper struct {
 func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper) {
 	return &Reaper{
 		Options:              opts,
-		measurementCh:        make(chan metrics.MeasurementEnvelope, 256),
+		measurementCh:        make(chan metrics.MeasurementEnvelope, cacheLimit),
 		measurementCache:     NewInstanceMetricCache(),
 		logger:               log.GetLogger(ctx),
 		monitoredSources:     make(sources.SourceConns, 0),
@@ -430,17 +431,35 @@ func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
 	}
 }
 
-// WriteMeasurements() writes the metrics to the sinks
+// WriteMeasurements() writes the metrics to the sinks after BatchingDelay Timeout or CacheLimit exceeds
 func (r *Reaper) WriteMeasurements(ctx context.Context) {
-	var err error
+	cacheTimeout := r.Sinks.BatchingDelay
+	tick := time.NewTicker(cacheTimeout)
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case msg := <-r.measurementCh:
-			if err = r.SinksWriter.Write(msg); err != nil {
-				r.logger.Error(err)
-			}
+		case <-tick.C:
+			r.FlushMeasurementsToSinks()
+		}
+
+		if len(r.measurementCh) >= cacheLimit {
+			tick.Stop()
+			r.FlushMeasurementsToSinks()
+			tick = time.NewTicker(cacheTimeout)
+		}
+	}
+}
+
+func (r *Reaper) FlushMeasurementsToSinks() {
+	var err error
+	// take specific length to avoid infinite emptying for the channel
+	cacheLength := len(r.measurementCh)
+	for range cacheLength {
+		msg := <-r.measurementCh
+		if err = r.SinksWriter.Write(msg); err != nil {
+			r.logger.Error(err)
 		}
 	}
 }
