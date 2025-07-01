@@ -1451,9 +1451,9 @@ SQL support.</p>
 </li>
 <li>
 <p>When high metrics write latency is problematic (e.g. using a DBaaS
-    across the Atlantic) then increasing the default maximum batching
-    delay of 250ms usually gives good results.
-    Relevant params: <code>--batching-delay-ms / PW_BATCHING_MAX_DELAY_MS</code>.</p>
+    across the Atlantic) then increasing the default maximum batching flush
+    delay of 950ms usually gives good results.
+    Relevant params: <code>--batching-delay / PW_BATCHING_DELAY</code>.</p>
 </li>
 <li>
 <p>Note that when monitoring a very large number of databases, it's
