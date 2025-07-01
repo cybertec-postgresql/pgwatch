@@ -2,7 +2,7 @@
 title: Sizing recommendations
 ---
 
--   Min 1GB of RAM is required for a Docker setup using Postgres to
+- Min 1GB of RAM is required for a Docker setup using Postgres to
     store metrics.
 
     The gatherer alone needs typically less than 50 MB if the metric 
@@ -12,7 +12,7 @@ title: Sizing recommendations
     databases) and then memory consumption is dependent on how "wide"
     are the metrics gathered.
 
--   Storage requirements vary a lot and are hard to predict.
+- Storage requirements vary a lot and are hard to predict.
 
     10GB of disk space should be enough though for monitoring a single
     DB with "exhaustive" *preset* for 1 month with Postgres storage. 2
@@ -25,20 +25,20 @@ title: Sizing recommendations
     footprint is x5 time less than vanilla Postgres, while retaining full
     SQL support.
 
--   A low-spec (1 vCPU, 2 GB RAM) cloud machine can easily monitor 100
+- A low-spec (1 vCPU, 2 GB RAM) cloud machine can easily monitor 100
     DBs in "exhaustive" settings (i.e. almost all metrics are
     monitored in 1-2min intervals) without breaking a sweat (\<20%
     load).
 
--   A single Postgres node should handle thousands of requests per
+- A single Postgres node should handle thousands of requests per
     second.
 
--   When high metrics write latency is problematic (e.g. using a DBaaS
-    across the Atlantic) then increasing the default maximum batching
-    delay of 250ms usually gives good results.
-    Relevant params: `--batching-delay-ms / PW_BATCHING_MAX_DELAY_MS`.
+- When high metrics write latency is problematic (e.g. using a DBaaS
+    across the Atlantic) then increasing the default maximum batching flush
+    delay of 950ms usually gives good results.
+    Relevant params: `--batching-delay / PW_BATCHING_DELAY`.
 
--   Note that when monitoring a very large number of databases, it's
+- Note that when monitoring a very large number of databases, it's
     possible to "shard" / distribute them between many metric
     collection instances running on different hosts, via the `group`
     attribute. This requires that some hosts have been assigned a

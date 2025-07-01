@@ -93,7 +93,7 @@ from resolved databases.
 
 - `--batching-delay=`
 
-    Max milliseconds to wait for a batched metrics flush (default: 250ms).  
+    Sink-specific batching flush delay; may be ignored by some sinks (default: 950ms).  
     ENV: `$PW_BATCHING_DELAY`
 
 - `--retention=`
