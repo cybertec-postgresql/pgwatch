@@ -56,7 +56,7 @@
 //	--sink=                              URI where metrics will be stored,
 //	                                     can be used multiple times [$PW_SINK]
 //	--batching-delay=                    Sink-specific batching flush delay;
-//										 may be ignored by some sinks
+//	                                     may be ignored by some sinks
 //	                                     (default: 950ms)
 //	                                     [$PW_BATCHING_DELAY]
 //	--retention=                         If set, metrics older than that will
