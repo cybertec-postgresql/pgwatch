@@ -258,7 +258,7 @@
 <span id="L201" class="ln">   201  </span>
 <span id="L202" class="ln">   202  </span>	<span class="comment">// validate that input is boolean is set</span>
 <span id="L203" class="ln">   203  </span>	if c.Sinks.BatchingDelay &lt;= 0 || c.Sinks.BatchingDelay &gt; time.Hour {
-<span id="L204" class="ln">   204  </span>		return errors.New(&#34;--batching-delay-ms must be between 0 and 3600000&#34;)
+<span id="L204" class="ln">   204  </span>		return errors.New(&#34;--batching-delay-ms must be between 0 and 1h&#34;)
 <span id="L205" class="ln">   205  </span>	}
 <span id="L206" class="ln">   206  </span>
 <span id="L207" class="ln">   207  </span>	return nil

@@ -112,10 +112,10 @@
 <span id="L55" class="ln">    55  </span><span class="comment">//</span>
 <span id="L56" class="ln">    56  </span><span class="comment">//	--sink=                              URI where metrics will be stored,</span>
 <span id="L57" class="ln">    57  </span><span class="comment">//	                                     can be used multiple times [$PW_SINK]</span>
-<span id="L58" class="ln">    58  </span><span class="comment">//	--batching-delay=                    Max milliseconds to wait for a</span>
-<span id="L59" class="ln">    59  </span><span class="comment">//	                                     batched metrics flush. [Default:</span>
-<span id="L60" class="ln">    60  </span><span class="comment">//	                                     250ms] (default: 250ms)</span>
-<span id="L61" class="ln">    61  </span><span class="comment">//	                                     [$PW_BATCHING_MAX_DELAY]</span>
+<span id="L58" class="ln">    58  </span><span class="comment">//	--batching-delay=                    Sink-specific batching flush delay;</span>
+<span id="L59" class="ln">    59  </span><span class="comment">//	                                     may be ignored by some sinks</span>
+<span id="L60" class="ln">    60  </span><span class="comment">//	                                     (default: 950ms)</span>
+<span id="L61" class="ln">    61  </span><span class="comment">//	                                     [$PW_BATCHING_DELAY]</span>
 <span id="L62" class="ln">    62  </span><span class="comment">//	--retention=                         If set, metrics older than that will</span>
 <span id="L63" class="ln">    63  </span><span class="comment">//	                                     be deleted (default: 14)</span>
 <span id="L64" class="ln">    64  </span><span class="comment">//	                                     [$PW_RETENTION]</span>

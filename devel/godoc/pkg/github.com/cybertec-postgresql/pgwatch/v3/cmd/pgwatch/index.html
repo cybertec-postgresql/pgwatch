@@ -123,10 +123,10 @@
 <p>Sinks:
 <pre>--sink=                              URI where metrics will be stored,
                                      can be used multiple times [$PW_SINK]
---batching-delay=                    Max milliseconds to wait for a
-                                     batched metrics flush. [Default:
-                                     250ms] (default: 250ms)
-                                     [$PW_BATCHING_MAX_DELAY]
+--batching-delay=                    Sink-specific batching flush delay;
+                                     may be ignored by some sinks
+                                     (default: 950ms)
+                                     [$PW_BATCHING_DELAY]
 --retention=                         If set, metrics older than that will
                                      be deleted (default: 14)
                                      [$PW_RETENTION]
