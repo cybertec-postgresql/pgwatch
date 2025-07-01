@@ -6,8 +6,9 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net/rpc"
-	"os"
 	"net/url"
+	"os"
+	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
@@ -71,10 +72,16 @@ func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error {
 	if rw.ctx.Err() != nil {
 		return rw.ctx.Err()
 	}
+
+	t1 := time.Now()
 	var logMsg string
 	if err := rw.client.Call("Receiver.UpdateMeasurements", &msg, &logMsg); err != nil {
 		return err
 	}
+
+	diff := time.Since(t1)
+	written := len(msg.Data)
+	log.GetLogger(rw.ctx).WithField("rows", written).WithField("elapsed", diff).Info("measurements written")
 	if len(logMsg) > 0 {
 		log.GetLogger(rw.ctx).Info(logMsg)
 	}
