@@ -197,7 +197,7 @@ func (pgw *PostgresWriter) Write(msg metrics.MeasurementEnvelope) error {
 // poll is the main loop that reads from the input channel and flushes the data to the database
 func (pgw *PostgresWriter) poll() {
 	cache := make([]metrics.MeasurementEnvelope, 0, cacheLimit)
-	cacheTimeout := pgw.opts.BatchingDelay
+	cacheTimeout := pgw.opts.PgBatchingDelay
 	tick := time.NewTicker(cacheTimeout)
 	for {
 		select {
