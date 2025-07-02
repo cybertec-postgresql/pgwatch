@@ -51,3 +51,92 @@ func TestSource_IsDefaultGroup(t *testing.T) {
 	assert.True(t, sources[1].IsDefaultGroup())
 	assert.False(t, sources[2].IsDefaultGroup())
 }
+
+
+func TestSource_Equal(t *testing.T) {
+	var correctInterval float64 = 60
+	var incorrectInterval float64 = 10
+
+	s1 := sources.Source{
+		Metrics: map[string]float64{"wal" : correctInterval},
+		MetricsStandby: map[string]float64{"wal" : correctInterval},
+	}
+
+	srcs := sources.Sources{
+		{
+			PresetMetrics: "basic",
+			PresetMetricsStandby: "basic",
+		},
+		{
+			PresetMetrics: "basic",
+			PresetMetricsStandby: "basic",
+			Metrics: map[string]float64{"wal" : correctInterval},
+			MetricsStandby: map[string]float64{"wal" : correctInterval},
+		},
+		{
+			PresetMetrics: "basic",
+			PresetMetricsStandby: "basic",
+			Metrics: map[string]float64{"wal" : incorrectInterval},
+			MetricsStandby: map[string]float64{"wal" : incorrectInterval},
+		},
+		{
+			Metrics: map[string]float64{"wal" : incorrectInterval},
+			MetricsStandby: map[string]float64{"wal" : incorrectInterval},
+		},
+		{
+			Metrics: map[string]float64{"wal" : correctInterval, "db_size" : correctInterval},
+			MetricsStandby: map[string]float64{"wal" : correctInterval, "db_size" : correctInterval},
+		},
+		{
+			Metrics: map[string]float64{"wal" : correctInterval},
+			MetricsStandby: map[string]float64{"wal" : correctInterval},
+		},
+	}
+
+	assert.False(t, s1.Equal(srcs[0]))
+	assert.False(t, s1.Equal(srcs[1]))
+	assert.False(t, s1.Equal(srcs[2])) 
+	assert.False(t, s1.Equal(srcs[3])) 
+	assert.False(t, s1.Equal(srcs[4])) 
+	assert.True(t, s1.Equal(srcs[5])) 
+
+	s1 = sources.Source{
+		PresetMetrics: "basic",
+		PresetMetricsStandby : "basic",
+		Metrics: map[string]float64{"wal" : correctInterval},
+		MetricsStandby: map[string]float64{"wal" : correctInterval},
+	}
+
+	srcs = sources.Sources{
+		{
+			PresetMetrics: "basic",
+			PresetMetricsStandby: "basic",
+		},
+		{
+			PresetMetrics: "basic",
+			PresetMetricsStandby: "basic",
+			Metrics: map[string]float64{"wal" : incorrectInterval},
+			MetricsStandby: map[string]float64{"wal" : incorrectInterval},
+		},
+		{
+			PresetMetrics: "azure",
+			PresetMetricsStandby: "azure",
+		},
+		{
+			PresetMetrics: "azure",
+			PresetMetricsStandby: "azure",
+			Metrics: map[string]float64{"wal" : correctInterval},
+			MetricsStandby: map[string]float64{"wal" : correctInterval},
+		},
+		{
+			Metrics: map[string]float64{"wal" : correctInterval},
+			MetricsStandby: map[string]float64{"wal" : correctInterval},
+		},
+	}
+
+	assert.True(t, s1.Equal(srcs[0]))
+	assert.True(t, s1.Equal(srcs[1]))
+	assert.False(t, s1.Equal(srcs[2]))
+	assert.False(t, s1.Equal(srcs[3]))
+	assert.False(t, s1.Equal(srcs[4]))
+}
