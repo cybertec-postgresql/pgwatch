@@ -4,7 +4,7 @@ import { Error } from "components/Error/Error";
 import { Loading } from "components/Loading/Loading";
 import { PresetFormDialog } from "containers/PresetFormDialog/PresetFormDialog";
 import { PresetFormProvider } from "contexts/PresetForm/PresetForm.provider";
-import { useGridColumnVisibility } from 'hooks/useGridColumnVisibility';
+import { useGridState } from 'hooks/useGridState';
 import { usePageStyles } from "styles/page";
 import { usePresets } from "queries/Preset";
 import { usePresetsGridColumns } from "./PresetsGrid.consts";
@@ -17,7 +17,12 @@ export const PresetsGrid = () => {
   const { data, isLoading, isError, error } = usePresets();
 
   const columns = usePresetsGridColumns();
-  const { columnVisibility, onColumnVisibilityChange } = useGridColumnVisibility('PRESETS_GRID', columns);
+  const { 
+    columnVisibility, 
+    columnsWithSizing, 
+    onColumnVisibilityChange, 
+    onColumnResize
+  } = useGridState('PRESETS_GRID', columns);
 
   const rows: PresetGridRow[] | [] = useMemo(() => {
     if (data) {
@@ -50,13 +55,15 @@ export const PresetsGrid = () => {
       <PresetFormProvider>
         <DataGrid
           getRowId={(row) => row.Key}
-          columns={columns}
+          columns={columnsWithSizing}
           rows={rows}
-          rowsPerPageOptions={[]}
-          components={{ Toolbar: () => <PresetsGridToolbar /> }}
-          disableColumnMenu
+          pageSizeOptions={[]}
+          slots={{ 
+            toolbar: () => <PresetsGridToolbar />
+          }}
           columnVisibilityModel={columnVisibility}
           onColumnVisibilityModelChange={onColumnVisibilityChange}
+          onColumnResize={onColumnResize}
         />
         <PresetFormDialog />
       </PresetFormProvider>

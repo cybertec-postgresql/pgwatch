@@ -3,12 +3,13 @@ import { GridColDef, GridColumnVisibilityModel } from '@mui/x-data-grid';
 
 export const useGridColumnVisibility = (
   storageKey: string,
-  columns: GridColDef[]
+  columns: GridColDef[],
+  defaultHidden: GridColumnVisibilityModel = {}
 ) => {
   const [columnVisibility, setColumnVisibility] = useState<GridColumnVisibilityModel>(() => {
     const defaultVisibility = columns?.reduce((acc, col) => ({
       ...acc,
-      [col.field]: col.hide !== true
+      [col.field]: defaultHidden[col.field] === false ? false : true // Hidden if explicitly false, visible otherwise
     }), {});
 
     const saved = localStorage.getItem(storageKey);
