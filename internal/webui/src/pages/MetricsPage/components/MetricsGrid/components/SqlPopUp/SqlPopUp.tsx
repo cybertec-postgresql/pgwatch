@@ -49,10 +49,9 @@ export const SqlPopUp = ({ SQLs }: Props) => {
             getRowId={(row) => row.version}
             columns={columns}
             rows={rows}
-            rowsPerPageOptions={[]}
+            pageSizeOptions={[]}
             getRowHeight={() => "auto"}
             autoHeight
-            disableColumnMenu
           />
         </DialogContent>
       </Dialog>

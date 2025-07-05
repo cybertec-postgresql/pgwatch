@@ -17,7 +17,7 @@ export const usePresetsGridColumns = (): GridColDef<PresetGridRow>[] => ([
     flex: 1,
     align: "left",
     headerAlign: "center",
-    valueGetter: ({ row }) => row.Preset.Description,
+    valueGetter: (value, row) => row.Preset.Description,
   },
   {
     field: "Metrics",

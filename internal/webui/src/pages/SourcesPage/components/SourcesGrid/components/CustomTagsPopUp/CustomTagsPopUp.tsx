@@ -48,9 +48,8 @@ export const CustomTagsPopUp = ({ CustomTags }: Props) => {
             getRowId={(row) => row.name}
             columns={columns}
             rows={rows}
-            rowsPerPageOptions={[]}
+            pageSizeOptions={[]}
             autoHeight
-            disableColumnMenu
           />
         </DialogContent>
       </Dialog>

@@ -47,9 +47,8 @@ export const MetricPopUp = ({ Metrics }: Props) => {
             getRowId={(row) => row.name}
             columns={columns}
             rows={rows}
-            rowsPerPageOptions={[]}
+            pageSizeOptions={[]}
             autoHeight
-            disableColumnMenu
           />
         </DialogContent>
       </Dialog>

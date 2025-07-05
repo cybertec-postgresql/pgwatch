@@ -4,7 +4,7 @@ import { Error } from "components/Error/Error";
 import { Loading } from "components/Loading/Loading";
 import { MetricFormDialog } from "containers/MetricFormDialog/MetricFormDialog";
 import { MetricFormProvider } from "contexts/MetricForm/MetricForm.provider";
-import { useGridColumnVisibility } from 'hooks/useGridColumnVisibility';
+import { useGridState } from 'hooks/useGridState';
 import { usePageStyles } from "styles/page";
 import { useMetrics } from "queries/Metric";
 import { useMetricsGridColumns } from "./MetricsGrid.consts";
@@ -17,7 +17,12 @@ export const MetricsGrid = () => {
   const { classes } = usePageStyles();
 
   const columns = useMetricsGridColumns();
-  const { columnVisibility, onColumnVisibilityChange } = useGridColumnVisibility('METRICS_GRID', columns);
+  const { 
+    columnVisibility, 
+    columnsWithSizing, 
+    onColumnVisibilityChange, 
+    onColumnResize
+  } = useGridState('METRICS_GRID', columns);
 
   const rows: MetricGridRow[] | [] = useMemo(() => {
     if (data) {
@@ -50,13 +55,15 @@ export const MetricsGrid = () => {
       <MetricFormProvider>
         <DataGrid
           getRowId={(row) => row.Key}
-          columns={columns}
+          columns={columnsWithSizing}
           rows={rows}
-          rowsPerPageOptions={[]}
-          components={{ Toolbar: () => <MetricsGridToolbar /> }}
-          disableColumnMenu
+          pageSizeOptions={[]}
+          slots={{ 
+            toolbar: () => <MetricsGridToolbar />
+          }}
           columnVisibilityModel={columnVisibility}
           onColumnVisibilityModelChange={onColumnVisibilityChange}
+          onColumnResize={onColumnResize}
         />
         <MetricFormDialog />
       </MetricFormProvider>
