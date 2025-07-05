@@ -55,7 +55,6 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     headerName: "Type",
     align: "left",
     headerAlign: "center",
-    hide: true,
   },
   {
     field: "IncludePattern",
@@ -63,7 +62,6 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     width: 150,
     align: "left",
     headerAlign: "center",
-    hide: true,
   },
   {
     field: "ExcludePattern",
@@ -71,7 +69,6 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     width: 150,
     align: "left",
     headerAlign: "center",
-    hide: true,
   },
   {
     field: "PresetMetrics",
@@ -79,7 +76,6 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     width: 150,
     align: "left",
     headerAlign: "center",
-    hide: true,
   },
   {
     field: "PresetMetricsStandby",
@@ -87,7 +83,6 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     width: 150,
     align: "left",
     headerAlign: "center",
-    hide: true,
   },
   {
     field: "IsEnabled",
@@ -104,7 +99,6 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     align: "center",
     headerAlign: "center",
     renderCell: ({ row }) => <CustomTagsPopUp CustomTags={row.CustomTags} />,
-    hide: true,
   },
   {
     field: "HostConfig",
@@ -113,7 +107,6 @@ export const useSourcesGridColumns = (): GridColDef<Source>[] => ([
     align: "center",
     headerAlign: "center",
     renderCell: ({row}) => <HostConfigPopUp source={row} />,
-    hide: true,
   },
   {
     field: "OnlyIfMaster",

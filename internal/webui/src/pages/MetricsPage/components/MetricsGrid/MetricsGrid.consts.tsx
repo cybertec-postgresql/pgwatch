@@ -25,7 +25,7 @@ export const useMetricsGridColumns = (): GridColDef<MetricGridRow>[] => ([
     width: 200,
     align: "left",
     headerAlign: "center",
-    valueGetter: ({ row }) => row.Metric.Description,
+    valueGetter: (value, row) => row.Metric.Description,
   },
   {
     field: "InitSQL",
@@ -33,7 +33,7 @@ export const useMetricsGridColumns = (): GridColDef<MetricGridRow>[] => ([
     width: 200,
     align: "left",
     headerAlign: "center",
-    valueGetter: ({ row }) => row.Metric.InitSQL,
+    valueGetter: (value, row) => row.Metric.InitSQL,
   },
   {
     field: "NodeStatus",
@@ -41,7 +41,7 @@ export const useMetricsGridColumns = (): GridColDef<MetricGridRow>[] => ([
     width: 200,
     align: "center",
     headerAlign: "center",
-    valueGetter: ({ row }) => row.Metric.NodeStatus,
+    valueGetter: (value, row) => row.Metric.NodeStatus,
   },
   {
     field: "Gauges",
@@ -49,7 +49,7 @@ export const useMetricsGridColumns = (): GridColDef<MetricGridRow>[] => ([
     width: 200,
     align: "center",
     headerAlign: "center",
-    valueGetter: ({ row }) => row.Metric.Gauges && row.Metric.Gauges.toString(),
+    valueGetter: (value, row) => row.Metric.Gauges && row.Metric.Gauges.toString(),
   },
   {
     field: "IsInstanceLevel",
@@ -65,7 +65,7 @@ export const useMetricsGridColumns = (): GridColDef<MetricGridRow>[] => ([
     width: 200,
     align: "left",
     headerAlign: "center",
-    valueGetter: ({ row }) => row.Metric.StorageName,
+    valueGetter: (value, row) => row.Metric.StorageName,
   },
   {
     field: "SQLs",
