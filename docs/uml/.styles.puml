@@ -1,0 +1,33 @@
+@startuml .styles
+!theme plain
+' Set background and font color
+skinparam backgroundColor #f4f7fa
+skinparam defaultTextAlignment center
+skinparam shadowing false
+skinparam titleFontColor #1c4063
+skinparam titleFontSize 20
+skinparam titleFontName Arial
+skinparam noteBackgroundColor #eaf0f6
+skinparam noteBorderColor #1c4063
+
+' General border and font color
+skinparam componentBorderColor #1c4063
+skinparam componentFontColor #222222
+skinparam componentBackgroundColor #eaf0f6
+skinparam databaseBorderColor #1c4063
+skinparam databaseFontColor #222222
+skinparam databaseBackgroundColor #dbe9f6
+skinparam packageBorderColor #1c4063
+skinparam packageTitleFontColor #1c4063
+skinparam packageBackgroundColor #eaf0f6
+
+skinparam ArrowColor #467fcf
+skinparam ArrowFontColor #1c4063
+
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam databaseStyle rectangle
+skinparam direction top to bottom
+skinparam minClassWidth 200
+skinparam wrapWidth 200
+@enduml
