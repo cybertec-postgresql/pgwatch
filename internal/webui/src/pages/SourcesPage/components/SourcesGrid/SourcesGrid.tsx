@@ -3,7 +3,7 @@ import { Error } from "components/Error/Error";
 import { Loading } from "components/Loading/Loading";
 import { SourceFormDialog } from "containers/SourceFormDialog/SourceFormDialog";
 import { SourceFormProvider } from "contexts/SourceForm/SourceForm.provider";
-import { useGridColumnVisibility } from 'hooks/useGridColumnVisibility';
+import { useGridState } from 'hooks/useGridState';
 import { usePageStyles } from "styles/page";
 import { useSources } from "queries/Source";
 import { useSourcesGridColumns } from "./SourcesGrid.consts";
@@ -15,7 +15,20 @@ export const SourcesGrid = () => {
   const { data, isLoading, isError, error } = useSources();
 
   const columns = useSourcesGridColumns();
-  const { columnVisibility, onColumnVisibilityChange } = useGridColumnVisibility('SOURCES_GRID', columns);
+  const { 
+    columnVisibility, 
+    columnsWithSizing, 
+    onColumnVisibilityChange, 
+    onColumnResize
+  } = useGridState('SOURCES_GRID', columns, {
+    Kind: false,
+    IncludePattern: false,
+    ExcludePattern: false,
+    PresetMetrics: false,
+    PresetMetricsStandby: false,
+    CustomTags: false,
+    HostConfig: false
+  });
 
   if (isLoading) {
     return (
@@ -35,13 +48,15 @@ export const SourcesGrid = () => {
       <SourceFormProvider>
         <DataGrid
           getRowId={(row) => row.Name}
-          columns={columns}
+          columns={columnsWithSizing}
           rows={data ?? []}
-          rowsPerPageOptions={[]}
-          components={{ Toolbar: () => <SourcesGridToolbar /> }}
-          disableColumnMenu
+          pageSizeOptions={[]}
+          slots={{ 
+            toolbar: () => <SourcesGridToolbar />
+          }}
           columnVisibilityModel={columnVisibility}
           onColumnVisibilityModelChange={onColumnVisibilityChange}
+          onColumnResize={onColumnResize}
         />
         <SourceFormDialog />
       </SourceFormProvider>

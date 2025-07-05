@@ -12,8 +12,8 @@ export const GridToolbar = (props: Props) => {
 
   return (
     <GridToolbarContainer>
-      <GridToolbarColumnsButton size="small" />
-      <GridToolbarFilterButton componentsProps={{ button: { size: "small" } }} />
+      <GridToolbarColumnsButton slotProps={{ button: { size: "small" } }} />
+      <GridToolbarFilterButton slotProps={{ button: { size: "small" } }} />
       <Button startIcon={<AddIcon />} onClick={onNewClick}>New</Button>
       {children}
     </GridToolbarContainer>
