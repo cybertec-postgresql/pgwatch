@@ -201,7 +201,7 @@ func (c *Options) ValidateConfig() error {
 
 	// validate that input is boolean is set
 	if c.Sinks.BatchingDelay <= 0 || c.Sinks.BatchingDelay > time.Hour {
-		return errors.New("--batching-delay-ms must be between 0 and 3600000")
+		return errors.New("--batching-delay-ms must be between 0 and 1h")
 	}
 
 	return nil

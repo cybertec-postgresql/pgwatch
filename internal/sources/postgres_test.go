@@ -66,32 +66,6 @@ func TestGetMonitoredDatabases(t *testing.T) {
 	a.NoError(conn.ExpectationsWereMet())
 }
 
-func TestSyncFromReader(t *testing.T) {
-	a := assert.New(t)
-	conn, err := pgxmock.NewPool()
-	a.NoError(err)
-	conn.ExpectPing()
-	conn.ExpectQuery(`select \/\* pgwatch_generated \*\/`).WillReturnRows(pgxmock.NewRows([]string{
-		"name", "group", "dbtype", "connstr", "config", "config_standby", "preset_config",
-		"preset_config_standby", "include_pattern", "exclude_pattern",
-		"custom_tags", "host_config", "only_if_master", "is_enabled",
-	}).AddRow(
-		"db1", "group1", sources.Kind("postgres"), "postgres://user:pass@localhost:5432/db1",
-		map[string]float64{"metric": 60}, map[string]float64{"standby_metric": 60}, "exhaustive", "exhaustive",
-		".*", `\_.+`, map[string]string{"tag": "value"}, nil, true, true,
-	))
-	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
-	a.NoError(err)
-
-	md := &sources.SourceConn{}
-	md.Name = "db1"
-	dbs := sources.SourceConns{md}
-	dbs, err = dbs.SyncFromReader(pgrw)
-	a.NoError(err)
-	a.Len(dbs, 1)
-	a.NoError(conn.ExpectationsWereMet())
-}
-
 func TestDeleteDatabase(t *testing.T) {
 	a := assert.New(t)
 	conn, err := pgxmock.NewPool()

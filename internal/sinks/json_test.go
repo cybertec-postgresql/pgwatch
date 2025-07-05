@@ -60,11 +60,11 @@ func TestJSONWriter_SyncMetric(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Call the function being tested
-	err = jw.SyncMetric("", "", invalidOp)
+	err = jw.SyncMetric("", "", InvalidOp)
 	assert.NoError(t, err)
 
 	cancel()
-	err = jw.SyncMetric("", "", invalidOp)
+	err = jw.SyncMetric("", "", InvalidOp)
 	assert.Error(t, err, "context canceled")
 
 }

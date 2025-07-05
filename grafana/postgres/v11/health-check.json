@@ -105,7 +105,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  (data->'in_recovery_int')::int\nFROM\n  wal\nWHERE\n  time > now() - '$online_interval'::interval\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1\n",
+          "rawSql": "SELECT\n  time,\n  (data->>'in_recovery_int')::int\nFROM\n  wal\nWHERE\n  time > now() - '$online_interval'::interval\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -238,7 +238,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  (data->'postmaster_uptime_s')::int\nFROM\n  wal\nWHERE\n  time > now() - '$online_interval'::interval\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1\n",
+          "rawSql": "SELECT\n  time,\n  (data->>'postmaster_uptime_s')::int\nFROM\n  wal\nWHERE\n  time > now() - '$online_interval'::interval\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -378,7 +378,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select time, (data->'server_version_num')::int8 as value from settings where dbname = '$dbname' and $__timeFilter(time) order by time desc limit 1;",
+          "rawSql": "select time, (data->>'server_version_num')::int8 as value from settings where dbname = '$dbname' and $__timeFilter(time) order by time desc limit 1;",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -506,7 +506,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 AS time,\n  max((data->'longest_query_seconds')::int)\nFROM\n  backends\nWHERE\n  time > now() - '$online_interval'::interval\n  AND dbname = '$dbname'\n",
+          "rawSql": "SELECT\n  0 AS time,\n  max((data->>'longest_query_seconds')::int)\nFROM\n  backends\nWHERE\n  time > now() - '$online_interval'::interval\n  AND dbname = '$dbname'\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -646,7 +646,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  (data->'numbackends')::int\nFROM\n  db_stats\nWHERE\n  time > now() - '$online_interval'::interval\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1",
+          "rawSql": "SELECT\n  time,\n  (data->>'numbackends')::int\nFROM\n  db_stats\nWHERE\n  time > now() - '$online_interval'::interval\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -786,7 +786,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  (data->'max_connections')::int\nFROM\n  settings\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1",
+          "rawSql": "SELECT\n  time,\n  (data->>'max_connections')::int\nFROM\n  settings\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -926,7 +926,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  max((data->'waiting')::int)\nFROM\n  backends\nWHERE\n  $__timeFilter(time, $online_interval)\n  AND dbname = '$dbname'",
+          "rawSql": "SELECT\n  0 as time,\n  max((data->>'waiting')::int)\nFROM\n  backends\nWHERE\n  $__timeFilter(time, $online_interval)\n  AND dbname = '$dbname'",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1608,7 +1608,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  max((data->'idleintransaction')::int)\nFROM\n  backends\nWHERE\n  time > now() - '$online_interval'::interval\n  AND dbname = '$dbname'\n",
+          "rawSql": "SELECT\n  0 as time,\n  max((data->>'idleintransaction')::int)\nFROM\n  backends\nWHERE\n  time > now() - '$online_interval'::interval\n  AND dbname = '$dbname'\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1748,7 +1748,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  (data->'size_b')::int8\nFROM\n  db_size\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1",
+          "rawSql": "SELECT\n  time,\n  (data->>'size_b')::int8\nFROM\n  db_size\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -2016,7 +2016,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  time,\n  (data->'free')::int8\nfrom\n  psutil_disk\nwhere \n  dbname = '$dbname' and $__timeFilter(time)\n  and tag_data->>'dir_or_tablespace' = 'data_directory'\norder by 1 desc\nlimit 1",
+          "rawSql": "select\n  time,\n  (data->>'free')::int8\nfrom\n  psutil_disk\nwhere \n  dbname = '$dbname' and $__timeFilter(time)\n  and tag_data->>'dir_or_tablespace' = 'data_directory'\norder by 1 desc\nlimit 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -2564,7 +2564,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  (data->'is_failing_int')::int\nFROM\n  archiver\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1\n",
+          "rawSql": "SELECT\n  time,\n  (data->>'is_failing_int')::int\nFROM\n  archiver\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -2714,7 +2714,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  (data->'wal_size_b')::float8\nFROM\n  wal_size\nWHERE\n  time > now() - '$online_interval'::interval\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1\n",
+          "rawSql": "SELECT\n  time,\n  (data->>'wal_size_b')::float8\nFROM\n  wal_size\nWHERE\n  time > now() - '$online_interval'::interval\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -2848,7 +2848,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "WITH q_duplicates AS (\nSELECT\n  coalesce(sum(count-1), 0) as extra\nFROM (\nSELECT\n  tag_data->>'table_full_name' as table_full_name,\n  data->>'index_def' as index_def,\n  count(*)\nFROM\n  index_stats\nWHERE\n  time = (select max(time) from index_stats where $__timeFilter(time) AND dbname = '$dbname')\n  AND dbname = '$dbname'\nGROUP BY 1, 2\nHAVING count(*) > 1\n) x\n)\nSELECT\n  0 as time,\n  sum((data->'is_invalid_int')::int) + (select extra from q_duplicates)\nFROM\n  index_stats\nWHERE\n  time = (select max(time) from index_stats where $__timeFilter(time) AND dbname = '$dbname')\n  AND dbname = '$dbname'\nGROUP BY 1",
+          "rawSql": "WITH q_duplicates AS (\nSELECT\n  coalesce(sum(count-1), 0) as extra\nFROM (\nSELECT\n  tag_data->>'table_full_name' as table_full_name,\n  data->>'index_def' as index_def,\n  count(*)\nFROM\n  index_stats\nWHERE\n  time = (select max(time) from index_stats where $__timeFilter(time) AND dbname = '$dbname')\n  AND dbname = '$dbname'\nGROUP BY 1, 2\nHAVING count(*) > 1\n) x\n)\nSELECT\n  0 as time,\n  sum((data->>'is_invalid_int')::int) + (select extra from q_duplicates)\nFROM\n  index_stats\nWHERE\n  time = (select max(time) from index_stats where $__timeFilter(time) AND dbname = '$dbname')\n  AND dbname = '$dbname'\nGROUP BY 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -2970,7 +2970,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  sum(count)\nFROM (\n\nSELECT * FROM (\n\nSELECT\n  case when data->>'autovacuum' = 'off' then 1 else 0 end as count\nFROM\n  settings\nWHERE\n  dbname = '$dbname'\n  AND time > now() - '1d'::interval\nORDER BY time DESC LIMIT 1\n\n) a\n\nUNION ALL\n\nSELECT * FROM (\n\nSELECT\n  count(*)\nFROM\n  table_stats\nWHERE\n  dbname = '$dbname'\n  AND time = (select max(time) from table_stats where dbname = '$dbname')\n  AND (data->'no_autovacuum')::int = 1\n\n) b\n\n) x;",
+          "rawSql": "SELECT\n  0 as time,\n  sum(count)\nFROM (\n\nSELECT * FROM (\n\nSELECT\n  case when data->>'autovacuum' = 'off' then 1 else 0 end as count\nFROM\n  settings\nWHERE\n  dbname = '$dbname'\n  AND time > now() - '1d'::interval\nORDER BY time DESC LIMIT 1\n\n) a\n\nUNION ALL\n\nSELECT * FROM (\n\nSELECT\n  count(*)\nFROM\n  table_stats\nWHERE\n  dbname = '$dbname'\n  AND time = (select max(time) from table_stats where dbname = '$dbname')\n  AND (data->>'no_autovacuum')::int = 1\n\n) b\n\n) x;",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -3104,7 +3104,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  coalesce(sum(req - req_lag), 0)\nFROM (\nSELECT\n  (data->'checkpoints_req')::int as req,\n  lag((data->'checkpoints_req')::int) over(order by time) as req_lag\nFROM\n  bgwriter\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n) x\nWHERE req > req_lag\n",
+          "rawSql": "SELECT\n  0 as time,\n  coalesce(sum(req - req_lag), 0)\nFROM (\nSELECT\n  (data->>'checkpoints_req')::int as req,\n  lag((data->>'checkpoints_req')::int) over(order by time) as req_lag\nFROM\n  bgwriter\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n) x\nWHERE req > req_lag\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -3238,7 +3238,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  (data->'approx_table_bloat_b')::int8\nFROM\n  table_bloat_approx_summary_sql\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY 1 DESC\nLIMIT 1\n",
+          "rawSql": "SELECT\n  time,\n  (data->>'approx_table_bloat_b')::int8\nFROM\n  table_bloat_approx_summary_sql\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY 1 DESC\nLIMIT 1\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -3658,7 +3658,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  max((data->'longest_autovacuum_seconds')::int8) as longest_autovacuum_seconds\nFROM\n  backends\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'",
+          "rawSql": "SELECT\n  0 as time,\n  max((data->>'longest_autovacuum_seconds')::int8) as longest_autovacuum_seconds\nFROM\n  backends\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -3798,7 +3798,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  sum((scan-scan_lag) * 60 / extract(epoch from (time-time_lag)))\nFROM (\n  SELECT\n    time, lag(time) over w as time_lag,\n    (data->'seq_scan')::int8 as scan, lag((data->'seq_scan')::int8) over w as scan_lag\n  FROM\n    table_stats\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n    AND (data->'table_size_b')::int8 > 100000000\n  WINDOW w AS (partition by tag_data->>'table_full_name' order by time)\n) x\nWHERE scan > scan_lag and time > time_lag\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT\n  time,\n  sum((scan-scan_lag) * 60 / extract(epoch from (time-time_lag)))\nFROM (\n  SELECT\n    time, lag(time) over w as time_lag,\n    (data->>'seq_scan')::int8 as scan, lag((data->>'seq_scan')::int8) over w as scan_lag\n  FROM\n    table_stats\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n    AND (data->>'table_size_b')::int8 > 100000000\n  WINDOW w AS (partition by tag_data->>'table_full_name' order by time)\n) x\nWHERE scan > scan_lag and time > time_lag\nGROUP BY 1\nORDER BY 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -4090,7 +4090,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  time,\n  avg(((upd-upd_lag) * 60) / extract(epoch from time - time_lag))\nfrom (\n        select \n          (data->'tup_updated')::int8 as upd, lag((data->'tup_updated')::int8) over w as upd_lag,\n          time, lag(time) over w as time_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere upd >= upd_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  time,\n  avg(((upd-upd_lag) * 60) / extract(epoch from time - time_lag))\nfrom (\n        select \n          (data->>'tup_updated')::int8 as upd, lag((data->>'tup_updated')::int8) over w as upd_lag,\n          time, lag(time) over w as time_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere upd >= upd_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -4236,7 +4236,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  time,\n  avg(((del-del_lag) * 60) / extract(epoch from time - time_lag))\nfrom (\n        select \n          (data->'tup_deleted')::int8 as del, lag((data->'tup_deleted')::int8) over w as del_lag,\n          time, lag(time) over w as time_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere del >= del_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  time,\n  avg(((del-del_lag) * 60) / extract(epoch from time - time_lag))\nfrom (\n        select \n          (data->>'tup_deleted')::int8 as del, lag((data->>'tup_deleted')::int8) over w as del_lag,\n          time, lag(time) over w as time_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere del >= del_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -4376,7 +4376,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  max((data->'backup_duration_s')::int8)\nFROM\n  db_stats\nWHERE\n  $__timeFilter(time)\n  and dbname = '$dbname'",
+          "rawSql": "SELECT\n  0 as time,\n  max((data->>'backup_duration_s')::int8)\nFROM\n  db_stats\nWHERE\n  $__timeFilter(time)\n  and dbname = '$dbname'",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -4510,7 +4510,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  max((data->'tx_freeze_age')::int8)\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n  and dbname = '$dbname'",
+          "rawSql": "SELECT\n  0 as time,\n  max((data->>'tx_freeze_age')::int8)\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n  and dbname = '$dbname'",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -4650,7 +4650,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  0 as time,\n  max(xmin) from (\nSELECT\n  max((data->'xmin_age_tx')::int8) as xmin\nFROM\n  replication_slots\nWHERE\n  time = (select max(time) from replication_slots where time > now() - '$online_interval'::interval AND dbname = '$dbname')\n  and dbname = '$dbname'  \nUNION ALL\nSELECT\n  max((data->'max_xmin_age_tx')::int8) as xmin\nFROM\n  backends\nWHERE\n  time = (select max(time) from backends where time > now() - '$online_interval'::interval AND dbname = '$dbname')\n  and dbname = '$dbname'\n) x",
+          "rawSql": "select\n  0 as time,\n  max(xmin) from (\nSELECT\n  max((data->>'xmin_age_tx')::int8) as xmin\nFROM\n  replication_slots\nWHERE\n  time = (select max(time) from replication_slots where time > now() - '$online_interval'::interval AND dbname = '$dbname')\n  and dbname = '$dbname'  \nUNION ALL\nSELECT\n  max((data->>'max_xmin_age_tx')::int8) as xmin\nFROM\n  backends\nWHERE\n  time = (select max(time) from backends where time > now() - '$online_interval'::interval AND dbname = '$dbname')\n  and dbname = '$dbname'\n) x",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -4790,7 +4790,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  sum((data->'non_active_int')::int)\nFROM\n  replication_slots\nWHERE\n  time = (select max(time) from replication_slots where time > now() - '$online_interval'::interval AND dbname = '$dbname')\n  AND dbname = '$dbname'\n",
+          "rawSql": "SELECT\n  0 as time,\n  sum((data->>'non_active_int')::int)\nFROM\n  replication_slots\nWHERE\n  time = (select max(time) from replication_slots where time > now() - '$online_interval'::interval AND dbname = '$dbname')\n  AND dbname = '$dbname'\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -4924,7 +4924,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  max((data->'replay_lag_b')::int8)\nFROM\n  replication\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n",
+          "rawSql": "SELECT\n  0 as time,\n  max((data->>'replay_lag_b')::int8)\nFROM\n  replication\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [

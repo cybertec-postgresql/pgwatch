@@ -104,6 +104,10 @@ func (r *Reaper) Reap(ctx context.Context) {
 			srcL.WithField("recovery", monitoredSource.IsInRecovery).Infof("Connect OK. Version: %s", monitoredSource.VersionStr)
 			if monitoredSource.IsInRecovery && monitoredSource.OnlyIfMaster {
 				srcL.Info("not added to monitoring due to 'master only' property")
+				if monitoredSource.IsPostgresSource() {
+					srcL.Info("to be removed from monitoring due to 'master only' property and status change")
+					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true
+				}
 				continue
 			}
 
@@ -112,38 +116,30 @@ func (r *Reaper) Reap(ctx context.Context) {
 			} else {
 				metricsConfig = monitoredSource.Metrics
 			}
-			hostLastKnownStatusInRecovery[monitoredSource.Name] = monitoredSource.IsInRecovery
 
 			r.CreateSourceHelpers(ctx, srcL, monitoredSource)
 
 			if monitoredSource.IsPostgresSource() {
-				if r.Sources.MinDbSizeMB >= 8 { // an empty DB is a bit less than 8MB
-					DBSizeMB := monitoredSource.ApproxDbSize / 1048576 // only remove from monitoring when we're certain it's under the threshold
-					if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
-						srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
-						hostsToShutDownDueToRoleChange[monitoredSource.Name] = true // for the case when DB size was previosly above the threshold
-						continue
-					}
+				DBSizeMB := monitoredSource.ApproxDbSize / 1048576 // only remove from monitoring when we're certain it's under the threshold
+				if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
+					srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
+					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true // for the case when DB size was previosly above the threshold
+					continue
 				}
 
 				lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[monitoredSource.Name]
-				if monitoredSource.IsInRecovery && monitoredSource.OnlyIfMaster {
-					srcL.Info("to be removed from monitoring due to 'master only' property and status change")
-					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true
-					continue
-				} else if lastKnownStatusInRecovery != monitoredSource.IsInRecovery {
+				if lastKnownStatusInRecovery != monitoredSource.IsInRecovery {
 					if monitoredSource.IsInRecovery && len(monitoredSource.MetricsStandby) > 0 {
 						srcL.Warning("Switching metrics collection to standby config...")
 						metricsConfig = monitoredSource.MetricsStandby
-						hostLastKnownStatusInRecovery[monitoredSource.Name] = true
-					} else {
+					} else if !monitoredSource.IsInRecovery {
 						srcL.Warning("Switching metrics collection to primary config...")
 						metricsConfig = monitoredSource.Metrics
-						hostLastKnownStatusInRecovery[monitoredSource.Name] = false
 					}
+					// else: it already has primary config do nothing + no warn
 				}
-
 			}
+			hostLastKnownStatusInRecovery[monitoredSource.Name] = monitoredSource.IsInRecovery
 
 			for metricName, interval := range metricsConfig {
 				metric := metricName
@@ -314,7 +310,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 		if r.Metrics.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
 			metricStoreMessages, err = r.FetchStatsDirectlyFromOS(ctx, md, metricName)
 			if err != nil {
-				l.WithError(err).Errorf("Could not reader metric directly from OS")
+				l.WithError(err).Errorf("Could not read metric directly from OS")
 			}
 		}
 		t1 := time.Now()
@@ -373,13 +369,22 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 func (r *Reaper) LoadSources() (err error) {
 	if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
 		r.logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", r.Metrics.EmergencyPauseTriggerfile)
-		r.monitoredSources = make([]*sources.SourceConn, 0)
+		r.monitoredSources = make(sources.SourceConns, 0)
 		return nil
 	}
+
 	var newSrcs sources.SourceConns
-	if newSrcs, err = r.monitoredSources.SyncFromReader(r.SourcesReaderWriter); err != nil {
+	srcs, err := r.SourcesReaderWriter.GetSources()
+	if err != nil {
 		return err
 	}
+	srcs = slices.DeleteFunc(srcs, func(s sources.Source) bool {
+		return !s.IsEnabled || !s.IsDefaultGroup() && !slices.Contains(r.Sources.Groups, s.Group)
+	})
+	if newSrcs, err = srcs.ResolveDatabases(); err != nil {
+		return err
+	}
+
 	for i, newMD := range newSrcs {
 		md := r.monitoredSources.GetMonitoredDatabase(newMD.Name)
 		if md == nil {
@@ -484,7 +489,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 			data, err = r.GetInstanceUpMeasurement(ctx, md)
 		default:
 			sql = metric.GetSQL(md.Version)
-			if sql == "" && !(metricName == specialMetricChangeEvents || metricName == recoMetricName) {
+			if sql == "" {
 				l.Warning("Ignoring fetching because of empty SQL")
 				return nil, nil
 			}

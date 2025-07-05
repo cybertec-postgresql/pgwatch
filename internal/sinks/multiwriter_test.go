@@ -74,7 +74,7 @@ func TestSyncMetrics(t *testing.T) {
 	mw := &MultiWriter{}
 	mockWriter := &MockWriter{}
 	mw.AddWriter(mockWriter)
-	err := mw.SyncMetric("db", "metric", invalidOp)
+	err := mw.SyncMetric("db", "metric", InvalidOp)
 	assert.NoError(t, err)
 }
 

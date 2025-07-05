@@ -123,3 +123,9 @@ func GetLogger(ctx context.Context) Logger {
 	}
 	return logger.(Logger)
 }
+
+func NewNoopLogger() Logger {
+	l := logrus.New()
+	l.SetLevel(logrus.PanicLevel) // Noop logger should not output anything
+	return l
+}

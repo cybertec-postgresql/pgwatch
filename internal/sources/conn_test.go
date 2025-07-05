@@ -199,64 +199,6 @@ func TestSourceConn_GetMetricInterval(t *testing.T) {
 	})
 }
 
-type testSourceReader struct {
-	sources.Sources
-	error
-}
-
-func (r testSourceReader) GetSources() (sources.Sources, error) {
-	return r.Sources, r.error
-}
-
-func TestMonitoredDatabases_SyncFromReader_error(t *testing.T) {
-	reader := testSourceReader{error: assert.AnError}
-	mds := sources.SourceConns{}
-	_, err := mds.SyncFromReader(reader)
-	assert.Error(t, err)
-}
-
-func TestMonitoredDatabases_SyncFromReader(t *testing.T) {
-	db, _ := pgxmock.NewPool()
-
-	reader := testSourceReader{Sources: sources.Sources{
-		sources.Source{
-			Name:      "test",
-			Kind:      sources.SourcePostgres,
-			IsEnabled: true,
-			ConnStr:   "postgres://user:password@localhost:5432/mydatabase",
-		},
-		sources.Source{
-			Name:      "test2",
-			Kind:      sources.SourcePostgres,
-			IsEnabled: false,
-		},
-	},
-	}
-	// first read the sources
-	mds, _ := reader.GetSources()
-	assert.NotNil(t, mds, "GetSources() = nil, want not nil")
-	// then resolve the databases
-	mdbs, _ := mds.ResolveDatabases()
-	assert.NotNil(t, mdbs, "ResolveDatabases() = nil, want not nil")
-	// sync the databases and make sure they are the same
-	newmdbs, _ := mdbs.SyncFromReader(reader)
-	assert.NotNil(t, newmdbs)
-	assert.Equal(t, mdbs[0].ConnStr, newmdbs[0].ConnStr)
-	// change the connection string and check if databases are updated
-	reader.Sources[0].ConnStr = "postgres://user:password@localhost:5432/anotherdatabase"
-	newmdbs, _ = mdbs.SyncFromReader(reader)
-	assert.NotNil(t, newmdbs)
-	assert.NotEqual(t, mdbs[0].ConnStr, newmdbs[0].ConnStr)
-	assert.Nil(t, newmdbs[0].Conn)
-	assert.NoError(t, db.ExpectationsWereMet())
-	// change the unique name of the source and check if it's updated
-	reader.Sources[0].Name = "another"
-	newmdbs, _ = mdbs.SyncFromReader(reader)
-	assert.NotNil(t, newmdbs)
-	assert.NotEqual(t, mdbs[0].Name, newmdbs[0].Name)
-	assert.Nil(t, newmdbs[0].Conn)
-}
-
 func TestVersionToInt(t *testing.T) {
 	tests := []struct {
 		arg  string

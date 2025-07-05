@@ -11,7 +11,6 @@ import (
 // or an analytics system.
 type RPCWriter struct {
 	ctx     context.Context
-	address string
 	client  *rpc.Client
 }
 
@@ -20,7 +19,7 @@ type SyncOp int
 const (
 	AddOp SyncOp = iota
 	DeleteOp
-	invalidOp
+	InvalidOp
 )
 
 type SyncReq struct {
