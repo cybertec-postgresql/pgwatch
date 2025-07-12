@@ -90,7 +90,7 @@
           ],
           "metricColumn": "dbname",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 AS \"time\",\n  count(distinct dbname)\nFROM wal\nWHERE\n  $__timeFilter(\"time\")\n  AND (data->'in_recovery_int')::int = 0",
+          "rawSql": "SELECT\n  0 AS \"time\",\n  count(distinct dbname)\nFROM wal\nWHERE\n  $__timeFilter(\"time\")\n  AND (data->>'in_recovery_int')::int = 0",
           "refId": "A",
           "select": [
             [
@@ -203,7 +203,7 @@
           ],
           "metricColumn": "dbname",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 AS \"time\",\n  count(distinct dbname)\nFROM\n  wal\nWHERE\n  $__timeFilter(\"time\")\n  AND (data->'in_recovery_int')::int = 1",
+          "rawSql": "SELECT\n  0 AS \"time\",\n  count(distinct dbname)\nFROM\n  wal\nWHERE\n  $__timeFilter(\"time\")\n  AND (data->>'in_recovery_int')::int = 1",
           "refId": "A",
           "select": [
             [
@@ -393,7 +393,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n dbname,\n (SELECT case when data->>'in_recovery_int' = '0' then 'primary' else 'replica' end from wal where time > now() - '15min'::interval and dbname = c.dbname order by time desc limit 1) as last_role,\n (SELECT (extract(epoch from now() - time))::int from db_stats where dbname = c.dbname order by time desc limit 1) as last_seen,\n (SELECT (data->'postmaster_uptime_s')::int from db_stats where dbname = c.dbname order by time desc limit 1) as last_seen_uptime\nFROM\n  (select dbname, max(time) from configured_dbs where time between now() - '15min'::interval and now() group by dbname) c /* 10min ping interval hardcoded in collector */\nWHERE\n  NOT EXISTS (\n select dbname from db_stats where $__timeFilter(\"time\") and dbname = c.dbname union \n select dbname from pgbouncer_stats where $__timeFilter(\"time\") and dbname = c.dbname \n)",
+          "rawSql": "SELECT\n dbname,\n (SELECT case when data->>'in_recovery_int' = '0' then 'primary' else 'replica' end from wal where time > now() - '15min'::interval and dbname = c.dbname order by time desc limit 1) as last_role,\n (SELECT (extract(epoch from now() - time))::int from db_stats where dbname = c.dbname order by time desc limit 1) as last_seen,\n (SELECT (data->>'postmaster_uptime_s')::int from db_stats where dbname = c.dbname order by time desc limit 1) as last_seen_uptime\nFROM\n  (select dbname, max(time) from configured_dbs where time between now() - '15min'::interval and now() group by dbname) c /* 10min ping interval hardcoded in collector */\nWHERE\n  NOT EXISTS (\n select dbname from db_stats where $__timeFilter(\"time\") and dbname = c.dbname union \n select dbname from pgbouncer_stats where $__timeFilter(\"time\") and dbname = c.dbname \n)",
           "refId": "A",
           "select": [
             [
@@ -741,7 +741,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT * FROM (\nSELECT\n  dbname,\n  max((data->'longest_tx_seconds')::int) AS longest_tx_seconds\nFROM\n  backends\nWHERE\n  $__timeFilter(\"time\")\nGROUP BY\n  dbname\n) x\nWHERE longest_tx_seconds > 0\nORDER BY 2 DESC\nLIMIT $top_limit",
+          "rawSql": "SELECT * FROM (\nSELECT\n  dbname,\n  max((data->>'longest_tx_seconds')::int) AS longest_tx_seconds\nFROM\n  backends\nWHERE\n  $__timeFilter(\"time\")\nGROUP BY\n  dbname\n) x\nWHERE longest_tx_seconds > 0\nORDER BY 2 DESC\nLIMIT $top_limit",
           "refId": "A",
           "select": [
             [
@@ -910,7 +910,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n dbname,\n max((data->'waiting')::int) AS \"waiting\"\nFROM\n  backends\nWHERE\n  $__timeFilter(\"time\")\n  AND (data->'waiting')::int > 0\nGROUP BY\n  1\nORDER BY\n  2 DESC NULLS LAST\nLIMIT\n  $top_limit",
+          "rawSql": "SELECT\n dbname,\n max((data->>'waiting')::int) AS \"waiting\"\nFROM\n  backends\nWHERE\n  $__timeFilter(\"time\")\n  AND (data->>'waiting')::int > 0\nGROUP BY\n  1\nORDER BY\n  2 DESC NULLS LAST\nLIMIT\n  $top_limit",
           "refId": "A",
           "select": [
             [
@@ -1079,7 +1079,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n dbname,\n round(100 * instance_total::numeric / max_connections, 1) AS \"pct_used\",\n instance_total AS used_connections,\n max_connections\nFROM\n  (\n    select\n      distinct on (dbname)\n      dbname,\n      (data->'max_connections')::int as max_connections,\n      (data->'instance_total')::int as instance_total\n    FROM\n      backends\n    WHERE\n      $__timeFilter(time)\n    order by dbname, time desc\n  ) x\nORDER BY\n  2 DESC NULLS LAST\nLIMIT\n  $top_limit",
+          "rawSql": "SELECT\n dbname,\n round(100 * instance_total::numeric / max_connections, 1) AS \"pct_used\",\n instance_total AS used_connections,\n max_connections\nFROM\n  (\n    select\n      distinct on (dbname)\n      dbname,\n      (data->>'max_connections')::int as max_connections,\n      (data->>'instance_total')::int as instance_total\n    FROM\n      backends\n    WHERE\n      $__timeFilter(time)\n    order by dbname, time desc\n  ) x\nORDER BY\n  2 DESC NULLS LAST\nLIMIT\n  $top_limit",
           "refId": "A",
           "select": [
             [
@@ -1421,7 +1421,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select * from (\nselect \n  dbname,\n  max((data->'replay_lag_b')::int8) as replay_lag_b\nfrom\n  replication\nwhere\n  (data->'replay_lag_b')::int8 > 0\ngroup by\n  dbname\n) x\norder by 2 desc\nlimit $top_limit",
+          "rawSql": "select * from (\nselect \n  dbname,\n  max((data->>'replay_lag_b')::int8) as replay_lag_b\nfrom\n  replication\nwhere\n  (data->>'replay_lag_b')::int8 > 0\ngroup by\n  dbname\n) x\norder by 2 desc\nlimit $top_limit",
           "refId": "A",
           "select": [
             [
@@ -1594,7 +1594,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select * from (\nselect \n  dbname,\n  max((data->'percent')::float) as used_percent\nfrom\n  psutil_disk\nwhere\n  $__timeFilter(\"time\")\n  and (data->'percent')::float > 0\ngroup by\n  dbname\n) x\norder by 2 desc nulls last\nlimit $top_limit",
+          "rawSql": "select * from (\nselect \n  dbname,\n  max((data->>'percent')::float) as used_percent\nfrom\n  psutil_disk\nwhere\n  $__timeFilter(\"time\")\n  and (data->>'percent')::float > 0\ngroup by\n  dbname\n) x\norder by 2 desc nulls last\nlimit $top_limit",
           "refId": "A",
           "select": [
             [
@@ -1767,7 +1767,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n dbname,\n round(max((data->'cpu_utilization')::numeric), 1) AS \"cpu_utilization\"\nFROM\n  psutil_cpu\nWHERE\n  $__timeFilter(\"time\")\nGROUP BY\n  1\nORDER BY\n  2 DESC NULLS LAST\nLIMIT\n  $top_limit",
+          "rawSql": "SELECT\n dbname,\n round(max((data->>'cpu_utilization')::numeric), 1) AS \"cpu_utilization\"\nFROM\n  psutil_cpu\nWHERE\n  $__timeFilter(\"time\")\nGROUP BY\n  1\nORDER BY\n  2 DESC NULLS LAST\nLIMIT\n  $top_limit",
           "refId": "A",
           "select": [
             [
@@ -1914,7 +1914,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n dbname,\n max((data->'wal_size_b')::int8) as wal_size\nFROM\n  wal_size\nWHERE\n  $__timeFilter(\"time\")\nGROUP BY\n  1\nORDER BY\n  2 DESC NULLS LAST\nLIMIT\n  $top_limit",
+          "rawSql": "SELECT\n dbname,\n max((data->>'wal_size_b')::int8) as wal_size\nFROM\n  wal_size\nWHERE\n  $__timeFilter(\"time\")\nGROUP BY\n  1\nORDER BY\n  2 DESC NULLS LAST\nLIMIT\n  $top_limit",
           "refId": "A",
           "select": [
             [

@@ -93,7 +93,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->'load_1m_norm')::float8) \"normalized to #CPU\",\n  avg((data->'load_1m')::float8) \"as reported by /proc/loadavg\"\nFROM\n  psutil_cpu\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->>'load_1m_norm')::float8) \"normalized to #CPU\",\n  avg((data->>'load_1m')::float8) \"as reported by /proc/loadavg\"\nFROM\n  psutil_cpu\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
           "refId": "B",
           "resultFormat": "time_series",
           "select": [
@@ -250,7 +250,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->'cpu_utilization')::float8) \"utilization\"\nFROM\n  psutil_cpu\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->>'cpu_utilization')::float8) \"utilization\"\nFROM\n  psutil_cpu\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -389,7 +389,7 @@
           "policy": "default",
           "query": "",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->'idle')::float8) as \"idle\",\n  avg((data->'user')::float8) as \"user\",\n  avg((data->'system')::float8) as \"system\",\n  avg((data->'iowait')::float8) as \"iowait\",\n  avg((data->'other')::float8) as \"other\",\n  avg((data->'irqs')::float8) as \"irqs\"\nFROM\n  psutil_cpu\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->>'idle')::float8) as \"idle\",\n  avg((data->>'user')::float8) as \"user\",\n  avg((data->>'system')::float8) as \"system\",\n  avg((data->>'iowait')::float8) as \"iowait\",\n  avg((data->>'other')::float8) as \"other\",\n  avg((data->>'irqs')::float8) as \"irqs\"\nFROM\n  psutil_cpu\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -527,7 +527,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->'used')::float8) as \"used\",\n  avg((data->'total')::float8) as \"total\",\n  avg((data->'available')::float8) as \"available\",\n  avg((data->'free')::float8) as \"free\",\n  avg((data->'buff_cache')::float8) as \"buff_cache\"\nFROM\n  psutil_mem\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->>'used')::float8) as \"used\",\n  avg((data->>'total')::float8) as \"total\",\n  avg((data->>'available')::float8) as \"available\",\n  avg((data->>'free')::float8) as \"free\",\n  avg((data->>'buff_cache')::float8) as \"buff_cache\"\nFROM\n  psutil_mem\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
           "refId": "E",
           "resultFormat": "time_series",
           "select": [
@@ -666,7 +666,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->'swap_used')::float8) as \"swap_used\",\n  avg((data->'swap_total')::float8) as \"swap_total\"\nFROM\n  psutil_mem\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->>'swap_used')::float8) as \"swap_used\",\n  avg((data->>'swap_total')::float8) as \"swap_total\"\nFROM\n  psutil_mem\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -805,7 +805,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT * FROM (\nSELECT\n  $__timeGroup(time, $agg_interval),\n  max((data->'read_bytes')::int8) - min((data->'read_bytes')::int8) as \"read_bytes\",\n  max((data->'write_bytes')::int8) - min((data->'write_bytes')::int8)  as \"write_bytes\"\nFROM\n  psutil_disk_io_total\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\n) x WHERE read_bytes >= 0 and write_bytes >= 0\nORDER BY 1",
+          "rawSql": "SELECT * FROM (\nSELECT\n  $__timeGroup(time, $agg_interval),\n  max((data->>'read_bytes')::int8) - min((data->>'read_bytes')::int8) as \"read_bytes\",\n  max((data->>'write_bytes')::int8) - min((data->>'write_bytes')::int8)  as \"write_bytes\"\nFROM\n  psutil_disk_io_total\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\n) x WHERE read_bytes >= 0 and write_bytes >= 0\nORDER BY 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -962,7 +962,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  (tag_data->>'dir_or_tablespace') || ' (' || (tag_data->>'path') || ')',\n  avg((data->'percent')::float8) as \"percent\"\nFROM\n  psutil_disk\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1, 2\nORDER BY 1, 2",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  (tag_data->>'dir_or_tablespace') || ' (' || (tag_data->>'path') || ')',\n  avg((data->>'percent')::float8) as \"percent\"\nFROM\n  psutil_disk\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1, 2\nORDER BY 1, 2",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1114,7 +1114,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  (tag_data->>'dir_or_tablespace') || ' (' || (tag_data->>'path') || ')',\n  avg((data->'free')::float8) as \"free\"\nFROM\n  psutil_disk\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1, 2\nORDER BY 1, 2",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  (tag_data->>'dir_or_tablespace') || ' (' || (tag_data->>'path') || ')',\n  avg((data->>'free')::float8) as \"free\"\nFROM\n  psutil_disk\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1, 2\nORDER BY 1, 2",
           "refId": "B",
           "resultFormat": "time_series",
           "select": [
