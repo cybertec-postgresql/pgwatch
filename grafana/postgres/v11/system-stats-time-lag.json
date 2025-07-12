@@ -64,7 +64,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->'cpu_utilization')::float8) \"CPU utilization\"\nFROM\n  psutil_cpu\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->>'cpu_utilization')::float8) \"CPU utilization\"\nFROM\n  psutil_cpu\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
           "refId": "A",
           "select": [
             [
@@ -90,7 +90,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg(cpu_utilization) \"CPU utilization-$lag_interval\"\nFROM (\nSELECT\n  time + '$lag_interval'::interval as time,\n  (data->'cpu_utilization')::float8 as cpu_utilization\nFROM\n  psutil_cpu\nWHERE\n  dbname = '$dbname'\n  and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n) x\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg(cpu_utilization) \"CPU utilization-$lag_interval\"\nFROM (\nSELECT\n  time + '$lag_interval'::interval as time,\n  (data->>'cpu_utilization')::float8 as cpu_utilization\nFROM\n  psutil_cpu\nWHERE\n  dbname = '$dbname'\n  and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n) x\nGROUP BY 1\nORDER BY 1\n",
           "refId": "B",
           "select": [
             [
@@ -200,7 +200,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->'iowait')::float8) as \"IOWait\"\nFROM\n  psutil_cpu\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->>'iowait')::float8) as \"IOWait\"\nFROM\n  psutil_cpu\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
           "refId": "A",
           "select": [
             [
@@ -226,7 +226,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg(iowait) \"IOWait-$lag_interval\"\nFROM (\nSELECT\n  time + '$lag_interval'::interval as time,\n  (data->'iowait')::float8 as iowait\nFROM\n  psutil_cpu\nWHERE\n  dbname = '$dbname'\n  and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n) x\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg(iowait) \"IOWait-$lag_interval\"\nFROM (\nSELECT\n  time + '$lag_interval'::interval as time,\n  (data->>'iowait')::float8 as iowait\nFROM\n  psutil_cpu\nWHERE\n  dbname = '$dbname'\n  and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n) x\nGROUP BY 1\nORDER BY 1\n",
           "refId": "B",
           "select": [
             [
@@ -337,7 +337,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->'percent')::float8) as \"Mem. used\"\nFROM\n  psutil_mem\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->>'percent')::float8) as \"Mem. used\"\nFROM\n  psutil_mem\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
           "refId": "A",
           "select": [
             [
@@ -363,7 +363,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg(used) \"Mem. used-$lag_interval\"\nFROM (\nSELECT\n  time + '$lag_interval'::interval as time,\n  (data->'percent')::float8 as used\nFROM\n  psutil_mem\nWHERE\n  dbname = '$dbname'\n  and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n) x\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg(used) \"Mem. used-$lag_interval\"\nFROM (\nSELECT\n  time + '$lag_interval'::interval as time,\n  (data->>'percent')::float8 as used\nFROM\n  psutil_mem\nWHERE\n  dbname = '$dbname'\n  and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n) x\nGROUP BY 1\nORDER BY 1\n",
           "refId": "B",
           "select": [
             [
@@ -473,7 +473,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->'available')::float8) as \"Mem. available\"\nFROM\n  psutil_mem\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->>'available')::float8) as \"Mem. available\"\nFROM\n  psutil_mem\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
           "refId": "A",
           "select": [
             [
@@ -499,7 +499,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg(available) \"Mem. available-$lag_interval\"\nFROM (\nSELECT\n  time + '$lag_interval'::interval as time,\n  (data->'available')::float8 as available\nFROM\n  psutil_mem\nWHERE\n  dbname = '$dbname'\n  and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n) x\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg(available) \"Mem. available-$lag_interval\"\nFROM (\nSELECT\n  time + '$lag_interval'::interval as time,\n  (data->>'available')::float8 as available\nFROM\n  psutil_mem\nWHERE\n  dbname = '$dbname'\n  and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n) x\nGROUP BY 1\nORDER BY 1\n",
           "refId": "B",
           "select": [
             [
@@ -608,7 +608,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->'swap_percent')::float8) as \"Swap used\"\nFROM\n  psutil_mem\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((data->>'swap_percent')::float8) as \"Swap used\"\nFROM\n  psutil_mem\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1\nORDER BY 1\n",
           "refId": "A",
           "select": [
             [
@@ -634,7 +634,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg(swap_percent) \"Swap used-$lag_interval\"\nFROM (\nSELECT\n  time + '$lag_interval'::interval as time,\n  (data->'swap_percent')::float8 as swap_percent\nFROM\n  psutil_mem\nWHERE\n  dbname = '$dbname'\n  and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n) x\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg(swap_percent) \"Swap used-$lag_interval\"\nFROM (\nSELECT\n  time + '$lag_interval'::interval as time,\n  (data->>'swap_percent')::float8 as swap_percent\nFROM\n  psutil_mem\nWHERE\n  dbname = '$dbname'\n  and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n) x\nGROUP BY 1\nORDER BY 1\n",
           "refId": "B",
           "select": [
             [
@@ -743,7 +743,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((read_bytes_lag - read_bytes) / extract(epoch from time_lag - time))::int8 as \"read_bytes_s\"\nFROM (\n  SELECT\n    time,\n    lag(time) over w as time_lag,\n    (data->'read_bytes')::int8 as read_bytes,\n    lag((data->'read_bytes')::int8) over w as read_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE read_bytes >= read_bytes_lag and time > time_lag\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((read_bytes_lag - read_bytes) / extract(epoch from time_lag - time))::int8 as \"read_bytes_s\"\nFROM (\n  SELECT\n    time,\n    lag(time) over w as time_lag,\n    (data->>'read_bytes')::int8 as read_bytes,\n    lag((data->>'read_bytes')::int8) over w as read_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE read_bytes >= read_bytes_lag and time > time_lag\nGROUP BY 1\nORDER BY 1",
           "refId": "A",
           "select": [
             [
@@ -770,7 +770,7 @@
           "hide": false,
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((read_bytes_lag - read_bytes) / extract(epoch from time_lag - time))::int8 as \"read_bytes_s-$lag_interval\"\nFROM (\n  SELECT\n    time + '$lag_interval'::interval as time,\n    lag(time) over w + '$lag_interval'::interval as time_lag,\n    (data->'read_bytes')::int8 as read_bytes,\n    lag((data->'read_bytes')::int8) over w as read_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE read_bytes >= read_bytes_lag and time > time_lag\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((read_bytes_lag - read_bytes) / extract(epoch from time_lag - time))::int8 as \"read_bytes_s-$lag_interval\"\nFROM (\n  SELECT\n    time + '$lag_interval'::interval as time,\n    lag(time) over w + '$lag_interval'::interval as time_lag,\n    (data->>'read_bytes')::int8 as read_bytes,\n    lag((data->>'read_bytes')::int8) over w as read_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE read_bytes >= read_bytes_lag and time > time_lag\nGROUP BY 1\nORDER BY 1\n",
           "refId": "B",
           "select": [
             [
@@ -879,7 +879,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((write_bytes_lag - write_bytes) / extract(epoch from time_lag - time))::int8 as \"write_bytes_s\"\nFROM (\n  SELECT\n    time,\n    lag(time) over w as time_lag,\n    (data->'write_bytes')::int8 as write_bytes,\n    lag((data->'write_bytes')::int8) over w as write_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE write_bytes >= write_bytes_lag and time > time_lag\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((write_bytes_lag - write_bytes) / extract(epoch from time_lag - time))::int8 as \"write_bytes_s\"\nFROM (\n  SELECT\n    time,\n    lag(time) over w as time_lag,\n    (data->>'write_bytes')::int8 as write_bytes,\n    lag((data->>'write_bytes')::int8) over w as write_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE write_bytes >= write_bytes_lag and time > time_lag\nGROUP BY 1\nORDER BY 1",
           "refId": "A",
           "select": [
             [
@@ -906,7 +906,7 @@
           "hide": false,
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((write_bytes_lag - write_bytes) / extract(epoch from time_lag - time))::int8 as \"write_bytes_s-$lag_interval\"\nFROM (\n  SELECT\n    time + '$lag_interval'::interval as time,\n    lag(time) over w + '$lag_interval'::interval as time_lag,\n    (data->'write_bytes')::int8 as write_bytes,\n    lag((data->'write_bytes')::int8) over w as write_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE write_bytes >= write_bytes_lag and time > time_lag\nGROUP BY 1\nORDER BY 1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((write_bytes_lag - write_bytes) / extract(epoch from time_lag - time))::int8 as \"write_bytes_s-$lag_interval\"\nFROM (\n  SELECT\n    time + '$lag_interval'::interval as time,\n    lag(time) over w + '$lag_interval'::interval as time_lag,\n    (data->>'write_bytes')::int8 as write_bytes,\n    lag((data->>'write_bytes')::int8) over w as write_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE write_bytes >= write_bytes_lag and time > time_lag\nGROUP BY 1\nORDER BY 1\n",
           "refId": "B",
           "select": [
             [

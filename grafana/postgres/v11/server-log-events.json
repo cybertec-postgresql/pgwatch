@@ -148,7 +148,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  sum((data->'debug')::int8) as debug,\n  sum((data->'log')::int8) as log,\n  sum((data->'notice')::int8) as notice,  \n  sum((data->'warning')::int8) as warning,\n  sum((data->'error')::int8) as error,\n  sum((data->'fatal')::int8) as fatal,\n  sum((data->'panic')::int8) as panic\nFROM\n  server_log_event_counts\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1\nORDER BY\n  1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  sum((data->>'debug')::int8) as debug,\n  sum((data->>'log')::int8) as log,\n  sum((data->>'notice')::int8) as notice,  \n  sum((data->>'warning')::int8) as warning,\n  sum((data->>'error')::int8) as error,\n  sum((data->>'fatal')::int8) as fatal,\n  sum((data->>'panic')::int8) as panic\nFROM\n  server_log_event_counts\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1\nORDER BY\n  1\n",
           "refId": "A",
           "select": [
             [
@@ -300,7 +300,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  sum((data->'debug_total')::int8) as debug,\n  sum((data->'log_total')::int8) as log,\n  sum((data->'notice_total')::int8) as notice,  \n  sum((data->'warning_total')::int8) as warning,\n  sum((data->'error_total')::int8) as error,\n  sum((data->'fatal_total')::int8) as fatal,\n  sum((data->'panic_total')::int8) as panic\nFROM\n  server_log_event_counts\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1\nORDER BY\n  1\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  sum((data->>'debug_total')::int8) as debug,\n  sum((data->>'log_total')::int8) as log,\n  sum((data->>'notice_total')::int8) as notice,  \n  sum((data->>'warning_total')::int8) as warning,\n  sum((data->>'error_total')::int8) as error,\n  sum((data->>'fatal_total')::int8) as fatal,\n  sum((data->>'panic_total')::int8) as panic\nFROM\n  server_log_event_counts\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1\nORDER BY\n  1\n",
           "refId": "A",
           "select": [
             [
@@ -453,7 +453,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname,\n  sum((data->'error')::int8) as \"ERROR\",\n  sum((data->'error_total')::int8) as \"ERROR_TOTAL\",\n  sum((data->'fatal')::int8) as \"FATAL\",  \n  sum((data->'fatal_total')::int8) as \"FATAL_TOTAL\"\nFROM\n  server_log_event_counts\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1\nORDER BY\n  2 DESC\nLIMIT\n  20\n",
+          "rawSql": "SELECT\n  dbname,\n  sum((data->>'error')::int8) as \"ERROR\",\n  sum((data->>'error_total')::int8) as \"ERROR_TOTAL\",\n  sum((data->>'fatal')::int8) as \"FATAL\",  \n  sum((data->>'fatal_total')::int8) as \"FATAL_TOTAL\"\nFROM\n  server_log_event_counts\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1\nORDER BY\n  2 DESC\nLIMIT\n  20\n",
           "refId": "A",
           "select": [
             [
@@ -614,7 +614,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname,\n  sum((data->'fatal_total')::int8) as \"FATAL_TOTAL\",\n  sum((data->'fatal')::int8) as \"FATAL\",\n  sum((data->'error_total')::int8) as \"ERROR_TOTAL\",\n  sum((data->'error')::int8) as \"ERROR\"\nFROM\n  server_log_event_counts\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1\nORDER BY\n  2 DESC\nLIMIT\n  20\n",
+          "rawSql": "SELECT\n  dbname,\n  sum((data->>'fatal_total')::int8) as \"FATAL_TOTAL\",\n  sum((data->>'fatal')::int8) as \"FATAL\",\n  sum((data->>'error_total')::int8) as \"ERROR_TOTAL\",\n  sum((data->>'error')::int8) as \"ERROR\"\nFROM\n  server_log_event_counts\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1\nORDER BY\n  2 DESC\nLIMIT\n  20\n",
           "refId": "A",
           "select": [
             [
