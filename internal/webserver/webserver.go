@@ -58,6 +58,7 @@ func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWr
 	}
 
 	mux.Handle("/source", NewEnsureAuth(s.handleSources))
+	mux.Handle("/source/{name}", NewEnsureAuth(s.handleSourceItem))
 	mux.Handle("/test-connect", NewEnsureAuth(s.handleTestConnect))
 	mux.Handle("/metric", NewEnsureAuth(s.handleMetrics))
 	mux.Handle("/preset", NewEnsureAuth(s.handlePresets))
