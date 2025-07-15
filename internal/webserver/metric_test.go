@@ -605,3 +605,215 @@ func TestHandleMetricItem_DELETE_DeleteMetricError(t *testing.T) {
 	body, _ := io.ReadAll(resp.Body)
 	assert.Contains(t, string(body), "delete operation failed")
 }
+
+// Helper function to create HTTP requests with path values for testing individual preset endpoints
+func newPresetItemRequest(method, name string, body io.Reader) *http.Request {
+	url := "/preset/" + name
+	r := httptest.NewRequest(method, url, body)
+	r.SetPathValue("name", name)
+	return r
+}
+
+// Tests for new REST-compliant preset endpoints
+
+func TestHandlePresetItem_GET_Success(t *testing.T) {
+	preset := metrics.Preset{Description: "test preset", Metrics: map[string]float64{"cpu": 1.0}}
+	mock := &mockMetricsReaderWriter{
+		GetMetricsFunc: func() (*metrics.Metrics, error) {
+			return &metrics.Metrics{
+				PresetDefs: map[string]metrics.Preset{"test-preset": preset},
+			}, nil
+		},
+	}
+	ts := newTestMetricServer(mock)
+	r := newPresetItemRequest(http.MethodGet, "test-preset", nil)
+	w := httptest.NewRecorder()
+	ts.handlePresetItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+
+	var returnedPreset metrics.Preset
+	body, _ := io.ReadAll(resp.Body)
+	jsoniter.ConfigFastest.Unmarshal(body, &returnedPreset)
+	assert.Equal(t, preset.Description, returnedPreset.Description)
+}
+
+func TestHandlePresetItem_GET_NotFound(t *testing.T) {
+	mock := &mockMetricsReaderWriter{
+		GetMetricsFunc: func() (*metrics.Metrics, error) {
+			return &metrics.Metrics{PresetDefs: map[string]metrics.Preset{}}, nil
+		},
+	}
+	ts := newTestMetricServer(mock)
+	r := newPresetItemRequest(http.MethodGet, "nonexistent", nil)
+	w := httptest.NewRecorder()
+	ts.handlePresetItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "preset not found")
+}
+
+func TestHandlePresetItem_PUT_Success(t *testing.T) {
+	var updatedName string
+	var updatedPreset metrics.Preset
+	mock := &mockMetricsReaderWriter{
+		UpdatePresetFunc: func(name string, p metrics.Preset) error {
+			updatedName = name
+			updatedPreset = p
+			return nil
+		},
+	}
+	ts := newTestMetricServer(mock)
+
+	preset := metrics.Preset{Description: "updated preset", Metrics: map[string]float64{"memory": 2.0}}
+	b, _ := jsoniter.ConfigFastest.Marshal(preset)
+	r := newPresetItemRequest(http.MethodPut, "test-preset", bytes.NewReader(b))
+	w := httptest.NewRecorder()
+	ts.handlePresetItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "test-preset", updatedName)
+	assert.Equal(t, preset.Description, updatedPreset.Description)
+}
+
+func TestHandlePresetItem_DELETE_Success(t *testing.T) {
+	var deletedName string
+	mock := &mockMetricsReaderWriter{
+		DeletePresetFunc: func(name string) error {
+			deletedName = name
+			return nil
+		},
+	}
+	ts := newTestMetricServer(mock)
+	r := newPresetItemRequest(http.MethodDelete, "test-preset", nil)
+	w := httptest.NewRecorder()
+	ts.handlePresetItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.Equal(t, "test-preset", deletedName)
+}
+
+func TestHandlePresetItem_EmptyName(t *testing.T) {
+	mock := &mockMetricsReaderWriter{}
+	ts := newTestMetricServer(mock)
+	r := newPresetItemRequest(http.MethodGet, "", nil)
+	w := httptest.NewRecorder()
+	ts.handlePresetItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "preset name is required")
+}
+
+func TestHandlePresetItem_MethodNotAllowed(t *testing.T) {
+	mock := &mockMetricsReaderWriter{}
+	ts := newTestMetricServer(mock)
+	r := newPresetItemRequest(http.MethodPost, "test", nil)
+	w := httptest.NewRecorder()
+	ts.handlePresetItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+	assert.Equal(t, "GET, PUT, DELETE, OPTIONS", resp.Header.Get("Allow"))
+}
+
+func TestHandlePresetItem_Options(t *testing.T) {
+	mock := &mockMetricsReaderWriter{}
+	ts := newTestMetricServer(mock)
+	r := newPresetItemRequest(http.MethodOptions, "test", nil)
+	w := httptest.NewRecorder()
+	ts.handlePresetItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.Equal(t, "GET, PUT, DELETE, OPTIONS", resp.Header.Get("Allow"))
+}
+
+// Error flow tests for preset endpoints
+
+func TestHandlePresetItem_GET_GetMetricsError(t *testing.T) {
+	mock := &mockMetricsReaderWriter{
+		GetMetricsFunc: func() (*metrics.Metrics, error) {
+			return nil, errors.New("database connection failed")
+		},
+	}
+	ts := newTestMetricServer(mock)
+	r := newPresetItemRequest(http.MethodGet, "test-preset", nil)
+	w := httptest.NewRecorder()
+	ts.handlePresetItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "database connection failed")
+}
+
+func TestHandlePresetItem_PUT_InvalidRequestBody(t *testing.T) {
+	mock := &mockMetricsReaderWriter{}
+	ts := newTestMetricServer(mock)
+	r := newPresetItemRequest(http.MethodPut, "test-preset", &errorReader{})
+	w := httptest.NewRecorder()
+	ts.handlePresetItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "invalid request body")
+}
+
+func TestHandlePresetItem_PUT_InvalidJSON(t *testing.T) {
+	mock := &mockMetricsReaderWriter{}
+	ts := newTestMetricServer(mock)
+	r := newPresetItemRequest(http.MethodPut, "test-preset", strings.NewReader("invalid json"))
+	w := httptest.NewRecorder()
+	ts.handlePresetItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "invalid JSON format")
+}
+
+func TestHandlePresetItem_PUT_UpdatePresetError(t *testing.T) {
+	mock := &mockMetricsReaderWriter{
+		UpdatePresetFunc: func(string, metrics.Preset) error {
+			return errors.New("update operation failed")
+		},
+	}
+	ts := newTestMetricServer(mock)
+
+	preset := metrics.Preset{Description: "test preset"}
+	b, _ := jsoniter.ConfigFastest.Marshal(preset)
+	r := newPresetItemRequest(http.MethodPut, "test-preset", bytes.NewReader(b))
+	w := httptest.NewRecorder()
+	ts.handlePresetItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "update operation failed")
+}
+
+func TestHandlePresetItem_DELETE_DeletePresetError(t *testing.T) {
+	mock := &mockMetricsReaderWriter{
+		DeletePresetFunc: func(string) error {
+			return errors.New("delete operation failed")
+		},
+	}
+	ts := newTestMetricServer(mock)
+	r := newPresetItemRequest(http.MethodDelete, "test-preset", nil)
+	w := httptest.NewRecorder()
+	ts.handlePresetItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "delete operation failed")
+}
