@@ -96,7 +96,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  (data->'max_s')::int AS max_duration,\n  (data->'avg_s')::int AS avg_duration,\n  (data->'count')::int AS count,\n  data->>'users' AS users,\n  data->>'query' AS query,\n  data->>'plan' AS plan\nFROM\n  show_plans_realtime\nWHERE\n  time = (select max(time) from show_plans_realtime where $__timeFilter(time) and dbname = '$dbname' group by dbname)\n  AND dbname = '$dbname'\nORDER BY\n max_duration DESC\nLIMIT\n  25\n",
+          "rawSql": "SELECT\n  (data->>'max_s')::int AS max_duration,\n  (data->>'avg_s')::int AS avg_duration,\n  (data->>'count')::int AS count,\n  data->>'users' AS users,\n  data->>'query' AS query,\n  data->>'plan' AS plan\nFROM\n  show_plans_realtime\nWHERE\n  time = (select max(time) from show_plans_realtime where $__timeFilter(time) and dbname = '$dbname' group by dbname)\n  AND dbname = '$dbname'\nORDER BY\n max_duration DESC\nLIMIT\n  25\n",
           "refId": "A",
           "select": [
             [
