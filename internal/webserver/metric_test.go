@@ -6,9 +6,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -61,7 +63,7 @@ func TestHandleMetrics_GET(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	body, _ := io.ReadAll(resp.Body)
 	var got map[string]metrics.Metric
-	assert.NoError(t, json.Unmarshal(body, &got))
+	assert.NoError(t, jsoniter.ConfigFastest.Unmarshal(body, &got))
 	assert.Contains(t, got, "foo")
 }
 
@@ -94,7 +96,7 @@ func TestHandleMetrics_POST(t *testing.T) {
 	}
 	ts := newTestMetricServer(mock)
 	m := metrics.Metric{Description: "bar"}
-	b, _ := json.Marshal(m)
+	b, _ := jsoniter.ConfigFastest.Marshal(m)
 	r := httptest.NewRequest(http.MethodPost, "/metric?name=bar", bytes.NewReader(b))
 	w := httptest.NewRecorder()
 	ts.handleMetrics(w, r)
@@ -136,7 +138,7 @@ func TestHandleMetrics_POST_Fail(t *testing.T) {
 	}
 	ts := newTestMetricServer(mock)
 	m := metrics.Metric{Description: "bar"}
-	b, _ := json.Marshal(m)
+	b, _ := jsoniter.ConfigFastest.Marshal(m)
 	r := httptest.NewRequest(http.MethodPost, "/metric?name=bar", bytes.NewReader(b))
 	w := httptest.NewRecorder()
 	ts.handleMetrics(w, r)
@@ -237,7 +239,7 @@ func TestHandlePreset_GET(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	body, _ := io.ReadAll(resp.Body)
 	var got map[string]metrics.Preset
-	assert.NoError(t, json.Unmarshal(body, &got))
+	assert.NoError(t, jsoniter.ConfigFastest.Unmarshal(body, &got))
 	assert.Contains(t, got, "foo")
 }
 
@@ -270,7 +272,7 @@ func TestHandlePreset_POST(t *testing.T) {
 	}
 	ts := newTestMetricServer(mock)
 	p := metrics.Preset{Description: "bar"}
-	b, _ := json.Marshal(p)
+	b, _ := jsoniter.ConfigFastest.Marshal(p)
 	r := httptest.NewRequest(http.MethodPost, "/preset?name=bar", bytes.NewReader(b))
 	w := httptest.NewRecorder()
 	ts.handlePresets(w, r)
@@ -306,7 +308,7 @@ func TestHandlePreset_POST_Fail(t *testing.T) {
 	}
 	ts := newTestMetricServer(mock)
 	p := metrics.Preset{Description: "bar"}
-	b, _ := json.Marshal(p)
+	b, _ := jsoniter.ConfigFastest.Marshal(p)
 	r := httptest.NewRequest(http.MethodPost, "/preset?name=bar", bytes.NewReader(b))
 	w := httptest.NewRecorder()
 	ts.handlePresets(w, r)
@@ -390,4 +392,216 @@ func TestDeletePreset_Error(t *testing.T) {
 	ts := newTestMetricServer(mock)
 	err := ts.DeletePreset("foo")
 	assert.Error(t, err)
+}
+
+// Helper function to create HTTP requests with path values for testing individual metric endpoints
+func newMetricItemRequest(method, name string, body io.Reader) *http.Request {
+	url := "/metric/" + name
+	r := httptest.NewRequest(method, url, body)
+	r.SetPathValue("name", name)
+	return r
+}
+
+// Tests for new REST-compliant metric endpoints
+
+func TestHandleMetricItem_GET_Success(t *testing.T) {
+	metric := metrics.Metric{Description: "test metric", SQLs: map[int]string{130000: "SELECT 1"}}
+	mock := &mockMetricsReaderWriter{
+		GetMetricsFunc: func() (*metrics.Metrics, error) {
+			return &metrics.Metrics{
+				MetricDefs: map[string]metrics.Metric{"test-metric": metric},
+			}, nil
+		},
+	}
+	ts := newTestMetricServer(mock)
+	r := newMetricItemRequest(http.MethodGet, "test-metric", nil)
+	w := httptest.NewRecorder()
+	ts.handleMetricItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+
+	var returnedMetric metrics.Metric
+	body, _ := io.ReadAll(resp.Body)
+	jsoniter.ConfigFastest.Unmarshal(body, &returnedMetric)
+	assert.Equal(t, metric.Description, returnedMetric.Description)
+}
+
+func TestHandleMetricItem_GET_NotFound(t *testing.T) {
+	mock := &mockMetricsReaderWriter{
+		GetMetricsFunc: func() (*metrics.Metrics, error) {
+			return &metrics.Metrics{MetricDefs: map[string]metrics.Metric{}}, nil
+		},
+	}
+	ts := newTestMetricServer(mock)
+	r := newMetricItemRequest(http.MethodGet, "nonexistent", nil)
+	w := httptest.NewRecorder()
+	ts.handleMetricItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "metric not found")
+}
+
+func TestHandleMetricItem_PUT_Success(t *testing.T) {
+	var updatedName string
+	var updatedMetric metrics.Metric
+	mock := &mockMetricsReaderWriter{
+		UpdateMetricFunc: func(name string, m metrics.Metric) error {
+			updatedName = name
+			updatedMetric = m
+			return nil
+		},
+	}
+	ts := newTestMetricServer(mock)
+
+	metric := metrics.Metric{Description: "updated metric", SQLs: map[int]string{130000: "SELECT 2"}}
+	b, _ := jsoniter.ConfigFastest.Marshal(metric)
+	r := newMetricItemRequest(http.MethodPut, "test-metric", bytes.NewReader(b))
+	w := httptest.NewRecorder()
+	ts.handleMetricItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "test-metric", updatedName)
+	assert.Equal(t, metric.Description, updatedMetric.Description)
+}
+
+func TestHandleMetricItem_DELETE_Success(t *testing.T) {
+	var deletedName string
+	mock := &mockMetricsReaderWriter{
+		DeleteMetricFunc: func(name string) error {
+			deletedName = name
+			return nil
+		},
+	}
+	ts := newTestMetricServer(mock)
+	r := newMetricItemRequest(http.MethodDelete, "test-metric", nil)
+	w := httptest.NewRecorder()
+	ts.handleMetricItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.Equal(t, "test-metric", deletedName)
+}
+
+func TestHandleMetricItem_EmptyName(t *testing.T) {
+	mock := &mockMetricsReaderWriter{}
+	ts := newTestMetricServer(mock)
+	r := newMetricItemRequest(http.MethodGet, "", nil)
+	w := httptest.NewRecorder()
+	ts.handleMetricItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "metric name is required")
+}
+
+func TestHandleMetricItem_MethodNotAllowed(t *testing.T) {
+	mock := &mockMetricsReaderWriter{}
+	ts := newTestMetricServer(mock)
+	r := newMetricItemRequest(http.MethodPost, "test", nil)
+	w := httptest.NewRecorder()
+	ts.handleMetricItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+	assert.Equal(t, "GET, PUT, DELETE, OPTIONS", resp.Header.Get("Allow"))
+}
+
+func TestHandleMetricItem_Options(t *testing.T) {
+	mock := &mockMetricsReaderWriter{}
+	ts := newTestMetricServer(mock)
+	r := newMetricItemRequest(http.MethodOptions, "test", nil)
+	w := httptest.NewRecorder()
+	ts.handleMetricItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.Equal(t, "GET, PUT, DELETE, OPTIONS", resp.Header.Get("Allow"))
+}
+
+// Error flow tests for metric endpoints
+
+func TestHandleMetricItem_GET_GetMetricsError(t *testing.T) {
+	mock := &mockMetricsReaderWriter{
+		GetMetricsFunc: func() (*metrics.Metrics, error) {
+			return nil, errors.New("database connection failed")
+		},
+	}
+	ts := newTestMetricServer(mock)
+	r := newMetricItemRequest(http.MethodGet, "test-metric", nil)
+	w := httptest.NewRecorder()
+	ts.handleMetricItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "database connection failed")
+}
+
+func TestHandleMetricItem_PUT_InvalidRequestBody(t *testing.T) {
+	mock := &mockMetricsReaderWriter{}
+	ts := newTestMetricServer(mock)
+	r := newMetricItemRequest(http.MethodPut, "test-metric", &errorReader{})
+	w := httptest.NewRecorder()
+	ts.handleMetricItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "invalid request body")
+}
+
+func TestHandleMetricItem_PUT_InvalidJSON(t *testing.T) {
+	mock := &mockMetricsReaderWriter{}
+	ts := newTestMetricServer(mock)
+	r := newMetricItemRequest(http.MethodPut, "test-metric", strings.NewReader("invalid json"))
+	w := httptest.NewRecorder()
+	ts.handleMetricItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "invalid JSON format")
+}
+
+func TestHandleMetricItem_PUT_UpdateMetricError(t *testing.T) {
+	mock := &mockMetricsReaderWriter{
+		UpdateMetricFunc: func(string, metrics.Metric) error {
+			return errors.New("update operation failed")
+		},
+	}
+	ts := newTestMetricServer(mock)
+
+	metric := metrics.Metric{Description: "test metric"}
+	b, _ := jsoniter.ConfigFastest.Marshal(metric)
+	r := newMetricItemRequest(http.MethodPut, "test-metric", bytes.NewReader(b))
+	w := httptest.NewRecorder()
+	ts.handleMetricItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "update operation failed")
+}
+
+func TestHandleMetricItem_DELETE_DeleteMetricError(t *testing.T) {
+	mock := &mockMetricsReaderWriter{
+		DeleteMetricFunc: func(string) error {
+			return errors.New("delete operation failed")
+		},
+	}
+	ts := newTestMetricServer(mock)
+	r := newMetricItemRequest(http.MethodDelete, "test-metric", nil)
+	w := httptest.NewRecorder()
+	ts.handleMetricItem(w, r)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "delete operation failed")
 }

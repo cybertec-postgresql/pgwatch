@@ -77,6 +77,81 @@ func (server *WebUIServer) DeleteMetric(name string) error {
 	return server.metricsReaderWriter.DeleteMetric(name)
 }
 
+// handleMetricItem handles individual metric operations using REST-compliant HTTP methods
+// and path parameters like /metric/{name}
+func (server *WebUIServer) handleMetricItem(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	if name == "" {
+		http.Error(w, "metric name is required", http.StatusBadRequest)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		server.getMetricByName(w, name)
+	case http.MethodPut:
+		server.updateMetricByName(w, r, name)
+	case http.MethodDelete:
+		server.deleteMetricByName(w, name)
+	case http.MethodOptions:
+		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// getMetricByName returns a specific metric by name
+func (server *WebUIServer) getMetricByName(w http.ResponseWriter, name string) {
+	mr, err := server.metricsReaderWriter.GetMetrics()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if metric, exists := mr.MetricDefs[name]; exists {
+		b, _ := jsoniter.ConfigFastest.Marshal(metric)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(b)
+		return
+	}
+
+	http.Error(w, "metric not found", http.StatusNotFound)
+}
+
+// updateMetricByName updates an existing metric using PUT semantics
+func (server *WebUIServer) updateMetricByName(w http.ResponseWriter, r *http.Request, name string) {
+	params, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	var m metrics.Metric
+	if err := jsoniter.ConfigFastest.Unmarshal(params, &m); err != nil {
+		http.Error(w, "invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	if err := server.metricsReaderWriter.UpdateMetric(name, m); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// deleteMetricByName deletes a metric by name
+func (server *WebUIServer) deleteMetricByName(w http.ResponseWriter, name string) {
+	if err := server.metricsReaderWriter.DeleteMetric(name); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request) {
 	var (
 		err    error
