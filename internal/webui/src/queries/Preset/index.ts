@@ -11,6 +11,12 @@ export const usePresets = () => useQuery<Presets>({
   queryFn: async () => await services.getPresets()
 });
 
+export const usePreset = (name: string) => useQuery({
+  queryKey: [QueryKeys.Preset, name],
+  queryFn: async () => await services.getPreset(name),
+  enabled: !!name
+});
+
 export const useDeletePreset = () => useMutation({
   mutationKey: [QueryKeys.Preset],
   mutationFn: async (name: string) => await services.deletePreset(name)
