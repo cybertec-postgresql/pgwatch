@@ -140,7 +140,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  lockmode,\n  avg(count)\nFROM (\nSELECT\n  time,\n  tag_data->>'lockmode' as lockmode,\n  (data->'count')::int8 as count\nFROM\n  locks_mode\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n) x\nGROUP BY\n  1, 2\nORDER BY\n  1, 2\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  lockmode,\n  avg(count)\nFROM (\nSELECT\n  time,\n  tag_data->>'lockmode' as lockmode,\n  (data->>'count')::int8 as count\nFROM\n  locks_mode\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n) x\nGROUP BY\n  1, 2\nORDER BY\n  1, 2\n",
           "refId": "E",
           "resultFormat": "time_series",
           "select": [

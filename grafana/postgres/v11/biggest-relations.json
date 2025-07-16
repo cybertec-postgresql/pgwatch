@@ -97,7 +97,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  (data->'total_relation_size_b')::int8 as total_relation_size_b,\n  tag_data->>'table_full_name'::text as table_name\nFROM\n  table_stats\nWHERE\n  time = (select max(time) from table_stats WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND dbname = '$dbname'\nORDER BY\n  2 DESC NULLS LAST\nLIMIT 100",
+          "rawSql": "SELECT\n  time,\n  (data->>'total_relation_size_b')::int8 as total_relation_size_b,\n  tag_data->>'table_full_name'::text as table_name\nFROM\n  table_stats\nWHERE\n  time = (select max(time) from table_stats WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND dbname = '$dbname'\nORDER BY\n  2 DESC NULLS LAST\nLIMIT 100",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -202,7 +202,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  (data->'table_size_b')::int8 + coalesce((data->'toast_size_b')::int8, 0) as table_size_b,\n  tag_data->>'table_full_name' as table_name\nFROM\n  table_stats\nWHERE\n  time = (select max(time) from table_stats WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND dbname = '$dbname'\nORDER BY\n  2 DESC NULLS LAST\nLIMIT 100",
+          "rawSql": "SELECT\n  0 as time,\n  (data->>'table_size_b')::int8 + coalesce((data->>'toast_size_b')::int8, 0) as table_size_b,\n  tag_data->>'table_full_name' as table_name\nFROM\n  table_stats\nWHERE\n  time = (select max(time) from table_stats WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND dbname = '$dbname'\nORDER BY\n  2 DESC NULLS LAST\nLIMIT 100",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -306,7 +306,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  (data->'index_size_b')::int8 as index_size_b,\n  tag_data->>'index_full_name' as index_full_name\nFROM\n  index_stats\nWHERE\n  time = (select max(time) from index_stats WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND dbname = '$dbname'\nORDER BY\n  2 DESC NULLS LAST\nLIMIT 100",
+          "rawSql": "SELECT\n  0 as time,\n  (data->>'index_size_b')::int8 as index_size_b,\n  tag_data->>'index_full_name' as index_full_name\nFROM\n  index_stats\nWHERE\n  time = (select max(time) from index_stats WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND dbname = '$dbname'\nORDER BY\n  2 DESC NULLS LAST\nLIMIT 100",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [

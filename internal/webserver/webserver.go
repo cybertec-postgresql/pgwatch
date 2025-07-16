@@ -58,9 +58,12 @@ func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWr
 	}
 
 	mux.Handle("/source", NewEnsureAuth(s.handleSources))
+	mux.Handle("/source/{name}", NewEnsureAuth(s.handleSourceItem))
 	mux.Handle("/test-connect", NewEnsureAuth(s.handleTestConnect))
 	mux.Handle("/metric", NewEnsureAuth(s.handleMetrics))
+	mux.Handle("/metric/{name}", NewEnsureAuth(s.handleMetricItem))
 	mux.Handle("/preset", NewEnsureAuth(s.handlePresets))
+	mux.Handle("/preset/{name}", NewEnsureAuth(s.handlePresetItem))
 	mux.Handle("/log", NewEnsureAuth(s.serveWsLog))
 	mux.HandleFunc("/login", s.handleLogin)
 	mux.HandleFunc("/liveness", s.handleLiveness)
