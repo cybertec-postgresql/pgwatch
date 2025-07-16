@@ -24,8 +24,13 @@ export default class SourceService {
       then(response => response.data);
   };
 
+  public async getSource(uniqueName: string) {
+    return await this.api.get(`/source/${encodeURIComponent(uniqueName)}`).
+      then(response => response.data);
+  };
+
   public async deleteSource(uniqueName: string) {
-    return await this.api.delete("/source", { params: { "name": uniqueName } }).
+    return await this.api.delete(`/source/${encodeURIComponent(uniqueName)}`).
       then(response => response.data);
   };
 
@@ -35,17 +40,17 @@ export default class SourceService {
   };
 
   public async editSource(data: SourceRequestBody) {
-    return await this.api.post("/source", data.data, { params: { "name": data.Name } }).
+    return await this.api.put(`/source/${encodeURIComponent(data.Name)}`, data.data).
       then(response => response);
   };
 
   public async editSourceEnable(data: Source) {
-    return await this.api.post("/source", data, { params: { "name": data.Name } }).
+    return await this.api.put(`/source/${encodeURIComponent(data.Name)}`, data).
       then(response => response);
   };
 
   public async editSourceHostConfig(data: Source) {
-    return await this.api.post("/source", data, { params: { "name": data.Name } });
+    return await this.api.put(`/source/${encodeURIComponent(data.Name)}`, data);
   };
 
   public async testSourceConnection(data: string) {
