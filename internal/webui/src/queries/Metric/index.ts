@@ -11,9 +11,15 @@ export const useMetrics = () => useQuery<Metrics>({
   queryFn: async () => await services.getMetrics()
 });
 
+export const useMetric = (name: string) => useQuery({
+  queryKey: [QueryKeys.Metric, name],
+  queryFn: async () => await services.getMetric(name),
+  enabled: !!name
+});
+
 export const useDeleteMetric = () => useMutation({
   mutationKey: [QueryKeys.Metric],
-  mutationFn: async (data: string) => await services.deleteMetric(data)
+  mutationFn: async (name: string) => await services.deleteMetric(name)
 });
 
 export const useEditMetric = () => useMutation({

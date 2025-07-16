@@ -11,6 +11,12 @@ export const useSources = () => useQuery<Source[]>({
   queryFn: async () => await services.getSources()
 });
 
+export const useSource = (uniqueName: string) => useQuery({
+  queryKey: [QueryKeys.Source, uniqueName],
+  queryFn: async () => await services.getSource(uniqueName),
+  enabled: !!uniqueName
+});
+
 export const useDeleteSource = () => useMutation({
   mutationKey: [QueryKeys.Source],
   mutationFn: async (uniqueName: string) => await services.deleteSource(uniqueName)

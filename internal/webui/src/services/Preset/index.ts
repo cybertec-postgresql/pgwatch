@@ -24,8 +24,13 @@ export default class PresetService {
       then(response => response.data);
   };
 
+  public async getPreset(name: string) {
+    return await this.api.get(`/preset/${encodeURIComponent(name)}`).
+      then(response => response.data);
+  };
+
   public async deletePreset(name: string) {
-    return await this.api.delete("/preset", { params: { name } }).
+    return await this.api.delete(`/preset/${encodeURIComponent(name)}`).
       then(response => response.data);
   };
 
@@ -35,7 +40,7 @@ export default class PresetService {
   };
 
   public async editPreset(data: PresetRequestBody) {
-    return await this.api.post("/preset", data.Data, { params: { "name": data.Name } }).
+    return await this.api.put(`/preset/${encodeURIComponent(data.Name)}`, data.Data).
       then(response => response);
   };
 };

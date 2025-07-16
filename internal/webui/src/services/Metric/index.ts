@@ -25,8 +25,13 @@ export default class MetricService {
       then(response => response.data);
   };
 
-  public async deleteMetric(data: string) {
-    return await this.api.delete("/metric", { params: { "key": data } }).
+  public async getMetric(name: string): Promise<any> {
+    return await this.api.get(`/metric/${encodeURIComponent(name)}`).
+      then(response => response.data);
+  };
+
+  public async deleteMetric(name: string) {
+    return await this.api.delete(`/metric/${encodeURIComponent(name)}`).
       then(response => response.data);
   };
 
@@ -36,7 +41,7 @@ export default class MetricService {
   };
 
   public async editMetric(data: MetricRequestBody) {
-    return await this.api.post("/metric", data.Data, { params: { "name": data.Name } }).
+    return await this.api.put(`/metric/${encodeURIComponent(data.Name)}`, data.Data).
       then(response => response);
   };
 }
