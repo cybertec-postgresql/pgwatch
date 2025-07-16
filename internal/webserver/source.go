@@ -104,22 +104,33 @@ func (server *WebUIServer) handleSourceItem(w http.ResponseWriter, r *http.Reque
 
 // getSourceByName returns a specific source by name
 func (server *WebUIServer) getSourceByName(w http.ResponseWriter, name string) {
-	sources, err := server.sourcesReaderWriter.GetSources()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	var (
+		err    error
+		status = http.StatusInternalServerError
+		srcs   sources.Sources
+	)
+
+	defer func() {
+		if err != nil {
+			http.Error(w, err.Error(), status)
+		}
+	}()
+
+	if srcs, err = server.sourcesReaderWriter.GetSources(); err != nil {
 		return
 	}
 
-	for _, source := range sources {
-		if source.Name == name {
-			b, _ := jsoniter.ConfigFastest.Marshal(source)
+	for _, src := range srcs {
+		if src.Name == name {
+			b, _ := jsoniter.ConfigFastest.Marshal(src)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write(b)
+			_, err = w.Write(b)
 			return
 		}
 	}
 
-	http.Error(w, "source not found", http.StatusNotFound)
+	err = sources.ErrSourceNotFound
+	status = http.StatusNotFound
 }
 
 // updateSourceByName updates an existing source using PUT semantics

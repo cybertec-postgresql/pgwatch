@@ -104,38 +104,59 @@ func (server *WebUIServer) handleMetricItem(w http.ResponseWriter, r *http.Reque
 
 // getMetricByName returns a specific metric by name
 func (server *WebUIServer) getMetricByName(w http.ResponseWriter, name string) {
-	mr, err := server.metricsReaderWriter.GetMetrics()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	var (
+		err    error
+		status = http.StatusInternalServerError
+		mr     *metrics.Metrics
+	)
+
+	defer func() {
+		if err != nil {
+			http.Error(w, err.Error(), status)
+		}
+	}()
+
+	if mr, err = server.metricsReaderWriter.GetMetrics(); err != nil {
 		return
 	}
 
 	if metric, exists := mr.MetricDefs[name]; exists {
 		b, _ := jsoniter.ConfigFastest.Marshal(metric)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(b)
+		_, err = w.Write(b)
 		return
 	}
 
-	http.Error(w, "metric not found", http.StatusNotFound)
+	err = metrics.ErrMetricNotFound
+	status = http.StatusNotFound
 }
 
 // updateMetricByName updates an existing metric using PUT semantics
 func (server *WebUIServer) updateMetricByName(w http.ResponseWriter, r *http.Request, name string) {
-	params, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+	var (
+		err    error
+		params []byte
+		status = http.StatusInternalServerError
+	)
+
+	defer func() {
+		if err != nil {
+			http.Error(w, err.Error(), status)
+		}
+	}()
+
+	if params, err = io.ReadAll(r.Body); err != nil {
+		status = http.StatusBadRequest
 		return
 	}
 
 	var m metrics.Metric
-	if err := jsoniter.ConfigFastest.Unmarshal(params, &m); err != nil {
-		http.Error(w, "invalid JSON format", http.StatusBadRequest)
+	if err = jsoniter.ConfigFastest.Unmarshal(params, &m); err != nil {
+		status = http.StatusBadRequest
 		return
 	}
 
-	if err := server.metricsReaderWriter.UpdateMetric(name, m); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err = server.metricsReaderWriter.UpdateMetric(name, m); err != nil {
 		return
 	}
 
@@ -247,16 +268,26 @@ func (server *WebUIServer) handlePresetItem(w http.ResponseWriter, r *http.Reque
 
 // getPresetByName returns a specific preset by name
 func (server *WebUIServer) getPresetByName(w http.ResponseWriter, name string) {
-	mr, err := server.metricsReaderWriter.GetMetrics()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+	var (
+		err error
+		mr  *metrics.Metrics
+	)
+
+	defer func() {
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}()
+
+	if mr, err = server.metricsReaderWriter.GetMetrics(); err != nil {
 		return
 	}
 
 	if preset, exists := mr.PresetDefs[name]; exists {
 		b, _ := jsoniter.ConfigFastest.Marshal(preset)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(b)
+		_, err = w.Write(b)
 		return
 	}
 

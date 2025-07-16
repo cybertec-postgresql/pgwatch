@@ -424,7 +424,7 @@ func TestHandleMetricItem_GET_Success(t *testing.T) {
 
 	var returnedMetric metrics.Metric
 	body, _ := io.ReadAll(resp.Body)
-	jsoniter.ConfigFastest.Unmarshal(body, &returnedMetric)
+	assert.NoError(t, jsoniter.ConfigFastest.Unmarshal(body, &returnedMetric))
 	assert.Equal(t, metric.Description, returnedMetric.Description)
 }
 
@@ -553,7 +553,7 @@ func TestHandleMetricItem_PUT_InvalidRequestBody(t *testing.T) {
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "invalid request body")
+	assert.Contains(t, string(body), "mock read error")
 }
 
 func TestHandleMetricItem_PUT_InvalidJSON(t *testing.T) {
@@ -566,7 +566,7 @@ func TestHandleMetricItem_PUT_InvalidJSON(t *testing.T) {
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "invalid JSON format")
+	assert.Contains(t, string(body), "invalid json")
 }
 
 func TestHandleMetricItem_PUT_UpdateMetricError(t *testing.T) {
@@ -636,7 +636,7 @@ func TestHandlePresetItem_GET_Success(t *testing.T) {
 
 	var returnedPreset metrics.Preset
 	body, _ := io.ReadAll(resp.Body)
-	jsoniter.ConfigFastest.Unmarshal(body, &returnedPreset)
+	assert.NoError(t, jsoniter.ConfigFastest.Unmarshal(body, &returnedPreset))
 	assert.Equal(t, preset.Description, returnedPreset.Description)
 }
 

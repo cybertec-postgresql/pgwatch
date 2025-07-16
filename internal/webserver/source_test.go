@@ -246,7 +246,7 @@ func TestHandleSourceItem_GET_Success(t *testing.T) {
 
 	var returnedSource sources.Source
 	body, _ := io.ReadAll(resp.Body)
-	jsoniter.ConfigFastest.Unmarshal(body, &returnedSource)
+	assert.NoError(t, jsoniter.ConfigFastest.Unmarshal(body, &returnedSource))
 	assert.Equal(t, source.Name, returnedSource.Name)
 }
 
