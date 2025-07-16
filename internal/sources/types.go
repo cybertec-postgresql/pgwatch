@@ -1,6 +1,7 @@
 package sources
 
 import (
+	"errors"
 	"fmt"
 	"maps"
 	"reflect"
@@ -8,6 +9,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 )
+
+var ErrSourceNotFound = errors.New("source not found")
 
 type Kind string
 
@@ -88,7 +91,7 @@ func (s *Source) GetDatabaseName() string {
 }
 
 func (s Source) Equal(s2 Source) bool {
-	var eq bool 
+	var eq bool
 	if s.PresetMetrics != "" || s2.PresetMetrics != "" {
 		eq = (s.PresetMetrics == s2.PresetMetrics)
 	} else {
@@ -101,7 +104,7 @@ func (s Source) Equal(s2 Source) bool {
 		eq = eq && reflect.DeepEqual(s.MetricsStandby, s2.MetricsStandby)
 	}
 
-	return eq && 
+	return eq &&
 		s.Name == s2.Name &&
 		s.Group == s2.Group &&
 		s.ConnStr == s2.ConnStr &&

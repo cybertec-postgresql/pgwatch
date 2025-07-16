@@ -43,7 +43,7 @@ func (server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request)
 
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
 
 	default:
 		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")
@@ -75,6 +75,102 @@ func (server *WebUIServer) UpdateMetric(name string, params []byte) error {
 // DeleteMetric removes the metric from the configuration
 func (server *WebUIServer) DeleteMetric(name string) error {
 	return server.metricsReaderWriter.DeleteMetric(name)
+}
+
+// handleMetricItem handles individual metric operations using REST-compliant HTTP methods
+// and path parameters like /metric/{name}
+func (server *WebUIServer) handleMetricItem(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	if name == "" {
+		http.Error(w, "metric name is required", http.StatusBadRequest)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		server.getMetricByName(w, name)
+	case http.MethodPut:
+		server.updateMetricByName(w, r, name)
+	case http.MethodDelete:
+		server.deleteMetricByName(w, name)
+	case http.MethodOptions:
+		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
+		w.WriteHeader(http.StatusOK)
+	default:
+		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// getMetricByName returns a specific metric by name
+func (server *WebUIServer) getMetricByName(w http.ResponseWriter, name string) {
+	var (
+		err    error
+		status = http.StatusInternalServerError
+		mr     *metrics.Metrics
+	)
+
+	defer func() {
+		if err != nil {
+			http.Error(w, err.Error(), status)
+		}
+	}()
+
+	if mr, err = server.metricsReaderWriter.GetMetrics(); err != nil {
+		return
+	}
+
+	if metric, exists := mr.MetricDefs[name]; exists {
+		b, _ := jsoniter.ConfigFastest.Marshal(metric)
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write(b)
+		return
+	}
+
+	err = metrics.ErrMetricNotFound
+	status = http.StatusNotFound
+}
+
+// updateMetricByName updates an existing metric using PUT semantics
+func (server *WebUIServer) updateMetricByName(w http.ResponseWriter, r *http.Request, name string) {
+	var (
+		err    error
+		params []byte
+		status = http.StatusInternalServerError
+	)
+
+	defer func() {
+		if err != nil {
+			http.Error(w, err.Error(), status)
+		}
+	}()
+
+	if params, err = io.ReadAll(r.Body); err != nil {
+		status = http.StatusBadRequest
+		return
+	}
+
+	var m metrics.Metric
+	if err = jsoniter.ConfigFastest.Unmarshal(params, &m); err != nil {
+		status = http.StatusBadRequest
+		return
+	}
+
+	if err = server.metricsReaderWriter.UpdateMetric(name, m); err != nil {
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// deleteMetricByName deletes a metric by name
+func (server *WebUIServer) deleteMetricByName(w http.ResponseWriter, name string) {
+	if err := server.metricsReaderWriter.DeleteMetric(name); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +207,7 @@ func (server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
 
 	default:
 		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
@@ -129,7 +225,7 @@ func (server *WebUIServer) UpdatePreset(name string, params []byte) error {
 	return server.metricsReaderWriter.UpdatePreset(name, p)
 }
 
-// GetPresets ret	urns the list of available presets
+// GetPresets returns the list of available presets
 func (server *WebUIServer) GetPresets() (res string, err error) {
 	var mr *metrics.Metrics
 	if mr, err = server.metricsReaderWriter.GetMetrics(); err != nil {
@@ -143,4 +239,89 @@ func (server *WebUIServer) GetPresets() (res string, err error) {
 // DeletePreset removes the preset from the configuration
 func (server *WebUIServer) DeletePreset(name string) error {
 	return server.metricsReaderWriter.DeletePreset(name)
+}
+
+// handlePresetItem handles individual preset operations using REST-compliant HTTP methods
+// and path parameters like /preset/{name}
+func (server *WebUIServer) handlePresetItem(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	if name == "" {
+		http.Error(w, "preset name is required", http.StatusBadRequest)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		server.getPresetByName(w, name)
+	case http.MethodPut:
+		server.updatePresetByName(w, r, name)
+	case http.MethodDelete:
+		server.deletePresetByName(w, name)
+	case http.MethodOptions:
+		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
+		w.WriteHeader(http.StatusOK)
+	default:
+		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// getPresetByName returns a specific preset by name
+func (server *WebUIServer) getPresetByName(w http.ResponseWriter, name string) {
+
+	var (
+		err error
+		mr  *metrics.Metrics
+	)
+
+	defer func() {
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}()
+
+	if mr, err = server.metricsReaderWriter.GetMetrics(); err != nil {
+		return
+	}
+
+	if preset, exists := mr.PresetDefs[name]; exists {
+		b, _ := jsoniter.ConfigFastest.Marshal(preset)
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write(b)
+		return
+	}
+
+	http.Error(w, "preset not found", http.StatusNotFound)
+}
+
+// updatePresetByName updates an existing preset using PUT semantics
+func (server *WebUIServer) updatePresetByName(w http.ResponseWriter, r *http.Request, name string) {
+	params, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	var p metrics.Preset
+	if err := jsoniter.ConfigFastest.Unmarshal(params, &p); err != nil {
+		http.Error(w, "invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	if err := server.metricsReaderWriter.UpdatePreset(name, p); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// deletePresetByName deletes a preset by name
+func (server *WebUIServer) deletePresetByName(w http.ResponseWriter, name string) {
+	if err := server.metricsReaderWriter.DeletePreset(name); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
