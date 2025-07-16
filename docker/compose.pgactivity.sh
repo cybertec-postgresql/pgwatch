@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+source ~/.bashrc
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
