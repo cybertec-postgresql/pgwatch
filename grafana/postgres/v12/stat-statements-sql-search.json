@@ -1,0 +1,337 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 5,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/time/"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "calls"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/queryid/"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "Go to Query Details dash",
+                    "url": "/d/single-query-details?var-dbname=$dbname&var-queryid=$__cell"
+                  }
+                ]
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/last_exec/"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dtdurations"
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  total_time, mean_time, calls as total_calls, seconds_since_last_exec, queryid, query\nFROM (\n\nSELECT\n  DISTINCT ON (queryid) queryid, time, total_time, mean_time, calls, query\nFROM (\n\nSELECT\n  time, (data->'total_time')::float as total_time, (data->'total_time')::float / (data->'calls')::int8 as mean_time, (data->'calls')::int8 as calls, tag_data->>'queryid' as queryid, tag_data->>'query' as query\nFROM stat_statements\nWHERE\n  dbname = '$dbname'\n  AND time > now() - '$calls_interval'::interval\n  AND tag_data->>'query' ~* '$sql_fragment'\n  AND CASE WHEN length('$sql_fragment') > 2 THEN true ELSE false END\n) x\nORDER BY queryid, time DESC, mean_time, calls, query\n\n) y\nJOIN LATERAL \n  (select (extract(epoch from now() - prev.time))::int8 as seconds_since_last_exec\n  from stat_statements prev\n  where dbname = '$dbname' and time > now() - '$calls_interval'::interval\n  and prev.time < y.time and (prev.data->'calls')::int8 != y.calls\n  order by time desc limit 1\n) z on true\n\nORDER BY total_time DESC LIMIT 100",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Matching Queries",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 4,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+        "mode": "markdown"
+      },
+      "pluginVersion": "12.0.0",
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    }
+  ],
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 41,
+  "tags": [
+    "pgwatch"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "demo",
+          "value": "demo"
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "pgwatch-metrics"
+        },
+        "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_statements' ORDER BY 1;",
+        "includeAll": false,
+        "name": "dbname",
+        "options": [],
+        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_statements' ORDER BY 1;",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "label": "SQL search fragment (case insensitive, 3 char min.)",
+        "name": "sql_fragment",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "type": "textbox"
+      },
+      {
+        "auto": false,
+        "auto_count": 30,
+        "auto_min": "10s",
+        "current": {
+          "text": "12h",
+          "value": "12h"
+        },
+        "label": "Having some executions within last",
+        "name": "calls_interval",
+        "options": [
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": true,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": false,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": false,
+            "text": "30d",
+            "value": "30d"
+          }
+        ],
+        "query": "30m,1h,6h,12h,1d,7d,14d,30d",
+        "refresh": 2,
+        "type": "interval"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-12h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Stat Statements SQL Search",
+  "uid": "stat-statements-sql-search",
+  "version": 1
+}

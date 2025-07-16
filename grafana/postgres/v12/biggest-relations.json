@@ -1,0 +1,393 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Depends on the \"Heatmap\" plugin. Based on latest \"table/index_stats\" data",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 16,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "custom": {
+            "separator": "."
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 3,
+      "maxDataPoints": 100,
+      "options": {
+        "sizeField": "total_relation_size_b",
+        "textField": "table_name",
+        "tiling": "treemapSquarify"
+      },
+      "pluginVersion": "2.1.1",
+      "targets": [
+        {
+          "alias": "$tag_table_name",
+          "datasource": {
+            "type": "postgres"
+          },
+          "format": "table",
+          "group": [],
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time,\n  (data->'total_relation_size_b')::int8 as total_relation_size_b,\n  tag_data->>'table_full_name'::text as table_name\nFROM\n  table_stats\nWHERE\n  time = (select max(time) from table_stats WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND dbname = '$dbname'\nORDER BY\n  2 DESC NULLS LAST\nLIMIT 100",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": [],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Biggest by total relation size",
+      "type": "marcusolsson-treemap-panel"
+    },
+    {
+      "datasource": {
+        "type": "postgres"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "custom": {
+            "separator": "."
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "id": 1,
+      "maxDataPoints": 100,
+      "options": {
+        "sizeField": "table_size_b",
+        "textField": "table_name",
+        "tiling": "treemapSquarify"
+      },
+      "pluginVersion": "2.1.1",
+      "targets": [
+        {
+          "alias": "$tag_table_name",
+          "datasource": {
+            "type": "postgres"
+          },
+          "format": "table",
+          "group": [],
+          "groupBy": [
+            {
+              "params": [
+                "1h"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "table_full_name"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "none"
+              ],
+              "type": "fill"
+            }
+          ],
+          "measurement": "table_stats",
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  0 as time,\n  (data->'table_size_b')::int8 + coalesce((data->'toast_size_b')::int8, 0) as table_size_b,\n  tag_data->>'table_full_name' as table_name\nFROM\n  table_stats\nWHERE\n  time = (select max(time) from table_stats WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND dbname = '$dbname'\nORDER BY\n  2 DESC NULLS LAST\nLIMIT 100",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "total_relation_size_b"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "dbname",
+              "operator": "=",
+              "value": "$dbname"
+            }
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Biggest tables (w/o indexes)",
+      "type": "marcusolsson-treemap-panel"
+    },
+    {
+      "datasource": {
+        "type": "postgres"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "custom": {
+            "separator": "."
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "id": 2,
+      "maxDataPoints": 100,
+      "options": {
+        "sizeField": "index_size_b",
+        "textField": "index_full_name",
+        "tiling": "treemapSquarify"
+      },
+      "pluginVersion": "2.1.1",
+      "targets": [
+        {
+          "alias": "$tag_index_name",
+          "datasource": {
+            "type": "postgres"
+          },
+          "format": "table",
+          "group": [],
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  0 as time,\n  (data->'index_size_b')::int8 as index_size_b,\n  tag_data->>'index_full_name' as index_full_name\nFROM\n  index_stats\nWHERE\n  time = (select max(time) from index_stats WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND dbname = '$dbname'\nORDER BY\n  2 DESC NULLS LAST\nLIMIT 100",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": [],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Biggest indexes",
+      "type": "marcusolsson-treemap-panel"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "id": 4,
+      "options": {
+        "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+        "mode": "markdown"
+      },
+      "pluginVersion": "8.5.20",
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    }
+  ],
+  "preload": false,
+  "refresh": "1m",
+  "schemaVersion": 41,
+  "tags": [
+    "pgwatch"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "demo",
+          "value": "demo"
+        },
+        "datasource": {
+          "type": "postgres"
+        },
+        "definition": "",
+        "includeAll": false,
+        "name": "dbname",
+        "options": [],
+        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'table_stats' ORDER BY 1;",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Biggest relations treemap",
+  "uid": "biggest-relations",
+  "version": 6
+}
