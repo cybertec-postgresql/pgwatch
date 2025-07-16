@@ -15,10 +15,10 @@
       }
     ]
   },
-  "description": "",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": 3,
   "links": [],
   "panels": [
     {
@@ -35,7 +35,8 @@
           "custom": {
             "align": "auto",
             "cellOptions": {
-              "type": "auto"
+              "type": "auto",
+              "wrapText": true
             },
             "inspect": false
           },
@@ -97,11 +98,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "short"
-              },
-              {
-                "id": "decimals",
-                "value": 2
+                "value": "string"
               },
               {
                 "id": "links",
@@ -109,12 +106,16 @@
                   {
                     "targetBlank": true,
                     "title": "Go to Query Details dash",
-                    "url": "/d/single-query-details?var-dbname=$dbname&var-queryid=$__cell"
+                    "url": "/d/single-query-details?var-dbname=$dbname&var-queryid=${__data.fields.queryid}&${__url_time_range}"
                   }
                 ]
               },
               {
                 "id": "custom.align"
+              },
+              {
+                "id": "custom.width",
+                "value": 100
               }
             ]
           },
@@ -132,6 +133,20 @@
                 "id": "custom.align"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "query"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
           }
         ]
       },
@@ -146,15 +161,22 @@
         "cellHeight": "sm",
         "footer": {
           "countRows": false,
+          "enablePagination": true,
           "fields": "",
           "reducer": [
             "sum"
           ],
           "show": false
         },
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "total_time"
+          }
+        ]
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "11.5.6",
       "targets": [
         {
           "datasource": {
@@ -188,20 +210,12 @@
         }
       ],
       "title": "Matching Queries",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {
-            "reducers": []
-          }
-        }
-      ],
       "type": "table"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 5,
@@ -219,21 +233,14 @@
         "content": "<h2>Brought to you by</h2><div style=\"padding: 25px;\"><a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\"></a></div>",
         "mode": "html"
       },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
-          },
-          "refId": "A"
-        }
-      ],
+      "pluginVersion": "11.5.6",
+      "title": "",
       "transparent": true,
       "type": "text"
     }
   ],
-  "schemaVersion": 39,
+  "preload": false,
+  "schemaVersion": 40,
   "tags": [
     "pgwatch"
   ],
@@ -241,7 +248,6 @@
     "list": [
       {
         "current": {
-          "selected": false,
           "text": "test",
           "value": "test"
         },
@@ -250,27 +256,19 @@
           "uid": "pgwatch-metrics"
         },
         "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_statements' ORDER BY 1;",
-        "hide": 0,
         "includeAll": false,
-        "multi": false,
         "name": "dbname",
         "options": [],
         "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_statements' ORDER BY 1;",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
+        "type": "query"
       },
       {
         "current": {
           "text": "",
           "value": ""
         },
-        "hide": 0,
         "label": "SQL search fragment (case insensitive, 3 char min.)",
         "name": "sql_fragment",
         "options": [
@@ -280,8 +278,7 @@
             "value": ""
           }
         ],
-        "query": "",
-        "skipUrlSync": false,
+        "query": "UPDATE pgbench_accounts",
         "type": "textbox"
       },
       {
@@ -289,11 +286,9 @@
         "auto_count": 30,
         "auto_min": "10s",
         "current": {
-          "selected": false,
           "text": "12h",
           "value": "12h"
         },
-        "hide": 0,
         "label": "Having some executions within last",
         "name": "calls_interval",
         "options": [
@@ -340,7 +335,6 @@
         ],
         "query": "30m,1h,6h,12h,1d,7d,14d,30d",
         "refresh": 2,
-        "skipUrlSync": false,
         "type": "interval"
       }
     ]
@@ -349,21 +343,7 @@
     "from": "now-12h",
     "to": "now"
   },
-  "timepicker": {
-    "hidden": false,
-    "refresh_intervals": [
-      "5s",
-      "10s",
-      "30s",
-      "1m",
-      "5m",
-      "15m",
-      "30m",
-      "1h",
-      "2h",
-      "1d"
-    ]
-  },
+  "timepicker": {},
   "timezone": "",
   "title": "Stat Statements SQL Search",
   "uid": "stat-statements-sql-search",

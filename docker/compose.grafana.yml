@@ -1,6 +1,6 @@
 services:
   grafana:
-    # to use latest Grafana v11, update the dashboards provisioning folder below
+    # to use latest Grafana v11 (grafana/grafana:11.5.6), update the dashboards provisioning folder below
     image: grafana/grafana:10.4.15
     container_name: grafana
     user: "0:0"
