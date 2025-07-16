@@ -175,7 +175,7 @@ func TestHandleMetrics_Options(t *testing.T) {
 	ts.handleMetrics(w, r)
 	resp := w.Result()
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "GET, POST, DELETE, OPTIONS", resp.Header.Get("Allow"))
 }
 
@@ -345,7 +345,7 @@ func TestHandlePreset_Options(t *testing.T) {
 	ts.handlePresets(w, r)
 	resp := w.Result()
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "GET, POST, PATCH, DELETE, OPTIONS", resp.Header.Get("Allow"))
 }
 
@@ -483,7 +483,7 @@ func TestHandleMetricItem_DELETE_Success(t *testing.T) {
 	ts.handleMetricItem(w, r)
 	resp := w.Result()
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "test-metric", deletedName)
 }
 
@@ -520,7 +520,7 @@ func TestHandleMetricItem_Options(t *testing.T) {
 	ts.handleMetricItem(w, r)
 	resp := w.Result()
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "GET, PUT, DELETE, OPTIONS", resp.Header.Get("Allow"))
 }
 
@@ -695,7 +695,7 @@ func TestHandlePresetItem_DELETE_Success(t *testing.T) {
 	ts.handlePresetItem(w, r)
 	resp := w.Result()
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "test-preset", deletedName)
 }
 
@@ -732,7 +732,7 @@ func TestHandlePresetItem_Options(t *testing.T) {
 	ts.handlePresetItem(w, r)
 	resp := w.Result()
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "GET, PUT, DELETE, OPTIONS", resp.Header.Get("Allow"))
 }
 

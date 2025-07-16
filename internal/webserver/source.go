@@ -95,7 +95,7 @@ func (server *WebUIServer) handleSourceItem(w http.ResponseWriter, r *http.Reque
 		server.deleteSourceByName(w, name)
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
 	default:
 		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -157,5 +157,5 @@ func (server *WebUIServer) deleteSourceByName(w http.ResponseWriter, name string
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusOK)
 }

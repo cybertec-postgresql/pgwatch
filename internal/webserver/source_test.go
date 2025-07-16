@@ -357,7 +357,7 @@ func TestHandleSourceItem_DELETE_Success(t *testing.T) {
 	ts.handleSourceItem(w, r)
 	resp := w.Result()
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "test-source", deletedName)
 }
 
@@ -378,7 +378,7 @@ func TestHandleSourceItem_DELETE_Idempotent(t *testing.T) {
 	ts.handleSourceItem(w, r)
 	resp := w.Result()
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "nonexistent", deletedName)
 }
 
@@ -415,7 +415,7 @@ func TestHandleSourceItem_Options(t *testing.T) {
 	ts.handleSourceItem(w, r)
 	resp := w.Result()
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "GET, PUT, DELETE, OPTIONS", resp.Header.Get("Allow"))
 }
 

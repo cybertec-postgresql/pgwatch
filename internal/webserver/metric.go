@@ -43,7 +43,7 @@ func (server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request)
 
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
 
 	default:
 		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")
@@ -95,7 +95,7 @@ func (server *WebUIServer) handleMetricItem(w http.ResponseWriter, r *http.Reque
 		server.deleteMetricByName(w, name)
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
 	default:
 		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -149,7 +149,7 @@ func (server *WebUIServer) deleteMetricByName(w http.ResponseWriter, name string
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request) {
@@ -186,7 +186,7 @@ func (server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
 
 	default:
 		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
@@ -238,7 +238,7 @@ func (server *WebUIServer) handlePresetItem(w http.ResponseWriter, r *http.Reque
 		server.deletePresetByName(w, name)
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
 	default:
 		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -292,5 +292,5 @@ func (server *WebUIServer) deletePresetByName(w http.ResponseWriter, name string
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusOK)
 }
