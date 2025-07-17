@@ -146,12 +146,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 				metricDefExists := false
 				var mvp metrics.Metric
 
-				if strings.HasPrefix(metric, recoPrefix) {
-					metric = recoMetricName
-					metricDefExists = true
-				} else {
-					mvp, metricDefExists = metricDefs.GetMetricDef(metric)
-				}
+				mvp, metricDefExists = metricDefs.GetMetricDef(metric)
 
 				dbMetric := monitoredSource.Name + dbMetricJoinStr + metric
 				_, cancelFuncExists := r.cancelFuncs[dbMetric]
@@ -483,8 +478,6 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 		case specialMetricChangeEvents:
 			r.CheckForPGObjectChangesAndStore(ctx, md.Name, md, hostState)
 			return nil, nil
-		case recoMetricName:
-			data, err = GetRecommendations(ctx, md)
 		case specialMetricInstanceUp:
 			data, err = r.GetInstanceUpMeasurement(ctx, md)
 		default:

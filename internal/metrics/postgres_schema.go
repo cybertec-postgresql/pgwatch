@@ -75,6 +75,81 @@ var migrations func() migrator.Option = func() migrator.Option {
 			},
 		},
 
+		&migrator.Migration{
+			Name: "00824 Refactor recommendations metrics to use metric_storage_name",
+			Func: func(ctx context.Context, tx pgx.Tx) error {
+				_, err := tx.Exec(ctx, `
+					-- 1. Update all reco_ metrics to use metric_storage_name = 'recommendations'
+					UPDATE pgwatch.metric 
+					SET storage_name = 'recommendations' 
+					WHERE name LIKE 'reco_%' AND COALESCE(storage_name, '') = '';
+
+					-- 2. Remove the placeholder 'recommendations' metric if it exists
+					DELETE FROM pgwatch.metric WHERE name = 'recommendations';
+
+					-- 3. Update 'exhaustive' and 'full' presets to replace 'recommendations' with individual reco_ metrics
+					UPDATE pgwatch.preset 
+					SET metrics = metrics - 'recommendations' || $reco_metrics${
+						"reco_add_index": 43200, 
+						"reco_default_public_schema": 50400, 
+						"reco_disabled_triggers": 57600, 
+						"reco_drop_index": 64800, 
+						"reco_nested_views": 72000, 
+						"reco_partial_index_candidates": 79200, 
+						"reco_sprocs_wo_search_path": 86400, 
+						"reco_superusers": 93600
+					}$reco_metrics$::jsonb
+					WHERE name IN ('exhaustive', 'full') AND metrics ? 'recommendations';
+
+					-- 4. Insert new 'recommendations' preset if it doesn't exist
+					INSERT INTO pgwatch.preset (name, description, metrics) 
+					VALUES ('recommendations', 'performance and security recommendations', 
+						$reco_metrics${
+							"reco_add_index": 43200, 
+							"reco_default_public_schema": 50400, 
+							"reco_disabled_triggers": 57600, 
+							"reco_drop_index": 64800, 
+							"reco_nested_views": 72000, 
+							"reco_partial_index_candidates": 79200, 
+							"reco_sprocs_wo_search_path": 86400, 
+							"reco_superusers": 93600
+						}$reco_metrics$::jsonb)
+					ON CONFLICT (name) DO NOTHING;
+
+					-- 5. Update source configs to replace 'recommendations' with individual reco_ metrics
+					UPDATE pgwatch.source 
+					SET config = config - 'recommendations' || 
+						$reco_metrics${
+							"reco_add_index": 43200, 
+							"reco_default_public_schema": 50400, 
+							"reco_disabled_triggers": 57600, 
+							"reco_drop_index": 64800, 
+							"reco_nested_views": 72000, 
+							"reco_partial_index_candidates": 79200, 
+							"reco_sprocs_wo_search_path": 86400, 
+							"reco_superusers": 93600
+						}$reco_metrics$::jsonb
+					WHERE config ? 'recommendations';
+
+					-- 6. Update source standby configs to replace 'recommendations' with individual reco_ metrics
+					UPDATE pgwatch.source 
+					SET config_standby = config_standby - 'recommendations' || 
+						$reco_metrics${
+							"reco_add_index": 43200, 
+							"reco_default_public_schema": 50400, 
+							"reco_disabled_triggers": 57600, 
+							"reco_drop_index": 64800, 
+							"reco_nested_views": 72000, 
+							"reco_partial_index_candidates": 79200, 
+							"reco_sprocs_wo_search_path": 86400, 
+							"reco_superusers": 93600
+						}$reco_metrics$::jsonb
+					WHERE config_standby ? 'recommendations';
+				`)
+				return err
+			},
+		},
+
 		// adding new migration here, update "pgwatch"."migration" in "postgres_schema.sql"
 		// and "dbapi" variable in main.go!
 
