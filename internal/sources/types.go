@@ -11,6 +11,7 @@ import (
 )
 
 var ErrSourceNotFound = errors.New("source not found")
+var ErrSourceExists = errors.New("source already exists")
 
 type Kind string
 
@@ -155,6 +156,7 @@ type Writer interface {
 	WriteSources(Sources) error
 	DeleteSource(string) error
 	UpdateSource(md Source) error
+	CreateSource(md Source) error
 }
 
 type ReaderWriter interface {

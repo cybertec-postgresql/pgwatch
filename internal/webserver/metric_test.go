@@ -17,9 +17,11 @@ import (
 type mockMetricsReaderWriter struct {
 	GetMetricsFunc   func() (*metrics.Metrics, error)
 	UpdateMetricFunc func(name string, m metrics.Metric) error
+	CreateMetricFunc func(name string, m metrics.Metric) error
 	DeleteMetricFunc func(name string) error
 	DeletePresetFunc func(name string) error
 	UpdatePresetFunc func(name string, preset metrics.Preset) error
+	CreatePresetFunc func(name string, preset metrics.Preset) error
 	WriteMetricsFunc func(metricDefs *metrics.Metrics) error
 }
 
@@ -29,6 +31,9 @@ func (m *mockMetricsReaderWriter) GetMetrics() (*metrics.Metrics, error) {
 func (m *mockMetricsReaderWriter) UpdateMetric(name string, metric metrics.Metric) error {
 	return m.UpdateMetricFunc(name, metric)
 }
+func (m *mockMetricsReaderWriter) CreateMetric(name string, metric metrics.Metric) error {
+	return m.CreateMetricFunc(name, metric)
+}
 func (m *mockMetricsReaderWriter) DeleteMetric(name string) error {
 	return m.DeleteMetricFunc(name)
 }
@@ -37,6 +42,9 @@ func (m *mockMetricsReaderWriter) DeletePreset(name string) error {
 }
 func (m *mockMetricsReaderWriter) UpdatePreset(name string, preset metrics.Preset) error {
 	return m.UpdatePresetFunc(name, preset)
+}
+func (m *mockMetricsReaderWriter) CreatePreset(name string, preset metrics.Preset) error {
+	return m.CreatePresetFunc(name, preset)
 }
 func (m *mockMetricsReaderWriter) WriteMetrics(metricDefs *metrics.Metrics) error {
 	return m.WriteMetricsFunc(metricDefs)
@@ -85,26 +93,30 @@ func TestHandleMetrics_GET_Fail(t *testing.T) {
 }
 
 func TestHandleMetrics_POST(t *testing.T) {
-	var updatedName string
-	var updatedMetric metrics.Metric
+	var createdName string
+	var createdMetric metrics.Metric
 	mock := &mockMetricsReaderWriter{
-		UpdateMetricFunc: func(name string, m metrics.Metric) error {
-			updatedName = name
-			updatedMetric = m
+		CreateMetricFunc: func(name string, m metrics.Metric) error {
+			createdName = name
+			createdMetric = m
 			return nil
 		},
 	}
 	ts := newTestMetricServer(mock)
-	m := metrics.Metric{Description: "bar"}
-	b, _ := jsoniter.ConfigFastest.Marshal(m)
-	r := httptest.NewRequest(http.MethodPost, "/metric?name=bar", bytes.NewReader(b))
+	
+	// Test the map-based JSON format expected by collection endpoint
+	metricData := map[string]metrics.Metric{
+		"bar": {Description: "bar"},
+	}
+	b, _ := jsoniter.ConfigFastest.Marshal(metricData)
+	r := httptest.NewRequest(http.MethodPost, "/metric", bytes.NewReader(b))
 	w := httptest.NewRecorder()
 	ts.handleMetrics(w, r)
 	resp := w.Result()
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, "bar", updatedName)
-	assert.Equal(t, m, updatedMetric)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	assert.Equal(t, "bar", createdName)
+	assert.Equal(t, metrics.Metric{Description: "bar"}, createdMetric)
 }
 
 type errorReader struct{}
@@ -115,12 +127,12 @@ func (e *errorReader) Read([]byte) (n int, err error) {
 
 func TestHandleMetrics_POST_ReaderFail(t *testing.T) {
 	mock := &mockMetricsReaderWriter{
-		UpdateMetricFunc: func(_ string, _ metrics.Metric) error {
+		CreateMetricFunc: func(_ string, _ metrics.Metric) error {
 			return nil
 		},
 	}
 	ts := newTestMetricServer(mock)
-	r := httptest.NewRequest(http.MethodPost, "/metric?name=bar", &errorReader{})
+	r := httptest.NewRequest(http.MethodPost, "/metric", &errorReader{})
 	w := httptest.NewRecorder()
 	ts.handleMetrics(w, r)
 	resp := w.Result()
@@ -132,14 +144,16 @@ func TestHandleMetrics_POST_ReaderFail(t *testing.T) {
 
 func TestHandleMetrics_POST_Fail(t *testing.T) {
 	mock := &mockMetricsReaderWriter{
-		UpdateMetricFunc: func(_ string, _ metrics.Metric) error {
+		CreateMetricFunc: func(_ string, _ metrics.Metric) error {
 			return errors.New("fail")
 		},
 	}
 	ts := newTestMetricServer(mock)
-	m := metrics.Metric{Description: "bar"}
-	b, _ := jsoniter.ConfigFastest.Marshal(m)
-	r := httptest.NewRequest(http.MethodPost, "/metric?name=bar", bytes.NewReader(b))
+	metricData := map[string]metrics.Metric{
+		"bar": {Description: "bar"},
+	}
+	b, _ := jsoniter.ConfigFastest.Marshal(metricData)
+	r := httptest.NewRequest(http.MethodPost, "/metric", bytes.NewReader(b))
 	w := httptest.NewRecorder()
 	ts.handleMetrics(w, r)
 	resp := w.Result()
@@ -149,22 +163,25 @@ func TestHandleMetrics_POST_Fail(t *testing.T) {
 	assert.Contains(t, string(body), "fail")
 }
 
-func TestHandleMetrics_DELETE(t *testing.T) {
-	var deletedName string
+func TestHandleMetrics_POST_Conflict(t *testing.T) {
 	mock := &mockMetricsReaderWriter{
-		DeleteMetricFunc: func(name string) error {
-			deletedName = name
-			return nil
+		CreateMetricFunc: func(_ string, _ metrics.Metric) error {
+			return metrics.ErrMetricExists
 		},
 	}
 	ts := newTestMetricServer(mock)
-	r := httptest.NewRequest(http.MethodDelete, "/metric?name=foo", nil)
+	metricData := map[string]metrics.Metric{
+		"bar": {Description: "bar"},
+	}
+	b, _ := jsoniter.ConfigFastest.Marshal(metricData)
+	r := httptest.NewRequest(http.MethodPost, "/metric", bytes.NewReader(b))
 	w := httptest.NewRecorder()
 	ts.handleMetrics(w, r)
 	resp := w.Result()
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, "foo", deletedName)
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
+	body, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(body), "metric already exists")
 }
 
 func TestHandleMetrics_Options(t *testing.T) {
@@ -176,7 +193,7 @@ func TestHandleMetrics_Options(t *testing.T) {
 	resp := w.Result()
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, "GET, POST, DELETE, OPTIONS", resp.Header.Get("Allow"))
+	assert.Equal(t, "GET, POST, OPTIONS", resp.Header.Get("Allow"))
 }
 
 func TestHandleMetrics_MethodNotAllowed(t *testing.T) {
@@ -188,7 +205,7 @@ func TestHandleMetrics_MethodNotAllowed(t *testing.T) {
 	resp := w.Result()
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-	assert.Equal(t, "GET, POST, DELETE, OPTIONS", resp.Header.Get("Allow"))
+	assert.Equal(t, "GET, POST, OPTIONS", resp.Header.Get("Allow"))
 }
 
 func TestGetMetrics_Error(t *testing.T) {
@@ -261,26 +278,28 @@ func TestHandlePreset_GET_Fail(t *testing.T) {
 }
 
 func TestHandlePreset_POST(t *testing.T) {
-	var updatedName string
-	var updatedPreset metrics.Preset
+	var createdName string
+	var createdPreset metrics.Preset
 	mock := &mockMetricsReaderWriter{
-		UpdatePresetFunc: func(name string, p metrics.Preset) error {
-			updatedName = name
-			updatedPreset = p
+		CreatePresetFunc: func(name string, p metrics.Preset) error {
+			createdName = name
+			createdPreset = p
 			return nil
 		},
 	}
 	ts := newTestMetricServer(mock)
 	p := metrics.Preset{Description: "bar"}
-	b, _ := jsoniter.ConfigFastest.Marshal(p)
-	r := httptest.NewRequest(http.MethodPost, "/preset?name=bar", bytes.NewReader(b))
+	// Use map format for collection endpoint
+	presetMap := map[string]metrics.Preset{"bar": p}
+	b, _ := jsoniter.ConfigFastest.Marshal(presetMap)
+	r := httptest.NewRequest(http.MethodPost, "/preset", bytes.NewReader(b))
 	w := httptest.NewRecorder()
 	ts.handlePresets(w, r)
 	resp := w.Result()
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, "bar", updatedName)
-	assert.Equal(t, p, updatedPreset)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	assert.Equal(t, "bar", createdName)
+	assert.Equal(t, p, createdPreset)
 }
 
 func TestHandlePreset_POST_ReaderFail(t *testing.T) {
@@ -302,14 +321,16 @@ func TestHandlePreset_POST_ReaderFail(t *testing.T) {
 
 func TestHandlePreset_POST_Fail(t *testing.T) {
 	mock := &mockMetricsReaderWriter{
-		UpdatePresetFunc: func(string, metrics.Preset) error {
+		CreatePresetFunc: func(string, metrics.Preset) error {
 			return errors.New("fail")
 		},
 	}
 	ts := newTestMetricServer(mock)
 	p := metrics.Preset{Description: "bar"}
-	b, _ := jsoniter.ConfigFastest.Marshal(p)
-	r := httptest.NewRequest(http.MethodPost, "/preset?name=bar", bytes.NewReader(b))
+	// Use map format for collection endpoint
+	presetMap := map[string]metrics.Preset{"bar": p}
+	b, _ := jsoniter.ConfigFastest.Marshal(presetMap)
+	r := httptest.NewRequest(http.MethodPost, "/preset", bytes.NewReader(b))
 	w := httptest.NewRecorder()
 	ts.handlePresets(w, r)
 	resp := w.Result()
@@ -317,24 +338,6 @@ func TestHandlePreset_POST_Fail(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 	body, _ := io.ReadAll(resp.Body)
 	assert.Contains(t, string(body), "fail")
-}
-
-func TestHandlePreset_DELETE(t *testing.T) {
-	var deletedName string
-	mock := &mockMetricsReaderWriter{
-		DeletePresetFunc: func(name string) error {
-			deletedName = name
-			return nil
-		},
-	}
-	ts := newTestMetricServer(mock)
-	r := httptest.NewRequest(http.MethodDelete, "/preset?name=foo", nil)
-	w := httptest.NewRecorder()
-	ts.handlePresets(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, "foo", deletedName)
 }
 
 func TestHandlePreset_Options(t *testing.T) {
@@ -346,7 +349,7 @@ func TestHandlePreset_Options(t *testing.T) {
 	resp := w.Result()
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, "GET, POST, PATCH, DELETE, OPTIONS", resp.Header.Get("Allow"))
+	assert.Equal(t, "GET, POST, OPTIONS", resp.Header.Get("Allow"))
 }
 
 func TestHandlePreset_MethodNotAllowed(t *testing.T) {
@@ -358,7 +361,7 @@ func TestHandlePreset_MethodNotAllowed(t *testing.T) {
 	resp := w.Result()
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-	assert.Equal(t, "GET, POST, PATCH, DELETE, OPTIONS", resp.Header.Get("Allow"))
+	assert.Equal(t, "GET, POST, OPTIONS", resp.Header.Get("Allow"))
 }
 
 func TestGetPresets_Error(t *testing.T) {
