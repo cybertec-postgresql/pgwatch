@@ -36,7 +36,11 @@ export default class MetricService {
   };
 
   public async addMetric(data: MetricRequestBody) {
-    return await this.api.post("/metric", data.Data, { params: { "name": data.Name } }).
+    // New REST-compliant format: map of metric name to metric data
+    const requestData = {
+      [data.Name]: data.Data
+    };
+    return await this.api.post("/metric", requestData).
       then(response => response);
   };
 

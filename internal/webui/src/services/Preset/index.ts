@@ -35,7 +35,11 @@ export default class PresetService {
   };
 
   public async addPreset(data: PresetRequestBody) {
-    return await this.api.post("/preset", data.Data, { params: { "name": data.Name } }).
+    // New REST-compliant format: map of preset name to preset data
+    const requestData = {
+      [data.Name]: data.Data
+    };
+    return await this.api.post("/preset", requestData).
       then(response => response);
   };
 

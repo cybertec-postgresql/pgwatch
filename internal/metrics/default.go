@@ -34,11 +34,19 @@ func (dmrw *defaultMetricReader) UpdateMetric(string, Metric) error {
 	return errors.ErrUnsupported
 }
 
+func (dmrw *defaultMetricReader) CreateMetric(string, Metric) error {
+	return errors.ErrUnsupported
+}
+
 func (dmrw *defaultMetricReader) DeletePreset(string) error {
 	return errors.ErrUnsupported
 }
 
 func (dmrw *defaultMetricReader) UpdatePreset(string, Preset) error {
+	return errors.ErrUnsupported
+}
+
+func (dmrw *defaultMetricReader) CreatePreset(string, Preset) error {
 	return errors.ErrUnsupported
 }
 

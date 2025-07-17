@@ -1,6 +1,7 @@
 package webserver
 
 import (
+	"errors"
 	"io"
 	"net/http"
 
@@ -12,13 +13,14 @@ import (
 func (server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	var (
 		err    error
+		status = http.StatusInternalServerError
 		params []byte
 		res    string
 	)
 
 	defer func() {
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), status)
 		}
 	}()
 
@@ -31,22 +33,28 @@ func (server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request)
 		_, err = w.Write([]byte(res))
 
 	case http.MethodPost:
-		// add new stored metric
+		// add new stored metric (REST-compliant: POST for creation only)
 		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		err = server.UpdateMetric(r.URL.Query().Get("name"), params)
-
-	case http.MethodDelete:
-		// delete stored metric
-		err = server.DeleteMetric(r.URL.Query().Get("name"))
+		// For collection endpoint POST, extract name from request body
+		// The individual endpoint PUT /metric/{name} should be used for updates
+		err = server.CreateMetric(params)
+		if err != nil {
+			if errors.Is(err, metrics.ErrMetricExists) {
+				status = http.StatusConflict
+				return
+			}
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
 
 	case http.MethodOptions:
-		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")
+		w.Header().Set("Allow", "GET, POST, OPTIONS")
 		w.WriteHeader(http.StatusOK)
 
 	default:
-		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")
+		w.Header().Set("Allow", "GET, POST, OPTIONS")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
@@ -70,6 +78,28 @@ func (server *WebUIServer) UpdateMetric(name string, params []byte) error {
 		return err
 	}
 	return server.metricsReaderWriter.UpdateMetric(name, m)
+}
+
+// CreateMetric creates new metrics (for REST collection endpoint)
+// Supports both single and bulk creation from a map of metric names to metric definitions
+func (server *WebUIServer) CreateMetric(params []byte) error {
+	// For collection endpoint, we expect the JSON to be a map with name as key and metric as value
+	var namedMetrics map[string]metrics.Metric
+	err := jsoniter.ConfigFastest.Unmarshal(params, &namedMetrics)
+	if err != nil {
+		return err
+	}
+	if len(namedMetrics) == 0 {
+		return metrics.ErrInvalidMetric
+	}
+
+	// Create all metrics, returning the first error encountered
+	for metricName, metric := range namedMetrics {
+		if err := server.metricsReaderWriter.CreateMetric(metricName, metric); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeleteMetric removes the metric from the configuration
@@ -176,13 +206,14 @@ func (server *WebUIServer) deleteMetricByName(w http.ResponseWriter, name string
 func (server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request) {
 	var (
 		err    error
+		status = http.StatusInternalServerError
 		params []byte
 		res    string
 	)
 
 	defer func() {
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), status)
 		}
 	}()
 
@@ -195,22 +226,25 @@ func (server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 		_, err = w.Write([]byte(res))
 
 	case http.MethodPost:
-		// add new stored Preset
+		// add new stored Preset (REST-compliant: POST for creation only)
 		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		err = server.UpdatePreset(r.URL.Query().Get("name"), params)
-
-	case http.MethodDelete:
-		// delete stored Preset
-		err = server.DeletePreset(r.URL.Query().Get("name"))
+		err = server.CreatePreset(params)
+		if err != nil {
+			if errors.Is(err, metrics.ErrPresetExists) {
+				status = http.StatusConflict
+			}
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
 
 	case http.MethodOptions:
-		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Allow", "GET, POST, OPTIONS")
 		w.WriteHeader(http.StatusOK)
 
 	default:
-		w.Header().Set("Allow", "GET, POST, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Allow", "GET, POST, OPTIONS")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
@@ -223,6 +257,28 @@ func (server *WebUIServer) UpdatePreset(name string, params []byte) error {
 		return err
 	}
 	return server.metricsReaderWriter.UpdatePreset(name, p)
+}
+
+// CreatePreset creates new presets (for REST collection endpoint)
+// Supports both single and bulk creation
+func (server *WebUIServer) CreatePreset(params []byte) error {
+	// We expect the JSON to be a map with name as key and preset as value
+	var namedPresets map[string]metrics.Preset
+	err := jsoniter.ConfigFastest.Unmarshal(params, &namedPresets)
+	if err != nil {
+		return err
+	}
+	if len(namedPresets) == 0 {
+		return metrics.ErrInvalidPreset
+	}
+
+	// Create all presets, returning the first error encountered
+	for presetName, preset := range namedPresets {
+		if err := server.metricsReaderWriter.CreatePreset(presetName, preset); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // GetPresets returns the list of available presets

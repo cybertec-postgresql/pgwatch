@@ -1,15 +1,12 @@
 package metrics
 
 import (
-	"context"
 	"testing"
 
 	migrator "github.com/cybertec-postgresql/pgx-migrator"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 )
-
-var ctx = context.Background()
 
 func TestMigrate(t *testing.T) {
 	a := assert.New(t)

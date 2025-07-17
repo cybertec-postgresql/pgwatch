@@ -180,3 +180,60 @@ func TestYAMLUpdateDatabase(t *testing.T) {
 		a.Error(err)
 	})
 }
+
+func TestYAMLCreateSource(t *testing.T) {
+	a := assert.New(t)
+
+	t.Run("happy_path", func(*testing.T) {
+		data, err := os.ReadFile(sampleFile)
+		a.NoError(err)
+		tmpSampleFile := filepath.Join(t.TempDir(), "sample.sources.yaml")
+		err = os.WriteFile(tmpSampleFile, data, 0644)
+		a.NoError(err)
+		defer os.Remove(tmpSampleFile)
+
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpSampleFile)
+		a.NoError(err)
+
+		// Create a new source
+		md := sources.Source{
+			Name:    "new_source",
+			ConnStr: "postgresql://localhost/new_db",
+			Kind:    sources.SourcePostgres,
+		}
+		err = yamlrw.CreateSource(md)
+		a.NoError(err)
+
+		// Verify it was created
+		dbs, err := yamlrw.GetSources()
+		a.NoError(err)
+		a.Len(dbs, sampleEntriesNumber+1)
+
+		// Try to create the same source again - should fail
+		err = yamlrw.CreateSource(md)
+		a.Error(err)
+		a.ErrorIs(sources.ErrSourceExists, err)
+	})
+
+	t.Run("duplicate_source", func(*testing.T) {
+		data, err := os.ReadFile(sampleFile)
+		a.NoError(err)
+		tmpSampleFile := filepath.Join(t.TempDir(), "sample.sources.yaml")
+		err = os.WriteFile(tmpSampleFile, data, 0644)
+		a.NoError(err)
+		defer os.Remove(tmpSampleFile)
+
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpSampleFile)
+		a.NoError(err)
+
+		// Try to create a source that already exists
+		md := sources.Source{
+			Name:    "test1", // This name already exists in sample file
+			ConnStr: "postgresql://localhost/test1",
+			Kind:    sources.SourcePostgres,
+		}
+		err = yamlrw.CreateSource(md)
+		a.Error(err)
+		a.ErrorIs(sources.ErrSourceExists, err)
+	})
+}

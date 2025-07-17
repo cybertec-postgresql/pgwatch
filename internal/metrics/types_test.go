@@ -1,11 +1,15 @@
 package metrics
 
 import (
+	"context"
 	"testing"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/stretchr/testify/assert"
 )
+
+var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
 
 func TestGetSQL(t *testing.T) {
 	m := Metric{}
