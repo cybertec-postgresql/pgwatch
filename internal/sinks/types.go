@@ -2,7 +2,9 @@ package sinks
 
 import (
 	"context"
-	"net/rpc"
+
+	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
+	"google.golang.org/grpc"
 )
 
 // RPCWriter is a sink that sends metric measurements to a remote server using the RPC protocol.
@@ -11,7 +13,8 @@ import (
 // or an analytics system.
 type RPCWriter struct {
 	ctx     context.Context
-	client  *rpc.Client
+	conn    *grpc.ClientConn
+	client  pb.ReceiverClient
 }
 
 type SyncOp int
