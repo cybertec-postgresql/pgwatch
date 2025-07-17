@@ -379,7 +379,7 @@ func (r *Reaper) LoadSources() (err error) {
 		return err
 	}
 	srcs = slices.DeleteFunc(srcs, func(s sources.Source) bool {
-		return !s.IsEnabled || !s.IsDefaultGroup() && !slices.Contains(r.Sources.Groups, s.Group)
+		return !s.IsEnabled || len(r.Sources.Groups) > 0 && !s.IsDefaultGroup() && !slices.Contains(r.Sources.Groups, s.Group)
 	})
 	if newSrcs, err = srcs.ResolveDatabases(); err != nil {
 		return err

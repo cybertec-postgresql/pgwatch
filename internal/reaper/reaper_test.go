@@ -77,13 +77,20 @@ func TestReaper_LoadSources(t *testing.T) {
 		source2 := sources.Source{Name: "Source 2", IsEnabled: true, Kind: sources.SourcePostgres, Group: "group1"}
 		source3 := sources.Source{Name: "Source 3", IsEnabled: true, Kind: sources.SourcePostgres, Group: "group2"}
 		source4 := sources.Source{Name: "Source 4", IsEnabled: true, Kind: sources.SourcePostgres, Group: "default"} // Default group should not filter
-		reader := &mockReader{toReturn: sources.Sources{source1, source2, source3, source4}}
-		r := NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader, Sources: sources.CmdOpts{Groups: []string{"group1", "group2"}}})
-		assert.NoError(t, r.LoadSources())
-		assert.Equal(t, 4, len(r.monitoredSources), "Expected three monitored sources after load")
+		newReader := func() sources.ReaderWriter {
+			return &mockReader{toReturn: sources.Sources{source1, source2, source3, source4}}
+		}
 
-		r.Sources.Groups = []string{"group1"}
+		r := NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: newReader(), Sources: sources.CmdOpts{Groups: []string{"group1", "group2"}}})
+		assert.NoError(t, r.LoadSources())
+		assert.Equal(t, 4, len(r.monitoredSources), "Expected four monitored sources after load")
+
+		r = NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: newReader(), Sources: sources.CmdOpts{Groups: []string{"group1"}}})
 		assert.NoError(t, r.LoadSources())
 		assert.Equal(t, 3, len(r.monitoredSources), "Expected three monitored sources after group filtering")
+
+		r = NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: newReader()})
+		assert.NoError(t, r.LoadSources())
+		assert.Equal(t, 4, len(r.monitoredSources), "Expected four monitored sources after resetting groups")
 	})
 }
