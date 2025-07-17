@@ -12,6 +12,16 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+// RPCWriter sends metric measurements to a remote server using gRPC.
+// Remote servers should make use the .proto file under api/pb/ to integrate with it.
+// It's up to the implementer to define the behavior of the server. 
+// It can be a simple logger, external storage, alerting system, or an analytics system.
+type RPCWriter struct {
+	ctx     context.Context
+	conn    *grpc.ClientConn
+	client  pb.ReceiverClient
+}
+
 func NewRPCWriter(ctx context.Context, host string) (*RPCWriter, error) {
 	conn, err := grpc.NewClient(host, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
