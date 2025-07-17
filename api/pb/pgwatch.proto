@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+import "google/protobuf/struct.proto";
+option go_package = ".;pb";
+
+service Receiver {
+    rpc UpdateMeasurements(MeasurementEnvelope) returns (Reply);
+    rpc SyncMetric(SyncReq) returns (Reply);
+}
+
+message Reply {
+    string logmsg = 1;
+}
+
+message MeasurementEnvelope {
+    string DBName = 1;
+	string MetricName = 3;
+    map<string, string> CustomTags = 4;
+	repeated google.protobuf.Struct Data = 5;
+}
+
+message SyncReq {
+    string DBName = 1;
+	string MetricName = 2;
+	SyncOp Operation = 3;
+}
+
+enum SyncOp {
+    AddOp = 0;
+    DeleteOp = 1;
+    InvalidOp = 2;
+}
