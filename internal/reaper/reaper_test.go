@@ -29,6 +29,7 @@ func (m *mockReader) GetSources() (sources.Sources, error) {
 func (m *mockReader) WriteSources(sources.Sources) error { return nil }
 func (m *mockReader) DeleteSource(string) error          { return nil }
 func (m *mockReader) UpdateSource(sources.Source) error  { return nil }
+func (m *mockReader) CreateSource(sources.Source) error  { return nil }
 
 func TestReaper_LoadSources(t *testing.T) {
 	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())

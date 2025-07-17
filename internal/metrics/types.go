@@ -167,6 +167,8 @@ type Writer interface {
 	DeletePreset(presetName string) error
 	UpdateMetric(metricName string, metric Metric) error
 	UpdatePreset(presetName string, preset Preset) error
+	CreateMetric(metricName string, metric Metric) error
+	CreatePreset(presetName string, preset Preset) error
 }
 
 type Migrator interface {

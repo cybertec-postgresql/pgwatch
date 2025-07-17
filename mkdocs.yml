@@ -69,6 +69,7 @@ nav:
     - Migration from pgwatch v2: howto/migrate_v2_to_v3.md
   - Reference:
     - CLI & Environment Variables: reference/cli_env.md
+    - REST API: reference/rest.md
     - Advanced Features: reference/advanced_features.md
     - Metric Definitions: reference/metric_definitions.md
     - Docker Variables: reference/env_variables.md

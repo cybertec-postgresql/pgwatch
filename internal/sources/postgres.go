@@ -5,9 +5,11 @@ package sources
 
 import (
 	"context"
+	"errors"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	pgx "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func NewPostgresSourcesReaderWriter(ctx context.Context, connstr string) (ReaderWriter, error) {
@@ -41,14 +43,14 @@ func (r *dbSourcesReaderWriter) WriteSources(dbs Sources) error {
 	}
 	defer func() { _ = tx.Rollback(context.Background()) }()
 	for _, md := range dbs {
-		if err = r.updateDatabase(tx, md); err != nil {
+		if err = r.updateSource(tx, md); err != nil {
 			return err
 		}
 	}
 	return tx.Commit(context.Background())
 }
 
-func (r *dbSourcesReaderWriter) updateDatabase(conn db.PgxIface, md Source) (err error) {
+func (r *dbSourcesReaderWriter) updateSource(conn db.PgxIface, md Source) (err error) {
 	m := db.MarshallParamToJSONB
 	sql := `insert into pgwatch.source(
 	name, 
@@ -89,8 +91,46 @@ on conflict (name) do update set
 	return err
 }
 
+func (r *dbSourcesReaderWriter) createSource(conn db.PgxIface, md Source) (err error) {
+	m := db.MarshallParamToJSONB
+	sql := `insert into pgwatch.source(
+	name, 
+	"group", 
+	dbtype, 
+	connstr, 
+	config, 
+	config_standby, 
+	preset_config, 
+	preset_config_standby, 
+	include_pattern, 
+	exclude_pattern, 
+	custom_tags, 
+	host_config, 
+	only_if_master,
+	is_enabled) 
+values 
+	($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), $9, $10, $11, $12, $13, $14)`
+	_, err = conn.Exec(context.Background(), sql,
+		md.Name, md.Group, md.Kind,
+		md.ConnStr, m(md.Metrics), m(md.MetricsStandby), md.PresetMetrics, md.PresetMetricsStandby,
+		md.IncludePattern, md.ExcludePattern, m(md.CustomTags),
+		m(md.HostConfig), md.OnlyIfMaster, md.IsEnabled)
+	if err != nil {
+		// Check for unique constraint violation using PostgreSQL error code
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.SQLState() == "23505" {
+			return ErrSourceExists
+		}
+	}
+	return err
+}
+
 func (r *dbSourcesReaderWriter) UpdateSource(md Source) error {
-	return r.updateDatabase(r.configDb, md)
+	return r.updateSource(r.configDb, md)
+}
+
+func (r *dbSourcesReaderWriter) CreateSource(md Source) error {
+	return r.createSource(r.configDb, md)
 }
 
 func (r *dbSourcesReaderWriter) DeleteSource(name string) error {

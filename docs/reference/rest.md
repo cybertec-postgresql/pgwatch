@@ -26,7 +26,7 @@ TOKEN=$(curl -s -X POST http://localhost:8080/login \
   -d '{"user": "your_username", "password": "your_password"}')
 
 # Use in requests (note: pgwatch uses 'Token' header, not 'Authorization: Bearer')
-curl -H "Token: $TOKEN" http://localhost:8080/source
+$ curl -H "Token: $TOKEN" http://localhost:8080/source
 ```
 
 ## Health Check APIs
@@ -47,11 +47,52 @@ Check if the service is ready to serve requests (no authentication required).
 
 ```bash
 $ curl -X GET http://localhost:8080/readiness
-
-{"status": "ok"}
+ 
 ```
 
 **Response:** `{"status": "ok"}` if service is ready
+
+## API Patterns
+
+pgwatch uses different request patterns for different resource types:
+
+### Collection vs Item Endpoints
+
+- **Collection endpoints** (`/metric`, `/preset`): Used for listing all resources with GET and creating new resources with POST
+- **Item endpoints** (`/metric/{name}`, `/preset/{name}`): Used for reading, updating, or deleting specific resources
+
+### Request Body Formats
+
+**Sources** use direct object format:
+
+```json
+{
+  "Name": "my-postgres",
+  "Kind": "postgres",
+  "ConnStr": "postgresql://...",
+  "IsEnabled": true
+}
+```
+
+**Metrics and Presets** use collection format for creation (POST to collection endpoint):
+
+```json
+{
+  "resource_name": {
+    "field1": "value1",
+    "field2": "value2"
+  }
+}
+```
+
+But use direct object format for updates (PUT to item endpoint):
+
+```json
+{
+  "field1": "updated_value1",
+  "field2": "updated_value2"
+}
+```
 
 ## Sources API
 
@@ -66,9 +107,9 @@ $ curl -H "Token: $TOKEN" -X GET http://localhost:8080/source
 
 **Response:** JSON array of source objects
 
-### Create or update source
+### Create source
 
-Add a new monitoring source or update an existing one.
+Add a new monitoring source.
 
 ```bash
 $ curl -X POST http://localhost:8080/source \
@@ -146,20 +187,43 @@ $ curl -H "Token: $TOKEN" -X GET http://localhost:8080/metric
 
 **Response:** JSON array of metric objects
 
-### Create or update metric
+### Create metric
 
-Add a new metric definition or update an existing one.
+Add a new metric definition. POST to the collection endpoint expects a map with metric name as key.
+
+!!! Note
+    You can create multiple metrics in a single request by providing
+    multiple key-value pairs.
 
 ```bash
 $ curl -X POST http://localhost:8080/metric \
   -H "Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "custom_metric",
-    "SQLs": {
+    "custom_metric": {
+      "SQLs": {
         "11": "SELECT count(*) as active_connections FROM pg_stat_activity"
-        },
-    "Description": "Number of active connections"
+      },
+      "Description": "Number of active connections"
+    }
+  }'
+```
+
+**Bulk creation example:**
+
+```bash
+$ curl -X POST http://localhost:8080/metric \
+  -H "Token: $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metric_one": {
+      "SQLs": {"11": "SELECT 1"},
+      "Description": "First metric"
+    },
+    "metric_two": {
+      "SQLs": {"11": "SELECT 2"},
+      "Description": "Second metric"
+    }
   }'
 ```
 
@@ -176,16 +240,15 @@ $ curl -H "Token: $TOKEN" -X GET http://localhost:8080/metric/custom_metric
 
 ### Update specific metric
 
-Update an existing metric definition using PUT method.
+Update an existing metric definition using PUT method on the item endpoint.
 
 ```bash
 $ curl -X PUT http://localhost:8080/metric/custom_metric \
   -H "Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "Name": "custom_metric",
     "SQLs": { 
-        "11": "SELECT count(*) as connections FROM pg_stat_activity WHERE state = '\''active'\''"
+        "11": "SELECT count(*) as connections FROM pg_stat_activity WHERE state = $$active$$"
     },
     "Description": "Number of active connections (updated)"
   }'
@@ -196,7 +259,8 @@ $ curl -X PUT http://localhost:8080/metric/custom_metric \
 Remove a metric definition.
 
 ```bash
-curl -H "Token: $TOKEN" -X DELETE http://localhost:8080/metric/custom_metric
+$ curl -H "Token: $TOKEN" -X DELETE http://localhost:8080/metric/custom_metric
+ 
 ```
 
 ## Presets API
@@ -206,27 +270,32 @@ curl -H "Token: $TOKEN" -X DELETE http://localhost:8080/metric/custom_metric
 Get all available metric presets.
 
 ```bash
-$ curl -X GET http://localhost:8080/preset \
-  -H "Token: $TOKEN"
+$ curl -H "Token: $TOKEN" -X GET http://localhost:8080/preset
+  
 ```
 
 **Response:** JSON array of preset objects
 
-### Create or update preset
+### Create preset
 
-Add a new preset or update an existing one.
+Add a new preset. POST to the collection endpoint expects a map with preset name as key.
+
+!!! Note
+    You can create multiple presets in a single request
+    by providing multiple key-value pairs.
 
 ```bash
 $ curl -X POST http://localhost:8080/preset \
   -H "Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "Name": "custom_preset",
-    "Description": "Custom monitoring preset",
-    "Metrics": {
-      "db_stats": 60,
-      "table_stats": 300,
-      "custom_metric": 120
+    "custom_preset": {
+      "Description": "Custom monitoring preset",
+      "Metrics": {
+        "db_stats": 60,
+        "table_stats": 300,
+        "custom_metric": 120
+      }
     }
   }'
 ```
@@ -236,22 +305,21 @@ $ curl -X POST http://localhost:8080/preset \
 Retrieve a specific preset by name.
 
 ```bash
-$ curl -X GET http://localhost:8080/preset/custom_preset \
-  -H "Token: $TOKEN"
+$ curl -H "Token: $TOKEN" -X GET http://localhost:8080/preset/custom_preset
+ 
 ```
 
 **Response:** JSON object with preset definition
 
 ### Update specific preset
 
-Update an existing preset using PUT method.
+Update an existing preset using PUT method on the item endpoint.
 
 ```bash
 $ curl -X PUT http://localhost:8080/preset/custom_preset \
   -H "Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "Name": "custom_preset",
     "Description": "Updated custom monitoring preset",
     "Metrics": {
       "db_stats": 30,
@@ -266,9 +334,20 @@ $ curl -X PUT http://localhost:8080/preset/custom_preset \
 Remove a preset definition.
 
 ```bash
-$ curl -X DELETE http://localhost:8080/preset/custom_preset \
-  -H "Token: $TOKEN"
+$ curl -H "Token: $TOKEN" -X DELETE http://localhost:8080/preset/custom_preset
+ 
 ```
+
+## Options Requests
+
+All resource endpoints support OPTIONS requests to discover allowed methods:
+
+```bash
+$ curl -H "Token: $TOKEN" -X OPTIONS http://localhost:8080/source/my-postgres
+ 
+```
+
+**Response:** `Allow` header with supported methods (e.g., `GET, PUT, DELETE, OPTIONS`)
 
 ## HTTP Status Codes
 
@@ -279,14 +358,3 @@ $ curl -X DELETE http://localhost:8080/preset/custom_preset \
 - `404 Not Found` - Resource not found
 - `405 Method Not Allowed` - HTTP method not supported for endpoint
 - `500 Internal Server Error` - Server error
-
-## Options Requests
-
-All resource endpoints support OPTIONS requests to discover allowed methods:
-
-```bash
-$ curl -X OPTIONS http://localhost:8080/source/my-postgres \
-  -H "Token: $TOKEN"
-```
-
-**Response:** `Allow` header with supported methods (e.g., `GET, PUT, DELETE, OPTIONS`)

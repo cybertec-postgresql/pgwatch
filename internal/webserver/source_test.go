@@ -17,6 +17,7 @@ import (
 type mockSourcesReaderWriter struct {
 	GetSourcesFunc   func() (sources.Sources, error)
 	UpdateSourceFunc func(md sources.Source) error
+	CreateSourceFunc func(md sources.Source) error
 	DeleteSourceFunc func(name string) error
 	WriteSourcesFunc func(sources.Sources) error
 }
@@ -26,6 +27,9 @@ func (m *mockSourcesReaderWriter) GetSources() (sources.Sources, error) {
 }
 func (m *mockSourcesReaderWriter) UpdateSource(md sources.Source) error {
 	return m.UpdateSourceFunc(md)
+}
+func (m *mockSourcesReaderWriter) CreateSource(md sources.Source) error {
+	return m.CreateSourceFunc(md)
 }
 func (m *mockSourcesReaderWriter) DeleteSource(name string) error {
 	return m.DeleteSourceFunc(name)
@@ -40,138 +44,156 @@ func newTestSourceServer(mrw *mockSourcesReaderWriter) *WebUIServer {
 	}
 }
 
-func TestHandleSources_GET(t *testing.T) {
-	mock := &mockSourcesReaderWriter{
-		GetSourcesFunc: func() (sources.Sources, error) {
-			return sources.Sources{{Name: "foo"}}, nil
-		},
-	}
-	ts := newTestSourceServer(mock)
-	r := httptest.NewRequest(http.MethodGet, "/source", nil)
-	w := httptest.NewRecorder()
-	ts.handleSources(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	var got []sources.Source
-	assert.NoError(t, jsoniter.ConfigFastest.Unmarshal(body, &got))
-	assert.Equal(t, "foo", got[0].Name)
-}
+func TestHandleSources(t *testing.T) {
+	t.Run("GET", func(t *testing.T) {
+		t.Run("Success", func(t *testing.T) {
+			mock := &mockSourcesReaderWriter{
+				GetSourcesFunc: func() (sources.Sources, error) {
+					return sources.Sources{{Name: "foo"}}, nil
+				},
+			}
+			ts := newTestSourceServer(mock)
+			r := httptest.NewRequest(http.MethodGet, "/source", nil)
+			w := httptest.NewRecorder()
+			ts.handleSources(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			body, _ := io.ReadAll(resp.Body)
+			var got []sources.Source
+			assert.NoError(t, jsoniter.ConfigFastest.Unmarshal(body, &got))
+			assert.Equal(t, "foo", got[0].Name)
+		})
 
-func TestHandleSources_GET_Fail(t *testing.T) {
-	mock := &mockSourcesReaderWriter{
-		GetSourcesFunc: func() (sources.Sources, error) {
-			return nil, errors.New("fail")
-		},
-	}
-	ts := newTestSourceServer(mock)
-	r := httptest.NewRequest(http.MethodGet, "/source", nil)
-	w := httptest.NewRecorder()
-	ts.handleSources(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "fail")
-}
+		t.Run("Failure", func(t *testing.T) {
+			mock := &mockSourcesReaderWriter{
+				GetSourcesFunc: func() (sources.Sources, error) {
+					return nil, errors.New("fail")
+				},
+			}
+			ts := newTestSourceServer(mock)
+			r := httptest.NewRequest(http.MethodGet, "/source", nil)
+			w := httptest.NewRecorder()
+			ts.handleSources(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+			body, _ := io.ReadAll(resp.Body)
+			assert.Contains(t, string(body), "fail")
+		})
+	})
 
-func TestHandleSources_POST(t *testing.T) {
-	var updatedSource sources.Source
-	mock := &mockSourcesReaderWriter{
-		UpdateSourceFunc: func(md sources.Source) error {
-			updatedSource = md
-			return nil
-		},
-	}
-	ts := newTestSourceServer(mock)
-	src := sources.Source{Name: "bar"}
-	b, _ := jsoniter.ConfigFastest.Marshal(src)
-	r := httptest.NewRequest(http.MethodPost, "/source", bytes.NewReader(b))
-	w := httptest.NewRecorder()
-	ts.handleSources(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, src, updatedSource)
-}
+	t.Run("POST", func(t *testing.T) {
+		t.Run("Success", func(t *testing.T) {
+			var createdSource sources.Source
+			mock := &mockSourcesReaderWriter{
+				CreateSourceFunc: func(md sources.Source) error {
+					createdSource = md
+					return nil
+				},
+			}
+			ts := newTestSourceServer(mock)
+			src := sources.Source{Name: "bar"}
+			b, _ := jsoniter.ConfigFastest.Marshal(src)
+			r := httptest.NewRequest(http.MethodPost, "/source", bytes.NewReader(b))
+			w := httptest.NewRecorder()
+			ts.handleSources(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusCreated, resp.StatusCode)
+			assert.Equal(t, src, createdSource)
+		})
 
-func TestHandleSources_POST_ReaderFail(t *testing.T) {
-	mock := &mockSourcesReaderWriter{
-		UpdateSourceFunc: func(sources.Source) error {
-			return nil
-		},
-	}
-	ts := newTestSourceServer(mock)
-	r := httptest.NewRequest(http.MethodPost, "/Source?name=bar", &errorReader{})
-	w := httptest.NewRecorder()
-	ts.handleSources(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "mock read error")
-}
+		t.Run("ReaderFailure", func(t *testing.T) {
+			mock := &mockSourcesReaderWriter{
+				CreateSourceFunc: func(sources.Source) error {
+					return nil
+				},
+			}
+			ts := newTestSourceServer(mock)
+			r := httptest.NewRequest(http.MethodPost, "/Source?name=bar", &errorReader{})
+			w := httptest.NewRecorder()
+			ts.handleSources(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+			body, _ := io.ReadAll(resp.Body)
+			assert.Contains(t, string(body), "mock read error")
+		})
 
-func TestHandleSources_POST_Fail(t *testing.T) {
-	mock := &mockSourcesReaderWriter{
-		UpdateSourceFunc: func(sources.Source) error {
-			return errors.New("fail")
-		},
-	}
-	ts := newTestSourceServer(mock)
-	src := sources.Source{Name: "bar"}
-	b, _ := jsoniter.ConfigFastest.Marshal(src)
-	r := httptest.NewRequest(http.MethodPost, "/source", bytes.NewReader(b))
-	w := httptest.NewRecorder()
-	ts.handleSources(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "fail")
-}
+		t.Run("Conflict", func(t *testing.T) {
+			mock := &mockSourcesReaderWriter{
+				CreateSourceFunc: func(sources.Source) error {
+					return sources.ErrSourceExists
+				},
+			}
+			ts := newTestSourceServer(mock)
+			src := sources.Source{Name: "bar"}
+			b, _ := jsoniter.ConfigFastest.Marshal(src)
+			r := httptest.NewRequest(http.MethodPost, "/source", bytes.NewReader(b))
+			w := httptest.NewRecorder()
+			ts.handleSources(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusConflict, resp.StatusCode)
+			body, _ := io.ReadAll(resp.Body)
+			assert.Contains(t, string(body), "source already exists")
+		})
 
-func TestHandleSources_DELETE(t *testing.T) {
-	var deletedName string
-	mock := &mockSourcesReaderWriter{
-		DeleteSourceFunc: func(name string) error {
-			deletedName = name
-			return nil
-		},
-	}
-	ts := newTestSourceServer(mock)
-	r := httptest.NewRequest(http.MethodDelete, "/source?name=foo", nil)
-	w := httptest.NewRecorder()
-	ts.handleSources(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, "foo", deletedName)
-}
+		t.Run("CreateFailure", func(t *testing.T) {
+			mock := &mockSourcesReaderWriter{
+				CreateSourceFunc: func(sources.Source) error {
+					return errors.New("fail")
+				},
+			}
+			ts := newTestSourceServer(mock)
+			src := sources.Source{Name: "bar"}
+			b, _ := jsoniter.ConfigFastest.Marshal(src)
+			r := httptest.NewRequest(http.MethodPost, "/source", bytes.NewReader(b))
+			w := httptest.NewRecorder()
+			ts.handleSources(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+			body, _ := io.ReadAll(resp.Body)
+			assert.Contains(t, string(body), "fail")
+		})
 
-func TestHandleSources_Options(t *testing.T) {
-	mock := &mockSourcesReaderWriter{}
-	ts := newTestSourceServer(mock)
-	r := httptest.NewRequest(http.MethodOptions, "/source", nil)
-	w := httptest.NewRecorder()
-	ts.handleSources(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-	assert.Equal(t, "GET, POST, DELETE, OPTIONS", resp.Header.Get("Allow"))
-}
+		t.Run("ReadAllError", func(t *testing.T) {
+			mock := &mockSourcesReaderWriter{}
+			ts := newTestSourceServer(mock)
+			r := httptest.NewRequest(http.MethodPost, "/source", &errorReader{})
+			w := httptest.NewRecorder()
+			ts.handleSources(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		})
+	})
 
-func TestHandleSources_MethodNotAllowed(t *testing.T) {
-	mock := &mockSourcesReaderWriter{}
-	ts := newTestSourceServer(mock)
-	r := httptest.NewRequest(http.MethodPut, "/source", nil)
-	w := httptest.NewRecorder()
-	ts.handleSources(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-	assert.Equal(t, "GET, POST, DELETE, OPTIONS", resp.Header.Get("Allow"))
+	t.Run("OPTIONS", func(t *testing.T) {
+		mock := &mockSourcesReaderWriter{}
+		ts := newTestSourceServer(mock)
+		r := httptest.NewRequest(http.MethodOptions, "/source", nil)
+		w := httptest.NewRecorder()
+		ts.handleSources(w, r)
+		resp := w.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, "GET, POST, OPTIONS", resp.Header.Get("Allow"))
+	})
+
+	t.Run("MethodNotAllowed", func(t *testing.T) {
+		mock := &mockSourcesReaderWriter{}
+		ts := newTestSourceServer(mock)
+		r := httptest.NewRequest(http.MethodPut, "/source", nil)
+		w := httptest.NewRecorder()
+		ts.handleSources(w, r)
+		resp := w.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+		assert.Equal(t, "GET, POST, OPTIONS", resp.Header.Get("Allow"))
+	})
 }
 
 func TestGetSources_Error(t *testing.T) {
@@ -207,17 +229,6 @@ func TestDeleteSource_Error(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestHandleSources_ReadAllError(t *testing.T) {
-	mock := &mockSourcesReaderWriter{}
-	ts := newTestSourceServer(mock)
-	r := httptest.NewRequest(http.MethodPost, "/source", &errorReader{})
-	w := httptest.NewRecorder()
-	ts.handleSources(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-}
-
 // Helper function to create HTTP requests with path values for testing individual source endpoints
 func newSourceItemRequest(method, name string, body io.Reader) *http.Request {
 	url := "/source/" + name
@@ -226,277 +237,281 @@ func newSourceItemRequest(method, name string, body io.Reader) *http.Request {
 	return r
 }
 
-// Tests for new REST-compliant source endpoints
+func TestHandleSourceItem(t *testing.T) {
+	t.Run("GET", func(t *testing.T) {
+		t.Run("Success", func(t *testing.T) {
+			source := sources.Source{Name: "test-source", ConnStr: "postgresql://test"}
+			mock := &mockSourcesReaderWriter{
+				GetSourcesFunc: func() (sources.Sources, error) {
+					return sources.Sources{source}, nil
+				},
+			}
+			ts := newTestSourceServer(mock)
+			r := newSourceItemRequest(http.MethodGet, "test-source", nil)
+			w := httptest.NewRecorder()
+			ts.handleSourceItem(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 
-func TestHandleSourceItem_GET_Success(t *testing.T) {
-	source := sources.Source{Name: "test-source", ConnStr: "postgresql://test"}
-	mock := &mockSourcesReaderWriter{
-		GetSourcesFunc: func() (sources.Sources, error) {
-			return sources.Sources{source}, nil
-		},
-	}
-	ts := newTestSourceServer(mock)
-	r := newSourceItemRequest(http.MethodGet, "test-source", nil)
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+			var returnedSource sources.Source
+			body, _ := io.ReadAll(resp.Body)
+			assert.NoError(t, jsoniter.ConfigFastest.Unmarshal(body, &returnedSource))
+			assert.Equal(t, source.Name, returnedSource.Name)
+		})
 
-	var returnedSource sources.Source
-	body, _ := io.ReadAll(resp.Body)
-	assert.NoError(t, jsoniter.ConfigFastest.Unmarshal(body, &returnedSource))
-	assert.Equal(t, source.Name, returnedSource.Name)
-}
+		t.Run("NotFound", func(t *testing.T) {
+			mock := &mockSourcesReaderWriter{
+				GetSourcesFunc: func() (sources.Sources, error) {
+					return sources.Sources{}, nil
+				},
+			}
+			ts := newTestSourceServer(mock)
+			r := newSourceItemRequest(http.MethodGet, "nonexistent", nil)
+			w := httptest.NewRecorder()
+			ts.handleSourceItem(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+			body, _ := io.ReadAll(resp.Body)
+			assert.Contains(t, string(body), "source not found")
+		})
 
-func TestHandleSourceItem_GET_NotFound(t *testing.T) {
-	mock := &mockSourcesReaderWriter{
-		GetSourcesFunc: func() (sources.Sources, error) {
-			return sources.Sources{}, nil
-		},
-	}
-	ts := newTestSourceServer(mock)
-	r := newSourceItemRequest(http.MethodGet, "nonexistent", nil)
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "source not found")
-}
+		t.Run("GetSourcesError", func(t *testing.T) {
+			mock := &mockSourcesReaderWriter{
+				GetSourcesFunc: func() (sources.Sources, error) {
+					return nil, errors.New("database connection failed")
+				},
+			}
+			ts := newTestSourceServer(mock)
+			r := newSourceItemRequest(http.MethodGet, "test-source", nil)
+			w := httptest.NewRecorder()
+			ts.handleSourceItem(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+			body, _ := io.ReadAll(resp.Body)
+			assert.Contains(t, string(body), "database connection failed")
+		})
+	})
 
-func TestHandleSourceItem_PUT_Success(t *testing.T) {
-	existingSource := sources.Source{Name: "test-source", ConnStr: "postgresql://old"}
-	var updatedSource sources.Source
-	mock := &mockSourcesReaderWriter{
-		GetSourcesFunc: func() (sources.Sources, error) {
-			return sources.Sources{existingSource}, nil
-		},
-		UpdateSourceFunc: func(md sources.Source) error {
-			updatedSource = md
-			return nil
-		},
-	}
-	ts := newTestSourceServer(mock)
+	t.Run("PUT", func(t *testing.T) {
+		t.Run("Success", func(t *testing.T) {
+			existingSource := sources.Source{Name: "test-source", ConnStr: "postgresql://old"}
+			var updatedSource sources.Source
+			mock := &mockSourcesReaderWriter{
+				GetSourcesFunc: func() (sources.Sources, error) {
+					return sources.Sources{existingSource}, nil
+				},
+				UpdateSourceFunc: func(md sources.Source) error {
+					updatedSource = md
+					return nil
+				},
+			}
+			ts := newTestSourceServer(mock)
 
-	newSource := sources.Source{Name: "test-source", ConnStr: "postgresql://new"}
-	b, _ := jsoniter.ConfigFastest.Marshal(newSource)
-	r := newSourceItemRequest(http.MethodPut, "test-source", bytes.NewReader(b))
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, newSource.ConnStr, updatedSource.ConnStr)
-}
+			newSource := sources.Source{Name: "test-source", ConnStr: "postgresql://new"}
+			b, _ := jsoniter.ConfigFastest.Marshal(newSource)
+			r := newSourceItemRequest(http.MethodPut, "test-source", bytes.NewReader(b))
+			w := httptest.NewRecorder()
+			ts.handleSourceItem(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.Equal(t, newSource.ConnStr, updatedSource.ConnStr)
+		})
 
-func TestHandleSourceItem_PUT_CreateNew(t *testing.T) {
-	var updatedSource sources.Source
-	mock := &mockSourcesReaderWriter{
-		GetSourcesFunc: func() (sources.Sources, error) {
-			return sources.Sources{}, nil // No existing sources
-		},
-		UpdateSourceFunc: func(md sources.Source) error {
-			updatedSource = md
-			return nil
-		},
-	}
-	ts := newTestSourceServer(mock)
+		t.Run("CreateNew", func(t *testing.T) {
+			var updatedSource sources.Source
+			mock := &mockSourcesReaderWriter{
+				GetSourcesFunc: func() (sources.Sources, error) {
+					return sources.Sources{}, nil // No existing sources
+				},
+				UpdateSourceFunc: func(md sources.Source) error {
+					updatedSource = md
+					return nil
+				},
+			}
+			ts := newTestSourceServer(mock)
 
-	source := sources.Source{Name: "new-source", ConnStr: "postgresql://new"}
-	b, _ := jsoniter.ConfigFastest.Marshal(source)
-	r := newSourceItemRequest(http.MethodPut, "new-source", bytes.NewReader(b))
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, source.Name, updatedSource.Name)
-	assert.Equal(t, source.ConnStr, updatedSource.ConnStr)
-}
+			source := sources.Source{Name: "new-source", ConnStr: "postgresql://new"}
+			b, _ := jsoniter.ConfigFastest.Marshal(source)
+			r := newSourceItemRequest(http.MethodPut, "new-source", bytes.NewReader(b))
+			w := httptest.NewRecorder()
+			ts.handleSourceItem(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.Equal(t, source.Name, updatedSource.Name)
+			assert.Equal(t, source.ConnStr, updatedSource.ConnStr)
+		})
 
-func TestHandleSourceItem_PUT_NameMismatch(t *testing.T) {
-	existingSource := sources.Source{Name: "test-source"}
-	mock := &mockSourcesReaderWriter{
-		GetSourcesFunc: func() (sources.Sources, error) {
-			return sources.Sources{existingSource}, nil
-		},
-	}
-	ts := newTestSourceServer(mock)
+		t.Run("NameMismatch", func(t *testing.T) {
+			existingSource := sources.Source{Name: "test-source"}
+			mock := &mockSourcesReaderWriter{
+				GetSourcesFunc: func() (sources.Sources, error) {
+					return sources.Sources{existingSource}, nil
+				},
+			}
+			ts := newTestSourceServer(mock)
 
-	// Body has different name than URL path
-	source := sources.Source{Name: "different-name"}
-	b, _ := jsoniter.ConfigFastest.Marshal(source)
-	r := newSourceItemRequest(http.MethodPut, "test-source", bytes.NewReader(b))
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "name in URL and body must match")
-}
+			// Body has different name than URL path
+			source := sources.Source{Name: "different-name"}
+			b, _ := jsoniter.ConfigFastest.Marshal(source)
+			r := newSourceItemRequest(http.MethodPut, "test-source", bytes.NewReader(b))
+			w := httptest.NewRecorder()
+			ts.handleSourceItem(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+			body, _ := io.ReadAll(resp.Body)
+			assert.Contains(t, string(body), "name in URL and body must match")
+		})
 
-func TestHandleSourceItem_DELETE_Success(t *testing.T) {
-	existingSource := sources.Source{Name: "test-source"}
-	var deletedName string
-	mock := &mockSourcesReaderWriter{
-		GetSourcesFunc: func() (sources.Sources, error) {
-			return sources.Sources{existingSource}, nil
-		},
-		DeleteSourceFunc: func(name string) error {
-			deletedName = name
-			return nil
-		},
-	}
-	ts := newTestSourceServer(mock)
-	r := newSourceItemRequest(http.MethodDelete, "test-source", nil)
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, "test-source", deletedName)
-}
+		t.Run("InvalidRequestBody", func(t *testing.T) {
+			mock := &mockSourcesReaderWriter{}
+			ts := newTestSourceServer(mock)
+			r := newSourceItemRequest(http.MethodPut, "test-source", &errorReader{})
+			w := httptest.NewRecorder()
+			ts.handleSourceItem(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+			body, _ := io.ReadAll(resp.Body)
+			assert.Contains(t, string(body), "invalid request body")
+		})
 
-func TestHandleSourceItem_DELETE_Idempotent(t *testing.T) {
-	var deletedName string
-	mock := &mockSourcesReaderWriter{
-		GetSourcesFunc: func() (sources.Sources, error) {
-			return sources.Sources{}, nil // No existing sources
-		},
-		DeleteSourceFunc: func(name string) error {
-			deletedName = name
-			return nil // DELETE is idempotent - succeeds even if source doesn't exist
-		},
-	}
-	ts := newTestSourceServer(mock)
-	r := newSourceItemRequest(http.MethodDelete, "nonexistent", nil)
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, "nonexistent", deletedName)
-}
+		t.Run("InvalidJSON", func(t *testing.T) {
+			mock := &mockSourcesReaderWriter{}
+			ts := newTestSourceServer(mock)
+			r := newSourceItemRequest(http.MethodPut, "test-source", strings.NewReader("invalid json"))
+			w := httptest.NewRecorder()
+			ts.handleSourceItem(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+			body, _ := io.ReadAll(resp.Body)
+			assert.Contains(t, string(body), "invalid JSON format")
+		})
 
-func TestHandleSourceItem_EmptyName(t *testing.T) {
-	mock := &mockSourcesReaderWriter{}
-	ts := newTestSourceServer(mock)
-	r := newSourceItemRequest(http.MethodGet, "", nil)
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "source name is required")
-}
+		t.Run("UpdateError", func(t *testing.T) {
+			mock := &mockSourcesReaderWriter{
+				UpdateSourceFunc: func(sources.Source) error {
+					return errors.New("update operation failed")
+				},
+			}
+			ts := newTestSourceServer(mock)
 
-func TestHandleSourceItem_MethodNotAllowed(t *testing.T) {
-	mock := &mockSourcesReaderWriter{}
-	ts := newTestSourceServer(mock)
-	r := newSourceItemRequest(http.MethodPost, "test", nil)
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-	assert.Equal(t, "GET, PUT, DELETE, OPTIONS", resp.Header.Get("Allow"))
-}
+			source := sources.Source{Name: "test-source", ConnStr: "postgresql://test"}
+			b, _ := jsoniter.ConfigFastest.Marshal(source)
+			r := newSourceItemRequest(http.MethodPut, "test-source", bytes.NewReader(b))
+			w := httptest.NewRecorder()
+			ts.handleSourceItem(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+			body, _ := io.ReadAll(resp.Body)
+			assert.Contains(t, string(body), "update operation failed")
+		})
+	})
 
-func TestHandleSourceItem_Options(t *testing.T) {
-	mock := &mockSourcesReaderWriter{}
-	ts := newTestSourceServer(mock)
-	r := newSourceItemRequest(http.MethodOptions, "test", nil)
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, "GET, PUT, DELETE, OPTIONS", resp.Header.Get("Allow"))
-}
+	t.Run("DELETE", func(t *testing.T) {
+		t.Run("Success", func(t *testing.T) {
+			existingSource := sources.Source{Name: "test-source"}
+			var deletedName string
+			mock := &mockSourcesReaderWriter{
+				GetSourcesFunc: func() (sources.Sources, error) {
+					return sources.Sources{existingSource}, nil
+				},
+				DeleteSourceFunc: func(name string) error {
+					deletedName = name
+					return nil
+				},
+			}
+			ts := newTestSourceServer(mock)
+			r := newSourceItemRequest(http.MethodDelete, "test-source", nil)
+			w := httptest.NewRecorder()
+			ts.handleSourceItem(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.Equal(t, "test-source", deletedName)
+		})
 
-// Error flow tests for xxSourceByName methods
+		t.Run("Idempotent", func(t *testing.T) {
+			var deletedName string
+			mock := &mockSourcesReaderWriter{
+				GetSourcesFunc: func() (sources.Sources, error) {
+					return sources.Sources{}, nil // No existing sources
+				},
+				DeleteSourceFunc: func(name string) error {
+					deletedName = name
+					return nil // DELETE is idempotent - succeeds even if source doesn't exist
+				},
+			}
+			ts := newTestSourceServer(mock)
+			r := newSourceItemRequest(http.MethodDelete, "nonexistent", nil)
+			w := httptest.NewRecorder()
+			ts.handleSourceItem(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.Equal(t, "nonexistent", deletedName)
+		})
 
-func TestHandleSourceItem_GET_GetSourcesError(t *testing.T) {
-	mock := &mockSourcesReaderWriter{
-		GetSourcesFunc: func() (sources.Sources, error) {
-			return nil, errors.New("database connection failed")
-		},
-	}
-	ts := newTestSourceServer(mock)
-	r := newSourceItemRequest(http.MethodGet, "test-source", nil)
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "database connection failed")
-}
+		t.Run("DeleteError", func(t *testing.T) {
+			mock := &mockSourcesReaderWriter{
+				DeleteSourceFunc: func(string) error {
+					return errors.New("delete operation failed")
+				},
+			}
+			ts := newTestSourceServer(mock)
+			r := newSourceItemRequest(http.MethodDelete, "test-source", nil)
+			w := httptest.NewRecorder()
+			ts.handleSourceItem(w, r)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+			body, _ := io.ReadAll(resp.Body)
+			assert.Contains(t, string(body), "delete operation failed")
+		})
+	})
 
-func TestHandleSourceItem_PUT_InvalidRequestBody(t *testing.T) {
-	mock := &mockSourcesReaderWriter{}
-	ts := newTestSourceServer(mock)
-	r := newSourceItemRequest(http.MethodPut, "test-source", &errorReader{})
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "invalid request body")
-}
+	t.Run("EmptyName", func(t *testing.T) {
+		mock := &mockSourcesReaderWriter{}
+		ts := newTestSourceServer(mock)
+		r := newSourceItemRequest(http.MethodGet, "", nil)
+		w := httptest.NewRecorder()
+		ts.handleSourceItem(w, r)
+		resp := w.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		body, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(body), "source name is required")
+	})
 
-func TestHandleSourceItem_PUT_InvalidJSON(t *testing.T) {
-	mock := &mockSourcesReaderWriter{}
-	ts := newTestSourceServer(mock)
-	r := newSourceItemRequest(http.MethodPut, "test-source", strings.NewReader("invalid json"))
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "invalid JSON format")
-}
+	t.Run("OPTIONS", func(t *testing.T) {
+		mock := &mockSourcesReaderWriter{}
+		ts := newTestSourceServer(mock)
+		r := newSourceItemRequest(http.MethodOptions, "test", nil)
+		w := httptest.NewRecorder()
+		ts.handleSourceItem(w, r)
+		resp := w.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, "GET, PUT, DELETE, OPTIONS", resp.Header.Get("Allow"))
+	})
 
-func TestHandleSourceItem_PUT_UpdateSourceError(t *testing.T) {
-	mock := &mockSourcesReaderWriter{
-		UpdateSourceFunc: func(sources.Source) error {
-			return errors.New("update operation failed")
-		},
-	}
-	ts := newTestSourceServer(mock)
-
-	source := sources.Source{Name: "test-source", ConnStr: "postgresql://test"}
-	b, _ := jsoniter.ConfigFastest.Marshal(source)
-	r := newSourceItemRequest(http.MethodPut, "test-source", bytes.NewReader(b))
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "update operation failed")
-}
-
-func TestHandleSourceItem_DELETE_DeleteSourceError(t *testing.T) {
-	mock := &mockSourcesReaderWriter{
-		DeleteSourceFunc: func(string) error {
-			return errors.New("delete operation failed")
-		},
-	}
-	ts := newTestSourceServer(mock)
-	r := newSourceItemRequest(http.MethodDelete, "test-source", nil)
-	w := httptest.NewRecorder()
-	ts.handleSourceItem(w, r)
-	resp := w.Result()
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "delete operation failed")
+	t.Run("MethodNotAllowed", func(t *testing.T) {
+		mock := &mockSourcesReaderWriter{}
+		ts := newTestSourceServer(mock)
+		r := newSourceItemRequest(http.MethodPost, "test", nil)
+		w := httptest.NewRecorder()
+		ts.handleSourceItem(w, r)
+		resp := w.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+		assert.Equal(t, "GET, PUT, DELETE, OPTIONS", resp.Header.Get("Allow"))
+	})
 }

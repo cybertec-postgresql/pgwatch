@@ -45,6 +45,21 @@ func (fcr *fileSourcesReaderWriter) UpdateSource(md Source) error {
 	return fcr.WriteSources(dbs)
 }
 
+func (fcr *fileSourcesReaderWriter) CreateSource(md Source) error {
+	dbs, err := fcr.GetSources()
+	if err != nil {
+		return err
+	}
+	// Check if source already exists
+	for _, db := range dbs {
+		if db.Name == md.Name {
+			return ErrSourceExists
+		}
+	}
+	dbs = append(dbs, md)
+	return fcr.WriteSources(dbs)
+}
+
 func (fcr *fileSourcesReaderWriter) DeleteSource(name string) error {
 	dbs, err := fcr.GetSources()
 	if err != nil {
