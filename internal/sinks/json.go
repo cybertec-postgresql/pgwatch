@@ -6,6 +6,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -64,7 +65,7 @@ func (jw *JSONWriter) watchCtx() {
 	jw.lw.Close()
 }
 
-func (jw *JSONWriter) SyncMetric(_, _ string, _ SyncOp) error {
+func (jw *JSONWriter) SyncMetric(_, _ string, _ pb.SyncOp) error {
 	if jw.ctx.Err() != nil {
 		return jw.ctx.Err()
 	}

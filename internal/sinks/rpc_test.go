@@ -10,6 +10,7 @@ import (
 	"net/rpc"
 	"testing"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/stretchr/testify/assert"
@@ -42,11 +43,11 @@ func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementEnvelope, l
 	return nil
 }
 
-func (receiver *Receiver) SyncMetric(syncReq *sinks.SyncReq, logMsg *string) error {
+func (receiver *Receiver) SyncMetric(syncReq *pb.SyncReq, logMsg *string) error {
 	if syncReq == nil {
 		return errors.New("msgs is nil")
 	}
-	if syncReq.Operation == sinks.InvalidOp {
+	if syncReq.Operation == pb.SyncOp_InvalidOp {
 		return errors.New("invalid message")
 	}
 	*logMsg = fmt.Sprintf("Received: %+v", *syncReq)
@@ -159,11 +160,11 @@ func TestRPCSyncMetric(t *testing.T) {
 		}
 
 		// no error for valid messages
-		err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
+		err = rw.SyncMetric("Test-DB", "DB-Metric", pb.SyncOp_AddOp)
 		a.NoError(err)
 
 		// error for invalid messages
-		err = rw.SyncMetric("", "", sinks.InvalidOp)
+		err = rw.SyncMetric("", "", pb.SyncOp_InvalidOp)
 		a.Error(err)
 
 		// error for cancelled context
@@ -171,7 +172,7 @@ func TestRPCSyncMetric(t *testing.T) {
 		rw, err = sinks.NewRPCWriter(ctx, ConnStr)
 		a.NoError(err)
 		cancel()
-		err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
+		err = rw.SyncMetric("Test-DB", "DB-Metric", pb.SyncOp_AddOp)
 		a.Error(err)
 	}
 }

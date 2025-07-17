@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 	"github.com/jackc/pgx/v5"
 )
@@ -560,7 +560,7 @@ func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(shutDownDueToRoleChange ma
 	for _, prevDB := range r.prevLoopMonitoredDBs {
 		if r.monitoredSources.GetMonitoredDatabase(prevDB.Name) == nil { // removed from config
 			prevDB.Conn.Close()
-			_ = r.SinksWriter.SyncMetric(prevDB.Name, "", sinks.DeleteOp)
+			_ = r.SinksWriter.SyncMetric(prevDB.Name, "", pb.SyncOp_DeleteOp)
 		}
 	}
 
@@ -568,6 +568,6 @@ func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(shutDownDueToRoleChange ma
 		if db := r.monitoredSources.GetMonitoredDatabase(roleChangedDB); db != nil {
 			db.Conn.Close()
 		}
-		_ = r.SinksWriter.SyncMetric(roleChangedDB, "", sinks.DeleteOp)
+		_ = r.SinksWriter.SyncMetric(roleChangedDB, "", pb.SyncOp_DeleteOp)
 	}
 }

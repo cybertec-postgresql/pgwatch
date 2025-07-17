@@ -72,11 +72,11 @@ func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error {
 	return nil
 }
 
-func (rw *RPCWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error {
+func (rw *RPCWriter) SyncMetric(dbUnique, metricName string, op pb.SyncOp) error {
 	syncReq := &pb.SyncReq{
 		DBName: dbUnique,	
 		MetricName: metricName,
-		Operation: pb.SyncOp(op),
+		Operation: op,
 	}
 
 	reply, err := rw.client.SyncMetric(rw.ctx, syncReq)

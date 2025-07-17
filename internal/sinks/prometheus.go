@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
@@ -140,11 +141,11 @@ func (promw *PrometheusWriter) PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, met
 	}
 }
 
-func (promw *PrometheusWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error {
+func (promw *PrometheusWriter) SyncMetric(dbUnique, metricName string, op pb.SyncOp) error {
 	switch op {
-	case DeleteOp:
+	case pb.SyncOp_DeleteOp:
 		promw.PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, metricName)
-	case AddOp:
+	case pb.SyncOp_AddOp:
 		promw.PromAsyncCacheInitIfRequired(dbUnique, metricName)
 	}
 	return nil

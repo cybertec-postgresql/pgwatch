@@ -12,6 +12,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
@@ -151,8 +152,8 @@ var (
 )
 
 // SyncMetric ensures that tables exist for newly added metrics and/or sources
-func (pgw *PostgresWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error {
-	if op == AddOp {
+func (pgw *PostgresWriter) SyncMetric(dbUnique, metricName string, op pb.SyncOp) error {
+	if op == pb.SyncOp_AddOp {
 		return errors.Join(
 			pgw.AddDBUniqueMetricToListingTable(dbUnique, metricName),
 			pgw.EnsureMetricDummy(metricName), // ensure that there is at least an empty top-level table not to get ugly Grafana notifications

@@ -7,6 +7,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -60,11 +61,11 @@ func TestJSONWriter_SyncMetric(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Call the function being tested
-	err = jw.SyncMetric("", "", InvalidOp)
+	err = jw.SyncMetric("", "", pb.SyncOp_InvalidOp)
 	assert.NoError(t, err)
 
 	cancel()
-	err = jw.SyncMetric("", "", InvalidOp)
+	err = jw.SyncMetric("", "", pb.SyncOp_InvalidOp)
 	assert.Error(t, err, "context canceled")
 
 }

@@ -4,15 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 	"strings"
+	"sync"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 )
 
 // Writer is an interface that writes metrics values
 type Writer interface {
-	SyncMetric(dbUnique, metricName string, op SyncOp) error
+	SyncMetric(dbUnique, metricName string, op pb.SyncOp) error
 	Write(msgs metrics.MeasurementEnvelope) error
 }
 
@@ -76,7 +77,7 @@ func (mw *MultiWriter) DefineMetrics(metrics *metrics.Metrics) (err error) {
 	return nil
 }
 
-func (mw *MultiWriter) SyncMetric(dbUnique, metricName string, op SyncOp) (err error) {
+func (mw *MultiWriter) SyncMetric(dbUnique, metricName string, op pb.SyncOp) (err error) {
 	for _, w := range mw.writers {
 		err = errors.Join(err, w.SyncMetric(dbUnique, metricName, op))
 	}
