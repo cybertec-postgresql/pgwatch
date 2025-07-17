@@ -16,17 +16,3 @@ type RPCWriter struct {
 	conn    *grpc.ClientConn
 	client  pb.ReceiverClient
 }
-
-type SyncOp int
-
-const (
-	AddOp SyncOp = iota
-	DeleteOp
-	InvalidOp
-)
-
-type SyncReq struct {
-	DbName     string
-	MetricName string
-	Operation  SyncOp
-}
