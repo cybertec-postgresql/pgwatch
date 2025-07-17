@@ -12,6 +12,9 @@
 *.out
 *.txt
 
+# Protobuf files
+*.pb.go
+
 # Packages ouput folder
 dist
 docs/godoc
