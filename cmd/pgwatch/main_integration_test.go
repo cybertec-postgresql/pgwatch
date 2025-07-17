@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -17,7 +18,7 @@ import (
 
 const ImageName = "docker.io/postgres:17-alpine"
 
-var ctx = context.Background()
+var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
 
 func initTestContainer() (*postgres.PostgresContainer, error) {
 	dbName := "pgwatch"

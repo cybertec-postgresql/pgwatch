@@ -15,7 +15,7 @@ import (
 )
 
 func TestServeWsLog_UpgradeError(t *testing.T) {
-	ts := &WebUIServer{Logger: log.FallbackLogger}
+	ts := &WebUIServer{Logger: log.NewNoopLogger()}
 	r := httptest.NewRequest(http.MethodGet, "/wslog", nil)
 	w := httptest.NewRecorder()
 	// No websocket headers, should fail to upgrade

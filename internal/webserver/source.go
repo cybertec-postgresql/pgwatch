@@ -1,6 +1,7 @@
 package webserver
 
 import (
+	"errors"
 	"io"
 	"net/http"
 
@@ -12,13 +13,14 @@ import (
 func (server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request) {
 	var (
 		err    error
+		status = http.StatusInternalServerError
 		params []byte
 		res    string
 	)
 
 	defer func() {
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), status)
 		}
 	}()
 
@@ -31,22 +33,25 @@ func (server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request)
 		_, err = w.Write([]byte(res))
 
 	case http.MethodPost:
-		// add new monitored database
+		// add new monitored database (REST-compliant: POST for creation only)
 		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		err = server.UpdateSource(params)
-
-	case http.MethodDelete:
-		// delete monitored database
-		err = server.DeleteSource(r.URL.Query().Get("name"))
+		err = server.CreateSource(params)
+		if err != nil {
+			if errors.Is(err, sources.ErrSourceExists) {
+				status = http.StatusConflict
+			}
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
 
 	case http.MethodOptions:
-		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")
-		w.WriteHeader(http.StatusNoContent)
+		w.Header().Set("Allow", "GET, POST, OPTIONS")
+		w.WriteHeader(http.StatusOK)
 
 	default:
-		w.Header().Set("Allow", "GET, POST, DELETE, OPTIONS")
+		w.Header().Set("Allow", "GET, POST, OPTIONS")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
@@ -75,6 +80,16 @@ func (server *WebUIServer) UpdateSource(params []byte) error {
 		return err
 	}
 	return server.sourcesReaderWriter.UpdateSource(md)
+}
+
+// CreateSource creates a new source (for REST collection endpoint)
+func (server *WebUIServer) CreateSource(params []byte) error {
+	var md sources.Source
+	err := jsoniter.ConfigFastest.Unmarshal(params, &md)
+	if err != nil {
+		return err
+	}
+	return server.sourcesReaderWriter.CreateSource(md)
 }
 
 // handleSourceItem handles individual source operations using REST-compliant HTTP methods

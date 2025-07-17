@@ -4,10 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 )
+
+var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
 
 func AnyArgs(n int) []any {
 	args := make([]any, n)
@@ -19,7 +22,7 @@ func AnyArgs(n int) []any {
 
 func TestNewPostgresMetricReaderWriter(t *testing.T) {
 	a := assert.New(t)
-	ctx := context.Background()
+
 	t.Run("ConnectionError", func(*testing.T) {
 		pgrw, err := metrics.NewPostgresMetricReaderWriter(ctx, "postgres://user:pass@foohost:5432/db1")
 		a.Error(err)
@@ -40,7 +43,6 @@ func TestNewPostgresMetricReaderWriterConn(t *testing.T) {
 	a := assert.New(t)
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
-	ctx := context.Background()
 
 	doesntExist := func() *pgxmock.Rows { return pgxmock.NewRows([]string{"exists"}).AddRow(false) }
 
@@ -163,7 +165,6 @@ func TestMetricsToPostgres(t *testing.T) {
 	a := assert.New(t)
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
-	ctx := context.Background()
 
 	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 	conn.ExpectPing()

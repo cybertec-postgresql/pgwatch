@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 )
 
@@ -35,6 +37,8 @@ var (
 	ErrPresetNotFound = errors.New("preset not found")
 	ErrInvalidMetric  = errors.New("invalid metric")
 	ErrInvalidPreset  = errors.New("invalid preset")
+	ErrMetricExists   = errors.New("metric already exists")
+	ErrPresetExists   = errors.New("preset already exists")
 )
 
 // make sure *dbMetricReaderWriter implements the Migrator interface
@@ -128,6 +132,22 @@ sqls = $2, init_sql = $3, description = $4, node_status = $5, gauges = $6, is_in
 	return err
 }
 
+func (dmrw *dbMetricReaderWriter) CreateMetric(metricName string, metric Metric) error {
+	_, err := dmrw.configDb.Exec(dmrw.ctx, `INSERT INTO pgwatch.metric
+(name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		metricName, db.MarshallParamToJSONB(metric.SQLs), metric.InitSQL, metric.Description,
+		metric.NodeStatus, metric.Gauges, metric.IsInstanceLevel, metric.StorageName)
+	if err != nil {
+		// Check for unique constraint violation using PostgreSQL error code
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.SQLState() == "23505" {
+			return ErrMetricExists
+		}
+	}
+	return err
+}
+
 func (dmrw *dbMetricReaderWriter) DeletePreset(presetName string) error {
 	_, err := dmrw.configDb.Exec(dmrw.ctx, `DELETE FROM pgwatch.preset WHERE name = $1`, presetName)
 	return err
@@ -139,6 +159,19 @@ func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName string, preset Preset)
 	ct, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParamToJSONB(preset.Metrics))
 	if err == nil && ct.RowsAffected() == 0 {
 		return ErrPresetNotFound
+	}
+	return err
+}
+
+func (dmrw *dbMetricReaderWriter) CreatePreset(presetName string, preset Preset) error {
+	sql := `INSERT INTO pgwatch.preset(name, description, metrics) VALUES ($1, $2, $3)`
+	_, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParamToJSONB(preset.Metrics))
+	if err != nil {
+		// Check for unique constraint violation using PostgreSQL error code
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return ErrPresetExists
+		}
 	}
 	return err
 }

@@ -65,6 +65,19 @@ func (fmr *fileMetricReader) UpdateMetric(metricName string, metric Metric) erro
 	return fmr.WriteMetrics(metrics)
 }
 
+func (fmr *fileMetricReader) CreateMetric(metricName string, metric Metric) error {
+	metrics, err := fmr.GetMetrics()
+	if err != nil {
+		return err
+	}
+	// Check if metric already exists
+	if _, exists := metrics.MetricDefs[metricName]; exists {
+		return ErrMetricExists
+	}
+	metrics.MetricDefs[metricName] = metric
+	return fmr.WriteMetrics(metrics)
+}
+
 func (fmr *fileMetricReader) DeletePreset(presetName string) error {
 	metrics, err := fmr.GetMetrics()
 	if err != nil {
@@ -78,6 +91,19 @@ func (fmr *fileMetricReader) UpdatePreset(presetName string, preset Preset) erro
 	metrics, err := fmr.GetMetrics()
 	if err != nil {
 		return err
+	}
+	metrics.PresetDefs[presetName] = preset
+	return fmr.WriteMetrics(metrics)
+}
+
+func (fmr *fileMetricReader) CreatePreset(presetName string, preset Preset) error {
+	metrics, err := fmr.GetMetrics()
+	if err != nil {
+		return err
+	}
+	// Check if preset already exists
+	if _, exists := metrics.PresetDefs[presetName]; exists {
+		return ErrPresetExists
 	}
 	metrics.PresetDefs[presetName] = preset
 	return fmr.WriteMetrics(metrics)
