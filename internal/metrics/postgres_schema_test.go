@@ -17,6 +17,9 @@ func TestMigrate(t *testing.T) {
 	conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	conn.ExpectBegin()
 	conn.ExpectExec(`INSERT INTO`).WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	conn.ExpectBegin()
+	conn.ExpectExec(`UPDATE pgwatch\.metric`).WillReturnResult(pgxmock.NewResult("UPDATE", 0)) // combined migration SQL without parameters
+	conn.ExpectExec(`INSERT INTO`).WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 	dmrw := &dbMetricReaderWriter{ctx, conn}
 	err = dmrw.Migrate()

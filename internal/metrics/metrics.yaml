@@ -1438,7 +1438,7 @@ metrics:
                 from
                   get_psutil_mem()
         init_sql: |-
-            CREATE EXTENSION IF NOT EXISTS plpython3u; /* "plpython3u" might need changing to "plpythonu" (Python 2 everywhere for new OS-es */
+            CREATE EXTENSION IF NOT EXISTS plpython3u;
 
             CREATE OR REPLACE FUNCTION get_psutil_mem(
             	OUT total float8, OUT used float8, OUT free float8, OUT buff_cache float8, OUT available float8, OUT percent float8,
@@ -1483,8 +1483,10 @@ metrics:
                                       pg_qualstats_index_advisor() -> 'indexes') v
                      ) x
                 ORDER BY tag_object_name
+        init_sql: "CREATE EXTENSION IF NOT EXISTS pg_qualstats;"
         node_status: primary
         is_private: true
+        metric_storage_name: "recommendations"
     reco_default_public_schema:
         description: >
             Retrieves recommendations for revoking the CREATE privilege on the public schema from PUBLIC.
@@ -1503,6 +1505,7 @@ metrics:
                   nspname = 'public'
                   and nspacl::text ~ E'[,\\{]+=U?C/'
         node_status: primary
+        metric_storage_name: "recommendations"
     reco_disabled_triggers:
         description: >
             Retrieves recommendations for reviewing and potentially dropping disabled triggers in the PostgreSQL database.
@@ -1526,6 +1529,7 @@ metrics:
                 where
                     tgenabled = 'D'
         node_status: primary
+        metric_storage_name: "recommendations"
     reco_drop_index:
         description: >
             Retrieves recommendations for dropping unused or invalid indexes in the PostgreSQL database.
@@ -1556,7 +1560,9 @@ metrics:
                   and not indisprimary
                   and not indisreplident
                   and not schemaname like '_timescaledb%'
+        init_sql: "CREATE EXTENSION IF NOT EXISTS pg_qualstats;"
         node_status: primary
+        metric_storage_name: "recommendations"
     reco_nested_views:
         description: >
             Retrieves recommendations for overly nested views in the PostgreSQL database.
@@ -1614,6 +1620,7 @@ metrics:
                 HAVING max(level) > 3
                 ORDER BY max(level) DESC, full_name::text
         node_status: primary
+        metric_storage_name: "recommendations"
     reco_partial_index_candidates:
         description: >
             Retrieves recommendations for creating partial indexes on columns with a high fraction of NULL values.
@@ -1646,6 +1653,7 @@ metrics:
                   and not exists ( /* leave out sub-partitions */
                       select * from pg_inherits where inhrelid = c.oid
                     )
+        metric_storage_name: "recommendations"
     reco_sprocs_wo_search_path:
         description: >
             Retrieves recommendations for stored procedures that do not have a fixed `search_path` set.
@@ -1674,6 +1682,7 @@ metrics:
                 order by
                    tag_object_name, extra_info
         node_status: primary
+        metric_storage_name: "recommendations"
     reco_superusers:
         description: >
             Retrieves recommendations for reviewing the number of superusers in the PostgreSQL database.
@@ -1698,14 +1707,7 @@ metrics:
                 where
                   q_su.count >= 10
         node_status: primary
-    recommendations:
-        description: >
-            When enabled, this metric will find all other metrics starting with `reco_*` and execute those queries.
-            The metric targets performance, security, and other "best practices" violations.
-            Users can add new `reco_*` queries freely.
-        init_sql: CREATE EXTENSION IF NOT EXISTS pg_qualstats;
-        sqls:
-            11: /* dummy placeholder - special handling in code to collect other metrics named reco_* */
+        metric_storage_name: "recommendations"
     replication:
         description: >
             This metric collects replication statistics from the `pg_stat_replication` view.
@@ -4252,7 +4254,14 @@ presets:
             index_stats: 900
             locks: 60
             locks_mode: 60
-            recommendations: 43200
+            reco_add_index: 43200
+            reco_default_public_schema: 50400
+            reco_disabled_triggers: 57600
+            reco_drop_index: 64800
+            reco_nested_views: 72000
+            reco_partial_index_candidates: 79200
+            reco_sprocs_wo_search_path: 86400
+            reco_superusers: 93600
             replication: 120
             replication_slots: 120
             sequence_health: 3600
@@ -4373,7 +4382,14 @@ presets:
             psutil_disk: 120
             psutil_disk_io_total: 120
             psutil_mem: 120
-            recommendations: 43200
+            reco_add_index: 43200
+            reco_default_public_schema: 50400
+            reco_disabled_triggers: 57600
+            reco_drop_index: 64800
+            reco_nested_views: 72000
+            reco_partial_index_candidates: 79200
+            reco_sprocs_wo_search_path: 86400
+            reco_superusers: 93600
             replication: 120
             replication_slots: 120
             sequence_health: 3600
@@ -4430,6 +4446,17 @@ presets:
         metrics:
             pgpool_stats: 60
             pgpool_processes: 60
+    recommendations:
+        description: performance and security recommendations
+        metrics:
+            reco_add_index: 43200
+            reco_default_public_schema: 50400
+            reco_disabled_triggers: 57600
+            reco_drop_index: 64800
+            reco_nested_views: 72000
+            reco_partial_index_candidates: 79200
+            reco_sprocs_wo_search_path: 86400
+            reco_superusers: 93600
     prometheus-async:
         description: Tuned for the Prometheus async scrapping
         metrics:

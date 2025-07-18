@@ -91,7 +91,7 @@ func main() {
 
 	if upgrade, err := opts.NeedsSchemaUpgrade(); upgrade || err != nil {
 		if upgrade {
-			err = errors.Join(err, errors.New(`configuration needs upgrade, use "init --upgrade" command`))
+			err = errors.Join(err, errors.New(`configuration needs upgrade, use "config upgrade" command`))
 		}
 		exitCode.Store(cmdopts.ExitCodeUpgradeError)
 		logger.Error(err)

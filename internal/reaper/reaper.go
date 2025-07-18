@@ -18,6 +18,14 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
+const (
+	specialMetricChangeEvents         = "change_events"
+	specialMetricServerLogEventCounts = "server_log_event_counts"
+	specialMetricInstanceUp           = "instance_up"
+)
+
+var specialMetrics = map[string]bool{specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
+
 var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 var metricsConfig map[string]float64                      // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 var metricDefs = NewConcurrentMetricDefs()
@@ -146,12 +154,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 				metricDefExists := false
 				var mvp metrics.Metric
 
-				if strings.HasPrefix(metric, recoPrefix) {
-					metric = recoMetricName
-					metricDefExists = true
-				} else {
-					mvp, metricDefExists = metricDefs.GetMetricDef(metric)
-				}
+				mvp, metricDefExists = metricDefs.GetMetricDef(metric)
 
 				dbMetric := monitoredSource.Name + dbMetricJoinStr + metric
 				_, cancelFuncExists := r.cancelFuncs[dbMetric]
@@ -483,8 +486,6 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 		case specialMetricChangeEvents:
 			r.CheckForPGObjectChangesAndStore(ctx, md.Name, md, hostState)
 			return nil, nil
-		case recoMetricName:
-			data, err = GetRecommendations(ctx, md)
 		case specialMetricInstanceUp:
 			data, err = r.GetInstanceUpMeasurement(ctx, md)
 		default:
