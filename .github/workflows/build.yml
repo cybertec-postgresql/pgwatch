@@ -116,7 +116,13 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '22'                      
+        node-version: '22'
+
+    - name: Setup Protobuf
+      uses: ./.github/actions/setup-protobuf
+
+    - name: Generate protobuf files
+      run: go generate ./api/pb/
 
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v6
