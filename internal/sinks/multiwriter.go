@@ -7,13 +7,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 )
 
 // Writer is an interface that writes metrics values
 type Writer interface {
-	SyncMetric(dbUnique, metricName string, op pb.SyncOp) error
+	SyncMetric(dbUnique, metricName string, op SyncOp) error
 	Write(msgs metrics.MeasurementEnvelope) error
 }
 
@@ -46,7 +45,7 @@ func NewSinkWriter(ctx context.Context, opts *CmdOpts) (w Writer, err error) {
 			w, err = NewPostgresWriter(ctx, s, opts)
 		case "prometheus":
 			w, err = NewPrometheusWriter(ctx, path)
-		case "rpc":
+		case "rpc", "grpc":
 			w, err = NewRPCWriter(ctx, path)
 		default:
 			return nil, fmt.Errorf("unknown schema %s in sink URI %s", scheme, s)
@@ -77,7 +76,7 @@ func (mw *MultiWriter) DefineMetrics(metrics *metrics.Metrics) (err error) {
 	return nil
 }
 
-func (mw *MultiWriter) SyncMetric(dbUnique, metricName string, op pb.SyncOp) (err error) {
+func (mw *MultiWriter) SyncMetric(dbUnique, metricName string, op SyncOp) (err error) {
 	for _, w := range mw.writers {
 		err = errors.Join(err, w.SyncMetric(dbUnique, metricName, op))
 	}

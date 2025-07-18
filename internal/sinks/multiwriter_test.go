@@ -4,14 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/stretchr/testify/assert"
 )
 
 type MockWriter struct{}
 
-func (mw *MockWriter) SyncMetric(_, _ string, _ pb.SyncOp) error {
+func (mw *MockWriter) SyncMetric(_, _ string, _ SyncOp) error {
 	return nil
 }
 
@@ -72,7 +71,7 @@ func TestSyncMetrics(t *testing.T) {
 	mw := &MultiWriter{}
 	mockWriter := &MockWriter{}
 	mw.AddWriter(mockWriter)
-	err := mw.SyncMetric("db", "metric", pb.SyncOp_InvalidOp)
+	err := mw.SyncMetric("db", "metric", InvalidOp)
 	assert.NoError(t, err)
 }
 

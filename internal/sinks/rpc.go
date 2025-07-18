@@ -22,6 +22,18 @@ type RPCWriter struct {
 	client  pb.ReceiverClient
 }
 
+// convertSyncOp converts sinks.SyncOp to pb.SyncOp
+func convertSyncOp(op SyncOp) pb.SyncOp {
+	switch op {
+	case AddOp:
+		return pb.SyncOp_AddOp
+	case DeleteOp:
+		return pb.SyncOp_DeleteOp
+	default:
+		return pb.SyncOp_InvalidOp
+	}
+}
+
 func NewRPCWriter(ctx context.Context, host string) (*RPCWriter, error) {
 	conn, err := grpc.NewClient(host, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -82,11 +94,11 @@ func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error {
 	return nil
 }
 
-func (rw *RPCWriter) SyncMetric(dbUnique, metricName string, op pb.SyncOp) error {
+func (rw *RPCWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error {
 	syncReq := &pb.SyncReq{
 		DBName: dbUnique,	
 		MetricName: metricName,
-		Operation: op,
+		Operation: convertSyncOp(op),
 	}
 
 	reply, err := rw.client.SyncMetric(rw.ctx, syncReq)

@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pashagolub/pgxmock/v4"
@@ -62,14 +61,14 @@ func TestSyncMetric(t *testing.T) {
 	}
 	dbUnique := "mydb"
 	metricName := "mymetric"
-	op := pb.SyncOp_AddOp
+	op := AddOp
 	conn.ExpectExec("insert into admin\\.all_distinct_dbname_metrics").WithArgs(dbUnique, metricName).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
 	conn.ExpectExec("select admin\\.ensure_dummy_metrics_table").WithArgs(metricName).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
 	err = pgw.SyncMetric(dbUnique, metricName, op)
 	assert.NoError(t, err)
 	assert.NoError(t, conn.ExpectationsWereMet())
 
-	op = pb.SyncOp_InvalidOp
+	op = InvalidOp
 	err = pgw.SyncMetric(dbUnique, metricName, op)
 	assert.NoError(t, err, "ignore unknown operation")
 }

@@ -18,6 +18,7 @@ import (
 type Receiver struct {
 	pb.UnimplementedReceiverServer
 }
+
 var ctx = context.Background()
 
 const ServerAddress = "localhost:6060"
@@ -59,8 +60,6 @@ func init() {
 	}()
 }
 
-// Test begin from here ---------------------------------------------------------
-
 func TestRPCWrite(t *testing.T) {
 	a := assert.New(t)
 
@@ -100,11 +99,11 @@ func TestRPCSyncMetric(t *testing.T) {
 	a.NoError(err)
 
 	// no error for valid Sync requests
-	err = rw.SyncMetric("Test-DB", "DB-Metric", pb.SyncOp_AddOp)
+	err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
 	a.NoError(err)
 
 	// error for invalid Sync requests
-	err = rw.SyncMetric("", "", pb.SyncOp_InvalidOp)
+	err = rw.SyncMetric("", "", sinks.InvalidOp)
 	a.ErrorIs(err, status.Error(codes.Unknown, "invalid sync request"))
 
 	// error for cancelled context
@@ -112,6 +111,6 @@ func TestRPCSyncMetric(t *testing.T) {
 	rw, err = sinks.NewRPCWriter(ctx, ServerAddress)
 	a.NoError(err)
 	cancel()
-	err = rw.SyncMetric("Test-DB", "DB-Metric", pb.SyncOp_AddOp)
+	err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
 	a.Error(err)
 }
