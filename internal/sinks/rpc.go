@@ -7,6 +7,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	jsoniter "github.com/json-iterator/go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -14,12 +15,12 @@ import (
 
 // RPCWriter sends metric measurements to a remote server using gRPC.
 // Remote servers should make use the .proto file under api/pb/ to integrate with it.
-// It's up to the implementer to define the behavior of the server. 
+// It's up to the implementer to define the behavior of the server.
 // It can be a simple logger, external storage, alerting system, or an analytics system.
 type RPCWriter struct {
-	ctx     context.Context
-	conn    *grpc.ClientConn
-	client  pb.ReceiverClient
+	ctx    context.Context
+	conn   *grpc.ClientConn
+	client pb.ReceiverClient
 }
 
 // convertSyncOp converts sinks.SyncOp to pb.SyncOp
@@ -29,6 +30,8 @@ func convertSyncOp(op SyncOp) pb.SyncOp {
 		return pb.SyncOp_AddOp
 	case DeleteOp:
 		return pb.SyncOp_DeleteOp
+	case DefineOp:
+		return pb.SyncOp_DefineOp
 	default:
 		return pb.SyncOp_InvalidOp
 	}
@@ -42,8 +45,8 @@ func NewRPCWriter(ctx context.Context, host string) (*RPCWriter, error) {
 
 	client := pb.NewReceiverClient(conn)
 	rw := &RPCWriter{
-		ctx: ctx, 
-		conn: conn, 
+		ctx:    ctx,
+		conn:   conn,
 		client: client,
 	}
 	go rw.watchCtx()
@@ -61,7 +64,7 @@ func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error {
 	failCnt := 0
 	measurements := make([]*structpb.Struct, 0, dataLength)
 	for _, item := range msg.Data {
-		st, err := structpb.NewStruct(item) 
+		st, err := structpb.NewStruct(item)
 		if err != nil {
 			failCnt++
 			continue
@@ -69,15 +72,15 @@ func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error {
 		measurements = append(measurements, st)
 	}
 	if failCnt > 0 {
-		log.GetLogger(rw.ctx).WithField("database", msg.DBName).WithField("metric", 
+		log.GetLogger(rw.ctx).WithField("database", msg.DBName).WithField("metric",
 			msg.MetricName).Warningf("gRPC sink failed to encode %d rows", failCnt)
 	}
 
 	envelope := &pb.MeasurementEnvelope{
-		DBName: msg.DBName,
+		DBName:     msg.DBName,
 		MetricName: msg.MetricName,
-		CustomTags: msg.CustomTags, 
-		Data: measurements,
+		CustomTags: msg.CustomTags,
+		Data:       measurements,
 	}
 
 	t1 := time.Now()
@@ -94,18 +97,54 @@ func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error {
 	return nil
 }
 
-func (rw *RPCWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error {
+// SyncMetric synchronizes a metric and monitored source with the remote server
+func (rw *RPCWriter) SyncMetric(sourceName, metricName string, op SyncOp) error {
 	syncReq := &pb.SyncReq{
-		DBName: dbUnique,	
+		DBName:     sourceName,
 		MetricName: metricName,
-		Operation: convertSyncOp(op),
+		Operation:  convertSyncOp(op),
 	}
 
 	reply, err := rw.client.SyncMetric(rw.ctx, syncReq)
 	if err != nil {
 		return err
 	}
-	
+
+	if reply.GetLogmsg() != "" {
+		log.GetLogger(rw.ctx).Info(reply.GetLogmsg())
+	}
+	return nil
+}
+
+// DefineMetrics sends metric definitions to the remote server
+func (rw *RPCWriter) DefineMetrics(metrics *metrics.Metrics) error {
+	var json = jsoniter.ConfigFastest
+
+	// Convert metrics to JSON first, then to structpb.Struct
+	// to automatically handle all the type conversions
+	jsonData, err := json.Marshal(metrics)
+	if err != nil {
+		return err
+	}
+
+	var metricMap map[string]any
+	if err := json.Unmarshal(jsonData, &metricMap); err != nil {
+		return err
+	}
+
+	metricStruct, err := structpb.NewStruct(metricMap)
+	if err != nil {
+		return err
+	}
+
+	t1 := time.Now()
+	reply, err := rw.client.DefineMetrics(rw.ctx, metricStruct)
+	if err != nil {
+		return err
+	}
+
+	diff := time.Since(t1)
+	log.GetLogger(rw.ctx).WithField("elapsed", diff).Info("metric definitions written")
 	if reply.GetLogmsg() != "" {
 		log.GetLogger(rw.ctx).Info(reply.GetLogmsg())
 	}

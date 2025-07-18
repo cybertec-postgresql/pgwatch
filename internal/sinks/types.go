@@ -6,11 +6,13 @@ type SyncOp int32
 
 const (
 	// InvalidOp represents an invalid or unrecognized operation
-	InvalidOp          = -1
+	InvalidOp = -1
 	// AddOp represents adding a new metric
 	AddOp SyncOp = iota // 0
 	// DeleteOp represents deleting an existing metric
-	DeleteOp            // 1
+	DeleteOp // 1
+	// DefineOp represents defining metric definitions
+	DefineOp // 2
 )
 
 // String returns the string representation of the SyncOp
@@ -22,6 +24,8 @@ func (s SyncOp) String() string {
 		return "AddOp"
 	case DeleteOp:
 		return "DeleteOp"
+	case DefineOp:
+		return "DefineOp"
 	default:
 		return "Unknown"
 	}

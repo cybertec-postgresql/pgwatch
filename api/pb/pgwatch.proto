@@ -6,6 +6,7 @@ option go_package = ".;pb";
 service Receiver {
     rpc UpdateMeasurements(MeasurementEnvelope) returns (Reply);
     rpc SyncMetric(SyncReq) returns (Reply);
+    rpc DefineMetrics(google.protobuf.Struct) returns (Reply);
 }
 
 message Reply {
@@ -31,5 +32,6 @@ message SyncReq {
 enum SyncOp {
     AddOp = 0;
     DeleteOp = 1;
+    DefineOp = 2;
     InvalidOp = -1;
 }

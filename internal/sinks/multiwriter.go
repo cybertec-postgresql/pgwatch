@@ -18,7 +18,7 @@ type Writer interface {
 
 // MetricDefiner is an interface for passing metric definitions to a sink.
 type MetricsDefiner interface {
-	DefineMetrics(metric *metrics.Metrics) error
+	DefineMetrics(metrics *metrics.Metrics) error
 }
 
 // MultiWriter ensures the simultaneous storage of data in several storages.
@@ -76,9 +76,9 @@ func (mw *MultiWriter) DefineMetrics(metrics *metrics.Metrics) (err error) {
 	return nil
 }
 
-func (mw *MultiWriter) SyncMetric(dbUnique, metricName string, op SyncOp) (err error) {
+func (mw *MultiWriter) SyncMetric(sourceName, metricName string, op SyncOp) (err error) {
 	for _, w := range mw.writers {
-		err = errors.Join(err, w.SyncMetric(dbUnique, metricName, op))
+		err = errors.Join(err, w.SyncMetric(sourceName, metricName, op))
 	}
 	return
 }

@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type Receiver struct {
@@ -41,6 +42,16 @@ func (receiver *Receiver) SyncMetric(_ context.Context, syncReq *pb.SyncReq) (*p
 		return nil, errors.New("invalid sync request")
 	}
 	return &pb.Reply{}, nil
+}
+
+func (receiver *Receiver) DefineMetrics(_ context.Context, metricsStruct *structpb.Struct) (*pb.Reply, error) {
+	if metricsStruct == nil {
+		return nil, errors.New("nil metrics struct")
+	}
+	if metricsStruct.GetFields() == nil {
+		return nil, errors.New("empty metrics struct")
+	}
+	return &pb.Reply{Logmsg: "metrics defined successfully"}, nil
 }
 
 func init() {
@@ -112,5 +123,60 @@ func TestRPCSyncMetric(t *testing.T) {
 	a.NoError(err)
 	cancel()
 	err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
+	a.Error(err)
+}
+
+func TestRPCDefineMetric(t *testing.T) {
+	a := assert.New(t)
+
+	rw, err := sinks.NewRPCWriter(ctx, ServerAddress)
+	a.NoError(err)
+
+	// Test that RPCWriter implements MetricsDefiner interface
+	var writer sinks.Writer = rw
+	definer, ok := writer.(sinks.MetricsDefiner)
+	a.True(ok, "RPCWriter should implement MetricsDefiner interface")
+
+	// Test with valid metrics
+	testMetrics := &metrics.Metrics{
+		MetricDefs: metrics.MetricDefs{
+			"test_metric": metrics.Metric{
+				SQLs: metrics.SQLs{
+					11: "SELECT 1 as test_column",
+					12: "SELECT 2 as test_column",
+				},
+				Description: "Test metric",
+				Gauges:      []string{"test_column"},
+			},
+		},
+		PresetDefs: metrics.PresetDefs{
+			"test_preset": metrics.Preset{
+				Description: "Test preset",
+				Metrics:     map[string]float64{"test_metric": 30.0},
+			},
+		},
+	}
+
+	err = definer.DefineMetrics(testMetrics)
+	a.NoError(err)
+
+	// Test with empty metrics (should still work)
+	emptyMetrics := &metrics.Metrics{
+		MetricDefs: make(metrics.MetricDefs),
+		PresetDefs: make(metrics.PresetDefs),
+	}
+
+	err = definer.DefineMetrics(emptyMetrics)
+	a.NoError(err)
+
+	// Test with cancelled context
+	ctx, cancel := context.WithCancel(ctx)
+	rw, err = sinks.NewRPCWriter(ctx, ServerAddress)
+	a.NoError(err)
+	cancel()
+
+	writer = rw
+	definer = writer.(sinks.MetricsDefiner)
+	err = definer.DefineMetrics(testMetrics)
 	a.Error(err)
 }

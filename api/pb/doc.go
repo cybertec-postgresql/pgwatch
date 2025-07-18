@@ -6,14 +6,16 @@
 //   - protoc-gen-go-grpc (Go gRPC plugin for protoc)
 //
 // On Windows:
-//   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-//   go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-//   # Download protoc from https://github.com/protocolbuffers/protobuf/releases
+//
+//	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+//	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+//	winget install protobuf
 //
 // On Linux/macOS:
-//   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-//   go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-//   # Install protoc via package manager (apt, brew, etc.)
+//
+//	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+//	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+//	# Install protoc via package manager (apt, brew, etc.)
 //
 // Then run: go generate ./api/pb/
 package pb
