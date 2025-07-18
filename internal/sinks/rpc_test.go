@@ -2,177 +2,116 @@ package sinks_test
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
-	"fmt"
 	"net"
-	"net/http"
-	"net/rpc"
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-type Receiver struct {}
-
-var ctxt = context.Background()
-
-const CA = "./rpc_tests_certs/ca.crt"
-const ServerCert = "./rpc_tests_certs/server.crt"
-const ServerKey = "./rpc_tests_certs/server.key"
-
-var ClientTLSConnStr = fmt.Sprintf("rpc://localhost:5050?sslrootca=%s", CA) // the CN in server test cert is set to `localhost`
-const TLSServerAddress = "localhost:5050"
+type Receiver struct {
+	pb.UnimplementedReceiverServer
+}
+var ctx = context.Background()
 
 const ServerAddress = "localhost:6060"
-const ClientConnStr = "rpc://localhost:6060"
 
-var ConnStrs = [2]string{ClientConnStr, ClientTLSConnStr}
-
-func (receiver *Receiver) UpdateMeasurements(msg *metrics.MeasurementEnvelope, logMsg *string) error {
-	if msg == nil || len(msg.Data) == 0 {
-		return errors.New("msgs is nil")
+func (receiver *Receiver) UpdateMeasurements(ctx context.Context, msg *pb.MeasurementEnvelope) (*pb.Reply, error) {
+	if len(msg.GetData()) == 0 {
+		return nil, errors.New("empty message")
 	}
-	if msg.DBName != "Db" {
-		return errors.New("invalid message")
+	if msg.GetDBName() != "Db" {
+		return nil, errors.New("invalid message")
 	}
-	*logMsg = fmt.Sprintf("Received: %+v", *msg)
-	return nil
+	return &pb.Reply{}, nil
 }
 
-func (receiver *Receiver) SyncMetric(syncReq *pb.SyncReq, logMsg *string) error {
+func (receiver *Receiver) SyncMetric(ctx context.Context, syncReq *pb.SyncReq) (*pb.Reply, error) {
 	if syncReq == nil {
-		return errors.New("msgs is nil")
+		return nil, errors.New("nil sync request")
 	}
-	if syncReq.Operation == pb.SyncOp_InvalidOp {
-		return errors.New("invalid message")
+	if syncReq.GetOperation() == pb.SyncOp_InvalidOp {
+		return nil, errors.New("invalid sync request")
 	}
-	*logMsg = fmt.Sprintf("Received: %+v", *syncReq)
-	return nil
+	return &pb.Reply{}, nil
 }
 
 func init() {
+	lis, err := net.Listen("tcp", ServerAddress)
+	if err != nil {
+		panic(err)
+	}
+
+	server := grpc.NewServer()
 	recv := new(Receiver)
-	if err := rpc.Register(recv); err != nil {
-		panic(err)
-	}
-
-	rpc.HandleHTTP()
-	if listener, err := net.Listen("tcp", ServerAddress); err == nil {
-		go func() {
-			_ = http.Serve(listener, nil)
-		}()
-	} else {
-		panic(err)
-	}	
-	
-	cert, err := tls.LoadX509KeyPair(ServerCert, ServerKey)
-	if err != nil {
-		panic(err) 
-	}
-
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-	}
-
-	TLSListener, err := tls.Listen("tcp", TLSServerAddress, tlsConfig) 
-	if err != nil {
-		panic(err)
-	}
+	pb.RegisterReceiverServer(server, recv)
 
 	go func() {
-		for {
-			conn, err := TLSListener.Accept()
-			if err != nil {
-				continue
-			}
-			go rpc.ServeConn(conn)
+		if err := server.Serve(lis); err != nil {
+			panic(err)
 		}
 	}()
 }
 
 // Test begin from here ---------------------------------------------------------
 
-func TestCACertValidation(t *testing.T) {
-	a := assert.New(t)
-	_, err := sinks.NewRPCWriter(ctxt, ClientConnStr)
-	a.NoError(err)
-
-	BadRPCParams := [...]string{"?sslrootca=file.txt", "?sslrootca="}
-	for _, value := range BadRPCParams {
-		_, err = sinks.NewRPCWriter(ctxt, fmt.Sprintf("localhost:5050%s", value))
-		a.Error(err)
-	}
-}
-
-func TestNewRPCWriter(t *testing.T) {
-	a := assert.New(t)
-	_, err := sinks.NewRPCWriter(ctxt, "foo")
-	a.Error(err)
-}
-
 func TestRPCWrite(t *testing.T) {
 	a := assert.New(t)
 
-	for _, ConnStr := range ConnStrs {
-		rw, err := sinks.NewRPCWriter(ctxt, ConnStr)
-		a.NoError(err)
+	rw, err := sinks.NewRPCWriter(ctx, ServerAddress)
+	a.NoError(err)
 
-		// no error for valid messages
-		msgs := metrics.MeasurementEnvelope{
-			DBName: "Db",
-			Data:   metrics.Measurements{{"test": 1}},
-		}
-		err = rw.Write(msgs)
-		a.NoError(err)
+	// no error for valid messages
+	msgs := metrics.MeasurementEnvelope{
+		DBName: "Db",
+		Data:   metrics.Measurements{{"test": 1}},
+	}
+	err = rw.Write(msgs)
+	a.NoError(err)
 
-		// error for invalid messages
-		msgs = metrics.MeasurementEnvelope{
-			DBName: "invalid",
-		}
+	// error for invalid messages
+	msgs.DBName = "invalid"
+	err = rw.Write(msgs)
+	a.ErrorIs(err, status.Error(codes.Unknown, "invalid message"))
 
-		err = rw.Write(msgs)
-		a.Error(err)
+	// error for empty messages
+	err = rw.Write(metrics.MeasurementEnvelope{})
+	a.ErrorIs(err, status.Error(codes.Unknown, "empty message"))
 
-		// error for empty messages
-		err = rw.Write(metrics.MeasurementEnvelope{})
-		a.Error(err)
-
-		// error for cancelled context
-		ctx, cancel := context.WithCancel(ctxt)
-		rw, err = sinks.NewRPCWriter(ctx, ConnStr)
-		a.NoError(err)
-		cancel()
-		err = rw.Write(msgs)
-		a.Error(err)
-	}	
+	// error for cancelled context
+	ctx, cancel := context.WithCancel(ctx)
+	rw, err = sinks.NewRPCWriter(ctx, ServerAddress)
+	a.NoError(err)
+	cancel()
+	err = rw.Write(msgs)
+	a.Error(err)
 }
 
 func TestRPCSyncMetric(t *testing.T) {
 	a := assert.New(t)
-	for _, ConnStr := range ConnStrs {
-		rw, err := sinks.NewRPCWriter(ctxt, ConnStr)
-		if err != nil {
-			t.Error("Unable to send sync metric signal")
-		}
 
-		// no error for valid messages
-		err = rw.SyncMetric("Test-DB", "DB-Metric", pb.SyncOp_AddOp)
-		a.NoError(err)
+	rw, err := sinks.NewRPCWriter(ctx, ServerAddress)
+	a.NoError(err)
 
-		// error for invalid messages
-		err = rw.SyncMetric("", "", pb.SyncOp_InvalidOp)
-		a.Error(err)
+	// no error for valid Sync requests
+	err = rw.SyncMetric("Test-DB", "DB-Metric", pb.SyncOp_AddOp)
+	a.NoError(err)
 
-		// error for cancelled context
-		ctx, cancel := context.WithCancel(ctxt)
-		rw, err = sinks.NewRPCWriter(ctx, ConnStr)
-		a.NoError(err)
-		cancel()
-		err = rw.SyncMetric("Test-DB", "DB-Metric", pb.SyncOp_AddOp)
-		a.Error(err)
-	}
+	// error for invalid Sync requests
+	err = rw.SyncMetric("", "", pb.SyncOp_InvalidOp)
+	a.ErrorIs(err, status.Error(codes.Unknown, "invalid sync request"))
+
+	// error for cancelled context
+	ctx, cancel := context.WithCancel(ctx)
+	rw, err = sinks.NewRPCWriter(ctx, ServerAddress)
+	a.NoError(err)
+	cancel()
+	err = rw.SyncMetric("Test-DB", "DB-Metric", pb.SyncOp_AddOp)
+	a.Error(err)
 }
