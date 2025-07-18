@@ -13,6 +13,12 @@ runs:
         restore-keys: |
           ${{ runner.os }}-protoc-tools-
     
+    - name: Install protoc
+      uses: arduino/setup-protoc@v3
+      with:
+        version: '25.x'
+        repo-token: ${{ github.token }}
+    
     - name: Install protobuf tools
       shell: bash
       run: |
@@ -20,9 +26,3 @@ runs:
           go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
         fi
-    
-    - name: Install protoc
-      shell: bash
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y protobuf-compiler
