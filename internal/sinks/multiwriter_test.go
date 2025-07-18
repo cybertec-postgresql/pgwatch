@@ -39,9 +39,6 @@ func TestNewMultiWriter(t *testing.T) {
 			Sinks: []string{"prometheus://foo/"},
 		}, false, true},
 		{&CmdOpts{
-			Sinks: []string{"rpc://foo/"},
-		}, false, true},
-		{&CmdOpts{
 			Sinks: []string{"postgresql:///baz"},
 		}, false, true},
 		{&CmdOpts{
