@@ -112,17 +112,24 @@ and be prepared for the unavoidable downtime.
 ### Updating the pgwatch schema
 
 This is the pgwatch specific part, with some coupling between the
-following components - Config DB SQL schema, metrics collector, and the
-optional Web UI.
+following components - Configuration DB SQL schema and pgwatch binary.
 
-Here one should check from the
-[CHANGELOG](https://github.com/cybertec-postgresql/pgwatch/releases)
-if pgwatch schema needs updating. If yes, then manual applying of
-schema diffs is required before running the new gatherer or Web UI. If
-no, i.e. no schema changes, all components can be updated independently
-in random order.
+First of all, the pgwatch binary needs to be updated to a newer version.
+Then try to run the pgwatch as usual:
 
-    pgwatch --config=postgresql://localhost/pgwatch --upgrade
+    pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch_metrics
+    
+    [ERROR] configuration needs upgrade, use "config upgrade" command
+    exit status 4
+
+If you see the above error message, then the pgwatch schema needs updating.
+This is done by running the following command, which will apply all
+the necessary SQL migrations to the configuration database:
+
+    pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch config upgrade
+
+    [INFO] Applying migration named '00824 Refactor recommendations'...
+    [INFO] Applied migration named '00824 Refactor recommendations'
 
 ### Updating the metrics collector
 

@@ -76,7 +76,7 @@ var migrations func() migrator.Option = func() migrator.Option {
 		},
 
 		&migrator.Migration{
-			Name: "00824 Refactor recommendations metrics to use metric_storage_name",
+			Name: "00824 Refactor recommendations",
 			Func: func(ctx context.Context, tx pgx.Tx) error {
 				_, err := tx.Exec(ctx, `
 					-- 1. Update all reco_ metrics to use metric_storage_name = 'recommendations'
