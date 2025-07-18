@@ -22,7 +22,7 @@ var ctx = context.Background()
 
 const ServerAddress = "localhost:6060"
 
-func (receiver *Receiver) UpdateMeasurements(ctx context.Context, msg *pb.MeasurementEnvelope) (*pb.Reply, error) {
+func (receiver *Receiver) UpdateMeasurements(_ context.Context, msg *pb.MeasurementEnvelope) (*pb.Reply, error) {
 	if len(msg.GetData()) == 0 {
 		return nil, errors.New("empty message")
 	}
@@ -32,7 +32,7 @@ func (receiver *Receiver) UpdateMeasurements(ctx context.Context, msg *pb.Measur
 	return &pb.Reply{}, nil
 }
 
-func (receiver *Receiver) SyncMetric(ctx context.Context, syncReq *pb.SyncReq) (*pb.Reply, error) {
+func (receiver *Receiver) SyncMetric(_ context.Context, syncReq *pb.SyncReq) (*pb.Reply, error) {
 	if syncReq == nil {
 		return nil, errors.New("nil sync request")
 	}
