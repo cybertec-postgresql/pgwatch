@@ -26,6 +26,9 @@ jobs:
         go-version: '1.24'
         cache-dependency-path: 'go.sum'
 
+    - name: Setup Protobuf
+      uses: ./.github/actions/setup-protobuf
+
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
@@ -45,6 +48,7 @@ jobs:
         cd internal/webui
         yarn install --network-timeout 100000 && yarn build
         cd -
+        go generate ./api/pb/
         go build ./cmd/pgwatch
 
     - name: Upload webui as artifact
@@ -80,8 +84,12 @@ jobs:
         name: webui-build
         path: internal/webui/build        
 
+    - name: Setup Protobuf
+      uses: ./.github/actions/setup-protobuf
+
     - name: Test
       run: |
+        go generate ./api/pb/
         go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./...
 
     - name: Coveralls

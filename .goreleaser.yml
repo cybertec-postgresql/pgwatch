@@ -2,7 +2,6 @@ version: 2
 
 before:
   hooks:
-    - go generate ./api/pb/
     - sh -c "cd ./internal/webui && yarn install && yarn build"
 
 builds:
