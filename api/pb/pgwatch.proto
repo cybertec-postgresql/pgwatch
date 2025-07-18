@@ -14,9 +14,9 @@ message Reply {
 
 message MeasurementEnvelope {
     string DBName = 1;
-	string MetricName = 3;
-    map<string, string> CustomTags = 4;
-	repeated google.protobuf.Struct Data = 5;
+	string MetricName = 2;
+    map<string, string> CustomTags = 3;
+	repeated google.protobuf.Struct Data = 4;
 }
 
 message SyncReq {
@@ -26,7 +26,7 @@ message SyncReq {
 }
 
 enum SyncOp {
-    AddOp = 0;
-    DeleteOp = 1;
-    InvalidOp = 2;
+    InvalidOp = 0;
+    AddOp = 1;
+    DeleteOp = 2;
 }
