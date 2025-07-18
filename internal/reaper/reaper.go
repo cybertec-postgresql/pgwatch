@@ -18,6 +18,14 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
+const (
+	specialMetricChangeEvents         = "change_events"
+	specialMetricServerLogEventCounts = "server_log_event_counts"
+	specialMetricInstanceUp           = "instance_up"
+)
+
+var specialMetrics = map[string]bool{specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
+
 var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 var metricsConfig map[string]float64                      // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 var metricDefs = NewConcurrentMetricDefs()
