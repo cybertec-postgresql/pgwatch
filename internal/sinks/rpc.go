@@ -50,7 +50,7 @@ func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error {
 	measurements := make([]*structpb.Struct, 0, dataLength)
 	for _, item := range msg.Data {
 		st, err := structpb.NewStruct(item) 
-		if err == nil {
+		if err != nil {
 			failCnt++
 			continue
 		}
