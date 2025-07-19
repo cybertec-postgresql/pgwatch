@@ -9,7 +9,9 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	jsoniter "github.com/json-iterator/go"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -49,9 +51,22 @@ func NewRPCWriter(ctx context.Context, host string) (*RPCWriter, error) {
 		conn:   conn,
 		client: client,
 	}
-	go rw.watchCtx()
 
+	if err = rw.Ping(); err != nil {
+		return nil, err
+	}
+
+	go rw.watchCtx()
 	return rw, nil
+}
+
+func (rw *RPCWriter) Ping() error {
+	err := rw.SyncMetric("", "", InvalidOp)
+	st, ok := status.FromError(err)
+	if ok && st.Code() == codes.Unavailable {
+		return err
+	}
+	return nil
 }
 
 // Sends Measurement Message to RPC Sink
