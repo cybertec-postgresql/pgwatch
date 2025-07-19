@@ -12,7 +12,7 @@ import (
 
 // Writer is an interface that writes metrics values
 type Writer interface {
-	SyncMetric(dbUnique, metricName string, op SyncOp) error
+	SyncMetric(sourceName, metricName string, op SyncOp) error
 	Write(msgs metrics.MeasurementEnvelope) error
 }
 

@@ -6,13 +6,13 @@ type SyncOp int32
 
 const (
 	// InvalidOp represents an invalid or unrecognized operation
-	InvalidOp = -1
+	InvalidOp SyncOp = iota // 0 
 	// AddOp represents adding a new metric
-	AddOp SyncOp = iota // 0
-	// DeleteOp represents deleting an existing metric
-	DeleteOp // 1
+	AddOp  // 1
+	// DeleteOp represents deleting an existing metric or entire source
+	DeleteOp // 2
 	// DefineOp represents defining metric definitions
-	DefineOp // 2
+	DefineOp // 3
 )
 
 // String returns the string representation of the SyncOp

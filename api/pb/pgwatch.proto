@@ -30,8 +30,8 @@ message SyncReq {
 // The actual constants are defined in internal/sinks/types.go
 // and should be used instead of these protobuf-generated constants.
 enum SyncOp {
-    AddOp = 0;
-    DeleteOp = 1;
-    DefineOp = 2;
-    InvalidOp = -1;
+    InvalidOp = 0;
+    AddOp = 1;
+    DeleteOp = 2;
+    DefineOp = 3;
 }
