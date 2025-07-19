@@ -2,7 +2,6 @@ version: 2
 
 before:
   hooks:
-    # weirdly goreleaser doesn't all to include outside of the Go build "root" so need to copy
     - sh -c "cd ./internal/webui && yarn install && yarn build"
 
 builds:

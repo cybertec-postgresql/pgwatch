@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+import "google/protobuf/struct.proto";
+option go_package = ".;pb";
+
+service Receiver {
+    rpc UpdateMeasurements(MeasurementEnvelope) returns (Reply);
+    rpc SyncMetric(SyncReq) returns (Reply);
+    rpc DefineMetrics(google.protobuf.Struct) returns (Reply);
+}
+
+message Reply {
+    string logmsg = 1;
+}
+
+message MeasurementEnvelope {
+    string DBName = 1;
+    string MetricName = 2;
+    map<string, string> CustomTags = 3;
+    repeated google.protobuf.Struct Data = 4;
+}
+
+message SyncReq {
+    string DBName = 1;
+    string MetricName = 2;
+    SyncOp Operation = 3;
+}
+
+// SyncOp represents synchronization operations for metrics.
+// The actual constants are defined in internal/sinks/types.go
+// and should be used instead of these protobuf-generated constants.
+enum SyncOp {
+    InvalidOp = 0;
+    AddOp = 1;
+    DeleteOp = 2;
+    DefineOp = 3;
+}

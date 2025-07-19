@@ -17,6 +17,9 @@ dist
 docs/godoc
 site
 
+# Generated protobuf files
+*.pb.go
+
 # delve debugger file
 debug
 
