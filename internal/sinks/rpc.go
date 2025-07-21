@@ -2,69 +2,71 @@ package sinks
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
-	"fmt"
-	"net/rpc"
-	"net/url"
-	"os"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	jsoniter "github.com/json-iterator/go"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
-func NewRPCWriter(ctx context.Context, ConnStr string) (*RPCWriter, error) {
-	uri, err := url.Parse(ConnStr)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing RPC URI: %s", err)
-	}
+// RPCWriter sends metric measurements to a remote server using gRPC.
+// Remote servers should make use the .proto file under api/pb/ to integrate with it.
+// It's up to the implementer to define the behavior of the server.
+// It can be a simple logger, external storage, alerting system, or an analytics system.
+type RPCWriter struct {
+	ctx    context.Context
+	conn   *grpc.ClientConn
+	client pb.ReceiverClient
+}
 
-	params, err := url.ParseQuery(uri.RawQuery)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing RPC URI parameters: %s", err)
+// convertSyncOp converts sinks.SyncOp to pb.SyncOp
+func convertSyncOp(op SyncOp) pb.SyncOp {
+	switch op {
+	case AddOp:
+		return pb.SyncOp_AddOp
+	case DeleteOp:
+		return pb.SyncOp_DeleteOp
+	case DefineOp:
+		return pb.SyncOp_DefineOp
+	default:
+		return pb.SyncOp_InvalidOp
 	}
+}
 
-	RootCA, exists := params["sslrootca"]
-	var client *rpc.Client
-	if exists {
-		client, err = connectViaTLS(uri.Host, RootCA[0])
-	} else {
-		client, err = rpc.DialHTTP("tcp", uri.Host)
-	}
-
+func NewRPCWriter(ctx context.Context, host string) (*RPCWriter, error) {
+	conn, err := grpc.NewClient(host, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
 
-	l := log.GetLogger(ctx).WithField("sink", "rpc").WithField("address", uri.Host)
-	ctx = log.WithLogger(ctx, l)
+	client := pb.NewReceiverClient(conn)
 	rw := &RPCWriter{
-		ctx:     ctx,
-		client:  client,
+		ctx:    ctx,
+		conn:   conn,
+		client: client,
 	}
+
+	if err = rw.Ping(); err != nil {
+		return nil, err
+	}
+
 	go rw.watchCtx()
 	return rw, nil
 }
 
-func connectViaTLS(address, RootCA string) (*rpc.Client, error) {
-	ca, err := os.ReadFile(RootCA)
-	if err != nil {
-		return nil, fmt.Errorf("cannot load CA file: %s", err)
+func (rw *RPCWriter) Ping() error {
+	err := rw.SyncMetric("", "", InvalidOp)
+	st, ok := status.FromError(err)
+	if ok && st.Code() == codes.Unavailable {
+		return err
 	}
-
-	certPool := x509.NewCertPool()
-	certPool.AppendCertsFromPEM(ca)
-
-	tlsClientConfig := &tls.Config{
-		RootCAs: certPool,
-	}
-
-	conn, err := tls.Dial("tcp", address, tlsClientConfig)
-	if err != nil {
-		return nil, err
-	}
-	return rpc.NewClient(conn), nil
+	return nil
 }
 
 // Sends Measurement Message to RPC Sink
@@ -73,37 +75,98 @@ func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error {
 		return rw.ctx.Err()
 	}
 
+	dataLength := len(msg.Data)
+	failCnt := 0
+	measurements := make([]*structpb.Struct, 0, dataLength)
+	for _, item := range msg.Data {
+		st, err := structpb.NewStruct(item)
+		if err != nil {
+			failCnt++
+			continue
+		}
+		measurements = append(measurements, st)
+	}
+	if failCnt > 0 {
+		log.GetLogger(rw.ctx).WithField("database", msg.DBName).WithField("metric",
+			msg.MetricName).Warningf("gRPC sink failed to encode %d rows", failCnt)
+	}
+
+	envelope := &pb.MeasurementEnvelope{
+		DBName:     msg.DBName,
+		MetricName: msg.MetricName,
+		CustomTags: msg.CustomTags,
+		Data:       measurements,
+	}
+
 	t1 := time.Now()
-	var logMsg string
-	if err := rw.client.Call("Receiver.UpdateMeasurements", &msg, &logMsg); err != nil {
+	reply, err := rw.client.UpdateMeasurements(rw.ctx, envelope)
+	if err != nil {
 		return err
 	}
 
 	diff := time.Since(t1)
-	written := len(msg.Data)
-	log.GetLogger(rw.ctx).WithField("rows", written).WithField("elapsed", diff).Info("measurements written")
-	if len(logMsg) > 0 {
-		log.GetLogger(rw.ctx).Info(logMsg)
+	log.GetLogger(rw.ctx).WithField("rows", dataLength).WithField("elapsed", diff).Info("measurements written")
+	if reply.GetLogmsg() != "" {
+		log.GetLogger(rw.ctx).Info(reply.GetLogmsg())
 	}
 	return nil
 }
 
-func (rw *RPCWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error {
-	var logMsg string
-	if err := rw.client.Call("Receiver.SyncMetric", &SyncReq{
-		Operation:  op,
-		DbName:     dbUnique,
+// SyncMetric synchronizes a metric and monitored source with the remote server
+func (rw *RPCWriter) SyncMetric(sourceName, metricName string, op SyncOp) error {
+	syncReq := &pb.SyncReq{
+		DBName:     sourceName,
 		MetricName: metricName,
-	}, &logMsg); err != nil {
+		Operation:  convertSyncOp(op),
+	}
+
+	reply, err := rw.client.SyncMetric(rw.ctx, syncReq)
+	if err != nil {
 		return err
 	}
-	if len(logMsg) > 0 {
-		log.GetLogger(rw.ctx).Info(logMsg)
+
+	if reply.GetLogmsg() != "" {
+		log.GetLogger(rw.ctx).Info(reply.GetLogmsg())
+	}
+	return nil
+}
+
+// DefineMetrics sends metric definitions to the remote server
+func (rw *RPCWriter) DefineMetrics(metrics *metrics.Metrics) error {
+	var json = jsoniter.ConfigFastest
+
+	// Convert metrics to JSON first, then to structpb.Struct
+	// to automatically handle all the type conversions
+	jsonData, err := json.Marshal(metrics)
+	if err != nil {
+		return err
+	}
+
+	var metricMap map[string]any
+	if err := json.Unmarshal(jsonData, &metricMap); err != nil {
+		return err
+	}
+
+	metricStruct, err := structpb.NewStruct(metricMap)
+	if err != nil {
+		return err
+	}
+
+	t1 := time.Now()
+	reply, err := rw.client.DefineMetrics(rw.ctx, metricStruct)
+	if err != nil {
+		return err
+	}
+
+	diff := time.Since(t1)
+	log.GetLogger(rw.ctx).WithField("elapsed", diff).Info("metric definitions written")
+	if reply.GetLogmsg() != "" {
+		log.GetLogger(rw.ctx).Info(reply.GetLogmsg())
 	}
 	return nil
 }
 
 func (rw *RPCWriter) watchCtx() {
 	<-rw.ctx.Done()
-	rw.client.Close()
+	rw.conn.Close()
 }
