@@ -26,6 +26,12 @@ jobs:
       with:
         node-version: '22'
 
+    - name: Setup Protobuf
+      uses: ./.github/actions/setup-protobuf
+
+    - name: Generate protobuf files
+      run: go generate ./api/pb/
+
     - name: Release via goreleaser
       uses: goreleaser/goreleaser-action@v6
       with:

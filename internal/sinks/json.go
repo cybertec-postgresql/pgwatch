@@ -68,6 +68,5 @@ func (jw *JSONWriter) SyncMetric(_, _ string, _ SyncOp) error {
 	if jw.ctx.Err() != nil {
 		return jw.ctx.Err()
 	}
-	// do nothing, we don't care
 	return nil
 }
