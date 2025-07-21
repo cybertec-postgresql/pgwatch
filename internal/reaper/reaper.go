@@ -150,18 +150,17 @@ func (r *Reaper) Reap(ctx context.Context) {
 			hostLastKnownStatusInRecovery[monitoredSource.Name] = monitoredSource.IsInRecovery
 
 			for metricName, interval := range metricsConfig {
-				metric := metricName
 				metricDefExists := false
 				var mvp metrics.Metric
 
-				mvp, metricDefExists = metricDefs.GetMetricDef(metric)
+				mvp, metricDefExists = metricDefs.GetMetricDef(metricName)
 
-				dbMetric := monitoredSource.Name + dbMetricJoinStr + metric
+				dbMetric := monitoredSource.Name + dbMetricJoinStr + metricName
 				_, cancelFuncExists := r.cancelFuncs[dbMetric]
 
 				if metricDefExists && !cancelFuncExists { // initialize a new per db/per metric control channel
 					if interval > 0 {
-						srcL.WithField("metric", metric).WithField("interval", interval).Info("starting gatherer")
+						srcL.WithField("metric", metricName).WithField("interval", interval).Info("starting gatherer")
 						metricCtx, cancelFunc := context.WithCancel(ctx)
 						r.cancelFuncs[dbMetric] = cancelFunc
 
@@ -174,20 +173,20 @@ func (r *Reaper) Reap(ctx context.Context) {
 							srcL.Error(err)
 						}
 
-						go r.reapMetricMeasurements(metricCtx, monitoredSource, metric)
+						go r.reapMetricMeasurements(metricCtx, monitoredSource, metricName)
 					}
 				} else if (!metricDefExists && cancelFuncExists) || interval <= 0 {
 					// metric definition files were recently removed or interval set to zero
 					if cancelFunc, isOk := r.cancelFuncs[dbMetric]; isOk {
 						cancelFunc()
 					}
-					srcL.WithField("metric", metric).Warning("shutting down gatherer...")
+					srcL.WithField("metric", metricName).Warning("shutting down gatherer...")
 					delete(r.cancelFuncs, dbMetric)
 				} else if !metricDefExists {
-					epoch, ok := lastSQLFetchError.Load(metric)
+					epoch, ok := lastSQLFetchError.Load(metricName)
 					if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) { // complain only 1x per hour
-						srcL.WithField("metric", metric).Warning("metric definition not found")
-						lastSQLFetchError.Store(metric, time.Now().Unix())
+						srcL.WithField("metric", metricName).Warning("metric definition not found")
+						lastSQLFetchError.Store(metricName, time.Now().Unix())
 					}
 				}
 			}
