@@ -1,29 +1,32 @@
 package sinks
 
-import (
-	"context"
-	"net/rpc"
-)
-
-// RPCWriter is a sink that sends metric measurements to a remote server using the RPC protocol.
-// Remote server should implement the Receiver interface. It's up to the implementer to define the
-// behavior of the server. It can be a simple logger, external storage, alerting system,
-// or an analytics system.
-type RPCWriter struct {
-	ctx     context.Context
-	client  *rpc.Client
-}
-
-type SyncOp int
+// SyncOp represents synchronization operations for metrics.
+// These constants are used both in Go code and protobuf definitions.
+type SyncOp int32
 
 const (
-	AddOp SyncOp = iota
-	DeleteOp
-	InvalidOp
+	// InvalidOp represents an invalid or unrecognized operation
+	InvalidOp SyncOp = iota // 0 
+	// AddOp represents adding a new metric
+	AddOp  // 1
+	// DeleteOp represents deleting an existing metric or entire source
+	DeleteOp // 2
+	// DefineOp represents defining metric definitions
+	DefineOp // 3
 )
 
-type SyncReq struct {
-	DbName     string
-	MetricName string
-	Operation  SyncOp
+// String returns the string representation of the SyncOp
+func (s SyncOp) String() string {
+	switch s {
+	case InvalidOp:
+		return "InvalidOp"
+	case AddOp:
+		return "AddOp"
+	case DeleteOp:
+		return "DeleteOp"
+	case DefineOp:
+		return "DefineOp"
+	default:
+		return "Unknown"
+	}
 }
