@@ -83,4 +83,5 @@ CREATE TABLE pgwatch.migration(
 INSERT INTO
     pgwatch.migration (id, version)
 VALUES
-    (0,  '00179 Apply metrics migrations for v3');
+    (0,  '00179 Apply metrics migrations for v3'),
+    (1,  '00824 Refactor recommendations metrics to use metric_storage_name');

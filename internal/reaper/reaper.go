@@ -18,6 +18,14 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
+const (
+	specialMetricChangeEvents         = "change_events"
+	specialMetricServerLogEventCounts = "server_log_event_counts"
+	specialMetricInstanceUp           = "instance_up"
+)
+
+var specialMetrics = map[string]bool{specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
+
 var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 var metricsConfig map[string]float64                      // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 var metricDefs = NewConcurrentMetricDefs()
@@ -142,23 +150,17 @@ func (r *Reaper) Reap(ctx context.Context) {
 			hostLastKnownStatusInRecovery[monitoredSource.Name] = monitoredSource.IsInRecovery
 
 			for metricName, interval := range metricsConfig {
-				metric := metricName
 				metricDefExists := false
 				var mvp metrics.Metric
 
-				if strings.HasPrefix(metric, recoPrefix) {
-					metric = recoMetricName
-					metricDefExists = true
-				} else {
-					mvp, metricDefExists = metricDefs.GetMetricDef(metric)
-				}
+				mvp, metricDefExists = metricDefs.GetMetricDef(metricName)
 
-				dbMetric := monitoredSource.Name + dbMetricJoinStr + metric
+				dbMetric := monitoredSource.Name + dbMetricJoinStr + metricName
 				_, cancelFuncExists := r.cancelFuncs[dbMetric]
 
 				if metricDefExists && !cancelFuncExists { // initialize a new per db/per metric control channel
 					if interval > 0 {
-						srcL.WithField("metric", metric).WithField("interval", interval).Info("starting gatherer")
+						srcL.WithField("metric", metricName).WithField("interval", interval).Info("starting gatherer")
 						metricCtx, cancelFunc := context.WithCancel(ctx)
 						r.cancelFuncs[dbMetric] = cancelFunc
 
@@ -171,20 +173,20 @@ func (r *Reaper) Reap(ctx context.Context) {
 							srcL.Error(err)
 						}
 
-						go r.reapMetricMeasurements(metricCtx, monitoredSource, metric)
+						go r.reapMetricMeasurements(metricCtx, monitoredSource, metricName)
 					}
 				} else if (!metricDefExists && cancelFuncExists) || interval <= 0 {
 					// metric definition files were recently removed or interval set to zero
 					if cancelFunc, isOk := r.cancelFuncs[dbMetric]; isOk {
 						cancelFunc()
 					}
-					srcL.WithField("metric", metric).Warning("shutting down gatherer...")
+					srcL.WithField("metric", metricName).Warning("shutting down gatherer...")
 					delete(r.cancelFuncs, dbMetric)
 				} else if !metricDefExists {
-					epoch, ok := lastSQLFetchError.Load(metric)
+					epoch, ok := lastSQLFetchError.Load(metricName)
 					if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) { // complain only 1x per hour
-						srcL.WithField("metric", metric).Warning("metric definition not found")
-						lastSQLFetchError.Store(metric, time.Now().Unix())
+						srcL.WithField("metric", metricName).Warning("metric definition not found")
+						lastSQLFetchError.Store(metricName, time.Now().Unix())
 					}
 				}
 			}
@@ -483,8 +485,6 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 		case specialMetricChangeEvents:
 			r.CheckForPGObjectChangesAndStore(ctx, md.Name, md, hostState)
 			return nil, nil
-		case recoMetricName:
-			data, err = GetRecommendations(ctx, md)
 		case specialMetricInstanceUp:
 			data, err = r.GetInstanceUpMeasurement(ctx, md)
 		default:
