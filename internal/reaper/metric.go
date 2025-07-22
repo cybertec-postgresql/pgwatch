@@ -79,7 +79,10 @@ func (r *Reaper) LoadMetrics() (err error) {
 	}
 	metricDefs.Assign(newDefs)
 	if definer, ok := r.SinksWriter.(sinks.MetricsDefiner); ok {
-		err = definer.DefineMetrics(newDefs)
+		err := definer.DefineMetrics(newDefs)
+		if err != nil {
+			r.logger.Error(err)
+		}
 	}
 	r.logger.
 		WithField("metrics", len(newDefs.MetricDefs)).
