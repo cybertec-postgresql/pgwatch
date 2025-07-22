@@ -116,7 +116,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  (data->'in_recovery_int')::int\nFROM\n  wal\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1\n",
+          "rawSql": "SELECT\n  time,\n  (data->>'in_recovery_int')::int\nFROM\n  wal\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -240,7 +240,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  (data->'postmaster_uptime_s')::int\nFROM\n  wal\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1\n",
+          "rawSql": "SELECT\n  time,\n  (data->>'postmaster_uptime_s')::int\nFROM\n  wal\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1018,7 +1018,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  100 * avg((fetched - fetched_lag)::numeric / (returned - returned_lag)) as fetched_vs_returned_pct\nFROM (\n\nSELECT\n  time,\n  (data->'tup_fetched')::int8 as fetched,\n  lag((data->'tup_fetched')::int8) over w as fetched_lag,\n  (data->'tup_returned')::int8 as returned,\n  lag((data->'tup_returned')::int8) over w as returned_lag\nFROM\n  db_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nWINDOW w AS (ORDER BY time)\n) x  \nWHERE returned > returned_lag AND fetched >= fetched_lag\nGROUP BY 1\nORDER BY 1\n\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  100 * avg((fetched - fetched_lag)::numeric / (returned - returned_lag)) as fetched_vs_returned_pct\nFROM (\n\nSELECT\n  time,\n  (data->>'tup_fetched')::int8 as fetched,\n  lag((data->>'tup_fetched')::int8) over w as fetched_lag,\n  (data->>'tup_returned')::int8 as returned,\n  lag((data->>'tup_returned')::int8) over w as returned_lag\nFROM\n  db_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nWINDOW w AS (ORDER BY time)\n) x  \nWHERE returned > returned_lag AND fetched >= fetched_lag\nGROUP BY 1\nORDER BY 1\n\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
