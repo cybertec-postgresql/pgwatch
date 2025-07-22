@@ -2,9 +2,13 @@ package sinks_test
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
+	"fmt"
 	"net"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
@@ -12,17 +16,27 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+var ctx = context.Background()
+
+const CA = "./rpc_tests_certs/ca.crt"
+const ServerCert = "./rpc_tests_certs/server.crt"
+const ServerKey = "./rpc_tests_certs/server.key"
+
+// the CN in server test cert is set to `localhost`
+var TLSConnStr = fmt.Sprintf("grpc://localhost:5050?sslrootca=%s", CA) 
+const TLSServerAddress = "localhost:5050"
+
+const PlainServerAddress = "localhost:6060"
+const PlainConnStr = "grpc://localhost:6060"
+
 type Receiver struct {
 	pb.UnimplementedReceiverServer
 }
-
-var ctx = context.Background()
-
-const ServerAddress = "localhost:6060"
 
 func (receiver *Receiver) UpdateMeasurements(_ context.Context, msg *pb.MeasurementEnvelope) (*pb.Reply, error) {
 	if len(msg.GetData()) == 0 {
@@ -54,27 +68,92 @@ func (receiver *Receiver) DefineMetrics(_ context.Context, metricsStruct *struct
 	return &pb.Reply{Logmsg: "metrics defined successfully"}, nil
 }
 
-func init() {
-	lis, err := net.Listen("tcp", ServerAddress)
+func LoadServerTLSCredentials() (credentials.TransportCredentials, error) {
+	cert, err := tls.LoadX509KeyPair(ServerCert, ServerKey)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	server := grpc.NewServer()
-	recv := new(Receiver)
-	pb.RegisterReceiverServer(server, recv)
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+	}
+	return credentials.NewTLS(tlsConfig), nil
+}
 
-	go func() {
-		if err := server.Serve(lis); err != nil {
+func init() {
+	addresses := [2]string{PlainServerAddress, TLSServerAddress}
+	for _, address := range addresses {
+		lis, err := net.Listen("tcp", address)
+		if err != nil {
 			panic(err)
 		}
-	}()
+
+		var creds credentials.TransportCredentials
+		if address == TLSServerAddress {
+			creds, err = LoadServerTLSCredentials()
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		server := grpc.NewServer(
+			grpc.Creds(creds),
+		)
+
+		recv := new(Receiver)
+		pb.RegisterReceiverServer(server, recv)
+
+		go func() {
+			if err := server.Serve(lis); err != nil {
+				panic(err)
+			}
+		}()
+	}
+	// wait a little for servers start
+	time.Sleep(time.Second)
+}
+
+// Tests begin from here ---------------------------------------------------------
+
+func TestCACertParamValidation(t *testing.T) {
+	a := assert.New(t)
+	_, err := sinks.NewRPCWriter(ctx, PlainConnStr)
+	a.NoError(err)
+
+	_, _ = os.Create("badca.crt")
+	defer func ()  {  _ = os.Remove("badca.crt") }()
+
+	BadRPCParams := map[string]string{
+		"?sslrootca=file.txt": "error loading CA file: open file.txt: no such file or directory", 
+		"?sslrootca=": "error loading CA file: open : no such file or directory", 
+		"?sslrootca=badca.crt": "invalid CA file",
+	}
+
+	for param, errMsg := range BadRPCParams {
+		_, err = sinks.NewRPCWriter(ctx, fmt.Sprintf("grpc://%s%s", TLSServerAddress, param))
+		a.EqualError(err, errMsg)
+	}
+}
+
+func TestRPCTLSWriter(t *testing.T) {
+	a := assert.New(t)
+
+	rw, err := sinks.NewRPCWriter(ctx, TLSConnStr)
+	a.NoError(err)
+
+	// no error for valid messages
+	msgs := metrics.MeasurementEnvelope{
+		DBName: "Db",
+		Data:   metrics.Measurements{{"test": 1}},
+	}
+	err = rw.Write(msgs)
+	a.NoError(err)
 }
 
 func TestRPCWrite(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := sinks.NewRPCWriter(ctx, ServerAddress)
+	rw, err := sinks.NewRPCWriter(ctx, PlainConnStr)
 	a.NoError(err)
 
 	// no error for valid messages
@@ -96,7 +175,7 @@ func TestRPCWrite(t *testing.T) {
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctx)
-	rw, err = sinks.NewRPCWriter(ctx, ServerAddress)
+	rw, err = sinks.NewRPCWriter(ctx, PlainConnStr)
 	a.NoError(err)
 	cancel()
 	err = rw.Write(msgs)
@@ -106,7 +185,7 @@ func TestRPCWrite(t *testing.T) {
 func TestRPCSyncMetric(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := sinks.NewRPCWriter(ctx, ServerAddress)
+	rw, err := sinks.NewRPCWriter(ctx, PlainConnStr)
 	a.NoError(err)
 
 	// no error for valid Sync requests
@@ -119,7 +198,7 @@ func TestRPCSyncMetric(t *testing.T) {
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctx)
-	rw, err = sinks.NewRPCWriter(ctx, ServerAddress)
+	rw, err = sinks.NewRPCWriter(ctx, PlainConnStr)
 	a.NoError(err)
 	cancel()
 	err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
@@ -129,7 +208,7 @@ func TestRPCSyncMetric(t *testing.T) {
 func TestRPCDefineMetric(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := sinks.NewRPCWriter(ctx, ServerAddress)
+	rw, err := sinks.NewRPCWriter(ctx, PlainConnStr)
 	a.NoError(err)
 
 	// Test that RPCWriter implements MetricsDefiner interface
@@ -171,7 +250,7 @@ func TestRPCDefineMetric(t *testing.T) {
 
 	// Test with cancelled context
 	ctx, cancel := context.WithCancel(ctx)
-	rw, err = sinks.NewRPCWriter(ctx, ServerAddress)
+	rw, err = sinks.NewRPCWriter(ctx, PlainConnStr)
 	a.NoError(err)
 	cancel()
 
