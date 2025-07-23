@@ -119,7 +119,7 @@
           "policy": "default",
           "query": "select sum(\"last\") from (select last(\"non_active_int\") FROM \"replication_slots\" WHERE \"dbname\" =~ /^$dbname$/ AND $timeFilter group by \"dbname\", \"slot_name\")",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  sum((data->'non_active_int')::int)\nFROM\n  replication_slots\nWHERE\n  time in (select max(time) from replication_slots where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n",
+          "rawSql": "SELECT\n  0 as time,\n  sum((data->>'non_active_int')::int)\nFROM\n  replication_slots\nWHERE\n  time in (select max(time) from replication_slots where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -647,7 +647,7 @@
           "policy": "default",
           "query": "SELECT max(\"restart_lsn_lag_b\") FROM \"replication_slots\" WHERE \"dbname\" =~ /^$dbname$/ AND $timeFilter GROUP BY time(1d) fill(none)",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  max((data->'restart_lsn_lag_b')::int8)\nFROM\n  replication_slots\nWHERE\n  time in (select max(time) from replication_slots where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n\n",
+          "rawSql": "SELECT\n  0 as time,\n  max((data->>'restart_lsn_lag_b')::int8)\nFROM\n  replication_slots\nWHERE\n  time in (select max(time) from replication_slots where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -777,7 +777,7 @@
           "policy": "default",
           "query": "SELECT max(\"write_lag_b\") FROM \"replication\" WHERE $timeFilter GROUP BY time($__interval) fill(none)",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  max((data->'write_lag_b')::int8)\nFROM\n  replication\nWHERE\n  time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n\n",
+          "rawSql": "SELECT\n  0 as time,\n  max((data->>'write_lag_b')::int8)\nFROM\n  replication\nWHERE\n  time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -913,7 +913,7 @@
           "policy": "default",
           "query": "SELECT max(\"write_lag_b\") FROM \"replication\" WHERE $timeFilter GROUP BY time($__interval) fill(none)",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  max((data->'flush_lag_b')::int8)\nFROM\n  replication\nWHERE\n  time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n\n",
+          "rawSql": "SELECT\n  0 as time,\n  max((data->>'flush_lag_b')::int8)\nFROM\n  replication\nWHERE\n  time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1049,7 +1049,7 @@
           "policy": "default",
           "query": "SELECT max(\"replay_lag_b\") FROM \"replication\" WHERE (\"dbname\" =~ /^$dbname$/) AND $timeFilter GROUP BY time($__interval) fill(none)",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  max((data->'replay_lag_b')::int8)\nFROM\n  replication\nWHERE\n  time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n\n",
+          "rawSql": "SELECT\n  0 as time,\n  max((data->>'replay_lag_b')::int8)\nFROM\n  replication\nWHERE\n  time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1214,7 +1214,7 @@
           "policy": "default",
           "query": "",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  max((data->'restart_lsn_lag_b')::int8)\nFROM\n  replication_slots\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY 1, 2\nORDER BY 1, 2\n\n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  max((data->>'restart_lsn_lag_b')::int8)\nFROM\n  replication_slots\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY 1, 2\nORDER BY 1, 2\n\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1384,7 +1384,7 @@
           "policy": "default",
           "query": "SELECT mean(\"write_lag_b\") FROM \"replication\" WHERE (\"dbname\" =~ /^$dbname$/) AND $timeFilter GROUP BY time($__interval), \"dbname\", \"client_info\", \"application_name\" fill(none)",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  avg((data->'flush_lag_b')::int8)\nFROM\n  replication\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2\nORDER BY\n  1, 2\n  \n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  avg((data->>'flush_lag_b')::int8)\nFROM\n  replication\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2\nORDER BY\n  1, 2\n  \n",
           "refId": "B",
           "resultFormat": "time_series",
           "select": [
@@ -1554,7 +1554,7 @@
           "policy": "default",
           "query": "",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  avg((data->'replay_lag_b')::int8)\nFROM\n  replication\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2\nORDER BY\n  1, 2\n  \n",
+          "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  avg((data->>'replay_lag_b')::int8)\nFROM\n  replication\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2\nORDER BY\n  1, 2\n  \n",
           "refId": "B",
           "resultFormat": "time_series",
           "select": [
@@ -1724,7 +1724,7 @@
           "policy": "default",
           "query": "",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  avg((data->'xmin_age_tx')::int8)\nFROM\n  replication_slots\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY 1, 2\nORDER BY 1, 2",
+          "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  avg((data->>'xmin_age_tx')::int8)\nFROM\n  replication_slots\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY 1, 2\nORDER BY 1, 2",
           "refId": "B",
           "resultFormat": "time_series",
           "select": [
