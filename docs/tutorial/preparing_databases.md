@@ -256,16 +256,15 @@ all supported DCSs (etcd, Zookeeper, Consul), but currently only
 for simpler cases with no security applied (which is actually the
 common case in a trusted environment).
 
-### *patroni-continuous-discovery*
+Connection string should point to the DCS, and then pgwatch will
+periodically scan the DCS and add any found and not yet monitored.
+If you use etcd as the DCS, then your connection string should
+look like this: `etcd://host:port[,host:port..]/namespace/scope`, for example
+`etcd://localhost:2379/service/batman`.
 
-As normal *patroni* DB type but all DBs (or only those matching the
-regex if any provided) are monitored.
-
-### *patroni-namespace-discovery*
-
-Similar to *patroni-continuous-discovery* but all Patroni scopes
-(clusters) of an ETCD namespace are automatically monitored.
-Optionally regexes on database names still apply if provided.
+You may omit the scope part to resolve all databases in the
+specified namespace, or you may specify the scope to resolve only
+databases from the specific Patroni cluster.
 
 !!! Notice
     All "continuous" modes expect access to "template1" or "postgres"

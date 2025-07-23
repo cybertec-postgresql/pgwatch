@@ -22,8 +22,6 @@ func TestKind_IsValid(t *testing.T) {
 		{kind: sources.SourcePgBouncer, expected: true},
 		{kind: sources.SourcePgPool, expected: true},
 		{kind: sources.SourcePatroni, expected: true},
-		{kind: sources.SourcePatroniContinuous, expected: true},
-		{kind: sources.SourcePatroniNamespace, expected: true},
 		{kind: "invalid", expected: false},
 	}
 
