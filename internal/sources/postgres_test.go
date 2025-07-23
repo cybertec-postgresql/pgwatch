@@ -44,11 +44,11 @@ func TestGetMonitoredDatabases(t *testing.T) {
 	conn.ExpectQuery(`select \/\* pgwatch_generated \*\/`).WillReturnRows(pgxmock.NewRows([]string{
 		"name", "group", "dbtype", "connstr", "config", "config_standby", "preset_config",
 		"preset_config_standby", "include_pattern", "exclude_pattern",
-		"custom_tags", "host_config", "only_if_master", "is_enabled",
+		"custom_tags", "only_if_master", "is_enabled",
 	}).AddRow(
 		"db1", "group1", sources.Kind("postgres"), "postgres://user:pass@localhost:5432/db1",
 		map[string]float64{"metric": 60}, map[string]float64{"standby_metric": 60}, "exhaustive", "exhaustive",
-		".*", `\_.+`, map[string]string{"tag": "value"}, nil, true, true,
+		".*", `\_.+`, map[string]string{"tag": "value"}, true, true,
 	))
 	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
 	a.NoError(err)
@@ -102,7 +102,7 @@ func TestUpdateDatabase(t *testing.T) {
 		md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`,
 		md.PresetMetrics, md.PresetMetricsStandby,
 		md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
-		nil, md.OnlyIfMaster, md.IsEnabled,
+		md.OnlyIfMaster, md.IsEnabled,
 	).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
@@ -141,7 +141,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 			md.Name, md.Group, md.Kind,
 			md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`, md.PresetMetrics, md.PresetMetricsStandby,
 			md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
-			nil, md.OnlyIfMaster, md.IsEnabled,
+			md.OnlyIfMaster, md.IsEnabled,
 		).WillReturnResult(pgxmock.NewResult("INSERT", 1))
 		conn.ExpectCommit()
 		conn.ExpectRollback() // deferred rollback
@@ -177,7 +177,7 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 			md.Name, md.Group, md.Kind,
 			md.ConnStr, `{"metric":60}`, `{"standby_metric":60}`, md.PresetMetrics, md.PresetMetricsStandby,
 			md.IncludePattern, md.ExcludePattern, `{"tag":"value"}`,
-			nil, md.OnlyIfMaster, md.IsEnabled,
+			md.OnlyIfMaster, md.IsEnabled,
 		).WillReturnError(errors.New("failed insert"))
 		conn.ExpectRollback()
 

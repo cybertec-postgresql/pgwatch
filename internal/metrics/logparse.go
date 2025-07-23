@@ -108,7 +108,13 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 	}
 }
 
-func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, interval float64, storeCh chan<- MeasurementEnvelope) {
+func ParseLogs(ctx context.Context,
+	mdb *sources.SourceConn,
+	realDbname string,
+	interval float64,
+	storeCh chan<- MeasurementEnvelope,
+	LogsMatchRegex string,
+	LogsGlobPath string) {
 
 	var latest, previous, serverMessagesLang string
 	var latestHandle *os.File
@@ -133,15 +139,15 @@ func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, 
 		return
 	}
 
-	csvlogRegex, err = regexp.Compile(cmp.Or(mdb.HostConfig.LogsMatchRegex, CSVLogDefaultRegEx))
+	csvlogRegex, err = regexp.Compile(cmp.Or(LogsMatchRegex, CSVLogDefaultRegEx))
 	if err != nil {
 		logger.WithError(err).Print("Invalid regex: ", logsMatchRegex)
 		return
 	}
 	logger.Debugf("Changing logs parsing regex to: %s", logsMatchRegex)
 
-	if mdb.HostConfig.LogsGlobPath != "" {
-		logsGlobPath = mdb.HostConfig.LogsGlobPath
+	if LogsGlobPath != "" {
+		logsGlobPath = LogsGlobPath
 	} else {
 		if logsGlobPath, err = tryDetermineLogFolder(ctx, mdb.Conn); err != nil {
 			logger.WithError(err).Print("Could not determine Postgres logs parsing folder in ", logsGlobPath)

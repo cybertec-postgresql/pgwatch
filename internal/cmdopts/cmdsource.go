@@ -52,7 +52,7 @@ func (cmd *SourcePingCommand) Execute(args []string) error {
 	var e error
 	for _, s := range foundSources {
 		switch s.Kind {
-		case sources.SourcePatroni, sources.SourcePatroniContinuous, sources.SourcePatroniNamespace:
+		case sources.SourcePatroni:
 			_, e = sources.ResolveDatabasesFromPatroni(s)
 		case sources.SourcePostgresContinuous:
 			_, e = sources.ResolveDatabasesFromPostgres(s)

@@ -21,8 +21,6 @@ const (
 	SourcePgBouncer          Kind = "pgbouncer"
 	SourcePgPool             Kind = "pgpool"
 	SourcePatroni            Kind = "patroni"
-	SourcePatroniContinuous  Kind = "patroni-continuous-discovery"
-	SourcePatroniNamespace   Kind = "patroni-namespace-discovery"
 )
 
 var Kinds = []Kind{
@@ -31,8 +29,6 @@ var Kinds = []Kind{
 	SourcePgBouncer,
 	SourcePgPool,
 	SourcePatroni,
-	SourcePatroniContinuous,
-	SourcePatroniNamespace,
 }
 
 func (k Kind) IsValid() bool {
@@ -59,7 +55,6 @@ type (
 		PresetMetricsStandby string             `yaml:"preset_metrics_standby" db:"preset_config_standby"`
 		IsEnabled            bool               `yaml:"is_enabled" db:"is_enabled"`
 		CustomTags           map[string]string  `yaml:"custom_tags" db:"custom_tags"`
-		HostConfig           HostConfigAttrs    `yaml:"host_config" db:"host_config"`
 		OnlyIfMaster         bool               `yaml:"only_if_master" db:"only_if_master"`
 	}
 
@@ -77,8 +72,12 @@ func (srcs Sources) Validate() (Sources, error) {
 			return nil, fmt.Errorf("duplicate source with name '%s' found", src.Name)
 		}
 		names[src.Name] = nil
-		if src.Kind == "" {
+		switch src.Kind {
+		case "":
 			src.Kind = SourcePostgres
+		case "patroni-continuous-discovery", "patroni-namespace-discovery":
+			// deprecated, use SourcePatroni
+			src.Kind = SourcePatroni
 		}
 	}
 	return srcs, nil
@@ -114,8 +113,7 @@ func (s Source) Equal(s2 Source) bool {
 		s.IncludePattern == s2.IncludePattern &&
 		s.ExcludePattern == s2.ExcludePattern &&
 		s.OnlyIfMaster == s2.OnlyIfMaster &&
-		reflect.DeepEqual(s.CustomTags, s2.CustomTags) &&
-		reflect.DeepEqual(s.HostConfig, s2.HostConfig)
+		reflect.DeepEqual(s.CustomTags, s2.CustomTags)
 }
 
 func (s *Source) Clone() *Source {
@@ -125,27 +123,6 @@ func (s *Source) Clone() *Source {
 	c.MetricsStandby = maps.Clone(s.MetricsStandby)
 	c.CustomTags = maps.Clone(s.CustomTags)
 	return c
-}
-
-type HostConfigAttrs struct {
-	DcsType                string   `yaml:"dcs_type"`
-	DcsEndpoints           []string `yaml:"dcs_endpoints"`
-	Scope                  string
-	Namespace              string
-	Username               string
-	Password               string
-	CAFile                 string                             `yaml:"ca_file"`
-	CertFile               string                             `yaml:"cert_file"`
-	KeyFile                string                             `yaml:"key_file"`
-	LogsGlobPath           string                             `yaml:"logs_glob_path"`   // default $data_directory / $log_directory / *.csvlog
-	LogsMatchRegex         string                             `yaml:"logs_match_regex"` // default is for CSVLOG format. needs to capture following named groups: log_time, user_name, database_name and error_severity
-	PerMetricDisabledTimes []HostConfigPerMetricDisabledTimes `yaml:"per_metric_disabled_intervals"`
-}
-
-type HostConfigPerMetricDisabledTimes struct { // metric gathering override per host / metric / time
-	Metrics       []string `yaml:"metrics"`
-	DisabledTimes []string `yaml:"disabled_times"`
-	DisabledDays  string   `yaml:"disabled_days"`
 }
 
 type Reader interface {

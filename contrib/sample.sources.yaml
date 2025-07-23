@@ -6,8 +6,6 @@
                               # - pgbouncer
                               # - pgpool
                               # - patroni
-                              # - patroni-continuous-discovery
-                              # - patroni-namespace-discover
                               # Defaults to postgres if not specified
   preset_metrics: exhaustive  # from list of presets defined in "metrics/preset-configs.yaml"
   custom_metrics:             # if both preset and custom are specified, custom wins
@@ -20,21 +18,9 @@
   custom_tags:                # option to add arbitrary tags for every stored data row,
       aws_instance_id: i-0af01c0123456789a       # for example to fetch data from some other source onto a same Grafana graph
 
-- name: test2
-  kind: patroni-continuous-discovery
-  host_config:    # used for storing patroni connect info (dbtype=patroni|patroni-continuous-discovery) or log parsing settings
-    dcs_type: etcd
-    dcs_endpoints: ["http://localhost:2379"]
-    scope: batman
-    namespace: /service/
-    username:
-    password:
-    ca_file:
-    cert_file:
-    key_file:
-    logs_glob_path: "/tmp/*.csv"
-    logs_match_regex: ^(?P<log_time>.*?),"?(?P<user_name>.*?)"?,"?(?P<database_name>.*?)"?,(?P<process_id>\d+),"?(?P<connection_from>.*?)"?,(?P<session_id>.*?),(?P<session_line_num>\d+),"?(?P<command_tag>.*?)"?,(?P<session_start_time>.*?),(?P<virtual_transaction_id>.*?),(?P<transaction_id>.*?),(?P<error_severity>\w+),
-#    logs_match_regex: '^(?P<log_time>.*) \[(?P<process_id>\d+)\] (?P<user_name>.*)@(?P<database_name>.*?) (?P<error_severity>.*?): ' # a sample regex (Debian / Ubuntu default) if not using CSVLOG
+- name: patroni-test
+  kind: patroni
+  conn_str: etcd://localhost:2379,10.0.1:2379,10.0.2:2379/service/batman
   stmt_timeout: 5
   preset_metrics:
   custom_metrics:
@@ -45,7 +31,8 @@
   only_if_master: true # don't gather metrics from standby servers
 
 - name: pgbouncer
-  conn_str: postgresql://pgwatch:pgwatchadmin@localhost/pgwatch
+  conn_str: postgresql://pgwatch:pgwatchadmin@localhost/pgbouncer
+  kind: pgbouncer
   custom_metrics: 
     pgbouncer_stats: 10
     pgbouncer_clients: 10

@@ -64,7 +64,6 @@ func (r *dbSourcesReaderWriter) updateSource(conn db.PgxIface, md Source) (err e
 	include_pattern, 
 	exclude_pattern, 
 	custom_tags, 
-	host_config, 
 	only_if_master,
 	is_enabled) 
 values 
@@ -80,14 +79,13 @@ on conflict (name) do update set
 	include_pattern = $9, 
 	exclude_pattern = $10, 
 	custom_tags = $11, 
-	host_config = $12,
-	only_if_master = $13,
-	is_enabled = $14`
+	only_if_master = $12,
+	is_enabled = $13`
 	_, err = conn.Exec(context.Background(), sql,
 		md.Name, md.Group, md.Kind,
 		md.ConnStr, m(md.Metrics), m(md.MetricsStandby), md.PresetMetrics, md.PresetMetricsStandby,
 		md.IncludePattern, md.ExcludePattern, m(md.CustomTags),
-		m(md.HostConfig), md.OnlyIfMaster, md.IsEnabled)
+		md.OnlyIfMaster, md.IsEnabled)
 	return err
 }
 
@@ -105,16 +103,15 @@ func (r *dbSourcesReaderWriter) createSource(conn db.PgxIface, md Source) (err e
 	include_pattern, 
 	exclude_pattern, 
 	custom_tags, 
-	host_config, 
 	only_if_master,
 	is_enabled) 
 values 
-	($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), $9, $10, $11, $12, $13, $14)`
+	($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), $9, $10, $11, $12, $13)`
 	_, err = conn.Exec(context.Background(), sql,
 		md.Name, md.Group, md.Kind,
 		md.ConnStr, m(md.Metrics), m(md.MetricsStandby), md.PresetMetrics, md.PresetMetricsStandby,
 		md.IncludePattern, md.ExcludePattern, m(md.CustomTags),
-		m(md.HostConfig), md.OnlyIfMaster, md.IsEnabled)
+		md.OnlyIfMaster, md.IsEnabled)
 	if err != nil {
 		// Check for unique constraint violation using PostgreSQL error code
 		var pgErr *pgconn.PgError
