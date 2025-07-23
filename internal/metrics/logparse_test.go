@@ -394,10 +394,6 @@ func TestLogParse(t *testing.T) {
 	sourceConn := &sources.SourceConn{
 		Source: sources.Source{
 			Name: "test-source",
-			HostConfig: sources.HostConfigAttrs{
-				LogsGlobPath: filepath.Join(tempDir, "*.csv"),
-				// Use default regex by leaving LogsMatchRegex empty
-			},
 		},
 		Conn: mock,
 	}
@@ -410,7 +406,7 @@ func TestLogParse(t *testing.T) {
 	storeCh := make(chan MeasurementEnvelope, 10)
 
 	// Use a short interval for testing (0.5 seconds)
-	ParseLogs(ctx, sourceConn, "testdb", 0.5, storeCh)
+	ParseLogs(ctx, sourceConn, "testdb", 0.5, storeCh, "", filepath.Join(tempDir, "*.csv"))
 
 	// Wait for measurements to be sent or timeout
 	var measurement MeasurementEnvelope

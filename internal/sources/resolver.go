@@ -11,8 +11,8 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -42,7 +42,7 @@ func (srcs Sources) ResolveDatabases() (_ SourceConns, err error) {
 // ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni
 func (s Source) ResolveDatabases() (SourceConns, error) {
 	switch s.Kind {
-	case SourcePatroni, SourcePatroniContinuous, SourcePatroniNamespace:
+	case SourcePatroni:
 		return ResolveDatabasesFromPatroni(s)
 	case SourcePostgresContinuous:
 		return ResolveDatabasesFromPostgres(s)
@@ -66,7 +66,7 @@ func getConsulClusterMembers(Source) ([]PatroniClusterMember, error) {
 	return nil, errors.ErrUnsupported
 }
 
-func getZookeeperClusterMembers(Source) ([]PatroniClusterMember, error) {
+func getZookeeperClusterMembers(Source, HostConfig) ([]PatroniClusterMember, error) {
 	return nil, errors.ErrUnsupported
 }
 
@@ -85,7 +85,7 @@ func jsonTextToStringMap(jsonText string) (map[string]string, error) {
 	return retmap, nil
 }
 
-func getTransport(conf HostConfigAttrs) (*tls.Config, error) {
+func getTransport(conf HostConfig) (*tls.Config, error) {
 	var caCertPool *x509.CertPool
 
 	// create valid CertPool only if the ca certificate file exists
@@ -123,24 +123,24 @@ func getTransport(conf HostConfigAttrs) (*tls.Config, error) {
 	return tlsClientConfig, nil
 }
 
-func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
+func getEtcdClusterMembers(s Source, hc HostConfig) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var cfg client.Config
 
-	if len(s.HostConfig.DcsEndpoints) == 0 {
+	if len(hc.DcsEndpoints) == 0 {
 		return ret, errors.New("missing ETCD connect info, make sure host config has a 'dcs_endpoints' key")
 	}
 
-	tlsConfig, err := getTransport(s.HostConfig)
+	tlsConfig, err := getTransport(hc)
 	if err != nil {
 		return nil, err
 	}
 	cfg = client.Config{
-		Endpoints:            s.HostConfig.DcsEndpoints,
+		Endpoints:            hc.DcsEndpoints,
 		TLS:                  tlsConfig,
 		DialKeepAliveTimeout: time.Second,
-		Username:             s.HostConfig.Username,
-		Password:             s.HostConfig.Password,
+		Username:             hc.Username,
+		Password:             hc.Password,
 		DialTimeout:          5 * time.Second,
 		Logger:               zap.NewNop(),
 	}
@@ -158,8 +158,7 @@ func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
 	// Key="/namespace/scope/leader", e.g. "/service/batman/leader"
 	// Key="/namespace/scope/members/node", e.g. "/service/batman/members/pg1"
 
-	p := path.Join(cmp.Or(s.HostConfig.Namespace, "/service"), s.HostConfig.Scope)
-	resp, err := c.Get(ctx, p, client.WithPrefix())
+	resp, err := c.Get(ctx, hc.Path, client.WithPrefix())
 	if err != nil {
 		return ret, cmp.Or(context.Cause(ctx), err)
 	}
@@ -192,17 +191,73 @@ const (
 	dcsTypeConsul    = "consul"
 )
 
+type HostConfig struct {
+	DcsType      string   `yaml:"dcs_type"`
+	DcsEndpoints []string `yaml:"dcs_endpoints"`
+	Path         string
+	Username     string
+	Password     string
+	CAFile       string `yaml:"ca_file"`
+	CertFile     string `yaml:"cert_file"`
+	KeyFile      string `yaml:"key_file"`
+}
+
+func (hc HostConfig) IsScopeSpecified() bool {
+	// Path is usually "/namespace/scope"
+	// so we check if it has at least 2 slashes
+	return strings.Count(hc.Path, "/") >= 2
+}
+
+func NewHostConfig(URI string) (hc HostConfig, err error) {
+	var url *url.URL
+	url, err = url.Parse(URI)
+	if err != nil {
+		return
+	}
+
+	switch url.Scheme {
+	case dcsTypeEtcd:
+		hc.DcsType = dcsTypeEtcd
+		for h := range strings.SplitSeq(url.Host, ",") {
+			hc.DcsEndpoints = append(hc.DcsEndpoints, "http://"+h)
+		}
+	case dcsTypeZookeeper:
+		hc.DcsType = dcsTypeZookeeper
+		hc.DcsEndpoints = []string{url.Host} // Zookeeper usually has a
+		// single endpoint, but can be a list of hosts separated by commas
+	case dcsTypeConsul:
+		hc.DcsType = dcsTypeConsul
+		hc.DcsEndpoints = strings.Split(url.Host, ",")
+	default:
+		return hc, fmt.Errorf("unsupported DCS type: %s", url.Scheme)
+	}
+
+	hc.Path = url.Path
+	hc.Username = url.User.Username()
+	hc.Password, _ = url.User.Password() // password is optional, so we ignore the error
+	hc.CAFile = url.Query().Get("ca_file")
+	hc.CertFile = url.Query().Get("cert_file")
+	hc.KeyFile = url.Query().Get("key_file")
+
+	return hc, nil
+}
+
 func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 	var mds []*SourceConn
 	var clusterMembers []PatroniClusterMember
 	var err error
 	var ok bool
 
-	switch source.HostConfig.DcsType {
+	hostConfig, err := NewHostConfig(source.ConnStr)
+	if err != nil {
+		return nil, err
+	}
+
+	switch hostConfig.DcsType {
 	case dcsTypeEtcd:
-		clusterMembers, err = getEtcdClusterMembers(source)
+		clusterMembers, err = getEtcdClusterMembers(source, hostConfig)
 	case dcsTypeZookeeper:
-		clusterMembers, err = getZookeeperClusterMembers(source)
+		clusterMembers, err = getZookeeperClusterMembers(source, hostConfig)
 	case dcsTypeConsul:
 		clusterMembers, err = getConsulClusterMembers(source)
 	default:
@@ -231,7 +286,7 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 		}
 		src := *source.Clone()
 		src.ConnStr = patroniMember.ConnURL
-		if source.Kind == SourcePatroniNamespace {
+		if hostConfig.IsScopeSpecified() {
 			src.Name += "_" + patroniMember.Scope
 		}
 		src.Name += "_" + patroniMember.Name

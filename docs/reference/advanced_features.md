@@ -17,35 +17,25 @@ standard way a bit tricky. But luckily Patroni cluster members
 information is stored in a DCS (Distributed Consensus Store), like
 *etcd*, so it can be fetched from there periodically.
 
-When 'patroni' is selected as a **source type** then the usual Postgres
-host/port fields should be left empty ("dbname" can still be filled if only a
-specific single database is
-to be monitored) and instead "Host config" JSON field should be filled
-with DCS address, type and scope (cluster name) information. A sample
-config (for Config DB based setups) looks like:
-
-```json
-    {
-      "dcs_type": "etcd",
-      "dcs_endpoints": ["http://127.0.0.1:2379"],
-      "scope": "batman",
-      "namespace": "/service/"
-    }
-```
+When 'patroni' is selected as a **source type** then the connection
+string should point to the DCS, and then pgwatch will
+periodically scan the DCS and add any found and not yet monitored:
+If you use etcd as the DCS, then your connection string should
+look like this: `etcd://host:port[,host:port..]/namespace/scope`,
+for example `etcd://localhost:2379/service/batman`.
 
 For YAML based setups an example can be found from the
 [instances.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.sources.yaml#L21)
 file.
 
 If Patroni is powered by *etcd*, then also username, password, ca_file,
-cert_file, key_file optional security parameters can be defined - other
-DCS systems are currently only supported without authentication.
+cert_file, key_file optional security parameters can be defined in the
+connection string, for example 
+`etcd://username:password@localhost:2379/service/batman?ca_file=/path/to/ca.crt&cert_file=/path/to/client.crt&key_file=/path/to/client.key`.
 
 Also, if you don't use the standby nodes actively for queries then it
 might make sense to decrease the volume of gathered metrics and to
-disable the monitoring of such nodes with the "Master mode only?"
-checkbox (when using the Web UI) or with *only_if_master=true* if using
-a YAML based setup.
+disable the monitoring of such nodes with the "Primary mode only".
 
 ## Log parsing
 
