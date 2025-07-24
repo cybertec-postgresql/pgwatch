@@ -295,7 +295,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->'longest_query_seconds')::int8) as longest_query,\n  max((data->'avg_query_seconds')::float) as avg_query\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_query_seconds')::int8) as longest_query,\n  max((data->>'avg_query_seconds')::float) as avg_query\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -446,7 +446,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->'longest_waiting_seconds')::int8) as longest_waiting,\n  max((data->'avg_waiting_seconds')::float) as avg_waiting\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_waiting_seconds')::int8) as longest_waiting,\n  max((data->>'avg_waiting_seconds')::float) as avg_waiting\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -611,7 +611,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->'longest_tx_seconds')::int8) as longest_tx,\n  max((data->'avg_tx_seconds')::float) as avg_tx\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_tx_seconds')::int8) as longest_tx,\n  max((data->>'avg_tx_seconds')::float) as avg_tx\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -746,7 +746,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->'longest_session_seconds')::int8) as longest_session,\n  max((data->'avg_session_seconds')::float) as avg_session\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_session_seconds')::int8) as longest_session,\n  max((data->>'avg_session_seconds')::float) as avg_session\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -895,7 +895,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->'longest_autovacuum_seconds')::int8) as longest_autovacuum_seconds\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_autovacuum_seconds')::int8) as longest_autovacuum_seconds\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -925,7 +925,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->'av_workers')::int8) as max_av_workers\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'av_workers')::int8) as max_av_workers\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
           "refId": "B",
           "select": [
             [
@@ -1044,7 +1044,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->'active')::int8) as active,\n  max((data->'total')::int8) as total_db,\n  max((data->'idleintransaction')::int8) as idleintransaction,\n  max((data->'waiting')::int8) as waiting\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'active')::int8) as active,\n  max((data->>'total')::int8) as total_db,\n  max((data->>'idleintransaction')::int8) as idleintransaction,\n  max((data->>'waiting')::int8) as waiting\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -1179,7 +1179,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->'instance_total')::int8) as instance_total,\n  max((data->'max_connections')::int8) as max_connections\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'instance_total')::int8) as instance_total,\n  max((data->>'max_connections')::int8) as max_connections\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
           "refId": "B",
           "select": [
             [
