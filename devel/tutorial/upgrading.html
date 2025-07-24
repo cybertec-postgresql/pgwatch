@@ -1267,6 +1267,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/rest.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    REST API
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/advanced_features.html" class="md-nav__link">
         
   
@@ -1811,15 +1834,21 @@ according release notes (e.g.
 and be prepared for the unavoidable downtime.</p>
 <h3 id="updating-the-pgwatch-schema">Updating the pgwatch schema</h3>
 <p>This is the pgwatch specific part, with some coupling between the
-following components - Config DB SQL schema, metrics collector, and the
-optional Web UI.</p>
-<p>Here one should check from the
-<a href="https://github.com/cybertec-postgresql/pgwatch/releases">CHANGELOG</a>
-if pgwatch schema needs updating. If yes, then manual applying of
-schema diffs is required before running the new gatherer or Web UI. If
-no, i.e. no schema changes, all components can be updated independently
-in random order.</p>
-<div class="language-text highlight"><pre><span></span><code>pgwatch --config=postgresql://localhost/pgwatch --upgrade
+following components - Configuration DB SQL schema and pgwatch binary.</p>
+<p>First of all, the pgwatch binary needs to be updated to a newer version.
+Then try to run the pgwatch as usual:</p>
+<div class="language-text highlight"><pre><span></span><code>pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch_metrics
+
+[ERROR] configuration needs upgrade, use &quot;config upgrade&quot; command
+exit status 4
+</code></pre></div>
+<p>If you see the above error message, then the pgwatch schema needs updating.
+This is done by running the following command, which will apply all
+the necessary SQL migrations to the configuration database:</p>
+<div class="language-text highlight"><pre><span></span><code>pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch config upgrade
+
+[INFO] Applying migration named &#39;00824 Refactor recommendations&#39;...
+[INFO] Applied migration named &#39;00824 Refactor recommendations&#39;
 </code></pre></div>
 <h3 id="updating-the-metrics-collector">Updating the metrics collector</h3>
 <p>Compile or install the gatherer from RPM / DEB / tarball packages. See

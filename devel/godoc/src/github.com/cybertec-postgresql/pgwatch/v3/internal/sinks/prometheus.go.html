@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -197,12 +197,12 @@
 <span id="L140" class="ln">   140  </span>	}
 <span id="L141" class="ln">   141  </span>}
 <span id="L142" class="ln">   142  </span>
-<span id="L143" class="ln">   143  </span>func (promw *PrometheusWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error {
+<span id="L143" class="ln">   143  </span>func (promw *PrometheusWriter) SyncMetric(sourceName, metricName string, op SyncOp) error {
 <span id="L144" class="ln">   144  </span>	switch op {
 <span id="L145" class="ln">   145  </span>	case DeleteOp:
-<span id="L146" class="ln">   146  </span>		promw.PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, metricName)
+<span id="L146" class="ln">   146  </span>		promw.PurgeMetricsFromPromAsyncCacheIfAny(sourceName, metricName)
 <span id="L147" class="ln">   147  </span>	case AddOp:
-<span id="L148" class="ln">   148  </span>		promw.PromAsyncCacheInitIfRequired(dbUnique, metricName)
+<span id="L148" class="ln">   148  </span>		promw.PromAsyncCacheInitIfRequired(sourceName, metricName)
 <span id="L149" class="ln">   149  </span>	}
 <span id="L150" class="ln">   150  </span>	return nil
 <span id="L151" class="ln">   151  </span>}
@@ -336,7 +336,7 @@
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

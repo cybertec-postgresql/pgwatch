@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -451,51 +451,47 @@
 <span id="L394" class="ln">   394  </span>	sourceConn := &amp;sources.SourceConn{
 <span id="L395" class="ln">   395  </span>		Source: sources.Source{
 <span id="L396" class="ln">   396  </span>			Name: &#34;test-source&#34;,
-<span id="L397" class="ln">   397  </span>			HostConfig: sources.HostConfigAttrs{
-<span id="L398" class="ln">   398  </span>				LogsGlobPath: filepath.Join(tempDir, &#34;*.csv&#34;),
-<span id="L399" class="ln">   399  </span>				<span class="comment">// Use default regex by leaving LogsMatchRegex empty</span>
-<span id="L400" class="ln">   400  </span>			},
-<span id="L401" class="ln">   401  </span>		},
-<span id="L402" class="ln">   402  </span>		Conn: mock,
-<span id="L403" class="ln">   403  </span>	}
+<span id="L397" class="ln">   397  </span>		},
+<span id="L398" class="ln">   398  </span>		Conn: mock,
+<span id="L399" class="ln">   399  </span>	}
+<span id="L400" class="ln">   400  </span>
+<span id="L401" class="ln">   401  </span>	<span class="comment">// Create a context with timeout to prevent test from hanging</span>
+<span id="L402" class="ln">   402  </span>	ctx, cancel := context.WithTimeout(testCtx, 3*time.Second)
+<span id="L403" class="ln">   403  </span>	defer cancel()
 <span id="L404" class="ln">   404  </span>
-<span id="L405" class="ln">   405  </span>	<span class="comment">// Create a context with timeout to prevent test from hanging</span>
-<span id="L406" class="ln">   406  </span>	ctx, cancel := context.WithTimeout(testCtx, 3*time.Second)
-<span id="L407" class="ln">   407  </span>	defer cancel()
-<span id="L408" class="ln">   408  </span>
-<span id="L409" class="ln">   409  </span>	<span class="comment">// Create a channel to receive measurement envelopes</span>
-<span id="L410" class="ln">   410  </span>	storeCh := make(chan MeasurementEnvelope, 10)
-<span id="L411" class="ln">   411  </span>
-<span id="L412" class="ln">   412  </span>	<span class="comment">// Use a short interval for testing (0.5 seconds)</span>
-<span id="L413" class="ln">   413  </span>	ParseLogs(ctx, sourceConn, &#34;testdb&#34;, 0.5, storeCh)
-<span id="L414" class="ln">   414  </span>
-<span id="L415" class="ln">   415  </span>	<span class="comment">// Wait for measurements to be sent or timeout</span>
-<span id="L416" class="ln">   416  </span>	var measurement MeasurementEnvelope
-<span id="L417" class="ln">   417  </span>	select {
-<span id="L418" class="ln">   418  </span>	case measurement = &lt;-storeCh:
-<span id="L419" class="ln">   419  </span>		assert.NotEmpty(t, measurement.Data, &#34;Measurement data should not be empty&#34;)
-<span id="L420" class="ln">   420  </span>	case &lt;-time.After(2 * time.Second):
-<span id="L421" class="ln">   421  </span>		break
-<span id="L422" class="ln">   422  </span>	}
-<span id="L423" class="ln">   423  </span>
-<span id="L424" class="ln">   424  </span>	assert.Equal(t, &#34;test-source&#34;, measurement.DBName)
-<span id="L425" class="ln">   425  </span>	assert.Equal(t, specialMetricServerLogEventCounts, measurement.MetricName)
-<span id="L426" class="ln">   426  </span>
-<span id="L427" class="ln">   427  </span>	<span class="comment">// Verify the data contains expected fields for both local and total counts</span>
-<span id="L428" class="ln">   428  </span>	data := measurement.Data[0]
-<span id="L429" class="ln">   429  </span>	<span class="comment">// Check that severity counts are present</span>
-<span id="L430" class="ln">   430  </span>	_, hasError := data[&#34;error&#34;]
-<span id="L431" class="ln">   431  </span>	_, hasWarning := data[&#34;warning&#34;]
-<span id="L432" class="ln">   432  </span>	assert.True(t, hasError &amp;&amp; hasWarning, &#34;Should have at least error and warning&#34;)
+<span id="L405" class="ln">   405  </span>	<span class="comment">// Create a channel to receive measurement envelopes</span>
+<span id="L406" class="ln">   406  </span>	storeCh := make(chan MeasurementEnvelope, 10)
+<span id="L407" class="ln">   407  </span>
+<span id="L408" class="ln">   408  </span>	<span class="comment">// Use a short interval for testing (0.5 seconds)</span>
+<span id="L409" class="ln">   409  </span>	ParseLogs(ctx, sourceConn, &#34;testdb&#34;, 0.5, storeCh, &#34;&#34;, filepath.Join(tempDir, &#34;*.csv&#34;))
+<span id="L410" class="ln">   410  </span>
+<span id="L411" class="ln">   411  </span>	<span class="comment">// Wait for measurements to be sent or timeout</span>
+<span id="L412" class="ln">   412  </span>	var measurement MeasurementEnvelope
+<span id="L413" class="ln">   413  </span>	select {
+<span id="L414" class="ln">   414  </span>	case measurement = &lt;-storeCh:
+<span id="L415" class="ln">   415  </span>		assert.NotEmpty(t, measurement.Data, &#34;Measurement data should not be empty&#34;)
+<span id="L416" class="ln">   416  </span>	case &lt;-time.After(2 * time.Second):
+<span id="L417" class="ln">   417  </span>		break
+<span id="L418" class="ln">   418  </span>	}
+<span id="L419" class="ln">   419  </span>
+<span id="L420" class="ln">   420  </span>	assert.Equal(t, &#34;test-source&#34;, measurement.DBName)
+<span id="L421" class="ln">   421  </span>	assert.Equal(t, specialMetricServerLogEventCounts, measurement.MetricName)
+<span id="L422" class="ln">   422  </span>
+<span id="L423" class="ln">   423  </span>	<span class="comment">// Verify the data contains expected fields for both local and total counts</span>
+<span id="L424" class="ln">   424  </span>	data := measurement.Data[0]
+<span id="L425" class="ln">   425  </span>	<span class="comment">// Check that severity counts are present</span>
+<span id="L426" class="ln">   426  </span>	_, hasError := data[&#34;error&#34;]
+<span id="L427" class="ln">   427  </span>	_, hasWarning := data[&#34;warning&#34;]
+<span id="L428" class="ln">   428  </span>	assert.True(t, hasError &amp;&amp; hasWarning, &#34;Should have at least error and warning&#34;)
+<span id="L429" class="ln">   429  </span>
+<span id="L430" class="ln">   430  </span>	<span class="comment">// Ensure mock expectations were met</span>
+<span id="L431" class="ln">   431  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L432" class="ln">   432  </span>}
 <span id="L433" class="ln">   433  </span>
-<span id="L434" class="ln">   434  </span>	<span class="comment">// Ensure mock expectations were met</span>
-<span id="L435" class="ln">   435  </span>	assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L436" class="ln">   436  </span>}
-<span id="L437" class="ln">   437  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

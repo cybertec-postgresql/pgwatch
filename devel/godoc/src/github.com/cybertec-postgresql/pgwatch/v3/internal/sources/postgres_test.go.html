@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -101,11 +101,11 @@
 <span id="L44" class="ln">    44  </span>	conn.ExpectQuery(`select \/\* pgwatch_generated \*\/`).WillReturnRows(pgxmock.NewRows([]string{
 <span id="L45" class="ln">    45  </span>		&#34;name&#34;, &#34;group&#34;, &#34;dbtype&#34;, &#34;connstr&#34;, &#34;config&#34;, &#34;config_standby&#34;, &#34;preset_config&#34;,
 <span id="L46" class="ln">    46  </span>		&#34;preset_config_standby&#34;, &#34;include_pattern&#34;, &#34;exclude_pattern&#34;,
-<span id="L47" class="ln">    47  </span>		&#34;custom_tags&#34;, &#34;host_config&#34;, &#34;only_if_master&#34;, &#34;is_enabled&#34;,
+<span id="L47" class="ln">    47  </span>		&#34;custom_tags&#34;, &#34;only_if_master&#34;, &#34;is_enabled&#34;,
 <span id="L48" class="ln">    48  </span>	}).AddRow(
 <span id="L49" class="ln">    49  </span>		&#34;db1&#34;, &#34;group1&#34;, sources.Kind(&#34;postgres&#34;), &#34;postgres://user:pass@localhost:5432/db1&#34;,
 <span id="L50" class="ln">    50  </span>		map[string]float64{&#34;metric&#34;: 60}, map[string]float64{&#34;standby_metric&#34;: 60}, &#34;exhaustive&#34;, &#34;exhaustive&#34;,
-<span id="L51" class="ln">    51  </span>		&#34;.*&#34;, `\_.+`, map[string]string{&#34;tag&#34;: &#34;value&#34;}, nil, true, true,
+<span id="L51" class="ln">    51  </span>		&#34;.*&#34;, `\_.+`, map[string]string{&#34;tag&#34;: &#34;value&#34;}, true, true,
 <span id="L52" class="ln">    52  </span>	))
 <span id="L53" class="ln">    53  </span>	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
 <span id="L54" class="ln">    54  </span>	a.NoError(err)
@@ -159,7 +159,7 @@
 <span id="L102" class="ln">   102  </span>		md.ConnStr, `{&#34;metric&#34;:60}`, `{&#34;standby_metric&#34;:60}`,
 <span id="L103" class="ln">   103  </span>		md.PresetMetrics, md.PresetMetricsStandby,
 <span id="L104" class="ln">   104  </span>		md.IncludePattern, md.ExcludePattern, `{&#34;tag&#34;:&#34;value&#34;}`,
-<span id="L105" class="ln">   105  </span>		nil, md.OnlyIfMaster, md.IsEnabled,
+<span id="L105" class="ln">   105  </span>		md.OnlyIfMaster, md.IsEnabled,
 <span id="L106" class="ln">   106  </span>	).WillReturnResult(pgxmock.NewResult(&#34;UPDATE&#34;, 1))
 <span id="L107" class="ln">   107  </span>
 <span id="L108" class="ln">   108  </span>	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
@@ -198,7 +198,7 @@
 <span id="L141" class="ln">   141  </span>			md.Name, md.Group, md.Kind,
 <span id="L142" class="ln">   142  </span>			md.ConnStr, `{&#34;metric&#34;:60}`, `{&#34;standby_metric&#34;:60}`, md.PresetMetrics, md.PresetMetricsStandby,
 <span id="L143" class="ln">   143  </span>			md.IncludePattern, md.ExcludePattern, `{&#34;tag&#34;:&#34;value&#34;}`,
-<span id="L144" class="ln">   144  </span>			nil, md.OnlyIfMaster, md.IsEnabled,
+<span id="L144" class="ln">   144  </span>			md.OnlyIfMaster, md.IsEnabled,
 <span id="L145" class="ln">   145  </span>		).WillReturnResult(pgxmock.NewResult(&#34;INSERT&#34;, 1))
 <span id="L146" class="ln">   146  </span>		conn.ExpectCommit()
 <span id="L147" class="ln">   147  </span>		conn.ExpectRollback() <span class="comment">// deferred rollback</span>
@@ -234,7 +234,7 @@
 <span id="L177" class="ln">   177  </span>			md.Name, md.Group, md.Kind,
 <span id="L178" class="ln">   178  </span>			md.ConnStr, `{&#34;metric&#34;:60}`, `{&#34;standby_metric&#34;:60}`, md.PresetMetrics, md.PresetMetricsStandby,
 <span id="L179" class="ln">   179  </span>			md.IncludePattern, md.ExcludePattern, `{&#34;tag&#34;:&#34;value&#34;}`,
-<span id="L180" class="ln">   180  </span>			nil, md.OnlyIfMaster, md.IsEnabled,
+<span id="L180" class="ln">   180  </span>			md.OnlyIfMaster, md.IsEnabled,
 <span id="L181" class="ln">   181  </span>		).WillReturnError(errors.New(&#34;failed insert&#34;))
 <span id="L182" class="ln">   182  </span>		conn.ExpectRollback()
 <span id="L183" class="ln">   183  </span>
@@ -247,7 +247,7 @@
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

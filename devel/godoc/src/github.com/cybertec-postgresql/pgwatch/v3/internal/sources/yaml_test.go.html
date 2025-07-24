@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -238,10 +238,67 @@
 <span id="L181" class="ln">   181  </span>	})
 <span id="L182" class="ln">   182  </span>}
 <span id="L183" class="ln">   183  </span>
+<span id="L184" class="ln">   184  </span>func TestYAMLCreateSource(t *testing.T) {
+<span id="L185" class="ln">   185  </span>	a := assert.New(t)
+<span id="L186" class="ln">   186  </span>
+<span id="L187" class="ln">   187  </span>	t.Run(&#34;happy_path&#34;, func(*testing.T) {
+<span id="L188" class="ln">   188  </span>		data, err := os.ReadFile(sampleFile)
+<span id="L189" class="ln">   189  </span>		a.NoError(err)
+<span id="L190" class="ln">   190  </span>		tmpSampleFile := filepath.Join(t.TempDir(), &#34;sample.sources.yaml&#34;)
+<span id="L191" class="ln">   191  </span>		err = os.WriteFile(tmpSampleFile, data, 0644)
+<span id="L192" class="ln">   192  </span>		a.NoError(err)
+<span id="L193" class="ln">   193  </span>		defer os.Remove(tmpSampleFile)
+<span id="L194" class="ln">   194  </span>
+<span id="L195" class="ln">   195  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpSampleFile)
+<span id="L196" class="ln">   196  </span>		a.NoError(err)
+<span id="L197" class="ln">   197  </span>
+<span id="L198" class="ln">   198  </span>		<span class="comment">// Create a new source</span>
+<span id="L199" class="ln">   199  </span>		md := sources.Source{
+<span id="L200" class="ln">   200  </span>			Name:    &#34;new_source&#34;,
+<span id="L201" class="ln">   201  </span>			ConnStr: &#34;postgresql://localhost/new_db&#34;,
+<span id="L202" class="ln">   202  </span>			Kind:    sources.SourcePostgres,
+<span id="L203" class="ln">   203  </span>		}
+<span id="L204" class="ln">   204  </span>		err = yamlrw.CreateSource(md)
+<span id="L205" class="ln">   205  </span>		a.NoError(err)
+<span id="L206" class="ln">   206  </span>
+<span id="L207" class="ln">   207  </span>		<span class="comment">// Verify it was created</span>
+<span id="L208" class="ln">   208  </span>		dbs, err := yamlrw.GetSources()
+<span id="L209" class="ln">   209  </span>		a.NoError(err)
+<span id="L210" class="ln">   210  </span>		a.Len(dbs, sampleEntriesNumber+1)
+<span id="L211" class="ln">   211  </span>
+<span id="L212" class="ln">   212  </span>		<span class="comment">// Try to create the same source again - should fail</span>
+<span id="L213" class="ln">   213  </span>		err = yamlrw.CreateSource(md)
+<span id="L214" class="ln">   214  </span>		a.Error(err)
+<span id="L215" class="ln">   215  </span>		a.ErrorIs(sources.ErrSourceExists, err)
+<span id="L216" class="ln">   216  </span>	})
+<span id="L217" class="ln">   217  </span>
+<span id="L218" class="ln">   218  </span>	t.Run(&#34;duplicate_source&#34;, func(*testing.T) {
+<span id="L219" class="ln">   219  </span>		data, err := os.ReadFile(sampleFile)
+<span id="L220" class="ln">   220  </span>		a.NoError(err)
+<span id="L221" class="ln">   221  </span>		tmpSampleFile := filepath.Join(t.TempDir(), &#34;sample.sources.yaml&#34;)
+<span id="L222" class="ln">   222  </span>		err = os.WriteFile(tmpSampleFile, data, 0644)
+<span id="L223" class="ln">   223  </span>		a.NoError(err)
+<span id="L224" class="ln">   224  </span>		defer os.Remove(tmpSampleFile)
+<span id="L225" class="ln">   225  </span>
+<span id="L226" class="ln">   226  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpSampleFile)
+<span id="L227" class="ln">   227  </span>		a.NoError(err)
+<span id="L228" class="ln">   228  </span>
+<span id="L229" class="ln">   229  </span>		<span class="comment">// Try to create a source that already exists</span>
+<span id="L230" class="ln">   230  </span>		md := sources.Source{
+<span id="L231" class="ln">   231  </span>			Name:    &#34;test1&#34;, <span class="comment">// This name already exists in sample file</span>
+<span id="L232" class="ln">   232  </span>			ConnStr: &#34;postgresql://localhost/test1&#34;,
+<span id="L233" class="ln">   233  </span>			Kind:    sources.SourcePostgres,
+<span id="L234" class="ln">   234  </span>		}
+<span id="L235" class="ln">   235  </span>		err = yamlrw.CreateSource(md)
+<span id="L236" class="ln">   236  </span>		a.Error(err)
+<span id="L237" class="ln">   237  </span>		a.ErrorIs(sources.ErrSourceExists, err)
+<span id="L238" class="ln">   238  </span>	})
+<span id="L239" class="ln">   239  </span>}
+<span id="L240" class="ln">   240  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -61,149 +61,182 @@
 <span id="L4" class="ln">     4  </span>	&#34;context&#34;
 <span id="L5" class="ln">     5  </span>	&#34;errors&#34;
 <span id="L6" class="ln">     6  </span>
-<span id="L7" class="ln">     7  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/db&#34;
-<span id="L8" class="ln">     8  </span>)
-<span id="L9" class="ln">     9  </span>
-<span id="L10" class="ln">    10  </span>func NewPostgresMetricReaderWriter(ctx context.Context, connstr string) (ReaderWriter, error) {
-<span id="L11" class="ln">    11  </span>	conn, err := db.New(ctx, connstr)
-<span id="L12" class="ln">    12  </span>	if err != nil {
-<span id="L13" class="ln">    13  </span>		return nil, err
-<span id="L14" class="ln">    14  </span>	}
-<span id="L15" class="ln">    15  </span>	return NewPostgresMetricReaderWriterConn(ctx, conn)
-<span id="L16" class="ln">    16  </span>}
-<span id="L17" class="ln">    17  </span>
-<span id="L18" class="ln">    18  </span>func NewPostgresMetricReaderWriterConn(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error) {
-<span id="L19" class="ln">    19  </span>	if err := initSchema(ctx, conn); err != nil {
-<span id="L20" class="ln">    20  </span>		return nil, err
-<span id="L21" class="ln">    21  </span>	}
-<span id="L22" class="ln">    22  </span>	return &amp;dbMetricReaderWriter{
-<span id="L23" class="ln">    23  </span>		ctx:      ctx,
-<span id="L24" class="ln">    24  </span>		configDb: conn,
-<span id="L25" class="ln">    25  </span>	}, conn.Ping(ctx)
-<span id="L26" class="ln">    26  </span>}
-<span id="L27" class="ln">    27  </span>
-<span id="L28" class="ln">    28  </span>type dbMetricReaderWriter struct {
-<span id="L29" class="ln">    29  </span>	ctx      context.Context
-<span id="L30" class="ln">    30  </span>	configDb db.PgxIface
-<span id="L31" class="ln">    31  </span>}
-<span id="L32" class="ln">    32  </span>
-<span id="L33" class="ln">    33  </span>var (
-<span id="L34" class="ln">    34  </span>	ErrMetricNotFound = errors.New(&#34;metric not found&#34;)
-<span id="L35" class="ln">    35  </span>	ErrPresetNotFound = errors.New(&#34;preset not found&#34;)
-<span id="L36" class="ln">    36  </span>	ErrInvalidMetric  = errors.New(&#34;invalid metric&#34;)
-<span id="L37" class="ln">    37  </span>	ErrInvalidPreset  = errors.New(&#34;invalid preset&#34;)
-<span id="L38" class="ln">    38  </span>)
-<span id="L39" class="ln">    39  </span>
-<span id="L40" class="ln">    40  </span><span class="comment">// make sure *dbMetricReaderWriter implements the Migrator interface</span>
-<span id="L41" class="ln">    41  </span>var _ Migrator = (*dbMetricReaderWriter)(nil)
-<span id="L42" class="ln">    42  </span>
-<span id="L43" class="ln">    43  </span><span class="comment">// writeMetricsToPostgres writes the metrics and presets definitions to the</span>
-<span id="L44" class="ln">    44  </span><span class="comment">// pgwatch.metric and pgwatch.preset tables in the ConfigDB.</span>
-<span id="L45" class="ln">    45  </span>func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *Metrics) error {
-<span id="L46" class="ln">    46  </span>	tx, err := conn.Begin(ctx)
-<span id="L47" class="ln">    47  </span>	if err != nil {
-<span id="L48" class="ln">    48  </span>		return err
-<span id="L49" class="ln">    49  </span>	}
-<span id="L50" class="ln">    50  </span>	defer func() { _ = tx.Rollback(ctx) }()
-<span id="L51" class="ln">    51  </span>	for metricName, metric := range metricDefs.MetricDefs {
-<span id="L52" class="ln">    52  </span>		_, err = tx.Exec(ctx, `INSERT INTO pgwatch.metric (name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name)
-<span id="L53" class="ln">    53  </span>		values ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (name) 
-<span id="L54" class="ln">    54  </span>		DO UPDATE SET sqls = $2, init_sql = $3, description = $4, node_status = $5, 
-<span id="L55" class="ln">    55  </span>		gauges = $6, is_instance_level = $7, storage_name = $8`,
-<span id="L56" class="ln">    56  </span>			metricName, metric.SQLs, metric.InitSQL, metric.Description, metric.NodeStatus, metric.Gauges, metric.IsInstanceLevel, metric.StorageName)
-<span id="L57" class="ln">    57  </span>		if err != nil {
-<span id="L58" class="ln">    58  </span>			return err
-<span id="L59" class="ln">    59  </span>		}
-<span id="L60" class="ln">    60  </span>	}
-<span id="L61" class="ln">    61  </span>	for presetName, preset := range metricDefs.PresetDefs {
-<span id="L62" class="ln">    62  </span>		_, err = tx.Exec(ctx, `INSERT INTO pgwatch.preset (name, description, metrics) 
-<span id="L63" class="ln">    63  </span>		VALUES ($1, $2, $3) ON CONFLICT (name) DO UPDATE SET description = $2, metrics = $3;`,
-<span id="L64" class="ln">    64  </span>			presetName, preset.Description, preset.Metrics)
-<span id="L65" class="ln">    65  </span>		if err != nil {
-<span id="L66" class="ln">    66  </span>			return err
-<span id="L67" class="ln">    67  </span>		}
-<span id="L68" class="ln">    68  </span>	}
-<span id="L69" class="ln">    69  </span>	return tx.Commit(ctx)
-<span id="L70" class="ln">    70  </span>}
-<span id="L71" class="ln">    71  </span>
-<span id="L72" class="ln">    72  </span><span class="comment">// ReadMetricsFromPostgres reads the metrics and presets definitions from the pgwatch.metric and pgwatch.preset tables from the ConfigDB.</span>
-<span id="L73" class="ln">    73  </span>func (dmrw *dbMetricReaderWriter) GetMetrics() (metricDefMapNew *Metrics, err error) {
-<span id="L74" class="ln">    74  </span>	ctx := dmrw.ctx
-<span id="L75" class="ln">    75  </span>	conn := dmrw.configDb
-<span id="L76" class="ln">    76  </span>	metricDefMapNew = &amp;Metrics{MetricDefs{}, PresetDefs{}}
-<span id="L77" class="ln">    77  </span>	rows, err := conn.Query(ctx, `SELECT name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name FROM pgwatch.metric`)
-<span id="L78" class="ln">    78  </span>	if err != nil {
-<span id="L79" class="ln">    79  </span>		return nil, err
-<span id="L80" class="ln">    80  </span>	}
-<span id="L81" class="ln">    81  </span>	defer rows.Close()
-<span id="L82" class="ln">    82  </span>	for rows.Next() {
-<span id="L83" class="ln">    83  </span>		metric := Metric{}
-<span id="L84" class="ln">    84  </span>		var name string
-<span id="L85" class="ln">    85  </span>		err = rows.Scan(&amp;name, &amp;metric.SQLs, &amp;metric.InitSQL, &amp;metric.Description, &amp;metric.NodeStatus, &amp;metric.Gauges, &amp;metric.IsInstanceLevel, &amp;metric.StorageName)
-<span id="L86" class="ln">    86  </span>		if err != nil {
-<span id="L87" class="ln">    87  </span>			return nil, err
-<span id="L88" class="ln">    88  </span>		}
-<span id="L89" class="ln">    89  </span>		metricDefMapNew.MetricDefs[name] = metric
-<span id="L90" class="ln">    90  </span>	}
-<span id="L91" class="ln">    91  </span>	rows, err = conn.Query(ctx, `SELECT name, description, metrics FROM pgwatch.preset`)
-<span id="L92" class="ln">    92  </span>	if err != nil {
-<span id="L93" class="ln">    93  </span>		return nil, err
+<span id="L7" class="ln">     7  </span>	&#34;github.com/jackc/pgx/v5/pgconn&#34;
+<span id="L8" class="ln">     8  </span>
+<span id="L9" class="ln">     9  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/db&#34;
+<span id="L10" class="ln">    10  </span>)
+<span id="L11" class="ln">    11  </span>
+<span id="L12" class="ln">    12  </span>func NewPostgresMetricReaderWriter(ctx context.Context, connstr string) (ReaderWriter, error) {
+<span id="L13" class="ln">    13  </span>	conn, err := db.New(ctx, connstr)
+<span id="L14" class="ln">    14  </span>	if err != nil {
+<span id="L15" class="ln">    15  </span>		return nil, err
+<span id="L16" class="ln">    16  </span>	}
+<span id="L17" class="ln">    17  </span>	return NewPostgresMetricReaderWriterConn(ctx, conn)
+<span id="L18" class="ln">    18  </span>}
+<span id="L19" class="ln">    19  </span>
+<span id="L20" class="ln">    20  </span>func NewPostgresMetricReaderWriterConn(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error) {
+<span id="L21" class="ln">    21  </span>	if err := initSchema(ctx, conn); err != nil {
+<span id="L22" class="ln">    22  </span>		return nil, err
+<span id="L23" class="ln">    23  </span>	}
+<span id="L24" class="ln">    24  </span>	return &amp;dbMetricReaderWriter{
+<span id="L25" class="ln">    25  </span>		ctx:      ctx,
+<span id="L26" class="ln">    26  </span>		configDb: conn,
+<span id="L27" class="ln">    27  </span>	}, conn.Ping(ctx)
+<span id="L28" class="ln">    28  </span>}
+<span id="L29" class="ln">    29  </span>
+<span id="L30" class="ln">    30  </span>type dbMetricReaderWriter struct {
+<span id="L31" class="ln">    31  </span>	ctx      context.Context
+<span id="L32" class="ln">    32  </span>	configDb db.PgxIface
+<span id="L33" class="ln">    33  </span>}
+<span id="L34" class="ln">    34  </span>
+<span id="L35" class="ln">    35  </span>var (
+<span id="L36" class="ln">    36  </span>	ErrMetricNotFound = errors.New(&#34;metric not found&#34;)
+<span id="L37" class="ln">    37  </span>	ErrPresetNotFound = errors.New(&#34;preset not found&#34;)
+<span id="L38" class="ln">    38  </span>	ErrInvalidMetric  = errors.New(&#34;invalid metric&#34;)
+<span id="L39" class="ln">    39  </span>	ErrInvalidPreset  = errors.New(&#34;invalid preset&#34;)
+<span id="L40" class="ln">    40  </span>	ErrMetricExists   = errors.New(&#34;metric already exists&#34;)
+<span id="L41" class="ln">    41  </span>	ErrPresetExists   = errors.New(&#34;preset already exists&#34;)
+<span id="L42" class="ln">    42  </span>)
+<span id="L43" class="ln">    43  </span>
+<span id="L44" class="ln">    44  </span><span class="comment">// make sure *dbMetricReaderWriter implements the Migrator interface</span>
+<span id="L45" class="ln">    45  </span>var _ Migrator = (*dbMetricReaderWriter)(nil)
+<span id="L46" class="ln">    46  </span>
+<span id="L47" class="ln">    47  </span><span class="comment">// writeMetricsToPostgres writes the metrics and presets definitions to the</span>
+<span id="L48" class="ln">    48  </span><span class="comment">// pgwatch.metric and pgwatch.preset tables in the ConfigDB.</span>
+<span id="L49" class="ln">    49  </span>func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *Metrics) error {
+<span id="L50" class="ln">    50  </span>	tx, err := conn.Begin(ctx)
+<span id="L51" class="ln">    51  </span>	if err != nil {
+<span id="L52" class="ln">    52  </span>		return err
+<span id="L53" class="ln">    53  </span>	}
+<span id="L54" class="ln">    54  </span>	defer func() { _ = tx.Rollback(ctx) }()
+<span id="L55" class="ln">    55  </span>	for metricName, metric := range metricDefs.MetricDefs {
+<span id="L56" class="ln">    56  </span>		_, err = tx.Exec(ctx, `INSERT INTO pgwatch.metric (name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name)
+<span id="L57" class="ln">    57  </span>		values ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (name) 
+<span id="L58" class="ln">    58  </span>		DO UPDATE SET sqls = $2, init_sql = $3, description = $4, node_status = $5, 
+<span id="L59" class="ln">    59  </span>		gauges = $6, is_instance_level = $7, storage_name = $8`,
+<span id="L60" class="ln">    60  </span>			metricName, metric.SQLs, metric.InitSQL, metric.Description, metric.NodeStatus, metric.Gauges, metric.IsInstanceLevel, metric.StorageName)
+<span id="L61" class="ln">    61  </span>		if err != nil {
+<span id="L62" class="ln">    62  </span>			return err
+<span id="L63" class="ln">    63  </span>		}
+<span id="L64" class="ln">    64  </span>	}
+<span id="L65" class="ln">    65  </span>	for presetName, preset := range metricDefs.PresetDefs {
+<span id="L66" class="ln">    66  </span>		_, err = tx.Exec(ctx, `INSERT INTO pgwatch.preset (name, description, metrics) 
+<span id="L67" class="ln">    67  </span>		VALUES ($1, $2, $3) ON CONFLICT (name) DO UPDATE SET description = $2, metrics = $3;`,
+<span id="L68" class="ln">    68  </span>			presetName, preset.Description, preset.Metrics)
+<span id="L69" class="ln">    69  </span>		if err != nil {
+<span id="L70" class="ln">    70  </span>			return err
+<span id="L71" class="ln">    71  </span>		}
+<span id="L72" class="ln">    72  </span>	}
+<span id="L73" class="ln">    73  </span>	return tx.Commit(ctx)
+<span id="L74" class="ln">    74  </span>}
+<span id="L75" class="ln">    75  </span>
+<span id="L76" class="ln">    76  </span><span class="comment">// ReadMetricsFromPostgres reads the metrics and presets definitions from the pgwatch.metric and pgwatch.preset tables from the ConfigDB.</span>
+<span id="L77" class="ln">    77  </span>func (dmrw *dbMetricReaderWriter) GetMetrics() (metricDefMapNew *Metrics, err error) {
+<span id="L78" class="ln">    78  </span>	ctx := dmrw.ctx
+<span id="L79" class="ln">    79  </span>	conn := dmrw.configDb
+<span id="L80" class="ln">    80  </span>	metricDefMapNew = &amp;Metrics{MetricDefs{}, PresetDefs{}}
+<span id="L81" class="ln">    81  </span>	rows, err := conn.Query(ctx, `SELECT name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name FROM pgwatch.metric`)
+<span id="L82" class="ln">    82  </span>	if err != nil {
+<span id="L83" class="ln">    83  </span>		return nil, err
+<span id="L84" class="ln">    84  </span>	}
+<span id="L85" class="ln">    85  </span>	defer rows.Close()
+<span id="L86" class="ln">    86  </span>	for rows.Next() {
+<span id="L87" class="ln">    87  </span>		metric := Metric{}
+<span id="L88" class="ln">    88  </span>		var name string
+<span id="L89" class="ln">    89  </span>		err = rows.Scan(&amp;name, &amp;metric.SQLs, &amp;metric.InitSQL, &amp;metric.Description, &amp;metric.NodeStatus, &amp;metric.Gauges, &amp;metric.IsInstanceLevel, &amp;metric.StorageName)
+<span id="L90" class="ln">    90  </span>		if err != nil {
+<span id="L91" class="ln">    91  </span>			return nil, err
+<span id="L92" class="ln">    92  </span>		}
+<span id="L93" class="ln">    93  </span>		metricDefMapNew.MetricDefs[name] = metric
 <span id="L94" class="ln">    94  </span>	}
-<span id="L95" class="ln">    95  </span>	defer rows.Close()
-<span id="L96" class="ln">    96  </span>	for rows.Next() {
-<span id="L97" class="ln">    97  </span>		preset := Preset{}
-<span id="L98" class="ln">    98  </span>		var name string
-<span id="L99" class="ln">    99  </span>		err = rows.Scan(&amp;name, &amp;preset.Description, &amp;preset.Metrics)
-<span id="L100" class="ln">   100  </span>		if err != nil {
-<span id="L101" class="ln">   101  </span>			return nil, err
-<span id="L102" class="ln">   102  </span>		}
-<span id="L103" class="ln">   103  </span>		metricDefMapNew.PresetDefs[name] = preset
-<span id="L104" class="ln">   104  </span>	}
-<span id="L105" class="ln">   105  </span>	return metricDefMapNew, nil
-<span id="L106" class="ln">   106  </span>}
-<span id="L107" class="ln">   107  </span>
-<span id="L108" class="ln">   108  </span>func (dmrw *dbMetricReaderWriter) WriteMetrics(metricDefs *Metrics) error {
-<span id="L109" class="ln">   109  </span>	return writeMetricsToPostgres(dmrw.ctx, dmrw.configDb, metricDefs)
+<span id="L95" class="ln">    95  </span>	rows, err = conn.Query(ctx, `SELECT name, description, metrics FROM pgwatch.preset`)
+<span id="L96" class="ln">    96  </span>	if err != nil {
+<span id="L97" class="ln">    97  </span>		return nil, err
+<span id="L98" class="ln">    98  </span>	}
+<span id="L99" class="ln">    99  </span>	defer rows.Close()
+<span id="L100" class="ln">   100  </span>	for rows.Next() {
+<span id="L101" class="ln">   101  </span>		preset := Preset{}
+<span id="L102" class="ln">   102  </span>		var name string
+<span id="L103" class="ln">   103  </span>		err = rows.Scan(&amp;name, &amp;preset.Description, &amp;preset.Metrics)
+<span id="L104" class="ln">   104  </span>		if err != nil {
+<span id="L105" class="ln">   105  </span>			return nil, err
+<span id="L106" class="ln">   106  </span>		}
+<span id="L107" class="ln">   107  </span>		metricDefMapNew.PresetDefs[name] = preset
+<span id="L108" class="ln">   108  </span>	}
+<span id="L109" class="ln">   109  </span>	return metricDefMapNew, nil
 <span id="L110" class="ln">   110  </span>}
 <span id="L111" class="ln">   111  </span>
-<span id="L112" class="ln">   112  </span>func (dmrw *dbMetricReaderWriter) DeleteMetric(metricName string) error {
-<span id="L113" class="ln">   113  </span>	_, err := dmrw.configDb.Exec(dmrw.ctx, `DELETE FROM pgwatch.metric WHERE name = $1`, metricName)
-<span id="L114" class="ln">   114  </span>	return err
-<span id="L115" class="ln">   115  </span>}
-<span id="L116" class="ln">   116  </span>
-<span id="L117" class="ln">   117  </span>func (dmrw *dbMetricReaderWriter) UpdateMetric(metricName string, metric Metric) error {
-<span id="L118" class="ln">   118  </span>	ct, err := dmrw.configDb.Exec(dmrw.ctx, `INSERT INTO pgwatch.metric
-<span id="L119" class="ln">   119  </span>(name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name)
-<span id="L120" class="ln">   120  </span>VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
-<span id="L121" class="ln">   121  </span>ON CONFLICT (name) DO UPDATE SET 
-<span id="L122" class="ln">   122  </span>sqls = $2, init_sql = $3, description = $4, node_status = $5, gauges = $6, is_instance_level = $7, storage_name = $8`,
-<span id="L123" class="ln">   123  </span>		metricName, db.MarshallParamToJSONB(metric.SQLs), metric.InitSQL, metric.Description,
-<span id="L124" class="ln">   124  </span>		metric.NodeStatus, metric.Gauges, metric.IsInstanceLevel, metric.StorageName)
-<span id="L125" class="ln">   125  </span>	if err == nil &amp;&amp; ct.RowsAffected() == 0 {
-<span id="L126" class="ln">   126  </span>		return ErrMetricNotFound
-<span id="L127" class="ln">   127  </span>	}
-<span id="L128" class="ln">   128  </span>	return err
-<span id="L129" class="ln">   129  </span>}
-<span id="L130" class="ln">   130  </span>
-<span id="L131" class="ln">   131  </span>func (dmrw *dbMetricReaderWriter) DeletePreset(presetName string) error {
-<span id="L132" class="ln">   132  </span>	_, err := dmrw.configDb.Exec(dmrw.ctx, `DELETE FROM pgwatch.preset WHERE name = $1`, presetName)
-<span id="L133" class="ln">   133  </span>	return err
-<span id="L134" class="ln">   134  </span>}
-<span id="L135" class="ln">   135  </span>
-<span id="L136" class="ln">   136  </span>func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName string, preset Preset) error {
-<span id="L137" class="ln">   137  </span>	sql := `INSERT INTO pgwatch.preset(name, description, metrics) VALUES ($1, $2, $3)
-<span id="L138" class="ln">   138  </span>	ON CONFLICT (name) DO UPDATE SET description = $2, metrics = $3`
-<span id="L139" class="ln">   139  </span>	ct, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParamToJSONB(preset.Metrics))
-<span id="L140" class="ln">   140  </span>	if err == nil &amp;&amp; ct.RowsAffected() == 0 {
-<span id="L141" class="ln">   141  </span>		return ErrPresetNotFound
-<span id="L142" class="ln">   142  </span>	}
-<span id="L143" class="ln">   143  </span>	return err
-<span id="L144" class="ln">   144  </span>}
-<span id="L145" class="ln">   145  </span>
+<span id="L112" class="ln">   112  </span>func (dmrw *dbMetricReaderWriter) WriteMetrics(metricDefs *Metrics) error {
+<span id="L113" class="ln">   113  </span>	return writeMetricsToPostgres(dmrw.ctx, dmrw.configDb, metricDefs)
+<span id="L114" class="ln">   114  </span>}
+<span id="L115" class="ln">   115  </span>
+<span id="L116" class="ln">   116  </span>func (dmrw *dbMetricReaderWriter) DeleteMetric(metricName string) error {
+<span id="L117" class="ln">   117  </span>	_, err := dmrw.configDb.Exec(dmrw.ctx, `DELETE FROM pgwatch.metric WHERE name = $1`, metricName)
+<span id="L118" class="ln">   118  </span>	return err
+<span id="L119" class="ln">   119  </span>}
+<span id="L120" class="ln">   120  </span>
+<span id="L121" class="ln">   121  </span>func (dmrw *dbMetricReaderWriter) UpdateMetric(metricName string, metric Metric) error {
+<span id="L122" class="ln">   122  </span>	ct, err := dmrw.configDb.Exec(dmrw.ctx, `INSERT INTO pgwatch.metric
+<span id="L123" class="ln">   123  </span>(name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name)
+<span id="L124" class="ln">   124  </span>VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+<span id="L125" class="ln">   125  </span>ON CONFLICT (name) DO UPDATE SET 
+<span id="L126" class="ln">   126  </span>sqls = $2, init_sql = $3, description = $4, node_status = $5, gauges = $6, is_instance_level = $7, storage_name = $8`,
+<span id="L127" class="ln">   127  </span>		metricName, db.MarshallParamToJSONB(metric.SQLs), metric.InitSQL, metric.Description,
+<span id="L128" class="ln">   128  </span>		metric.NodeStatus, metric.Gauges, metric.IsInstanceLevel, metric.StorageName)
+<span id="L129" class="ln">   129  </span>	if err == nil &amp;&amp; ct.RowsAffected() == 0 {
+<span id="L130" class="ln">   130  </span>		return ErrMetricNotFound
+<span id="L131" class="ln">   131  </span>	}
+<span id="L132" class="ln">   132  </span>	return err
+<span id="L133" class="ln">   133  </span>}
+<span id="L134" class="ln">   134  </span>
+<span id="L135" class="ln">   135  </span>func (dmrw *dbMetricReaderWriter) CreateMetric(metricName string, metric Metric) error {
+<span id="L136" class="ln">   136  </span>	_, err := dmrw.configDb.Exec(dmrw.ctx, `INSERT INTO pgwatch.metric
+<span id="L137" class="ln">   137  </span>(name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name)
+<span id="L138" class="ln">   138  </span>VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+<span id="L139" class="ln">   139  </span>		metricName, db.MarshallParamToJSONB(metric.SQLs), metric.InitSQL, metric.Description,
+<span id="L140" class="ln">   140  </span>		metric.NodeStatus, metric.Gauges, metric.IsInstanceLevel, metric.StorageName)
+<span id="L141" class="ln">   141  </span>	if err != nil {
+<span id="L142" class="ln">   142  </span>		<span class="comment">// Check for unique constraint violation using PostgreSQL error code</span>
+<span id="L143" class="ln">   143  </span>		var pgErr *pgconn.PgError
+<span id="L144" class="ln">   144  </span>		if errors.As(err, &amp;pgErr) &amp;&amp; pgErr.SQLState() == &#34;23505&#34; {
+<span id="L145" class="ln">   145  </span>			return ErrMetricExists
+<span id="L146" class="ln">   146  </span>		}
+<span id="L147" class="ln">   147  </span>	}
+<span id="L148" class="ln">   148  </span>	return err
+<span id="L149" class="ln">   149  </span>}
+<span id="L150" class="ln">   150  </span>
+<span id="L151" class="ln">   151  </span>func (dmrw *dbMetricReaderWriter) DeletePreset(presetName string) error {
+<span id="L152" class="ln">   152  </span>	_, err := dmrw.configDb.Exec(dmrw.ctx, `DELETE FROM pgwatch.preset WHERE name = $1`, presetName)
+<span id="L153" class="ln">   153  </span>	return err
+<span id="L154" class="ln">   154  </span>}
+<span id="L155" class="ln">   155  </span>
+<span id="L156" class="ln">   156  </span>func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName string, preset Preset) error {
+<span id="L157" class="ln">   157  </span>	sql := `INSERT INTO pgwatch.preset(name, description, metrics) VALUES ($1, $2, $3)
+<span id="L158" class="ln">   158  </span>	ON CONFLICT (name) DO UPDATE SET description = $2, metrics = $3`
+<span id="L159" class="ln">   159  </span>	ct, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParamToJSONB(preset.Metrics))
+<span id="L160" class="ln">   160  </span>	if err == nil &amp;&amp; ct.RowsAffected() == 0 {
+<span id="L161" class="ln">   161  </span>		return ErrPresetNotFound
+<span id="L162" class="ln">   162  </span>	}
+<span id="L163" class="ln">   163  </span>	return err
+<span id="L164" class="ln">   164  </span>}
+<span id="L165" class="ln">   165  </span>
+<span id="L166" class="ln">   166  </span>func (dmrw *dbMetricReaderWriter) CreatePreset(presetName string, preset Preset) error {
+<span id="L167" class="ln">   167  </span>	sql := `INSERT INTO pgwatch.preset(name, description, metrics) VALUES ($1, $2, $3)`
+<span id="L168" class="ln">   168  </span>	_, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParamToJSONB(preset.Metrics))
+<span id="L169" class="ln">   169  </span>	if err != nil {
+<span id="L170" class="ln">   170  </span>		<span class="comment">// Check for unique constraint violation using PostgreSQL error code</span>
+<span id="L171" class="ln">   171  </span>		var pgErr *pgconn.PgError
+<span id="L172" class="ln">   172  </span>		if errors.As(err, &amp;pgErr) &amp;&amp; pgErr.Code == &#34;23505&#34; {
+<span id="L173" class="ln">   173  </span>			return ErrPresetExists
+<span id="L174" class="ln">   174  </span>		}
+<span id="L175" class="ln">   175  </span>	}
+<span id="L176" class="ln">   176  </span>	return err
+<span id="L177" class="ln">   177  </span>}
+<span id="L178" class="ln">   178  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

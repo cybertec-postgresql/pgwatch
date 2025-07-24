@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -57,38 +57,41 @@
 <script type="text/javascript">document.ANALYSIS_DATA = null;</script>
 <pre><span id="L1" class="ln">     1  </span>package sinks
 <span id="L2" class="ln">     2  </span>
-<span id="L3" class="ln">     3  </span>import (
-<span id="L4" class="ln">     4  </span>	&#34;context&#34;
-<span id="L5" class="ln">     5  </span>	&#34;net/rpc&#34;
-<span id="L6" class="ln">     6  </span>)
-<span id="L7" class="ln">     7  </span>
-<span id="L8" class="ln">     8  </span><span class="comment">// RPCWriter is a sink that sends metric measurements to a remote server using the RPC protocol.</span>
-<span id="L9" class="ln">     9  </span><span class="comment">// Remote server should implement the Receiver interface. It&#39;s up to the implementer to define the</span>
-<span id="L10" class="ln">    10  </span><span class="comment">// behavior of the server. It can be a simple logger, external storage, alerting system,</span>
-<span id="L11" class="ln">    11  </span><span class="comment">// or an analytics system.</span>
-<span id="L12" class="ln">    12  </span>type RPCWriter struct {
-<span id="L13" class="ln">    13  </span>	ctx     context.Context
-<span id="L14" class="ln">    14  </span>	client  *rpc.Client
-<span id="L15" class="ln">    15  </span>}
-<span id="L16" class="ln">    16  </span>
-<span id="L17" class="ln">    17  </span>type SyncOp int
-<span id="L18" class="ln">    18  </span>
-<span id="L19" class="ln">    19  </span>const (
-<span id="L20" class="ln">    20  </span>	AddOp SyncOp = iota
-<span id="L21" class="ln">    21  </span>	DeleteOp
-<span id="L22" class="ln">    22  </span>	InvalidOp
-<span id="L23" class="ln">    23  </span>)
-<span id="L24" class="ln">    24  </span>
-<span id="L25" class="ln">    25  </span>type SyncReq struct {
-<span id="L26" class="ln">    26  </span>	DbName     string
-<span id="L27" class="ln">    27  </span>	MetricName string
-<span id="L28" class="ln">    28  </span>	Operation  SyncOp
-<span id="L29" class="ln">    29  </span>}
-<span id="L30" class="ln">    30  </span>
+<span id="L3" class="ln">     3  </span><span class="comment">// SyncOp represents synchronization operations for metrics.</span>
+<span id="L4" class="ln">     4  </span><span class="comment">// These constants are used both in Go code and protobuf definitions.</span>
+<span id="L5" class="ln">     5  </span>type SyncOp int32
+<span id="L6" class="ln">     6  </span>
+<span id="L7" class="ln">     7  </span>const (
+<span id="L8" class="ln">     8  </span>	<span class="comment">// InvalidOp represents an invalid or unrecognized operation</span>
+<span id="L9" class="ln">     9  </span>	InvalidOp SyncOp = iota <span class="comment">// 0 </span>
+<span id="L10" class="ln">    10  </span>	<span class="comment">// AddOp represents adding a new metric</span>
+<span id="L11" class="ln">    11  </span>	AddOp  <span class="comment">// 1</span>
+<span id="L12" class="ln">    12  </span>	<span class="comment">// DeleteOp represents deleting an existing metric or entire source</span>
+<span id="L13" class="ln">    13  </span>	DeleteOp <span class="comment">// 2</span>
+<span id="L14" class="ln">    14  </span>	<span class="comment">// DefineOp represents defining metric definitions</span>
+<span id="L15" class="ln">    15  </span>	DefineOp <span class="comment">// 3</span>
+<span id="L16" class="ln">    16  </span>)
+<span id="L17" class="ln">    17  </span>
+<span id="L18" class="ln">    18  </span><span class="comment">// String returns the string representation of the SyncOp</span>
+<span id="L19" class="ln">    19  </span>func (s SyncOp) String() string {
+<span id="L20" class="ln">    20  </span>	switch s {
+<span id="L21" class="ln">    21  </span>	case InvalidOp:
+<span id="L22" class="ln">    22  </span>		return &#34;InvalidOp&#34;
+<span id="L23" class="ln">    23  </span>	case AddOp:
+<span id="L24" class="ln">    24  </span>		return &#34;AddOp&#34;
+<span id="L25" class="ln">    25  </span>	case DeleteOp:
+<span id="L26" class="ln">    26  </span>		return &#34;DeleteOp&#34;
+<span id="L27" class="ln">    27  </span>	case DefineOp:
+<span id="L28" class="ln">    28  </span>		return &#34;DefineOp&#34;
+<span id="L29" class="ln">    29  </span>	default:
+<span id="L30" class="ln">    30  </span>		return &#34;Unknown&#34;
+<span id="L31" class="ln">    31  </span>	}
+<span id="L32" class="ln">    32  </span>}
+<span id="L33" class="ln">    33  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -208,10 +208,10 @@
 <span id="L151" class="ln">   151  </span>)
 <span id="L152" class="ln">   152  </span>
 <span id="L153" class="ln">   153  </span><span class="comment">// SyncMetric ensures that tables exist for newly added metrics and/or sources</span>
-<span id="L154" class="ln">   154  </span>func (pgw *PostgresWriter) SyncMetric(dbUnique, metricName string, op SyncOp) error {
+<span id="L154" class="ln">   154  </span>func (pgw *PostgresWriter) SyncMetric(sourceName, metricName string, op SyncOp) error {
 <span id="L155" class="ln">   155  </span>	if op == AddOp {
 <span id="L156" class="ln">   156  </span>		return errors.Join(
-<span id="L157" class="ln">   157  </span>			pgw.AddDBUniqueMetricToListingTable(dbUnique, metricName),
+<span id="L157" class="ln">   157  </span>			pgw.AddDBUniqueMetricToListingTable(sourceName, metricName),
 <span id="L158" class="ln">   158  </span>			pgw.EnsureMetricDummy(metricName), <span class="comment">// ensure that there is at least an empty top-level table not to get ugly Grafana notifications</span>
 <span id="L159" class="ln">   159  </span>		)
 <span id="L160" class="ln">   160  </span>	}
@@ -712,7 +712,7 @@
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

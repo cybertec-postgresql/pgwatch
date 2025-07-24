@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -109,7 +109,7 @@
 <span id="L52" class="ln">    52  </span>	var e error
 <span id="L53" class="ln">    53  </span>	for _, s := range foundSources {
 <span id="L54" class="ln">    54  </span>		switch s.Kind {
-<span id="L55" class="ln">    55  </span>		case sources.SourcePatroni, sources.SourcePatroniContinuous, sources.SourcePatroniNamespace:
+<span id="L55" class="ln">    55  </span>		case sources.SourcePatroni:
 <span id="L56" class="ln">    56  </span>			_, e = sources.ResolveDatabasesFromPatroni(s)
 <span id="L57" class="ln">    57  </span>		case sources.SourcePostgresContinuous:
 <span id="L58" class="ln">    58  </span>			_, e = sources.ResolveDatabasesFromPostgres(s)
@@ -179,7 +179,7 @@
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

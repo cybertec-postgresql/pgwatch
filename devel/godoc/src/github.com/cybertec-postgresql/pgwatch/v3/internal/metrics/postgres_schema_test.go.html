@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -58,24 +58,24 @@
 <pre><span id="L1" class="ln">     1  </span>package metrics
 <span id="L2" class="ln">     2  </span>
 <span id="L3" class="ln">     3  </span>import (
-<span id="L4" class="ln">     4  </span>	&#34;context&#34;
-<span id="L5" class="ln">     5  </span>	&#34;testing&#34;
-<span id="L6" class="ln">     6  </span>
-<span id="L7" class="ln">     7  </span>	migrator &#34;github.com/cybertec-postgresql/pgx-migrator&#34;
-<span id="L8" class="ln">     8  </span>	&#34;github.com/pashagolub/pgxmock/v4&#34;
-<span id="L9" class="ln">     9  </span>	&#34;github.com/stretchr/testify/assert&#34;
-<span id="L10" class="ln">    10  </span>)
-<span id="L11" class="ln">    11  </span>
-<span id="L12" class="ln">    12  </span>var ctx = context.Background()
-<span id="L13" class="ln">    13  </span>
-<span id="L14" class="ln">    14  </span>func TestMigrate(t *testing.T) {
-<span id="L15" class="ln">    15  </span>	a := assert.New(t)
-<span id="L16" class="ln">    16  </span>	conn, err := pgxmock.NewPool()
-<span id="L17" class="ln">    17  </span>	a.NoError(err)
-<span id="L18" class="ln">    18  </span>
-<span id="L19" class="ln">    19  </span>	conn.ExpectExec(`CREATE TABLE IF NOT EXISTS pgwatch\.migration`).WillReturnResult(pgxmock.NewResult(&#34;CREATE&#34;, 1))
-<span id="L20" class="ln">    20  </span>	conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{&#34;count&#34;}).AddRow(0))
-<span id="L21" class="ln">    21  </span>	conn.ExpectBegin()
+<span id="L4" class="ln">     4  </span>	&#34;testing&#34;
+<span id="L5" class="ln">     5  </span>
+<span id="L6" class="ln">     6  </span>	migrator &#34;github.com/cybertec-postgresql/pgx-migrator&#34;
+<span id="L7" class="ln">     7  </span>	&#34;github.com/pashagolub/pgxmock/v4&#34;
+<span id="L8" class="ln">     8  </span>	&#34;github.com/stretchr/testify/assert&#34;
+<span id="L9" class="ln">     9  </span>)
+<span id="L10" class="ln">    10  </span>
+<span id="L11" class="ln">    11  </span>func TestMigrate(t *testing.T) {
+<span id="L12" class="ln">    12  </span>	a := assert.New(t)
+<span id="L13" class="ln">    13  </span>	conn, err := pgxmock.NewPool()
+<span id="L14" class="ln">    14  </span>	a.NoError(err)
+<span id="L15" class="ln">    15  </span>
+<span id="L16" class="ln">    16  </span>	conn.ExpectExec(`CREATE TABLE IF NOT EXISTS pgwatch\.migration`).WillReturnResult(pgxmock.NewResult(&#34;CREATE&#34;, 1))
+<span id="L17" class="ln">    17  </span>	conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{&#34;count&#34;}).AddRow(0))
+<span id="L18" class="ln">    18  </span>	conn.ExpectBegin()
+<span id="L19" class="ln">    19  </span>	conn.ExpectExec(`INSERT INTO`).WillReturnResult(pgxmock.NewResult(&#34;INSERT&#34;, 1))
+<span id="L20" class="ln">    20  </span>	conn.ExpectBegin()
+<span id="L21" class="ln">    21  </span>	conn.ExpectExec(`UPDATE pgwatch\.metric`).WillReturnResult(pgxmock.NewResult(&#34;UPDATE&#34;, 0)) <span class="comment">// combined migration SQL without parameters</span>
 <span id="L22" class="ln">    22  </span>	conn.ExpectExec(`INSERT INTO`).WillReturnResult(pgxmock.NewResult(&#34;INSERT&#34;, 1))
 <span id="L23" class="ln">    23  </span>
 <span id="L24" class="ln">    24  </span>	dmrw := &amp;dbMetricReaderWriter{ctx, conn}
@@ -130,7 +130,7 @@
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

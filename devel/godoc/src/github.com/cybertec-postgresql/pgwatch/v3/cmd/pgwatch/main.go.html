@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -148,7 +148,7 @@
 <span id="L91" class="ln">    91  </span>
 <span id="L92" class="ln">    92  </span>	if upgrade, err := opts.NeedsSchemaUpgrade(); upgrade || err != nil {
 <span id="L93" class="ln">    93  </span>		if upgrade {
-<span id="L94" class="ln">    94  </span>			err = errors.Join(err, errors.New(`configuration needs upgrade, use &#34;init --upgrade&#34; command`))
+<span id="L94" class="ln">    94  </span>			err = errors.Join(err, errors.New(`configuration needs upgrade, use &#34;config upgrade&#34; command`))
 <span id="L95" class="ln">    95  </span>		}
 <span id="L96" class="ln">    96  </span>		exitCode.Store(cmdopts.ExitCodeUpgradeError)
 <span id="L97" class="ln">    97  </span>		logger.Error(err)
@@ -170,7 +170,7 @@
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

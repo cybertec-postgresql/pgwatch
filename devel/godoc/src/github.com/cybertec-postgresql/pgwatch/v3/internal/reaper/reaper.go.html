@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -75,473 +75,473 @@
 <span id="L18" class="ln">    18  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/sources&#34;
 <span id="L19" class="ln">    19  </span>)
 <span id="L20" class="ln">    20  </span>
-<span id="L21" class="ln">    21  </span>var hostLastKnownStatusInRecovery = make(map[string]bool) <span class="comment">// isInRecovery</span>
-<span id="L22" class="ln">    22  </span>var metricsConfig map[string]float64                      <span class="comment">// set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state</span>
-<span id="L23" class="ln">    23  </span>var metricDefs = NewConcurrentMetricDefs()
-<span id="L24" class="ln">    24  </span>
-<span id="L25" class="ln">    25  </span><span class="comment">// Reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks</span>
-<span id="L26" class="ln">    26  </span>type Reaper struct {
-<span id="L27" class="ln">    27  </span>	*cmdopts.Options
-<span id="L28" class="ln">    28  </span>	ready                atomic.Bool
-<span id="L29" class="ln">    29  </span>	measurementCh        chan metrics.MeasurementEnvelope
-<span id="L30" class="ln">    30  </span>	measurementCache     *InstanceMetricCache
-<span id="L31" class="ln">    31  </span>	logger               log.Logger
-<span id="L32" class="ln">    32  </span>	monitoredSources     sources.SourceConns
-<span id="L33" class="ln">    33  </span>	prevLoopMonitoredDBs sources.SourceConns
-<span id="L34" class="ln">    34  </span>	cancelFuncs          map[string]context.CancelFunc
-<span id="L35" class="ln">    35  </span>}
-<span id="L36" class="ln">    36  </span>
-<span id="L37" class="ln">    37  </span><span class="comment">// NewReaper creates a new Reaper instance</span>
-<span id="L38" class="ln">    38  </span>func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper) {
-<span id="L39" class="ln">    39  </span>	return &amp;Reaper{
-<span id="L40" class="ln">    40  </span>		Options:              opts,
-<span id="L41" class="ln">    41  </span>		measurementCh:        make(chan metrics.MeasurementEnvelope, 256),
-<span id="L42" class="ln">    42  </span>		measurementCache:     NewInstanceMetricCache(),
-<span id="L43" class="ln">    43  </span>		logger:               log.GetLogger(ctx),
-<span id="L44" class="ln">    44  </span>		monitoredSources:     make(sources.SourceConns, 0),
-<span id="L45" class="ln">    45  </span>		prevLoopMonitoredDBs: make(sources.SourceConns, 0),
-<span id="L46" class="ln">    46  </span>		cancelFuncs:          make(map[string]context.CancelFunc), <span class="comment">// [db1+metric1]cancel()</span>
-<span id="L47" class="ln">    47  </span>	}
-<span id="L48" class="ln">    48  </span>}
-<span id="L49" class="ln">    49  </span>
-<span id="L50" class="ln">    50  </span><span class="comment">// Ready() returns true if the service is healthy and operating correctly</span>
-<span id="L51" class="ln">    51  </span>func (r *Reaper) Ready() bool {
-<span id="L52" class="ln">    52  </span>	return r.ready.Load()
-<span id="L53" class="ln">    53  </span>}
-<span id="L54" class="ln">    54  </span>
-<span id="L55" class="ln">    55  </span>func (r *Reaper) PrintMemStats() {
-<span id="L56" class="ln">    56  </span>	var m runtime.MemStats
-<span id="L57" class="ln">    57  </span>	runtime.ReadMemStats(&amp;m)
-<span id="L58" class="ln">    58  </span>
-<span id="L59" class="ln">    59  </span>	bToKb := func(b uint64) uint64 {
-<span id="L60" class="ln">    60  </span>		return b / 1024
-<span id="L61" class="ln">    61  </span>	}
-<span id="L62" class="ln">    62  </span>	r.logger.Debugf(&#34;Alloc: %d Kb, TotalAlloc: %d Kb, Sys: %d Kb, NumGC: %d, HeapAlloc: %d Kb, HeapSys: %d Kb&#34;,
-<span id="L63" class="ln">    63  </span>		bToKb(m.Alloc), bToKb(m.TotalAlloc), bToKb(m.Sys), m.NumGC, bToKb(m.HeapAlloc), bToKb(m.HeapSys))
-<span id="L64" class="ln">    64  </span>}
-<span id="L65" class="ln">    65  </span>
-<span id="L66" class="ln">    66  </span><span class="comment">// Reap() starts the main monitoring loop. It is responsible for fetching metrics measurements</span>
-<span id="L67" class="ln">    67  </span><span class="comment">// from the sources and storing them to the sinks. It also manages the lifecycle of</span>
-<span id="L68" class="ln">    68  </span><span class="comment">// the metric gatherers. In case of a source or metric definition change, it will</span>
-<span id="L69" class="ln">    69  </span><span class="comment">// start or stop the gatherers accordingly.</span>
-<span id="L70" class="ln">    70  </span>func (r *Reaper) Reap(ctx context.Context) {
-<span id="L71" class="ln">    71  </span>	var err error
-<span id="L72" class="ln">    72  </span>	logger := r.logger
+<span id="L21" class="ln">    21  </span>const (
+<span id="L22" class="ln">    22  </span>	specialMetricChangeEvents         = &#34;change_events&#34;
+<span id="L23" class="ln">    23  </span>	specialMetricServerLogEventCounts = &#34;server_log_event_counts&#34;
+<span id="L24" class="ln">    24  </span>	specialMetricInstanceUp           = &#34;instance_up&#34;
+<span id="L25" class="ln">    25  </span>)
+<span id="L26" class="ln">    26  </span>
+<span id="L27" class="ln">    27  </span>var specialMetrics = map[string]bool{specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
+<span id="L28" class="ln">    28  </span>
+<span id="L29" class="ln">    29  </span>var hostLastKnownStatusInRecovery = make(map[string]bool) <span class="comment">// isInRecovery</span>
+<span id="L30" class="ln">    30  </span>var metricsConfig map[string]float64                      <span class="comment">// set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state</span>
+<span id="L31" class="ln">    31  </span>var metricDefs = NewConcurrentMetricDefs()
+<span id="L32" class="ln">    32  </span>
+<span id="L33" class="ln">    33  </span><span class="comment">// Reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks</span>
+<span id="L34" class="ln">    34  </span>type Reaper struct {
+<span id="L35" class="ln">    35  </span>	*cmdopts.Options
+<span id="L36" class="ln">    36  </span>	ready                atomic.Bool
+<span id="L37" class="ln">    37  </span>	measurementCh        chan metrics.MeasurementEnvelope
+<span id="L38" class="ln">    38  </span>	measurementCache     *InstanceMetricCache
+<span id="L39" class="ln">    39  </span>	logger               log.Logger
+<span id="L40" class="ln">    40  </span>	monitoredSources     sources.SourceConns
+<span id="L41" class="ln">    41  </span>	prevLoopMonitoredDBs sources.SourceConns
+<span id="L42" class="ln">    42  </span>	cancelFuncs          map[string]context.CancelFunc
+<span id="L43" class="ln">    43  </span>}
+<span id="L44" class="ln">    44  </span>
+<span id="L45" class="ln">    45  </span><span class="comment">// NewReaper creates a new Reaper instance</span>
+<span id="L46" class="ln">    46  </span>func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper) {
+<span id="L47" class="ln">    47  </span>	return &amp;Reaper{
+<span id="L48" class="ln">    48  </span>		Options:              opts,
+<span id="L49" class="ln">    49  </span>		measurementCh:        make(chan metrics.MeasurementEnvelope, 256),
+<span id="L50" class="ln">    50  </span>		measurementCache:     NewInstanceMetricCache(),
+<span id="L51" class="ln">    51  </span>		logger:               log.GetLogger(ctx),
+<span id="L52" class="ln">    52  </span>		monitoredSources:     make(sources.SourceConns, 0),
+<span id="L53" class="ln">    53  </span>		prevLoopMonitoredDBs: make(sources.SourceConns, 0),
+<span id="L54" class="ln">    54  </span>		cancelFuncs:          make(map[string]context.CancelFunc), <span class="comment">// [db1+metric1]cancel()</span>
+<span id="L55" class="ln">    55  </span>	}
+<span id="L56" class="ln">    56  </span>}
+<span id="L57" class="ln">    57  </span>
+<span id="L58" class="ln">    58  </span><span class="comment">// Ready() returns true if the service is healthy and operating correctly</span>
+<span id="L59" class="ln">    59  </span>func (r *Reaper) Ready() bool {
+<span id="L60" class="ln">    60  </span>	return r.ready.Load()
+<span id="L61" class="ln">    61  </span>}
+<span id="L62" class="ln">    62  </span>
+<span id="L63" class="ln">    63  </span>func (r *Reaper) PrintMemStats() {
+<span id="L64" class="ln">    64  </span>	var m runtime.MemStats
+<span id="L65" class="ln">    65  </span>	runtime.ReadMemStats(&amp;m)
+<span id="L66" class="ln">    66  </span>
+<span id="L67" class="ln">    67  </span>	bToKb := func(b uint64) uint64 {
+<span id="L68" class="ln">    68  </span>		return b / 1024
+<span id="L69" class="ln">    69  </span>	}
+<span id="L70" class="ln">    70  </span>	r.logger.Debugf(&#34;Alloc: %d Kb, TotalAlloc: %d Kb, Sys: %d Kb, NumGC: %d, HeapAlloc: %d Kb, HeapSys: %d Kb&#34;,
+<span id="L71" class="ln">    71  </span>		bToKb(m.Alloc), bToKb(m.TotalAlloc), bToKb(m.Sys), m.NumGC, bToKb(m.HeapAlloc), bToKb(m.HeapSys))
+<span id="L72" class="ln">    72  </span>}
 <span id="L73" class="ln">    73  </span>
-<span id="L74" class="ln">    74  </span>	go r.WriteMeasurements(ctx)
-<span id="L75" class="ln">    75  </span>	go r.WriteMonitoredSources(ctx)
-<span id="L76" class="ln">    76  </span>
-<span id="L77" class="ln">    77  </span>	r.ready.Store(true)
-<span id="L78" class="ln">    78  </span>
-<span id="L79" class="ln">    79  </span>	for { <span class="comment">//main loop</span>
-<span id="L80" class="ln">    80  </span>		if r.Logging.LogLevel == &#34;debug&#34; {
-<span id="L81" class="ln">    81  </span>			r.PrintMemStats()
-<span id="L82" class="ln">    82  </span>		}
-<span id="L83" class="ln">    83  </span>		if err = r.LoadSources(); err != nil {
-<span id="L84" class="ln">    84  </span>			logger.WithError(err).Error(&#34;could not refresh active sources, using last valid cache&#34;)
-<span id="L85" class="ln">    85  </span>		}
-<span id="L86" class="ln">    86  </span>		if err = r.LoadMetrics(); err != nil {
-<span id="L87" class="ln">    87  </span>			logger.WithError(err).Error(&#34;could not refresh metric definitions, using last valid cache&#34;)
-<span id="L88" class="ln">    88  </span>		}
-<span id="L89" class="ln">    89  </span>
-<span id="L90" class="ln">    90  </span>		<span class="comment">// UpdateMonitoredDBCache(r.monitoredSources)</span>
-<span id="L91" class="ln">    91  </span>		hostsToShutDownDueToRoleChange := make(map[string]bool) <span class="comment">// hosts went from master to standby and have &#34;only if master&#34; set</span>
-<span id="L92" class="ln">    92  </span>		for _, monitoredSource := range r.monitoredSources {
-<span id="L93" class="ln">    93  </span>			srcL := logger.WithField(&#34;source&#34;, monitoredSource.Name)
-<span id="L94" class="ln">    94  </span>
-<span id="L95" class="ln">    95  </span>			if monitoredSource.Connect(ctx, r.Sources) != nil {
-<span id="L96" class="ln">    96  </span>				srcL.WithError(err).Warning(&#34;could not init connection, retrying on next iteration&#34;)
-<span id="L97" class="ln">    97  </span>				continue
-<span id="L98" class="ln">    98  </span>			}
-<span id="L99" class="ln">    99  </span>
-<span id="L100" class="ln">   100  </span>			if err = monitoredSource.FetchRuntimeInfo(ctx, true); err != nil {
-<span id="L101" class="ln">   101  </span>				srcL.WithError(err).Error(&#34;could not start metric gathering&#34;)
-<span id="L102" class="ln">   102  </span>				continue
-<span id="L103" class="ln">   103  </span>			}
-<span id="L104" class="ln">   104  </span>			srcL.WithField(&#34;recovery&#34;, monitoredSource.IsInRecovery).Infof(&#34;Connect OK. Version: %s&#34;, monitoredSource.VersionStr)
-<span id="L105" class="ln">   105  </span>			if monitoredSource.IsInRecovery &amp;&amp; monitoredSource.OnlyIfMaster {
-<span id="L106" class="ln">   106  </span>				srcL.Info(&#34;not added to monitoring due to &#39;master only&#39; property&#34;)
-<span id="L107" class="ln">   107  </span>				if monitoredSource.IsPostgresSource() {
-<span id="L108" class="ln">   108  </span>					srcL.Info(&#34;to be removed from monitoring due to &#39;master only&#39; property and status change&#34;)
-<span id="L109" class="ln">   109  </span>					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true
-<span id="L110" class="ln">   110  </span>				}
-<span id="L111" class="ln">   111  </span>				continue
-<span id="L112" class="ln">   112  </span>			}
-<span id="L113" class="ln">   113  </span>
-<span id="L114" class="ln">   114  </span>			if monitoredSource.IsInRecovery &amp;&amp; len(monitoredSource.MetricsStandby) &gt; 0 {
-<span id="L115" class="ln">   115  </span>				metricsConfig = monitoredSource.MetricsStandby
-<span id="L116" class="ln">   116  </span>			} else {
-<span id="L117" class="ln">   117  </span>				metricsConfig = monitoredSource.Metrics
-<span id="L118" class="ln">   118  </span>			}
-<span id="L119" class="ln">   119  </span>
-<span id="L120" class="ln">   120  </span>			r.CreateSourceHelpers(ctx, srcL, monitoredSource)
+<span id="L74" class="ln">    74  </span><span class="comment">// Reap() starts the main monitoring loop. It is responsible for fetching metrics measurements</span>
+<span id="L75" class="ln">    75  </span><span class="comment">// from the sources and storing them to the sinks. It also manages the lifecycle of</span>
+<span id="L76" class="ln">    76  </span><span class="comment">// the metric gatherers. In case of a source or metric definition change, it will</span>
+<span id="L77" class="ln">    77  </span><span class="comment">// start or stop the gatherers accordingly.</span>
+<span id="L78" class="ln">    78  </span>func (r *Reaper) Reap(ctx context.Context) {
+<span id="L79" class="ln">    79  </span>	var err error
+<span id="L80" class="ln">    80  </span>	logger := r.logger
+<span id="L81" class="ln">    81  </span>
+<span id="L82" class="ln">    82  </span>	go r.WriteMeasurements(ctx)
+<span id="L83" class="ln">    83  </span>	go r.WriteMonitoredSources(ctx)
+<span id="L84" class="ln">    84  </span>
+<span id="L85" class="ln">    85  </span>	r.ready.Store(true)
+<span id="L86" class="ln">    86  </span>
+<span id="L87" class="ln">    87  </span>	for { <span class="comment">//main loop</span>
+<span id="L88" class="ln">    88  </span>		if r.Logging.LogLevel == &#34;debug&#34; {
+<span id="L89" class="ln">    89  </span>			r.PrintMemStats()
+<span id="L90" class="ln">    90  </span>		}
+<span id="L91" class="ln">    91  </span>		if err = r.LoadSources(); err != nil {
+<span id="L92" class="ln">    92  </span>			logger.WithError(err).Error(&#34;could not refresh active sources, using last valid cache&#34;)
+<span id="L93" class="ln">    93  </span>		}
+<span id="L94" class="ln">    94  </span>		if err = r.LoadMetrics(); err != nil {
+<span id="L95" class="ln">    95  </span>			logger.WithError(err).Error(&#34;could not refresh metric definitions, using last valid cache&#34;)
+<span id="L96" class="ln">    96  </span>		}
+<span id="L97" class="ln">    97  </span>
+<span id="L98" class="ln">    98  </span>		<span class="comment">// UpdateMonitoredDBCache(r.monitoredSources)</span>
+<span id="L99" class="ln">    99  </span>		hostsToShutDownDueToRoleChange := make(map[string]bool) <span class="comment">// hosts went from master to standby and have &#34;only if master&#34; set</span>
+<span id="L100" class="ln">   100  </span>		for _, monitoredSource := range r.monitoredSources {
+<span id="L101" class="ln">   101  </span>			srcL := logger.WithField(&#34;source&#34;, monitoredSource.Name)
+<span id="L102" class="ln">   102  </span>
+<span id="L103" class="ln">   103  </span>			if monitoredSource.Connect(ctx, r.Sources) != nil {
+<span id="L104" class="ln">   104  </span>				srcL.WithError(err).Warning(&#34;could not init connection, retrying on next iteration&#34;)
+<span id="L105" class="ln">   105  </span>				continue
+<span id="L106" class="ln">   106  </span>			}
+<span id="L107" class="ln">   107  </span>
+<span id="L108" class="ln">   108  </span>			if err = monitoredSource.FetchRuntimeInfo(ctx, true); err != nil {
+<span id="L109" class="ln">   109  </span>				srcL.WithError(err).Error(&#34;could not start metric gathering&#34;)
+<span id="L110" class="ln">   110  </span>				continue
+<span id="L111" class="ln">   111  </span>			}
+<span id="L112" class="ln">   112  </span>			srcL.WithField(&#34;recovery&#34;, monitoredSource.IsInRecovery).Infof(&#34;Connect OK. Version: %s&#34;, monitoredSource.VersionStr)
+<span id="L113" class="ln">   113  </span>			if monitoredSource.IsInRecovery &amp;&amp; monitoredSource.OnlyIfMaster {
+<span id="L114" class="ln">   114  </span>				srcL.Info(&#34;not added to monitoring due to &#39;master only&#39; property&#34;)
+<span id="L115" class="ln">   115  </span>				if monitoredSource.IsPostgresSource() {
+<span id="L116" class="ln">   116  </span>					srcL.Info(&#34;to be removed from monitoring due to &#39;master only&#39; property and status change&#34;)
+<span id="L117" class="ln">   117  </span>					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true
+<span id="L118" class="ln">   118  </span>				}
+<span id="L119" class="ln">   119  </span>				continue
+<span id="L120" class="ln">   120  </span>			}
 <span id="L121" class="ln">   121  </span>
-<span id="L122" class="ln">   122  </span>			if monitoredSource.IsPostgresSource() {
-<span id="L123" class="ln">   123  </span>				DBSizeMB := monitoredSource.ApproxDbSize / 1048576 <span class="comment">// only remove from monitoring when we&#39;re certain it&#39;s under the threshold</span>
-<span id="L124" class="ln">   124  </span>				if DBSizeMB != 0 &amp;&amp; DBSizeMB &lt; r.Sources.MinDbSizeMB {
-<span id="L125" class="ln">   125  </span>					srcL.Infof(&#34;ignored due to the --min-db-size-mb filter, current size %d MB&#34;, DBSizeMB)
-<span id="L126" class="ln">   126  </span>					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true <span class="comment">// for the case when DB size was previosly above the threshold</span>
-<span id="L127" class="ln">   127  </span>					continue
-<span id="L128" class="ln">   128  </span>				}
+<span id="L122" class="ln">   122  </span>			if monitoredSource.IsInRecovery &amp;&amp; len(monitoredSource.MetricsStandby) &gt; 0 {
+<span id="L123" class="ln">   123  </span>				metricsConfig = monitoredSource.MetricsStandby
+<span id="L124" class="ln">   124  </span>			} else {
+<span id="L125" class="ln">   125  </span>				metricsConfig = monitoredSource.Metrics
+<span id="L126" class="ln">   126  </span>			}
+<span id="L127" class="ln">   127  </span>
+<span id="L128" class="ln">   128  </span>			r.CreateSourceHelpers(ctx, srcL, monitoredSource)
 <span id="L129" class="ln">   129  </span>
-<span id="L130" class="ln">   130  </span>				lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[monitoredSource.Name]
-<span id="L131" class="ln">   131  </span>				if lastKnownStatusInRecovery != monitoredSource.IsInRecovery {
-<span id="L132" class="ln">   132  </span>					if monitoredSource.IsInRecovery &amp;&amp; len(monitoredSource.MetricsStandby) &gt; 0 {
-<span id="L133" class="ln">   133  </span>						srcL.Warning(&#34;Switching metrics collection to standby config...&#34;)
-<span id="L134" class="ln">   134  </span>						metricsConfig = monitoredSource.MetricsStandby
-<span id="L135" class="ln">   135  </span>					} else if !monitoredSource.IsInRecovery {
-<span id="L136" class="ln">   136  </span>						srcL.Warning(&#34;Switching metrics collection to primary config...&#34;)
-<span id="L137" class="ln">   137  </span>						metricsConfig = monitoredSource.Metrics
-<span id="L138" class="ln">   138  </span>					}
-<span id="L139" class="ln">   139  </span>					<span class="comment">// else: it already has primary config do nothing + no warn</span>
-<span id="L140" class="ln">   140  </span>				}
-<span id="L141" class="ln">   141  </span>			}
-<span id="L142" class="ln">   142  </span>			hostLastKnownStatusInRecovery[monitoredSource.Name] = monitoredSource.IsInRecovery
-<span id="L143" class="ln">   143  </span>
-<span id="L144" class="ln">   144  </span>			for metricName, interval := range metricsConfig {
-<span id="L145" class="ln">   145  </span>				metric := metricName
-<span id="L146" class="ln">   146  </span>				metricDefExists := false
-<span id="L147" class="ln">   147  </span>				var mvp metrics.Metric
-<span id="L148" class="ln">   148  </span>
-<span id="L149" class="ln">   149  </span>				if strings.HasPrefix(metric, recoPrefix) {
-<span id="L150" class="ln">   150  </span>					metric = recoMetricName
-<span id="L151" class="ln">   151  </span>					metricDefExists = true
-<span id="L152" class="ln">   152  </span>				} else {
-<span id="L153" class="ln">   153  </span>					mvp, metricDefExists = metricDefs.GetMetricDef(metric)
-<span id="L154" class="ln">   154  </span>				}
+<span id="L130" class="ln">   130  </span>			if monitoredSource.IsPostgresSource() {
+<span id="L131" class="ln">   131  </span>				DBSizeMB := monitoredSource.ApproxDbSize / 1048576 <span class="comment">// only remove from monitoring when we&#39;re certain it&#39;s under the threshold</span>
+<span id="L132" class="ln">   132  </span>				if DBSizeMB != 0 &amp;&amp; DBSizeMB &lt; r.Sources.MinDbSizeMB {
+<span id="L133" class="ln">   133  </span>					srcL.Infof(&#34;ignored due to the --min-db-size-mb filter, current size %d MB&#34;, DBSizeMB)
+<span id="L134" class="ln">   134  </span>					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true <span class="comment">// for the case when DB size was previosly above the threshold</span>
+<span id="L135" class="ln">   135  </span>					continue
+<span id="L136" class="ln">   136  </span>				}
+<span id="L137" class="ln">   137  </span>
+<span id="L138" class="ln">   138  </span>				lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[monitoredSource.Name]
+<span id="L139" class="ln">   139  </span>				if lastKnownStatusInRecovery != monitoredSource.IsInRecovery {
+<span id="L140" class="ln">   140  </span>					if monitoredSource.IsInRecovery &amp;&amp; len(monitoredSource.MetricsStandby) &gt; 0 {
+<span id="L141" class="ln">   141  </span>						srcL.Warning(&#34;Switching metrics collection to standby config...&#34;)
+<span id="L142" class="ln">   142  </span>						metricsConfig = monitoredSource.MetricsStandby
+<span id="L143" class="ln">   143  </span>					} else if !monitoredSource.IsInRecovery {
+<span id="L144" class="ln">   144  </span>						srcL.Warning(&#34;Switching metrics collection to primary config...&#34;)
+<span id="L145" class="ln">   145  </span>						metricsConfig = monitoredSource.Metrics
+<span id="L146" class="ln">   146  </span>					}
+<span id="L147" class="ln">   147  </span>					<span class="comment">// else: it already has primary config do nothing + no warn</span>
+<span id="L148" class="ln">   148  </span>				}
+<span id="L149" class="ln">   149  </span>			}
+<span id="L150" class="ln">   150  </span>			hostLastKnownStatusInRecovery[monitoredSource.Name] = monitoredSource.IsInRecovery
+<span id="L151" class="ln">   151  </span>
+<span id="L152" class="ln">   152  </span>			for metricName, interval := range metricsConfig {
+<span id="L153" class="ln">   153  </span>				metricDefExists := false
+<span id="L154" class="ln">   154  </span>				var mvp metrics.Metric
 <span id="L155" class="ln">   155  </span>
-<span id="L156" class="ln">   156  </span>				dbMetric := monitoredSource.Name + dbMetricJoinStr + metric
-<span id="L157" class="ln">   157  </span>				_, cancelFuncExists := r.cancelFuncs[dbMetric]
-<span id="L158" class="ln">   158  </span>
-<span id="L159" class="ln">   159  </span>				if metricDefExists &amp;&amp; !cancelFuncExists { <span class="comment">// initialize a new per db/per metric control channel</span>
-<span id="L160" class="ln">   160  </span>					if interval &gt; 0 {
-<span id="L161" class="ln">   161  </span>						srcL.WithField(&#34;metric&#34;, metric).WithField(&#34;interval&#34;, interval).Info(&#34;starting gatherer&#34;)
-<span id="L162" class="ln">   162  </span>						metricCtx, cancelFunc := context.WithCancel(ctx)
-<span id="L163" class="ln">   163  </span>						r.cancelFuncs[dbMetric] = cancelFunc
-<span id="L164" class="ln">   164  </span>
-<span id="L165" class="ln">   165  </span>						metricNameForStorage := metricName
-<span id="L166" class="ln">   166  </span>						if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric &amp;&amp; mvp.StorageName &gt; &#34;&#34; {
-<span id="L167" class="ln">   167  </span>							metricNameForStorage = mvp.StorageName
-<span id="L168" class="ln">   168  </span>						}
-<span id="L169" class="ln">   169  </span>
-<span id="L170" class="ln">   170  </span>						if err := r.SinksWriter.SyncMetric(monitoredSource.Name, metricNameForStorage, sinks.AddOp); err != nil {
-<span id="L171" class="ln">   171  </span>							srcL.Error(err)
-<span id="L172" class="ln">   172  </span>						}
-<span id="L173" class="ln">   173  </span>
-<span id="L174" class="ln">   174  </span>						go r.reapMetricMeasurements(metricCtx, monitoredSource, metric)
-<span id="L175" class="ln">   175  </span>					}
-<span id="L176" class="ln">   176  </span>				} else if (!metricDefExists &amp;&amp; cancelFuncExists) || interval &lt;= 0 {
-<span id="L177" class="ln">   177  </span>					<span class="comment">// metric definition files were recently removed or interval set to zero</span>
-<span id="L178" class="ln">   178  </span>					if cancelFunc, isOk := r.cancelFuncs[dbMetric]; isOk {
-<span id="L179" class="ln">   179  </span>						cancelFunc()
-<span id="L180" class="ln">   180  </span>					}
-<span id="L181" class="ln">   181  </span>					srcL.WithField(&#34;metric&#34;, metric).Warning(&#34;shutting down gatherer...&#34;)
-<span id="L182" class="ln">   182  </span>					delete(r.cancelFuncs, dbMetric)
-<span id="L183" class="ln">   183  </span>				} else if !metricDefExists {
-<span id="L184" class="ln">   184  </span>					epoch, ok := lastSQLFetchError.Load(metric)
-<span id="L185" class="ln">   185  </span>					if !ok || ((time.Now().Unix() - epoch.(int64)) &gt; 3600) { <span class="comment">// complain only 1x per hour</span>
-<span id="L186" class="ln">   186  </span>						srcL.WithField(&#34;metric&#34;, metric).Warning(&#34;metric definition not found&#34;)
-<span id="L187" class="ln">   187  </span>						lastSQLFetchError.Store(metric, time.Now().Unix())
-<span id="L188" class="ln">   188  </span>					}
-<span id="L189" class="ln">   189  </span>				}
-<span id="L190" class="ln">   190  </span>			}
-<span id="L191" class="ln">   191  </span>		}
-<span id="L192" class="ln">   192  </span>
-<span id="L193" class="ln">   193  </span>		r.ShutdownOldWorkers(ctx, hostsToShutDownDueToRoleChange)
+<span id="L156" class="ln">   156  </span>				mvp, metricDefExists = metricDefs.GetMetricDef(metricName)
+<span id="L157" class="ln">   157  </span>
+<span id="L158" class="ln">   158  </span>				dbMetric := monitoredSource.Name + dbMetricJoinStr + metricName
+<span id="L159" class="ln">   159  </span>				_, cancelFuncExists := r.cancelFuncs[dbMetric]
+<span id="L160" class="ln">   160  </span>
+<span id="L161" class="ln">   161  </span>				if metricDefExists &amp;&amp; !cancelFuncExists { <span class="comment">// initialize a new per db/per metric control channel</span>
+<span id="L162" class="ln">   162  </span>					if interval &gt; 0 {
+<span id="L163" class="ln">   163  </span>						srcL.WithField(&#34;metric&#34;, metricName).WithField(&#34;interval&#34;, interval).Info(&#34;starting gatherer&#34;)
+<span id="L164" class="ln">   164  </span>						metricCtx, cancelFunc := context.WithCancel(ctx)
+<span id="L165" class="ln">   165  </span>						r.cancelFuncs[dbMetric] = cancelFunc
+<span id="L166" class="ln">   166  </span>
+<span id="L167" class="ln">   167  </span>						metricNameForStorage := metricName
+<span id="L168" class="ln">   168  </span>						if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric &amp;&amp; mvp.StorageName &gt; &#34;&#34; {
+<span id="L169" class="ln">   169  </span>							metricNameForStorage = mvp.StorageName
+<span id="L170" class="ln">   170  </span>						}
+<span id="L171" class="ln">   171  </span>
+<span id="L172" class="ln">   172  </span>						if err := r.SinksWriter.SyncMetric(monitoredSource.Name, metricNameForStorage, sinks.AddOp); err != nil {
+<span id="L173" class="ln">   173  </span>							srcL.Error(err)
+<span id="L174" class="ln">   174  </span>						}
+<span id="L175" class="ln">   175  </span>
+<span id="L176" class="ln">   176  </span>						go r.reapMetricMeasurements(metricCtx, monitoredSource, metricName)
+<span id="L177" class="ln">   177  </span>					}
+<span id="L178" class="ln">   178  </span>				} else if (!metricDefExists &amp;&amp; cancelFuncExists) || interval &lt;= 0 {
+<span id="L179" class="ln">   179  </span>					<span class="comment">// metric definition files were recently removed or interval set to zero</span>
+<span id="L180" class="ln">   180  </span>					if cancelFunc, isOk := r.cancelFuncs[dbMetric]; isOk {
+<span id="L181" class="ln">   181  </span>						cancelFunc()
+<span id="L182" class="ln">   182  </span>					}
+<span id="L183" class="ln">   183  </span>					srcL.WithField(&#34;metric&#34;, metricName).Warning(&#34;shutting down gatherer...&#34;)
+<span id="L184" class="ln">   184  </span>					delete(r.cancelFuncs, dbMetric)
+<span id="L185" class="ln">   185  </span>				} else if !metricDefExists {
+<span id="L186" class="ln">   186  </span>					epoch, ok := lastSQLFetchError.Load(metricName)
+<span id="L187" class="ln">   187  </span>					if !ok || ((time.Now().Unix() - epoch.(int64)) &gt; 3600) { <span class="comment">// complain only 1x per hour</span>
+<span id="L188" class="ln">   188  </span>						srcL.WithField(&#34;metric&#34;, metricName).Warning(&#34;metric definition not found&#34;)
+<span id="L189" class="ln">   189  </span>						lastSQLFetchError.Store(metricName, time.Now().Unix())
+<span id="L190" class="ln">   190  </span>					}
+<span id="L191" class="ln">   191  </span>				}
+<span id="L192" class="ln">   192  </span>			}
+<span id="L193" class="ln">   193  </span>		}
 <span id="L194" class="ln">   194  </span>
-<span id="L195" class="ln">   195  </span>		r.prevLoopMonitoredDBs = slices.Clone(r.monitoredSources)
-<span id="L196" class="ln">   196  </span>		select {
-<span id="L197" class="ln">   197  </span>		case &lt;-time.After(time.Second * time.Duration(r.Sources.Refresh)):
-<span id="L198" class="ln">   198  </span>			logger.Debugf(&#34;wake up after %d seconds&#34;, r.Sources.Refresh)
-<span id="L199" class="ln">   199  </span>		case &lt;-ctx.Done():
-<span id="L200" class="ln">   200  </span>			return
-<span id="L201" class="ln">   201  </span>		}
-<span id="L202" class="ln">   202  </span>	}
-<span id="L203" class="ln">   203  </span>}
-<span id="L204" class="ln">   204  </span>
-<span id="L205" class="ln">   205  </span><span class="comment">// CreateSourceHelpers creates the extensions and metric helpers for the monitored source</span>
-<span id="L206" class="ln">   206  </span>func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monitoredSource *sources.SourceConn) {
-<span id="L207" class="ln">   207  </span>	if r.prevLoopMonitoredDBs.GetMonitoredDatabase(monitoredSource.Name) != nil {
-<span id="L208" class="ln">   208  </span>		return <span class="comment">// already created</span>
-<span id="L209" class="ln">   209  </span>	}
-<span id="L210" class="ln">   210  </span>	if !monitoredSource.IsPostgresSource() || monitoredSource.IsInRecovery {
-<span id="L211" class="ln">   211  </span>		return <span class="comment">// no need to create anything for non-postgres sources</span>
-<span id="L212" class="ln">   212  </span>	}
-<span id="L213" class="ln">   213  </span>
-<span id="L214" class="ln">   214  </span>	if r.Sources.TryCreateListedExtsIfMissing &gt; &#34;&#34; {
-<span id="L215" class="ln">   215  </span>		srcL.Info(&#34;trying to create extensions if missing&#34;)
-<span id="L216" class="ln">   216  </span>		extsToCreate := strings.Split(r.Sources.TryCreateListedExtsIfMissing, &#34;,&#34;)
-<span id="L217" class="ln">   217  </span>		extsCreated := TryCreateMissingExtensions(ctx, monitoredSource, extsToCreate, monitoredSource.Extensions)
-<span id="L218" class="ln">   218  </span>		srcL.Infof(&#34;%d/%d extensions created based on --try-create-listed-exts-if-missing input %v&#34;, len(extsCreated), len(extsToCreate), extsCreated)
-<span id="L219" class="ln">   219  </span>	}
-<span id="L220" class="ln">   220  </span>
-<span id="L221" class="ln">   221  </span>	if r.Sources.CreateHelpers {
-<span id="L222" class="ln">   222  </span>		srcL.Info(&#34;trying to create helper objects if missing&#34;)
-<span id="L223" class="ln">   223  </span>		if err := TryCreateMetricsFetchingHelpers(ctx, monitoredSource); err != nil {
-<span id="L224" class="ln">   224  </span>			srcL.WithError(err).Warning(&#34;failed to create helper functions&#34;)
-<span id="L225" class="ln">   225  </span>		}
-<span id="L226" class="ln">   226  </span>	}
-<span id="L227" class="ln">   227  </span>
-<span id="L228" class="ln">   228  </span>}
+<span id="L195" class="ln">   195  </span>		r.ShutdownOldWorkers(ctx, hostsToShutDownDueToRoleChange)
+<span id="L196" class="ln">   196  </span>
+<span id="L197" class="ln">   197  </span>		r.prevLoopMonitoredDBs = slices.Clone(r.monitoredSources)
+<span id="L198" class="ln">   198  </span>		select {
+<span id="L199" class="ln">   199  </span>		case &lt;-time.After(time.Second * time.Duration(r.Sources.Refresh)):
+<span id="L200" class="ln">   200  </span>			logger.Debugf(&#34;wake up after %d seconds&#34;, r.Sources.Refresh)
+<span id="L201" class="ln">   201  </span>		case &lt;-ctx.Done():
+<span id="L202" class="ln">   202  </span>			return
+<span id="L203" class="ln">   203  </span>		}
+<span id="L204" class="ln">   204  </span>	}
+<span id="L205" class="ln">   205  </span>}
+<span id="L206" class="ln">   206  </span>
+<span id="L207" class="ln">   207  </span><span class="comment">// CreateSourceHelpers creates the extensions and metric helpers for the monitored source</span>
+<span id="L208" class="ln">   208  </span>func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monitoredSource *sources.SourceConn) {
+<span id="L209" class="ln">   209  </span>	if r.prevLoopMonitoredDBs.GetMonitoredDatabase(monitoredSource.Name) != nil {
+<span id="L210" class="ln">   210  </span>		return <span class="comment">// already created</span>
+<span id="L211" class="ln">   211  </span>	}
+<span id="L212" class="ln">   212  </span>	if !monitoredSource.IsPostgresSource() || monitoredSource.IsInRecovery {
+<span id="L213" class="ln">   213  </span>		return <span class="comment">// no need to create anything for non-postgres sources</span>
+<span id="L214" class="ln">   214  </span>	}
+<span id="L215" class="ln">   215  </span>
+<span id="L216" class="ln">   216  </span>	if r.Sources.TryCreateListedExtsIfMissing &gt; &#34;&#34; {
+<span id="L217" class="ln">   217  </span>		srcL.Info(&#34;trying to create extensions if missing&#34;)
+<span id="L218" class="ln">   218  </span>		extsToCreate := strings.Split(r.Sources.TryCreateListedExtsIfMissing, &#34;,&#34;)
+<span id="L219" class="ln">   219  </span>		extsCreated := TryCreateMissingExtensions(ctx, monitoredSource, extsToCreate, monitoredSource.Extensions)
+<span id="L220" class="ln">   220  </span>		srcL.Infof(&#34;%d/%d extensions created based on --try-create-listed-exts-if-missing input %v&#34;, len(extsCreated), len(extsToCreate), extsCreated)
+<span id="L221" class="ln">   221  </span>	}
+<span id="L222" class="ln">   222  </span>
+<span id="L223" class="ln">   223  </span>	if r.Sources.CreateHelpers {
+<span id="L224" class="ln">   224  </span>		srcL.Info(&#34;trying to create helper objects if missing&#34;)
+<span id="L225" class="ln">   225  </span>		if err := TryCreateMetricsFetchingHelpers(ctx, monitoredSource); err != nil {
+<span id="L226" class="ln">   226  </span>			srcL.WithError(err).Warning(&#34;failed to create helper functions&#34;)
+<span id="L227" class="ln">   227  </span>		}
+<span id="L228" class="ln">   228  </span>	}
 <span id="L229" class="ln">   229  </span>
-<span id="L230" class="ln">   230  </span>func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRoleChange map[string]bool) {
-<span id="L231" class="ln">   231  </span>	logger := r.logger
-<span id="L232" class="ln">   232  </span>	<span class="comment">// loop over existing channels and stop workers if DB or metric removed from config</span>
-<span id="L233" class="ln">   233  </span>	<span class="comment">// or state change makes it uninteresting</span>
-<span id="L234" class="ln">   234  </span>	logger.Debug(&#34;checking if any workers need to be shut down...&#34;)
-<span id="L235" class="ln">   235  </span>	for dbMetric, cancelFunc := range r.cancelFuncs {
-<span id="L236" class="ln">   236  </span>		var currentMetricConfig map[string]float64
-<span id="L237" class="ln">   237  </span>		var md *sources.SourceConn
-<span id="L238" class="ln">   238  </span>		var dbRemovedFromConfig bool
-<span id="L239" class="ln">   239  </span>		singleMetricDisabled := false
-<span id="L240" class="ln">   240  </span>		splits := strings.Split(dbMetric, dbMetricJoinStr)
-<span id="L241" class="ln">   241  </span>		db := splits[0]
-<span id="L242" class="ln">   242  </span>		metric := splits[1]
-<span id="L243" class="ln">   243  </span>
-<span id="L244" class="ln">   244  </span>		_, wholeDbShutDownDueToRoleChange := hostsToShutDownDueToRoleChange[db]
-<span id="L245" class="ln">   245  </span>		if !wholeDbShutDownDueToRoleChange {
-<span id="L246" class="ln">   246  </span>			md = r.monitoredSources.GetMonitoredDatabase(db)
-<span id="L247" class="ln">   247  </span>			if md == nil { <span class="comment">// normal removing of DB from config</span>
-<span id="L248" class="ln">   248  </span>				dbRemovedFromConfig = true
-<span id="L249" class="ln">   249  </span>				logger.Debugf(&#34;DB %s removed from config, shutting down all metric worker processes...&#34;, db)
-<span id="L250" class="ln">   250  </span>			}
-<span id="L251" class="ln">   251  </span>		}
-<span id="L252" class="ln">   252  </span>
-<span id="L253" class="ln">   253  </span>		if !(wholeDbShutDownDueToRoleChange || dbRemovedFromConfig) { <span class="comment">// maybe some single metric was disabled</span>
-<span id="L254" class="ln">   254  </span>			if md.IsInRecovery &amp;&amp; len(md.MetricsStandby) &gt; 0 {
-<span id="L255" class="ln">   255  </span>				currentMetricConfig = md.MetricsStandby
-<span id="L256" class="ln">   256  </span>			} else {
-<span id="L257" class="ln">   257  </span>				currentMetricConfig = md.Metrics
-<span id="L258" class="ln">   258  </span>			}
-<span id="L259" class="ln">   259  </span>			interval, isMetricActive := currentMetricConfig[metric]
-<span id="L260" class="ln">   260  </span>			singleMetricDisabled = !isMetricActive || interval &lt;= 0
-<span id="L261" class="ln">   261  </span>		}
-<span id="L262" class="ln">   262  </span>
-<span id="L263" class="ln">   263  </span>		if ctx.Err() != nil || wholeDbShutDownDueToRoleChange || dbRemovedFromConfig || singleMetricDisabled {
-<span id="L264" class="ln">   264  </span>			logger.WithField(&#34;source&#34;, db).WithField(&#34;metric&#34;, metric).Info(&#34;stopping gatherer...&#34;)
-<span id="L265" class="ln">   265  </span>			cancelFunc()
-<span id="L266" class="ln">   266  </span>			delete(r.cancelFuncs, dbMetric)
-<span id="L267" class="ln">   267  </span>			if err := r.SinksWriter.SyncMetric(db, metric, sinks.DeleteOp); err != nil {
-<span id="L268" class="ln">   268  </span>				logger.Error(err)
-<span id="L269" class="ln">   269  </span>			}
-<span id="L270" class="ln">   270  </span>		}
-<span id="L271" class="ln">   271  </span>	}
-<span id="L272" class="ln">   272  </span>
-<span id="L273" class="ln">   273  </span>	<span class="comment">// Destroy conn pools and metric writers</span>
-<span id="L274" class="ln">   274  </span>	r.CloseResourcesForRemovedMonitoredDBs(hostsToShutDownDueToRoleChange)
-<span id="L275" class="ln">   275  </span>}
-<span id="L276" class="ln">   276  </span>
-<span id="L277" class="ln">   277  </span>func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceConn, metricName string) {
-<span id="L278" class="ln">   278  </span>	hostState := make(map[string]map[string]string)
-<span id="L279" class="ln">   279  </span>	var lastUptimeS int64 = -1 <span class="comment">// used for &#34;server restarted&#34; event detection</span>
-<span id="L280" class="ln">   280  </span>	var lastErrorNotificationTime time.Time
-<span id="L281" class="ln">   281  </span>	var err error
-<span id="L282" class="ln">   282  </span>	var ok bool
-<span id="L283" class="ln">   283  </span>
-<span id="L284" class="ln">   284  </span>	failedFetches := 0
-<span id="L285" class="ln">   285  </span>	lastDBVersionFetchTime := time.Unix(0, 0) <span class="comment">// check DB ver. ev. 5 min</span>
-<span id="L286" class="ln">   286  </span>
-<span id="L287" class="ln">   287  </span>	l := r.logger.WithField(&#34;source&#34;, md.Name).WithField(&#34;metric&#34;, metricName)
-<span id="L288" class="ln">   288  </span>	if metricName == specialMetricServerLogEventCounts {
-<span id="L289" class="ln">   289  </span>		metrics.ParseLogs(ctx, md, md.RealDbname, md.GetMetricInterval(metricName), r.measurementCh)
-<span id="L290" class="ln">   290  </span>		return
-<span id="L291" class="ln">   291  </span>	}
-<span id="L292" class="ln">   292  </span>
-<span id="L293" class="ln">   293  </span>	for {
-<span id="L294" class="ln">   294  </span>		interval := md.GetMetricInterval(metricName)
-<span id="L295" class="ln">   295  </span>		if lastDBVersionFetchTime.Add(time.Minute * time.Duration(5)).Before(time.Now()) {
-<span id="L296" class="ln">   296  </span>			<span class="comment">// in case of errors just ignore metric &#34;disabled&#34; time ranges</span>
-<span id="L297" class="ln">   297  </span>			if err = md.FetchRuntimeInfo(ctx, false); err != nil {
-<span id="L298" class="ln">   298  </span>				lastDBVersionFetchTime = time.Now()
-<span id="L299" class="ln">   299  </span>			}
-<span id="L300" class="ln">   300  </span>
-<span id="L301" class="ln">   301  </span>			if _, ok = metricDefs.GetMetricDef(metricName); !ok {
-<span id="L302" class="ln">   302  </span>				l.Error(&#34;Could not get metric version properties&#34;)
-<span id="L303" class="ln">   303  </span>				return
-<span id="L304" class="ln">   304  </span>			}
-<span id="L305" class="ln">   305  </span>		}
-<span id="L306" class="ln">   306  </span>
-<span id="L307" class="ln">   307  </span>		var metricStoreMessages *metrics.MeasurementEnvelope
+<span id="L230" class="ln">   230  </span>}
+<span id="L231" class="ln">   231  </span>
+<span id="L232" class="ln">   232  </span>func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRoleChange map[string]bool) {
+<span id="L233" class="ln">   233  </span>	logger := r.logger
+<span id="L234" class="ln">   234  </span>	<span class="comment">// loop over existing channels and stop workers if DB or metric removed from config</span>
+<span id="L235" class="ln">   235  </span>	<span class="comment">// or state change makes it uninteresting</span>
+<span id="L236" class="ln">   236  </span>	logger.Debug(&#34;checking if any workers need to be shut down...&#34;)
+<span id="L237" class="ln">   237  </span>	for dbMetric, cancelFunc := range r.cancelFuncs {
+<span id="L238" class="ln">   238  </span>		var currentMetricConfig map[string]float64
+<span id="L239" class="ln">   239  </span>		var md *sources.SourceConn
+<span id="L240" class="ln">   240  </span>		var dbRemovedFromConfig bool
+<span id="L241" class="ln">   241  </span>		singleMetricDisabled := false
+<span id="L242" class="ln">   242  </span>		splits := strings.Split(dbMetric, dbMetricJoinStr)
+<span id="L243" class="ln">   243  </span>		db := splits[0]
+<span id="L244" class="ln">   244  </span>		metric := splits[1]
+<span id="L245" class="ln">   245  </span>
+<span id="L246" class="ln">   246  </span>		_, wholeDbShutDownDueToRoleChange := hostsToShutDownDueToRoleChange[db]
+<span id="L247" class="ln">   247  </span>		if !wholeDbShutDownDueToRoleChange {
+<span id="L248" class="ln">   248  </span>			md = r.monitoredSources.GetMonitoredDatabase(db)
+<span id="L249" class="ln">   249  </span>			if md == nil { <span class="comment">// normal removing of DB from config</span>
+<span id="L250" class="ln">   250  </span>				dbRemovedFromConfig = true
+<span id="L251" class="ln">   251  </span>				logger.Debugf(&#34;DB %s removed from config, shutting down all metric worker processes...&#34;, db)
+<span id="L252" class="ln">   252  </span>			}
+<span id="L253" class="ln">   253  </span>		}
+<span id="L254" class="ln">   254  </span>
+<span id="L255" class="ln">   255  </span>		if !(wholeDbShutDownDueToRoleChange || dbRemovedFromConfig) { <span class="comment">// maybe some single metric was disabled</span>
+<span id="L256" class="ln">   256  </span>			if md.IsInRecovery &amp;&amp; len(md.MetricsStandby) &gt; 0 {
+<span id="L257" class="ln">   257  </span>				currentMetricConfig = md.MetricsStandby
+<span id="L258" class="ln">   258  </span>			} else {
+<span id="L259" class="ln">   259  </span>				currentMetricConfig = md.Metrics
+<span id="L260" class="ln">   260  </span>			}
+<span id="L261" class="ln">   261  </span>			interval, isMetricActive := currentMetricConfig[metric]
+<span id="L262" class="ln">   262  </span>			singleMetricDisabled = !isMetricActive || interval &lt;= 0
+<span id="L263" class="ln">   263  </span>		}
+<span id="L264" class="ln">   264  </span>
+<span id="L265" class="ln">   265  </span>		if ctx.Err() != nil || wholeDbShutDownDueToRoleChange || dbRemovedFromConfig || singleMetricDisabled {
+<span id="L266" class="ln">   266  </span>			logger.WithField(&#34;source&#34;, db).WithField(&#34;metric&#34;, metric).Info(&#34;stopping gatherer...&#34;)
+<span id="L267" class="ln">   267  </span>			cancelFunc()
+<span id="L268" class="ln">   268  </span>			delete(r.cancelFuncs, dbMetric)
+<span id="L269" class="ln">   269  </span>			if err := r.SinksWriter.SyncMetric(db, metric, sinks.DeleteOp); err != nil {
+<span id="L270" class="ln">   270  </span>				logger.Error(err)
+<span id="L271" class="ln">   271  </span>			}
+<span id="L272" class="ln">   272  </span>		}
+<span id="L273" class="ln">   273  </span>	}
+<span id="L274" class="ln">   274  </span>
+<span id="L275" class="ln">   275  </span>	<span class="comment">// Destroy conn pools and metric writers</span>
+<span id="L276" class="ln">   276  </span>	r.CloseResourcesForRemovedMonitoredDBs(hostsToShutDownDueToRoleChange)
+<span id="L277" class="ln">   277  </span>}
+<span id="L278" class="ln">   278  </span>
+<span id="L279" class="ln">   279  </span>func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceConn, metricName string) {
+<span id="L280" class="ln">   280  </span>	hostState := make(map[string]map[string]string)
+<span id="L281" class="ln">   281  </span>	var lastUptimeS int64 = -1 <span class="comment">// used for &#34;server restarted&#34; event detection</span>
+<span id="L282" class="ln">   282  </span>	var lastErrorNotificationTime time.Time
+<span id="L283" class="ln">   283  </span>	var err error
+<span id="L284" class="ln">   284  </span>	var ok bool
+<span id="L285" class="ln">   285  </span>
+<span id="L286" class="ln">   286  </span>	failedFetches := 0
+<span id="L287" class="ln">   287  </span>	lastDBVersionFetchTime := time.Unix(0, 0) <span class="comment">// check DB ver. ev. 5 min</span>
+<span id="L288" class="ln">   288  </span>
+<span id="L289" class="ln">   289  </span>	l := r.logger.WithField(&#34;source&#34;, md.Name).WithField(&#34;metric&#34;, metricName)
+<span id="L290" class="ln">   290  </span>	if metricName == specialMetricServerLogEventCounts {
+<span id="L291" class="ln">   291  </span>		metrics.ParseLogs(ctx, md, md.RealDbname, md.GetMetricInterval(metricName), r.measurementCh, &#34;&#34;, &#34;&#34;)
+<span id="L292" class="ln">   292  </span>		return
+<span id="L293" class="ln">   293  </span>	}
+<span id="L294" class="ln">   294  </span>
+<span id="L295" class="ln">   295  </span>	for {
+<span id="L296" class="ln">   296  </span>		interval := md.GetMetricInterval(metricName)
+<span id="L297" class="ln">   297  </span>		if lastDBVersionFetchTime.Add(time.Minute * time.Duration(5)).Before(time.Now()) {
+<span id="L298" class="ln">   298  </span>			<span class="comment">// in case of errors just ignore metric &#34;disabled&#34; time ranges</span>
+<span id="L299" class="ln">   299  </span>			if err = md.FetchRuntimeInfo(ctx, false); err != nil {
+<span id="L300" class="ln">   300  </span>				lastDBVersionFetchTime = time.Now()
+<span id="L301" class="ln">   301  </span>			}
+<span id="L302" class="ln">   302  </span>
+<span id="L303" class="ln">   303  </span>			if _, ok = metricDefs.GetMetricDef(metricName); !ok {
+<span id="L304" class="ln">   304  </span>				l.Error(&#34;Could not get metric version properties&#34;)
+<span id="L305" class="ln">   305  </span>				return
+<span id="L306" class="ln">   306  </span>			}
+<span id="L307" class="ln">   307  </span>		}
 <span id="L308" class="ln">   308  </span>
-<span id="L309" class="ln">   309  </span>		<span class="comment">// 1st try local overrides for some metrics if operating in push mode</span>
-<span id="L310" class="ln">   310  </span>		if r.Metrics.DirectOSStats &amp;&amp; IsDirectlyFetchableMetric(metricName) {
-<span id="L311" class="ln">   311  </span>			metricStoreMessages, err = r.FetchStatsDirectlyFromOS(ctx, md, metricName)
-<span id="L312" class="ln">   312  </span>			if err != nil {
-<span id="L313" class="ln">   313  </span>				l.WithError(err).Errorf(&#34;Could not read metric directly from OS&#34;)
-<span id="L314" class="ln">   314  </span>			}
-<span id="L315" class="ln">   315  </span>		}
-<span id="L316" class="ln">   316  </span>		t1 := time.Now()
-<span id="L317" class="ln">   317  </span>		if metricStoreMessages == nil {
-<span id="L318" class="ln">   318  </span>			metricStoreMessages, err = r.FetchMetric(ctx, md, metricName, hostState)
-<span id="L319" class="ln">   319  </span>		}
-<span id="L320" class="ln">   320  </span>
-<span id="L321" class="ln">   321  </span>		if time.Since(t1) &gt; (time.Second * time.Duration(interval)) {
-<span id="L322" class="ln">   322  </span>			l.Warningf(&#34;Total fetching time of %v bigger than %vs interval&#34;, time.Since(t1), interval)
-<span id="L323" class="ln">   323  </span>		}
-<span id="L324" class="ln">   324  </span>
-<span id="L325" class="ln">   325  </span>		if err != nil {
-<span id="L326" class="ln">   326  </span>			failedFetches++
-<span id="L327" class="ln">   327  </span>			<span class="comment">// complain only 1x per 10min per host/metric...</span>
-<span id="L328" class="ln">   328  </span>			if time.Since(lastErrorNotificationTime) &gt; time.Minute*10 {
-<span id="L329" class="ln">   329  </span>				l.WithError(err).WithField(&#34;count&#34;, failedFetches).Error(&#34;failed to fetch metric data&#34;)
-<span id="L330" class="ln">   330  </span>				lastErrorNotificationTime = time.Now()
-<span id="L331" class="ln">   331  </span>			}
-<span id="L332" class="ln">   332  </span>		} else if metricStoreMessages != nil &amp;&amp; len(metricStoreMessages.Data) &gt; 0 {
-<span id="L333" class="ln">   333  </span>			r.measurementCh &lt;- *metricStoreMessages
-<span id="L334" class="ln">   334  </span>			<span class="comment">// pick up &#34;server restarted&#34; events here to avoid doing extra selects from CheckForPGObjectChangesAndStore code</span>
-<span id="L335" class="ln">   335  </span>			if metricName == &#34;db_stats&#34; {
-<span id="L336" class="ln">   336  </span>				postmasterUptimeS, ok := (metricStoreMessages.Data)[0][&#34;postmaster_uptime_s&#34;]
-<span id="L337" class="ln">   337  </span>				if ok {
-<span id="L338" class="ln">   338  </span>					if lastUptimeS != -1 {
-<span id="L339" class="ln">   339  </span>						if postmasterUptimeS.(int64) &lt; lastUptimeS { <span class="comment">// restart (or possibly also failover when host is routed) happened</span>
-<span id="L340" class="ln">   340  </span>							message := &#34;Detected server restart (or failover)&#34;
-<span id="L341" class="ln">   341  </span>							l.Warning(message)
-<span id="L342" class="ln">   342  </span>							detectedChangesSummary := make(metrics.Measurements, 0)
-<span id="L343" class="ln">   343  </span>							entry := metrics.NewMeasurement(metricStoreMessages.Data.GetEpoch())
-<span id="L344" class="ln">   344  </span>							entry[&#34;details&#34;] = message
-<span id="L345" class="ln">   345  </span>							detectedChangesSummary = append(detectedChangesSummary, entry)
-<span id="L346" class="ln">   346  </span>							r.measurementCh &lt;- metrics.MeasurementEnvelope{
-<span id="L347" class="ln">   347  </span>								DBName:     md.Name,
-<span id="L348" class="ln">   348  </span>								MetricName: &#34;object_changes&#34;,
-<span id="L349" class="ln">   349  </span>								Data:       detectedChangesSummary,
-<span id="L350" class="ln">   350  </span>								CustomTags: metricStoreMessages.CustomTags,
-<span id="L351" class="ln">   351  </span>							}
-<span id="L352" class="ln">   352  </span>						}
-<span id="L353" class="ln">   353  </span>					}
-<span id="L354" class="ln">   354  </span>					lastUptimeS = postmasterUptimeS.(int64)
-<span id="L355" class="ln">   355  </span>				}
-<span id="L356" class="ln">   356  </span>			}
-<span id="L357" class="ln">   357  </span>		}
-<span id="L358" class="ln">   358  </span>
-<span id="L359" class="ln">   359  </span>		select {
-<span id="L360" class="ln">   360  </span>		case &lt;-ctx.Done():
-<span id="L361" class="ln">   361  </span>			return
-<span id="L362" class="ln">   362  </span>		case &lt;-time.After(time.Second * time.Duration(interval)):
-<span id="L363" class="ln">   363  </span>			<span class="comment">// continue</span>
-<span id="L364" class="ln">   364  </span>		}
-<span id="L365" class="ln">   365  </span>	}
-<span id="L366" class="ln">   366  </span>}
-<span id="L367" class="ln">   367  </span>
-<span id="L368" class="ln">   368  </span><span class="comment">// LoadSources loads sources from the reader</span>
-<span id="L369" class="ln">   369  </span>func (r *Reaper) LoadSources() (err error) {
-<span id="L370" class="ln">   370  </span>	if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
-<span id="L371" class="ln">   371  </span>		r.logger.Warningf(&#34;Emergency pause triggerfile detected at %s, ignoring currently configured DBs&#34;, r.Metrics.EmergencyPauseTriggerfile)
-<span id="L372" class="ln">   372  </span>		r.monitoredSources = make(sources.SourceConns, 0)
-<span id="L373" class="ln">   373  </span>		return nil
-<span id="L374" class="ln">   374  </span>	}
-<span id="L375" class="ln">   375  </span>
-<span id="L376" class="ln">   376  </span>	var newSrcs sources.SourceConns
-<span id="L377" class="ln">   377  </span>	srcs, err := r.SourcesReaderWriter.GetSources()
-<span id="L378" class="ln">   378  </span>	if err != nil {
-<span id="L379" class="ln">   379  </span>		return err
-<span id="L380" class="ln">   380  </span>	}
-<span id="L381" class="ln">   381  </span>	srcs = slices.DeleteFunc(srcs, func(s sources.Source) bool {
-<span id="L382" class="ln">   382  </span>		return !s.IsEnabled || len(r.Sources.Groups) &gt; 0 &amp;&amp; !s.IsDefaultGroup() &amp;&amp; !slices.Contains(r.Sources.Groups, s.Group)
-<span id="L383" class="ln">   383  </span>	})
-<span id="L384" class="ln">   384  </span>	if newSrcs, err = srcs.ResolveDatabases(); err != nil {
-<span id="L385" class="ln">   385  </span>		return err
-<span id="L386" class="ln">   386  </span>	}
-<span id="L387" class="ln">   387  </span>
-<span id="L388" class="ln">   388  </span>	for i, newMD := range newSrcs {
-<span id="L389" class="ln">   389  </span>		md := r.monitoredSources.GetMonitoredDatabase(newMD.Name)
-<span id="L390" class="ln">   390  </span>		if md == nil {
-<span id="L391" class="ln">   391  </span>			continue
-<span id="L392" class="ln">   392  </span>		}
-<span id="L393" class="ln">   393  </span>		if md.Equal(newMD.Source) {
-<span id="L394" class="ln">   394  </span>			<span class="comment">// replace with the existing connection if the source is the same</span>
-<span id="L395" class="ln">   395  </span>			newSrcs[i] = md
-<span id="L396" class="ln">   396  </span>			continue
-<span id="L397" class="ln">   397  </span>		}
-<span id="L398" class="ln">   398  </span>	}
-<span id="L399" class="ln">   399  </span>	r.monitoredSources = newSrcs
-<span id="L400" class="ln">   400  </span>	r.logger.WithField(&#34;sources&#34;, len(r.monitoredSources)).Info(&#34;sources refreshed&#34;)
-<span id="L401" class="ln">   401  </span>	return nil
-<span id="L402" class="ln">   402  </span>}
-<span id="L403" class="ln">   403  </span>
-<span id="L404" class="ln">   404  </span><span class="comment">// WriteMonitoredSources writes actively monitored DBs listing to sinks</span>
-<span id="L405" class="ln">   405  </span><span class="comment">// every monitoredDbsDatastoreSyncIntervalSeconds (default 10min)</span>
-<span id="L406" class="ln">   406  </span>func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
-<span id="L407" class="ln">   407  </span>	for {
-<span id="L408" class="ln">   408  </span>		if len(r.monitoredSources) &gt; 0 {
-<span id="L409" class="ln">   409  </span>			now := time.Now().UnixNano()
-<span id="L410" class="ln">   410  </span>			for _, mdb := range r.monitoredSources {
-<span id="L411" class="ln">   411  </span>				db := metrics.NewMeasurement(now)
-<span id="L412" class="ln">   412  </span>				db[&#34;tag_group&#34;] = mdb.Group
-<span id="L413" class="ln">   413  </span>				db[&#34;master_only&#34;] = mdb.OnlyIfMaster
-<span id="L414" class="ln">   414  </span>				for k, v := range mdb.CustomTags {
-<span id="L415" class="ln">   415  </span>					db[metrics.TagPrefix+k] = v
-<span id="L416" class="ln">   416  </span>				}
-<span id="L417" class="ln">   417  </span>				r.measurementCh &lt;- metrics.MeasurementEnvelope{
-<span id="L418" class="ln">   418  </span>					DBName:     mdb.Name,
-<span id="L419" class="ln">   419  </span>					MetricName: monitoredDbsDatastoreSyncMetricName,
-<span id="L420" class="ln">   420  </span>					Data:       metrics.Measurements{db},
-<span id="L421" class="ln">   421  </span>				}
-<span id="L422" class="ln">   422  </span>			}
-<span id="L423" class="ln">   423  </span>		}
-<span id="L424" class="ln">   424  </span>		select {
-<span id="L425" class="ln">   425  </span>		case &lt;-time.After(time.Second * monitoredDbsDatastoreSyncIntervalSeconds):
-<span id="L426" class="ln">   426  </span>			<span class="comment">// continue</span>
-<span id="L427" class="ln">   427  </span>		case &lt;-ctx.Done():
-<span id="L428" class="ln">   428  </span>			return
-<span id="L429" class="ln">   429  </span>		}
-<span id="L430" class="ln">   430  </span>	}
-<span id="L431" class="ln">   431  </span>}
-<span id="L432" class="ln">   432  </span>
-<span id="L433" class="ln">   433  </span><span class="comment">// WriteMeasurements() writes the metrics to the sinks</span>
-<span id="L434" class="ln">   434  </span>func (r *Reaper) WriteMeasurements(ctx context.Context) {
-<span id="L435" class="ln">   435  </span>	var err error
-<span id="L436" class="ln">   436  </span>	for {
-<span id="L437" class="ln">   437  </span>		select {
-<span id="L438" class="ln">   438  </span>		case &lt;-ctx.Done():
-<span id="L439" class="ln">   439  </span>			return
-<span id="L440" class="ln">   440  </span>		case msg := &lt;-r.measurementCh:
-<span id="L441" class="ln">   441  </span>			if err = r.SinksWriter.Write(msg); err != nil {
-<span id="L442" class="ln">   442  </span>				r.logger.Error(err)
-<span id="L443" class="ln">   443  </span>			}
-<span id="L444" class="ln">   444  </span>		}
-<span id="L445" class="ln">   445  </span>	}
-<span id="L446" class="ln">   446  </span>}
-<span id="L447" class="ln">   447  </span>
-<span id="L448" class="ln">   448  </span>func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, md *sources.SourceConn) {
-<span id="L449" class="ln">   449  </span>	for _, dr := range data {
-<span id="L450" class="ln">   450  </span>		if r.Sinks.RealDbnameField &gt; &#34;&#34; &amp;&amp; md.RealDbname &gt; &#34;&#34; {
-<span id="L451" class="ln">   451  </span>			dr[r.Sinks.RealDbnameField] = md.RealDbname
-<span id="L452" class="ln">   452  </span>		}
-<span id="L453" class="ln">   453  </span>		if r.Sinks.SystemIdentifierField &gt; &#34;&#34; &amp;&amp; md.SystemIdentifier &gt; &#34;&#34; {
-<span id="L454" class="ln">   454  </span>			dr[r.Sinks.SystemIdentifierField] = md.SystemIdentifier
-<span id="L455" class="ln">   455  </span>		}
-<span id="L456" class="ln">   456  </span>	}
-<span id="L457" class="ln">   457  </span>}
-<span id="L458" class="ln">   458  </span>
-<span id="L459" class="ln">   459  </span>func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metricName string, hostState map[string]map[string]string) (_ *metrics.MeasurementEnvelope, err error) {
-<span id="L460" class="ln">   460  </span>	var sql string
-<span id="L461" class="ln">   461  </span>	var data metrics.Measurements
-<span id="L462" class="ln">   462  </span>	var metric metrics.Metric
-<span id="L463" class="ln">   463  </span>	var fromCache bool
-<span id="L464" class="ln">   464  </span>	var cacheKey string
-<span id="L465" class="ln">   465  </span>	var ok bool
-<span id="L466" class="ln">   466  </span>
-<span id="L467" class="ln">   467  </span>	if metric, ok = metricDefs.GetMetricDef(metricName); !ok {
-<span id="L468" class="ln">   468  </span>		return nil, metrics.ErrMetricNotFound
-<span id="L469" class="ln">   469  </span>	}
-<span id="L470" class="ln">   470  </span>	l := r.logger.WithField(&#34;source&#34;, md.Name).WithField(&#34;metric&#34;, metricName)
-<span id="L471" class="ln">   471  </span>
-<span id="L472" class="ln">   472  </span>	if metric.IsInstanceLevel &amp;&amp; r.Metrics.InstanceLevelCacheMaxSeconds &gt; 0 &amp;&amp; time.Second*time.Duration(md.GetMetricInterval(metricName)) &lt; r.Metrics.CacheAge() {
-<span id="L473" class="ln">   473  </span>		cacheKey = fmt.Sprintf(&#34;%s:%s&#34;, md.GetClusterIdentifier(), metricName)
-<span id="L474" class="ln">   474  </span>	}
-<span id="L475" class="ln">   475  </span>	data = r.measurementCache.Get(cacheKey, r.Metrics.CacheAge())
-<span id="L476" class="ln">   476  </span>	fromCache = len(data) &gt; 0
-<span id="L477" class="ln">   477  </span>	if !fromCache {
-<span id="L478" class="ln">   478  </span>		if (metric.PrimaryOnly() &amp;&amp; md.IsInRecovery) || (metric.StandbyOnly() &amp;&amp; !md.IsInRecovery) {
-<span id="L479" class="ln">   479  </span>			l.Debug(&#34;Skipping fetching of as server in wrong IsInRecovery: &#34;, md.IsInRecovery)
-<span id="L480" class="ln">   480  </span>			return nil, nil
-<span id="L481" class="ln">   481  </span>		}
-<span id="L482" class="ln">   482  </span>		switch metricName {
-<span id="L483" class="ln">   483  </span>		case specialMetricChangeEvents:
-<span id="L484" class="ln">   484  </span>			r.CheckForPGObjectChangesAndStore(ctx, md.Name, md, hostState)
-<span id="L485" class="ln">   485  </span>			return nil, nil
-<span id="L486" class="ln">   486  </span>		case recoMetricName:
-<span id="L487" class="ln">   487  </span>			data, err = GetRecommendations(ctx, md)
+<span id="L309" class="ln">   309  </span>		var metricStoreMessages *metrics.MeasurementEnvelope
+<span id="L310" class="ln">   310  </span>
+<span id="L311" class="ln">   311  </span>		<span class="comment">// 1st try local overrides for some metrics if operating in push mode</span>
+<span id="L312" class="ln">   312  </span>		if r.Metrics.DirectOSStats &amp;&amp; IsDirectlyFetchableMetric(metricName) {
+<span id="L313" class="ln">   313  </span>			metricStoreMessages, err = r.FetchStatsDirectlyFromOS(ctx, md, metricName)
+<span id="L314" class="ln">   314  </span>			if err != nil {
+<span id="L315" class="ln">   315  </span>				l.WithError(err).Errorf(&#34;Could not read metric directly from OS&#34;)
+<span id="L316" class="ln">   316  </span>			}
+<span id="L317" class="ln">   317  </span>		}
+<span id="L318" class="ln">   318  </span>		t1 := time.Now()
+<span id="L319" class="ln">   319  </span>		if metricStoreMessages == nil {
+<span id="L320" class="ln">   320  </span>			metricStoreMessages, err = r.FetchMetric(ctx, md, metricName, hostState)
+<span id="L321" class="ln">   321  </span>		}
+<span id="L322" class="ln">   322  </span>
+<span id="L323" class="ln">   323  </span>		if time.Since(t1) &gt; (time.Second * time.Duration(interval)) {
+<span id="L324" class="ln">   324  </span>			l.Warningf(&#34;Total fetching time of %v bigger than %vs interval&#34;, time.Since(t1), interval)
+<span id="L325" class="ln">   325  </span>		}
+<span id="L326" class="ln">   326  </span>
+<span id="L327" class="ln">   327  </span>		if err != nil {
+<span id="L328" class="ln">   328  </span>			failedFetches++
+<span id="L329" class="ln">   329  </span>			<span class="comment">// complain only 1x per 10min per host/metric...</span>
+<span id="L330" class="ln">   330  </span>			if time.Since(lastErrorNotificationTime) &gt; time.Minute*10 {
+<span id="L331" class="ln">   331  </span>				l.WithError(err).WithField(&#34;count&#34;, failedFetches).Error(&#34;failed to fetch metric data&#34;)
+<span id="L332" class="ln">   332  </span>				lastErrorNotificationTime = time.Now()
+<span id="L333" class="ln">   333  </span>			}
+<span id="L334" class="ln">   334  </span>		} else if metricStoreMessages != nil &amp;&amp; len(metricStoreMessages.Data) &gt; 0 {
+<span id="L335" class="ln">   335  </span>			r.measurementCh &lt;- *metricStoreMessages
+<span id="L336" class="ln">   336  </span>			<span class="comment">// pick up &#34;server restarted&#34; events here to avoid doing extra selects from CheckForPGObjectChangesAndStore code</span>
+<span id="L337" class="ln">   337  </span>			if metricName == &#34;db_stats&#34; {
+<span id="L338" class="ln">   338  </span>				postmasterUptimeS, ok := (metricStoreMessages.Data)[0][&#34;postmaster_uptime_s&#34;]
+<span id="L339" class="ln">   339  </span>				if ok {
+<span id="L340" class="ln">   340  </span>					if lastUptimeS != -1 {
+<span id="L341" class="ln">   341  </span>						if postmasterUptimeS.(int64) &lt; lastUptimeS { <span class="comment">// restart (or possibly also failover when host is routed) happened</span>
+<span id="L342" class="ln">   342  </span>							message := &#34;Detected server restart (or failover)&#34;
+<span id="L343" class="ln">   343  </span>							l.Warning(message)
+<span id="L344" class="ln">   344  </span>							detectedChangesSummary := make(metrics.Measurements, 0)
+<span id="L345" class="ln">   345  </span>							entry := metrics.NewMeasurement(metricStoreMessages.Data.GetEpoch())
+<span id="L346" class="ln">   346  </span>							entry[&#34;details&#34;] = message
+<span id="L347" class="ln">   347  </span>							detectedChangesSummary = append(detectedChangesSummary, entry)
+<span id="L348" class="ln">   348  </span>							r.measurementCh &lt;- metrics.MeasurementEnvelope{
+<span id="L349" class="ln">   349  </span>								DBName:     md.Name,
+<span id="L350" class="ln">   350  </span>								MetricName: &#34;object_changes&#34;,
+<span id="L351" class="ln">   351  </span>								Data:       detectedChangesSummary,
+<span id="L352" class="ln">   352  </span>								CustomTags: metricStoreMessages.CustomTags,
+<span id="L353" class="ln">   353  </span>							}
+<span id="L354" class="ln">   354  </span>						}
+<span id="L355" class="ln">   355  </span>					}
+<span id="L356" class="ln">   356  </span>					lastUptimeS = postmasterUptimeS.(int64)
+<span id="L357" class="ln">   357  </span>				}
+<span id="L358" class="ln">   358  </span>			}
+<span id="L359" class="ln">   359  </span>		}
+<span id="L360" class="ln">   360  </span>
+<span id="L361" class="ln">   361  </span>		select {
+<span id="L362" class="ln">   362  </span>		case &lt;-ctx.Done():
+<span id="L363" class="ln">   363  </span>			return
+<span id="L364" class="ln">   364  </span>		case &lt;-time.After(time.Second * time.Duration(interval)):
+<span id="L365" class="ln">   365  </span>			<span class="comment">// continue</span>
+<span id="L366" class="ln">   366  </span>		}
+<span id="L367" class="ln">   367  </span>	}
+<span id="L368" class="ln">   368  </span>}
+<span id="L369" class="ln">   369  </span>
+<span id="L370" class="ln">   370  </span><span class="comment">// LoadSources loads sources from the reader</span>
+<span id="L371" class="ln">   371  </span>func (r *Reaper) LoadSources() (err error) {
+<span id="L372" class="ln">   372  </span>	if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
+<span id="L373" class="ln">   373  </span>		r.logger.Warningf(&#34;Emergency pause triggerfile detected at %s, ignoring currently configured DBs&#34;, r.Metrics.EmergencyPauseTriggerfile)
+<span id="L374" class="ln">   374  </span>		r.monitoredSources = make(sources.SourceConns, 0)
+<span id="L375" class="ln">   375  </span>		return nil
+<span id="L376" class="ln">   376  </span>	}
+<span id="L377" class="ln">   377  </span>
+<span id="L378" class="ln">   378  </span>	var newSrcs sources.SourceConns
+<span id="L379" class="ln">   379  </span>	srcs, err := r.SourcesReaderWriter.GetSources()
+<span id="L380" class="ln">   380  </span>	if err != nil {
+<span id="L381" class="ln">   381  </span>		return err
+<span id="L382" class="ln">   382  </span>	}
+<span id="L383" class="ln">   383  </span>	srcs = slices.DeleteFunc(srcs, func(s sources.Source) bool {
+<span id="L384" class="ln">   384  </span>		return !s.IsEnabled || len(r.Sources.Groups) &gt; 0 &amp;&amp; !s.IsDefaultGroup() &amp;&amp; !slices.Contains(r.Sources.Groups, s.Group)
+<span id="L385" class="ln">   385  </span>	})
+<span id="L386" class="ln">   386  </span>	if newSrcs, err = srcs.ResolveDatabases(); err != nil {
+<span id="L387" class="ln">   387  </span>		return err
+<span id="L388" class="ln">   388  </span>	}
+<span id="L389" class="ln">   389  </span>
+<span id="L390" class="ln">   390  </span>	for i, newMD := range newSrcs {
+<span id="L391" class="ln">   391  </span>		md := r.monitoredSources.GetMonitoredDatabase(newMD.Name)
+<span id="L392" class="ln">   392  </span>		if md == nil {
+<span id="L393" class="ln">   393  </span>			continue
+<span id="L394" class="ln">   394  </span>		}
+<span id="L395" class="ln">   395  </span>		if md.Equal(newMD.Source) {
+<span id="L396" class="ln">   396  </span>			<span class="comment">// replace with the existing connection if the source is the same</span>
+<span id="L397" class="ln">   397  </span>			newSrcs[i] = md
+<span id="L398" class="ln">   398  </span>			continue
+<span id="L399" class="ln">   399  </span>		}
+<span id="L400" class="ln">   400  </span>	}
+<span id="L401" class="ln">   401  </span>	r.monitoredSources = newSrcs
+<span id="L402" class="ln">   402  </span>	r.logger.WithField(&#34;sources&#34;, len(r.monitoredSources)).Info(&#34;sources refreshed&#34;)
+<span id="L403" class="ln">   403  </span>	return nil
+<span id="L404" class="ln">   404  </span>}
+<span id="L405" class="ln">   405  </span>
+<span id="L406" class="ln">   406  </span><span class="comment">// WriteMonitoredSources writes actively monitored DBs listing to sinks</span>
+<span id="L407" class="ln">   407  </span><span class="comment">// every monitoredDbsDatastoreSyncIntervalSeconds (default 10min)</span>
+<span id="L408" class="ln">   408  </span>func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
+<span id="L409" class="ln">   409  </span>	for {
+<span id="L410" class="ln">   410  </span>		if len(r.monitoredSources) &gt; 0 {
+<span id="L411" class="ln">   411  </span>			now := time.Now().UnixNano()
+<span id="L412" class="ln">   412  </span>			for _, mdb := range r.monitoredSources {
+<span id="L413" class="ln">   413  </span>				db := metrics.NewMeasurement(now)
+<span id="L414" class="ln">   414  </span>				db[&#34;tag_group&#34;] = mdb.Group
+<span id="L415" class="ln">   415  </span>				db[&#34;master_only&#34;] = mdb.OnlyIfMaster
+<span id="L416" class="ln">   416  </span>				for k, v := range mdb.CustomTags {
+<span id="L417" class="ln">   417  </span>					db[metrics.TagPrefix+k] = v
+<span id="L418" class="ln">   418  </span>				}
+<span id="L419" class="ln">   419  </span>				r.measurementCh &lt;- metrics.MeasurementEnvelope{
+<span id="L420" class="ln">   420  </span>					DBName:     mdb.Name,
+<span id="L421" class="ln">   421  </span>					MetricName: monitoredDbsDatastoreSyncMetricName,
+<span id="L422" class="ln">   422  </span>					Data:       metrics.Measurements{db},
+<span id="L423" class="ln">   423  </span>				}
+<span id="L424" class="ln">   424  </span>			}
+<span id="L425" class="ln">   425  </span>		}
+<span id="L426" class="ln">   426  </span>		select {
+<span id="L427" class="ln">   427  </span>		case &lt;-time.After(time.Second * monitoredDbsDatastoreSyncIntervalSeconds):
+<span id="L428" class="ln">   428  </span>			<span class="comment">// continue</span>
+<span id="L429" class="ln">   429  </span>		case &lt;-ctx.Done():
+<span id="L430" class="ln">   430  </span>			return
+<span id="L431" class="ln">   431  </span>		}
+<span id="L432" class="ln">   432  </span>	}
+<span id="L433" class="ln">   433  </span>}
+<span id="L434" class="ln">   434  </span>
+<span id="L435" class="ln">   435  </span><span class="comment">// WriteMeasurements() writes the metrics to the sinks</span>
+<span id="L436" class="ln">   436  </span>func (r *Reaper) WriteMeasurements(ctx context.Context) {
+<span id="L437" class="ln">   437  </span>	var err error
+<span id="L438" class="ln">   438  </span>	for {
+<span id="L439" class="ln">   439  </span>		select {
+<span id="L440" class="ln">   440  </span>		case &lt;-ctx.Done():
+<span id="L441" class="ln">   441  </span>			return
+<span id="L442" class="ln">   442  </span>		case msg := &lt;-r.measurementCh:
+<span id="L443" class="ln">   443  </span>			if err = r.SinksWriter.Write(msg); err != nil {
+<span id="L444" class="ln">   444  </span>				r.logger.Error(err)
+<span id="L445" class="ln">   445  </span>			}
+<span id="L446" class="ln">   446  </span>		}
+<span id="L447" class="ln">   447  </span>	}
+<span id="L448" class="ln">   448  </span>}
+<span id="L449" class="ln">   449  </span>
+<span id="L450" class="ln">   450  </span>func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, md *sources.SourceConn) {
+<span id="L451" class="ln">   451  </span>	for _, dr := range data {
+<span id="L452" class="ln">   452  </span>		if r.Sinks.RealDbnameField &gt; &#34;&#34; &amp;&amp; md.RealDbname &gt; &#34;&#34; {
+<span id="L453" class="ln">   453  </span>			dr[r.Sinks.RealDbnameField] = md.RealDbname
+<span id="L454" class="ln">   454  </span>		}
+<span id="L455" class="ln">   455  </span>		if r.Sinks.SystemIdentifierField &gt; &#34;&#34; &amp;&amp; md.SystemIdentifier &gt; &#34;&#34; {
+<span id="L456" class="ln">   456  </span>			dr[r.Sinks.SystemIdentifierField] = md.SystemIdentifier
+<span id="L457" class="ln">   457  </span>		}
+<span id="L458" class="ln">   458  </span>	}
+<span id="L459" class="ln">   459  </span>}
+<span id="L460" class="ln">   460  </span>
+<span id="L461" class="ln">   461  </span>func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metricName string, hostState map[string]map[string]string) (_ *metrics.MeasurementEnvelope, err error) {
+<span id="L462" class="ln">   462  </span>	var sql string
+<span id="L463" class="ln">   463  </span>	var data metrics.Measurements
+<span id="L464" class="ln">   464  </span>	var metric metrics.Metric
+<span id="L465" class="ln">   465  </span>	var fromCache bool
+<span id="L466" class="ln">   466  </span>	var cacheKey string
+<span id="L467" class="ln">   467  </span>	var ok bool
+<span id="L468" class="ln">   468  </span>
+<span id="L469" class="ln">   469  </span>	if metric, ok = metricDefs.GetMetricDef(metricName); !ok {
+<span id="L470" class="ln">   470  </span>		return nil, metrics.ErrMetricNotFound
+<span id="L471" class="ln">   471  </span>	}
+<span id="L472" class="ln">   472  </span>	l := r.logger.WithField(&#34;source&#34;, md.Name).WithField(&#34;metric&#34;, metricName)
+<span id="L473" class="ln">   473  </span>
+<span id="L474" class="ln">   474  </span>	if metric.IsInstanceLevel &amp;&amp; r.Metrics.InstanceLevelCacheMaxSeconds &gt; 0 &amp;&amp; time.Second*time.Duration(md.GetMetricInterval(metricName)) &lt; r.Metrics.CacheAge() {
+<span id="L475" class="ln">   475  </span>		cacheKey = fmt.Sprintf(&#34;%s:%s&#34;, md.GetClusterIdentifier(), metricName)
+<span id="L476" class="ln">   476  </span>	}
+<span id="L477" class="ln">   477  </span>	data = r.measurementCache.Get(cacheKey, r.Metrics.CacheAge())
+<span id="L478" class="ln">   478  </span>	fromCache = len(data) &gt; 0
+<span id="L479" class="ln">   479  </span>	if !fromCache {
+<span id="L480" class="ln">   480  </span>		if (metric.PrimaryOnly() &amp;&amp; md.IsInRecovery) || (metric.StandbyOnly() &amp;&amp; !md.IsInRecovery) {
+<span id="L481" class="ln">   481  </span>			l.Debug(&#34;Skipping fetching of as server in wrong IsInRecovery: &#34;, md.IsInRecovery)
+<span id="L482" class="ln">   482  </span>			return nil, nil
+<span id="L483" class="ln">   483  </span>		}
+<span id="L484" class="ln">   484  </span>		switch metricName {
+<span id="L485" class="ln">   485  </span>		case specialMetricChangeEvents:
+<span id="L486" class="ln">   486  </span>			r.CheckForPGObjectChangesAndStore(ctx, md.Name, md, hostState)
+<span id="L487" class="ln">   487  </span>			return nil, nil
 <span id="L488" class="ln">   488  </span>		case specialMetricInstanceUp:
 <span id="L489" class="ln">   489  </span>			data, err = r.GetInstanceUpMeasurement(ctx, md)
 <span id="L490" class="ln">   490  </span>		default:
@@ -569,7 +569,7 @@
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

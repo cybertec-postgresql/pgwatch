@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -58,70 +58,74 @@
 <pre><span id="L1" class="ln">     1  </span>package metrics
 <span id="L2" class="ln">     2  </span>
 <span id="L3" class="ln">     3  </span>import (
-<span id="L4" class="ln">     4  </span>	&#34;testing&#34;
-<span id="L5" class="ln">     5  </span>	&#34;time&#34;
-<span id="L6" class="ln">     6  </span>
-<span id="L7" class="ln">     7  </span>	&#34;github.com/stretchr/testify/assert&#34;
-<span id="L8" class="ln">     8  </span>)
-<span id="L9" class="ln">     9  </span>
-<span id="L10" class="ln">    10  </span>func TestGetSQL(t *testing.T) {
-<span id="L11" class="ln">    11  </span>	m := Metric{}
-<span id="L12" class="ln">    12  </span>	m.SQLs = SQLs{
-<span id="L13" class="ln">    13  </span>		1: &#34;one&#34;,
-<span id="L14" class="ln">    14  </span>		3: &#34;three&#34;,
-<span id="L15" class="ln">    15  </span>		5: &#34;five&#34;,
-<span id="L16" class="ln">    16  </span>		6: &#34;six&#34;,
-<span id="L17" class="ln">    17  </span>	}
-<span id="L18" class="ln">    18  </span>	tests := map[int]string{
-<span id="L19" class="ln">    19  </span>		2:  &#34;one&#34;,
-<span id="L20" class="ln">    20  </span>		3:  &#34;three&#34;,
-<span id="L21" class="ln">    21  </span>		4:  &#34;three&#34;,
-<span id="L22" class="ln">    22  </span>		5:  &#34;five&#34;,
-<span id="L23" class="ln">    23  </span>		6:  &#34;six&#34;,
-<span id="L24" class="ln">    24  </span>		10: &#34;six&#34;,
-<span id="L25" class="ln">    25  </span>		0:  &#34;&#34;,
-<span id="L26" class="ln">    26  </span>	}
-<span id="L27" class="ln">    27  </span>
-<span id="L28" class="ln">    28  </span>	for i, tt := range tests {
-<span id="L29" class="ln">    29  </span>		if got := m.GetSQL(i); got != tt {
-<span id="L30" class="ln">    30  </span>			t.Errorf(&#34;VersionToInt() = %v, want %v&#34;, got, tt)
-<span id="L31" class="ln">    31  </span>		}
-<span id="L32" class="ln">    32  </span>	}
-<span id="L33" class="ln">    33  </span>}
-<span id="L34" class="ln">    34  </span>func TestPrimaryOnly(t *testing.T) {
-<span id="L35" class="ln">    35  </span>	m := Metric{NodeStatus: &#34;primary&#34;}
-<span id="L36" class="ln">    36  </span>	assert.True(t, m.PrimaryOnly())
-<span id="L37" class="ln">    37  </span>	assert.False(t, m.StandbyOnly())
-<span id="L38" class="ln">    38  </span>	m.NodeStatus = &#34;standby&#34;
-<span id="L39" class="ln">    39  </span>	assert.False(t, m.PrimaryOnly())
-<span id="L40" class="ln">    40  </span>	assert.True(t, m.StandbyOnly())
-<span id="L41" class="ln">    41  </span>}
-<span id="L42" class="ln">    42  </span>
-<span id="L43" class="ln">    43  </span>func TestMeasurement(t *testing.T) {
-<span id="L44" class="ln">    44  </span>	m := NewMeasurement(1234567890)
-<span id="L45" class="ln">    45  </span>	assert.Equal(t, int64(1234567890), m.GetEpoch(), &#34;epoch should be equal&#34;)
-<span id="L46" class="ln">    46  </span>	m[EpochColumnName] = &#34;wrong type&#34;
-<span id="L47" class="ln">    47  </span>	assert.True(t, time.Now().UnixNano()-m.GetEpoch() &lt; int64(time.Second), &#34;epoch should be close to now&#34;)
-<span id="L48" class="ln">    48  </span>}
-<span id="L49" class="ln">    49  </span>
-<span id="L50" class="ln">    50  </span>func TestMeasurements(t *testing.T) {
-<span id="L51" class="ln">    51  </span>	m := Measurements{}
-<span id="L52" class="ln">    52  </span>	assert.False(t, m.IsEpochSet(), &#34;epoch should not be set&#34;)
-<span id="L53" class="ln">    53  </span>	assert.True(t, time.Now().UnixNano()-m.GetEpoch() &lt; 100, &#34;epoch should be close to now&#34;)
-<span id="L54" class="ln">    54  </span>	m = append(m, NewMeasurement(1234567890))
-<span id="L55" class="ln">    55  </span>	assert.True(t, m.IsEpochSet(), &#34;epoch should be set&#34;)
-<span id="L56" class="ln">    56  </span>	assert.Equal(t, int64(1234567890), m.GetEpoch(), &#34;epoch should be equal&#34;)
-<span id="L57" class="ln">    57  </span>	m1 := m.DeepCopy()
-<span id="L58" class="ln">    58  </span>	assert.Equal(t, m, m1, &#34;deep copy should be equal&#34;)
-<span id="L59" class="ln">    59  </span>	m1.Touch()
-<span id="L60" class="ln">    60  </span>	assert.NotEqual(t, m, m1, &#34;deep copy should be different&#34;)
-<span id="L61" class="ln">    61  </span>	assert.True(t, time.Now().UnixNano()-m1.GetEpoch() &lt; int64(time.Second), &#34;epoch should be close to now&#34;)
-<span id="L62" class="ln">    62  </span>}
-<span id="L63" class="ln">    63  </span>
+<span id="L4" class="ln">     4  </span>	&#34;context&#34;
+<span id="L5" class="ln">     5  </span>	&#34;testing&#34;
+<span id="L6" class="ln">     6  </span>	&#34;time&#34;
+<span id="L7" class="ln">     7  </span>
+<span id="L8" class="ln">     8  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/log&#34;
+<span id="L9" class="ln">     9  </span>	&#34;github.com/stretchr/testify/assert&#34;
+<span id="L10" class="ln">    10  </span>)
+<span id="L11" class="ln">    11  </span>
+<span id="L12" class="ln">    12  </span>var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
+<span id="L13" class="ln">    13  </span>
+<span id="L14" class="ln">    14  </span>func TestGetSQL(t *testing.T) {
+<span id="L15" class="ln">    15  </span>	m := Metric{}
+<span id="L16" class="ln">    16  </span>	m.SQLs = SQLs{
+<span id="L17" class="ln">    17  </span>		1: &#34;one&#34;,
+<span id="L18" class="ln">    18  </span>		3: &#34;three&#34;,
+<span id="L19" class="ln">    19  </span>		5: &#34;five&#34;,
+<span id="L20" class="ln">    20  </span>		6: &#34;six&#34;,
+<span id="L21" class="ln">    21  </span>	}
+<span id="L22" class="ln">    22  </span>	tests := map[int]string{
+<span id="L23" class="ln">    23  </span>		2:  &#34;one&#34;,
+<span id="L24" class="ln">    24  </span>		3:  &#34;three&#34;,
+<span id="L25" class="ln">    25  </span>		4:  &#34;three&#34;,
+<span id="L26" class="ln">    26  </span>		5:  &#34;five&#34;,
+<span id="L27" class="ln">    27  </span>		6:  &#34;six&#34;,
+<span id="L28" class="ln">    28  </span>		10: &#34;six&#34;,
+<span id="L29" class="ln">    29  </span>		0:  &#34;&#34;,
+<span id="L30" class="ln">    30  </span>	}
+<span id="L31" class="ln">    31  </span>
+<span id="L32" class="ln">    32  </span>	for i, tt := range tests {
+<span id="L33" class="ln">    33  </span>		if got := m.GetSQL(i); got != tt {
+<span id="L34" class="ln">    34  </span>			t.Errorf(&#34;VersionToInt() = %v, want %v&#34;, got, tt)
+<span id="L35" class="ln">    35  </span>		}
+<span id="L36" class="ln">    36  </span>	}
+<span id="L37" class="ln">    37  </span>}
+<span id="L38" class="ln">    38  </span>func TestPrimaryOnly(t *testing.T) {
+<span id="L39" class="ln">    39  </span>	m := Metric{NodeStatus: &#34;primary&#34;}
+<span id="L40" class="ln">    40  </span>	assert.True(t, m.PrimaryOnly())
+<span id="L41" class="ln">    41  </span>	assert.False(t, m.StandbyOnly())
+<span id="L42" class="ln">    42  </span>	m.NodeStatus = &#34;standby&#34;
+<span id="L43" class="ln">    43  </span>	assert.False(t, m.PrimaryOnly())
+<span id="L44" class="ln">    44  </span>	assert.True(t, m.StandbyOnly())
+<span id="L45" class="ln">    45  </span>}
+<span id="L46" class="ln">    46  </span>
+<span id="L47" class="ln">    47  </span>func TestMeasurement(t *testing.T) {
+<span id="L48" class="ln">    48  </span>	m := NewMeasurement(1234567890)
+<span id="L49" class="ln">    49  </span>	assert.Equal(t, int64(1234567890), m.GetEpoch(), &#34;epoch should be equal&#34;)
+<span id="L50" class="ln">    50  </span>	m[EpochColumnName] = &#34;wrong type&#34;
+<span id="L51" class="ln">    51  </span>	assert.True(t, time.Now().UnixNano()-m.GetEpoch() &lt; int64(time.Second), &#34;epoch should be close to now&#34;)
+<span id="L52" class="ln">    52  </span>}
+<span id="L53" class="ln">    53  </span>
+<span id="L54" class="ln">    54  </span>func TestMeasurements(t *testing.T) {
+<span id="L55" class="ln">    55  </span>	m := Measurements{}
+<span id="L56" class="ln">    56  </span>	assert.False(t, m.IsEpochSet(), &#34;epoch should not be set&#34;)
+<span id="L57" class="ln">    57  </span>	assert.True(t, time.Now().UnixNano()-m.GetEpoch() &lt; 100, &#34;epoch should be close to now&#34;)
+<span id="L58" class="ln">    58  </span>	m = append(m, NewMeasurement(1234567890))
+<span id="L59" class="ln">    59  </span>	assert.True(t, m.IsEpochSet(), &#34;epoch should be set&#34;)
+<span id="L60" class="ln">    60  </span>	assert.Equal(t, int64(1234567890), m.GetEpoch(), &#34;epoch should be equal&#34;)
+<span id="L61" class="ln">    61  </span>	m1 := m.DeepCopy()
+<span id="L62" class="ln">    62  </span>	assert.Equal(t, m, m1, &#34;deep copy should be equal&#34;)
+<span id="L63" class="ln">    63  </span>	m1.Touch()
+<span id="L64" class="ln">    64  </span>	assert.NotEqual(t, m, m1, &#34;deep copy should be different&#34;)
+<span id="L65" class="ln">    65  </span>	assert.True(t, time.Now().UnixNano()-m1.GetEpoch() &lt; int64(time.Second), &#34;epoch should be close to now&#34;)
+<span id="L66" class="ln">    66  </span>}
+<span id="L67" class="ln">    67  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

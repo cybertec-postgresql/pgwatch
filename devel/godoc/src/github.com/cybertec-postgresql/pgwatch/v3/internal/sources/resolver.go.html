@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -68,8 +68,8 @@
 <span id="L11" class="ln">    11  </span>	&#34;crypto/x509&#34;
 <span id="L12" class="ln">    12  </span>	&#34;errors&#34;
 <span id="L13" class="ln">    13  </span>	&#34;fmt&#34;
-<span id="L14" class="ln">    14  </span>	&#34;os&#34;
-<span id="L15" class="ln">    15  </span>	&#34;path&#34;
+<span id="L14" class="ln">    14  </span>	&#34;net/url&#34;
+<span id="L15" class="ln">    15  </span>	&#34;os&#34;
 <span id="L16" class="ln">    16  </span>	&#34;strings&#34;
 <span id="L17" class="ln">    17  </span>	&#34;time&#34;
 <span id="L18" class="ln">    18  </span>
@@ -99,7 +99,7 @@
 <span id="L42" class="ln">    42  </span><span class="comment">// ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni</span>
 <span id="L43" class="ln">    43  </span>func (s Source) ResolveDatabases() (SourceConns, error) {
 <span id="L44" class="ln">    44  </span>	switch s.Kind {
-<span id="L45" class="ln">    45  </span>	case SourcePatroni, SourcePatroniContinuous, SourcePatroniNamespace:
+<span id="L45" class="ln">    45  </span>	case SourcePatroni:
 <span id="L46" class="ln">    46  </span>		return ResolveDatabasesFromPatroni(s)
 <span id="L47" class="ln">    47  </span>	case SourcePostgresContinuous:
 <span id="L48" class="ln">    48  </span>		return ResolveDatabasesFromPostgres(s)
@@ -123,7 +123,7 @@
 <span id="L66" class="ln">    66  </span>	return nil, errors.ErrUnsupported
 <span id="L67" class="ln">    67  </span>}
 <span id="L68" class="ln">    68  </span>
-<span id="L69" class="ln">    69  </span>func getZookeeperClusterMembers(Source) ([]PatroniClusterMember, error) {
+<span id="L69" class="ln">    69  </span>func getZookeeperClusterMembers(Source, HostConfig) ([]PatroniClusterMember, error) {
 <span id="L70" class="ln">    70  </span>	return nil, errors.ErrUnsupported
 <span id="L71" class="ln">    71  </span>}
 <span id="L72" class="ln">    72  </span>
@@ -142,7 +142,7 @@
 <span id="L85" class="ln">    85  </span>	return retmap, nil
 <span id="L86" class="ln">    86  </span>}
 <span id="L87" class="ln">    87  </span>
-<span id="L88" class="ln">    88  </span>func getTransport(conf HostConfigAttrs) (*tls.Config, error) {
+<span id="L88" class="ln">    88  </span>func getTransport(conf HostConfig) (*tls.Config, error) {
 <span id="L89" class="ln">    89  </span>	var caCertPool *x509.CertPool
 <span id="L90" class="ln">    90  </span>
 <span id="L91" class="ln">    91  </span>	<span class="comment">// create valid CertPool only if the ca certificate file exists</span>
@@ -180,24 +180,24 @@
 <span id="L123" class="ln">   123  </span>	return tlsClientConfig, nil
 <span id="L124" class="ln">   124  </span>}
 <span id="L125" class="ln">   125  </span>
-<span id="L126" class="ln">   126  </span>func getEtcdClusterMembers(s Source) ([]PatroniClusterMember, error) {
+<span id="L126" class="ln">   126  </span>func getEtcdClusterMembers(s Source, hc HostConfig) ([]PatroniClusterMember, error) {
 <span id="L127" class="ln">   127  </span>	var ret = make([]PatroniClusterMember, 0)
 <span id="L128" class="ln">   128  </span>	var cfg client.Config
 <span id="L129" class="ln">   129  </span>
-<span id="L130" class="ln">   130  </span>	if len(s.HostConfig.DcsEndpoints) == 0 {
+<span id="L130" class="ln">   130  </span>	if len(hc.DcsEndpoints) == 0 {
 <span id="L131" class="ln">   131  </span>		return ret, errors.New(&#34;missing ETCD connect info, make sure host config has a &#39;dcs_endpoints&#39; key&#34;)
 <span id="L132" class="ln">   132  </span>	}
 <span id="L133" class="ln">   133  </span>
-<span id="L134" class="ln">   134  </span>	tlsConfig, err := getTransport(s.HostConfig)
+<span id="L134" class="ln">   134  </span>	tlsConfig, err := getTransport(hc)
 <span id="L135" class="ln">   135  </span>	if err != nil {
 <span id="L136" class="ln">   136  </span>		return nil, err
 <span id="L137" class="ln">   137  </span>	}
 <span id="L138" class="ln">   138  </span>	cfg = client.Config{
-<span id="L139" class="ln">   139  </span>		Endpoints:            s.HostConfig.DcsEndpoints,
+<span id="L139" class="ln">   139  </span>		Endpoints:            hc.DcsEndpoints,
 <span id="L140" class="ln">   140  </span>		TLS:                  tlsConfig,
 <span id="L141" class="ln">   141  </span>		DialKeepAliveTimeout: time.Second,
-<span id="L142" class="ln">   142  </span>		Username:             s.HostConfig.Username,
-<span id="L143" class="ln">   143  </span>		Password:             s.HostConfig.Password,
+<span id="L142" class="ln">   142  </span>		Username:             hc.Username,
+<span id="L143" class="ln">   143  </span>		Password:             hc.Password,
 <span id="L144" class="ln">   144  </span>		DialTimeout:          5 * time.Second,
 <span id="L145" class="ln">   145  </span>		Logger:               zap.NewNop(),
 <span id="L146" class="ln">   146  </span>	}
@@ -215,138 +215,193 @@
 <span id="L158" class="ln">   158  </span>	<span class="comment">// Key=&#34;/namespace/scope/leader&#34;, e.g. &#34;/service/batman/leader&#34;</span>
 <span id="L159" class="ln">   159  </span>	<span class="comment">// Key=&#34;/namespace/scope/members/node&#34;, e.g. &#34;/service/batman/members/pg1&#34;</span>
 <span id="L160" class="ln">   160  </span>
-<span id="L161" class="ln">   161  </span>	p := path.Join(cmp.Or(s.HostConfig.Namespace, &#34;/service&#34;), s.HostConfig.Scope)
-<span id="L162" class="ln">   162  </span>	resp, err := c.Get(ctx, p, client.WithPrefix())
-<span id="L163" class="ln">   163  </span>	if err != nil {
-<span id="L164" class="ln">   164  </span>		return ret, cmp.Or(context.Cause(ctx), err)
-<span id="L165" class="ln">   165  </span>	}
-<span id="L166" class="ln">   166  </span>
-<span id="L167" class="ln">   167  </span>	for _, node := range resp.Kvs {
-<span id="L168" class="ln">   168  </span>		nodeData, err := jsonTextToStringMap(string(node.Value))
-<span id="L169" class="ln">   169  </span>		if err != nil {
-<span id="L170" class="ln">   170  </span>			logger.Errorf(&#34;Could not parse ETCD node data for node \&#34;%s\&#34;: %s&#34;, node, err)
-<span id="L171" class="ln">   171  </span>			continue
-<span id="L172" class="ln">   172  </span>		}
-<span id="L173" class="ln">   173  </span>		<span class="comment">// remove leading slash and split by &#34;/&#34;</span>
-<span id="L174" class="ln">   174  </span>		parts := strings.Split(strings.TrimPrefix(string(node.Key), &#34;/&#34;), &#34;/&#34;)
-<span id="L175" class="ln">   175  </span>		if len(parts) &lt; 3 {
-<span id="L176" class="ln">   176  </span>			return nil, errors.New(&#34;invalid ETCD key format&#34;)
-<span id="L177" class="ln">   177  </span>		}
-<span id="L178" class="ln">   178  </span>		role := nodeData[&#34;role&#34;]
-<span id="L179" class="ln">   179  </span>		connURL := nodeData[&#34;conn_url&#34;]
-<span id="L180" class="ln">   180  </span>		scope := parts[1]
-<span id="L181" class="ln">   181  </span>		name := parts[3]
-<span id="L182" class="ln">   182  </span>		ret = append(ret, PatroniClusterMember{Scope: scope, ConnURL: connURL, Role: role, Name: name})
-<span id="L183" class="ln">   183  </span>	}
-<span id="L184" class="ln">   184  </span>
-<span id="L185" class="ln">   185  </span>	lastFoundClusterMembers[s.Name] = ret
-<span id="L186" class="ln">   186  </span>	return ret, nil
-<span id="L187" class="ln">   187  </span>}
-<span id="L188" class="ln">   188  </span>
-<span id="L189" class="ln">   189  </span>const (
-<span id="L190" class="ln">   190  </span>	dcsTypeEtcd      = &#34;etcd&#34;
-<span id="L191" class="ln">   191  </span>	dcsTypeZookeeper = &#34;zookeeper&#34;
-<span id="L192" class="ln">   192  </span>	dcsTypeConsul    = &#34;consul&#34;
-<span id="L193" class="ln">   193  </span>)
-<span id="L194" class="ln">   194  </span>
-<span id="L195" class="ln">   195  </span>func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
-<span id="L196" class="ln">   196  </span>	var mds []*SourceConn
-<span id="L197" class="ln">   197  </span>	var clusterMembers []PatroniClusterMember
-<span id="L198" class="ln">   198  </span>	var err error
-<span id="L199" class="ln">   199  </span>	var ok bool
-<span id="L200" class="ln">   200  </span>
-<span id="L201" class="ln">   201  </span>	switch source.HostConfig.DcsType {
-<span id="L202" class="ln">   202  </span>	case dcsTypeEtcd:
-<span id="L203" class="ln">   203  </span>		clusterMembers, err = getEtcdClusterMembers(source)
-<span id="L204" class="ln">   204  </span>	case dcsTypeZookeeper:
-<span id="L205" class="ln">   205  </span>		clusterMembers, err = getZookeeperClusterMembers(source)
-<span id="L206" class="ln">   206  </span>	case dcsTypeConsul:
-<span id="L207" class="ln">   207  </span>		clusterMembers, err = getConsulClusterMembers(source)
-<span id="L208" class="ln">   208  </span>	default:
-<span id="L209" class="ln">   209  </span>		return nil, errors.New(&#34;unknown DCS&#34;)
-<span id="L210" class="ln">   210  </span>	}
-<span id="L211" class="ln">   211  </span>	logger := logger.WithField(&#34;sorce&#34;, source.Name)
-<span id="L212" class="ln">   212  </span>	if err != nil {
-<span id="L213" class="ln">   213  </span>		if errors.Is(err, errors.ErrUnsupported) {
-<span id="L214" class="ln">   214  </span>			return nil, err
-<span id="L215" class="ln">   215  </span>		}
-<span id="L216" class="ln">   216  </span>		logger.Debug(&#34;Failed to get info from DCS, using previous member info if any&#34;)
-<span id="L217" class="ln">   217  </span>		if clusterMembers, ok = lastFoundClusterMembers[source.Name]; ok { <span class="comment">// mask error from main loop not to remove monitored DBs due to &#34;jitter&#34;</span>
-<span id="L218" class="ln">   218  </span>			err = nil
-<span id="L219" class="ln">   219  </span>		}
-<span id="L220" class="ln">   220  </span>	} else {
-<span id="L221" class="ln">   221  </span>		lastFoundClusterMembers[source.Name] = clusterMembers
-<span id="L222" class="ln">   222  </span>	}
-<span id="L223" class="ln">   223  </span>	if len(clusterMembers) == 0 {
-<span id="L224" class="ln">   224  </span>		return mds, err
-<span id="L225" class="ln">   225  </span>	}
-<span id="L226" class="ln">   226  </span>
-<span id="L227" class="ln">   227  </span>	for _, patroniMember := range clusterMembers {
-<span id="L228" class="ln">   228  </span>		logger.Info(&#34;Processing Patroni cluster member: &#34;, patroniMember.Name)
-<span id="L229" class="ln">   229  </span>		if source.OnlyIfMaster &amp;&amp; patroniMember.Role != &#34;master&#34; {
-<span id="L230" class="ln">   230  </span>			continue
-<span id="L231" class="ln">   231  </span>		}
-<span id="L232" class="ln">   232  </span>		src := *source.Clone()
-<span id="L233" class="ln">   233  </span>		src.ConnStr = patroniMember.ConnURL
-<span id="L234" class="ln">   234  </span>		if source.Kind == SourcePatroniNamespace {
-<span id="L235" class="ln">   235  </span>			src.Name += &#34;_&#34; + patroniMember.Scope
-<span id="L236" class="ln">   236  </span>		}
-<span id="L237" class="ln">   237  </span>		src.Name += &#34;_&#34; + patroniMember.Name
-<span id="L238" class="ln">   238  </span>		if dbs, err := ResolveDatabasesFromPostgres(src); err == nil {
-<span id="L239" class="ln">   239  </span>			mds = append(mds, dbs...)
-<span id="L240" class="ln">   240  </span>		} else {
-<span id="L241" class="ln">   241  </span>			logger.WithError(err).Error(&#34;Failed to resolve databases for Patroni member: &#34;, patroniMember.Name)
-<span id="L242" class="ln">   242  </span>		}
-<span id="L243" class="ln">   243  </span>	}
-<span id="L244" class="ln">   244  </span>	return mds, err
-<span id="L245" class="ln">   245  </span>}
-<span id="L246" class="ln">   246  </span>
-<span id="L247" class="ln">   247  </span><span class="comment">// ResolveDatabasesFromPostgres reads all the databases from the given cluster,</span>
-<span id="L248" class="ln">   248  </span><span class="comment">// additionally matching/not matching specified regex patterns</span>
-<span id="L249" class="ln">   249  </span>func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error) {
-<span id="L250" class="ln">   250  </span>	var (
-<span id="L251" class="ln">   251  </span>		c      db.PgxPoolIface
-<span id="L252" class="ln">   252  </span>		dbname string
-<span id="L253" class="ln">   253  </span>		rows   pgx.Rows
-<span id="L254" class="ln">   254  </span>	)
-<span id="L255" class="ln">   255  </span>	c, err = NewConn(context.TODO(), s.ConnStr)
-<span id="L256" class="ln">   256  </span>	if err != nil {
-<span id="L257" class="ln">   257  </span>		return
-<span id="L258" class="ln">   258  </span>	}
-<span id="L259" class="ln">   259  </span>	defer c.Close()
-<span id="L260" class="ln">   260  </span>
-<span id="L261" class="ln">   261  </span>	sql := `select /* pgwatch_generated */
-<span id="L262" class="ln">   262  </span>	datname
-<span id="L263" class="ln">   263  </span>	from pg_database
-<span id="L264" class="ln">   264  </span>	where not datistemplate
-<span id="L265" class="ln">   265  </span>	and datallowconn
-<span id="L266" class="ln">   266  </span>	and has_database_privilege (datname, &#39;CONNECT&#39;)
-<span id="L267" class="ln">   267  </span>	and case when length(trim($1)) &gt; 0 then datname ~ $1 else true end
-<span id="L268" class="ln">   268  </span>	and case when length(trim($2)) &gt; 0 then not datname ~ $2 else true end`
-<span id="L269" class="ln">   269  </span>
-<span id="L270" class="ln">   270  </span>	if rows, err = c.Query(context.TODO(), sql, s.IncludePattern, s.ExcludePattern); err != nil {
-<span id="L271" class="ln">   271  </span>		return nil, err
-<span id="L272" class="ln">   272  </span>	}
-<span id="L273" class="ln">   273  </span>	for rows.Next() {
-<span id="L274" class="ln">   274  </span>		if err = rows.Scan(&amp;dbname); err != nil {
-<span id="L275" class="ln">   275  </span>			return nil, err
-<span id="L276" class="ln">   276  </span>		}
-<span id="L277" class="ln">   277  </span>		rdb := &amp;SourceConn{Source: *s.Clone()}
-<span id="L278" class="ln">   278  </span>		rdb.Name += &#34;_&#34; + dbname
-<span id="L279" class="ln">   279  </span>		rdb.SetDatabaseName(dbname)
-<span id="L280" class="ln">   280  </span>		resolvedDbs = append(resolvedDbs, rdb)
-<span id="L281" class="ln">   281  </span>	}
-<span id="L282" class="ln">   282  </span>
-<span id="L283" class="ln">   283  </span>	if err := rows.Err(); err != nil {
-<span id="L284" class="ln">   284  </span>		return nil, err
-<span id="L285" class="ln">   285  </span>	}
-<span id="L286" class="ln">   286  </span>	return
-<span id="L287" class="ln">   287  </span>}
-<span id="L288" class="ln">   288  </span>
+<span id="L161" class="ln">   161  </span>	resp, err := c.Get(ctx, hc.Path, client.WithPrefix())
+<span id="L162" class="ln">   162  </span>	if err != nil {
+<span id="L163" class="ln">   163  </span>		return ret, cmp.Or(context.Cause(ctx), err)
+<span id="L164" class="ln">   164  </span>	}
+<span id="L165" class="ln">   165  </span>
+<span id="L166" class="ln">   166  </span>	for _, node := range resp.Kvs {
+<span id="L167" class="ln">   167  </span>		nodeData, err := jsonTextToStringMap(string(node.Value))
+<span id="L168" class="ln">   168  </span>		if err != nil {
+<span id="L169" class="ln">   169  </span>			logger.Errorf(&#34;Could not parse ETCD node data for node \&#34;%s\&#34;: %s&#34;, node, err)
+<span id="L170" class="ln">   170  </span>			continue
+<span id="L171" class="ln">   171  </span>		}
+<span id="L172" class="ln">   172  </span>		<span class="comment">// remove leading slash and split by &#34;/&#34;</span>
+<span id="L173" class="ln">   173  </span>		parts := strings.Split(strings.TrimPrefix(string(node.Key), &#34;/&#34;), &#34;/&#34;)
+<span id="L174" class="ln">   174  </span>		if len(parts) &lt; 3 {
+<span id="L175" class="ln">   175  </span>			return nil, errors.New(&#34;invalid ETCD key format&#34;)
+<span id="L176" class="ln">   176  </span>		}
+<span id="L177" class="ln">   177  </span>		role := nodeData[&#34;role&#34;]
+<span id="L178" class="ln">   178  </span>		connURL := nodeData[&#34;conn_url&#34;]
+<span id="L179" class="ln">   179  </span>		scope := parts[1]
+<span id="L180" class="ln">   180  </span>		name := parts[3]
+<span id="L181" class="ln">   181  </span>		ret = append(ret, PatroniClusterMember{Scope: scope, ConnURL: connURL, Role: role, Name: name})
+<span id="L182" class="ln">   182  </span>	}
+<span id="L183" class="ln">   183  </span>
+<span id="L184" class="ln">   184  </span>	lastFoundClusterMembers[s.Name] = ret
+<span id="L185" class="ln">   185  </span>	return ret, nil
+<span id="L186" class="ln">   186  </span>}
+<span id="L187" class="ln">   187  </span>
+<span id="L188" class="ln">   188  </span>const (
+<span id="L189" class="ln">   189  </span>	dcsTypeEtcd      = &#34;etcd&#34;
+<span id="L190" class="ln">   190  </span>	dcsTypeZookeeper = &#34;zookeeper&#34;
+<span id="L191" class="ln">   191  </span>	dcsTypeConsul    = &#34;consul&#34;
+<span id="L192" class="ln">   192  </span>)
+<span id="L193" class="ln">   193  </span>
+<span id="L194" class="ln">   194  </span>type HostConfig struct {
+<span id="L195" class="ln">   195  </span>	DcsType      string   `yaml:&#34;dcs_type&#34;`
+<span id="L196" class="ln">   196  </span>	DcsEndpoints []string `yaml:&#34;dcs_endpoints&#34;`
+<span id="L197" class="ln">   197  </span>	Path         string
+<span id="L198" class="ln">   198  </span>	Username     string
+<span id="L199" class="ln">   199  </span>	Password     string
+<span id="L200" class="ln">   200  </span>	CAFile       string `yaml:&#34;ca_file&#34;`
+<span id="L201" class="ln">   201  </span>	CertFile     string `yaml:&#34;cert_file&#34;`
+<span id="L202" class="ln">   202  </span>	KeyFile      string `yaml:&#34;key_file&#34;`
+<span id="L203" class="ln">   203  </span>}
+<span id="L204" class="ln">   204  </span>
+<span id="L205" class="ln">   205  </span>func (hc HostConfig) IsScopeSpecified() bool {
+<span id="L206" class="ln">   206  </span>	<span class="comment">// Path is usually &#34;/namespace/scope&#34;</span>
+<span id="L207" class="ln">   207  </span>	<span class="comment">// so we check if it has at least 2 slashes</span>
+<span id="L208" class="ln">   208  </span>	return strings.Count(hc.Path, &#34;/&#34;) &gt;= 2
+<span id="L209" class="ln">   209  </span>}
+<span id="L210" class="ln">   210  </span>
+<span id="L211" class="ln">   211  </span>func NewHostConfig(URI string) (hc HostConfig, err error) {
+<span id="L212" class="ln">   212  </span>	var url *url.URL
+<span id="L213" class="ln">   213  </span>	url, err = url.Parse(URI)
+<span id="L214" class="ln">   214  </span>	if err != nil {
+<span id="L215" class="ln">   215  </span>		return
+<span id="L216" class="ln">   216  </span>	}
+<span id="L217" class="ln">   217  </span>
+<span id="L218" class="ln">   218  </span>	switch url.Scheme {
+<span id="L219" class="ln">   219  </span>	case dcsTypeEtcd:
+<span id="L220" class="ln">   220  </span>		hc.DcsType = dcsTypeEtcd
+<span id="L221" class="ln">   221  </span>		for h := range strings.SplitSeq(url.Host, &#34;,&#34;) {
+<span id="L222" class="ln">   222  </span>			hc.DcsEndpoints = append(hc.DcsEndpoints, &#34;http://&#34;+h)
+<span id="L223" class="ln">   223  </span>		}
+<span id="L224" class="ln">   224  </span>	case dcsTypeZookeeper:
+<span id="L225" class="ln">   225  </span>		hc.DcsType = dcsTypeZookeeper
+<span id="L226" class="ln">   226  </span>		hc.DcsEndpoints = []string{url.Host} <span class="comment">// Zookeeper usually has a</span>
+<span id="L227" class="ln">   227  </span>		<span class="comment">// single endpoint, but can be a list of hosts separated by commas</span>
+<span id="L228" class="ln">   228  </span>	case dcsTypeConsul:
+<span id="L229" class="ln">   229  </span>		hc.DcsType = dcsTypeConsul
+<span id="L230" class="ln">   230  </span>		hc.DcsEndpoints = strings.Split(url.Host, &#34;,&#34;)
+<span id="L231" class="ln">   231  </span>	default:
+<span id="L232" class="ln">   232  </span>		return hc, fmt.Errorf(&#34;unsupported DCS type: %s&#34;, url.Scheme)
+<span id="L233" class="ln">   233  </span>	}
+<span id="L234" class="ln">   234  </span>
+<span id="L235" class="ln">   235  </span>	hc.Path = url.Path
+<span id="L236" class="ln">   236  </span>	hc.Username = url.User.Username()
+<span id="L237" class="ln">   237  </span>	hc.Password, _ = url.User.Password() <span class="comment">// password is optional, so we ignore the error</span>
+<span id="L238" class="ln">   238  </span>	hc.CAFile = url.Query().Get(&#34;ca_file&#34;)
+<span id="L239" class="ln">   239  </span>	hc.CertFile = url.Query().Get(&#34;cert_file&#34;)
+<span id="L240" class="ln">   240  </span>	hc.KeyFile = url.Query().Get(&#34;key_file&#34;)
+<span id="L241" class="ln">   241  </span>
+<span id="L242" class="ln">   242  </span>	return hc, nil
+<span id="L243" class="ln">   243  </span>}
+<span id="L244" class="ln">   244  </span>
+<span id="L245" class="ln">   245  </span>func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
+<span id="L246" class="ln">   246  </span>	var mds []*SourceConn
+<span id="L247" class="ln">   247  </span>	var clusterMembers []PatroniClusterMember
+<span id="L248" class="ln">   248  </span>	var err error
+<span id="L249" class="ln">   249  </span>	var ok bool
+<span id="L250" class="ln">   250  </span>
+<span id="L251" class="ln">   251  </span>	hostConfig, err := NewHostConfig(source.ConnStr)
+<span id="L252" class="ln">   252  </span>	if err != nil {
+<span id="L253" class="ln">   253  </span>		return nil, err
+<span id="L254" class="ln">   254  </span>	}
+<span id="L255" class="ln">   255  </span>
+<span id="L256" class="ln">   256  </span>	switch hostConfig.DcsType {
+<span id="L257" class="ln">   257  </span>	case dcsTypeEtcd:
+<span id="L258" class="ln">   258  </span>		clusterMembers, err = getEtcdClusterMembers(source, hostConfig)
+<span id="L259" class="ln">   259  </span>	case dcsTypeZookeeper:
+<span id="L260" class="ln">   260  </span>		clusterMembers, err = getZookeeperClusterMembers(source, hostConfig)
+<span id="L261" class="ln">   261  </span>	case dcsTypeConsul:
+<span id="L262" class="ln">   262  </span>		clusterMembers, err = getConsulClusterMembers(source)
+<span id="L263" class="ln">   263  </span>	default:
+<span id="L264" class="ln">   264  </span>		return nil, errors.New(&#34;unknown DCS&#34;)
+<span id="L265" class="ln">   265  </span>	}
+<span id="L266" class="ln">   266  </span>	logger := logger.WithField(&#34;sorce&#34;, source.Name)
+<span id="L267" class="ln">   267  </span>	if err != nil {
+<span id="L268" class="ln">   268  </span>		if errors.Is(err, errors.ErrUnsupported) {
+<span id="L269" class="ln">   269  </span>			return nil, err
+<span id="L270" class="ln">   270  </span>		}
+<span id="L271" class="ln">   271  </span>		logger.Debug(&#34;Failed to get info from DCS, using previous member info if any&#34;)
+<span id="L272" class="ln">   272  </span>		if clusterMembers, ok = lastFoundClusterMembers[source.Name]; ok { <span class="comment">// mask error from main loop not to remove monitored DBs due to &#34;jitter&#34;</span>
+<span id="L273" class="ln">   273  </span>			err = nil
+<span id="L274" class="ln">   274  </span>		}
+<span id="L275" class="ln">   275  </span>	} else {
+<span id="L276" class="ln">   276  </span>		lastFoundClusterMembers[source.Name] = clusterMembers
+<span id="L277" class="ln">   277  </span>	}
+<span id="L278" class="ln">   278  </span>	if len(clusterMembers) == 0 {
+<span id="L279" class="ln">   279  </span>		return mds, err
+<span id="L280" class="ln">   280  </span>	}
+<span id="L281" class="ln">   281  </span>
+<span id="L282" class="ln">   282  </span>	for _, patroniMember := range clusterMembers {
+<span id="L283" class="ln">   283  </span>		logger.Info(&#34;Processing Patroni cluster member: &#34;, patroniMember.Name)
+<span id="L284" class="ln">   284  </span>		if source.OnlyIfMaster &amp;&amp; patroniMember.Role != &#34;master&#34; {
+<span id="L285" class="ln">   285  </span>			continue
+<span id="L286" class="ln">   286  </span>		}
+<span id="L287" class="ln">   287  </span>		src := *source.Clone()
+<span id="L288" class="ln">   288  </span>		src.ConnStr = patroniMember.ConnURL
+<span id="L289" class="ln">   289  </span>		if hostConfig.IsScopeSpecified() {
+<span id="L290" class="ln">   290  </span>			src.Name += &#34;_&#34; + patroniMember.Scope
+<span id="L291" class="ln">   291  </span>		}
+<span id="L292" class="ln">   292  </span>		src.Name += &#34;_&#34; + patroniMember.Name
+<span id="L293" class="ln">   293  </span>		if dbs, err := ResolveDatabasesFromPostgres(src); err == nil {
+<span id="L294" class="ln">   294  </span>			mds = append(mds, dbs...)
+<span id="L295" class="ln">   295  </span>		} else {
+<span id="L296" class="ln">   296  </span>			logger.WithError(err).Error(&#34;Failed to resolve databases for Patroni member: &#34;, patroniMember.Name)
+<span id="L297" class="ln">   297  </span>		}
+<span id="L298" class="ln">   298  </span>	}
+<span id="L299" class="ln">   299  </span>	return mds, err
+<span id="L300" class="ln">   300  </span>}
+<span id="L301" class="ln">   301  </span>
+<span id="L302" class="ln">   302  </span><span class="comment">// ResolveDatabasesFromPostgres reads all the databases from the given cluster,</span>
+<span id="L303" class="ln">   303  </span><span class="comment">// additionally matching/not matching specified regex patterns</span>
+<span id="L304" class="ln">   304  </span>func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error) {
+<span id="L305" class="ln">   305  </span>	var (
+<span id="L306" class="ln">   306  </span>		c      db.PgxPoolIface
+<span id="L307" class="ln">   307  </span>		dbname string
+<span id="L308" class="ln">   308  </span>		rows   pgx.Rows
+<span id="L309" class="ln">   309  </span>	)
+<span id="L310" class="ln">   310  </span>	c, err = NewConn(context.TODO(), s.ConnStr)
+<span id="L311" class="ln">   311  </span>	if err != nil {
+<span id="L312" class="ln">   312  </span>		return
+<span id="L313" class="ln">   313  </span>	}
+<span id="L314" class="ln">   314  </span>	defer c.Close()
+<span id="L315" class="ln">   315  </span>
+<span id="L316" class="ln">   316  </span>	sql := `select /* pgwatch_generated */
+<span id="L317" class="ln">   317  </span>	datname
+<span id="L318" class="ln">   318  </span>	from pg_database
+<span id="L319" class="ln">   319  </span>	where not datistemplate
+<span id="L320" class="ln">   320  </span>	and datallowconn
+<span id="L321" class="ln">   321  </span>	and has_database_privilege (datname, &#39;CONNECT&#39;)
+<span id="L322" class="ln">   322  </span>	and case when length(trim($1)) &gt; 0 then datname ~ $1 else true end
+<span id="L323" class="ln">   323  </span>	and case when length(trim($2)) &gt; 0 then not datname ~ $2 else true end`
+<span id="L324" class="ln">   324  </span>
+<span id="L325" class="ln">   325  </span>	if rows, err = c.Query(context.TODO(), sql, s.IncludePattern, s.ExcludePattern); err != nil {
+<span id="L326" class="ln">   326  </span>		return nil, err
+<span id="L327" class="ln">   327  </span>	}
+<span id="L328" class="ln">   328  </span>	for rows.Next() {
+<span id="L329" class="ln">   329  </span>		if err = rows.Scan(&amp;dbname); err != nil {
+<span id="L330" class="ln">   330  </span>			return nil, err
+<span id="L331" class="ln">   331  </span>		}
+<span id="L332" class="ln">   332  </span>		rdb := &amp;SourceConn{Source: *s.Clone()}
+<span id="L333" class="ln">   333  </span>		rdb.Name += &#34;_&#34; + dbname
+<span id="L334" class="ln">   334  </span>		rdb.SetDatabaseName(dbname)
+<span id="L335" class="ln">   335  </span>		resolvedDbs = append(resolvedDbs, rdb)
+<span id="L336" class="ln">   336  </span>	}
+<span id="L337" class="ln">   337  </span>
+<span id="L338" class="ln">   338  </span>	if err := rows.Err(); err != nil {
+<span id="L339" class="ln">   339  </span>		return nil, err
+<span id="L340" class="ln">   340  </span>	}
+<span id="L341" class="ln">   341  </span>	return
+<span id="L342" class="ln">   342  </span>}
+<span id="L343" class="ln">   343  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

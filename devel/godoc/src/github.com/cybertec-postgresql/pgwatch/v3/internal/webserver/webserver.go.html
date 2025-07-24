@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.24.4";</script>
+<script>var goVersion = "go1.24.5";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -115,123 +115,126 @@
 <span id="L58" class="ln">    58  </span>	}
 <span id="L59" class="ln">    59  </span>
 <span id="L60" class="ln">    60  </span>	mux.Handle(&#34;/source&#34;, NewEnsureAuth(s.handleSources))
-<span id="L61" class="ln">    61  </span>	mux.Handle(&#34;/test-connect&#34;, NewEnsureAuth(s.handleTestConnect))
-<span id="L62" class="ln">    62  </span>	mux.Handle(&#34;/metric&#34;, NewEnsureAuth(s.handleMetrics))
-<span id="L63" class="ln">    63  </span>	mux.Handle(&#34;/preset&#34;, NewEnsureAuth(s.handlePresets))
-<span id="L64" class="ln">    64  </span>	mux.Handle(&#34;/log&#34;, NewEnsureAuth(s.serveWsLog))
-<span id="L65" class="ln">    65  </span>	mux.HandleFunc(&#34;/login&#34;, s.handleLogin)
-<span id="L66" class="ln">    66  </span>	mux.HandleFunc(&#34;/liveness&#34;, s.handleLiveness)
-<span id="L67" class="ln">    67  </span>	mux.HandleFunc(&#34;/readiness&#34;, s.handleReadiness)
-<span id="L68" class="ln">    68  </span>	if opts.WebDisable != WebDisableUI {
-<span id="L69" class="ln">    69  </span>		mux.HandleFunc(&#34;/&#34;, s.handleStatic)
-<span id="L70" class="ln">    70  </span>	}
-<span id="L71" class="ln">    71  </span>
-<span id="L72" class="ln">    72  </span>	ln, err := net.Listen(&#34;tcp&#34;, s.Addr)
-<span id="L73" class="ln">    73  </span>	if err != nil {
-<span id="L74" class="ln">    74  </span>		return nil, err
-<span id="L75" class="ln">    75  </span>	}
-<span id="L76" class="ln">    76  </span>
-<span id="L77" class="ln">    77  </span>	go func() { panic(s.Serve(ln)) }()
-<span id="L78" class="ln">    78  </span>
-<span id="L79" class="ln">    79  </span>	return s, nil
-<span id="L80" class="ln">    80  </span>}
+<span id="L61" class="ln">    61  </span>	mux.Handle(&#34;/source/{name}&#34;, NewEnsureAuth(s.handleSourceItem))
+<span id="L62" class="ln">    62  </span>	mux.Handle(&#34;/test-connect&#34;, NewEnsureAuth(s.handleTestConnect))
+<span id="L63" class="ln">    63  </span>	mux.Handle(&#34;/metric&#34;, NewEnsureAuth(s.handleMetrics))
+<span id="L64" class="ln">    64  </span>	mux.Handle(&#34;/metric/{name}&#34;, NewEnsureAuth(s.handleMetricItem))
+<span id="L65" class="ln">    65  </span>	mux.Handle(&#34;/preset&#34;, NewEnsureAuth(s.handlePresets))
+<span id="L66" class="ln">    66  </span>	mux.Handle(&#34;/preset/{name}&#34;, NewEnsureAuth(s.handlePresetItem))
+<span id="L67" class="ln">    67  </span>	mux.Handle(&#34;/log&#34;, NewEnsureAuth(s.serveWsLog))
+<span id="L68" class="ln">    68  </span>	mux.HandleFunc(&#34;/login&#34;, s.handleLogin)
+<span id="L69" class="ln">    69  </span>	mux.HandleFunc(&#34;/liveness&#34;, s.handleLiveness)
+<span id="L70" class="ln">    70  </span>	mux.HandleFunc(&#34;/readiness&#34;, s.handleReadiness)
+<span id="L71" class="ln">    71  </span>	if opts.WebDisable != WebDisableUI {
+<span id="L72" class="ln">    72  </span>		mux.HandleFunc(&#34;/&#34;, s.handleStatic)
+<span id="L73" class="ln">    73  </span>	}
+<span id="L74" class="ln">    74  </span>
+<span id="L75" class="ln">    75  </span>	ln, err := net.Listen(&#34;tcp&#34;, s.Addr)
+<span id="L76" class="ln">    76  </span>	if err != nil {
+<span id="L77" class="ln">    77  </span>		return nil, err
+<span id="L78" class="ln">    78  </span>	}
+<span id="L79" class="ln">    79  </span>
+<span id="L80" class="ln">    80  </span>	go func() { panic(s.Serve(ln)) }()
 <span id="L81" class="ln">    81  </span>
-<span id="L82" class="ln">    82  </span>func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
-<span id="L83" class="ln">    83  </span>	if r.Method != &#34;GET&#34; {
-<span id="L84" class="ln">    84  </span>		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-<span id="L85" class="ln">    85  </span>		return
-<span id="L86" class="ln">    86  </span>	}
-<span id="L87" class="ln">    87  </span>	routes := []string{&#34;/&#34;, &#34;/sources&#34;, &#34;/metrics&#34;, &#34;/presets&#34;, &#34;/logs&#34;}
-<span id="L88" class="ln">    88  </span>	path := r.URL.Path
-<span id="L89" class="ln">    89  </span>	if slices.Contains(routes, path) {
-<span id="L90" class="ln">    90  </span>		path = &#34;index.html&#34;
-<span id="L91" class="ln">    91  </span>	} else {
-<span id="L92" class="ln">    92  </span>		path = strings.TrimPrefix(path, &#34;/&#34;)
-<span id="L93" class="ln">    93  </span>	}
-<span id="L94" class="ln">    94  </span>
-<span id="L95" class="ln">    95  </span>	file, err := Server.uiFS.Open(path)
-<span id="L96" class="ln">    96  </span>	if err != nil {
-<span id="L97" class="ln">    97  </span>		if os.IsNotExist(err) {
-<span id="L98" class="ln">    98  </span>			Server.Println(&#34;file&#34;, path, &#34;not found:&#34;, err)
-<span id="L99" class="ln">    99  </span>			http.NotFound(w, r)
-<span id="L100" class="ln">   100  </span>			return
-<span id="L101" class="ln">   101  </span>		}
-<span id="L102" class="ln">   102  </span>		Server.Println(&#34;file&#34;, path, &#34;cannot be read:&#34;, err)
-<span id="L103" class="ln">   103  </span>		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-<span id="L104" class="ln">   104  </span>		return
-<span id="L105" class="ln">   105  </span>	}
-<span id="L106" class="ln">   106  </span>	defer file.Close()
-<span id="L107" class="ln">   107  </span>
-<span id="L108" class="ln">   108  </span>	contentType := mime.TypeByExtension(filepath.Ext(path))
-<span id="L109" class="ln">   109  </span>	w.Header().Set(&#34;Content-Type&#34;, contentType)
-<span id="L110" class="ln">   110  </span>	if strings.HasPrefix(path, &#34;static/&#34;) {
-<span id="L111" class="ln">   111  </span>		w.Header().Set(&#34;Cache-Control&#34;, &#34;public, max-age=31536000&#34;)
-<span id="L112" class="ln">   112  </span>	}
-<span id="L113" class="ln">   113  </span>	stat, err := file.Stat()
-<span id="L114" class="ln">   114  </span>	if err == nil &amp;&amp; stat.Size() &gt; 0 {
-<span id="L115" class="ln">   115  </span>		w.Header().Set(&#34;Content-Length&#34;, fmt.Sprintf(&#34;%d&#34;, stat.Size()))
-<span id="L116" class="ln">   116  </span>	}
-<span id="L117" class="ln">   117  </span>
-<span id="L118" class="ln">   118  </span>	n, _ := io.Copy(w, file)
-<span id="L119" class="ln">   119  </span>	Server.Debug(&#34;file&#34;, path, &#34;copied&#34;, n, &#34;bytes&#34;)
-<span id="L120" class="ln">   120  </span>}
-<span id="L121" class="ln">   121  </span>
-<span id="L122" class="ln">   122  </span>func (Server *WebUIServer) handleLiveness(w http.ResponseWriter, _ *http.Request) {
-<span id="L123" class="ln">   123  </span>	if Server.ctx.Err() != nil {
-<span id="L124" class="ln">   124  </span>		w.WriteHeader(http.StatusServiceUnavailable)
-<span id="L125" class="ln">   125  </span>		_, _ = w.Write([]byte(`{&#34;status&#34;: &#34;unavailable&#34;}`))
-<span id="L126" class="ln">   126  </span>		return
-<span id="L127" class="ln">   127  </span>	}
-<span id="L128" class="ln">   128  </span>	w.WriteHeader(http.StatusOK)
-<span id="L129" class="ln">   129  </span>	_, _ = w.Write([]byte(`{&#34;status&#34;: &#34;ok&#34;}`))
-<span id="L130" class="ln">   130  </span>}
-<span id="L131" class="ln">   131  </span>
-<span id="L132" class="ln">   132  </span>func (Server *WebUIServer) handleReadiness(w http.ResponseWriter, _ *http.Request) {
-<span id="L133" class="ln">   133  </span>	if Server.readyChecker.Ready() {
-<span id="L134" class="ln">   134  </span>		w.WriteHeader(http.StatusOK)
-<span id="L135" class="ln">   135  </span>		_, _ = w.Write([]byte(`{&#34;status&#34;: &#34;ok&#34;}`))
-<span id="L136" class="ln">   136  </span>		return
-<span id="L137" class="ln">   137  </span>	}
-<span id="L138" class="ln">   138  </span>	w.WriteHeader(http.StatusServiceUnavailable)
-<span id="L139" class="ln">   139  </span>	_, _ = w.Write([]byte(`{&#34;status&#34;: &#34;busy&#34;}`))
-<span id="L140" class="ln">   140  </span>}
-<span id="L141" class="ln">   141  </span>
-<span id="L142" class="ln">   142  </span>func (Server *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Request) {
-<span id="L143" class="ln">   143  </span>	switch r.Method {
-<span id="L144" class="ln">   144  </span>	case http.MethodPost:
-<span id="L145" class="ln">   145  </span>		<span class="comment">// test database connection</span>
-<span id="L146" class="ln">   146  </span>		p, err := io.ReadAll(r.Body)
-<span id="L147" class="ln">   147  </span>		if err != nil {
-<span id="L148" class="ln">   148  </span>			http.Error(w, err.Error(), http.StatusBadRequest)
-<span id="L149" class="ln">   149  </span>			return
-<span id="L150" class="ln">   150  </span>		}
-<span id="L151" class="ln">   151  </span>		if err := db.Ping(context.TODO(), string(p)); err != nil {
-<span id="L152" class="ln">   152  </span>			http.Error(w, err.Error(), http.StatusBadRequest)
+<span id="L82" class="ln">    82  </span>	return s, nil
+<span id="L83" class="ln">    83  </span>}
+<span id="L84" class="ln">    84  </span>
+<span id="L85" class="ln">    85  </span>func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
+<span id="L86" class="ln">    86  </span>	if r.Method != &#34;GET&#34; {
+<span id="L87" class="ln">    87  </span>		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+<span id="L88" class="ln">    88  </span>		return
+<span id="L89" class="ln">    89  </span>	}
+<span id="L90" class="ln">    90  </span>	routes := []string{&#34;/&#34;, &#34;/sources&#34;, &#34;/metrics&#34;, &#34;/presets&#34;, &#34;/logs&#34;}
+<span id="L91" class="ln">    91  </span>	path := r.URL.Path
+<span id="L92" class="ln">    92  </span>	if slices.Contains(routes, path) {
+<span id="L93" class="ln">    93  </span>		path = &#34;index.html&#34;
+<span id="L94" class="ln">    94  </span>	} else {
+<span id="L95" class="ln">    95  </span>		path = strings.TrimPrefix(path, &#34;/&#34;)
+<span id="L96" class="ln">    96  </span>	}
+<span id="L97" class="ln">    97  </span>
+<span id="L98" class="ln">    98  </span>	file, err := Server.uiFS.Open(path)
+<span id="L99" class="ln">    99  </span>	if err != nil {
+<span id="L100" class="ln">   100  </span>		if os.IsNotExist(err) {
+<span id="L101" class="ln">   101  </span>			Server.Println(&#34;file&#34;, path, &#34;not found:&#34;, err)
+<span id="L102" class="ln">   102  </span>			http.NotFound(w, r)
+<span id="L103" class="ln">   103  </span>			return
+<span id="L104" class="ln">   104  </span>		}
+<span id="L105" class="ln">   105  </span>		Server.Println(&#34;file&#34;, path, &#34;cannot be read:&#34;, err)
+<span id="L106" class="ln">   106  </span>		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+<span id="L107" class="ln">   107  </span>		return
+<span id="L108" class="ln">   108  </span>	}
+<span id="L109" class="ln">   109  </span>	defer file.Close()
+<span id="L110" class="ln">   110  </span>
+<span id="L111" class="ln">   111  </span>	contentType := mime.TypeByExtension(filepath.Ext(path))
+<span id="L112" class="ln">   112  </span>	w.Header().Set(&#34;Content-Type&#34;, contentType)
+<span id="L113" class="ln">   113  </span>	if strings.HasPrefix(path, &#34;static/&#34;) {
+<span id="L114" class="ln">   114  </span>		w.Header().Set(&#34;Cache-Control&#34;, &#34;public, max-age=31536000&#34;)
+<span id="L115" class="ln">   115  </span>	}
+<span id="L116" class="ln">   116  </span>	stat, err := file.Stat()
+<span id="L117" class="ln">   117  </span>	if err == nil &amp;&amp; stat.Size() &gt; 0 {
+<span id="L118" class="ln">   118  </span>		w.Header().Set(&#34;Content-Length&#34;, fmt.Sprintf(&#34;%d&#34;, stat.Size()))
+<span id="L119" class="ln">   119  </span>	}
+<span id="L120" class="ln">   120  </span>
+<span id="L121" class="ln">   121  </span>	n, _ := io.Copy(w, file)
+<span id="L122" class="ln">   122  </span>	Server.Debug(&#34;file&#34;, path, &#34;copied&#34;, n, &#34;bytes&#34;)
+<span id="L123" class="ln">   123  </span>}
+<span id="L124" class="ln">   124  </span>
+<span id="L125" class="ln">   125  </span>func (Server *WebUIServer) handleLiveness(w http.ResponseWriter, _ *http.Request) {
+<span id="L126" class="ln">   126  </span>	if Server.ctx.Err() != nil {
+<span id="L127" class="ln">   127  </span>		w.WriteHeader(http.StatusServiceUnavailable)
+<span id="L128" class="ln">   128  </span>		_, _ = w.Write([]byte(`{&#34;status&#34;: &#34;unavailable&#34;}`))
+<span id="L129" class="ln">   129  </span>		return
+<span id="L130" class="ln">   130  </span>	}
+<span id="L131" class="ln">   131  </span>	w.WriteHeader(http.StatusOK)
+<span id="L132" class="ln">   132  </span>	_, _ = w.Write([]byte(`{&#34;status&#34;: &#34;ok&#34;}`))
+<span id="L133" class="ln">   133  </span>}
+<span id="L134" class="ln">   134  </span>
+<span id="L135" class="ln">   135  </span>func (Server *WebUIServer) handleReadiness(w http.ResponseWriter, _ *http.Request) {
+<span id="L136" class="ln">   136  </span>	if Server.readyChecker.Ready() {
+<span id="L137" class="ln">   137  </span>		w.WriteHeader(http.StatusOK)
+<span id="L138" class="ln">   138  </span>		_, _ = w.Write([]byte(`{&#34;status&#34;: &#34;ok&#34;}`))
+<span id="L139" class="ln">   139  </span>		return
+<span id="L140" class="ln">   140  </span>	}
+<span id="L141" class="ln">   141  </span>	w.WriteHeader(http.StatusServiceUnavailable)
+<span id="L142" class="ln">   142  </span>	_, _ = w.Write([]byte(`{&#34;status&#34;: &#34;busy&#34;}`))
+<span id="L143" class="ln">   143  </span>}
+<span id="L144" class="ln">   144  </span>
+<span id="L145" class="ln">   145  </span>func (Server *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Request) {
+<span id="L146" class="ln">   146  </span>	switch r.Method {
+<span id="L147" class="ln">   147  </span>	case http.MethodPost:
+<span id="L148" class="ln">   148  </span>		<span class="comment">// test database connection</span>
+<span id="L149" class="ln">   149  </span>		p, err := io.ReadAll(r.Body)
+<span id="L150" class="ln">   150  </span>		if err != nil {
+<span id="L151" class="ln">   151  </span>			http.Error(w, err.Error(), http.StatusBadRequest)
+<span id="L152" class="ln">   152  </span>			return
 <span id="L153" class="ln">   153  </span>		}
-<span id="L154" class="ln">   154  </span>	default:
-<span id="L155" class="ln">   155  </span>		w.Header().Set(&#34;Allow&#34;, &#34;POST&#34;)
-<span id="L156" class="ln">   156  </span>		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-<span id="L157" class="ln">   157  </span>		return
-<span id="L158" class="ln">   158  </span>	}
-<span id="L159" class="ln">   159  </span>}
-<span id="L160" class="ln">   160  </span>
-<span id="L161" class="ln">   161  </span>func corsMiddleware(next http.Handler) http.Handler {
-<span id="L162" class="ln">   162  </span>	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-<span id="L163" class="ln">   163  </span>		w.Header().Set(&#34;Access-Control-Allow-Origin&#34;, &#34;http://localhost:4000&#34;) <span class="comment">//check internal/webui/.env</span>
-<span id="L164" class="ln">   164  </span>		w.Header().Set(&#34;Access-Control-Allow-Methods&#34;, &#34;POST, GET, OPTIONS, PUT, DELETE&#34;)
-<span id="L165" class="ln">   165  </span>		w.Header().Set(&#34;Access-Control-Allow-Headers&#34;, &#34;Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, token&#34;)
-<span id="L166" class="ln">   166  </span>		if r.Method == &#34;OPTIONS&#34; {
-<span id="L167" class="ln">   167  </span>			w.WriteHeader(http.StatusOK)
-<span id="L168" class="ln">   168  </span>			return
-<span id="L169" class="ln">   169  </span>		}
-<span id="L170" class="ln">   170  </span>		next.ServeHTTP(w, r)
-<span id="L171" class="ln">   171  </span>	})
-<span id="L172" class="ln">   172  </span>}
-<span id="L173" class="ln">   173  </span>
+<span id="L154" class="ln">   154  </span>		if err := db.Ping(context.TODO(), string(p)); err != nil {
+<span id="L155" class="ln">   155  </span>			http.Error(w, err.Error(), http.StatusBadRequest)
+<span id="L156" class="ln">   156  </span>		}
+<span id="L157" class="ln">   157  </span>	default:
+<span id="L158" class="ln">   158  </span>		w.Header().Set(&#34;Allow&#34;, &#34;POST&#34;)
+<span id="L159" class="ln">   159  </span>		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+<span id="L160" class="ln">   160  </span>		return
+<span id="L161" class="ln">   161  </span>	}
+<span id="L162" class="ln">   162  </span>}
+<span id="L163" class="ln">   163  </span>
+<span id="L164" class="ln">   164  </span>func corsMiddleware(next http.Handler) http.Handler {
+<span id="L165" class="ln">   165  </span>	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+<span id="L166" class="ln">   166  </span>		w.Header().Set(&#34;Access-Control-Allow-Origin&#34;, &#34;http://localhost:4000&#34;) <span class="comment">//check internal/webui/.env</span>
+<span id="L167" class="ln">   167  </span>		w.Header().Set(&#34;Access-Control-Allow-Methods&#34;, &#34;POST, GET, OPTIONS, PUT, DELETE&#34;)
+<span id="L168" class="ln">   168  </span>		w.Header().Set(&#34;Access-Control-Allow-Headers&#34;, &#34;Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, token&#34;)
+<span id="L169" class="ln">   169  </span>		if r.Method == &#34;OPTIONS&#34; {
+<span id="L170" class="ln">   170  </span>			w.WriteHeader(http.StatusOK)
+<span id="L171" class="ln">   171  </span>			return
+<span id="L172" class="ln">   172  </span>		}
+<span id="L173" class="ln">   173  </span>		next.ServeHTTP(w, r)
+<span id="L174" class="ln">   174  </span>	})
+<span id="L175" class="ln">   175  </span>}
+<span id="L176" class="ln">   176  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.24.4.<br/>
+Build version go1.24.5.<br/>
 </div>
 
 </div><!-- .container -->

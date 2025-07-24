@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://pgwat.ch/devel/reference/advanced_features.html">
       
       
-        <link rel="prev" href="cli_env.html">
+        <link rel="prev" href="rest.html">
       
       
         <link rel="next" href="metric_definitions.html">
@@ -1124,6 +1124,29 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="rest.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    REST API
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1638,30 +1661,22 @@ though - cluster members can come and go, making monitoring in the
 standard way a bit tricky. But luckily Patroni cluster members
 information is stored in a DCS (Distributed Consensus Store), like
 <em>etcd</em>, so it can be fetched from there periodically.</p>
-<p>When 'patroni' is selected as a <strong>source type</strong> then the usual Postgres
-host/port fields should be left empty ("dbname" can still be filled if only a
-specific single database is
-to be monitored) and instead "Host config" JSON field should be filled
-with DCS address, type and scope (cluster name) information. A sample
-config (for Config DB based setups) looks like:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="w">    </span><span class="p">{</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">      </span><span class="nt">&quot;dcs_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;etcd&quot;</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">      </span><span class="nt">&quot;dcs_endpoints&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;http://127.0.0.1:2379&quot;</span><span class="p">],</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">      </span><span class="nt">&quot;scope&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;batman&quot;</span><span class="p">,</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">      </span><span class="nt">&quot;namespace&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/service/&quot;</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="p">}</span>
-</span></code></pre></div>
+<p>When 'patroni' is selected as a <strong>source type</strong> then the connection
+string should point to the DCS, and then pgwatch will
+periodically scan the DCS and add any found and not yet monitored:
+If you use etcd as the DCS, then your connection string should
+look like this: <code>etcd://host:port[,host:port..]/namespace/scope</code>,
+for example <code>etcd://localhost:2379/service/batman</code>.</p>
 <p>For YAML based setups an example can be found from the
 <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.sources.yaml#L21">instances.yaml</a>
 file.</p>
 <p>If Patroni is powered by <em>etcd</em>, then also username, password, ca_file,
-cert_file, key_file optional security parameters can be defined - other
-DCS systems are currently only supported without authentication.</p>
+cert_file, key_file optional security parameters can be defined in the
+connection string, for example 
+<code>etcd://username:password@localhost:2379/service/batman?ca_file=/path/to/ca.crt&amp;cert_file=/path/to/client.crt&amp;key_file=/path/to/client.key</code>.</p>
 <p>Also, if you don't use the standby nodes actively for queries then it
 might make sense to decrease the volume of gathered metrics and to
-disable the monitoring of such nodes with the "Master mode only?"
-checkbox (when using the Web UI) or with <em>only_if_master=true</em> if using
-a YAML based setup.</p>
+disable the monitoring of such nodes with the "Primary mode only".</p>
 <h2 id="log-parsing">Log parsing</h2>
 <p>As of v1.7.0 the metrics collector daemon, when running on a DB server
 (controlled best over a YAML config), has capabilities to parse the
@@ -1681,14 +1696,14 @@ to be specified manually under "Host config" as seen for example
 <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.sources.yaml#L25">here</a>.</p>
 <p><strong>Sample configuration if not using CSVLOG logging:</strong></p>
 <p>On Postgres side (on the monitored DB)</p>
-<div class="language-ini highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="w">    </span><span class="c1"># Debian / Ubuntu default log_line_prefix actually</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="na">log_line_prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&#39;%m [%p] %q%u@%d &#39;</span>
+<div class="language-ini highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="w">    </span><span class="c1"># Debian / Ubuntu default log_line_prefix actually</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="na">log_line_prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&#39;%m [%p] %q%u@%d &#39;</span>
 </span></code></pre></div>
 <p>YAML config (recommended when "pushing" metrics from DB nodes to a
 central metrics DB)</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="w">    </span><span class="c1">## logs_glob_path is only needed if the monitoring user is cannot auto-detect it (i.e. not a superuser / pg_monitor role)</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="c1"># logs_glob_path:</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">logs_match_regex</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;^(?P&lt;log_time&gt;.*)</span><span class="nv"> </span><span class="s">\[(?P&lt;process_id&gt;\d+)\]</span><span class="nv"> </span><span class="s">(?P&lt;user_name&gt;.*)@(?P&lt;database_name&gt;.*?)</span><span class="nv"> </span><span class="s">(?P&lt;error_severity&gt;.*?):</span><span class="nv"> </span><span class="s">&#39;</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="w">    </span><span class="c1">## logs_glob_path is only needed if the monitoring user is cannot auto-detect it (i.e. not a superuser / pg_monitor role)</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="c1"># logs_glob_path:</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">logs_match_regex</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;^(?P&lt;log_time&gt;.*)</span><span class="nv"> </span><span class="s">\[(?P&lt;process_id&gt;\d+)\]</span><span class="nv"> </span><span class="s">(?P&lt;user_name&gt;.*)@(?P&lt;database_name&gt;.*?)</span><span class="nv"> </span><span class="s">(?P&lt;error_severity&gt;.*?):</span><span class="nv"> </span><span class="s">&#39;</span>
 </span></code></pre></div>
 <p>For log parsing to work the metric <strong>server_log_event_counts</strong> needs to
 be enabled or a <em>preset config</em> including it used - like the "full"
@@ -1779,7 +1794,7 @@ experimenting there are following presets available:</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="cli_env.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: CLI &amp; Environment Variables">
+          <a href="rest.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: REST API">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1789,7 +1804,7 @@ experimenting there are following presets available:</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                CLI & Environment Variables
+                REST API
               </div>
             </div>
           </a>

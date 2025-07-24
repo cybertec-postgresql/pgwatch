@@ -1001,24 +1001,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#patroni-continuous-discovery" class="md-nav__link">
-    <span class="md-ellipsis">
-      patroni-continuous-discovery
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#patroni-namespace-discovery" class="md-nav__link">
-    <span class="md-ellipsis">
-      patroni-namespace-discovery
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1280,6 +1262,29 @@
   
   <span class="md-ellipsis">
     CLI & Environment Variables
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/rest.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    REST API
     
   </span>
   
@@ -1733,24 +1738,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#patroni-continuous-discovery" class="md-nav__link">
-    <span class="md-ellipsis">
-      patroni-continuous-discovery
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#patroni-namespace-discovery" class="md-nav__link">
-    <span class="md-ellipsis">
-      patroni-namespace-discovery
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1999,13 +1986,14 @@ constellations pgwatch supports reading of cluster node info from
 all supported DCSs (etcd, Zookeeper, Consul), but currently only
 for simpler cases with no security applied (which is actually the
 common case in a trusted environment).</p>
-<h3 id="patroni-continuous-discovery"><em>patroni-continuous-discovery</em></h3>
-<p>As normal <em>patroni</em> DB type but all DBs (or only those matching the
-regex if any provided) are monitored.</p>
-<h3 id="patroni-namespace-discovery"><em>patroni-namespace-discovery</em></h3>
-<p>Similar to <em>patroni-continuous-discovery</em> but all Patroni scopes
-(clusters) of an ETCD namespace are automatically monitored.
-Optionally regexes on database names still apply if provided.</p>
+<p>Connection string should point to the DCS, and then pgwatch will
+periodically scan the DCS and add any found and not yet monitored.
+If you use etcd as the DCS, then your connection string should
+look like this: <code>etcd://host:port[,host:port..]/namespace/scope</code>, for example
+<code>etcd://localhost:2379/service/batman</code>.</p>
+<p>You may omit the scope part to resolve all databases in the
+specified namespace, or you may specify the scope to resolve only
+databases from the specific Patroni cluster.</p>
 <div class="admonition notice">
 <p class="admonition-title">Notice</p>
 <p>All "continuous" modes expect access to "template1" or "postgres"
