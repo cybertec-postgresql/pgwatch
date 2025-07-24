@@ -9,19 +9,6 @@ create schema "subpartitions";
 
 create extension if not exists btree_gin;
 
--- grant all on schema public to pgwatch;
-
--- do $sql$
--- begin
---   execute format($$alter role pgwatch in database %s set statement_timeout to '5min'$$, current_database());
---   raise warning 'Enabling asynchronous commit for pgwatch role - revert if possible data loss on crash is not acceptable!';
---   execute format($$alter role pgwatch in database %s set synchronous_commit to off$$, current_database());
--- end
--- $sql$;
-
--- set role to pgwatch;
-
-
 create function admin.get_default_storage_type() returns text as
 $$
  select case 
@@ -64,8 +51,12 @@ create table admin.config
 
 -- to later change the value call the admin.change_timescale_chunk_interval(interval) function!
 -- as changing the row directly will only be effective for completely new tables (metrics).
-insert into admin.config select 'timescale_chunk_interval', '2 days';
-insert into admin.config select 'timescale_compress_interval', '1 day';
+insert into admin.config values 
+  ('timescale_chunk_interval', '2 days'),
+  ('timescale_compress_interval', '1 day'),
+  ('partitions_maintenance', now()::text),
+  ('sources_maintenance', now()::text);
+
 
 create or replace function trg_config_modified() returns trigger
 as $$
@@ -153,6 +144,3 @@ COMMENT ON TABLE admin.metrics_template_realtime IS 'used as a template for all 
 
 -- create index on admin.metrics_template using brin (dbname, time) with (pages_per_range=32);  /* consider BRIN instead for large data amounts */
 CREATE INDEX ON admin.metrics_template_realtime (dbname, time);
-
--- RESET ROLE;
-
