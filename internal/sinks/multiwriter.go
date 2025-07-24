@@ -33,22 +33,22 @@ func NewSinkWriter(ctx context.Context, opts *CmdOpts) (w Writer, err error) {
 		return nil, errors.New("no sinks specified for measurements")
 	}
 	mw := &MultiWriter{}
-	for _, s := range opts.Sinks {
-		scheme, path, found := strings.Cut(s, "://")
-		if !found || scheme == "" || path == "" {
-			return nil, fmt.Errorf("malformed sink URI %s", s)
+	for _, sinkConnStr := range opts.Sinks {
+		scheme, target, found := strings.Cut(sinkConnStr, "://")
+		if !found || scheme == "" || target == "" {
+			return nil, fmt.Errorf("malformed sink URI %s", sinkConnStr)
 		}
 		switch scheme {
 		case "jsonfile":
-			w, err = NewJSONWriter(ctx, path)
+			w, err = NewJSONWriter(ctx, target)
 		case "postgres", "postgresql":
-			w, err = NewPostgresWriter(ctx, s, opts)
+			w, err = NewPostgresWriter(ctx, sinkConnStr, opts)
 		case "prometheus":
-			w, err = NewPrometheusWriter(ctx, path)
+			w, err = NewPrometheusWriter(ctx, target)
 		case "rpc", "grpc":
-			w, err = NewRPCWriter(ctx, path)
+			w, err = NewRPCWriter(ctx, sinkConnStr)
 		default:
-			return nil, fmt.Errorf("unknown schema %s in sink URI %s", scheme, s)
+			return nil, fmt.Errorf("unknown schema %s in sink URI %s", scheme, sinkConnStr)
 		}
 		if err != nil {
 			return nil, err
