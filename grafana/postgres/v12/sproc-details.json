@@ -134,7 +134,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  sum(calls - calls_lag) as calls\nFROM (\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (data->'sp_calls')::int8 as calls,\n  lag((data->'sp_calls')::int8) OVER(order by time) as calls_lag\nFROM\n  sproc_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data @> '{\"function_full_name\": \"$sproc_name\"}'\n) x\nWHERE calls >= calls_lag\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT\n  time,\n  sum(calls - calls_lag) as calls\nFROM (\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (data->>'sp_calls')::int8 as calls,\n  lag((data->>'sp_calls')::int8) OVER(order by time) as calls_lag\nFROM\n  sproc_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data @> '{\"function_full_name\": \"$sproc_name\"}'\n) x\nWHERE calls >= calls_lag\nGROUP BY 1\nORDER BY 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -298,7 +298,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg( case when calls = calls_lag then null else (total_time - total_time_lag) / (calls - calls_lag) end) as total_time,\n  avg( case when calls = calls_lag then null else (self_time - self_time_lag) / (calls - calls_lag) end) as self_time\nFROM (\n  SELECT\n    (data->'sp_calls')::int8 as calls, lag((data->'sp_calls')::int8) over w as calls_lag,\n    (data->'self_time')::float as self_time, lag((data->'self_time')::float) over w as self_time_lag,\n    (data->'total_time')::float as total_time, lag((data->'total_time')::float) over w as total_time_lag,\n    time, lag(time) over w as time_lag\n  FROM\n    sproc_stats\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n    AND tag_data @> jsonb_build_object('function_full_name', '$sproc_name')\n    WINDOW w AS (order by time)\n) x\nWHERE time > time_lag AND calls >= calls_lag\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg( case when calls = calls_lag then null else (total_time - total_time_lag) / (calls - calls_lag) end) as total_time,\n  avg( case when calls = calls_lag then null else (self_time - self_time_lag) / (calls - calls_lag) end) as self_time\nFROM (\n  SELECT\n    (data->>'sp_calls')::int8 as calls, lag((data->>'sp_calls')::int8) over w as calls_lag,\n    (data->>'self_time')::float as self_time, lag((data->>'self_time')::float) over w as self_time_lag,\n    (data->>'total_time')::float as total_time, lag((data->>'total_time')::float) over w as total_time_lag,\n    time, lag(time) over w as time_lag\n  FROM\n    sproc_stats\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n    AND tag_data @> jsonb_build_object('function_full_name', '$sproc_name')\n    WINDOW w AS (order by time)\n) x\nWHERE time > time_lag AND calls >= calls_lag\nGROUP BY 1\nORDER BY 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
