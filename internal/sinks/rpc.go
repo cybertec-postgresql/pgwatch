@@ -2,6 +2,12 @@ package sinks
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
+	"fmt"
+	"net/url"
+	"os"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
@@ -10,6 +16,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -39,8 +46,30 @@ func convertSyncOp(op SyncOp) pb.SyncOp {
 	}
 }
 
-func NewRPCWriter(ctx context.Context, host string) (*RPCWriter, error) {
-	conn, err := grpc.NewClient(host, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+func NewRPCWriter(ctx context.Context, connStr string) (*RPCWriter, error) {
+	uri, err := url.Parse(connStr)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing gRPC URI: %s", err)
+	}
+
+	params, err := url.ParseQuery(uri.RawQuery)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing gRPC URI parameters: %s", err)
+	}
+
+	creds := insecure.NewCredentials()
+
+	CAFile, ok := params["sslrootca"]
+	if ok {
+		creds, err = LoadTLSCredentials(CAFile[0])
+		if err != nil {
+			return nil, err
+		}
+		log.GetLogger(ctx).Infof("Valid CA File %s loaded - enabling TLS", CAFile)
+	}
+
+	conn, err := grpc.NewClient(uri.Host, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return nil, err
 	}
@@ -169,4 +198,22 @@ func (rw *RPCWriter) DefineMetrics(metrics *metrics.Metrics) error {
 func (rw *RPCWriter) watchCtx() {
 	<-rw.ctx.Done()
 	rw.conn.Close()
+}
+
+func LoadTLSCredentials(CAFile string) (credentials.TransportCredentials, error) {
+	ca, err := os.ReadFile(CAFile)
+	if err != nil {
+		return nil, fmt.Errorf("error loading CA file: %v", err)
+	}
+
+	certPool := x509.NewCertPool()
+	ok := certPool.AppendCertsFromPEM(ca)
+	if !ok {
+		return nil, errors.New("invalid CA file")
+	}
+
+	tlsClientConfig := &tls.Config{
+		RootCAs: certPool,
+	}
+	return credentials.NewTLS(tlsClientConfig), nil
 }
