@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -77,6 +78,19 @@ func LoadServerTLSCredentials() (credentials.TransportCredentials, error) {
 	return credentials.NewTLS(tlsConfig), nil
 }
 
+func AuthInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+
+	clientUsername := md.Get("username")[0]
+	clientPassword := md.Get("password")[0]
+
+	if clientUsername != "" && clientUsername != "pgwatch" && clientPassword != "pgwatch" {
+		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
+	}
+
+	return handler(ctx, req)
+}
+
 func TestMain(m *testing.M) {
 	err := os.WriteFile(CAFile, []byte(CA), 0644)
 	if err != nil {
@@ -99,6 +113,7 @@ func TestMain(m *testing.M) {
 		}
 
 		server := grpc.NewServer(
+			grpc.UnaryInterceptor(AuthInterceptor),
 			grpc.Creds(creds),
 		)
 
@@ -265,6 +280,17 @@ func TestRPCDefineMetric(t *testing.T) {
 	definer = writer.(sinks.MetricsDefiner)
 	err = definer.DefineMetrics(testMetrics)
 	a.Error(err)
+}
+
+func TestAuthCredsSending(t *testing.T) {
+	a := assert.New(t)
+
+	unauthenticatedConnStr := "grpc://notpgwatch:notpgwatch@localhost:6060"
+	rw, err := sinks.NewRPCWriter(ctx, unauthenticatedConnStr)
+	a.NoError(err)
+
+	err = rw.Write(metrics.MeasurementEnvelope{})
+	a.Equal(err, status.Error(codes.Unauthenticated, "unauthenticated"))
 }
 
 // End of tests ----------------------------------
