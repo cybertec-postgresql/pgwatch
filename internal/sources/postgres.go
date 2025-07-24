@@ -148,7 +148,6 @@ func (r *dbSourcesReaderWriter) GetSources() (Sources, error) {
 	coalesce(include_pattern, '') as include_pattern, 
 	coalesce(exclude_pattern, '') as exclude_pattern,
 	coalesce(custom_tags, '{}'::jsonb) as custom_tags, 
-	coalesce(host_config, '{}') as host_config, 
 	only_if_master,
 	is_enabled
 from
