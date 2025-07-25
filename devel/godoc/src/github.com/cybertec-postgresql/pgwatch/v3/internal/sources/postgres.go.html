@@ -205,18 +205,17 @@
 <span id="L148" class="ln">   148  </span>	coalesce(include_pattern, &#39;&#39;) as include_pattern, 
 <span id="L149" class="ln">   149  </span>	coalesce(exclude_pattern, &#39;&#39;) as exclude_pattern,
 <span id="L150" class="ln">   150  </span>	coalesce(custom_tags, &#39;{}&#39;::jsonb) as custom_tags, 
-<span id="L151" class="ln">   151  </span>	coalesce(host_config, &#39;{}&#39;) as host_config, 
-<span id="L152" class="ln">   152  </span>	only_if_master,
-<span id="L153" class="ln">   153  </span>	is_enabled
-<span id="L154" class="ln">   154  </span>from
-<span id="L155" class="ln">   155  </span>	pgwatch.source`
-<span id="L156" class="ln">   156  </span>	rows, err := r.configDb.Query(context.Background(), sqlLatest)
-<span id="L157" class="ln">   157  </span>	if err != nil {
-<span id="L158" class="ln">   158  </span>		return nil, err
-<span id="L159" class="ln">   159  </span>	}
-<span id="L160" class="ln">   160  </span>	return pgx.CollectRows[Source](rows, pgx.RowToStructByNameLax)
-<span id="L161" class="ln">   161  </span>}
-<span id="L162" class="ln">   162  </span>
+<span id="L151" class="ln">   151  </span>	only_if_master,
+<span id="L152" class="ln">   152  </span>	is_enabled
+<span id="L153" class="ln">   153  </span>from
+<span id="L154" class="ln">   154  </span>	pgwatch.source`
+<span id="L155" class="ln">   155  </span>	rows, err := r.configDb.Query(context.Background(), sqlLatest)
+<span id="L156" class="ln">   156  </span>	if err != nil {
+<span id="L157" class="ln">   157  </span>		return nil, err
+<span id="L158" class="ln">   158  </span>	}
+<span id="L159" class="ln">   159  </span>	return pgx.CollectRows[Source](rows, pgx.RowToStructByNameLax)
+<span id="L160" class="ln">   160  </span>}
+<span id="L161" class="ln">   161  </span>
 </pre><p></p>
 
 <div id="footer">
