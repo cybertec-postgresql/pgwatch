@@ -54,7 +54,7 @@ func NewRPCWriter(ctx context.Context, connStr string) (*RPCWriter, error) {
 		return nil, fmt.Errorf("error parsing gRPC URI: %s", err)
 	}
 
-	l := log.GetLogger(ctx).WithField("sink", "grpc").WithField("server", fmt.Sprintf("\"%s\"", uri.Host))
+	l := log.GetLogger(ctx).WithField("sink", "grpc").WithField("address", uri.Host)
 	ctx = log.WithLogger(ctx, l)
 
 	params, err := url.ParseQuery(uri.RawQuery)
