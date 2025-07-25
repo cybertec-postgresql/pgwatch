@@ -54,12 +54,12 @@ RUN apt-get update \
 RUN curl -L https://apt.grafana.com/gpg.key | apt-key add - \
     && echo "deb https://apt.grafana.com stable main" | tee /etc/apt/sources.list.d/grafana.list \
     && apt-get update \
-    && apt-get -qy install grafana=10.4.15 \
+    && apt-get -qy install grafana=12.1.0 \
     && grafana-cli plugins install marcusolsson-treemap-panel
 COPY docker/demo/grafana.ini /etc/grafana/grafana.ini
 COPY grafana/postgres_datasource.yml /etc/grafana/provisioning/datasources/pg_ds.yml
 COPY grafana/dashboards.yml /etc/grafana/provisioning/dashboards/pg_db.yml
-COPY grafana/postgres/v10/ /var/lib/grafana/dashboards/
+COPY grafana/postgres/v12/ /var/lib/grafana/dashboards/
 
 # Set up supervisord [https://docs.docker.com/engine/admin/using_supervisord/]
 COPY docker/demo/supervisord.conf /etc/supervisor/
