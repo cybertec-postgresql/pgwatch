@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -53,6 +54,9 @@ func NewRPCWriter(ctx context.Context, connStr string) (*RPCWriter, error) {
 		return nil, fmt.Errorf("error parsing gRPC URI: %s", err)
 	}
 
+	l := log.GetLogger(ctx).WithField("sink", "grpc").WithField("address", uri.Host)
+	ctx = log.WithLogger(ctx, l)
+
 	params, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing gRPC URI parameters: %s", err)
@@ -73,10 +77,17 @@ func NewRPCWriter(ctx context.Context, connStr string) (*RPCWriter, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	
+	password, _ := uri.User.Password()
+	md := metadata.Pairs(  
+		"username", uri.User.Username(),  
+		"password", password,
+	)  
+	newCtx := metadata.NewOutgoingContext(ctx, md)
+	
 	client := pb.NewReceiverClient(conn)
 	rw := &RPCWriter{
-		ctx:    ctx,
+		ctx:    newCtx,
 		conn:   conn,
 		client: client,
 	}
