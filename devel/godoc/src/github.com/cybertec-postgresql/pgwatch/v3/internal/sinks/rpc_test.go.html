@@ -74,150 +74,150 @@
 <span id="L17" class="ln">    17  </span>	&#34;google.golang.org/grpc&#34;
 <span id="L18" class="ln">    18  </span>	&#34;google.golang.org/grpc/codes&#34;
 <span id="L19" class="ln">    19  </span>	&#34;google.golang.org/grpc/credentials&#34;
-<span id="L20" class="ln">    20  </span>	&#34;google.golang.org/grpc/status&#34;
-<span id="L21" class="ln">    21  </span>	&#34;google.golang.org/protobuf/types/known/structpb&#34;
-<span id="L22" class="ln">    22  </span>)
-<span id="L23" class="ln">    23  </span>
-<span id="L24" class="ln">    24  </span>var ctx = context.Background()
-<span id="L25" class="ln">    25  </span>
-<span id="L26" class="ln">    26  </span><span class="comment">// the CN in server test cert is set to `localhost`</span>
-<span id="L27" class="ln">    27  </span>var CAFile = &#34;ca.crt&#34;
-<span id="L28" class="ln">    28  </span>var TLSConnStr = fmt.Sprintf(&#34;grpc://localhost:5050?sslrootca=%s&#34;, CAFile) 
-<span id="L29" class="ln">    29  </span>const TLSServerAddress = &#34;localhost:5050&#34;
-<span id="L30" class="ln">    30  </span>
-<span id="L31" class="ln">    31  </span>const PlainServerAddress = &#34;localhost:6060&#34;
-<span id="L32" class="ln">    32  </span>const PlainConnStr = &#34;grpc://localhost:6060&#34;
-<span id="L33" class="ln">    33  </span>
-<span id="L34" class="ln">    34  </span>type Receiver struct {
-<span id="L35" class="ln">    35  </span>	pb.UnimplementedReceiverServer
-<span id="L36" class="ln">    36  </span>}
-<span id="L37" class="ln">    37  </span>
-<span id="L38" class="ln">    38  </span>func (receiver *Receiver) UpdateMeasurements(_ context.Context, msg *pb.MeasurementEnvelope) (*pb.Reply, error) {
-<span id="L39" class="ln">    39  </span>	if len(msg.GetData()) == 0 {
-<span id="L40" class="ln">    40  </span>		return nil, errors.New(&#34;empty message&#34;)
-<span id="L41" class="ln">    41  </span>	}
-<span id="L42" class="ln">    42  </span>	if msg.GetDBName() != &#34;Db&#34; {
-<span id="L43" class="ln">    43  </span>		return nil, errors.New(&#34;invalid message&#34;)
-<span id="L44" class="ln">    44  </span>	}
-<span id="L45" class="ln">    45  </span>	return &amp;pb.Reply{}, nil
-<span id="L46" class="ln">    46  </span>}
-<span id="L47" class="ln">    47  </span>
-<span id="L48" class="ln">    48  </span>func (receiver *Receiver) SyncMetric(_ context.Context, syncReq *pb.SyncReq) (*pb.Reply, error) {
-<span id="L49" class="ln">    49  </span>	if syncReq == nil {
-<span id="L50" class="ln">    50  </span>		return nil, errors.New(&#34;nil sync request&#34;)
-<span id="L51" class="ln">    51  </span>	}
-<span id="L52" class="ln">    52  </span>	if syncReq.GetOperation() == pb.SyncOp_InvalidOp {
-<span id="L53" class="ln">    53  </span>		return nil, errors.New(&#34;invalid sync request&#34;)
-<span id="L54" class="ln">    54  </span>	}
-<span id="L55" class="ln">    55  </span>	return &amp;pb.Reply{}, nil
-<span id="L56" class="ln">    56  </span>}
-<span id="L57" class="ln">    57  </span>
-<span id="L58" class="ln">    58  </span>func (receiver *Receiver) DefineMetrics(_ context.Context, metricsStruct *structpb.Struct) (*pb.Reply, error) {
-<span id="L59" class="ln">    59  </span>	if metricsStruct == nil {
-<span id="L60" class="ln">    60  </span>		return nil, errors.New(&#34;nil metrics struct&#34;)
-<span id="L61" class="ln">    61  </span>	}
-<span id="L62" class="ln">    62  </span>	if metricsStruct.GetFields() == nil {
-<span id="L63" class="ln">    63  </span>		return nil, errors.New(&#34;empty metrics struct&#34;)
-<span id="L64" class="ln">    64  </span>	}
-<span id="L65" class="ln">    65  </span>	return &amp;pb.Reply{Logmsg: &#34;metrics defined successfully&#34;}, nil
-<span id="L66" class="ln">    66  </span>}
-<span id="L67" class="ln">    67  </span>
-<span id="L68" class="ln">    68  </span>func LoadServerTLSCredentials() (credentials.TransportCredentials, error) {
-<span id="L69" class="ln">    69  </span>	cert, err := tls.X509KeyPair(Cert, PrivateKey)
-<span id="L70" class="ln">    70  </span>	if err != nil {
-<span id="L71" class="ln">    71  </span>		return nil, err
-<span id="L72" class="ln">    72  </span>	}
-<span id="L73" class="ln">    73  </span>
-<span id="L74" class="ln">    74  </span>	tlsConfig := &amp;tls.Config{
-<span id="L75" class="ln">    75  </span>		Certificates: []tls.Certificate{cert},
-<span id="L76" class="ln">    76  </span>	}
-<span id="L77" class="ln">    77  </span>	return credentials.NewTLS(tlsConfig), nil
-<span id="L78" class="ln">    78  </span>}
-<span id="L79" class="ln">    79  </span>
-<span id="L80" class="ln">    80  </span>func TestMain(m *testing.M) {
-<span id="L81" class="ln">    81  </span>	err := os.WriteFile(CAFile, []byte(CA), 0644)
-<span id="L82" class="ln">    82  </span>	if err != nil {
-<span id="L83" class="ln">    83  </span>		panic(err)
-<span id="L84" class="ln">    84  </span>	}
-<span id="L85" class="ln">    85  </span>
-<span id="L86" class="ln">    86  </span>	addresses := [2]string{PlainServerAddress, TLSServerAddress}
-<span id="L87" class="ln">    87  </span>	for _, address := range addresses {
-<span id="L88" class="ln">    88  </span>		lis, err := net.Listen(&#34;tcp&#34;, address)
-<span id="L89" class="ln">    89  </span>		if err != nil {
-<span id="L90" class="ln">    90  </span>			panic(err)
-<span id="L91" class="ln">    91  </span>		}
-<span id="L92" class="ln">    92  </span>
-<span id="L93" class="ln">    93  </span>		var creds credentials.TransportCredentials
-<span id="L94" class="ln">    94  </span>		if address == TLSServerAddress {
-<span id="L95" class="ln">    95  </span>			creds, err = LoadServerTLSCredentials()
-<span id="L96" class="ln">    96  </span>			if err != nil {
-<span id="L97" class="ln">    97  </span>				panic(err)
-<span id="L98" class="ln">    98  </span>			}
-<span id="L99" class="ln">    99  </span>		}
-<span id="L100" class="ln">   100  </span>
-<span id="L101" class="ln">   101  </span>		server := grpc.NewServer(
-<span id="L102" class="ln">   102  </span>			grpc.Creds(creds),
-<span id="L103" class="ln">   103  </span>		)
-<span id="L104" class="ln">   104  </span>
-<span id="L105" class="ln">   105  </span>		recv := new(Receiver)
-<span id="L106" class="ln">   106  </span>		pb.RegisterReceiverServer(server, recv)
-<span id="L107" class="ln">   107  </span>
-<span id="L108" class="ln">   108  </span>		go func() {
-<span id="L109" class="ln">   109  </span>			if err := server.Serve(lis); err != nil {
-<span id="L110" class="ln">   110  </span>				panic(err)
-<span id="L111" class="ln">   111  </span>			}
-<span id="L112" class="ln">   112  </span>		}()
-<span id="L113" class="ln">   113  </span>	}
-<span id="L114" class="ln">   114  </span>	<span class="comment">// wait a little for servers start</span>
-<span id="L115" class="ln">   115  </span>	time.Sleep(time.Second)
-<span id="L116" class="ln">   116  </span>
-<span id="L117" class="ln">   117  </span>	exitCode := m.Run()
-<span id="L118" class="ln">   118  </span>	_ = os.Remove(CAFile)
+<span id="L20" class="ln">    20  </span>	&#34;google.golang.org/grpc/metadata&#34;
+<span id="L21" class="ln">    21  </span>	&#34;google.golang.org/grpc/status&#34;
+<span id="L22" class="ln">    22  </span>	&#34;google.golang.org/protobuf/types/known/structpb&#34;
+<span id="L23" class="ln">    23  </span>)
+<span id="L24" class="ln">    24  </span>
+<span id="L25" class="ln">    25  </span>var ctx = context.Background()
+<span id="L26" class="ln">    26  </span>
+<span id="L27" class="ln">    27  </span><span class="comment">// the CN in server test cert is set to `localhost`</span>
+<span id="L28" class="ln">    28  </span>var CAFile = &#34;ca.crt&#34;
+<span id="L29" class="ln">    29  </span>var TLSConnStr = fmt.Sprintf(&#34;grpc://localhost:5050?sslrootca=%s&#34;, CAFile) 
+<span id="L30" class="ln">    30  </span>const TLSServerAddress = &#34;localhost:5050&#34;
+<span id="L31" class="ln">    31  </span>
+<span id="L32" class="ln">    32  </span>const PlainServerAddress = &#34;localhost:6060&#34;
+<span id="L33" class="ln">    33  </span>const PlainConnStr = &#34;grpc://localhost:6060&#34;
+<span id="L34" class="ln">    34  </span>
+<span id="L35" class="ln">    35  </span>type Receiver struct {
+<span id="L36" class="ln">    36  </span>	pb.UnimplementedReceiverServer
+<span id="L37" class="ln">    37  </span>}
+<span id="L38" class="ln">    38  </span>
+<span id="L39" class="ln">    39  </span>func (receiver *Receiver) UpdateMeasurements(_ context.Context, msg *pb.MeasurementEnvelope) (*pb.Reply, error) {
+<span id="L40" class="ln">    40  </span>	if len(msg.GetData()) == 0 {
+<span id="L41" class="ln">    41  </span>		return nil, errors.New(&#34;empty message&#34;)
+<span id="L42" class="ln">    42  </span>	}
+<span id="L43" class="ln">    43  </span>	if msg.GetDBName() != &#34;Db&#34; {
+<span id="L44" class="ln">    44  </span>		return nil, errors.New(&#34;invalid message&#34;)
+<span id="L45" class="ln">    45  </span>	}
+<span id="L46" class="ln">    46  </span>	return &amp;pb.Reply{}, nil
+<span id="L47" class="ln">    47  </span>}
+<span id="L48" class="ln">    48  </span>
+<span id="L49" class="ln">    49  </span>func (receiver *Receiver) SyncMetric(_ context.Context, syncReq *pb.SyncReq) (*pb.Reply, error) {
+<span id="L50" class="ln">    50  </span>	if syncReq == nil {
+<span id="L51" class="ln">    51  </span>		return nil, errors.New(&#34;nil sync request&#34;)
+<span id="L52" class="ln">    52  </span>	}
+<span id="L53" class="ln">    53  </span>	if syncReq.GetOperation() == pb.SyncOp_InvalidOp {
+<span id="L54" class="ln">    54  </span>		return nil, errors.New(&#34;invalid sync request&#34;)
+<span id="L55" class="ln">    55  </span>	}
+<span id="L56" class="ln">    56  </span>	return &amp;pb.Reply{}, nil
+<span id="L57" class="ln">    57  </span>}
+<span id="L58" class="ln">    58  </span>
+<span id="L59" class="ln">    59  </span>func (receiver *Receiver) DefineMetrics(_ context.Context, metricsStruct *structpb.Struct) (*pb.Reply, error) {
+<span id="L60" class="ln">    60  </span>	if metricsStruct == nil {
+<span id="L61" class="ln">    61  </span>		return nil, errors.New(&#34;nil metrics struct&#34;)
+<span id="L62" class="ln">    62  </span>	}
+<span id="L63" class="ln">    63  </span>	if metricsStruct.GetFields() == nil {
+<span id="L64" class="ln">    64  </span>		return nil, errors.New(&#34;empty metrics struct&#34;)
+<span id="L65" class="ln">    65  </span>	}
+<span id="L66" class="ln">    66  </span>	return &amp;pb.Reply{Logmsg: &#34;metrics defined successfully&#34;}, nil
+<span id="L67" class="ln">    67  </span>}
+<span id="L68" class="ln">    68  </span>
+<span id="L69" class="ln">    69  </span>func LoadServerTLSCredentials() (credentials.TransportCredentials, error) {
+<span id="L70" class="ln">    70  </span>	cert, err := tls.X509KeyPair(Cert, PrivateKey)
+<span id="L71" class="ln">    71  </span>	if err != nil {
+<span id="L72" class="ln">    72  </span>		return nil, err
+<span id="L73" class="ln">    73  </span>	}
+<span id="L74" class="ln">    74  </span>
+<span id="L75" class="ln">    75  </span>	tlsConfig := &amp;tls.Config{
+<span id="L76" class="ln">    76  </span>		Certificates: []tls.Certificate{cert},
+<span id="L77" class="ln">    77  </span>	}
+<span id="L78" class="ln">    78  </span>	return credentials.NewTLS(tlsConfig), nil
+<span id="L79" class="ln">    79  </span>}
+<span id="L80" class="ln">    80  </span>
+<span id="L81" class="ln">    81  </span>func AuthInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+<span id="L82" class="ln">    82  </span>	md, _ := metadata.FromIncomingContext(ctx)
+<span id="L83" class="ln">    83  </span>
+<span id="L84" class="ln">    84  </span>	clientUsername := md.Get(&#34;username&#34;)[0]
+<span id="L85" class="ln">    85  </span>	clientPassword := md.Get(&#34;password&#34;)[0]
+<span id="L86" class="ln">    86  </span>
+<span id="L87" class="ln">    87  </span>	if clientUsername != &#34;&#34; &amp;&amp; clientUsername != &#34;pgwatch&#34; &amp;&amp; clientPassword != &#34;pgwatch&#34; {
+<span id="L88" class="ln">    88  </span>		return nil, status.Error(codes.Unauthenticated, &#34;unauthenticated&#34;)
+<span id="L89" class="ln">    89  </span>	}
+<span id="L90" class="ln">    90  </span>
+<span id="L91" class="ln">    91  </span>	return handler(ctx, req)
+<span id="L92" class="ln">    92  </span>}
+<span id="L93" class="ln">    93  </span>
+<span id="L94" class="ln">    94  </span>func TestMain(m *testing.M) {
+<span id="L95" class="ln">    95  </span>	err := os.WriteFile(CAFile, []byte(CA), 0644)
+<span id="L96" class="ln">    96  </span>	if err != nil {
+<span id="L97" class="ln">    97  </span>		panic(err)
+<span id="L98" class="ln">    98  </span>	}
+<span id="L99" class="ln">    99  </span>
+<span id="L100" class="ln">   100  </span>	addresses := [2]string{PlainServerAddress, TLSServerAddress}
+<span id="L101" class="ln">   101  </span>	for _, address := range addresses {
+<span id="L102" class="ln">   102  </span>		lis, err := net.Listen(&#34;tcp&#34;, address)
+<span id="L103" class="ln">   103  </span>		if err != nil {
+<span id="L104" class="ln">   104  </span>			panic(err)
+<span id="L105" class="ln">   105  </span>		}
+<span id="L106" class="ln">   106  </span>
+<span id="L107" class="ln">   107  </span>		var creds credentials.TransportCredentials
+<span id="L108" class="ln">   108  </span>		if address == TLSServerAddress {
+<span id="L109" class="ln">   109  </span>			creds, err = LoadServerTLSCredentials()
+<span id="L110" class="ln">   110  </span>			if err != nil {
+<span id="L111" class="ln">   111  </span>				panic(err)
+<span id="L112" class="ln">   112  </span>			}
+<span id="L113" class="ln">   113  </span>		}
+<span id="L114" class="ln">   114  </span>
+<span id="L115" class="ln">   115  </span>		server := grpc.NewServer(
+<span id="L116" class="ln">   116  </span>			grpc.UnaryInterceptor(AuthInterceptor),
+<span id="L117" class="ln">   117  </span>			grpc.Creds(creds),
+<span id="L118" class="ln">   118  </span>		)
 <span id="L119" class="ln">   119  </span>
-<span id="L120" class="ln">   120  </span>	os.Exit(exitCode)
-<span id="L121" class="ln">   121  </span>}
+<span id="L120" class="ln">   120  </span>		recv := new(Receiver)
+<span id="L121" class="ln">   121  </span>		pb.RegisterReceiverServer(server, recv)
 <span id="L122" class="ln">   122  </span>
-<span id="L123" class="ln">   123  </span><span class="comment">// Tests begin from here ---------------------------------------------------------</span>
-<span id="L124" class="ln">   124  </span>
-<span id="L125" class="ln">   125  </span>func TestCACertParamValidation(t *testing.T) {
-<span id="L126" class="ln">   126  </span>	a := assert.New(t)
-<span id="L127" class="ln">   127  </span>	_, err := sinks.NewRPCWriter(ctx, TLSConnStr)
-<span id="L128" class="ln">   128  </span>	a.NoError(err)
-<span id="L129" class="ln">   129  </span>
-<span id="L130" class="ln">   130  </span>	_, _ = os.Create(&#34;badca.crt&#34;)
-<span id="L131" class="ln">   131  </span>	defer func ()  {  _ = os.Remove(&#34;badca.crt&#34;) }()
-<span id="L132" class="ln">   132  </span>
-<span id="L133" class="ln">   133  </span>	BadRPCParams := map[string]string{
-<span id="L134" class="ln">   134  </span>		&#34;?sslrootca=file.txt&#34;: &#34;error loading CA file: open file.txt: no such file or directory&#34;, 
-<span id="L135" class="ln">   135  </span>		&#34;?sslrootca=&#34;: &#34;error loading CA file: open : no such file or directory&#34;, 
-<span id="L136" class="ln">   136  </span>		&#34;?sslrootca=badca.crt&#34;: &#34;invalid CA file&#34;,
-<span id="L137" class="ln">   137  </span>	}
-<span id="L138" class="ln">   138  </span>
-<span id="L139" class="ln">   139  </span>	for param, errMsg := range BadRPCParams {
-<span id="L140" class="ln">   140  </span>		_, err = sinks.NewRPCWriter(ctx, fmt.Sprintf(&#34;grpc://%s%s&#34;, TLSServerAddress, param))
-<span id="L141" class="ln">   141  </span>		a.EqualError(err, errMsg)
-<span id="L142" class="ln">   142  </span>	}
-<span id="L143" class="ln">   143  </span>}
+<span id="L123" class="ln">   123  </span>		go func() {
+<span id="L124" class="ln">   124  </span>			if err := server.Serve(lis); err != nil {
+<span id="L125" class="ln">   125  </span>				panic(err)
+<span id="L126" class="ln">   126  </span>			}
+<span id="L127" class="ln">   127  </span>		}()
+<span id="L128" class="ln">   128  </span>	}
+<span id="L129" class="ln">   129  </span>	<span class="comment">// wait a little for servers start</span>
+<span id="L130" class="ln">   130  </span>	time.Sleep(time.Second)
+<span id="L131" class="ln">   131  </span>
+<span id="L132" class="ln">   132  </span>	exitCode := m.Run()
+<span id="L133" class="ln">   133  </span>	_ = os.Remove(CAFile)
+<span id="L134" class="ln">   134  </span>
+<span id="L135" class="ln">   135  </span>	os.Exit(exitCode)
+<span id="L136" class="ln">   136  </span>}
+<span id="L137" class="ln">   137  </span>
+<span id="L138" class="ln">   138  </span><span class="comment">// Tests begin from here ---------------------------------------------------------</span>
+<span id="L139" class="ln">   139  </span>
+<span id="L140" class="ln">   140  </span>func TestCACertParamValidation(t *testing.T) {
+<span id="L141" class="ln">   141  </span>	a := assert.New(t)
+<span id="L142" class="ln">   142  </span>	_, err := sinks.NewRPCWriter(ctx, TLSConnStr)
+<span id="L143" class="ln">   143  </span>	a.NoError(err)
 <span id="L144" class="ln">   144  </span>
-<span id="L145" class="ln">   145  </span>func TestRPCTLSWriter(t *testing.T) {
-<span id="L146" class="ln">   146  </span>	a := assert.New(t)
+<span id="L145" class="ln">   145  </span>	_, _ = os.Create(&#34;badca.crt&#34;)
+<span id="L146" class="ln">   146  </span>	defer func ()  {  _ = os.Remove(&#34;badca.crt&#34;) }()
 <span id="L147" class="ln">   147  </span>
-<span id="L148" class="ln">   148  </span>	rw, err := sinks.NewRPCWriter(ctx, TLSConnStr)
-<span id="L149" class="ln">   149  </span>	a.NoError(err)
-<span id="L150" class="ln">   150  </span>
-<span id="L151" class="ln">   151  </span>	<span class="comment">// no error for valid messages</span>
-<span id="L152" class="ln">   152  </span>	msgs := metrics.MeasurementEnvelope{
-<span id="L153" class="ln">   153  </span>		DBName: &#34;Db&#34;,
-<span id="L154" class="ln">   154  </span>		Data:   metrics.Measurements{{&#34;test&#34;: 1}},
-<span id="L155" class="ln">   155  </span>	}
-<span id="L156" class="ln">   156  </span>	err = rw.Write(msgs)
-<span id="L157" class="ln">   157  </span>	a.NoError(err)
+<span id="L148" class="ln">   148  </span>	BadRPCParams := map[string]string{
+<span id="L149" class="ln">   149  </span>		&#34;?sslrootca=file.txt&#34;: &#34;error loading CA file: open file.txt: no such file or directory&#34;, 
+<span id="L150" class="ln">   150  </span>		&#34;?sslrootca=&#34;: &#34;error loading CA file: open : no such file or directory&#34;, 
+<span id="L151" class="ln">   151  </span>		&#34;?sslrootca=badca.crt&#34;: &#34;invalid CA file&#34;,
+<span id="L152" class="ln">   152  </span>	}
+<span id="L153" class="ln">   153  </span>
+<span id="L154" class="ln">   154  </span>	for param, errMsg := range BadRPCParams {
+<span id="L155" class="ln">   155  </span>		_, err = sinks.NewRPCWriter(ctx, fmt.Sprintf(&#34;grpc://%s%s&#34;, TLSServerAddress, param))
+<span id="L156" class="ln">   156  </span>		a.EqualError(err, errMsg)
+<span id="L157" class="ln">   157  </span>	}
 <span id="L158" class="ln">   158  </span>}
 <span id="L159" class="ln">   159  </span>
-<span id="L160" class="ln">   160  </span>func TestRPCWrite(t *testing.T) {
+<span id="L160" class="ln">   160  </span>func TestRPCTLSWriter(t *testing.T) {
 <span id="L161" class="ln">   161  </span>	a := assert.New(t)
 <span id="L162" class="ln">   162  </span>
-<span id="L163" class="ln">   163  </span>	rw, err := sinks.NewRPCWriter(ctx, PlainConnStr)
+<span id="L163" class="ln">   163  </span>	rw, err := sinks.NewRPCWriter(ctx, TLSConnStr)
 <span id="L164" class="ln">   164  </span>	a.NoError(err)
 <span id="L165" class="ln">   165  </span>
 <span id="L166" class="ln">   166  </span>	<span class="comment">// no error for valid messages</span>
@@ -227,176 +227,202 @@
 <span id="L170" class="ln">   170  </span>	}
 <span id="L171" class="ln">   171  </span>	err = rw.Write(msgs)
 <span id="L172" class="ln">   172  </span>	a.NoError(err)
-<span id="L173" class="ln">   173  </span>
-<span id="L174" class="ln">   174  </span>	<span class="comment">// error for invalid messages</span>
-<span id="L175" class="ln">   175  </span>	msgs.DBName = &#34;invalid&#34;
-<span id="L176" class="ln">   176  </span>	err = rw.Write(msgs)
-<span id="L177" class="ln">   177  </span>	a.ErrorIs(err, status.Error(codes.Unknown, &#34;invalid message&#34;))
-<span id="L178" class="ln">   178  </span>
-<span id="L179" class="ln">   179  </span>	<span class="comment">// error for empty messages</span>
-<span id="L180" class="ln">   180  </span>	err = rw.Write(metrics.MeasurementEnvelope{})
-<span id="L181" class="ln">   181  </span>	a.ErrorIs(err, status.Error(codes.Unknown, &#34;empty message&#34;))
-<span id="L182" class="ln">   182  </span>
-<span id="L183" class="ln">   183  </span>	<span class="comment">// error for cancelled context</span>
-<span id="L184" class="ln">   184  </span>	ctx, cancel := context.WithCancel(ctx)
-<span id="L185" class="ln">   185  </span>	rw, err = sinks.NewRPCWriter(ctx, PlainConnStr)
-<span id="L186" class="ln">   186  </span>	a.NoError(err)
-<span id="L187" class="ln">   187  </span>	cancel()
-<span id="L188" class="ln">   188  </span>	err = rw.Write(msgs)
-<span id="L189" class="ln">   189  </span>	a.Error(err)
-<span id="L190" class="ln">   190  </span>}
-<span id="L191" class="ln">   191  </span>
-<span id="L192" class="ln">   192  </span>func TestRPCSyncMetric(t *testing.T) {
-<span id="L193" class="ln">   193  </span>	a := assert.New(t)
-<span id="L194" class="ln">   194  </span>
-<span id="L195" class="ln">   195  </span>	rw, err := sinks.NewRPCWriter(ctx, PlainConnStr)
-<span id="L196" class="ln">   196  </span>	a.NoError(err)
+<span id="L173" class="ln">   173  </span>}
+<span id="L174" class="ln">   174  </span>
+<span id="L175" class="ln">   175  </span>func TestRPCWrite(t *testing.T) {
+<span id="L176" class="ln">   176  </span>	a := assert.New(t)
+<span id="L177" class="ln">   177  </span>
+<span id="L178" class="ln">   178  </span>	rw, err := sinks.NewRPCWriter(ctx, PlainConnStr)
+<span id="L179" class="ln">   179  </span>	a.NoError(err)
+<span id="L180" class="ln">   180  </span>
+<span id="L181" class="ln">   181  </span>	<span class="comment">// no error for valid messages</span>
+<span id="L182" class="ln">   182  </span>	msgs := metrics.MeasurementEnvelope{
+<span id="L183" class="ln">   183  </span>		DBName: &#34;Db&#34;,
+<span id="L184" class="ln">   184  </span>		Data:   metrics.Measurements{{&#34;test&#34;: 1}},
+<span id="L185" class="ln">   185  </span>	}
+<span id="L186" class="ln">   186  </span>	err = rw.Write(msgs)
+<span id="L187" class="ln">   187  </span>	a.NoError(err)
+<span id="L188" class="ln">   188  </span>
+<span id="L189" class="ln">   189  </span>	<span class="comment">// error for invalid messages</span>
+<span id="L190" class="ln">   190  </span>	msgs.DBName = &#34;invalid&#34;
+<span id="L191" class="ln">   191  </span>	err = rw.Write(msgs)
+<span id="L192" class="ln">   192  </span>	a.ErrorIs(err, status.Error(codes.Unknown, &#34;invalid message&#34;))
+<span id="L193" class="ln">   193  </span>
+<span id="L194" class="ln">   194  </span>	<span class="comment">// error for empty messages</span>
+<span id="L195" class="ln">   195  </span>	err = rw.Write(metrics.MeasurementEnvelope{})
+<span id="L196" class="ln">   196  </span>	a.ErrorIs(err, status.Error(codes.Unknown, &#34;empty message&#34;))
 <span id="L197" class="ln">   197  </span>
-<span id="L198" class="ln">   198  </span>	<span class="comment">// no error for valid Sync requests</span>
-<span id="L199" class="ln">   199  </span>	err = rw.SyncMetric(&#34;Test-DB&#34;, &#34;DB-Metric&#34;, sinks.AddOp)
-<span id="L200" class="ln">   200  </span>	a.NoError(err)
-<span id="L201" class="ln">   201  </span>
-<span id="L202" class="ln">   202  </span>	<span class="comment">// error for invalid Sync requests</span>
-<span id="L203" class="ln">   203  </span>	err = rw.SyncMetric(&#34;&#34;, &#34;&#34;, sinks.InvalidOp)
-<span id="L204" class="ln">   204  </span>	a.ErrorIs(err, status.Error(codes.Unknown, &#34;invalid sync request&#34;))
-<span id="L205" class="ln">   205  </span>
-<span id="L206" class="ln">   206  </span>	<span class="comment">// error for cancelled context</span>
-<span id="L207" class="ln">   207  </span>	ctx, cancel := context.WithCancel(ctx)
-<span id="L208" class="ln">   208  </span>	rw, err = sinks.NewRPCWriter(ctx, PlainConnStr)
-<span id="L209" class="ln">   209  </span>	a.NoError(err)
-<span id="L210" class="ln">   210  </span>	cancel()
-<span id="L211" class="ln">   211  </span>	err = rw.SyncMetric(&#34;Test-DB&#34;, &#34;DB-Metric&#34;, sinks.AddOp)
-<span id="L212" class="ln">   212  </span>	a.Error(err)
-<span id="L213" class="ln">   213  </span>}
-<span id="L214" class="ln">   214  </span>
-<span id="L215" class="ln">   215  </span>func TestRPCDefineMetric(t *testing.T) {
-<span id="L216" class="ln">   216  </span>	a := assert.New(t)
-<span id="L217" class="ln">   217  </span>
-<span id="L218" class="ln">   218  </span>	rw, err := sinks.NewRPCWriter(ctx, PlainConnStr)
-<span id="L219" class="ln">   219  </span>	a.NoError(err)
+<span id="L198" class="ln">   198  </span>	<span class="comment">// error for cancelled context</span>
+<span id="L199" class="ln">   199  </span>	ctx, cancel := context.WithCancel(ctx)
+<span id="L200" class="ln">   200  </span>	rw, err = sinks.NewRPCWriter(ctx, PlainConnStr)
+<span id="L201" class="ln">   201  </span>	a.NoError(err)
+<span id="L202" class="ln">   202  </span>	cancel()
+<span id="L203" class="ln">   203  </span>	err = rw.Write(msgs)
+<span id="L204" class="ln">   204  </span>	a.Error(err)
+<span id="L205" class="ln">   205  </span>}
+<span id="L206" class="ln">   206  </span>
+<span id="L207" class="ln">   207  </span>func TestRPCSyncMetric(t *testing.T) {
+<span id="L208" class="ln">   208  </span>	a := assert.New(t)
+<span id="L209" class="ln">   209  </span>
+<span id="L210" class="ln">   210  </span>	rw, err := sinks.NewRPCWriter(ctx, PlainConnStr)
+<span id="L211" class="ln">   211  </span>	a.NoError(err)
+<span id="L212" class="ln">   212  </span>
+<span id="L213" class="ln">   213  </span>	<span class="comment">// no error for valid Sync requests</span>
+<span id="L214" class="ln">   214  </span>	err = rw.SyncMetric(&#34;Test-DB&#34;, &#34;DB-Metric&#34;, sinks.AddOp)
+<span id="L215" class="ln">   215  </span>	a.NoError(err)
+<span id="L216" class="ln">   216  </span>
+<span id="L217" class="ln">   217  </span>	<span class="comment">// error for invalid Sync requests</span>
+<span id="L218" class="ln">   218  </span>	err = rw.SyncMetric(&#34;&#34;, &#34;&#34;, sinks.InvalidOp)
+<span id="L219" class="ln">   219  </span>	a.ErrorIs(err, status.Error(codes.Unknown, &#34;invalid sync request&#34;))
 <span id="L220" class="ln">   220  </span>
-<span id="L221" class="ln">   221  </span>	<span class="comment">// Test that RPCWriter implements MetricsDefiner interface</span>
-<span id="L222" class="ln">   222  </span>	var writer sinks.Writer = rw
-<span id="L223" class="ln">   223  </span>	definer, ok := writer.(sinks.MetricsDefiner)
-<span id="L224" class="ln">   224  </span>	a.True(ok, &#34;RPCWriter should implement MetricsDefiner interface&#34;)
-<span id="L225" class="ln">   225  </span>
-<span id="L226" class="ln">   226  </span>	<span class="comment">// Test with valid metrics</span>
-<span id="L227" class="ln">   227  </span>	testMetrics := &amp;metrics.Metrics{
-<span id="L228" class="ln">   228  </span>		MetricDefs: metrics.MetricDefs{
-<span id="L229" class="ln">   229  </span>			&#34;test_metric&#34;: metrics.Metric{
-<span id="L230" class="ln">   230  </span>				SQLs: metrics.SQLs{
-<span id="L231" class="ln">   231  </span>					11: &#34;SELECT 1 as test_column&#34;,
-<span id="L232" class="ln">   232  </span>					12: &#34;SELECT 2 as test_column&#34;,
-<span id="L233" class="ln">   233  </span>				},
-<span id="L234" class="ln">   234  </span>				Description: &#34;Test metric&#34;,
-<span id="L235" class="ln">   235  </span>				Gauges:      []string{&#34;test_column&#34;},
-<span id="L236" class="ln">   236  </span>			},
-<span id="L237" class="ln">   237  </span>		},
-<span id="L238" class="ln">   238  </span>		PresetDefs: metrics.PresetDefs{
-<span id="L239" class="ln">   239  </span>			&#34;test_preset&#34;: metrics.Preset{
-<span id="L240" class="ln">   240  </span>				Description: &#34;Test preset&#34;,
-<span id="L241" class="ln">   241  </span>				Metrics:     map[string]float64{&#34;test_metric&#34;: 30.0},
-<span id="L242" class="ln">   242  </span>			},
-<span id="L243" class="ln">   243  </span>		},
-<span id="L244" class="ln">   244  </span>	}
-<span id="L245" class="ln">   245  </span>
-<span id="L246" class="ln">   246  </span>	err = definer.DefineMetrics(testMetrics)
-<span id="L247" class="ln">   247  </span>	a.NoError(err)
-<span id="L248" class="ln">   248  </span>
-<span id="L249" class="ln">   249  </span>	<span class="comment">// Test with empty metrics (should still work)</span>
-<span id="L250" class="ln">   250  </span>	emptyMetrics := &amp;metrics.Metrics{
-<span id="L251" class="ln">   251  </span>		MetricDefs: make(metrics.MetricDefs),
-<span id="L252" class="ln">   252  </span>		PresetDefs: make(metrics.PresetDefs),
-<span id="L253" class="ln">   253  </span>	}
-<span id="L254" class="ln">   254  </span>
-<span id="L255" class="ln">   255  </span>	err = definer.DefineMetrics(emptyMetrics)
-<span id="L256" class="ln">   256  </span>	a.NoError(err)
-<span id="L257" class="ln">   257  </span>
-<span id="L258" class="ln">   258  </span>	<span class="comment">// Test with cancelled context</span>
-<span id="L259" class="ln">   259  </span>	ctx, cancel := context.WithCancel(ctx)
-<span id="L260" class="ln">   260  </span>	rw, err = sinks.NewRPCWriter(ctx, PlainConnStr)
-<span id="L261" class="ln">   261  </span>	a.NoError(err)
-<span id="L262" class="ln">   262  </span>	cancel()
+<span id="L221" class="ln">   221  </span>	<span class="comment">// error for cancelled context</span>
+<span id="L222" class="ln">   222  </span>	ctx, cancel := context.WithCancel(ctx)
+<span id="L223" class="ln">   223  </span>	rw, err = sinks.NewRPCWriter(ctx, PlainConnStr)
+<span id="L224" class="ln">   224  </span>	a.NoError(err)
+<span id="L225" class="ln">   225  </span>	cancel()
+<span id="L226" class="ln">   226  </span>	err = rw.SyncMetric(&#34;Test-DB&#34;, &#34;DB-Metric&#34;, sinks.AddOp)
+<span id="L227" class="ln">   227  </span>	a.Error(err)
+<span id="L228" class="ln">   228  </span>}
+<span id="L229" class="ln">   229  </span>
+<span id="L230" class="ln">   230  </span>func TestRPCDefineMetric(t *testing.T) {
+<span id="L231" class="ln">   231  </span>	a := assert.New(t)
+<span id="L232" class="ln">   232  </span>
+<span id="L233" class="ln">   233  </span>	rw, err := sinks.NewRPCWriter(ctx, PlainConnStr)
+<span id="L234" class="ln">   234  </span>	a.NoError(err)
+<span id="L235" class="ln">   235  </span>
+<span id="L236" class="ln">   236  </span>	<span class="comment">// Test that RPCWriter implements MetricsDefiner interface</span>
+<span id="L237" class="ln">   237  </span>	var writer sinks.Writer = rw
+<span id="L238" class="ln">   238  </span>	definer, ok := writer.(sinks.MetricsDefiner)
+<span id="L239" class="ln">   239  </span>	a.True(ok, &#34;RPCWriter should implement MetricsDefiner interface&#34;)
+<span id="L240" class="ln">   240  </span>
+<span id="L241" class="ln">   241  </span>	<span class="comment">// Test with valid metrics</span>
+<span id="L242" class="ln">   242  </span>	testMetrics := &amp;metrics.Metrics{
+<span id="L243" class="ln">   243  </span>		MetricDefs: metrics.MetricDefs{
+<span id="L244" class="ln">   244  </span>			&#34;test_metric&#34;: metrics.Metric{
+<span id="L245" class="ln">   245  </span>				SQLs: metrics.SQLs{
+<span id="L246" class="ln">   246  </span>					11: &#34;SELECT 1 as test_column&#34;,
+<span id="L247" class="ln">   247  </span>					12: &#34;SELECT 2 as test_column&#34;,
+<span id="L248" class="ln">   248  </span>				},
+<span id="L249" class="ln">   249  </span>				Description: &#34;Test metric&#34;,
+<span id="L250" class="ln">   250  </span>				Gauges:      []string{&#34;test_column&#34;},
+<span id="L251" class="ln">   251  </span>			},
+<span id="L252" class="ln">   252  </span>		},
+<span id="L253" class="ln">   253  </span>		PresetDefs: metrics.PresetDefs{
+<span id="L254" class="ln">   254  </span>			&#34;test_preset&#34;: metrics.Preset{
+<span id="L255" class="ln">   255  </span>				Description: &#34;Test preset&#34;,
+<span id="L256" class="ln">   256  </span>				Metrics:     map[string]float64{&#34;test_metric&#34;: 30.0},
+<span id="L257" class="ln">   257  </span>			},
+<span id="L258" class="ln">   258  </span>		},
+<span id="L259" class="ln">   259  </span>	}
+<span id="L260" class="ln">   260  </span>
+<span id="L261" class="ln">   261  </span>	err = definer.DefineMetrics(testMetrics)
+<span id="L262" class="ln">   262  </span>	a.NoError(err)
 <span id="L263" class="ln">   263  </span>
-<span id="L264" class="ln">   264  </span>	writer = rw
-<span id="L265" class="ln">   265  </span>	definer = writer.(sinks.MetricsDefiner)
-<span id="L266" class="ln">   266  </span>	err = definer.DefineMetrics(testMetrics)
-<span id="L267" class="ln">   267  </span>	a.Error(err)
-<span id="L268" class="ln">   268  </span>}
+<span id="L264" class="ln">   264  </span>	<span class="comment">// Test with empty metrics (should still work)</span>
+<span id="L265" class="ln">   265  </span>	emptyMetrics := &amp;metrics.Metrics{
+<span id="L266" class="ln">   266  </span>		MetricDefs: make(metrics.MetricDefs),
+<span id="L267" class="ln">   267  </span>		PresetDefs: make(metrics.PresetDefs),
+<span id="L268" class="ln">   268  </span>	}
 <span id="L269" class="ln">   269  </span>
-<span id="L270" class="ln">   270  </span><span class="comment">// End of tests ----------------------------------</span>
-<span id="L271" class="ln">   271  </span>
-<span id="L272" class="ln">   272  </span>var CA = `-----BEGIN CERTIFICATE-----
-<span id="L273" class="ln">   273  </span>MIIDPzCCAiegAwIBAgIUeENQlQFVH5h7HszFJLLWo+KCQwQwDQYJKoZIhvcNAQEL
-<span id="L274" class="ln">   274  </span>BQAwEjEQMA4GA1UEAwwHcGd3YXRjaDAeFw0yNTA2MTEwNTI1MDJaFw0zNTA2MDkw
-<span id="L275" class="ln">   275  </span>NTI1MDJaMBIxEDAOBgNVBAMMB3Bnd2F0Y2gwggEiMA0GCSqGSIb3DQEBAQUAA4IB
-<span id="L276" class="ln">   276  </span>DwAwggEKAoIBAQDtTW+kyvb3Y5OaYlriKp8HkHt95lfOgxQNZQfiREfEyLWU59bx
-<span id="L277" class="ln">   277  </span>0ZIvFmejK38Qc0dlca9d+5tEkxotsbggJflLljfmnzhxsuZpr8SjmDd1m8XSo0IA
-<span id="L278" class="ln">   278  </span>oDlVbKO6SZMlsyq3QrAOYAjG1LTPlATqvGAOs9NfFonjwoPXCjIwSfa+wexe5dRD
-<span id="L279" class="ln">   279  </span>gJ114AKXw3ck5ZQ4Pw+w5ylgNSfVl548WY9DSOA+6HlZ17MYA1qmMOTwKae5fmsc
-<span id="L280" class="ln">   280  </span>xlRPoIV3EJrKas7VlbebDOXOSXDV+9aMW6ox1xanUUDUgabzkzntfmuOttaIX1g1
-<span id="L281" class="ln">   281  </span>nSMuHa7EEQF7lxgdg9OU8i/jygdlGcgBUYjtAgMBAAGjgYwwgYkwDAYDVR0TBAUw
-<span id="L282" class="ln">   282  </span>AwEB/zAdBgNVHQ4EFgQUKGJs7OXINd2WL6X2meH90eINoJQwTQYDVR0jBEYwRIAU
-<span id="L283" class="ln">   283  </span>KGJs7OXINd2WL6X2meH90eINoJShFqQUMBIxEDAOBgNVBAMMB3Bnd2F0Y2iCFHhD
-<span id="L284" class="ln">   284  </span>UJUBVR+Yex7MxSSy1qPigkMEMAsGA1UdDwQEAwIBBjANBgkqhkiG9w0BAQsFAAOC
-<span id="L285" class="ln">   285  </span>AQEABdY/4rsgMu+sCqEdacNzHqAz9X1ew37y1UONngm/7LPqbQrzzg/fBvOOJLcd
-<span id="L286" class="ln">   286  </span>IzMJPtpdwokPYOW29jw/hY4R1RWr8012zc8Z0GsuDR7I/Z2Hww7tzYhf1H5mjy1d
-<span id="L287" class="ln">   287  </span>eQDhHNpsSb5pHLoPft5O0sT/0WqAlKWPb2KmSoAio8jE2BSUTK3ZgE0yJIikONon
-<span id="L288" class="ln">   288  </span>HCWOlNCWx+RsyPoRnQqbpVa+SmGBqpiyHchpZ8sFPe+pgPu+8u921lJ0PRvmfp7L
-<span id="L289" class="ln">   289  </span>4YZIaM8LQAV8FWk2VLXmsqYUJYYLAXCG6Unkx1oIOtq1AyAoXHCl/3hKbCeXIrgA
-<span id="L290" class="ln">   290  </span>Cs5qN+ZUHRdKff5gFpraKtHKkw==
-<span id="L291" class="ln">   291  </span>-----END CERTIFICATE-----`
-<span id="L292" class="ln">   292  </span>
-<span id="L293" class="ln">   293  </span>var Cert = []byte(`-----BEGIN CERTIFICATE-----
-<span id="L294" class="ln">   294  </span>MIIDZTCCAk2gAwIBAgIQeTQ+4M7xwydf7MvrDnDdsTANBgkqhkiG9w0BAQsFADAS
-<span id="L295" class="ln">   295  </span>MRAwDgYDVQQDDAdwZ3dhdGNoMB4XDTI1MDYxMTA1MjUxOFoXDTI3MDkxNDA1MjUx
-<span id="L296" class="ln">   296  </span>OFowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
-<span id="L297" class="ln">   297  </span>MIIBCgKCAQEA69Ja9K4ZHoIdBK+34YE1+0a/sB7YKZJb3+gYFahvszS37Oa6h/0+
-<span id="L298" class="ln">   298  </span>d9TCY58bMpPQSQQdvhG/s1H6Yc4BWTfH/ssRmDhKciMmdfMj/lr8TytglIUPPSzb
-<span id="L299" class="ln">   299  </span>PKy2t9idpk30PwiV1UlijjlFZxoxcO3Aia8mmrDJzkoHsQL96PhDT25YRinnflg8
-<span id="L300" class="ln">   300  </span>vVthasVqGIHNJIXORyz5lgkBW3NeeZPEUSxbvmo63AB1lFJZMz4xlpdN/LVsEOwg
-<span id="L301" class="ln">   301  </span>FrrYzb4mpGkAcTenkOfU4W7m7bxpsusW2JDm2O8bsx+v3cazOqJpCLMHP3Vqnzcl
-<span id="L302" class="ln">   302  </span>loYmeQauBep6H0wspid0YzMVza75pDx7rQIDAQABo4G0MIGxMAkGA1UdEwQCMAAw
-<span id="L303" class="ln">   303  </span>HQYDVR0OBBYEFFcDjPaZMelQIueauIRfo4L4wMehME0GA1UdIwRGMESAFChibOzl
-<span id="L304" class="ln">   304  </span>yDXdli+l9pnh/dHiDaCUoRakFDASMRAwDgYDVQQDDAdwZ3dhdGNoghR4Q1CVAVUf
-<span id="L305" class="ln">   305  </span>mHsezMUkstaj4oJDBDATBgNVHSUEDDAKBggrBgEFBQcDATALBgNVHQ8EBAMCBaAw
-<span id="L306" class="ln">   306  </span>FAYDVR0RBA0wC4IJbG9jYWxob3N0MA0GCSqGSIb3DQEBCwUAA4IBAQCM6tYNxoP2
-<span id="L307" class="ln">   307  </span>Gbp3aAPjoA3+U1gWHPHXOOgyhaQw4jJ7xK1MUlrFgSG6cJgO7IRSCIZp7GDZmIjo
-<span id="L308" class="ln">   308  </span>+PqWRgMNK2pFCUCqjrAV6NwMjApLzDdSza9xKb3nWXMKnV6j3tNUFUCS68CHAM7Q
-<span id="L309" class="ln">   309  </span>E1iuepjIy2VReFfjJoPuhp9OQBWobTo3H9F74Sj+Guu0lDcHWbwn5Y92pnKk0vOh
-<span id="L310" class="ln">   310  </span>v1AJ6vwdMpd6DAPlwmY3OcZI2FGYyoPP2CnzHIGP5RoVFp1zkJzoFvnOHnsRMByz
-<span id="L311" class="ln">   311  </span>HpGKqYFQVJSAOMCtL2OMiP8MxtiCsdz6j/e3/VOUQuYoM6fXFhZO64xekZdlh/ZR
-<span id="L312" class="ln">   312  </span>glsaMXQPWvHX
-<span id="L313" class="ln">   313  </span>-----END CERTIFICATE-----`)
-<span id="L314" class="ln">   314  </span>
-<span id="L315" class="ln">   315  </span>var PrivateKey = []byte(`-----BEGIN PRIVATE KEY-----
-<span id="L316" class="ln">   316  </span>MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDr0lr0rhkegh0E
-<span id="L317" class="ln">   317  </span>r7fhgTX7Rr+wHtgpklvf6BgVqG+zNLfs5rqH/T531MJjnxsyk9BJBB2+Eb+zUfph
-<span id="L318" class="ln">   318  </span>zgFZN8f+yxGYOEpyIyZ18yP+WvxPK2CUhQ89LNs8rLa32J2mTfQ/CJXVSWKOOUVn
-<span id="L319" class="ln">   319  </span>GjFw7cCJryaasMnOSgexAv3o+ENPblhGKed+WDy9W2FqxWoYgc0khc5HLPmWCQFb
-<span id="L320" class="ln">   320  </span>c155k8RRLFu+ajrcAHWUUlkzPjGWl038tWwQ7CAWutjNviakaQBxN6eQ59Thbubt
-<span id="L321" class="ln">   321  </span>vGmy6xbYkObY7xuzH6/dxrM6omkIswc/dWqfNyWWhiZ5Bq4F6nofTCymJ3RjMxXN
-<span id="L322" class="ln">   322  </span>rvmkPHutAgMBAAECggEAAc8djQJ35VzEqbhKXhO+bQTMLCb0bA84HrXaV3IxFywY
-<span id="L323" class="ln">   323  </span>nBviAvCNpeAvNJHwJLlvD9xU+RQMRy0iEVWB+6P6qAj5Q9Rst8buwNliZY1foaDY
-<span id="L324" class="ln">   324  </span>zxLdPNAnB2ZgyXTDMtcmwEQJ2DbFp4cnceTIy8+7GiNKlcW06pz1RaWa+opLA+U2
-<span id="L325" class="ln">   325  </span>STIxvTEAvqsyE/0KHbeEltwZxeZ83BsX8vhpyrCVvniFJnIMvyYG7iTzLWuTK98Z
-<span id="L326" class="ln">   326  </span>R3Baqim8CdWbh2W0OOfphAVlTjG6c0r6FqJIqsds9wf2FfuhgUcNQUXke+uuWbPQ
-<span id="L327" class="ln">   327  </span>36RsytymUgqye3DkxrC4dEi27S3cjRh5wK53gqET+QKBgQD8zM5wiindvDRSx+66
-<span id="L328" class="ln">   328  </span>ppbl6RJQcL7uv1os9TeNvfqwnhC75y2k4+2s8kiG2ik7aJiRg4dkj3rVJ4S6wQ67
-<span id="L329" class="ln">   329  </span>sjRVo5z68J1twP6PqvpJyx/G5Fmy8HPJUmy9FM1AdnYCWGX3bh3qNTkxEVn78yFZ
-<span id="L330" class="ln">   330  </span>zfn9CczDAmGErAXPRRDNQQy8ZQKBgQDuzofs5EXTpqw25XveCJKHT3fAis7pkNGu
-<span id="L331" class="ln">   331  </span>jwopiR9peKuJ9nNarHH2wWpHRn6zgHmhmAu7oEzo4OEmk4Elo5ffqqRPZZaU8aEo
-<span id="L332" class="ln">   332  </span>Ow7cRvedoP/EjJaR8m2uQnh9bWXuEVibfKmkrPswYYUCWmwoALFmzd6Gl0dIdyGk
-<span id="L333" class="ln">   333  </span>JXeA/jFZqQKBgQDhFbn5mgsM0rYDvuBgcFOLAaq81KYsDVRNE0kTe0PqXdKoe324
-<span id="L334" class="ln">   334  </span>gvjsNA0/hJ+Rtd+iMGosr1O+1iDn510m4dSXK8Zp6DNDtcLySFnxulngzRDQsidl
-<span id="L335" class="ln">   335  </span>6W3ILO1TqCYKkIq5c+JO1nTFq51jJ2dafntHQaJ/P290oXXKxsPe/TxJwQKBgD6g
-<span id="L336" class="ln">   336  </span>dS8f8lv+Mt22sxRYhSztH0ekX30LWKIBqzWXW2CKn9nvgvL9lGmU8a09hI7Im51Q
-<span id="L337" class="ln">   337  </span>RYtwD5tnFkTKnCzlyTeEBdE4oBPxhkUJr+z+w4NYLJs8D2S5AiCYGAc0wG19qRIl
-<span id="L338" class="ln">   338  </span>0Et6femDOaGTWxfmjp+aT8hWNgCAFZd5p+xxPTn5AoGBAIeUbCRTe0KcVaKw/Lcj
-<span id="L339" class="ln">   339  </span>KHjTih9x9d3f2EbnYbziBZz6fZfWdDIBfA6CbIHil21hNvjDm9Yci5b6FgtUzScb
-<span id="L340" class="ln">   340  </span>j3vPa99sMGc2xie07Cd7LTvZeWIVXeW1Dxzex89CqoJzmONrco1ZKQ+xXbPoZCBj
-<span id="L341" class="ln">   341  </span>VwAI/SWm7NlxgF6Sr5CIo2KR
-<span id="L342" class="ln">   342  </span>-----END PRIVATE KEY-----`)
+<span id="L270" class="ln">   270  </span>	err = definer.DefineMetrics(emptyMetrics)
+<span id="L271" class="ln">   271  </span>	a.NoError(err)
+<span id="L272" class="ln">   272  </span>
+<span id="L273" class="ln">   273  </span>	<span class="comment">// Test with cancelled context</span>
+<span id="L274" class="ln">   274  </span>	ctx, cancel := context.WithCancel(ctx)
+<span id="L275" class="ln">   275  </span>	rw, err = sinks.NewRPCWriter(ctx, PlainConnStr)
+<span id="L276" class="ln">   276  </span>	a.NoError(err)
+<span id="L277" class="ln">   277  </span>	cancel()
+<span id="L278" class="ln">   278  </span>
+<span id="L279" class="ln">   279  </span>	writer = rw
+<span id="L280" class="ln">   280  </span>	definer = writer.(sinks.MetricsDefiner)
+<span id="L281" class="ln">   281  </span>	err = definer.DefineMetrics(testMetrics)
+<span id="L282" class="ln">   282  </span>	a.Error(err)
+<span id="L283" class="ln">   283  </span>}
+<span id="L284" class="ln">   284  </span>
+<span id="L285" class="ln">   285  </span>func TestAuthCredsSending(t *testing.T) {
+<span id="L286" class="ln">   286  </span>	a := assert.New(t)
+<span id="L287" class="ln">   287  </span>
+<span id="L288" class="ln">   288  </span>	unauthenticatedConnStr := &#34;grpc://notpgwatch:notpgwatch@localhost:6060&#34;
+<span id="L289" class="ln">   289  </span>	rw, err := sinks.NewRPCWriter(ctx, unauthenticatedConnStr)
+<span id="L290" class="ln">   290  </span>	a.NoError(err)
+<span id="L291" class="ln">   291  </span>
+<span id="L292" class="ln">   292  </span>	err = rw.Write(metrics.MeasurementEnvelope{})
+<span id="L293" class="ln">   293  </span>	a.Equal(err, status.Error(codes.Unauthenticated, &#34;unauthenticated&#34;))
+<span id="L294" class="ln">   294  </span>}
+<span id="L295" class="ln">   295  </span>
+<span id="L296" class="ln">   296  </span><span class="comment">// End of tests ----------------------------------</span>
+<span id="L297" class="ln">   297  </span>
+<span id="L298" class="ln">   298  </span>var CA = `-----BEGIN CERTIFICATE-----
+<span id="L299" class="ln">   299  </span>MIIDPzCCAiegAwIBAgIUeENQlQFVH5h7HszFJLLWo+KCQwQwDQYJKoZIhvcNAQEL
+<span id="L300" class="ln">   300  </span>BQAwEjEQMA4GA1UEAwwHcGd3YXRjaDAeFw0yNTA2MTEwNTI1MDJaFw0zNTA2MDkw
+<span id="L301" class="ln">   301  </span>NTI1MDJaMBIxEDAOBgNVBAMMB3Bnd2F0Y2gwggEiMA0GCSqGSIb3DQEBAQUAA4IB
+<span id="L302" class="ln">   302  </span>DwAwggEKAoIBAQDtTW+kyvb3Y5OaYlriKp8HkHt95lfOgxQNZQfiREfEyLWU59bx
+<span id="L303" class="ln">   303  </span>0ZIvFmejK38Qc0dlca9d+5tEkxotsbggJflLljfmnzhxsuZpr8SjmDd1m8XSo0IA
+<span id="L304" class="ln">   304  </span>oDlVbKO6SZMlsyq3QrAOYAjG1LTPlATqvGAOs9NfFonjwoPXCjIwSfa+wexe5dRD
+<span id="L305" class="ln">   305  </span>gJ114AKXw3ck5ZQ4Pw+w5ylgNSfVl548WY9DSOA+6HlZ17MYA1qmMOTwKae5fmsc
+<span id="L306" class="ln">   306  </span>xlRPoIV3EJrKas7VlbebDOXOSXDV+9aMW6ox1xanUUDUgabzkzntfmuOttaIX1g1
+<span id="L307" class="ln">   307  </span>nSMuHa7EEQF7lxgdg9OU8i/jygdlGcgBUYjtAgMBAAGjgYwwgYkwDAYDVR0TBAUw
+<span id="L308" class="ln">   308  </span>AwEB/zAdBgNVHQ4EFgQUKGJs7OXINd2WL6X2meH90eINoJQwTQYDVR0jBEYwRIAU
+<span id="L309" class="ln">   309  </span>KGJs7OXINd2WL6X2meH90eINoJShFqQUMBIxEDAOBgNVBAMMB3Bnd2F0Y2iCFHhD
+<span id="L310" class="ln">   310  </span>UJUBVR+Yex7MxSSy1qPigkMEMAsGA1UdDwQEAwIBBjANBgkqhkiG9w0BAQsFAAOC
+<span id="L311" class="ln">   311  </span>AQEABdY/4rsgMu+sCqEdacNzHqAz9X1ew37y1UONngm/7LPqbQrzzg/fBvOOJLcd
+<span id="L312" class="ln">   312  </span>IzMJPtpdwokPYOW29jw/hY4R1RWr8012zc8Z0GsuDR7I/Z2Hww7tzYhf1H5mjy1d
+<span id="L313" class="ln">   313  </span>eQDhHNpsSb5pHLoPft5O0sT/0WqAlKWPb2KmSoAio8jE2BSUTK3ZgE0yJIikONon
+<span id="L314" class="ln">   314  </span>HCWOlNCWx+RsyPoRnQqbpVa+SmGBqpiyHchpZ8sFPe+pgPu+8u921lJ0PRvmfp7L
+<span id="L315" class="ln">   315  </span>4YZIaM8LQAV8FWk2VLXmsqYUJYYLAXCG6Unkx1oIOtq1AyAoXHCl/3hKbCeXIrgA
+<span id="L316" class="ln">   316  </span>Cs5qN+ZUHRdKff5gFpraKtHKkw==
+<span id="L317" class="ln">   317  </span>-----END CERTIFICATE-----`
+<span id="L318" class="ln">   318  </span>
+<span id="L319" class="ln">   319  </span>var Cert = []byte(`-----BEGIN CERTIFICATE-----
+<span id="L320" class="ln">   320  </span>MIIDZTCCAk2gAwIBAgIQeTQ+4M7xwydf7MvrDnDdsTANBgkqhkiG9w0BAQsFADAS
+<span id="L321" class="ln">   321  </span>MRAwDgYDVQQDDAdwZ3dhdGNoMB4XDTI1MDYxMTA1MjUxOFoXDTI3MDkxNDA1MjUx
+<span id="L322" class="ln">   322  </span>OFowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+<span id="L323" class="ln">   323  </span>MIIBCgKCAQEA69Ja9K4ZHoIdBK+34YE1+0a/sB7YKZJb3+gYFahvszS37Oa6h/0+
+<span id="L324" class="ln">   324  </span>d9TCY58bMpPQSQQdvhG/s1H6Yc4BWTfH/ssRmDhKciMmdfMj/lr8TytglIUPPSzb
+<span id="L325" class="ln">   325  </span>PKy2t9idpk30PwiV1UlijjlFZxoxcO3Aia8mmrDJzkoHsQL96PhDT25YRinnflg8
+<span id="L326" class="ln">   326  </span>vVthasVqGIHNJIXORyz5lgkBW3NeeZPEUSxbvmo63AB1lFJZMz4xlpdN/LVsEOwg
+<span id="L327" class="ln">   327  </span>FrrYzb4mpGkAcTenkOfU4W7m7bxpsusW2JDm2O8bsx+v3cazOqJpCLMHP3Vqnzcl
+<span id="L328" class="ln">   328  </span>loYmeQauBep6H0wspid0YzMVza75pDx7rQIDAQABo4G0MIGxMAkGA1UdEwQCMAAw
+<span id="L329" class="ln">   329  </span>HQYDVR0OBBYEFFcDjPaZMelQIueauIRfo4L4wMehME0GA1UdIwRGMESAFChibOzl
+<span id="L330" class="ln">   330  </span>yDXdli+l9pnh/dHiDaCUoRakFDASMRAwDgYDVQQDDAdwZ3dhdGNoghR4Q1CVAVUf
+<span id="L331" class="ln">   331  </span>mHsezMUkstaj4oJDBDATBgNVHSUEDDAKBggrBgEFBQcDATALBgNVHQ8EBAMCBaAw
+<span id="L332" class="ln">   332  </span>FAYDVR0RBA0wC4IJbG9jYWxob3N0MA0GCSqGSIb3DQEBCwUAA4IBAQCM6tYNxoP2
+<span id="L333" class="ln">   333  </span>Gbp3aAPjoA3+U1gWHPHXOOgyhaQw4jJ7xK1MUlrFgSG6cJgO7IRSCIZp7GDZmIjo
+<span id="L334" class="ln">   334  </span>+PqWRgMNK2pFCUCqjrAV6NwMjApLzDdSza9xKb3nWXMKnV6j3tNUFUCS68CHAM7Q
+<span id="L335" class="ln">   335  </span>E1iuepjIy2VReFfjJoPuhp9OQBWobTo3H9F74Sj+Guu0lDcHWbwn5Y92pnKk0vOh
+<span id="L336" class="ln">   336  </span>v1AJ6vwdMpd6DAPlwmY3OcZI2FGYyoPP2CnzHIGP5RoVFp1zkJzoFvnOHnsRMByz
+<span id="L337" class="ln">   337  </span>HpGKqYFQVJSAOMCtL2OMiP8MxtiCsdz6j/e3/VOUQuYoM6fXFhZO64xekZdlh/ZR
+<span id="L338" class="ln">   338  </span>glsaMXQPWvHX
+<span id="L339" class="ln">   339  </span>-----END CERTIFICATE-----`)
+<span id="L340" class="ln">   340  </span>
+<span id="L341" class="ln">   341  </span>var PrivateKey = []byte(`-----BEGIN PRIVATE KEY-----
+<span id="L342" class="ln">   342  </span>MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDr0lr0rhkegh0E
+<span id="L343" class="ln">   343  </span>r7fhgTX7Rr+wHtgpklvf6BgVqG+zNLfs5rqH/T531MJjnxsyk9BJBB2+Eb+zUfph
+<span id="L344" class="ln">   344  </span>zgFZN8f+yxGYOEpyIyZ18yP+WvxPK2CUhQ89LNs8rLa32J2mTfQ/CJXVSWKOOUVn
+<span id="L345" class="ln">   345  </span>GjFw7cCJryaasMnOSgexAv3o+ENPblhGKed+WDy9W2FqxWoYgc0khc5HLPmWCQFb
+<span id="L346" class="ln">   346  </span>c155k8RRLFu+ajrcAHWUUlkzPjGWl038tWwQ7CAWutjNviakaQBxN6eQ59Thbubt
+<span id="L347" class="ln">   347  </span>vGmy6xbYkObY7xuzH6/dxrM6omkIswc/dWqfNyWWhiZ5Bq4F6nofTCymJ3RjMxXN
+<span id="L348" class="ln">   348  </span>rvmkPHutAgMBAAECggEAAc8djQJ35VzEqbhKXhO+bQTMLCb0bA84HrXaV3IxFywY
+<span id="L349" class="ln">   349  </span>nBviAvCNpeAvNJHwJLlvD9xU+RQMRy0iEVWB+6P6qAj5Q9Rst8buwNliZY1foaDY
+<span id="L350" class="ln">   350  </span>zxLdPNAnB2ZgyXTDMtcmwEQJ2DbFp4cnceTIy8+7GiNKlcW06pz1RaWa+opLA+U2
+<span id="L351" class="ln">   351  </span>STIxvTEAvqsyE/0KHbeEltwZxeZ83BsX8vhpyrCVvniFJnIMvyYG7iTzLWuTK98Z
+<span id="L352" class="ln">   352  </span>R3Baqim8CdWbh2W0OOfphAVlTjG6c0r6FqJIqsds9wf2FfuhgUcNQUXke+uuWbPQ
+<span id="L353" class="ln">   353  </span>36RsytymUgqye3DkxrC4dEi27S3cjRh5wK53gqET+QKBgQD8zM5wiindvDRSx+66
+<span id="L354" class="ln">   354  </span>ppbl6RJQcL7uv1os9TeNvfqwnhC75y2k4+2s8kiG2ik7aJiRg4dkj3rVJ4S6wQ67
+<span id="L355" class="ln">   355  </span>sjRVo5z68J1twP6PqvpJyx/G5Fmy8HPJUmy9FM1AdnYCWGX3bh3qNTkxEVn78yFZ
+<span id="L356" class="ln">   356  </span>zfn9CczDAmGErAXPRRDNQQy8ZQKBgQDuzofs5EXTpqw25XveCJKHT3fAis7pkNGu
+<span id="L357" class="ln">   357  </span>jwopiR9peKuJ9nNarHH2wWpHRn6zgHmhmAu7oEzo4OEmk4Elo5ffqqRPZZaU8aEo
+<span id="L358" class="ln">   358  </span>Ow7cRvedoP/EjJaR8m2uQnh9bWXuEVibfKmkrPswYYUCWmwoALFmzd6Gl0dIdyGk
+<span id="L359" class="ln">   359  </span>JXeA/jFZqQKBgQDhFbn5mgsM0rYDvuBgcFOLAaq81KYsDVRNE0kTe0PqXdKoe324
+<span id="L360" class="ln">   360  </span>gvjsNA0/hJ+Rtd+iMGosr1O+1iDn510m4dSXK8Zp6DNDtcLySFnxulngzRDQsidl
+<span id="L361" class="ln">   361  </span>6W3ILO1TqCYKkIq5c+JO1nTFq51jJ2dafntHQaJ/P290oXXKxsPe/TxJwQKBgD6g
+<span id="L362" class="ln">   362  </span>dS8f8lv+Mt22sxRYhSztH0ekX30LWKIBqzWXW2CKn9nvgvL9lGmU8a09hI7Im51Q
+<span id="L363" class="ln">   363  </span>RYtwD5tnFkTKnCzlyTeEBdE4oBPxhkUJr+z+w4NYLJs8D2S5AiCYGAc0wG19qRIl
+<span id="L364" class="ln">   364  </span>0Et6femDOaGTWxfmjp+aT8hWNgCAFZd5p+xxPTn5AoGBAIeUbCRTe0KcVaKw/Lcj
+<span id="L365" class="ln">   365  </span>KHjTih9x9d3f2EbnYbziBZz6fZfWdDIBfA6CbIHil21hNvjDm9Yci5b6FgtUzScb
+<span id="L366" class="ln">   366  </span>j3vPa99sMGc2xie07Cd7LTvZeWIVXeW1Dxzex89CqoJzmONrco1ZKQ+xXbPoZCBj
+<span id="L367" class="ln">   367  </span>VwAI/SWm7NlxgF6Sr5CIo2KR
+<span id="L368" class="ln">   368  </span>-----END PRIVATE KEY-----`)
 </pre><p></p>
 
 <div id="footer">
