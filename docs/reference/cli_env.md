@@ -89,7 +89,17 @@ from resolved databases.
     Examples: `postgresql://pgwatch@localhost:5432/metrics`,  
     `prometheus://localhost:9090`,  
     `jsonfile:///tmp/metrics.json`,  
-    `rpc://localhost:5000/`
+    `grpc://localhost:5000/`
+
+    gRPC sink supports:
+
+    - **Authentication**: via username/password provided in the URI using the standard format, e.g.:
+    `grpc://pgwatch:pgwatch@localhost:5000/`
+
+    - **TLS encryption**: by specifying a custom Certificate Authority (CA) file via `sslrootca` URI parameter, e.g.:
+    `grpc://localhost:5000/?sslrootca=/home/user/ca.crt`
+
+
 
 - `--batching-delay=`
 
