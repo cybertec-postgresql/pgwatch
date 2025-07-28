@@ -4265,11 +4265,11 @@ metrics:
             0 = No Replication - physical replication is not configured or there are no available standby servers.
         sqls:
             11: |-
-                SELECT /* pgwatch_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-                  CASE pg_is_in_recovery() WHEN 't' then 2 
-                ELSE (select case (select count(*) from pg_stat_replication where application_name != 'pg_basebackup') when '0' then 0 else 1 end)
-                END AS in_recovery_int;
+                  case pg_is_in_recovery() when 't' then 2 
+                else (select case (select count(*) from pg_stat_replication where application_name != 'pg_basebackup') when '0' then 0 else 1 end)
+                end as in_recovery_int;
         gauges:
             - '*'
         is_instance_level: true
