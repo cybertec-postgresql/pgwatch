@@ -4245,13 +4245,13 @@ metrics:
             It provides insights into the age of the frozen transaction ID and its impact on database performance.
         sqls:
             11: |-
-                SELECT /* pgwatch_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   age(datfrozenxid) as datfrozenxid_age,
                   mxid_age(datminmxid) as datminmxid_age
-                FROM 
+                from 
                   pg_database 
-                WHERE 
+                where 
                   datname = current_database();
         gauges:
             - '*'
