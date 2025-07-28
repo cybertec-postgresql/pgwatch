@@ -4267,7 +4267,7 @@ metrics:
             11: |-
                 select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-                  case pg_is_in_recovery() when 't' then 2 
+                  case pg_is_in_recovery() WHEN 't' then 2 
                 else (select case (select count(*) from pg_stat_replication where application_name != 'pg_basebackup') when '0' then 0 else 1 end)
                 end as in_recovery_int;
         gauges:
@@ -4277,12 +4277,12 @@ metrics:
     archiver_pending_count:
         sqls:
             11: |-
-                SELECT /* pgwatch_generated */
+                select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   count(*) as archiver_pending_count
-                FROM 
-                  (SELECT pg_ls_dir('pg_wal/archive_status')) a 
-                WHERE
+                from 
+                  (select pg_ls_dir('pg_wal/archive_status')) a 
+                where
                   pg_ls_dir ~ '[0-9A-F]{24}.ready';
 
 presets:
