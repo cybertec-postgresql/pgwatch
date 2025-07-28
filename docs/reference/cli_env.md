@@ -89,9 +89,7 @@ from resolved databases.
     Examples: `postgresql://pgwatch@localhost:5432/metrics`,  
     `prometheus://localhost:9090`,  
     `jsonfile:///tmp/metrics.json`,  
-    `grpc://user:pwd@localhost:5000/?sslrootca=/home/user/ca.crt`
-
-
+    `grpc://[user:pwd]@localhost:5000/[?sslrootca=/home/user/ca.crt]`
 
 - `--batching-delay=`
 

@@ -73,6 +73,7 @@ nav:
     - Advanced Features: reference/advanced_features.md
     - Metric Definitions: reference/metric_definitions.md
     - Docker Variables: reference/env_variables.md
+    - Sinks Options: reference/sinks_options.md
   - Gallery: 
     - Dashboards: gallery/dashboards.md
     - Web UI: gallery/webui.md
