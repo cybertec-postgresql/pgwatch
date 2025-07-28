@@ -4277,14 +4277,13 @@ metrics:
     archiver_pending_count:
         sqls:
             11: |-
-                SELECT /* pgwatch2_generated */
+                SELECT /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   count(*) as archiver_pending_count
                 FROM 
                   (SELECT pg_ls_dir('pg_wal/archive_status')) a 
                 WHERE
                   pg_ls_dir ~ '[0-9A-F]{24}.ready';
-
 
 presets:
     aiven:
