@@ -4239,6 +4239,52 @@ metrics:
                     wal_sync_time::int8
                 from
                     pg_stat_wal
+    datfrozenxid:
+        description: >
+            This metric collects information about the database frozen transaction ID.
+            It provides insights into the age of the frozen transaction ID and its impact on database performance.
+        sqls:
+            11: |-
+                select /* pgwatch_generated */
+                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                  age(datfrozenxid) as datfrozenxid_age,
+                  mxid_age(datminmxid) as datminmxid_age
+                from 
+                  pg_database 
+                where 
+                  datname = current_database();
+        gauges:
+            - '*'
+        is_instance_level: true
+
+    postgres_role:
+        description: >
+            This metric collects information about the node role in a PostgreSQL cluster.
+            1 = Primary - accepting writes.
+            2 = Secondary - read-only.
+            0 = No Replication - physical replication is not configured or there are no available standby servers.
+        sqls:
+            11: |-
+                select /* pgwatch_generated */
+                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                  case pg_is_in_recovery() WHEN 't' then 2 
+                else (select case (select count(*) from pg_stat_replication where application_name != 'pg_basebackup') when '0' then 0 else 1 end)
+                end as in_recovery_int;
+        gauges:
+            - '*'
+        is_instance_level: true
+
+    archiver_pending_count:
+        sqls:
+            11: |-
+                select /* pgwatch_generated */
+                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                  count(*) as archiver_pending_count
+                from 
+                  (select pg_ls_dir('pg_wal/archive_status')) a 
+                where
+                  pg_ls_dir ~ '[0-9A-F]{24}.ready';
+
 presets:
     aiven:
         description: aiven database metrics
@@ -4336,17 +4382,20 @@ presets:
         description: all important metrics for a deeper performance understanding
         metrics:
             archiver: 60
+            archiver_pending_count: 120
             backends: 60
             bgwriter: 60
             checkpointer: 60
             change_events: 300
             cpu_load: 60
+            datfrozenxid: 300
             db_size: 300
             db_stats: 60
             index_stats: 900
             instance_up: 60
             locks: 60
             locks_mode: 60
+            postgres_role: 120
             replication: 120
             replication_slots: 120
             sequence_health: 3600
@@ -4365,11 +4414,13 @@ presets:
         description: almost all available metrics for a even deeper performance understanding
         metrics:
             archiver: 60
+            archiver_pending_count: 120
             backends: 60
             bgwriter: 60
             checkpointer: 60
             change_events: 300
             cpu_load: 60
+            datfrozenxid: 300
             db_size: 300
             db_stats: 60
             index_stats: 900
@@ -4378,6 +4429,7 @@ presets:
             locks: 60
             locks_mode: 60
             logical_subscriptions: 120
+            postgres_role: 120
             psutil_cpu: 120
             psutil_disk: 120
             psutil_disk_io_total: 120
@@ -4479,6 +4531,7 @@ presets:
         description: similar to 'exhaustive' with stuff that's not accessible on AWS RDS removed
         metrics:
             archiver: 60
+            archiver_pending_count: 120
             backends: 60
             bgwriter: 60
             checkpointer: 60
@@ -4518,16 +4571,19 @@ presets:
         description: like exhaustive, but no PL/Python helpers
         metrics:
             archiver: 60
+            archiver_pending_count: 120
             backends: 60
             bgwriter: 60
             checkpointer: 60
             change_events: 300
+            datfrozenxid: 300
             db_size: 300
             db_stats: 60
             index_stats: 900
             instance_up: 60
             locks: 60
             locks_mode: 60
+            postgres_role: 120
             replication: 120
             replication_slots: 120
             sequence_health: 3600
@@ -4546,6 +4602,7 @@ presets:
         description: no wrappers + only pg_stat_statements extension expected (developer mode)
         metrics:
             archiver: 60
+            archiver_pending_count: 120
             bgwriter: 60
             checkpointer: 60
             change_events: 300
