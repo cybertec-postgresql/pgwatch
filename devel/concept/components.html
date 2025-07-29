@@ -702,6 +702,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#grpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      gRPC
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#json-files" class="md-nav__link">
     <span class="md-ellipsis">
       JSON files
@@ -1346,6 +1355,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/sinks_options.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sinks Options
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1676,6 +1708,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#grpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      gRPC
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#json-files" class="md-nav__link">
     <span class="md-ellipsis">
       JSON files
@@ -1789,6 +1830,12 @@ monitoring targets don't need to know too much about how actual
 monitoring will be carried out later and also Prometheus has a
 nice fault-tolerant alerting system for enterprise needs. By
 default, Prometheus is not set up for long term metrics storage!</p>
+<h3 id="grpc"><a href="https://grpc.io/">gRPC</a></h3>
+<p>gRPC is a high-performance, open source RPC framework.</p>
+<p>It offers a way to push metrics to a custom storage backend 
+by implementing your own gRPC server based on pgwatch 
+<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.proto">protobuf definition</a>. </p>
+<p>This is useful when none of the built-in storage options meet your needs.</p>
 <h3 id="json-files">JSON files</h3>
 <p>Plain text files for testing / special use cases.</p>
 <h2 id="the-web-ui">The Web UI</h2>
