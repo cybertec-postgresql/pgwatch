@@ -8,7 +8,7 @@ Some variables influence multiple components. Command line parameters override e
 
 ## Gatherer daemon
 
-See `pgwatch --help` output for details.
+See [CLI & Environment Variables](./cli_env.md) chapter for details.
 
 ## Grafana
 
