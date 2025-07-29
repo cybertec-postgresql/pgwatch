@@ -29,9 +29,9 @@ defined once and reused across multiple monitoring targets for convenience and c
 
 ## Built-in metrics and presets
 
-There's a good set of pre-defined metrics, metrics configs, and presets 
+There's a good set of pre-defined metrics, metrics configs, and presets
 provided by the pgwatch project to cover all typical needs.  
-However, when monitoring hundreds of hosts, you'd typically want to define **custom metrics and/or presets** 
+However, when monitoring hundreds of hosts, you'd typically want to define **custom metrics and/or presets**
 or at least adjust the metric fetching intervals according to your monitoring goals.
 
 You can find the full list in pgwatch's default [metrics.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/metrics/metrics.yaml) file,
@@ -48,7 +48,7 @@ primary or, conversely, a standby. One can inspect the flags and set them
 on the Web UI Metrics tab or in the YAML file, changing the metric
 definition.
 - Some unique preset metrics have some
-non-standard behavior attached to them, e.g., `change_events`, `server_log_event_counts`, 
+non-standard behavior attached to them, e.g., `change_events`, `server_log_event_counts`,
 `instance_up`, etc.
 
 ## Custom metrics
