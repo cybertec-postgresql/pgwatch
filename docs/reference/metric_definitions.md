@@ -2,7 +2,7 @@
 title: Metric definitions
 ---
 
-## What is metric?
+## What is a metric?
 
 Metrics are named SQL queries that return a timestamp and
 anything else you find helpful. Most metrics have different query
@@ -22,13 +22,20 @@ regularly connecting to the target database and checking the Postgres
 version, recovery state, and if the monitoring user is a superuser or
 not.
 
+## What is a preset?
+
+Presets in pgwatch are named collections of `metric_name: time interval` pairs,
+defined once and reused across multiple monitoring targets for convenience and consistency.
+
 ## Built-in metrics and presets
 
-There's a good set of pre-defined metrics & metric configs provided by
-the pgwatch project to cover all typical needs, but when monitoring
-hundreds of hosts you'd typically want to develop some custom *Preset
-Configs* or at least adjust the metric fetching intervals according to
-your monitoring goals.
+There's a good set of pre-defined metrics, metrics configs, and presets 
+provided by the pgwatch project to cover all typical needs.  
+However, when monitoring hundreds of hosts, you'd typically want to define **custom metrics and/or presets** 
+or at least adjust the metric fetching intervals according to your monitoring goals.
+
+You can find the full list in pgwatch's default [metrics.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/metrics/metrics.yaml) file,
+for a more user-friendly experience, consider browsing them via the [Web UI](../gallery/webui.md)
 
 Some things to note about the built-in metrics:
 
@@ -41,113 +48,8 @@ primary or, conversely, a standby. One can inspect the flags and set them
 on the Web UI Metrics tab or in the YAML file, changing the metric
 definition.
 - Some unique preset metrics have some
-non-standard behavior attached to them, e.g., `change_events`, `recommendations`,
-`server_log_event_counts`, `instance_up`, etc.
-
-### change_events
-
-The "change_events" built-in metric tracks DDL & config
-changes. Internally, it uses some other `*_hashes` metrics that
-are not meant to be used independently. Such metrics
-should not be removed.
-
-### recommendations
-
-When enabled, this metric will find all
-other metrics starting with `reco_*` and execute those
-queries. The metric targets performance,
-security, and other "best practices" violations. Users can add
-new `reco_*` queries freely.
-
-### server_log_event_counts
-
-This metric enables the Postgres server log "tailing" for errors. It can't
-be used for remote setups, though, unless the DB logs are
-somehow mounted or copied over, as real file access is needed.
-For details, see the [Log parsing](../reference/advanced_features.md#log-parsing) chapter.
-
-### instance_up
-
-For standard metrics there will be no data rows stored when the DB
-is not reachable, but for this one, there will be a zero stored for
-the "is_up" column that, under normal operations, would always
-be 1. This metric can be used to calculate some "uptime" SLA
-indicator, for example.
-
-### archiver
-
-This metric retrieves key statistics from the PostgreSQL `pg_stat_archiver` view
-providing insights into the status of WAL file archiving.
-It returns the total number of successfully archived files and failed archiving attempts.
-Additionally, it identifies if the most recent attempt
-resulted in a failure and calculates how many seconds have passed since the last failure.
-The metric only considers data if WAL archiving is
-enabled in the system, helping administrators monitor and diagnose issues related to the archiving process.
-
-### backends
-
-This metric gathers detailed information from the PostgreSQL `pg_stat_activity` view, providing an overview of the database's current session and activity
-state. It tracks the total number of client backends, active sessions, idle sessions, sessions waiting on locks, and background
-workers. The metric also calculates statistics on blocked sessions, most extended waiting times, average and longest session durations, transaction times,
-and query durations. Additionally, it monitors autovacuum worker activity and provides the age of the oldest transaction (measured by `xmin`). This
-metric helps administrators monitor session states, detect bottlenecks, and ensure the system is within its connection limits, providing visibility
-into database performance and contention.
-
-### bgwriter
-
-This metric retrieves statistics from the `pg_stat_bgwriter` view, providing information about the background writer process in PostgreSQL. It reports the number of buffers cleaned (written to disk) by the background writer, how many times buffers were written because the background writer reached the maximum limit (`maxwritten_clean`), and the total number of buffers allocated. Additionally, it calculates the time in seconds since the last reset of these statistics. This metric helps monitor the efficiency and behavior of PostgreSQL's background writer, which plays a crucial role in managing I/O by writing modified buffers to disk, thus helping to ensure smooth database performance.
-
-### blocking_locks
-
-This metric provides information about lock contention in PostgreSQL by identifying sessions waiting for locks and the sessions holding those locks.
-It captures details from the `pg_locks` view and the `pg_stat_activity` view to highlight the interactions between the waiting and blocking sessions.
-The result helps identify which queries are causing delays due to lock contention, the type of locks involved, and the users or sessions responsible for holding or
- waiting on locks. This metric helps diagnose performance bottlenecks related to database lock.
-
-### checkpointer
-
-This metric provides insights into the activity and performance of PostgreSQL's checkpointer process, which ensures that modified data pages are regularly written to disk to maintain consistency. It tracks the number of checkpoints triggered either by the system's timing or specific requests, as well as how many restart points have been completed in standby environments. Additionally, it measures the time spent writing and synchronizing buffers to disk, the total number of buffers written, and how long it has been since the last reset of these statistics. This metric helps administrators understand how efficiently the system handles checkpoints and whether there might be I/O performance issues related to the frequency or duration of checkpoint operations.
-
-### db_stats
-
-This metric provides a comprehensive overview of various performance and health statistics for the current PostgreSQL database. It tracks key metrics such as the number of active database connections (`numbackends`), transaction statistics (committed, rolled back), block I/O (blocks read and hit in the cache), and tuple operations (rows returned, fetched, inserted, updated, deleted). Additionally, it monitors conflicts, temporary file usage, deadlocks, and block read/write times.
-
-The metric also includes system uptime by calculating how long the PostgreSQL `postmaster` process has been running and tracks checksum failures and the time since the last checksum failure. It identifies if the database is in recovery mode, retrieves the system identifier, and tracks session-related statistics such as total session time, active time, idle-in-transaction time, and abandoned, fatal, or killed sessions.
-
-Lastly, it monitors the number of invalid indexes not being rebuilt. This metric helps database administrators gain insights into overall database performance, transaction behavior, session activity, and potential index-related issues, which are critical for efficient database management and troubleshooting.
-
-### wal
-
-This metric tracks key information about the PostgreSQL system's write-ahead logging (WAL) and recovery state. It calculates the current WAL location, showing how far the system has progressed in terms of WAL writing or replaying if in recovery mode. The metric also indicates whether the database is in recovery, monitors the system's uptime since the `postmaster` process started, and provides the system's unique identifier. Additionally, it retrieves the current timeline, which is essential for tracking the state of the WAL log and recovery process. This metric helps administrators monitor database health, especially regarding recovery and WAL operations.
-
-### locks
-
-This metric identifies lock contention in the PostgreSQL database by tracking sessions waiting for locks and the corresponding sessions holding those locks. It examines active queries in the current database and captures detailed information about waiting and blocking sessions. For each waiting session, it records the lock type, user, lock mode, the query being executed, and the table involved. Similarly, for the session holding the lock, it captures the same details. This helps database administrators identify queries causing delays due to lock contention, enabling them to troubleshoot performance issues and optimize query execution.
-
-### kpi
-
-This metric provides a detailed overview of PostgreSQL database performance and activity. It tracks the current WAL (Write-Ahead Log) location, the number of active and blocked backends, and the oldest transaction time. It calculates the total transaction rate (TPS) by summing committed and rolled-back transactions and specific statistics on table and index performance, such as the number of sequential scans on tables larger than 10MB and the number of function calls.
-
-Additionally, the metric tracks block read and write times, the amount of temporary bytes used, deadlocks, and whether the database is in recovery mode. Finally, it calculates the uptime of the PostgreSQL `postmaster` process. This information helps administrators monitor and manage system performance, detect potential bottlenecks, and optimize query and transaction behavior.
-
-### stat_statements
-
-This metric provides detailed statistics about the performance and resource usage of SQL queries executed on the PostgreSQL database. It collects data from the `pg_stat_statements` view, focusing on queries executed more than five times and having significant execution time (greater than 5 milliseconds). It aggregates essential performance metrics for each query, such as:
-
-- **Execution metrics**: Total number of executions (`calls`), total execution time, and total planning time.
-- **I/O metrics**: Blocks read and written (both shared and temporary), blocks dirtied, and associated read/write times.
-- **WAL metrics**: WAL (Write-Ahead Log) bytes generated and the number of WAL full-page images (FPI).
-- **User activity**: The users who executed the queries and a sample of the query text.
-
-The metric ranks queries based on different performance factors, including execution time, number of calls, block reads/writes, and temporary block usage, and it limits the results to the top 100 queries in each category. This helps administrators identify resource-intensive queries, optimize database performance, and improve query efficiency by focusing on those that consume the most I/O or take the longest to execute.
-
-### table_stats
-
-This metric collects and summarizes detailed information about table sizes, table activity, and maintenance operations in PostgreSQL. It tracks both individual tables and partitioned tables, including their root partitions. The metric calculates the size of each table (in bytes) and other key statistics like sequential scans, index scans, tuples inserted, updated, or deleted, and the number of live and dead tuples. It also tracks maintenance operations like a vacuum and analyze runs, as well as whether autovacuum is disabled for specific tables.
-
-For partitioned tables, the metric aggregates the statistics across all partitions and summarizes the partitioned table as a whole, marking it as the root partition. Additionally, it calculates the time since the last vacuum and analyze operations, and captures the transaction freeze age for each table, which helps monitor when a table might need a vacuum to prevent transaction wraparound.
-
-By focusing on tables larger than 10MB and ignoring temporary and system tables, this metric helps database administrators monitor the largest and most active tables in their database, ensuring that maintenance operations like vacuum and analyze are running effectively and identifying tables that may be contributing to performance bottlenecks due to size or activity.
+non-standard behavior attached to them, e.g., `change_events`, `server_log_event_counts`, 
+`instance_up`, etc.
 
 ## Custom metrics
 
@@ -190,7 +92,11 @@ only floats can be stored!
 
 ### For *Config DB* based setups
 
-1. Go to the Web UI "METRICS" page and press the "+ NEW" button.
+!!! Info
+    The default `metrics.yml` file is loaded into the config DB on bootstrap
+    no need to add it manually.
+
+1. Go to the [Web UI](../gallery/webui.md) "METRICS" page and press the "+ NEW" button.
 1. Fill out the template - pick a name for your metric, select the minimum
  supported PostgreSQL version, and insert the query text and any
  extra attributes, if any (see below for options). Hit the "ADD METRIC"
