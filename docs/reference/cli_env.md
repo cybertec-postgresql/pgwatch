@@ -5,8 +5,7 @@ title: Command-Line Options & Environment Variables
 ## General Usage
 
 ```terminal
-  pgwatch [OPTIONS] 
-  pgwatch [config | metric | source] [OPTIONS] 
+  pgwatch [OPTIONS] [config | metric | source]
 ```
 
 When no command is specified, pgwatch starts the monitoring process. 
@@ -218,7 +217,7 @@ It reads the configuration from the specified sources and metrics, then begins c
 ### Manage sources
 
 ```terminal
-    pgwatch source <ping | resolve> [OPTIONS]
+    pgwatch [OPTIONS] source <ping | resolve>
 ```
 
 !!! info
