@@ -91,6 +91,8 @@ from resolved databases.
     `jsonfile:///tmp/metrics.json`,  
     `grpc://[user:pwd]@localhost:5000/[?sslrootca=/home/user/ca.crt]`
 
+    See [Sinks Options & Parameters](sinks_options.md) for more details.
+
 - `--batching-delay=`
 
     Sink-specific batching flush delay; may be ignored by some sinks (default: 950ms).  
