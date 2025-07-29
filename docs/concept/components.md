@@ -77,6 +77,17 @@ monitoring will be carried out later and also Prometheus has a
 nice fault-tolerant alerting system for enterprise needs. By
 default, Prometheus is not set up for long term metrics storage!
 
+
+### [gRPC](https://grpc.io/)
+
+gRPC is a high-performance, open source RPC framework.
+
+It offers a way to push metrics to a custom storage backend 
+by implementing your own gRPC server based on pgwatch 
+[protobuf definition](https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.proto). 
+
+This is useful when none of the built-in storage options meet your needs.
+
 ### JSON files
 
 Plain text files for testing / special use cases.

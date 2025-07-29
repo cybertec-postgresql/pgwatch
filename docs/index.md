@@ -40,7 +40,7 @@ In addition to the standard metrics, pgwatch can be easily extended to monitor *
 
 **Where are the measurements stored and where can users inspect the dashboards?**
 
-- pgwatch allows users to choose from a variety of **storage backends** aka **sinks** for storing monitoring data, such as JSON file, TimescaleDB, Prometheus, or a traditional PostgreSQL database.
+- pgwatch allows users to choose from a variety of **storage backends** aka **sinks** for storing monitoring data, such as JSON file, TimescaleDB, Prometheus, PostgreSQL, or a custom gRPC-based backend.
 - The **user interface** for pgwatch is powered by **Grafana dashboards**, providing interactive and detailed visualization of the collected metrics. Users can easily view the performance and status of their databases in real-time, drill down into historical data, and configure custom dashboard views based on their preferences.
 
 For a detailed list of all features and capabilities, please refer to the [Features](intro/features.md) page.

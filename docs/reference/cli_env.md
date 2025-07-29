@@ -89,7 +89,9 @@ from resolved databases.
     Examples: `postgresql://pgwatch@localhost:5432/metrics`,  
     `prometheus://localhost:9090`,  
     `jsonfile:///tmp/metrics.json`,  
-    `rpc://localhost:5000/`
+    `grpc://user:pwd@localhost:5000/?sslrootca=/home/user/ca.crt`
+
+    See [Sinks Options & Parameters](sinks_options.md) for more details.
 
 - `--batching-delay=`
 

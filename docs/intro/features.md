@@ -14,7 +14,8 @@ title: List of main features
 -   Easy extensibility of metrics which are defined in pure SQL, thus
     they could also be from the business domain
 -   Many metric data storage options - PostgreSQL, PostgreSQL with the
-    compression enabled TimescaleDB extension, or Prometheus scraping
+    compression enabled TimescaleDB extension, Prometheus scraping, or 
+    gRPC-based custom storage integration
 -   Multiple deployment options - PostgreSQL configuration DB, YAML or
     ENV configuration
 -   Possible to monitoring all, single or a subset (list or regex) of
