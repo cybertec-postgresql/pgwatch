@@ -5,12 +5,12 @@ title: Command-Line Options & Environment Variables
 ## General Usage
 
 ```terminal
-  pgwatch [OPTIONS] [config | metric | source]
+  pgwatch [OPTIONS] 
+  pgwatch [config | metric | source] [OPTIONS] 
 ```
 
-When no command is specified, the default is to start in a monitoring mode. pgwatch will read the
-configuration from the specified sources and metrics first, and then will start the measurements collection
-from resolved databases.
+When no command is specified, pgwatch starts the monitoring process. 
+It reads the configuration from the specified sources and metrics, then begins collecting measurements from the resolved databases.
 
 ## Options
 
@@ -52,17 +52,17 @@ from resolved databases.
 
     Example: `pg_stat_statements,pg_hint_plan`
 
+- `--create-helpers`
+
+    Create helper database objects from metric definitions.  
+    ENV: `$PW_CREATE_HELPERS`
+
 ### Metrics
 
 - `-m`, `--metrics=`
 
     Postgres URI, YAML file or folder of YAML files with metrics definitions.  
     ENV: `$PW_METRICS`
-
-- `--create-helpers`
-
-    Create helper database objects from metric definitions.  
-    ENV: `$PW_CREATE_HELPERS`
 
 - `--direct-os-stats`
 
@@ -157,7 +157,7 @@ from resolved databases.
 
 - `--web-user=`
 
-    Admin login.  
+    Admin username.  
     ENV: `$PW_WEBUSER`
 
 - `--web-password=`
@@ -169,7 +169,7 @@ from resolved databases.
 
 - `-h`, `--help`
 
-    Show this help message
+    Show the help message
 
 ## Available commands
 
@@ -218,7 +218,7 @@ from resolved databases.
 ### Manage sources
 
 ```terminal
-    pgwatch [OPTIONS] source <ping | resolve>
+    pgwatch source <ping | resolve> [OPTIONS]
 ```
 
 !!! info
@@ -231,5 +231,5 @@ from resolved databases.
 - `resolve`
 
     Resolve the monitored databases from sources (postgres clusters and patroni clusters) to check
-    if they are reachableand if the configuration is correct. The output will be a list of the
+    if they are reachable and if the configuration is correct. The output will be a list of the
     resolved databases with their connection strings.
