@@ -48,7 +48,7 @@ title: Sizing recommendations
 - Note that when monitoring a very large number of databases, it's
     possible to "shard" / distribute them between many metric
     collection instances running on different hosts, via the `group`
-    attribute. This requires that targets have been assigned a
+    attribute. This requires that sources have been assigned a
     non-default *group* identifier, which is just a text field exactly
     for this sharding purpose.
     Relevant params: `--group / PW_GROUP`.
