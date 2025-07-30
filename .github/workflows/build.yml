@@ -1,4 +1,4 @@
-name: Go Build & Test
+name: Build and Test
 on:
   push:
     branches:
@@ -133,22 +133,32 @@ jobs:
   test-docker-images:
     if: true # false to skip job during debug
     needs: [build, test, goreleaser]
-    name: Build Docker Image
+    name: Test Docker Image Build
     runs-on: ubuntu-latest
     steps:
 
     - name: Check out code
       uses: actions/checkout@v4
-    
-    - name: Build Docker Image
-      shell: bash
+
+    - name: Prepare build metadata
+      id: meta
       run: |
-        docker build \
-        --build-arg GIT_TIME=`git show -s --format=%cI HEAD` \
-        --build-arg GIT_HASH=`git show -s --format=%H HEAD` \
-        --build-arg VERSION=`git rev-parse --abbrev-ref HEAD` \
-        -t cybertecpostgresql/pgwatch:latest \
-        -f docker/Dockerfile .   
+        echo "GIT_HASH=${{ github.sha }}" >> $GITHUB_OUTPUT
+        echo "GIT_TIME=$(git show -s --format=%cI HEAD)" >> $GITHUB_OUTPUT
+        echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+    
+    - name: Test build Docker image (fast, amd64 only)
+      uses: ./.github/actions/build-docker
+      with:
+        dockerfile: docker/Dockerfile
+        image-name: cybertecpostgresql/pgwatch
+        platforms: linux/amd64
+        push: 'false'
+        cache-scope: test-build
+        build-args: |
+          GIT_HASH=${{ steps.meta.outputs.GIT_HASH }}
+          GIT_TIME=${{ steps.meta.outputs.GIT_TIME }}
+          VERSION=${{ steps.meta.outputs.VERSION }}   
 
   build-docs:
     if: true # false to skip job during debug
