@@ -78,7 +78,7 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         platforms: linux/amd64,linux/arm64
         push: ${{ steps.meta.outputs.SHOULD_PUSH }}
-        cache-scope: ${{ matrix.image.name }}
+        cache-scope: shared-release
         build-args: |
           GIT_HASH=${{ steps.meta.outputs.GIT_HASH }}
           GIT_TIME=${{ steps.meta.outputs.GIT_TIME }}

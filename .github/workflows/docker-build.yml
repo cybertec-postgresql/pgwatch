@@ -1,11 +1,10 @@
-name: Docker Multi-Registry Build
+name: Build Docker Images
+description: Build and push Docker images for pgwatch and pgwatch-demo with caching and multi-arch support.
 permissions:
   contents: read
   packages: write
 
 on:
-  push:  # FOR TESTS ONLY
-    branches: [ improve-docker-gha ]
   workflow_dispatch:
     inputs:
       registry:
@@ -109,7 +108,7 @@ jobs:
         password: ${{ steps.creds.outputs.password }}
         platforms: linux/amd64,linux/arm64
         push: ${{ needs.prepare.outputs.should-push }}
-        cache-scope: ${{ needs.prepare.outputs.registry }}-${{ matrix.image.name }}-${{ needs.prepare.outputs.webui-hash }}-${{ needs.prepare.outputs.go-hash }}
+        cache-scope: ${{ needs.prepare.outputs.registry }}-shared-${{ needs.prepare.outputs.webui-hash }}-${{ needs.prepare.outputs.go-hash }}
         build-args: |
           GIT_HASH=${{ steps.meta.outputs.GIT_HASH }}
           GIT_TIME=${{ steps.meta.outputs.GIT_TIME }}
