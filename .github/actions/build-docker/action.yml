@@ -99,7 +99,7 @@ runs:
         context: .
         file: ${{ inputs.dockerfile }}
         platforms: ${{ inputs.platforms }}
-        push: ${{ inputs.push }}
+        push: ${{ inputs.push == 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         build-args: ${{ inputs.build-args }}
