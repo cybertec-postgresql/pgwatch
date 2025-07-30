@@ -1,6 +1,8 @@
-name: Docker Manual Multi-Registry Build
+name: Docker Multi-Registry Build
 permissions:
   contents: read
+  packages: write
+
 on:
   workflow_dispatch:
     inputs:
@@ -29,24 +31,42 @@ jobs:
     outputs:
       registry: ${{ steps.config.outputs.registry }}
       should-push: ${{ steps.config.outputs.should-push }}
+      cache-key: ${{ steps.config.outputs.cache-key }}
+      webui-hash: ${{ steps.config.outputs.webui-hash }}
+      go-hash: ${{ steps.config.outputs.go-hash }}
     steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+
       - name: Configure registry and push settings
         id: config
         run: |
-          # Manual workflow: use inputs directly
           REGISTRY="${{ github.event.inputs.registry }}"
           SHOULD_PUSH="${{ github.event.inputs.push }}"
           
+          # Create cache keys based on content hashes for better cache efficiency
+          WEBUI_HASH=$(find internal/webui -name "*.json" -o -name "*.lock" | sort | xargs cat | sha256sum | cut -d' ' -f1 | cut -c1-12)
+          GO_HASH=$(cat go.mod go.sum | sha256sum | cut -d' ' -f1 | cut -c1-12)
+          CACHE_KEY="${{ github.ref_name }}-$(date +%Y%m%d)"
+          
           echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
           echo "should-push=$SHOULD_PUSH" >> $GITHUB_OUTPUT
+          echo "cache-key=$CACHE_KEY" >> $GITHUB_OUTPUT
+          echo "webui-hash=$WEBUI_HASH" >> $GITHUB_OUTPUT
+          echo "go-hash=$GO_HASH" >> $GITHUB_OUTPUT
           
           echo "🚀 Registry: $REGISTRY"
           echo "📤 Push: $SHOULD_PUSH"
+          echo "🔧 Cache Key: $CACHE_KEY"
+          echo "🔧 WebUI Hash: $WEBUI_HASH"
+          echo "🔧 Go Hash: $GO_HASH"
 
   docker:
-    name: Build Docker Images
+    name: Build Docker Images  
     needs: prepare
     strategy:
+      # Build sequentially to allow cache sharing between images
+      max-parallel: 1
       fail-fast: false
       matrix:
         image: [ 
@@ -77,7 +97,7 @@ jobs:
           echo "password=${{ secrets.DOCKER_PASSWORD }}" >> $GITHUB_OUTPUT
         fi
 
-    - name: Build and push to selected registry
+    - name: Build and push with optimized caching
       uses: ./.github/actions/build-docker
       with:
         dockerfile: ${{ matrix.image.file }}
@@ -87,7 +107,7 @@ jobs:
         password: ${{ steps.creds.outputs.password }}
         platforms: linux/amd64,linux/arm64
         push: ${{ needs.prepare.outputs.should-push }}
-        cache-scope: ${{ needs.prepare.outputs.registry }}-${{ matrix.image.name }}
+        cache-scope: ${{ needs.prepare.outputs.registry }}-${{ matrix.image.name }}-${{ needs.prepare.outputs.webui-hash }}-${{ needs.prepare.outputs.go-hash }}
         build-args: |
           GIT_HASH=${{ steps.meta.outputs.GIT_HASH }}
           GIT_TIME=${{ steps.meta.outputs.GIT_TIME }}
@@ -105,13 +125,17 @@ jobs:
           echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Registry | \`${{ needs.prepare.outputs.registry }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Push Enabled | ${{ needs.prepare.outputs.should-push }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Push Enabled | \`${{ needs.prepare.outputs.should-push }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cache Key | \`${{ needs.prepare.outputs.cache-key }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| WebUI Hash | \`${{ needs.prepare.outputs.webui-hash }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Go Hash | \`${{ needs.prepare.outputs.go-hash }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Ref | \`${{ github.ref }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Images | \`cybertecpostgresql/pgwatch\`, \`cybertecpostgresql/pgwatch-demo\` |" >> $GITHUB_STEP_SUMMARY
           
           if [ "${{ needs.docker.result }}" = "success" ]; then
-            echo "✅ All Docker builds completed successfully!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **All Docker builds completed successfully!**" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ Some Docker builds failed. Check the logs above." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **Some Docker builds failed. Check the logs above.**" >> $GITHUB_STEP_SUMMARY
           fi
