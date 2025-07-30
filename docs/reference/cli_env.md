@@ -168,7 +168,7 @@ It reads the configuration from the specified sources and metrics, then begins c
 
 - `-h`, `--help`
 
-    Show the help message
+    Show this help message
 
 ## Available commands
 
