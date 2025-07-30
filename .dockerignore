@@ -1,4 +1,75 @@
+# ================================================================
+# Docker Build Context Optimization
+# Exclude unnecessary files to reduce build context size and improve performance
+# ================================================================
+
+# Git and version control
+.git
+.gitignore
+.gitattributes
+.gitmodules
+
+# Documentation and markdown files (except essential ones)
+*.md
+!README.md
+docs/
+site/
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+mem_log.txt
+coverage.out
+
+# Node.js (keep essential files, exclude build artifacts)
 **/node_modules
 **/build
-docs
-contrib
+internal/webui/.yarn/
+internal/webui/yarn-error.log
+internal/webui/npm-debug.log*
+internal/webui/lerna-debug.log*
+
+# Go build artifacts (exclude from context, but keep source)
+pgwatch
+cmd/pgwatch/pgwatch
+*.exe
+
+# Test files and test data
+*_test.go
+**/*_test.go
+testdata/
+
+# Docker artifacts
+docker-compose*.yml
+compose*.yml
+
+# CI/CD (GitHub Actions can access these separately)
+.github/
+
+# Local development tools
+etcdctl.exe
+.env
+.env.local
+.env.*.local
+
+# Other build artifacts
+dist/
+out/
+contrib/

@@ -1,40 +1,67 @@
-# ----------------------------------------------------------------
-# 1. Build Web UI
-# ----------------------------------------------------------------
-FROM node:22 AS uibuilder
-ADD internal/webui /webui
-RUN cd webui && yarn install --network-timeout 100000 && yarn build
+# ================================================================
+# PRODUCTION PGWATCH IMAGE - OPTIMIZED VERSION
+# Uses shared base stages for faster builds and better caching
+# ================================================================
 
 # ----------------------------------------------------------------
-# 2. Build gatherer
+# 1. WebUI Dependencies (cached separately for better performance)
 # ----------------------------------------------------------------
-FROM golang:1.24 AS builder
+FROM node:22 AS webui-deps
+WORKDIR /webui
+# Copy only package files first for optimal layer caching
+COPY internal/webui/package.json internal/webui/yarn.lock ./
+RUN yarn install --network-timeout 100000 --frozen-lockfile
 
-ARG VERSION
-ARG GIT_HASH
-ARG GIT_TIME
+# ----------------------------------------------------------------
+# 2. WebUI Builder (rebuilds only when source changes)
+# ----------------------------------------------------------------
+FROM webui-deps AS webui-builder
+# Copy source files and build
+COPY internal/webui/ ./
+RUN yarn build
 
+# ----------------------------------------------------------------
+# 3. Go Dependencies and Tools (cached separately)
+# ----------------------------------------------------------------
+FROM golang:1.24 AS go-deps
 # Install protoc and required tools for protobuf generation
 RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
-COPY . /pgwatch
-COPY --from=uibuilder /webui/build /pgwatch/internal/webui/build
-RUN cd /pgwatch \
-    && go generate ./api/pb/ \
-    && CGO_ENABLED=0 go build -ldflags "\
+# Pre-download Go modules for better caching
+WORKDIR /pgwatch
+COPY go.mod go.sum ./
+RUN go mod download
+
+# ----------------------------------------------------------------
+# 4. Go Builder (application compilation)
+# ----------------------------------------------------------------
+FROM go-deps AS go-builder
+
+ARG VERSION
+ARG GIT_HASH
+ARG GIT_TIME
+
+# Copy source code
+COPY . .
+# Copy built WebUI from previous stage
+COPY --from=webui-builder /webui/build ./internal/webui/build
+
+# Generate protobuf and build the application
+RUN go generate ./api/pb/ && \
+    CGO_ENABLED=0 go build -ldflags "\
         -X 'main.commit=${GIT_HASH}' \
         -X 'main.date=${GIT_TIME}' \
         -X 'main.version=${VERSION}'" ./cmd/pgwatch
 
 # ----------------------------------------------------------------
-# 3. Build the final image
+# 5. Final production image
 # ----------------------------------------------------------------
 FROM alpine
 
 # Copy over the compiled gatherer
-COPY --from=builder /pgwatch/pgwatch /pgwatch/
+COPY --from=go-builder /pgwatch/pgwatch /pgwatch/
 COPY internal/metrics/metrics.yaml /pgwatch/metrics/metrics.yaml
 
 # Admin UI for configuring servers to be monitored
