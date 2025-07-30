@@ -12,6 +12,13 @@ title: Sizing recommendations
     databases) and then memory consumption is dependent on how "wide"
     are the metrics gathered.
 
+!!! Notice
+    In high-load environments, some metrics may return thousands of rows per monitoring target at each fetch. 
+    So, sharing the collection interval for these metrics between all sources can cause a huge memory load.
+    In such scenarios, adding a `LIMIT` clause to the metric query is usually the way to go, 
+    but otherwise, consider varying the collection interval of these metrics between sources 
+    to reduce memory load — or disable them entirely, if necessary.
+
 - Storage requirements vary a lot and are hard to predict.
 
     10GB of disk space should be enough though for monitoring a single
@@ -41,7 +48,7 @@ title: Sizing recommendations
 - Note that when monitoring a very large number of databases, it's
     possible to "shard" / distribute them between many metric
     collection instances running on different hosts, via the `group`
-    attribute. This requires that some hosts have been assigned a
+    attribute. This requires that targets have been assigned a
     non-default *group* identifier, which is just a text field exactly
     for this sharding purpose.
     Relevant params: `--group / PW_GROUP`.
