@@ -12,7 +12,7 @@ import (
 type SourceCommand struct {
 	owner   *Options
 	Ping    SourcePingCommand    `command:"ping" description:"Try to connect to configured sources, report errors if any and then exit"`
-	Resolve SourceResolveCommand `command:"resolve" description:"Resolve monitored connections for a given sources (all by default)"`
+	Resolve SourceResolveCommand `command:"resolve" description:"Resolve connection strings for configured sources, based on the given source names (or all sources by default)."`
 	// PrintSQL  SourcePrintCommand `command:"print" description:"Get and print SQL for a given Source"`
 }
 
