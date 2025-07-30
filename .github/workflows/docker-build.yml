@@ -4,6 +4,8 @@ permissions:
   packages: write
 
 on:
+  push:  # FOR TESTS ONLY
+    branches: [ improve-docker-gha ]
   workflow_dispatch:
     inputs:
       registry:
