@@ -225,10 +225,8 @@ It reads the configuration from the specified sources and metrics, then begins c
 
 - `ping`
 
-    Ping the sources (databases, patroni clusters, poolers, etc.) to check if they are reachable.  
+    Try to connect to configured sources, report errors if any and then exit  
 
 - `resolve`
 
-    Resolve the monitored databases from sources (postgres clusters and patroni clusters) to check
-    if they are reachable and if the configuration is correct. The output will be a list of the
-    resolved databases with their connection strings.
+    Resolve connection strings for configured sources, based on the given source names (or all sources by default).
