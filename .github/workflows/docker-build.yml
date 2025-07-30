@@ -1,0 +1,142 @@
+name: Build Docker Images
+description: Build and push Docker images for pgwatch and pgwatch-demo with caching and multi-arch support.
+permissions:
+  contents: read
+  packages: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      registry:
+        description: 'Docker registry to use'
+        required: true
+        default: 'docker.io'
+        type: choice
+        options:
+          - docker.io
+          - ghcr.io
+      push:
+        description: 'Push images to registry'
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: Prepare Build Settings
+    runs-on: ubuntu-latest
+    outputs:
+      registry: ${{ steps.config.outputs.registry }}
+      should-push: ${{ steps.config.outputs.should-push }}
+      cache-key: ${{ steps.config.outputs.cache-key }}
+      webui-hash: ${{ steps.config.outputs.webui-hash }}
+      go-hash: ${{ steps.config.outputs.go-hash }}
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+
+      - name: Configure registry and push settings
+        id: config
+        run: |
+          REGISTRY="${{ github.event.inputs.registry }}"
+          SHOULD_PUSH="${{ github.event.inputs.push }}"
+          
+          # Create cache keys based on content hashes for better cache efficiency
+          WEBUI_HASH=$(find internal/webui -name "*.json" -o -name "*.lock" | sort | xargs cat | sha256sum | cut -d' ' -f1 | cut -c1-12)
+          GO_HASH=$(cat go.mod go.sum | sha256sum | cut -d' ' -f1 | cut -c1-12)
+          CACHE_KEY="${{ github.ref_name }}-$(date +%Y%m%d)"
+          
+          echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
+          echo "should-push=$SHOULD_PUSH" >> $GITHUB_OUTPUT
+          echo "cache-key=$CACHE_KEY" >> $GITHUB_OUTPUT
+          echo "webui-hash=$WEBUI_HASH" >> $GITHUB_OUTPUT
+          echo "go-hash=$GO_HASH" >> $GITHUB_OUTPUT
+          
+          echo "🚀 Registry: $REGISTRY"
+          echo "📤 Push: $SHOULD_PUSH"
+          echo "🔧 Cache Key: $CACHE_KEY"
+          echo "🔧 WebUI Hash: $WEBUI_HASH"
+          echo "🔧 Go Hash: $GO_HASH"
+
+  docker:
+    name: Build Docker Images  
+    needs: prepare
+    strategy:
+      # Build sequentially to allow cache sharing between images
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        image: [ 
+          {file: 'docker/Dockerfile', name: 'pgwatch'}, 
+          {file: 'docker/demo/Dockerfile', name: 'pgwatch-demo'}
+        ]
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check out source code
+      uses: actions/checkout@v4
+
+    - name: Prepare build metadata
+      id: meta
+      run: |
+        echo "GIT_HASH=${{ github.sha }}" >> $GITHUB_OUTPUT
+        echo "GIT_TIME=$(git show -s --format=%cI HEAD)" >> $GITHUB_OUTPUT
+        echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+
+    - name: Set registry credentials
+      id: creds
+      run: |
+        if [ "${{ needs.prepare.outputs.registry }}" = "ghcr.io" ]; then
+          echo "username=${{ github.actor }}" >> $GITHUB_OUTPUT
+          echo "password=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_OUTPUT
+        else
+          echo "username=${{ secrets.DOCKER_USERNAME }}" >> $GITHUB_OUTPUT
+          echo "password=${{ secrets.DOCKER_PASSWORD }}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Build and push with optimized caching
+      uses: ./.github/actions/build-docker
+      with:
+        dockerfile: ${{ matrix.image.file }}
+        image-name: cybertecpostgresql/${{ matrix.image.name }}
+        registry: ${{ needs.prepare.outputs.registry }}
+        username: ${{ steps.creds.outputs.username }}
+        password: ${{ steps.creds.outputs.password }}
+        platforms: linux/amd64,linux/arm64
+        push: ${{ needs.prepare.outputs.should-push }}
+        cache-scope: ${{ needs.prepare.outputs.registry }}-shared-${{ needs.prepare.outputs.webui-hash }}-${{ needs.prepare.outputs.go-hash }}
+        build-args: |
+          GIT_HASH=${{ steps.meta.outputs.GIT_HASH }}
+          GIT_TIME=${{ steps.meta.outputs.GIT_TIME }}
+          VERSION=${{ steps.meta.outputs.VERSION }}
+
+  summary:
+    name: Build Summary
+    needs: [prepare, docker]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report build results
+        run: |
+          echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Registry | \`${{ needs.prepare.outputs.registry }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Push Enabled | \`${{ needs.prepare.outputs.should-push }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cache Key | \`${{ needs.prepare.outputs.cache-key }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| WebUI Hash | \`${{ needs.prepare.outputs.webui-hash }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Go Hash | \`${{ needs.prepare.outputs.go-hash }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Ref | \`${{ github.ref }}\` |" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.docker.result }}" = "success" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **All Docker builds completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **Some Docker builds failed. Check the logs above.**" >> $GITHUB_STEP_SUMMARY
+          fi
