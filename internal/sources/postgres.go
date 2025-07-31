@@ -67,7 +67,7 @@ func (r *dbSourcesReaderWriter) updateSource(conn db.PgxIface, md Source) (err e
 	only_if_master,
 	is_enabled) 
 values 
-	($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), $9, $10, $11, $12, $13, $14) 
+	($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), $9, $10, $11, $12, $13)
 on conflict (name) do update set
 	"group" = $2, 
 	dbtype = $3, 
