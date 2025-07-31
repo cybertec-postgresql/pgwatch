@@ -547,7 +547,7 @@ func (pgw *PostgresWriter) StartMaintenanceActivity(ctx context.Context, activit
 		logger.Errorf("Starting transaction for %s maintenance failed: %w", activity, err)
 		return false
 	}
-	func() {
+	defer func() {
 		if err != nil {
 			_ = tx.Rollback(pgw.ctx)
 		} else {
