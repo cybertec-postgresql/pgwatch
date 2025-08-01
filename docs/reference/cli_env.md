@@ -8,9 +8,8 @@ title: Command-Line Options & Environment Variables
   pgwatch [OPTIONS] [config | metric | source]
 ```
 
-When no command is specified, the default is to start in a monitoring mode. pgwatch will read the
-configuration from the specified sources and metrics first, and then will start the measurements collection
-from resolved databases.
+When no command is specified, pgwatch starts the monitoring process. 
+It reads the configuration from the specified sources and metrics, then begins collecting measurements from the resolved databases.
 
 ## Options
 
@@ -52,17 +51,17 @@ from resolved databases.
 
     Example: `pg_stat_statements,pg_hint_plan`
 
+- `--create-helpers`
+
+    Create helper database objects from metric definitions.  
+    ENV: `$PW_CREATE_HELPERS`
+
 ### Metrics
 
 - `-m`, `--metrics=`
 
     Postgres URI, YAML file or folder of YAML files with metrics definitions.  
     ENV: `$PW_METRICS`
-
-- `--create-helpers`
-
-    Create helper database objects from metric definitions.  
-    ENV: `$PW_CREATE_HELPERS`
 
 - `--direct-os-stats`
 
@@ -157,7 +156,7 @@ from resolved databases.
 
 - `--web-user=`
 
-    Admin login.  
+    Admin username.  
     ENV: `$PW_WEBUSER`
 
 - `--web-password=`
@@ -226,10 +225,8 @@ from resolved databases.
 
 - `ping`
 
-    Ping the sources (databases, patroni clusters, poolers, etc.) to check if they are reachable.  
+    Try to connect to configured sources, report errors if any and then exit  
 
 - `resolve`
 
-    Resolve the monitored databases from sources (postgres clusters and patroni clusters) to check
-    if they are reachableand if the configuration is correct. The output will be a list of the
-    resolved databases with their connection strings.
+    Resolve connection strings for configured sources, based on the given source names (or all sources by default).
