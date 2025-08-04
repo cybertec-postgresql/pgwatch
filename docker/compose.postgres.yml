@@ -46,5 +46,3 @@ services:
         pg_basebackup -h postgres --pgdata=/var/lib/postgresql/data --wal-method=stream --progress --write-recovery-conf --slot=standby_slot &&
         chmod 0700 /var/lib/postgresql/data &&
         postgres -cshared_preload_libraries=pg_stat_statements -cpg_stat_statements.track=all -ctrack_io_timing=on -ctrack_functions=pl"
-    links:
-      - postgres
