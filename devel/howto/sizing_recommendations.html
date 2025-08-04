@@ -1532,6 +1532,16 @@ in ring buffer style up to a limit of 10k data points (for all
 databases) and then memory consumption is dependent on how "wide"
 are the metrics gathered.</p>
 </li>
+</ul>
+<div class="admonition notice">
+<p class="admonition-title">Notice</p>
+<p>In high-load environments, some metrics may return thousands of rows per monitoring target at each fetch. 
+So, sharing the collection interval for these metrics between all sources can cause a huge memory load.
+In such scenarios, adding a <code>LIMIT</code> clause to the metric query is usually the way to go, 
+but otherwise, consider varying the collection interval of these metrics between sources 
+to reduce memory load — or disable them entirely, if necessary.</p>
+</div>
+<ul>
 <li>
 <p>Storage requirements vary a lot and are hard to predict.</p>
 <p>10GB of disk space should be enough though for monitoring a single
@@ -1565,7 +1575,7 @@ SQL support.</p>
 <p>Note that when monitoring a very large number of databases, it's
     possible to "shard" / distribute them between many metric
     collection instances running on different hosts, via the <code>group</code>
-    attribute. This requires that some hosts have been assigned a
+    attribute. This requires that sources have been assigned a
     non-default <em>group</em> identifier, which is just a text field exactly
     for this sharding purpose.
     Relevant params: <code>--group / PW_GROUP</code>.</p>
