@@ -30,13 +30,33 @@ If you don't want to add the test database for monitoring, remove the `PW_TESTDB
 ## Development and production use
 
 For production and long term installation `cybertecpostgresql/pgwatch` Docker image should be used.
-For the fastest development and deployment experience the Docker compose files are provided:
+For the fastest development and deployment experience the Docker compose files are provided.
 
-```shell
-git clone https://github.com/cybertec-postgresql/pgwatch.git && cd pgwatch
+- The usual production setup should involve:
 
-docker compose -f ./docker/docker-compose.yml up --detach
-```
+    ```shell
+    git clone https://github.com/cybertec-postgresql/pgwatch.git && cd pgwatch
+
+    git checkout git checkout v3.7.0 # or any other version you want to use
+
+    docker compose -f ./docker/docker-compose.yml up --detach
+    ```
+
+- For development purposes you want to build the image from sources:
+
+    ```shell
+    git clone https://github.com/cybertec-postgresql/pgwatch.git && cd pgwatch
+
+    docker compose -f ./docker/docker-compose.yml build
+
+    docker compose -f ./docker/docker-compose.yml up --detach
+    ```
+
+These commands will build and start services listed in the compose file:
+
+- configuration and metric database;
+- pgwatch monitoring agent with WebUI;
+- Grafana with dashboards.
 
 ```console
  ✔ Network pgwatch_default       Created
@@ -44,12 +64,6 @@ docker compose -f ./docker/docker-compose.yml up --detach
  ✔ Container pgwatch-pgwatch-1   Started
  ✔ Container pgwatch-grafana-1   Started
 ```
-
-These commands will build and start services listed in the compose file:
-
-- configuration and metric database;
-- pgwatch monitoring agent with WebUI;
-- Grafana with dashboards.
 
 ## Monitor Database
 
