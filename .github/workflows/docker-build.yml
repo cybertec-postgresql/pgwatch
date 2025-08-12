@@ -37,7 +37,7 @@ jobs:
       go-hash: ${{ steps.config.outputs.go-hash }}
     steps:
       - name: Check out source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configure registry and push settings
         id: config
@@ -78,7 +78,7 @@ jobs:
     steps:
 
     - name: Check out source code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Prepare build metadata
       id: meta
