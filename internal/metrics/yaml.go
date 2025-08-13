@@ -48,7 +48,7 @@ func (fmr *fileMetricReader) GetMetrics() (*Metrics, error) {
 }
 
 // Loads a Metrics struct from a file or a folder of YAML files
-// located at the file metric reader path.
+// located at the fileMetricReader path.
 func (fmr *fileMetricReader) loadMetricsFromYaml() (*Metrics, error) {
 	fi, err := os.Stat(fmr.path)
 	if err != nil {

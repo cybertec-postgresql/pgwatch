@@ -7,6 +7,7 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
 )
 
 func TestDeaultMetrics(t *testing.T) {
@@ -76,7 +77,6 @@ func TestWriteMetricsToFile(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Read the contents of the file
-	assert.NoError(t, err)
 	metrics, err := fmr.GetMetrics()
 	assert.NoError(t, err)
 
@@ -328,4 +328,66 @@ func TestCreateMetricAndPreset(t *testing.T) {
 		a.Error(err)
 		a.Equal(metrics.ErrPresetExists, err)
 	})
+}
+
+func TestMetricsDir(t *testing.T) {
+	a := assert.New(t)
+
+	// first metrics file data
+	metrics1 := metrics.Metrics{
+		MetricDefs: map[string]metrics.Metric{
+			"metric1": {
+				Description: "metric1 description",
+			},
+		},
+		PresetDefs: map[string]metrics.Preset{
+			"preset1": {
+				Description: "preset1 description",
+				Metrics: map[string]float64{
+					"metric1": 10,
+				},
+			},
+		},
+	}
+
+	// second metrics file data
+	metrics2 := metrics.Metrics{
+		MetricDefs: map[string]metrics.Metric{
+			"metric2": {
+				Description: "metric2 description",
+			},
+		},
+		PresetDefs: map[string]metrics.Preset{
+			"preset2": {
+				Description: "preset2 description",
+				Metrics: map[string]float64{
+					"metric2": 10,
+				},
+			},
+		},
+	}
+
+	metrics1File, err := yaml.Marshal(metrics1)
+	a.NoError(err)
+	metrics2File, err := yaml.Marshal(metrics2)
+	a.NoError(err)
+
+	// write data to different files in a folder
+	tempDir := t.TempDir()
+	err = os.WriteFile(filepath.Join(tempDir, "metrics1.yaml"), metrics1File, 0644)
+	a.NoError(err)
+	err = os.WriteFile(filepath.Join(tempDir, "metrics2.yaml"), metrics2File, 0644)
+	a.NoError(err)
+
+	// use folder of yaml files for metrics configs
+	yamlrw, err := metrics.NewYAMLMetricReaderWriter(ctx, tempDir)
+	a.NoError(err)
+
+	// load metrics configs from folder
+	ms, err := yamlrw.GetMetrics()
+	a.NoError(err)
+	a.Equal("metric1 description", ms.MetricDefs["metric1"].Description)
+	a.Equal("preset1 description", ms.PresetDefs["preset1"].Description)
+	a.Equal("metric2 description", ms.MetricDefs["metric2"].Description)
+	a.Equal("preset2 description", ms.PresetDefs["preset2"].Description)
 }
