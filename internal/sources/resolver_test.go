@@ -56,7 +56,7 @@ func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
 func TestMonitoredDatabase_ResolveDatabasesFromPatroni(t *testing.T) {
 	etcdContainer, err := etcd.Run(ctx, "gcr.io/etcd-development/etcd:v3.5.14",
 		testcontainers.WithWaitStrategy(wait.ForLog("ready to serve client requests").
-			WithStartupTimeout(5*time.Second)))
+			WithStartupTimeout(15*time.Second)))
 	require.NoError(t, err)
 	defer func() { assert.NoError(t, etcdContainer.Terminate(ctx)) }()
 
