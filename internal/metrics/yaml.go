@@ -3,7 +3,11 @@ package metrics
 import (
 	"context"
 	_ "embed"
+	"io/fs"
+	"maps"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -31,20 +35,74 @@ func (fmr *fileMetricReader) WriteMetrics(metricDefs *Metrics) error {
 //go:embed metrics.yaml
 var defaultMetricsYAML []byte
 
-func (fmr *fileMetricReader) GetMetrics() (metrics *Metrics, err error) {
-	metrics = new(Metrics)
-	var s []byte
+func (fmr *fileMetricReader) GetMetrics() (*Metrics, error) {
 	if fmr.path == "" {
-		s = defaultMetricsYAML
-	} else {
-		if s, err = os.ReadFile(fmr.path); err != nil {
+		metrics := new(Metrics)
+		metricsYaml := defaultMetricsYAML
+		if err := yaml.Unmarshal(metricsYaml, metrics); err != nil {
 			return nil, err
 		}
-	}
-	if err = yaml.Unmarshal(s, metrics); err != nil {
+		return metrics, nil
+	} 
+	return fmr.loadMetricsFromYaml()	
+}
+
+// Loads a Metrics struct from a file or a folder of YAML files
+// located at the file metric reader path.
+func (fmr *fileMetricReader) loadMetricsFromYaml() (*Metrics, error) {
+	fi, err := os.Stat(fmr.path)
+	if err != nil {
 		return nil, err
 	}
-	return
+
+	var yamlFiles [][]byte
+	switch mode := fi.Mode(); {
+	case mode.IsDir():
+		err = filepath.WalkDir(fmr.path, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+
+			ext := strings.ToLower(filepath.Ext(d.Name()))
+			if d.IsDir() || ext != ".yaml" && ext != ".yml" {
+				return nil
+			}
+
+			var singleFileData []byte
+			if singleFileData, err = os.ReadFile(path); err != nil {
+				return err
+			}
+			yamlFiles = append(yamlFiles, singleFileData)
+
+			return nil
+		})
+
+		if err != nil {
+			return nil, err
+		}
+	case mode.IsRegular():
+		var singleFileData []byte
+		if singleFileData, err = os.ReadFile(fmr.path); err != nil {
+			return nil, err
+		}
+		yamlFiles = append(yamlFiles, singleFileData)
+	}
+
+
+	metrics := &Metrics {
+		MetricDefs: make(MetricDefs),
+		PresetDefs: make(PresetDefs),
+	}
+
+	for _, singleFileData := range yamlFiles {
+		var fileMetrics Metrics
+		if err = yaml.Unmarshal(singleFileData, &fileMetrics); err != nil {
+			return nil, err
+		}
+		maps.Copy(metrics.PresetDefs, fileMetrics.PresetDefs)
+		maps.Copy(metrics.MetricDefs, fileMetrics.MetricDefs)
+	}
+	return metrics, nil
 }
 
 func (fmr *fileMetricReader) DeleteMetric(metricName string) error {
