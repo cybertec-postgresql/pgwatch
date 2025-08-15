@@ -68,6 +68,7 @@ func TestWriteMetricsToFile(t *testing.T) {
 	// Create a temporary file for testing
 	tempDir := t.TempDir()
 	tempFile := filepath.Join(tempDir, "metrics.yaml")
+	_, _ = os.Create(tempFile)
 
 	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
 	assert.NoError(t, err)
@@ -112,6 +113,7 @@ func TestMetricsToFile(t *testing.T) {
 	// Create a temporary file for testing
 	tempDir := t.TempDir()
 	tempFile := filepath.Join(tempDir, "metrics.yaml")
+	_, _ = os.Create(tempFile)
 
 	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
 	assert.NoError(t, err)
@@ -170,6 +172,7 @@ func TestPresetsToFile(t *testing.T) {
 	// Create a temporary file for testing
 	tempDir := t.TempDir()
 	tempFile := filepath.Join(tempDir, "metrics.yaml")
+	_, _ = os.Create(tempFile)
 
 	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
 	assert.NoError(t, err)
@@ -212,43 +215,26 @@ func TestPresetsToFile(t *testing.T) {
 }
 
 func TestErrorHandlingToFile(t *testing.T) {
-	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, "/") // empty path is reserved for default metrics
-	assert.NoError(t, err)
+	invalidFolders := [2]string{"/", "nonExistingDir"}
 
-	// Test WriteMetrics
-	err = fmr.WriteMetrics(&metrics.Metrics{})
-	assert.Error(t, err)
-
-	// Test GetMetrics
-	_, err = fmr.GetMetrics()
-	assert.Error(t, err)
-
-	// Test DeleteMetric
-	err = fmr.DeleteMetric("test")
-	assert.Error(t, err)
-
-	// Test UpdateMetric
-	err = fmr.UpdateMetric("test", metrics.Metric{})
-	assert.Error(t, err)
-
-	// Test DeletePreset
-	err = fmr.DeletePreset("test")
-	assert.Error(t, err)
-
-	// Test UpdatePreset
-	err = fmr.UpdatePreset("test", metrics.Preset{})
-	assert.Error(t, err)
+	for _, folder := range invalidFolders {
+		_, err := metrics.NewYAMLMetricReaderWriter(ctx, folder) 
+		assert.Error(t, err)
+	}
 
 	// Test invalid YAML
 	tempDir := t.TempDir()
 	tempFile := filepath.Join(tempDir, "metrics.yaml")
+	_, _ = os.Create(tempFile)
+
 	file, err := os.Create(tempFile)
 	assert.NoError(t, err)
 	defer file.Close()
+
 	_, err = file.WriteString("invalid yaml")
 	assert.NoError(t, err)
 
-	fmr, err = metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
 	assert.NoError(t, err)
 
 	_, err = fmr.GetMetrics()
@@ -261,6 +247,7 @@ func TestCreateMetricAndPreset(t *testing.T) {
 
 	t.Run("YAML_CreateMetric_Success", func(t *testing.T) {
 		tmpFile := filepath.Join(t.TempDir(), "test_metrics.yaml")
+		_, _ = os.Create(tmpFile)
 		defer os.Remove(tmpFile)
 
 		// Create YAML reader/writer
@@ -296,6 +283,7 @@ func TestCreateMetricAndPreset(t *testing.T) {
 
 	t.Run("YAML_CreatePreset_Success", func(t *testing.T) {
 		tmpFile := filepath.Join(t.TempDir(), "test_presets.yaml")
+		_, _ = os.Create(tmpFile)
 		defer os.Remove(tmpFile)
 
 		yamlrw, err := metrics.NewYAMLMetricReaderWriter(ctx, tmpFile)
