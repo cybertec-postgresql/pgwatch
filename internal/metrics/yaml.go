@@ -25,7 +25,10 @@ func NewYAMLMetricReaderWriter(ctx context.Context, path string) (ReaderWriter, 
 	isDir := false
 	if fi.Mode().IsDir() {
 		isDir = true
-		_, _ = os.Create(filepath.Join(path, "new_metrics.yaml"))
+		_, err = os.Create(filepath.Join(path, "new_metrics.yaml"))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &fileMetricReader{

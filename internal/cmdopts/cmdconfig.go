@@ -3,6 +3,7 @@ package cmdopts
 import (
 	"context"
 	"errors"
+	"os"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
@@ -59,6 +60,11 @@ func (cmd *ConfigInitCommand) InitSources() (err error) {
 func (cmd *ConfigInitCommand) InitMetrics() (err error) {
 	ctx := context.Background()
 	opts := cmd.owner
+
+	_, err = os.Create(opts.Metrics.Metrics)
+	if err != nil {
+		return err
+	}
 	err = opts.InitMetricReader(ctx)
 	if err != nil || opts.IsPgConnStr(opts.Metrics.Metrics) {
 		return // nothing to do, database initialized automatically
