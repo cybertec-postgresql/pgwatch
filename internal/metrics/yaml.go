@@ -69,7 +69,7 @@ func (fmr *fileMetricReader) GetMetrics() (metrics *Metrics, err error) {
 	return
 }
 
-func (fcr *fileMetricReader) getMetrics(metricsFilePath string) (metrics *Metrics, err error) {
+func (fmr *fileMetricReader) getMetrics(metricsFilePath string) (metrics *Metrics, err error) {
 	var yamlFile []byte
 	if yamlFile, err = os.ReadFile(metricsFilePath); err != nil {
 		return
