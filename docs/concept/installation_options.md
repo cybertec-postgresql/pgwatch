@@ -27,10 +27,17 @@ no need for the central Postgres configuration database. See
 [sample.sources.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.sources.yaml)
 And
 [sample.metrics.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.metrics.yaml)
-config files for an example.
+config files for example.
 
-!!! Note
-    The configuration system supports multiple
-    YAML files in a folder so that you could easily programmatically manage
-    things via *Ansible*, for example, and you can also use environment
-    variables inside YAML files.
+!!! Note 
+    You can use folder of YAML files instead of a single file 
+    so that you can easily manage things via *Ansible*, for example. 
+
+!!! Note 
+    Environment variables can be used inside sources YAML files.  
+    example:
+    ```yaml
+    - name: ...
+      conn_str: $MY_VERY_SECRET_CONN_STR
+      ...
+    ```
