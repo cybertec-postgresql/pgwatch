@@ -94,6 +94,12 @@ But use direct object format for updates (PUT to item endpoint):
 }
 ```
 
+!!! Note
+    When using a YAML folder-based configuration for metrics and/or sources, 
+    pgwatch operates in **read-only** mode for metrics/presets and/or sources.  
+    Attempting to update, create, or delete metrics/presets or sources will result in an error.
+
+
 ## Sources API
 
 ### List all sources
