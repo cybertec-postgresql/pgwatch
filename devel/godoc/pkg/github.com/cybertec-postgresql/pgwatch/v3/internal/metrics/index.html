@@ -386,6 +386,9 @@
 					
 					<dd>&nbsp; &nbsp; <a href="#fileMetricReader.WriteMetrics">func (fmr *fileMetricReader) WriteMetrics(metricDefs *Metrics) error</a></dd>
 				
+					
+					<dd>&nbsp; &nbsp; <a href="#fileMetricReader.getMetrics">func (fmr *fileMetricReader) getMetrics(metricsFilePath string) (metrics *Metrics, err error)</a></dd>
+				
 			
 			
 			</dl>
@@ -1329,7 +1332,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="NewYAMLMetricReaderWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L11">NewYAMLMetricReaderWriter</a>
+				<h3 id="NewYAMLMetricReaderWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L15">NewYAMLMetricReaderWriter</a>
 					<a class="permalink" href="#NewYAMLMetricReaderWriter">&#xb6;</a>
 					
 					
@@ -1664,7 +1667,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 		
 			
 			
-			<h2 id="fileMetricReader">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L21">fileMetricReader</a>
+			<h2 id="fileMetricReader">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L25">fileMetricReader</a>
 				<a class="permalink" href="#fileMetricReader">&#xb6;</a>
 				
 				
@@ -1688,7 +1691,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 
 			
 				
-				<h3 id="fileMetricReader.CreateMetric">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L68">CreateMetric</a>
+				<h3 id="fileMetricReader.CreateMetric">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L100">CreateMetric</a>
 					<a class="permalink" href="#fileMetricReader.CreateMetric">&#xb6;</a>
 					
 					
@@ -1700,7 +1703,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="fileMetricReader.CreatePreset">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L99">CreatePreset</a>
+				<h3 id="fileMetricReader.CreatePreset">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L131">CreatePreset</a>
 					<a class="permalink" href="#fileMetricReader.CreatePreset">&#xb6;</a>
 					
 					
@@ -1712,7 +1715,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="fileMetricReader.DeleteMetric">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L50">DeleteMetric</a>
+				<h3 id="fileMetricReader.DeleteMetric">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L82">DeleteMetric</a>
 					<a class="permalink" href="#fileMetricReader.DeleteMetric">&#xb6;</a>
 					
 					
@@ -1724,7 +1727,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="fileMetricReader.DeletePreset">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L81">DeletePreset</a>
+				<h3 id="fileMetricReader.DeletePreset">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L113">DeletePreset</a>
 					<a class="permalink" href="#fileMetricReader.DeletePreset">&#xb6;</a>
 					
 					
@@ -1736,7 +1739,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="fileMetricReader.GetMetrics">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L34">GetMetrics</a>
+				<h3 id="fileMetricReader.GetMetrics">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L38">GetMetrics</a>
 					<a class="permalink" href="#fileMetricReader.GetMetrics">&#xb6;</a>
 					
 					
@@ -1748,7 +1751,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="fileMetricReader.UpdateMetric">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L59">UpdateMetric</a>
+				<h3 id="fileMetricReader.UpdateMetric">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L91">UpdateMetric</a>
 					<a class="permalink" href="#fileMetricReader.UpdateMetric">&#xb6;</a>
 					
 					
@@ -1760,7 +1763,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="fileMetricReader.UpdatePreset">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L90">UpdatePreset</a>
+				<h3 id="fileMetricReader.UpdatePreset">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L122">UpdatePreset</a>
 					<a class="permalink" href="#fileMetricReader.UpdatePreset">&#xb6;</a>
 					
 					
@@ -1772,12 +1775,24 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="fileMetricReader.WriteMetrics">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L26">WriteMetrics</a>
+				<h3 id="fileMetricReader.WriteMetrics">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L30">WriteMetrics</a>
 					<a class="permalink" href="#fileMetricReader.WriteMetrics">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fmr *fileMetricReader) WriteMetrics(metricDefs *<a href="#Metrics">Metrics</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="fileMetricReader.getMetrics">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/yaml.go.html#L72">getMetrics</a>
+					<a class="permalink" href="#fileMetricReader.getMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (fmr *fileMetricReader) getMetrics(metricsFilePath <a href="https://pkg.go.dev/builtin/#string">string</a>) (metrics *<a href="#Metrics">Metrics</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				

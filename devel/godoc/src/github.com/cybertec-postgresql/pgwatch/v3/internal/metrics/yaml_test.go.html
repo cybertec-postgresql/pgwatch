@@ -64,76 +64,76 @@
 <span id="L7" class="ln">     7  </span>
 <span id="L8" class="ln">     8  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/metrics&#34;
 <span id="L9" class="ln">     9  </span>	&#34;github.com/stretchr/testify/assert&#34;
-<span id="L10" class="ln">    10  </span>)
-<span id="L11" class="ln">    11  </span>
-<span id="L12" class="ln">    12  </span>func TestDeaultMetrics(t *testing.T) {
-<span id="L13" class="ln">    13  </span>	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, &#34;&#34;) <span class="comment">// empty path is reserved for default metrics</span>
-<span id="L14" class="ln">    14  </span>	assert.NoError(t, err)
-<span id="L15" class="ln">    15  </span>
-<span id="L16" class="ln">    16  </span>	<span class="comment">// Test GetMetrics</span>
-<span id="L17" class="ln">    17  </span>	metricsDefs, err := fmr.GetMetrics()
-<span id="L18" class="ln">    18  </span>	assert.NoError(t, err)
-<span id="L19" class="ln">    19  </span>
-<span id="L20" class="ln">    20  </span>	<span class="comment">// Test WriteMetrics</span>
-<span id="L21" class="ln">    21  </span>	err = fmr.WriteMetrics(metricsDefs)
-<span id="L22" class="ln">    22  </span>	assert.Error(t, err)
-<span id="L23" class="ln">    23  </span>
-<span id="L24" class="ln">    24  </span>	<span class="comment">// Test DeleteMetric</span>
-<span id="L25" class="ln">    25  </span>	err = fmr.DeleteMetric(&#34;test&#34;)
-<span id="L26" class="ln">    26  </span>	assert.Error(t, err)
-<span id="L27" class="ln">    27  </span>
-<span id="L28" class="ln">    28  </span>	<span class="comment">// Test UpdateMetric</span>
-<span id="L29" class="ln">    29  </span>	err = fmr.UpdateMetric(&#34;test&#34;, metrics.Metric{})
-<span id="L30" class="ln">    30  </span>	assert.Error(t, err)
-<span id="L31" class="ln">    31  </span>
-<span id="L32" class="ln">    32  </span>	<span class="comment">// Test DeletePreset</span>
-<span id="L33" class="ln">    33  </span>	err = fmr.DeletePreset(&#34;test&#34;)
-<span id="L34" class="ln">    34  </span>	assert.Error(t, err)
-<span id="L35" class="ln">    35  </span>
-<span id="L36" class="ln">    36  </span>	<span class="comment">// Test UpdatePreset</span>
-<span id="L37" class="ln">    37  </span>	err = fmr.UpdatePreset(&#34;test&#34;, metrics.Preset{})
-<span id="L38" class="ln">    38  </span>	assert.Error(t, err)
-<span id="L39" class="ln">    39  </span>}
-<span id="L40" class="ln">    40  </span>
-<span id="L41" class="ln">    41  </span>func TestWriteMetricsToFile(t *testing.T) {
-<span id="L42" class="ln">    42  </span>	<span class="comment">// Define test data</span>
-<span id="L43" class="ln">    43  </span>	metricDefs := metrics.Metrics{
-<span id="L44" class="ln">    44  </span>		MetricDefs: metrics.MetricDefs{
-<span id="L45" class="ln">    45  </span>			&#34;test_metric&#34;: metrics.Metric{
-<span id="L46" class="ln">    46  </span>				SQLs: map[int]string{
-<span id="L47" class="ln">    47  </span>					1: &#34;SELECT 1&#34;,
-<span id="L48" class="ln">    48  </span>				},
-<span id="L49" class="ln">    49  </span>				InitSQL:         &#34;SELECT 1&#34;,
-<span id="L50" class="ln">    50  </span>				NodeStatus:      &#34;primary&#34;,
-<span id="L51" class="ln">    51  </span>				Gauges:          []string{&#34;gauge1&#34;, &#34;gauge2&#34;},
-<span id="L52" class="ln">    52  </span>				IsInstanceLevel: true,
-<span id="L53" class="ln">    53  </span>				StorageName:     &#34;storage1&#34;,
-<span id="L54" class="ln">    54  </span>				Description:     &#34;Test metric&#34;,
-<span id="L55" class="ln">    55  </span>			},
-<span id="L56" class="ln">    56  </span>		},
-<span id="L57" class="ln">    57  </span>		PresetDefs: metrics.PresetDefs{
-<span id="L58" class="ln">    58  </span>			&#34;test_preset&#34;: metrics.Preset{
-<span id="L59" class="ln">    59  </span>				Description: &#34;Test preset&#34;,
-<span id="L60" class="ln">    60  </span>				Metrics: map[string]float64{
-<span id="L61" class="ln">    61  </span>					&#34;test_metric&#34;: 1.0,
-<span id="L62" class="ln">    62  </span>				},
-<span id="L63" class="ln">    63  </span>			},
-<span id="L64" class="ln">    64  </span>		},
-<span id="L65" class="ln">    65  </span>	}
-<span id="L66" class="ln">    66  </span>
-<span id="L67" class="ln">    67  </span>	<span class="comment">// Create a temporary file for testing</span>
-<span id="L68" class="ln">    68  </span>	tempDir := t.TempDir()
-<span id="L69" class="ln">    69  </span>	tempFile := filepath.Join(tempDir, &#34;metrics.yaml&#34;)
-<span id="L70" class="ln">    70  </span>
-<span id="L71" class="ln">    71  </span>	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
-<span id="L72" class="ln">    72  </span>	assert.NoError(t, err)
-<span id="L73" class="ln">    73  </span>
-<span id="L74" class="ln">    74  </span>	<span class="comment">// Call the function being tested</span>
-<span id="L75" class="ln">    75  </span>	err = fmr.WriteMetrics(&amp;metricDefs)
-<span id="L76" class="ln">    76  </span>	assert.NoError(t, err)
-<span id="L77" class="ln">    77  </span>
-<span id="L78" class="ln">    78  </span>	<span class="comment">// Read the contents of the file</span>
-<span id="L79" class="ln">    79  </span>	assert.NoError(t, err)
+<span id="L10" class="ln">    10  </span>	&#34;gopkg.in/yaml.v3&#34;
+<span id="L11" class="ln">    11  </span>)
+<span id="L12" class="ln">    12  </span>
+<span id="L13" class="ln">    13  </span>func TestDeaultMetrics(t *testing.T) {
+<span id="L14" class="ln">    14  </span>	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, &#34;&#34;) <span class="comment">// empty path is reserved for default metrics</span>
+<span id="L15" class="ln">    15  </span>	assert.NoError(t, err)
+<span id="L16" class="ln">    16  </span>
+<span id="L17" class="ln">    17  </span>	<span class="comment">// Test GetMetrics</span>
+<span id="L18" class="ln">    18  </span>	metricsDefs, err := fmr.GetMetrics()
+<span id="L19" class="ln">    19  </span>	assert.NoError(t, err)
+<span id="L20" class="ln">    20  </span>
+<span id="L21" class="ln">    21  </span>	<span class="comment">// Test WriteMetrics</span>
+<span id="L22" class="ln">    22  </span>	err = fmr.WriteMetrics(metricsDefs)
+<span id="L23" class="ln">    23  </span>	assert.Error(t, err)
+<span id="L24" class="ln">    24  </span>
+<span id="L25" class="ln">    25  </span>	<span class="comment">// Test DeleteMetric</span>
+<span id="L26" class="ln">    26  </span>	err = fmr.DeleteMetric(&#34;test&#34;)
+<span id="L27" class="ln">    27  </span>	assert.Error(t, err)
+<span id="L28" class="ln">    28  </span>
+<span id="L29" class="ln">    29  </span>	<span class="comment">// Test UpdateMetric</span>
+<span id="L30" class="ln">    30  </span>	err = fmr.UpdateMetric(&#34;test&#34;, metrics.Metric{})
+<span id="L31" class="ln">    31  </span>	assert.Error(t, err)
+<span id="L32" class="ln">    32  </span>
+<span id="L33" class="ln">    33  </span>	<span class="comment">// Test DeletePreset</span>
+<span id="L34" class="ln">    34  </span>	err = fmr.DeletePreset(&#34;test&#34;)
+<span id="L35" class="ln">    35  </span>	assert.Error(t, err)
+<span id="L36" class="ln">    36  </span>
+<span id="L37" class="ln">    37  </span>	<span class="comment">// Test UpdatePreset</span>
+<span id="L38" class="ln">    38  </span>	err = fmr.UpdatePreset(&#34;test&#34;, metrics.Preset{})
+<span id="L39" class="ln">    39  </span>	assert.Error(t, err)
+<span id="L40" class="ln">    40  </span>}
+<span id="L41" class="ln">    41  </span>
+<span id="L42" class="ln">    42  </span>func TestWriteMetricsToFile(t *testing.T) {
+<span id="L43" class="ln">    43  </span>	<span class="comment">// Define test data</span>
+<span id="L44" class="ln">    44  </span>	metricDefs := metrics.Metrics{
+<span id="L45" class="ln">    45  </span>		MetricDefs: metrics.MetricDefs{
+<span id="L46" class="ln">    46  </span>			&#34;test_metric&#34;: metrics.Metric{
+<span id="L47" class="ln">    47  </span>				SQLs: map[int]string{
+<span id="L48" class="ln">    48  </span>					1: &#34;SELECT 1&#34;,
+<span id="L49" class="ln">    49  </span>				},
+<span id="L50" class="ln">    50  </span>				InitSQL:         &#34;SELECT 1&#34;,
+<span id="L51" class="ln">    51  </span>				NodeStatus:      &#34;primary&#34;,
+<span id="L52" class="ln">    52  </span>				Gauges:          []string{&#34;gauge1&#34;, &#34;gauge2&#34;},
+<span id="L53" class="ln">    53  </span>				IsInstanceLevel: true,
+<span id="L54" class="ln">    54  </span>				StorageName:     &#34;storage1&#34;,
+<span id="L55" class="ln">    55  </span>				Description:     &#34;Test metric&#34;,
+<span id="L56" class="ln">    56  </span>			},
+<span id="L57" class="ln">    57  </span>		},
+<span id="L58" class="ln">    58  </span>		PresetDefs: metrics.PresetDefs{
+<span id="L59" class="ln">    59  </span>			&#34;test_preset&#34;: metrics.Preset{
+<span id="L60" class="ln">    60  </span>				Description: &#34;Test preset&#34;,
+<span id="L61" class="ln">    61  </span>				Metrics: map[string]float64{
+<span id="L62" class="ln">    62  </span>					&#34;test_metric&#34;: 1.0,
+<span id="L63" class="ln">    63  </span>				},
+<span id="L64" class="ln">    64  </span>			},
+<span id="L65" class="ln">    65  </span>		},
+<span id="L66" class="ln">    66  </span>	}
+<span id="L67" class="ln">    67  </span>
+<span id="L68" class="ln">    68  </span>	<span class="comment">// Create a temporary file for testing</span>
+<span id="L69" class="ln">    69  </span>	tempDir := t.TempDir()
+<span id="L70" class="ln">    70  </span>	tempFile := filepath.Join(tempDir, &#34;metrics.yaml&#34;)
+<span id="L71" class="ln">    71  </span>
+<span id="L72" class="ln">    72  </span>	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
+<span id="L73" class="ln">    73  </span>	assert.NoError(t, err)
+<span id="L74" class="ln">    74  </span>
+<span id="L75" class="ln">    75  </span>	<span class="comment">// Call the function being tested</span>
+<span id="L76" class="ln">    76  </span>	err = fmr.WriteMetrics(&amp;metricDefs)
+<span id="L77" class="ln">    77  </span>	assert.NoError(t, err)
+<span id="L78" class="ln">    78  </span>
+<span id="L79" class="ln">    79  </span>	<span class="comment">// Read the contents of the file</span>
 <span id="L80" class="ln">    80  </span>	metrics, err := fmr.GetMetrics()
 <span id="L81" class="ln">    81  </span>	assert.NoError(t, err)
 <span id="L82" class="ln">    82  </span>
@@ -387,6 +387,67 @@
 <span id="L330" class="ln">   330  </span>	})
 <span id="L331" class="ln">   331  </span>}
 <span id="L332" class="ln">   332  </span>
+<span id="L333" class="ln">   333  </span>func TestMetricsDir(t *testing.T) {
+<span id="L334" class="ln">   334  </span>	a := assert.New(t)
+<span id="L335" class="ln">   335  </span>
+<span id="L336" class="ln">   336  </span>	<span class="comment">// first metrics file data</span>
+<span id="L337" class="ln">   337  </span>	metrics1 := metrics.Metrics{
+<span id="L338" class="ln">   338  </span>		MetricDefs: map[string]metrics.Metric{
+<span id="L339" class="ln">   339  </span>			&#34;metric1&#34;: {
+<span id="L340" class="ln">   340  </span>				Description: &#34;metric1 description&#34;,
+<span id="L341" class="ln">   341  </span>			},
+<span id="L342" class="ln">   342  </span>		},
+<span id="L343" class="ln">   343  </span>		PresetDefs: map[string]metrics.Preset{
+<span id="L344" class="ln">   344  </span>			&#34;preset1&#34;: {
+<span id="L345" class="ln">   345  </span>				Description: &#34;preset1 description&#34;,
+<span id="L346" class="ln">   346  </span>				Metrics: map[string]float64{
+<span id="L347" class="ln">   347  </span>					&#34;metric1&#34;: 10,
+<span id="L348" class="ln">   348  </span>				},
+<span id="L349" class="ln">   349  </span>			},
+<span id="L350" class="ln">   350  </span>		},
+<span id="L351" class="ln">   351  </span>	}
+<span id="L352" class="ln">   352  </span>
+<span id="L353" class="ln">   353  </span>	<span class="comment">// second metrics file data</span>
+<span id="L354" class="ln">   354  </span>	metrics2 := metrics.Metrics{
+<span id="L355" class="ln">   355  </span>		MetricDefs: map[string]metrics.Metric{
+<span id="L356" class="ln">   356  </span>			&#34;metric2&#34;: {
+<span id="L357" class="ln">   357  </span>				Description: &#34;metric2 description&#34;,
+<span id="L358" class="ln">   358  </span>			},
+<span id="L359" class="ln">   359  </span>		},
+<span id="L360" class="ln">   360  </span>		PresetDefs: map[string]metrics.Preset{
+<span id="L361" class="ln">   361  </span>			&#34;preset2&#34;: {
+<span id="L362" class="ln">   362  </span>				Description: &#34;preset2 description&#34;,
+<span id="L363" class="ln">   363  </span>				Metrics: map[string]float64{
+<span id="L364" class="ln">   364  </span>					&#34;metric2&#34;: 10,
+<span id="L365" class="ln">   365  </span>				},
+<span id="L366" class="ln">   366  </span>			},
+<span id="L367" class="ln">   367  </span>		},
+<span id="L368" class="ln">   368  </span>	}
+<span id="L369" class="ln">   369  </span>
+<span id="L370" class="ln">   370  </span>	metrics1File, err := yaml.Marshal(metrics1)
+<span id="L371" class="ln">   371  </span>	a.NoError(err)
+<span id="L372" class="ln">   372  </span>	metrics2File, err := yaml.Marshal(metrics2)
+<span id="L373" class="ln">   373  </span>	a.NoError(err)
+<span id="L374" class="ln">   374  </span>
+<span id="L375" class="ln">   375  </span>	<span class="comment">// write data to different files in a folder</span>
+<span id="L376" class="ln">   376  </span>	tempDir := t.TempDir()
+<span id="L377" class="ln">   377  </span>	err = os.WriteFile(filepath.Join(tempDir, &#34;metrics1.yaml&#34;), metrics1File, 0644)
+<span id="L378" class="ln">   378  </span>	a.NoError(err)
+<span id="L379" class="ln">   379  </span>	err = os.WriteFile(filepath.Join(tempDir, &#34;metrics2.yaml&#34;), metrics2File, 0644)
+<span id="L380" class="ln">   380  </span>	a.NoError(err)
+<span id="L381" class="ln">   381  </span>
+<span id="L382" class="ln">   382  </span>	<span class="comment">// use folder of yaml files for metrics configs</span>
+<span id="L383" class="ln">   383  </span>	yamlrw, err := metrics.NewYAMLMetricReaderWriter(ctx, tempDir)
+<span id="L384" class="ln">   384  </span>	a.NoError(err)
+<span id="L385" class="ln">   385  </span>
+<span id="L386" class="ln">   386  </span>	<span class="comment">// load metrics configs from folder</span>
+<span id="L387" class="ln">   387  </span>	ms, err := yamlrw.GetMetrics()
+<span id="L388" class="ln">   388  </span>	a.NoError(err)
+<span id="L389" class="ln">   389  </span>	a.Equal(&#34;metric1 description&#34;, ms.MetricDefs[&#34;metric1&#34;].Description)
+<span id="L390" class="ln">   390  </span>	a.Equal(&#34;preset1 description&#34;, ms.PresetDefs[&#34;preset1&#34;].Description)
+<span id="L391" class="ln">   391  </span>	a.Equal(&#34;metric2 description&#34;, ms.MetricDefs[&#34;metric2&#34;].Description)
+<span id="L392" class="ln">   392  </span>	a.Equal(&#34;preset2 description&#34;, ms.PresetDefs[&#34;preset2&#34;].Description)
+<span id="L393" class="ln">   393  </span>}
 </pre><p></p>
 
 <div id="footer">

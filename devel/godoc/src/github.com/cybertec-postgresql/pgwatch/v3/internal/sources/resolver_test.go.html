@@ -113,7 +113,7 @@
 <span id="L56" class="ln">    56  </span>func TestMonitoredDatabase_ResolveDatabasesFromPatroni(t *testing.T) {
 <span id="L57" class="ln">    57  </span>	etcdContainer, err := etcd.Run(ctx, &#34;gcr.io/etcd-development/etcd:v3.5.14&#34;,
 <span id="L58" class="ln">    58  </span>		testcontainers.WithWaitStrategy(wait.ForLog(&#34;ready to serve client requests&#34;).
-<span id="L59" class="ln">    59  </span>			WithStartupTimeout(5*time.Second)))
+<span id="L59" class="ln">    59  </span>			WithStartupTimeout(15*time.Second)))
 <span id="L60" class="ln">    60  </span>	require.NoError(t, err)
 <span id="L61" class="ln">    61  </span>	defer func() { assert.NoError(t, etcdContainer.Terminate(ctx)) }()
 <span id="L62" class="ln">    62  </span>
