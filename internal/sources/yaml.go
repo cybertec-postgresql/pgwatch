@@ -80,8 +80,8 @@ func (fcr *fileSourcesReaderWriter) GetSources() (dbs Sources, err error) {
 			if err != nil {
 				return err
 			}
-			name := strings.ToLower(d.Name())
-			if d.IsDir() || !strings.HasSuffix(name, ".yaml") && !strings.HasSuffix(name, ".yml") {
+			ext := strings.ToLower(filepath.Ext(d.Name()))
+			if d.IsDir() || ext != ".yaml" && ext != ".yml" {
 				return nil
 			}
 			var mdbs Sources

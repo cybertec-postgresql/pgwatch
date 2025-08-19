@@ -35,74 +35,48 @@ func (fmr *fileMetricReader) WriteMetrics(metricDefs *Metrics) error {
 //go:embed metrics.yaml
 var defaultMetricsYAML []byte
 
-func (fmr *fileMetricReader) GetMetrics() (*Metrics, error) {
+func (fmr *fileMetricReader) GetMetrics() (metrics *Metrics, err error) {
+	metrics = &Metrics{MetricDefs{}, PresetDefs{}}
 	if fmr.path == "" {
-		metrics := new(Metrics)
-		metricsYaml := defaultMetricsYAML
-		if err := yaml.Unmarshal(metricsYaml, metrics); err != nil {
-			return nil, err
-		}
-		return metrics, nil
-	} 
-	return fmr.loadMetricsFromYaml()	
-}
+		err = yaml.Unmarshal(defaultMetricsYAML, metrics)
+		return
+	}
 
-// Loads a Metrics struct from a file or a folder of YAML files
-// located at the fileMetricReader path.
-func (fmr *fileMetricReader) loadMetricsFromYaml() (*Metrics, error) {
 	fi, err := os.Stat(fmr.path)
 	if err != nil {
 		return nil, err
 	}
-
-	var yamlFiles [][]byte
 	switch mode := fi.Mode(); {
 	case mode.IsDir():
 		err = filepath.WalkDir(fmr.path, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
-
 			ext := strings.ToLower(filepath.Ext(d.Name()))
 			if d.IsDir() || ext != ".yaml" && ext != ".yml" {
 				return nil
 			}
-
-			var singleFileData []byte
-			if singleFileData, err = os.ReadFile(path); err != nil {
-				return err
+			var m *Metrics
+			if m, err = fmr.getMetrics(path); err == nil {
+				maps.Copy(metrics.PresetDefs, m.PresetDefs)
+				maps.Copy(metrics.MetricDefs, m.MetricDefs)
 			}
-			yamlFiles = append(yamlFiles, singleFileData)
-
-			return nil
+			return err
 		})
-
-		if err != nil {
-			return nil, err
-		}
 	case mode.IsRegular():
-		var singleFileData []byte
-		if singleFileData, err = os.ReadFile(fmr.path); err != nil {
-			return nil, err
-		}
-		yamlFiles = append(yamlFiles, singleFileData)
+		metrics, err = fmr.getMetrics(fmr.path)
 	}
+	return
+}
 
-
-	metrics := &Metrics {
-		MetricDefs: make(MetricDefs),
-		PresetDefs: make(PresetDefs),
+func (fcr *fileMetricReader) getMetrics(metricsFilePath string) (metrics *Metrics, err error) {
+	var yamlFile []byte
+	if yamlFile, err = os.ReadFile(metricsFilePath); err != nil {
+		return
 	}
-
-	for _, singleFileData := range yamlFiles {
-		var fileMetrics Metrics
-		if err = yaml.Unmarshal(singleFileData, &fileMetrics); err != nil {
-			return nil, err
-		}
-		maps.Copy(metrics.PresetDefs, fileMetrics.PresetDefs)
-		maps.Copy(metrics.MetricDefs, fileMetrics.MetricDefs)
-	}
-	return metrics, nil
+	metrics = &Metrics{MetricDefs{}, PresetDefs{}}
+	err = yaml.Unmarshal(yamlFile, &metrics)
+	return
 }
 
 func (fmr *fileMetricReader) DeleteMetric(metricName string) error {
