@@ -3,7 +3,11 @@ package metrics
 import (
 	"context"
 	_ "embed"
+	"io/fs"
+	"maps"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -32,18 +36,46 @@ func (fmr *fileMetricReader) WriteMetrics(metricDefs *Metrics) error {
 var defaultMetricsYAML []byte
 
 func (fmr *fileMetricReader) GetMetrics() (metrics *Metrics, err error) {
-	metrics = new(Metrics)
-	var s []byte
+	metrics = &Metrics{MetricDefs{}, PresetDefs{}}
 	if fmr.path == "" {
-		s = defaultMetricsYAML
-	} else {
-		if s, err = os.ReadFile(fmr.path); err != nil {
-			return nil, err
-		}
+		err = yaml.Unmarshal(defaultMetricsYAML, metrics)
+		return
 	}
-	if err = yaml.Unmarshal(s, metrics); err != nil {
+
+	fi, err := os.Stat(fmr.path)
+	if err != nil {
 		return nil, err
 	}
+	switch mode := fi.Mode(); {
+	case mode.IsDir():
+		err = filepath.WalkDir(fmr.path, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			ext := strings.ToLower(filepath.Ext(d.Name()))
+			if d.IsDir() || ext != ".yaml" && ext != ".yml" {
+				return nil
+			}
+			var m *Metrics
+			if m, err = fmr.getMetrics(path); err == nil {
+				maps.Copy(metrics.PresetDefs, m.PresetDefs)
+				maps.Copy(metrics.MetricDefs, m.MetricDefs)
+			}
+			return err
+		})
+	case mode.IsRegular():
+		metrics, err = fmr.getMetrics(fmr.path)
+	}
+	return
+}
+
+func (fmr *fileMetricReader) getMetrics(metricsFilePath string) (metrics *Metrics, err error) {
+	var yamlFile []byte
+	if yamlFile, err = os.ReadFile(metricsFilePath); err != nil {
+		return
+	}
+	metrics = &Metrics{MetricDefs{}, PresetDefs{}}
+	err = yaml.Unmarshal(yamlFile, &metrics)
 	return
 }
 
