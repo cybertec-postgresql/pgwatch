@@ -384,7 +384,7 @@ func (r *Reaper) LoadSources() (err error) {
 		return !s.IsEnabled || len(r.Sources.Groups) > 0 && !s.IsDefaultGroup() && !slices.Contains(r.Sources.Groups, s.Group)
 	})
 	if newSrcs, err = srcs.ResolveDatabases(); err != nil {
-		return err
+		r.logger.WithError(err).Error("could not resolve databases from sources")
 	}
 
 	for i, newMD := range newSrcs {
