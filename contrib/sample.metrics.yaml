@@ -1,0 +1,74 @@
+# The following structure is expected for metrics and preset definitions:
+# metrics:
+#    metric_name:
+#        init_sql: |-
+#            CREATE EXTENSION IF NOT EXISTS some_extension;
+#            CREATE OR REPLACE FUNCTION get_some_stat(OUT some_stat int)
+#            ...
+#        sqls:
+#            11: |
+#                select /* pgwatch_generated */
+#                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+#                  ...
+#            14: |
+#                select /* pgwatch_generated */
+#                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+#                  ...
+#        gauges:
+#            - '*'
+#        is_instance_level: true
+#        node_status: primary
+#        statement_timeout_seconds: 300
+#        metric_storage_name: optional_metric_storage_name
+# presets:
+#    preset_name:
+#        description: custom preset for some metrics
+#        metrics:
+#            metric_name: 60
+#            another_metric_name: 120
+metrics:
+  connections:
+    sqls:
+      11: |
+        select /* pgwatch_generated */
+          (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+          count(*)::int8 as value
+        from pg_stat_activity;
+    gauges:
+      - '*'
+    is_instance_level: true
+  transactions_total:
+    sqls:
+      11: |
+        select /* pgwatch_generated */
+          (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+          sum(xact_commit + xact_rollback)::int8 as value
+        from pg_stat_database;
+    gauges:
+      - '*'
+    is_instance_level: false
+  buffer_cache_hit_ratio:
+    sqls:
+      11: |
+        select /* pgwatch_generated */
+          (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+          case when (blks_hit + blks_read) = 0 then 0
+               else (blks_hit::double precision / (blks_hit + blks_read)) end as value
+        from (
+          select sum(blks_hit) as blks_hit, sum(blks_read) as blks_read
+          from pg_stat_database
+        ) s;
+    gauges:
+      - '*'
+    is_instance_level: false
+    metric_storage_name: buffer_cache_hit_ratio
+presets:
+  default:
+    description: minimal example preset
+    metrics:
+      connections: 10
+      transactions_total: 30
+      buffer_cache_hit_ratio: 60
+
+
+
