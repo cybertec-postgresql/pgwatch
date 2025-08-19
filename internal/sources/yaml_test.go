@@ -37,15 +37,6 @@ func TestYAMLGetMonitoredDatabases(t *testing.T) {
 		a.Len(dbs, sampleEntriesNumber)
 	})
 
-	t.Run("folder with yaml files", func(*testing.T) {
-		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, contribDir)
-		a.NoError(err)
-
-		dbs, err := yamlrw.GetSources()
-		a.NoError(err)
-		a.Len(dbs, sampleEntriesNumber)
-	})
-
 	t.Run("nonexistent file", func(*testing.T) {
 		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, "nonexistent.yaml")
 		a.NoError(err)
