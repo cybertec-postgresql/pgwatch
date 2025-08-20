@@ -4470,17 +4470,15 @@ metrics:
         is_instance_level: true
 
     archiver_pending_count:
-        init_sql: |-
-            GRANT EXECUTE ON FUNCTION pg_ls_dir(text) TO pgwatch;
         sqls:
-            11: |-
+            12: |-
                 select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   count(*) as archiver_pending_count
                 from 
-                  (select pg_ls_dir('pg_wal/archive_status')) a 
+                  pg_ls_archive_statusdir() a 
                 where
-                  pg_ls_dir ~ '[0-9A-F]{24}.ready';
+                  name ~ '[0-9A-F]{24}.ready';
 
 presets:
     aiven:
