@@ -441,7 +441,7 @@
 <span id="L384" class="ln">   384  </span>		return !s.IsEnabled || len(r.Sources.Groups) &gt; 0 &amp;&amp; !s.IsDefaultGroup() &amp;&amp; !slices.Contains(r.Sources.Groups, s.Group)
 <span id="L385" class="ln">   385  </span>	})
 <span id="L386" class="ln">   386  </span>	if newSrcs, err = srcs.ResolveDatabases(); err != nil {
-<span id="L387" class="ln">   387  </span>		return err
+<span id="L387" class="ln">   387  </span>		r.logger.WithError(err).Error(&#34;could not resolve databases from sources&#34;)
 <span id="L388" class="ln">   388  </span>	}
 <span id="L389" class="ln">   389  </span>
 <span id="L390" class="ln">   390  </span>	for i, newMD := range newSrcs {
