@@ -775,7 +775,7 @@ If one is specified, the other one is set to the same value.
 			<pre>type SourceCommand struct {
 <span id="SourceCommand.owner"></span>    owner   *<a href="#Options">Options</a>
 <span id="SourceCommand.Ping"></span>    Ping    <a href="#SourcePingCommand">SourcePingCommand</a>    `command:&#34;ping&#34; description:&#34;Try to connect to configured sources, report errors if any and then exit&#34;`
-<span id="SourceCommand.Resolve"></span>    Resolve <a href="#SourceResolveCommand">SourceResolveCommand</a> `command:&#34;resolve&#34; description:&#34;Resolve monitored connections for a given sources (all by default)&#34;`
+<span id="SourceCommand.Resolve"></span>    Resolve <a href="#SourceResolveCommand">SourceResolveCommand</a> `command:&#34;resolve&#34; description:&#34;Connect to the configured source(s) and return resolved connection strings for the monitoring targets discovered&#34;`
 }
 </pre>
 

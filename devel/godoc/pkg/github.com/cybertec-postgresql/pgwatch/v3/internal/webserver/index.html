@@ -413,7 +413,7 @@
 			<pre>type CmdOpts struct {
 <span id="CmdOpts.WebDisable"></span>    WebDisable  <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-disable&#34; mapstructure:&#34;web-disable&#34; description:&#34;Disable REST API and/or web UI&#34; env:&#34;PW_WEBDISABLE&#34; optional:&#34;true&#34; optional-value:&#34;all&#34; choice:&#34;all&#34; choice:&#34;ui&#34;`
 <span id="CmdOpts.WebAddr"></span>    WebAddr     <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-addr&#34; mapstructure:&#34;web-addr&#34; description:&#34;TCP address in the form &#39;host:port&#39; to listen on&#34; default:&#34;:8080&#34; env:&#34;PW_WEBADDR&#34;`
-<span id="CmdOpts.WebUser"></span>    WebUser     <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-user&#34; mapstructure:&#34;web-user&#34; description:&#34;Admin login&#34; env:&#34;PW_WEBUSER&#34;`
+<span id="CmdOpts.WebUser"></span>    WebUser     <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-user&#34; mapstructure:&#34;web-user&#34; description:&#34;Admin username&#34; env:&#34;PW_WEBUSER&#34;`
 <span id="CmdOpts.WebPassword"></span>    WebPassword <a href="https://pkg.go.dev/builtin/#string">string</a> `long:&#34;web-password&#34; mapstructure:&#34;web-password&#34; description:&#34;Admin password&#34; env:&#34;PW_WEBPASSWORD&#34;`
 }
 </pre>

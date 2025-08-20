@@ -1807,9 +1807,8 @@
 <h2 id="general-usage">General Usage</h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>  pgwatch [OPTIONS] [config | metric | source]
 </span></code></pre></div>
-<p>When no command is specified, the default is to start in a monitoring mode. pgwatch will read the
-configuration from the specified sources and metrics first, and then will start the measurements collection
-from resolved databases.</p>
+<p>When no command is specified, pgwatch starts the monitoring process. 
+It reads the configuration from the specified sources and metrics, then begins collecting measurements from the resolved databases.</p>
 <h2 id="options">Options</h2>
 <h3 id="sources">Sources</h3>
 <ul>
@@ -1847,6 +1846,11 @@ ENV: <code>$PW_MAX_PARALLEL_CONNECTIONS_PER_DB</code></p>
 ENV: <code>$PW_TRY_CREATE_LISTED_EXTS_IF_MISSING</code></p>
 <p>Example: <code>pg_stat_statements,pg_hint_plan</code></p>
 </li>
+<li>
+<p><code>--create-helpers</code></p>
+<p>Create helper database objects from metric definitions.<br />
+ENV: <code>$PW_CREATE_HELPERS</code></p>
+</li>
 </ul>
 <h3 id="metrics">Metrics</h3>
 <ul>
@@ -1854,11 +1858,6 @@ ENV: <code>$PW_TRY_CREATE_LISTED_EXTS_IF_MISSING</code></p>
 <p><code>-m</code>, <code>--metrics=</code></p>
 <p>Postgres URI, YAML file or folder of YAML files with metrics definitions.<br />
 ENV: <code>$PW_METRICS</code></p>
-</li>
-<li>
-<p><code>--create-helpers</code></p>
-<p>Create helper database objects from metric definitions.<br />
-ENV: <code>$PW_CREATE_HELPERS</code></p>
 </li>
 <li>
 <p><code>--direct-os-stats</code></p>
@@ -1954,7 +1953,7 @@ ENV: <code>$PW_WEBADDR</code></p>
 </li>
 <li>
 <p><code>--web-user=</code></p>
-<p>Admin login.<br />
+<p>Admin username.<br />
 ENV: <code>$PW_WEBUSER</code></p>
 </li>
 <li>
@@ -2021,13 +2020,20 @@ PostgreSQL version to get SQL for.</p>
 <ul>
 <li>
 <p><code>ping</code></p>
-<p>Ping the sources (databases, patroni clusters, poolers, etc.) to check if they are reachable.  </p>
+<p>Try to connect to configured sources, report errors if any and then exit.  </p>
 </li>
 <li>
 <p><code>resolve</code></p>
-<p>Resolve the monitored databases from sources (postgres clusters and patroni clusters) to check
-if they are reachableand if the configuration is correct. The output will be a list of the
-resolved databases with their connection strings.</p>
+<p>Connect to the configured source(s) and return resolved connection strings for the monitoring targets discovered.</p>
+<p>Example (say we have a source pg-stage1 defined as postgres-continuous-discovery):</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>    pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch source resolve
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    pg-stage1_postgres=postgresql://pgwatch:pgwatch@localhost:5432/postgres
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    pg-stage1_pagila=postgresql://pgwatch:pgwatch@localhost:5432/pagila
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    pg-stage1_test=postgresql://pgwatch:pgwatch@localhost:5432/test
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    pg-stage1_timetable=postgresql://pgwatch:pgwatch@localhost:5432/timetable
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    pg-stage1_test602=postgresql://pgwatch:pgwatch@localhost:5432/test602
+</span></code></pre></div>
 </li>
 </ul>
 
