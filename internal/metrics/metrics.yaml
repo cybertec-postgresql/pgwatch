@@ -4275,6 +4275,8 @@ metrics:
         is_instance_level: true
 
     archiver_pending_count:
+        init_sql: |-
+            GRANT EXECUTE ON FUNCTION pg_ls_dir(text) TO pgwatch;
         sqls:
             11: |-
                 select /* pgwatch_generated */
