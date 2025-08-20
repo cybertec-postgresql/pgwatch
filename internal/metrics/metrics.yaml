@@ -365,6 +365,22 @@ metrics:
                   (extract(epoch from now() - stats_reset))::int as last_reset_s
                 from
                   pg_stat_checkpointer
+            18: |-
+                select /* pgwatch_generated */
+                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                  num_timed,
+                  num_requested,
+                  num_done,
+                  restartpoints_timed,
+                  restartpoints_req,
+                  restartpoints_done,
+                  write_time,
+                  sync_time,
+                  buffers_written,
+                  slru_written,
+                  (extract(epoch from now() - stats_reset))::int as last_reset_s
+                from
+                  pg_stat_checkpointer
     configuration_hashes:
         description: >
             Retrieves configuration settings from the PostgreSQL `pg_settings` view, providing insights into the current configuration of the database.
