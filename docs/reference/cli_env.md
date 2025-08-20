@@ -225,8 +225,20 @@ It reads the configuration from the specified sources and metrics, then begins c
 
 - `ping`
 
-    Try to connect to configured sources, report errors if any and then exit  
+    Try to connect to configured sources, report errors if any and then exit.  
 
 - `resolve`
 
-    Resolve connection strings for configured sources, based on the given source names (or all sources by default).
+    Connect to the configured source(s) and return resolved connection strings for the monitoring targets discovered.
+
+    Example (say we have a source pg-stage1 defined as postgres-continuous-discovery):
+
+    ```terminal
+        pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch source resolve
+
+        pg-stage1_postgres=postgresql://pgwatch:pgwatch@localhost:5432/postgres
+        pg-stage1_pagila=postgresql://pgwatch:pgwatch@localhost:5432/pagila
+        pg-stage1_test=postgresql://pgwatch:pgwatch@localhost:5432/test
+        pg-stage1_timetable=postgresql://pgwatch:pgwatch@localhost:5432/timetable
+        pg-stage1_test602=postgresql://pgwatch:pgwatch@localhost:5432/test602
+    ```
