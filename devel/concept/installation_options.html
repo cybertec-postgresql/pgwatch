@@ -1614,18 +1614,26 @@ some other more minor attributes. For rollout details see the
 <p>The default Docker demo image <code>cybertecpostgresql/pgwatch-demo</code> uses this approach.</p>
 <h2 id="file-based-operation">File based operation</h2>
 <p>One can deploy the gatherer daemon(s) decentralized with
-<em>sources to be monitored</em> defined in simple YAML files. In that case there
-is no need for the central Postgres configuration database. See the
+<strong>sources to be monitored</strong> and <strong>metrics and presets definitions</strong> 
+defined in simple YAML files. In that case there is 
+no need for the central Postgres configuration database. See
 <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.sources.yaml">sample.sources.yaml</a>
-config file for an example.</p>
+And
+<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.metrics.yaml">sample.metrics.yaml</a>
+config files for example.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>In this mode you also may want, but not forced, to point out the path to
-metric definition YAML file when starting the
-gatherer. Also note that the configuration system supports multiple
-YAML files in a folder so that you could easily programmatically manage
-things via <em>Ansible</em>, for example, and you can also use environment
-variables inside YAML files.</p>
+<p>You can use folder of YAML files instead of a single file 
+so that you can easily manage things via <em>Ansible</em>, for example. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Environment variables can be used inside sources YAML files.<br />
+example:
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$MY_VERY_SECRET_CONN_STR</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+</span></code></pre></div></p>
 </div>
 
 

@@ -2195,6 +2195,12 @@
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">&quot;field2&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;updated_value2&quot;</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="p">}</span>
 </span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When using a YAML folder-based configuration for metrics and/or sources, 
+pgwatch operates in <strong>read-only</strong> mode for metrics/presets and/or sources.<br />
+Attempting to update, create, or delete metrics/presets or sources will result in an error.</p>
+</div>
 <h2 id="sources-api">Sources API</h2>
 <h3 id="list-all-sources">List all sources</h3>
 <p>Get all monitoring sources.</p>
