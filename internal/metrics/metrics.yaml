@@ -2054,6 +2054,28 @@ metrics:
                     pg_stat_io
                 GROUP BY
                    ROLLUP (backend_type)
+            18: |-
+                SELECT /* pgwatch_generated */
+                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                    coalesce(backend_type, 'total') as tag_backend_type,
+                    sum(coalesce(reads, 0))::int8  as reads,
+                    (sum(coalesce(read_bytes, 0)) / 1e6)::int8 as read_bytes_mb,
+                    sum(coalesce(read_time, 0))::int8 as read_time_ms,
+                    sum(coalesce(writes, 0))::int8 as writes,
+                    (sum(coalesce(write_bytes, 0)) / 1e6)::int8 as write_bytes_mb,
+                    sum(coalesce(write_time, 0))::int8 as write_time_ms,
+                    sum(coalesce(writebacks, 0))::int8 as writebacks,
+                    (sum(coalesce(writebacks, 0)) * current_setting('block_size')::int8 / 1e6)::int8 as writeback_bytes_mb,
+                    sum(coalesce(writeback_time, 0))::int8 as writeback_time_ms,
+                    sum(coalesce(fsyncs, 0))::int8 as fsyncs,
+                    sum(coalesce(fsync_time, 0))::int8 as fsync_time_ms,
+                    sum(coalesce(extends, 0))::int8 as extends,
+                    (sum(coalesce(extend_bytes, 0)) / 1e6)::int8 as extend_bytes_mb,
+                    max(extract(epoch from now() - stats_reset)::int) as stats_reset_s
+                FROM
+                    pg_stat_io
+                GROUP BY
+                   ROLLUP (backend_type)
         is_instance_level: true
     stat_ssl:
         description: >
