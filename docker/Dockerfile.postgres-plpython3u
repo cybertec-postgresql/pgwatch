@@ -1,8 +1,8 @@
-FROM postgres:17
+FROM postgres:18beta3
 
 # Install the necessary packages for plpython3u
 RUN apt-get update && apt-get install -y \
-    postgresql-plpython3-17 postgresql-17-pg-qualstats python3-psutil \
+    postgresql-plpython3-18 postgresql-18-pg-qualstats python3-psutil \
     pg-activity
 
 # Clean up
