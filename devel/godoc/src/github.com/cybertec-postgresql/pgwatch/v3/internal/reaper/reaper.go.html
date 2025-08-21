@@ -158,7 +158,7 @@
 <span id="L101" class="ln">   101  </span>			srcL := logger.WithField(&#34;source&#34;, monitoredSource.Name)
 <span id="L102" class="ln">   102  </span>
 <span id="L103" class="ln">   103  </span>			if monitoredSource.Connect(ctx, r.Sources) != nil {
-<span id="L104" class="ln">   104  </span>				srcL.WithError(err).Warning(&#34;could not init connection, retrying on next iteration&#34;)
+<span id="L104" class="ln">   104  </span>				srcL.Warning(&#34;could not init connection, retrying on next iteration&#34;)
 <span id="L105" class="ln">   105  </span>				continue
 <span id="L106" class="ln">   106  </span>			}
 <span id="L107" class="ln">   107  </span>
