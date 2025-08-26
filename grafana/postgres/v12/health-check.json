@@ -53,7 +53,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -95,7 +96,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -179,7 +180,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#d44a3a"
+                "color": "#d44a3a",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -221,7 +223,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -311,7 +313,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#C4162A"
+                "color": "#C4162A",
+                "value": 0
               },
               {
                 "color": "#FA6400",
@@ -360,7 +363,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -444,7 +447,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -486,7 +490,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -576,7 +580,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "rgba(237, 129, 40, 0.89)"
+                "color": "rgba(237, 129, 40, 0.89)",
+                "value": 0
               },
               {
                 "color": "#299c46",
@@ -625,7 +630,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -696,34 +701,20 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "\"max_connections\" configuration setting. Changing requires re-start. 500/1000 Warn / Error thresholds by default",
+      "description": "Total number of sessions established to this database during last interval",
       "fieldConfig": {
         "defaults": {
-          "decimals": 0,
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#56A64B",
+                "value": 0
               },
               {
-                "color": "#FA6400",
-                "value": 500
-              },
-              {
-                "color": "#d44a3a",
-                "value": 1000
+                "color": "red",
+                "value": 100
               }
             ]
           },
@@ -737,21 +728,12 @@
         "x": 6,
         "y": 2
       },
-      "hideTimeOverride": true,
-      "id": 45,
-      "links": [
-        {
-          "targetBlank": true,
-          "title": "'DB overview :: backends' panel",
-          "url": "/d/db-overview?$__all_variables&viewPanel=11&fullscreen"
-        }
-      ],
-      "maxDataPoints": 100,
+      "id": 49,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
-        "orientation": "horizontal",
+        "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
@@ -764,70 +746,34 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
-          },
-          "format": "time_series",
-          "group": [],
-          "groupBy": [
-            {
-              "params": [
-                "1d"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "none"
-              ],
-              "type": "fill"
-            }
-          ],
-          "measurement": "db_stats",
-          "metricColumn": "none",
-          "orderByTime": "ASC",
-          "policy": "default",
+          "editorMode": "code",
+          "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  (data->>'max_connections')::int\nFROM\n  settings\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1",
+          "rawSql": "  SELECT \r\n  max((data->>'sessions')::int8) - min((data->>'sessions')::int8) as established\r\nfrom db_stats \r\nwhere dbname = '$dbname' and time > now() - '$online_interval'::interval\r\norder by 1",
           "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
+          "sql": {
+            "columns": [
               {
-                "params": [
-                  "numbackends"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "last"
+                "parameters": [],
+                "type": "function"
               }
-            ]
-          ],
-          "tags": [
-            {
-              "key": "dbname",
-              "operator": "=~",
-              "value": "/^$dbname$/"
-            }
-          ],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
-      "timeFrom": "6h",
-      "title": "Max. connections",
+      "title": "Established Connections",
       "type": "stat"
     },
     {
@@ -854,7 +800,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -903,7 +850,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -996,7 +943,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#d44a3a"
+                "color": "#d44a3a",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -1044,7 +992,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -1135,7 +1083,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -1183,7 +1132,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -1247,10 +1196,10 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Transactions per Second. Last $online_interval average. <0.1 % Error / < 1.0 Warn thresholds by default",
+      "description": "\"max_connections\" configuration setting. Changing requires re-start. 500/1000 Warn / Error thresholds by default",
       "fieldConfig": {
         "defaults": {
-          "decimals": 1,
+          "decimals": 0,
           "mappings": [
             {
               "options": {
@@ -1266,15 +1215,16 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#d44a3a"
-              },
-              {
-                "color": "rgba(237, 129, 40, 0.89)",
-                "value": 0.1
-              },
-              {
                 "color": "#299c46",
-                "value": 1
+                "value": 0
+              },
+              {
+                "color": "#FA6400",
+                "value": 500
+              },
+              {
+                "color": "#d44a3a",
+                "value": 1000
               }
             ]
           },
@@ -1288,12 +1238,13 @@
         "x": 6,
         "y": 4
       },
-      "id": 7,
+      "hideTimeOverride": true,
+      "id": 45,
       "links": [
         {
           "targetBlank": true,
-          "title": "'DB overview Unprivileged / Developer :: TPS' panel",
-          "url": "/d/db-overview-developer?$__all_variables&viewPanel=15&fullscreen"
+          "title": "'DB overview :: backends' panel",
+          "url": "/d/db-overview?$__all_variables&viewPanel=11&fullscreen"
         }
       ],
       "maxDataPoints": 100,
@@ -1305,7 +1256,7 @@
         "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
-            "mean"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
@@ -1314,7 +1265,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -1326,7 +1277,7 @@
           "groupBy": [
             {
               "params": [
-                "$__interval"
+                "1d"
               ],
               "type": "time"
             },
@@ -1342,24 +1293,30 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $online_interval),\n  avg( ((roll-roll_lag) + (comm-comm_lag)) / extract(epoch from (time - time_lag))  )\nfrom (\n  select\n      time, lag(time) over w as time_lag,\n      (data->>'xact_rollback')::int8 as roll, lag((data->>'xact_rollback')::int8) over w as roll_lag,\n      (data->>'xact_commit')::int8 as comm, lag((data->>'xact_commit')::int8) over w as comm_lag\n  FROM\n      db_stats\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n    window w as (order by time)\n) x\nWHERE (comm > comm_lag or roll > roll_lag) and time > time_lag\nGROUP BY 1\nORDER BY 1 DESC\nLIMIT 1\n",
+          "rawSql": "SELECT\n  time,\n  (data->>'max_connections')::int\nFROM\n  settings\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "xact_commit"
+                  "numbackends"
                 ],
                 "type": "field"
               },
               {
                 "params": [],
-                "type": "mean"
+                "type": "last"
               }
             ]
           ],
-          "tags": [],
+          "tags": [
+            {
+              "key": "dbname",
+              "operator": "=~",
+              "value": "/^$dbname$/"
+            }
+          ],
           "timeColumn": "time",
           "where": [
             {
@@ -1370,7 +1327,8 @@
           ]
         }
       ],
-      "title": "TPS (avg.)",
+      "timeFrom": "6h",
+      "title": "Max. connections",
       "type": "stat"
     },
     {
@@ -1397,7 +1355,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#d44a3a"
+                "color": "#d44a3a",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -1445,7 +1404,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -1528,7 +1487,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -1577,7 +1537,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -1667,7 +1627,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1711,7 +1672,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -1775,7 +1736,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "",
+      "description": "Transactions per Second. Last $online_interval average. <0.1 % Error / < 1.0 Warn thresholds by default",
       "fieldConfig": {
         "defaults": {
           "decimals": 1,
@@ -1794,15 +1755,20 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "#d44a3a",
+                "value": 0
               },
               {
-                "color": "red",
-                "value": 80
+                "color": "rgba(237, 129, 40, 0.89)",
+                "value": 0.1
+              },
+              {
+                "color": "#299c46",
+                "value": 1
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "short"
         },
         "overrides": []
       },
@@ -1812,17 +1778,17 @@
         "x": 6,
         "y": 6
       },
-      "id": 23,
+      "id": 7,
       "links": [
         {
           "targetBlank": true,
-          "title": "DB overview :: DB size panel",
-          "url": "/d/db-overview?$__all_variables&viewPanel=10&fullscreen"
+          "title": "'DB overview Unprivileged / Developer :: TPS' panel",
+          "url": "/d/db-overview-developer?$__all_variables&viewPanel=15&fullscreen"
         }
       ],
       "maxDataPoints": 100,
       "options": {
-        "colorMode": "none",
+        "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "horizontal",
@@ -1838,7 +1804,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -1850,7 +1816,7 @@
           "groupBy": [
             {
               "params": [
-                "1h"
+                "$__interval"
               ],
               "type": "time"
             },
@@ -1866,20 +1832,20 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  time,\n  last_value-first_value as size_diff\nfrom (\n  select\n    time,\n    first_value((data->>'size_b')::int8) over w,\n    last_value((data->>'size_b')::int8) over w\n  from\n    db_size\n  where \n    dbname = '$dbname' and $__timeFilter(time)\n  window w as (\n     order by time rows BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING\n  )\n) x\norder by 1 desc\nlimit 1",
+          "rawSql": "select\n  $__timeGroup(time, $online_interval),\n  avg( ((roll-roll_lag) + (comm-comm_lag)) / extract(epoch from (time - time_lag))  )\nfrom (\n  select\n      time, lag(time) over w as time_lag,\n      (data->>'xact_rollback')::int8 as roll, lag((data->>'xact_rollback')::int8) over w as roll_lag,\n      (data->>'xact_commit')::int8 as comm, lag((data->>'xact_commit')::int8) over w as comm_lag\n  FROM\n      db_stats\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n    window w as (order by time)\n) x\nWHERE (comm > comm_lag or roll > roll_lag) and time > time_lag\nGROUP BY 1\nORDER BY 1 DESC\nLIMIT 1\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "postmaster_uptime_s"
+                  "xact_commit"
                 ],
                 "type": "field"
               },
               {
                 "params": [],
-                "type": "last"
+                "type": "mean"
               }
             ]
           ],
@@ -1894,7 +1860,7 @@
           ]
         }
       ],
-      "title": "DB size change (diff.)",
+      "title": "TPS (avg.)",
       "type": "stat"
     },
     {
@@ -1922,7 +1888,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#d44a3a"
+                "color": "#d44a3a",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -1970,7 +1937,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -2059,7 +2026,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -2107,7 +2075,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -2191,7 +2159,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -2238,7 +2207,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -2308,17 +2277,16 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Number of DDL changes i.e. new or changed tables, columns, functions etc.  >1 Warn thresholds by default",
+      "description": "",
       "fieldConfig": {
         "defaults": {
-          "decimals": 0,
+          "decimals": 1,
           "mappings": [
             {
               "options": {
                 "match": "null",
                 "result": {
-                  "color": "#299c46",
-                  "text": "0"
+                  "text": "N/A"
                 }
               },
               "type": "special"
@@ -2328,18 +2296,16 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "green",
+                "value": 0
               },
               {
-                "color": "rgba(237, 129, 40, 0.89)",
-                "value": 1
-              },
-              {
-                "color": "#d44a3a"
+                "color": "red",
+                "value": 80
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -2349,17 +2315,17 @@
         "x": 6,
         "y": 8
       },
-      "id": 20,
+      "id": 23,
       "links": [
         {
           "targetBlank": true,
-          "title": "'DDL / Config change events' dash",
-          "url": "/d/change-events?$__all_variables"
+          "title": "DB overview :: DB size panel",
+          "url": "/d/db-overview?$__all_variables&viewPanel=10&fullscreen"
         }
       ],
       "maxDataPoints": 100,
       "options": {
-        "colorMode": "background",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "horizontal",
@@ -2375,7 +2341,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -2398,35 +2364,29 @@
               "type": "fill"
             }
           ],
-          "measurement": "table_changes",
+          "measurement": "db_stats",
           "metricColumn": "none",
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  count(*)\nFROM\n  table_changes\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n",
+          "rawSql": "select\n  time,\n  last_value-first_value as size_diff\nfrom (\n  select\n    time,\n    first_value((data->>'size_b')::int8) over w,\n    last_value((data->>'size_b')::int8) over w\n  from\n    db_size\n  where \n    dbname = '$dbname' and $__timeFilter(time)\n  window w as (\n     order by time rows BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING\n  )\n) x\norder by 1 desc\nlimit 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "event"
+                  "postmaster_uptime_s"
                 ],
                 "type": "field"
               },
               {
                 "params": [],
-                "type": "count"
+                "type": "last"
               }
             ]
           ],
-          "tags": [
-            {
-              "key": "dbname",
-              "operator": "=~",
-              "value": "/^$dbname$/"
-            }
-          ],
+          "tags": [],
           "timeColumn": "time",
           "where": [
             {
@@ -2437,7 +2397,7 @@
           ]
         }
       ],
-      "title": "Table changes",
+      "title": "DB size change (diff.)",
       "type": "stat"
     },
     {
@@ -2480,7 +2440,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -2522,7 +2483,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -2612,7 +2573,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -2660,7 +2622,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -2733,7 +2695,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -2781,7 +2744,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -2845,7 +2808,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "i.e. AUTOVACUUM disabled globally or per table.",
+      "description": "Number of DDL changes i.e. new or changed tables, columns, functions etc.  >1 Warn thresholds by default",
       "fieldConfig": {
         "defaults": {
           "decimals": 0,
@@ -2854,7 +2817,8 @@
               "options": {
                 "match": "null",
                 "result": {
-                  "text": "N/A"
+                  "color": "#299c46",
+                  "text": "0"
                 }
               },
               "type": "special"
@@ -2864,15 +2828,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
                 "value": 1
               },
               {
-                "color": "#d44a3a",
-                "value": 10
+                "color": "#d44a3a"
               }
             ]
           },
@@ -2886,7 +2850,14 @@
         "x": 6,
         "y": 10
       },
-      "id": 30,
+      "id": 20,
+      "links": [
+        {
+          "targetBlank": true,
+          "title": "'DDL / Config change events' dash",
+          "url": "/d/change-events?$__all_variables"
+        }
+      ],
       "maxDataPoints": 100,
       "options": {
         "colorMode": "background",
@@ -2896,7 +2867,7 @@
         "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -2905,7 +2876,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -2917,7 +2888,7 @@
           "groupBy": [
             {
               "params": [
-                "1d"
+                "1h"
               ],
               "type": "time"
             },
@@ -2928,29 +2899,35 @@
               "type": "fill"
             }
           ],
-          "measurement": "table_stats",
+          "measurement": "table_changes",
           "metricColumn": "none",
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  sum(count)\nFROM (\n\nSELECT * FROM (\n\nSELECT\n  case when data->>'autovacuum' = 'off' then 1 else 0 end as count\nFROM\n  settings\nWHERE\n  dbname = '$dbname'\n  AND time > now() - '1d'::interval\nORDER BY time DESC LIMIT 1\n\n) a\n\nUNION ALL\n\nSELECT * FROM (\n\nSELECT\n  count(*)\nFROM\n  table_stats\nWHERE\n  dbname = '$dbname'\n  AND time = (select max(time) from table_stats where dbname = '$dbname')\n  AND (data->>'no_autovacuum')::int = 1\n\n) b\n\n) x;",
+          "rawSql": "SELECT\n  0 as time,\n  count(*)\nFROM\n  table_changes\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "total_relation_size_b"
+                  "event"
                 ],
                 "type": "field"
               },
               {
                 "params": [],
-                "type": "last"
+                "type": "count"
               }
             ]
           ],
-          "tags": [],
+          "tags": [
+            {
+              "key": "dbname",
+              "operator": "=~",
+              "value": "/^$dbname$/"
+            }
+          ],
           "timeColumn": "time",
           "where": [
             {
@@ -2961,7 +2938,7 @@
           ]
         }
       ],
-      "title": "Autovacuum issues",
+      "title": "Table changes",
       "type": "stat"
     },
     {
@@ -2988,7 +2965,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -3036,7 +3014,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -3125,7 +3103,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -3163,7 +3142,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -3247,7 +3226,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -3295,7 +3275,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -3371,10 +3351,10 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Postgres writes temporary files to disk when sorting / grouping  big amounts of data that doesn't fit into \"work_mem\".  10/100 MB Warn / Error by default",
+      "description": "i.e. AUTOVACUUM disabled globally or per table.",
       "fieldConfig": {
         "defaults": {
-          "decimals": 1,
+          "decimals": 0,
           "mappings": [
             {
               "options": {
@@ -3390,19 +3370,20 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
-                "value": 10000000
+                "value": 1
               },
               {
                 "color": "#d44a3a",
-                "value": 100000000
+                "value": 10
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "short"
         },
         "overrides": []
       },
@@ -3412,14 +3393,7 @@
         "x": 6,
         "y": 12
       },
-      "id": 37,
-      "links": [
-        {
-          "targetBlank": true,
-          "title": "DB overview",
-          "url": "/d/db-overview?$__all_variables&viewPanel=19&fullscreen"
-        }
-      ],
+      "id": 30,
       "maxDataPoints": 100,
       "options": {
         "colorMode": "background",
@@ -3429,7 +3403,7 @@
         "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
-            "mean"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
@@ -3438,7 +3412,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -3450,7 +3424,7 @@
           "groupBy": [
             {
               "params": [
-                "$__interval"
+                "1d"
               ],
               "type": "time"
             },
@@ -3461,41 +3435,29 @@
               "type": "fill"
             }
           ],
-          "measurement": "db_stats",
+          "measurement": "table_stats",
           "metricColumn": "none",
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  0 as time,\n  avg(case when tb-tb_lag > 0 then (tb-tb_lag) / (etime - lag_etime) else 0 end) as \"Temp bytes (1h rate)\"\nfrom (\n        select \n          (data->>'temp_bytes')::int8 as tb, lag((data->>'temp_bytes')::int8) over w as tb_lag,\n          (extract(epoch from time))::int8 as etime,\n          (lag(extract(epoch from time)) over w)::int8 as lag_etime\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere tb >= tb_lag and etime > lag_etime\n",
+          "rawSql": "SELECT\n  0 as time,\n  sum(count)\nFROM (\n\nSELECT * FROM (\n\nSELECT\n  case when data->>'autovacuum' = 'off' then 1 else 0 end as count\nFROM\n  settings\nWHERE\n  dbname = '$dbname'\n  AND time > now() - '1d'::interval\nORDER BY time DESC LIMIT 1\n\n) a\n\nUNION ALL\n\nSELECT * FROM (\n\nSELECT\n  count(*)\nFROM\n  table_stats\nWHERE\n  dbname = '$dbname'\n  AND time = (select max(time) from table_stats where dbname = '$dbname')\n  AND (data->>'no_autovacuum')::int = 1\n\n) b\n\n) x;",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "temp_bytes"
+                  "total_relation_size_b"
                 ],
                 "type": "field"
               },
               {
                 "params": [],
                 "type": "last"
-              },
-              {
-                "params": [
-                  "1s"
-                ],
-                "type": "non_negative_derivative"
               }
             ]
           ],
-          "tags": [
-            {
-              "key": "dbname",
-              "operator": "=~",
-              "value": "/^$dbname$/"
-            }
-          ],
+          "tags": [],
           "timeColumn": "time",
           "where": [
             {
@@ -3506,7 +3468,7 @@
           ]
         }
       ],
-      "title": "Temp. bytes per second (avg.)",
+      "title": "Autovacuum issues",
       "type": "stat"
     },
     {
@@ -3533,7 +3495,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -3574,7 +3537,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -3663,7 +3626,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -3711,7 +3675,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -3806,7 +3770,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -3850,7 +3815,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -3926,10 +3891,10 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "On non-temporary  tables",
+      "description": "Postgres writes temporary files to disk when sorting / grouping  big amounts of data that doesn't fit into \"work_mem\".  10/100 MB Warn / Error by default",
       "fieldConfig": {
         "defaults": {
-          "decimals": 0,
+          "decimals": 1,
           "mappings": [
             {
               "options": {
@@ -3945,15 +3910,20 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "#299c46",
+                "value": 0
               },
               {
-                "color": "red",
-                "value": 80
+                "color": "rgba(237, 129, 40, 0.89)",
+                "value": 10000000
+              },
+              {
+                "color": "#d44a3a",
+                "value": 100000000
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -3963,17 +3933,17 @@
         "x": 6,
         "y": 14
       },
-      "id": 40,
+      "id": 37,
       "links": [
         {
           "targetBlank": true,
-          "title": "'Tables Top :: Updates' panel",
-          "url": "/d/tables-top?$__all_variables&viewPanel=7&fullscreen"
+          "title": "DB overview",
+          "url": "/d/db-overview?$__all_variables&viewPanel=19&fullscreen"
         }
       ],
       "maxDataPoints": 100,
       "options": {
-        "colorMode": "none",
+        "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "horizontal",
@@ -3989,7 +3959,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -4001,7 +3971,7 @@
           "groupBy": [
             {
               "params": [
-                "5m"
+                "$__interval"
               ],
               "type": "time"
             },
@@ -4017,14 +3987,14 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  time,\n  avg(((upd-upd_lag) * 60) / extract(epoch from time - time_lag))\nfrom (\n        select \n          (data->>'tup_updated')::int8 as upd, lag((data->>'tup_updated')::int8) over w as upd_lag,\n          time, lag(time) over w as time_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere upd >= upd_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  0 as time,\n  avg(case when tb-tb_lag > 0 then (tb-tb_lag) / (etime - lag_etime) else 0 end) as \"Temp bytes (1h rate)\"\nfrom (\n        select \n          (data->>'temp_bytes')::int8 as tb, lag((data->>'temp_bytes')::int8) over w as tb_lag,\n          (extract(epoch from time))::int8 as etime,\n          (lag(extract(epoch from time)) over w)::int8 as lag_etime\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere tb >= tb_lag and etime > lag_etime\n",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "tup_updated"
+                  "temp_bytes"
                 ],
                 "type": "field"
               },
@@ -4034,7 +4004,7 @@
               },
               {
                 "params": [
-                  "1m"
+                  "1s"
                 ],
                 "type": "non_negative_derivative"
               }
@@ -4057,7 +4027,7 @@
           ]
         }
       ],
-      "title": "UPDATE-s per minute (avg.)",
+      "title": "Temp. bytes per second (avg.)",
       "type": "stat"
     },
     {
@@ -4084,7 +4054,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -4128,7 +4099,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -4223,7 +4194,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -4265,7 +4237,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -4355,7 +4327,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -4396,7 +4369,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -4466,7 +4439,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "In TX. Holds back VACUUM",
+      "description": "On non-temporary  tables",
       "fieldConfig": {
         "defaults": {
           "decimals": 0,
@@ -4485,15 +4458,12 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "green",
+                "value": 0
               },
               {
-                "color": "rgba(237, 129, 40, 0.89)",
-                "value": 10000
-              },
-              {
-                "color": "#d44a3a",
-                "value": 100000
+                "color": "red",
+                "value": 80
               }
             ]
           },
@@ -4507,24 +4477,24 @@
         "x": 6,
         "y": 16
       },
-      "id": 43,
+      "id": 40,
       "links": [
         {
           "targetBlank": true,
-          "title": "'Replication lag' dashboard",
-          "url": "/d/replication?$__all_variables"
+          "title": "'Tables Top :: Updates' panel",
+          "url": "/d/tables-top?$__all_variables&viewPanel=7&fullscreen"
         }
       ],
       "maxDataPoints": 100,
       "options": {
-        "colorMode": "background",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "horizontal",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -4533,7 +4503,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -4545,7 +4515,7 @@
           "groupBy": [
             {
               "params": [
-                "365d"
+                "5m"
               ],
               "type": "time"
             },
@@ -4556,25 +4526,31 @@
               "type": "fill"
             }
           ],
-          "measurement": "replication_slots",
+          "measurement": "db_stats",
           "metricColumn": "none",
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  0 as time,\n  max(xmin) from (\nSELECT\n  max((data->>'xmin_age_tx')::int8) as xmin\nFROM\n  replication_slots\nWHERE\n  time = (select max(time) from replication_slots where time > now() - '$online_interval'::interval AND dbname = '$dbname')\n  and dbname = '$dbname'  \nUNION ALL\nSELECT\n  max((data->>'max_xmin_age_tx')::int8) as xmin\nFROM\n  backends\nWHERE\n  time = (select max(time) from backends where time > now() - '$online_interval'::interval AND dbname = '$dbname')\n  and dbname = '$dbname'\n) x",
+          "rawSql": "select\n  time,\n  avg(((upd-upd_lag) * 60) / extract(epoch from time - time_lag))\nfrom (\n        select \n          (data->>'tup_updated')::int8 as upd, lag((data->>'tup_updated')::int8) over w as upd_lag,\n          time, lag(time) over w as time_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere upd >= upd_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "max_xmin_age_tx"
+                  "tup_updated"
                 ],
                 "type": "field"
               },
               {
                 "params": [],
                 "type": "last"
+              },
+              {
+                "params": [
+                  "1m"
+                ],
+                "type": "non_negative_derivative"
               }
             ]
           ],
@@ -4595,7 +4571,7 @@
           ]
         }
       ],
-      "title": "Max. XMIN horizon age",
+      "title": "UPDATE-s per minute (avg.)",
       "type": "stat"
     },
     {
@@ -4622,7 +4598,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "#bf1b00",
@@ -4671,7 +4648,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -4754,7 +4731,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46"
+                "color": "#299c46",
+                "value": 0
               },
               {
                 "color": "#FA6400",
@@ -4803,7 +4781,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -4864,30 +4842,142 @@
       "type": "stat"
     },
     {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "In TX. Holds back VACUUM",
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "decimals": 0,
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#299c46",
+                "value": 0
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "value": 10000
+              },
+              {
+                "color": "#d44a3a",
+                "value": 100000
+              }
+            ]
+          },
+          "unit": "short"
+        },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 12,
+        "h": 2,
+        "w": 6,
         "x": 0,
         "y": 18
       },
-      "id": 12,
+      "id": 43,
+      "links": [
+        {
+          "targetBlank": true,
+          "title": "'Replication lag' dashboard",
+          "url": "/d/replication?$__all_variables"
+        }
+      ],
+      "maxDataPoints": 100,
       "options": {
-        "code": {
-          "language": "plaintext",
-          "showLineNumbers": false,
-          "showMiniMap": false
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
-        "mode": "markdown"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
-      "title": "",
-      "transparent": true,
-      "type": "text"
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [
+            {
+              "params": [
+                "365d"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "none"
+              ],
+              "type": "fill"
+            }
+          ],
+          "measurement": "replication_slots",
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "select\n  0 as time,\n  max(xmin) from (\nSELECT\n  max((data->>'xmin_age_tx')::int8) as xmin\nFROM\n  replication_slots\nWHERE\n  time = (select max(time) from replication_slots where time > now() - '$online_interval'::interval AND dbname = '$dbname')\n  and dbname = '$dbname'  \nUNION ALL\nSELECT\n  max((data->>'max_xmin_age_tx')::int8) as xmin\nFROM\n  backends\nWHERE\n  time = (select max(time) from backends where time > now() - '$online_interval'::interval AND dbname = '$dbname')\n  and dbname = '$dbname'\n) x",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "max_xmin_age_tx"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "last"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "dbname",
+              "operator": "=~",
+              "value": "/^$dbname$/"
+            }
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Max. XMIN horizon age",
+      "type": "stat"
     },
     {
       "fieldConfig": {
@@ -4895,7 +4985,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 2,
         "w": 12,
         "x": 12,
         "y": 18
@@ -4910,7 +5000,33 @@
         "content": "### The preset threshold values (green / yellow / red) should be reviewed / adjusted!",
         "mode": "markdown"
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 13,
+        "x": 0,
+        "y": 20
+      },
+      "id": 12,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+        "mode": "markdown"
+      },
+      "pluginVersion": "12.1.0",
       "title": "",
       "transparent": true,
       "type": "text"

@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 15,
+  "id": 33,
   "links": [],
   "panels": [
     {
@@ -32,7 +32,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "",
+      "description": "- Total number of sessions established to database(s). \n- Number of database sessions that were terminated because connection to the client was lost.\n- Number of database sessions that were terminated by fatal errors.\n- Number of database sessions that were terminated by operator intervention.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -44,11 +44,10 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "axisSoftMin": 0,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 20,
+            "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -62,8 +61,8 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
-            "spanNulls": true,
+            "showPoints": "auto",
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -72,9 +71,7 @@
               "mode": "off"
             }
           },
-          "decimals": 0,
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -87,8 +84,7 @@
                 "value": 80
               }
             ]
-          },
-          "unit": "short"
+          }
         },
         "overrides": []
       },
@@ -98,18 +94,15 @@
         "x": 0,
         "y": 0
       },
-      "id": 2,
+      "id": 40,
       "options": {
         "legend": {
           "calcs": [
-            "mean",
             "max"
           ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true,
-          "sortBy": "Mean",
-          "sortDesc": true
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "hideZeros": false,
@@ -120,27 +113,11 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
-          },
           "editorMode": "code",
-          "format": "time_series",
-          "group": [],
-          "metricColumn": "none",
+          "format": "table",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg(((c - c_lag) + (r - r_lag)) / extract(epoch from time - time_lag)) as \" \"\nfrom (\n  select \n    (data->>'xact_commit')::bigint as c, lag((data->>'xact_commit')::bigint) over w as c_lag,\n    (data->>'xact_rollback')::bigint as r, lag((data->>'xact_rollback')::bigint) over w as r_lag,\n    time, lag(time) over w as time_lag, dbname\n  from db_stats\n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname order by time)        \n) x\nwhere time > time_lag\n  and (c - c_lag) + (r - r_lag) > 0\ngroup by 1, 2\norder by 1\n",
+          "rawSql": "with sessions as (\r\n  SELECT \r\n  $__timeGroup(time, $agg_interval),\r\n  (data->>'sessions')::int8 as sessions,\r\n  lag((data->>'sessions')::int8) over w as lag_sessions,\r\n  (data->>'sessions_abandoned')::int8 as sessions_abandoned,\r\n  lag((data->>'sessions_abandoned')::int8) over w as lag_sessions_abandoned,\r\n  (data->>'sessions_fatal')::int8 as sessions_fatal,\r\n  lag((data->>'sessions_fatal')::int8) over w as lag_sessions_fatal,\r\n  (data->>'sessions_killed')::int8 as sessions_killed,\r\n  lag((data->>'sessions_killed')::int8) over w as lag_sessions_killed\r\nfrom db_stats \r\nwhere dbname in ($dbname) and $__timeFilter(time)\r\nwindow w as (order by time)\r\n)\r\nselect \r\n  time,\r\n  sum(sessions-lag_sessions) as established,\r\n  sum(sessions_abandoned-lag_sessions_abandoned) as abandoned,\r\n  sum(sessions_fatal-lag_sessions_fatal) as fatal,\r\n  sum(sessions_killed-lag_sessions_killed) as killed\r\nfrom sessions \r\ngroup by time\r\norder by 1",
           "refId": "A",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "column"
-              }
-            ]
-          ],
           "sql": {
             "columns": [
               {
@@ -157,18 +134,10 @@
               }
             ],
             "limit": 50
-          },
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
+          }
         }
       ],
-      "title": "TPS (transactions per second)",
+      "title": "Connections Overview",
       "type": "timeseries"
     },
     {
@@ -313,10 +282,11 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
+            "axisSoftMin": 0,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 20,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -342,6 +312,7 @@
           },
           "decimals": 0,
           "mappings": [],
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -354,7 +325,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "short"
         },
         "overrides": []
       },
@@ -364,17 +336,17 @@
         "x": 0,
         "y": 7
       },
-      "id": 4,
+      "id": 2,
       "options": {
         "legend": {
           "calcs": [
-            "lastNotNull",
+            "mean",
             "max"
           ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true,
-          "sortBy": "Max",
+          "sortBy": "Mean",
           "sortDesc": true
         },
         "tooltip": {
@@ -390,11 +362,12 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
+          "editorMode": "code",
           "format": "time_series",
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((data->>'numbackends')::bigint) as \" \"\nfrom db_stats\nwhere dbname in ($dbname) and $__timeFilter(time)\n  and (data->>'numbackends')::bigint > 0\ngroup by 1, 2\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg(((c - c_lag) + (r - r_lag)) / extract(epoch from time - time_lag)) as \" \"\nfrom (\n  select \n    (data->>'xact_commit')::bigint as c, lag((data->>'xact_commit')::bigint) over w as c_lag,\n    (data->>'xact_rollback')::bigint as r, lag((data->>'xact_rollback')::bigint) over w as r_lag,\n    time, lag(time) over w as time_lag, dbname\n  from db_stats\n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname order by time)        \n) x\nwhere time > time_lag\n  and (c - c_lag) + (r - r_lag) > 0\ngroup by 1, 2\norder by 1\n",
           "refId": "A",
           "select": [
             [
@@ -406,6 +379,23 @@
               }
             ]
           ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
           "timeColumn": "time",
           "where": [
             {
@@ -416,7 +406,7 @@
           ]
         }
       ],
-      "title": "Total sessions (numbackends)",
+      "title": "TPS (transactions per second)",
       "type": "timeseries"
     },
     {
@@ -549,7 +539,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "active — backend is currently active",
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -563,9 +553,9 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
-            "drawStyle": "bars",
-            "fillOpacity": 100,
-            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
@@ -574,7 +564,7 @@
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 3,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
@@ -590,7 +580,6 @@
           },
           "decimals": 0,
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -603,8 +592,7 @@
                 "value": 80
               }
             ]
-          },
-          "unit": "short"
+          }
         },
         "overrides": []
       },
@@ -614,7 +602,7 @@
         "x": 0,
         "y": 14
       },
-      "id": 9,
+      "id": 4,
       "options": {
         "legend": {
           "calcs": [
@@ -644,7 +632,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((data->>'active')::bigint) as \" \"\nfrom backends\nwhere dbname in ($dbname) and $__timeFilter(time)\n  and (data->>'active')::bigint > 0\ngroup by 1, 2\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((data->>'numbackends')::bigint) as \" \"\nfrom db_stats\nwhere dbname in ($dbname) and $__timeFilter(time)\n  and (data->>'numbackends')::bigint > 0\ngroup by 1, 2\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -666,7 +654,7 @@
           ]
         }
       ],
-      "title": "Active sessions",
+      "title": "Total sessions (numbackends)",
       "type": "timeseries"
     },
     {
@@ -790,7 +778,7 @@
           ]
         }
       ],
-      "title": "longest transaction",
+      "title": "Longest transaction",
       "type": "timeseries"
     },
     {
@@ -798,7 +786,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "waiting — backend is currently waiting on a lock",
+      "description": "active — backend is currently active",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -837,6 +825,7 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -862,7 +851,7 @@
         "x": 0,
         "y": 21
       },
-      "id": 13,
+      "id": 9,
       "options": {
         "legend": {
           "calcs": [
@@ -892,7 +881,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((data->>'waiting')::numeric) as \" \"\nfrom backends\nwhere dbname in ($dbname) and $__timeFilter(time)\n  and (data->>'waiting')::numeric > 0\ngroup by 1, 2\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((data->>'active')::bigint) as \" \"\nfrom backends\nwhere dbname in ($dbname) and $__timeFilter(time)\n  and (data->>'active')::bigint > 0\ngroup by 1, 2\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -914,7 +903,7 @@
           ]
         }
       ],
-      "title": "Waiting sessions",
+      "title": "Active sessions",
       "type": "timeseries"
     },
     {
@@ -1046,7 +1035,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "",
+      "description": "waiting — backend is currently waiting on a lock",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1059,7 +1048,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "barWidthFactor": 0.1,
+            "barWidthFactor": 0.6,
             "drawStyle": "bars",
             "fillOpacity": 100,
             "gradientMode": "opacity",
@@ -1085,7 +1074,6 @@
               "mode": "off"
             }
           },
-          "decimals": 0,
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -1111,7 +1099,7 @@
         "x": 0,
         "y": 28
       },
-      "id": 17,
+      "id": 13,
       "options": {
         "legend": {
           "calcs": [
@@ -1141,7 +1129,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((data->>'idleintransaction')::bigint) as \" \"\nfrom backends\nwhere dbname in ($dbname) and $__timeFilter(time)\n  and (data->>'idleintransaction')::bigint > 0\ngroup by 1, 2\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((data->>'waiting')::numeric) as \" \"\nfrom backends\nwhere dbname in ($dbname) and $__timeFilter(time)\n  and (data->>'waiting')::numeric > 0\ngroup by 1, 2\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -1163,7 +1151,7 @@
           ]
         }
       ],
-      "title": "idle-in-transaction sessions",
+      "title": "Waiting sessions",
       "type": "timeseries"
     },
     {
@@ -1314,7 +1302,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Amount of data written to temporary files by queries in this database.",
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1327,10 +1315,10 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "none",
+            "barWidthFactor": 0.1,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
@@ -1339,7 +1327,7 @@
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
+            "pointSize": 3,
             "scaleDistribution": {
               "type": "linear"
             },
@@ -1353,6 +1341,7 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -1368,7 +1357,7 @@
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "short"
         },
         "overrides": []
       },
@@ -1378,11 +1367,11 @@
         "x": 0,
         "y": 35
       },
-      "id": 21,
+      "id": 17,
       "options": {
         "legend": {
           "calcs": [
-            "mean",
+            "lastNotNull",
             "max"
           ],
           "displayMode": "table",
@@ -1408,7 +1397,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((b - b_lag)::numeric / extract(epoch from time - time_lag)) as \" \"\nfrom (\n  select \n    (data->>'temp_bytes')::bigint as b, lag((data->>'temp_bytes')::bigint) over w as b_lag,\n    time, lag(time) over w as time_lag, dbname\n  from db_stats\n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname order by time)\n) x\nwhere b > b_lag and time > time_lag\ngroup by 1, 2\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((data->>'idleintransaction')::bigint) as \" \"\nfrom backends\nwhere dbname in ($dbname) and $__timeFilter(time)\n  and (data->>'idleintransaction')::bigint > 0\ngroup by 1, 2\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -1430,7 +1419,7 @@
           ]
         }
       ],
-      "title": "Temp bytes written (1s rate)",
+      "title": "Idle-in-transaction sessions",
       "type": "timeseries"
     },
     {
@@ -1564,7 +1553,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Time spent reading and writing data file blocks by backends in this database.\n\nBased on pg_stat_database. Requires \"track_io_timing=on\"",
+      "description": "Amount of data written to temporary files by queries in this database.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1618,7 +1607,7 @@
               }
             ]
           },
-          "unit": "ms"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -1628,7 +1617,7 @@
         "x": 0,
         "y": 42
       },
-      "id": 25,
+      "id": 21,
       "options": {
         "legend": {
           "calcs": [
@@ -1658,7 +1647,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg(((r - r_lag) + (w - w_lag)) / extract(epoch from time - time_lag)) as \" \"\nfrom (\n  select \n    (data->>'blk_read_time')::numeric as r, lag((data->>'blk_read_time')::numeric) over w as r_lag,\n    (data->>'blk_write_time')::numeric as w, lag((data->>'blk_write_time')::numeric) over w as w_lag,\n    time, lag(time) over w as time_lag, dbname\n  from db_stats\n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname order by time)\n) x\nwhere time > time_lag\n  and (r - r_lag) + (w - w_lag) > 0\ngroup by 1, 2\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((b - b_lag)::numeric / extract(epoch from time - time_lag)) as \" \"\nfrom (\n  select \n    (data->>'temp_bytes')::bigint as b, lag((data->>'temp_bytes')::bigint) over w as b_lag,\n    time, lag(time) over w as time_lag, dbname\n  from db_stats\n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname order by time)\n) x\nwhere b > b_lag and time > time_lag\ngroup by 1, 2\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -1680,7 +1669,7 @@
           ]
         }
       ],
-      "title": "Database IO time (1s rate)",
+      "title": "Temp bytes written (1s rate)",
       "type": "timeseries"
     },
     {
@@ -1813,7 +1802,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "",
+      "description": "Time spent reading and writing data file blocks by backends in this database.\n\nBased on pg_stat_database. Requires \"track_io_timing=on\"",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1867,7 +1856,7 @@
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "ms"
         },
         "overrides": []
       },
@@ -1877,7 +1866,7 @@
         "x": 0,
         "y": 49
       },
-      "id": 29,
+      "id": 25,
       "options": {
         "legend": {
           "calcs": [
@@ -1903,12 +1892,11 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
-          "editorMode": "code",
           "format": "time_series",
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  tag_data->>'application_name'::text as client_info,\n  avg((data->>'total_lag')::bigint) as \" \"\nfrom replication\nwhere dbname in ($dbname) and $__timeFilter(time)\n  and (data->>'total_lag')::bigint > 0\ngroup by 1, 2\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg(((r - r_lag) + (w - w_lag)) / extract(epoch from time - time_lag)) as \" \"\nfrom (\n  select \n    (data->>'blk_read_time')::numeric as r, lag((data->>'blk_read_time')::numeric) over w as r_lag,\n    (data->>'blk_write_time')::numeric as w, lag((data->>'blk_write_time')::numeric) over w as w_lag,\n    time, lag(time) over w as time_lag, dbname\n  from db_stats\n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname order by time)\n) x\nwhere time > time_lag\n  and (r - r_lag) + (w - w_lag) > 0\ngroup by 1, 2\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -1920,23 +1908,6 @@
               }
             ]
           ],
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          },
           "timeColumn": "time",
           "where": [
             {
@@ -1947,7 +1918,7 @@
           ]
         }
       ],
-      "title": "Replication lag (byte)",
+      "title": "Database IO time (1s rate)",
       "type": "timeseries"
     },
     {
@@ -2078,7 +2049,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "1 = Primary - accepting writes.\n\n2 = Secondary - read-only.\n\n0 = No Replication - physical replication is not configured or there are no available standby servers.",
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2093,7 +2064,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 20,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -2118,7 +2089,6 @@
             }
           },
           "mappings": [],
-          "max": 2,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -2132,7 +2102,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -2142,17 +2113,18 @@
         "x": 0,
         "y": 56
       },
-      "id": 33,
+      "id": 29,
       "options": {
         "legend": {
           "calcs": [
-            "lastNotNull"
+            "mean",
+            "max"
           ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true,
-          "sortBy": "Last *",
-          "sortDesc": false
+          "sortBy": "Max",
+          "sortDesc": true
         },
         "tooltip": {
           "hideZeros": false,
@@ -2167,11 +2139,12 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
+          "editorMode": "code",
           "format": "time_series",
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select distinct\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  last_value((data->>'in_recovery_int')::bigint) over w as \" \"\nfrom postgres_role\nwhere dbname in ($dbname) and $__timeFilter(time)\nwindow w as (partition by dbname order by time)\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  tag_data->>'application_name'::text as client_info,\n  avg((data->>'total_lag')::bigint) as \" \"\nfrom replication\nwhere dbname in ($dbname) and $__timeFilter(time)\n  and (data->>'total_lag')::bigint > 0\ngroup by 1, 2\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -2183,6 +2156,23 @@
               }
             ]
           ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
           "timeColumn": "time",
           "where": [
             {
@@ -2193,7 +2183,7 @@
           ]
         }
       ],
-      "title": "PostgreSQL Role",
+      "title": "Replication lag (byte)",
       "type": "timeseries"
     },
     {
@@ -2325,7 +2315,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "xid_age - Transaction ID age",
+      "description": "1 = Primary - accepting writes.\n\n2 = Secondary - read-only.\n\n0 = No Replication - physical replication is not configured or there are no available standby servers.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2365,6 +2355,8 @@
             }
           },
           "mappings": [],
+          "max": 2,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -2379,20 +2371,7 @@
             ]
           }
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "mxid_age - "
-            },
-            "properties": [
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 7,
@@ -2400,7 +2379,7 @@
         "x": 0,
         "y": 63
       },
-      "id": 37,
+      "id": 33,
       "options": {
         "legend": {
           "calcs": [
@@ -2410,7 +2389,7 @@
           "placement": "right",
           "showLegend": true,
           "sortBy": "Last *",
-          "sortDesc": true
+          "sortDesc": false
         },
         "tooltip": {
           "hideZeros": false,
@@ -2425,12 +2404,11 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
-          "editorMode": "code",
           "format": "time_series",
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  \"time\",\n  dbname,\n  last_datfrozenxid_age as \" \"\nFROM\n  (\n    SELECT\n      DISTINCT ON (dbname, \"time\") dbname,\n      $__timeGroup(time, $agg_interval),\n      (data ->> 'datfrozenxid_age') :: bigint AS last_datfrozenxid_age\n    FROM\n      datfrozenxid\n    WHERE\n      dbname IN ($dbname)\n      AND $__timeFilter(time)\n    ORDER BY\n      dbname,\n      time DESC\n  ) sub\nORDER BY\n  \"time\";",
+          "rawSql": "select distinct\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  last_value((data->>'in_recovery_int')::bigint) over w as \" \"\nfrom postgres_role\nwhere dbname in ($dbname) and $__timeFilter(time)\nwindow w as (partition by dbname order by time)\norder by 1",
           "refId": "A",
           "select": [
             [
@@ -2442,23 +2420,6 @@
               }
             ]
           ],
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          },
           "timeColumn": "time",
           "where": [
             {
@@ -2469,7 +2430,7 @@
           ]
         }
       ],
-      "title": "Wraparound: Transaction ID age",
+      "title": "PostgreSQL Role",
       "type": "timeseries"
     },
     {
@@ -2612,6 +2573,158 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "xid_age - Transaction ID age",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mxid_age - "
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 70
+      },
+      "id": 37,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Last *",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  \"time\",\n  dbname,\n  last_datfrozenxid_age as \" \"\nFROM\n  (\n    SELECT\n      DISTINCT ON (dbname, \"time\") dbname,\n      $__timeGroup(time, $agg_interval),\n      (data ->> 'datfrozenxid_age') :: bigint AS last_datfrozenxid_age\n    FROM\n      datfrozenxid\n    WHERE\n      dbname IN ($dbname)\n      AND $__timeFilter(time)\n    ORDER BY\n      dbname,\n      time DESC\n  ) sub\nORDER BY\n  \"time\";",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Wraparound: Transaction ID age",
+      "type": "timeseries"
+    },
+    {
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -2620,7 +2733,7 @@
         "h": 5,
         "w": 12,
         "x": 0,
-        "y": 70
+        "y": 77
       },
       "id": 39,
       "options": {
