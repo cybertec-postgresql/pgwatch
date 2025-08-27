@@ -421,6 +421,9 @@ func TestCopyFromMeasurements_JsonMarshaling(t *testing.T) {
 	assert.True(t, cfm.Next())
 	_, err = cfm.Values()
 	assert.Error(t, err, "cannot marshal function value to JSON")
+
+	cfm.NextEnvelope()
+	assert.NotPanics(t, func() { _ = cfm.MetricName() })
 }
 
 func TestCopyFromMeasurements_ErrorHandling(t *testing.T) {
@@ -517,4 +520,5 @@ func TestCopyFromMeasurements_CopyFail(t *testing.T) {
 			}
 		}
 	}
+
 }
