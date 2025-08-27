@@ -238,10 +238,7 @@ type copyFromMeasurements struct {
 func (c *copyFromMeasurements) NextEnvelope() bool {
 	c.envelopeIdx++
 	c.measurementIdx = -1
-	if c.envelopeIdx >= len(c.envelopes) {
-		return false
-	}
-	return true
+	return c.envelopeIdx < len(c.envelopes)
 }
 
 func (c *copyFromMeasurements) Next() bool {
