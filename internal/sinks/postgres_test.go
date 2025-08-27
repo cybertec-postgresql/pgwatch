@@ -7,9 +7,14 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/jackc/pgx/v5"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	testcontainers "github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/postgres"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 var ctx = context.Background()
@@ -462,4 +467,54 @@ func TestCopyFromMeasurements_StateManagement(t *testing.T) {
 	assert.False(t, cfm.Next())
 	// State should be positioned to restart on next metric
 	assert.Equal(t, "", cfm.metricName)
+}
+
+func TestCopyFromMeasurements_CopyFail(t *testing.T) {
+	a := assert.New(t)
+	r := require.New(t)
+	const ImageName = "docker.io/postgres:17-alpine"
+	pgContainer, err := postgres.Run(ctx,
+		ImageName,
+		postgres.WithDatabase("mydatabase"),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(5*time.Second)),
+	)
+	r.NoError(err)
+	defer func() { assert.NoError(t, pgContainer.Terminate(ctx)) }()
+
+	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	conn, err := pgx.Connect(ctx, connStr)
+	r.NoError(err)
+
+	_, err = conn.Exec(ctx, `CREATE TABLE IF NOT EXISTS test_metric (
+		time timestamptz not null default now(),
+		dbname text NOT NULL,
+		data jsonb,
+		tag_data jsonb)`)
+	r.NoError(err)
+
+	msgs := []metrics.MeasurementEnvelope{
+		{
+			MetricName: "test_metric",
+			Data: metrics.Measurements{
+				{"epoch_ns": int64(2000), "value": func() {}},
+				{"epoch_ns": int64(2000), "value": struct{}{}},
+			},
+			DBName: "test_db",
+		},
+	}
+
+	cfm := newCopyFromMeasurements(msgs)
+
+	for !cfm.EOF() {
+		_, err = conn.CopyFrom(context.Background(), cfm.MetricName(), targetColumns[:], cfm)
+		a.Error(err)
+		if err != nil {
+			if !cfm.NextEnvelope() {
+				break
+			}
+		}
+	}
 }

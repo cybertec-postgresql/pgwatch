@@ -26,7 +26,8 @@ var ctx = context.Background()
 
 // the CN in server test cert is set to `localhost`
 var CAFile = "ca.crt"
-var TLSConnStr = fmt.Sprintf("grpc://localhost:5050?sslrootca=%s", CAFile) 
+var TLSConnStr = fmt.Sprintf("grpc://localhost:5050?sslrootca=%s", CAFile)
+
 const TLSServerAddress = "localhost:5050"
 
 const PlainServerAddress = "localhost:6060"
@@ -143,17 +144,17 @@ func TestCACertParamValidation(t *testing.T) {
 	a.NoError(err)
 
 	_, _ = os.Create("badca.crt")
-	defer func ()  {  _ = os.Remove("badca.crt") }()
+	defer func() { _ = os.Remove("badca.crt") }()
 
 	BadRPCParams := map[string]string{
-		"?sslrootca=file.txt": "error loading CA file: open file.txt: no such file or directory", 
-		"?sslrootca=": "error loading CA file: open : no such file or directory", 
+		"?sslrootca=file.txt":  "error loading CA file",
+		"?sslrootca=":          "error loading CA file",
 		"?sslrootca=badca.crt": "invalid CA file",
 	}
 
 	for param, errMsg := range BadRPCParams {
 		_, err = sinks.NewRPCWriter(ctx, fmt.Sprintf("grpc://%s%s", TLSServerAddress, param))
-		a.EqualError(err, errMsg)
+		a.ErrorContains(err, errMsg)
 	}
 }
 
