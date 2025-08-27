@@ -235,17 +235,20 @@ type copyFromMeasurements struct {
 	metricName     string
 }
 
+func (c *copyFromMeasurements) NextEnvelope() bool {
+	c.envelopeIdx++
+	c.measurementIdx = -1
+	return c.envelopeIdx < len(c.envelopes)
+}
+
 func (c *copyFromMeasurements) Next() bool {
 	for {
 		// Check if we need to advance to the next envelope
 		if c.envelopeIdx < 0 || c.measurementIdx+1 >= len(c.envelopes[c.envelopeIdx].Data) {
 			// Advance to next envelope
-			c.envelopeIdx++
-			if c.envelopeIdx >= len(c.envelopes) {
+			if ok := c.NextEnvelope(); !ok {
 				return false // No more envelopes
 			}
-			c.measurementIdx = -1 // Reset measurement index for new envelope
-
 			// Set metric name from first envelope, or detect metric boundary
 			if c.metricName == "" {
 				c.metricName = c.envelopes[c.envelopeIdx].MetricName
@@ -279,8 +282,8 @@ func (c *copyFromMeasurements) Values() ([]any, error) {
 		tagRow = make(map[string]string)
 	}
 	for k, v := range row {
-		if strings.HasPrefix(k, metrics.TagPrefix) {
-			tagRow[strings.TrimPrefix(k, metrics.TagPrefix)] = fmt.Sprintf("%v", v)
+		if after, ok := strings.CutPrefix(k, metrics.TagPrefix); ok {
+			tagRow[after] = fmt.Sprintf("%v", v)
 			delete(row, k)
 		}
 	}
@@ -296,8 +299,12 @@ func (c *copyFromMeasurements) Err() error {
 	return nil
 }
 
-func (c *copyFromMeasurements) MetricName() pgx.Identifier {
-	return pgx.Identifier{c.envelopes[c.envelopeIdx+1].MetricName} // Metric name is taken from the next envelope
+func (c *copyFromMeasurements) MetricName() (ident pgx.Identifier) {
+	if c.envelopeIdx+1 < len(c.envelopes) {
+		// Metric name is taken from the next envelope
+		ident = pgx.Identifier{c.envelopes[c.envelopeIdx+1].MetricName}
+	}
+	return
 }
 
 // flush sends the cached measurements to the database
