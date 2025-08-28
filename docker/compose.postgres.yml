@@ -13,6 +13,7 @@ services:
     command:
       - "-cshared_preload_libraries=pg_stat_statements"
       - "-cpg_stat_statements.track=all"
+      - "-cpg_stat_statements.track_planning=on"
       - "-ctrack_io_timing=on"
       - "-ctrack_functions=pl"
     ports:
