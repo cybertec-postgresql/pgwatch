@@ -330,15 +330,17 @@ The content of a file is a array of sources definitions, like this:
                       # - patroni-namespace-discover
                       # Defaults to postgres if not specified
   conn_str: postgresql://pgwatch:xyz@somehost/mydb
-  preset_metrics: exhaustive # from list of presets defined in "metrics/preset-configs.yaml"
-  custom_metrics:    # if both preset and custom are specified, custom wins
-  preset_metrics_standby: # optional metrics configuration for standby / replica state, v1.8.1+
-  custom_metrics_standby:
+  preset_metrics: exhaustive # from list of presets defined in "metrics.yaml" or in the config DB
+  custom_metrics:    # map of metrics and intervals, if both preset_metrics and custom_metrics are specified, custom wins
+        backends: 300
+        archiver: 120
+  preset_metrics_standby: # optional preset configuration for standby state, same as preset_metrics
+  custom_metrics_standby: # optional custom metrics for standby state, same as custom_metrics
   include_pattern: # regex to filter databases to actually monitor for the "continuous" modes
   exclude_pattern:
   is_enabled: true
   group: default # just for logical grouping of DB hosts or for "sharding", i.e. splitting the workload between many gatherer daemons
   custom_tags:      # option to add arbitrary tags for every stored data row,
-      aws_instance_id: i-0af01c0123456789a       # for example to fetch data from some other source onto a same Grafana graph
+        aws_instance_id: i-0af01c0123456789a       # for example to fetch data from some other source onto a same Grafana graph
 ...
 ```
