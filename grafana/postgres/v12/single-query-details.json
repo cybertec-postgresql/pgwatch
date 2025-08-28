@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 26,
+  "id": 2,
   "links": [],
   "panels": [
     {
@@ -72,7 +72,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -107,7 +108,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "avg_runtime",
@@ -228,7 +229,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -263,7 +265,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "calls",
@@ -390,7 +392,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -425,7 +428,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "total_runtime",
@@ -552,7 +555,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -587,7 +591,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "sb_hit_ratio",
@@ -709,7 +713,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -742,7 +747,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "temp_blks_written",
@@ -838,6 +843,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -869,7 +875,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -899,11 +906,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "blk_read_time",
@@ -938,7 +946,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  sum(read-read_lag) as \"blk_read_time\",\n  sum(write-write_lag) as \"blk_write_time\"\nfrom (\n        select \n          (data->>'blk_read_time')::int8 as read, lag((data->>'blk_read_time')::int8) over w as read_lag,\n          (data->>'blk_write_time')::int8 as write, lag((data->>'blk_write_time')::int8) over w as write_lag,\n          time\n        from stat_statements\n        where dbname = '$dbname' and $__timeFilter(time) and tag_data @> '{\"queryid\": \"$queryid\"}'\n        window w as (order by time)\n) x\nwhere read >= read_lag and write>= write_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  sum(read-read_lag) as \"blk_read_time\",\n  sum(write-write_lag) as \"blk_write_time\"\nfrom (\n        select \n          (data->>'blk_read_time')::numeric as read, lag((data->>'blk_read_time')::numeric) over w as read_lag,\n          (data->>'blk_write_time')::numeric as write, lag((data->>'blk_write_time')::numeric) over w as write_lag,\n          time\n        from stat_statements\n        where dbname = '$dbname' and $__timeFilter(time) and tag_data @> '{\"queryid\": \"$queryid\"}'\n        window w as (order by time)\n) x\nwhere read >= read_lag and write>= write_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -998,6 +1006,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1029,7 +1038,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1059,11 +1069,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "none"
         }
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "io_time_pct",
@@ -1071,6 +1082,7 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
+          "editorMode": "code",
           "format": "time_series",
           "group": [],
           "groupBy": [
@@ -1092,7 +1104,7 @@
           "policy": "default",
           "query": "SELECT ((non_negative_derivative(mean(\"blk_read_time\"))  + non_negative_derivative(mean(\"blk_write_time\"))) /  non_negative_derivative(mean(\"total_time\"))) * 100  FROM \"stat_statements\" WHERE \"queryid\" =~ /^$queryid$/ AND $timeFilter GROUP BY time($__interval), \"queryid\" fill(null)",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg(case when tt = tt_lag then null else (read-read_lag+write-write_lag)::numeric*100 / (tt-tt_lag) end) as \"io_time_pct\"\nfrom (\n        select \n          (data->>'blk_read_time')::int8 as read, lag((data->>'blk_read_time')::int8) over w as read_lag,\n          (data->>'blk_write_time')::int8 as write, lag((data->>'blk_write_time')::int8) over w as write_lag,\n          (data->>'total_time')::int8 as tt, lag((data->>'total_time')::int8) over w as tt_lag,\n          time\n        from stat_statements\n        where dbname = '$dbname' and $__timeFilter(time) and tag_data @> '{\"queryid\": \"$queryid\"}'\n        window w as (order by time)\n) x\nwhere read >= read_lag and write>= write_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg(case when tt = tt_lag then null else (read-read_lag+write-write_lag)::numeric*100 / (tt-tt_lag) end) as \"io_time_pct\"\nfrom (\n        select \n          (data->>'blk_read_time')::numeric as read, lag((data->>'blk_read_time')::numeric) over w as read_lag,\n          (data->>'blk_write_time')::numeric as write, lag((data->>'blk_write_time')::numeric) over w as write_lag,\n          (data->>'total_time')::numeric as tt, lag((data->>'total_time')::numeric) over w as tt_lag,\n          time\n        from stat_statements\n        where dbname = '$dbname' and $__timeFilter(time) and tag_data @> '{\"queryid\": \"$queryid\"}'\n        window w as (order by time)\n) x\nwhere read >= read_lag and write>= write_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1109,6 +1121,23 @@
               }
             ]
           ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
           "tags": [],
           "timeColumn": "time",
           "where": [
@@ -1124,89 +1153,29 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
-      },
       "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
+        "defaults": {},
         "overrides": [
           {
             "matcher": {
               "id": "byName",
               "options": "Time"
             },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Time"
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
+            "properties": []
           },
           {
             "matcher": {
               "id": "byName",
               "options": "Metric"
             },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "short"
-              },
-              {
-                "id": "decimals",
-                "value": 2
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
+            "properties": []
           },
           {
             "matcher": {
               "id": "byName",
               "options": "Value"
             },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "short"
-              },
-              {
-                "id": "decimals",
-                "value": 2
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
+            "properties": []
           }
         ]
       },
@@ -1218,82 +1187,17 @@
       },
       "id": 9,
       "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
+        "code": {
+          "language": "sql",
+          "showLineNumbers": true,
+          "showMiniMap": false
         },
-        "showHeader": true
+        "content": "$sql_text",
+        "mode": "code"
       },
-      "pluginVersion": "10.4.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
-          },
-          "format": "table",
-          "group": [],
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "null"
-              ],
-              "type": "fill"
-            }
-          ],
-          "metricColumn": "none",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "rawQuery": true,
-          "rawSql": "select\n  tag_data->>'query' as \"Value\"\nfrom stat_statements\nwhere dbname = '$dbname' and tag_data @> '{\"queryid\": \"$queryid\"}'\norder by time desc\nlimit 1",
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": [],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
-        }
-      ],
+      "pluginVersion": "12.1.0",
       "title": "SQL",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {
-            "reducers": []
-          }
-        }
-      ],
-      "type": "table"
+      "type": "text"
     },
     {
       "fieldConfig": {
@@ -1301,8 +1205,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 24,
+        "h": 4,
+        "w": 10,
         "x": 0,
         "y": 40
       },
@@ -1316,7 +1220,7 @@
         "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
         "mode": "markdown"
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.1.0",
       "title": "",
       "transparent": true,
       "type": "text"
@@ -1425,6 +1329,21 @@
         "query": "1m,5m,10m,15m,30m,1h,6h,12h,1d",
         "refresh": 2,
         "type": "interval"
+      },
+      {
+        "allowCustomValue": false,
+        "current": {
+          "text": "select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $1))[$2]::text as extversion from pg_extension order by 1",
+          "value": "select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $1))[$2]::text as extversion from pg_extension order by 1"
+        },
+        "definition": "select tag_data->>'query'\nfrom stat_statements\nwhere dbname = '$dbname'\n  and tag_data @> '{\"queryid\": \"$queryid\"}'\norder by time desc\nlimit 1",
+        "hide": 2,
+        "name": "sql_text",
+        "options": [],
+        "query": "select tag_data->>'query'\nfrom stat_statements\nwhere dbname = '$dbname'\n  and tag_data @> '{\"queryid\": \"$queryid\"}'\norder by time desc\nlimit 1",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
       }
     ]
   },
@@ -1436,5 +1355,5 @@
   "timezone": "browser",
   "title": "Single query details",
   "uid": "single-query-details",
-  "version": 1
+  "version": 2
 }
