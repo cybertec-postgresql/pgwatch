@@ -15,7 +15,7 @@ require (
 	github.com/sethvargo/go-retry v0.3.0
 	github.com/shirou/gopsutil/v4 v4.25.7
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.11.0
+	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.38.0
 	github.com/testcontainers/testcontainers-go/modules/etcd v0.38.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.38.0
