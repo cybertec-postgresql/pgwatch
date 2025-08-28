@@ -1,0 +1,1234 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Enhanced PostgreSQL statement analysis dashboard with comprehensive table view and visual analytics",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "panels": [],
+      "title": "Comprehensive Query Analysis Table (pg_stat_statements)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Comprehensive query performance analysis from pg_stat_statements.\n\n**Column Guide:**\n- **Query ID** - Internal PostgreSQL query identifier (click to drill down)\n- **Total Runtime** - Total cumulative execution time\n- **Avg Runtime** - Average execution time per call\n- **Plan Time** - Total time spent planning queries\n- **Avg Plan Time** - Average planning time per call\n- **Calls** - Number of times executed\n- **Rows** - Total rows retrieved/affected\n- **Avg Rows** - Average rows per execution\n- **Shared Hit (MB)** - Buffer cache hits - data found in memory (higher is better)\n- **Shared Read (MB)** - Data read from disk into shared buffers (cache misses)\n- **Shared Written (MB)** - Data written from shared buffers to disk\n- **Temp Read (MB)** - Data read from temporary files (indicates memory pressure)\n- **Temp Written (MB)** - Data written to temporary files during large operations\n- **IO Time** - Time spent on disk I/O operations (requires track_io_timing)\n- **% DB Total** - Percentage of total database execution time\n- **Users** - Database roles that executed this query\n- **Query** - Normalized SQL text with constants replaced by placeholders",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "queryid"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Query ID"
+              },
+              {
+                "id": "unit",
+                "value": "string"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "Opens 'Single query details' dashboard for that queryid",
+                    "url": "/d/single-query-details?orgId=1&var-dbname=${dbname}&var-queryid=${__value.raw}&from=${__from}&to=${__to}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total Runtime (ms)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avg Runtime (ms)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Plan Time (ms)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avg Plan Time (ms)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Calls"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rows"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avg Rows"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Shared Hit (MB)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decmbytes"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Shared Read (MB)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decmbytes"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Shared Written (MB)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decmbytes"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temp Read (MB)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decmbytes"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temp Written (MB)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decmbytes"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "IO Time (ms)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "% DB Total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Query ID"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 229
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "-- Enhanced comprehensive query analysis (Fast mode)\nWITH query_stats AS (\n  select\n    tag_data->>'queryid' as queryid,\n    max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric) as total_runtime,\n    (max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric)) / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_runtime,\n    max((data->>'total_plan_time')::numeric) - min((data->>'total_plan_time')::numeric) as plan_time,\n    (max((data->>'total_plan_time')::numeric) - min((data->>'total_plan_time')::numeric)) / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_plan_time,\n    max((data->>'calls')::int8) - min((data->>'calls')::int8) as calls,\n    max((data->>'rows')::int8) - min((data->>'rows')::int8) as rows,\n    (max((data->>'rows')::int8) - min((data->>'rows')::int8))::numeric / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_rows,\n    (max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8)) * 8192 / 1024.0 / 1024.0 as shared_hit_mb,\n    (max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as shared_read_mb,\n    (max((data->>'shared_blks_written')::int8) - min((data->>'shared_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as shared_written_mb,\n    (max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as temp_read_mb,\n    (max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as temp_written_mb,\n    (max((data->>'blk_read_time')::numeric) - min((data->>'blk_read_time')::numeric)) + \n    (max((data->>'blk_write_time')::numeric) - min((data->>'blk_write_time')::numeric)) as io_time,\n    case when length(tag_data->>'query') > 150 then (tag_data->>'query')::varchar(150) || '...' else tag_data->>'query' end as query\n  from stat_statements\n  where dbname = '$dbname'\n    and $__timeFilter(time)\n    and case \n        when '$query_filter_regex' like '!%' then not tag_data->>'query' ~* substring('$query_filter_regex' from 2)\n        else tag_data->>'query' ~* '$query_filter_regex' \n    end\n  group by tag_data->>'queryid', tag_data->>'query'\n  having max((data->>'calls')::int8) - min((data->>'calls')::int8) > 0\n),\nwith_percentages AS (\n  select \n    *,\n    100 * total_runtime / nullif((select sum(total_runtime) from query_stats), 0) as pct_db_total\n  from query_stats\n)\nselect\n  queryid,\n  total_runtime::int8 as \"Total Runtime (ms)\",\n  avg_runtime::numeric(10,2) as \"Avg Runtime (ms)\",\n  plan_time::int8 as \"Plan Time (ms)\",\n  avg_plan_time::numeric(10,2) as \"Avg Plan Time (ms)\",\n  calls as \"Calls\",\n  rows as \"Rows\",\n  avg_rows::numeric(10,1) as \"Avg Rows\",\n  shared_hit_mb::numeric(10,1) as \"Shared Hit (MB)\",\n  shared_read_mb::numeric(10,1) as \"Shared Read (MB)\",\n  shared_written_mb::numeric(10,1) as \"Shared Written (MB)\",\n  temp_read_mb::numeric(10,1) as \"Temp Read (MB)\",\n  temp_written_mb::numeric(10,1) as \"Temp Written (MB)\",\n  io_time::numeric(10,1) as \"IO Time (ms)\",\n  pct_db_total::numeric(5,1) as \"% DB Total\",\n  (select data->>'users' from stat_statements where $__timeFilter(time) and dbname = '$dbname' and tag_data->>'queryid' = with_percentages.queryid order by time desc limit 1) as \"Users\",\n  query as \"Query\"\nfrom with_percentages\norder by total_runtime desc nulls last\nlimit $top",
+          "refId": "A"
+        }
+      ],
+      "title": "Enhanced Query Performance Analysis Table",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "id": 3,
+      "panels": [],
+      "title": "Top $top queries visual analysis (pg_stat_statements)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "-- Top queries by calls over time\nWITH query_calls AS (\n  select \n    time,\n    tag_data->>'queryid' as queryid,\n    (data->>'calls')::int8 as calls\n  from stat_statements \n  where dbname = '$dbname'\n    and $__timeFilter(time)\n    and case \n        when '$query_filter_regex' like '!%' then not tag_data->>'query' ~* substring('$query_filter_regex' from 2)\n        else tag_data->>'query' ~* '$query_filter_regex' \n    end\n),\ntop_queries AS (\n  select queryid\n  from query_calls\n  group by queryid\n  order by max(calls) - min(calls) desc\n  limit $top\n)\nselect \n  time as \"time\",\n  calls,\n  queryid as metric\nfrom query_calls\nwhere queryid in (select queryid from top_queries)\norder by time",
+          "refId": "A"
+        }
+      ],
+      "title": "Top $top statements by calls over time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "-- Top queries by total execution time over time\nWITH query_runtime AS (\n  select \n    time,\n    tag_data->>'queryid' as queryid,\n    (data->>'total_time')::numeric as total_time\n  from stat_statements \n  where dbname = '$dbname'\n    and $__timeFilter(time)\n    and case \n        when '$query_filter_regex' like '!%' then not tag_data->>'query' ~* substring('$query_filter_regex' from 2)\n        else tag_data->>'query' ~* '$query_filter_regex' \n    end\n),\ntop_queries AS (\n  select queryid\n  from query_runtime\n  group by queryid\n  order by max(total_time) - min(total_time) desc\n  limit $top\n)\nselect \n  time as \"time\",\n  total_time,\n  queryid as metric\nfrom query_runtime\nwhere queryid in (select queryid from top_queries)\norder by time",
+          "refId": "A"
+        }
+      ],
+      "title": "Top $top statements by execution time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "-- Top queries by rows over time\nWITH query_rows AS (\n  select \n    time,\n    tag_data->>'queryid' as queryid,\n    (data->>'rows')::int8 as rows\n  from stat_statements \n  where dbname = '$dbname'\n    and $__timeFilter(time)\n    and case \n        when '$query_filter_regex' like '!%' then not tag_data->>'query' ~* substring('$query_filter_regex' from 2)\n        else tag_data->>'query' ~* '$query_filter_regex' \n    end\n),\ntop_queries AS (\n  select queryid\n  from query_rows\n  group by queryid\n  order by max(rows) - min(rows) desc\n  limit $top\n)\nselect \n  time as \"time\",\n  rows,\n  queryid as metric\nfrom query_rows\nwhere queryid in (select queryid from top_queries)\norder by time",
+          "refId": "A"
+        }
+      ],
+      "title": "Top $top statements by rows",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decmbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "-- Top queries by shared blocks hit over time\nWITH query_shared_hit AS (\n  select \n    time,\n    tag_data->>'queryid' as queryid,\n    (data->>'shared_blks_hit')::int8 * 8192 / 1024.0 / 1024.0 as shared_hit_mb\n  from stat_statements \n  where dbname = '$dbname'\n    and $__timeFilter(time)\n    and case \n        when '$query_filter_regex' like '!%' then not tag_data->>'query' ~* substring('$query_filter_regex' from 2)\n        else tag_data->>'query' ~* '$query_filter_regex' \n    end\n),\ntop_queries AS (\n  select queryid\n  from query_shared_hit\n  group by queryid\n  order by max(shared_hit_mb) - min(shared_hit_mb) desc\n  limit $top\n)\nselect \n  time as \"time\",\n  shared_hit_mb,\n  queryid as metric\nfrom query_shared_hit\nwhere queryid in (select queryid from top_queries)\norder by time",
+          "refId": "A"
+        }
+      ],
+      "title": "Top $top statements by shared_blks_hit (in MB)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decmbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "-- Top queries by shared blocks read over time\nWITH query_shared_read AS (\n  select \n    time,\n    tag_data->>'queryid' as queryid,\n    (data->>'shared_blks_read')::int8 * 8192 / 1024.0 / 1024.0 as shared_read_mb\n  from stat_statements \n  where dbname = '$dbname'\n    and $__timeFilter(time)\n    and case \n        when '$query_filter_regex' like '!%' then not tag_data->>'query' ~* substring('$query_filter_regex' from 2)\n        else tag_data->>'query' ~* '$query_filter_regex' \n    end\n),\ntop_queries AS (\n  select queryid\n  from query_shared_read\n  group by queryid\n  order by max(shared_read_mb) - min(shared_read_mb) desc\n  limit $top\n)\nselect \n  time as \"time\",\n  shared_read_mb,\n  queryid as metric\nfrom query_shared_read\nwhere queryid in (select queryid from top_queries)\norder by time",
+          "refId": "A"
+        }
+      ],
+      "title": "Top $top statements by shared_blks_read (in MB)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decmbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 38
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "-- Top queries by temp blocks read over time\nWITH query_temp_read AS (\n  select \n    time,\n    tag_data->>'queryid' as queryid,\n    (data->>'temp_blks_read')::int8 * 8192 / 1024.0 / 1024.0 as temp_read_mb\n  from stat_statements \n  where dbname = '$dbname'\n    and $__timeFilter(time)\n    and case \n        when '$query_filter_regex' like '!%' then not tag_data->>'query' ~* substring('$query_filter_regex' from 2)\n        else tag_data->>'query' ~* '$query_filter_regex' \n    end\n),\ntop_queries AS (\n  select queryid\n  from query_temp_read\n  group by queryid\n  order by max(temp_read_mb) - min(temp_read_mb) desc\n  limit $top\n)\nselect \n  time as \"time\",\n  temp_read_mb,\n  queryid as metric\nfrom query_temp_read\nwhere queryid in (select queryid from top_queries)\nand temp_read_mb > 0\norder by time",
+          "refId": "A"
+        }
+      ],
+      "title": "Top $top statements by temp bytes read (in MB)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decmbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 38
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "-- Top queries by temp blocks written over time\nWITH query_temp_written AS (\n  select \n    time,\n    tag_data->>'queryid' as queryid,\n    (data->>'temp_blks_written')::int8 * 8192 / 1024.0 / 1024.0 as temp_written_mb\n  from stat_statements \n  where dbname = '$dbname'\n    and $__timeFilter(time)\n    and case \n        when '$query_filter_regex' like '!%' then not tag_data->>'query' ~* substring('$query_filter_regex' from 2)\n        else tag_data->>'query' ~* '$query_filter_regex' \n    end\n),\ntop_queries AS (\n  select queryid\n  from query_temp_written\n  group by queryid\n  order by max(temp_written_mb) - min(temp_written_mb) desc\n  limit $top\n)\nselect \n  time as \"time\",\n  temp_written_mb,\n  queryid as metric\nfrom query_temp_written\nwhere queryid in (select queryid from top_queries)\nand temp_written_mb > 0\norder by time",
+          "refId": "A"
+        }
+      ],
+      "title": "Top $top statements by temp bytes written (in MB)",
+      "type": "timeseries"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 46
+      },
+      "id": 11,
+      "options": {
+        "content": "## Fast Mode Analysis\n\nThis dashboard uses **fast mode** analysis with simple max-min calculations for optimal performance. It assumes no `pg_stat_statements` reset during the time period.\n\n**Enhanced Features:** Comprehensive query analysis with sortable table view and visual time-series charts for top-performing queries.\n\nFor more detailed analysis with reset handling, use the \"Stat Statements Analysis (Unified)\" dashboard.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "12.0.0",
+      "title": "Dashboard Information",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 46
+      },
+      "id": 12,
+      "options": {
+        "content": "## Brought to you by\n\n<a href=\"https://www.cybertec-postgresql.com/en/\">\n  <img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\" width=\"400\" />\n</a>",
+        "mode": "markdown"
+      },
+      "pluginVersion": "12.0.0",
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    }
+  ],
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 41,
+  "tags": [
+    "pgwatch"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "demo",
+          "value": "demo"
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "pgwatch-metrics"
+        },
+        "definition": "",
+        "includeAll": false,
+        "name": "dbname",
+        "options": [],
+        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_statements' ORDER BY 1;",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "20",
+          "value": "20"
+        },
+        "includeAll": false,
+        "name": "top",
+        "options": [
+          {
+            "selected": false,
+            "text": "5",
+            "value": "5"
+          },
+          {
+            "selected": false,
+            "text": "10",
+            "value": "10"
+          },
+          {
+            "selected": false,
+            "text": "15",
+            "value": "15"
+          },
+          {
+            "selected": true,
+            "text": "20",
+            "value": "20"
+          },
+          {
+            "selected": false,
+            "text": "30",
+            "value": "30"
+          },
+          {
+            "selected": false,
+            "text": "50",
+            "value": "50"
+          }
+        ],
+        "query": "5,10,15,20,30,50",
+        "type": "custom"
+      },
+      {
+        "current": {
+          "text": "!pgwatch_generated",
+          "value": "!pgwatch_generated"
+        },
+        "includeAll": false,
+        "name": "query_filter_regex",
+        "options": [
+          {
+            "selected": true,
+            "text": "!pgwatch_generated",
+            "value": "!pgwatch_generated"
+          },
+          {
+            "selected": false,
+            "text": ".*",
+            "value": ".*"
+          },
+          {
+            "selected": false,
+            "text": "!SELECT",
+            "value": "!SELECT"
+          },
+          {
+            "selected": false,
+            "text": "UPDATE|DELETE|INSERT",
+            "value": "UPDATE|DELETE|INSERT"
+          }
+        ],
+        "query": "!pgwatch_generated,.*,!SELECT,UPDATE|DELETE|INSERT",
+        "type": "custom",
+        "description": "Custom regex filter for queries. Use '!' prefix to exclude, e.g., '!pgwatch_generated' excludes queries containing 'pgwatch_generated'. Use regular expressions like 'SELECT|INSERT' to include only specific patterns."
+      }
+    ]
+  },
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "4. Query Performance Analysis",
+  "uid": "query-performance-analysis",
+  "version": 1
+}
