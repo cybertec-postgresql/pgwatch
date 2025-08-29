@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 32,
+  "id": 18,
   "links": [],
   "panels": [
     {
@@ -2039,11 +2039,11 @@
           "text": "db_stats",
           "value": "db_stats"
         },
-        "definition": "SELECT\nCASE to_regclass('pgbouncer_stats') IS NULL WHEN true THEN 'db_stats'\nELSE 'pgbouncer_stats'\nEND",
+        "definition": "SELECT COALESCE(to_regclass('pgbouncer_stats')::text, 'db_stats')",
         "hide": 2,
         "name": "pgbouncer_stats_qry",
         "options": [],
-        "query": "SELECT\nCASE to_regclass('pgbouncer_stats') IS NULL WHEN true THEN 'db_stats'\nELSE 'pgbouncer_stats'\nEND",
+        "query": "SELECT COALESCE(to_regclass('pgbouncer_stats')::text, 'db_stats')",
         "refresh": 1,
         "regex": "",
         "type": "query"

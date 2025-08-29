@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 14,
+  "id": 15,
   "links": [],
   "panels": [
     {
@@ -45,7 +45,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -95,18 +96,19 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
+          "editorMode": "code",
           "format": "table",
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  recommendations\nWHERE\n  time IN (SELECT max(time) FROM recommendations WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'superuser_count'\nORDER BY\n  dbname, object_name",
+          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  $table_name\nWHERE\n  time IN (SELECT max(time) FROM $table_name WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'superuser_count'\nORDER BY\n  dbname, object_name",
           "refId": "A",
           "select": [
             [
@@ -118,6 +120,23 @@
               }
             ]
           ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
           "timeColumn": "time",
           "where": [
             {
@@ -162,7 +181,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -212,7 +232,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -279,7 +299,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -329,7 +350,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -396,7 +417,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -446,18 +468,19 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
+          "editorMode": "code",
           "format": "table",
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  recommendations\nWHERE\n  time IN (SELECT max(time) FROM recommendations WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'sprocs_wo_search_path'\nORDER BY\n  dbname, object_name",
+          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  $table_name\nWHERE\n  time IN (SELECT max(time) FROM $table_name WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'sprocs_wo_search_path'\nORDER BY\n  dbname, object_name",
           "refId": "A",
           "select": [
             [
@@ -469,6 +492,23 @@
               }
             ]
           ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
           "timeColumn": "time",
           "where": [
             {
@@ -513,7 +553,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -563,18 +604,19 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
+          "editorMode": "code",
           "format": "table",
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  recommendations\nWHERE\n  time IN (SELECT max(time) FROM recommendations WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'default_public_schema_privs'\nORDER BY\n  dbname, object_name",
+          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  $table_name\nWHERE\n  time IN (SELECT max(time) FROM $table_name WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'default_public_schema_privs'\nORDER BY\n  dbname, object_name",
           "refId": "A",
           "select": [
             [
@@ -586,6 +628,23 @@
               }
             ]
           ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
           "timeColumn": "time",
           "where": [
             {
@@ -630,7 +689,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -680,18 +740,19 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
+          "editorMode": "code",
           "format": "table",
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  recommendations\nWHERE\n  time IN (SELECT max(time) FROM recommendations WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'create_index'\nORDER BY\n  dbname, object_name",
+          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  $table_name\nWHERE\n  time IN (SELECT max(time) FROM $table_name WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'create_index'\nORDER BY\n  dbname, object_name",
           "refId": "A",
           "select": [
             [
@@ -703,6 +764,23 @@
               }
             ]
           ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
           "timeColumn": "time",
           "where": [
             {
@@ -747,7 +825,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -797,18 +876,19 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
+          "editorMode": "code",
           "format": "table",
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  recommendations\nWHERE\n  time IN (SELECT max(time) FROM recommendations WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'drop_index'\nORDER BY\n  dbname, object_name",
+          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  $table_name\nWHERE\n  time IN (SELECT max(time) FROM $table_name WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'drop_index'\nORDER BY\n  dbname, object_name",
           "refId": "A",
           "select": [
             [
@@ -820,6 +900,23 @@
               }
             ]
           ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
           "timeColumn": "time",
           "where": [
             {
@@ -864,7 +961,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -914,18 +1012,19 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
+          "editorMode": "code",
           "format": "table",
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  recommendations\nWHERE\n  time IN (SELECT max(time) FROM recommendations WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'partial_index_candidates'\nORDER BY\n  dbname, object_name",
+          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  $table_name\nWHERE\n  time IN (SELECT max(time) FROM $table_name WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'partial_index_candidates'\nORDER BY\n  dbname, object_name",
           "refId": "A",
           "select": [
             [
@@ -937,6 +1036,23 @@
               }
             ]
           ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
           "timeColumn": "time",
           "where": [
             {
@@ -981,7 +1097,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1031,18 +1148,19 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
+          "editorMode": "code",
           "format": "table",
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  recommendations\nWHERE\n  time IN (SELECT max(time) FROM recommendations WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'overly_nested_views'\nORDER BY\n  dbname, object_name",
+          "rawSql": "SELECT\n  dbname,\n  data->>'major_ver' AS pg_major_ver,\n  tag_data->>'object_name' AS object_name,\n  data->>'recommendation' AS recommendation,\n  data->>'extra_info' AS extra_info\nFROM\n  $table_name\nWHERE\n  time IN (SELECT max(time) FROM $table_name WHERE $__timeFilter(time) GROUP BY dbname)\n  AND dbname IN ($dbname)\n  AND tag_data->>'reco_topic' = 'overly_nested_views'\nORDER BY\n  dbname, object_name",
           "refId": "A",
           "select": [
             [
@@ -1054,6 +1172,23 @@
               }
             ]
           ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
           "timeColumn": "time",
           "where": [
             {
@@ -1098,7 +1233,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1148,7 +1284,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -1199,8 +1335,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 24,
+        "h": 4,
+        "w": 9,
         "x": 0,
         "y": 50
       },
@@ -1214,7 +1350,7 @@
         "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
         "mode": "markdown"
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "12.1.0",
       "title": "",
       "transparent": true,
       "type": "text"
@@ -1239,12 +1375,26 @@
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
         },
-        "definition": "SELECT DISTINCT dbname FROM recommendations WHERE time > now() - '2d'::interval ORDER BY 1;",
+        "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics ORDER BY 1;",
         "includeAll": true,
         "multi": true,
         "name": "dbname",
         "options": [],
-        "query": "SELECT DISTINCT dbname FROM recommendations WHERE time > now() - '2d'::interval ORDER BY 1;",
+        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics ORDER BY 1;",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "(SELECT NULL time, NULL dbname, NULL::json data, NULL::jsonb tag_data WHERE false)",
+          "value": "(SELECT NULL time, NULL dbname, NULL::json data, NULL::jsonb tag_data WHERE false)"
+        },
+        "definition": "SELECT COALESCE (to_regclass('recommendations')::text, '(SELECT NULL time, NULL dbname, NULL::json data, NULL::jsonb tag_data WHERE false)')",
+        "hide": 2,
+        "name": "table_name",
+        "options": [],
+        "query": "SELECT COALESCE (to_regclass('recommendations')::text, '(SELECT NULL time, NULL dbname, NULL::json data, NULL::jsonb tag_data WHERE false)')",
         "refresh": 1,
         "regex": "",
         "type": "query"
