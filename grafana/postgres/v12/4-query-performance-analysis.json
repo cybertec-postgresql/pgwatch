@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
+  "id": 42,
   "links": [],
   "panels": [
     {
@@ -55,7 +55,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -180,6 +181,10 @@
               {
                 "id": "decimals",
                 "value": 0
+              },
+              {
+                "id": "custom.width",
+                "value": 76
               }
             ]
           },
@@ -196,6 +201,10 @@
               {
                 "id": "decimals",
                 "value": 0
+              },
+              {
+                "id": "custom.width",
+                "value": 73
               }
             ]
           },
@@ -212,6 +221,10 @@
               {
                 "id": "decimals",
                 "value": 1
+              },
+              {
+                "id": "custom.width",
+                "value": 86
               }
             ]
           },
@@ -358,9 +371,10 @@
           ],
           "show": false
         },
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": []
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -406,13 +420,15 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "vis": false,
+              "viz": false
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
@@ -436,7 +452,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -472,7 +489,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -505,13 +522,15 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "vis": false,
+              "viz": false
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
@@ -535,7 +554,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -569,7 +589,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -602,13 +622,15 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "vis": false,
+              "viz": false
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
@@ -632,7 +654,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -668,7 +691,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -701,13 +724,15 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "vis": false,
+              "viz": false
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
@@ -731,7 +756,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -765,7 +791,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -798,13 +824,15 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "vis": false,
+              "viz": false
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
@@ -828,7 +856,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -864,7 +893,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -897,13 +926,15 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "vis": false,
+              "viz": false
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
@@ -927,7 +958,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -961,7 +993,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -994,13 +1026,15 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "vis": false,
+              "viz": false
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
@@ -1024,7 +1058,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1060,7 +1095,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -1087,33 +1122,17 @@
         "x": 0,
         "y": 46
       },
-      "id": 11,
-      "options": {
-        "content": "## Fast Mode Analysis\n\nThis dashboard uses **fast mode** analysis with simple max-min calculations for optimal performance. It assumes no `pg_stat_statements` reset during the time period.\n\n**Enhanced Features:** Comprehensive query analysis with sortable table view and visual time-series charts for top-performing queries.\n\nFor more detailed analysis with reset handling, use the \"Stat Statements Analysis (Unified)\" dashboard.",
-        "mode": "markdown"
-      },
-      "pluginVersion": "12.0.0",
-      "title": "Dashboard Information",
-      "transparent": true,
-      "type": "text"
-    },
-    {
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 12,
-        "y": 46
-      },
       "id": 12,
       "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
         "content": "## Brought to you by\n\n<a href=\"https://www.cybertec-postgresql.com/en/\">\n  <img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\" width=\"400\" />\n</a>",
         "mode": "markdown"
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "title": "",
       "transparent": true,
       "type": "text"
@@ -1138,6 +1157,7 @@
         },
         "definition": "",
         "includeAll": false,
+        "label": "Monitored Source",
         "name": "dbname",
         "options": [],
         "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_statements' ORDER BY 1;",
@@ -1150,7 +1170,9 @@
           "text": "20",
           "value": "20"
         },
+        "description": "Limit output to top N entries",
         "includeAll": false,
+        "label": "Top N",
         "name": "top",
         "options": [
           {
@@ -1189,19 +1211,21 @@
       },
       {
         "current": {
-          "text": "!pgwatch_generated",
-          "value": "!pgwatch_generated"
+          "text": ".*",
+          "value": ".*"
         },
+        "description": "Custom regex filter for queries. Use '!' prefix to exclude, e.g., '!pgwatch_generated' excludes queries containing 'pgwatch_generated'. Use regular expressions like 'SELECT|INSERT' to include only specific patterns.",
         "includeAll": false,
+        "label": "Filter RegEx",
         "name": "query_filter_regex",
         "options": [
           {
-            "selected": true,
+            "selected": false,
             "text": "!pgwatch_generated",
             "value": "!pgwatch_generated"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": ".*",
             "value": ".*"
           },
@@ -1217,8 +1241,7 @@
           }
         ],
         "query": "!pgwatch_generated,.*,!SELECT,UPDATE|DELETE|INSERT",
-        "type": "custom",
-        "description": "Custom regex filter for queries. Use '!' prefix to exclude, e.g., '!pgwatch_generated' excludes queries containing 'pgwatch_generated'. Use regular expressions like 'SELECT|INSERT' to include only specific patterns."
+        "type": "custom"
       }
     ]
   },
@@ -1230,5 +1253,5 @@
   "timezone": "browser",
   "title": "4. Query Performance Analysis",
   "uid": "query-performance-analysis",
-  "version": 1
+  "version": 4
 }
