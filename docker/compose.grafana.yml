@@ -9,6 +9,7 @@ services:
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/1-global-db-overview.json
       GF_INSTALL_PLUGINS: marcusolsson-treemap-panel
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      # GF_FEATURE_TOGGLES_ENABLE: dashboardNewLayouts
     ports:
       - "3000:3000"
     restart: unless-stopped

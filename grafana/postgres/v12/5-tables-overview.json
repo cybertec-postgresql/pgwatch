@@ -1,0 +1,1616 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Combined dashboard showing table statistics and visualizations with tabbed interface",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 35,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "panels": [],
+      "title": "Table Statistics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Tables ranked by total relation size (table + indexes + TOAST). Click on table name to view detailed metrics for that table.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "displayName": "",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "table_full_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Table Name"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "View Table Details",
+                    "url": "/d/table-details/table-details?orgId=1&var-dbname=${dbname}&var-table_full_name=${__data.fields.table_full_name}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_relation_size"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Size"
+              },
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "data_size"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Data Size"
+              },
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_vacuum"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Vacuum"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_analyze"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Analyze"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 12,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "select\n  x.*,\n  (data->>'seconds_since_last_vacuum')::int8 as last_vacuum,\n  (data->>'seconds_since_last_analyze')::int8 as last_analyze\nfrom (\nSELECT\n  dbname,\n  tag_data->>'table_full_name' as table_full_name,\n  max((data->>'total_relation_size_b')::int8) as total_relation_size,\n  max((data->>'table_size_b')::int8) as data_size\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1, 2\nORDER BY 3 DESC NULLS LAST\nLIMIT $top\n) x\njoin lateral (select data from table_stats where dbname = x.dbname and tag_data->>'table_full_name' = x.table_full_name and $__timeFilter(time) order by time desc limit 1) y on true",
+          "refId": "A",
+          "resultFormat": "table"
+        }
+      ],
+      "title": "Largest Tables by Total Size",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Tables ranked by data size only (excluding indexes and TOAST). Click on table name to view detailed metrics for that table.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "table_full_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Table Name"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "View Table Details",
+                    "url": "/d/table-details/table-details?orgId=1&var-dbname=${dbname}&var-table_full_name=${__data.fields.table_full_name}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_relation_size"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Size"
+              },
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "data_size"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Data Size"
+              },
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_vacuum"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Vacuum"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_analyze"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Analyze"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 13,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  x.*,\n  (data->>'seconds_since_last_vacuum')::int8 as last_vacuum,\n  (data->>'seconds_since_last_analyze')::int8 as last_analyze\nFROM (\nSELECT\n  dbname,\n  tag_data->>'table_full_name' as table_full_name,\n  max((data->>'total_relation_size_b')::int8) as total_relation_size,\n  max((data->>'table_size_b')::int8) as data_size\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1, 2\nORDER BY 4 DESC NULLS LAST\nLIMIT $top\n) x\njoin lateral (select data from table_stats where dbname = x.dbname and tag_data->>'table_full_name' = x.table_full_name and $__timeFilter(time) order by time desc limit 1) y on true",
+          "refId": "A",
+          "resultFormat": "table"
+        }
+      ],
+      "title": "Largest Tables by Data Size",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Tables with the largest growth in total relation size during the selected time period. Assumes no statistics reset occurred.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "table_full_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Table Name"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "View Table Details",
+                    "url": "/d/table-details/table-details?orgId=1&var-dbname=${dbname}&var-table_full_name=${__data.fields.table_full_name}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "growth"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Size Growth"
+              },
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_relation_size"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Current Total Size"
+              },
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_vacuum"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Vacuum"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_analyze"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Analyze"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 5,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  x.*,\n  (data->>'seconds_since_last_vacuum')::int8 as last_vacuum,\n  (data->>'seconds_since_last_analyze')::int8 as last_analyze\nFROM (\n  SELECT\n    dbname,\n    tag_data->>'table_full_name' as table_full_name,\n    max((data->>'total_relation_size_b')::int8) - min((data->>'total_relation_size_b')::int8) as growth,\n    max((data->>'total_relation_size_b')::int8) as total_relation_size\n  FROM\n    table_stats\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  GROUP BY 1, 2\n  ORDER BY growth DESC NULLS LAST\n  LIMIT $top\n) x\njoin lateral (select data from table_stats where dbname = x.dbname and tag_data->>'table_full_name' = x.table_full_name and $__timeFilter(time) order by time desc limit 1) y on true",
+          "refId": "A",
+          "resultFormat": "table"
+        }
+      ],
+      "title": "Tables with Highest Growth",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Tables with the most sequential scans during the selected time period. Limited to tables larger than 100MB as seq scans on small tables are normal.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "table_full_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Table Name"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "View Table Details",
+                    "url": "/d/table-details/table-details?orgId=1&var-dbname=${dbname}&var-table_full_name=${__data.fields.table_full_name}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "seq_scan"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sequential Scans"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "table_size"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Table Size"
+              },
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_vacuum"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Vacuum"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_analyze"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Analyze"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "id": 4,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  x.*,\n  (data->>'table_size_b')::int8 as table_size,\n  (data->>'seconds_since_last_vacuum')::int8 as last_vacuum,\n  (data->>'seconds_since_last_analyze')::int8 as last_analyze\nFROM (\nSELECT\n  dbname,\n  tag_data->>'table_full_name' as table_full_name,\n  max((data->>'seq_scan')::int8) - min((data->>'seq_scan')::int8) as seq_scan\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND (data->>'table_size_b')::int8 > 100000000\nGROUP BY\n  1, 2\nHAVING\n  max((data->>'seq_scan')::int8) > min((data->>'seq_scan')::int8)\nORDER BY\n  3 DESC\nLIMIT\n  $top\n) x\njoin lateral (select data from table_stats where dbname = x.dbname and tag_data->>'table_full_name' = x.table_full_name and $__timeFilter(time) order by time desc limit 1) y on true",
+          "refId": "A",
+          "resultFormat": "table"
+        }
+      ],
+      "title": "Tables with Most Sequential Scans",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Tables with the most INSERT operations during the selected time period. Useful for identifying write-heavy tables.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "table_full_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Table Name"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "View Table Details",
+                    "url": "/d/table-details/table-details?orgId=1&var-dbname=${dbname}&var-table_full_name=${__data.fields.table_full_name}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ins"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "INSERT Operations"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_relation_size"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Size"
+              },
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_vacuum"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Vacuum"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_analyze"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Analyze"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "id": 6,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  x.*,\n  (data->>'total_relation_size_b')::int8 as total_relation_size,\n  (data->>'seconds_since_last_vacuum')::int8 as last_vacuum,\n  (data->>'seconds_since_last_analyze')::int8 as last_analyze\nFROM (\nSELECT\n  dbname,\n  tag_data->>'table_full_name' as table_full_name,\n  max((data->>'n_tup_ins')::int8) - min((data->>'n_tup_ins')::int8) as ins\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY\n  1, 2\nHAVING\n  max((data->>'n_tup_ins')::int8) > min((data->>'n_tup_ins')::int8)\nORDER BY\n  3 DESC NULLS LAST\nLIMIT\n  $top\n) x\njoin lateral (select data from table_stats where dbname = x.dbname and tag_data->>'table_full_name' = x.table_full_name and $__timeFilter(time) order by time desc limit 1) y on true",
+          "refId": "A",
+          "resultFormat": "table"
+        }
+      ],
+      "title": "Tables with Most INSERT Activity",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Tables with the most UPDATE operations during the selected time period. High UPDATE activity may indicate need for more frequent VACUUM operations.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "table_full_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Table Name"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "View Table Details",
+                    "url": "/d/table-details/table-details?orgId=1&var-dbname=${dbname}&var-table_full_name=${__data.fields.table_full_name}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upd"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "UPDATE Operations"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_relation_size"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Size"
+              },
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_vacuum"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Vacuum"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_analyze"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Analyze"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
+      "id": 7,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  x.*,\n  (data->>'total_relation_size_b')::int8 as total_relation_size,  \n  (data->>'seconds_since_last_vacuum')::int8  as last_vacuum,\n  (data->>'seconds_since_last_analyze')::int8 as last_analyze\nFROM (\nSELECT\n  dbname,\n  tag_data->>'table_full_name' as table_full_name,\n  max((data->>'n_tup_upd')::int8) - min((data->>'n_tup_upd')::int8) as upd -- assumes no reset\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY\n  1, 2\nHAVING\n  max((data->>'n_tup_upd')::int8) > min((data->>'n_tup_upd')::int8)\nORDER BY\n  3 DESC NULLS LAST\nLIMIT\n  $top\n) x\njoin lateral (select data from table_stats where dbname = x.dbname and tag_data->>'table_full_name' = x.table_full_name and $__timeFilter(time) order by time desc limit 1) y on true",
+          "refId": "A",
+          "resultFormat": "table"
+        }
+      ],
+      "title": "Tables with Most UPDATE Activity",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Tables with the most DELETE operations during the selected time period. High DELETE activity may indicate need for more frequent VACUUM operations.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "table_full_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Table Name"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "View Table Details",
+                    "url": "/d/table-details/table-details?orgId=1&var-dbname=${dbname}&var-table_full_name=${__data.fields.table_full_name}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "del"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "DELETE Operations"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_relation_size"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Size"
+              },
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_vacuum"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Vacuum"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_analyze"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Analyze"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 43
+      },
+      "id": 8,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  x.*,\n  (data->>'total_relation_size_b')::int8 as total_relation_size,  \n  (data->>'seconds_since_last_vacuum')::int8  as last_vacuum,\n  (data->>'seconds_since_last_analyze')::int8 as last_analyze\nFROM (\nSELECT\n  dbname,\n  tag_data->>'table_full_name' as table_full_name,\n  max((data->>'n_tup_del')::int8) - min((data->>'n_tup_del')::int8) as del -- assumes no reset\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY\n  1, 2\nHAVING\n  max((data->>'n_tup_del')::int8) > min((data->>'n_tup_del')::int8)\nORDER BY\n  3 DESC NULLS LAST\nLIMIT\n  $top\n) x\njoin lateral (select data from table_stats where dbname = x.dbname and tag_data->>'table_full_name' = x.table_full_name and $__timeFilter(time) order by time desc limit 1) y on true",
+          "refId": "A",
+          "resultFormat": "table"
+        }
+      ],
+      "title": "Tables with Most DELETE Activity",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Tables with the most disk block reads during the selected time period. Based on pg_statio_user_tables. Assumes 8KB page size. High values may indicate insufficient shared_buffers or poor indexing.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "table_full_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Table Name"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "View Table Details",
+                    "url": "/d/table-details/table-details?orgId=1&var-dbname=${dbname}&var-table_full_name=${__data.fields.table_full_name}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "blks_read"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Disk Reads"
+              },
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "data_size"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Table Size"
+              },
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "seq_scan"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sequential Scans"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_vacuum"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Vacuum"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_analyze"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Analyze"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 50
+      },
+      "id": 11,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  x.*,\n  (data->>'table_size_b')::int8 as data_size,\n  (data->>'seq_scan')::int8 - (select (data->>'seq_scan')::int8 from table_stats where dbname = x.dbname and tag_data->>'table_full_name' = x.table_full_name and $__timeFilter(time) order by time limit 1) as seq_scan,\n  (data->>'seconds_since_last_vacuum')::int8  as last_vacuum,\n  (data->>'seconds_since_last_analyze')::int8 as last_analyze\nFROM (\nSELECT\n  dbname,\n  tag_data->>'table_full_name' as table_full_name,\n  8192 * (coalesce(max((data->>'heap_blks_read')::int8) - min((data->>'heap_blks_read')::int8), 0) + coalesce(max((data->>'toast_blks_read')::int8) - min((data->>'toast_blks_read')::int8), 0) + coalesce(max((data->>'tidx_blks_read')::int8) - min((data->>'tidx_blks_read')::int8), 0)) as blks_read\nFROM\n  table_io_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY\n  1, 2\nHAVING\n  max((data->>'heap_blks_read')::int8) > min((data->>'heap_blks_read')::int8)\nORDER BY\n  3 DESC NULLS LAST\nLIMIT\n  $top\n) x\njoin lateral (select data from table_stats where dbname = x.dbname and tag_data->>'table_full_name' = x.table_full_name and $__timeFilter(time) order by time desc limit 1) y on true",
+          "refId": "A",
+          "resultFormat": "table"
+        }
+      ],
+      "title": "Tables with Most Disk I/O Reads",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 57
+      },
+      "id": 200,
+      "panels": [],
+      "title": "Visual Analysis",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres"
+      },
+      "description": "Interactive treemap visualization showing relative sizes of tables and their indexes. Larger rectangles represent bigger tables.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "custom": {
+            "separator": "."
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 58
+      },
+      "id": 3,
+      "maxDataPoints": 100,
+      "options": {
+        "sizeField": "total_relation_size_b",
+        "textField": "table_name",
+        "tiling": "treemapSquarify"
+      },
+      "pluginVersion": "2.1.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time,\n  (data->>'total_relation_size_b')::int8 as total_relation_size_b,\n  tag_data->>'table_full_name'::text as table_name\nFROM\n  table_stats\nWHERE\n  time = (select max(time) from table_stats WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND dbname = '$dbname'\nORDER BY\n  2 DESC NULLS LAST\nLIMIT 100",
+          "refId": "A"
+        }
+      ],
+      "title": "Table Sizes Treemap",
+      "type": "marcusolsson-treemap-panel"
+    },
+    {
+      "datasource": {
+        "type": "postgres"
+      },
+      "description": "Interactive treemap visualization showing table data sizes excluding indexes and TOAST. Useful for identifying tables with large amounts of actual data.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 68
+      },
+      "id": 1,
+      "options": {
+        "sizeField": "table_size_b",
+        "textField": "table_name",
+        "tiling": "treemapSquarify"
+      },
+      "pluginVersion": "2.1.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  0 as time,\n  (data->>'table_size_b')::int8 + coalesce((data->>'toast_size_b')::int8, 0) as table_size_b,\n  tag_data->>'table_full_name' as table_name\nFROM\n  table_stats\nWHERE\n  time = (select max(time) from table_stats WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND dbname = '$dbname'\nORDER BY\n  2 DESC NULLS LAST\nLIMIT 100",
+          "refId": "A"
+        }
+      ],
+      "title": "Table Data Sizes Treemap",
+      "type": "marcusolsson-treemap-panel"
+    },
+    {
+      "datasource": {
+        "type": "postgres"
+      },
+      "description": "Interactive treemap visualization showing index sizes. Helps identify large indexes that may need optimization or rebuilding.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "custom": {
+            "separator": "."
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 78
+      },
+      "id": 2,
+      "maxDataPoints": 100,
+      "options": {
+        "sizeField": "index_size_b",
+        "textField": "index_full_name",
+        "tiling": "treemapSquarify"
+      },
+      "pluginVersion": "2.1.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  0 as time,\n  (data->>'index_size_b')::int8 as index_size_b,\n  tag_data->>'index_full_name' as index_full_name\nFROM\n  index_stats\nWHERE\n  time = (select max(time) from index_stats WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND dbname = '$dbname'\nORDER BY\n  2 DESC NULLS LAST\nLIMIT 100",
+          "refId": "A"
+        }
+      ],
+      "title": "Index Sizes Treemap",
+      "type": "marcusolsson-treemap-panel"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 11,
+        "x": 0,
+        "y": 85
+      },
+      "id": 201,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+        "mode": "markdown"
+      },
+      "pluginVersion": "12.1.0",
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    }
+  ],
+  "preload": false,
+  "refresh": "1m",
+  "schemaVersion": 41,
+  "tags": [
+    "pgwatch"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "demo",
+          "value": "demo"
+        },
+        "datasource": {
+          "type": "postgres"
+        },
+        "definition": "",
+        "includeAll": false,
+        "label": "Monitored Source",
+        "name": "dbname",
+        "options": [],
+        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'table_stats' ORDER BY 1;",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "5",
+          "value": "5"
+        },
+        "description": "Limit to top N entries",
+        "includeAll": false,
+        "label": "Top N",
+        "name": "top",
+        "options": [
+          {
+            "selected": false,
+            "text": "1",
+            "value": "1"
+          },
+          {
+            "selected": false,
+            "text": "3",
+            "value": "3"
+          },
+          {
+            "selected": true,
+            "text": "5",
+            "value": "5"
+          },
+          {
+            "selected": false,
+            "text": "10",
+            "value": "10"
+          },
+          {
+            "selected": false,
+            "text": "20",
+            "value": "20"
+          },
+          {
+            "selected": false,
+            "text": "50",
+            "value": "50"
+          }
+        ],
+        "query": "1,3,5,10,20,50",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "5. Tables Overview",
+  "uid": "tables-overview",
+  "version": 2
+}
