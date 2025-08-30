@@ -1312,7 +1312,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "4. Query Performance Analysis",
+  "title": "3. Query Performance Analysis",
   "uid": "query-performance-analysis",
   "version": 49
 }
