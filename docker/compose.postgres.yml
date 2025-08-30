@@ -11,7 +11,7 @@ services:
     image: &pgimage postgres-plpython3u:latest
     container_name: postgres
     command:
-      - "-cshared_preload_libraries=pg_stat_statements"
+      - "-cshared_preload_libraries=pg_stat_statements,pg_qualstats"
       - "-cpg_stat_statements.track=all"
       - "-cpg_stat_statements.track_planning=on"
       - "-ctrack_io_timing=on"

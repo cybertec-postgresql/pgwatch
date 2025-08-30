@@ -1528,25 +1528,28 @@ metrics:
             This metric helps administrators optimize database performance by suggesting index creation.
         sqls:
             11: |-
-                select /* pgwatch_generated */
-                  epoch_ns,
-                  tag_reco_topic,
-                  tag_object_name,
-                  recommendation,
-                  case when exists (select * from pg_inherits
-                                    where inhrelid = regclass(tag_object_name)
-                                    ) then 'Partitioned table, create the index on parent' else extra_info
-                  end as extra_info
-                FROM (
-                         SELECT (extract(epoch from now()) * 1e9)::int8    as epoch_ns,
-                                'create_index'::text                       as tag_reco_topic,
-                                (regexp_matches(v::text, E'ON (.*?) '))[1] as tag_object_name,
-                                v::text                                    as recommendation,
-                                ''                                         as extra_info
-                         FROM json_array_elements(
-                                      pg_qualstats_index_advisor() -> 'indexes') v
-                     ) x
-                ORDER BY tag_object_name
+                with r as (select /* pgwatch_generated */
+                    (regexp_matches(v::text, E'ON (.*?) '))[1] as object_name,
+                    v::text as recommendation
+                    from json_array_elements(pg_qualstats_index_advisor() -> 'indexes') v),
+                rr as (select
+                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                    'create_index'::text as tag_reco_topic,
+                    string_agg(object_name, ',') as tag_object_name,
+                    'create indexes for better query performance'::text as recommendation,
+                    'Use CREATE INDEX CONCURRENTLY <index_name> ON <table_name> (<columns>);'::text as extra_info
+                    from r 
+                    limit 50),
+                last_reco(s) as (
+                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                select 
+                    epoch_ns,
+                    tag_reco_topic,
+                    concat(tag_object_name, s) as tag_object_name,
+                    recommendation,
+                    extra_info
+                from rr, last_reco
+                where tag_object_name > '';
         init_sql: "CREATE EXTENSION IF NOT EXISTS pg_qualstats;"
         node_status: primary
         is_private: true
@@ -1557,17 +1560,28 @@ metrics:
             This metric helps enhance security by ensuring that only authorized users can create new objects in the public schema.
         sqls:
             11: |
-                select /* pgwatch_generated */
-                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-                  'default_public_schema_privs'::text as tag_reco_topic,
-                  nspname::text as tag_object_name,
-                  'REVOKE CREATE ON SCHEMA public FROM PUBLIC;'::text as recommendation,
-                  'only authorized users should be allowed to create new objects'::text as extra_info
-                from
-                  pg_namespace
-                where
-                  nspname = 'public'
-                  and nspacl::text ~ E'[,\\{]+=U?C/'
+                with r as (select /* pgwatch_generated */
+                    nspname::text as object_name
+                    from pg_namespace
+                    where nspname = 'public' and nspacl::text ~ E'[,\\{]+=U?C/'),
+                rr as (select
+                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                    'default_public_schema_privs'::text as tag_reco_topic,
+                    string_agg(object_name, ',') as tag_object_name,
+                    'REVOKE CREATE ON SCHEMA public FROM PUBLIC;'::text as recommendation,
+                    'only authorized users should be allowed to create new objects'::text as extra_info
+                    from r 
+                    limit 50),
+                last_reco(s) as (
+                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                select 
+                    epoch_ns,
+                    tag_reco_topic,
+                    concat(tag_object_name, s) as tag_object_name,
+                    recommendation,
+                    extra_info
+                from rr, last_reco
+                where tag_object_name > '';
         node_status: primary
         metric_storage_name: "recommendations"
     reco_disabled_triggers:
@@ -1577,21 +1591,28 @@ metrics:
             This metric helps maintain database performance and reduce clutter by suggesting the removal of unused triggers.
         sqls:
             11: |
-                /* "temporarily" disabled triggers might be forgotten about... */
-                select /* pgwatch_generated */
+                with r as (select /* pgwatch_generated */
+                    c.oid 
+                    from pg_trigger t join pg_class c on c.oid = t.tgrelid
+                    where tgenabled = 'D'),
+                rr as (select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     'disabled_triggers'::text as tag_reco_topic,
-                    quote_ident(nspname)||'.'||quote_ident(relname) as tag_object_name,
-                    'review usage of trigger and consider dropping it if not needed anymore'::text as recommendation,
-                    ''::text as extra_info
-                from
-                    pg_trigger t
-                    join
-                    pg_class c on c.oid = t.tgrelid
-                    join
-                    pg_namespace n on n.oid = c.relnamespace
-                where
-                    tgenabled = 'D'
+                    string_agg(oid::regclass::text, ',') as tag_object_name,
+                    'review usage of triggers and consider dropping them if not needed anymore'::text as recommendation,
+                    'Enable: ALTER TABLE <table_name> ENABLE TRIGGER <trigger_name>; Drop: DROP TRIGGER <trigger_name> ON <table_name>;'::text as extra_info
+                    from r 
+                    limit 50),
+                last_reco(s) as (
+                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                select 
+                    epoch_ns,
+                    tag_reco_topic,
+                    concat(tag_object_name, s) as tag_object_name,
+                    recommendation,
+                    extra_info
+                from rr, last_reco
+                where tag_object_name > '';
         node_status: primary
         metric_storage_name: "recommendations"
     reco_drop_index:
@@ -1601,29 +1622,38 @@ metrics:
             This metric helps administrators optimize database performance by suggesting the removal of unnecessary indexes.
         sqls:
             11: |
-                /* assumes the pg_qualstats extension */
                 with q_database_size as (
                   select pg_database_size(current_database()) as database_size_b
-                )
-                select /* pgwatch_generated */
-                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-                  'drop_index'::text as tag_reco_topic,
-                  quote_ident(schemaname)||'.'||quote_ident(indexrelname) as tag_object_name,
-                  ('DROP INDEX ' || quote_ident(schemaname)||'.'||quote_ident(indexrelname) || ';')::text as recommendation,
-                  'Make sure to also check replica pg_stat_user_indexes.idx_scan count if using them for queries'::text as extra_info
-                from
-                  pg_stat_user_indexes
-                  join
-                  pg_index using (indexrelid)
-                  join
-                  q_database_size on true
-                where
-                  idx_scan = 0
-                  and ((pg_relation_size(indexrelid)::numeric / database_size_b) > 0.005 /* 0.5% DB size threshold */
-                    or indisvalid)
-                  and not indisprimary
-                  and not indisreplident
-                  and not schemaname like '_timescaledb%'
+                ),
+                r as (select /* pgwatch_generated */
+                    indexrelid::regclass::text as object_name
+                    from pg_stat_user_indexes
+                    join pg_index using (indexrelid)
+                    join q_database_size on true
+                    where idx_scan = 0
+                    and ((pg_relation_size(indexrelid)::numeric / database_size_b) > 0.005 /* 0.5% DB size threshold */
+                      or not indisvalid)
+                    and not indisprimary
+                    and not indisreplident
+                    and not schemaname like '_timescaledb%'),
+                rr as (select
+                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                    'drop_index'::text as tag_reco_topic,
+                    string_agg(object_name, ',') as tag_object_name,
+                    'drop unused or invalid indexes to improve performance'::text as recommendation,
+                    'Make sure to also check replica pg_stat_user_indexes.idx_scan count if using them for queries'::text as extra_info
+                    from r 
+                    limit 50),
+                last_reco(s) as (
+                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                select 
+                    epoch_ns,
+                    tag_reco_topic,
+                    concat(tag_object_name, s) as tag_object_name,
+                    recommendation,
+                    extra_info
+                from rr, last_reco
+                where tag_object_name > '';
         init_sql: "CREATE EXTENSION IF NOT EXISTS pg_qualstats;"
         node_status: primary
         metric_storage_name: "recommendations"
@@ -1672,17 +1702,35 @@ metrics:
                      AND d.refclassid = 'pg_class'::regclass
                      AND d.deptype = 'n'
                      AND v.oid <> views.view  -- avoid loop
-                )
-                select /* pgwatch_generated */
-                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-                  'overly_nested_views'::text AS tag_reco_topic,
-                  full_name::text as tag_object_name,
-                  'overly nested views can affect performance'::text recommendation,
-                  'nesting_depth: ' || coalesce(max(level)::text, '-') AS extra_info
-                FROM views
-                GROUP BY 1, 2, 3
-                HAVING max(level) > 3
-                ORDER BY max(level) DESC, full_name::text
+                ),
+                nested_views AS (
+                    SELECT full_name::text as object_name,
+                           max(level) as max_level
+                    FROM views
+                    GROUP BY full_name
+                    HAVING max(level) > 3
+                ),
+                r as (select /* pgwatch_generated */
+                    object_name
+                    from nested_views),
+                rr as (select
+                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                    'overly_nested_views'::text as tag_reco_topic,
+                    string_agg(object_name, ',') as tag_object_name,
+                    'overly nested views can affect performance'::text as recommendation,
+                    'Consider flattening views by creating materialized views or combining view logic to reduce dependency depth'::text as extra_info
+                    from r 
+                    limit 50),
+                last_reco(s) as (
+                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                select 
+                    epoch_ns,
+                    tag_reco_topic,
+                    concat(tag_object_name, s) as tag_object_name,
+                    recommendation,
+                    extra_info
+                from rr, last_reco
+                where tag_object_name > '';
         node_status: primary
         metric_storage_name: "recommendations"
     reco_partial_index_candidates:
@@ -1692,31 +1740,41 @@ metrics:
             This metric helps optimize index usage and improve query performance by suggesting the creation of partial indexes.
         sqls:
             11: |
-                select distinct /* pgwatch_generated */
-                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-                    'partial_index_candidates'::text as tag_reco_topic,
-                    quote_ident(ni.nspname)||'.'||quote_ident(ci.relname) as tag_object_name,
-                    ('index ' || quote_ident(ni.nspname)||'.'||quote_ident(ci.relname) || ' on ' || quote_ident(s.schemaname) || '.' || quote_ident(s.tablename) || ' column ' || quote_ident(s.attname)  || ' could possibly be declared partial leaving out NULL-s')::text as recommendation,
-                    'NULL fraction: ' || round((null_frac * 100)::numeric, 1) || '%, rowcount estimate: ' || (c.reltuples)::int8 || ', current definition: ' ||  pg_get_indexdef(i.indexrelid) as extra_info
-                from
-                    pg_stats s
+                with r as (select distinct /* pgwatch_generated */
+                    ci.oid::regclass::text as object_name
+                    from pg_stats s
                     join pg_attribute a using (attname)
                     join pg_index i on i.indkey[0] = a.attnum and i.indrelid = a.attrelid
                     join pg_class c on c.oid = i.indrelid
                     join pg_class ci on ci.oid = i.indexrelid
-                    join pg_namespace ni on ni.oid = ci.relnamespace
-                where
-                  not indisprimary
-                  and not indisunique
-                  and indisready
-                  and indisvalid
-                  and i.indnatts = 1 /* simple 1 column indexes */
-                  and null_frac > 0.5 /* 50% empty */
-                  and not pg_get_indexdef(i.indexrelid) like '% WHERE %'
-                  and c.reltuples >= 1e5 /* ignore smaller tables */
-                  and not exists ( /* leave out sub-partitions */
-                      select * from pg_inherits where inhrelid = c.oid
-                    )
+                    where not indisprimary
+                    and not indisunique
+                    and indisready
+                    and indisvalid
+                    and i.indnatts = 1 /* simple 1 column indexes */
+                    and null_frac > 0.5 /* 50% empty */
+                    and not pg_get_indexdef(i.indexrelid) like '% WHERE %'
+                    and c.reltuples >= 1e5 /* ignore smaller tables */
+                    and not exists ( /* leave out sub-partitions */
+                        select * from pg_inherits where inhrelid = c.oid)),
+                rr as (select
+                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                    'partial_index_candidates'::text as tag_reco_topic,
+                    string_agg(object_name, ',') as tag_object_name,
+                    'indexes could possibly be declared partial leaving out NULL-s'::text as recommendation,
+                    'CREATE INDEX CONCURRENTLY <index_name> ON <table_name> (<column>) WHERE <column> IS NOT NULL;'::text as extra_info
+                    from r 
+                    limit 50),
+                last_reco(s) as (
+                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                select 
+                    epoch_ns,
+                    tag_reco_topic,
+                    concat(tag_object_name, s) as tag_object_name,
+                    recommendation,
+                    extra_info
+                from rr, last_reco
+                where tag_object_name > '';
         metric_storage_name: "recommendations"
     reco_sprocs_wo_search_path:
         description: >
@@ -1725,26 +1783,29 @@ metrics:
             This metric helps enhance security by suggesting the setting of a fixed search_path for stored procedures.
         sqls:
             11: |-
-                with q_sprocs as (
-                select /* pgwatch_generated */
-                  format('%s.%s', quote_ident(nspname), quote_ident(proname)) as sproc_name,
-                  'alter function ' || proname || '(' || pg_get_function_arguments(p.oid) || ') set search_path = X;' as fix_sql
-                from
-                  pg_proc p
-                  join pg_namespace n on n.oid = p.pronamespace
-                  where prosecdef and not 'search_path' = ANY(coalesce(proconfig, '{}'::text[]))
-                  and not pg_catalog.obj_description(p.oid, 'pg_proc') ~ 'pgwatch'
-                )
-                select /* pgwatch_generated */
-                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-                  'sprocs_wo_search_path'::text as tag_reco_topic,
-                  sproc_name::text as tag_object_name,
-                  fix_sql::text as recommendation,
-                  'functions without fixed search_path can be potentially abused by malicious users if used objects are not fully qualified'::text as extra_info
-                from
-                  q_sprocs
-                order by
-                   tag_object_name, extra_info
+                with r as (select /* pgwatch_generated */
+                    p.oid::regproc::text as object_name
+                    from pg_proc p
+                    where prosecdef and not 'search_path' = ANY(coalesce(proconfig, '{}'::text[]))
+                    and not pg_catalog.obj_description(p.oid, 'pg_proc') ~ 'pgwatch'),
+                rr as (select
+                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                    'sprocs_wo_search_path'::text as tag_reco_topic,
+                    string_agg(object_name, ',') as tag_object_name,
+                    'functions without fixed search_path can be potentially abused by malicious users if used objects are not fully qualified'::text as recommendation,
+                    'ALTER FUNCTION <function_name> SET search_path = pg_catalog, pg_temp;'::text as extra_info
+                    from r 
+                    limit 50),
+                last_reco(s) as (
+                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                select 
+                    epoch_ns,
+                    tag_reco_topic,
+                    concat(tag_object_name, s) as tag_object_name,
+                    recommendation,
+                    extra_info
+                from rr, last_reco
+                where tag_object_name > '';
         node_status: primary
         metric_storage_name: "recommendations"
     reco_superusers:
@@ -1754,22 +1815,21 @@ metrics:
             This metric helps maintain database security by suggesting a review of superuser accounts.
         sqls:
             11: |
-                with q_su as (
-                  select count(*) from pg_roles where rolcanlogin and rolsuper
-                ),
-                q_total as (
-                  select count(*) from pg_roles where rolcanlogin
+                with r as (select  /* pgwatch_generated */
+                	count(*) filter (where rolcanlogin and rolsuper) as su,
+                	count(*) filter (where rolcanlogin) as users 
+                	from pg_roles 
                 )
-                select /* pgwatch_generated */
+                select
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   'superuser_count'::text as tag_reco_topic,
                   '-'::text as tag_object_name,
                   'too many superusers detected - review recommended'::text as recommendation,
-                  format('%s active superusers, %s total active users', q_su.count, q_total.count) as extra_info
+                  format('%s active superusers, %s total active users', r.su, r.users) as extra_info
                 from
-                  q_su, q_total
+                  r
                 where
-                  q_su.count >= 10
+                  r.su >= 10
         node_status: primary
         metric_storage_name: "recommendations"
     replication:
