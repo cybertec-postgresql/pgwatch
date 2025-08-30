@@ -1,5 +1,7 @@
 # Sinks Options & Parameters
 
+- Sinks URIs should be provided to pgwatch via the `--sink` flag, which can be used more than once, see [CLI & Envs](./cli_env.md#sinks).
+
 ## PostgreSQL
 
 The PostgreSQL sink URI format is the standard [PostgreSQL connection string](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING-URIS),
@@ -42,7 +44,7 @@ The gRPC sink URI format is
 
 The gRPC sink supports optional **authentication** and **TLS encryption** over the RPC channel.
 
-For authentication credentials can be provided using the `username:password` format in the URI string,
+For authentication, credentials can be provided using the `username:password` format in the URI string,
 e.g. `--sink=grpc://user:pwd@localhost:5000/`.
 If omitted, defaults to empty string for both username and password.
 The values are then forwarded to the gRPC server under the `"username"` and `"password"` fields in the metadata.
