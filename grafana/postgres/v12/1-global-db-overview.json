@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 33,
+  "id": 6,
   "links": [],
   "panels": [
     {
@@ -116,7 +116,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "with sessions as (\r\n  SELECT \r\n  $__timeGroup(time, $agg_interval),\r\n  (data->>'sessions')::int8 as sessions,\r\n  lag((data->>'sessions')::int8) over w as lag_sessions,\r\n  (data->>'sessions_abandoned')::int8 as sessions_abandoned,\r\n  lag((data->>'sessions_abandoned')::int8) over w as lag_sessions_abandoned,\r\n  (data->>'sessions_fatal')::int8 as sessions_fatal,\r\n  lag((data->>'sessions_fatal')::int8) over w as lag_sessions_fatal,\r\n  (data->>'sessions_killed')::int8 as sessions_killed,\r\n  lag((data->>'sessions_killed')::int8) over w as lag_sessions_killed\r\nfrom db_stats \r\nwhere dbname in ($dbname) and $__timeFilter(time)\r\nwindow w as (order by time)\r\n)\r\nselect \r\n  time,\r\n  sum(sessions-lag_sessions) as established,\r\n  sum(sessions_abandoned-lag_sessions_abandoned) as abandoned,\r\n  sum(sessions_fatal-lag_sessions_fatal) as fatal,\r\n  sum(sessions_killed-lag_sessions_killed) as killed\r\nfrom sessions \r\ngroup by time\r\norder by 1",
+          "rawSql": "with sessions as (\r\n  SELECT \r\n  $__timeGroup(time, $agg_interval),\r\n  (data->>'sessions')::int8 as sessions,\r\n  lag((data->>'sessions')::int8) over w as lag_sessions,\r\n  (data->>'sessions_abandoned')::int8 as sessions_abandoned,\r\n  lag((data->>'sessions_abandoned')::int8) over w as lag_sessions_abandoned,\r\n  (data->>'sessions_fatal')::int8 as sessions_fatal,\r\n  lag((data->>'sessions_fatal')::int8) over w as lag_sessions_fatal,\r\n  (data->>'sessions_killed')::int8 as sessions_killed,\r\n  lag((data->>'sessions_killed')::int8) over w as lag_sessions_killed\r\nfrom db_stats \r\nwhere dbname in ($dbname) and $__timeFilter(time)\r\nwindow w as (order by time)\r\n)\r\nselect \r\n  time,\r\n  sum(sessions)-sum(lag_sessions) as established,\r\n  sum(sessions_abandoned)-sum(lag_sessions_abandoned) as abandoned,\r\n  sum(sessions_fatal)-sum(lag_sessions_fatal) as fatal,\r\n  sum(sessions_killed)-sum(lag_sessions_killed) as killed\r\nfrom sessions \r\ngroup by time\r\norder by 1",
           "refId": "A",
           "sql": {
             "columns": [

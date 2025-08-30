@@ -18,9 +18,22 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 7,
+  "id": 10,
   "links": [],
   "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 20,
+      "panels": [],
+      "title": "Database Overview",
+      "type": "row"
+    },
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
@@ -49,7 +62,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -65,7 +79,7 @@
         "h": 2,
         "w": 3,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "hideTimeOverride": true,
       "id": 16,
@@ -88,7 +102,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "TPS",
@@ -174,7 +188,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -190,7 +205,7 @@
         "h": 2,
         "w": 3,
         "x": 3,
-        "y": 0
+        "y": 1
       },
       "hideTimeOverride": true,
       "id": 15,
@@ -212,7 +227,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "TPS",
@@ -299,7 +314,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -315,7 +331,7 @@
         "h": 2,
         "w": 3,
         "x": 6,
-        "y": 0
+        "y": 1
       },
       "hideTimeOverride": true,
       "id": 1,
@@ -338,7 +354,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "TPS",
@@ -425,7 +441,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -441,7 +458,7 @@
         "h": 2,
         "w": 3,
         "x": 9,
-        "y": 0
+        "y": 1
       },
       "hideTimeOverride": true,
       "id": 2,
@@ -464,7 +481,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "QPS",
@@ -551,7 +568,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -567,7 +585,7 @@
         "h": 2,
         "w": 3,
         "x": 12,
-        "y": 0
+        "y": 1
       },
       "hideTimeOverride": true,
       "id": 3,
@@ -590,7 +608,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "avg_query_runtime_per_db",
@@ -677,7 +695,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -693,7 +712,7 @@
         "h": 2,
         "w": 3,
         "x": 15,
-        "y": 0
+        "y": 1
       },
       "hideTimeOverride": true,
       "id": 4,
@@ -715,7 +734,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "db_size_change_last_hour",
@@ -804,7 +823,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -820,7 +840,7 @@
         "h": 2,
         "w": 3,
         "x": 18,
-        "y": 0
+        "y": 1
       },
       "hideTimeOverride": true,
       "id": 5,
@@ -842,7 +862,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "Bloat size",
@@ -938,7 +958,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -954,7 +975,7 @@
         "h": 2,
         "w": 3,
         "x": 21,
-        "y": 0
+        "y": 1
       },
       "hideTimeOverride": true,
       "id": 6,
@@ -977,7 +998,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "load_5",
@@ -1097,7 +1118,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1178,7 +1200,7 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 2
+        "y": 3
       },
       "id": 7,
       "interval": "5m",
@@ -1197,7 +1219,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "DELETE",
@@ -1314,7 +1336,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1346,7 +1369,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 2
+        "y": 3
       },
       "id": 8,
       "interval": "5m",
@@ -1365,7 +1388,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "Shared buffers hit ratio",
@@ -1476,7 +1499,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1598,7 +1622,7 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 8
+        "y": 9
       },
       "id": 9,
       "options": {
@@ -1616,7 +1640,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "# Sessions",
@@ -1757,7 +1781,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1816,7 +1841,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 8
+        "y": 9
       },
       "id": 10,
       "interval": "2m",
@@ -1835,7 +1860,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "WAL rate",
@@ -1989,7 +2014,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -2041,7 +2067,7 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 15
       },
       "id": 11,
       "interval": "5m",
@@ -2060,7 +2086,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "idle",
@@ -2178,7 +2204,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -2222,7 +2249,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 15
       },
       "id": 12,
       "interval": "10m",
@@ -2241,7 +2268,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "load_5",
@@ -2409,7 +2436,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -2425,7 +2453,7 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 20
+        "y": 21
       },
       "id": 18,
       "options": {
@@ -2443,7 +2471,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -2531,7 +2559,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -2593,7 +2622,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 20
+        "y": 21
       },
       "id": 19,
       "options": {
@@ -2611,7 +2640,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -2648,15 +2677,1875 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Based on pg_locks",
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 10,
+              "type": "log"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
         "overrides": []
       },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 26
+        "y": 27
+      },
+      "id": 33,
+      "interval": "5m",
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "alias": "$tag_lockmode",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "lockmode"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "none"
+              ],
+              "type": "fill"
+            }
+          ],
+          "measurement": "locks_mode",
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  lockmode,\n  avg(count)\nFROM (\nSELECT\n  time,\n  tag_data->>'lockmode' as lockmode,\n  (data->>'count')::int8 as count\nFROM\n  locks_mode\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n) x\nGROUP BY\n  1, 2\nORDER BY\n  1, 2\n",
+          "refId": "E",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "count"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "dbname",
+              "operator": "=~",
+              "value": "/^$dbname$/"
+            }
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Locking details (exp. scale)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 34
+      },
+      "id": 21,
+      "panels": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "description": "Active + idle in transaction user sessions",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "decimals": 1,
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 57
+          },
+          "id": 22,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  coalesce(avg((data->>'active')::int8 + (data->>'idleintransaction')::int8), 0) as active\nfrom backends\n  where dbname = '$dbname'\n  and $__timeFilter(time)\ngroup by 1\norder by 1",
+              "refId": "A",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            },
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  coalesce(avg(active), 0) as \"active -$lag_interval\"\nfrom (\nselect\n  time + '$lag_interval'::interval as time,\n  (data->>'active')::int8 + (data->>'idleintransaction')::int8 as active\nfrom backends\n  where dbname = '$dbname'\n  and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n) x\ngroup by 1\norder by 1",
+              "refId": "B",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            }
+          ],
+          "title": "Active sessions",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 57
+          },
+          "id": 23,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg((c - c_lag + r - r_lag) / extract(epoch from time - time_lag)) as \"TPS\"\nfrom (\n        select \n          (data->>'xact_commit')::int8 as c, lag((data->>'xact_commit')::int8) over w as c_lag,\n          (data->>'xact_rollback')::int8 as r, lag((data->>'xact_rollback')::int8) over w as r_lag,\n          time, lag(time) over w as time_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and r >= r_lag and time > time_lag\ngroup by 1\norder by 1",
+              "refId": "A",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            },
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg((c - c_lag + r - r_lag) / extract(epoch from time - time_lag)) as \"TPS-$lag_interval\"\nfrom (\n        select \n          (data->>'xact_commit')::int8 as c, lag((data->>'xact_commit')::int8) over w as c_lag,\n          (data->>'xact_rollback')::int8 as r, lag((data->>'xact_rollback')::int8) over w as r_lag,\n          time + '$lag_interval'::interval as time, lag(time) over w + '$lag_interval'::interval as time_lag\n        from db_stats\n        where dbname = '$dbname' and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and r >= r_lag and time > time_lag\ngroup by 1\norder by 1",
+              "refId": "B",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            }
+          ],
+          "title": "TPS",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 65
+          },
+          "id": 24,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"QPS\"\nfrom (\n        select \n          (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from stat_statements_calls\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1\n",
+              "refId": "A",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            },
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg((c - c_lag + r - r_lag) / extract(epoch from time - time_lag)) as \"QPS-$lag_interval\"\nfrom (\n        select \n          (data->>'xact_commit')::int8 as c, lag((data->>'xact_commit')::int8) over w as c_lag,\n          (data->>'xact_rollback')::int8 as r, lag((data->>'xact_rollback')::int8) over w as r_lag,\n          time + '$lag_interval'::interval as time, lag(time) over w + '$lag_interval'::interval as time_lag\n        from db_stats\n        where dbname = '$dbname' and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and r >= r_lag and time > time_lag\ngroup by 1\norder by 1",
+              "refId": "B",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            }
+          ],
+          "title": "QPS",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "description": "Based on pg_stat_statements data",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 65
+          },
+          "id": 25,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  time,\n  avg(avg) as \"avg_query_runtime\"\nfrom (\n\nselect\n$__timeGroup(time, $agg_interval),\nqueryid,\navg((tt-tt_lag)::numeric / (c-c_lag))\n\nfrom (\n\n        select \n          (data->>'total_time')::float8 as tt, lag((data->>'total_time')::float8) over w as tt_lag,\n          (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag,\n          tag_data->>'queryid' as queryid,\n          time\n        from stat_statements\n        where dbname = '$dbname' and $__timeFilter(time)\n        and not tag_data->>'query' like '%$2)::int8 as epoch_ns,%' /*trying to not include queries by pgwatch itself*/\n        window w as (partition by tag_data->>'queryid' order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1, 2\norder by 1, 2\n) y\ngroup by 1\norder by 1",
+              "refId": "A",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            },
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  time,\n  avg(avg) as \"avg_query_runtime-$lag_interval\"\nfrom (\n\nselect\n$__timeGroup(time, $agg_interval),\nqueryid,\navg((tt-tt_lag)::numeric / (c-c_lag))\n\nfrom (\n\n        select \n          (data->>'total_time')::float8 as tt, lag((data->>'total_time')::float8) over w as tt_lag,\n          (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag,\n          tag_data->>'queryid' as queryid,\n          time + '$lag_interval'::interval as time\n        from stat_statements\n        where dbname = '$dbname' and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n        and not tag_data->>'query' like '%$2)::int8 as epoch_ns,%' /*trying to not include queries by pgwatch itself*/\n        window w as (partition by tag_data->>'queryid' order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1, 2\norder by 1, 2\n) y\ngroup by 1\norder by 1",
+              "refId": "B",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            }
+          ],
+          "title": "Avg. query runtime",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "Bps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 73
+          },
+          "id": 26,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg((wal-wal_lag) / (etime-lag_etime)) as \"WAL rate\"\nfrom (\n        select \n          (data->>'xlog_location_b')::int8 as wal, lag((data->>'xlog_location_b')::int8) over w as wal_lag,\n          extract(epoch from time) as etime,\n          lag(extract(epoch from time)) over w as lag_etime,\n          time\n        from wal\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere wal >= wal_lag and etime - lag_etime > 0\ngroup by 1\norder by 1",
+              "refId": "A",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            },
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg((wal-wal_lag) / (etime-lag_etime)) as \"WAL rate-$lag_interval\"\nfrom (\n        select \n          (data->>'xlog_location_b')::int8 as wal, lag((data->>'xlog_location_b')::int8) over w as wal_lag,\n          extract(epoch from time + '$lag_interval'::interval) as etime,\n          lag(extract(epoch from time + '$lag_interval'::interval)) over w as lag_etime,\n          time + '$lag_interval'::interval as time\n        from wal\n        where dbname = '$dbname' and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n        window w as (order by time)\n) x\nwhere wal >= wal_lag and etime - lag_etime > 0\ngroup by 1\norder by 1",
+              "refId": "B",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            }
+          ],
+          "title": "WAL rate",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "description": "Temp tables not included",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "links": [],
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 73
+          },
+          "id": 27,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg(((ins-ins_lag) * (extract(epoch from '$agg_interval'::interval))) / extract(epoch from time - time_lag)) as \"INSERT\"\nfrom (\n        select \n          (data->>'tup_inserted')::int8 as ins, lag((data->>'tup_inserted')::int8) over w as ins_lag,\n          time, lag(time) over w as time_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere ins >= ins_lag\ngroup by 1\norder by 1",
+              "refId": "A",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            },
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg(((ins-ins_lag) * (extract(epoch from '$agg_interval'::interval))) / extract(epoch from time - time_lag)) as \"INSERT-$lag_interval\"\nfrom (\n        select \n          (data->>'tup_inserted')::int8 as ins, lag((data->>'tup_inserted')::int8) over w as ins_lag,\n          time + '$lag_interval'::interval as time, lag(time) over w + '$lag_interval'::interval as time_lag\n        from db_stats\n        where dbname = '$dbname' and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n        window w as (order by time)\n) x\nwhere ins >= ins_lag\ngroup by 1\norder by 1",
+              "refId": "B",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            }
+          ],
+          "title": "INSERT-s",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "description": "Temp tables not included",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "links": [],
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 81
+          },
+          "id": 28,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg(((upd-upd_lag) * (extract(epoch from '$agg_interval'::interval))) / extract(epoch from time - time_lag)) as \"UPDATE\"\nfrom (\n        select \n          (data->>'tup_updated')::int8 as upd, lag((data->>'tup_updated')::int8) over w as upd_lag,\n          time, lag(time) over w as time_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere upd >= upd_lag\ngroup by 1\norder by 1",
+              "refId": "A",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            },
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg(((upd-upd_lag) * (extract(epoch from '$agg_interval'::interval))) / extract(epoch from time - time_lag)) as \"UPDATE-$lag_interval\"\nfrom (\n        select \n          (data->>'tup_updated')::int8 as upd, lag((data->>'tup_updated')::int8) over w as upd_lag,\n          time + '$lag_interval'::interval as time, lag(time) over w + '$lag_interval'::interval as time_lag\n        from db_stats\n        where dbname = '$dbname' and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n        window w as (order by time)\n) x\nwhere upd >= upd_lag\ngroup by 1\norder by 1",
+              "refId": "B",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            }
+          ],
+          "title": "UPDATE-s",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "description": "Temp tables not included",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "links": [],
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 81
+          },
+          "id": 29,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg(((del-del_lag) * (extract(epoch from '$agg_interval'::interval))) / extract(epoch from time - time_lag)) as \"delATE\"\nfrom (\n        select \n          (data->>'tup_deleted')::int8 as del, lag((data->>'tup_deleted')::int8) over w as del_lag,\n          time, lag(time) over w as time_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere del >= del_lag\ngroup by 1\norder by 1",
+              "refId": "A",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            },
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg(((del-del_lag) * (extract(epoch from '$agg_interval'::interval))) / extract(epoch from time - time_lag)) as \"DELETE-$lag_interval\"\nfrom (\n        select \n          (data->>'tup_deleted')::int8 as del, lag((data->>'tup_deleted')::int8) over w as del_lag,\n          time + '$lag_interval'::interval as time, lag(time) over w + '$lag_interval'::interval as time_lag\n        from db_stats\n        where dbname = '$dbname' and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n        window w as (order by time)\n) x\nwhere del >= del_lag\ngroup by 1\norder by 1",
+              "refId": "B",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            }
+          ],
+          "title": "DELETE-s",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "links": [],
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 89
+          },
+          "id": 30,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  time,\n  sum(seq_scan) as seq_scan\nfrom (\n  select\n    $__timeGroup(time, $agg_interval),\n    table_full_name,\n    avg((((scan - scan_lag) * (extract(epoch from '$agg_interval'::interval))) / extract(epoch from time - time_lag))) as seq_scan\n  from (\n          select \n            (data->>'seq_scan')::int8 as scan, lag((data->>'seq_scan')::int8) over w as scan_lag,\n            time, lag(time) over w as time_lag,\n            tag_data->>'table_full_name' as table_full_name\n          from table_stats\n          where dbname = '$dbname' and $__timeFilter(time)\n          and (data->>'table_size_b')::int8  > 1e8\n          window w as (partition by tag_data->>'table_full_name' order by time)        \n    ) x\n    where scan >= scan_lag and time > time_lag\n    group by 1, 2\n) y\ngroup by 1\norder by 1\n",
+              "refId": "A",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            },
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  time,\n  sum(seq_scan) as \"seq_scan-$lag_interval\"\nfrom (\n  select\n    $__timeGroup(time, $agg_interval),\n    table_full_name,\n    avg((((scan - scan_lag) * (extract(epoch from '$agg_interval'::interval))) / extract(epoch from time - time_lag))) as seq_scan\n  from (\n          select \n            (data->>'seq_scan')::int8 as scan, lag((data->>'seq_scan')::int8) over w as scan_lag,\n            time + '$lag_interval'::interval as time, lag(time) over w + '$lag_interval'::interval as time_lag,\n            tag_data->>'table_full_name' as table_full_name\n          from table_stats\n          where dbname = '$dbname' and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n          and (data->>'table_size_b')::int8  > 1e8\n          window w as (partition by tag_data->>'table_full_name' order by time)        \n    ) x\n    where scan >= scan_lag and time > time_lag\n    group by 1, 2\n) y\ngroup by 1\norder by 1\n",
+              "refId": "B",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            }
+          ],
+          "title": "Seq. scans on tables > 100MB",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "links": [],
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 89
+          },
+          "id": 31,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  sum(tb-tb_lag) as \"Temp bytes\"\nfrom (\n      select \n          time,\n          lag(time) over w as time_lag,        \n          (data->>'temp_bytes')::int8 as tb,\n          lag((data->>'temp_bytes')::int8) over w as tb_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere tb >= tb_lag\ngroup by 1\norder by 1\n",
+              "refId": "A",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            },
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  sum(tb-tb_lag) as \"Temp bytes -$lag_interval\"\nfrom (\n      select \n          time + '$lag_interval'::interval as time,\n          (data->>'temp_bytes')::int8 as tb,\n          lag((data->>'temp_bytes')::int8) over w as tb_lag\n        from db_stats\n        where dbname = '$dbname' and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n        window w as (order by time)\n) x\nwhere tb >= tb_lag\ngroup by 1\norder by 1\n",
+              "refId": "B",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            }
+          ],
+          "title": "Temp bytes",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "description": "i.e. the Postgres cache ratio",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 97
+          },
+          "id": 32,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg((hit-hit_lag)::numeric / ((hit-hit_lag) + (read-read_lag)))*100 as \"SB hit ratio\"\nfrom (\n        select\n          time,\n          (data->>'blks_hit')::int8 as hit, lag((data->>'blks_hit')::int8) over w as hit_lag,\n          (data->>'blks_read')::int8 as read, lag((data->>'blks_read')::int8) over w as read_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere hit > hit_lag or read > read_lag\ngroup by 1\norder by 1",
+              "refId": "A",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            },
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "pgwatch-metrics"
+              },
+              "format": "time_series",
+              "group": [],
+              "hide": false,
+              "metricColumn": "none",
+              "rawQuery": true,
+              "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg((hit-hit_lag)::numeric / ((hit-hit_lag) + (read-read_lag)))*100 as \"SB hit ratio -$lag_interval\"\nfrom (\n        select\n          time + '$lag_interval'::interval as time,\n          (data->>'blks_hit')::int8 as hit, lag((data->>'blks_hit')::int8) over w as hit_lag,\n          (data->>'blks_read')::int8 as read, lag((data->>'blks_read')::int8) over w as read_lag\n        from db_stats\n        where dbname = '$dbname' and time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n        window w as (order by time)\n) x\nwhere hit > hit_lag or read > read_lag\ngroup by 1\norder by 1",
+              "refId": "B",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "value"
+                    ],
+                    "type": "column"
+                  }
+                ]
+              ],
+              "timeColumn": "time",
+              "where": [
+                {
+                  "name": "$__timeFilter",
+                  "params": [],
+                  "type": "macro"
+                }
+              ]
+            }
+          ],
+          "title": "Shared buffers hit ratio",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Time Lag Comparison",
+      "type": "row"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 0,
+        "y": 35
       },
       "id": 14,
       "options": {
@@ -2668,7 +4557,7 @@
         "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
         "mode": "markdown"
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "title": "",
       "transparent": true,
       "type": "text"
@@ -2693,6 +4582,7 @@
         },
         "definition": "",
         "includeAll": false,
+        "label": "Monitored Source",
         "name": "dbname",
         "options": [],
         "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics ORDER BY 1;",
@@ -2708,6 +4598,7 @@
           "text": "5m",
           "value": "5m"
         },
+        "label": "Aggregation Interval",
         "name": "agg_interval",
         "options": [
           {
@@ -2764,6 +4655,57 @@
         "query": "1s,1m,5m,10m,15m,30m,1h,6h,12h,1d",
         "refresh": 2,
         "type": "interval"
+      },
+      {
+        "auto": false,
+        "auto_count": 30,
+        "auto_min": "10s",
+        "current": {
+          "text": "1d",
+          "value": "1d"
+        },
+        "label": "Lag Interval",
+        "name": "lag_interval",
+        "options": [
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": true,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": false,
+            "text": "30d",
+            "value": "30d"
+          }
+        ],
+        "query": "1h,6h,12h,1d,7d,14d,30d",
+        "refresh": 2,
+        "type": "interval"
       }
     ]
   },
@@ -2775,5 +4717,5 @@
   "timezone": "browser",
   "title": "2. Database Overview",
   "uid": "db-overview",
-  "version": 1
+  "version": 3
 }
