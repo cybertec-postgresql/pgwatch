@@ -19,7 +19,7 @@
 #        is_instance_level: true
 #        node_status: primary
 #        statement_timeout_seconds: 300
-#        metric_storage_name: db_stats
+#        storage_name: db_stats
 
 metrics:
     archiver:
@@ -485,7 +485,7 @@ metrics:
                   ) as catalog_size_b
         gauges:
             - '*'
-        metric_storage_name: db_size
+        storage_name: db_size
     db_stats:
         description: >
             Retrieves key statistics from the PostgreSQL `pg_stat_database` view, providing insights into the current database's performance.
@@ -748,7 +748,7 @@ metrics:
             - postmaster_uptime_s
             - backup_duration_s
             - checksum_last_failure_s
-        metric_storage_name: db_stats
+        storage_name: db_stats
     index_hashes:
         description: >
             Retrieves the hash of index definitions in the PostgreSQL database, providing a way to track changes in index definitions over time.
@@ -1553,7 +1553,7 @@ metrics:
         init_sql: "CREATE EXTENSION IF NOT EXISTS pg_qualstats;"
         node_status: primary
         is_private: true
-        metric_storage_name: "recommendations"
+        storage_name: "recommendations"
     reco_default_public_schema:
         description: >
             Retrieves recommendations for revoking the CREATE privilege on the public schema from PUBLIC.
@@ -1583,7 +1583,7 @@ metrics:
                 from rr, last_reco
                 where tag_object_name > '';
         node_status: primary
-        metric_storage_name: "recommendations"
+        storage_name: "recommendations"
     reco_disabled_triggers:
         description: >
             Retrieves recommendations for reviewing and potentially dropping disabled triggers in the PostgreSQL database.
@@ -1614,7 +1614,7 @@ metrics:
                 from rr, last_reco
                 where tag_object_name > '';
         node_status: primary
-        metric_storage_name: "recommendations"
+        storage_name: "recommendations"
     reco_drop_index:
         description: >
             Retrieves recommendations for dropping unused or invalid indexes in the PostgreSQL database.
@@ -1656,7 +1656,7 @@ metrics:
                 where tag_object_name > '';
         init_sql: "CREATE EXTENSION IF NOT EXISTS pg_qualstats;"
         node_status: primary
-        metric_storage_name: "recommendations"
+        storage_name: "recommendations"
     reco_nested_views:
         description: >
             Retrieves recommendations for overly nested views in the PostgreSQL database.
@@ -1732,7 +1732,7 @@ metrics:
                 from rr, last_reco
                 where tag_object_name > '';
         node_status: primary
-        metric_storage_name: "recommendations"
+        storage_name: "recommendations"
     reco_partial_index_candidates:
         description: >
             Retrieves recommendations for creating partial indexes on columns with a high fraction of NULL values.
@@ -1775,7 +1775,7 @@ metrics:
                     extra_info
                 from rr, last_reco
                 where tag_object_name > '';
-        metric_storage_name: "recommendations"
+        storage_name: "recommendations"
     reco_sprocs_wo_search_path:
         description: >
             Retrieves recommendations for stored procedures that do not have a fixed `search_path` set.
@@ -1807,7 +1807,7 @@ metrics:
                 from rr, last_reco
                 where tag_object_name > '';
         node_status: primary
-        metric_storage_name: "recommendations"
+        storage_name: "recommendations"
     reco_superusers:
         description: >
             Retrieves recommendations for reviewing the number of superusers in the PostgreSQL database.
@@ -1831,7 +1831,7 @@ metrics:
                 where
                   r.su >= 10
         node_status: primary
-        metric_storage_name: "recommendations"
+        storage_name: "recommendations"
     replication:
         description: >
             This metric collects replication statistics from the `pg_stat_replication` view.
@@ -3242,7 +3242,7 @@ metrics:
                     temp_blks_written desc
                   limit 100
                 ) a;
-        metric_storage_name: stat_statements
+        storage_name: stat_statements
     subscription_stats:
         description: >
             This metric collects statistics from the `pg_stat_subscription_stats` view, which provides information about the status of logical replication subscriptions.
@@ -4369,7 +4369,7 @@ metrics:
             - seconds_since_last_analyze
             - n_live_tup
             - n_dead_tup
-        metric_storage_name: table_stats
+        storage_name: table_stats
     unused_indexes:
         description: >
             This metric collects information about unused indexes in the database.

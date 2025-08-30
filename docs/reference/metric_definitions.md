@@ -136,7 +136,7 @@ Here is the structure of a metric definition in YAML format:
         is_instance_level: true
         node_status: primary/standby
         statement_timeout_seconds: 300
-        metric_storage_name: some_other_metric_name
+        storage_name: some_other_metric_name
 ```
 
 - *init_sql*
@@ -199,7 +199,7 @@ Here is the structure of a metric definition in YAML format:
     The maximum time in seconds the metric query is allowed to run
     before it's killed. The default is 5 seconds.
 
-- *metric_storage_name*
+- *storage_name*
 
     Enables dynamic "renaming" of metrics at the storage level, i.e.
     declaring almost similar metrics with different names, but the data
