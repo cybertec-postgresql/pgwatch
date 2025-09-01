@@ -13,7 +13,7 @@ require (
 	github.com/prometheus/client_golang v1.23.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sethvargo/go-retry v0.3.0
-	github.com/shirou/gopsutil/v4 v4.25.7
+	github.com/shirou/gopsutil/v4 v4.25.8
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.38.0
@@ -96,7 +96,7 @@ require (
 	golang.org/x/crypto v0.40.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
