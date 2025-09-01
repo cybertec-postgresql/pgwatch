@@ -399,47 +399,10 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	pgw.lastError <- err
 }
 
-// EnsureMetricTime creates special partitions if Timescale used for realtime metrics
-func (pgw *PostgresWriter) EnsureMetricTime(pgPartBounds map[string]ExistingPartitionInfo, force bool) error {
-	logger := log.GetLogger(pgw.ctx)
-	sqlEnsure := `select part_available_from, part_available_to from admin.ensure_partition_metric_time($1, $2)`
-	for metric, pb := range pgPartBounds {
-		if !strings.HasSuffix(metric, "_realtime") {
-			continue
-		}
-		if pb.StartTime.IsZero() || pb.EndTime.IsZero() {
-			return fmt.Errorf("zero StartTime/EndTime in partitioning request: [%s:%v]", metric, pb)
-		}
-
-		partInfo, ok := partitionMapMetric[metric]
-		if !ok || (ok && (pb.StartTime.Before(partInfo.StartTime))) || force {
-			err := pgw.sinkDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.StartTime).
-				Scan(&partInfo.StartTime, &partInfo.EndTime)
-			if err != nil {
-				logger.Error("Failed to create partition on 'metrics': ", err)
-				return err
-			}
-			partitionMapMetric[metric] = partInfo
-		}
-		if pb.EndTime.After(partInfo.EndTime) || force {
-			err := pgw.sinkDb.QueryRow(pgw.ctx, sqlEnsure, metric, pb.EndTime).Scan(nil, &partInfo.EndTime)
-			if err != nil {
-				logger.Error("Failed to create partition on 'metrics': ", err)
-				return err
-			}
-			partitionMapMetric[metric] = partInfo
-		}
-	}
-	return nil
-}
-
 func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]ExistingPartitionInfo, force bool) (err error) {
 	logger := log.GetLogger(pgw.ctx)
 	sqlEnsure := `select * from admin.ensure_partition_timescale($1)`
 	for metric := range pgPartBounds {
-		if strings.HasSuffix(metric, "_realtime") {
-			continue
-		}
 		if _, ok := partitionMapMetric[metric]; !ok {
 			if _, err = pgw.sinkDb.Exec(pgw.ctx, sqlEnsure, metric); err != nil {
 				logger.Errorf("Failed to create a TimescaleDB table for metric '%s': %v", metric, err)
@@ -448,7 +411,7 @@ func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]Existin
 			partitionMapMetric[metric] = ExistingPartitionInfo{}
 		}
 	}
-	return pgw.EnsureMetricTime(pgPartBounds, force)
+	return
 }
 
 func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[string]map[string]ExistingPartitionInfo, force bool) (err error) {

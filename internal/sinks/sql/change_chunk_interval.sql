@@ -13,7 +13,6 @@ $SQL$
 DECLARE
     r record;
 BEGIN
-
   INSERT INTO admin.config
   SELECT 'timescale_chunk_interval', new_interval::text
   ON CONFLICT (key) DO UPDATE
@@ -23,11 +22,8 @@ BEGIN
                    FROM _timescaledb_catalog.hypertable
                   WHERE schema_name = 'public')
   LOOP
-    -- RAISE NOTICE 'setting % to %s ...', r.metric, new_interval;
     PERFORM set_chunk_time_interval(r.metric, new_interval);
   END LOOP;
 
 END;
 $SQL$ LANGUAGE plpgsql;
-
--- GRANT EXECUTE ON FUNCTION admin.timescale_change_chunk_interval(interval) TO pgwatch;

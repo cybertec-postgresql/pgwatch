@@ -132,7 +132,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  tag_data->>'pid' AS pid,\n  data->>'user' AS user,\n  data->>'appname' AS appname,\n  data->>'ip' AS ip,\n  (data->>'duration_s')::int AS duration,\n  data->>'waiting' AS waiting,\n  coalesce(data->>'blocking_pids', '') AS blocking_pids,\n  data->>'query' AS query\nFROM\n  stat_activity_realtime\nWHERE\n  dbname = '$dbname'\n  AND time = (SELECT max(time) FROM stat_activity_realtime WHERE dbname = '$dbname' AND $__timeFilter(time))\n  AND (data->>'duration_s')::int > $min_duration_s\nORDER BY\n  duration DESC\nLIMIT 25\n\n\n\n\n\n\n\n\n\n\n\n\n",
+          "rawSql": "SELECT\n  query AS query,\n  count(*) AS count\nFROM\n  stat_activity\nWHERE\n  dbname = '$dbname'\n  AND $__timeFilter(time)\nGROUP BY\n  query\nORDER BY\n  count DESC\nLIMIT 25\n",
           "refId": "A",
           "select": [
             [
@@ -177,13 +177,13 @@
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
         },
-        "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_activity_realtime' ORDER BY 1;",
+        "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_activity' ORDER BY 1;",
         "hide": 0,
         "includeAll": false,
         "multi": false,
         "name": "dbname",
         "options": [],
-        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_activity_realtime' ORDER BY 1;",
+        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_activity' ORDER BY 1;",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,

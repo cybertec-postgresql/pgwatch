@@ -44,9 +44,8 @@ COMMENT ON TABLE subpartitions."mymetric_mydbname_y2019w01" IS 'pgwatch-generate
 Most suitable storage schema when using long retention periods or hundreds of databases due to built-in extra compression.
 Typical compression ratios vary from 3 to 10x and also querying of larger historical data sets is typically faster.
 
-Assumes TimescaleDB (v1.7+) extension and "outsources" partition management for normal metrics to the extensions. Realtime
-metrics still use the "metric-time" schema as sadly Timescale doesn't support unlogged tables. Additionally one can also
-tune the chunking and historic data compression intervals - by default it's 2 days and 1 day. To change use the
+Assumes TimescaleDB (v1.7+) extension and "outsources" partition management for normal metrics to the extensions.
+Additionally one can also tune the chunking and historic data compression intervals - by default it's 2 days and 1 day. To change use the
 `admin.timescale_change_chunk_interval()` and `admin.timescale_change_compress_interval()` functions.
 
 Note that if wanting to store a deeper history of 6 months or a year then additionally using [Continuous Aggregates](https://docs.timescale.com/latest/using-timescaledb/continuous-aggregates)
@@ -71,13 +70,6 @@ SELECT add_compression_policy('some_metric', INTERVAL '1 day');
 When you're planning to monitor lots of databases or with very low intervals, i.e. generating a lot of data, but not selecting
 all of it actively (alerting / Grafana) then it would make sense to consider BRIN indexes to save a lot on storage space. See
 the according commented out line in the table template definition file.
-
-# Notice on "realtime" metrics
-
-Metrics that have the string 'realtime' in them are handled differently on storage level to draw less resources:
-
- * They're not normal persistent tables but UNLOGGED tables, meaning they're not WAL-logged and cleared on crash
- * Such subpartitions are dropped after 1d
 
 # Notice on Grafana access to metric data and GRANT-s
 

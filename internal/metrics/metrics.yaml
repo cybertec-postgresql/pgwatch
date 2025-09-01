@@ -2011,39 +2011,6 @@ metrics:
                   (select setting::float8 from qs where name = 'autovacuum_vacuum_threshold') as autovacuum_vacuum_threshold,
                   (select setting::float8 from qs where name = 'autovacuum_analyze_scale_factor') as autovacuum_analyze_scale_factor,
                   (select setting::float8 from qs where name = 'autovacuum_analyze_threshold') as autovacuum_analyze_scale_factor
-    show_plans_realtime:
-        description: >
-            This metric collects real-time query plans from the `pg_show_plans` extension.
-            It provides insights into the execution plans of currently running queries, helping to identify performance issues and optimize query execution.
-            This metric is useful for monitoring query performance and understanding how queries are executed in real-time.
-        sqls:
-            11: |
-                /* assumes pg_show_plans extension */
-                select /* pgwatch_generated */
-                  max((extract(epoch from now()) * 1e9)::int8) as epoch_ns,
-                  max(extract(epoch from now() - query_start))::int as max_s,
-                  avg(extract(epoch from now() - query_start))::int as avg_s,
-                  count(*),
-                  array_to_string(array_agg(distinct usename order by usename), ',') as "users",
-                  max(md5(plan)) as tag_hash, /* needed for influx */
-                  plan,
-                  max(query) as query
-                from
-                  pg_show_plans p
-                  join
-                  pg_stat_activity a
-                    using (pid)
-                where
-                  p.pid != pg_backend_pid()
-                  and datname = current_database()
-                  and now() - query_start > '1s'::interval
-                  and backend_type = 'client backend'
-                group by
-                  plan
-                order by
-                  max_s desc
-                limit
-                  10
     smart_health_per_disk:
         description: >
             This metric collects SMART health status for all disk devices using the `smartmontools` utility.
@@ -2147,34 +2114,6 @@ metrics:
                   and s.pid != pg_backend_pid()
                   and now() - s.query_start > '100ms'::interval
                 group by s.query
-    stat_activity_realtime:
-        description: >
-            This metric collects real-time statistics about currently active queries in the database.
-            It provides insights into the state of active queries, including their duration and blocking status.
-            This metric is useful for monitoring query performance and identifying long-running or blocked queries in real-time.
-        sqls:
-            11: |-
-                select /* pgwatch_generated */
-                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-                    pid as tag_pid,
-                    usename::text AS user,
-                    application_name AS appname,
-                    coalesce(client_addr::text, 'local') AS ip,
-                    extract(epoch FROM (now() - query_start))::int AS duration_s,
-                    (coalesce(wait_event_type, '') IN ('LWLockNamed', 'Lock', 'BufferPin'))::int AS waiting,
-                    array_to_string(pg_blocking_pids(pid), ',') as blocking_pids,
-                    ltrim(regexp_replace(query, E'[ \\t\\n\\r]+' , ' ', 'g'))::varchar(300) AS query
-                FROM
-                    pg_stat_activity
-                WHERE
-                  state != 'idle'
-                  AND backend_type IN ('client backend', 'autovacuum worker')
-                  AND pid != pg_backend_pid()
-                  AND datname = current_database()
-                  AND now() - query_start > '500ms'::interval
-                ORDER BY
-                  now() - query_start DESC
-                LIMIT 25
     stat_io:
         description: >
             This metric collects I/O statistics from the `pg_stat_io` view.
