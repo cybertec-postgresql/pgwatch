@@ -1,0 +1,37 @@
+@startuml patroni
+
+!include .styles.puml
+
+package "patroni cluster"{
+
+    node etcd [
+        **etcd**
+        ----
+        Key-Value Store
+    ]
+
+    database postgres1 [
+        **postgres1**
+        ----
+        primary
+    ]
+
+    database postgres2 [
+        **postgres2**
+        ----
+        standby
+    ]
+
+    database postgres3 [
+        **postgres3**
+        ----
+        standby
+    ]
+
+
+    postgres1 -up-> etcd
+    postgres2 -up-> etcd
+    postgres3 -up-> etcd
+
+}
+@enduml
