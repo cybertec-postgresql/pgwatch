@@ -366,7 +366,7 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	case DbStorageSchemaPostgres:
 		err = pgw.EnsureMetricDbnameTime(pgPartBoundsDbName, forceRecreatePartitions)
 	case DbStorageSchemaTimescale:
-		err = pgw.EnsureMetricTimescale(pgPartBounds, forceRecreatePartitions)
+		err = pgw.EnsureMetricTimescale(pgPartBounds)
 	default:
 		logger.Fatal("unknown storage schema...")
 	}
@@ -399,7 +399,7 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	pgw.lastError <- err
 }
 
-func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]ExistingPartitionInfo, force bool) (err error) {
+func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]ExistingPartitionInfo) (err error) {
 	logger := log.GetLogger(pgw.ctx)
 	sqlEnsure := `select * from admin.ensure_partition_timescale($1)`
 	for metric := range pgPartBounds {
