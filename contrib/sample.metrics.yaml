@@ -19,7 +19,7 @@
 #        is_instance_level: true
 #        node_status: primary
 #        statement_timeout_seconds: 300
-#        metric_storage_name: optional_metric_storage_name
+#        storage_name: optional_metric_storage_name
 # presets:
 #    preset_name:
 #        description: custom preset for some metrics
@@ -61,7 +61,7 @@ metrics:
     gauges:
       - '*'
     is_instance_level: false
-    metric_storage_name: buffer_cache_hit_ratio
+    storage_name: buffer_cache_hit_ratio
 presets:
   default:
     description: minimal example preset

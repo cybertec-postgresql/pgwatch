@@ -8,6 +8,7 @@ services:
     container_name: pgwatch
     environment:
       PW_SOURCES: postgresql://pgwatch@postgres:5432/pgwatch
+      # PW_METRICS: /etc/pgwatch/metrics.yml
     command:
       - "--sink=postgresql://pgwatch@postgres:5432/pgwatch_metrics"
       - "--sink=prometheus://pgwatch:9187/pgwatch"
@@ -15,6 +16,8 @@ services:
       - "8080:8080"
       - "9187:9187"
       # - "6060:6060" # Uncomment for profiling
+    volumes:
+      - "../internal/metrics/metrics.yaml:/etc/pgwatch/metrics.yml"
     depends_on:
       postgres:
         condition: service_healthy
