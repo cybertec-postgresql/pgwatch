@@ -1,0 +1,44 @@
+@startuml patroni-prometheus
+
+!include .styles.puml
+
+title pgwatch with Prometheus - Direct patroni nodes conninfo
+
+!include patroni.puml
+
+package "pgwatch related"{
+
+    node pgwatch [
+        **pgwatch**
+        ----
+        --config=postgresql://pgwatch@10.0.0.42/pgwatch
+        --sink=prometheus://:9187/pgwatch
+    ]
+
+    database pgwatch_config_db [
+        Postgres Config DB
+        ----
+        - Monitored nodes settings
+        - Metric Definitions
+        ----
+        IP: 10.0.0.42
+        Database: pgwatch
+    ]
+
+
+    pgwatch -up-> postgres1: fetch metric measurements
+    pgwatch -up-> postgres2: fetch metric measurements
+    pgwatch -up-> postgres3: fetch metric measurements
+
+    pgwatch ..left..> pgwatch_config_db: reads metrics and monitored sources
+
+}
+
+    component Grafana
+
+    component Prometheus
+
+    Prometheus -up=> pgwatch: scrapes new measurements
+    Grafana -up=> Prometheus: reads data and shows graphs
+
+@enduml
