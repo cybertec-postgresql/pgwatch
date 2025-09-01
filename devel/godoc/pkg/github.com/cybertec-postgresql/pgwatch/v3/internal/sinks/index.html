@@ -212,10 +212,7 @@
 					<dd>&nbsp; &nbsp; <a href="#PostgresWriter.EnsureMetricDummy">func (pgw *PostgresWriter) EnsureMetricDummy(metric string) (err error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#PostgresWriter.EnsureMetricTime">func (pgw *PostgresWriter) EnsureMetricTime(pgPartBounds map[string]ExistingPartitionInfo, force bool) error</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#PostgresWriter.EnsureMetricTimescale">func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]ExistingPartitionInfo, force bool) (err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#PostgresWriter.EnsureMetricTimescale">func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]ExistingPartitionInfo) (err error)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#PostgresWriter.GetOldTimePartitions">func (pgw *PostgresWriter) GetOldTimePartitions(metricAgeDaysThreshold int) ([]string, error)</a></dd>
@@ -824,7 +821,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 
 			
 				
-				<h3 id="PostgresWriter.AddDBUniqueMetricToListingTable">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L652">AddDBUniqueMetricToListingTable</a>
+				<h3 id="PostgresWriter.AddDBUniqueMetricToListingTable">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L615">AddDBUniqueMetricToListingTable</a>
 					<a class="permalink" href="#PostgresWriter.AddDBUniqueMetricToListingTable">&#xb6;</a>
 					
 					
@@ -836,7 +833,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.DropOldTimePartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L637">DropOldTimePartitions</a>
+				<h3 id="PostgresWriter.DropOldTimePartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L600">DropOldTimePartitions</a>
 					<a class="permalink" href="#PostgresWriter.DropOldTimePartitions">&#xb6;</a>
 					
 					
@@ -861,7 +858,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.EnsureMetricDbnameTime">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L454">EnsureMetricDbnameTime</a>
+				<h3 id="PostgresWriter.EnsureMetricDbnameTime">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L417">EnsureMetricDbnameTime</a>
 					<a class="permalink" href="#PostgresWriter.EnsureMetricDbnameTime">&#xb6;</a>
 					
 					
@@ -886,32 +883,19 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.EnsureMetricTime">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L403">EnsureMetricTime</a>
-					<a class="permalink" href="#PostgresWriter.EnsureMetricTime">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (pgw *<a href="#PostgresWriter">PostgresWriter</a>) EnsureMetricTime(pgPartBounds map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#ExistingPartitionInfo">ExistingPartitionInfo</a>, force <a href="https://pkg.go.dev/builtin/#bool">bool</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				<p>EnsureMetricTime creates special partitions if Timescale used for realtime metrics
-
-				
-				
-				
-			
-				
-				<h3 id="PostgresWriter.EnsureMetricTimescale">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L436">EnsureMetricTimescale</a>
+				<h3 id="PostgresWriter.EnsureMetricTimescale">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L402">EnsureMetricTimescale</a>
 					<a class="permalink" href="#PostgresWriter.EnsureMetricTimescale">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (pgw *<a href="#PostgresWriter">PostgresWriter</a>) EnsureMetricTimescale(pgPartBounds map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#ExistingPartitionInfo">ExistingPartitionInfo</a>, force <a href="https://pkg.go.dev/builtin/#bool">bool</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func (pgw *<a href="#PostgresWriter">PostgresWriter</a>) EnsureMetricTimescale(pgPartBounds map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#ExistingPartitionInfo">ExistingPartitionInfo</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
 				
 			
 				
-				<h3 id="PostgresWriter.GetOldTimePartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L643">GetOldTimePartitions</a>
+				<h3 id="PostgresWriter.GetOldTimePartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L606">GetOldTimePartitions</a>
 					<a class="permalink" href="#PostgresWriter.GetOldTimePartitions">&#xb6;</a>
 					
 					
@@ -961,7 +945,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.deleteOldPartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L492">deleteOldPartitions</a>
+				<h3 id="PostgresWriter.deleteOldPartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L455">deleteOldPartitions</a>
 					<a class="permalink" href="#PostgresWriter.deleteOldPartitions">&#xb6;</a>
 					
 					
@@ -987,7 +971,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.maintainUniqueSources">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L546">maintainUniqueSources</a>
+				<h3 id="PostgresWriter.maintainUniqueSources">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/sinks/postgres.go.html#L509">maintainUniqueSources</a>
 					<a class="permalink" href="#PostgresWriter.maintainUniqueSources">&#xb6;</a>
 					
 					
