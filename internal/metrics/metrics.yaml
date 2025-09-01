@@ -1530,18 +1530,19 @@ metrics:
             11: |-
                 with r as (select /* pgwatch_generated */
                     (regexp_matches(v::text, E'ON (.*?) '))[1] as object_name,
-                    v::text as recommendation
+                    COALESCE(v->>'ddl', v::text) as recommendation,
+                    v->>'queryids' as queryids
                     from json_array_elements(pg_qualstats_index_advisor() -> 'indexes') v),
-                limited_r as (select * from r limit 25),
+                limited_r as (select * from r limit 10),
                 rr as (select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     'create_index'::text as tag_reco_topic,
                     string_agg(object_name, ',') as tag_object_name,
-                    'create indexes for better query performance'::text as recommendation,
-                    'Use CREATE INDEX CONCURRENTLY <index_name> ON <table_name> (<columns>);'::text as extra_info
+                    string_agg(recommendation, ', ') as recommendation,
+                    string_agg(queryids, ', ') as extra_info
                     from limited_r),
                 last_reco(s) as (
-                    select case when count(*) > 25 then format(' and found %s more...', count(*)-25) end from r),
+                    select case when count(*) > 10 then format(' and found %s more...', count(*)-10) end from r),
                 total_count as (
                     select count(*) as total from r)
                 select 
@@ -1549,7 +1550,7 @@ metrics:
                     tag_reco_topic,
                     concat(tag_object_name, s) as tag_object_name,
                     recommendation,
-                    extra_info,
+                    case when extra_info > '' then 'affected queries: ' || extra_info end,
                     total as total_recommendations
                 from rr, last_reco, total_count
                 where tag_object_name > '';
