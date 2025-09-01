@@ -3,10 +3,16 @@ services:
     image: bitnami/pgbouncer:latest
     container_name: pgbouncer
     ports:
-      - "6432:6432"
+      - "6432:5432"
     environment:
       POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_USERNAME: pgwatch
+      POSTGRESQL_PASSWORD: pgwatchadmin
+      POSTGRESQL_DATABASE: pgwatch
       PGBOUNCER_AUTH_TYPE: trust
+      PGBOUNCER_POOL_MODE: session
+      PGBOUNCER_PORT: 5432
     depends_on:
       postgres:
         condition: service_healthy

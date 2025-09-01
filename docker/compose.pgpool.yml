@@ -9,10 +9,10 @@ services:
       PGPOOL_SR_CHECK_USER: postgres
       PGPOOL_SR_CHECK_PASSWORD: standbypass
       PGPOOL_ENABLE_LDAP: no
-      PGPOOL_POSTGRES_USERNAME: postgres
-      PGPOOL_POSTGRES_PASSWORD: adminpassword
-      PGPOOL_ADMIN_USERNAME: admin
-      PGPOOL_ADMIN_PASSWORD: adminpassword
+      PGPOOL_POSTGRES_USERNAME: pgwatch
+      PGPOOL_POSTGRES_PASSWORD: pgwatchadmin
+      PGPOOL_ADMIN_USERNAME: pgwatch
+      PGPOOL_ADMIN_PASSWORD: pgwatchadmin
     depends_on:
       postgres:
         condition: service_healthy
