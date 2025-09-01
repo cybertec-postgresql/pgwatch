@@ -1832,7 +1832,7 @@ in some existing or new <em>Preset</em>.</li>
 </span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">        </span><span class="nt">is_instance_level</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">        </span><span class="nt">node_status</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">primary/standby</span>
 </span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">        </span><span class="nt">statement_timeout_seconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">300</span>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">        </span><span class="nt">metric_storage_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">some_other_metric_name</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">        </span><span class="nt">storage_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">some_other_metric_name</span>
 </span></code></pre></div>
 <ul>
 <li>
@@ -1895,7 +1895,7 @@ when the server is in that state. This property is helpful for only relevant met
 before it's killed. The default is 5 seconds.</p>
 </li>
 <li>
-<p><em>metric_storage_name</em></p>
+<p><em>storage_name</em></p>
 <p>Enables dynamic "renaming" of metrics at the storage level, i.e.
 declaring almost similar metrics with different names, but the data
 will be stored under one metric. Currently used (for out-of-the-box
