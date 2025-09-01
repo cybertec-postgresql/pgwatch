@@ -1532,23 +1532,26 @@ metrics:
                     (regexp_matches(v::text, E'ON (.*?) '))[1] as object_name,
                     v::text as recommendation
                     from json_array_elements(pg_qualstats_index_advisor() -> 'indexes') v),
+                limited_r as (select * from r limit 25),
                 rr as (select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     'create_index'::text as tag_reco_topic,
                     string_agg(object_name, ',') as tag_object_name,
                     'create indexes for better query performance'::text as recommendation,
                     'Use CREATE INDEX CONCURRENTLY <index_name> ON <table_name> (<columns>);'::text as extra_info
-                    from r 
-                    limit 50),
+                    from limited_r),
                 last_reco(s) as (
-                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                    select case when count(*) > 25 then format(' and found %s more...', count(*)-25) end from r),
+                total_count as (
+                    select count(*) as total from r)
                 select 
                     epoch_ns,
                     tag_reco_topic,
                     concat(tag_object_name, s) as tag_object_name,
                     recommendation,
-                    extra_info
-                from rr, last_reco
+                    extra_info,
+                    total as total_recommendations
+                from rr, last_reco, total_count
                 where tag_object_name > '';
         init_sql: "CREATE EXTENSION IF NOT EXISTS pg_qualstats;"
         node_status: primary
@@ -1564,23 +1567,26 @@ metrics:
                     nspname::text as object_name
                     from pg_namespace
                     where nspname = 'public' and nspacl::text ~ E'[,\\{]+=U?C/'),
+                limited_r as (select * from r limit 25),
                 rr as (select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     'default_public_schema_privs'::text as tag_reco_topic,
                     string_agg(object_name, ',') as tag_object_name,
                     'REVOKE CREATE ON SCHEMA public FROM PUBLIC;'::text as recommendation,
                     'only authorized users should be allowed to create new objects'::text as extra_info
-                    from r 
-                    limit 50),
+                    from limited_r),
                 last_reco(s) as (
-                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                    select case when count(*) > 25 then format(' and found %s more...', count(*)-25) end from r),
+                total_count as (
+                    select count(*) as total from r)
                 select 
                     epoch_ns,
                     tag_reco_topic,
                     concat(tag_object_name, s) as tag_object_name,
                     recommendation,
-                    extra_info
-                from rr, last_reco
+                    extra_info,
+                    total as total_recommendations
+                from rr, last_reco, total_count
                 where tag_object_name > '';
         node_status: primary
         storage_name: "recommendations"
@@ -1592,26 +1598,29 @@ metrics:
         sqls:
             11: |
                 with r as (select /* pgwatch_generated */
-                    c.oid 
+                    c.oid::regclass::text as object_name
                     from pg_trigger t join pg_class c on c.oid = t.tgrelid
                     where tgenabled = 'D'),
+                limited_r as (select * from r limit 25),
                 rr as (select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     'disabled_triggers'::text as tag_reco_topic,
-                    string_agg(oid::regclass::text, ',') as tag_object_name,
+                    string_agg(object_name, ',') as tag_object_name,
                     'review usage of triggers and consider dropping them if not needed anymore'::text as recommendation,
                     'Enable: ALTER TABLE <table_name> ENABLE TRIGGER <trigger_name>; Drop: DROP TRIGGER <trigger_name> ON <table_name>;'::text as extra_info
-                    from r 
-                    limit 50),
+                    from limited_r),
                 last_reco(s) as (
-                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                    select case when count(*) > 25 then format(' and found %s more...', count(*)-25) end from r),
+                total_count as (
+                    select count(*) as total from r)
                 select 
                     epoch_ns,
                     tag_reco_topic,
                     concat(tag_object_name, s) as tag_object_name,
                     recommendation,
-                    extra_info
-                from rr, last_reco
+                    extra_info,
+                    total as total_recommendations
+                from rr, last_reco, total_count
                 where tag_object_name > '';
         node_status: primary
         storage_name: "recommendations"
@@ -1636,23 +1645,26 @@ metrics:
                     and not indisprimary
                     and not indisreplident
                     and not schemaname like '_timescaledb%'),
+                limited_r as (select * from r limit 25),
                 rr as (select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     'drop_index'::text as tag_reco_topic,
                     string_agg(object_name, ',') as tag_object_name,
                     'drop unused or invalid indexes to improve performance'::text as recommendation,
                     'Make sure to also check replica pg_stat_user_indexes.idx_scan count if using them for queries'::text as extra_info
-                    from r 
-                    limit 50),
+                    from limited_r),
                 last_reco(s) as (
-                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                    select case when count(*) > 25 then format(' and found %s more...', count(*)-25) end from r),
+                total_count as (
+                    select count(*) as total from r)
                 select 
                     epoch_ns,
                     tag_reco_topic,
                     concat(tag_object_name, s) as tag_object_name,
                     recommendation,
-                    extra_info
-                from rr, last_reco
+                    extra_info,
+                    total as total_recommendations
+                from rr, last_reco, total_count
                 where tag_object_name > '';
         init_sql: "CREATE EXTENSION IF NOT EXISTS pg_qualstats;"
         node_status: primary
@@ -1713,23 +1725,26 @@ metrics:
                 r as (select /* pgwatch_generated */
                     object_name
                     from nested_views),
+                limited_r as (select * from r limit 25),
                 rr as (select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     'overly_nested_views'::text as tag_reco_topic,
                     string_agg(object_name, ',') as tag_object_name,
                     'overly nested views can affect performance'::text as recommendation,
                     'Consider flattening views by creating materialized views or combining view logic to reduce dependency depth'::text as extra_info
-                    from r 
-                    limit 50),
+                    from limited_r),
                 last_reco(s) as (
-                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                    select case when count(*) > 25 then format(' and found %s more...', count(*)-25) end from r),
+                total_count as (
+                    select count(*) as total from r)
                 select 
                     epoch_ns,
                     tag_reco_topic,
                     concat(tag_object_name, s) as tag_object_name,
                     recommendation,
-                    extra_info
-                from rr, last_reco
+                    extra_info,
+                    total as total_recommendations
+                from rr, last_reco, total_count
                 where tag_object_name > '';
         node_status: primary
         storage_name: "recommendations"
@@ -1757,23 +1772,26 @@ metrics:
                     and c.reltuples >= 1e5 /* ignore smaller tables */
                     and not exists ( /* leave out sub-partitions */
                         select * from pg_inherits where inhrelid = c.oid)),
+                limited_r as (select * from r limit 25),
                 rr as (select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     'partial_index_candidates'::text as tag_reco_topic,
                     string_agg(object_name, ',') as tag_object_name,
                     'indexes could possibly be declared partial leaving out NULL-s'::text as recommendation,
                     'CREATE INDEX CONCURRENTLY <index_name> ON <table_name> (<column>) WHERE <column> IS NOT NULL;'::text as extra_info
-                    from r 
-                    limit 50),
+                    from limited_r),
                 last_reco(s) as (
-                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                    select case when count(*) > 25 then format(' and found %s more...', count(*)-25) end from r),
+                total_count as (
+                    select count(*) as total from r)
                 select 
                     epoch_ns,
                     tag_reco_topic,
                     concat(tag_object_name, s) as tag_object_name,
                     recommendation,
-                    extra_info
-                from rr, last_reco
+                    extra_info,
+                    total as total_recommendations
+                from rr, last_reco, total_count
                 where tag_object_name > '';
         storage_name: "recommendations"
     reco_sprocs_wo_search_path:
@@ -1788,23 +1806,26 @@ metrics:
                     from pg_proc p
                     where prosecdef and not 'search_path' = ANY(coalesce(proconfig, '{}'::text[]))
                     and not pg_catalog.obj_description(p.oid, 'pg_proc') ~ 'pgwatch'),
+                limited_r as (select * from r limit 25),
                 rr as (select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     'sprocs_wo_search_path'::text as tag_reco_topic,
                     string_agg(object_name, ',') as tag_object_name,
                     'functions without fixed search_path can be potentially abused by malicious users if used objects are not fully qualified'::text as recommendation,
                     'ALTER FUNCTION <function_name> SET search_path = pg_catalog, pg_temp;'::text as extra_info
-                    from r 
-                    limit 50),
+                    from limited_r),
                 last_reco(s) as (
-                    select case when count(*) > 50 then format(' and found %s more...', count(*)-50) end from r)
+                    select case when count(*) > 25 then format(' and found %s more...', count(*)-25) end from r),
+                total_count as (
+                    select count(*) as total from r)
                 select 
                     epoch_ns,
                     tag_reco_topic,
                     concat(tag_object_name, s) as tag_object_name,
                     recommendation,
-                    extra_info
-                from rr, last_reco
+                    extra_info,
+                    total as total_recommendations
+                from rr, last_reco, total_count
                 where tag_object_name > '';
         node_status: primary
         storage_name: "recommendations"
@@ -1825,7 +1846,8 @@ metrics:
                   'superuser_count'::text as tag_reco_topic,
                   '-'::text as tag_object_name,
                   'too many superusers detected - review recommended'::text as recommendation,
-                  format('%s active superusers, %s total active users', r.su, r.users) as extra_info
+                  format('%s active superusers, %s total active users', r.su, r.users) as extra_info,
+                  1 as total_recommendations
                 from
                   r
                 where
