@@ -41,12 +41,6 @@ Replication Lag
 Server Log Events
 ![Server Log Events](server_log_events.png){data-gallery="dashboards"}
 
-Realtime Execution Plans
-![Realtime Execution Plans](show_plans_realtime.png){data-gallery="dashboards"}
-
-Stat Activity Realtime
-![Stat Activity Realtime](stat_activity_realtime.png){data-gallery="dashboards"}
-
 Stat Statements SQL Search
 ![Stat Statements SQL Search](stat_statements_sql_search.png){data-gallery="dashboards"}
 

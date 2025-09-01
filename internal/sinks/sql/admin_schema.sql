@@ -9,19 +9,6 @@ create schema "subpartitions";
 
 create extension if not exists btree_gin;
 
--- grant all on schema public to pgwatch;
-
--- do $sql$
--- begin
---   execute format($$alter role pgwatch in database %s set statement_timeout to '5min'$$, current_database());
---   raise warning 'Enabling asynchronous commit for pgwatch role - revert if possible data loss on crash is not acceptable!';
---   execute format($$alter role pgwatch in database %s set synchronous_commit to off$$, current_database());
--- end
--- $sql$;
-
--- set role to pgwatch;
-
-
 create function admin.get_default_storage_type() returns text as
 $$
  select case 
@@ -34,8 +21,8 @@ $$
 language sql;
 
 create table admin.storage_schema_type (
-  schema_type text not null default admin.get_default_storage_type(),
-  initialized_on timestamptz not null default now(),
+  schema_type     text        not null default admin.get_default_storage_type(),
+  initialized_on  timestamptz not null default now(),
   check (schema_type in ('postgres', 'timescale'))
 );
 
@@ -47,19 +34,18 @@ create unique index max_one_row on admin.storage_schema_type ((1));
 
 /* for the Grafana drop-down. managed by the gatherer */
 create table admin.all_distinct_dbname_metrics (
-  dbname text not null,
-  metric text not null,
-  created_on timestamptz not null default now(),
+  dbname      text        not null,
+  metric      text        not null,
+  created_on  timestamptz not null default now(),
   primary key (dbname, metric)
 );
 
 /* currently only used to store TimescaleDB chunk interval */
-create table admin.config
-(
-    key   text  not null primary key,
-    value text not null,
-    created_on timestamptz not null default now(),
-    last_modified_on timestamptz
+create table admin.config (
+    key               text        not null primary key,
+    value             text        not null,
+    created_on        timestamptz not null default now(),
+    last_modified_on  timestamptz
 );
 
 -- to later change the value call the admin.change_timescale_chunk_interval(interval) function!
@@ -79,80 +65,43 @@ language plpgsql;
 create trigger config_modified before update on admin.config
 for each row execute function trg_config_modified();
 
--- DROP FUNCTION IF EXISTS admin.ensure_dummy_metrics_table(text);
--- select * from admin.ensure_dummy_metrics_table('wal');
-create or replace function admin.ensure_dummy_metrics_table(
-    metric text
-)
-RETURNS boolean AS
 /*
   creates a top level metric table if not already existing (non-existing tables show ugly warnings in Grafana).
   expects the "metrics_template" table to exist.
 */
-$SQL$
-DECLARE
+create or replace function admin.ensure_dummy_metrics_table(metric text) returns boolean as
+$sql$
+declare
   l_schema_type text;
-  l_template_table text := 'admin.metrics_template';
-  l_unlogged text := '';
-BEGIN
-  SELECT schema_type INTO l_schema_type FROM admin.storage_schema_type;
+begin
+  select schema_type into l_schema_type from admin.storage_schema_type;
 
-  IF to_regclass(format('public.%I', metric)) is null
-  THEN
-    IF metric ~ 'realtime' THEN
-        l_template_table := 'admin.metrics_template_realtime';
-        l_unlogged := 'UNLOGGED';
-    END IF;
+  if to_regclass(format('public.%I', metric)) is not null then
+    return false;
+  end if;
 
-    IF l_schema_type = 'postgres' THEN
-      EXECUTE format($$CREATE %s TABLE public."%s" (LIKE %s INCLUDING INDEXES) PARTITION BY LIST (dbname)$$, l_unlogged, metric, l_template_table);
-    ELSIF l_schema_type = 'timescale' THEN
-        IF metric ~ 'realtime' THEN
-            EXECUTE format($$CREATE TABLE public."%s" (LIKE %s INCLUDING INDEXES) PARTITION BY RANGE (time)$$, metric, l_template_table);
-        ELSE
-            PERFORM admin.ensure_partition_timescale(metric);
-        END IF;
-    END IF;
+  if l_schema_type = 'postgres' then
+    execute format('CREATE TABLE public.%I (LIKE admin.metrics_template INCLUDING INDEXES) PARTITION BY LIST (dbname)', metric);
+  elsif l_schema_type = 'timescale' then
+    perform admin.ensure_partition_timescale(metric);
+  end if;
 
-    EXECUTE format($$COMMENT ON TABLE public."%s" IS 'pgwatch-generated-metric-lvl'$$, metric);
+  execute format('COMMENT ON TABLE public.%I IS $$pgwatch-generated-metric-lvl$$', metric);
 
-    RETURN true;
+  return true;
+end;
+$sql$ language plpgsql;
 
-  END IF;
-
-  RETURN false;
-END;
-$SQL$ LANGUAGE plpgsql;
-
--- GRANT EXECUTE ON FUNCTION admin.ensure_dummy_metrics_table(text) TO pgwatch;
-
-
-CREATE TABLE admin.metrics_template (
-  time timestamptz not null default now(),
-  dbname text not null,
-  data jsonb not null,
-  tag_data jsonb,
-  CHECK (false)
+create table admin.metrics_template (
+  time      timestamptz not null default now(),
+  dbname    text        not null,
+  data      jsonb       not null,
+  tag_data  jsonb,
+  check (false)
 );
 
-COMMENT ON TABLE admin.metrics_template IS 'used as a template for all new metric definitions';
+comment on table admin.metrics_template IS 'used as a template for all new metric definitions';
 
-CREATE INDEX ON admin.metrics_template (dbname, time);
+create index on admin.metrics_template (dbname, time);
 -- create index on admin.metrics_template using brin (dbname, time);  /* consider BRIN instead for large data amounts */
 -- create index on admin.metrics_template using gin (tag_data) where tag_data notnull;
-
-CREATE UNLOGGED TABLE admin.metrics_template_realtime (
-    time timestamptz not null default now(),
-    dbname text not null,
-    data jsonb not null,
-    tag_data jsonb,
-    CHECK (false)
-);
-
-COMMENT ON TABLE admin.metrics_template_realtime IS 'used as a template for all new realtime metric definitions';
-
--- create index on admin.metrics_template using brin (dbname, time) with (pages_per_range=32);  /* consider BRIN instead for large data amounts */
-CREATE INDEX ON admin.metrics_template_realtime (dbname, time);
-
--- RESET ROLE;
-
