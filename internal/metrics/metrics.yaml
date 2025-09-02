@@ -4942,10 +4942,6 @@ presets:
             locks: 30
             locks_mode: 30
             logical_subscriptions: 30
-            pgbouncer_clients: 30
-            pgbouncer_stats: 30
-            pgpool_processes: 30
-            pgpool_stats: 30
             postgres_role: 30
             privilege_changes: 30
             psutil_cpu: 30
@@ -4990,3 +4986,8 @@ presets:
             wal_receiver: 30
             wal_size: 30
             wal_stats: 30
+            # pgbouncer and pgpool metrics need separate source settings
+            # pgbouncer_clients: 30
+            # pgbouncer_stats: 30
+            # pgpool_processes: 30
+            # pgpool_stats: 30
