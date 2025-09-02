@@ -112,7 +112,7 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "expr": "rate(pgwatch_db_stats_sessions{dbname=~\"$dbname\"}[$agg_interval])",
+          "expr": "increase(pgwatch_db_stats_sessions{dbname=~\"$dbname\"}[$agg_interval])",
           "legendFormat": "{{dbname}}",
           "refId": "A"
         }
