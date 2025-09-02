@@ -32,7 +32,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "- Total number of sessions established to database(s). \n- Number of database sessions that were terminated because connection to the client was lost.\n- Number of database sessions that were terminated by fatal errors.\n- Number of database sessions that were terminated by operator intervention.",
+      "description": "Number of new database sessions established per monitored source over time. Each line represents a different monitored database/source.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -114,9 +114,9 @@
       "targets": [
         {
           "editorMode": "code",
-          "format": "table",
+          "format": "time_series",
           "rawQuery": true,
-          "rawSql": "with sessions as (\r\n  SELECT \r\n  $__timeGroup(time, $agg_interval),\r\n  (data->>'sessions')::int8 as sessions,\r\n  lag((data->>'sessions')::int8) over w as lag_sessions,\r\n  (data->>'sessions_abandoned')::int8 as sessions_abandoned,\r\n  lag((data->>'sessions_abandoned')::int8) over w as lag_sessions_abandoned,\r\n  (data->>'sessions_fatal')::int8 as sessions_fatal,\r\n  lag((data->>'sessions_fatal')::int8) over w as lag_sessions_fatal,\r\n  (data->>'sessions_killed')::int8 as sessions_killed,\r\n  lag((data->>'sessions_killed')::int8) over w as lag_sessions_killed\r\nfrom db_stats \r\nwhere dbname in ($dbname) and $__timeFilter(time)\r\nwindow w as (order by time)\r\n)\r\nselect \r\n  time,\r\n  sum(sessions)-sum(lag_sessions) as established,\r\n  sum(sessions_abandoned)-sum(lag_sessions_abandoned) as abandoned,\r\n  sum(sessions_fatal)-sum(lag_sessions_fatal) as fatal,\r\n  sum(sessions_killed)-sum(lag_sessions_killed) as killed\r\nfrom sessions \r\ngroup by time\r\norder by 1",
+          "rawSql": "with session_changes as (\r\n  SELECT \r\n  dbname,\r\n  time,\r\n  coalesce((data->>'sessions')::int8 - lag((data->>'sessions')::int8) over w, 0) as established\r\nfrom db_stats \r\nwhere dbname in ($dbname) and $__timeFilter(time)\r\nwindow w as (partition by dbname order by time)\r\n)\r\nselect \r\n  $__timeGroup(time, $agg_interval),\r\n  sum(established) as value,\r\n  dbname as metric\r\nfrom session_changes\r\ngroup by 1, dbname\r\norder by 1, dbname",
           "refId": "A",
           "sql": {
             "columns": [
