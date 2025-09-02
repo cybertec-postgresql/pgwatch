@@ -1,11 +1,24 @@
 apiVersion: 1
 
 providers:
-- name: 'default'
+- name: 'postgres-dashboards'
   orgId: 1
-  folder: ''
+  folder: 'pgwatch (postgres)'
   type: 'file'
   disableDeletion: false
-  updateIntervalSeconds: 10 #how often Grafana will scan for changed dashboards
+  allowUiUpdates: true
+  editable: true
+  updateIntervalSeconds: 10
   options:
-    path: /var/lib/grafana/dashboards
+    path: /var/lib/grafana/dashboards/postgres
+
+- name: 'prometheus-dashboards'
+  orgId: 1
+  folder: 'pgwatch (prometheus)'
+  type: 'file'
+  disableDeletion: false
+  allowUiUpdates: true
+  editable: true
+  updateIntervalSeconds: 10
+  options:
+    path: /var/lib/grafana/dashboards/prometheus
