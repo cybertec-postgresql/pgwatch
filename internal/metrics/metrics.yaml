@@ -294,6 +294,8 @@ metrics:
             Retrieves buffer cache statistics grouped by database, providing insights into the size of buffers used by each database.
             It calculates the total size of buffers in bytes for each database.
             This metric helps administrators monitor buffer usage across different databases in the PostgreSQL instance.
+        init_sql: |-
+            create extension if not exists pg_buffercache;
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -316,6 +318,8 @@ metrics:
             by different relation kinds. It calculates the total size of buffers in bytes for each relation kind
             (e.g., Table, Index, Toast, Materialized view). This metric helps administrators monitor buffer usage across
             different relation types in the PostgreSQL instance.
+        init_sql: |-
+            create extension if not exists pg_buffercache;            
         sqls:
             11: |-
                 select /* pgwatch_generated */
