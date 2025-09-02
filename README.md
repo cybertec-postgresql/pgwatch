@@ -50,6 +50,8 @@ For the fastest development and deployment experience the Docker compose files a
     docker compose -f ./docker/docker-compose.yml build
 
     docker compose -f ./docker/docker-compose.yml up --detach
+
+    docker/compose.add-test-db.sh
     ```
 
 These commands will build and start services listed in the compose file:
@@ -70,22 +72,7 @@ These commands will build and start services listed in the compose file:
 After start, you could open the [monitoring dashboard](http://localhost:3000/) and start
 looking at metrics.
 
-To add a test database under monitoring, you can use [built-in WebUI](http://localhost:8080/). Or simply
-execute from command line:
-
-```shell
-docker/compose.add-test-db.sh
-```
-
-```console
-CREATE EXTENSION
-CREATE EXTENSION
-CREATE FUNCTION
-GRANT
-GRANT
-GRANT
-INSERT 0 1
-```
+To add a test database under monitoring, you can use [built-in WebUI](http://localhost:8080/).
 
 ## Produce Workload
 

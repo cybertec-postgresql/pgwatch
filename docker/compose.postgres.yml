@@ -41,11 +41,36 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: >
-      bash -c "psql -h postgres -c \"SELECT * FROM pg_create_physical_replication_slot('standby_slot')\" ||
-        rm -rf /var/lib/postgresql/data/* &&
-        pg_basebackup -h postgres --pgdata=/var/lib/postgresql/data --wal-method=stream --progress --write-recovery-conf --slot=standby_slot &&
-        chmod 0700 /var/lib/postgresql/data &&
-        postgres -cshared_preload_libraries=pg_stat_statements -cpg_stat_statements.track=all -ctrack_io_timing=on -ctrack_functions=pl"
+    command: |
+      bash -c "
+        echo 'Setting up standby server...'
+        export PGDATA=/var/lib/postgresql/standby
+        
+        # Check if data directory already exists and is initialized
+        if [ -f /var/lib/postgresql/standby/PG_VERSION ]; then
+          echo 'Data directory already exists and is initialized, starting PostgreSQL...'
+        else
+          echo 'Initializing new standby server...'
+          
+          # Create replication slot if it doesn't exist
+          psql -h postgres -U postgres -c \"SELECT * FROM pg_create_physical_replication_slot('standby_slot');\" 2>/dev/null || true
+          
+          # Create custom data directory with correct permissions
+          mkdir -p /var/lib/postgresql/standby
+          chmod 0700 /var/lib/postgresql/standby
+          
+          # Remove any existing files to ensure clean backup
+          rm -rf /var/lib/postgresql/standby/* || true
+          
+          # Create base backup directly to our custom directory
+          pg_basebackup -h postgres -U postgres -D /var/lib/postgresql/standby -Xs -P -R -S standby_slot
+          
+          # Ensure correct permissions after backup
+          chmod 0700 /var/lib/postgresql/standby
+        fi
+        
+        # Start PostgreSQL with custom data directory
+        exec postgres -D /var/lib/postgresql/standby -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=all -c track_io_timing=on -c track_functions=pl
+      "
     links:
       - postgres
