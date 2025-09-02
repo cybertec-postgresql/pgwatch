@@ -970,8 +970,19 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Using Managed Services
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="using_managed_services.html" class="md-nav__link md-nav__link--active">
         
@@ -984,6 +995,59 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#google-cloud-sql-for-postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      Google Cloud SQL for PostgreSQL
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#amazon-rds-for-postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      Amazon RDS for PostgreSQL
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#azure-database-for-postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      Azure Database for PostgreSQL
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aiven-for-postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      Aiven for PostgreSQL
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1503,8 +1567,50 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#google-cloud-sql-for-postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      Google Cloud SQL for PostgreSQL
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#amazon-rds-for-postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      Amazon RDS for PostgreSQL
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#azure-database-for-postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      Azure Database for PostgreSQL
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aiven-for-postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      Aiven for PostgreSQL
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -1528,6 +1634,8 @@
   
 
 
+  <h1>Using Managed Services</h1>
+
 <p>Although all cloud service providers offer some kind of built-in
 instrumentation and graphs, they're mostly rather conservative in this
 are not to consume extra server resources and not to overflow and
@@ -1550,7 +1658,7 @@ dashboard called "DB overview Unprivileged" tailored specially for
 such a use case.</p>
 <p>pgwatch has been tested to work with the following managed database
 services:</p>
-<h1 id="google-cloud-sql-for-postgresql">Google Cloud SQL for PostgreSQL</h1>
+<h2 id="google-cloud-sql-for-postgresql">Google Cloud SQL for PostgreSQL</h2>
 <ul>
 <li>No Python / OS helpers possible. OS metrics can be integrated in
     Grafana though using the
@@ -1563,7 +1671,7 @@ services:</p>
 <p>To get most out pgwatch on GCE you need some additional clicks in the
 GUI / Cloud Console "Flags" section to enable some common PostgreSQL
 monitoring parameters like <code>track_io_timing</code> and <code>track_functions</code>.</p>
-<h1 id="amazon-rds-for-postgresql">Amazon RDS for PostgreSQL</h1>
+<h2 id="amazon-rds-for-postgresql">Amazon RDS for PostgreSQL</h2>
 <ul>
 <li>
 <p>No Python / OS helpers possible. OS metrics can be integrated in
@@ -1575,7 +1683,7 @@ monitoring parameters like <code>track_io_timing</code> and <code>track_function
 <p><code>pg_monitor</code> system role available.</p>
 </li>
 <li>
-<p>pgwatch default preset names: <code>rds</code>, <code>aurora</code></p>
+<p>pgwatch default preset names: <code>rds</code></p>
 </li>
 <li>
 <p>Documentation:</p>
@@ -1585,7 +1693,7 @@ monitoring parameters like <code>track_io_timing</code> and <code>track_function
 </ul>
 <p>Note that the AWS Aurora PostgreSQL-compatible engine is missing some
 additional metrics compared to normal RDS.</p>
-<h1 id="azure-database-for-postgresql">Azure Database for PostgreSQL</h1>
+<h2 id="azure-database-for-postgresql">Azure Database for PostgreSQL</h2>
 <ul>
 <li>No Python / OS helpers possible. OS metrics can be integrated in
     Grafana though using the <a href="https://grafana.com/docs/grafana/latest/datasources/azuremonitor/">Azure
@@ -1600,10 +1708,10 @@ one can for example use the <code>wal_size</code> metrics.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>By default Azure has <strong>pg_stat_statements</strong> not fully activated by
-default, so you need to enable it manually or via the API. Documentation
-link <a href="https://docs.microsoft.com/en-us/azure/postgresql/howto-optimize-query-stats-collection">here</a>.</p>
+default, so you need to enable it manually or via the API.
+Documentation: <a href="https://docs.microsoft.com/en-us/azure/postgresql/howto-optimize-query-stats-collection">https://docs.microsoft.com/en-us/azure/postgresql/howto-optimize-query-stats-collection</a></p>
 </div>
-<h1 id="aiven-for-postgresql">Aiven for PostgreSQL</h1>
+<h2 id="aiven-for-postgresql">Aiven for PostgreSQL</h2>
 <p>The <a href="https://aiven.io/docs/products/postgresql/howto/monitor-with-pgwatch2">Aiven developer
 documentation</a>
 contains information on how to monitor PostgreSQL instances running on

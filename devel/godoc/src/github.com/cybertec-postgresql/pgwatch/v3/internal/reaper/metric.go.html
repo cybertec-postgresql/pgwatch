@@ -70,98 +70,96 @@
 <span id="L13" class="ln">    13  </span>const (
 <span id="L14" class="ln">    14  </span>	monitoredDbsDatastoreSyncIntervalSeconds = 600              <span class="comment">// write actively monitored DBs listing to metrics store after so many seconds</span>
 <span id="L15" class="ln">    15  </span>	monitoredDbsDatastoreSyncMetricName      = &#34;configured_dbs&#34; <span class="comment">// FYI - for Postgres datastore there&#39;s also the admin.all_unique_dbnames table with all recent DB unique names with some metric data</span>
-<span id="L16" class="ln">    16  </span>
-<span id="L17" class="ln">    17  </span>	dbSizeCachingInterval = 30 * time.Minute
-<span id="L18" class="ln">    18  </span>	dbMetricJoinStr       = &#34;¤¤¤&#34; <span class="comment">// just some unlikely string for a DB name to avoid using maps of maps for DB+metric data</span>
+<span id="L16" class="ln">    16  </span>	dbMetricJoinStr                          = &#34;¤¤¤&#34;            <span class="comment">// just some unlikely string for a DB name to avoid using maps of maps for DB+metric data</span>
+<span id="L17" class="ln">    17  </span>
+<span id="L18" class="ln">    18  </span>)
 <span id="L19" class="ln">    19  </span>
-<span id="L20" class="ln">    20  </span>)
-<span id="L21" class="ln">    21  </span>
-<span id="L22" class="ln">    22  </span>type ConcurrentMetricDefs struct {
-<span id="L23" class="ln">    23  </span>	*metrics.Metrics
-<span id="L24" class="ln">    24  </span>	sync.RWMutex
-<span id="L25" class="ln">    25  </span>}
-<span id="L26" class="ln">    26  </span>
-<span id="L27" class="ln">    27  </span>func NewConcurrentMetricDefs() *ConcurrentMetricDefs {
-<span id="L28" class="ln">    28  </span>	return &amp;ConcurrentMetricDefs{
-<span id="L29" class="ln">    29  </span>		Metrics: &amp;metrics.Metrics{
-<span id="L30" class="ln">    30  </span>			MetricDefs: make(metrics.MetricDefs),
-<span id="L31" class="ln">    31  </span>			PresetDefs: make(metrics.PresetDefs),
-<span id="L32" class="ln">    32  </span>		},
-<span id="L33" class="ln">    33  </span>	}
-<span id="L34" class="ln">    34  </span>}
-<span id="L35" class="ln">    35  </span>
-<span id="L36" class="ln">    36  </span>func (cmd *ConcurrentMetricDefs) GetMetricDef(name string) (m metrics.Metric, ok bool) {
-<span id="L37" class="ln">    37  </span>	cmd.RLock()
-<span id="L38" class="ln">    38  </span>	defer cmd.RUnlock()
-<span id="L39" class="ln">    39  </span>	m, ok = cmd.MetricDefs[name]
-<span id="L40" class="ln">    40  </span>	return
-<span id="L41" class="ln">    41  </span>}
-<span id="L42" class="ln">    42  </span>
-<span id="L43" class="ln">    43  </span>func (cmd *ConcurrentMetricDefs) GetPresetDef(name string) (m metrics.Preset, ok bool) {
-<span id="L44" class="ln">    44  </span>	cmd.RLock()
-<span id="L45" class="ln">    45  </span>	defer cmd.RUnlock()
-<span id="L46" class="ln">    46  </span>	m, ok = cmd.PresetDefs[name]
-<span id="L47" class="ln">    47  </span>	return
-<span id="L48" class="ln">    48  </span>}
-<span id="L49" class="ln">    49  </span>
-<span id="L50" class="ln">    50  </span>func (cmd *ConcurrentMetricDefs) GetPresetMetrics(name string) (m map[string]float64) {
-<span id="L51" class="ln">    51  </span>	cmd.RLock()
-<span id="L52" class="ln">    52  </span>	defer cmd.RUnlock()
-<span id="L53" class="ln">    53  </span>	return cmd.PresetDefs[name].Metrics
-<span id="L54" class="ln">    54  </span>}
-<span id="L55" class="ln">    55  </span>
-<span id="L56" class="ln">    56  </span>func (cmd *ConcurrentMetricDefs) Assign(newDefs *metrics.Metrics) {
-<span id="L57" class="ln">    57  </span>	cmd.Lock()
-<span id="L58" class="ln">    58  </span>	defer cmd.Unlock()
-<span id="L59" class="ln">    59  </span>	cmd.MetricDefs = maps.Clone(newDefs.MetricDefs)
-<span id="L60" class="ln">    60  </span>	cmd.PresetDefs = maps.Clone(newDefs.PresetDefs)
-<span id="L61" class="ln">    61  </span>}
-<span id="L62" class="ln">    62  </span>
-<span id="L63" class="ln">    63  </span>type ChangeDetectionResults struct { <span class="comment">// for passing around DDL/index/config change detection results</span>
-<span id="L64" class="ln">    64  </span>	Created int
-<span id="L65" class="ln">    65  </span>	Altered int
-<span id="L66" class="ln">    66  </span>	Dropped int
-<span id="L67" class="ln">    67  </span>}
-<span id="L68" class="ln">    68  </span>
-<span id="L69" class="ln">    69  </span>type ExistingPartitionInfo struct {
-<span id="L70" class="ln">    70  </span>	StartTime time.Time
-<span id="L71" class="ln">    71  </span>	EndTime   time.Time
-<span id="L72" class="ln">    72  </span>}
-<span id="L73" class="ln">    73  </span>
-<span id="L74" class="ln">    74  </span><span class="comment">// LoadMetrics loads metric definitions from the reader</span>
-<span id="L75" class="ln">    75  </span>func (r *Reaper) LoadMetrics() (err error) {
-<span id="L76" class="ln">    76  </span>	var newDefs *metrics.Metrics
-<span id="L77" class="ln">    77  </span>	if newDefs, err = r.MetricsReaderWriter.GetMetrics(); err != nil {
-<span id="L78" class="ln">    78  </span>		return
-<span id="L79" class="ln">    79  </span>	}
-<span id="L80" class="ln">    80  </span>	metricDefs.Assign(newDefs)
-<span id="L81" class="ln">    81  </span>	if definer, ok := r.SinksWriter.(sinks.MetricsDefiner); ok {
-<span id="L82" class="ln">    82  </span>		err := definer.DefineMetrics(newDefs)
-<span id="L83" class="ln">    83  </span>		if err != nil {
-<span id="L84" class="ln">    84  </span>			r.logger.Error(err)
-<span id="L85" class="ln">    85  </span>		}
-<span id="L86" class="ln">    86  </span>	}
-<span id="L87" class="ln">    87  </span>	r.logger.
-<span id="L88" class="ln">    88  </span>		WithField(&#34;metrics&#34;, len(newDefs.MetricDefs)).
-<span id="L89" class="ln">    89  </span>		WithField(&#34;presets&#34;, len(newDefs.PresetDefs)).
-<span id="L90" class="ln">    90  </span>		Log(func() logrus.Level {
-<span id="L91" class="ln">    91  </span>			if len(newDefs.PresetDefs)*len(newDefs.MetricDefs) == 0 {
-<span id="L92" class="ln">    92  </span>				return logrus.WarnLevel
-<span id="L93" class="ln">    93  </span>			}
-<span id="L94" class="ln">    94  </span>			return logrus.InfoLevel
-<span id="L95" class="ln">    95  </span>		}(), &#34;metrics and presets refreshed&#34;)
-<span id="L96" class="ln">    96  </span>	<span class="comment">// update the monitored sources with real metric definitions from presets</span>
-<span id="L97" class="ln">    97  </span>	for _, md := range r.monitoredSources {
-<span id="L98" class="ln">    98  </span>		if md.PresetMetrics &gt; &#34;&#34; {
-<span id="L99" class="ln">    99  </span>			md.Metrics = metricDefs.GetPresetMetrics(md.PresetMetrics)
-<span id="L100" class="ln">   100  </span>		}
-<span id="L101" class="ln">   101  </span>		if md.PresetMetricsStandby &gt; &#34;&#34; {
-<span id="L102" class="ln">   102  </span>			md.MetricsStandby = metricDefs.GetPresetMetrics(md.PresetMetricsStandby)
-<span id="L103" class="ln">   103  </span>		}
-<span id="L104" class="ln">   104  </span>	}
-<span id="L105" class="ln">   105  </span>	return
-<span id="L106" class="ln">   106  </span>}
-<span id="L107" class="ln">   107  </span>
+<span id="L20" class="ln">    20  </span>type ConcurrentMetricDefs struct {
+<span id="L21" class="ln">    21  </span>	*metrics.Metrics
+<span id="L22" class="ln">    22  </span>	sync.RWMutex
+<span id="L23" class="ln">    23  </span>}
+<span id="L24" class="ln">    24  </span>
+<span id="L25" class="ln">    25  </span>func NewConcurrentMetricDefs() *ConcurrentMetricDefs {
+<span id="L26" class="ln">    26  </span>	return &amp;ConcurrentMetricDefs{
+<span id="L27" class="ln">    27  </span>		Metrics: &amp;metrics.Metrics{
+<span id="L28" class="ln">    28  </span>			MetricDefs: make(metrics.MetricDefs),
+<span id="L29" class="ln">    29  </span>			PresetDefs: make(metrics.PresetDefs),
+<span id="L30" class="ln">    30  </span>		},
+<span id="L31" class="ln">    31  </span>	}
+<span id="L32" class="ln">    32  </span>}
+<span id="L33" class="ln">    33  </span>
+<span id="L34" class="ln">    34  </span>func (cmd *ConcurrentMetricDefs) GetMetricDef(name string) (m metrics.Metric, ok bool) {
+<span id="L35" class="ln">    35  </span>	cmd.RLock()
+<span id="L36" class="ln">    36  </span>	defer cmd.RUnlock()
+<span id="L37" class="ln">    37  </span>	m, ok = cmd.MetricDefs[name]
+<span id="L38" class="ln">    38  </span>	return
+<span id="L39" class="ln">    39  </span>}
+<span id="L40" class="ln">    40  </span>
+<span id="L41" class="ln">    41  </span>func (cmd *ConcurrentMetricDefs) GetPresetDef(name string) (m metrics.Preset, ok bool) {
+<span id="L42" class="ln">    42  </span>	cmd.RLock()
+<span id="L43" class="ln">    43  </span>	defer cmd.RUnlock()
+<span id="L44" class="ln">    44  </span>	m, ok = cmd.PresetDefs[name]
+<span id="L45" class="ln">    45  </span>	return
+<span id="L46" class="ln">    46  </span>}
+<span id="L47" class="ln">    47  </span>
+<span id="L48" class="ln">    48  </span>func (cmd *ConcurrentMetricDefs) GetPresetMetrics(name string) (m map[string]float64) {
+<span id="L49" class="ln">    49  </span>	cmd.RLock()
+<span id="L50" class="ln">    50  </span>	defer cmd.RUnlock()
+<span id="L51" class="ln">    51  </span>	return cmd.PresetDefs[name].Metrics
+<span id="L52" class="ln">    52  </span>}
+<span id="L53" class="ln">    53  </span>
+<span id="L54" class="ln">    54  </span>func (cmd *ConcurrentMetricDefs) Assign(newDefs *metrics.Metrics) {
+<span id="L55" class="ln">    55  </span>	cmd.Lock()
+<span id="L56" class="ln">    56  </span>	defer cmd.Unlock()
+<span id="L57" class="ln">    57  </span>	cmd.MetricDefs = maps.Clone(newDefs.MetricDefs)
+<span id="L58" class="ln">    58  </span>	cmd.PresetDefs = maps.Clone(newDefs.PresetDefs)
+<span id="L59" class="ln">    59  </span>}
+<span id="L60" class="ln">    60  </span>
+<span id="L61" class="ln">    61  </span>type ChangeDetectionResults struct { <span class="comment">// for passing around DDL/index/config change detection results</span>
+<span id="L62" class="ln">    62  </span>	Created int
+<span id="L63" class="ln">    63  </span>	Altered int
+<span id="L64" class="ln">    64  </span>	Dropped int
+<span id="L65" class="ln">    65  </span>}
+<span id="L66" class="ln">    66  </span>
+<span id="L67" class="ln">    67  </span>type ExistingPartitionInfo struct {
+<span id="L68" class="ln">    68  </span>	StartTime time.Time
+<span id="L69" class="ln">    69  </span>	EndTime   time.Time
+<span id="L70" class="ln">    70  </span>}
+<span id="L71" class="ln">    71  </span>
+<span id="L72" class="ln">    72  </span><span class="comment">// LoadMetrics loads metric definitions from the reader</span>
+<span id="L73" class="ln">    73  </span>func (r *Reaper) LoadMetrics() (err error) {
+<span id="L74" class="ln">    74  </span>	var newDefs *metrics.Metrics
+<span id="L75" class="ln">    75  </span>	if newDefs, err = r.MetricsReaderWriter.GetMetrics(); err != nil {
+<span id="L76" class="ln">    76  </span>		return
+<span id="L77" class="ln">    77  </span>	}
+<span id="L78" class="ln">    78  </span>	metricDefs.Assign(newDefs)
+<span id="L79" class="ln">    79  </span>	if definer, ok := r.SinksWriter.(sinks.MetricsDefiner); ok {
+<span id="L80" class="ln">    80  </span>		err := definer.DefineMetrics(newDefs)
+<span id="L81" class="ln">    81  </span>		if err != nil {
+<span id="L82" class="ln">    82  </span>			r.logger.Error(err)
+<span id="L83" class="ln">    83  </span>		}
+<span id="L84" class="ln">    84  </span>	}
+<span id="L85" class="ln">    85  </span>	r.logger.
+<span id="L86" class="ln">    86  </span>		WithField(&#34;metrics&#34;, len(newDefs.MetricDefs)).
+<span id="L87" class="ln">    87  </span>		WithField(&#34;presets&#34;, len(newDefs.PresetDefs)).
+<span id="L88" class="ln">    88  </span>		Log(func() logrus.Level {
+<span id="L89" class="ln">    89  </span>			if len(newDefs.PresetDefs)*len(newDefs.MetricDefs) == 0 {
+<span id="L90" class="ln">    90  </span>				return logrus.WarnLevel
+<span id="L91" class="ln">    91  </span>			}
+<span id="L92" class="ln">    92  </span>			return logrus.InfoLevel
+<span id="L93" class="ln">    93  </span>		}(), &#34;metrics and presets refreshed&#34;)
+<span id="L94" class="ln">    94  </span>	<span class="comment">// update the monitored sources with real metric definitions from presets</span>
+<span id="L95" class="ln">    95  </span>	for _, md := range r.monitoredSources {
+<span id="L96" class="ln">    96  </span>		if md.PresetMetrics &gt; &#34;&#34; {
+<span id="L97" class="ln">    97  </span>			md.Metrics = metricDefs.GetPresetMetrics(md.PresetMetrics)
+<span id="L98" class="ln">    98  </span>		}
+<span id="L99" class="ln">    99  </span>		if md.PresetMetricsStandby &gt; &#34;&#34; {
+<span id="L100" class="ln">   100  </span>			md.MetricsStandby = metricDefs.GetPresetMetrics(md.PresetMetricsStandby)
+<span id="L101" class="ln">   101  </span>		}
+<span id="L102" class="ln">   102  </span>	}
+<span id="L103" class="ln">   103  </span>	return
+<span id="L104" class="ln">   104  </span>}
+<span id="L105" class="ln">   105  </span>
 </pre><p></p>
 
 <div id="footer">

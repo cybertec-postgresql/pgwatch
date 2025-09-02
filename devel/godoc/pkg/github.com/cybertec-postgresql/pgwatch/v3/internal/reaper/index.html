@@ -325,9 +325,7 @@ and send measurements to sinks.
 				<pre>const (
     <span id="monitoredDbsDatastoreSyncIntervalSeconds">monitoredDbsDatastoreSyncIntervalSeconds</span> = 600              <span class="comment">// write actively monitored DBs listing to metrics store after so many seconds</span>
     <span id="monitoredDbsDatastoreSyncMetricName">monitoredDbsDatastoreSyncMetricName</span>      = &#34;configured_dbs&#34; <span class="comment">// FYI - for Postgres datastore there&#39;s also the admin.all_unique_dbnames table with all recent DB unique names with some metric data</span>
-
-    <span id="dbSizeCachingInterval">dbSizeCachingInterval</span> = 30 * <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Minute">Minute</a>
-    <span id="dbMetricJoinStr">dbMetricJoinStr</span>       = &#34;¤¤¤&#34; <span class="comment">// just some unlikely string for a DB name to avoid using maps of maps for DB+metric data</span>
+    <span id="dbMetricJoinStr">dbMetricJoinStr</span>                          = &#34;¤¤¤&#34;            <span class="comment">// just some unlikely string for a DB name to avoid using maps of maps for DB+metric data</span>
 
 )</pre>
 			
@@ -551,7 +549,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="ChangeDetectionResults">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L63">ChangeDetectionResults</a>
+			<h2 id="ChangeDetectionResults">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L61">ChangeDetectionResults</a>
 				<a class="permalink" href="#ChangeDetectionResults">&#xb6;</a>
 				
 				
@@ -633,7 +631,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="ConcurrentMetricDefs">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L22">ConcurrentMetricDefs</a>
+			<h2 id="ConcurrentMetricDefs">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L20">ConcurrentMetricDefs</a>
 				<a class="permalink" href="#ConcurrentMetricDefs">&#xb6;</a>
 				
 				
@@ -655,7 +653,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="NewConcurrentMetricDefs">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L27">NewConcurrentMetricDefs</a>
+				<h3 id="NewConcurrentMetricDefs">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L25">NewConcurrentMetricDefs</a>
 					<a class="permalink" href="#NewConcurrentMetricDefs">&#xb6;</a>
 					
 					
@@ -668,7 +666,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="ConcurrentMetricDefs.Assign">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L56">Assign</a>
+				<h3 id="ConcurrentMetricDefs.Assign">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L54">Assign</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.Assign">&#xb6;</a>
 					
 					
@@ -680,7 +678,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="ConcurrentMetricDefs.GetMetricDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L36">GetMetricDef</a>
+				<h3 id="ConcurrentMetricDefs.GetMetricDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L34">GetMetricDef</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.GetMetricDef">&#xb6;</a>
 					
 					
@@ -692,7 +690,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="ConcurrentMetricDefs.GetPresetDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L43">GetPresetDef</a>
+				<h3 id="ConcurrentMetricDefs.GetPresetDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L41">GetPresetDef</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.GetPresetDef">&#xb6;</a>
 					
 					
@@ -704,7 +702,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="ConcurrentMetricDefs.GetPresetMetrics">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L50">GetPresetMetrics</a>
+				<h3 id="ConcurrentMetricDefs.GetPresetMetrics">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L48">GetPresetMetrics</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.GetPresetMetrics">&#xb6;</a>
 					
 					
@@ -718,7 +716,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L69">ExistingPartitionInfo</a>
+			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L67">ExistingPartitionInfo</a>
 				<a class="permalink" href="#ExistingPartitionInfo">&#xb6;</a>
 				
 				
@@ -935,7 +933,7 @@ used to detect if the instance is up or down
 				
 			
 				
-				<h3 id="Reaper.LoadMetrics">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L75">LoadMetrics</a>
+				<h3 id="Reaper.LoadMetrics">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L73">LoadMetrics</a>
 					<a class="permalink" href="#Reaper.LoadMetrics">&#xb6;</a>
 					
 					
