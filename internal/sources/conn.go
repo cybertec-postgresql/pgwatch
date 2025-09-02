@@ -37,6 +37,7 @@ type RuntimeInfo struct {
 	Extensions       map[string]int
 	ExecEnv          string
 	ApproxDbSize     int64
+	ChangeState      map[string]map[string]string // ["category"][object_identifier] = state
 }
 
 // SourceConn represents a single connection to monitor. Unlike source, it contains a database connection.
@@ -156,7 +157,8 @@ func (md *SourceConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (
 	}
 
 	dbNewSettings := RuntimeInfo{
-		Extensions: make(map[string]int),
+		Extensions:  make(map[string]int),
+		ChangeState: make(map[string]map[string]string),
 	}
 
 	switch md.Kind {

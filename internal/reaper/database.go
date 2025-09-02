@@ -47,79 +47,75 @@ func QueryMeasurements(ctx context.Context, md *sources.SourceConn, sql string, 
 	return nil, err
 }
 
-func DetectSprocChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func (r *Reaper) DetectSprocChanges(ctx context.Context, md *sources.SourceConn) (changeCounts ChangeDetectionResults) {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
-	var changeCounts ChangeDetectionResults
-
-	log.GetLogger(ctx).Debugf("[%s][%s] checking for sproc changes...", md.Name, specialMetricChangeEvents)
-	if _, ok := hostState["sproc_hashes"]; !ok {
+	l := log.GetLogger(ctx)
+	l.Debug("checking for sproc changes...")
+	if _, ok := md.ChangeState["sproc_hashes"]; !ok {
 		firstRun = true
-		hostState["sproc_hashes"] = make(map[string]string)
+		md.ChangeState["sproc_hashes"] = make(map[string]string)
 	}
 
 	mvp, ok := metricDefs.GetMetricDef("sproc_hashes")
 	if !ok {
-		log.GetLogger(ctx).Error("could not get sproc_hashes sql")
-		return changeCounts
+		l.Error("could not get sproc_hashes sql")
+		return
 	}
 
 	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
 	if err != nil {
-		log.GetLogger(ctx).Error("could not read sproc_hashes from monitored host: ", md.Name, ", err:", err)
-		return changeCounts
+		l.Error(err)
+		return
 	}
 
 	for _, dr := range data {
 		objIdent := dr["tag_sproc"].(string) + dbMetricJoinStr + dr["tag_oid"].(string)
-		prevHash, ok := hostState["sproc_hashes"][objIdent]
+		prevHash, ok := md.ChangeState["sproc_hashes"][objIdent]
+		ll := l.WithField("sproc", dr["tag_sproc"]).WithField("oid", dr["tag_oid"])
 		if ok { // we have existing state
 			if prevHash != dr["md5"].(string) {
-				log.GetLogger(ctx).Info("detected change in sproc:", dr["tag_sproc"], ", oid:", dr["tag_oid"])
+				ll.Debug("change detected")
 				dr["event"] = "alter"
 				detectedChanges = append(detectedChanges, dr)
-				hostState["sproc_hashes"][objIdent] = dr["md5"].(string)
+				md.ChangeState["sproc_hashes"][objIdent] = dr["md5"].(string)
 				changeCounts.Altered++
 			}
 		} else { // check for new / delete
 			if !firstRun {
-				log.GetLogger(ctx).Info("detected new sproc:", dr["tag_sproc"], ", oid:", dr["tag_oid"])
+				ll.Debug("new sproc detected")
 				dr["event"] = "create"
 				detectedChanges = append(detectedChanges, dr)
 				changeCounts.Created++
 			}
-			hostState["sproc_hashes"][objIdent] = dr["md5"].(string)
+			md.ChangeState["sproc_hashes"][objIdent] = dr["md5"].(string)
 		}
 	}
 	// detect deletes
-	if !firstRun && len(hostState["sproc_hashes"]) != len(data) {
-		deletedSProcs := make([]string, 0)
+	if !firstRun && len(md.ChangeState["sproc_hashes"]) != len(data) {
 		// turn resultset to map => [oid]=true for faster checks
 		currentOidMap := make(map[string]bool)
 		for _, dr := range data {
 			currentOidMap[dr["tag_sproc"].(string)+dbMetricJoinStr+dr["tag_oid"].(string)] = true
 		}
-		for sprocIdent := range hostState["sproc_hashes"] {
+		for sprocIdent := range md.ChangeState["sproc_hashes"] {
 			_, ok := currentOidMap[sprocIdent]
 			if !ok {
 				splits := strings.Split(sprocIdent, dbMetricJoinStr)
-				log.GetLogger(ctx).Info("detected delete of sproc:", splits[0], ", oid:", splits[1])
-				influxEntry := metrics.NewMeasurement(data.GetEpoch())
-				influxEntry["event"] = "drop"
-				influxEntry["tag_sproc"] = splits[0]
-				influxEntry["tag_oid"] = splits[1]
-				detectedChanges = append(detectedChanges, influxEntry)
-				deletedSProcs = append(deletedSProcs, sprocIdent)
+				l.WithField("sproc", splits[0]).WithField("oid", splits[1]).Debug("deleted sproc detected")
+				m := metrics.NewMeasurement(data.GetEpoch())
+				m["event"] = "drop"
+				m["tag_sproc"] = splits[0]
+				m["tag_oid"] = splits[1]
+				detectedChanges = append(detectedChanges, m)
+				delete(md.ChangeState["sproc_hashes"], sprocIdent)
 				changeCounts.Dropped++
 			}
 		}
-		for _, deletedSProc := range deletedSProcs {
-			delete(hostState["sproc_hashes"], deletedSProc)
-		}
 	}
-	log.GetLogger(ctx).Debugf("[%s][%s] detected %d sproc changes", md.Name, specialMetricChangeEvents, len(detectedChanges))
+	l.Debugf("sproc changes detected: %d", len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		storageCh <- metrics.MeasurementEnvelope{
+		r.measurementCh <- metrics.MeasurementEnvelope{
 			DBName:     md.Name,
 			MetricName: "sproc_changes",
 			Data:       detectedChanges,
@@ -130,62 +126,63 @@ func DetectSprocChanges(ctx context.Context, md *sources.SourceConn, storageCh c
 	return changeCounts
 }
 
-func DetectTableChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
-
-	log.GetLogger(ctx).Debugf("[%s][%s] checking for table changes...", md.Name, specialMetricChangeEvents)
-	if _, ok := hostState["table_hashes"]; !ok {
+	l := log.GetLogger(ctx)
+	l.Debug("checking for table changes...")
+	if _, ok := md.ChangeState["table_hashes"]; !ok {
 		firstRun = true
-		hostState["table_hashes"] = make(map[string]string)
+		md.ChangeState["table_hashes"] = make(map[string]string)
 	}
 
 	mvp, ok := metricDefs.GetMetricDef("table_hashes")
 	if !ok {
-		log.GetLogger(ctx).Error("could not get table_hashes sql")
+		l.Error("could not get table_hashes sql")
 		return changeCounts
 	}
 
 	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
 	if err != nil {
-		log.GetLogger(ctx).Error("could not read table_hashes from monitored host:", md.Name, ", err:", err)
+		l.Error(err)
 		return changeCounts
 	}
 
 	for _, dr := range data {
 		objIdent := dr["tag_table"].(string)
-		prevHash, ok := hostState["table_hashes"][objIdent]
+		prevHash, ok := md.ChangeState["table_hashes"][objIdent]
+		ll := l.WithField("table", dr["tag_table"])
 		if ok { // we have existing state
 			if prevHash != dr["md5"].(string) {
-				log.GetLogger(ctx).Info("detected DDL change in table:", dr["tag_table"])
+				ll.Debug("change detected")
 				dr["event"] = "alter"
 				detectedChanges = append(detectedChanges, dr)
-				hostState["table_hashes"][objIdent] = dr["md5"].(string)
+				md.ChangeState["table_hashes"][objIdent] = dr["md5"].(string)
 				changeCounts.Altered++
 			}
 		} else { // check for new / delete
 			if !firstRun {
-				log.GetLogger(ctx).Info("detected new table:", dr["tag_table"])
+				ll.Debug("new table detected")
 				dr["event"] = "create"
 				detectedChanges = append(detectedChanges, dr)
 				changeCounts.Created++
 			}
-			hostState["table_hashes"][objIdent] = dr["md5"].(string)
+			md.ChangeState["table_hashes"][objIdent] = dr["md5"].(string)
 		}
 	}
 	// detect deletes
-	if !firstRun && len(hostState["table_hashes"]) != len(data) {
+	if !firstRun && len(md.ChangeState["table_hashes"]) != len(data) {
 		deletedTables := make([]string, 0)
 		// turn resultset to map => [table]=true for faster checks
 		currentTableMap := make(map[string]bool)
 		for _, dr := range data {
 			currentTableMap[dr["tag_table"].(string)] = true
 		}
-		for table := range hostState["table_hashes"] {
+		for table := range md.ChangeState["table_hashes"] {
 			_, ok := currentTableMap[table]
 			if !ok {
-				log.GetLogger(ctx).Info("detected drop of table:", table)
+				l.WithField("table", table).Debug("deleted table detected")
 				influxEntry := metrics.NewMeasurement(data.GetEpoch())
 				influxEntry["event"] = "drop"
 				influxEntry["tag_table"] = table
@@ -195,13 +192,13 @@ func DetectTableChanges(ctx context.Context, md *sources.SourceConn, storageCh c
 			}
 		}
 		for _, deletedTable := range deletedTables {
-			delete(hostState["table_hashes"], deletedTable)
+			delete(md.ChangeState["table_hashes"], deletedTable)
 		}
 	}
 
-	log.GetLogger(ctx).Debugf("[%s][%s] detected %d table changes", md.Name, specialMetricChangeEvents, len(detectedChanges))
+	l.Debugf("table changes detected: %d", len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		storageCh <- metrics.MeasurementEnvelope{
+		r.measurementCh <- metrics.MeasurementEnvelope{
 			DBName:     md.Name,
 			MetricName: "table_changes",
 			Data:       detectedChanges,
@@ -212,62 +209,63 @@ func DetectTableChanges(ctx context.Context, md *sources.SourceConn, storageCh c
 	return changeCounts
 }
 
-func DetectIndexChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func (r *Reaper) DetectIndexChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
-
-	log.GetLogger(ctx).Debugf("[%s][%s] checking for index changes...", md.Name, specialMetricChangeEvents)
-	if _, ok := hostState["index_hashes"]; !ok {
+	l := log.GetLogger(ctx)
+	l.Debug("checking for index changes...")
+	if _, ok := md.ChangeState["index_hashes"]; !ok {
 		firstRun = true
-		hostState["index_hashes"] = make(map[string]string)
+		md.ChangeState["index_hashes"] = make(map[string]string)
 	}
 
 	mvp, ok := metricDefs.GetMetricDef("index_hashes")
 	if !ok {
-		log.GetLogger(ctx).Error("could not get index_hashes sql")
+		l.Error("could not get index_hashes sql")
 		return changeCounts
 	}
 
 	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
 	if err != nil {
-		log.GetLogger(ctx).Error("could not read index_hashes from monitored host:", md.Name, ", err:", err)
+		l.Error(err)
 		return changeCounts
 	}
 
 	for _, dr := range data {
 		objIdent := dr["tag_index"].(string)
-		prevHash, ok := hostState["index_hashes"][objIdent]
+		prevHash, ok := md.ChangeState["index_hashes"][objIdent]
+		ll := l.WithField("index", dr["tag_index"]).WithField("table", dr["table"])
 		if ok { // we have existing state
 			if prevHash != (dr["md5"].(string) + dr["is_valid"].(string)) {
-				log.GetLogger(ctx).Info("detected index change:", dr["tag_index"], ", table:", dr["table"])
+				ll.Debug("change detected")
 				dr["event"] = "alter"
 				detectedChanges = append(detectedChanges, dr)
-				hostState["index_hashes"][objIdent] = dr["md5"].(string) + dr["is_valid"].(string)
+				md.ChangeState["index_hashes"][objIdent] = dr["md5"].(string) + dr["is_valid"].(string)
 				changeCounts.Altered++
 			}
 		} else { // check for new / delete
 			if !firstRun {
-				log.GetLogger(ctx).Info("detected new index:", dr["tag_index"])
+				ll.Debug("new index detected")
 				dr["event"] = "create"
 				detectedChanges = append(detectedChanges, dr)
 				changeCounts.Created++
 			}
-			hostState["index_hashes"][objIdent] = dr["md5"].(string) + dr["is_valid"].(string)
+			md.ChangeState["index_hashes"][objIdent] = dr["md5"].(string) + dr["is_valid"].(string)
 		}
 	}
 	// detect deletes
-	if !firstRun && len(hostState["index_hashes"]) != len(data) {
+	if !firstRun && len(md.ChangeState["index_hashes"]) != len(data) {
 		deletedIndexes := make([]string, 0)
 		// turn resultset to map => [table]=true for faster checks
 		currentIndexMap := make(map[string]bool)
 		for _, dr := range data {
 			currentIndexMap[dr["tag_index"].(string)] = true
 		}
-		for indexName := range hostState["index_hashes"] {
+		for indexName := range md.ChangeState["index_hashes"] {
 			_, ok := currentIndexMap[indexName]
 			if !ok {
-				log.GetLogger(ctx).Info("detected drop of index_name:", indexName)
+				l.WithField("index", indexName).Debug("deleted index detected")
 				influxEntry := metrics.NewMeasurement(data.GetEpoch())
 				influxEntry["event"] = "drop"
 				influxEntry["tag_index"] = indexName
@@ -277,12 +275,12 @@ func DetectIndexChanges(ctx context.Context, md *sources.SourceConn, storageCh c
 			}
 		}
 		for _, deletedIndex := range deletedIndexes {
-			delete(hostState["index_hashes"], deletedIndex)
+			delete(md.ChangeState["index_hashes"], deletedIndex)
 		}
 	}
-	log.GetLogger(ctx).Debugf("[%s][%s] detected %d index changes", md.Name, specialMetricChangeEvents, len(detectedChanges))
+	l.Debugf("index changes detected: %d", len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		storageCh <- metrics.MeasurementEnvelope{
+		r.measurementCh <- metrics.MeasurementEnvelope{
 			DBName:     md.Name,
 			MetricName: "index_changes",
 			Data:       detectedChanges,
@@ -293,55 +291,61 @@ func DetectIndexChanges(ctx context.Context, md *sources.SourceConn, storageCh c
 	return changeCounts
 }
 
-func DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
-
-	log.GetLogger(ctx).Debugf("[%s][%s] checking object privilege changes...", md.Name, specialMetricChangeEvents)
-	if _, ok := hostState["object_privileges"]; !ok {
+	l := log.GetLogger(ctx)
+	l.Debug("checking object privilege changes...")
+	if _, ok := md.ChangeState["object_privileges"]; !ok {
 		firstRun = true
-		hostState["object_privileges"] = make(map[string]string)
+		md.ChangeState["object_privileges"] = make(map[string]string)
 	}
 
 	mvp, ok := metricDefs.GetMetricDef("privilege_changes")
 	if !ok || mvp.GetSQL(int(md.Version)) == "" {
-		log.GetLogger(ctx).Warningf("[%s][%s] could not get SQL for 'privilege_changes'. cannot detect privilege changes", md.Name, specialMetricChangeEvents)
+		l.Warning("could not get SQL for 'privilege_changes'. cannot detect privilege changes")
 		return changeCounts
 	}
 
 	// returns rows of: object_type, tag_role, tag_object, privilege_type
 	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
 	if err != nil {
-		log.GetLogger(ctx).Errorf("[%s][%s] failed to fetch object privileges info: %v", md.Name, specialMetricChangeEvents, err)
+		l.Error(err)
 		return changeCounts
 	}
 
 	currentState := make(map[string]bool)
 	for _, dr := range data {
 		objIdent := fmt.Sprintf("%s#:#%s#:#%s#:#%s", dr["object_type"], dr["tag_role"], dr["tag_object"], dr["privilege_type"])
+		ll := l.WithField("role", dr["tag_role"]).
+			WithField("object_type", dr["object_type"]).
+			WithField("object", dr["tag_object"]).
+			WithField("privilege_type", dr["privilege_type"])
 		if firstRun {
-			hostState["object_privileges"][objIdent] = ""
+			md.ChangeState["object_privileges"][objIdent] = ""
 		} else {
-			_, ok := hostState["object_privileges"][objIdent]
+			_, ok := md.ChangeState["object_privileges"][objIdent]
 			if !ok {
-				log.GetLogger(ctx).Infof("[%s][%s] detected new object privileges: role=%s, object_type=%s, object=%s, privilege_type=%s",
-					md.Name, specialMetricChangeEvents, dr["tag_role"], dr["object_type"], dr["tag_object"], dr["privilege_type"])
+				ll.Debug("new object privileges detected")
 				dr["event"] = "GRANT"
 				detectedChanges = append(detectedChanges, dr)
 				changeCounts.Created++
-				hostState["object_privileges"][objIdent] = ""
+				md.ChangeState["object_privileges"][objIdent] = ""
 			}
 			currentState[objIdent] = true
 		}
 	}
 	// check revokes - exists in old state only
 	if !firstRun && len(currentState) > 0 {
-		for objPrevRun := range hostState["object_privileges"] {
+		for objPrevRun := range md.ChangeState["object_privileges"] {
 			if _, ok := currentState[objPrevRun]; !ok {
 				splits := strings.Split(objPrevRun, "#:#")
-				log.GetLogger(ctx).Infof("[%s][%s] detected removed object privileges: role=%s, object_type=%s, object=%s, privilege_type=%s",
-					md.Name, specialMetricChangeEvents, splits[1], splits[0], splits[2], splits[3])
+				l.WithField("role", splits[1]).
+					WithField("object_type", splits[0]).
+					WithField("object", splits[2]).
+					WithField("privilege_type", splits[3]).
+					Debug("removed object privileges detected")
 				revokeEntry := metrics.NewMeasurement(data.GetEpoch())
 				revokeEntry["object_type"] = splits[0]
 				revokeEntry["tag_role"] = splits[1]
@@ -350,14 +354,14 @@ func DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn, storage
 				revokeEntry["event"] = "REVOKE"
 				detectedChanges = append(detectedChanges, revokeEntry)
 				changeCounts.Dropped++
-				delete(hostState["object_privileges"], objPrevRun)
+				delete(md.ChangeState["object_privileges"], objPrevRun)
 			}
 		}
 	}
 
-	log.GetLogger(ctx).Debugf("[%s][%s] detected %d object privilege changes...", md.Name, specialMetricChangeEvents, len(detectedChanges))
+	l.Debugf("object privilege changes detected: %d", len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		storageCh <- metrics.MeasurementEnvelope{
+		r.measurementCh <- metrics.MeasurementEnvelope{
 			DBName:     md.Name,
 			MetricName: "privilege_changes",
 			Data:       detectedChanges,
@@ -368,27 +372,26 @@ func DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn, storage
 	return changeCounts
 }
 
-func DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn, storageCh chan<- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults {
+func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
-
-	logger := log.GetLogger(ctx).WithField("source", md.Name).WithField("metric", specialMetricChangeEvents)
-
-	if _, ok := hostState["configuration_hashes"]; !ok {
+	l := log.GetLogger(ctx)
+	l.Debug("checking for configuration changes...")
+	if _, ok := md.ChangeState["configuration_hashes"]; !ok {
 		firstRun = true
-		hostState["configuration_hashes"] = make(map[string]string)
+		md.ChangeState["configuration_hashes"] = make(map[string]string)
 	}
 
 	mvp, ok := metricDefs.GetMetricDef("configuration_hashes")
 	if !ok {
-		logger.Error("could not get configuration_hashes sql")
+		l.Error("could not get configuration_hashes sql")
 		return changeCounts
 	}
 
 	rows, err := md.Conn.Query(ctx, mvp.GetSQL(md.Version))
 	if err != nil {
-		logger.Error("could not read configuration_hashes from monitored host: ", err)
+		l.Error(err)
 		return changeCounts
 	}
 	defer rows.Close()
@@ -400,24 +403,25 @@ func DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn, sto
 		if rows.Scan(&epoch, &objIdent, &objValue) != nil {
 			return changeCounts
 		}
-		prevРash, ok := hostState["configuration_hashes"][objIdent]
+		prevРash, ok := md.ChangeState["configuration_hashes"][objIdent]
+		ll := l.WithField("setting", objIdent)
 		if ok { // we have existing state
 			if prevРash != objValue {
-				logger.Warningf("detected settings change: %s = %s (prev: %s)", objIdent, objValue, prevРash)
+				ll.Warningf("settings change detected: %s = %s (prev: %s)", objIdent, objValue, prevРash)
 				detectedChanges = append(detectedChanges, metrics.Measurement{
 					metrics.EpochColumnName: epoch,
 					"tag_setting":           objIdent,
 					"value":                 objValue,
 					"event":                 "alter"})
-				hostState["configuration_hashes"][objIdent] = objValue
+				md.ChangeState["configuration_hashes"][objIdent] = objValue
 				changeCounts.Altered++
 			}
 		} else { // check for new, delete not relevant here (pg_upgrade)
-			hostState["configuration_hashes"][objIdent] = objValue
+			md.ChangeState["configuration_hashes"][objIdent] = objValue
 			if firstRun {
 				continue
 			}
-			logger.Warning("detected new setting: ", objIdent)
+			ll.Debug("new setting detected")
 			detectedChanges = append(detectedChanges, metrics.Measurement{
 				metrics.EpochColumnName: epoch,
 				"tag_setting":           objIdent,
@@ -427,8 +431,9 @@ func DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn, sto
 		}
 	}
 
+	l.Debugf("configuration changes detected: %d", len(detectedChanges))
 	if len(detectedChanges) > 0 {
-		storageCh <- metrics.MeasurementEnvelope{
+		r.measurementCh <- metrics.MeasurementEnvelope{
 			DBName:     md.Name,
 			MetricName: "configuration_changes",
 			Data:       detectedChanges,
@@ -455,46 +460,45 @@ func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.Sourc
 	}, err
 }
 
-func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, md *sources.SourceConn, hostState map[string]map[string]string) {
-	storageCh := r.measurementCh
-	sprocCounts := DetectSprocChanges(ctx, md, storageCh, hostState) // TODO some of Detect*() code could be unified...
-	tableCounts := DetectTableChanges(ctx, md, storageCh, hostState)
-	indexCounts := DetectIndexChanges(ctx, md, storageCh, hostState)
-	confCounts := DetectConfigurationChanges(ctx, md, storageCh, hostState)
-	privChangeCounts := DetectPrivilegeChanges(ctx, md, storageCh, hostState)
+func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, md *sources.SourceConn) {
+	var err error
+	l := log.GetLogger(ctx).WithField("source", md.Name).WithField("metric", specialMetricChangeEvents)
+	ctx = log.WithLogger(ctx, l)
+	sprocCounts := r.DetectSprocChanges(ctx, md) // TODO some of Detect*() code could be unified...
+	tableCounts := r.DetectTableChanges(ctx, md)
+	indexCounts := r.DetectIndexChanges(ctx, md)
+	confCounts := r.DetectConfigurationChanges(ctx, md)
+	privChangeCounts := r.DetectPrivilegeChanges(ctx, md)
 
 	// need to send info on all object changes as one message as Grafana applies "last wins" for annotations with similar timestamp
-	message := ""
-	if sprocCounts.Altered > 0 || sprocCounts.Created > 0 || sprocCounts.Dropped > 0 {
-		message += fmt.Sprintf(" sprocs %d/%d/%d", sprocCounts.Created, sprocCounts.Altered, sprocCounts.Dropped)
+	if sprocCounts.Total() > 0 {
+		l = l.WithField("functions", sprocCounts.String())
 	}
-	if tableCounts.Altered > 0 || tableCounts.Created > 0 || tableCounts.Dropped > 0 {
-		message += fmt.Sprintf(" tables/views %d/%d/%d", tableCounts.Created, tableCounts.Altered, tableCounts.Dropped)
+	if tableCounts.Total() > 0 {
+		l = l.WithField("relations", tableCounts.String())
 	}
-	if indexCounts.Altered > 0 || indexCounts.Created > 0 || indexCounts.Dropped > 0 {
-		message += fmt.Sprintf(" indexes %d/%d/%d", indexCounts.Created, indexCounts.Altered, indexCounts.Dropped)
+	if indexCounts.Total() > 0 {
+		l = l.WithField("indexes", indexCounts.String())
 	}
-	if confCounts.Altered > 0 || confCounts.Created > 0 {
-		message += fmt.Sprintf(" configuration %d/%d/%d", confCounts.Created, confCounts.Altered, confCounts.Dropped)
+	if confCounts.Total() > 0 {
+		l = l.WithField("settings", confCounts.String())
 	}
-	if privChangeCounts.Dropped > 0 || privChangeCounts.Created > 0 {
-		message += fmt.Sprintf(" privileges %d/%d/%d", privChangeCounts.Created, privChangeCounts.Altered, privChangeCounts.Dropped)
+	if privChangeCounts.Total() > 0 {
+		l = l.WithField("privileges", privChangeCounts.String())
 	}
-
-	if message > "" {
-		message = "Detected changes for \"" + dbUnique + "\" [Created/Altered/Dropped]:" + message
-		log.GetLogger(ctx).Info(message)
-		detectedChangesSummary := make(metrics.Measurements, 0)
-		influxEntry := metrics.NewMeasurement(time.Now().UnixNano())
-		influxEntry["details"] = message
-		detectedChangesSummary = append(detectedChangesSummary, influxEntry)
-		storageCh <- metrics.MeasurementEnvelope{
-			DBName:     dbUnique,
+	if len(l.Data) > 2 { // source and metric are always there
+		m := metrics.NewMeasurement(time.Now().UnixNano())
+		if m["details"], err = l.String(); err != nil {
+			l.Error(err)
+			return
+		}
+		r.measurementCh <- metrics.MeasurementEnvelope{
+			DBName:     md.Name,
 			MetricName: "object_changes",
-			Data:       detectedChangesSummary,
+			Data:       metrics.Measurements{m},
 			CustomTags: md.CustomTags,
 		}
-
+		l.Info("detected changes [created/altered/dropped]")
 	}
 }
 
