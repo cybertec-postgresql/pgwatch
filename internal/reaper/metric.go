@@ -13,9 +13,7 @@ import (
 const (
 	monitoredDbsDatastoreSyncIntervalSeconds = 600              // write actively monitored DBs listing to metrics store after so many seconds
 	monitoredDbsDatastoreSyncMetricName      = "configured_dbs" // FYI - for Postgres datastore there's also the admin.all_unique_dbnames table with all recent DB unique names with some metric data
-
-	dbSizeCachingInterval = 30 * time.Minute
-	dbMetricJoinStr       = "¤¤¤" // just some unlikely string for a DB name to avoid using maps of maps for DB+metric data
+	dbMetricJoinStr                          = "¤¤¤"            // just some unlikely string for a DB name to avoid using maps of maps for DB+metric data
 
 )
 

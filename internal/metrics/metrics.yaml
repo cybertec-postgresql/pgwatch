@@ -714,45 +714,6 @@ metrics:
             - checksum_last_failure_s
             - parallel_workers_to_launch
             - parallel_workers_launched
-    db_stats_aurora:
-        description: >
-            Retrieves key statistics from the PostgreSQL `pg_stat_database` view for Amazon Aurora PostgreSQL, providing insights into the current database's performance.
-            It returns the number of backends, transaction commits and rollbacks, buffer reads and hits, tuple statistics, conflicts, temporary files and bytes,
-            deadlocks, block read and write times, postmaster uptime, recovery status, system identifier, and invalid indexes.
-            This metric helps administrators monitor database activity and performance in an Aurora PostgreSQL environment.
-        sqls:
-            11: |-
-                select /* pgwatch_generated */
-                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-                  numbackends,
-                  xact_commit,
-                  xact_rollback,
-                  blks_read,
-                  blks_hit,
-                  tup_returned,
-                  tup_fetched,
-                  tup_inserted,
-                  tup_updated,
-                  tup_deleted,
-                  conflicts,
-                  temp_files,
-                  temp_bytes,
-                  deadlocks,
-                  blk_read_time,
-                  blk_write_time,
-                  extract(epoch from (now() - pg_postmaster_start_time()))::int8 as postmaster_uptime_s,
-                  case when pg_is_in_recovery() then 1 else 0 end as in_recovery_int,
-                  system_identifier::text as tag_sys_id
-                from
-                  pg_stat_database, pg_control_system()
-                where
-                  datname = current_database()
-        gauges:
-            - numbackends
-            - postmaster_uptime_s
-            - backup_duration_s
-            - checksum_last_failure_s
-        storage_name: db_stats
     index_hashes:
         description: >
             Retrieves the hash of index definitions in the PostgreSQL database, providing a way to track changes in index definitions over time.
@@ -4943,7 +4904,6 @@ presets:
             db_size: 30
             db_size_approx: 30
             db_stats: 30
-            db_stats_aurora: 30
             index_hashes: 30
             index_stats: 30
             instance_up: 30
