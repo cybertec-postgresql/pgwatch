@@ -156,21 +156,12 @@ and send measurements to sinks.
 				
 				<dd><a href="#ChangeDetectionResults">type ChangeDetectionResults</a></dd>
 				
-					
-					<dd>&nbsp; &nbsp; <a href="#DetectConfigurationChanges">func DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn, storageCh chan&lt;- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#DetectIndexChanges">func DetectIndexChanges(ctx context.Context, md *sources.SourceConn, storageCh chan&lt;- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#ChangeDetectionResults.String">func (cdr *ChangeDetectionResults) String() string</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#DetectPrivilegeChanges">func DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn, storageCh chan&lt;- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#DetectSprocChanges">func DetectSprocChanges(ctx context.Context, md *sources.SourceConn, storageCh chan&lt;- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#DetectTableChanges">func DetectTableChanges(ctx context.Context, md *sources.SourceConn, storageCh chan&lt;- metrics.MeasurementEnvelope, hostState map[string]map[string]string) ChangeDetectionResults</a></dd>
-				
+					<dd>&nbsp; &nbsp; <a href="#ChangeDetectionResults.Total">func (cdr *ChangeDetectionResults) Total() int</a></dd>
 				
 			
 				
@@ -223,7 +214,7 @@ and send measurements to sinks.
 					<dd>&nbsp; &nbsp; <a href="#Reaper.AddSysinfoToMeasurements">func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, md *sources.SourceConn)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.CheckForPGObjectChangesAndStore">func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, dbUnique string, md *sources.SourceConn, hostState map[string]map[string]string)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Reaper.CheckForPGObjectChangesAndStore">func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, md *sources.SourceConn)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#Reaper.CloseResourcesForRemovedMonitoredDBs">func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(shutDownDueToRoleChange map[string]bool)</a></dd>
@@ -232,7 +223,22 @@ and send measurements to sinks.
 					<dd>&nbsp; &nbsp; <a href="#Reaper.CreateSourceHelpers">func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monitoredSource *sources.SourceConn)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.FetchMetric">func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metricName string, hostState map[string]map[string]string) (_ *metrics.MeasurementEnvelope, err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Reaper.DetectConfigurationChanges">func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reaper.DetectIndexChanges">func (r *Reaper) DetectIndexChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reaper.DetectPrivilegeChanges">func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reaper.DetectSprocChanges">func (r *Reaper) DetectSprocChanges(ctx context.Context, md *sources.SourceConn) (changeCounts ChangeDetectionResults)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reaper.DetectTableChanges">func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reaper.FetchMetric">func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metricName string) (_ *metrics.MeasurementEnvelope, err error)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#Reaper.FetchStatsDirectlyFromOS">func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.SourceConn, metricName string) (*metrics.MeasurementEnvelope, error)</a></dd>
@@ -505,7 +511,7 @@ and send measurements to sinks.
 		
 			
 			
-			<h2 id="TryCreateMetricsFetchingHelpers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L542">TryCreateMetricsFetchingHelpers</a>
+			<h2 id="TryCreateMetricsFetchingHelpers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L546">TryCreateMetricsFetchingHelpers</a>
 				<a class="permalink" href="#TryCreateMetricsFetchingHelpers">&#xb6;</a>
 				
 				
@@ -519,7 +525,7 @@ and send measurements to sinks.
 		
 			
 			
-			<h2 id="TryCreateMissingExtensions">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L504">TryCreateMissingExtensions</a>
+			<h2 id="TryCreateMissingExtensions">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L508">TryCreateMissingExtensions</a>
 				<a class="permalink" href="#TryCreateMissingExtensions">&#xb6;</a>
 				
 				
@@ -549,7 +555,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="ChangeDetectionResults">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L61">ChangeDetectionResults</a>
+			<h2 id="ChangeDetectionResults">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L62">ChangeDetectionResults</a>
 				<a class="permalink" href="#ChangeDetectionResults">&#xb6;</a>
 				
 				
@@ -571,67 +577,36 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 			
 
 			
-				
-				<h3 id="DetectConfigurationChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L371">DetectConfigurationChanges</a>
-					<a class="permalink" href="#DetectConfigurationChanges">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func DetectConfigurationChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, storageCh chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
-				
-				
-				
-			
-				
-				<h3 id="DetectIndexChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L215">DetectIndexChanges</a>
-					<a class="permalink" href="#DetectIndexChanges">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func DetectIndexChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, storageCh chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
-				
-				
-				
-			
-				
-				<h3 id="DetectPrivilegeChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L296">DetectPrivilegeChanges</a>
-					<a class="permalink" href="#DetectPrivilegeChanges">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func DetectPrivilegeChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, storageCh chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
-				
-				
-				
-			
-				
-				<h3 id="DetectSprocChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L50">DetectSprocChanges</a>
-					<a class="permalink" href="#DetectSprocChanges">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func DetectSprocChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, storageCh chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
-				
-				
-				
-			
-				
-				<h3 id="DetectTableChanges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L133">DetectTableChanges</a>
-					<a class="permalink" href="#DetectTableChanges">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func DetectTableChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, storageCh chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
-				
-				
-				
-			
 
+			
+				
+				<h3 id="ChangeDetectionResults.String">func (*ChangeDetectionResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L72">String</a>
+					<a class="permalink" href="#ChangeDetectionResults.String">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (cdr *<a href="#ChangeDetectionResults">ChangeDetectionResults</a>) String() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="ChangeDetectionResults.Total">func (*ChangeDetectionResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L68">Total</a>
+					<a class="permalink" href="#ChangeDetectionResults.Total">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (cdr *<a href="#ChangeDetectionResults">ChangeDetectionResults</a>) Total() <a href="https://pkg.go.dev/builtin/#int">int</a></pre>
+				
+				
+				
+				
 			
 		
 			
 			
-			<h2 id="ConcurrentMetricDefs">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L20">ConcurrentMetricDefs</a>
+			<h2 id="ConcurrentMetricDefs">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L21">ConcurrentMetricDefs</a>
 				<a class="permalink" href="#ConcurrentMetricDefs">&#xb6;</a>
 				
 				
@@ -653,7 +628,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="NewConcurrentMetricDefs">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L25">NewConcurrentMetricDefs</a>
+				<h3 id="NewConcurrentMetricDefs">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L26">NewConcurrentMetricDefs</a>
 					<a class="permalink" href="#NewConcurrentMetricDefs">&#xb6;</a>
 					
 					
@@ -666,7 +641,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="ConcurrentMetricDefs.Assign">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L54">Assign</a>
+				<h3 id="ConcurrentMetricDefs.Assign">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L55">Assign</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.Assign">&#xb6;</a>
 					
 					
@@ -678,7 +653,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="ConcurrentMetricDefs.GetMetricDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L34">GetMetricDef</a>
+				<h3 id="ConcurrentMetricDefs.GetMetricDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L35">GetMetricDef</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.GetMetricDef">&#xb6;</a>
 					
 					
@@ -690,7 +665,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="ConcurrentMetricDefs.GetPresetDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L41">GetPresetDef</a>
+				<h3 id="ConcurrentMetricDefs.GetPresetDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L42">GetPresetDef</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.GetPresetDef">&#xb6;</a>
 					
 					
@@ -702,7 +677,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="ConcurrentMetricDefs.GetPresetMetrics">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L48">GetPresetMetrics</a>
+				<h3 id="ConcurrentMetricDefs.GetPresetMetrics">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L49">GetPresetMetrics</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.GetPresetMetrics">&#xb6;</a>
 					
 					
@@ -716,7 +691,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L67">ExistingPartitionInfo</a>
+			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L76">ExistingPartitionInfo</a>
 				<a class="permalink" href="#ExistingPartitionInfo">&#xb6;</a>
 				
 				
@@ -846,7 +821,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="Reaper.AddSysinfoToMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L450">AddSysinfoToMeasurements</a>
+				<h3 id="Reaper.AddSysinfoToMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L449">AddSysinfoToMeasurements</a>
 					<a class="permalink" href="#Reaper.AddSysinfoToMeasurements">&#xb6;</a>
 					
 					
@@ -858,19 +833,19 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="Reaper.CheckForPGObjectChangesAndStore">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L458">CheckForPGObjectChangesAndStore</a>
+				<h3 id="Reaper.CheckForPGObjectChangesAndStore">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L463">CheckForPGObjectChangesAndStore</a>
 					<a class="permalink" href="#Reaper.CheckForPGObjectChangesAndStore">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) CheckForPGObjectChangesAndStore(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dbUnique <a href="https://pkg.go.dev/builtin/#string">string</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) CheckForPGObjectChangesAndStore(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>)</pre>
 				
 				
 				
 				
 			
 				
-				<h3 id="Reaper.CloseResourcesForRemovedMonitoredDBs">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L559">CloseResourcesForRemovedMonitoredDBs</a>
+				<h3 id="Reaper.CloseResourcesForRemovedMonitoredDBs">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L563">CloseResourcesForRemovedMonitoredDBs</a>
 					<a class="permalink" href="#Reaper.CloseResourcesForRemovedMonitoredDBs">&#xb6;</a>
 					
 					
@@ -895,12 +870,72 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="Reaper.FetchMetric">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L461">FetchMetric</a>
+				<h3 id="Reaper.DetectConfigurationChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L375">DetectConfigurationChanges</a>
+					<a class="permalink" href="#Reaper.DetectConfigurationChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) DetectConfigurationChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Reaper.DetectIndexChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L212">DetectIndexChanges</a>
+					<a class="permalink" href="#Reaper.DetectIndexChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) DetectIndexChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Reaper.DetectPrivilegeChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L294">DetectPrivilegeChanges</a>
+					<a class="permalink" href="#Reaper.DetectPrivilegeChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) DetectPrivilegeChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Reaper.DetectSprocChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L50">DetectSprocChanges</a>
+					<a class="permalink" href="#Reaper.DetectSprocChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) DetectSprocChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>) (changeCounts <a href="#ChangeDetectionResults">ChangeDetectionResults</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Reaper.DetectTableChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L129">DetectTableChanges</a>
+					<a class="permalink" href="#Reaper.DetectTableChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) DetectTableChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Reaper.FetchMetric">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L460">FetchMetric</a>
 					<a class="permalink" href="#Reaper.FetchMetric">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) FetchMetric(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, hostState map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>) (_ *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func (r *<a href="#Reaper">Reaper</a>) FetchMetric(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>) (_ *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
@@ -919,7 +954,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="Reaper.GetInstanceUpMeasurement">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L443">GetInstanceUpMeasurement</a>
+				<h3 id="Reaper.GetInstanceUpMeasurement">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/database.go.html#L448">GetInstanceUpMeasurement</a>
 					<a class="permalink" href="#Reaper.GetInstanceUpMeasurement">&#xb6;</a>
 					
 					
@@ -933,7 +968,7 @@ used to detect if the instance is up or down
 				
 			
 				
-				<h3 id="Reaper.LoadMetrics">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L73">LoadMetrics</a>
+				<h3 id="Reaper.LoadMetrics">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html#L82">LoadMetrics</a>
 					<a class="permalink" href="#Reaper.LoadMetrics">&#xb6;</a>
 					
 					
@@ -946,7 +981,7 @@ used to detect if the instance is up or down
 				
 			
 				
-				<h3 id="Reaper.LoadSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L371">LoadSources</a>
+				<h3 id="Reaper.LoadSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L370">LoadSources</a>
 					<a class="permalink" href="#Reaper.LoadSources">&#xb6;</a>
 					
 					
@@ -1012,7 +1047,7 @@ start or stop the gatherers accordingly.
 				
 			
 				
-				<h3 id="Reaper.WriteMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L436">WriteMeasurements</a>
+				<h3 id="Reaper.WriteMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L435">WriteMeasurements</a>
 					<a class="permalink" href="#Reaper.WriteMeasurements">&#xb6;</a>
 					
 					
@@ -1025,7 +1060,7 @@ start or stop the gatherers accordingly.
 				
 			
 				
-				<h3 id="Reaper.WriteMonitoredSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L408">WriteMonitoredSources</a>
+				<h3 id="Reaper.WriteMonitoredSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L407">WriteMonitoredSources</a>
 					<a class="permalink" href="#Reaper.WriteMonitoredSources">&#xb6;</a>
 					
 					
