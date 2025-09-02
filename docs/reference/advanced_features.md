@@ -141,6 +141,5 @@ plain removed. Thus, to reduce server log errors and save time on
 experimenting there are following presets available:
 
 - **aws** - for standard AWS RDS managed PostgreSQL databases
-- **aurora** - for AWS Aurora managed PostgreSQL service
 - **azure** - for Azure Database for PostgreSQL managed databases
 - **gce** - for Google Cloud SQL for PostgreSQL managed databases

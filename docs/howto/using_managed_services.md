@@ -27,58 +27,58 @@ such a use case.
 pgwatch has been tested to work with the following managed database
 services:
 
-# Google Cloud SQL for PostgreSQL
+## Google Cloud SQL for PostgreSQL
 
--   No Python / OS helpers possible. OS metrics can be integrated in
+- No Python / OS helpers possible. OS metrics can be integrated in
     Grafana though using the
     [Stackdriver](https://grafana.com/docs/grafana/latest/datasources/google-cloud-monitoring/)
     data source.
--   `pg_monitor` system role available.
--   pgwatch default preset name: `gce`.
--   Documentation: <https://cloud.google.com/sql/docs/postgres>
+- `pg_monitor` system role available.
+- pgwatch default preset name: `gce`.
+- Documentation: <https://cloud.google.com/sql/docs/postgres>
 
 To get most out pgwatch on GCE you need some additional clicks in the
 GUI / Cloud Console "Flags" section to enable some common PostgreSQL
 monitoring parameters like `track_io_timing` and `track_functions`.
 
-# Amazon RDS for PostgreSQL
+## Amazon RDS for PostgreSQL
 
--   No Python / OS helpers possible. OS metrics can be integrated in
+- No Python / OS helpers possible. OS metrics can be integrated in
     Grafana though using the
     [CloudWatch](https://grafana.com/docs/grafana/latest/datasources/cloudwatch/)
     data source
 
--   `pg_monitor` system role available.
+- `pg_monitor` system role available.
 
--   pgwatch default preset names: `rds`, `aurora`
+- pgwatch default preset names: `rds`
 
--   Documentation:
-    
+- Documentation:
+
     <https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html>
     <https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.AuroraPostgreSQL.html>
 
 Note that the AWS Aurora PostgreSQL-compatible engine is missing some
 additional metrics compared to normal RDS.
 
-# Azure Database for PostgreSQL
+## Azure Database for PostgreSQL
 
--   No Python / OS helpers possible. OS metrics can be integrated in
+- No Python / OS helpers possible. OS metrics can be integrated in
     Grafana though using the [Azure
     Monitor](https://grafana.com/docs/grafana/latest/datasources/azuremonitor/)
     data source
--   `pg_monitor` system role available.
--   pgwatch default preset name: `azure`
--   Documentation: <https://docs.microsoft.com/en-us/azure/postgresql/>
+- `pg_monitor` system role available.
+- pgwatch default preset name: `azure`
+- Documentation: <https://docs.microsoft.com/en-us/azure/postgresql/>
 
 Surprisingly on Azure some file access functions are whitelisted, thus
 one can for example use the `wal_size` metrics.
 
 !!! Note
     By default Azure has **pg_stat_statements** not fully activated by
-    default, so you need to enable it manually or via the API. Documentation
-    link [here](https://docs.microsoft.com/en-us/azure/postgresql/howto-optimize-query-stats-collection).
+    default, so you need to enable it manually or via the API.
+    Documentation: <https://docs.microsoft.com/en-us/azure/postgresql/howto-optimize-query-stats-collection>
 
-# Aiven for PostgreSQL
+## Aiven for PostgreSQL
 
 The [Aiven developer
 documentation](https://aiven.io/docs/products/postgresql/howto/monitor-with-pgwatch2)
