@@ -2008,7 +2008,6 @@
   "schemaVersion": 41,
   "tags": [
     "pgwatch",
-    "postgres",
     "prometheus"
   ],
   "templating": {
@@ -2042,7 +2041,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Health-check",
+  "title": "Health-check (Prometheus)",
   "uid": "health-check-prometheus",
   "version": 1
 }

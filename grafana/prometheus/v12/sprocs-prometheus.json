@@ -873,10 +873,7 @@
   "schemaVersion": 39,
   "tags": [
     "pgwatch",
-    "prometheus",
-    "functions",
-    "procedures",
-    "performance"
+    "prometheus"
   ],
   "templating": {
     "list": [

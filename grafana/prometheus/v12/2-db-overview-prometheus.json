@@ -2502,7 +2502,6 @@
   "schemaVersion": 41,
   "tags": [
     "pgwatch",
-    "postgres",
     "prometheus"
   ],
   "templating": {

@@ -743,10 +743,7 @@
   "schemaVersion": 39,
   "tags": [
     "pgwatch",
-    "prometheus",
-    "queries",
-    "calls",
-    "performance"
+    "prometheus"
   ],
   "templating": {
     "list": [

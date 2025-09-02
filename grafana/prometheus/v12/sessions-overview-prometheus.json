@@ -726,7 +726,6 @@
   "schemaVersion": 41,
   "tags": [
     "pgwatch",
-    "postgres",
     "prometheus"
   ],
   "templating": {
@@ -821,7 +820,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Sessions overview",
+  "title": "Sessions overview (Prometheus)",
   "uid": "sesions-prometheus",
   "version": 1
 }

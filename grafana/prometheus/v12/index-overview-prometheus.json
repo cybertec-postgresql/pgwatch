@@ -703,8 +703,7 @@
   "schemaVersion": 39,
   "tags": [
     "pgwatch",
-    "prometheus",
-    "indexes"
+    "prometheus"
   ],
   "templating": {
     "list": [

@@ -815,9 +815,7 @@
   "schemaVersion": 39,
   "tags": [
     "pgwatch",
-    "prometheus",
-    "system",
-    "resources"
+    "prometheus"
   ],
   "templating": {
     "list": [

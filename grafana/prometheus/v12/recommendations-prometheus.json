@@ -784,9 +784,7 @@
   "schemaVersion": 39,
   "tags": [
     "pgwatch",
-    "prometheus",
-    "recommendations",
-    "optimization"
+    "prometheus"
   ],
   "templating": {
     "list": [

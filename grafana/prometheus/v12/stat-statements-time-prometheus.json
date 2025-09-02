@@ -929,10 +929,7 @@
   "schemaVersion": 39,
   "tags": [
     "pgwatch",
-    "prometheus",
-    "queries",
-    "time",
-    "performance"
+    "prometheus"
   ],
   "templating": {
     "list": [

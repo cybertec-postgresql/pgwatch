@@ -678,8 +678,7 @@
   "schemaVersion": 39,
   "tags": [
     "pgwatch",
-    "prometheus",
-    "tables"
+    "prometheus"
   ],
   "templating": {
     "list": [
@@ -757,7 +756,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "4 - Tables Overview (Prometheus)",
+  "title": "4. Tables Overview (Prometheus)",
   "uid": "tables-overview-prometheus",
   "version": 1,
   "weekStart": ""

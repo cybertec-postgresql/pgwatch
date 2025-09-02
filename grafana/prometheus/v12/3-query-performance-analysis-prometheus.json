@@ -742,9 +742,7 @@
   "schemaVersion": 39,
   "tags": [
     "pgwatch",
-    "postgres",
-    "prometheus",
-    "performance"
+    "prometheus"
   ],
   "templating": {
     "list": [
@@ -822,7 +820,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "3 - Query Performance Analysis (Prometheus)",
+  "title": "3. Query Performance Analysis (Prometheus)",
   "uid": "query-performance-analysis-prometheus",
   "version": 1,
   "weekStart": ""

@@ -802,8 +802,7 @@
   "schemaVersion": 39,
   "tags": [
     "pgwatch",
-    "prometheus",
-    "health"
+    "prometheus"
   ],
   "templating": {
     "list": [

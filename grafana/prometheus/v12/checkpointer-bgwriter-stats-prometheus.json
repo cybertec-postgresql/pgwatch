@@ -695,9 +695,7 @@
   "schemaVersion": 39,
   "tags": [
     "pgwatch",
-    "prometheus",
-    "checkpointer",
-    "bgwriter"
+    "prometheus"
   ],
   "templating": {
     "list": [
