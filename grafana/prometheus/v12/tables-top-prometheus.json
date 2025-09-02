@@ -914,7 +914,8 @@
   "schemaVersion": 41,
   "tags": [
     "pgwatch",
-    "postgres"
+    "postgres",
+    "prometheus"
   ],
   "templating": {
     "list": [
@@ -985,6 +986,6 @@
   "timepicker": {},
   "timezone": "",
   "title": "Tables top",
-  "uid": "179bd096-5ffb-4947-8f59-f94f188e3c8c",
+  "uid": "tables-top-prometheus",
   "version": 1
 }

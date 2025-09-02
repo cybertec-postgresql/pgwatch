@@ -742,6 +742,7 @@
   "schemaVersion": 39,
   "tags": [
     "pgwatch",
+    "postgres",
     "prometheus",
     "performance"
   ],
