@@ -277,7 +277,6 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 }
 
 func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceConn, metricName string) {
-	hostState := make(map[string]map[string]string)
 	var lastUptimeS int64 = -1 // used for "server restarted" event detection
 	var lastErrorNotificationTime time.Time
 	var err error
@@ -317,7 +316,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 		}
 		t1 := time.Now()
 		if metricStoreMessages == nil {
-			metricStoreMessages, err = r.FetchMetric(ctx, md, metricName, hostState)
+			metricStoreMessages, err = r.FetchMetric(ctx, md, metricName)
 		}
 
 		if time.Since(t1) > (time.Second * time.Duration(interval)) {
@@ -458,7 +457,7 @@ func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, md *sources
 	}
 }
 
-func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metricName string, hostState map[string]map[string]string) (_ *metrics.MeasurementEnvelope, err error) {
+func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metricName string) (_ *metrics.MeasurementEnvelope, err error) {
 	var sql string
 	var data metrics.Measurements
 	var metric metrics.Metric
@@ -483,7 +482,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 		}
 		switch metricName {
 		case specialMetricChangeEvents:
-			r.CheckForPGObjectChangesAndStore(ctx, md.Name, md, hostState)
+			r.CheckForPGObjectChangesAndStore(ctx, md)
 			return nil, nil
 		case specialMetricInstanceUp:
 			data, err = r.GetInstanceUpMeasurement(ctx, md)

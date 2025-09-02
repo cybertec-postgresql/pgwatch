@@ -1,6 +1,7 @@
 package reaper
 
 import (
+	"fmt"
 	"maps"
 	"sync"
 	"time"
@@ -62,6 +63,14 @@ type ChangeDetectionResults struct { // for passing around DDL/index/config chan
 	Created int
 	Altered int
 	Dropped int
+}
+
+func (cdr *ChangeDetectionResults) Total() int {
+	return cdr.Created + cdr.Altered + cdr.Dropped
+}
+
+func (cdr *ChangeDetectionResults) String() string {
+	return fmt.Sprintf("%d/%d/%d", cdr.Created, cdr.Altered, cdr.Dropped)
 }
 
 type ExistingPartitionInfo struct {
