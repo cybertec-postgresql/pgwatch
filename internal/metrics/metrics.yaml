@@ -3226,6 +3226,8 @@ metrics:
         description: >
             This metric collects approximate table bloat statistics using the `pgstattuple_approx` function.
             It provides insights into the amount of free space and dead tuples in tables, which can help in identifying bloat issues.
+        init_sql: |-
+            create extension if not exists pgstattuple;
         sqls:
             11: |-
                 select /* pgwatch_generated */
@@ -3251,6 +3253,8 @@ metrics:
         description: >
             This metric provides a summary of approximate table bloat statistics, including the total bloat size and percentage for the current database.
             It aggregates data from multiple tables to give an overview of bloat across the database.
+        init_sql: |-
+            create extension if not exists pgstattuple;
         sqls:
             11: |-
                 /* accessing pgstattuple_approx directly requires superuser or pg_stat_scan_tables/pg_monitor builtin roles or
@@ -3288,6 +3292,8 @@ metrics:
         description: >
             This metric provides a summary of approximate table bloat statistics, including the total bloat size and percentage for the current database.
             It aggregates data from multiple tables to give an overview of bloat across the database.
+        init_sql: |-
+            create extension if not exists pgstattuple;
         sqls:
             11: |
                 WITH q_bloat AS (
