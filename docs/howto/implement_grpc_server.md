@@ -17,5 +17,5 @@ their suitability for real production use. Its main purpose is to provide
 examples and building blocks that users can extend to integrate with pgwatch 
 and develop their own production-ready gRPC servers.
 
-You can refer to this short [tutorial](https://github.com/destrex271/pgwatch3_rpc_server/blob/main/TUTORIAL.md) 
+You can refer to this short [tutorial](https://github.com/cybertec-postgresql/pgwatch-contrib/blob/main/rpc/TUTORIAL.md) 
 for guidance on using pgwatch_rpc_server to implement a custom gRPC server sink.
