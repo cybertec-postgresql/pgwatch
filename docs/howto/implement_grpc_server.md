@@ -9,7 +9,7 @@ See also [gRPC Sink URI Parameters](../reference/sinks_options.md#grpc).
 
 ## pgwatch_rpc_server
 
-[pgwatch_rpc_server](https://github.com/destrex271/pgwatch3_rpc_server/) 
+[pgwatch-contrib/rpc](https://github.com/cybertec-postgresql/pgwatch-contrib/tree/main/rpc) 
 is a **community-maintained** collection of gRPC server implementations for pgwatch.
 
 It provides servers for common data solutions but makes no guarantees about 
