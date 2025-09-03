@@ -2502,7 +2502,7 @@
   "schemaVersion": 41,
   "tags": [
     "pgwatch",
-    "postgres"
+    "prometheus"
   ],
   "templating": {
     "list": [
@@ -2600,7 +2600,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "DB overview",
-  "uid": "d38735e1-a04f-4e05-a5ee-16e89401175b",
+  "title": "2. Database Overview (Prometheus)",
+  "uid": "database-overview-prometheus",
   "version": 1
 }

@@ -6,7 +6,7 @@ services:
     user: "0:0"
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: true
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/1-global-db-overview.json
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/postgres/1-global-db-overview.json
       GF_INSTALL_PLUGINS: marcusolsson-treemap-panel
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       # GF_FEATURE_TOGGLES_ENABLE: dashboardNewLayouts
@@ -17,14 +17,10 @@ services:
       - "../grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/pgwatch_dashboards.yml"
       # Uncomment the datasource version you want to use
       - "../grafana/postgres_datasource.yml:/etc/grafana/provisioning/datasources/postgres_datasource.yml"
-      # - "../grafana/prometheus_datasource.yml:/etc/grafana/provisioning/datasources/prometheus_datasource.yml"
+      - "../grafana/prometheus_datasource.yml:/etc/grafana/provisioning/datasources/prometheus_datasource.yml"
       # Uncomment the dashboard version you want to use and comment out the other one.
-      # - "../grafana/postgres/v10:/var/lib/grafana/dashboards"
-      # - "../grafana/postgres/v11:/var/lib/grafana/dashboards"
-      - "../grafana/postgres/v12:/var/lib/grafana/dashboards"
-      # - "../grafana/prometheus/v10:/var/lib/grafana/dashboards"
-      # - "../grafana/prometheus/v11:/var/lib/grafana/dashboards"
-      # - "../grafana/prometheus/v12:/var/lib/grafana/dashboards"
+      - "../grafana/postgres/v12:/var/lib/grafana/dashboards/postgres"
+      - "../grafana/prometheus/v12:/var/lib/grafana/dashboards/prometheus"
     depends_on:
       postgres:
         condition: service_healthy
