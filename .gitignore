@@ -31,3 +31,6 @@ debug
 
 # IntelliJ Idea settings
 .idea/
+
+# MCP and AI related output
+.playwright-mcp/
