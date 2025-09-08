@@ -190,7 +190,7 @@ pgwatch metric print-init psutil_cpu psutil_mem psutil_disk psutil_disk_io_total
     based on the Linux distro / Kernel version used, so small
     adjustments might be needed there (e.g. to remove a non-existent
     column). Minimum usable Kernel version required is 3.3.
-- When running the gatherer locally one can enable the `--direct-os-stats` 
+- When running the gatherer locally one can enable the `--direct-os-stats`
     parameter to signal that we can fetch the data for the default `psutil*` metrics
     directly from OS counters. If direct OS fetching fails though, the
     fallback is still to try via PL/Python wrappers.
@@ -206,17 +206,6 @@ pgwatch metric print-init psutil_cpu psutil_mem psutil_disk psutil_disk_io_total
     use the `--create-helpers` parameter to automatically create all
     needed helper functions in the monitored databases.
 
-## Running with developer credentials
-
-For developers with no means to install any wrappers as superuser, it's
-also possible to benefit from pgwatch. For such use cases the
-"unprivileged" preset metrics profile and the according "DB overview
-Unprivileged / Developer"
-![dashboard](../gallery/overview_developer.png)
-are a good starting point as it only assumes existence of
-`pg_stat_statements` (which should be available by all cloud
-providers).
-
 ## Different source types explained
 
 When adding a new "to be monitored" entry a *source type* needs to be
@@ -224,7 +213,7 @@ selected. Following types are available:
 
 ### *postgres*
 
-Monitor a single database on a single Postgres instance. Internally monitoring 
+Monitor a single database on a single Postgres instance. Internally monitoring
 always happens "per DB" not "per cluster" though.
 
 ### *postgres-continuous-discovery*
