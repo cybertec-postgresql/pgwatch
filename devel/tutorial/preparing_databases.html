@@ -936,15 +936,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-with-developer-credentials" class="md-nav__link">
-    <span class="md-ellipsis">
-      Running with developer credentials
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#different-source-types-explained" class="md-nav__link">
     <span class="md-ellipsis">
       Different source types explained
@@ -1719,15 +1710,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-with-developer-credentials" class="md-nav__link">
-    <span class="md-ellipsis">
-      Running with developer credentials
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#different-source-types-explained" class="md-nav__link">
     <span class="md-ellipsis">
       Different source types explained
@@ -1977,7 +1959,7 @@ providers like AWS RDS for security reasons.</p>
     based on the Linux distro / Kernel version used, so small
     adjustments might be needed there (e.g. to remove a non-existent
     column). Minimum usable Kernel version required is 3.3.</li>
-<li>When running the gatherer locally one can enable the <code>--direct-os-stats</code> 
+<li>When running the gatherer locally one can enable the <code>--direct-os-stats</code>
     parameter to signal that we can fetch the data for the default <code>psutil*</code> metrics
     directly from OS counters. If direct OS fetching fails though, the
     fallback is still to try via PL/Python wrappers.</li>
@@ -1994,20 +1976,11 @@ with a sufficient user account (e.g. a superuser) you can also
 use the <code>--create-helpers</code> parameter to automatically create all
 needed helper functions in the monitored databases.</p>
 </div>
-<h2 id="running-with-developer-credentials">Running with developer credentials</h2>
-<p>For developers with no means to install any wrappers as superuser, it's
-also possible to benefit from pgwatch. For such use cases the
-"unprivileged" preset metrics profile and the according "DB overview
-Unprivileged / Developer"
-<a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../gallery/overview_developer.png" data-desc-position="bottom"><img alt="dashboard" src="../gallery/overview_developer.png"></a>
-are a good starting point as it only assumes existence of
-<code>pg_stat_statements</code> (which should be available by all cloud
-providers).</p>
 <h2 id="different-source-types-explained">Different source types explained</h2>
 <p>When adding a new "to be monitored" entry a <em>source type</em> needs to be
 selected. Following types are available:</p>
 <h3 id="postgres"><em>postgres</em></h3>
-<p>Monitor a single database on a single Postgres instance. Internally monitoring 
+<p>Monitor a single database on a single Postgres instance. Internally monitoring
 always happens "per DB" not "per cluster" though.</p>
 <h3 id="postgres-continuous-discovery"><em>postgres-continuous-discovery</em></h3>
 <p>Monitor a whole (or subset of DB-s) of Postgres cluster / instance.
