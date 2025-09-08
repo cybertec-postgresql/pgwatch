@@ -1042,6 +1042,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/implement_grpc_server.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Implement Сustom gRPC Sink
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1639,6 +1662,9 @@
 
 
 <h1 id="sinks-options-parameters">Sinks Options &amp; Parameters</h1>
+<ul>
+<li>Sinks URIs should be provided to pgwatch via the <code>--sink</code> flag, which can be used more than once, see <a href="cli_env.html#sinks">CLI &amp; Envs</a>.</li>
+</ul>
 <h2 id="postgresql">PostgreSQL</h2>
 <p>The PostgreSQL sink URI format is the standard <a href="https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING-URIS">PostgreSQL connection string</a>,
 e.g.</p>
@@ -1661,7 +1687,7 @@ If you omit namespace, default is <code>pgwatch</code>.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>--sink<span class="o">=</span>grpc://user:pwd@host:port/?sslrootca<span class="o">=</span>/path/to/ca.crt
 </span></code></pre></div>
 <p>The gRPC sink supports optional <strong>authentication</strong> and <strong>TLS encryption</strong> over the RPC channel.</p>
-<p>For authentication credentials can be provided using the <code>username:password</code> format in the URI string,
+<p>For authentication, credentials can be provided using the <code>username:password</code> format in the URI string,
 e.g. <code>--sink=grpc://user:pwd@localhost:5000/</code>.
 If omitted, defaults to empty string for both username and password.
 The values are then forwarded to the gRPC server under the <code>"username"</code> and <code>"password"</code> fields in the metadata.</p>

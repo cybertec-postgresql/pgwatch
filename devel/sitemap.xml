@@ -57,6 +57,10 @@
          <lastmod>2025-09-08</lastmod>
     </url>
     <url>
+         <loc>https://pgwat.ch/devel/howto/implement_grpc_server.html</loc>
+         <lastmod>2025-09-08</lastmod>
+    </url>
+    <url>
          <loc>https://pgwat.ch/devel/howto/metrics_db_bootstrap.html</loc>
          <lastmod>2025-09-08</lastmod>
     </url>
