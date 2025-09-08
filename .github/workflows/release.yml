@@ -1,8 +1,12 @@
 name: Release
 
 permissions:
-  contents: read
+  contents: write
   packages: write
+  pages: write
+  deployments: write
+  pull-requests: write
+  issues: write
 
 on:
   release:
