@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION admin.ensure_partition_metric_dbname_time(
     metric text,
     dbname text,
     metric_timestamp timestamptz,
-    partitions_to_precreate int default 0,
+    partitions_to_precreate int default 3,
     OUT part_available_from timestamptz,
     OUT part_available_to timestamptz)
 RETURNS record AS
