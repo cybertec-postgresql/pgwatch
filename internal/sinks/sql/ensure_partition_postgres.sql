@@ -25,10 +25,17 @@ DECLARE
   l_sql text;
   ideal_length int;
   l_template_table text := 'admin.metrics_template';
+  l_partition_interval interval;
   MAX_IDENT_LEN CONSTANT integer := current_setting('max_identifier_length')::int;
 BEGIN
 
   PERFORM pg_advisory_xact_lock(regexp_replace( md5(metric) , E'\\D', '', 'g')::varchar(10)::int8);
+
+  -- Get the configurable partition interval
+  SELECT value::interval INTO l_partition_interval FROM admin.config WHERE key = 'postgres_partition_interval';
+  IF NOT FOUND THEN
+    l_partition_interval := '1 week'; -- Default fallback
+  END IF;
 
   -- 1. level
   IF NOT EXISTS (SELECT 1
@@ -65,26 +72,44 @@ BEGIN
   -- 3. level
   FOR i IN 0..partitions_to_precreate LOOP
 
-      l_year := extract(isoyear from (metric_timestamp + '1month'::interval * i));
-      l_week := extract(week from (metric_timestamp + '1week'::interval * i));
-
       IF i = 0 THEN
-          l_part_start := to_date(l_year::text || l_week::text, 'iyyyiw');
-          l_part_end := l_part_start + '1week'::interval;
+          l_part_start := date_trunc('day', metric_timestamp);
+          l_part_end := l_part_start + l_partition_interval;
           part_available_from := l_part_start;
           part_available_to := l_part_end;
       ELSE
-          l_part_start := l_part_start + '1week'::interval;
-          l_part_end := l_part_start + '1week'::interval;
+          l_part_start := l_part_start + l_partition_interval;
+          l_part_end := l_part_start + l_partition_interval;
           part_available_to := l_part_end;
       END IF;
 
-      l_part_name_3rd := format('%s_%s_y%sw%s', metric, dbname, l_year, to_char(l_week, 'fm00' ));
+      -- Generate partition name based on interval type (only 3 allowed intervals)
+      IF l_partition_interval = '1 day'::interval THEN
+          l_part_name_3rd := format('%s_%s_%s', metric, dbname, to_char(l_part_start, 'yyyymmdd'));
+      ELSIF l_partition_interval = '1 week'::interval THEN
+          l_year := extract(isoyear from l_part_start);
+          l_week := extract(week from l_part_start);
+          l_part_name_3rd := format('%s_%s_y%sw%s', metric, dbname, l_year, to_char(l_week, 'fm00' ));
+      ELSIF l_partition_interval = '1 month'::interval THEN
+          l_part_name_3rd := format('%s_%s_%s', metric, dbname, to_char(l_part_start, 'yyyymm'));
+      ELSE
+          -- This should never happen due to validation, but provide a fallback
+          RAISE EXCEPTION 'Unsupported partition interval: %. Only 1 day, 1 week, or 1 month are allowed.', l_partition_interval;
+      END IF;
 
       IF char_length(l_part_name_3rd) > MAX_IDENT_LEN     -- use "dbname" hash instead of name for overly long ones
       THEN
-          ideal_length = MAX_IDENT_LEN - char_length(format('%s__y%sw%s', metric, l_year, to_char(l_week, 'fm00')));
-          l_part_name_3rd := format('%s_%s_y%sw%s', metric, substring(md5(dbname) from 1 for ideal_length), l_year, to_char(l_week, 'fm00' ));
+          -- Calculate ideal length based on the naming pattern used (only 3 allowed intervals)
+          IF l_partition_interval = '1 day'::interval THEN
+              ideal_length = MAX_IDENT_LEN - char_length(format('%s__%s', metric, to_char(l_part_start, 'yyyymmdd')));
+              l_part_name_3rd := format('%s_%s_%s', metric, substring(md5(dbname) from 1 for ideal_length), to_char(l_part_start, 'yyyymmdd'));
+          ELSIF l_partition_interval = '1 week'::interval THEN
+              ideal_length = MAX_IDENT_LEN - char_length(format('%s__y%sw%s', metric, l_year, to_char(l_week, 'fm00')));
+              l_part_name_3rd := format('%s_%s_y%sw%s', metric, substring(md5(dbname) from 1 for ideal_length), l_year, to_char(l_week, 'fm00' ));
+          ELSIF l_partition_interval = '1 month'::interval THEN
+              ideal_length = MAX_IDENT_LEN - char_length(format('%s__%s', metric, to_char(l_part_start, 'yyyymm')));
+              l_part_name_3rd := format('%s_%s_%s', metric, substring(md5(dbname) from 1 for ideal_length), to_char(l_part_start, 'yyyymm'));
+          END IF;
       END IF;
 
       IF NOT EXISTS (SELECT 1

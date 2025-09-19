@@ -40,7 +40,7 @@ create table admin.all_distinct_dbname_metrics (
   primary key (dbname, metric)
 );
 
-/* currently only used to store TimescaleDB chunk interval */
+/* stores configuration for both TimescaleDB and PostgreSQL native partitioning */
 create table admin.config (
     key               text        not null primary key,
     value             text        not null,
@@ -48,10 +48,11 @@ create table admin.config (
     last_modified_on  timestamptz
 );
 
--- to later change the value call the admin.change_timescale_chunk_interval(interval) function!
--- as changing the row directly will only be effective for completely new tables (metrics).
+-- to later change the values call the respective change functions!
+-- as changing the rows directly will only be effective for completely new tables (metrics).
 insert into admin.config select 'timescale_chunk_interval', '2 days';
 insert into admin.config select 'timescale_compress_interval', '1 day';
+insert into admin.config select 'postgres_partition_interval', '1 week';
 
 create or replace function trg_config_modified() returns trigger
 as $$
