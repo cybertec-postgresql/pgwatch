@@ -107,6 +107,8 @@ COPY docker/demo/postgresql.conf /etc/postgresql/pgwatch_postgresql.conf
 
 ENV PW_SOURCES=postgresql://pgwatch:pgwatchadmin@localhost:5432/pgwatch
 ENV PW_SINK=postgresql://pgwatch:pgwatchadmin@localhost:5432/pgwatch_metrics
+ENV PW_RETENTION=7
+ENV PW_PARTITION_INTERVAL=1 month
 ENV POSTGRES_PASSWORD=mysecretpassword
 
 # Admin UI for configuring servers to be monitored
