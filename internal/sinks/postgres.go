@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -55,6 +56,17 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 				return err
 			}
 		}
+
+		// Set partition interval from CLI/env configuration during initialization
+		if pgw.opts.PartitionInterval != "" {
+			sql := `INSERT INTO admin.config (key, value) VALUES ('postgres_partition_interval', $1)
+					ON CONFLICT (key) DO UPDATE SET value = $1`
+			if _, err = conn.Exec(ctx, sql, pgw.opts.PartitionInterval); err != nil {
+				return fmt.Errorf("failed to set partition interval from CLI/env config during initialization: %w", err)
+			}
+			l.Infof("Set PostgreSQL partition interval to: %s (from CLI/env configuration during initialization)", pgw.opts.PartitionInterval)
+		}
+
 		return nil
 	}); err != nil {
 		return
@@ -90,6 +102,9 @@ var sqlMetricChangeChunkIntervalTimescale string
 //go:embed sql/change_compression_interval.sql
 var sqlMetricChangeCompressionIntervalTimescale string
 
+//go:embed sql/change_partition_interval.sql
+var sqlMetricChangePartitionIntervalPostgres string
+
 var (
 	metricSchemaSQLs = []string{
 		sqlMetricAdminSchema,
@@ -98,6 +113,7 @@ var (
 		sqlMetricEnsurePartitionTimescale,
 		sqlMetricChangeChunkIntervalTimescale,
 		sqlMetricChangeCompressionIntervalTimescale,
+		sqlMetricChangePartitionIntervalPostgres,
 	}
 )
 
@@ -620,4 +636,42 @@ func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric stri
 			)`
 	_, err := pgw.sinkDb.Exec(pgw.ctx, sql, dbUnique, metric)
 	return err
+}
+
+// extractParentTableFromPartition extracts the parent table name from a partition name
+// Supports only the 3 allowed partition naming patterns: daily, weekly, monthly
+func (pgw *PostgresWriter) extractParentTableFromPartition(partitionName string) string {
+	// Remove the schema prefix if present
+	partitionName = strings.TrimPrefix(partitionName, "subpartitions.")
+
+	// Try the 3 allowed patterns based on partition naming conventions
+	// Pattern 1: Daily partitions (_20240101)
+	reDaily := regexp.MustCompile(`_\d{8}$`)
+	if reDaily.MatchString(partitionName) {
+		parentTable := reDaily.ReplaceAllString(partitionName, "")
+		return "subpartitions." + parentTable
+	}
+
+	// Pattern 2: Weekly partitions (_y2024w01)
+	reWeekly := regexp.MustCompile(`_y\d{4}w\d{2}$`)
+	if reWeekly.MatchString(partitionName) {
+		parentTable := reWeekly.ReplaceAllString(partitionName, "")
+		return "subpartitions." + parentTable
+	}
+
+	// Pattern 3: Monthly partitions (_202401)
+	reMonthly := regexp.MustCompile(`_\d{6}$`)
+	if reMonthly.MatchString(partitionName) {
+		parentTable := reMonthly.ReplaceAllString(partitionName, "")
+		return "subpartitions." + parentTable
+	}
+
+	// Fallback: try to find the last underscore and remove everything after it
+	if lastUnderscore := strings.LastIndex(partitionName, "_"); lastUnderscore != -1 {
+		parentTable := partitionName[:lastUnderscore]
+		return "subpartitions." + parentTable
+	}
+
+	// If no pattern matches, return as-is (shouldn't happen in normal operation)
+	return "subpartitions." + partitionName
 }
