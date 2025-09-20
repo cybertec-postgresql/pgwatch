@@ -171,7 +171,7 @@ BEGIN
         raise notice 'would detach and drop old time sub-partition: % from parent: %', r.time_partition_name, r.parent_table_name;
       else
         raise notice 'detaching old time sub-partition: % from parent: %', r.time_partition_name, r.parent_table_name;
-        EXECUTE 'ALTER TABLE ' || r.parent_table_name || ' DETACH PARTITION ' || r.time_partition_name || ' CONCURRENTLY';
+        EXECUTE 'ALTER TABLE ' || r.parent_table_name || ' DETACH PARTITION ' || r.time_partition_name;
         
         raise notice 'dropping detached table: %', r.time_partition_name;
         EXECUTE 'DROP TABLE IF EXISTS ' || r.time_partition_name;
