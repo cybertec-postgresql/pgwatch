@@ -474,26 +474,47 @@ func (pgw *PostgresWriter) deleteOldPartitions(delay time.Duration) {
 			}
 			logger.Infof("Dropped %d old metric partitions...", partsDropped)
 		} else if pgw.metricSchema == DbStorageSchemaPostgres {
+			// Get the list of old time partitions according to the interval specified in the retention policy.
+			// The function is rolled out with the admin.get_old_time_partitions() function.
 			partsToDrop, err := pgw.GetOldTimePartitions(metricAgeDaysThreshold)
 			if err != nil {
 				logger.Errorf("Failed to get a listing of old (>%d days) time partitions from Postgres metrics DB - check that the admin.get_old_time_partitions() function is rolled out: %v", metricAgeDaysThreshold, err)
 				time.Sleep(time.Second * 300)
 				continue
 			}
+			// If there are any old time partitions, detach and drop them one by one.
 			if len(partsToDrop) > 0 {
-				logger.Infof("Dropping %d old metric partitions one by one...", len(partsToDrop))
+				logger.Infof("Detaching and dropping %d old metric partitions one by one...", len(partsToDrop))
 				for _, toDrop := range partsToDrop {
-					sqlDropTable := `DROP TABLE IF EXISTS ` + toDrop
+					// Extract the parent table name for the partition.
+					parentTable, err := pgw.getParentTableForPartition(toDrop)
+					if err != nil {
+						logger.Errorf("Failed to get parent table for partition %s: %v", toDrop, err)
+						time.Sleep(time.Second * 5)
+						continue
+					}
+					// Detach the partition by a native SQL function.
+					// Because it's not possible to detach a partition concurrently inside a function.
+					sqlDetachPartition := fmt.Sprintf(`ALTER TABLE %s DETACH PARTITION %s CONCURRENTLY`, parentTable, toDrop)
+					if _, err := pgw.sinkDb.Exec(pgw.ctx, sqlDetachPartition); err != nil {
+						logger.Errorf("Failed to detach partition %s from parent %s: %v", toDrop, parentTable, err)
+						time.Sleep(time.Second * 300)
+						continue
+					}
+					logger.Infof("Detached partition: %s from parent: %s", toDrop, parentTable)
 
+					// Drop the detached table.
+					sqlDropTable := `DROP TABLE IF EXISTS ` + toDrop
 					if _, err := pgw.sinkDb.Exec(pgw.ctx, sqlDropTable); err != nil {
-						logger.Errorf("Failed to drop old partition %s from Postgres metrics DB: %w", toDrop, err)
+						logger.Errorf("Failed to drop detached table %s: %v", toDrop, err)
 						time.Sleep(time.Second * 300)
 					} else {
+						logger.Infof("Dropped detached table: %s", toDrop)
 						time.Sleep(time.Second * 5)
 					}
 				}
 			} else {
-				logger.Infof("No old metric partitions found to drop...")
+				logger.Infof("No old metric partitions found to detach and drop...")
 			}
 		}
 		select {
@@ -610,6 +631,28 @@ func (pgw *PostgresWriter) GetOldTimePartitions(metricAgeDaysThreshold int) ([]s
 		return pgx.CollectRows(rows, pgx.RowTo[string])
 	}
 	return nil, err
+}
+
+// getParentTableForPartition finds the parent table for a given partition name
+func (pgw *PostgresWriter) getParentTableForPartition(partitionName string) (string, error) {
+	// Remove schema prefix if present for the query
+	tableName := strings.TrimPrefix(partitionName, "subpartitions.")
+
+	sql := `
+		SELECT 'subpartitions.' || quote_ident(c2.relname) as parent_table_name
+		FROM pg_class c
+		JOIN pg_inherits i ON c.oid = i.inhrelid
+		JOIN pg_class c2 ON i.inhparent = c2.oid
+		JOIN pg_namespace n ON n.oid = c.relnamespace
+		WHERE c.relname = $1 AND n.nspname = 'subpartitions'`
+
+	var parentTable string
+	err := pgw.sinkDb.QueryRow(pgw.ctx, sql, tableName).Scan(&parentTable)
+	if err != nil {
+		return "", fmt.Errorf("failed to find parent table for partition %s: %w", partitionName, err)
+	}
+
+	return parentTable, nil
 }
 
 func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
