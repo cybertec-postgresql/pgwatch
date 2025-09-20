@@ -475,50 +475,15 @@ func (pgw *PostgresWriter) deleteOldPartitions(delay time.Duration) {
 			}
 			logger.Infof("Dropped %d old metric partitions...", partsDropped)
 		} else if pgw.metricSchema == DbStorageSchemaPostgres {
-			partsToDrop, err := pgw.GetOldTimePartitions(metricAgeDaysThreshold)
+			// Use the same function for Postgres as TimescaleDB schema.
+			// The function now handles detach + drop in one call.
+			partsDropped, err := pgw.DropOldTimePartitions(metricAgeDaysThreshold)
 			if err != nil {
-				logger.Errorf("Failed to get a listing of old (>%d days) time partitions from Postgres metrics DB - check that the admin.get_old_time_partitions() function is rolled out: %v", metricAgeDaysThreshold, err)
-				time.Sleep(time.Second * 300)
+				logger.Errorf("Failed to drop old partitions (>%d days) from Postgres: %v", metricAgeDaysThreshold, err)
 				continue
 			}
-			if len(partsToDrop) > 0 {
-				logger.Infof("Processing %d old metric partitions in two steps: detach concurrently, then drop...", len(partsToDrop))
-
-				// Phase 1: Detach partitions concurrently. We already generated the list of partitoned table can be dropped.
-				// Instead of dropping the partitions, they will be detached concurrently.
-				logger.Infof("Step 1: Detaching %d partitions concurrently...", len(partsToDrop))
-				detachedPartitions := make([]string, 0, len(partsToDrop))
-
-				for _, toDetach := range partsToDrop {
-					parentTable := pgw.extractParentTableFromPartition(toDetach)
-					sqlDetachPartition := `ALTER TABLE ` + parentTable + ` DETACH PARTITION CONCURRENTLY ` + toDetach
-
-					if _, err := pgw.sinkDb.Exec(pgw.ctx, sqlDetachPartition); err != nil {
-						logger.Errorf("Failed to detach partition %s from Postgres metrics DB: %w", toDetach, err)
-						time.Sleep(time.Second * 300)
-					} else {
-						logger.Infof("Successfully detached partition %s", toDetach)
-						detachedPartitions = append(detachedPartitions, toDetach)
-						time.Sleep(time.Second * 2) // Shorter delay for detach operations
-					}
-				}
-
-				// Phase 2: Drop already detached partitions
-				// No need to use concurrent drop, as the partitions are already detached.
-				if len(detachedPartitions) > 0 {
-					logger.Infof("Step 2: Dropping %d detached tables...", len(detachedPartitions))
-					for _, toDrop := range detachedPartitions {
-						sqlDropTable := `DROP TABLE IF EXISTS ` + toDrop
-
-						if _, err := pgw.sinkDb.Exec(pgw.ctx, sqlDropTable); err != nil {
-							logger.Errorf("Failed to drop detached table %s from Postgres metrics DB: %w", toDrop, err)
-							time.Sleep(time.Second * 300)
-						} else {
-							logger.Infof("Successfully dropped detached table %s", toDrop)
-							time.Sleep(time.Second * 3) // Slightly longer delay for drop operations
-						}
-					}
-				}
+			if partsDropped > 0 {
+				logger.Infof("Dropped %d old metric partitions using SQL function...", partsDropped)
 			} else {
 				logger.Infof("No old metric partitions found to detach and drop...")
 			}
