@@ -479,7 +479,7 @@ func (pgw *PostgresWriter) deleteOldPartitions(delay time.Duration) {
 			partsToDrop, err := pgw.GetOldTimePartitions(metricAgeDaysThreshold)
 			if err != nil {
 				logger.Errorf("Failed to get a listing of old (>%d days) time partitions from Postgres metrics DB - check that the admin.get_old_time_partitions() function is rolled out: %v", metricAgeDaysThreshold, err)
-				time.Sleep(time.Second * 1)
+				time.Sleep(time.Second * 300)
 				continue
 			}
 			// If there are any old time partitions, detach and drop them one by one.
@@ -490,7 +490,7 @@ func (pgw *PostgresWriter) deleteOldPartitions(delay time.Duration) {
 					parentTable, err := pgw.getParentTableForPartition(toDrop)
 					if err != nil {
 						logger.Errorf("Failed to get parent table for partition %s: %v", toDrop, err)
-						time.Sleep(time.Second * 1)
+						time.Sleep(time.Second * 5)
 						continue
 					}
 					// Detach the partition by a native SQL function.
@@ -498,7 +498,7 @@ func (pgw *PostgresWriter) deleteOldPartitions(delay time.Duration) {
 					sqlDetachPartition := fmt.Sprintf(`ALTER TABLE %s DETACH PARTITION %s CONCURRENTLY`, parentTable, toDrop)
 					if _, err := pgw.sinkDb.Exec(pgw.ctx, sqlDetachPartition); err != nil {
 						logger.Errorf("Failed to detach partition %s from parent %s: %v", toDrop, parentTable, err)
-						time.Sleep(time.Second * 1)
+						time.Sleep(time.Second * 300)
 						continue
 					}
 					logger.Infof("Detached partition: %s from parent: %s", toDrop, parentTable)
@@ -507,10 +507,10 @@ func (pgw *PostgresWriter) deleteOldPartitions(delay time.Duration) {
 					sqlDropTable := `DROP TABLE IF EXISTS ` + toDrop
 					if _, err := pgw.sinkDb.Exec(pgw.ctx, sqlDropTable); err != nil {
 						logger.Errorf("Failed to drop detached table %s: %v", toDrop, err)
-						time.Sleep(time.Second * 1)
+						time.Sleep(time.Second * 300)
 					} else {
 						logger.Infof("Dropped detached table: %s", toDrop)
-						time.Sleep(time.Second * 1)
+						time.Sleep(time.Second * 5)
 					}
 				}
 			} else {
