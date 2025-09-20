@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -602,22 +601,6 @@ func (pgw *PostgresWriter) GetOldTimePartitions(metricAgeDaysThreshold int) ([]s
 		return pgx.CollectRows(rows, pgx.RowTo[string])
 	}
 	return nil, err
-}
-
-// extractParentTableFromPartition extracts the parent table name from a partition name
-// Partition names follow the pattern: subpartitions.metric_dbname_y2024w01
-// Parent table would be: subpartitions.metric_dbname
-func (pgw *PostgresWriter) extractParentTableFromPartition(partitionName string) string {
-	// Remove the schema prefix if present
-	partitionName = strings.TrimPrefix(partitionName, "subpartitions.")
-
-	// Use regex to find the year/week pattern and remove it
-	// Pattern: _y2024w01 or similar time-based suffixes
-	re := regexp.MustCompile(`_y\d{4}w\d{2}$`)
-	parentTable := re.ReplaceAllString(partitionName, "")
-
-	// Add back the schema prefix
-	return "subpartitions." + parentTable
 }
 
 func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
