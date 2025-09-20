@@ -204,5 +204,10 @@ func (c *Options) ValidateConfig() error {
 		return errors.New("--batching-delay-ms must be between 0 and 1h")
 	}
 
+	// validate partition interval
+	if c.Sinks.PartitionInterval != "" && c.Sinks.PartitionInterval != "1 day" && c.Sinks.PartitionInterval != "1 week" && c.Sinks.PartitionInterval != "1 month" {
+		return errors.New("--partition-interval must be exactly '1 day', '1 week', or '1 month'")
+	}
+
 	return nil
 }

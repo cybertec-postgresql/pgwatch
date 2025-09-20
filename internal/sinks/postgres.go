@@ -55,6 +55,17 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 				return err
 			}
 		}
+
+		// Set partition interval from CLI/env configuration during initialization
+		if pgw.opts.PartitionInterval != "" {
+			sql := `INSERT INTO admin.config (key, value) VALUES ('postgres_partition_interval', $1)
+					ON CONFLICT (key) DO UPDATE SET value = $1`
+			if _, err = conn.Exec(ctx, sql, pgw.opts.PartitionInterval); err != nil {
+				return fmt.Errorf("failed to set partition interval from CLI/env config during initialization: %w", err)
+			}
+			l.Infof("Set PostgreSQL partition interval to: %s (from CLI/env configuration during initialization)", pgw.opts.PartitionInterval)
+		}
+
 		return nil
 	}); err != nil {
 		return
@@ -90,6 +101,9 @@ var sqlMetricChangeChunkIntervalTimescale string
 //go:embed sql/change_compression_interval.sql
 var sqlMetricChangeCompressionIntervalTimescale string
 
+//go:embed sql/change_partition_interval.sql
+var sqlMetricChangePartitionIntervalPostgres string
+
 var (
 	metricSchemaSQLs = []string{
 		sqlMetricAdminSchema,
@@ -98,6 +112,7 @@ var (
 		sqlMetricEnsurePartitionTimescale,
 		sqlMetricChangeChunkIntervalTimescale,
 		sqlMetricChangeCompressionIntervalTimescale,
+		sqlMetricChangePartitionIntervalPostgres,
 	}
 )
 
