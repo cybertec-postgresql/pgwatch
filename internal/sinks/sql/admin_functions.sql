@@ -122,6 +122,7 @@ $SQL$ LANGUAGE plpgsql;
 
 -- drop function if exists admin.drop_old_time_partitions(int,bool)
 -- select * from admin.drop_old_time_partitions(1, true);
+-- Note: This function uses a two-phase approach: DETACH PARTITION first, then DROP TABLE for safer partition removal
 CREATE OR REPLACE FUNCTION admin.drop_old_time_partitions(older_than_days int, dry_run boolean default true, schema_type text default '')
 RETURNS int AS
 $SQL$
@@ -139,9 +140,10 @@ BEGIN
   IF schema_type = 'postgres' THEN
 
     FOR r IN (
-      SELECT time_partition_name FROM (
+      SELECT time_partition_name, parent_table_name FROM (
         SELECT
             'subpartitions.' || quote_ident(c.relname) as time_partition_name,
+            'subpartitions.' || quote_ident(c2.relname) as parent_table_name,
             pg_catalog.pg_get_expr(c.relpartbound, c.oid) as limits,
             (regexp_match(pg_catalog.pg_get_expr(c.relpartbound, c.oid),
                 E'TO \\((''.*?'')'))[1]::timestamp < (current_date  - '1day'::interval * older_than_days) is_old
@@ -150,10 +152,12 @@ BEGIN
           JOIN
             pg_inherits i ON c.oid=i.inhrelid
             JOIN
-            pg_namespace n ON n.oid = relnamespace
+            pg_class c2 ON i.inhparent = c2.oid
+            JOIN
+            pg_namespace n ON n.oid = c.relnamespace
         WHERE
           c.relkind IN ('r', 'p')
-            AND nspname = 'subpartitions'
+            AND n.nspname = 'subpartitions'
             AND pg_catalog.obj_description(c.oid, 'pg_class') IN (
               'pgwatch-generated-metric-time-lvl',
               'pgwatch-generated-metric-dbname-time-lvl'
@@ -164,10 +168,13 @@ BEGIN
     )
     LOOP
       if dry_run then
-        raise notice 'would drop old time sub-partition: %', r.time_partition_name;
+        raise notice 'would detach and drop old time sub-partition: % from parent: %', r.time_partition_name, r.parent_table_name;
       else
-        raise notice 'dropping old time sub-partition: %', r.time_partition_name;
-        EXECUTE 'drop table ' || r.time_partition_name;
+        raise notice 'detaching old time sub-partition: % from parent: %', r.time_partition_name, r.parent_table_name;
+        EXECUTE 'ALTER TABLE ' || r.parent_table_name || ' DETACH PARTITION ' || r.time_partition_name;
+        
+        raise notice 'dropping detached table: %', r.time_partition_name;
+        EXECUTE 'DROP TABLE IF EXISTS ' || r.time_partition_name;
         i := i + 1;
       end if;
     END LOOP;
