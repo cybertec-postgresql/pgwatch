@@ -114,7 +114,7 @@
 <span id="L57" class="ln">    57  </span>		case sources.SourcePostgresContinuous:
 <span id="L58" class="ln">    58  </span>			_, e = sources.ResolveDatabasesFromPostgres(s)
 <span id="L59" class="ln">    59  </span>		default:
-<span id="L60" class="ln">    60  </span>			mdb := &amp;sources.SourceConn{Source: s}
+<span id="L60" class="ln">    60  </span>			mdb := sources.NewSourceConn(s)
 <span id="L61" class="ln">    61  </span>			e = mdb.Connect(context.Background(), cmd.owner.Sources)
 <span id="L62" class="ln">    62  </span>		}
 <span id="L63" class="ln">    63  </span>		if e != nil {

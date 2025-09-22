@@ -104,7 +104,7 @@
 <span id="L47" class="ln">    47  </span>	case SourcePostgresContinuous:
 <span id="L48" class="ln">    48  </span>		return ResolveDatabasesFromPostgres(s)
 <span id="L49" class="ln">    49  </span>	}
-<span id="L50" class="ln">    50  </span>	return SourceConns{&amp;SourceConn{Source: s}}, nil
+<span id="L50" class="ln">    50  </span>	return SourceConns{NewSourceConn(s)}, nil
 <span id="L51" class="ln">    51  </span>}
 <span id="L52" class="ln">    52  </span>
 <span id="L53" class="ln">    53  </span>type PatroniClusterMember struct {
@@ -386,7 +386,7 @@
 <span id="L329" class="ln">   329  </span>		if err = rows.Scan(&amp;dbname); err != nil {
 <span id="L330" class="ln">   330  </span>			return nil, err
 <span id="L331" class="ln">   331  </span>		}
-<span id="L332" class="ln">   332  </span>		rdb := &amp;SourceConn{Source: *s.Clone()}
+<span id="L332" class="ln">   332  </span>		rdb := NewSourceConn(*s.Clone())
 <span id="L333" class="ln">   333  </span>		rdb.Name += &#34;_&#34; + dbname
 <span id="L334" class="ln">   334  </span>		rdb.SetDatabaseName(dbname)
 <span id="L335" class="ln">   335  </span>		resolvedDbs = append(resolvedDbs, rdb)
