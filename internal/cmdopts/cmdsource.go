@@ -57,7 +57,7 @@ func (cmd *SourcePingCommand) Execute(args []string) error {
 		case sources.SourcePostgresContinuous:
 			_, e = sources.ResolveDatabasesFromPostgres(s)
 		default:
-			mdb := &sources.SourceConn{Source: s}
+			mdb := sources.NewSourceConn(s)
 			e = mdb.Connect(context.Background(), cmd.owner.Sources)
 		}
 		if e != nil {
