@@ -37,7 +37,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Total time spent in queries per second",
       "fieldConfig": {
@@ -133,7 +134,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Average query execution time",
       "fieldConfig": {
@@ -246,7 +248,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Queries consuming the most total time",
       "fieldConfig": {
@@ -452,7 +455,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Query time trends for slowest queries",
       "fieldConfig": {
@@ -547,7 +551,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Time consumption distribution by database",
       "fieldConfig": {
@@ -626,7 +631,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Queries with high variance in execution time",
       "fieldConfig": {
@@ -819,7 +825,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Current performance summary",
       "fieldConfig": {

@@ -37,7 +37,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "CPU utilization breakdown by type",
       "fieldConfig": {
@@ -149,7 +150,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "System load averages (1, 5, 15 minutes)",
       "fieldConfig": {
@@ -266,7 +268,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Memory usage breakdown",
       "fieldConfig": {
@@ -371,7 +374,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Swap space usage",
       "fieldConfig": {
@@ -484,7 +488,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Disk space usage",
       "fieldConfig": {
@@ -584,7 +589,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Disk I/O operations and bytes transferred",
       "fieldConfig": {
@@ -697,7 +703,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Key system resource utilization metrics",
       "fieldConfig": {

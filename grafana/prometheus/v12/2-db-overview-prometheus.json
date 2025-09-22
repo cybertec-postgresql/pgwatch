@@ -24,7 +24,8 @@
   "panels": [
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Current Transaction Per Second",
       "fieldConfig": {
@@ -86,9 +87,10 @@
       "targets": [
         {
           "alias": "TPS",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "avg(rate(pgwatch_db_stats_xact_commit{dbname='$dbname'}[$agg_interval])) + avg(rate(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -137,7 +139,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Queries Per Second based on pg_stat_statements.calls. Can be smaller that TPS if transactions don't execute anything or don't make it to the pg_stat_statements top.",
       "fieldConfig": {
@@ -199,9 +202,10 @@
       "targets": [
         {
           "alias": "QPS",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "avg(rate(pgwatch_stat_statements_calls_calls{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -251,7 +255,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Approximate value based on pg_stat_statements total_time / calls",
       "fieldConfig": {
@@ -316,9 +321,10 @@
       "targets": [
         {
           "alias": "avg_query_runtime_per_db",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "avg(increase(pgwatch_stat_statements_calls_total_time{dbname='$dbname'}[$agg_interval])) / avg(increase(pgwatch_stat_statements_calls_calls{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -368,7 +374,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Based on pg_stat_activity. All sessions for the selected DB, even idle",
       "fieldConfig": {
@@ -434,9 +441,10 @@
       "targets": [
         {
           "alias": "",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "editorMode": "code",
           "exemplar": true,
           "expr": "avg(pgwatch_db_stats_numbackends{dbname='$dbname'})",
@@ -494,7 +502,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -559,9 +568,10 @@
       "targets": [
         {
           "alias": "",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "avg(rate(pgwatch_db_stats_temp_bytes{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -623,7 +633,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -688,9 +699,10 @@
       "targets": [
         {
           "alias": "db_size_change_last_hour",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "avg(delta(pgwatch_db_size_size_b{dbname='$dbname'}[1h]))",
           "format": "time_series",
@@ -740,7 +752,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -826,9 +839,10 @@
       "targets": [
         {
           "alias": "DELETE",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "editorMode": "code",
           "exemplar": true,
           "expr": "avg(increase(pgwatch_db_stats_tup_inserted{dbname='$dbname'}[$agg_interval]))",
@@ -883,9 +897,10 @@
         },
         {
           "alias": "UPDATE",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "avg(increase(pgwatch_db_stats_tup_updated{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -931,9 +946,10 @@
         },
         {
           "alias": "UPDATE",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "avg(increase(pgwatch_db_stats_tup_deleted{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -983,7 +999,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1086,9 +1103,10 @@
       "targets": [
         {
           "alias": "Shared buffers hit ratio",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "100 * avg(increase(pgwatch_db_stats_blks_hit{dbname='$dbname'}[$agg_interval])) / (avg(increase(pgwatch_db_stats_blks_hit{dbname='$dbname'}[$agg_interval])) + avg(increase(pgwatch_db_stats_blks_read{dbname='$dbname'}[$agg_interval])))",
           "format": "time_series",
@@ -1135,9 +1153,10 @@
         },
         {
           "alias": "TX rollback ratio",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "100 * avg(increase(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$agg_interval])) / (avg(increase(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$agg_interval])) + avg(increase(pgwatch_db_stats_xact_commit{dbname='$dbname'}[$agg_interval])))",
           "format": "time_series",
@@ -1187,7 +1206,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Approximate value based on pg_stat_statements total_time / calls",
       "fieldConfig": {
@@ -1304,9 +1324,10 @@
       "targets": [
         {
           "alias": "avg_query_runtime",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "avg(increase(pgwatch_stat_statements_calls_total_time{dbname='$dbname'}[$agg_interval])) / avg(increase(pgwatch_stat_statements_calls_calls{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -1356,7 +1377,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1505,9 +1527,10 @@
       "targets": [
         {
           "alias": "WAL rate",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "avg(rate(pgwatch_wal_xlog_location_b{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -1565,9 +1588,10 @@
         },
         {
           "alias": "DB Size",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "editorMode": "code",
           "exemplar": true,
           "expr": "avg(pgwatch_db_size_size_b{dbname='$dbname'})",
@@ -1623,7 +1647,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "$agg_interval avg.",
       "fieldConfig": {
@@ -1742,9 +1767,10 @@
       "targets": [
         {
           "alias": "# Sessions",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "max(avg_over_time(pgwatch_backends_total{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -1790,9 +1816,10 @@
         },
         {
           "alias": "# Sessions",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_backends_active{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -1839,9 +1866,10 @@
         },
         {
           "alias": "# Sessions",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_backends_waiting{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -1888,9 +1916,10 @@
         },
         {
           "alias": "# Sessions",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_backends_idleintransaction{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -1937,9 +1966,10 @@
         },
         {
           "alias": "Temp bytes written",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "max(increase(pgwatch_db_stats_deadlocks{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -1988,7 +2018,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Transactions per Second / Queries per Second. FYI - QPS can possibly be smaller than TPS",
       "fieldConfig": {
@@ -2076,9 +2107,10 @@
       "targets": [
         {
           "alias": "TPS",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "avg(rate(pgwatch_db_stats_xact_commit{dbname='$dbname'}[$agg_interval])) + avg(rate(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -2123,9 +2155,10 @@
         },
         {
           "alias": "QPS",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "avg(rate(pgwatch_stat_statements_calls_calls{dbname='$dbname'}[$agg_interval]))",
           "format": "time_series",
@@ -2174,7 +2207,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -2278,9 +2312,10 @@
       "targets": [
         {
           "alias": "seq_scan",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "sum(max(increase(pgwatch_table_stats_seq_scan{dbname='$dbname',table_size_cardinality_mb=~\"3|4|5|6|7|8\"}[$agg_interval])) by (table_full_name))",
           "format": "time_series",
@@ -2342,7 +2377,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Max locks spotted during the selected interval",
       "fieldConfig": {
@@ -2430,9 +2466,10 @@
       "targets": [
         {
           "alias": "$tag_lockmode",
-          "datasource": {
-            "type": "prometheus"
-          },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_locks_mode_count{dbname='$dbname',lockmode=~\".*Exclusive.*\"}[$agg_interval])) by (lockmode)",
           "format": "time_series",

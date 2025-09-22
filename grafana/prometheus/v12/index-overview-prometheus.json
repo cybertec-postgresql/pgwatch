@@ -37,7 +37,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Index scan activity across tables",
       "fieldConfig": {
@@ -132,7 +133,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Tuples fetched via index scans",
       "fieldConfig": {
@@ -240,7 +242,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Ratio of tuples read vs fetched (efficiency)",
       "fieldConfig": {
@@ -335,7 +338,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Index sizes in bytes",
       "fieldConfig": {
@@ -443,7 +447,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Invalid indexes that need attention",
       "fieldConfig": {
@@ -519,7 +524,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Unused indexes with zero scans",
       "fieldConfig": {
@@ -626,7 +632,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Index classification by type and role",
       "fieldConfig": {

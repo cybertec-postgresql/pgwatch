@@ -37,7 +37,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Unused indexes (no scans in recent period)",
       "fieldConfig": {
@@ -142,7 +143,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Duplicate indexes sharing same columns",
       "fieldConfig": {
@@ -241,7 +243,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Queries with low cache hit ratio",
       "fieldConfig": {
@@ -383,7 +386,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Queries with high I/O wait time",
       "fieldConfig": {
@@ -529,7 +533,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Current configuration settings that may need adjustment",
       "fieldConfig": {
@@ -628,7 +633,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Tables that may benefit from VACUUM or ANALYZE",
       "fieldConfig": {
