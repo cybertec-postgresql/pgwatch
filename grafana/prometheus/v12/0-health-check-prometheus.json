@@ -2041,7 +2041,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Health-check (Prometheus)",
+  "title": "0. Health Check (Prometheus)",
   "uid": "health-check-prometheus",
   "version": 1
 }
