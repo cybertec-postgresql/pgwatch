@@ -37,7 +37,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Database role: Primary (0) or Replica (1)",
       "fieldConfig": {
@@ -113,7 +114,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "WAL timeline progression",
       "fieldConfig": {
@@ -219,7 +221,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "WAL location progression (bytes)",
       "fieldConfig": {
@@ -313,7 +316,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "WAL generation rate",
       "fieldConfig": {
@@ -421,7 +425,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "WAL file count and total size",
       "fieldConfig": {
@@ -544,7 +549,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Archive pending count",
       "fieldConfig": {
@@ -655,7 +661,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Key replication metrics summary",
       "fieldConfig": {

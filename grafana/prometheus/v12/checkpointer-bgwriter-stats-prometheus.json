@@ -37,7 +37,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Checkpoint frequency and types",
       "fieldConfig": {
@@ -147,7 +148,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Time spent writing and syncing during checkpoints",
       "fieldConfig": {
@@ -247,7 +249,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Buffers written during checkpoints",
       "fieldConfig": {
@@ -360,7 +363,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Background writer buffer allocation and cleaning activity",
       "fieldConfig": {
@@ -460,7 +464,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Background writer halt events due to too many buffers being written",
       "fieldConfig": {
@@ -572,7 +577,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Key checkpoint metrics as single values",
       "fieldConfig": {
