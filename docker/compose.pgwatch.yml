@@ -12,6 +12,7 @@ services:
     command:
       - "--sink=postgresql://pgwatch@postgres:5432/pgwatch_metrics"
       - "--sink=prometheus://pgwatch:9187/pgwatch"
+      - "--partition-interval=1 day"
     ports:
       - "8080:8080"
       - "9187:9187"
