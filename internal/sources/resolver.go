@@ -57,6 +57,10 @@ type PatroniClusterMember struct {
 	Role    string
 }
 
+func (pcm PatroniClusterMember) IsPrimary() bool {
+	return pcm.Role == "primary" || pcm.Role == "master"
+}
+
 var logger log.Logger = log.FallbackLogger
 
 var lastFoundClusterMembers = make(map[string][]PatroniClusterMember) // needed for cases where DCS is temporarily down
@@ -171,8 +175,8 @@ func getEtcdClusterMembers(s Source, hc HostConfig) ([]PatroniClusterMember, err
 		}
 		// remove leading slash and split by "/"
 		parts := strings.Split(strings.TrimPrefix(string(node.Key), "/"), "/")
-		if len(parts) < 3 {
-			return nil, errors.New("invalid ETCD key format")
+		if len(parts) < 4 || parts[2] != "members" {
+			continue // skip non-member keys
 		}
 		role := nodeData["role"]
 		connURL := nodeData["conn_url"]
@@ -281,12 +285,12 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 
 	for _, patroniMember := range clusterMembers {
 		logger.Info("Processing Patroni cluster member: ", patroniMember.Name)
-		if source.OnlyIfMaster && patroniMember.Role != "master" {
+		if source.OnlyIfMaster && !patroniMember.IsPrimary() {
 			continue
 		}
 		src := *source.Clone()
 		src.ConnStr = patroniMember.ConnURL
-		if hostConfig.IsScopeSpecified() {
+		if !hostConfig.IsScopeSpecified() {
 			src.Name += "_" + patroniMember.Scope
 		}
 		src.Name += "_" + patroniMember.Name
