@@ -461,6 +461,8 @@ func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.Sourc
 }
 
 func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, md *sources.SourceConn) {
+	md.Lock()
+	defer md.Unlock()
 	var err error
 	l := log.GetLogger(ctx).WithField("source", md.Name).WithField("metric", specialMetricChangeEvents)
 	ctx = log.WithLogger(ctx, l)

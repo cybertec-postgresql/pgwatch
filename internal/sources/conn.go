@@ -6,6 +6,7 @@ import (
 	"math"
 	"regexp"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
@@ -49,6 +50,7 @@ type (
 		Conn       db.PgxPoolIface
 		ConnConfig *pgxpool.Config
 		RuntimeInfo
+		sync.RWMutex
 	}
 
 	SourceConns []*SourceConn
@@ -123,6 +125,8 @@ func (md *SourceConn) GetDatabaseName() string {
 
 // GetMetricInterval returns the metric interval for the connection
 func (md *SourceConn) GetMetricInterval(name string) float64 {
+	md.RLock()
+	defer md.RUnlock()
 	if md.IsInRecovery && len(md.MetricsStandby) > 0 {
 		return md.MetricsStandby[name]
 	}
@@ -158,6 +162,8 @@ func VersionToInt(version string) (v int) {
 }
 
 func (md *SourceConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error) {
+	md.Lock()
+	defer md.Unlock()
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
