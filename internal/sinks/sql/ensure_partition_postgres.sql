@@ -65,7 +65,7 @@ BEGIN
   -- 3. level
   FOR i IN 0..partitions_to_precreate LOOP
 
-      l_year := extract(isoyear from (metric_timestamp + '1month'::interval * i));
+      l_year := extract(isoyear from (metric_timestamp + '1week'::interval * i));
       l_week := extract(week from (metric_timestamp + '1week'::interval * i));
 
       IF i = 0 THEN
