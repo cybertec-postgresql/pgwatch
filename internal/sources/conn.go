@@ -6,6 +6,7 @@ import (
 	"math"
 	"regexp"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
@@ -49,10 +50,21 @@ type (
 		Conn       db.PgxPoolIface
 		ConnConfig *pgxpool.Config
 		RuntimeInfo
+		sync.RWMutex
 	}
 
 	SourceConns []*SourceConn
 )
+
+func NewSourceConn(s Source) *SourceConn {
+	return &SourceConn{
+		Source: s,
+		RuntimeInfo: RuntimeInfo{
+			Extensions:  make(map[string]int),
+			ChangeState: make(map[string]map[string]string),
+		},
+	}
+}
 
 // Ping will try to ping the server to ensure the connection is still alive
 func (md *SourceConn) Ping(ctx context.Context) (err error) {
@@ -113,6 +125,8 @@ func (md *SourceConn) GetDatabaseName() string {
 
 // GetMetricInterval returns the metric interval for the connection
 func (md *SourceConn) GetMetricInterval(name string) float64 {
+	md.RLock()
+	defer md.RUnlock()
 	if md.IsInRecovery && len(md.MetricsStandby) > 0 {
 		return md.MetricsStandby[name]
 	}
@@ -148,6 +162,8 @@ func VersionToInt(version string) (v int) {
 }
 
 func (md *SourceConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error) {
+	md.Lock()
+	defer md.Unlock()
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -155,15 +171,9 @@ func (md *SourceConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (
 	if !forceRefetch && md.LastCheckedOn.After(time.Now().Add(time.Minute*-2)) { // use cached version for 2 min
 		return nil
 	}
-
-	dbNewSettings := RuntimeInfo{
-		Extensions:  make(map[string]int),
-		ChangeState: make(map[string]map[string]string),
-	}
-
 	switch md.Kind {
 	case SourcePgBouncer, SourcePgPool:
-		if dbNewSettings.VersionStr, dbNewSettings.Version, err = md.FetchVersion(ctx, func() string {
+		if md.VersionStr, md.Version, err = md.FetchVersion(ctx, func() string {
 			if md.Kind == SourcePgBouncer {
 				return "SHOW VERSION"
 			}
@@ -183,15 +193,15 @@ FROM
 	pg_control_system()`
 
 		err = md.Conn.QueryRow(ctx, sql).
-			Scan(&dbNewSettings.Version, &dbNewSettings.VersionStr,
-				&dbNewSettings.IsInRecovery, &dbNewSettings.RealDbname,
-				&dbNewSettings.SystemIdentifier, &dbNewSettings.IsSuperuser)
+			Scan(&md.Version, &md.VersionStr,
+				&md.IsInRecovery, &md.RealDbname,
+				&md.SystemIdentifier, &md.IsSuperuser)
 		if err != nil {
 			return err
 		}
 
-		dbNewSettings.ExecEnv = md.DiscoverPlatform(ctx)
-		dbNewSettings.ApproxDbSize = md.FetchApproxSize(ctx)
+		md.ExecEnv = md.DiscoverPlatform(ctx)
+		md.ApproxDbSize = md.FetchApproxSize(ctx)
 
 		sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
 		var res pgx.Rows
@@ -204,14 +214,13 @@ FROM
 				if extver == 0 {
 					return fmt.Errorf("unexpected extension %s version input: %s", ext, ver)
 				}
-				dbNewSettings.Extensions[ext] = extver
+				md.Extensions[ext] = extver
 				return nil
 			})
 		}
 
 	}
-	dbNewSettings.LastCheckedOn = time.Now()
-	md.RuntimeInfo = dbNewSettings // store the new settings in the struct
+	md.LastCheckedOn = time.Now()
 	return err
 }
 
