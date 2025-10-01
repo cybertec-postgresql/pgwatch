@@ -140,23 +140,24 @@ BEGIN
   IF schema_type = 'timescale' THEN
 
         if dry_run then
-            FOR r in (select * from (
-                   select h.table_name                                  as                                                     metric,
-                             format('%I.%I', c.schema_name, c.table_name)  as                                                     chunk,
-                             pg_catalog.pg_get_constraintdef(co.oid, true) as                                                     limits,
-                             (regexp_match(
-                                     pg_catalog.pg_get_constraintdef(co.oid, true),
-                                     $$ < '(.*)'$$)
-                                 )[1]::timestamp < (current_date - '1day'::interval * older_than_days) is_old
-                      from _timescaledb_catalog.hypertable h
-                               join _timescaledb_catalog.chunk c on c.hypertable_id = h.id
-                               join pg_catalog.pg_class cl on cl.relname = c.table_name
-                               join pg_catalog.pg_namespace n on n.nspname = c.schema_name
-                               join pg_catalog.pg_constraint co on co.conrelid = cl.oid
-                      where h.schema_name = 'public'
-            ) x where is_old)
+            -- Loop over all top-level hypertables
+            FOR r IN (
+                select
+                  h.table_name::text as metric
+                from
+                  _timescaledb_catalog.hypertable h
+                where
+                  h.schema_name = 'public'
+            )
             LOOP
-                    raise notice 'would drop timescale old time sub-partition: %', r.chunk;
+                -- Get old chunks for this hypertable using show_chunks()
+                FOR r2 IN (
+                    SELECT show_chunks(r.metric, older_than => (older_than_days * '1 day'::interval)) as chunk_name
+                )
+                LOOP
+                    raise notice 'would execute: CALL detach_chunk(%)', r2.chunk_name;
+                    raise notice 'would execute: DROP TABLE %', r2.chunk_name;
+                END LOOP;
             END LOOP;
 
         else /* loop over all to level hypertables */
@@ -169,18 +170,36 @@ BEGIN
                   h.schema_name = 'public'
             )
             LOOP
-                --raise notice 'dropping old timescale sub-partitions for hypertable: %', r.metric;
-                IF (SELECT ((regexp_matches(extversion, '\d+\.\d+'))[1])::numeric FROM pg_extension WHERE extname = 'timescaledb') >= 2.0 THEN
-                    FOR r2 in (select drop_chunks(r.metric, older_than_days * ' 1 day'::interval))
-                    LOOP
-                        i := i + 1;
-                    END LOOP;
-                ELSE
-                    FOR r2 in (select drop_chunks(older_than_days * ' 1 day'::interval , r.metric))
-                    LOOP
-                        i := i + 1;
-                    END LOOP;
-                END IF;
+                -- Get old chunks for this hypertable using show_chunks()
+                FOR r2 IN (
+                    SELECT show_chunks(r.metric, older_than => (older_than_days * '1 day'::interval)) as chunk_name
+                )
+                LOOP
+                    raise notice 'detaching old timescale chunk: % from hypertable: %', r2.chunk_name, r.metric;
+                    
+                    -- Detach the chunk using TimescaleDB's detach_chunk procedure
+                    BEGIN
+                        EXECUTE 'CALL detach_chunk(' || quote_literal(r2.chunk_name) || ')';
+                        raise notice 'successfully detached chunk: %', r2.chunk_name;
+                    EXCEPTION
+                        WHEN OTHERS THEN
+                            raise notice 'failed to detach chunk %: %', r2.chunk_name, SQLERRM;
+                            CONTINUE;
+                    END;
+                    
+                    raise notice 'dropping detached chunk: %', r2.chunk_name;
+                    -- Drop the detached chunk table using DROP TABLE
+                    BEGIN
+                        EXECUTE 'DROP TABLE ' || r2.chunk_name::text;
+                        raise notice 'successfully dropped chunk: %', r2.chunk_name;
+                    EXCEPTION
+                        WHEN OTHERS THEN
+                            raise notice 'failed to drop chunk %: %', r2.chunk_name, SQLERRM;
+                            CONTINUE;
+                    END;
+                    
+                    i := i + 1;
+                END LOOP;
             END LOOP;
         end if;
 
