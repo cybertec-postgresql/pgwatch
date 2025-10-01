@@ -137,49 +137,7 @@ BEGIN
   END IF;
 
 
-  IF schema_type = 'postgres' THEN
-
-    FOR r IN (
-      SELECT time_partition_name, parent_table_name FROM (
-        SELECT
-            'subpartitions.' || quote_ident(c.relname) as time_partition_name,
-            'subpartitions.' || quote_ident(c2.relname) as parent_table_name,
-            pg_catalog.pg_get_expr(c.relpartbound, c.oid) as limits,
-            (regexp_match(pg_catalog.pg_get_expr(c.relpartbound, c.oid),
-                E'TO \\((''.*?'')'))[1]::timestamp < (current_date  - '1day'::interval * older_than_days) is_old
-        FROM
-            pg_class c
-          JOIN
-            pg_inherits i ON c.oid=i.inhrelid
-            JOIN
-            pg_class c2 ON i.inhparent = c2.oid
-            JOIN
-            pg_namespace n ON n.oid = c.relnamespace
-        WHERE
-          c.relkind IN ('r', 'p')
-            AND n.nspname = 'subpartitions'
-            AND pg_catalog.obj_description(c.oid, 'pg_class') IN (
-              'pgwatch-generated-metric-time-lvl',
-              'pgwatch-generated-metric-dbname-time-lvl'
-            )
-        ) x
-        WHERE is_old
-        ORDER BY 1
-    )
-    LOOP
-      if dry_run then
-        raise notice 'would detach and drop old time sub-partition: % from parent: %', r.time_partition_name, r.parent_table_name;
-      else
-        raise notice 'detaching old time sub-partition: % from parent: %', r.time_partition_name, r.parent_table_name;
-        EXECUTE 'ALTER TABLE ' || r.parent_table_name || ' DETACH PARTITION ' || r.time_partition_name;
-        
-        raise notice 'dropping detached table: %', r.time_partition_name;
-        EXECUTE 'DROP TABLE IF EXISTS ' || r.time_partition_name;
-        i := i + 1;
-      end if;
-    END LOOP;
-
-  ELSIF schema_type = 'timescale' THEN
+  IF schema_type = 'timescale' THEN
 
         if dry_run then
             FOR r in (select * from (
@@ -225,9 +183,6 @@ BEGIN
                 END IF;
             END LOOP;
         end if;
-
-        -- Drop old time partitions for postgres schema
-        PERFORM admin.drop_old_time_partitions(older_than_days, dry_run, 'postgres');
 
   ELSE
     raise warning 'unsupported schema type: %', l_schema_type;
