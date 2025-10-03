@@ -14,6 +14,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 	"github.com/jackc/pgx/v5"
+	"github.com/sirupsen/logrus"
 )
 
 func QueryMeasurements(ctx context.Context, md *sources.SourceConn, sql string, args ...any) (metrics.Measurements, error) {
@@ -464,8 +465,7 @@ func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, md *source
 	md.Lock()
 	defer md.Unlock()
 	var err error
-	l := log.GetLogger(ctx).WithField("source", md.Name).WithField("metric", specialMetricChangeEvents)
-	ctx = log.WithLogger(ctx, l)
+	l := log.GetLogger(ctx).(*logrus.Entry)
 	sprocCounts := r.DetectSprocChanges(ctx, md) // TODO some of Detect*() code could be unified...
 	tableCounts := r.DetectTableChanges(ctx, md)
 	indexCounts := r.DetectIndexChanges(ctx, md)
