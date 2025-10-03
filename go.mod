@@ -1,6 +1,6 @@
 module github.com/cybertec-postgresql/pgwatch/v3
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/cybertec-postgresql/pgx-migrator v1.2.0
