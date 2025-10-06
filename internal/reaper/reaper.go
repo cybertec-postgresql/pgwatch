@@ -484,8 +484,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 		}
 		switch metricName {
 		case specialMetricChangeEvents:
-			r.CheckForPGObjectChangesAndStore(ctx, md)
-			return nil, nil
+			data, err = r.GetObjectChangesMeasurement(ctx, md)
 		case specialMetricInstanceUp:
 			data, err = r.GetInstanceUpMeasurement(ctx, md)
 		default:
@@ -496,7 +495,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 			}
 			data, err = QueryMeasurements(ctx, md, sql)
 		}
-		if err != nil {
+		if err != nil || len(data) == 0 {
 			return nil, err
 		}
 		r.measurementCache.Put(cacheKey, data)
