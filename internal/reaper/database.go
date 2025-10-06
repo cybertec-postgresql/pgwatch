@@ -51,6 +51,7 @@ func (r *Reaper) DetectSprocChanges(ctx context.Context, md *sources.SourceConn)
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	l := log.GetLogger(ctx)
+	changeCounts.Target = "functions"
 	l.Debug("checking for sproc changes...")
 	if _, ok := md.ChangeState["sproc_hashes"]; !ok {
 		firstRun = true
@@ -131,6 +132,7 @@ func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.SourceConn)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 	l := log.GetLogger(ctx)
+	changeCounts.Target = "tables"
 	l.Debug("checking for table changes...")
 	if _, ok := md.ChangeState["table_hashes"]; !ok {
 		firstRun = true
@@ -214,6 +216,7 @@ func (r *Reaper) DetectIndexChanges(ctx context.Context, md *sources.SourceConn)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 	l := log.GetLogger(ctx)
+	changeCounts.Target = "indexes"
 	l.Debug("checking for index changes...")
 	if _, ok := md.ChangeState["index_hashes"]; !ok {
 		firstRun = true
@@ -296,6 +299,7 @@ func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.SourceC
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 	l := log.GetLogger(ctx)
+	changeCounts.Target = "privileges"
 	l.Debug("checking object privilege changes...")
 	if _, ok := md.ChangeState["object_privileges"]; !ok {
 		firstRun = true
@@ -377,6 +381,7 @@ func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.Sou
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
 	l := log.GetLogger(ctx)
+	changeCounts.Target = "settings"
 	l.Debug("checking for configuration changes...")
 	if _, ok := md.ChangeState["configuration_hashes"]; !ok {
 		firstRun = true
@@ -460,48 +465,23 @@ func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.Sourc
 	}, err
 }
 
-func (r *Reaper) CheckForPGObjectChangesAndStore(ctx context.Context, md *sources.SourceConn) {
+func (r *Reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.SourceConn) (metrics.Measurements, error) {
 	md.Lock()
 	defer md.Unlock()
-	var err error
-	l := log.GetLogger(ctx).WithField("source", md.Name).WithField("metric", specialMetricChangeEvents)
-	ctx = log.WithLogger(ctx, l)
-	sprocCounts := r.DetectSprocChanges(ctx, md) // TODO some of Detect*() code could be unified...
-	tableCounts := r.DetectTableChanges(ctx, md)
-	indexCounts := r.DetectIndexChanges(ctx, md)
-	confCounts := r.DetectConfigurationChanges(ctx, md)
-	privChangeCounts := r.DetectPrivilegeChanges(ctx, md)
 
-	// need to send info on all object changes as one message as Grafana applies "last wins" for annotations with similar timestamp
-	if sprocCounts.Total() > 0 {
-		l = l.WithField("functions", sprocCounts.String())
+	spN := r.DetectSprocChanges(ctx, md)
+	tblN := r.DetectTableChanges(ctx, md)
+	idxN := r.DetectIndexChanges(ctx, md)
+	cnfN := r.DetectConfigurationChanges(ctx, md)
+	privN := r.DetectPrivilegeChanges(ctx, md)
+
+	if spN.Total()+tblN.Total()+idxN.Total()+cnfN.Total()+privN.Total() == 0 {
+		return nil, nil
 	}
-	if tableCounts.Total() > 0 {
-		l = l.WithField("relations", tableCounts.String())
-	}
-	if indexCounts.Total() > 0 {
-		l = l.WithField("indexes", indexCounts.String())
-	}
-	if confCounts.Total() > 0 {
-		l = l.WithField("settings", confCounts.String())
-	}
-	if privChangeCounts.Total() > 0 {
-		l = l.WithField("privileges", privChangeCounts.String())
-	}
-	if len(l.Data) > 2 { // source and metric are always there
-		m := metrics.NewMeasurement(time.Now().UnixNano())
-		if m["details"], err = l.String(); err != nil {
-			l.Error(err)
-			return
-		}
-		r.measurementCh <- metrics.MeasurementEnvelope{
-			DBName:     md.Name,
-			MetricName: "object_changes",
-			Data:       metrics.Measurements{m},
-			CustomTags: md.CustomTags,
-		}
-		l.Info("detected changes [created/altered/dropped]")
-	}
+
+	m := metrics.NewMeasurement(time.Now().UnixNano())
+	m["details"] = strings.Join([]string{spN.String(), tblN.String(), idxN.String(), cnfN.String(), privN.String()}, " ")
+	return metrics.Measurements{m}, nil
 }
 
 // Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
