@@ -541,32 +541,31 @@
 <span id="L484" class="ln">   484  </span>		}
 <span id="L485" class="ln">   485  </span>		switch metricName {
 <span id="L486" class="ln">   486  </span>		case specialMetricChangeEvents:
-<span id="L487" class="ln">   487  </span>			r.CheckForPGObjectChangesAndStore(ctx, md)
-<span id="L488" class="ln">   488  </span>			return nil, nil
-<span id="L489" class="ln">   489  </span>		case specialMetricInstanceUp:
-<span id="L490" class="ln">   490  </span>			data, err = r.GetInstanceUpMeasurement(ctx, md)
-<span id="L491" class="ln">   491  </span>		default:
-<span id="L492" class="ln">   492  </span>			sql = metric.GetSQL(md.Version)
-<span id="L493" class="ln">   493  </span>			if sql == &#34;&#34; {
-<span id="L494" class="ln">   494  </span>				l.Warning(&#34;Ignoring fetching because of empty SQL&#34;)
-<span id="L495" class="ln">   495  </span>				return nil, nil
-<span id="L496" class="ln">   496  </span>			}
-<span id="L497" class="ln">   497  </span>			data, err = QueryMeasurements(ctx, md, sql)
-<span id="L498" class="ln">   498  </span>		}
-<span id="L499" class="ln">   499  </span>		if err != nil {
-<span id="L500" class="ln">   500  </span>			return nil, err
-<span id="L501" class="ln">   501  </span>		}
-<span id="L502" class="ln">   502  </span>		r.measurementCache.Put(cacheKey, data)
-<span id="L503" class="ln">   503  </span>	}
-<span id="L504" class="ln">   504  </span>	r.AddSysinfoToMeasurements(data, md)
-<span id="L505" class="ln">   505  </span>	l.WithField(&#34;cache&#34;, fromCache).WithField(&#34;rows&#34;, len(data)).Info(&#34;measurements fetched&#34;)
-<span id="L506" class="ln">   506  </span>	return &amp;metrics.MeasurementEnvelope{
-<span id="L507" class="ln">   507  </span>		DBName:     md.Name,
-<span id="L508" class="ln">   508  </span>		MetricName: cmp.Or(metric.StorageName, metricName),
-<span id="L509" class="ln">   509  </span>		Data:       data,
-<span id="L510" class="ln">   510  </span>		CustomTags: md.CustomTags}, nil
-<span id="L511" class="ln">   511  </span>}
-<span id="L512" class="ln">   512  </span>
+<span id="L487" class="ln">   487  </span>			data, err = r.GetObjectChangesMeasurement(ctx, md)
+<span id="L488" class="ln">   488  </span>		case specialMetricInstanceUp:
+<span id="L489" class="ln">   489  </span>			data, err = r.GetInstanceUpMeasurement(ctx, md)
+<span id="L490" class="ln">   490  </span>		default:
+<span id="L491" class="ln">   491  </span>			sql = metric.GetSQL(md.Version)
+<span id="L492" class="ln">   492  </span>			if sql == &#34;&#34; {
+<span id="L493" class="ln">   493  </span>				l.Warning(&#34;Ignoring fetching because of empty SQL&#34;)
+<span id="L494" class="ln">   494  </span>				return nil, nil
+<span id="L495" class="ln">   495  </span>			}
+<span id="L496" class="ln">   496  </span>			data, err = QueryMeasurements(ctx, md, sql)
+<span id="L497" class="ln">   497  </span>		}
+<span id="L498" class="ln">   498  </span>		if err != nil || len(data) == 0 {
+<span id="L499" class="ln">   499  </span>			return nil, err
+<span id="L500" class="ln">   500  </span>		}
+<span id="L501" class="ln">   501  </span>		r.measurementCache.Put(cacheKey, data)
+<span id="L502" class="ln">   502  </span>	}
+<span id="L503" class="ln">   503  </span>	r.AddSysinfoToMeasurements(data, md)
+<span id="L504" class="ln">   504  </span>	l.WithField(&#34;cache&#34;, fromCache).WithField(&#34;rows&#34;, len(data)).Info(&#34;measurements fetched&#34;)
+<span id="L505" class="ln">   505  </span>	return &amp;metrics.MeasurementEnvelope{
+<span id="L506" class="ln">   506  </span>		DBName:     md.Name,
+<span id="L507" class="ln">   507  </span>		MetricName: cmp.Or(metric.StorageName, metricName),
+<span id="L508" class="ln">   508  </span>		Data:       data,
+<span id="L509" class="ln">   509  </span>		CustomTags: md.CustomTags}, nil
+<span id="L510" class="ln">   510  </span>}
+<span id="L511" class="ln">   511  </span>
 </pre><p></p>
 
 <div id="footer">
