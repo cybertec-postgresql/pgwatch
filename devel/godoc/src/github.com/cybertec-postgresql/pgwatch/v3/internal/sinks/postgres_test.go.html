@@ -103,7 +103,7 @@
 <span id="L46" class="ln">    46  </span>	conn.ExpectQuery(&#34;SELECT EXISTS&#34;).WithArgs(&#34;admin&#34;).WillReturnRows(pgxmock.NewRows([]string{&#34;schema_type&#34;}).AddRow(true))
 <span id="L47" class="ln">    47  </span>	conn.ExpectQuery(&#34;SELECT schema_type&#34;).WillReturnRows(pgxmock.NewRows([]string{&#34;schema_type&#34;}).AddRow(true))
 <span id="L48" class="ln">    48  </span>	for _, m := range metrics.GetDefaultBuiltInMetrics() {
-<span id="L49" class="ln">    49  </span>		conn.ExpectExec(&#34;select admin.ensure_dummy_metrics_table&#34;).WithArgs(m).WillReturnResult(pgxmock.NewResult(&#34;EXECUTE&#34;, 1))
+<span id="L49" class="ln">    49  </span>		conn.ExpectExec(&#34;SELECT admin.ensure_dummy_metrics_table&#34;).WithArgs(m).WillReturnResult(pgxmock.NewResult(&#34;EXECUTE&#34;, 1))
 <span id="L50" class="ln">    50  </span>	}
 <span id="L51" class="ln">    51  </span>
 <span id="L52" class="ln">    52  </span>	opts := &amp;CmdOpts{BatchingDelay: time.Hour, Retention: 356}
@@ -124,8 +124,8 @@
 <span id="L67" class="ln">    67  </span>	dbUnique := &#34;mydb&#34;
 <span id="L68" class="ln">    68  </span>	metricName := &#34;mymetric&#34;
 <span id="L69" class="ln">    69  </span>	op := AddOp
-<span id="L70" class="ln">    70  </span>	conn.ExpectExec(&#34;insert into admin\\.all_distinct_dbname_metrics&#34;).WithArgs(dbUnique, metricName).WillReturnResult(pgxmock.NewResult(&#34;EXECUTE&#34;, 1))
-<span id="L71" class="ln">    71  </span>	conn.ExpectExec(&#34;select admin\\.ensure_dummy_metrics_table&#34;).WithArgs(metricName).WillReturnResult(pgxmock.NewResult(&#34;EXECUTE&#34;, 1))
+<span id="L70" class="ln">    70  </span>	conn.ExpectExec(&#34;INSERT INTO admin\\.all_distinct_dbname_metrics&#34;).WithArgs(dbUnique, metricName).WillReturnResult(pgxmock.NewResult(&#34;EXECUTE&#34;, 1))
+<span id="L71" class="ln">    71  </span>	conn.ExpectExec(&#34;SELECT admin\\.ensure_dummy_metrics_table&#34;).WithArgs(metricName).WillReturnResult(pgxmock.NewResult(&#34;EXECUTE&#34;, 1))
 <span id="L72" class="ln">    72  </span>	err = pgw.SyncMetric(dbUnique, metricName, op)
 <span id="L73" class="ln">    73  </span>	assert.NoError(t, err)
 <span id="L74" class="ln">    74  </span>	assert.NoError(t, conn.ExpectationsWereMet())
