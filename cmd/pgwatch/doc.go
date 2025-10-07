@@ -60,7 +60,7 @@
 //	                                     (default: 950ms)
 //	                                     [$PW_BATCHING_DELAY]
 //	--retention=                         If set, metrics older than that will
-//	                                     be deleted (default: 14)
+//	                                     be deleted (default: "14 days")
 //	                                     [$PW_RETENTION]
 //	--real-dbname-field=                 Tag key for real database name
 //	                                     (default: real_dbname)

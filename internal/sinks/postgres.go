@@ -43,7 +43,11 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		lastError: make(chan error),
 		sinkDb:    conn,
 	}
+	var runDeleteOldPartitions bool
 	if err = db.Init(ctx, pgw.sinkDb, func(ctx context.Context, conn db.PgxIface) error {
+		if err = conn.QueryRow(ctx, "SELECT $1::interval > '0'::interval", opts.Retention).Scan(&runDeleteOldPartitions); err != nil {
+			return err
+		}
 		l.Info("initialising measurements database...")
 		exists, err := db.DoesSchemaExist(ctx, conn, "admin")
 		if err != nil || exists {
@@ -64,7 +68,9 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 	if err = pgw.EnsureBuiltinMetricDummies(); err != nil {
 		return
 	}
-	go pgw.deleteOldPartitions()
+	if runDeleteOldPartitions {
+		go pgw.deleteOldPartitions()
+	}
 	go pgw.maintainUniqueSources()
 	go pgw.poll()
 	l.Info(`measurements sink is activated`)
@@ -452,14 +458,11 @@ func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[str
 
 // deleteOldPartitions is a background task that deletes old partitions from the measurements DB
 func (pgw *PostgresWriter) deleteOldPartitions() {
-	if pgw.opts.Retention <= 0 {
-		return
-	}
 	l := log.GetLogger(pgw.ctx)
 	for {
 		var partsDropped int
-		err := pgw.sinkDb.QueryRow(pgw.ctx, `SELECT admin.drop_old_time_partitions(older_than => $1)`,
-			24*time.Hour*time.Duration(pgw.opts.Retention)).Scan(&partsDropped)
+		err := pgw.sinkDb.QueryRow(pgw.ctx, `SELECT admin.drop_old_time_partitions(older_than => $1::interval)`,
+			pgw.opts.Retention).Scan(&partsDropped)
 		if err != nil {
 			l.Error("Could not drop old time partitions:", err)
 		} else if partsDropped > 0 {
