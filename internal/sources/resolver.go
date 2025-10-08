@@ -168,15 +168,15 @@ func getEtcdClusterMembers(s Source, hc HostConfig) ([]PatroniClusterMember, err
 	}
 
 	for _, node := range resp.Kvs {
-		nodeData, err := jsonTextToStringMap(string(node.Value))
-		if err != nil {
-			logger.Errorf("Could not parse ETCD node data for node \"%s\": %s", node, err)
-			continue
-		}
 		// remove leading slash and split by "/"
 		parts := strings.Split(strings.TrimPrefix(string(node.Key), "/"), "/")
 		if len(parts) < 4 || parts[2] != "members" {
 			continue // skip non-member keys
+		}
+		nodeData, err := jsonTextToStringMap(string(node.Value))
+		if err != nil {
+			logger.Errorf("Could not parse ETCD node data for node \"%s\": %s", node.Key, err)
+			continue
 		}
 		role := nodeData["role"]
 		connURL := nodeData["conn_url"]
