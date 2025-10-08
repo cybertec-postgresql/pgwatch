@@ -225,15 +225,15 @@
 <span id="L168" class="ln">   168  </span>	}
 <span id="L169" class="ln">   169  </span>
 <span id="L170" class="ln">   170  </span>	for _, node := range resp.Kvs {
-<span id="L171" class="ln">   171  </span>		nodeData, err := jsonTextToStringMap(string(node.Value))
-<span id="L172" class="ln">   172  </span>		if err != nil {
-<span id="L173" class="ln">   173  </span>			logger.Errorf(&#34;Could not parse ETCD node data for node \&#34;%s\&#34;: %s&#34;, node, err)
-<span id="L174" class="ln">   174  </span>			continue
+<span id="L171" class="ln">   171  </span>		<span class="comment">// remove leading slash and split by &#34;/&#34;</span>
+<span id="L172" class="ln">   172  </span>		parts := strings.Split(strings.TrimPrefix(string(node.Key), &#34;/&#34;), &#34;/&#34;)
+<span id="L173" class="ln">   173  </span>		if len(parts) &lt; 4 || parts[2] != &#34;members&#34; {
+<span id="L174" class="ln">   174  </span>			continue <span class="comment">// skip non-member keys</span>
 <span id="L175" class="ln">   175  </span>		}
-<span id="L176" class="ln">   176  </span>		<span class="comment">// remove leading slash and split by &#34;/&#34;</span>
-<span id="L177" class="ln">   177  </span>		parts := strings.Split(strings.TrimPrefix(string(node.Key), &#34;/&#34;), &#34;/&#34;)
-<span id="L178" class="ln">   178  </span>		if len(parts) &lt; 4 || parts[2] != &#34;members&#34; {
-<span id="L179" class="ln">   179  </span>			continue <span class="comment">// skip non-member keys</span>
+<span id="L176" class="ln">   176  </span>		nodeData, err := jsonTextToStringMap(string(node.Value))
+<span id="L177" class="ln">   177  </span>		if err != nil {
+<span id="L178" class="ln">   178  </span>			logger.Errorf(&#34;Could not parse ETCD node data for node \&#34;%s\&#34;: %s&#34;, node.Key, err)
+<span id="L179" class="ln">   179  </span>			continue
 <span id="L180" class="ln">   180  </span>		}
 <span id="L181" class="ln">   181  </span>		role := nodeData[&#34;role&#34;]
 <span id="L182" class="ln">   182  </span>		connURL := nodeData[&#34;conn_url&#34;]
