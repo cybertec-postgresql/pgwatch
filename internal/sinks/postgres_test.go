@@ -43,13 +43,14 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 	assert.NoError(t, err)
 
 	conn.ExpectPing()
+	conn.ExpectQuery("SELECT \\$1::interval").WithArgs("1 year").WillReturnRows(pgxmock.NewRows([]string{"col"}).AddRow(true))
 	conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 	conn.ExpectQuery("SELECT schema_type").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 	for _, m := range metrics.GetDefaultBuiltInMetrics() {
 		conn.ExpectExec("SELECT admin.ensure_dummy_metrics_table").WithArgs(m).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
 	}
 
-	opts := &CmdOpts{BatchingDelay: time.Hour, Retention: 356}
+	opts := &CmdOpts{BatchingDelay: time.Hour, Retention: "1 year"}
 	pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
 	assert.NoError(t, err)
 	assert.NotNil(t, pgw)
