@@ -272,7 +272,7 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 		if errors.Is(err, errors.ErrUnsupported) {
 			return nil, err
 		}
-		logger.Debug("Failed to get info from DCS, using previous member info if any")
+		logger.Debug("failed to get info from DCS, using previous member info if any")
 		if clusterMembers, ok = lastFoundClusterMembers[source.Name]; ok { // mask error from main loop not to remove monitored DBs due to "jitter"
 			err = nil
 		}
@@ -284,7 +284,7 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 	}
 
 	for _, patroniMember := range clusterMembers {
-		logger.Info("Processing Patroni cluster member: ", patroniMember.Name)
+		logger.Info("processing Patroni cluster member: ", patroniMember.Name)
 		if source.OnlyIfMaster && !patroniMember.IsPrimary() {
 			continue
 		}
@@ -297,7 +297,7 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 		if dbs, err := ResolveDatabasesFromPostgres(src); err == nil {
 			mds = append(mds, dbs...)
 		} else {
-			logger.WithError(err).Error("Failed to resolve databases for Patroni member: ", patroniMember.Name)
+			logger.WithError(err).Error("failed to resolve databases for Patroni member: ", patroniMember.Name)
 		}
 	}
 	return mds, err
