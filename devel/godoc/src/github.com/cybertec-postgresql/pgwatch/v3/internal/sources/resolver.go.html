@@ -329,7 +329,7 @@
 <span id="L272" class="ln">   272  </span>		if errors.Is(err, errors.ErrUnsupported) {
 <span id="L273" class="ln">   273  </span>			return nil, err
 <span id="L274" class="ln">   274  </span>		}
-<span id="L275" class="ln">   275  </span>		logger.Debug(&#34;Failed to get info from DCS, using previous member info if any&#34;)
+<span id="L275" class="ln">   275  </span>		logger.Debug(&#34;failed to get info from DCS, using previous member info if any&#34;)
 <span id="L276" class="ln">   276  </span>		if clusterMembers, ok = lastFoundClusterMembers[source.Name]; ok { <span class="comment">// mask error from main loop not to remove monitored DBs due to &#34;jitter&#34;</span>
 <span id="L277" class="ln">   277  </span>			err = nil
 <span id="L278" class="ln">   278  </span>		}
@@ -341,7 +341,7 @@
 <span id="L284" class="ln">   284  </span>	}
 <span id="L285" class="ln">   285  </span>
 <span id="L286" class="ln">   286  </span>	for _, patroniMember := range clusterMembers {
-<span id="L287" class="ln">   287  </span>		logger.Info(&#34;Processing Patroni cluster member: &#34;, patroniMember.Name)
+<span id="L287" class="ln">   287  </span>		logger.Info(&#34;processing Patroni cluster member: &#34;, patroniMember.Name)
 <span id="L288" class="ln">   288  </span>		if source.OnlyIfMaster &amp;&amp; !patroniMember.IsPrimary() {
 <span id="L289" class="ln">   289  </span>			continue
 <span id="L290" class="ln">   290  </span>		}
@@ -354,7 +354,7 @@
 <span id="L297" class="ln">   297  </span>		if dbs, err := ResolveDatabasesFromPostgres(src); err == nil {
 <span id="L298" class="ln">   298  </span>			mds = append(mds, dbs...)
 <span id="L299" class="ln">   299  </span>		} else {
-<span id="L300" class="ln">   300  </span>			logger.WithError(err).Error(&#34;Failed to resolve databases for Patroni member: &#34;, patroniMember.Name)
+<span id="L300" class="ln">   300  </span>			logger.WithError(err).Error(&#34;failed to resolve databases for Patroni member: &#34;, patroniMember.Name)
 <span id="L301" class="ln">   301  </span>		}
 <span id="L302" class="ln">   302  </span>	}
 <span id="L303" class="ln">   303  </span>	return mds, err
