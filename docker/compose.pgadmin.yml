@@ -7,7 +7,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: admin
     volumes:
       - "./bootstrap/pgadmin_servers.json:/pgadmin4/servers.json"
-      - "./bootstrap/pgadmin_pass:/pgadmin4/pass"
+      - "./bootstrap/.pgpass:/pgadmin4/pass"
     ports:
       - "80:80"
     depends_on:

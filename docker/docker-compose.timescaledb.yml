@@ -6,3 +6,4 @@ include:
   - path: compose.pgwatch.yml
   - path: compose.pgadmin.yml
   - path: compose.prometheus.yml
+  - path: compose.patroni.yml  

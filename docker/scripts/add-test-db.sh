@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 export MSYS_NO_PATHCONV=1
 
@@ -19,5 +19,6 @@ VALUES
     ('demo',            'postgres',     'debug',        'postgresql://pgwatch:pgwatchadmin@postgres/pgwatch'),
     ('demo_metrics',    'postgres',     'full',         'postgresql://pgwatch:pgwatchadmin@postgres/pgwatch_metrics'), 
     ('demo_standby',    'postgres',     'full',         'postgresql://pgwatch:pgwatchadmin@postgres-standby/pgwatch'),
+    ('demo_patroni',    'patroni',      'basic',        'etcd://etcd1:2379,etcd2:2379,etcd3:2379/service/demo'),
     ('demo_pgbouncer',  'pgbouncer',    'pgbouncer',    'postgresql://pgwatch:pgwatchadmin@pgbouncer/pgbouncer'),
     ('demo_pgpool',     'pgpool',       'pgpool',       'postgresql://pgwatch:pgwatchadmin@pgpool/pgwatch');"
