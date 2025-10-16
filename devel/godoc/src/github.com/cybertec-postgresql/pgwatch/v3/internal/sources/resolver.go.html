@@ -324,7 +324,7 @@
 <span id="L267" class="ln">   267  </span>	default:
 <span id="L268" class="ln">   268  </span>		return nil, errors.New(&#34;unknown DCS&#34;)
 <span id="L269" class="ln">   269  </span>	}
-<span id="L270" class="ln">   270  </span>	logger := logger.WithField(&#34;sorce&#34;, source.Name)
+<span id="L270" class="ln">   270  </span>	logger := logger.WithField(&#34;source&#34;, source.Name)
 <span id="L271" class="ln">   271  </span>	if err != nil {
 <span id="L272" class="ln">   272  </span>		if errors.Is(err, errors.ErrUnsupported) {
 <span id="L273" class="ln">   273  </span>			return nil, err
