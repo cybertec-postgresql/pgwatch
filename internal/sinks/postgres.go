@@ -318,7 +318,6 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 		return
 	}
 	logger := log.GetLogger(pgw.ctx)
-	// metricsToStorePerMetric := make(map[string][]MeasurementMessagePostgres)
 	pgPartBounds := make(map[string]ExistingPartitionInfo)                  // metric=min/max
 	pgPartBoundsDbName := make(map[string]map[string]ExistingPartitionInfo) // metric=[dbname=min/max]
 	var err error
