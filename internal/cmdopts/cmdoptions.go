@@ -207,20 +207,18 @@ func (c *Options) ValidateConfig() error {
 	}
 
 	// validate partition interval
-	if c.Sinks.PartitionInterval != "" {
-		// Check if it's a standard interval first
-		if c.Sinks.PartitionInterval != "1 day" && c.Sinks.PartitionInterval != "1 week" && c.Sinks.PartitionInterval != "1 month" {
-			// Validate that the custom interval is a valid PostgreSQL interval
-			if _, err := time.ParseDuration(c.Sinks.PartitionInterval); err != nil {
-				// Try parsing as PostgreSQL interval format (e.g., "2 hours", "3 days")
-				if !isValidPostgreSQLInterval(c.Sinks.PartitionInterval) {
-					return fmt.Errorf("--partition-interval must be a valid PostgreSQL interval (e.g., '1 day', '1 week', '1 month', '2 hours', '3 days', '2 weeks'): %v", err)
-				}
-			}
-			// Check for prohibited intervals (year, minute, and second types)
-			if isProhibitedInterval(c.Sinks.PartitionInterval) {
-				return errors.New("--partition-interval cannot use year, minute, or second-based intervals. Use hours, days, weeks, or months instead")
-			}
+	if c.Sinks.PartitionInterval > 0 {
+		// Check if it's within allowed range (1 hour to 1 month)
+		if c.Sinks.PartitionInterval < time.Hour || c.Sinks.PartitionInterval > 30*24*time.Hour {
+			return errors.New("--partition-interval must be between 1 hour and 30 days (1 month). Use hours, days, or weeks instead")
+		}
+
+		// Check for prohibited intervals (less than 1 hour or more than 1 month)
+		if c.Sinks.PartitionInterval < time.Hour {
+			return errors.New("--partition-interval cannot use minute or second-based intervals. Use hours, days, weeks, or months instead")
+		}
+		if c.Sinks.PartitionInterval > 30*24*time.Hour {
+			return errors.New("--partition-interval cannot use year-based intervals. Use hours, days, weeks, or months instead")
 		}
 	}
 

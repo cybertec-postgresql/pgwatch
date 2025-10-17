@@ -114,13 +114,13 @@ It reads the configuration from the specified sources and metrics, then begins c
 
 - `--partition-interval=`
 
-    PostgreSQL partition interval (default: 1 week).  
+    PostgreSQL partition interval (default: 168h).  
     ENV: `$PW_PARTITION_INTERVAL`
 
-    **Standard intervals**: `1 day`, `1 week`, `1 month`  
-    **Custom intervals**: `2 hours`, `6 hours`, `12 hours`, `2 days`, `3 days`, `2 weeks`, `3 weeks`, `2 months`, `3 months`
+    **Standard intervals**: `24h` (1 day), `168h` (1 week), `720h` (1 month)  
+    **Custom intervals**: `2h`, `6h`, `12h`, `48h` (2 days), `72h` (3 days), `336h` (2 weeks), `504h` (3 weeks)
 
-    Allowed range: 1 hour to 1 month. Year, minute, and second-based intervals are not allowed.
+    Allowed range: 1 hour to 30 days. Year, minute, and second-based intervals are not allowed.
     Custom intervals use boundary-based partition naming for hour-based intervals.
 
 ### Logging

@@ -76,46 +76,46 @@ func TestPartitionInterval(t *testing.T) {
 	}{
 		{
 			name:        "valid standard interval",
-			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=1 day"},
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=24h"},
 			expectError: false,
 		},
 		{
 			name:        "valid custom interval",
-			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=2 hours"},
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=2h"},
 			expectError: false,
 		},
 		{
 			name:        "valid custom interval with days",
-			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=3 days"},
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=72h"},
 			expectError: false,
 		},
 		{
 			name:        "invalid interval format",
 			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=invalid"},
 			expectError: true,
-			errorMsg:    "must be a valid PostgreSQL interval",
+			errorMsg:    "invalid duration",
 		},
 		{
 			name:        "prohibited year interval",
-			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=1 year"},
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=8760h"},
 			expectError: true,
-			errorMsg:    "cannot use year, minute, or second-based intervals",
+			errorMsg:    "cannot use year-based intervals",
 		},
 		{
 			name:        "prohibited minute interval",
-			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=30 minutes"},
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=30m"},
 			expectError: true,
-			errorMsg:    "cannot use year, minute, or second-based intervals",
+			errorMsg:    "cannot use minute or second-based intervals",
 		},
 		{
 			name:        "prohibited second interval",
-			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=3600 seconds"},
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=3600s"},
 			expectError: true,
-			errorMsg:    "cannot use year, minute, or second-based intervals",
+			errorMsg:    "cannot use minute or second-based intervals",
 		},
 		{
 			name:        "standard partition interval still works",
-			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=1 week"},
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=168h"},
 			expectError: false,
 		},
 	}

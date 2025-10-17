@@ -83,23 +83,30 @@ BEGIN
           part_available_to := l_part_end;
       END IF;
 
-      -- Generate partition name based on interval type (only 3 allowed intervals)
+      -- Generate partition name based on interval type
+      -- Check if interval is single day (1 day only)
       IF l_partition_interval = '1 day'::interval THEN
           l_part_name_3rd := format('%s_%s_%s', metric, dbname, to_char(l_part_start, 'yyyymmdd'));
+      -- Check if interval is single week (1 week only)
       ELSIF l_partition_interval = '1 week'::interval THEN
           l_year := extract(isoyear from l_part_start);
           l_week := extract(week from l_part_start);
           l_part_name_3rd := format('%s_%s_y%sw%s', metric, dbname, l_year, to_char(l_week, 'fm00' ));
+      -- Check if interval is single month (1 month only)
       ELSIF l_partition_interval = '1 month'::interval THEN
           l_part_name_3rd := format('%s_%s_%s', metric, dbname, to_char(l_part_start, 'yyyymm'));
       ELSE
-          -- This should never happen due to validation, but provide a fallback
-          RAISE EXCEPTION 'Unsupported partition interval: %. Only 1 day, 1 week, or 1 month are allowed.', l_partition_interval;
+          -- For all multi-intervals and hour-based intervals, use boundary-based naming
+          l_part_name_3rd := format('%s_%s_%s_to_%s', 
+              metric, 
+              dbname, 
+              to_char(l_part_start, 'yyyymmdd_hh24mi'), 
+              to_char(l_part_end, 'yyyymmdd_hh24mi'));
       END IF;
 
       IF char_length(l_part_name_3rd) > MAX_IDENT_LEN     -- use "dbname" hash instead of name for overly long ones
       THEN
-          -- Calculate ideal length based on the naming pattern used (only 3 allowed intervals)
+          -- Calculate ideal length based on the naming pattern used
           IF l_partition_interval = '1 day'::interval THEN
               ideal_length = MAX_IDENT_LEN - char_length(format('%s__%s', metric, to_char(l_part_start, 'yyyymmdd')));
               l_part_name_3rd := format('%s_%s_%s', metric, substring(md5(dbname) from 1 for ideal_length), to_char(l_part_start, 'yyyymmdd'));
@@ -109,6 +116,23 @@ BEGIN
           ELSIF l_partition_interval = '1 month'::interval THEN
               ideal_length = MAX_IDENT_LEN - char_length(format('%s__%s', metric, to_char(l_part_start, 'yyyymm')));
               l_part_name_3rd := format('%s_%s_%s', metric, substring(md5(dbname) from 1 for ideal_length), to_char(l_part_start, 'yyyymm'));
+          ELSE
+              -- For all multi-intervals and hour-based intervals, use hash for dbname and truncate boundary timestamps if needed
+              ideal_length = MAX_IDENT_LEN - char_length(format('%s__%s_to_%s', metric, to_char(l_part_start, 'yyyymmdd_hh24mi'), to_char(l_part_end, 'yyyymmdd_hh24mi')));
+              IF ideal_length < 8 THEN
+                  -- If still too long, use shorter timestamp format
+                  l_part_name_3rd := format('%s_%s_%s_to_%s', 
+                      metric, 
+                      substring(md5(dbname) from 1 for 8), 
+                      to_char(l_part_start, 'mmdd_hh24mi'), 
+                      to_char(l_part_end, 'mmdd_hh24mi'));
+              ELSE
+                  l_part_name_3rd := format('%s_%s_%s_to_%s', 
+                      metric, 
+                      substring(md5(dbname) from 1 for ideal_length), 
+                      to_char(l_part_start, 'yyyymmdd_hh24mi'), 
+                      to_char(l_part_end, 'yyyymmdd_hh24mi'));
+              END IF;
           END IF;
       END IF;
 
