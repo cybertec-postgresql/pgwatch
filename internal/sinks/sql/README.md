@@ -13,9 +13,60 @@ pgwatch --config=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=post
 
 ### metric-dbname-time
 
-A single top level table for each distinct metric in the "public" schema + 2 levels of subpartitions ("dbname" + weekly time based) in the "subpartitions" schema.
+A single top level table for each distinct metric in the "public" schema + 2 levels of subpartitions ("dbname" + configurable time based) in the "subpartitions" schema.
 
 Provides the fastest query runtimes when having long retention intervals / lots of metrics data or slow disks and accessing mostly only a single DB's metrics at a time.
+
+**Partition Interval Configuration:**
+- Default: `1 week` (weekly partitions)
+- **Initial Configuration**: Set via CLI/Environment variables during database initialization
+  - CLI: `--partition-interval="1 day"` or `--partition-interval="3 days"`
+  - Environment: `PW_PARTITION_INTERVAL="1 day"` or `PW_PARTITION_INTERVAL="3 days"`
+  - **Note**: Only applied when creating a new database or when `admin` schema doesn't exist
+- **Runtime Configuration**: Change via `admin.change_postgres_partition_interval(interval)` function
+- **Supported intervals**: 
+  - **Standard**: `1 day`, `1 week`, or `1 month`
+  - **Custom**: Any PostgreSQL interval between 1 hour and 1 month (e.g., `2 hours`, `6 hours`, `12 hours`, `2 days`, `3 days`)
+  - **Prohibited**: Year, minute, and second-based intervals are not allowed
+
+**Initial Configuration Examples:**
+```bash
+# Standard intervals via CLI
+pgwatch --partition-interval="1 day" --sink=postgresql://user:pass@localhost/metrics
+
+# Custom intervals via CLI
+pgwatch --partition-interval="3 days" --sink=postgresql://user:pass@localhost/metrics
+
+# Environment variables
+export PW_PARTITION_INTERVAL="1 day"
+# OR
+export PW_PARTITION_INTERVAL="3 days"
+pgwatch --sink=postgresql://user:pass@localhost/metrics
+
+# Docker
+docker run -e PW_PARTITION_INTERVAL="3 days" pgwatch
+
+# Docker Compose
+services:
+  pgwatch:
+    environment:
+      PW_PARTITION_INTERVAL: "3 days"
+    command:
+      - "--partition-interval=3 days"
+```
+
+**Runtime Configuration Examples:**
+```sql
+-- Standard intervals
+SELECT admin.change_postgres_partition_interval('1 day');
+SELECT admin.change_postgres_partition_interval('1 week');
+SELECT admin.change_postgres_partition_interval('1 month');
+
+-- Custom intervals
+SELECT admin.change_postgres_partition_interval('3 days');
+SELECT admin.change_postgres_partition_interval('6 hours');
+SELECT admin.change_postgres_partition_interval('12 hours');
+```
 
 Also note that when having extremely many hosts under monitoring it might be necessary to increase the `max_locks_per_transaction`
 parameter in `postgresql.conf` on the metric measurements database for automatic old partition dropping to work. One could of course also drop old
@@ -35,10 +86,21 @@ create table subpartitions."mymetric_mydbname"
   FOR VALUES IN ('my-dbname') PARTITION BY RANGE (time);
 COMMENT ON TABLE subpartitions."mymetric_mydbname" IS 'pgwatch-generated-metric-dbname-lvl';
 
-create table subpartitions."mymetric_mydbname_y2019w01" -- month calculated dynamically of course
+create table subpartitions."mymetric_mydbname_y2019w01" -- time calculated dynamically based on configured interval
   PARTITION OF subpartitions."mymetric_mydbname"
   FOR VALUES FROM ('2019-01-01') TO ('2019-01-07');
 COMMENT ON TABLE subpartitions."mymetric_mydbname_y2019w01" IS 'pgwatch-generated-metric-dbname-time-lvl';
+
+-- For daily partitions (if configured):
+-- create table subpartitions."mymetric_mydbname_20190101"
+--   PARTITION OF subpartitions."mymetric_mydbname"
+--   FOR VALUES FROM ('2019-01-01') TO ('2019-01-02');
+
+-- For monthly partitions (if configured):
+-- create table subpartitions."mymetric_mydbname_201901"
+--   PARTITION OF subpartitions."mymetric_mydbname"
+--   FOR VALUES FROM ('2019-01-01') TO ('2019-02-01');
+
 ```
 
 ### timescale
