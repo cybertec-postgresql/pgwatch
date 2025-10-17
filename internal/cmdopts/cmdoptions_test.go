@@ -66,3 +66,72 @@ func TestConfig(t *testing.T) {
 	_, err = New(nil)
 	assert.NoError(t, err)
 }
+
+func TestPartitionInterval(t *testing.T) {
+	tests := []struct {
+		name        string
+		args        []string
+		expectError bool
+		errorMsg    string
+	}{
+		{
+			name:        "valid standard interval",
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=1 day"},
+			expectError: false,
+		},
+		{
+			name:        "valid custom interval",
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=2 hours"},
+			expectError: false,
+		},
+		{
+			name:        "valid custom interval with days",
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=3 days"},
+			expectError: false,
+		},
+		{
+			name:        "invalid interval format",
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=invalid"},
+			expectError: true,
+			errorMsg:    "must be a valid PostgreSQL interval",
+		},
+		{
+			name:        "prohibited year interval",
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=1 year"},
+			expectError: true,
+			errorMsg:    "cannot use year, minute, or second-based intervals",
+		},
+		{
+			name:        "prohibited minute interval",
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=30 minutes"},
+			expectError: true,
+			errorMsg:    "cannot use year, minute, or second-based intervals",
+		},
+		{
+			name:        "prohibited second interval",
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=3600 seconds"},
+			expectError: true,
+			errorMsg:    "cannot use year, minute, or second-based intervals",
+		},
+		{
+			name:        "standard partition interval still works",
+			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=1 week"},
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Args = tt.args
+			_, err := New(nil)
+			if tt.expectError {
+				assert.Error(t, err)
+				if tt.errorMsg != "" {
+					assert.Contains(t, err.Error(), tt.errorMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
@@ -205,9 +207,70 @@ func (c *Options) ValidateConfig() error {
 	}
 
 	// validate partition interval
-	if c.Sinks.PartitionInterval != "" && c.Sinks.PartitionInterval != "1 day" && c.Sinks.PartitionInterval != "1 week" && c.Sinks.PartitionInterval != "1 month" {
-		return errors.New("--partition-interval must be exactly '1 day', '1 week', or '1 month'")
+	if c.Sinks.PartitionInterval != "" {
+		// Check if it's a standard interval first
+		if c.Sinks.PartitionInterval != "1 day" && c.Sinks.PartitionInterval != "1 week" && c.Sinks.PartitionInterval != "1 month" {
+			// Validate that the custom interval is a valid PostgreSQL interval
+			if _, err := time.ParseDuration(c.Sinks.PartitionInterval); err != nil {
+				// Try parsing as PostgreSQL interval format (e.g., "2 hours", "3 days")
+				if !isValidPostgreSQLInterval(c.Sinks.PartitionInterval) {
+					return fmt.Errorf("--partition-interval must be a valid PostgreSQL interval (e.g., '1 day', '1 week', '1 month', '2 hours', '3 days', '2 weeks'): %v", err)
+				}
+			}
+			// Check for prohibited intervals (year, minute, and second types)
+			if isProhibitedInterval(c.Sinks.PartitionInterval) {
+				return errors.New("--partition-interval cannot use year, minute, or second-based intervals. Use hours, days, weeks, or months instead")
+			}
+		}
 	}
 
 	return nil
+}
+
+// isValidPostgreSQLInterval validates if the string is a valid PostgreSQL interval
+func isValidPostgreSQLInterval(interval string) bool {
+	// Basic validation for PostgreSQL interval format
+	// Examples: "2 hours", "6 hours", "12 hours", "1 day", "2 days", "3 days", "1 week", "2 weeks"
+	interval = strings.TrimSpace(interval)
+
+	// Check for common PostgreSQL interval patterns
+	validPatterns := []string{
+		`^\d+\s+(hour|hours)$`,
+		`^\d+\s+(day|days)$`,
+		`^\d+\s+(week|weeks)$`,
+		`^\d+\s+(month|months)$`,
+		`^\d+\s+(year|years)$`,
+		`^\d+\s+(minute|minutes)$`,
+		`^\d+\s+(second|seconds)$`,
+	}
+
+	for _, pattern := range validPatterns {
+		matched, _ := regexp.MatchString(pattern, strings.ToLower(interval))
+		if matched {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isProhibitedInterval checks if the interval uses prohibited time units (year, minute, or second)
+func isProhibitedInterval(interval string) bool {
+	interval = strings.TrimSpace(strings.ToLower(interval))
+
+	// Check for prohibited patterns
+	prohibitedPatterns := []string{
+		`^\d+\s+(year|years)$`,
+		`^\d+\s+(minute|minutes)$`,
+		`^\d+\s+(second|seconds)$`,
+	}
+
+	for _, pattern := range prohibitedPatterns {
+		matched, _ := regexp.MatchString(pattern, interval)
+		if matched {
+			return true
+		}
+	}
+
+	return false
 }
