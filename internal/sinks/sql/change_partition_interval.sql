@@ -15,19 +15,15 @@ RETURNS void AS
 $SQL$
 BEGIN
   -- Validate the interval - allow standard intervals or custom intervals
-  IF new_interval NOT IN ('1 day'::interval, '1 week'::interval, '1 month'::interval) THEN
-    -- For custom intervals, validate they are reasonable (between 1 hour and 1 month)
-    IF new_interval < '1 hour'::interval OR new_interval > '1 month'::interval THEN
-      RAISE EXCEPTION 'Custom partition interval must be between 1 hour and 1 month. Got: %', new_interval;
+  IF new_interval NOT IN ('1 day'::interval, '1 week'::interval, '1 month'::interval, '1 year'::interval) THEN
+    -- For custom intervals, validate they are reasonable (between 1 hour and 1 year)
+    IF new_interval < '1 hour'::interval OR new_interval > '1 year'::interval THEN
+      RAISE EXCEPTION 'Custom partition interval must be between 1 hour and 1 year. Got: %', new_interval;
     END IF;
     
-    -- Prohibit year and minute-based intervals
-    IF new_interval >= '1 year'::interval THEN
-      RAISE EXCEPTION 'Year-based intervals are not allowed. Use months, weeks, days, or hours instead. Got: %', new_interval;
-    END IF;
-    
+    -- Prohibit minute and second-based intervals
     IF new_interval < '1 hour'::interval THEN
-      RAISE EXCEPTION 'Minute and second-based intervals are not allowed. Use hours, days, weeks, or months instead. Got: %', new_interval;
+      RAISE EXCEPTION 'Minute and second-based intervals are not allowed. Use hours, days, weeks, months, or years instead. Got: %', new_interval;
     END IF;
   END IF;
   

@@ -95,6 +95,9 @@ BEGIN
       -- Check if interval is single month (1 month only)
       ELSIF l_partition_interval = '1 month'::interval THEN
           l_part_name_3rd := format('%s_%s_%s', metric, dbname, to_char(l_part_start, 'yyyymm'));
+      -- Check if interval is single year (1 year only)
+      ELSIF l_partition_interval = '1 year'::interval THEN
+          l_part_name_3rd := format('%s_%s_%s', metric, dbname, to_char(l_part_start, 'yyyy'));
       ELSE
           -- For all multi-intervals and hour-based intervals, use boundary-based naming
           l_part_name_3rd := format('%s_%s_%s_to_%s', 
@@ -116,6 +119,9 @@ BEGIN
           ELSIF l_partition_interval = '1 month'::interval THEN
               ideal_length = MAX_IDENT_LEN - char_length(format('%s__%s', metric, to_char(l_part_start, 'yyyymm')));
               l_part_name_3rd := format('%s_%s_%s', metric, substring(md5(dbname) from 1 for ideal_length), to_char(l_part_start, 'yyyymm'));
+          ELSIF l_partition_interval = '1 year'::interval THEN
+              ideal_length = MAX_IDENT_LEN - char_length(format('%s__%s', metric, to_char(l_part_start, 'yyyy')));
+              l_part_name_3rd := format('%s_%s_%s', metric, substring(md5(dbname) from 1 for ideal_length), to_char(l_part_start, 'yyyy'));
           ELSE
               -- For all multi-intervals and hour-based intervals, use hash for dbname and truncate boundary timestamps if needed
               ideal_length = MAX_IDENT_LEN - char_length(format('%s__%s_to_%s', metric, to_char(l_part_start, 'yyyymmdd_hh24mi'), to_char(l_part_end, 'yyyymmdd_hh24mi')));

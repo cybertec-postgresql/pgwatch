@@ -208,17 +208,12 @@ func (c *Options) ValidateConfig() error {
 
 	// validate partition interval
 	if c.Sinks.PartitionInterval > 0 {
-		// Check if it's within allowed range (1 hour to 1 month)
-		if c.Sinks.PartitionInterval < time.Hour || c.Sinks.PartitionInterval > 30*24*time.Hour {
-			return errors.New("--partition-interval must be between 1 hour and 30 days (1 month). Use hours, days, or weeks instead")
-		}
-
-		// Check for prohibited intervals (less than 1 hour or more than 1 month)
+		// Check for prohibited intervals (less than 1 hour or more than 1 year)
 		if c.Sinks.PartitionInterval < time.Hour {
-			return errors.New("--partition-interval cannot use minute or second-based intervals. Use hours, days, weeks, or months instead")
+			return errors.New("--partition-interval cannot use minute or second-based intervals. Use hours, days, weeks, months, or years instead")
 		}
-		if c.Sinks.PartitionInterval > 30*24*time.Hour {
-			return errors.New("--partition-interval cannot use year-based intervals. Use hours, days, weeks, or months instead")
+		if c.Sinks.PartitionInterval > 365*24*time.Hour {
+			return errors.New("--partition-interval cannot use intervals longer than 1 year. Use hours, days, weeks, months, or years instead")
 		}
 	}
 
@@ -252,13 +247,12 @@ func isValidPostgreSQLInterval(interval string) bool {
 	return false
 }
 
-// isProhibitedInterval checks if the interval uses prohibited time units (year, minute, or second)
+// isProhibitedInterval checks if the interval uses prohibited time units (minute or second)
 func isProhibitedInterval(interval string) bool {
 	interval = strings.TrimSpace(strings.ToLower(interval))
 
 	// Check for prohibited patterns
 	prohibitedPatterns := []string{
-		`^\d+\s+(year|years)$`,
 		`^\d+\s+(minute|minutes)$`,
 		`^\d+\s+(second|seconds)$`,
 	}
