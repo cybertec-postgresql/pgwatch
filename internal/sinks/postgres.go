@@ -57,13 +57,15 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		}
 
 		// Set partition interval from CLI/env configuration during initialization
-		if pgw.opts.PartitionInterval != "" {
+		if pgw.opts.PartitionInterval > 0 {
+			// Convert time.Duration to PostgreSQL interval string
+			intervalStr := pgw.convertDurationToPostgreSQLInterval(pgw.opts.PartitionInterval)
 			sql := `INSERT INTO admin.config (key, value) VALUES ('postgres_partition_interval', $1)
 					ON CONFLICT (key) DO UPDATE SET value = $1`
-			if _, err = conn.Exec(ctx, sql, pgw.opts.PartitionInterval); err != nil {
+			if _, err = conn.Exec(ctx, sql, intervalStr); err != nil {
 				return fmt.Errorf("failed to set partition interval from CLI/env config during initialization: %w", err)
 			}
-			l.Infof("Set PostgreSQL partition interval to: %s (from CLI/env configuration during initialization)", pgw.opts.PartitionInterval)
+			l.Infof("Set PostgreSQL partition interval to: %s (from CLI/env configuration during initialization)", intervalStr)
 		}
 
 		return nil
@@ -635,4 +637,32 @@ func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric stri
 			)`
 	_, err := pgw.sinkDb.Exec(pgw.ctx, sql, dbUnique, metric)
 	return err
+}
+
+// convertDurationToPostgreSQLInterval converts Go time.Duration to PostgreSQL interval string
+func (pgw *PostgresWriter) convertDurationToPostgreSQLInterval(d time.Duration) string {
+	// Convert to hours for easier calculation
+	hours := int(d.Hours())
+
+	// Handle common intervals
+	switch {
+	case hours == 24:
+		return "1 day"
+	case hours == 168: // 7 days
+		return "1 week"
+	case hours == 720: // 30 days
+		return "1 month"
+	case hours < 24:
+		return fmt.Sprintf("%d hours", hours)
+	case hours < 168: // less than a week
+		days := hours / 24
+		return fmt.Sprintf("%d days", days)
+	case hours < 720: // less than a month
+		weeks := hours / 168
+		return fmt.Sprintf("%d weeks", weeks)
+	default:
+		// For longer intervals, convert to days
+		days := hours / 24
+		return fmt.Sprintf("%d days", days)
+	}
 }
