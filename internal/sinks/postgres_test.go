@@ -50,7 +50,7 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 		conn.ExpectExec("SELECT admin.ensure_dummy_metrics_table").WithArgs(m).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
 	}
 
-	opts := &CmdOpts{BatchingDelay: time.Hour, Retention: "1 year"}
+	opts := &CmdOpts{BatchingDelay: time.Hour, Retention: 1}
 	pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
 	assert.NoError(t, err)
 	assert.NotNil(t, pgw)
