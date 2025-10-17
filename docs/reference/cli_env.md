@@ -99,7 +99,7 @@ It reads the configuration from the specified sources and metrics, then begins c
 
 - `--retention=`
 
-    If set, metrics older than that will be deleted (default: 14).  
+    If set, metrics older than that will be deleted (default: "14 days").  
     ENV: `$PW_RETENTION`
 
 - `--real-dbname-field=`

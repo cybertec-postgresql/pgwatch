@@ -24,7 +24,8 @@
   "panels": [
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Number of monitored primary database instances",
       "fieldConfig": {
@@ -85,7 +86,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Number of monitored replica database instances",
       "fieldConfig": {
@@ -146,7 +148,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Total number of database instances being monitored",
       "fieldConfig": {
@@ -220,7 +223,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Database uptime across all monitored instances",
       "fieldConfig": {
@@ -314,7 +318,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Active backend connections across all databases",
       "fieldConfig": {
@@ -407,7 +412,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Transaction rate across all monitored databases",
       "fieldConfig": {
@@ -501,7 +507,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Buffer cache hit ratio across all databases",
       "fieldConfig": {
@@ -610,7 +617,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "CPU load average (1 minute) for monitored systems",
       "fieldConfig": {
@@ -703,7 +711,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
       },
       "description": "Memory usage percentage across monitored systems",
       "fieldConfig": {

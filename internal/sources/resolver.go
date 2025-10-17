@@ -47,7 +47,7 @@ func (s Source) ResolveDatabases() (SourceConns, error) {
 	case SourcePostgresContinuous:
 		return ResolveDatabasesFromPostgres(s)
 	}
-	return SourceConns{&SourceConn{Source: s}}, nil
+	return SourceConns{NewSourceConn(s)}, nil
 }
 
 type PatroniClusterMember struct {
@@ -55,6 +55,10 @@ type PatroniClusterMember struct {
 	Name    string
 	ConnURL string `yaml:"conn_url"`
 	Role    string
+}
+
+func (pcm PatroniClusterMember) IsPrimary() bool {
+	return pcm.Role == "primary" || pcm.Role == "master"
 }
 
 var logger log.Logger = log.FallbackLogger
@@ -164,15 +168,15 @@ func getEtcdClusterMembers(s Source, hc HostConfig) ([]PatroniClusterMember, err
 	}
 
 	for _, node := range resp.Kvs {
-		nodeData, err := jsonTextToStringMap(string(node.Value))
-		if err != nil {
-			logger.Errorf("Could not parse ETCD node data for node \"%s\": %s", node, err)
-			continue
-		}
 		// remove leading slash and split by "/"
 		parts := strings.Split(strings.TrimPrefix(string(node.Key), "/"), "/")
-		if len(parts) < 3 {
-			return nil, errors.New("invalid ETCD key format")
+		if len(parts) < 4 || parts[2] != "members" {
+			continue // skip non-member keys
+		}
+		nodeData, err := jsonTextToStringMap(string(node.Value))
+		if err != nil {
+			logger.Errorf("Could not parse ETCD node data for node \"%s\": %s", node.Key, err)
+			continue
 		}
 		role := nodeData["role"]
 		connURL := nodeData["conn_url"]
@@ -263,12 +267,12 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 	default:
 		return nil, errors.New("unknown DCS")
 	}
-	logger := logger.WithField("sorce", source.Name)
+	logger := logger.WithField("source", source.Name)
 	if err != nil {
 		if errors.Is(err, errors.ErrUnsupported) {
 			return nil, err
 		}
-		logger.Debug("Failed to get info from DCS, using previous member info if any")
+		logger.Debug("failed to get info from DCS, using previous member info if any")
 		if clusterMembers, ok = lastFoundClusterMembers[source.Name]; ok { // mask error from main loop not to remove monitored DBs due to "jitter"
 			err = nil
 		}
@@ -280,20 +284,20 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 	}
 
 	for _, patroniMember := range clusterMembers {
-		logger.Info("Processing Patroni cluster member: ", patroniMember.Name)
-		if source.OnlyIfMaster && patroniMember.Role != "master" {
+		logger.Info("processing Patroni cluster member: ", patroniMember.Name)
+		if source.OnlyIfMaster && !patroniMember.IsPrimary() {
 			continue
 		}
 		src := *source.Clone()
 		src.ConnStr = patroniMember.ConnURL
-		if hostConfig.IsScopeSpecified() {
+		if !hostConfig.IsScopeSpecified() {
 			src.Name += "_" + patroniMember.Scope
 		}
 		src.Name += "_" + patroniMember.Name
 		if dbs, err := ResolveDatabasesFromPostgres(src); err == nil {
 			mds = append(mds, dbs...)
 		} else {
-			logger.WithError(err).Error("Failed to resolve databases for Patroni member: ", patroniMember.Name)
+			logger.WithError(err).Error("failed to resolve databases for Patroni member: ", patroniMember.Name)
 		}
 	}
 	return mds, err
@@ -329,7 +333,7 @@ func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error)
 		if err = rows.Scan(&dbname); err != nil {
 			return nil, err
 		}
-		rdb := &SourceConn{Source: *s.Clone()}
+		rdb := NewSourceConn(*s.Clone())
 		rdb.Name += "_" + dbname
 		rdb.SetDatabaseName(dbname)
 		resolvedDbs = append(resolvedDbs, rdb)

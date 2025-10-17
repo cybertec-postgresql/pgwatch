@@ -22,7 +22,6 @@ import (
 var (
 	cacheLimit      = 256
 	highLoadTimeout = time.Second * 5
-	deleterDelay    = time.Hour
 	targetColumns   = [...]string{"time", "dbname", "data", "tag_data"}
 )
 
@@ -44,7 +43,11 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		lastError: make(chan error),
 		sinkDb:    conn,
 	}
+	var runDeleteOldPartitions bool
 	if err = db.Init(ctx, pgw.sinkDb, func(ctx context.Context, conn db.PgxIface) error {
+		if err = conn.QueryRow(ctx, "SELECT $1::interval > '0'::interval", opts.Retention).Scan(&runDeleteOldPartitions); err != nil {
+			return err
+		}
 		l.Info("initialising measurements database...")
 		exists, err := db.DoesSchemaExist(ctx, conn, "admin")
 		if err != nil || exists {
@@ -78,7 +81,9 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 	if err = pgw.EnsureBuiltinMetricDummies(); err != nil {
 		return
 	}
-	go pgw.deleteOldPartitions(deleterDelay)
+	if runDeleteOldPartitions {
+		go pgw.deleteOldPartitions()
+	}
 	go pgw.maintainUniqueSources()
 	go pgw.poll()
 	l.Info(`measurements sink is activated`)
@@ -188,7 +193,7 @@ func (pgw *PostgresWriter) EnsureBuiltinMetricDummies() (err error) {
 
 // EnsureMetricDummy creates an empty table for a metric measurements if it doesn't exist
 func (pgw *PostgresWriter) EnsureMetricDummy(metric string) (err error) {
-	_, err = pgw.sinkDb.Exec(pgw.ctx, "select admin.ensure_dummy_metrics_table($1)", metric)
+	_, err = pgw.sinkDb.Exec(pgw.ctx, "SELECT admin.ensure_dummy_metrics_table($1)", metric)
 	return
 }
 
@@ -469,49 +474,16 @@ func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[str
 }
 
 // deleteOldPartitions is a background task that deletes old partitions from the measurements DB
-func (pgw *PostgresWriter) deleteOldPartitions(delay time.Duration) {
-	metricAgeDaysThreshold := pgw.opts.Retention
-	if metricAgeDaysThreshold <= 0 {
-		return
-	}
-	logger := log.GetLogger(pgw.ctx)
-	select {
-	case <-pgw.ctx.Done():
-		return
-	case <-time.After(delay):
-		// to reduce distracting log messages at startup
-	}
-
+func (pgw *PostgresWriter) deleteOldPartitions() {
+	l := log.GetLogger(pgw.ctx)
 	for {
-		if pgw.metricSchema == DbStorageSchemaTimescale {
-			partsDropped, err := pgw.DropOldTimePartitions(metricAgeDaysThreshold)
-			if err != nil {
-				logger.Errorf("Failed to drop old partitions (>%d days) from Postgres: %v", metricAgeDaysThreshold, err)
-				continue
-			}
-			logger.Infof("Dropped %d old metric partitions...", partsDropped)
-		} else if pgw.metricSchema == DbStorageSchemaPostgres {
-			partsToDrop, err := pgw.GetOldTimePartitions(metricAgeDaysThreshold)
-			if err != nil {
-				logger.Errorf("Failed to get a listing of old (>%d days) time partitions from Postgres metrics DB - check that the admin.get_old_time_partitions() function is rolled out: %v", metricAgeDaysThreshold, err)
-				time.Sleep(time.Second * 300)
-				continue
-			}
-			if len(partsToDrop) > 0 {
-				logger.Infof("Dropping %d old metric partitions one by one...", len(partsToDrop))
-				for _, toDrop := range partsToDrop {
-					sqlDropTable := `DROP TABLE IF EXISTS ` + toDrop
-
-					if _, err := pgw.sinkDb.Exec(pgw.ctx, sqlDropTable); err != nil {
-						logger.Errorf("Failed to drop old partition %s from Postgres metrics DB: %w", toDrop, err)
-						time.Sleep(time.Second * 300)
-					} else {
-						time.Sleep(time.Second * 5)
-					}
-				}
-			} else {
-				logger.Infof("No old metric partitions found to drop...")
-			}
+		var partsDropped int
+		err := pgw.sinkDb.QueryRow(pgw.ctx, `SELECT admin.drop_old_time_partitions(older_than => $1::interval)`,
+			pgw.opts.Retention).Scan(&partsDropped)
+		if err != nil {
+			l.Error("Could not drop old time partitions:", err)
+		} else if partsDropped > 0 {
+			l.Infof("Dropped %d old time partitions", partsDropped)
 		}
 		select {
 		case <-pgw.ctx.Done():
@@ -614,26 +586,11 @@ func (pgw *PostgresWriter) maintainUniqueSources() {
 	}
 }
 
-func (pgw *PostgresWriter) DropOldTimePartitions(metricAgeDaysThreshold int) (res int, err error) {
-	sqlOldPart := `select admin.drop_old_time_partitions($1, $2)`
-	err = pgw.sinkDb.QueryRow(pgw.ctx, sqlOldPart, metricAgeDaysThreshold, false).Scan(&res)
-	return
-}
-
-func (pgw *PostgresWriter) GetOldTimePartitions(metricAgeDaysThreshold int) ([]string, error) {
-	sqlGetOldParts := `select admin.get_old_time_partitions($1)`
-	rows, err := pgw.sinkDb.Query(pgw.ctx, sqlGetOldParts, metricAgeDaysThreshold)
-	if err == nil {
-		return pgx.CollectRows(rows, pgx.RowTo[string])
-	}
-	return nil, err
-}
-
 func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
-	sql := `insert into admin.all_distinct_dbname_metrics
-			select $1, $2
-			where not exists (
-				select * from admin.all_distinct_dbname_metrics where dbname = $1 and metric = $2
+	sql := `INSERT INTO admin.all_distinct_dbname_metrics
+			SELECT $1, $2
+			WHERE NOT EXISTS (
+				SELECT * FROM admin.all_distinct_dbname_metrics WHERE dbname = $1 AND metric = $2
 			)`
 	_, err := pgw.sinkDb.Exec(pgw.ctx, sql, dbUnique, metric)
 	return err

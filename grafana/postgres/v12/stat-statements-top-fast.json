@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 9,
+  "id": 3,
   "links": [],
   "panels": [
     {
@@ -42,7 +42,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -83,11 +84,7 @@
               },
               {
                 "id": "unit",
-                "value": "short"
-              },
-              {
-                "id": "decimals",
-                "value": 2
+                "value": ""
               },
               {
                 "id": "links",
@@ -95,7 +92,7 @@
                   {
                     "targetBlank": true,
                     "title": "Opens  'Single query details' dashboard for that queryid",
-                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=$__cell&from=$__from&to=$__to"
+                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=${__value.raw}&from=${__from}&to=${__to}"
                   }
                 ]
               },
@@ -224,7 +221,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "ass",
@@ -304,7 +301,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -345,11 +343,7 @@
               },
               {
                 "id": "unit",
-                "value": "short"
-              },
-              {
-                "id": "decimals",
-                "value": 2
+                "value": ""
               },
               {
                 "id": "links",
@@ -357,7 +351,7 @@
                   {
                     "targetBlank": true,
                     "title": "Opens  'Single query details' dashboard for that queryid",
-                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=$__cell&from=$__from&to=$__to"
+                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=${__value.raw}&from=${__from}&to=${__to}"
                   }
                 ]
               },
@@ -452,7 +446,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "ass",
@@ -532,7 +526,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -573,11 +568,7 @@
               },
               {
                 "id": "unit",
-                "value": "short"
-              },
-              {
-                "id": "decimals",
-                "value": 2
+                "value": ""
               },
               {
                 "id": "links",
@@ -585,7 +576,7 @@
                   {
                     "targetBlank": true,
                     "title": "Opens  'Single query details' dashboard for that queryid",
-                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=$__cell&from=$__from&to=$__to"
+                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=${__value.raw}&from=${__from}&to=${__to}"
                   }
                 ]
               },
@@ -699,7 +690,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "alias": "ass",
@@ -779,7 +770,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -843,11 +835,7 @@
               },
               {
                 "id": "unit",
-                "value": "short"
-              },
-              {
-                "id": "decimals",
-                "value": 2
+                "value": ""
               },
               {
                 "id": "links",
@@ -855,7 +843,7 @@
                   {
                     "targetBlank": false,
                     "title": "Opens  'Single query details' dashboard for that queryid",
-                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=$__cell&from=$__from&to=$__to"
+                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=${__value.raw}&from=${__from}&to=${__to}"
                   }
                 ]
               },
@@ -927,7 +915,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -993,7 +981,29 @@
       },
       "description": "Does not include Shared Buffer activities. Same as 'By total runtime' if no direct IO was performed. Requires track_io_timing=on",
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
         "overrides": []
       },
       "gridPos": {
@@ -1003,7 +1013,19 @@
         "y": 28
       },
       "id": 12,
-      "options": {},
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
@@ -1401,5 +1423,5 @@
   "timezone": "browser",
   "title": "Stat statements Top (Fast)",
   "uid": "stat-statements-top-fast",
-  "version": 1
+  "version": 2
 }

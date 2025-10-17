@@ -99,6 +99,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
 		for _, monitoredSource := range r.monitoredSources {
 			srcL := logger.WithField("source", monitoredSource.Name)
+			ctx = log.WithLogger(ctx, srcL)
 
 			if monitoredSource.Connect(ctx, r.Sources) != nil {
 				srcL.Warning("could not init connection, retrying on next iteration")
@@ -216,7 +217,9 @@ func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monit
 	if r.Sources.TryCreateListedExtsIfMissing > "" {
 		srcL.Info("trying to create extensions if missing")
 		extsToCreate := strings.Split(r.Sources.TryCreateListedExtsIfMissing, ",")
+		monitoredSource.RLock()
 		extsCreated := TryCreateMissingExtensions(ctx, monitoredSource, extsToCreate, monitoredSource.Extensions)
+		monitoredSource.RUnlock()
 		srcL.Infof("%d/%d extensions created based on --try-create-listed-exts-if-missing input %v", len(extsCreated), len(extsToCreate), extsCreated)
 	}
 
@@ -285,7 +288,9 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 	failedFetches := 0
 	lastDBVersionFetchTime := time.Unix(0, 0) // check DB ver. ev. 5 min
 
-	l := r.logger.WithField("source", md.Name).WithField("metric", metricName)
+	l := log.GetLogger(ctx).WithField("metric", metricName)
+	ctx = log.WithLogger(ctx, l)
+
 	if metricName == specialMetricServerLogEventCounts {
 		metrics.ParseLogs(ctx, md, md.RealDbname, md.GetMetricInterval(metricName), r.measurementCh, "", "")
 		return
@@ -468,7 +473,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 	if metric, ok = metricDefs.GetMetricDef(metricName); !ok {
 		return nil, metrics.ErrMetricNotFound
 	}
-	l := r.logger.WithField("source", md.Name).WithField("metric", metricName)
+	l := log.GetLogger(ctx)
 
 	if metric.IsInstanceLevel && r.Metrics.InstanceLevelCacheMaxSeconds > 0 && time.Second*time.Duration(md.GetMetricInterval(metricName)) < r.Metrics.CacheAge() {
 		cacheKey = fmt.Sprintf("%s:%s", md.GetClusterIdentifier(), metricName)
@@ -482,8 +487,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 		}
 		switch metricName {
 		case specialMetricChangeEvents:
-			r.CheckForPGObjectChangesAndStore(ctx, md)
-			return nil, nil
+			data, err = r.GetObjectChangesMeasurement(ctx, md)
 		case specialMetricInstanceUp:
 			data, err = r.GetInstanceUpMeasurement(ctx, md)
 		default:
@@ -494,7 +498,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 			}
 			data, err = QueryMeasurements(ctx, md, sql)
 		}
-		if err != nil {
+		if err != nil || len(data) == 0 {
 			return nil, err
 		}
 		r.measurementCache.Put(cacheKey, data)

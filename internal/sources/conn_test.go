@@ -243,10 +243,8 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 	t.Run("pgbouncer version fetch", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := &sources.SourceConn{
-			Conn:   mock,
-			Source: sources.Source{Kind: sources.SourcePgBouncer},
-		}
+		md := sources.NewSourceConn(sources.Source{Kind: sources.SourcePgBouncer})
+		md.Conn = mock
 		mock.ExpectQuery("SHOW VERSION").
 			WithArgs(pgx.QueryExecModeSimpleProtocol).
 			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("PgBouncer 1.12.0"))
@@ -260,10 +258,8 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 	t.Run("pgpool version fetch", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := &sources.SourceConn{
-			Conn:   mock,
-			Source: sources.Source{Kind: sources.SourcePgPool},
-		}
+		md := sources.NewSourceConn(sources.Source{Kind: sources.SourcePgPool})
+		md.Conn = mock
 		mock.ExpectQuery("SHOW POOL_VERSION").
 			WithArgs(pgx.QueryExecModeSimpleProtocol).
 			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("4.1.2"))
@@ -277,10 +273,8 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 	t.Run("postgres version and extensions", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := &sources.SourceConn{
-			Conn:   mock,
-			Source: sources.Source{Kind: sources.SourcePostgres},
-		}
+		md := sources.NewSourceConn(sources.Source{Kind: sources.SourcePostgres})
+		md.Conn = mock
 		mock.ExpectQuery("select").WillReturnRows(
 			pgxmock.NewRows([]string{"ver", "version", "pg_is_in_recovery", "current_database", "system_identifier", "is_superuser"}).
 				AddRow(13, "PostgreSQL 13.3", false, "testdb", "42424242", true),
@@ -306,10 +300,8 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 	t.Run("query error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := &sources.SourceConn{
-			Conn:   mock,
-			Source: sources.Source{Kind: sources.SourcePgBouncer},
-		}
+		md := sources.NewSourceConn(sources.Source{Kind: sources.SourcePgBouncer})
+		md.Conn = mock
 		mock.ExpectQuery("SHOW VERSION").
 			WithArgs(pgx.QueryExecModeSimpleProtocol).
 			WillReturnError(fmt.Errorf("db error"))

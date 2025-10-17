@@ -23,7 +23,7 @@ RUN yarn build
 # ----------------------------------------------------------------
 # 3. Go Dependencies and Tools (cached separately)
 # ----------------------------------------------------------------
-FROM golang:1.24 AS go-deps
+FROM golang:1.25 AS go-deps
 # Install protoc and required tools for protobuf generation
 RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest

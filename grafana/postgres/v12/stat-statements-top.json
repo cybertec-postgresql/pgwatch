@@ -90,7 +90,7 @@
                   {
                     "targetBlank": true,
                     "title": "Opens  'Single query details' dashboard for that queryid",
-                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=$__cell&from=$__from&to=$__to"
+                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=${__value.raw}&from=${__from}&to=${__to}"
                   }
                 ]
               },
@@ -313,7 +313,7 @@
                   {
                     "targetBlank": true,
                     "title": "Opens  'Single query details' dashboard for that queryid",
-                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=$__cell&from=$__from&to=$__to"
+                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=${__value.raw}&from=${__from}&to=${__to}"
                   }
                 ]
               },
@@ -517,7 +517,7 @@
                   {
                     "targetBlank": true,
                     "title": "Opens  'Single query details' dashboard for that queryid",
-                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=$__cell&from=$__from&to=$__to"
+                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=${__value.raw}&from=${__from}&to=${__to}"
                   }
                 ]
               },
@@ -744,7 +744,7 @@
                   {
                     "targetBlank": false,
                     "title": "Opens  'Single query details' dashboard for that queryid",
-                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=$__cell&from=$__from&to=$__to"
+                    "url": "/d/single-query-details?orgId=1&var-dbname=$dbname&var-queryid=${__value.raw}&from=${__from}&to=${__to}"
                   }
                 ]
               },

@@ -22,7 +22,7 @@ jobs:
     - name: Set up Golang
       uses: actions/setup-go@v6
       with:
-        go-version: '1.24'
+        go-version: '1.25'
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v5
@@ -31,7 +31,7 @@ jobs:
       run: git fetch --prune --unshallow
 
     - name: Set up Node.js
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@v6
       with:
         node-version: '22'
 

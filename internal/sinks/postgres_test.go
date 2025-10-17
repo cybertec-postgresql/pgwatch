@@ -43,13 +43,14 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 	assert.NoError(t, err)
 
 	conn.ExpectPing()
+	conn.ExpectQuery("SELECT \\$1::interval").WithArgs("1 year").WillReturnRows(pgxmock.NewRows([]string{"col"}).AddRow(true))
 	conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 	conn.ExpectQuery("SELECT schema_type").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 	for _, m := range metrics.GetDefaultBuiltInMetrics() {
-		conn.ExpectExec("select admin.ensure_dummy_metrics_table").WithArgs(m).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
+		conn.ExpectExec("SELECT admin.ensure_dummy_metrics_table").WithArgs(m).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
 	}
 
-	opts := &CmdOpts{BatchingDelay: time.Hour, Retention: 356}
+	opts := &CmdOpts{BatchingDelay: time.Hour, Retention: "1 year"}
 	pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
 	assert.NoError(t, err)
 	assert.NotNil(t, pgw)
@@ -67,8 +68,8 @@ func TestSyncMetric(t *testing.T) {
 	dbUnique := "mydb"
 	metricName := "mymetric"
 	op := AddOp
-	conn.ExpectExec("insert into admin\\.all_distinct_dbname_metrics").WithArgs(dbUnique, metricName).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
-	conn.ExpectExec("select admin\\.ensure_dummy_metrics_table").WithArgs(metricName).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
+	conn.ExpectExec("INSERT INTO admin\\.all_distinct_dbname_metrics").WithArgs(dbUnique, metricName).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
+	conn.ExpectExec("SELECT admin\\.ensure_dummy_metrics_table").WithArgs(metricName).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
 	err = pgw.SyncMetric(dbUnique, metricName, op)
 	assert.NoError(t, err)
 	assert.NoError(t, conn.ExpectationsWereMet())
