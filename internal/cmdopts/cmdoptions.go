@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
-	"strings"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
@@ -218,51 +216,4 @@ func (c *Options) ValidateConfig() error {
 	}
 
 	return nil
-}
-
-// isValidPostgreSQLInterval validates if the string is a valid PostgreSQL interval
-func isValidPostgreSQLInterval(interval string) bool {
-	// Basic validation for PostgreSQL interval format
-	// Examples: "2 hours", "6 hours", "12 hours", "1 day", "2 days", "3 days", "1 week", "2 weeks"
-	interval = strings.TrimSpace(interval)
-
-	// Check for common PostgreSQL interval patterns
-	validPatterns := []string{
-		`^\d+\s+(hour|hours)$`,
-		`^\d+\s+(day|days)$`,
-		`^\d+\s+(week|weeks)$`,
-		`^\d+\s+(month|months)$`,
-		`^\d+\s+(year|years)$`,
-		`^\d+\s+(minute|minutes)$`,
-		`^\d+\s+(second|seconds)$`,
-	}
-
-	for _, pattern := range validPatterns {
-		matched, _ := regexp.MatchString(pattern, strings.ToLower(interval))
-		if matched {
-			return true
-		}
-	}
-
-	return false
-}
-
-// isProhibitedInterval checks if the interval uses prohibited time units (minute or second)
-func isProhibitedInterval(interval string) bool {
-	interval = strings.TrimSpace(strings.ToLower(interval))
-
-	// Check for prohibited patterns
-	prohibitedPatterns := []string{
-		`^\d+\s+(minute|minutes)$`,
-		`^\d+\s+(second|seconds)$`,
-	}
-
-	for _, pattern := range prohibitedPatterns {
-		matched, _ := regexp.MatchString(pattern, interval)
-		if matched {
-			return true
-		}
-	}
-
-	return false
 }
