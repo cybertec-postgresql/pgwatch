@@ -96,9 +96,10 @@ func TestPartitionInterval(t *testing.T) {
 			errorMsg:    "invalid duration",
 		},
 		{
-			name:        "valid year interval",
+			name:        "prohibited year interval",
 			args:        []string{0: "test", "--sources=postgresql://test", "--partition-interval=8760h"},
-			expectError: false,
+			expectError: true,
+			errorMsg:    "cannot use 1 year intervals",
 		},
 		{
 			name:        "prohibited interval longer than year",

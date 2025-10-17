@@ -25,9 +25,9 @@ Provides the fastest query runtimes when having long retention intervals / lots 
   - **Note**: Only applied when creating a new database or when `admin` schema doesn't exist
 - **Runtime Configuration**: Change via `admin.change_postgres_partition_interval(interval)` function
 - **Supported intervals**: 
-  - **Standard**: `1 day`, `1 week`, `1 month`, or `1 year`
-  - **Custom**: Any PostgreSQL interval between 1 hour and 1 year (e.g., `2 hours`, `6 hours`, `12 hours`, `2 days`, `3 days`)
-  - **Prohibited**: Minute and second-based intervals are not allowed
+  - **Standard**: `1 day`, `1 week`, or `1 month`
+  - **Custom**: Any PostgreSQL interval between 1 hour and 1 month (e.g., `2 hours`, `6 hours`, `12 hours`, `2 days`, `3 days`)
+  - **Prohibited**: Year, minute, and second-based intervals are not allowed
 
 **Initial Configuration Examples:**
 ```bash
@@ -61,7 +61,6 @@ services:
 SELECT admin.change_postgres_partition_interval('1 day');
 SELECT admin.change_postgres_partition_interval('1 week');
 SELECT admin.change_postgres_partition_interval('1 month');
-SELECT admin.change_postgres_partition_interval('1 year');
 
 -- Custom intervals
 SELECT admin.change_postgres_partition_interval('3 days');

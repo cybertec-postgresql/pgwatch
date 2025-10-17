@@ -206,12 +206,15 @@ func (c *Options) ValidateConfig() error {
 
 	// validate partition interval
 	if c.Sinks.PartitionInterval > 0 {
-		// Check for prohibited intervals (less than 1 hour or more than 1 year)
+		// Check for prohibited intervals (less than 1 hour, exactly 1 year, or more than 1 year)
 		if c.Sinks.PartitionInterval < time.Hour {
-			return errors.New("--partition-interval cannot use minute or second-based intervals. Use hours, days, weeks, months, or years instead")
+			return errors.New("--partition-interval cannot use minute or second-based intervals. Use hours, days, weeks, or months instead")
+		}
+		if c.Sinks.PartitionInterval == 365*24*time.Hour {
+			return errors.New("--partition-interval cannot use 1 year intervals. Use hours, days, weeks, or months instead")
 		}
 		if c.Sinks.PartitionInterval > 365*24*time.Hour {
-			return errors.New("--partition-interval cannot use intervals longer than 1 year. Use hours, days, weeks, months, or years instead")
+			return errors.New("--partition-interval cannot use intervals longer than 1 year. Use hours, days, weeks, or months instead")
 		}
 	}
 
