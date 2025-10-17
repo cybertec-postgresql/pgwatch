@@ -199,8 +199,15 @@ func (c *Options) ValidateConfig() error {
 		return errors.New("--max-parallel-connections-per-db must be >= 1")
 	}
 
+	if c.Sinks.Maintenance < 0 {
+		return errors.New("--maintenance must be positive duration or 0 to disable it")
+	}
+	if c.Sinks.Retention < 0 {
+		return errors.New("--retention must be positive duration or 0 to disable it")
+	}
+
 	// validate that input is boolean is set
-	if c.Sinks.BatchingDelay <= 0 || c.Sinks.BatchingDelay > time.Hour {
+	if c.Sinks.BatchingDelay < 0 || c.Sinks.BatchingDelay > time.Hour {
 		return errors.New("--batching-delay-ms must be between 0 and 1h")
 	}
 
