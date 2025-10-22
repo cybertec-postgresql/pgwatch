@@ -36,7 +36,7 @@ jobs:
       uses: ./.github/actions/setup-protobuf
 
     - name: Set up Node.js
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@v6
       with:
         node-version: '22'        
 
@@ -120,7 +120,7 @@ jobs:
         cache-dependency-path: 'go.sum'
 
     - name: Set up Node.js
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@v6
       with:
         node-version: '22'
 

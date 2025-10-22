@@ -267,7 +267,7 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 	default:
 		return nil, errors.New("unknown DCS")
 	}
-	logger := logger.WithField("sorce", source.Name)
+	logger := logger.WithField("source", source.Name)
 	if err != nil {
 		if errors.Is(err, errors.ErrUnsupported) {
 			return nil, err
