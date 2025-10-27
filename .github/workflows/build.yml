@@ -58,7 +58,7 @@ jobs:
         go build ./cmd/pgwatch
 
     - name: Upload webui as artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: webui-build
         path: internal/webui/build
@@ -85,7 +85,7 @@ jobs:
         cache-dependency-path: 'go.sum'
 
     - name: Download webui artifact
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v6
       with:
         name: webui-build
         path: internal/webui/build        
