@@ -117,7 +117,7 @@
           "policy": "default",
           "query": "",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_xact_count')::int8 as c, lag((data->>'total_xact_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_xact_count')::int8 as c, lag((data->>'total_xact_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -257,7 +257,7 @@
           "policy": "default",
           "query": "",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -395,7 +395,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag))\n\nfrom (\n\n        select \n          (data->>'total_query_time')::float8 as tt, lag((data->>'total_query_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag))\n\nfrom (\n\n        select \n          (data->>'total_query_time')::float8 as tt, lag((data->>'total_query_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -522,7 +522,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag))\n\nfrom (\n\n        select \n          (data->>'total_wait_time')::float8 as tt, lag((data->>'total_wait_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag))\n\nfrom (\n\n        select \n          (data->>'total_wait_time')::float8 as tt, lag((data->>'total_wait_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -661,7 +661,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_received')::int8 as c, lag((data->>'total_received')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_received')::int8 as c, lag((data->>'total_received')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -799,7 +799,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_sent')::int8 as c, lag((data->>'total_sent')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_sent')::int8 as c, lag((data->>'total_sent')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -973,7 +973,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"TPS\"\nfrom (\n        select \n          (data->>'total_xact_count')::int8 as c, lag((data->>'total_xact_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"TPS\"\nfrom (\n        select \n          (data->>'total_xact_count')::int8 as c, lag((data->>'total_xact_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1161,7 +1161,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag)) as \"Pool wait time\"\n\nfrom (\n\n        select \n          (data->>'total_wait_time')::float8 as tt, lag((data->>'total_wait_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag)) as \"Pool wait time\"\n\nfrom (\n\n        select \n          (data->>'total_wait_time')::float8 as tt, lag((data->>'total_wait_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1366,7 +1366,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"QPS\"\nfrom (\n        select \n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"QPS\"\nfrom (\n        select \n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1576,7 +1576,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"Incoming rate\"\nfrom (\n        select \n          (data->>'total_received')::int8 as c, lag((data->>'total_received')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"Incoming rate\"\nfrom (\n        select \n          (data->>'total_received')::int8 as c, lag((data->>'total_received')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1742,7 +1742,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag)) as \"Avg. runtime\"\n\nfrom (\n\n        select \n          (data->>'total_query_time')::float8 as tt, lag((data->>'total_query_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag)) as \"Avg. runtime\"\n\nfrom (\n\n        select \n          (data->>'total_query_time')::float8 as tt, lag((data->>'total_query_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1933,7 +1933,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"Outgoing rate\"\nfrom (\n        select \n          (data->>'total_sent')::int8 as c, lag((data->>'total_sent')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"Outgoing rate\"\nfrom (\n        select \n          (data->>'total_sent')::int8 as c, lag((data->>'total_sent')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -2006,6 +2006,22 @@
   "templating": {
     "list": [
       {
+        "allowCustomValue": false,
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "definition": "select distinct dbname from pgbouncer_stats;",
+        "name": "monitoredsource",
+        "options": [],
+        "query": "select distinct dbname from pgbouncer_stats;",
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allowCustomValue": false,
         "current": {
           "text": "",
           "value": ""
@@ -2014,13 +2030,14 @@
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
         },
-        "definition": "",
+        "definition": "select distinct (data->>'database') as database from pgbouncer_stats where dbname = '$monitoredsource' ;",
         "includeAll": false,
         "name": "dbname",
         "options": [],
-        "query": "select distinct (data->>'database') as database from pgbouncer_stats ORDER BY 1;",
+        "query": "select distinct (data->>'database') as database from pgbouncer_stats where dbname = '$monitoredsource' ;",
         "refresh": 1,
         "regex": "",
+        "sort": 1,
         "type": "query"
       }
     ]
