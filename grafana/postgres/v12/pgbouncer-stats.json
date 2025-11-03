@@ -2011,10 +2011,10 @@
           "text": "",
           "value": ""
         },
-        "definition": "select distinct dbname from pgbouncer_stats;",
+        "definition": "select dbname as monitoredsource from admin.all_distinct_dbname_metrics where metric = 'pgbouncer_stats';",
         "name": "monitoredsource",
         "options": [],
-        "query": "select distinct dbname from pgbouncer_stats;",
+        "query": "select dbname as monitoredsource from admin.all_distinct_dbname_metrics where metric = 'pgbouncer_stats';",
         "refresh": 1,
         "regex": "",
         "sort": 1,
