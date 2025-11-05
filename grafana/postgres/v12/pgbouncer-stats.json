@@ -926,7 +926,7 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "#584477",
-                  "mode": "fixed"
+                  "mode": "palette-classic"
                 }
               }
             ]
@@ -1115,7 +1115,7 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "#890f02",
-                  "mode": "fixed"
+                  "mode": "palette-classic"
                 }
               }
             ]
@@ -1130,7 +1130,7 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "#890F02",
-                  "mode": "fixed"
+                  "mode": "palette-classic"
                 }
               }
             ]
@@ -1307,7 +1307,7 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "#F9E2D2",
-                  "mode": "fixed"
+                  "mode": "palette-classic"
                 }
               }
             ]
@@ -1322,7 +1322,7 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "#BF1B00",
-                  "mode": "fixed"
+                  "mode": "palette-classic"
                 }
               }
             ]
@@ -1337,7 +1337,7 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "#508642",
-                  "mode": "fixed"
+                  "mode": "palette-classic"
                 }
               }
             ]
@@ -1535,7 +1535,7 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "#2F575E",
-                  "mode": "fixed"
+                  "mode": "palette-classic"
                 }
               }
             ]
@@ -1565,7 +1565,7 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "#6ed0e0",
-                  "mode": "fixed"
+                  "mode": "palette-classic"
                 }
               }
             ]
@@ -1764,7 +1764,7 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "#ef843c",
-                  "mode": "fixed"
+                  "mode": "palette-classic"
                 }
               }
             ]
@@ -1965,7 +1965,7 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "#e24d42",
-                  "mode": "fixed"
+                  "mode": "palette-classic"
                 }
               }
             ]
@@ -1980,7 +1980,7 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "#e24d42",
-                  "mode": "fixed"
+                  "mode": "palette-classic"
                 }
               }
             ]
@@ -1995,7 +1995,7 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "#BA43A9",
-                  "mode": "fixed"
+                  "mode": "palette-classic"
                 }
               }
             ]
