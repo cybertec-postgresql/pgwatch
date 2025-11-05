@@ -8,6 +8,7 @@ builds:
 - main: ./cmd/pgwatch
   env:
     - CGO_ENABLED=0
+    - GOEXPERIMENT=greenteagc
   goos:
     - linux
     - darwin
