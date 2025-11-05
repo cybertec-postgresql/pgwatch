@@ -88,6 +88,8 @@
         "wideLayout": true
       },
       "pluginVersion": "12.0.0",
+      "repeat": "dbname",
+      "repeatDirection": "v",
       "targets": [
         {
           "alias": "TPS",
@@ -117,7 +119,7 @@
           "policy": "default",
           "query": "",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_xact_count')::int8 as c, lag((data->>'total_xact_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_xact_count')::int8 as c, lag((data->>'total_xact_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' in ($dbname) and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -158,7 +160,7 @@
         }
       ],
       "timeFrom": "15m",
-      "title": "TPS",
+      "title": "TPS - $dbname",
       "type": "stat"
     },
     {
@@ -228,6 +230,8 @@
         "wideLayout": true
       },
       "pluginVersion": "12.0.0",
+      "repeat": "dbname",
+      "repeatDirection": "v",
       "targets": [
         {
           "alias": "QPS",
@@ -257,7 +261,7 @@
           "policy": "default",
           "query": "",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' in ($dbname) and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -298,7 +302,7 @@
         }
       ],
       "timeFrom": "15m",
-      "title": "QPS",
+      "title": "QPS - $dbname",
       "type": "stat"
     },
     {
@@ -368,6 +372,8 @@
         "wideLayout": true
       },
       "pluginVersion": "12.0.0",
+      "repeat": "dbname",
+      "repeatDirection": "v",
       "targets": [
         {
           "alias": "avg_query_runtime",
@@ -395,7 +401,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag))\n\nfrom (\n\n        select \n          (data->>'total_query_time')::float8 as tt, lag((data->>'total_query_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag))\n\nfrom (\n\n        select \n          (data->>'total_query_time')::float8 as tt, lag((data->>'total_query_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' in ($dbname) and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -424,7 +430,7 @@
         }
       ],
       "timeFrom": "15m",
-      "title": "Avg. query runtime",
+      "title": "Avg. query runtime - $dbname",
       "type": "stat"
     },
     {
@@ -494,6 +500,8 @@
         "wideLayout": true
       },
       "pluginVersion": "12.0.0",
+      "repeat": "dbname",
+      "repeatDirection": "v",
       "targets": [
         {
           "alias": "db_size_change_last_hour",
@@ -522,7 +530,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag))\n\nfrom (\n\n        select \n          (data->>'total_wait_time')::float8 as tt, lag((data->>'total_wait_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag))\n\nfrom (\n\n        select \n          (data->>'total_wait_time')::float8 as tt, lag((data->>'total_wait_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' in ($dbname) and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -563,7 +571,7 @@
         }
       ],
       "timeFrom": "1h",
-      "title": "Pool wait time",
+      "title": "Pool wait time - $dbname",
       "type": "stat"
     },
     {
@@ -633,6 +641,8 @@
         "wideLayout": true
       },
       "pluginVersion": "12.0.0",
+      "repeat": "dbname",
+      "repeatDirection": "v",
       "targets": [
         {
           "alias": "bytes_received",
@@ -661,7 +671,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_received')::int8 as c, lag((data->>'total_received')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_received')::int8 as c, lag((data->>'total_received')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' in ($dbname) and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -702,7 +712,7 @@
         }
       ],
       "timeFrom": "15m",
-      "title": "Incoming traffic",
+      "title": "Incoming traffic - $dbname",
       "type": "stat"
     },
     {
@@ -772,6 +782,8 @@
         "wideLayout": true
       },
       "pluginVersion": "12.0.0",
+      "repeat": "dbname",
+      "repeatDirection": "v",
       "targets": [
         {
           "datasource": {
@@ -799,7 +811,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_sent')::int8 as c, lag((data->>'total_sent')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as tps\nfrom (\n        select \n          (data->>'total_sent')::int8 as c, lag((data->>'total_sent')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' in ($dbname) and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -840,7 +852,7 @@
         }
       ],
       "timeFrom": "15m",
-      "title": "Outgoing traffic",
+      "title": "Outgoing traffic - $dbname",
       "type": "stat"
     },
     {
@@ -945,6 +957,8 @@
         }
       },
       "pluginVersion": "12.0.0",
+      "repeat": "dbname",
+      "repeatDirection": "v",
       "targets": [
         {
           "alias": "TPS",
@@ -973,7 +987,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"TPS\"\nfrom (\n        select \n          (data->>'total_xact_count')::int8 as c, lag((data->>'total_xact_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"TPS\"\nfrom (\n        select \n          (data->>'total_xact_count')::int8 as c, lag((data->>'total_xact_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' in ($dbname) and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1013,7 +1027,7 @@
           ]
         }
       ],
-      "title": "TPS",
+      "title": "TPS - $dbname",
       "type": "timeseries"
     },
     {
@@ -1132,6 +1146,8 @@
         }
       },
       "pluginVersion": "12.0.0",
+      "repeat": "dbname",
+      "repeatDirection": "v",
       "targets": [
         {
           "alias": "Pool wait time",
@@ -1161,7 +1177,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag)) as \"Pool wait time\"\n\nfrom (\n\n        select \n          (data->>'total_wait_time')::float8 as tt, lag((data->>'total_wait_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag)) as \"Pool wait time\"\n\nfrom (\n\n        select \n          (data->>'total_wait_time')::float8 as tt, lag((data->>'total_wait_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' in ($dbname) and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1189,7 +1205,7 @@
           ]
         }
       ],
-      "title": "Pool wait time per Query",
+      "title": "Pool wait time per Query - $dbname",
       "type": "timeseries"
     },
     {
@@ -1338,6 +1354,8 @@
         }
       },
       "pluginVersion": "12.0.0",
+      "repeat": "dbname",
+      "repeatDirection": "v",
       "targets": [
         {
           "alias": "QPS",
@@ -1366,7 +1384,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"QPS\"\nfrom (\n        select \n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"QPS\"\nfrom (\n        select \n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' in ($dbname) and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1400,7 +1418,7 @@
           ]
         }
       ],
-      "title": "QPS",
+      "title": "QPS - $dbname",
       "type": "timeseries"
     },
     {
@@ -1548,6 +1566,8 @@
         }
       },
       "pluginVersion": "12.0.0",
+      "repeat": "dbname",
+      "repeatDirection": "v",
       "targets": [
         {
           "alias": "Incoming rate",
@@ -1576,7 +1596,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"Incoming rate\"\nfrom (\n        select \n          (data->>'total_received')::int8 as c, lag((data->>'total_received')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"Incoming rate\"\nfrom (\n        select \n          (data->>'total_received')::int8 as c, lag((data->>'total_received')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' in ($dbname) and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1610,7 +1630,7 @@
           ]
         }
       ],
-      "title": "Incoming traffic rate",
+      "title": "Incoming traffic rate - $dbname",
       "type": "timeseries"
     },
     {
@@ -1715,6 +1735,8 @@
         }
       },
       "pluginVersion": "12.0.0",
+      "repeat": "dbname",
+      "repeatDirection": "v",
       "targets": [
         {
           "alias": "Avg. runtime",
@@ -1742,7 +1764,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag)) as \"Avg. runtime\"\n\nfrom (\n\n        select \n          (data->>'total_query_time')::float8 as tt, lag((data->>'total_query_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n$__timeGroup(time, $__interval),\navg((tt-tt_lag)::numeric / (c-c_lag)) as \"Avg. runtime\"\n\nfrom (\n\n        select \n          (data->>'total_query_time')::float8 as tt, lag((data->>'total_query_time')::float8) over w as tt_lag,\n          (data->>'total_query_count')::int8 as c, lag((data->>'total_query_count')::int8) over w as c_lag,\n          time\n        from pgbouncer_stats\n        where data->>'database' in ($dbname) and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere c > c_lag and tt >= tt_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1770,7 +1792,7 @@
           ]
         }
       ],
-      "title": "Avg. query runtime",
+      "title": "Avg. query runtime - $dbname",
       "type": "timeseries"
     },
     {
@@ -1905,6 +1927,8 @@
         }
       },
       "pluginVersion": "12.0.0",
+      "repeat": "dbname",
+      "repeatDirection": "v",
       "targets": [
         {
           "alias": "Outgoing rate",
@@ -1967,7 +1991,7 @@
           ]
         }
       ],
-      "title": "Outgoing traffic rate",
+      "title": "Outgoing traffic rate - $dbname",
       "type": "timeseries"
     },
     {
@@ -2013,6 +2037,7 @@
         },
         "definition": "select dbname as monitoredsource from admin.all_distinct_dbname_metrics where metric = 'pgbouncer_stats';",
         "name": "monitoredsource",
+        "label": "Monitored Source",
         "options": [],
         "query": "select dbname as monitoredsource from admin.all_distinct_dbname_metrics where metric = 'pgbouncer_stats';",
         "refresh": 1,
@@ -2032,7 +2057,9 @@
         },
         "definition": "select distinct (data->>'database') as database from pgbouncer_stats where dbname = '$monitoredsource' ;",
         "includeAll": false,
+        "multi": true,
         "name": "dbname",
+        "label": "DB Name",
         "options": [],
         "query": "select distinct (data->>'database') as database from pgbouncer_stats where dbname = '$monitoredsource' ;",
         "refresh": 1,
