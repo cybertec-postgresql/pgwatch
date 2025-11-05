@@ -1957,7 +1957,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"Outgoing rate\"\nfrom (\n        select \n          (data->>'total_sent')::int8 as c, lag((data->>'total_sent')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' = '$dbname' and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \"Outgoing rate\"\nfrom (\n        select \n          (data->>'total_sent')::int8 as c, lag((data->>'total_sent')::int8) over w as c_lag,\n          time, lag(time) over w as time_lag\n        from pgbouncer_stats\n        where data->>'database' in ($dbname) and dbname = '$monitoredsource' and $__timeFilter(time)\n        window w as (order by time)        \n) x\nwhere c >= c_lag and time > time_lag\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
