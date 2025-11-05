@@ -11,8 +11,8 @@ type MaskedTextProps = {
 const mask = (connStr: string) => {
   if (connStr.includes("://")) {
     return connStr.replace(
-      /(postgresql:\/\/[^:]+:)([^@]+)(@.*)/,
-      (_, start, pass, end) => `${start}${"•".repeat(8)}${end}`
+      /((postgresql|postgres):\/\/[^:]+:)([^@]+)(@.*)/,
+      (_, start, __, pass, end) => `${start}${"•".repeat(8)}${end}`
     );
   } else {
     return connStr.replace(
