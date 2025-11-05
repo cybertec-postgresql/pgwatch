@@ -88,7 +88,7 @@
         "wideLayout": true
       },
       "pluginVersion": "12.0.0",
-      "repeat": "dbname",
+      "repeat": "databases",
       "repeatDirection": "v",
       "targets": [
         {
@@ -230,7 +230,7 @@
         "wideLayout": true
       },
       "pluginVersion": "12.0.0",
-      "repeat": "dbname",
+      "repeat": "databases",
       "repeatDirection": "v",
       "targets": [
         {
@@ -372,7 +372,7 @@
         "wideLayout": true
       },
       "pluginVersion": "12.0.0",
-      "repeat": "dbname",
+      "repeat": "databases",
       "repeatDirection": "v",
       "targets": [
         {
@@ -500,7 +500,7 @@
         "wideLayout": true
       },
       "pluginVersion": "12.0.0",
-      "repeat": "dbname",
+      "repeat": "databases",
       "repeatDirection": "v",
       "targets": [
         {
@@ -641,7 +641,7 @@
         "wideLayout": true
       },
       "pluginVersion": "12.0.0",
-      "repeat": "dbname",
+      "repeat": "databases",
       "repeatDirection": "v",
       "targets": [
         {
@@ -782,7 +782,7 @@
         "wideLayout": true
       },
       "pluginVersion": "12.0.0",
-      "repeat": "dbname",
+      "repeat": "databases",
       "repeatDirection": "v",
       "targets": [
         {
