@@ -2152,7 +2152,7 @@
         "name": "databases",
         "options": [],
         "query": "select distinct (data->>'database') as database from pgbouncer_stats where dbname = '$monitoredsource' and $__timeFilter(time);",
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "sort": 1,
         "type": "query"
