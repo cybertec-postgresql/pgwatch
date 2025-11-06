@@ -2147,7 +2147,7 @@
         },
         "definition": "select distinct (data->>'database') as database from pgbouncer_stats where dbname = '$monitoredsource' and $__timeFilter(time) ;",
         "includeAll": true,
-        "label": "DB Name",
+        "label": "Databases",
         "multi": true,
         "name": "databases",
         "options": [],
