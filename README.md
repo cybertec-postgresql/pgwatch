@@ -51,7 +51,7 @@ For the fastest development and deployment experience the Docker compose files a
 
     docker compose -f ./docker/docker-compose.yml up --detach
 
-    docker/compose.add-test-db.sh
+    docker/scripts/add-test-db.sh
     ```
 
 These commands will build and start services listed in the compose file:
@@ -79,7 +79,7 @@ To add a test database under monitoring, you can use [built-in WebUI](http://loc
 To emulate workload for added test database execute:
 
 ```shell
-docker/compose.pgbench.sh 
+docker/scripts/pgbench.sh
 ```
 
 ```console
