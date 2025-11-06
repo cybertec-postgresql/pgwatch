@@ -48,6 +48,15 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		if err = conn.QueryRow(ctx, "SELECT $1::interval > '0'::interval", opts.Retention).Scan(&runDeleteOldPartitions); err != nil {
 			return err
 		}
+		var isValidInterval bool 
+		err = conn.QueryRow(ctx, "SELECT $1::interval >= '1h'::interval", opts.PartitionInterval).Scan(&isValidInterval)
+		if err != nil {
+			return err
+		}
+		if !isValidInterval {
+			return fmt.Errorf("Partition interval must be at least 1 hour, got: %s", opts.PartitionInterval)
+		}
+
 		l.Info("initialising measurements database...")
 		exists, err := db.DoesSchemaExist(ctx, conn, "admin")
 		if err != nil || exists {
