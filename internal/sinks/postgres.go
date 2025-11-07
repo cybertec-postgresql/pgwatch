@@ -54,7 +54,7 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 			return err
 		}
 		if !isValidInterval {
-			return fmt.Errorf("Partition interval must be at least 1 hour, got: %s", opts.PartitionInterval)
+			return fmt.Errorf("partition interval must be at least 1 hour, got: %s", opts.PartitionInterval)
 		}
 
 		l.Info("initialising measurements database...")

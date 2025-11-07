@@ -44,13 +44,18 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 
 	conn.ExpectPing()
 	conn.ExpectQuery("SELECT \\$1::interval").WithArgs("1 year").WillReturnRows(pgxmock.NewRows([]string{"col"}).AddRow(true))
+	conn.ExpectQuery("SELECT \\$1::interval").WithArgs("1 hour").WillReturnRows(pgxmock.NewRows([]string{"col"}).AddRow(true))
 	conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 	conn.ExpectQuery("SELECT schema_type").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 	for _, m := range metrics.GetDefaultBuiltInMetrics() {
 		conn.ExpectExec("SELECT admin.ensure_dummy_metrics_table").WithArgs(m).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
 	}
 
-	opts := &CmdOpts{BatchingDelay: time.Hour, Retention: "1 year"}
+	opts := &CmdOpts{
+		BatchingDelay: time.Hour, 
+		Retention: "1 year",
+		PartitionInterval: "1 hour",
+	}
 	pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
 	assert.NoError(t, err)
 	assert.NotNil(t, pgw)
@@ -498,4 +503,50 @@ func TestCopyFromMeasurements_CopyFail(t *testing.T) {
 		}
 	}
 
+}
+
+func TestPartitionIntervalValidation(t *testing.T) {
+	a := assert.New(t)
+	r := require.New(t)
+
+	const ImageName = "docker.io/postgres:17-alpine"
+	pgContainer, err := postgres.Run(ctx,
+		ImageName,
+		postgres.WithDatabase("mydatabase"),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(5*time.Second)),
+	)
+	r.NoError(err)
+	defer func() { a.NoError(pgContainer.Terminate(ctx)) }()
+
+	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
+
+	a.NoError(err)
+
+	opts := &CmdOpts{
+		PartitionInterval: "1 minute", 
+		Retention: "14 days",
+		BatchingDelay: time.Second,
+	}
+
+	_, err = NewPostgresWriter(ctx, connStr, opts)
+	a.EqualError(err, "partition interval must be at least 1 hour, got: 1 minute")
+
+	opts.PartitionInterval = "not an interval"
+	_, err = NewPostgresWriter(ctx, connStr, opts)
+	a.Error(err)
+
+	validIntervals := []string{
+		"3 days 4 hours", "1 year",
+		"P3D", "PT3H", "0-02", "1 00:00:00",
+		"P0-02", "P1", "2 weeks",
+	}
+
+	for _, interval := range validIntervals {
+		opts.PartitionInterval = interval
+		_, err = NewPostgresWriter(ctx, connStr, opts)
+		a.NoError( err)
+	}
 }
