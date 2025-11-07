@@ -101,6 +101,9 @@ It reads the configuration from the specified sources and metrics, then begins c
     Time range for PostgreSQL sink table partitions. Must be a valid PostgreSQL interval expression. (default: 1 week)
     ENV: `$PW_PARTITION_INTERVAL`
 
+    Example:
+    `--partition-inteval="3 weeks 4 days"`,
+
 - `--retention=`
 
     If set, metrics older than that will be deleted (default: "14 days").  
