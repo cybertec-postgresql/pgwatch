@@ -505,7 +505,7 @@ func TestCopyFromMeasurements_CopyFail(t *testing.T) {
 
 }
 
-func TestPartitionIntervalValidation(t *testing.T) {
+func TestPartitionInterval(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
 
@@ -523,30 +523,56 @@ func TestPartitionIntervalValidation(t *testing.T) {
 
 	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
 
-	a.NoError(err)
-
 	opts := &CmdOpts{
 		PartitionInterval: "1 minute", 
 		Retention: "14 days",
 		BatchingDelay: time.Second,
 	}
 
-	_, err = NewPostgresWriter(ctx, connStr, opts)
-	a.EqualError(err, "partition interval must be at least 1 hour, got: 1 minute")
-
-	opts.PartitionInterval = "not an interval"
-	_, err = NewPostgresWriter(ctx, connStr, opts)
-	a.Error(err)
-
-	validIntervals := []string{
-		"3 days 4 hours", "1 year",
-		"P3D", "PT3H", "0-02", "1 00:00:00",
-		"P0-02", "P1", "2 weeks",
-	}
-
-	for _, interval := range validIntervals {
-		opts.PartitionInterval = interval
+	t.Run("Interval Validation", func(t *testing.T) {
 		_, err = NewPostgresWriter(ctx, connStr, opts)
-		a.NoError( err)
-	}
+		a.EqualError(err, "partition interval must be at least 1 hour, got: 1 minute")
+
+		opts.PartitionInterval = "not an interval"
+		_, err = NewPostgresWriter(ctx, connStr, opts)
+		a.Error(err)
+
+		validIntervals := []string{
+			"3 days 4 hours", "1 year",
+			"P3D", "PT3H", "0-02", "1 00:00:00",
+			"P0-02", "P1", "2 weeks",
+		}
+
+		for _, interval := range validIntervals {
+			opts.PartitionInterval = interval
+			_, err = NewPostgresWriter(ctx, connStr, opts)
+			a.NoError(err)
+		}
+	})
+
+	t.Run("Partitions Creation", func(t *testing.T) {
+		opts.PartitionInterval = "3 weeks"
+		pgw, err := NewPostgresWriter(ctx, connStr, opts)
+		r.NoError(err)
+
+		conn, err := pgx.Connect(ctx, connStr)
+		r.NoError(err)
+
+		m := map[string]map[string]ExistingPartitionInfo{
+			"test_metric": {
+				"test_db": {
+					time.Now(), time.Now().Add(time.Hour),
+				},
+			},
+		}
+		err = pgw.EnsureMetricDbnameTime(m, false)
+		r.NoError(err)
+
+		var partitionsNum int;
+		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric');").Scan(&partitionsNum)
+		a.NoError(err)
+		// 1 the metric table itself + 1 dbname partition
+		// + 4 time partitions (1 we asked for + 3 precreated)
+		a.Equal(6, partitionsNum)
+	})
 }
