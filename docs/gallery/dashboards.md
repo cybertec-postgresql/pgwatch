@@ -2,6 +2,9 @@
 
 Dashboards are a collection of visualizations that are displayed in a single page. They are useful for monitoring and analyzing data.
 
+The complete list of available dashboards can be found in the official repository under 
+[/grafana](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana).
+
 ## 0. Health Check
 
 ![Health Check](0_health_check.png){data-gallery="dashboards"}

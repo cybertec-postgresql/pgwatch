@@ -18,7 +18,7 @@ title: List of main features
     gRPC-based custom storage integration
 -   Multiple deployment options - PostgreSQL configuration DB, YAML or
     ENV configuration
--   Possible to monitoring all, single or a subset (list or regex) of
+-   Possibility to monitor all, single or a subset (list or regex) of
     databases of a PostgreSQL instance
 -   Global or per DB configuration of metrics and metric fetching
     intervals
