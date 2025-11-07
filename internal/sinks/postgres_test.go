@@ -529,7 +529,7 @@ func TestPartitionInterval(t *testing.T) {
 		BatchingDelay: time.Second,
 	}
 
-	t.Run("Interval Validation", func(t *testing.T) {
+	t.Run("Interval Validation", func(_ *testing.T) {
 		_, err = NewPostgresWriter(ctx, connStr, opts)
 		a.EqualError(err, "partition interval must be at least 1 hour, got: 1 minute")
 
@@ -550,7 +550,7 @@ func TestPartitionInterval(t *testing.T) {
 		}
 	})
 
-	t.Run("Partitions Creation", func(t *testing.T) {
+	t.Run("Partitions Creation", func(_ *testing.T) {
 		opts.PartitionInterval = "3 weeks"
 		pgw, err := NewPostgresWriter(ctx, connStr, opts)
 		r.NoError(err)
@@ -574,5 +574,9 @@ func TestPartitionInterval(t *testing.T) {
 		// 1 the metric table itself + 1 dbname partition
 		// + 4 time partitions (1 we asked for + 3 precreated)
 		a.Equal(6, partitionsNum)
+
+		part := partitionMapMetricDbname["test_metric"]["test_db"]
+		// partition bounds should have a difference of 3 weeks
+		a.Equal(part.StartTime.Add(3 * 7 * 24 * time.Hour), part.EndTime)
 	})
 }
