@@ -97,6 +97,13 @@ It reads the configuration from the specified sources and metrics, then begins c
     Sink-specific batching flush delay; may be ignored by some sinks (default: 950ms).  
     ENV: `$PW_BATCHING_DELAY`
 
+- `--partition-interval=`
+    Time range for PostgreSQL sink table partitions. Must be a valid PostgreSQL interval expression. (default: 1 week)
+    ENV: `$PW_PARTITION_INTERVAL`
+
+    Example:
+    `--partition-inteval="3 weeks 4 days"`,
+
 - `--retention=`
 
     If set, metrics older than that will be deleted (default: "14 days").  
