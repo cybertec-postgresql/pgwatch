@@ -107,12 +107,12 @@ It reads the configuration from the specified sources and metrics, then begins c
 
 - `--retention=`
 
-    Delete metrics older than this. set to zero to disable. Must be a valid PostgreSQL interval. (default: 14 days)  
+    Delete metrics older than this. Set to zero to disable. Must be a valid PostgreSQL interval. (default: 14 days)  
     ENV: `$PW_RETENTION`
 
 - `--maintenance-interval=`
 
-    Run pgwatch maintenance tasks on sinks with this interval; set to zero to disable. Must be a valid PostgreSQL interval. (default: 12 hours)  
+    Run pgwatch maintenance tasks on sinks with this interval; Set to zero to disable. Must be a valid PostgreSQL interval. (default: 12 hours)  
     ENV: `$PW_MAINTENANCE_INTERVAL`
 
 - `--real-dbname-field=`
