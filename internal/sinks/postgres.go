@@ -102,6 +102,7 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 	if err = pgw.EnsureBuiltinMetricDummies(); err != nil {
 		return
 	}
+
 	if pgw.maintenanceInterval > 0 {
 		go func() {
 			for {
@@ -109,12 +110,25 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 				case <-pgw.ctx.Done():
 					return
 				case <-time.After(pgw.maintenanceInterval):
-					pgw.DeleteOldPartitions()
 					pgw.MaintainUniqueSources()
 				}
 			}
 		}()
 	}
+
+	if pgw.retentionInterval > 0 {
+		go func() {
+			for {
+				select {
+				case <-pgw.ctx.Done():
+					return
+				case <-time.After(pgw.retentionInterval):
+					pgw.DeleteOldPartitions()
+				}
+			}
+		}()
+	}
+
 	go pgw.poll()
 	l.Info(`measurements sink is activated`)
 	return

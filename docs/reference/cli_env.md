@@ -112,7 +112,7 @@ It reads the configuration from the specified sources and metrics, then begins c
 
 - `--maintenance-interval=`
 
-    Run sink maintenance tasks (e.g., removing old metrics) with this interval; set to zero to disable. Must be a valid PostgreSQL interval. (default: 12 hours)  
+    Run pgwatch maintenance tasks on sinks with this interval; set to zero to disable. Must be a valid PostgreSQL interval. (default: 12 hours)  
     ENV: `$PW_MAINTENANCE_INTERVAL`
 
 - `--real-dbname-field=`
