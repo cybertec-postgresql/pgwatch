@@ -98,7 +98,8 @@ It reads the configuration from the specified sources and metrics, then begins c
     ENV: `$PW_BATCHING_DELAY`
 
 - `--partition-interval=`
-    Time range for PostgreSQL sink table partitions. Must be a valid PostgreSQL interval expression. (default: 1 week)
+
+    Time range for PostgreSQL sink table partitions. Must be a valid PostgreSQL interval. (default: 1 week)  
     ENV: `$PW_PARTITION_INTERVAL`
 
     Example:
@@ -106,8 +107,13 @@ It reads the configuration from the specified sources and metrics, then begins c
 
 - `--retention=`
 
-    If set, metrics older than that will be deleted (default: "14 days").  
+    Delete metrics older than this. set to zero to disable. Must be a valid PostgreSQL interval. (default: 14 days)  
     ENV: `$PW_RETENTION`
+
+- `--maintenance-interval=`
+
+    Run sink maintenance tasks (e.g., removing old metrics) with this interval; set to zero to disable. Must be a valid PostgreSQL interval. (default: 12 hours)  
+    ENV: `$PW_MAINTENANCE_INTERVAL`
 
 - `--real-dbname-field=`
 
