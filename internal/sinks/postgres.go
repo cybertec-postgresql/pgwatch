@@ -25,6 +25,21 @@ var (
 	targetColumns   = [...]string{"time", "dbname", "data", "tag_data"}
 )
 
+// PostgresWriter is a sink that writes metric measurements to a Postgres database.
+// At the moment, it supports both Postgres and TimescaleDB as a storage backend.
+// However, one is able to use any Postgres-compatible database as a storage backend,
+// e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
+type PostgresWriter struct {
+	ctx                 context.Context
+	sinkDb              db.PgxPoolIface
+	metricSchema        DbStorageSchemaType
+	opts                *CmdOpts
+	retentionInterval   time.Duration
+	maintenanceInterval time.Duration
+	input               chan metrics.MeasurementEnvelope
+	lastError           chan error
+}
+
 func NewPostgresWriter(ctx context.Context, connstr string, opts *CmdOpts) (pgw *PostgresWriter, err error) {
 	var conn db.PgxPoolIface
 	if conn, err = db.New(ctx, connstr); err != nil {
@@ -43,18 +58,28 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		lastError: make(chan error),
 		sinkDb:    conn,
 	}
-	var runDeleteOldPartitions bool
 	if err = db.Init(ctx, pgw.sinkDb, func(ctx context.Context, conn db.PgxIface) error {
-		if err = conn.QueryRow(ctx, "SELECT $1::interval > '0'::interval", opts.Retention).Scan(&runDeleteOldPartitions); err != nil {
+		var isValidPartitionInterval bool 
+		if err = conn.QueryRow(ctx, 
+			"SELECT extract(epoch from $1::interval), extract(epoch from $2::interval), $3::interval >= '1h'::interval", 
+			opts.Retention, opts.MaintenanceInterval, opts.PartitionInterval,
+		).Scan(&pgw.retentionInterval, &pgw.maintenanceInterval, &isValidPartitionInterval); err != nil {
 			return err
 		}
-		var isValidInterval bool 
-		err = conn.QueryRow(ctx, "SELECT $1::interval >= '1h'::interval", opts.PartitionInterval).Scan(&isValidInterval)
-		if err != nil {
-			return err
+
+		// multiply by (10 ^ 9) because we epoch returns seconds
+		// but time.Duration works in terms of nanoseconds
+		pgw.retentionInterval *= 1_000_000_000
+		pgw.maintenanceInterval *= 1_000_000_000
+
+		if !isValidPartitionInterval {
+			return fmt.Errorf("--partition-interval must be at least 1 hour, got: %s", opts.PartitionInterval)
 		}
-		if !isValidInterval {
-			return fmt.Errorf("partition interval must be at least 1 hour, got: %s", opts.PartitionInterval)
+		if pgw.maintenanceInterval < 0 {
+			return errors.New("--maintenance-interval must be a positive PostgreSQL interval or 0 to disable it")
+		}
+		if pgw.retentionInterval < 0 {
+			return errors.New("--retention must be a positive PostgreSQL interval or 0 to disable it")
 		}
 
 		l.Info("initialising measurements database...")
@@ -77,10 +102,19 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 	if err = pgw.EnsureBuiltinMetricDummies(); err != nil {
 		return
 	}
-	if runDeleteOldPartitions {
-		go pgw.deleteOldPartitions()
+	if pgw.maintenanceInterval > 0 {
+		go func() {
+			for {
+				select {
+				case <-pgw.ctx.Done():
+					return
+				case <-time.After(pgw.maintenanceInterval):
+					pgw.DeleteOldPartitions()
+					pgw.MaintainUniqueSources()
+				}
+			}
+		}()
 	}
-	go pgw.maintainUniqueSources()
 	go pgw.poll()
 	l.Info(`measurements sink is activated`)
 	return
@@ -114,19 +148,6 @@ var (
 		sqlMetricChangeCompressionIntervalTimescale,
 	}
 )
-
-// PostgresWriter is a sink that writes metric measurements to a Postgres database.
-// At the moment, it supports both Postgres and TimescaleDB as a storage backend.
-// However, one is able to use any Postgres-compatible database as a storage backend,
-// e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
-type PostgresWriter struct {
-	ctx          context.Context
-	sinkDb       db.PgxPoolIface
-	metricSchema DbStorageSchemaType
-	opts         *CmdOpts
-	input        chan metrics.MeasurementEnvelope
-	lastError    chan error
-}
 
 type ExistingPartitionInfo struct {
 	StartTime time.Time
@@ -464,117 +485,105 @@ func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[str
 	return nil
 }
 
-// deleteOldPartitions is a background task that deletes old partitions from the measurements DB
-func (pgw *PostgresWriter) deleteOldPartitions() {
+// DeleteOldPartitions is a background task that deletes old partitions from the measurements DB
+func (pgw *PostgresWriter) DeleteOldPartitions() {
 	l := log.GetLogger(pgw.ctx)
-	for {
-		var partsDropped int
-		err := pgw.sinkDb.QueryRow(pgw.ctx, `SELECT admin.drop_old_time_partitions(older_than => $1::interval)`,
-			pgw.opts.Retention).Scan(&partsDropped)
-		if err != nil {
-			l.Error("Could not drop old time partitions:", err)
-		} else if partsDropped > 0 {
-			l.Infof("Dropped %d old time partitions", partsDropped)
-		}
-		select {
-		case <-pgw.ctx.Done():
-			return
-		case <-time.After(time.Hour * 12):
-		}
+	var partsDropped int
+	err := pgw.sinkDb.QueryRow(pgw.ctx, `SELECT admin.drop_old_time_partitions(older_than => $1::interval)`,
+		pgw.opts.Retention).Scan(&partsDropped)
+	if err != nil {
+		l.Error("Could not drop old time partitions:", err)
+	} else if partsDropped > 0 {
+		l.Infof("Dropped %d old time partitions", partsDropped)
 	}
 }
 
-// maintainUniqueSources is a background task that maintains a listing of unique sources for each metric.
+// MaintainUniqueSources is a background task that maintains a mapping of unique sources 
+// in each metric table in admin.all_distinct_dbname_metrics.
 // This is used to avoid listing the same source multiple times in Grafana dropdowns.
-func (pgw *PostgresWriter) maintainUniqueSources() {
+func (pgw *PostgresWriter) MaintainUniqueSources() {
 	logger := log.GetLogger(pgw.ctx)
-	// due to metrics deletion the listing can go out of sync (a trigger not really wanted)
+
 	sqlGetAdvisoryLock := `SELECT pg_try_advisory_lock(1571543679778230000) AS have_lock` // 1571543679778230000 is just a random bigint
 	sqlTopLevelMetrics := `SELECT table_name FROM admin.get_top_level_metric_tables()`
 	sqlDistinct := `
 	WITH RECURSIVE t(dbname) AS (
 		SELECT MIN(dbname) AS dbname FROM %s
 		UNION
-		SELECT (SELECT MIN(dbname) FROM %s WHERE dbname > t.dbname) FROM t )
+		SELECT (SELECT MIN(dbname) FROM %s WHERE dbname > t.dbname) FROM t 
+	)
 	SELECT dbname FROM t WHERE dbname NOTNULL ORDER BY 1`
 	sqlDelete := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT dbname = ANY($1) and metric = $2`
 	sqlDeleteAll := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric = $1`
 	sqlAdd := `
-		INSERT INTO admin.all_distinct_dbname_metrics SELECT u, $2 FROM (select unnest($1::text[]) as u) x
+		INSERT INTO admin.all_distinct_dbname_metrics 
+		SELECT u, $2 FROM (select unnest($1::text[]) as u) x
 		WHERE NOT EXISTS (select * from admin.all_distinct_dbname_metrics where dbname = u and metric = $2)
 		RETURNING *`
 
-	for {
-		select {
-		case <-pgw.ctx.Done():
-			return
-		case <-time.After(time.Hour * 24):
-		}
-		var lock bool
-		logger.Infof("Trying to get metricsDb listing maintainer advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
-		if err := pgw.sinkDb.QueryRow(pgw.ctx, sqlGetAdvisoryLock).Scan(&lock); err != nil {
-			logger.Error("Getting metricsDb listing maintainer advisory lock failed:", err)
-			continue
-		}
-		if !lock {
-			logger.Info("Skipping admin.all_distinct_dbname_metrics maintenance as another instance has the advisory lock...")
-			continue
-		}
-
-		logger.Info("Refreshing admin.all_distinct_dbname_metrics listing table...")
-		rows, _ := pgw.sinkDb.Query(pgw.ctx, sqlTopLevelMetrics)
-		allDistinctMetricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
-		if err != nil {
-			logger.Error(err)
-			continue
-		}
-
-		for _, tableName := range allDistinctMetricTables {
-			foundDbnamesMap := make(map[string]bool)
-			foundDbnamesArr := make([]string, 0)
-			metricName := strings.Replace(tableName, "public.", "", 1)
-
-			logger.Debugf("Refreshing all_distinct_dbname_metrics listing for metric: %s", metricName)
-			rows, _ := pgw.sinkDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, tableName, tableName))
-			ret, err := pgx.CollectRows(rows, pgx.RowTo[string])
-			// ret, err := DBExecRead(mainContext, metricDb, fmt.Sprintf(sqlDistinct, tableName, tableName))
-			if err != nil {
-				logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for '%s': %s", metricName, err)
-				break
-			}
-			for _, drDbname := range ret {
-				foundDbnamesMap[drDbname] = true // "set" behaviour, don't want duplicates
-			}
-
-			// delete all that are not known and add all that are not there
-			for k := range foundDbnamesMap {
-				foundDbnamesArr = append(foundDbnamesArr, k)
-			}
-			if len(foundDbnamesArr) == 0 { // delete all entries for given metric
-				logger.Debugf("Deleting Postgres all_distinct_dbname_metrics listing table entries for metric '%s':", metricName)
-
-				_, err = pgw.sinkDb.Exec(pgw.ctx, sqlDeleteAll, metricName)
-				if err != nil {
-					logger.Errorf("Could not delete Postgres all_distinct_dbname_metrics listing table entries for metric '%s': %s", metricName, err)
-				}
-				continue
-			}
-			cmdTag, err := pgw.sinkDb.Exec(pgw.ctx, sqlDelete, foundDbnamesArr, metricName)
-			if err != nil {
-				logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
-			} else if cmdTag.RowsAffected() > 0 {
-				logger.Infof("Removed %d stale entries from all_distinct_dbname_metrics listing table for metric: %s", cmdTag.RowsAffected(), metricName)
-			}
-			cmdTag, err = pgw.sinkDb.Exec(pgw.ctx, sqlAdd, foundDbnamesArr, metricName)
-			if err != nil {
-				logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
-			} else if cmdTag.RowsAffected() > 0 {
-				logger.Infof("Added %d entry to the Postgres all_distinct_dbname_metrics listing table for metric: %s", cmdTag.RowsAffected(), metricName)
-			}
-			time.Sleep(time.Minute)
-		}
-
+	var lock bool
+	logger.Infof("Trying to get admin.all_distinct_dbname_metrics maintainer advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
+	if err := pgw.sinkDb.QueryRow(pgw.ctx, sqlGetAdvisoryLock).Scan(&lock); err != nil {
+		logger.Error("Getting admin.all_distinct_dbname_metrics maintainer advisory lock failed:", err)
+		return
 	}
+	if !lock {
+		logger.Info("Skipping admin.all_distinct_dbname_metrics maintenance as another instance has the advisory lock...")
+		return
+	}
+
+	logger.Info("Refreshing admin.all_distinct_dbname_metrics listing table...")
+	rows, _ := pgw.sinkDb.Query(pgw.ctx, sqlTopLevelMetrics)
+	allDistinctMetricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	for _, tableName := range allDistinctMetricTables {
+		foundDbnamesMap := make(map[string]bool)
+		foundDbnamesArr := make([]string, 0)
+		metricName := strings.Replace(tableName, "public.", "", 1)
+
+		logger.Debugf("Refreshing all_distinct_dbname_metrics listing for metric: %s", metricName)
+		rows, _ := pgw.sinkDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, tableName, tableName))
+		ret, err := pgx.CollectRows(rows, pgx.RowTo[string])
+		if err != nil {
+			logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for '%s': %s", metricName, err)
+			break
+		}
+		for _, drDbname := range ret {
+			foundDbnamesMap[drDbname] = true // "set" behaviour, don't want duplicates
+		}
+
+		// delete all that are not known and add all that are not there
+		for k := range foundDbnamesMap {
+			foundDbnamesArr = append(foundDbnamesArr, k)
+		}
+		if len(foundDbnamesArr) == 0 { // delete all entries for given metric
+			logger.Debugf("Deleting Postgres all_distinct_dbname_metrics listing table entries for metric '%s':", metricName)
+
+			_, err = pgw.sinkDb.Exec(pgw.ctx, sqlDeleteAll, metricName)
+			if err != nil {
+				logger.Errorf("Could not delete Postgres all_distinct_dbname_metrics listing table entries for metric '%s': %s", metricName, err)
+			}
+			continue
+		}
+		cmdTag, err := pgw.sinkDb.Exec(pgw.ctx, sqlDelete, foundDbnamesArr, metricName)
+		if err != nil {
+			logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
+		} else if cmdTag.RowsAffected() > 0 {
+			logger.Infof("Removed %d stale entries from all_distinct_dbname_metrics listing table for metric: %s", cmdTag.RowsAffected(), metricName)
+		}
+		cmdTag, err = pgw.sinkDb.Exec(pgw.ctx, sqlAdd, foundDbnamesArr, metricName)
+		if err != nil {
+			logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
+		} else if cmdTag.RowsAffected() > 0 {
+			logger.Infof("Added %d entry to the Postgres all_distinct_dbname_metrics listing table for metric: %s", cmdTag.RowsAffected(), metricName)
+		}
+		time.Sleep(time.Minute)
+	}
+
 }
 
 func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
