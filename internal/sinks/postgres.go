@@ -529,6 +529,7 @@ func (pgw *PostgresWriter) MaintainUniqueSources() {
 	SELECT dbname FROM t WHERE dbname NOTNULL ORDER BY 1`
 	sqlDelete := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT dbname = ANY($1) and metric = $2`
 	sqlDeleteAll := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric = $1`
+	sqlDroppedTables := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT metric = ANY($1)`
 	sqlAdd := `
 		INSERT INTO admin.all_distinct_dbname_metrics 
 		SELECT u, $2 FROM (select unnest($1::text[]) as u) x
@@ -554,13 +555,16 @@ func (pgw *PostgresWriter) MaintainUniqueSources() {
 		return
 	}
 
-	for _, tableName := range allDistinctMetricTables {
+	for i, tableName := range allDistinctMetricTables {
+		allDistinctMetricTables[i] = strings.Replace(tableName, "public.", "", 1)
+	}
+
+	for _, metricName := range allDistinctMetricTables {
 		foundDbnamesMap := make(map[string]bool)
 		foundDbnamesArr := make([]string, 0)
-		metricName := strings.Replace(tableName, "public.", "", 1)
 
 		logger.Debugf("Refreshing all_distinct_dbname_metrics listing for metric: %s", metricName)
-		rows, _ := pgw.sinkDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, tableName, tableName))
+		rows, _ := pgw.sinkDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, metricName, metricName))
 		ret, err := pgx.CollectRows(rows, pgx.RowTo[string])
 		if err != nil {
 			logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for '%s': %s", metricName, err)
@@ -598,6 +602,12 @@ func (pgw *PostgresWriter) MaintainUniqueSources() {
 		time.Sleep(time.Minute)
 	}
 
+	cmdTag, err := pgw.sinkDb.Exec(pgw.ctx, sqlDroppedTables, allDistinctMetricTables)
+	if err != nil {
+		logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for dropped metric tables: %s", err)
+	} else if cmdTag.RowsAffected() > 0 {
+		logger.Infof("Removed %d stale entries for dropped tables from all_distinct_dbname_metrics listing table", cmdTag.RowsAffected())
+	}
 }
 
 func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
