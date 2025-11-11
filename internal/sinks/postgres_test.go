@@ -565,6 +565,7 @@ func TestIntervalValidation(t *testing.T) {
 		opts.Retention = interval
 		_, err = NewPostgresWriter(ctx, connStr, opts)
 		a.Error(err)
+		opts.Retention = "1 hour"
 	}
 
 	validIntervals := []string{
@@ -636,7 +637,7 @@ func TestPartitionInterval(t *testing.T) {
 	a.Equal(part.StartTime.Add(3 * 7 * 24 * time.Hour), part.EndTime)
 }
 
-func TestMaintenance(t *testing.T) {
+func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
 
@@ -710,13 +711,14 @@ func TestMaintenance(t *testing.T) {
 		err = pgw.SyncMetric("test", "test_metric_2", AddOp)
 		r.NoError(err)
 
+		// create the 2nd level dbname partition
 		_, err = conn.Exec(ctx, "CREATE TABLE subpartitions.test_metric_2_dbname PARTITION OF public.test_metric_2 FOR VALUES IN ('test') PARTITION BY RANGE (time)")
 		a.NoError(err)
 
 		boundStart := time.Now().Add(-1 * 2 * 24 * time.Hour).Format("2006-01-02")
 		boundEnd := time.Now().Add(-1 * 24 * time.Hour).Format("2006-01-02")
 
-		// create a time partition with end bound yesterday 
+		// create the 3rd level time partition with end bound yesterday 
 		_, err = conn.Exec(ctx, 
 			fmt.Sprintf(
 			`CREATE TABLE subpartitions.test_metric_2_dbname_time 
@@ -748,7 +750,7 @@ func TestMaintenance(t *testing.T) {
 		a.Equal(2, partitionsNum)
 	})
 
-	t.Run("Epcoh to Duration Conversion", func(_ *testing.T) {
+	t.Run("Epoch to Duration Conversion", func(_ *testing.T) {
 		table := map[string]time.Duration{
 			"1 hour": time.Hour, 
 			"2 hours": 2 * time.Hour,
