@@ -710,7 +710,7 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 		// the corresponding entry should be deleted
 		pgw.MaintainUniqueSources()
 		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
-		a.NoError(err)	
+		a.NoError(err)
 		a.Equal(0, numOfEntries)
 	})
 
