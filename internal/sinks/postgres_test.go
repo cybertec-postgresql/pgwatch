@@ -3,6 +3,7 @@ package sinks
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -43,8 +44,9 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 	assert.NoError(t, err)
 
 	conn.ExpectPing()
-	conn.ExpectQuery("SELECT \\$1::interval").WithArgs("1 year").WillReturnRows(pgxmock.NewRows([]string{"col"}).AddRow(true))
-	conn.ExpectQuery("SELECT \\$1::interval").WithArgs("1 hour").WillReturnRows(pgxmock.NewRows([]string{"col"}).AddRow(true))
+	conn.ExpectQuery("SELECT extract").WithArgs("1 day", "1 day", "1 hour").WillReturnRows(
+		pgxmock.NewRows([]string{"col1", "col2", "col3"}).AddRow((24 * time.Hour).Seconds(), (24 * time.Hour).Seconds(), true),
+	)
 	conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 	conn.ExpectQuery("SELECT schema_type").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 	for _, m := range metrics.GetDefaultBuiltInMetrics() {
@@ -52,9 +54,10 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 	}
 
 	opts := &CmdOpts{
-		BatchingDelay: time.Hour, 
-		Retention: "1 year",
-		PartitionInterval: "1 hour",
+		BatchingDelay:       time.Hour,
+		RetentionInterval:   "1 day",
+		MaintenanceInterval: "1 day",
+		PartitionInterval:   "1 hour",
 	}
 	pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
 	assert.NoError(t, err)
@@ -505,6 +508,82 @@ func TestCopyFromMeasurements_CopyFail(t *testing.T) {
 
 }
 
+// tests interval string validation for all
+// cli flags that expect a PostgreSQL interval string
+func TestIntervalValidation(t *testing.T) {
+	a := assert.New(t)
+	r := require.New(t)
+
+	const ImageName = "docker.io/postgres:17-alpine"
+	pgContainer, err := postgres.Run(ctx,
+		ImageName,
+		postgres.WithDatabase("mydatabase"),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(5*time.Second)),
+	)
+	r.NoError(err)
+	defer func() { a.NoError(pgContainer.Terminate(ctx)) }()
+
+	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
+
+	opts := &CmdOpts{
+		PartitionInterval:   "1 minute",
+		MaintenanceInterval: "-1 hours",
+		RetentionInterval:   "-1 hours",
+		BatchingDelay:       time.Second,
+	}
+
+	_, err = NewPostgresWriter(ctx, connStr, opts)
+	a.EqualError(err, "--partition-interval must be at least 1 hour, got: 1 minute")
+	opts.PartitionInterval = "1 hour"
+
+	_, err = NewPostgresWriter(ctx, connStr, opts)
+	a.EqualError(err, "--maintenance-interval must be a positive PostgreSQL interval or 0 to disable it")
+	opts.MaintenanceInterval = "0 hours"
+
+	_, err = NewPostgresWriter(ctx, connStr, opts)
+	a.EqualError(err, "--retention must be a positive PostgreSQL interval or 0 to disable it")
+
+	invalidIntervals := []string{
+		"not an interval", "3 dayss",
+		"four hours",
+	}
+
+	for _, interval := range invalidIntervals {
+		opts.PartitionInterval = interval
+		_, err = NewPostgresWriter(ctx, connStr, opts)
+		a.Error(err)
+		opts.PartitionInterval = "1 hour"
+
+		opts.MaintenanceInterval = interval
+		_, err = NewPostgresWriter(ctx, connStr, opts)
+		a.Error(err)
+		opts.MaintenanceInterval = "1 hour"
+
+		opts.RetentionInterval = interval
+		_, err = NewPostgresWriter(ctx, connStr, opts)
+		a.Error(err)
+		opts.RetentionInterval = "1 hour"
+	}
+
+	validIntervals := []string{
+		"3 days 4 hours", "1 year",
+		"P3D", "PT3H", "0-02", "1 00:00:00",
+		"P0-02", "P1", "2 weeks",
+	}
+
+	for _, interval := range validIntervals {
+		opts.PartitionInterval = interval
+		opts.MaintenanceInterval = interval
+		opts.RetentionInterval = interval
+
+		_, err = NewPostgresWriter(ctx, connStr, opts)
+		a.NoError(err)
+	}
+}
+
 func TestPartitionInterval(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
@@ -524,59 +603,178 @@ func TestPartitionInterval(t *testing.T) {
 	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
 
 	opts := &CmdOpts{
-		PartitionInterval: "1 minute", 
-		Retention: "14 days",
-		BatchingDelay: time.Second,
+		PartitionInterval:   "3 weeks",
+		RetentionInterval:   "14 days",
+		MaintenanceInterval: "12 hours",
+		BatchingDelay:       time.Second,
 	}
 
-	t.Run("Interval Validation", func(_ *testing.T) {
-		_, err = NewPostgresWriter(ctx, connStr, opts)
-		a.EqualError(err, "partition interval must be at least 1 hour, got: 1 minute")
+	pgw, err := NewPostgresWriter(ctx, connStr, opts)
+	r.NoError(err)
 
-		opts.PartitionInterval = "not an interval"
-		_, err = NewPostgresWriter(ctx, connStr, opts)
-		a.Error(err)
+	conn, err := pgx.Connect(ctx, connStr)
+	r.NoError(err)
 
-		validIntervals := []string{
-			"3 days 4 hours", "1 year",
-			"P3D", "PT3H", "0-02", "1 00:00:00",
-			"P0-02", "P1", "2 weeks",
-		}
+	m := map[string]map[string]ExistingPartitionInfo{
+		"test_metric": {
+			"test_db": {
+				time.Now(), time.Now().Add(time.Hour),
+			},
+		},
+	}
+	err = pgw.EnsureMetricDbnameTime(m, false)
+	r.NoError(err)
 
-		for _, interval := range validIntervals {
-			opts.PartitionInterval = interval
-			_, err = NewPostgresWriter(ctx, connStr, opts)
-			a.NoError(err)
-		}
-	})
+	var partitionsNum int
+	err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric');").Scan(&partitionsNum)
+	a.NoError(err)
+	// 1 the metric table itself + 1 dbname partition
+	// + 4 time partitions (1 we asked for + 3 precreated)
+	a.Equal(6, partitionsNum)
 
-	t.Run("Partitions Creation", func(_ *testing.T) {
-		opts.PartitionInterval = "3 weeks"
-		pgw, err := NewPostgresWriter(ctx, connStr, opts)
+	part := partitionMapMetricDbname["test_metric"]["test_db"]
+	// partition bounds should have a difference of 3 weeks
+	a.Equal(part.StartTime.Add(3*7*24*time.Hour), part.EndTime)
+}
+
+func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
+	a := assert.New(t)
+	r := require.New(t)
+
+	// TODO: move postgres container setup to TestMain()
+	const ImageName = "docker.io/postgres:17-alpine"
+	pgContainer, err := postgres.Run(ctx,
+		ImageName,
+		postgres.WithDatabase("mydatabase"),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(5*time.Second)),
+	)
+	r.NoError(err)
+	defer func() { a.NoError(pgContainer.Terminate(ctx)) }()
+
+	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	conn, err := pgx.Connect(ctx, connStr)
+	r.NoError(err)
+
+	opts := &CmdOpts{
+		PartitionInterval:   "1 hour",
+		RetentionInterval:   "1 second",
+		MaintenanceInterval: "0 days",
+		BatchingDelay:       time.Hour,
+	}
+
+	pgw, err := NewPostgresWriter(ctx, connStr, opts)
+	r.NoError(err)
+
+	t.Run("MaintainUniqueSources", func(_ *testing.T) {
+		// adds an entry to `admin.all_distinct_dbname_metrics`
+		err = pgw.SyncMetric("test", "test_metric_1", AddOp)
 		r.NoError(err)
 
-		conn, err := pgx.Connect(ctx, connStr)
-		r.NoError(err)
+		var numOfEntries int
+		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
+		a.NoError(err)
+		a.Equal(1, numOfEntries)
 
-		m := map[string]map[string]ExistingPartitionInfo{
-			"test_metric": {
-				"test_db": {
-					time.Now(), time.Now().Add(time.Hour),
+		// manually call the maintenance routine
+		pgw.MaintainUniqueSources()
+
+		// entry should have been deleted, because it has no corresponding entries in `test_metric_1` table.
+		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
+		a.NoError(err)
+		a.Equal(0, numOfEntries)
+
+		message := []metrics.MeasurementEnvelope{
+			{
+				MetricName: "test_metric_1",
+				Data: metrics.Measurements{
+					{"number": 1, "string": "test_data"},
 				},
+				DBName: "test_db",
 			},
 		}
-		err = pgw.EnsureMetricDbnameTime(m, false)
+		pgw.flush(message)
+
+		// manually call the maintenance routine
+		pgw.MaintainUniqueSources()
+
+		// entry should have been added, because there is a corresponding entry in `test_metric_1` table just written.
+		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
+		a.NoError(err)
+		a.Equal(1, numOfEntries)
+	})
+
+	t.Run("DeleteOldPartitions", func(_ *testing.T) {
+		// Creates a new top level table for `test_metric_2`
+		err = pgw.SyncMetric("test", "test_metric_2", AddOp)
 		r.NoError(err)
 
-		var partitionsNum int;
-		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric');").Scan(&partitionsNum)
+		// create the 2nd level dbname partition
+		_, err = conn.Exec(ctx, "CREATE TABLE subpartitions.test_metric_2_dbname PARTITION OF public.test_metric_2 FOR VALUES IN ('test') PARTITION BY RANGE (time)")
 		a.NoError(err)
-		// 1 the metric table itself + 1 dbname partition
-		// + 4 time partitions (1 we asked for + 3 precreated)
-		a.Equal(6, partitionsNum)
 
-		part := partitionMapMetricDbname["test_metric"]["test_db"]
-		// partition bounds should have a difference of 3 weeks
-		a.Equal(part.StartTime.Add(3 * 7 * 24 * time.Hour), part.EndTime)
+		boundStart := time.Now().Add(-1 * 2 * 24 * time.Hour).Format("2006-01-02")
+		boundEnd := time.Now().Add(-1 * 24 * time.Hour).Format("2006-01-02")
+
+		// create the 3rd level time partition with end bound yesterday
+		_, err = conn.Exec(ctx,
+			fmt.Sprintf(
+				`CREATE TABLE subpartitions.test_metric_2_dbname_time 
+			PARTITION OF subpartitions.test_metric_2_dbname 
+			FOR VALUES FROM ('%s') TO ('%s')`,
+				boundStart, boundEnd),
+		)
+		a.NoError(err)
+		_, err = conn.Exec(ctx, "COMMENT ON TABLE subpartitions.test_metric_2_dbname_time IS $$pgwatch-generated-metric-dbname-time-lvl$$")
+		a.NoError(err)
+
+		var partitionsNum int
+		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric_2');").Scan(&partitionsNum)
+		a.NoError(err)
+		a.Equal(3, partitionsNum)
+
+		pgw.opts.RetentionInterval = "2 days"
+		pgw.DeleteOldPartitions() // 1 day < 2 days, shouldn't delete anything
+
+		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric_2');").Scan(&partitionsNum)
+		a.NoError(err)
+		a.Equal(3, partitionsNum)
+
+		pgw.opts.RetentionInterval = "1 hour"
+		pgw.DeleteOldPartitions() // 1 day > 1 hour, should delete the partition
+
+		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric_2');").Scan(&partitionsNum)
+		a.NoError(err)
+		a.Equal(2, partitionsNum)
+	})
+
+	t.Run("Epoch to Duration Conversion", func(_ *testing.T) {
+		table := map[string]time.Duration{
+			"1 hour":   time.Hour,
+			"2 hours":  2 * time.Hour,
+			"4 days":   4 * 24 * time.Hour,
+			"1 day":    24 * time.Hour,
+			"1 year":   365.25 * 24 * time.Hour,
+			"1 week":   7 * 24 * time.Hour,
+			"3 weeks":  3 * 7 * 24 * time.Hour,
+			"2 months": 2 * 30 * 24 * time.Hour,
+			"1 month":  30 * 24 * time.Hour,
+		}
+
+		for k, v := range table {
+			opts := &CmdOpts{
+				PartitionInterval:   "1 hour",
+				RetentionInterval:   k,
+				MaintenanceInterval: k,
+				BatchingDelay:       time.Hour,
+			}
+
+			pgw, err := NewPostgresWriter(ctx, connStr, opts)
+			a.NoError(err)
+			a.Equal(pgw.retentionInterval, v)
+			a.Equal(pgw.maintenanceInterval, v)
+		}
 	})
 }
