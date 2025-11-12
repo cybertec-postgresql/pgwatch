@@ -2193,16 +2193,21 @@ ENV: <code>$PW_SINK</code></p>
 ENV: <code>$PW_BATCHING_DELAY</code></p>
 </li>
 <li>
-<p><code>--partition-interval=</code>
-    Time range for PostgreSQL sink table partitions. Must be a valid PostgreSQL interval expression. (default: 1 week)
-    ENV: <code>$PW_PARTITION_INTERVAL</code></p>
+<p><code>--partition-interval=</code></p>
+<p>Time range for PostgreSQL sink table partitions. Must be a valid PostgreSQL interval. (default: 1 week)<br>
+ENV: <code>$PW_PARTITION_INTERVAL</code></p>
 <p>Example:
 <code>--partition-inteval="3 weeks 4 days"</code>,</p>
 </li>
 <li>
 <p><code>--retention=</code></p>
-<p>If set, metrics older than that will be deleted (default: "14 days").<br>
+<p>Delete metrics older than this. Set to zero to disable. Must be a valid PostgreSQL interval. (default: 14 days)<br>
 ENV: <code>$PW_RETENTION</code></p>
+</li>
+<li>
+<p><code>--maintenance-interval=</code></p>
+<p>Run pgwatch maintenance tasks on sinks with this interval; Set to zero to disable. Must be a valid PostgreSQL interval. (default: 12 hours)<br>
+ENV: <code>$PW_MAINTENANCE_INTERVAL</code></p>
 </li>
 <li>
 <p><code>--real-dbname-field=</code></p>
