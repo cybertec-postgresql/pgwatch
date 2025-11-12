@@ -21,13 +21,36 @@
   "links": [],
   "panels": [
     {
-      "columns": [],
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
       "description": "Top 25 longest running queries from pg_stat_activity. Query texts are compacted",
-      "fontSize": "100%",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "count"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 24,
         "w": 24,
@@ -155,8 +178,7 @@
         }
       ],
       "title": "Stat Activity",
-      "transform": "table",
-      "type": "table-old"
+      "type": "table"
     }
   ],
   "refresh": "5s",
