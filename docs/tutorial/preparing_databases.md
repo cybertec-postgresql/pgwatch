@@ -190,10 +190,10 @@ pgwatch metric print-init psutil_cpu psutil_mem psutil_disk psutil_disk_io_total
     based on the Linux distro / Kernel version used, so small
     adjustments might be needed there (e.g. to remove a non-existent
     column). Minimum usable Kernel version required is 3.3.
-- When running the gatherer locally one can enable the `--direct-os-stats`
-    parameter to signal that we can fetch the data for the default `psutil*` metrics
-    directly from OS counters. If direct OS fetching fails though, the
-    fallback is still to try via PL/Python wrappers.
+- When pgwatch runs on the same host as a monitored source,
+    it auto-detects this and tries to fetch the default `psutil*`
+    metrics data directly from OS counters. If this direct OS fetch fails,
+    it falls back to using PL/Python wrappers.
 - In rare cases when some "helpers" have been installed, and when
     doing a binary PostgreSQL upgrade at some later point in time via
     `pg_upgrade`, this could result in error messages
@@ -201,10 +201,10 @@ pgwatch metric print-init psutil_cpu psutil_mem psutil_disk psutil_disk_io_total
     upgraded" cluster and re-create them after the upgrade process.
 
 !!! Info
-    If despite all the warnings you still want to run the pgwatch
-    with a sufficient user account (e.g. a superuser) you can also
+    If, despite all the warnings, you still want to run pgwatch
+    with a sufficient user account (e.g., a superuser), you can
     use the `--create-helpers` parameter to automatically create all
-    needed helper functions in the monitored databases.
+    needed helper functions in the monitored databases on startup.
 
 ## Different source types explained
 

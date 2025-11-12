@@ -63,11 +63,6 @@ It reads the configuration from the specified sources and metrics, then begins c
     Postgres URI, YAML file or folder of YAML files with metrics definitions.  
     ENV: `$PW_METRICS`
 
-- `--direct-os-stats`
-
-    Extract OS related psutil statistics not via PL/Python wrappers but directly on host.  
-    ENV: `$PW_DIRECT_OS_STATS`
-
 - `--instance-level-cache-max-seconds=`
 
     Max allowed staleness for instance level metric data shared between DBs of an instance. Set to 0 to disable (default: 30).  
