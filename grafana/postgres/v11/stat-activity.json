@@ -214,24 +214,6 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
-      },
-      {
-        "current": {
-          "text": "1",
-          "value": "1"
-        },
-        "hide": 0,
-        "name": "min_duration_s",
-        "options": [
-          {
-            "selected": true,
-            "text": "1",
-            "value": "1"
-          }
-        ],
-        "query": "1",
-        "skipUrlSync": false,
-        "type": "textbox"
       }
     ]
   },
