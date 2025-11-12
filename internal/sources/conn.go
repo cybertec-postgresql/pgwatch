@@ -133,6 +133,12 @@ func (md *SourceConn) GetMetricInterval(name string) float64 {
 	return md.Metrics[name]
 }
 
+// IsClientOnSameHost checks if the pgwatch is running on the same host as the server
+func (md *SourceConn) IsClientOnSameHost() bool {
+	ok, err := db.IsClientOnSameHost(md.Conn)
+	return ok && err == nil
+}
+
 // SetDatabaseName sets the database name in the connection config for resolved databases
 func (md *SourceConn) SetDatabaseName(name string) {
 	if err := md.ParseConfig(); err != nil {

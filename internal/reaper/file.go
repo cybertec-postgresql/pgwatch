@@ -37,8 +37,8 @@ const (
 
 var directlyFetchableOSMetrics = []string{metricPsutilCPU, metricPsutilDisk, metricPsutilDiskIoTotal, metricPsutilMem, metricCPULoad}
 
-func IsDirectlyFetchableMetric(metric string) bool {
-	return slices.Contains(directlyFetchableOSMetrics, metric)
+func IsDirectlyFetchableMetric(md *sources.SourceConn, metric string) bool {
+	return slices.Contains(directlyFetchableOSMetrics, metric) && md.IsClientOnSameHost()
 }
 
 func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.SourceConn, metricName string) (*metrics.MeasurementEnvelope, error) {
