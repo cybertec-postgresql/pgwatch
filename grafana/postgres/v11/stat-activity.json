@@ -132,7 +132,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  query AS query,\n  count(*) AS count\nFROM\n  stat_activity\nWHERE\n  dbname = '$dbname'\n  AND $__timeFilter(time)\nGROUP BY\n  query\nORDER BY\n  count DESC\nLIMIT 25\n",
+          "rawSql": "SELECT\n sum((data->>'count')::integer) as count, data->>'query' AS query\n FROM\n  stat_activity\nWHERE\n  dbname = '$dbname'\n  AND $__timeFilter(time)\nGROUP BY\n  query\nORDER BY\n  count DESC\nLIMIT 25\n",
           "refId": "A",
           "select": [
             [
