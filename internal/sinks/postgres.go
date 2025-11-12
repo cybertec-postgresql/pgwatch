@@ -520,7 +520,7 @@ func (pgw *PostgresWriter) MaintainUniqueSources() {
 	SELECT dbname FROM t WHERE dbname NOTNULL ORDER BY 1`
 	sqlDelete := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT dbname = ANY($1) and metric = $2`
 	sqlDeleteAll := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric = $1`
-	sqlDroppedTables := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT metric = ANY($1)`
+	sqlDroppedTables := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric != ANY($1)`
 	sqlAdd := `
 		INSERT INTO admin.all_distinct_dbname_metrics 
 		SELECT u, $2 FROM (select unnest($1::text[]) as u) x
