@@ -67,10 +67,9 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 			return err
 		}
 
-		// multiply by (10 ^ 9) because epoch returns seconds
-		// but time.Duration works in terms of nanoseconds
-		pgw.retentionInterval *= 1_000_000_000
-		pgw.maintenanceInterval *= 1_000_000_000
+		// epoch returns seconds but time.Duration represents nanoseconds
+		pgw.retentionInterval *= time.Second
+		pgw.maintenanceInterval *= time.Second
 
 		if !isValidPartitionInterval {
 			return fmt.Errorf("--partition-interval must be at least 1 hour, got: %s", opts.PartitionInterval)
@@ -103,31 +102,8 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		return
 	}
 
-	if pgw.maintenanceInterval > 0 {
-		go func() {
-			for {
-				select {
-				case <-pgw.ctx.Done():
-					return
-				case <-time.After(pgw.maintenanceInterval):
-					pgw.MaintainUniqueSources()
-				}
-			}
-		}()
-	}
-
-	if pgw.retentionInterval > 0 {
-		go func() {
-			for {
-				select {
-				case <-pgw.ctx.Done():
-					return
-				case <-time.After(pgw.retentionInterval):
-					pgw.DeleteOldPartitions()
-				}
-			}
-		}()
-	}
+	pgw.scheduleJob(pgw.maintenanceInterval, pgw.MaintainUniqueSources)
+	pgw.scheduleJob(pgw.retentionInterval, pgw.DeleteOldPartitions)
 
 	go pgw.poll()
 	l.Info(`measurements sink is activated`)
@@ -182,6 +158,21 @@ const (
 	DbStorageSchemaPostgres DbStorageSchemaType = iota
 	DbStorageSchemaTimescale
 )
+
+func (pgw *PostgresWriter) scheduleJob(interval time.Duration, job func()) {
+	if interval > 0 {
+		go func() {
+			for {
+				select {
+				case <-pgw.ctx.Done():
+					return
+				case <-time.After(interval):
+					job()
+				}
+			}
+		}()
+	}
+}
 
 func (pgw *PostgresWriter) ReadMetricSchemaType() (err error) {
 	var isTs bool
@@ -512,7 +503,7 @@ func (pgw *PostgresWriter) DeleteOldPartitions() {
 	}
 }
 
-// MaintainUniqueSources is a background task that maintains a mapping of unique sources 
+// MaintainUniqueSources is a background task that maintains a mapping of unique sources
 // in each metric table in admin.all_distinct_dbname_metrics.
 // This is used to avoid listing the same source multiple times in Grafana dropdowns.
 func (pgw *PostgresWriter) MaintainUniqueSources() {
