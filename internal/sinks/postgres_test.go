@@ -706,6 +706,7 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 		a.Equal(1, numOfEntries)
 
 		_, err = conn.Exec(ctx, "DROP TABLE test_metric_1;")
+		r.NoError(err)
 
 		// the corresponding entry should be deleted
 		pgw.MaintainUniqueSources()
