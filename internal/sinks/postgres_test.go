@@ -54,10 +54,10 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 	}
 
 	opts := &CmdOpts{
-		BatchingDelay: time.Hour, 
-		Retention: "1 day",
+		BatchingDelay:       time.Hour,
+		RetentionInterval:   "1 day",
 		MaintenanceInterval: "1 day",
-		PartitionInterval: "1 hour",
+		PartitionInterval:   "1 hour",
 	}
 	pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
 	assert.NoError(t, err)
@@ -529,10 +529,10 @@ func TestIntervalValidation(t *testing.T) {
 	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
 
 	opts := &CmdOpts{
-		PartitionInterval: "1 minute",
+		PartitionInterval:   "1 minute",
 		MaintenanceInterval: "-1 hours",
-		Retention: "-1 hours",
-		BatchingDelay: time.Second,
+		RetentionInterval:   "-1 hours",
+		BatchingDelay:       time.Second,
 	}
 
 	_, err = NewPostgresWriter(ctx, connStr, opts)
@@ -562,10 +562,10 @@ func TestIntervalValidation(t *testing.T) {
 		a.Error(err)
 		opts.MaintenanceInterval = "1 hour"
 
-		opts.Retention = interval
+		opts.RetentionInterval = interval
 		_, err = NewPostgresWriter(ctx, connStr, opts)
 		a.Error(err)
-		opts.Retention = "1 hour"
+		opts.RetentionInterval = "1 hour"
 	}
 
 	validIntervals := []string{
@@ -577,7 +577,7 @@ func TestIntervalValidation(t *testing.T) {
 	for _, interval := range validIntervals {
 		opts.PartitionInterval = interval
 		opts.MaintenanceInterval = interval
-		opts.Retention = interval
+		opts.RetentionInterval = interval
 
 		_, err = NewPostgresWriter(ctx, connStr, opts)
 		a.NoError(err)
@@ -603,10 +603,10 @@ func TestPartitionInterval(t *testing.T) {
 	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
 
 	opts := &CmdOpts{
-		PartitionInterval: "3 weeks",
-		Retention: "14 days",
+		PartitionInterval:   "3 weeks",
+		RetentionInterval:   "14 days",
 		MaintenanceInterval: "12 hours",
-		BatchingDelay: time.Second,
+		BatchingDelay:       time.Second,
 	}
 
 	pgw, err := NewPostgresWriter(ctx, connStr, opts)
@@ -625,7 +625,7 @@ func TestPartitionInterval(t *testing.T) {
 	err = pgw.EnsureMetricDbnameTime(m, false)
 	r.NoError(err)
 
-	var partitionsNum int;
+	var partitionsNum int
 	err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric');").Scan(&partitionsNum)
 	a.NoError(err)
 	// 1 the metric table itself + 1 dbname partition
@@ -634,7 +634,7 @@ func TestPartitionInterval(t *testing.T) {
 
 	part := partitionMapMetricDbname["test_metric"]["test_db"]
 	// partition bounds should have a difference of 3 weeks
-	a.Equal(part.StartTime.Add(3 * 7 * 24 * time.Hour), part.EndTime)
+	a.Equal(part.StartTime.Add(3*7*24*time.Hour), part.EndTime)
 }
 
 func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
@@ -659,10 +659,10 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 	r.NoError(err)
 
 	opts := &CmdOpts{
-		PartitionInterval: "1 hour",
-		Retention: "1 second",
+		PartitionInterval:   "1 hour",
+		RetentionInterval:   "1 second",
 		MaintenanceInterval: "0 days",
-		BatchingDelay: time.Hour,
+		BatchingDelay:       time.Hour,
 	}
 
 	pgw, err := NewPostgresWriter(ctx, connStr, opts)
@@ -735,14 +735,14 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 		a.NoError(err)
 		a.Equal(3, partitionsNum)
 
-		pgw.opts.Retention = "2 days"
+		pgw.opts.RetentionInterval = "2 days"
 		pgw.DeleteOldPartitions() // 1 day < 2 days, shouldn't delete anything
 
 		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric_2');").Scan(&partitionsNum)
 		a.NoError(err)
 		a.Equal(3, partitionsNum)
 
-		pgw.opts.Retention = "1 hour"
+		pgw.opts.RetentionInterval = "1 hour"
 		pgw.DeleteOldPartitions() // 1 day > 1 hour, should delete the partition
 
 		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric_2');").Scan(&partitionsNum)
@@ -765,10 +765,10 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 
 		for k, v := range table {
 			opts := &CmdOpts{
-				PartitionInterval: "1 hour",
-				Retention: k,
+				PartitionInterval:   "1 hour",
+				RetentionInterval:   k,
 				MaintenanceInterval: k,
-				BatchingDelay: time.Hour,
+				BatchingDelay:       time.Hour,
 			}
 
 			pgw, err := NewPostgresWriter(ctx, connStr, opts)

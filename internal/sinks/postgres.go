@@ -59,10 +59,10 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		sinkDb:    conn,
 	}
 	if err = db.Init(ctx, pgw.sinkDb, func(ctx context.Context, conn db.PgxIface) error {
-		var isValidPartitionInterval bool 
-		if err = conn.QueryRow(ctx, 
-			"SELECT extract(epoch from $1::interval), extract(epoch from $2::interval), $3::interval >= '1h'::interval", 
-			opts.Retention, opts.MaintenanceInterval, opts.PartitionInterval,
+		var isValidPartitionInterval bool
+		if err = conn.QueryRow(ctx,
+			"SELECT extract(epoch from $1::interval), extract(epoch from $2::interval), $3::interval >= '1h'::interval",
+			opts.RetentionInterval, opts.MaintenanceInterval, opts.PartitionInterval,
 		).Scan(&pgw.retentionInterval, &pgw.maintenanceInterval, &isValidPartitionInterval); err != nil {
 			return err
 		}
@@ -504,7 +504,7 @@ func (pgw *PostgresWriter) DeleteOldPartitions() {
 	l := log.GetLogger(pgw.ctx)
 	var partsDropped int
 	err := pgw.sinkDb.QueryRow(pgw.ctx, `SELECT admin.drop_old_time_partitions(older_than => $1::interval)`,
-		pgw.opts.Retention).Scan(&partsDropped)
+		pgw.opts.RetentionInterval).Scan(&partsDropped)
 	if err != nil {
 		l.Error("Could not drop old time partitions:", err)
 	} else if partsDropped > 0 {
