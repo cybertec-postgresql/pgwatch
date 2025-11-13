@@ -21,13 +21,36 @@
   "links": [],
   "panels": [
     {
-      "columns": [],
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
       "description": "Top 25 longest running queries from pg_stat_activity. Query texts are compacted",
-      "fontSize": "100%",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "count"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 24,
         "w": 24,
@@ -132,7 +155,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  query AS query,\n  count(*) AS count\nFROM\n  stat_activity\nWHERE\n  dbname = '$dbname'\n  AND $__timeFilter(time)\nGROUP BY\n  query\nORDER BY\n  count DESC\nLIMIT 25\n",
+          "rawSql": "SELECT\n sum((data->>'count')::integer) as count, data->>'query' AS query\n FROM\n  stat_activity\nWHERE\n  dbname = '$dbname'\n  AND $__timeFilter(time)\nGROUP BY\n  query\nORDER BY\n  count DESC\nLIMIT 25\n",
           "refId": "A",
           "select": [
             [
@@ -155,8 +178,7 @@
         }
       ],
       "title": "Stat Activity",
-      "transform": "table",
-      "type": "table-old"
+      "type": "table"
     }
   ],
   "refresh": "5s",
@@ -192,24 +214,6 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
-      },
-      {
-        "current": {
-          "text": "1",
-          "value": "1"
-        },
-        "hide": 0,
-        "name": "min_duration_s",
-        "options": [
-          {
-            "selected": true,
-            "text": "1",
-            "value": "1"
-          }
-        ],
-        "query": "1",
-        "skipUrlSync": false,
-        "type": "textbox"
       }
     ]
   },
