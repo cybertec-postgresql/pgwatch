@@ -558,8 +558,8 @@ func (pgw *PostgresWriter) MaintainUniqueSources() {
 		rows, _ := pgw.sinkDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, tableName, tableName))
 		ret, err := pgx.CollectRows(rows, pgx.RowTo[string])
 		if err != nil {
-			logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for '%s': %s", metricName, err)
-			break
+			logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
+			continue
 		}
 		for _, drDbname := range ret {
 			foundDbnamesMap[drDbname] = true // "set" behaviour, don't want duplicates
