@@ -520,7 +520,7 @@ func (pgw *PostgresWriter) MaintainUniqueSources() {
 	SELECT dbname FROM t WHERE dbname NOTNULL ORDER BY 1`
 	sqlDelete := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT dbname = ANY($1) and metric = $2`
 	sqlDeleteAll := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric = $1`
-	sqlDroppedTables := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric != ANY($1)`
+	sqlDroppedTables := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric != ALL($1)`
 	sqlAdd := `
 		INSERT INTO admin.all_distinct_dbname_metrics 
 		SELECT u, $2 FROM (select unnest($1::text[]) as u) x
@@ -547,15 +547,15 @@ func (pgw *PostgresWriter) MaintainUniqueSources() {
 	}
 
 	for i, tableName := range allDistinctMetricTables {
-		allDistinctMetricTables[i] = strings.Replace(tableName, "public.", "", 1)
-	}
-
-	for _, metricName := range allDistinctMetricTables {
 		foundDbnamesMap := make(map[string]bool)
 		foundDbnamesArr := make([]string, 0)
 
+		metricName := strings.Replace(tableName, "public.", "", 1)
+		// later usage in sqlDroppedTables requires no "public." prefix
+		allDistinctMetricTables[i] = metricName 
+
 		logger.Debugf("Refreshing all_distinct_dbname_metrics listing for metric: %s", metricName)
-		rows, _ := pgw.sinkDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, metricName, metricName))
+		rows, _ := pgw.sinkDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, tableName, tableName))
 		ret, err := pgx.CollectRows(rows, pgx.RowTo[string])
 		if err != nil {
 			logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for '%s': %s", metricName, err)
