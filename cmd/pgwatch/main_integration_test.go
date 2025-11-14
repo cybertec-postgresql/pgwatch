@@ -134,10 +134,10 @@ metrics:
 
 	t.Run("non-direct os stats", func(t *testing.T) {
 		os.Args = []string{
-			"pgwatch", 
-			"--sources", sourcesYaml, 
-			"--metrics", metricsYaml, 
-			"--sink", "jsonfile://" + jsonSink, 
+			"pgwatch",
+			"--sources", sourcesYaml,
+			"--metrics", metricsYaml,
+			"--sink", "jsonfile://" + jsonSink,
 			"--web-disable",
 		}
 
