@@ -133,6 +133,7 @@ metrics:
 	})
 
 	t.Run("non-direct os stats", func(t *testing.T) {
+		os.Remove(jsonSink) // truncate output file
 		os.Args = []string{
 			"pgwatch",
 			"--sources", sourcesYaml,
