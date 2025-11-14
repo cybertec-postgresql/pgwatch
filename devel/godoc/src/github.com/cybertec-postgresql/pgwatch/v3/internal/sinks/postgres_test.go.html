@@ -761,81 +761,90 @@
 <span id="L704" class="ln">   704  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics;&#34;).Scan(&amp;numOfEntries)
 <span id="L705" class="ln">   705  </span>		a.NoError(err)
 <span id="L706" class="ln">   706  </span>		a.Equal(1, numOfEntries)
-<span id="L707" class="ln">   707  </span>	})
-<span id="L708" class="ln">   708  </span>
-<span id="L709" class="ln">   709  </span>	t.Run(&#34;DeleteOldPartitions&#34;, func(_ *testing.T) {
-<span id="L710" class="ln">   710  </span>		<span class="comment">// Creates a new top level table for `test_metric_2`</span>
-<span id="L711" class="ln">   711  </span>		err = pgw.SyncMetric(&#34;test&#34;, &#34;test_metric_2&#34;, AddOp)
-<span id="L712" class="ln">   712  </span>		r.NoError(err)
-<span id="L713" class="ln">   713  </span>
-<span id="L714" class="ln">   714  </span>		<span class="comment">// create the 2nd level dbname partition</span>
-<span id="L715" class="ln">   715  </span>		_, err = conn.Exec(ctx, &#34;CREATE TABLE subpartitions.test_metric_2_dbname PARTITION OF public.test_metric_2 FOR VALUES IN (&#39;test&#39;) PARTITION BY RANGE (time)&#34;)
-<span id="L716" class="ln">   716  </span>		a.NoError(err)
+<span id="L707" class="ln">   707  </span>
+<span id="L708" class="ln">   708  </span>		_, err = conn.Exec(ctx, &#34;DROP TABLE test_metric_1;&#34;)
+<span id="L709" class="ln">   709  </span>		r.NoError(err)
+<span id="L710" class="ln">   710  </span>
+<span id="L711" class="ln">   711  </span>		<span class="comment">// the corresponding entry should be deleted</span>
+<span id="L712" class="ln">   712  </span>		pgw.MaintainUniqueSources()
+<span id="L713" class="ln">   713  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics;&#34;).Scan(&amp;numOfEntries)
+<span id="L714" class="ln">   714  </span>		a.NoError(err)
+<span id="L715" class="ln">   715  </span>		a.Equal(0, numOfEntries)
+<span id="L716" class="ln">   716  </span>	})
 <span id="L717" class="ln">   717  </span>
-<span id="L718" class="ln">   718  </span>		boundStart := time.Now().Add(-1 * 2 * 24 * time.Hour).Format(&#34;2006-01-02&#34;)
-<span id="L719" class="ln">   719  </span>		boundEnd := time.Now().Add(-1 * 24 * time.Hour).Format(&#34;2006-01-02&#34;)
-<span id="L720" class="ln">   720  </span>
-<span id="L721" class="ln">   721  </span>		<span class="comment">// create the 3rd level time partition with end bound yesterday</span>
-<span id="L722" class="ln">   722  </span>		_, err = conn.Exec(ctx,
-<span id="L723" class="ln">   723  </span>			fmt.Sprintf(
-<span id="L724" class="ln">   724  </span>				`CREATE TABLE subpartitions.test_metric_2_dbname_time 
-<span id="L725" class="ln">   725  </span>			PARTITION OF subpartitions.test_metric_2_dbname 
-<span id="L726" class="ln">   726  </span>			FOR VALUES FROM (&#39;%s&#39;) TO (&#39;%s&#39;)`,
-<span id="L727" class="ln">   727  </span>				boundStart, boundEnd),
-<span id="L728" class="ln">   728  </span>		)
-<span id="L729" class="ln">   729  </span>		a.NoError(err)
-<span id="L730" class="ln">   730  </span>		_, err = conn.Exec(ctx, &#34;COMMENT ON TABLE subpartitions.test_metric_2_dbname_time IS $$pgwatch-generated-metric-dbname-time-lvl$$&#34;)
-<span id="L731" class="ln">   731  </span>		a.NoError(err)
-<span id="L732" class="ln">   732  </span>
-<span id="L733" class="ln">   733  </span>		var partitionsNum int
-<span id="L734" class="ln">   734  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;test_metric_2&#39;);&#34;).Scan(&amp;partitionsNum)
-<span id="L735" class="ln">   735  </span>		a.NoError(err)
-<span id="L736" class="ln">   736  </span>		a.Equal(3, partitionsNum)
-<span id="L737" class="ln">   737  </span>
-<span id="L738" class="ln">   738  </span>		pgw.opts.RetentionInterval = &#34;2 days&#34;
-<span id="L739" class="ln">   739  </span>		pgw.DeleteOldPartitions() <span class="comment">// 1 day &lt; 2 days, shouldn&#39;t delete anything</span>
-<span id="L740" class="ln">   740  </span>
-<span id="L741" class="ln">   741  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;test_metric_2&#39;);&#34;).Scan(&amp;partitionsNum)
-<span id="L742" class="ln">   742  </span>		a.NoError(err)
-<span id="L743" class="ln">   743  </span>		a.Equal(3, partitionsNum)
-<span id="L744" class="ln">   744  </span>
-<span id="L745" class="ln">   745  </span>		pgw.opts.RetentionInterval = &#34;1 hour&#34;
-<span id="L746" class="ln">   746  </span>		pgw.DeleteOldPartitions() <span class="comment">// 1 day &gt; 1 hour, should delete the partition</span>
-<span id="L747" class="ln">   747  </span>
-<span id="L748" class="ln">   748  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;test_metric_2&#39;);&#34;).Scan(&amp;partitionsNum)
-<span id="L749" class="ln">   749  </span>		a.NoError(err)
-<span id="L750" class="ln">   750  </span>		a.Equal(2, partitionsNum)
-<span id="L751" class="ln">   751  </span>	})
-<span id="L752" class="ln">   752  </span>
-<span id="L753" class="ln">   753  </span>	t.Run(&#34;Epoch to Duration Conversion&#34;, func(_ *testing.T) {
-<span id="L754" class="ln">   754  </span>		table := map[string]time.Duration{
-<span id="L755" class="ln">   755  </span>			&#34;1 hour&#34;:   time.Hour,
-<span id="L756" class="ln">   756  </span>			&#34;2 hours&#34;:  2 * time.Hour,
-<span id="L757" class="ln">   757  </span>			&#34;4 days&#34;:   4 * 24 * time.Hour,
-<span id="L758" class="ln">   758  </span>			&#34;1 day&#34;:    24 * time.Hour,
-<span id="L759" class="ln">   759  </span>			&#34;1 year&#34;:   365.25 * 24 * time.Hour,
-<span id="L760" class="ln">   760  </span>			&#34;1 week&#34;:   7 * 24 * time.Hour,
-<span id="L761" class="ln">   761  </span>			&#34;3 weeks&#34;:  3 * 7 * 24 * time.Hour,
-<span id="L762" class="ln">   762  </span>			&#34;2 months&#34;: 2 * 30 * 24 * time.Hour,
-<span id="L763" class="ln">   763  </span>			&#34;1 month&#34;:  30 * 24 * time.Hour,
-<span id="L764" class="ln">   764  </span>		}
-<span id="L765" class="ln">   765  </span>
-<span id="L766" class="ln">   766  </span>		for k, v := range table {
-<span id="L767" class="ln">   767  </span>			opts := &amp;CmdOpts{
-<span id="L768" class="ln">   768  </span>				PartitionInterval:   &#34;1 hour&#34;,
-<span id="L769" class="ln">   769  </span>				RetentionInterval:   k,
-<span id="L770" class="ln">   770  </span>				MaintenanceInterval: k,
-<span id="L771" class="ln">   771  </span>				BatchingDelay:       time.Hour,
-<span id="L772" class="ln">   772  </span>			}
-<span id="L773" class="ln">   773  </span>
-<span id="L774" class="ln">   774  </span>			pgw, err := NewPostgresWriter(ctx, connStr, opts)
-<span id="L775" class="ln">   775  </span>			a.NoError(err)
-<span id="L776" class="ln">   776  </span>			a.Equal(pgw.retentionInterval, v)
-<span id="L777" class="ln">   777  </span>			a.Equal(pgw.maintenanceInterval, v)
-<span id="L778" class="ln">   778  </span>		}
-<span id="L779" class="ln">   779  </span>	})
-<span id="L780" class="ln">   780  </span>}
-<span id="L781" class="ln">   781  </span>
+<span id="L718" class="ln">   718  </span>	t.Run(&#34;DeleteOldPartitions&#34;, func(_ *testing.T) {
+<span id="L719" class="ln">   719  </span>		<span class="comment">// Creates a new top level table for `test_metric_2`</span>
+<span id="L720" class="ln">   720  </span>		err = pgw.SyncMetric(&#34;test&#34;, &#34;test_metric_2&#34;, AddOp)
+<span id="L721" class="ln">   721  </span>		r.NoError(err)
+<span id="L722" class="ln">   722  </span>
+<span id="L723" class="ln">   723  </span>		<span class="comment">// create the 2nd level dbname partition</span>
+<span id="L724" class="ln">   724  </span>		_, err = conn.Exec(ctx, &#34;CREATE TABLE subpartitions.test_metric_2_dbname PARTITION OF public.test_metric_2 FOR VALUES IN (&#39;test&#39;) PARTITION BY RANGE (time)&#34;)
+<span id="L725" class="ln">   725  </span>		a.NoError(err)
+<span id="L726" class="ln">   726  </span>
+<span id="L727" class="ln">   727  </span>		boundStart := time.Now().Add(-1 * 2 * 24 * time.Hour).Format(&#34;2006-01-02&#34;)
+<span id="L728" class="ln">   728  </span>		boundEnd := time.Now().Add(-1 * 24 * time.Hour).Format(&#34;2006-01-02&#34;)
+<span id="L729" class="ln">   729  </span>
+<span id="L730" class="ln">   730  </span>		<span class="comment">// create the 3rd level time partition with end bound yesterday</span>
+<span id="L731" class="ln">   731  </span>		_, err = conn.Exec(ctx,
+<span id="L732" class="ln">   732  </span>			fmt.Sprintf(
+<span id="L733" class="ln">   733  </span>				`CREATE TABLE subpartitions.test_metric_2_dbname_time 
+<span id="L734" class="ln">   734  </span>			PARTITION OF subpartitions.test_metric_2_dbname 
+<span id="L735" class="ln">   735  </span>			FOR VALUES FROM (&#39;%s&#39;) TO (&#39;%s&#39;)`,
+<span id="L736" class="ln">   736  </span>				boundStart, boundEnd),
+<span id="L737" class="ln">   737  </span>		)
+<span id="L738" class="ln">   738  </span>		a.NoError(err)
+<span id="L739" class="ln">   739  </span>		_, err = conn.Exec(ctx, &#34;COMMENT ON TABLE subpartitions.test_metric_2_dbname_time IS $$pgwatch-generated-metric-dbname-time-lvl$$&#34;)
+<span id="L740" class="ln">   740  </span>		a.NoError(err)
+<span id="L741" class="ln">   741  </span>
+<span id="L742" class="ln">   742  </span>		var partitionsNum int
+<span id="L743" class="ln">   743  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;test_metric_2&#39;);&#34;).Scan(&amp;partitionsNum)
+<span id="L744" class="ln">   744  </span>		a.NoError(err)
+<span id="L745" class="ln">   745  </span>		a.Equal(3, partitionsNum)
+<span id="L746" class="ln">   746  </span>
+<span id="L747" class="ln">   747  </span>		pgw.opts.RetentionInterval = &#34;2 days&#34;
+<span id="L748" class="ln">   748  </span>		pgw.DeleteOldPartitions() <span class="comment">// 1 day &lt; 2 days, shouldn&#39;t delete anything</span>
+<span id="L749" class="ln">   749  </span>
+<span id="L750" class="ln">   750  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;test_metric_2&#39;);&#34;).Scan(&amp;partitionsNum)
+<span id="L751" class="ln">   751  </span>		a.NoError(err)
+<span id="L752" class="ln">   752  </span>		a.Equal(3, partitionsNum)
+<span id="L753" class="ln">   753  </span>
+<span id="L754" class="ln">   754  </span>		pgw.opts.RetentionInterval = &#34;1 hour&#34;
+<span id="L755" class="ln">   755  </span>		pgw.DeleteOldPartitions() <span class="comment">// 1 day &gt; 1 hour, should delete the partition</span>
+<span id="L756" class="ln">   756  </span>
+<span id="L757" class="ln">   757  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;test_metric_2&#39;);&#34;).Scan(&amp;partitionsNum)
+<span id="L758" class="ln">   758  </span>		a.NoError(err)
+<span id="L759" class="ln">   759  </span>		a.Equal(2, partitionsNum)
+<span id="L760" class="ln">   760  </span>	})
+<span id="L761" class="ln">   761  </span>
+<span id="L762" class="ln">   762  </span>	t.Run(&#34;Epoch to Duration Conversion&#34;, func(_ *testing.T) {
+<span id="L763" class="ln">   763  </span>		table := map[string]time.Duration{
+<span id="L764" class="ln">   764  </span>			&#34;1 hour&#34;:   time.Hour,
+<span id="L765" class="ln">   765  </span>			&#34;2 hours&#34;:  2 * time.Hour,
+<span id="L766" class="ln">   766  </span>			&#34;4 days&#34;:   4 * 24 * time.Hour,
+<span id="L767" class="ln">   767  </span>			&#34;1 day&#34;:    24 * time.Hour,
+<span id="L768" class="ln">   768  </span>			&#34;1 year&#34;:   365.25 * 24 * time.Hour,
+<span id="L769" class="ln">   769  </span>			&#34;1 week&#34;:   7 * 24 * time.Hour,
+<span id="L770" class="ln">   770  </span>			&#34;3 weeks&#34;:  3 * 7 * 24 * time.Hour,
+<span id="L771" class="ln">   771  </span>			&#34;2 months&#34;: 2 * 30 * 24 * time.Hour,
+<span id="L772" class="ln">   772  </span>			&#34;1 month&#34;:  30 * 24 * time.Hour,
+<span id="L773" class="ln">   773  </span>		}
+<span id="L774" class="ln">   774  </span>
+<span id="L775" class="ln">   775  </span>		for k, v := range table {
+<span id="L776" class="ln">   776  </span>			opts := &amp;CmdOpts{
+<span id="L777" class="ln">   777  </span>				PartitionInterval:   &#34;1 hour&#34;,
+<span id="L778" class="ln">   778  </span>				RetentionInterval:   k,
+<span id="L779" class="ln">   779  </span>				MaintenanceInterval: k,
+<span id="L780" class="ln">   780  </span>				BatchingDelay:       time.Hour,
+<span id="L781" class="ln">   781  </span>			}
+<span id="L782" class="ln">   782  </span>
+<span id="L783" class="ln">   783  </span>			pgw, err := NewPostgresWriter(ctx, connStr, opts)
+<span id="L784" class="ln">   784  </span>			a.NoError(err)
+<span id="L785" class="ln">   785  </span>			a.Equal(pgw.retentionInterval, v)
+<span id="L786" class="ln">   786  </span>			a.Equal(pgw.maintenanceInterval, v)
+<span id="L787" class="ln">   787  </span>		}
+<span id="L788" class="ln">   788  </span>	})
+<span id="L789" class="ln">   789  </span>}
+<span id="L790" class="ln">   790  </span>
 </pre><p></p>
 
 <div id="footer">
