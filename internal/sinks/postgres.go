@@ -509,7 +509,6 @@ func (pgw *PostgresWriter) DeleteOldPartitions() {
 func (pgw *PostgresWriter) MaintainUniqueSources() {
 	logger := log.GetLogger(pgw.ctx)
 
-	sqlGetAdvisoryLock := `SELECT pg_try_advisory_lock(1571543679778230000) AS have_lock` // 1571543679778230000 is just a random bigint
 	sqlTopLevelMetrics := `SELECT table_name FROM admin.get_top_level_metric_tables()`
 	sqlDistinct := `
 	WITH RECURSIVE t(dbname) AS (
@@ -528,13 +527,13 @@ func (pgw *PostgresWriter) MaintainUniqueSources() {
 		RETURNING *`
 
 	var lock bool
-	logger.Infof("Trying to get admin.all_distinct_dbname_metrics maintainer advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
-	if err := pgw.sinkDb.QueryRow(pgw.ctx, sqlGetAdvisoryLock).Scan(&lock); err != nil {
-		logger.Error("Getting admin.all_distinct_dbname_metrics maintainer advisory lock failed:", err)
+	logger.Infof("Trying to get maintenance advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
+	if err := pgw.sinkDb.QueryRow(pgw.ctx, "SELECT admin.try_get_maintenance_lock();").Scan(&lock); err != nil {
+		logger.Error("Getting maintenance advisory lock failed:", err)
 		return
 	}
 	if !lock {
-		logger.Info("Skipping admin.all_distinct_dbname_metrics maintenance as another instance has the advisory lock...")
+		logger.Info("Skipping maintenance as another instance has the advisory lock...")
 		return
 	}
 

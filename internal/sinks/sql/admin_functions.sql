@@ -139,3 +139,14 @@ BEGIN
   RETURN i;
 END;
 $SQL$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION admin.try_get_maintenance_lock(
+  OUT have_lock BOOLEAN
+)
+AS 
+$SQL$
+BEGIN
+  -- 1571543679778230000 is just a random bigint
+  SELECT pg_try_advisory_lock(1571543679778230000) INTO have_lock;
+END;
+$SQL$ LANGUAGE plpgsql;
