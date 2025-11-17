@@ -529,22 +529,33 @@ func (pgw *PostgresWriter) MaintainUniqueSources() {
 	}
 
 	// updates listing table entries for a single metric.
-	sqlUpdateListingTable := "SELECT admin.update_listing_table(metric_table_name => $1);"
+	sqlUpdateListingTable := "SELECT * FROM admin.update_listing_table(metric_table_name => $1);"
 	for i, tableName := range allDistinctMetricTables {
 		metricName := strings.Replace(tableName, "public.", "", 1)
 		allDistinctMetricTables[i] = metricName // later usage in sqlDroppedTables requires no "public." prefix.
 		logger.Debugf("Updating admin.all_distinct_dbname_metrics listing for metric: %s", metricName)
-		if _, err := pgw.sinkDb.Exec(pgw.ctx, sqlUpdateListingTable, tableName); err != nil {
+		var deletedRowsCnt, insertedRowsCnt int;
+		err = pgw.sinkDb.QueryRow(pgw.ctx, sqlUpdateListingTable, tableName).Scan(&deletedRowsCnt, &insertedRowsCnt);
+		if err != nil {
 			logger.Errorf("Could not update admin.all_distinct_dbname_metrics listing for metric '%s': %s", metricName, err)
+		}
+		if deletedRowsCnt > 0 {
+			logger.Infof("Removed %d stale entries from admin.all_distinct_dbname_metrics listing table for metric: %s", deletedRowsCnt, metricName)
+		}
+		if insertedRowsCnt > 0 {
+			logger.Infof("Added %d entries to admin.all_distinct_dbname_metrics listing table for metric: %s", insertedRowsCnt, metricName)
 		}
 		time.Sleep(time.Minute)
 	}
 
 	// removes all entries for any non-existing table.
 	sqlRemoveDroppedTables := "SELECT admin.remove_dropped_tables_listing(existing_metrics => $1)"
-	_, err = pgw.sinkDb.Exec(pgw.ctx, sqlRemoveDroppedTables, allDistinctMetricTables)
+	var deletedRowsCnt int;
+	err = pgw.sinkDb.QueryRow(pgw.ctx, sqlRemoveDroppedTables, allDistinctMetricTables).Scan(&deletedRowsCnt)
 	if err != nil {
 		logger.Errorf("Could not update admin.all_distinct_dbname_metrics listing table for dropped metric tables: %s", err)
+	} else if deletedRowsCnt > 0 {
+		logger.Infof("Removed %d stale entries for dropped metric tables from admin.all_distinct_dbname_metrics listing table", deletedRowsCnt)
 	}
 }
 
