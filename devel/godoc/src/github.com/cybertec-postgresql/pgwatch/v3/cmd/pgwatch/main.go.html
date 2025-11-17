@@ -155,18 +155,22 @@
 <span id="L98" class="ln">    98  </span>		return
 <span id="L99" class="ln">    99  </span>	}
 <span id="L100" class="ln">   100  </span>
-<span id="L101" class="ln">   101  </span>	reaper := reaper.NewReaper(mainCtx, opts)
-<span id="L102" class="ln">   102  </span>
-<span id="L103" class="ln">   103  </span>	if _, err = webserver.Init(mainCtx, opts.WebUI, webui.WebUIFs, opts.MetricsReaderWriter,
-<span id="L104" class="ln">   104  </span>		opts.SourcesReaderWriter, reaper); err != nil {
-<span id="L105" class="ln">   105  </span>		exitCode.Store(cmdopts.ExitCodeWebUIError)
-<span id="L106" class="ln">   106  </span>		logger.Error(&#34;failed to initialize web UI: &#34;, err)
-<span id="L107" class="ln">   107  </span>		return
-<span id="L108" class="ln">   108  </span>	}
-<span id="L109" class="ln">   109  </span>
-<span id="L110" class="ln">   110  </span>	reaper.Reap(mainCtx)
-<span id="L111" class="ln">   111  </span>}
-<span id="L112" class="ln">   112  </span>
+<span id="L101" class="ln">   101  </span>	if opts.Metrics.DirectOSStats {
+<span id="L102" class="ln">   102  </span>		logger.Warning(&#34;--direct-os-stats flag is deprecated, direct OS access is now applied automatically for relevant metrics if on same host.&#34;)
+<span id="L103" class="ln">   103  </span>	}
+<span id="L104" class="ln">   104  </span>
+<span id="L105" class="ln">   105  </span>	reaper := reaper.NewReaper(mainCtx, opts)
+<span id="L106" class="ln">   106  </span>
+<span id="L107" class="ln">   107  </span>	if _, err = webserver.Init(mainCtx, opts.WebUI, webui.WebUIFs, opts.MetricsReaderWriter,
+<span id="L108" class="ln">   108  </span>		opts.SourcesReaderWriter, reaper); err != nil {
+<span id="L109" class="ln">   109  </span>		exitCode.Store(cmdopts.ExitCodeWebUIError)
+<span id="L110" class="ln">   110  </span>		logger.Error(&#34;failed to initialize web UI: &#34;, err)
+<span id="L111" class="ln">   111  </span>		return
+<span id="L112" class="ln">   112  </span>	}
+<span id="L113" class="ln">   113  </span>
+<span id="L114" class="ln">   114  </span>	reaper.Reap(mainCtx)
+<span id="L115" class="ln">   115  </span>}
+<span id="L116" class="ln">   116  </span>
 </pre><p></p>
 
 <div id="footer">

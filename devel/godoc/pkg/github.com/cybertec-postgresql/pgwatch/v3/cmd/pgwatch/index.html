@@ -97,17 +97,13 @@
                                          all monitored DBs when missing. Main
                                          usage - pg_stat_statements
                                          [$PW_TRY_CREATE_LISTED_EXTS_IF_MISSING]
+    --create-helpers                     Create helper database objects from
+                                         metric definitions
+                                         [$PW_CREATE_HELPERS]
 </pre>
 <p>Metrics:
 <pre>-m, --metrics=                           File or folder of YAML files with
                                          metrics definitions [$PW_METRICS]
-    --create-helpers                     Create helper database objects from
-                                         metric definitions
-                                         [$PW_CREATE_HELPERS]
-    --direct-os-stats                    Extract OS related psutil statistics
-                                         not via PL/Python wrappers but
-                                         directly on host
-                                         [$PW_DIRECT_OS_STATS]
     --instance-level-cache-max-seconds=  Max allowed staleness for instance
                                          level metric data shared between DBs
                                          of an instance. Affects &apos;continuous&apos;

@@ -190,150 +190,156 @@
 <span id="L133" class="ln">   133  </span>	return md.Metrics[name]
 <span id="L134" class="ln">   134  </span>}
 <span id="L135" class="ln">   135  </span>
-<span id="L136" class="ln">   136  </span><span class="comment">// SetDatabaseName sets the database name in the connection config for resolved databases</span>
-<span id="L137" class="ln">   137  </span>func (md *SourceConn) SetDatabaseName(name string) {
-<span id="L138" class="ln">   138  </span>	if err := md.ParseConfig(); err != nil {
-<span id="L139" class="ln">   139  </span>		return
-<span id="L140" class="ln">   140  </span>	}
-<span id="L141" class="ln">   141  </span>	md.ConnStr = &#34;&#34; <span class="comment">// unset the connection string to force conn config usage</span>
-<span id="L142" class="ln">   142  </span>	md.ConnConfig.ConnConfig.Database = name
-<span id="L143" class="ln">   143  </span>}
-<span id="L144" class="ln">   144  </span>
-<span id="L145" class="ln">   145  </span>func (md *SourceConn) IsPostgresSource() bool {
-<span id="L146" class="ln">   146  </span>	return md.Kind != SourcePgBouncer &amp;&amp; md.Kind != SourcePgPool
-<span id="L147" class="ln">   147  </span>}
-<span id="L148" class="ln">   148  </span>
-<span id="L149" class="ln">   149  </span><span class="comment">// VersionToInt parses a given version and returns an integer  or</span>
-<span id="L150" class="ln">   150  </span><span class="comment">// an error if unable to parse the version. Only parses valid semantic versions.</span>
-<span id="L151" class="ln">   151  </span><span class="comment">// Performs checking that can find errors within the version.</span>
-<span id="L152" class="ln">   152  </span><span class="comment">// Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00</span>
-<span id="L153" class="ln">   153  </span>var regVer = regexp.MustCompile(`(\d+).?(\d*).?(\d*)`)
+<span id="L136" class="ln">   136  </span><span class="comment">// IsClientOnSameHost checks if the pgwatch client is running on the same host as the PostgreSQL server</span>
+<span id="L137" class="ln">   137  </span>func (md *SourceConn) IsClientOnSameHost() bool {
+<span id="L138" class="ln">   138  </span>	ok, err := db.IsClientOnSameHost(md.Conn)
+<span id="L139" class="ln">   139  </span>	return ok &amp;&amp; err == nil
+<span id="L140" class="ln">   140  </span>}
+<span id="L141" class="ln">   141  </span>
+<span id="L142" class="ln">   142  </span><span class="comment">// SetDatabaseName sets the database name in the connection config for resolved databases</span>
+<span id="L143" class="ln">   143  </span>func (md *SourceConn) SetDatabaseName(name string) {
+<span id="L144" class="ln">   144  </span>	if err := md.ParseConfig(); err != nil {
+<span id="L145" class="ln">   145  </span>		return
+<span id="L146" class="ln">   146  </span>	}
+<span id="L147" class="ln">   147  </span>	md.ConnStr = &#34;&#34; <span class="comment">// unset the connection string to force conn config usage</span>
+<span id="L148" class="ln">   148  </span>	md.ConnConfig.ConnConfig.Database = name
+<span id="L149" class="ln">   149  </span>}
+<span id="L150" class="ln">   150  </span>
+<span id="L151" class="ln">   151  </span>func (md *SourceConn) IsPostgresSource() bool {
+<span id="L152" class="ln">   152  </span>	return md.Kind != SourcePgBouncer &amp;&amp; md.Kind != SourcePgPool
+<span id="L153" class="ln">   153  </span>}
 <span id="L154" class="ln">   154  </span>
-<span id="L155" class="ln">   155  </span>func VersionToInt(version string) (v int) {
-<span id="L156" class="ln">   156  </span>	if matches := regVer.FindStringSubmatch(version); len(matches) &gt; 1 {
-<span id="L157" class="ln">   157  </span>		for i, match := range matches[1:] {
-<span id="L158" class="ln">   158  </span>			v += func() (m int) { m, _ = strconv.Atoi(match); return }() * int(math.Pow10(4-i*2))
-<span id="L159" class="ln">   159  </span>		}
-<span id="L160" class="ln">   160  </span>	}
-<span id="L161" class="ln">   161  </span>	return
-<span id="L162" class="ln">   162  </span>}
-<span id="L163" class="ln">   163  </span>
-<span id="L164" class="ln">   164  </span>func (md *SourceConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error) {
-<span id="L165" class="ln">   165  </span>	md.Lock()
-<span id="L166" class="ln">   166  </span>	defer md.Unlock()
-<span id="L167" class="ln">   167  </span>	if ctx.Err() != nil {
-<span id="L168" class="ln">   168  </span>		return ctx.Err()
-<span id="L169" class="ln">   169  </span>	}
-<span id="L170" class="ln">   170  </span>
-<span id="L171" class="ln">   171  </span>	if !forceRefetch &amp;&amp; md.LastCheckedOn.After(time.Now().Add(time.Minute*-2)) { <span class="comment">// use cached version for 2 min</span>
-<span id="L172" class="ln">   172  </span>		return nil
-<span id="L173" class="ln">   173  </span>	}
-<span id="L174" class="ln">   174  </span>	switch md.Kind {
-<span id="L175" class="ln">   175  </span>	case SourcePgBouncer, SourcePgPool:
-<span id="L176" class="ln">   176  </span>		if md.VersionStr, md.Version, err = md.FetchVersion(ctx, func() string {
-<span id="L177" class="ln">   177  </span>			if md.Kind == SourcePgBouncer {
-<span id="L178" class="ln">   178  </span>				return &#34;SHOW VERSION&#34;
-<span id="L179" class="ln">   179  </span>			}
-<span id="L180" class="ln">   180  </span>			return &#34;SHOW POOL_VERSION&#34;
-<span id="L181" class="ln">   181  </span>		}()); err != nil {
-<span id="L182" class="ln">   182  </span>			return
-<span id="L183" class="ln">   183  </span>		}
-<span id="L184" class="ln">   184  </span>	default:
-<span id="L185" class="ln">   185  </span>		sql := `select /* pgwatch_generated */ 
-<span id="L186" class="ln">   186  </span>	div(current_setting(&#39;server_version_num&#39;)::int, 10000) as ver, 
-<span id="L187" class="ln">   187  </span>	version(), 
-<span id="L188" class="ln">   188  </span>	pg_is_in_recovery(), 
-<span id="L189" class="ln">   189  </span>	current_database()::TEXT,
-<span id="L190" class="ln">   190  </span>	system_identifier,
-<span id="L191" class="ln">   191  </span>	current_setting(&#39;is_superuser&#39;)::bool
-<span id="L192" class="ln">   192  </span>FROM
-<span id="L193" class="ln">   193  </span>	pg_control_system()`
-<span id="L194" class="ln">   194  </span>
-<span id="L195" class="ln">   195  </span>		err = md.Conn.QueryRow(ctx, sql).
-<span id="L196" class="ln">   196  </span>			Scan(&amp;md.Version, &amp;md.VersionStr,
-<span id="L197" class="ln">   197  </span>				&amp;md.IsInRecovery, &amp;md.RealDbname,
-<span id="L198" class="ln">   198  </span>				&amp;md.SystemIdentifier, &amp;md.IsSuperuser)
-<span id="L199" class="ln">   199  </span>		if err != nil {
-<span id="L200" class="ln">   200  </span>			return err
-<span id="L201" class="ln">   201  </span>		}
-<span id="L202" class="ln">   202  </span>
-<span id="L203" class="ln">   203  </span>		md.ExecEnv = md.DiscoverPlatform(ctx)
-<span id="L204" class="ln">   204  </span>		md.ApproxDbSize = md.FetchApproxSize(ctx)
-<span id="L205" class="ln">   205  </span>
-<span id="L206" class="ln">   206  </span>		sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
-<span id="L207" class="ln">   207  </span>		var res pgx.Rows
-<span id="L208" class="ln">   208  </span>		res, err = md.Conn.Query(ctx, sqlExtensions)
-<span id="L209" class="ln">   209  </span>		if err == nil {
-<span id="L210" class="ln">   210  </span>			var ext string
-<span id="L211" class="ln">   211  </span>			var ver string
-<span id="L212" class="ln">   212  </span>			_, err = pgx.ForEachRow(res, []any{&amp;ext, &amp;ver}, func() error {
-<span id="L213" class="ln">   213  </span>				extver := VersionToInt(ver)
-<span id="L214" class="ln">   214  </span>				if extver == 0 {
-<span id="L215" class="ln">   215  </span>					return fmt.Errorf(&#34;unexpected extension %s version input: %s&#34;, ext, ver)
-<span id="L216" class="ln">   216  </span>				}
-<span id="L217" class="ln">   217  </span>				md.Extensions[ext] = extver
-<span id="L218" class="ln">   218  </span>				return nil
-<span id="L219" class="ln">   219  </span>			})
-<span id="L220" class="ln">   220  </span>		}
-<span id="L221" class="ln">   221  </span>
-<span id="L222" class="ln">   222  </span>	}
-<span id="L223" class="ln">   223  </span>	md.LastCheckedOn = time.Now()
-<span id="L224" class="ln">   224  </span>	return err
-<span id="L225" class="ln">   225  </span>}
-<span id="L226" class="ln">   226  </span>
-<span id="L227" class="ln">   227  </span>func (md *SourceConn) FetchVersion(ctx context.Context, sql string) (version string, ver int, err error) {
-<span id="L228" class="ln">   228  </span>	if err = md.Conn.QueryRow(ctx, sql, pgx.QueryExecModeSimpleProtocol).Scan(&amp;version); err != nil {
-<span id="L229" class="ln">   229  </span>		return
-<span id="L230" class="ln">   230  </span>	}
-<span id="L231" class="ln">   231  </span>	ver = VersionToInt(version)
-<span id="L232" class="ln">   232  </span>	return
-<span id="L233" class="ln">   233  </span>}
-<span id="L234" class="ln">   234  </span>
-<span id="L235" class="ln">   235  </span><span class="comment">// TryDiscoverPlatform tries to discover the platform based on the database version string and some special settings</span>
-<span id="L236" class="ln">   236  </span><span class="comment">// that are only available on certain platforms. Returns the platform name or &#34;UNKNOWN&#34; if not sure.</span>
-<span id="L237" class="ln">   237  </span>func (md *SourceConn) DiscoverPlatform(ctx context.Context) (platform string) {
-<span id="L238" class="ln">   238  </span>	if md.ExecEnv != &#34;&#34; {
-<span id="L239" class="ln">   239  </span>		return md.ExecEnv <span class="comment">// carry over as not likely to change ever</span>
-<span id="L240" class="ln">   240  </span>	}
-<span id="L241" class="ln">   241  </span>	sql := `select /* pgwatch_generated */
-<span id="L242" class="ln">   242  </span>	case
-<span id="L243" class="ln">   243  </span>	  when exists (select * from pg_settings where name = &#39;pg_qs.host_database&#39; and setting = &#39;azure_sys&#39;) and version() ~* &#39;compiled by Visual C&#39; then &#39;AZURE_SINGLE&#39;
-<span id="L244" class="ln">   244  </span>	  when exists (select * from pg_settings where name = &#39;pg_qs.host_database&#39; and setting = &#39;azure_sys&#39;) and version() ~* &#39;compiled by gcc&#39; then &#39;AZURE_FLEXIBLE&#39;
-<span id="L245" class="ln">   245  </span>	  when exists (select * from pg_settings where name = &#39;cloudsql.supported_extensions&#39;) then &#39;GOOGLE&#39;
-<span id="L246" class="ln">   246  </span>	else
-<span id="L247" class="ln">   247  </span>	  &#39;UNKNOWN&#39;
-<span id="L248" class="ln">   248  </span>	end as exec_env`
-<span id="L249" class="ln">   249  </span>	_ = md.Conn.QueryRow(ctx, sql).Scan(&amp;platform)
-<span id="L250" class="ln">   250  </span>	return
-<span id="L251" class="ln">   251  </span>}
-<span id="L252" class="ln">   252  </span>
-<span id="L253" class="ln">   253  </span><span class="comment">// FetchApproxSize returns the approximate size of the database in bytes</span>
-<span id="L254" class="ln">   254  </span>func (md *SourceConn) FetchApproxSize(ctx context.Context) (size int64) {
-<span id="L255" class="ln">   255  </span>	sqlApproxDBSize := `select /* pgwatch_generated */ current_setting(&#39;block_size&#39;)::int8 * sum(relpages) from pg_class c where c.relpersistence != &#39;t&#39;`
-<span id="L256" class="ln">   256  </span>	_ = md.Conn.QueryRow(ctx, sqlApproxDBSize).Scan(&amp;size)
-<span id="L257" class="ln">   257  </span>	return
-<span id="L258" class="ln">   258  </span>}
-<span id="L259" class="ln">   259  </span>
-<span id="L260" class="ln">   260  </span><span class="comment">// FunctionExists checks if a function exists in the database</span>
-<span id="L261" class="ln">   261  </span>func (md *SourceConn) FunctionExists(ctx context.Context, functionName string) (exists bool) {
-<span id="L262" class="ln">   262  </span>	sql := `select /* pgwatch_generated */ true 
-<span id="L263" class="ln">   263  </span>from 
-<span id="L264" class="ln">   264  </span>	pg_proc join pg_namespace n on pronamespace = n.oid 
-<span id="L265" class="ln">   265  </span>where 
-<span id="L266" class="ln">   266  </span>	proname = $1 and n.nspname = &#39;public&#39;`
-<span id="L267" class="ln">   267  </span>	_ = md.Conn.QueryRow(ctx, sql, functionName).Scan(&amp;exists)
-<span id="L268" class="ln">   268  </span>	return
-<span id="L269" class="ln">   269  </span>}
-<span id="L270" class="ln">   270  </span>
-<span id="L271" class="ln">   271  </span>func (mds SourceConns) GetMonitoredDatabase(DBUniqueName string) *SourceConn {
-<span id="L272" class="ln">   272  </span>	for _, md := range mds {
-<span id="L273" class="ln">   273  </span>		if md.Name == DBUniqueName {
-<span id="L274" class="ln">   274  </span>			return md
-<span id="L275" class="ln">   275  </span>		}
-<span id="L276" class="ln">   276  </span>	}
-<span id="L277" class="ln">   277  </span>	return nil
-<span id="L278" class="ln">   278  </span>}
-<span id="L279" class="ln">   279  </span>
+<span id="L155" class="ln">   155  </span><span class="comment">// VersionToInt parses a given version and returns an integer  or</span>
+<span id="L156" class="ln">   156  </span><span class="comment">// an error if unable to parse the version. Only parses valid semantic versions.</span>
+<span id="L157" class="ln">   157  </span><span class="comment">// Performs checking that can find errors within the version.</span>
+<span id="L158" class="ln">   158  </span><span class="comment">// Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00</span>
+<span id="L159" class="ln">   159  </span>var regVer = regexp.MustCompile(`(\d+).?(\d*).?(\d*)`)
+<span id="L160" class="ln">   160  </span>
+<span id="L161" class="ln">   161  </span>func VersionToInt(version string) (v int) {
+<span id="L162" class="ln">   162  </span>	if matches := regVer.FindStringSubmatch(version); len(matches) &gt; 1 {
+<span id="L163" class="ln">   163  </span>		for i, match := range matches[1:] {
+<span id="L164" class="ln">   164  </span>			v += func() (m int) { m, _ = strconv.Atoi(match); return }() * int(math.Pow10(4-i*2))
+<span id="L165" class="ln">   165  </span>		}
+<span id="L166" class="ln">   166  </span>	}
+<span id="L167" class="ln">   167  </span>	return
+<span id="L168" class="ln">   168  </span>}
+<span id="L169" class="ln">   169  </span>
+<span id="L170" class="ln">   170  </span>func (md *SourceConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error) {
+<span id="L171" class="ln">   171  </span>	md.Lock()
+<span id="L172" class="ln">   172  </span>	defer md.Unlock()
+<span id="L173" class="ln">   173  </span>	if ctx.Err() != nil {
+<span id="L174" class="ln">   174  </span>		return ctx.Err()
+<span id="L175" class="ln">   175  </span>	}
+<span id="L176" class="ln">   176  </span>
+<span id="L177" class="ln">   177  </span>	if !forceRefetch &amp;&amp; md.LastCheckedOn.After(time.Now().Add(time.Minute*-2)) { <span class="comment">// use cached version for 2 min</span>
+<span id="L178" class="ln">   178  </span>		return nil
+<span id="L179" class="ln">   179  </span>	}
+<span id="L180" class="ln">   180  </span>	switch md.Kind {
+<span id="L181" class="ln">   181  </span>	case SourcePgBouncer, SourcePgPool:
+<span id="L182" class="ln">   182  </span>		if md.VersionStr, md.Version, err = md.FetchVersion(ctx, func() string {
+<span id="L183" class="ln">   183  </span>			if md.Kind == SourcePgBouncer {
+<span id="L184" class="ln">   184  </span>				return &#34;SHOW VERSION&#34;
+<span id="L185" class="ln">   185  </span>			}
+<span id="L186" class="ln">   186  </span>			return &#34;SHOW POOL_VERSION&#34;
+<span id="L187" class="ln">   187  </span>		}()); err != nil {
+<span id="L188" class="ln">   188  </span>			return
+<span id="L189" class="ln">   189  </span>		}
+<span id="L190" class="ln">   190  </span>	default:
+<span id="L191" class="ln">   191  </span>		sql := `select /* pgwatch_generated */ 
+<span id="L192" class="ln">   192  </span>	div(current_setting(&#39;server_version_num&#39;)::int, 10000) as ver, 
+<span id="L193" class="ln">   193  </span>	version(), 
+<span id="L194" class="ln">   194  </span>	pg_is_in_recovery(), 
+<span id="L195" class="ln">   195  </span>	current_database()::TEXT,
+<span id="L196" class="ln">   196  </span>	system_identifier,
+<span id="L197" class="ln">   197  </span>	current_setting(&#39;is_superuser&#39;)::bool
+<span id="L198" class="ln">   198  </span>FROM
+<span id="L199" class="ln">   199  </span>	pg_control_system()`
+<span id="L200" class="ln">   200  </span>
+<span id="L201" class="ln">   201  </span>		err = md.Conn.QueryRow(ctx, sql).
+<span id="L202" class="ln">   202  </span>			Scan(&amp;md.Version, &amp;md.VersionStr,
+<span id="L203" class="ln">   203  </span>				&amp;md.IsInRecovery, &amp;md.RealDbname,
+<span id="L204" class="ln">   204  </span>				&amp;md.SystemIdentifier, &amp;md.IsSuperuser)
+<span id="L205" class="ln">   205  </span>		if err != nil {
+<span id="L206" class="ln">   206  </span>			return err
+<span id="L207" class="ln">   207  </span>		}
+<span id="L208" class="ln">   208  </span>
+<span id="L209" class="ln">   209  </span>		md.ExecEnv = md.DiscoverPlatform(ctx)
+<span id="L210" class="ln">   210  </span>		md.ApproxDbSize = md.FetchApproxSize(ctx)
+<span id="L211" class="ln">   211  </span>
+<span id="L212" class="ln">   212  </span>		sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
+<span id="L213" class="ln">   213  </span>		var res pgx.Rows
+<span id="L214" class="ln">   214  </span>		res, err = md.Conn.Query(ctx, sqlExtensions)
+<span id="L215" class="ln">   215  </span>		if err == nil {
+<span id="L216" class="ln">   216  </span>			var ext string
+<span id="L217" class="ln">   217  </span>			var ver string
+<span id="L218" class="ln">   218  </span>			_, err = pgx.ForEachRow(res, []any{&amp;ext, &amp;ver}, func() error {
+<span id="L219" class="ln">   219  </span>				extver := VersionToInt(ver)
+<span id="L220" class="ln">   220  </span>				if extver == 0 {
+<span id="L221" class="ln">   221  </span>					return fmt.Errorf(&#34;unexpected extension %s version input: %s&#34;, ext, ver)
+<span id="L222" class="ln">   222  </span>				}
+<span id="L223" class="ln">   223  </span>				md.Extensions[ext] = extver
+<span id="L224" class="ln">   224  </span>				return nil
+<span id="L225" class="ln">   225  </span>			})
+<span id="L226" class="ln">   226  </span>		}
+<span id="L227" class="ln">   227  </span>
+<span id="L228" class="ln">   228  </span>	}
+<span id="L229" class="ln">   229  </span>	md.LastCheckedOn = time.Now()
+<span id="L230" class="ln">   230  </span>	return err
+<span id="L231" class="ln">   231  </span>}
+<span id="L232" class="ln">   232  </span>
+<span id="L233" class="ln">   233  </span>func (md *SourceConn) FetchVersion(ctx context.Context, sql string) (version string, ver int, err error) {
+<span id="L234" class="ln">   234  </span>	if err = md.Conn.QueryRow(ctx, sql, pgx.QueryExecModeSimpleProtocol).Scan(&amp;version); err != nil {
+<span id="L235" class="ln">   235  </span>		return
+<span id="L236" class="ln">   236  </span>	}
+<span id="L237" class="ln">   237  </span>	ver = VersionToInt(version)
+<span id="L238" class="ln">   238  </span>	return
+<span id="L239" class="ln">   239  </span>}
+<span id="L240" class="ln">   240  </span>
+<span id="L241" class="ln">   241  </span><span class="comment">// TryDiscoverPlatform tries to discover the platform based on the database version string and some special settings</span>
+<span id="L242" class="ln">   242  </span><span class="comment">// that are only available on certain platforms. Returns the platform name or &#34;UNKNOWN&#34; if not sure.</span>
+<span id="L243" class="ln">   243  </span>func (md *SourceConn) DiscoverPlatform(ctx context.Context) (platform string) {
+<span id="L244" class="ln">   244  </span>	if md.ExecEnv != &#34;&#34; {
+<span id="L245" class="ln">   245  </span>		return md.ExecEnv <span class="comment">// carry over as not likely to change ever</span>
+<span id="L246" class="ln">   246  </span>	}
+<span id="L247" class="ln">   247  </span>	sql := `select /* pgwatch_generated */
+<span id="L248" class="ln">   248  </span>	case
+<span id="L249" class="ln">   249  </span>	  when exists (select * from pg_settings where name = &#39;pg_qs.host_database&#39; and setting = &#39;azure_sys&#39;) and version() ~* &#39;compiled by Visual C&#39; then &#39;AZURE_SINGLE&#39;
+<span id="L250" class="ln">   250  </span>	  when exists (select * from pg_settings where name = &#39;pg_qs.host_database&#39; and setting = &#39;azure_sys&#39;) and version() ~* &#39;compiled by gcc&#39; then &#39;AZURE_FLEXIBLE&#39;
+<span id="L251" class="ln">   251  </span>	  when exists (select * from pg_settings where name = &#39;cloudsql.supported_extensions&#39;) then &#39;GOOGLE&#39;
+<span id="L252" class="ln">   252  </span>	else
+<span id="L253" class="ln">   253  </span>	  &#39;UNKNOWN&#39;
+<span id="L254" class="ln">   254  </span>	end as exec_env`
+<span id="L255" class="ln">   255  </span>	_ = md.Conn.QueryRow(ctx, sql).Scan(&amp;platform)
+<span id="L256" class="ln">   256  </span>	return
+<span id="L257" class="ln">   257  </span>}
+<span id="L258" class="ln">   258  </span>
+<span id="L259" class="ln">   259  </span><span class="comment">// FetchApproxSize returns the approximate size of the database in bytes</span>
+<span id="L260" class="ln">   260  </span>func (md *SourceConn) FetchApproxSize(ctx context.Context) (size int64) {
+<span id="L261" class="ln">   261  </span>	sqlApproxDBSize := `select /* pgwatch_generated */ current_setting(&#39;block_size&#39;)::int8 * sum(relpages) from pg_class c where c.relpersistence != &#39;t&#39;`
+<span id="L262" class="ln">   262  </span>	_ = md.Conn.QueryRow(ctx, sqlApproxDBSize).Scan(&amp;size)
+<span id="L263" class="ln">   263  </span>	return
+<span id="L264" class="ln">   264  </span>}
+<span id="L265" class="ln">   265  </span>
+<span id="L266" class="ln">   266  </span><span class="comment">// FunctionExists checks if a function exists in the database</span>
+<span id="L267" class="ln">   267  </span>func (md *SourceConn) FunctionExists(ctx context.Context, functionName string) (exists bool) {
+<span id="L268" class="ln">   268  </span>	sql := `select /* pgwatch_generated */ true 
+<span id="L269" class="ln">   269  </span>from 
+<span id="L270" class="ln">   270  </span>	pg_proc join pg_namespace n on pronamespace = n.oid 
+<span id="L271" class="ln">   271  </span>where 
+<span id="L272" class="ln">   272  </span>	proname = $1 and n.nspname = &#39;public&#39;`
+<span id="L273" class="ln">   273  </span>	_ = md.Conn.QueryRow(ctx, sql, functionName).Scan(&amp;exists)
+<span id="L274" class="ln">   274  </span>	return
+<span id="L275" class="ln">   275  </span>}
+<span id="L276" class="ln">   276  </span>
+<span id="L277" class="ln">   277  </span>func (mds SourceConns) GetMonitoredDatabase(DBUniqueName string) *SourceConn {
+<span id="L278" class="ln">   278  </span>	for _, md := range mds {
+<span id="L279" class="ln">   279  </span>		if md.Name == DBUniqueName {
+<span id="L280" class="ln">   280  </span>			return md
+<span id="L281" class="ln">   281  </span>		}
+<span id="L282" class="ln">   282  </span>	}
+<span id="L283" class="ln">   283  </span>	return nil
+<span id="L284" class="ln">   284  </span>}
+<span id="L285" class="ln">   285  </span>
 </pre><p></p>
 
 <div id="footer">

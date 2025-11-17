@@ -94,8 +94,8 @@
 <span id="L37" class="ln">    37  </span>
 <span id="L38" class="ln">    38  </span>var directlyFetchableOSMetrics = []string{metricPsutilCPU, metricPsutilDisk, metricPsutilDiskIoTotal, metricPsutilMem, metricCPULoad}
 <span id="L39" class="ln">    39  </span>
-<span id="L40" class="ln">    40  </span>func IsDirectlyFetchableMetric(metric string) bool {
-<span id="L41" class="ln">    41  </span>	return slices.Contains(directlyFetchableOSMetrics, metric)
+<span id="L40" class="ln">    40  </span>func IsDirectlyFetchableMetric(md *sources.SourceConn, metric string) bool {
+<span id="L41" class="ln">    41  </span>	return slices.Contains(directlyFetchableOSMetrics, metric) &amp;&amp; md.IsClientOnSameHost()
 <span id="L42" class="ln">    42  </span>}
 <span id="L43" class="ln">    43  </span>
 <span id="L44" class="ln">    44  </span>func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.SourceConn, metricName string) (*metrics.MeasurementEnvelope, error) {
