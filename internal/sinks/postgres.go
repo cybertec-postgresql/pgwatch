@@ -534,8 +534,8 @@ func (pgw *PostgresWriter) MaintainUniqueSources() {
 		metricName := strings.Replace(tableName, "public.", "", 1)
 		allDistinctMetricTables[i] = metricName // later usage in sqlDroppedTables requires no "public." prefix.
 		logger.Debugf("Updating admin.all_distinct_dbname_metrics listing for metric: %s", metricName)
-		var deletedRowsCnt, insertedRowsCnt int;
-		err = pgw.sinkDb.QueryRow(pgw.ctx, sqlUpdateListingTable, tableName).Scan(&deletedRowsCnt, &insertedRowsCnt);
+		var deletedRowsCnt, insertedRowsCnt int
+		err = pgw.sinkDb.QueryRow(pgw.ctx, sqlUpdateListingTable, tableName).Scan(&deletedRowsCnt, &insertedRowsCnt)
 		if err != nil {
 			logger.Errorf("Could not update admin.all_distinct_dbname_metrics listing for metric '%s': %s", metricName, err)
 		}
@@ -550,7 +550,7 @@ func (pgw *PostgresWriter) MaintainUniqueSources() {
 
 	// removes all entries for any non-existing table.
 	sqlRemoveDroppedTables := "SELECT admin.remove_dropped_tables_listing(existing_metrics => $1)"
-	var deletedRowsCnt int;
+	var deletedRowsCnt int
 	err = pgw.sinkDb.QueryRow(pgw.ctx, sqlRemoveDroppedTables, allDistinctMetricTables).Scan(&deletedRowsCnt)
 	if err != nil {
 		logger.Errorf("Could not update admin.all_distinct_dbname_metrics listing table for dropped metric tables: %s", err)
