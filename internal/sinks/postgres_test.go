@@ -669,7 +669,7 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 	r.NoError(err)
 
 	t.Run("MaintainUniqueSources", func(_ *testing.T) {
-		// creates an empty metric table and adds 
+		// creates an empty metric table and adds
 		// an entry to `admin.all_distinct_dbname_metrics`
 		err = pgw.SyncMetric("test", "test_metric_1", AddOp)
 		r.NoError(err)
@@ -705,7 +705,8 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 		message[0].DBName = "test_db_2"
 		pgw.flush(message)
 		// explicitly use `public.*` prefix.
-		pgw.sinkDb.Exec(pgw.ctx, "SELECT admin.update_listing_table(metric_table_name => 'public.test_metric_1');")
+		_, err = pgw.sinkDb.Exec(pgw.ctx, "SELECT admin.update_listing_table(metric_table_name => 'public.test_metric_1');")
+		a.NoError(err)
 		// another entry should have been added.
 		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
 		a.NoError(err)
@@ -735,10 +736,10 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 		// create the 3rd level time partition with end bound yesterday
 		_, err = conn.Exec(ctx,
 			fmt.Sprintf(
-			`CREATE TABLE subpartitions.test_metric_2_dbname_time 
-			PARTITION OF subpartitions.test_metric_2_dbname 
-			FOR VALUES FROM ('%s') TO ('%s')`,
-			boundStart, boundEnd),
+				`CREATE TABLE subpartitions.test_metric_2_dbname_time 
+				PARTITION OF subpartitions.test_metric_2_dbname 
+				FOR VALUES FROM ('%s') TO ('%s')`,
+				boundStart, boundEnd),
 		)
 		a.NoError(err)
 		_, err = conn.Exec(ctx, "COMMENT ON TABLE subpartitions.test_metric_2_dbname_time IS $$pgwatch-generated-metric-dbname-time-lvl$$")
