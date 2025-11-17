@@ -151,8 +151,11 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION admin.update_listing_table(metric_table_name text)
-RETURNS VOID
+CREATE OR REPLACE FUNCTION admin.update_listing_table(
+  metric_table_name text,
+  OUT deleted_rows_cnt int,
+  OUT inserted_rows_cnt int
+)
 AS
 $SQL$
 DECLARE
@@ -183,6 +186,8 @@ BEGIN
       AND metric = '%s';
   $$, metric_name);
 
+  GET DIAGNOSTICS deleted_rows_cnt = ROW_COUNT;
+
   EXECUTE FORMAT(
   $$
     INSERT INTO admin.all_distinct_dbname_metrics 
@@ -190,16 +195,21 @@ BEGIN
       WHERE NOT EXISTS (SELECT * FROM admin.all_distinct_dbname_metrics WHERE dbname = d.dbname AND metric = '%s');
   $$, metric_name, metric_name);
 
+  GET DIAGNOSTICS inserted_rows_cnt = ROW_COUNT;
+
   DROP TABLE distinct_dbnames;
 
 END;
 $SQL$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION admin.remove_dropped_tables_listing(existing_metrics text[])
-RETURNS VOID
+CREATE OR REPLACE FUNCTION admin.remove_dropped_tables_listing(
+  existing_metrics text[],
+  OUT deleted_rows_cnt int
+)
 AS 
 $SQL$
 BEGIN
   DELETE FROM admin.all_distinct_dbname_metrics WHERE metric != ALL(existing_metrics);
+  GET DIAGNOSTICS deleted_rows_cnt = ROW_COUNT;
 END;
 $SQL$ LANGUAGE plpgsql;
