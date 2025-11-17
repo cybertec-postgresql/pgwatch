@@ -669,10 +669,10 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 	r.NoError(err)
 
 	t.Run("MaintainUniqueSources", func(_ *testing.T) {
-		// adds an entry to `admin.all_distinct_dbname_metrics`
+		// creates an empty metric table and adds 
+		// an entry to `admin.all_distinct_dbname_metrics`
 		err = pgw.SyncMetric("test", "test_metric_1", AddOp)
 		r.NoError(err)
-
 		var numOfEntries int
 		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
 		a.NoError(err)
@@ -680,8 +680,7 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 
 		// manually call the maintenance routine
 		pgw.MaintainUniqueSources()
-
-		// entry should have been deleted, because it has no corresponding entries in `test_metric_1` table.
+		// entry should have been deleted, because there is now rows in `test_metric_1` table.
 		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
 		a.NoError(err)
 		a.Equal(0, numOfEntries)
@@ -696,19 +695,25 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 			},
 		}
 		pgw.flush(message)
-
 		// manually call the maintenance routine
 		pgw.MaintainUniqueSources()
-
-		// entry should have been added, because there is a corresponding entry in `test_metric_1` table just written.
+		// an entry should have been added, because there is a corresponding entry in `test_metric_1` table just written.
 		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
 		a.NoError(err)
 		a.Equal(1, numOfEntries)
 
+		message[0].DBName = "test_db_2"
+		pgw.flush(message)
+		// explicitly use `public.*` prefix.
+		pgw.sinkDb.Exec(pgw.ctx, "SELECT admin.update_listing_table(metric_table_name => 'public.test_metric_1');")
+		// another entry should have been added.
+		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
+		a.NoError(err)
+		a.Equal(2, numOfEntries)
+
 		_, err = conn.Exec(ctx, "DROP TABLE test_metric_1;")
 		r.NoError(err)
-
-		// the corresponding entry should be deleted
+		// all entries should be deleted
 		pgw.MaintainUniqueSources()
 		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
 		a.NoError(err)
@@ -730,10 +735,10 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 		// create the 3rd level time partition with end bound yesterday
 		_, err = conn.Exec(ctx,
 			fmt.Sprintf(
-				`CREATE TABLE subpartitions.test_metric_2_dbname_time 
+			`CREATE TABLE subpartitions.test_metric_2_dbname_time 
 			PARTITION OF subpartitions.test_metric_2_dbname 
 			FOR VALUES FROM ('%s') TO ('%s')`,
-				boundStart, boundEnd),
+			boundStart, boundEnd),
 		)
 		a.NoError(err)
 		_, err = conn.Exec(ctx, "COMMENT ON TABLE subpartitions.test_metric_2_dbname_time IS $$pgwatch-generated-metric-dbname-time-lvl$$")
