@@ -509,23 +509,6 @@ func (pgw *PostgresWriter) DeleteOldPartitions() {
 func (pgw *PostgresWriter) MaintainUniqueSources() {
 	logger := log.GetLogger(pgw.ctx)
 
-	sqlTopLevelMetrics := `SELECT table_name FROM admin.get_top_level_metric_tables()`
-	sqlDistinct := `
-	WITH RECURSIVE t(dbname) AS (
-		SELECT MIN(dbname) AS dbname FROM %s
-		UNION
-		SELECT (SELECT MIN(dbname) FROM %s WHERE dbname > t.dbname) FROM t 
-	)
-	SELECT dbname FROM t WHERE dbname NOTNULL ORDER BY 1`
-	sqlDelete := `DELETE FROM admin.all_distinct_dbname_metrics WHERE NOT dbname = ANY($1) and metric = $2`
-	sqlDeleteAll := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric = $1`
-	sqlDroppedTables := `DELETE FROM admin.all_distinct_dbname_metrics WHERE metric != ALL($1)`
-	sqlAdd := `
-		INSERT INTO admin.all_distinct_dbname_metrics 
-		SELECT u, $2 FROM (select unnest($1::text[]) as u) x
-		WHERE NOT EXISTS (select * from admin.all_distinct_dbname_metrics where dbname = u and metric = $2)
-		RETURNING *`
-
 	var lock bool
 	logger.Infof("Trying to get maintenance advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
 	if err := pgw.sinkDb.QueryRow(pgw.ctx, "SELECT admin.try_get_maintenance_lock();").Scan(&lock); err != nil {
@@ -537,66 +520,31 @@ func (pgw *PostgresWriter) MaintainUniqueSources() {
 		return
 	}
 
-	logger.Info("Refreshing admin.all_distinct_dbname_metrics listing table...")
-	rows, _ := pgw.sinkDb.Query(pgw.ctx, sqlTopLevelMetrics)
+	logger.Info("Updating admin.all_distinct_dbname_metrics listing table...")
+	rows, _ := pgw.sinkDb.Query(pgw.ctx, "SELECT table_name FROM admin.get_top_level_metric_tables()")
 	allDistinctMetricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
 	if err != nil {
 		logger.Error(err)
 		return
 	}
 
+	// updates listing table entries for a single metric.
+	sqlUpdateListingTable := "SELECT admin.update_listing_table(metric_table_name => $1);"
 	for i, tableName := range allDistinctMetricTables {
-		foundDbnamesMap := make(map[string]bool)
-		foundDbnamesArr := make([]string, 0)
-
 		metricName := strings.Replace(tableName, "public.", "", 1)
-		// later usage in sqlDroppedTables requires no "public." prefix
-		allDistinctMetricTables[i] = metricName 
-
-		logger.Debugf("Refreshing all_distinct_dbname_metrics listing for metric: %s", metricName)
-		rows, _ := pgw.sinkDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, tableName, tableName))
-		ret, err := pgx.CollectRows(rows, pgx.RowTo[string])
-		if err != nil {
-			logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
-			continue
-		}
-		for _, drDbname := range ret {
-			foundDbnamesMap[drDbname] = true // "set" behaviour, don't want duplicates
-		}
-
-		// delete all that are not known and add all that are not there
-		for k := range foundDbnamesMap {
-			foundDbnamesArr = append(foundDbnamesArr, k)
-		}
-		if len(foundDbnamesArr) == 0 { // delete all entries for given metric
-			logger.Debugf("Deleting Postgres all_distinct_dbname_metrics listing table entries for metric '%s':", metricName)
-
-			_, err = pgw.sinkDb.Exec(pgw.ctx, sqlDeleteAll, metricName)
-			if err != nil {
-				logger.Errorf("Could not delete Postgres all_distinct_dbname_metrics listing table entries for metric '%s': %s", metricName, err)
-			}
-			continue
-		}
-		cmdTag, err := pgw.sinkDb.Exec(pgw.ctx, sqlDelete, foundDbnamesArr, metricName)
-		if err != nil {
-			logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
-		} else if cmdTag.RowsAffected() > 0 {
-			logger.Infof("Removed %d stale entries from all_distinct_dbname_metrics listing table for metric: %s", cmdTag.RowsAffected(), metricName)
-		}
-		cmdTag, err = pgw.sinkDb.Exec(pgw.ctx, sqlAdd, foundDbnamesArr, metricName)
-		if err != nil {
-			logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for metric '%s': %s", metricName, err)
-		} else if cmdTag.RowsAffected() > 0 {
-			logger.Infof("Added %d entry to the Postgres all_distinct_dbname_metrics listing table for metric: %s", cmdTag.RowsAffected(), metricName)
+		allDistinctMetricTables[i] = metricName // later usage in sqlDroppedTables requires no "public." prefix.
+		logger.Debugf("Updating admin.all_distinct_dbname_metrics listing for metric: %s", metricName)
+		if _, err := pgw.sinkDb.Exec(pgw.ctx, sqlUpdateListingTable, tableName); err != nil {
+			logger.Errorf("Could not update admin.all_distinct_dbname_metrics listing for metric '%s': %s", metricName, err)
 		}
 		time.Sleep(time.Minute)
 	}
 
-	cmdTag, err := pgw.sinkDb.Exec(pgw.ctx, sqlDroppedTables, allDistinctMetricTables)
+	// removes all entries for any non-existing table.
+	sqlRemoveDroppedTables := "SELECT admin.remove_dropped_tables_listing(existing_metrics => $1)"
+	_, err = pgw.sinkDb.Exec(pgw.ctx, sqlRemoveDroppedTables, allDistinctMetricTables)
 	if err != nil {
-		logger.Errorf("Could not refresh Postgres all_distinct_dbname_metrics listing table for dropped metric tables: %s", err)
-	} else if cmdTag.RowsAffected() > 0 {
-		logger.Infof("Removed %d stale entries for dropped tables from all_distinct_dbname_metrics listing table", cmdTag.RowsAffected())
+		logger.Errorf("Could not update admin.all_distinct_dbname_metrics listing table for dropped metric tables: %s", err)
 	}
 }
 

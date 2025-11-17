@@ -150,3 +150,57 @@ BEGIN
   SELECT pg_try_advisory_lock(1571543679778230000) INTO have_lock;
 END;
 $SQL$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION admin.update_listing_table(metric_table_name text)
+RETURNS VOID
+AS
+$SQL$
+DECLARE
+  metric_name text;
+  schema text = 'public';
+BEGIN
+
+  IF POSITION('public.' IN metric_table_name) > 0 THEN
+    metric_name = SUBSTRING(metric_table_name FROM POSITION('public.' IN metric_table_name) + LENGTH('public.'));
+  ELSE
+    metric_name = metric_table_name;
+  END IF;
+
+  EXECUTE FORMAT(
+  $$
+    CREATE TEMP TABLE distinct_dbnames AS
+      WITH RECURSIVE t(dbname) AS (
+        SELECT MIN(dbname) AS dbname FROM %I.%I
+        UNION
+        SELECT (SELECT MIN(dbname) FROM %I.%I WHERE dbname > t.dbname) FROM t 
+      )
+      SELECT dbname FROM t WHERE dbname NOTNULL ORDER BY 1;
+  $$, schema, metric_name, schema, metric_name);
+
+  EXECUTE FORMAT(
+  $$
+    DELETE FROM admin.all_distinct_dbname_metrics 
+      WHERE dbname NOT IN (SELECT * FROM distinct_dbnames)
+      AND metric = '%s';
+  $$, metric_name);
+
+  EXECUTE FORMAT(
+  $$
+    INSERT INTO admin.all_distinct_dbname_metrics 
+      SELECT d.dbname, '%s' FROM distinct_dbnames AS d
+      WHERE NOT EXISTS (SELECT * FROM admin.all_distinct_dbname_metrics WHERE dbname = d.dbname AND metric = '%s');
+  $$, metric_name, metric_name);
+
+  DROP TABLE distinct_dbnames;
+
+END;
+$SQL$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION admin.remove_dropped_tables_listing(existing_metrics text[])
+RETURNS VOID
+AS 
+$SQL$
+BEGIN
+  DELETE FROM admin.all_distinct_dbname_metrics WHERE metric != ALL(existing_metrics);
+END;
+$SQL$ LANGUAGE plpgsql;
