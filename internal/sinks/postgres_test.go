@@ -668,7 +668,7 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 	pgw, err := NewPostgresWriter(ctx, connStr, opts)
 	r.NoError(err)
 
-	// Drop tables for all builtin metrics to avoid timeout in 
+	// Drop tables for all builtin metrics to avoid timeout in
 	// in `MaintainUniqueSources` test.
 	for _, metric := range metrics.GetDefaultBuiltInMetrics() {
 		_, err = pgw.sinkDb.Exec(pgw.ctx, fmt.Sprintf("DROP TABLE %s;", metric))
