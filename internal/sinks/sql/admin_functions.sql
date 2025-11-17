@@ -157,7 +157,6 @@ AS
 $SQL$
 DECLARE
   metric_name text;
-  schema text = 'public';
 BEGIN
 
   IF POSITION('public.' IN metric_table_name) > 0 THEN
@@ -170,12 +169,12 @@ BEGIN
   $$
     CREATE TEMP TABLE distinct_dbnames AS
       WITH RECURSIVE t(dbname) AS (
-        SELECT MIN(dbname) AS dbname FROM %I.%I
+        SELECT MIN(dbname) AS dbname FROM public.%I
         UNION
-        SELECT (SELECT MIN(dbname) FROM %I.%I WHERE dbname > t.dbname) FROM t 
+        SELECT (SELECT MIN(dbname) FROM public.%I WHERE dbname > t.dbname) FROM t 
       )
       SELECT dbname FROM t WHERE dbname NOTNULL ORDER BY 1;
-  $$, schema, metric_name, schema, metric_name);
+  $$, metric_name, metric_name);
 
   EXECUTE FORMAT(
   $$
