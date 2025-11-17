@@ -72,7 +72,7 @@ These commands will build and start services listed in the compose file:
 After start, you could open the [monitoring dashboard](http://localhost:3000/) and start
 looking at metrics.
 
-To add a test database under monitoring, you can use [built-in WebUI](http://localhost:8080/).
+To add a test database to monitoring, you can use the [built-in WebUI](http://localhost:8080/).
 
 ## Produce Workload
 
