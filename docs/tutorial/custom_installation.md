@@ -105,6 +105,8 @@ syntax differences.
         ExecStart=/usr/bin/pgwatch --sources=postgresql://pgwatch:xyz@localhost:5432/pgwatch --sink=postgresql://pgwatch:xyz@localhost:5432/pgwatch_metrics
         Restart=on-failure
         TimeoutStartSec=0
+        RestartSec=5s
+        TimeoutStopSec=60s
 
         [Install]
         WantedBy=multi-user.target
