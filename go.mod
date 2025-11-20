@@ -20,7 +20,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/etcd v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.40.0
 	go.etcd.io/etcd/client/v3 v3.6.6
-	go.uber.org/zap v1.27.0
+	go.uber.org/zap v1.27.1
 	google.golang.org/grpc v1.77.0
 	google.golang.org/protobuf v1.36.10
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
