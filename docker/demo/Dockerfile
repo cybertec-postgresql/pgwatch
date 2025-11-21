@@ -86,7 +86,7 @@ RUN curl -L https://apt.grafana.com/gpg.key | apt-key add - \
 COPY docker/demo/grafana.ini /etc/grafana/grafana.ini
 COPY grafana/postgres_datasource.yml /etc/grafana/provisioning/datasources/pg_ds.yml
 COPY grafana/dashboards.yml /etc/grafana/provisioning/dashboards/pg_db.yml
-COPY grafana/postgres/v12/ /var/lib/grafana/dashboards/
+COPY grafana/postgres/v12/ /var/lib/grafana/dashboards/postgres/
 
 # Set up supervisord [https://docs.docker.com/engine/admin/using_supervisord/]
 COPY docker/demo/supervisord.conf /etc/supervisor/
