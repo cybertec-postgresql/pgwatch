@@ -4,7 +4,7 @@ title: Hello world!
 
 **pgwatch** is a scalable and flexible PostgreSQL-specific monitoring solution that offers a comprehensive view of database performance and health. It provides a user-friendly interface through Grafana dashboards, allowing users to easily inspect various metrics and trends.
 
-Visit [demo.pgwatch.com](https://demo.pgwatch.com) for Grafana demo.
+Visit [demo.pgwatch.com](https://demo.pgwatch.com) for a Grafana demo.
 
 ---
 
