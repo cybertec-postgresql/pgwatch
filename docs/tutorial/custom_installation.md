@@ -54,17 +54,20 @@ syntax differences.
         / RedHat based systems
     - <https://www.postgresql.org/download/windows/> - for Windows
 
-1. **Install pgwatch** either from pre-built packages or by
-    compiling the Go code
+1. **Install pgwatch**
 
-    - Using pre-built packages which are available on the
-        [GitHub releases](https://github.com/cybertec-postgresql/pgwatch/releases)
-        page:
+    - From the official [PostgreSQL Apt Repository](https://wiki.postgresql.org/wiki/Apt#Quickstart):
 
-        ```terminal
-        # find out the latest package link and replace below, using v3.0 here
-        wget https://github.com/cybertec-postgresql/pgwatch/releases/download/3.0.0/pgwatch_Linux_x86_64.deb
-        sudo dpkg -i pgwatch_Linux_x86_64.deb
+        ```bash
+            sudo apt update && sudo apt install pgwatch
+        ```
+
+    - Using pre-built packages from the [GitHub releases](https://github.com/cybertec-postgresql/pgwatch/releases) page:
+
+        ```bash
+            # find out the latest package link and replace below, using v4.0 here
+            wget https://github.com/cybertec-postgresql/pgwatch/releases/download/v4.0.0/pgwatch_Linux_x86_64.deb
+            sudo dpkg -i pgwatch_Linux_x86_64.deb
         ```
 
     - Compiling the Go code yourself
@@ -72,23 +75,31 @@ syntax differences.
         This method of course is not needed unless dealing with maximum
         security environments or some slight code changes are required.
 
-        1. Install Go by following the [official
-            instructions](https://golang.org/doc/install)
+        1. Install Go by following the [official instructions](https://golang.org/doc/install)
 
-        2. Get the pgwatch project's code and compile the gatherer
-            daemon
+        2. Get the pgwatch project's code and compile the gatherer daemon
 
-            ```terminal
-            git clone https://github.com/cybertec-postgresql/pgwatch.git
-            cd pgwatch/internal/webui
-            yarn install --network-timeout 100000 && yarn build
-            cd ../..
-            go build ./cmd/pgwatch/
+            ```bash
+                # Clone the Repo
+                git clone https://github.com/cybertec-postgresql/pgwatch.git
+
+                # Build the webui
+                cd pgwatch/internal/webui
+                yarn install --network-timeout 100000 && yarn build
+
+                # Install protoc and generate the protobuf files
+                sudo apt update && sudo apt install -y protobuf-compiler protoc-gen-go protoc-gen-go-grpc
+                go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+                go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+                cd ../../api/pb && protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative pgwatch.proto
+
+                # Compile pgwatch
+                cd ../../ && go build ./cmd/pgwatch/
             ```
 
             After fetching all the Go library dependencies (can take minutes)
-            an executable named "pgwatch" should be generated. Additionally, it's a good idea
-            to copy it to `/usr/bin/pgwatch`.
+            an executable named "pgwatch" should be generated. Additionally, 
+            it's a good idea to copy it to `/usr/bin/pgwatch`.
 
     - Configure a SystemD auto-start service (optional). Here is the sample:
 
