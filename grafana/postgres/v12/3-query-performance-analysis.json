@@ -107,7 +107,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Total Runtime (ms)"
+              "options": "Total Runtime"
             },
             "properties": [
               {
@@ -123,7 +123,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Avg Runtime (ms)"
+              "options": "Avg Runtime"
             },
             "properties": [
               {
@@ -139,7 +139,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Plan Time (ms)"
+              "options": "Plan Time"
             },
             "properties": [
               {
@@ -155,7 +155,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Avg Plan Time (ms)"
+              "options": "Avg Plan Time"
             },
             "properties": [
               {
@@ -164,7 +164,7 @@
               },
               {
                 "id": "decimals",
-                "value": 2
+                "value": 1
               }
             ]
           },
@@ -231,7 +231,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Shared Hit (MB)"
+              "options": "Shared Hit"
             },
             "properties": [
               {
@@ -247,7 +247,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Shared Read (MB)"
+              "options": "Shared Read"
             },
             "properties": [
               {
@@ -263,7 +263,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Shared Written (MB)"
+              "options": "Shared Written"
             },
             "properties": [
               {
@@ -279,7 +279,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Temp Read (MB)"
+              "options": "Temp Read"
             },
             "properties": [
               {
@@ -295,7 +295,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Temp Written (MB)"
+              "options": "Temp Written"
             },
             "properties": [
               {
@@ -311,7 +311,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "IO Time (ms)"
+              "options": "IO Time"
             },
             "properties": [
               {
@@ -383,7 +383,7 @@
           },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Enhanced comprehensive query analysis (Fast mode)\nWITH query_stats AS (\n  select\n    tag_data->>'queryid' as queryid,\n    max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric) as total_runtime,\n    (max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric)) / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_runtime,\n    max((data->>'total_plan_time')::numeric) - min((data->>'total_plan_time')::numeric) as plan_time,\n    (max((data->>'total_plan_time')::numeric) - min((data->>'total_plan_time')::numeric)) / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_plan_time,\n    max((data->>'calls')::int8) - min((data->>'calls')::int8) as calls,\n    max((data->>'rows')::int8) - min((data->>'rows')::int8) as rows,\n    (max((data->>'rows')::int8) - min((data->>'rows')::int8))::numeric / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_rows,\n    (max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8)) * 8192 / 1024.0 / 1024.0 as shared_hit_mb,\n    (max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as shared_read_mb,\n    (max((data->>'shared_blks_written')::int8) - min((data->>'shared_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as shared_written_mb,\n    (max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as temp_read_mb,\n    (max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as temp_written_mb,\n    (max((data->>'blk_read_time')::numeric) - min((data->>'blk_read_time')::numeric)) + \n    (max((data->>'blk_write_time')::numeric) - min((data->>'blk_write_time')::numeric)) as io_time,\n    case when length(tag_data->>'query') > 150 then (tag_data->>'query')::varchar(150) || '...' else tag_data->>'query' end as query\n  from stat_statements\n  where dbname = '$dbname'\n    and $__timeFilter(time)\n    and tag_data->>'query' ~* '$query_filter_regex'\n  group by tag_data->>'queryid', tag_data->>'query'\n  having max((data->>'calls')::int8) - min((data->>'calls')::int8) > 0\n),\nwith_percentages AS (\n  select \n    *,\n    100 * total_runtime / nullif((select sum(total_runtime) from query_stats), 0) as pct_db_total\n  from query_stats\n)\nselect\n  queryid,\n  total_runtime::int8 as \"Total Runtime (ms)\",\n  avg_runtime::numeric(10,2) as \"Avg Runtime (ms)\",\n  plan_time::int8 as \"Plan Time (ms)\",\n  avg_plan_time::numeric(10,2) as \"Avg Plan Time (ms)\",\n  calls as \"Calls\",\n  rows as \"Rows\",\n  avg_rows::numeric(10,1) as \"Avg Rows\",\n  shared_hit_mb::numeric(10,1) as \"Shared Hit (MB)\",\n  shared_read_mb::numeric(10,1) as \"Shared Read (MB)\",\n  shared_written_mb::numeric(10,1) as \"Shared Written (MB)\",\n  temp_read_mb::numeric(10,1) as \"Temp Read (MB)\",\n  temp_written_mb::numeric(10,1) as \"Temp Written (MB)\",\n  io_time::numeric(10,1) as \"IO Time (ms)\",\n  pct_db_total::numeric(5,1) as \"% DB Total\",\n  (select data->>'users' from stat_statements where $__timeFilter(time) and dbname = '$dbname' and tag_data->>'queryid' = with_percentages.queryid order by time desc limit 1) as \"Users\",\n  query as \"Query\"\nfrom with_percentages\norder by total_runtime desc nulls last\nlimit $top",
+          "rawSql": "-- Enhanced comprehensive query analysis (Fast mode)\nWITH query_stats AS (\n  select\n    tag_data->>'queryid' as queryid,\n    max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric) as total_runtime,\n    (max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric)) / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_runtime,\n    max((data->>'total_plan_time')::numeric) - min((data->>'total_plan_time')::numeric) as plan_time,\n    (max((data->>'total_plan_time')::numeric) - min((data->>'total_plan_time')::numeric)) / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_plan_time,\n    max((data->>'calls')::int8) - min((data->>'calls')::int8) as calls,\n    max((data->>'rows')::int8) - min((data->>'rows')::int8) as rows,\n    (max((data->>'rows')::int8) - min((data->>'rows')::int8))::numeric / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_rows,\n    (max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8)) * 8192 / 1024.0 / 1024.0 as shared_hit_mb,\n    (max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as shared_read_mb,\n    (max((data->>'shared_blks_written')::int8) - min((data->>'shared_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as shared_written_mb,\n    (max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as temp_read_mb,\n    (max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as temp_written_mb,\n    (max((data->>'blk_read_time')::numeric) - min((data->>'blk_read_time')::numeric)) + \n    (max((data->>'blk_write_time')::numeric) - min((data->>'blk_write_time')::numeric)) as io_time,\n    case when length(tag_data->>'query') > 150 then (tag_data->>'query')::varchar(150) || '...' else tag_data->>'query' end as query\n  from stat_statements\n  where dbname = '$dbname'\n    and $__timeFilter(time)\n    and tag_data->>'query' ~* '$query_filter_regex'\n  group by tag_data->>'queryid', tag_data->>'query'\n  having max((data->>'calls')::int8) - min((data->>'calls')::int8) > 0\n),\nwith_percentages AS (\n  select \n    *,\n    100 * total_runtime / nullif((select sum(total_runtime) from query_stats), 0) as pct_db_total\n  from query_stats\n)\nselect\n  queryid,\n  total_runtime::int8 as \"Total Runtime\",\n  avg_runtime::numeric(10,2) as \"Avg Runtime\",\n  plan_time::int8 as \"Plan Time\",\n  avg_plan_time::numeric(10,2) as \"Avg Plan Time\",\n  calls as \"Calls\",\n  rows as \"Rows\",\n  avg_rows::numeric(10,1) as \"Avg Rows\",\n  shared_hit_mb::numeric(10,1) as \"Shared Hit\",\n  shared_read_mb::numeric(10,1) as \"Shared Read\",\n  shared_written_mb::numeric(10,1) as \"Shared Written\",\n  temp_read_mb::numeric(10,1) as \"Temp Read\",\n  temp_written_mb::numeric(10,1) as \"Temp Written\",\n  io_time::numeric(10,1) as \"IO Time\",\n  pct_db_total::numeric(5,1) as \"% DB Total\",\n  (select data->>'users' from stat_statements where $__timeFilter(time) and dbname = '$dbname' and tag_data->>'queryid' = with_percentages.queryid order by time desc limit 1) as \"Users\",\n  query as \"Query\"\nfrom with_percentages\norder by total_runtime desc nulls last\nlimit $top",
           "refId": "A"
         }
       ],
@@ -800,11 +800,11 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "-- Top queries by shared blocks hit over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8)) * 8192 / 1024.0 / 1024.0 as shared_hit_mb,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8) > 0\n    order by (max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8)) * 8192 / 1024.0 / 1024.0 desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
+          "rawSql": "-- Top queries by shared blocks hit over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8)) * 8192 / 1024.0 / 1024.0 as shared_blks_hit,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8) > 0\n    order by (max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8)) * 8192 / 1024.0 / 1024.0 desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
           "refId": "A"
         }
       ],
-      "title": "Top $top statements by shared_blks_hit (in MB)",
+      "title": "Top $top statements by shared_blks_hit",
       "type": "timeseries"
     },
     {
@@ -902,11 +902,11 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "-- Top queries by shared blocks read over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as shared_read_mb,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8) > 0\n    order by (max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
+          "rawSql": "-- Top queries by shared blocks read over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as shared_blks_read,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8) > 0\n    order by (max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
           "refId": "A"
         }
       ],
-      "title": "Top $top statements by shared_blks_read (in MB)",
+      "title": "Top $top statements by shared_blks_read",
       "type": "timeseries"
     },
     {
@@ -1000,13 +1000,14 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
+          "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "-- Top queries by temp blocks read over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as temp_read_mb,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8) > 0\n    order by (max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
+          "rawSql": "-- Top queries by temp blocks read over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as temp_blks_read,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8) > 0\n    order by (max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
           "refId": "A"
         }
       ],
-      "title": "Top $top statements by temp bytes read (in MB)",
+      "title": "Top $top statements by temp bytes read",
       "type": "timeseries"
     },
     {
@@ -1104,11 +1105,11 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "-- Top queries by temp blocks written over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as temp_written_mb,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8) > 0\n    order by (max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
+          "rawSql": "-- Top queries by temp blocks written over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as temp_blks_written,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8) > 0\n    order by (max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
           "refId": "A"
         }
       ],
-      "title": "Top $top statements by temp bytes written (in MB)",
+      "title": "Top $top statements by temp bytes written",
       "type": "timeseries"
     },
     {
@@ -1314,5 +1315,5 @@
   "timezone": "browser",
   "title": "3. Query Performance Analysis",
   "uid": "query-performance-analysis",
-  "version": 49
+  "version": 49 
 }
