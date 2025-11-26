@@ -92,7 +92,7 @@ syntax differences.
 
             # Install protoc and generate the protobuf files
             sudo apt update && sudo apt install -y protobuf-compiler protoc-gen-go protoc-gen-go-grpc
-            cd ../../ && protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative api/pb/pgwatch.proto
+            cd ../../ && go generate ./api/pb
 
             # Compile pgwatch
             go build ./cmd/pgwatch/
