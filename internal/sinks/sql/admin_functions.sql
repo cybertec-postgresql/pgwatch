@@ -160,7 +160,7 @@ BEGIN
     SELECT array_append(existing_metrics, metric_name) INTO existing_metrics;
 
     EXECUTE FORMAT($$SELECT admin.update_listing_table(metric_name => '%s')$$, metric_name);
-    SELECT PG_SLEEP(60);
+    PERFORM PG_SLEEP(60);
   END LOOP;
 
   -- Delete entries for dropped tables
