@@ -98,6 +98,10 @@ func main() {
 		return
 	}
 
+	if opts.Metrics.DirectOSStats {
+		logger.Warning("--direct-os-stats flag is deprecated, direct OS access is now applied automatically for relevant metrics if on same host.")
+	}
+
 	reaper := reaper.NewReaper(mainCtx, opts)
 
 	if _, err = webserver.Init(mainCtx, opts.WebUI, webui.WebUIFs, opts.MetricsReaderWriter,

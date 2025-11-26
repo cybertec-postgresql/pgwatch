@@ -312,14 +312,13 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 
 		var metricStoreMessages *metrics.MeasurementEnvelope
 
-		// 1st try local overrides for some metrics if operating in push mode
-		if r.Metrics.DirectOSStats && IsDirectlyFetchableMetric(metricName) {
-			metricStoreMessages, err = r.FetchStatsDirectlyFromOS(ctx, md, metricName)
-			if err != nil {
+		t1 := time.Now()
+		// 1st try local overrides for system metrics if operating on the same host
+		if IsDirectlyFetchableMetric(md, metricName) {
+			if metricStoreMessages, err = r.FetchStatsDirectlyFromOS(ctx, md, metricName); err != nil {
 				l.WithError(err).Errorf("Could not read metric directly from OS")
 			}
 		}
-		t1 := time.Now()
 		if metricStoreMessages == nil {
 			metricStoreMessages, err = r.FetchMetric(ctx, md, metricName)
 		}

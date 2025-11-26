@@ -71,14 +71,16 @@ func MarshallParamToJSONB(v any) any {
 func IsClientOnSameHost(conn PgxIface) (bool, error) {
 	ctx := context.Background()
 
-	// Step 1: Check connection type using SQL
+	// Option 1: Check if connection type is unix socket
 	var isUnixSocket bool
 	err := conn.QueryRow(ctx, "SELECT COALESCE(inet_client_addr(), inet_server_addr()) IS NULL").Scan(&isUnixSocket)
 	if err != nil || isUnixSocket {
 		return isUnixSocket, err
 	}
 
-	// Step 2: Retrieve unique cluster identifier
+	// Option 2: Compare system identifier from file system vs cluster identifier
+
+	// Step 1: Retrieve unique cluster identifier
 	var dataDirectory string
 	if err := conn.QueryRow(ctx, "SHOW data_directory").Scan(&dataDirectory); err != nil {
 		return false, err
@@ -89,7 +91,7 @@ func IsClientOnSameHost(conn PgxIface) (bool, error) {
 		return false, err
 	}
 
-	// Step 3: Compare system identifier from file system
+	// Step 2: Retrieve system identifier from file system
 	pgControlFile := filepath.Join(dataDirectory, "global", "pg_control")
 	file, err := os.Open(pgControlFile)
 	if err != nil {
@@ -102,5 +104,6 @@ func IsClientOnSameHost(conn PgxIface) (bool, error) {
 		return false, err
 	}
 
+	// Compare file system identifier and cluster identifier
 	return fileSystemIdentifier == systemIdentifier, nil
 }

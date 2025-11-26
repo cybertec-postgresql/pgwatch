@@ -29,10 +29,13 @@ var (
 func TestReaper_FetchStatsDirectlyFromOS(t *testing.T) {
 	a := assert.New(t)
 	r := &Reaper{}
-	conn, _ := pgxmock.NewPool()
+	conn, _ := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherEqual))
+	expq := conn.ExpectQuery("SELECT COALESCE(inet_client_addr(), inet_server_addr()) IS NULL")
+	expq.Times(uint(len(directlyFetchableOSMetrics)))
 	md := &sources.SourceConn{Conn: conn}
 	for _, m := range directlyFetchableOSMetrics {
-		a.True(IsDirectlyFetchableMetric(m), "Expected %s to be directly fetchable", m)
+		expq.WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(true))
+		a.True(IsDirectlyFetchableMetric(md, m), "Expected %s to be directly fetchable", m)
 		a.NotPanics(func() {
 			_, _ = r.FetchStatsDirectlyFromOS(context.Background(), md, m)
 		})

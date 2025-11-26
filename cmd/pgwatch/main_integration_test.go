@@ -50,6 +50,9 @@ metrics:
     test_metric:
         sqls:
             11:  select (extract(epoch from now()) * 1e9)::int8 as epoch_ns, 42 as test_metric
+    cpu_load:
+        sqls:
+            11:  select 'metric fetched via PostgreSQL not OS'
 `), 0644))
 
 	pg, err := initTestContainer()
@@ -66,6 +69,7 @@ metrics:
   is_enabled: true
   custom_metrics:
     test_metric: 60
+    cpu_load: 60
 `), 0644))
 
 	// Mock Exit to capture exit code
@@ -126,5 +130,25 @@ metrics:
 		cancel()
 		<-mainCtx.Done() // Wait for main to finish
 		assert.Equal(t, cmdopts.ExitCodeWebUIError, gotExit, "port should be busy and fail to bind")
+	})
+
+	t.Run("non-direct os stats", func(t *testing.T) {
+		os.Remove(jsonSink) // truncate output file
+		os.Args = []string{
+			"pgwatch",
+			"--sources", sourcesYaml,
+			"--metrics", metricsYaml,
+			"--sink", "jsonfile://" + jsonSink,
+			"--web-disable",
+		}
+
+		go main()
+		<-time.After(5 * time.Second) // Wait for main to fetch metric
+		cancel()
+		<-mainCtx.Done() // Wait for main to finish
+
+		datab, err := os.ReadFile(jsonSink)
+		assert.NoError(t, err)
+		assert.Contains(t, string(datab), "metric fetched via PostgreSQL not OS")
 	})
 }
