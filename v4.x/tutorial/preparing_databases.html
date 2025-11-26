@@ -1897,10 +1897,10 @@ providers like AWS RDS for security reasons.</p>
     based on the Linux distro / Kernel version used, so small
     adjustments might be needed there (e.g. to remove a non-existent
     column). Minimum usable Kernel version required is 3.3.</li>
-<li>When running the gatherer locally one can enable the <code>--direct-os-stats</code>
-    parameter to signal that we can fetch the data for the default <code>psutil*</code> metrics
-    directly from OS counters. If direct OS fetching fails though, the
-    fallback is still to try via PL/Python wrappers.</li>
+<li>When pgwatch runs on the same host as a monitored source,
+    it auto-detects this and tries to fetch the default <code>psutil*</code>
+    metrics data directly from OS counters. If this direct OS fetch fails,
+    it falls back to using PL/Python wrappers.</li>
 <li>In rare cases when some "helpers" have been installed, and when
     doing a binary PostgreSQL upgrade at some later point in time via
     <code>pg_upgrade</code>, this could result in error messages
@@ -1909,10 +1909,10 @@ providers like AWS RDS for security reasons.</p>
 </ul>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
-<p>If despite all the warnings you still want to run the pgwatch
-with a sufficient user account (e.g. a superuser) you can also
+<p>If, despite all the warnings, you still want to run pgwatch
+with a sufficient user account (e.g., a superuser), you can
 use the <code>--create-helpers</code> parameter to automatically create all
-needed helper functions in the monitored databases.</p>
+needed helper functions in the monitored databases on startup.</p>
 </div>
 <h2 id="different-source-types-explained">Different source types explained</h2>
 <p>When adding a new "to be monitored" entry a <em>source type</em> needs to be

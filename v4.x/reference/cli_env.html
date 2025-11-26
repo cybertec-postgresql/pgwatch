@@ -1819,11 +1819,6 @@ ENV: <code>$PW_CREATE_HELPERS</code></p>
 ENV: <code>$PW_METRICS</code></p>
 </li>
 <li>
-<p><code>--direct-os-stats</code></p>
-<p>Extract OS related psutil statistics not via PL/Python wrappers but directly on host.<br />
-ENV: <code>$PW_DIRECT_OS_STATS</code></p>
-</li>
-<li>
 <p><code>--instance-level-cache-max-seconds=</code></p>
 <p>Max allowed staleness for instance level metric data shared between DBs of an instance. Set to 0 to disable (default: 30).<br />
 ENV: <code>$PW_INSTANCE_LEVEL_CACHE_MAX_SECONDS</code></p>
@@ -1852,9 +1847,21 @@ ENV: <code>$PW_SINK</code></p>
 ENV: <code>$PW_BATCHING_DELAY</code></p>
 </li>
 <li>
+<p><code>--partition-interval=</code></p>
+<p>Time range for PostgreSQL sink table partitions. Must be a valid PostgreSQL interval. (default: 1 week)<br />
+ENV: <code>$PW_PARTITION_INTERVAL</code></p>
+<p>Example:
+<code>--partition-inteval="3 weeks 4 days"</code>,</p>
+</li>
+<li>
 <p><code>--retention=</code></p>
-<p>If set, metrics older than that will be deleted (default: 14).<br />
+<p>Delete metrics older than this. Set to zero to disable. Must be a valid PostgreSQL interval. (default: 14 days)<br />
 ENV: <code>$PW_RETENTION</code></p>
+</li>
+<li>
+<p><code>--maintenance-interval=</code></p>
+<p>Run pgwatch maintenance tasks on sinks with this interval; Set to zero to disable. Must be a valid PostgreSQL interval. (default: 12 hours)<br />
+ENV: <code>$PW_MAINTENANCE_INTERVAL</code></p>
 </li>
 <li>
 <p><code>--real-dbname-field=</code></p>
