@@ -76,10 +76,11 @@ syntax differences.
         This method of course is not needed unless dealing with maximum
         security environments or some slight code changes are required.
 
-        1. Install Go by following the [official
-            instructions](https://golang.org/doc/install)
+        1. Install Go by following the [official instructions](https://golang.org/doc/install)
 
-        2. Get the pgwatch project's code and compile the gatherer
+        2. Install Protoc and protoc plugins for Go by following the [official instructions](https://grpc.io/docs/languages/go/quickstart/)
+
+        3. Get the pgwatch project's code and compile the gatherer
             daemon
 
             ```bash
@@ -90,8 +91,7 @@ syntax differences.
             cd pgwatch/internal/webui
             yarn install --network-timeout 100000 && yarn build
 
-            # Install protoc and generate the protobuf files
-            sudo apt update && sudo apt install -y protobuf-compiler protoc-gen-go protoc-gen-go-grpc
+            # generate the Go code from protobuf files
             cd ../../ && go generate ./api/pb
 
             # Compile pgwatch
