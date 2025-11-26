@@ -16,8 +16,7 @@ visualize the gathered metrics.
     is required but the latest major version is recommended.
 1. Bootstrap the configuration database.
 1. Bootstrap the metrics measurements storage database aka sink (PostgreSQL here).
-1. Install pgwatch - either from pre-built packages or by compiling
-    the Go code.
+1. Install pgwatch
 1. [Prepare](preparing_databases.md) the "to-be-monitored" databases for monitoring by creating
     a dedicated login role name as a minimum.
 1. Add some databases to the monitoring configuration via the Web UI, REST API or
@@ -54,16 +53,21 @@ syntax differences.
         / RedHat based systems
     - <https://www.postgresql.org/download/windows/> - for Windows
 
-1. **Install pgwatch** either from pre-built packages or by
-    compiling the Go code
+1. **Install pgwatch**
+
+    - For Debian/Ubuntu, add the official [PostgreSQL Apt Repository](https://wiki.postgresql.org/wiki/Apt#Quickstart) then:
+
+        ```bash
+        sudo apt update && sudo apt install pgwatch
+        ```
 
     - Using pre-built packages which are available on the
         [GitHub releases](https://github.com/cybertec-postgresql/pgwatch/releases)
         page:
 
         ```terminal
-        # find out the latest package link and replace below, using v3.0 here
-        wget https://github.com/cybertec-postgresql/pgwatch/releases/download/3.0.0/pgwatch_Linux_x86_64.deb
+        # find out the latest package link and replace below, using v4.0 here
+        wget https://github.com/cybertec-postgresql/pgwatch/releases/download/v4.0.0/pgwatch_Linux_x86_64.deb
         sudo dpkg -i pgwatch_Linux_x86_64.deb
         ```
 
@@ -78,11 +82,21 @@ syntax differences.
         2. Get the pgwatch project's code and compile the gatherer
             daemon
 
-            ```terminal
+            ```bash
+            # Clone the Repo
             git clone https://github.com/cybertec-postgresql/pgwatch.git
+
+            # Build the webui
             cd pgwatch/internal/webui
             yarn install --network-timeout 100000 && yarn build
-            cd ../..
+
+            # Install protoc and generate the protobuf files
+            sudo apt update && sudo apt install -y protobuf-compiler protoc-gen-go protoc-gen-go-grpc
+            go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+            go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+            cd ../../ && protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative api/pb/pgwatch.proto
+
+            # Compile pgwatch
             go build ./cmd/pgwatch/
             ```
 
@@ -303,8 +317,7 @@ paragraph.
     is required but the latest major version is recommended.
 1. Edit the YAML file to include the sources to be monitored.
 1. Bootstrap the metrics measurements storage database aka sink (PostgreSQL here).
-1. Install pgwatch - either from pre-built packages or by compiling
-    the Go code.
+1. Install pgwatch
 1. [Prepare](preparing_databases.md) the "to-be-monitored" databases for monitoring by creating
     a dedicated login role name as a minimum.
 1. Add some databases to the monitoring configuration via the Web UI, REST API or
