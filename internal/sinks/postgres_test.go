@@ -709,16 +709,6 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 		a.NoError(err)
 		a.Equal(1, numOfEntries)
 
-		message[0].DBName = "test_db_2"
-		pgw.flush(message)
-		// explicitly use `public.*` prefix.
-		_, err = pgw.sinkDb.Exec(pgw.ctx, "SELECT admin.update_listing_table(metric_table_name => 'public.test_metric_1');")
-		a.NoError(err)
-		// another entry should have been added.
-		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
-		a.NoError(err)
-		a.Equal(2, numOfEntries)
-
 		_, err = conn.Exec(ctx, "DROP TABLE test_metric_1;")
 		r.NoError(err)
 		// all entries should be deleted

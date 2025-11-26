@@ -507,55 +507,11 @@ func (pgw *PostgresWriter) DeleteOldPartitions() {
 // in each metric table in admin.all_distinct_dbname_metrics.
 // This is used to avoid listing the same source multiple times in Grafana dropdowns.
 func (pgw *PostgresWriter) MaintainUniqueSources() {
+	sql := "SELECT admin.maintain_tables() WHERE pg_try_advisory_lock(1571543679778230000)"
 	logger := log.GetLogger(pgw.ctx)
-
-	var lock bool
-	logger.Infof("Trying to get maintenance advisory lock...") // to only have one "maintainer" in case of a "push" setup, as can get costly
-	if err := pgw.sinkDb.QueryRow(pgw.ctx, "SELECT admin.try_get_maintenance_lock();").Scan(&lock); err != nil {
-		logger.Error("Getting maintenance advisory lock failed:", err)
-		return
-	}
-	if !lock {
-		logger.Info("Skipping maintenance as another instance has the advisory lock...")
-		return
-	}
-
-	logger.Info("Updating admin.all_distinct_dbname_metrics listing table...")
-	rows, _ := pgw.sinkDb.Query(pgw.ctx, "SELECT table_name FROM admin.get_top_level_metric_tables()")
-	allDistinctMetricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-
-	// updates listing table entries for a single metric.
-	sqlUpdateListingTable := "SELECT * FROM admin.update_listing_table(metric_table_name => $1);"
-	for i, tableName := range allDistinctMetricTables {
-		metricName := strings.Replace(tableName, "public.", "", 1)
-		allDistinctMetricTables[i] = metricName // later usage in sqlDroppedTables requires no "public." prefix.
-		logger.Debugf("Updating admin.all_distinct_dbname_metrics listing for metric: %s", metricName)
-		var deletedRowsCnt, insertedRowsCnt int
-		err = pgw.sinkDb.QueryRow(pgw.ctx, sqlUpdateListingTable, tableName).Scan(&deletedRowsCnt, &insertedRowsCnt)
-		if err != nil {
-			logger.Errorf("Could not update admin.all_distinct_dbname_metrics listing for metric '%s': %s", metricName, err)
-		}
-		if deletedRowsCnt > 0 {
-			logger.Infof("Removed %d stale entries from admin.all_distinct_dbname_metrics listing table for metric: %s", deletedRowsCnt, metricName)
-		}
-		if insertedRowsCnt > 0 {
-			logger.Infof("Added %d entries to admin.all_distinct_dbname_metrics listing table for metric: %s", insertedRowsCnt, metricName)
-		}
-		time.Sleep(time.Minute)
-	}
-
-	// removes all entries for any non-existing table.
-	sqlRemoveDroppedTables := "SELECT admin.remove_dropped_tables_listing(existing_metrics => $1)"
-	var deletedRowsCnt int
-	err = pgw.sinkDb.QueryRow(pgw.ctx, sqlRemoveDroppedTables, allDistinctMetricTables).Scan(&deletedRowsCnt)
-	if err != nil {
-		logger.Errorf("Could not update admin.all_distinct_dbname_metrics listing table for dropped metric tables: %s", err)
-	} else if deletedRowsCnt > 0 {
-		logger.Infof("Removed %d stale entries for dropped metric tables from admin.all_distinct_dbname_metrics listing table", deletedRowsCnt)
+	logger.Info("Starting maintenance...")
+	if _, err := pgw.sinkDb.Exec(pgw.ctx, sql); err != nil {
+		logger.Error("Maintaining 'admin.all_distinct_dbname_metrics' listing table failed:", err)
 	}
 }
 

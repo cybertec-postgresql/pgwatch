@@ -140,33 +140,39 @@ BEGIN
 END;
 $SQL$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION admin.try_get_maintenance_lock(
-  OUT have_lock BOOLEAN
-)
+CREATE OR REPLACE FUNCTION admin.maintain_tables()
+RETURNS VOID
 AS 
 $SQL$
+DECLARE
+  rec record;
+  metric_name text;
+  existing_metrics text[];
 BEGIN
-  -- 1571543679778230000 is just a random bigint
-  SELECT pg_try_advisory_lock(1571543679778230000) INTO have_lock;
+  FOR rec IN SELECT * FROM admin.get_top_level_metric_tables()
+  LOOP
+    IF POSITION('public.' IN rec.table_name) = 1 THEN
+      metric_name = SUBSTRING(rec.table_name FROM POSITION('public.' IN rec.table_name) + LENGTH('public.'));
+    ELSE
+      metric_name = rec.table_name;
+    END IF;
+
+    SELECT array_append(existing_metrics, metric_name) INTO existing_metrics;
+
+    EXECUTE FORMAT($$SELECT admin.update_listing_table(metric_name => '%s')$$, metric_name);
+    SELECT PG_SLEEP(60);
+  END LOOP;
+
+  -- Delete entries for dropped tables
+  DELETE FROM admin.all_distinct_dbname_metrics WHERE metric != ALL(existing_metrics) OR existing_metrics IS NULL;
 END;
 $SQL$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION admin.update_listing_table(
-  metric_table_name text,
-  OUT deleted_rows_cnt int,
-  OUT inserted_rows_cnt int
-)
+CREATE OR REPLACE FUNCTION admin.update_listing_table(metric_name text)
+RETURNS VOID
 AS
 $SQL$
-DECLARE
-  metric_name text;
 BEGIN
-
-  IF POSITION('public.' IN metric_table_name) > 0 THEN
-    metric_name = SUBSTRING(metric_table_name FROM POSITION('public.' IN metric_table_name) + LENGTH('public.'));
-  ELSE
-    metric_name = metric_table_name;
-  END IF;
 
   EXECUTE FORMAT(
   $$
@@ -186,8 +192,6 @@ BEGIN
       AND metric = '%s';
   $$, metric_name);
 
-  GET DIAGNOSTICS deleted_rows_cnt = ROW_COUNT;
-
   EXECUTE FORMAT(
   $$
     INSERT INTO admin.all_distinct_dbname_metrics 
@@ -195,21 +199,7 @@ BEGIN
       WHERE NOT EXISTS (SELECT * FROM admin.all_distinct_dbname_metrics WHERE dbname = d.dbname AND metric = '%s');
   $$, metric_name, metric_name);
 
-  GET DIAGNOSTICS inserted_rows_cnt = ROW_COUNT;
-
   DROP TABLE distinct_dbnames;
 
-END;
-$SQL$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION admin.remove_dropped_tables_listing(
-  existing_metrics text[],
-  OUT deleted_rows_cnt int
-)
-AS 
-$SQL$
-BEGIN
-  DELETE FROM admin.all_distinct_dbname_metrics WHERE metric != ALL(existing_metrics);
-  GET DIAGNOSTICS deleted_rows_cnt = ROW_COUNT;
 END;
 $SQL$ LANGUAGE plpgsql;
