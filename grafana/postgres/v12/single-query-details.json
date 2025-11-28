@@ -1336,6 +1336,10 @@
           "text": "select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $1))[$2]::text as extversion from pg_extension order by 1",
           "value": "select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $1))[$2]::text as extversion from pg_extension order by 1"
         },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "pgwatch-metrics"
+        },
         "definition": "select tag_data->>'query'\nfrom stat_statements\nwhere dbname = '$dbname'\n  and tag_data @> '{\"queryid\": \"$queryid\"}'\norder by time desc\nlimit 1",
         "hide": 2,
         "name": "sql_text",
