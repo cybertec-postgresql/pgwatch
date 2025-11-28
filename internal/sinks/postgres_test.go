@@ -669,11 +669,18 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 	pgw, err := NewPostgresWriter(ctx, connStr, opts)
 	r.NoError(err)
 
+	// Drop tables for all builtin metrics to avoid timeout in
+	// in `MaintainUniqueSources` test.
+	for _, metric := range metrics.GetDefaultBuiltInMetrics() {
+		_, err = pgw.sinkDb.Exec(pgw.ctx, fmt.Sprintf("DROP TABLE %s;", metric))
+		a.NoError(err)
+	}
+
 	t.Run("MaintainUniqueSources", func(_ *testing.T) {
-		// adds an entry to `admin.all_distinct_dbname_metrics`
+		// creates an empty metric table and adds
+		// an entry to `admin.all_distinct_dbname_metrics`
 		err = pgw.SyncMetric("test", "test_metric_1", AddOp)
 		r.NoError(err)
-
 		var numOfEntries int
 		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
 		a.NoError(err)
@@ -681,8 +688,7 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 
 		// manually call the maintenance routine
 		pgw.MaintainUniqueSources()
-
-		// entry should have been deleted, because it has no corresponding entries in `test_metric_1` table.
+		// entry should have been deleted, because there is now rows in `test_metric_1` table.
 		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
 		a.NoError(err)
 		a.Equal(0, numOfEntries)
@@ -697,19 +703,16 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 			},
 		}
 		pgw.flush(message)
-
 		// manually call the maintenance routine
 		pgw.MaintainUniqueSources()
-
-		// entry should have been added, because there is a corresponding entry in `test_metric_1` table just written.
+		// an entry should have been added, because there is a corresponding entry in `test_metric_1` table just written.
 		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
 		a.NoError(err)
 		a.Equal(1, numOfEntries)
 
 		_, err = conn.Exec(ctx, "DROP TABLE test_metric_1;")
 		r.NoError(err)
-
-		// the corresponding entry should be deleted
+		// all entries should be deleted
 		pgw.MaintainUniqueSources()
 		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
 		a.NoError(err)
@@ -732,8 +735,8 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 		_, err = conn.Exec(ctx,
 			fmt.Sprintf(
 				`CREATE TABLE subpartitions.test_metric_2_dbname_time 
-			PARTITION OF subpartitions.test_metric_2_dbname 
-			FOR VALUES FROM ('%s') TO ('%s')`,
+				PARTITION OF subpartitions.test_metric_2_dbname 
+				FOR VALUES FROM ('%s') TO ('%s')`,
 				boundStart, boundEnd),
 		)
 		a.NoError(err)
