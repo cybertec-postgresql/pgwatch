@@ -5213,6 +5213,7 @@
           "value": "$__auto"
         },
         "hide": 3,
+        "label": "Max. age for 'online' metrics",
         "name": "online_interval",
         "options": [
           {
