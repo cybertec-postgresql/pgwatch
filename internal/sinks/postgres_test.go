@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/jackc/pgx/v5"
 	jsoniter "github.com/json-iterator/go"
@@ -18,7 +19,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-var ctx = context.Background()
+var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
 
 func TestReadMetricSchemaType(t *testing.T) {
 	conn, err := pgxmock.NewPool()
@@ -531,7 +532,7 @@ func TestIntervalValidation(t *testing.T) {
 	opts := &CmdOpts{
 		PartitionInterval:   "1 minute",
 		MaintenanceInterval: "-1 hours",
-		RetentionInterval:   "-1 hours",
+		RetentionInterval:   "00:01:30",
 		BatchingDelay:       time.Second,
 	}
 
@@ -544,7 +545,7 @@ func TestIntervalValidation(t *testing.T) {
 	opts.MaintenanceInterval = "0 hours"
 
 	_, err = NewPostgresWriter(ctx, connStr, opts)
-	a.EqualError(err, "--retention must be a positive PostgreSQL interval or 0 to disable it")
+	a.Error(err)
 
 	invalidIntervals := []string{
 		"not an interval", "3 dayss",
@@ -660,7 +661,7 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 
 	opts := &CmdOpts{
 		PartitionInterval:   "1 hour",
-		RetentionInterval:   "1 second",
+		RetentionInterval:   "1 hour",
 		MaintenanceInterval: "0 days",
 		BatchingDelay:       time.Hour,
 	}

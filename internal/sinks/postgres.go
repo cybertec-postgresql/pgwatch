@@ -77,8 +77,8 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		if pgw.maintenanceInterval < 0 {
 			return errors.New("--maintenance-interval must be a positive PostgreSQL interval or 0 to disable it")
 		}
-		if pgw.retentionInterval < 0 {
-			return errors.New("--retention must be a positive PostgreSQL interval or 0 to disable it")
+		if pgw.retentionInterval < time.Hour && pgw.retentionInterval != 0 {
+			return errors.New("--retention must be at least 1 hour PostgreSQL interval or 0 to disable it")
 		}
 
 		l.Info("initialising measurements database...")
@@ -552,7 +552,7 @@ func (pgw *PostgresWriter) MaintainUniqueSources() {
 
 		metricName := strings.Replace(tableName, "public.", "", 1)
 		// later usage in sqlDroppedTables requires no "public." prefix
-		allDistinctMetricTables[i] = metricName 
+		allDistinctMetricTables[i] = metricName
 
 		logger.Debugf("Refreshing all_distinct_dbname_metrics listing for metric: %s", metricName)
 		rows, _ := pgw.sinkDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, tableName, tableName))
