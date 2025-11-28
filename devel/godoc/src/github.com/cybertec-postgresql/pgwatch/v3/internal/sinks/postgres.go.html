@@ -134,8 +134,8 @@
 <span id="L77" class="ln">    77  </span>		if pgw.maintenanceInterval &lt; 0 {
 <span id="L78" class="ln">    78  </span>			return errors.New(&#34;--maintenance-interval must be a positive PostgreSQL interval or 0 to disable it&#34;)
 <span id="L79" class="ln">    79  </span>		}
-<span id="L80" class="ln">    80  </span>		if pgw.retentionInterval &lt; 0 {
-<span id="L81" class="ln">    81  </span>			return errors.New(&#34;--retention must be a positive PostgreSQL interval or 0 to disable it&#34;)
+<span id="L80" class="ln">    80  </span>		if pgw.retentionInterval &lt; time.Hour &amp;&amp; pgw.retentionInterval != 0 {
+<span id="L81" class="ln">    81  </span>			return errors.New(&#34;--retention must be at least 1 hour PostgreSQL interval or 0 to disable it&#34;)
 <span id="L82" class="ln">    82  </span>		}
 <span id="L83" class="ln">    83  </span>
 <span id="L84" class="ln">    84  </span>		l.Info(&#34;initialising measurements database...&#34;)
@@ -609,7 +609,7 @@
 <span id="L552" class="ln">   552  </span>
 <span id="L553" class="ln">   553  </span>		metricName := strings.Replace(tableName, &#34;public.&#34;, &#34;&#34;, 1)
 <span id="L554" class="ln">   554  </span>		<span class="comment">// later usage in sqlDroppedTables requires no &#34;public.&#34; prefix</span>
-<span id="L555" class="ln">   555  </span>		allDistinctMetricTables[i] = metricName 
+<span id="L555" class="ln">   555  </span>		allDistinctMetricTables[i] = metricName
 <span id="L556" class="ln">   556  </span>
 <span id="L557" class="ln">   557  </span>		logger.Debugf(&#34;Refreshing all_distinct_dbname_metrics listing for metric: %s&#34;, metricName)
 <span id="L558" class="ln">   558  </span>		rows, _ := pgw.sinkDb.Query(pgw.ctx, fmt.Sprintf(sqlDistinct, tableName, tableName))
