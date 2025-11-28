@@ -2760,6 +2760,22 @@ metrics:
                   pg_stat_statements
                 where
                   dbid = (select oid from pg_database where datname = current_database())
+    stat_statements_jit:
+        description: >
+            This metric collects statistics from the `pg_stat_statements` extension, focusing on the total JIT generation time.
+            It provides insights into query performance, including total JIT generation time and total execution times.
+            This metric is useful for monitoring query performance and identifying queries with high percent of execution time spent in JIT.
+        init_sql: CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+        sqls:
+            13: |
+                select /*pgwatch_generated*/
+                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                  coalesce(sum(jit_generation_time)::numeric, 0)::double precision as total_jit_time,
+                  coalesce(round(sum(total_exec_time)::numeric, 3), 0)::double precision as total_time
+                from 
+                  pg_stat_statements
+                where 
+                  dbid = (select oid from pg_database where datname = current_database())
     stat_statements_no_query_text:
         description: >
             This metric collects statistics from the `pg_stat_statements` extension without including the query text.
