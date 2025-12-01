@@ -878,7 +878,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT max((data->>'waiting')::int)\nFROM backends\nWHERE $__timeFilter(time, $online_interval) AND dbname = '$dbname'",
+          "rawSql": "SELECT max((data->>'waiting')::int)\nFROM backends\nWHERE $__timeFilter(time) AND dbname = '$dbname'",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -3544,7 +3544,7 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
-          "format": "time_series",
+          "format": "table",
           "group": [],
           "groupBy": [
             {
@@ -3565,7 +3565,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  max((data->>'longest_autovacuum_seconds')::int8) as longest_autovacuum_seconds\nFROM\n  backends\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'",
+          "rawSql": "SELECT\n  max((data->>'longest_autovacuum_seconds')::int8) as longest_autovacuum_seconds\nFROM\n  backends\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -3682,7 +3682,7 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
-          "format": "time_series",
+          "format": "table",
           "group": [],
           "groupBy": [
             {
@@ -3703,7 +3703,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  sum((scan-scan_lag) * 60 / extract(epoch from (time-time_lag)))\nFROM (\n  SELECT\n    time, lag(time) over w as time_lag,\n    (data->>'seq_scan')::int8 as scan, lag((data->>'seq_scan')::int8) over w as scan_lag\n  FROM\n    table_stats\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n    AND (data->>'table_size_b')::int8 > 100000000\n  WINDOW w AS (partition by tag_data->>'table_full_name' order by time)\n) x\nWHERE scan > scan_lag and time > time_lag\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT\n  sum((scan-scan_lag) * 60 / extract(epoch from (time-time_lag)))\nFROM (\n  SELECT\n    time, lag(time) over w as time_lag,\n    (data->>'seq_scan')::int8 as scan, lag((data->>'seq_scan')::int8) over w as scan_lag\n  FROM\n    table_stats\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n    AND (data->>'table_size_b')::int8 > 100000000\n  WINDOW w AS (partition by tag_data->>'table_full_name' order by time)\n) x\nWHERE scan > scan_lag and time > time_lag",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -3822,7 +3822,7 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
-          "format": "time_series",
+          "format": "table",
           "group": [],
           "groupBy": [
             {
@@ -3843,7 +3843,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  time,\n  avg(((ins-ins_lag) * 60) / extract(epoch from time - time_lag))\nfrom (\n        select \n          (data->>'tup_inserted')::int8 as ins, lag((data->>'tup_inserted')::int8) over w as ins_lag,\n          time, lag(time) over w as time_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere ins >= ins_lag and time > time_lag\ngroup by 1\norder by 1",
+          "rawSql": "select\n  avg(((ins-ins_lag) * 60) / extract(epoch from time - time_lag))\nfrom (\n        select \n          (data->>'tup_inserted')::int8 as ins, lag((data->>'tup_inserted')::int8) over w as ins_lag,\n          time, lag(time) over w as time_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere ins >= ins_lag and time > time_lag",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
