@@ -5048,6 +5048,7 @@
         "definition": "",
         "includeAll": false,
         "name": "dbname",
+        "label": "Source Name",
         "options": [],
         "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics ORDER BY 1;",
         "refresh": 1,
