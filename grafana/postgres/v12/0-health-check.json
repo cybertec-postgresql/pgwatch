@@ -4987,7 +4987,7 @@
       "description": "Percentage of total query execution time spent in JIT. (requires stat_statements_jit metric)",
       "fieldConfig": {
         "defaults": {
-          "decimals": 5,
+          "decimals": 2,
           "mappings": [
             {
               "options": {
@@ -5010,11 +5010,11 @@
               },
               {
                 "color": "orange",
-                "value": 2
+                "value": 1
               },
               {
                 "color": "red",
-                "value": 5
+                "value": 25
               }
             ]
           },
