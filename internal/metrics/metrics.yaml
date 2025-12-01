@@ -2767,7 +2767,7 @@ metrics:
             This metric is useful for monitoring query performance and identifying queries with high percent of execution time spent in JIT.
         init_sql: CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
         sqls:
-            13: |
+            15: |
                 select /*pgwatch_generated*/
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   coalesce(sum(jit_generation_time)::numeric, 0)::double precision as total_jit_time,
