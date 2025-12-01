@@ -313,10 +313,6 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "text": "demo",
-          "value": "demo"
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
