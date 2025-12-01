@@ -1236,8 +1236,8 @@
     "list": [
       {
         "current": {
-          "text": "demo",
-          "value": "demo"
+          "text": "",
+          "value": ""
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
@@ -1254,8 +1254,8 @@
       },
       {
         "current": {
-          "text": "1488892720291066843",
-          "value": "1488892720291066843"
+          "text": "",
+          "value": ""
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
@@ -1333,8 +1333,8 @@
       {
         "allowCustomValue": false,
         "current": {
-          "text": "select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $1))[$2]::text as extversion from pg_extension order by 1",
-          "value": "select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $1))[$2]::text as extversion from pg_extension order by 1"
+          "text": "",
+          "value": ""
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
