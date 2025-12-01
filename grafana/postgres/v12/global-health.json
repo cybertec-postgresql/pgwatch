@@ -2034,6 +2034,10 @@
         "type": "custom"
       },
       {
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "pgwatch-metrics"
+        },
         "allowCustomValue": false,
         "current": {
           "text": "db_stats",

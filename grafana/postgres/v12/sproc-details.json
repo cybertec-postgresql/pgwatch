@@ -357,10 +357,6 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "text": "demo",
-          "value": "demo"
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
@@ -375,10 +371,6 @@
         "type": "query"
       },
       {
-        "current": {
-          "text": "public.get_load_average",
-          "value": "public.get_load_average"
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"

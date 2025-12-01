@@ -2121,9 +2121,9 @@
     "list": [
       {
         "allowCustomValue": false,
-        "current": {
-          "text": "",
-          "value": ""
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "pgwatch-metrics"
         },
         "definition": "select dbname as monitoredsource from admin.all_distinct_dbname_metrics where metric = 'pgbouncer_stats';",
         "label": "Monitored Source",
@@ -2137,10 +2137,6 @@
       },
       {
         "allowCustomValue": false,
-        "current": {
-          "text": "",
-          "value": ""
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
