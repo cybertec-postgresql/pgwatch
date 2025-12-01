@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 21,
   "links": [],
   "panels": [
     {
@@ -5056,7 +5056,7 @@
             "uid": "pgwatch-metrics"
           },
           "editorMode": "code",
-          "format": "time_series",
+          "format": "table",
           "group": [],
           "groupBy": [
             {
@@ -5077,7 +5077,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select \n    $__timeGroup(time, $online_interval),\n    (sum(total_jit - total_jit_lag) / sum(total_time - total_time_lag)) * 100 as pct\nfrom\n(\n    select\n        time,\n        (data->>'total_jit_time')::float8 as total_jit, lag((data->>'total_jit_time')::float8) over w as total_jit_lag,\n        (data->>'total_time')::float8 as total_time, lag((data->>'total_time')::float8) over w as total_time_lag\n    from\n        stat_statements_jit\n    where \n        dbname = '$dbname' and $__timeFilter(time)\n    window w as (order by time)\n)\nwhere total_time > total_time_lag\ngroup by 1\norder by 2 desc\nlimit 1",
+          "rawSql": "select\n    (sum(total_jit - total_jit_lag) / sum(total_time - total_time_lag)) * 100 as pct\nfrom\n(\n    select\n        time,\n        (data->>'total_jit_time')::float8 as total_jit, lag((data->>'total_jit_time')::float8) over w as total_jit_lag,\n        (data->>'total_time')::float8 as total_time, lag((data->>'total_time')::float8) over w as total_time_lag\n    from\n        stat_statements_jit\n    where \n        dbname = '$dbname' and $__timeFilter(time)\n    window w as (order by time)\n)\nwhere total_time > total_time_lag",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -5205,12 +5205,12 @@
         "type": "query"
       },
       {
-        "auto": true,
-        "auto_count": 1,
+        "auto": false,
+        "auto_count": 30,
         "auto_min": "10s",
         "current": {
-          "text": "$__auto",
-          "value": "$__auto"
+          "text": "30m",
+          "value": "30m"
         },
         "hide": 3,
         "label": "Max. age for 'online' metrics",
