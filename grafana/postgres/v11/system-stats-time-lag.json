@@ -23,7 +23,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "fill": 1,
       "fillGradient": 0,
@@ -159,7 +162,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "fill": 1,
       "fillGradient": 0,
@@ -295,7 +301,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "(total - available) /  total * 100",
       "fill": 1,
@@ -432,7 +441,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": null,
       "fill": 1,
       "fillGradient": 0,
@@ -567,7 +579,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "fill": 1,
       "fillGradient": 0,
@@ -702,7 +717,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "fill": 1,
       "fillGradient": 0,
@@ -838,7 +856,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "fill": 1,
       "fillGradient": 0,
@@ -979,7 +1000,10 @@
     "list": [
       {
         "allValue": null,
-        "datasource": null,
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "pgwatch-metrics"
+        },
         "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric LIKE 'psutil%' ORDER BY 1;",
         "hide": 0,
         "includeAll": false,

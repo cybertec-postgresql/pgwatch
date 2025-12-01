@@ -32,7 +32,8 @@
   "panels": [
     {
       "datasource": {
-        "type": "postgres"
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
       },
       "description": "",
       "fieldConfig": {
@@ -75,7 +76,8 @@
         {
           "alias": "$tag_table_name",
           "datasource": {
-            "type": "postgres"
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
           },
           "format": "table",
           "group": [],
@@ -130,7 +132,8 @@
     },
     {
       "datasource": {
-        "type": "postgres"
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
       },
       "description": "",
       "fieldConfig": {
@@ -173,7 +176,8 @@
         {
           "alias": "$tag_table_name",
           "datasource": {
-            "type": "postgres"
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
           },
           "format": "table",
           "group": [],
@@ -241,7 +245,8 @@
     },
     {
       "datasource": {
-        "type": "postgres"
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
       },
       "description": "",
       "fieldConfig": {
@@ -284,7 +289,8 @@
         {
           "alias": "$tag_index_name",
           "datasource": {
-            "type": "postgres"
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
           },
           "format": "table",
           "group": [],
@@ -339,7 +345,8 @@
     },
     {
       "datasource": {
-        "type": "postgres"
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
       },
       "editable": true,
       "error": false,
@@ -371,7 +378,8 @@
       {
         "current": {},
         "datasource": {
-          "type": "postgres"
+          "type": "grafana-postgresql-datasource",
+          "uid": "pgwatch-metrics"
         },
         "definition": "",
         "hide": 0,
