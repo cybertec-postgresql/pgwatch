@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 	err = PGTestsSetup()
 	if err != nil {
 		panic(err)
-	}	
+	}
 
 	// Execute all tests
 	exitCode := m.Run()
