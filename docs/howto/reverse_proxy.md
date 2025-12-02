@@ -24,18 +24,25 @@ pgwatch
 
 The web UI automatically adapts to the configured base path without requiring a rebuild.
 
+WebSockets are used for live log streaming. Make sure your reverse proxy is configured to support WebSocket connections.
+
 ### Apache
+
+The `mod_proxy_wstunnel` module is required for the WebSocket proxy.
 
 ```apache
 <VirtualHost *:443>
     ServerName example.com
-    
+
     # Other SSL and domain configuration...
-    
+
+    ProxyPass /pgwatch/log ws://localhost:8432/pgwatch/log
+    ProxyPassReverse /pgwatch/log ws://localhost:8432/pgwatch/log
+
     ProxyPass /pgwatch/ http://localhost:8432/pgwatch/
     ProxyPassReverse /pgwatch/ http://localhost:8432/pgwatch/
     ProxyPreserveHost On
-    
+
     <Location /pgwatch/>
         # Optional: Add authentication
         AuthUserFile /etc/apache2/admpasswd
@@ -50,43 +57,28 @@ The web UI automatically adapts to the configured base path without requiring a 
 
 ### Nginx
 
+WebSocket support is automatic with the proxy configuration shown above. Nginx will upgrade the connection when needed.
+
 ```nginx
 server {
     listen 443 ssl;
     server_name example.com;
-    
+
     # Other SSL and domain configuration...
-    
+
     location /pgwatch/ {
         proxy_pass http://localhost:8432/pgwatch/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # Optional: Add authentication
         auth_basic "pgwatch Administration";
         auth_basic_user_file /etc/nginx/.htpasswd;
     }
 }
 ```
-
-## WebSocket Support
-
-The pgwatch web UI uses WebSockets for live log streaming. Make sure your reverse proxy is configured to support WebSocket connections:
-
-### Apache
-
-Requires `mod_proxy_wstunnel`:
-
-```apache
-ProxyPass /pgwatch/log ws://localhost:8432/pgwatch/log
-ProxyPassReverse /pgwatch/log ws://localhost:8432/pgwatch/log
-```
-
-### Nginx
-
-WebSocket support is automatic with the proxy configuration shown above. Nginx will upgrade the connection when needed.
 
 ## Testing the Configuration
 
