@@ -152,7 +152,6 @@
           ]
         }
       ],
-      "timeFrom": "$online_interval",
       "title": "Instance state",
       "type": "stat"
     },
@@ -285,7 +284,6 @@
           ]
         }
       ],
-      "timeFrom": "$online_interval",
       "title": "Instance uptime",
       "type": "stat"
     },
@@ -428,7 +426,6 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Longest query duration during last $online_interval",
       "fieldConfig": {
         "defaults": {
           "decimals": 0,
@@ -552,7 +549,6 @@
           ]
         }
       ],
-      "timeFrom": "$online_interval",
       "title": "Longest query runtime",
       "type": "stat"
     },
@@ -692,7 +688,6 @@
           ]
         }
       ],
-      "timeFrom": "$online_interval",
       "title": "Active connections",
       "type": "stat"
     },
@@ -912,7 +907,6 @@
           ]
         }
       ],
-      "timeFrom": "$online_interval",
       "title": "Blocked sessions",
       "type": "stat"
     },
@@ -1336,7 +1330,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Queries per Second based on  \"pg_stat_statements\" extension info. Last $online_interval avg. < 0.1 Error / < 1 Warning thresholds by default",
+      "description": "Queries per Second based on  \"pg_stat_statements\" extension info. < 0.1 Error / < 1 Warning thresholds by default",
       "fieldConfig": {
         "defaults": {
           "decimals": 1,
@@ -1599,7 +1593,6 @@
           ]
         }
       ],
-      "timeFrom": "$online_interval",
       "title": "\"Idle in TX\" count",
       "type": "stat"
     },
@@ -1736,7 +1729,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Transactions per Second. Last $online_interval average. <0.1 % Error / < 1.0 Warn thresholds by default",
+      "description": "Transactions per Second. <0.1 % Error / < 1.0 Warn thresholds by default",
       "fieldConfig": {
         "defaults": {
           "decimals": 1,
@@ -2007,7 +2000,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Last $online_interval avg. based on \"pg_stat_statements\" info.  > 0.5s Warning / > 5s  Error thresholds by default",
+      "description": "Average query runtime based on \"pg_stat_statements\" info.  > 0.5s Warning / > 5s  Error thresholds by default",
       "fieldConfig": {
         "defaults": {
           "decimals": 1,
@@ -2545,7 +2538,6 @@
           ]
         }
       ],
-      "timeFrom": "$online_interval",
       "title": "WAL archiving status",
       "type": "stat"
     },
@@ -4299,7 +4291,6 @@
           ]
         }
       ],
-      "timeFrom": "$online_interval",
       "title": "Backup duration",
       "type": "stat"
     },
@@ -4704,7 +4695,6 @@
           ]
         }
       ],
-      "timeFrom": "$online_interval",
       "title": "Inactive repl. slots",
       "type": "stat"
     },
@@ -4837,7 +4827,6 @@
           ]
         }
       ],
-      "timeFrom": "$online_interval",
       "title": "Max. replication lag",
       "type": "stat"
     },
