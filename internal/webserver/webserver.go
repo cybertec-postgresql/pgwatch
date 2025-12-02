@@ -1,8 +1,11 @@
 package webserver
 
 import (
+	"bytes"
 	"context"
+	"embed"
 	"fmt"
+	"html/template"
 	"io"
 	"io/fs"
 	"mime"
@@ -20,6 +23,15 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
+//go:embed build
+var buildFS embed.FS
+
+var uiFS fs.FS
+
+func init() {
+	uiFS, _ = fs.Sub(buildFS, "build")
+}
+
 type ReadyChecker interface {
 	Ready() bool
 }
@@ -30,13 +42,13 @@ type WebUIServer struct {
 	log.Logger
 	ctx                 context.Context
 	basePath            string // computed base path with slashes
-	uiFS                fs.FS  // webui files
+	indexHTML           []byte // pre-rendered index.html content
 	metricsReaderWriter metrics.ReaderWriter
 	sourcesReaderWriter sources.ReaderWriter
 	readyChecker        ReadyChecker
 }
 
-func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc ReadyChecker) (*WebUIServer, error) {
+func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc ReadyChecker) (_ *WebUIServer, err error) {
 	if opts.WebDisable == WebDisableAll {
 		return nil, nil
 	}
@@ -52,7 +64,6 @@ func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWr
 		ctx:                 ctx,
 		Logger:              log.GetLogger(ctx),
 		CmdOpts:             opts,
-		uiFS:                webuifs,
 		metricsReaderWriter: mrw,
 		sourcesReaderWriter: srw,
 		readyChecker:        rc,
@@ -62,6 +73,7 @@ func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWr
 	if opts.WebBasePath != "" {
 		s.basePath += "/"
 	}
+
 	mux.Handle(s.basePath+"source", NewEnsureAuth(s.handleSources))
 	mux.Handle(s.basePath+"source/{name}", NewEnsureAuth(s.handleSourceItem))
 	mux.Handle(s.basePath+"test-connect", NewEnsureAuth(s.handleTestConnect))
@@ -74,6 +86,9 @@ func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWr
 	mux.HandleFunc(s.basePath+"liveness", s.handleLiveness)
 	mux.HandleFunc(s.basePath+"readiness", s.handleReadiness)
 	if opts.WebDisable != WebDisableUI {
+		if err = s.prepareIndexHTML(); err != nil {
+			return nil, err
+		}
 		mux.HandleFunc(s.basePath, s.handleStatic)
 	}
 
@@ -87,6 +102,25 @@ func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWr
 	return s, nil
 }
 
+// prepareIndexHTML renders the index.html template once at startup
+func (s *WebUIServer) prepareIndexHTML() error {
+	tmpl, err := template.ParseFS(uiFS, "index.html")
+	if err != nil {
+		return err
+	}
+
+	var buf bytes.Buffer
+	data := map[string]string{
+		"BasePath": s.WebBasePath,
+	}
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return err
+	}
+
+	s.indexHTML = buf.Bytes()
+	return nil
+}
+
 func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
@@ -97,14 +131,16 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	path := strings.TrimPrefix(r.URL.Path, strings.TrimSuffix(Server.basePath, "/"))
 
 	routes := []string{"/", "/sources", "/metrics", "/presets", "/logs"}
-	isIndexHTML := slices.Contains(routes, path)
-	if isIndexHTML {
-		path = "index.html"
-	} else {
-		path = strings.TrimPrefix(path, "/")
+	if slices.Contains(routes, path) { // is index.html
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(Server.indexHTML)))
+		_, _ = w.Write(Server.indexHTML)
+		Server.Debug("index.html served")
+		return
 	}
 
-	file, err := Server.uiFS.Open(path)
+	path = strings.TrimPrefix(path, "/")
+	file, err := uiFS.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			Server.Println("file", path, "not found:", err)
@@ -122,34 +158,6 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", contentType)
 	if strings.HasPrefix(path, "static/") {
 		w.Header().Set("Cache-Control", "public, max-age=31536000")
-	}
-
-	// For index.html, inject base path configuration
-	if isIndexHTML {
-		content, err := io.ReadAll(file)
-		if err != nil {
-			http.Error(w, "Failed to read index.html", http.StatusInternalServerError)
-			return
-		}
-		htmlContent := string(content)
-
-		if Server.WebBasePath != "" {
-			// Add base tag after opening <head> to make all relative URLs work with base path
-			baseTag := fmt.Sprintf(`<head><base href="/%s/">`, Server.WebBasePath)
-			htmlContent = strings.Replace(htmlContent, "<head>", baseTag, 1)
-			// Inject script variable for React Router
-			injection := fmt.Sprintf(`<script>window.__PGWATCH_BASE_PATH__='/%s';</script></head>`, Server.WebBasePath)
-			htmlContent = strings.Replace(htmlContent, "</head>", injection, 1)
-		} else {
-			// No base path, just inject empty variable
-			injection := `<script>window.__PGWATCH_BASE_PATH__='';</script></head>`
-			htmlContent = strings.Replace(htmlContent, "</head>", injection, 1)
-		}
-
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(htmlContent)))
-		_, _ = w.Write([]byte(htmlContent))
-		Server.Debug("file", path, "served")
-		return
 	}
 
 	stat, err := file.Stat()
