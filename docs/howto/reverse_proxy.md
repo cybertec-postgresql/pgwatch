@@ -57,7 +57,7 @@ The `mod_proxy_wstunnel` module is required for the WebSocket proxy.
 
 ### Nginx
 
-WebSocket support is automatic with the proxy configuration shown above. Nginx will upgrade the connection when needed.
+WebSocket support is automatic with the proxy configuration shown here. Nginx will upgrade the connection when needed.
 
 ```nginx
 server {
