@@ -29,7 +29,8 @@ type WebUIServer struct {
 	http.Server
 	log.Logger
 	ctx                 context.Context
-	uiFS                fs.FS // webui files
+	basePath            string // computed base path with slashes
+	uiFS                fs.FS  // webui files
 	metricsReaderWriter metrics.ReaderWriter
 	sourcesReaderWriter sources.ReaderWriter
 	readyChecker        ReadyChecker
@@ -57,19 +58,23 @@ func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWr
 		readyChecker:        rc,
 	}
 
-	mux.Handle("/source", NewEnsureAuth(s.handleSources))
-	mux.Handle("/source/{name}", NewEnsureAuth(s.handleSourceItem))
-	mux.Handle("/test-connect", NewEnsureAuth(s.handleTestConnect))
-	mux.Handle("/metric", NewEnsureAuth(s.handleMetrics))
-	mux.Handle("/metric/{name}", NewEnsureAuth(s.handleMetricItem))
-	mux.Handle("/preset", NewEnsureAuth(s.handlePresets))
-	mux.Handle("/preset/{name}", NewEnsureAuth(s.handlePresetItem))
-	mux.Handle("/log", NewEnsureAuth(s.serveWsLog))
-	mux.HandleFunc("/login", s.handleLogin)
-	mux.HandleFunc("/liveness", s.handleLiveness)
-	mux.HandleFunc("/readiness", s.handleReadiness)
+	s.basePath = "/" + opts.WebBasePath
+	if opts.WebBasePath != "" {
+		s.basePath += "/"
+	}
+	mux.Handle(s.basePath+"source", NewEnsureAuth(s.handleSources))
+	mux.Handle(s.basePath+"source/{name}", NewEnsureAuth(s.handleSourceItem))
+	mux.Handle(s.basePath+"test-connect", NewEnsureAuth(s.handleTestConnect))
+	mux.Handle(s.basePath+"metric", NewEnsureAuth(s.handleMetrics))
+	mux.Handle(s.basePath+"metric/{name}", NewEnsureAuth(s.handleMetricItem))
+	mux.Handle(s.basePath+"preset", NewEnsureAuth(s.handlePresets))
+	mux.Handle(s.basePath+"preset/{name}", NewEnsureAuth(s.handlePresetItem))
+	mux.Handle(s.basePath+"log", NewEnsureAuth(s.serveWsLog))
+	mux.HandleFunc(s.basePath+"login", s.handleLogin)
+	mux.HandleFunc(s.basePath+"liveness", s.handleLiveness)
+	mux.HandleFunc(s.basePath+"readiness", s.handleReadiness)
 	if opts.WebDisable != WebDisableUI {
-		mux.HandleFunc("/", s.handleStatic)
+		mux.HandleFunc(s.basePath, s.handleStatic)
 	}
 
 	ln, err := net.Listen("tcp", s.Addr)
@@ -87,9 +92,13 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
+
+	// Strip base path if present
+	path := strings.TrimPrefix(r.URL.Path, strings.TrimSuffix(Server.basePath, "/"))
+
 	routes := []string{"/", "/sources", "/metrics", "/presets", "/logs"}
-	path := r.URL.Path
-	if slices.Contains(routes, path) {
+	isIndexHTML := slices.Contains(routes, path)
+	if isIndexHTML {
 		path = "index.html"
 	} else {
 		path = strings.TrimPrefix(path, "/")
@@ -108,11 +117,41 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	}
 	defer file.Close()
 
+	// Determine content type
 	contentType := mime.TypeByExtension(filepath.Ext(path))
 	w.Header().Set("Content-Type", contentType)
 	if strings.HasPrefix(path, "static/") {
 		w.Header().Set("Cache-Control", "public, max-age=31536000")
 	}
+
+	// For index.html, inject base path configuration
+	if isIndexHTML {
+		content, err := io.ReadAll(file)
+		if err != nil {
+			http.Error(w, "Failed to read index.html", http.StatusInternalServerError)
+			return
+		}
+		htmlContent := string(content)
+
+		if Server.WebBasePath != "" {
+			// Add base tag after opening <head> to make all relative URLs work with base path
+			baseTag := fmt.Sprintf(`<head><base href="/%s/">`, Server.WebBasePath)
+			htmlContent = strings.Replace(htmlContent, "<head>", baseTag, 1)
+			// Inject script variable for React Router
+			injection := fmt.Sprintf(`<script>window.__PGWATCH_BASE_PATH__='/%s';</script></head>`, Server.WebBasePath)
+			htmlContent = strings.Replace(htmlContent, "</head>", injection, 1)
+		} else {
+			// No base path, just inject empty variable
+			injection := `<script>window.__PGWATCH_BASE_PATH__='';</script></head>`
+			htmlContent = strings.Replace(htmlContent, "</head>", injection, 1)
+		}
+
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(htmlContent)))
+		_, _ = w.Write([]byte(htmlContent))
+		Server.Debug("file", path, "served")
+		return
+	}
+
 	stat, err := file.Stat()
 	if err == nil && stat.Size() > 0 {
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", stat.Size()))

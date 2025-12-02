@@ -1,6 +1,7 @@
 {
   "name": "web-gui",
   "version": "0.1.0",
+  "homepage": ".",
   "private": true,
   "scripts": {
     "start": "react-scripts start",

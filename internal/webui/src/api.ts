@@ -2,7 +2,9 @@ import axios, { AxiosError } from "axios";
 import { getToken } from "services/Token";
 
 export const apiClient = () => {
-  const apiEndpoint = window.location.origin;
+  // Use base path from window object if available
+  const basePath = (window as any).__PGWATCH_BASE_PATH__ || '';
+  const apiEndpoint = window.location.origin + basePath;
   const instance = axios.create({
     baseURL: apiEndpoint,
   });
