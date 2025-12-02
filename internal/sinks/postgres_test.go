@@ -18,9 +18,9 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-var pgContainer *postgres.PostgresContainer;
-var connStr string;
-var conn *pgx.Conn;
+var pgContainer *postgres.PostgresContainer
+var connStr string
+var conn *pgx.Conn
 
 func PGTestsSetup() error {
 	var err error
