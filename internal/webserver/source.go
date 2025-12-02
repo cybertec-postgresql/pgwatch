@@ -10,7 +10,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
-func (server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request) {
+func (s *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request) {
 	var (
 		err    error
 		status = http.StatusInternalServerError
@@ -27,7 +27,7 @@ func (server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request)
 	switch r.Method {
 	case http.MethodGet:
 		// return monitored databases
-		if res, err = server.GetSources(); err != nil {
+		if res, err = s.GetSources(); err != nil {
 			return
 		}
 		_, err = w.Write([]byte(res))
@@ -37,7 +37,7 @@ func (server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request)
 		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		err = server.CreateSource(params)
+		err = s.CreateSource(params)
 		if err != nil {
 			if errors.Is(err, sources.ErrSourceExists) {
 				status = http.StatusConflict
@@ -57,9 +57,9 @@ func (server *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request)
 }
 
 // GetSources returns the list of sources fo find databases for monitoring
-func (server *WebUIServer) GetSources() (res string, err error) {
+func (s *WebUIServer) GetSources() (res string, err error) {
 	var dbs sources.Sources
-	if dbs, err = server.sourcesReaderWriter.GetSources(); err != nil {
+	if dbs, err = s.sourcesReaderWriter.GetSources(); err != nil {
 		return
 	}
 	b, _ := jsoniter.ConfigFastest.Marshal(dbs)
@@ -68,33 +68,33 @@ func (server *WebUIServer) GetSources() (res string, err error) {
 }
 
 // DeleteSource removes the source from the list of configured sources
-func (server *WebUIServer) DeleteSource(database string) error {
-	return server.sourcesReaderWriter.DeleteSource(database)
+func (s *WebUIServer) DeleteSource(database string) error {
+	return s.sourcesReaderWriter.DeleteSource(database)
 }
 
 // UpdateSource updates the configured source information
-func (server *WebUIServer) UpdateSource(params []byte) error {
+func (s *WebUIServer) UpdateSource(params []byte) error {
 	var md sources.Source
 	err := jsoniter.ConfigFastest.Unmarshal(params, &md)
 	if err != nil {
 		return err
 	}
-	return server.sourcesReaderWriter.UpdateSource(md)
+	return s.sourcesReaderWriter.UpdateSource(md)
 }
 
 // CreateSource creates a new source (for REST collection endpoint)
-func (server *WebUIServer) CreateSource(params []byte) error {
+func (s *WebUIServer) CreateSource(params []byte) error {
 	var md sources.Source
 	err := jsoniter.ConfigFastest.Unmarshal(params, &md)
 	if err != nil {
 		return err
 	}
-	return server.sourcesReaderWriter.CreateSource(md)
+	return s.sourcesReaderWriter.CreateSource(md)
 }
 
 // handleSourceItem handles individual source operations using REST-compliant HTTP methods
 // and path parameters like /source/{name}
-func (server *WebUIServer) handleSourceItem(w http.ResponseWriter, r *http.Request) {
+func (s *WebUIServer) handleSourceItem(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	if name == "" {
 		http.Error(w, "source name is required", http.StatusBadRequest)
@@ -103,11 +103,11 @@ func (server *WebUIServer) handleSourceItem(w http.ResponseWriter, r *http.Reque
 
 	switch r.Method {
 	case http.MethodGet:
-		server.getSourceByName(w, name)
+		s.getSourceByName(w, name)
 	case http.MethodPut:
-		server.updateSourceByName(w, r, name)
+		s.updateSourceByName(w, r, name)
 	case http.MethodDelete:
-		server.deleteSourceByName(w, name)
+		s.deleteSourceByName(w, name)
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
 		w.WriteHeader(http.StatusOK)
@@ -118,7 +118,7 @@ func (server *WebUIServer) handleSourceItem(w http.ResponseWriter, r *http.Reque
 }
 
 // getSourceByName returns a specific source by name
-func (server *WebUIServer) getSourceByName(w http.ResponseWriter, name string) {
+func (s *WebUIServer) getSourceByName(w http.ResponseWriter, name string) {
 	var (
 		err    error
 		status = http.StatusInternalServerError
@@ -131,7 +131,7 @@ func (server *WebUIServer) getSourceByName(w http.ResponseWriter, name string) {
 		}
 	}()
 
-	if srcs, err = server.sourcesReaderWriter.GetSources(); err != nil {
+	if srcs, err = s.sourcesReaderWriter.GetSources(); err != nil {
 		return
 	}
 
@@ -149,7 +149,7 @@ func (server *WebUIServer) getSourceByName(w http.ResponseWriter, name string) {
 }
 
 // updateSourceByName updates an existing source using PUT semantics
-func (server *WebUIServer) updateSourceByName(w http.ResponseWriter, r *http.Request, name string) {
+func (s *WebUIServer) updateSourceByName(w http.ResponseWriter, r *http.Request, name string) {
 	params, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -168,7 +168,7 @@ func (server *WebUIServer) updateSourceByName(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := server.sourcesReaderWriter.UpdateSource(md); err != nil {
+	if err := s.sourcesReaderWriter.UpdateSource(md); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -177,8 +177,8 @@ func (server *WebUIServer) updateSourceByName(w http.ResponseWriter, r *http.Req
 }
 
 // deleteSourceByName deletes a source by name
-func (server *WebUIServer) deleteSourceByName(w http.ResponseWriter, name string) {
-	if err := server.sourcesReaderWriter.DeleteSource(name); err != nil {
+func (s *WebUIServer) deleteSourceByName(w http.ResponseWriter, name string) {
+	if err := s.sourcesReaderWriter.DeleteSource(name); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

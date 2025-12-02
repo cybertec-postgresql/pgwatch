@@ -121,21 +121,21 @@ func (s *WebUIServer) prepareIndexHTML() error {
 	return nil
 }
 
-func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
+func (s *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
 
 	// Strip base path if present
-	path := strings.TrimPrefix(r.URL.Path, strings.TrimSuffix(Server.basePath, "/"))
+	path := strings.TrimPrefix(r.URL.Path, strings.TrimSuffix(s.basePath, "/"))
 
 	routes := []string{"/", "/sources", "/metrics", "/presets", "/logs"}
 	if slices.Contains(routes, path) { // is index.html
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(Server.indexHTML)))
-		_, _ = w.Write(Server.indexHTML)
-		Server.Debug("index.html served")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(s.indexHTML)))
+		_, _ = w.Write(s.indexHTML)
+		s.Debug("index.html served")
 		return
 	}
 
@@ -143,11 +143,11 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	file, err := uiFS.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			Server.Println("file", path, "not found:", err)
+			s.Println("file", path, "not found:", err)
 			http.NotFound(w, r)
 			return
 		}
-		Server.Println("file", path, "cannot be read:", err)
+		s.Println("file", path, "cannot be read:", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -166,11 +166,11 @@ func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) 
 	}
 
 	n, _ := io.Copy(w, file)
-	Server.Debug("file", path, "copied", n, "bytes")
+	s.Debug("file", path, "copied", n, "bytes")
 }
 
-func (Server *WebUIServer) handleLiveness(w http.ResponseWriter, _ *http.Request) {
-	if Server.ctx.Err() != nil {
+func (s *WebUIServer) handleLiveness(w http.ResponseWriter, _ *http.Request) {
+	if s.ctx.Err() != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		_, _ = w.Write([]byte(`{"status": "unavailable"}`))
 		return
@@ -179,8 +179,8 @@ func (Server *WebUIServer) handleLiveness(w http.ResponseWriter, _ *http.Request
 	_, _ = w.Write([]byte(`{"status": "ok"}`))
 }
 
-func (Server *WebUIServer) handleReadiness(w http.ResponseWriter, _ *http.Request) {
-	if Server.readyChecker.Ready() {
+func (s *WebUIServer) handleReadiness(w http.ResponseWriter, _ *http.Request) {
+	if s.readyChecker.Ready() {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status": "ok"}`))
 		return
@@ -189,7 +189,7 @@ func (Server *WebUIServer) handleReadiness(w http.ResponseWriter, _ *http.Reques
 	_, _ = w.Write([]byte(`{"status": "busy"}`))
 }
 
-func (Server *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Request) {
+func (s *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
 		// test database connection
