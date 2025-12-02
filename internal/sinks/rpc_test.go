@@ -1,4 +1,4 @@
-package sinks_test
+package sinks
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -21,8 +20,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
-
-var ctx = context.Background()
 
 // the CN in server test cert is set to `localhost`
 var CAFile = "ca.crt"
@@ -92,24 +89,24 @@ func AuthInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, hand
 	return handler(ctx, req)
 }
 
-func TestMain(m *testing.M) {
+func RPCTestsSetup() error {
 	err := os.WriteFile(CAFile, []byte(CA), 0644)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	addresses := [2]string{PlainServerAddress, TLSServerAddress}
 	for _, address := range addresses {
 		lis, err := net.Listen("tcp", address)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		var creds credentials.TransportCredentials
 		if address == TLSServerAddress {
 			creds, err = LoadServerTLSCredentials()
 			if err != nil {
-				panic(err)
+				return err
 			}
 		}
 
@@ -129,18 +126,18 @@ func TestMain(m *testing.M) {
 	}
 	// wait a little for servers start
 	time.Sleep(time.Second)
+	return nil
+}
 
-	exitCode := m.Run()
+func RPCTestsTeardown() {
 	_ = os.Remove(CAFile)
-
-	os.Exit(exitCode)
 }
 
 // Tests begin from here ---------------------------------------------------------
 
 func TestCACertParamValidation(t *testing.T) {
 	a := assert.New(t)
-	_, err := sinks.NewRPCWriter(ctx, TLSConnStr)
+	_, err := NewRPCWriter(ctx, TLSConnStr)
 	a.NoError(err)
 
 	_, _ = os.Create("badca.crt")
@@ -153,7 +150,7 @@ func TestCACertParamValidation(t *testing.T) {
 	}
 
 	for param, errMsg := range BadRPCParams {
-		_, err = sinks.NewRPCWriter(ctx, fmt.Sprintf("grpc://%s%s", TLSServerAddress, param))
+		_, err = NewRPCWriter(ctx, fmt.Sprintf("grpc://%s%s", TLSServerAddress, param))
 		a.ErrorContains(err, errMsg)
 	}
 }
@@ -161,7 +158,7 @@ func TestCACertParamValidation(t *testing.T) {
 func TestRPCTLSWriter(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := sinks.NewRPCWriter(ctx, TLSConnStr)
+	rw, err := NewRPCWriter(ctx, TLSConnStr)
 	a.NoError(err)
 
 	// no error for valid messages
@@ -176,7 +173,7 @@ func TestRPCTLSWriter(t *testing.T) {
 func TestRPCWrite(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := sinks.NewRPCWriter(ctx, PlainConnStr)
+	rw, err := NewRPCWriter(ctx, PlainConnStr)
 	a.NoError(err)
 
 	// no error for valid messages
@@ -198,7 +195,7 @@ func TestRPCWrite(t *testing.T) {
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctx)
-	rw, err = sinks.NewRPCWriter(ctx, PlainConnStr)
+	rw, err = NewRPCWriter(ctx, PlainConnStr)
 	a.NoError(err)
 	cancel()
 	err = rw.Write(msgs)
@@ -208,35 +205,35 @@ func TestRPCWrite(t *testing.T) {
 func TestRPCSyncMetric(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := sinks.NewRPCWriter(ctx, PlainConnStr)
+	rw, err := NewRPCWriter(ctx, PlainConnStr)
 	a.NoError(err)
 
 	// no error for valid Sync requests
-	err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
+	err = rw.SyncMetric("Test-DB", "DB-Metric", AddOp)
 	a.NoError(err)
 
 	// error for invalid Sync requests
-	err = rw.SyncMetric("", "", sinks.InvalidOp)
+	err = rw.SyncMetric("", "", InvalidOp)
 	a.ErrorIs(err, status.Error(codes.Unknown, "invalid sync request"))
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctx)
-	rw, err = sinks.NewRPCWriter(ctx, PlainConnStr)
+	rw, err = NewRPCWriter(ctx, PlainConnStr)
 	a.NoError(err)
 	cancel()
-	err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
+	err = rw.SyncMetric("Test-DB", "DB-Metric", AddOp)
 	a.Error(err)
 }
 
 func TestRPCDefineMetric(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := sinks.NewRPCWriter(ctx, PlainConnStr)
+	rw, err := NewRPCWriter(ctx, PlainConnStr)
 	a.NoError(err)
 
 	// Test that RPCWriter implements MetricsDefiner interface
-	var writer sinks.Writer = rw
-	definer, ok := writer.(sinks.MetricsDefiner)
+	var writer Writer = rw
+	definer, ok := writer.(MetricsDefiner)
 	a.True(ok, "RPCWriter should implement MetricsDefiner interface")
 
 	// Test with valid metrics
@@ -273,12 +270,12 @@ func TestRPCDefineMetric(t *testing.T) {
 
 	// Test with cancelled context
 	ctx, cancel := context.WithCancel(ctx)
-	rw, err = sinks.NewRPCWriter(ctx, PlainConnStr)
+	rw, err = NewRPCWriter(ctx, PlainConnStr)
 	a.NoError(err)
 	cancel()
 
 	writer = rw
-	definer = writer.(sinks.MetricsDefiner)
+	definer = writer.(MetricsDefiner)
 	err = definer.DefineMetrics(testMetrics)
 	a.Error(err)
 }
@@ -287,7 +284,7 @@ func TestAuthCredsSending(t *testing.T) {
 	a := assert.New(t)
 
 	unauthenticatedConnStr := "grpc://notpgwatch:notpgwatch@localhost:6060"
-	rw, err := sinks.NewRPCWriter(ctx, unauthenticatedConnStr)
+	rw, err := NewRPCWriter(ctx, unauthenticatedConnStr)
 	a.NoError(err)
 
 	err = rw.Write(metrics.MeasurementEnvelope{})

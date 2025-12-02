@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/jackc/pgx/v5"
 	jsoniter "github.com/json-iterator/go"
@@ -19,7 +18,42 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
+var pgContainer *postgres.PostgresContainer;
+var connStr string;
+var conn *pgx.Conn;
+
+func PGTestsSetup() error {
+	var err error
+	const ImageName = "docker.io/postgres:17-alpine"
+	pgContainer, err = postgres.Run(ctx,
+		ImageName,
+		postgres.WithDatabase("mydatabase"),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(5*time.Second)),
+	)
+	if err != nil {
+		return err
+	}
+
+	connStr, err = pgContainer.ConnectionString(ctx, "sslmode=disable")
+	if err != nil {
+		return err
+	}
+
+	conn, err = pgx.Connect(ctx, connStr)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func PGTestsTeardown() {
+	_ = pgContainer.Terminate(ctx)
+}
+
+// Tests begin from here ---------------------------------------------------------
 
 func TestReadMetricSchemaType(t *testing.T) {
 	conn, err := pgxmock.NewPool()
@@ -461,23 +495,8 @@ func TestCopyFromMeasurements_StateManagement(t *testing.T) {
 func TestCopyFromMeasurements_CopyFail(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
-	const ImageName = "docker.io/postgres:17-alpine"
-	pgContainer, err := postgres.Run(ctx,
-		ImageName,
-		postgres.WithDatabase("mydatabase"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
-	r.NoError(err)
-	defer func() { assert.NoError(t, pgContainer.Terminate(ctx)) }()
 
-	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
-	conn, err := pgx.Connect(ctx, connStr)
-	r.NoError(err)
-
-	_, err = conn.Exec(ctx, `CREATE TABLE IF NOT EXISTS test_metric (
+	_, err := conn.Exec(ctx, `CREATE TABLE IF NOT EXISTS test_metric (
 		time timestamptz not null default now(),
 		dbname text NOT NULL,
 		data jsonb,
@@ -513,21 +532,6 @@ func TestCopyFromMeasurements_CopyFail(t *testing.T) {
 // cli flags that expect a PostgreSQL interval string
 func TestIntervalValidation(t *testing.T) {
 	a := assert.New(t)
-	r := require.New(t)
-
-	const ImageName = "docker.io/postgres:17-alpine"
-	pgContainer, err := postgres.Run(ctx,
-		ImageName,
-		postgres.WithDatabase("mydatabase"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
-	r.NoError(err)
-	defer func() { a.NoError(pgContainer.Terminate(ctx)) }()
-
-	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
 
 	opts := &CmdOpts{
 		PartitionInterval:   "1 minute",
@@ -536,7 +540,7 @@ func TestIntervalValidation(t *testing.T) {
 		BatchingDelay:       time.Second,
 	}
 
-	_, err = NewPostgresWriter(ctx, connStr, opts)
+	_, err := NewPostgresWriter(ctx, connStr, opts)
 	a.EqualError(err, "--partition-interval must be at least 1 hour, got: 1 minute")
 	opts.PartitionInterval = "1 hour"
 
@@ -589,20 +593,6 @@ func TestPartitionInterval(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
 
-	const ImageName = "docker.io/postgres:17-alpine"
-	pgContainer, err := postgres.Run(ctx,
-		ImageName,
-		postgres.WithDatabase("mydatabase"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
-	r.NoError(err)
-	defer func() { a.NoError(pgContainer.Terminate(ctx)) }()
-
-	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
-
 	opts := &CmdOpts{
 		PartitionInterval:   "3 weeks",
 		RetentionInterval:   "14 days",
@@ -617,7 +607,7 @@ func TestPartitionInterval(t *testing.T) {
 	r.NoError(err)
 
 	m := map[string]map[string]ExistingPartitionInfo{
-		"test_metric": {
+		"test_metric_1": {
 			"test_db": {
 				time.Now(), time.Now().Add(time.Hour),
 			},
@@ -627,13 +617,13 @@ func TestPartitionInterval(t *testing.T) {
 	r.NoError(err)
 
 	var partitionsNum int
-	err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric');").Scan(&partitionsNum)
+	err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric_1');").Scan(&partitionsNum)
 	a.NoError(err)
 	// 1 the metric table itself + 1 dbname partition
 	// + 4 time partitions (1 we asked for + 3 precreated)
 	a.Equal(6, partitionsNum)
 
-	part := partitionMapMetricDbname["test_metric"]["test_db"]
+	part := partitionMapMetricDbname["test_metric_1"]["test_db"]
 	// partition bounds should have a difference of 3 weeks
 	a.Equal(part.StartTime.Add(3*7*24*time.Hour), part.EndTime)
 }
@@ -641,23 +631,6 @@ func TestPartitionInterval(t *testing.T) {
 func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
-
-	// TODO: move postgres container setup to TestMain()
-	const ImageName = "docker.io/postgres:17-alpine"
-	pgContainer, err := postgres.Run(ctx,
-		ImageName,
-		postgres.WithDatabase("mydatabase"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
-	r.NoError(err)
-	defer func() { a.NoError(pgContainer.Terminate(ctx)) }()
-
-	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
-	conn, err := pgx.Connect(ctx, connStr)
-	r.NoError(err)
 
 	opts := &CmdOpts{
 		PartitionInterval:   "1 hour",
