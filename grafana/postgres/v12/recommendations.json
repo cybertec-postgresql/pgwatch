@@ -490,7 +490,7 @@
           ]
         }
       ],
-      "title": "Overly long queries",
+      "title": "Longest query runtime",
       "transformations": [
         {
           "id": "merge",

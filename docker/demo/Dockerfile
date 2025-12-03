@@ -45,8 +45,8 @@ ARG GIT_TIME
 
 # Copy source code
 COPY . .
-# Copy built WebUI from previous stage
-COPY --from=webui-builder /webui/build ./internal/webui/build
+# Copy built WebUI from previous stage to webserver package
+COPY --from=webui-builder /webserver/build ./internal/webserver/build
 
 # Generate protobuf and build the application
 RUN go generate ./api/pb/ && \
