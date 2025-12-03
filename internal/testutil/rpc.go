@@ -87,7 +87,7 @@ func AuthInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, hand
 
 func SetupRPCServers() (func(), error) {
 	err := os.WriteFile(CAFile, []byte(CA), 0644)
-	teardown := func () { _ = os.Remove(CAFile) }
+	teardown := func() { _ = os.Remove(CAFile) }
 	if err != nil {
 		return teardown, err
 	}
@@ -125,7 +125,6 @@ func SetupRPCServers() (func(), error) {
 	time.Sleep(time.Second)
 	return teardown, nil
 }
-
 
 var CA = `-----BEGIN CERTIFICATE-----
 MIIDPzCCAiegAwIBAgIUeENQlQFVH5h7HszFJLLWo+KCQwQwDQYJKoZIhvcNAQEL
