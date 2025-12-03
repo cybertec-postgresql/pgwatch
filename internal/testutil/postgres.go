@@ -23,7 +23,7 @@ func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error) {
 				WithStartupTimeout(5*time.Second)),
 	)
 
-	tearDown := func () {
+	tearDown := func() {
 		_ = pgContainer.Terminate(ctx)
 	}
 
