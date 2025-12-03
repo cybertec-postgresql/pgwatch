@@ -1,8 +1,11 @@
 package webserver
 
 import (
+	"bytes"
 	"context"
+	"embed"
 	"fmt"
+	"html/template"
 	"io"
 	"io/fs"
 	"mime"
@@ -20,6 +23,15 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
+//go:embed build
+var buildFS embed.FS
+
+var uiFS fs.FS
+
+func init() {
+	uiFS, _ = fs.Sub(buildFS, "build")
+}
+
 type ReadyChecker interface {
 	Ready() bool
 }
@@ -29,13 +41,14 @@ type WebUIServer struct {
 	http.Server
 	log.Logger
 	ctx                 context.Context
-	uiFS                fs.FS // webui files
+	basePath            string // computed base path with slashes
+	indexHTML           []byte // pre-rendered index.html content
 	metricsReaderWriter metrics.ReaderWriter
 	sourcesReaderWriter sources.ReaderWriter
 	readyChecker        ReadyChecker
 }
 
-func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc ReadyChecker) (*WebUIServer, error) {
+func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc ReadyChecker) (_ *WebUIServer, err error) {
 	if opts.WebDisable == WebDisableAll {
 		return nil, nil
 	}
@@ -51,25 +64,32 @@ func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWr
 		ctx:                 ctx,
 		Logger:              log.GetLogger(ctx),
 		CmdOpts:             opts,
-		uiFS:                webuifs,
 		metricsReaderWriter: mrw,
 		sourcesReaderWriter: srw,
 		readyChecker:        rc,
 	}
 
-	mux.Handle("/source", NewEnsureAuth(s.handleSources))
-	mux.Handle("/source/{name}", NewEnsureAuth(s.handleSourceItem))
-	mux.Handle("/test-connect", NewEnsureAuth(s.handleTestConnect))
-	mux.Handle("/metric", NewEnsureAuth(s.handleMetrics))
-	mux.Handle("/metric/{name}", NewEnsureAuth(s.handleMetricItem))
-	mux.Handle("/preset", NewEnsureAuth(s.handlePresets))
-	mux.Handle("/preset/{name}", NewEnsureAuth(s.handlePresetItem))
-	mux.Handle("/log", NewEnsureAuth(s.serveWsLog))
-	mux.HandleFunc("/login", s.handleLogin)
-	mux.HandleFunc("/liveness", s.handleLiveness)
-	mux.HandleFunc("/readiness", s.handleReadiness)
+	s.basePath = "/" + opts.WebBasePath
+	if opts.WebBasePath != "" {
+		s.basePath += "/"
+	}
+
+	mux.Handle(s.basePath+"source", NewEnsureAuth(s.handleSources))
+	mux.Handle(s.basePath+"source/{name}", NewEnsureAuth(s.handleSourceItem))
+	mux.Handle(s.basePath+"test-connect", NewEnsureAuth(s.handleTestConnect))
+	mux.Handle(s.basePath+"metric", NewEnsureAuth(s.handleMetrics))
+	mux.Handle(s.basePath+"metric/{name}", NewEnsureAuth(s.handleMetricItem))
+	mux.Handle(s.basePath+"preset", NewEnsureAuth(s.handlePresets))
+	mux.Handle(s.basePath+"preset/{name}", NewEnsureAuth(s.handlePresetItem))
+	mux.Handle(s.basePath+"log", NewEnsureAuth(s.serveWsLog))
+	mux.HandleFunc(s.basePath+"login", s.handleLogin)
+	mux.HandleFunc(s.basePath+"liveness", s.handleLiveness)
+	mux.HandleFunc(s.basePath+"readiness", s.handleReadiness)
 	if opts.WebDisable != WebDisableUI {
-		mux.HandleFunc("/", s.handleStatic)
+		if err = s.prepareIndexHTML(); err != nil {
+			return nil, err
+		}
+		mux.HandleFunc(s.basePath, s.handleStatic)
 	}
 
 	ln, err := net.Listen("tcp", s.Addr)
@@ -82,48 +102,75 @@ func Init(ctx context.Context, opts CmdOpts, webuifs fs.FS, mrw metrics.ReaderWr
 	return s, nil
 }
 
-func (Server *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
+// prepareIndexHTML renders the index.html template once at startup
+func (s *WebUIServer) prepareIndexHTML() error {
+	tmpl, err := template.ParseFS(uiFS, "index.html")
+	if err != nil {
+		return err
+	}
+
+	var buf bytes.Buffer
+	data := map[string]string{
+		"BasePath": s.WebBasePath,
+	}
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return err
+	}
+
+	s.indexHTML = buf.Bytes()
+	return nil
+}
+
+func (s *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
+
+	// Strip base path if present
+	path := strings.TrimPrefix(r.URL.Path, strings.TrimSuffix(s.basePath, "/"))
+
 	routes := []string{"/", "/sources", "/metrics", "/presets", "/logs"}
-	path := r.URL.Path
-	if slices.Contains(routes, path) {
-		path = "index.html"
-	} else {
-		path = strings.TrimPrefix(path, "/")
+	if slices.Contains(routes, path) { // is index.html
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(s.indexHTML)))
+		_, _ = w.Write(s.indexHTML)
+		s.Debug("index.html served")
+		return
 	}
 
-	file, err := Server.uiFS.Open(path)
+	path = strings.TrimPrefix(path, "/")
+	file, err := uiFS.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			Server.Println("file", path, "not found:", err)
+			s.Println("file", path, "not found:", err)
 			http.NotFound(w, r)
 			return
 		}
-		Server.Println("file", path, "cannot be read:", err)
+		s.Println("file", path, "cannot be read:", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
 
+	// Determine content type
 	contentType := mime.TypeByExtension(filepath.Ext(path))
 	w.Header().Set("Content-Type", contentType)
 	if strings.HasPrefix(path, "static/") {
 		w.Header().Set("Cache-Control", "public, max-age=31536000")
 	}
+
 	stat, err := file.Stat()
 	if err == nil && stat.Size() > 0 {
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", stat.Size()))
 	}
 
 	n, _ := io.Copy(w, file)
-	Server.Debug("file", path, "copied", n, "bytes")
+	s.Debug("file", path, "copied", n, "bytes")
 }
 
-func (Server *WebUIServer) handleLiveness(w http.ResponseWriter, _ *http.Request) {
-	if Server.ctx.Err() != nil {
+func (s *WebUIServer) handleLiveness(w http.ResponseWriter, _ *http.Request) {
+	if s.ctx.Err() != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		_, _ = w.Write([]byte(`{"status": "unavailable"}`))
 		return
@@ -132,8 +179,8 @@ func (Server *WebUIServer) handleLiveness(w http.ResponseWriter, _ *http.Request
 	_, _ = w.Write([]byte(`{"status": "ok"}`))
 }
 
-func (Server *WebUIServer) handleReadiness(w http.ResponseWriter, _ *http.Request) {
-	if Server.readyChecker.Ready() {
+func (s *WebUIServer) handleReadiness(w http.ResponseWriter, _ *http.Request) {
+	if s.readyChecker.Ready() {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status": "ok"}`))
 		return
@@ -142,7 +189,7 @@ func (Server *WebUIServer) handleReadiness(w http.ResponseWriter, _ *http.Reques
 	_, _ = w.Write([]byte(`{"status": "busy"}`))
 }
 
-func (Server *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Request) {
+func (s *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
 		// test database connection
