@@ -6,19 +6,20 @@ import (
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 )
 
 var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
 
 func TestMain(m *testing.M) {
 	// Setup
-
-	err := RPCTestsSetup()
+	rpcTeardown, err := testutil.SetupRPCServers()
 	if err != nil {
+		rpcTeardown()
 		panic(err)
 	}
-
-	err = PGTestsSetup()
+	var pgTearDown func()
+	pgContainer, pgTearDown, err = testutil.SetupPostgresContainer()
 	if err != nil {
 		panic(err)
 	}
@@ -27,8 +28,7 @@ func TestMain(m *testing.M) {
 	exitCode := m.Run()
 
 	// Teardown
-	RPCTestsTeardown()
-	PGTestsTeardown()
-
+	pgTearDown()
+	rpcTeardown()
 	os.Exit(exitCode)
 }
