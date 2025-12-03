@@ -19,6 +19,7 @@
 dist
 docs/godoc
 site
+build
 
 # Generated protobuf files
 *.pb.go

@@ -21,7 +21,10 @@
   "panels": [
     {
       "columns": [],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "description": "",
       "fontSize": "90%",
       "gridPos": {
@@ -219,7 +222,10 @@
     },
     {
       "columns": [],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "description": "",
       "fontSize": "90%",
       "gridPos": {
@@ -383,7 +389,10 @@
     },
     {
       "columns": [],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "description": "",
       "fontSize": "90%",
       "gridPos": {
@@ -564,7 +573,10 @@
     },
     {
       "columns": [],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "description": "total_time - blk_read_time -blk_write_time. Requires track_io_timing=on",
       "fontSize": "100%",
       "gridPos": {
@@ -720,7 +732,10 @@
     },
     {
       "columns": [],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "description": "Does not include Shared Buffer activities. Same as 'By total runtime' if no direct IO was performed. Requires track_io_timing=on",
       "fontSize": "100%",
       "gridPos": {
@@ -876,7 +891,10 @@
     },
     {
       "columns": [],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "description": "Shared buffer + temp buffer reading / writing",
       "fontSize": "100%",
       "gridPos": {
@@ -1050,7 +1068,10 @@
     },
     {
       "columns": [],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "description": "Based on pg_stat_statements.temp_blks_written",
       "fontSize": "100%",
       "gridPos": {
@@ -1241,7 +1262,10 @@
     },
     {
       "content": "<h2>Brought to you by</h2><div style=\"padding: 25px;\"><a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\"></a></div>",
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "editable": true,
       "error": false,
       "gridPos": {
@@ -1266,7 +1290,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -1380,12 +1407,10 @@
     "list": [
       {
         "allValue": null,
-        "current": {
-          "tags": [],
-          "text": null,
-          "value": null
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "pgwatch-metrics"
         },
-        "datasource": null,
         "definition": "",
         "hide": 0,
         "includeAll": false,

@@ -16,12 +16,12 @@ type loginReq struct {
 	Password string `json:"password"`
 }
 
-func (Server *WebUIServer) IsCorrectPassword(lr loginReq) bool {
-	return (Server.WebUser+Server.WebPassword == "") ||
-		(Server.WebUser == lr.Username && Server.WebPassword == lr.Password)
+func (s *WebUIServer) IsCorrectPassword(lr loginReq) bool {
+	return (s.WebUser+s.WebPassword == "") ||
+		(s.WebUser == lr.Username && s.WebPassword == lr.Password)
 }
 
-func (Server *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
+func (s *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var (
 		err   error
 		lr    loginReq
@@ -39,7 +39,7 @@ func (Server *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 		if err = jsoniter.ConfigFastest.NewDecoder(r.Body).Decode(&lr); err != nil {
 			return
 		}
-		if !Server.IsCorrectPassword(lr) {
+		if !s.IsCorrectPassword(lr) {
 			http.Error(w, "can not authenticate this user", http.StatusUnauthorized)
 			return
 		}

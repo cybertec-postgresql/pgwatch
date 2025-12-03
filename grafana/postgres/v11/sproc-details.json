@@ -345,11 +345,6 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "test",
-          "value": "test"
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
@@ -371,11 +366,6 @@
         "useTags": false
       },
       {
-        "current": {
-          "selected": false,
-          "text": "_timescaledb_functions.policy_job_error_retention",
-          "value": "_timescaledb_functions.policy_job_error_retention"
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"

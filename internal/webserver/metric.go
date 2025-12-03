@@ -10,7 +10,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 )
 
-func (server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request) {
+func (s *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	var (
 		err    error
 		status = http.StatusInternalServerError
@@ -27,7 +27,7 @@ func (server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request)
 	switch r.Method {
 	case http.MethodGet:
 		// return stored metrics
-		if res, err = server.GetMetrics(); err != nil {
+		if res, err = s.GetMetrics(); err != nil {
 			return
 		}
 		_, err = w.Write([]byte(res))
@@ -39,7 +39,7 @@ func (server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request)
 		}
 		// For collection endpoint POST, extract name from request body
 		// The individual endpoint PUT /metric/{name} should be used for updates
-		err = server.CreateMetric(params)
+		err = s.CreateMetric(params)
 		if err != nil {
 			if errors.Is(err, metrics.ErrMetricExists) {
 				status = http.StatusConflict
@@ -60,9 +60,9 @@ func (server *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request)
 }
 
 // GetMetrics returns the list of metrics
-func (server *WebUIServer) GetMetrics() (res string, err error) {
+func (s *WebUIServer) GetMetrics() (res string, err error) {
 	var mr *metrics.Metrics
-	if mr, err = server.metricsReaderWriter.GetMetrics(); err != nil {
+	if mr, err = s.metricsReaderWriter.GetMetrics(); err != nil {
 		return
 	}
 	b, _ := jsoniter.ConfigFastest.Marshal(mr.MetricDefs)
@@ -71,18 +71,18 @@ func (server *WebUIServer) GetMetrics() (res string, err error) {
 }
 
 // UpdateMetric updates the stored metric information
-func (server *WebUIServer) UpdateMetric(name string, params []byte) error {
+func (s *WebUIServer) UpdateMetric(name string, params []byte) error {
 	var m metrics.Metric
 	err := jsoniter.ConfigFastest.Unmarshal(params, &m)
 	if err != nil {
 		return err
 	}
-	return server.metricsReaderWriter.UpdateMetric(name, m)
+	return s.metricsReaderWriter.UpdateMetric(name, m)
 }
 
 // CreateMetric creates new metrics (for REST collection endpoint)
 // Supports both single and bulk creation from a map of metric names to metric definitions
-func (server *WebUIServer) CreateMetric(params []byte) error {
+func (s *WebUIServer) CreateMetric(params []byte) error {
 	// For collection endpoint, we expect the JSON to be a map with name as key and metric as value
 	var namedMetrics map[string]metrics.Metric
 	err := jsoniter.ConfigFastest.Unmarshal(params, &namedMetrics)
@@ -95,7 +95,7 @@ func (server *WebUIServer) CreateMetric(params []byte) error {
 
 	// Create all metrics, returning the first error encountered
 	for metricName, metric := range namedMetrics {
-		if err := server.metricsReaderWriter.CreateMetric(metricName, metric); err != nil {
+		if err := s.metricsReaderWriter.CreateMetric(metricName, metric); err != nil {
 			return err
 		}
 	}
@@ -103,13 +103,13 @@ func (server *WebUIServer) CreateMetric(params []byte) error {
 }
 
 // DeleteMetric removes the metric from the configuration
-func (server *WebUIServer) DeleteMetric(name string) error {
-	return server.metricsReaderWriter.DeleteMetric(name)
+func (s *WebUIServer) DeleteMetric(name string) error {
+	return s.metricsReaderWriter.DeleteMetric(name)
 }
 
 // handleMetricItem handles individual metric operations using REST-compliant HTTP methods
 // and path parameters like /metric/{name}
-func (server *WebUIServer) handleMetricItem(w http.ResponseWriter, r *http.Request) {
+func (s *WebUIServer) handleMetricItem(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	if name == "" {
 		http.Error(w, "metric name is required", http.StatusBadRequest)
@@ -118,11 +118,11 @@ func (server *WebUIServer) handleMetricItem(w http.ResponseWriter, r *http.Reque
 
 	switch r.Method {
 	case http.MethodGet:
-		server.getMetricByName(w, name)
+		s.getMetricByName(w, name)
 	case http.MethodPut:
-		server.updateMetricByName(w, r, name)
+		s.updateMetricByName(w, r, name)
 	case http.MethodDelete:
-		server.deleteMetricByName(w, name)
+		s.deleteMetricByName(w, name)
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
 		w.WriteHeader(http.StatusOK)
@@ -133,7 +133,7 @@ func (server *WebUIServer) handleMetricItem(w http.ResponseWriter, r *http.Reque
 }
 
 // getMetricByName returns a specific metric by name
-func (server *WebUIServer) getMetricByName(w http.ResponseWriter, name string) {
+func (s *WebUIServer) getMetricByName(w http.ResponseWriter, name string) {
 	var (
 		err    error
 		status = http.StatusInternalServerError
@@ -146,7 +146,7 @@ func (server *WebUIServer) getMetricByName(w http.ResponseWriter, name string) {
 		}
 	}()
 
-	if mr, err = server.metricsReaderWriter.GetMetrics(); err != nil {
+	if mr, err = s.metricsReaderWriter.GetMetrics(); err != nil {
 		return
 	}
 
@@ -162,7 +162,7 @@ func (server *WebUIServer) getMetricByName(w http.ResponseWriter, name string) {
 }
 
 // updateMetricByName updates an existing metric using PUT semantics
-func (server *WebUIServer) updateMetricByName(w http.ResponseWriter, r *http.Request, name string) {
+func (s *WebUIServer) updateMetricByName(w http.ResponseWriter, r *http.Request, name string) {
 	var (
 		err    error
 		params []byte
@@ -186,7 +186,7 @@ func (server *WebUIServer) updateMetricByName(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err = server.metricsReaderWriter.UpdateMetric(name, m); err != nil {
+	if err = s.metricsReaderWriter.UpdateMetric(name, m); err != nil {
 		return
 	}
 
@@ -194,8 +194,8 @@ func (server *WebUIServer) updateMetricByName(w http.ResponseWriter, r *http.Req
 }
 
 // deleteMetricByName deletes a metric by name
-func (server *WebUIServer) deleteMetricByName(w http.ResponseWriter, name string) {
-	if err := server.metricsReaderWriter.DeleteMetric(name); err != nil {
+func (s *WebUIServer) deleteMetricByName(w http.ResponseWriter, name string) {
+	if err := s.metricsReaderWriter.DeleteMetric(name); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -203,7 +203,7 @@ func (server *WebUIServer) deleteMetricByName(w http.ResponseWriter, name string
 	w.WriteHeader(http.StatusOK)
 }
 
-func (server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request) {
+func (s *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request) {
 	var (
 		err    error
 		status = http.StatusInternalServerError
@@ -220,7 +220,7 @@ func (server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 	switch r.Method {
 	case http.MethodGet:
 		// return stored Presets
-		if res, err = server.GetPresets(); err != nil {
+		if res, err = s.GetPresets(); err != nil {
 			return
 		}
 		_, err = w.Write([]byte(res))
@@ -230,7 +230,7 @@ func (server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 		if params, err = io.ReadAll(r.Body); err != nil {
 			return
 		}
-		err = server.CreatePreset(params)
+		err = s.CreatePreset(params)
 		if err != nil {
 			if errors.Is(err, metrics.ErrPresetExists) {
 				status = http.StatusConflict
@@ -250,18 +250,18 @@ func (server *WebUIServer) handlePresets(w http.ResponseWriter, r *http.Request)
 }
 
 // UpdatePreset updates the stored preset
-func (server *WebUIServer) UpdatePreset(name string, params []byte) error {
+func (s *WebUIServer) UpdatePreset(name string, params []byte) error {
 	var p metrics.Preset
 	err := jsoniter.ConfigFastest.Unmarshal(params, &p)
 	if err != nil {
 		return err
 	}
-	return server.metricsReaderWriter.UpdatePreset(name, p)
+	return s.metricsReaderWriter.UpdatePreset(name, p)
 }
 
 // CreatePreset creates new presets (for REST collection endpoint)
 // Supports both single and bulk creation
-func (server *WebUIServer) CreatePreset(params []byte) error {
+func (s *WebUIServer) CreatePreset(params []byte) error {
 	// We expect the JSON to be a map with name as key and preset as value
 	var namedPresets map[string]metrics.Preset
 	err := jsoniter.ConfigFastest.Unmarshal(params, &namedPresets)
@@ -274,7 +274,7 @@ func (server *WebUIServer) CreatePreset(params []byte) error {
 
 	// Create all presets, returning the first error encountered
 	for presetName, preset := range namedPresets {
-		if err := server.metricsReaderWriter.CreatePreset(presetName, preset); err != nil {
+		if err := s.metricsReaderWriter.CreatePreset(presetName, preset); err != nil {
 			return err
 		}
 	}
@@ -282,9 +282,9 @@ func (server *WebUIServer) CreatePreset(params []byte) error {
 }
 
 // GetPresets returns the list of available presets
-func (server *WebUIServer) GetPresets() (res string, err error) {
+func (s *WebUIServer) GetPresets() (res string, err error) {
 	var mr *metrics.Metrics
-	if mr, err = server.metricsReaderWriter.GetMetrics(); err != nil {
+	if mr, err = s.metricsReaderWriter.GetMetrics(); err != nil {
 		return
 	}
 	b, _ := jsoniter.ConfigFastest.Marshal(mr.PresetDefs)
@@ -293,13 +293,13 @@ func (server *WebUIServer) GetPresets() (res string, err error) {
 }
 
 // DeletePreset removes the preset from the configuration
-func (server *WebUIServer) DeletePreset(name string) error {
-	return server.metricsReaderWriter.DeletePreset(name)
+func (s *WebUIServer) DeletePreset(name string) error {
+	return s.metricsReaderWriter.DeletePreset(name)
 }
 
 // handlePresetItem handles individual preset operations using REST-compliant HTTP methods
 // and path parameters like /preset/{name}
-func (server *WebUIServer) handlePresetItem(w http.ResponseWriter, r *http.Request) {
+func (s *WebUIServer) handlePresetItem(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	if name == "" {
 		http.Error(w, "preset name is required", http.StatusBadRequest)
@@ -308,11 +308,11 @@ func (server *WebUIServer) handlePresetItem(w http.ResponseWriter, r *http.Reque
 
 	switch r.Method {
 	case http.MethodGet:
-		server.getPresetByName(w, name)
+		s.getPresetByName(w, name)
 	case http.MethodPut:
-		server.updatePresetByName(w, r, name)
+		s.updatePresetByName(w, r, name)
 	case http.MethodDelete:
-		server.deletePresetByName(w, name)
+		s.deletePresetByName(w, name)
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, PUT, DELETE, OPTIONS")
 		w.WriteHeader(http.StatusOK)
@@ -323,7 +323,7 @@ func (server *WebUIServer) handlePresetItem(w http.ResponseWriter, r *http.Reque
 }
 
 // getPresetByName returns a specific preset by name
-func (server *WebUIServer) getPresetByName(w http.ResponseWriter, name string) {
+func (s *WebUIServer) getPresetByName(w http.ResponseWriter, name string) {
 
 	var (
 		err error
@@ -336,7 +336,7 @@ func (server *WebUIServer) getPresetByName(w http.ResponseWriter, name string) {
 		}
 	}()
 
-	if mr, err = server.metricsReaderWriter.GetMetrics(); err != nil {
+	if mr, err = s.metricsReaderWriter.GetMetrics(); err != nil {
 		return
 	}
 
@@ -351,7 +351,7 @@ func (server *WebUIServer) getPresetByName(w http.ResponseWriter, name string) {
 }
 
 // updatePresetByName updates an existing preset using PUT semantics
-func (server *WebUIServer) updatePresetByName(w http.ResponseWriter, r *http.Request, name string) {
+func (s *WebUIServer) updatePresetByName(w http.ResponseWriter, r *http.Request, name string) {
 	params, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -364,7 +364,7 @@ func (server *WebUIServer) updatePresetByName(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := server.metricsReaderWriter.UpdatePreset(name, p); err != nil {
+	if err := s.metricsReaderWriter.UpdatePreset(name, p); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -373,8 +373,8 @@ func (server *WebUIServer) updatePresetByName(w http.ResponseWriter, r *http.Req
 }
 
 // deletePresetByName deletes a preset by name
-func (server *WebUIServer) deletePresetByName(w http.ResponseWriter, name string) {
-	if err := server.metricsReaderWriter.DeletePreset(name); err != nil {
+func (s *WebUIServer) deletePresetByName(w http.ResponseWriter, name string) {
+	if err := s.metricsReaderWriter.DeletePreset(name); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

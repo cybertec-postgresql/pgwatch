@@ -1014,7 +1014,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  ((hit-hit_lag)::numeric / ((hit-hit_lag) + (read-read_lag)))*100 as \"Shared buffers hit ratio\"\nfrom (\n        select \n          (data->>'blks_hit')::int8 as hit, lag((data->>'blks_hit')::int8) over w as hit_lag,\n          (data->>'blks_read')::int8 as read, lag((data->>'blks_read')::int8) over w as read_lag,\n          (data->>'xact_rollback')::int8 as roll, lag((data->>'xact_rollback')::int8) over w as roll_lag,\n          (data->>'xact_commit')::int8 as comm, lag((data->>'xact_commit')::int8) over w as comm_lag,\n          time\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere hit > hit_lag or read > read_lag\norder by 1",
+          "rawSql": "select\n  ((hit-hit_lag)::numeric / ((hit-hit_lag) + (read-read_lag)))*100 as \"Shared buffers hit ratio\"\nfrom (\n        select \n          (data->>'blks_hit')::int8 as hit, lag((data->>'blks_hit')::int8) over w as hit_lag,\n          (data->>'blks_read')::int8 as read, lag((data->>'blks_read')::int8) over w as read_lag\n        from db_stats\n        where dbname = '$dbname' and $__timeFilter(time)\n        window w as (order by time)\n) x\nwhere hit > hit_lag or read > read_lag\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
