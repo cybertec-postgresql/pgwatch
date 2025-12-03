@@ -28,7 +28,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "PRIMARY - accepting writes, REPLICA - read-only",
       "format": "none",
@@ -161,7 +164,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "Time from last Postgres process restart.  < 5m Error, < 30m Warn thresholds by default",
       "format": "dtdurations",
@@ -295,7 +301,10 @@
         "#FA6400",
         "#299c46"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "\"SHOW server_version_num;\"\n110005 => 11.5",
       "format": "none",
@@ -429,7 +438,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "Longest query duration during last $online_interval",
       "format": "dtdurations",
@@ -563,7 +575,10 @@
         "#299c46",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "Connected sessions, including Postgres internal processes like Autovacuum. < 1 Warn / > 300 Error thresholds by default",
       "format": "short",
@@ -703,7 +718,10 @@
         "#FA6400",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "\"max_connections\" configuration setting. Changing requires re-start. 500/1000 Warn / Error thresholds by default",
       "format": "short",
@@ -843,7 +861,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "Max number of queries waiting on resources locked by other sessions.  1 Warn / 5 Err thresholds by default",
       "format": "short",
@@ -983,7 +1004,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Shared Buffers is the Postgres -managed file cache and 90%+ is what you normally want to see for best performance.",
       "format": "percent",
@@ -1123,7 +1147,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "0.5% Warn / 1% Error thresholds by default",
       "format": "percent",
@@ -1257,7 +1284,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Transactions per Second. Last $online_interval average. <0.1 % Error / < 1.0 Warn thresholds by default",
       "format": "short",
@@ -1391,7 +1421,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Queries per Second based on  \"pg_stat_statements\" extension info. Last $online_interval avg. < 0.1 Error / < 1 Warning thresholds by default",
       "format": "short",
@@ -1525,7 +1558,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "Transactions opened but where no queries are being executed.",
       "format": "short",
@@ -1665,7 +1701,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Size for selected DB only",
       "format": "bytes",
@@ -1799,7 +1838,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "",
       "format": "bytes",
@@ -1933,7 +1975,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Assumes get_psutil_disk wrapper being installed. 10/50GB Warn/Error thresholds by default",
       "format": "bytes",
@@ -2073,7 +2118,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Last $online_interval avg. based on \"pg_stat_statements\" info.  > 0.5s Warning / > 5s  Error thresholds by default",
       "format": "ms",
@@ -2207,7 +2255,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "Server configuration changes.  >1 Warn thresholds by default",
       "format": "short",
@@ -2347,7 +2398,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "Number of DDL changes i.e. new or changed tables, columns, functions etc.  >1 Warn thresholds by default",
       "format": "short",
@@ -2487,7 +2541,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "Based on pg_stat_archiver. N/A when archiving is not enabled.",
       "format": "none",
@@ -2631,7 +2688,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Transaction Log Folder size.  Assumes get_wal_size helper being installed. 1/10 GB Warn / 50  Error  thresholds by default",
       "format": "bytes",
@@ -2765,7 +2825,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "Invalid indexes should be dropped as they're updated on DML operations but cannot be used for speeding up queries. In case multiple indexes of same structure Postgres will use the smallest so the others can be dropped. 'N/A' displayed both when no duplicate indexes or no metrics data for index_stats.",
       "format": "short",
@@ -2893,7 +2956,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "i.e. AUTOVACUUM disabled globally or per table.",
       "format": "short",
@@ -3021,7 +3087,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "Checkpoints should normally be performed by the background \"Checkpointer\" process. If seeing high numbers then adjusting server configuration is recommended.",
       "format": "none",
@@ -3161,7 +3230,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Estimated extra space held by tables (excluding indexes) that would disappear after \"compacting\".",
       "format": "bytes",
@@ -3289,7 +3361,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Transaction logs generation velocity.",
       "format": "bytes",
@@ -3435,7 +3510,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Postgres writes temporary files to disk when sorting / grouping  big amounts of data that doesn't fit into \"work_mem\".  10/100 MB Warn / Error by default",
       "format": "bytes",
@@ -3581,7 +3659,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "Long running AUTOVACUUM processes can hint at workload or configuration  problems",
       "format": "dtdurations",
@@ -3715,7 +3796,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Frequent sequential scans on bigger tables should usually be avoided. Warn / Error thresholds: 10 / 100",
       "format": "short",
@@ -3861,7 +3945,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "On non-temporary  tables",
       "format": "short",
@@ -4007,7 +4094,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "On non-temporary  tables",
       "format": "short",
@@ -4153,7 +4243,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "On non-temporary  tables",
       "format": "short",
@@ -4299,7 +4392,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "Based on db_stats.backup_duration_s  / pg_backup_start_time() [9.3+] function. N/A if no backup in progress.",
       "format": "dtdurations",
@@ -4433,7 +4529,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Max. age since last VACUUM FREEZE. Could hint at problems when going into 100s of millions",
       "format": "short",
@@ -4567,7 +4666,10 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "In TX. Holds back VACUUM",
       "format": "short",
@@ -4707,7 +4809,10 @@
         "#bf1b00",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 0,
       "description": "Inactive repl. slots accumulate WAL files until disk space runs out. Re-animate the replica or use  pg_drop_replication_slot() to remove the slot so that Postgres can delete the un-needed WALs.",
       "format": "none",
@@ -4841,7 +4946,10 @@
         "#FA6400",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": null,
       "description": "\"Apply\" (data made visible to queries on replica)  lag in bytes",
       "format": "bytes",
@@ -5012,7 +5120,10 @@
           "text": null,
           "value": null
         },
-        "datasource": null,
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "pgwatch-metrics"
+        },
         "definition": "",
         "hide": 0,
         "includeAll": false,

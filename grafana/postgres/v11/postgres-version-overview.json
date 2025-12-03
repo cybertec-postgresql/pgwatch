@@ -279,11 +279,6 @@
         "useTags": false
       },
       {
-        "current": {
-          "selected": false,
-          "text": "160002",
-          "value": "160002"
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"

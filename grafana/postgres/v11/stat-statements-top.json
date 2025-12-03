@@ -1279,11 +1279,6 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "isNone": true,
-          "text": "None",
-          "value": ""
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
