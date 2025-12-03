@@ -2111,7 +2111,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select \n    dbname, pct\nfrom (\n    select \n        dbname,\n        (sum(total_jit - total_jit_lag) / sum(total_time - total_time_lag)) * 100 as pct\n    from\n    (\n        select\n            dbname,\n            (data->>'total_jit_time')::float8 as total_jit, lag((data->>'total_jit_time')::float8) over w as total_jit_lag,\n            (data->>'total_time')::float8 as total_time, lag((data->>'total_time')::float8) over w as total_time_lag\n        from stat_statements_jit\n        where $__timeFilter(time)\n        window w as (order by time)\n    )\n    where total_time > total_time_lag\n    group by 1\n)\nwhere pct > 0\norder by 2 desc\nlimit $top_limit",
+          "rawSql": "select \n    dbname, pct\nfrom (\n    select \n        dbname,\n        (sum(total_jit - total_jit_lag) / sum(total_time - total_time_lag)) * 100 as pct\n    from\n    (\n        select\n            dbname,\n            (data->>'jit_generation_time')::float8 as total_jit, lag((data->>'jit_generation_time')::float8) over w as total_jit_lag,\n            (data->>'total_time')::float8 as total_time, lag((data->>'total_time')::float8) over w as total_time_lag\n        from stat_statements\n        where $__timeFilter(time)\n        window w as (order by time)\n    )\n    where total_time > total_time_lag\n    group by 1\n)\nwhere pct > 0\norder by 2 desc\nlimit $top_limit",
           "refId": "A",
           "select": [
             [
