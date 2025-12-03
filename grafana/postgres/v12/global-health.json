@@ -1971,7 +1971,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Top $top_limit sources by the percentage of total query execution time spent in JIT. (requires stat_statements_jit metric).",
+      "description": "Top $top_limit sources by the percentage of total query execution time spent in JIT. (requires stat_statements metric).",
       "fieldConfig": {
         "defaults": {
           "color": {
