@@ -10,7 +10,7 @@
         <link rel="canonical" href="https://pgwat.ch/devel/reference/cli_env.html">
       
       
-        <link rel="prev" href="../howto/implement_grpc_server.html">
+        <link rel="prev" href="../howto/reverse_proxy.html">
       
       
         <link rel="next" href="rest.html">
@@ -1203,6 +1203,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/reverse_proxy.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reverse Proxy Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2259,6 +2287,12 @@ ENV: <code>$PW_WEBDISABLE</code></p>
 ENV: <code>$PW_WEBADDR</code></p>
 </li>
 <li>
+<p><code>--web-base-path=</code></p>
+<p>Base path for web UI and API endpoints (e.g., 'pgwatch' for reverse proxy setups). When set, all web endpoints will be served under this path.<br>
+ENV: <code>$PW_WEBBASEPATH</code></p>
+<p>Example: <code>--web-base-path=/pgwatch</code></p>
+</li>
+<li>
 <p><code>--web-user=</code></p>
 <p>Admin username.<br>
 ENV: <code>$PW_WEBUSER</code></p>
@@ -2377,7 +2411,7 @@ PostgreSQL version to get SQL for.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer">
         
           
-          <a href="../howto/implement_grpc_server.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Implement Сustom gRPC Sink">
+          <a href="../howto/reverse_proxy.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Reverse Proxy Setup">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
@@ -2387,7 +2421,7 @@ PostgreSQL version to get SQL for.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Implement Сustom gRPC Sink
+                Reverse Proxy Setup
               </div>
             </div>
           </a>

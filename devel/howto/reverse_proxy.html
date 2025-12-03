@@ -7,13 +7,13 @@
       
       
       
-        <link rel="canonical" href="https://pgwat.ch/devel/howto/config_db_bootstrap.html">
+        <link rel="canonical" href="https://pgwat.ch/devel/howto/reverse_proxy.html">
       
       
-        <link rel="prev" href="using_managed_services.html">
+        <link rel="prev" href="implement_grpc_server.html">
       
       
-        <link rel="next" href="metrics_db_bootstrap.html">
+        <link rel="next" href="../reference/cli_env.html">
       
       
         
@@ -24,7 +24,7 @@
     
     
       
-        <title>Bootstrapping the Configuration Database - 🔬 pgwatch</title>
+        <title>Running Behind a Reverse Proxy - 🔬 pgwatch</title>
       
     
     
@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#choosing-a-database" class="md-skip">
+        <a href="#configuration" class="md-skip">
           Skip to content
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Bootstrapping the Configuration Database
+              Running Behind a Reverse Proxy
             
           </span>
         </div>
@@ -1100,35 +1100,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Bootstrapping the Configuration Database
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="config_db_bootstrap.html" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="config_db_bootstrap.html" class="md-nav__link">
         
   
   
@@ -1144,68 +1119,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#choosing-a-database" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Choosing a Database
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#creating-the-database" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Creating the Database
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#init-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Init (optional)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Usage
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1299,10 +1212,35 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="reverse_proxy.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reverse Proxy Setup
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="reverse_proxy.html" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1318,6 +1256,135 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pgwatch-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pgwatch Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apache
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nginx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nginx
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-the-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing the Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#static-assets-not-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Static Assets Not Loading
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#websocket-connection-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WebSocket Connection Failures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authentication-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1862,10 +1929,60 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#choosing-a-database" class="md-nav__link">
+  <a href="#configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Choosing a Database
+        Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pgwatch-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pgwatch Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apache
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nginx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nginx
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-the-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing the Configuration
       
     </span>
   </a>
@@ -1873,35 +1990,52 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#creating-the-database" class="md-nav__link">
+  <a href="#common-issues" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Creating the Database
+        Common Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#static-assets-not-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Static Assets Not Loading
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#init-optional" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#websocket-connection-failures" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Init (optional)
+        WebSocket Connection Failures
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#authentication-issues" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Usage
+        Authentication Issues
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1922,7 +2056,7 @@
 
 
   
-    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/howto/config_db_bootstrap.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/howto/reverse_proxy.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
     </a>
@@ -1930,72 +2064,96 @@
   
 
 
-  <h1>Bootstrapping the Configuration Database</h1>
+  <h1>Reverse Proxy Setup</h1>
 
-<h2 id="choosing-a-database">Choosing a Database</h2>
-<p>pgwatch supports any database that supports the PostgreSQL wire protocol. This includes:</p>
+<p>When running pgwatch in production environments, you may want to expose it through a reverse proxy (like Apache, Nginx, or Traefik) on a different path instead of exposing its port directly. This guide shows you how to configure pgwatch for such setups.</p>
+<h2 id="configuration">Configuration</h2>
+<h3 id="pgwatch-configuration">pgwatch Configuration</h3>
+<p>Use the <code>--web-base-path</code> option to specify the base path under which pgwatch should serve its content:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pgwatch<span class="w"> </span>--web-base-path<span class="o">=</span>pgwatch<span class="w"> </span>--web-addr<span class="o">=</span>:8432
+</span></code></pre></div>
+<p>Or using environment variables:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">PW_WEBBASEPATH</span><span class="o">=</span>pgwatch
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">PW_WEBADDR</span><span class="o">=</span>:8432
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>pgwatch
+</span></code></pre></div>
+<p>The web UI automatically adapts to the configured base path without requiring a rebuild.</p>
+<p>WebSockets are used for live log streaming. Make sure your reverse proxy is configured to support WebSocket connections.</p>
+<h3 id="apache">Apache</h3>
+<p>The <code>mod_proxy_wstunnel</code> module is required for the WebSocket proxy.</p>
+<div class="language-apache highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">&lt;VirtualHost</span><span class="w"> </span><span class="s">*:443</span><span class="nt">&gt;</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="nb">ServerName</span><span class="w"> </span>example.com
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="c"># Other SSL and domain configuration...</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nb">ProxyPass</span><span class="w"> </span><span class="sx">/pgwatch/log</span><span class="w"> </span>ws://localhost:8432/pgwatch/log
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nb">ProxyPassReverse</span><span class="w"> </span><span class="sx">/pgwatch/log</span><span class="w"> </span>ws://localhost:8432/pgwatch/log
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="nb">ProxyPass</span><span class="w"> </span><span class="sx">/pgwatch/</span><span class="w"> </span>http://localhost:8432/pgwatch/
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="nb">ProxyPassReverse</span><span class="w"> </span><span class="sx">/pgwatch/</span><span class="w"> </span>http://localhost:8432/pgwatch/
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="nb">ProxyPreserveHost</span><span class="w"> </span><span class="k">On</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="nt">&lt;Location</span><span class="w"> </span><span class="s">/pgwatch/</span><span class="nt">&gt;</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">        </span><span class="c"># Optional: Add authentication</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">        </span><span class="nb">AuthUserFile</span><span class="w"> </span><span class="sx">/etc/apache2/admpasswd</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">        </span><span class="nb">AuthType</span><span class="w"> </span>Basic
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">        </span><span class="nb">AuthName</span><span class="w"> </span><span class="s2">"pgwatch Administration"</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">        </span><span class="nt">&lt;RequireAll&gt;</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">            </span><span class="nb">Require</span><span class="w"> </span>valid-user
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">        </span><span class="nt">&lt;/RequireAll&gt;</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">    </span><span class="nt">&lt;/Location&gt;</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="nt">&lt;/VirtualHost&gt;</span>
+</span></code></pre></div>
+<h3 id="nginx">Nginx</h3>
+<p>WebSocket support is automatic with the proxy configuration shown here. Nginx will upgrade the connection when needed.</p>
+<div class="language-nginx highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">443</span><span class="w"> </span><span class="s">ssl</span><span class="p">;</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">example.com</span><span class="p">;</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="c1"># Other SSL and domain configuration...</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/pgwatch/</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:8432/pgwatch/</span><span class="p">;</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">        </span><span class="c1"># Optional: Add authentication</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">        </span><span class="kn">auth_basic</span><span class="w"> </span><span class="s">"pgwatch</span><span class="w"> </span><span class="s">Administration"</span><span class="p">;</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">        </span><span class="kn">auth_basic_user_file</span><span class="w"> </span><span class="s">/etc/nginx/.htpasswd</span><span class="p">;</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="p">}</span>
+</span></code></pre></div>
+<h2 id="testing-the-configuration">Testing the Configuration</h2>
+<p>After configuring your reverse proxy and starting pgwatch:</p>
+<ol>
+<li>Verify the web UI loads: <code>https://example.com/pgwatch/</code></li>
+<li>Check that API endpoints work: <code>https://example.com/pgwatch/readiness</code></li>
+<li>Test WebSocket log streaming in the UI's Logs page</li>
+<li>Verify that navigation between pages works correctly</li>
+</ol>
+<h2 id="common-issues">Common Issues</h2>
+<h3 id="static-assets-not-loading">Static Assets Not Loading</h3>
+<p>Make sure:</p>
 <ul>
-<li>PostgreSQL</li>
-<li>TimescaleDB</li>
-<li>CitusDB</li>
-<li>CockroachDB</li>
-<li>many more</li>
+<li>The reverse proxy's <code>ProxyPass</code> directive includes the base path</li>
+<li>Both backend (<code>--web-base-path</code>) and frontend use the same path (frontend reads it dynamically from backend)</li>
 </ul>
-<p>We will use PostgreSQL in this guide. But the steps are similar for other databases. It's up to you to choose the database that best fits your needs and set it up accordingly.</p>
-<h2 id="creating-the-database">Creating the Database</h2>
-<p>First, we need to create a database for storing the configuration. We will use the <code>psql</code> command-line tool to create the database. You can also use a GUI tool like pgAdmin to create the database.</p>
-<p>Let's assume we want to create a database named <code>pgwatch</code> on a completely fresh PostgreSQL installation.
-It is wise to use a special role for the configuration database, so we will create a role named <code>pgwatch</code> and assign it to the <code>pgwatch</code> database.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>$ psql -U postgres -h localhost -p 5432 -d postgres
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>psql (17.2)
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>postgres=# CREATE ROLE pgwatch WITH LOGIN PASSWORD 'pgwatchadmin';
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>CREATE ROLE
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>postgres=# CREATE DATABASE pgwatch OWNER pgwatch;
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>CREATE DATABASE
-</span></code></pre></div>
-<p>That's it! We have created a database named <code>pgwatch</code> with the owner <code>pgwatch</code>. Now we can proceed to the next step.</p>
-<h2 id="init-optional">Init (optional)</h2>
-<p>pgwatch will automatically create the necessary tables and indexes in the database when it starts. But in case
-you want to create the schema as a separate step, you can use the <code>config init</code> command. The only thing you
-need is to provide the connection string to the database.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch config init
-</span></code></pre></div>
-<p>Or you can use the <code>config init</code> command with the <code>--metrics</code> flag, since metrics and sources share the same database.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pgwatch --metrics=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch config init
-</span></code></pre></div>
-<h2 id="usage">Usage</h2>
-<p>You can now configure pgwatch to use the <code>pgwatch</code> database as the configuration database for storing monitored sources,
-metric deinitions and presets.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>$ pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=postgresql://pgwatch@10.0.0.42/measurements
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>...
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>[INFO] [metrics:75] [presets:17] [sources:2] sources and metrics refreshed
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>...
-</span></code></pre></div>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>Even though configuration database can hold both sources and metrics definitions,
-you are free to use any combination of configurations. For example, you can use a database
-for metrics and YAML file for sources, or vice versa.</p>
-</div>
-<p>That's it! You have successfully bootstrapped the configuration database for pgwatch.</p>
-<p>If now you want to see the tables created by pgwatch in the configuration database, you can connect to the database
-using the <code>psql</code> command-line tool and list the tables.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$ psql postgresql://pgwatch:pgwatchadmin@localhost/pgwatch
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>psql (17.2)
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>pgwatch=# \dt pgwatch.*
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>           List of relations
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a> Schema  |   Name    | Type  |  Owner
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>---------+-----------+-------+---------
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a> pgwatch | metric    | table | pgwatch
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a> pgwatch | migration | table | pgwatch
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a> pgwatch | preset    | table | pgwatch
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a> pgwatch | source    | table | pgwatch
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>(4 rows)
-</span></code></pre></div>
-<p>You may examine these tables to understand how pgwatch stores metrics and presets definitions, as well as what sources and how to monitor in the database.</p>
+<h3 id="websocket-connection-failures">WebSocket Connection Failures</h3>
+<p>Ensure:</p>
+<ul>
+<li>Your reverse proxy supports WebSocket upgrades</li>
+<li>The <code>/log</code> endpoint is properly proxied</li>
+<li>No firewall rules are blocking WebSocket connections</li>
+</ul>
+<h3 id="authentication-issues">Authentication Issues</h3>
+<p>If using both reverse proxy authentication and pgwatch's built-in authentication:</p>
+<ul>
+<li>The reverse proxy authentication happens first</li>
+<li>Users must authenticate twice (proxy, then pgwatch login)</li>
+<li>Consider disabling pgwatch authentication if using proxy-level auth</li>
+</ul>
 
 
 
@@ -2030,7 +2188,7 @@ using the <code>psql</code> command-line tool and list the tables.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer">
         
           
-          <a href="using_managed_services.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Using Managed Services">
+          <a href="implement_grpc_server.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Implement Сustom gRPC Sink">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
@@ -2040,20 +2198,20 @@ using the <code>psql</code> command-line tool and list the tables.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Using Managed Services
+                Implement Сustom gRPC Sink
               </div>
             </div>
           </a>
         
         
           
-          <a href="metrics_db_bootstrap.html" class="md-footer__link md-footer__link--next" aria-label="Next: Bootstraping the Measurements Database (Sink)">
+          <a href="../reference/cli_env.html" class="md-footer__link md-footer__link--next" aria-label="Next: CLI &amp; Environment Variables">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Bootstraping the Measurements Database (Sink)
+                CLI &amp; Environment Variables
               </div>
             </div>
             <div class="md-footer__button md-icon">

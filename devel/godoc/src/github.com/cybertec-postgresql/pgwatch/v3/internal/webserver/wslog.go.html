@@ -127,15 +127,15 @@
 <span id="L70" class="ln">    70  </span>	}
 <span id="L71" class="ln">    71  </span>}
 <span id="L72" class="ln">    72  </span>
-<span id="L73" class="ln">    73  </span>func (Server *WebUIServer) serveWsLog(w http.ResponseWriter, r *http.Request) {
+<span id="L73" class="ln">    73  </span>func (s *WebUIServer) serveWsLog(w http.ResponseWriter, r *http.Request) {
 <span id="L74" class="ln">    74  </span>	ws, err := upgrader.Upgrade(w, r, nil)
 <span id="L75" class="ln">    75  </span>	if err != nil {
-<span id="L76" class="ln">    76  </span>		Server.Error(err)
+<span id="L76" class="ln">    76  </span>		s.Error(err)
 <span id="L77" class="ln">    77  </span>		http.Error(w, err.Error(), http.StatusBadRequest)
 <span id="L78" class="ln">    78  </span>		return
 <span id="L79" class="ln">    79  </span>	}
-<span id="L80" class="ln">    80  </span>	Server.WithField(&#34;reguest&#34;, r.URL.String()).Debugf(&#34;established websocket connection&#34;)
-<span id="L81" class="ln">    81  </span>	l, _ := Server.Logger.(log.LoggerHooker)
+<span id="L80" class="ln">    80  </span>	s.WithField(&#34;reguest&#34;, r.URL.String()).Debugf(&#34;established websocket connection&#34;)
+<span id="L81" class="ln">    81  </span>	l, _ := s.Logger.(log.LoggerHooker)
 <span id="L82" class="ln">    82  </span>	done := make(chan struct{})
 <span id="L83" class="ln">    83  </span>	go writer(ws, l, done)
 <span id="L84" class="ln">    84  </span>	go reader(ws, done)

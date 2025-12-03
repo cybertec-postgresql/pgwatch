@@ -66,10 +66,11 @@
 <span id="L9" class="ln">     9  </span>type CmdOpts struct {
 <span id="L10" class="ln">    10  </span>	WebDisable  string `long:&#34;web-disable&#34; mapstructure:&#34;web-disable&#34; description:&#34;Disable REST API and/or web UI&#34; env:&#34;PW_WEBDISABLE&#34; optional:&#34;true&#34; optional-value:&#34;all&#34; choice:&#34;all&#34; choice:&#34;ui&#34;`
 <span id="L11" class="ln">    11  </span>	WebAddr     string `long:&#34;web-addr&#34; mapstructure:&#34;web-addr&#34; description:&#34;TCP address in the form &#39;host:port&#39; to listen on&#34; default:&#34;:8080&#34; env:&#34;PW_WEBADDR&#34;`
-<span id="L12" class="ln">    12  </span>	WebUser     string `long:&#34;web-user&#34; mapstructure:&#34;web-user&#34; description:&#34;Admin username&#34; env:&#34;PW_WEBUSER&#34;`
-<span id="L13" class="ln">    13  </span>	WebPassword string `long:&#34;web-password&#34; mapstructure:&#34;web-password&#34; description:&#34;Admin password&#34; env:&#34;PW_WEBPASSWORD&#34;`
-<span id="L14" class="ln">    14  </span>}
-<span id="L15" class="ln">    15  </span>
+<span id="L12" class="ln">    12  </span>	WebBasePath string `long:&#34;web-base-path&#34; mapstructure:&#34;web-base-path&#34; description:&#34;Base path for web UI and API endpoints (e.g., &#39;pgwatch&#39; for reverse proxy setups)&#34; env:&#34;PW_WEBBASEPATH&#34;`
+<span id="L13" class="ln">    13  </span>	WebUser     string `long:&#34;web-user&#34; mapstructure:&#34;web-user&#34; description:&#34;Admin username&#34; env:&#34;PW_WEBUSER&#34;`
+<span id="L14" class="ln">    14  </span>	WebPassword string `long:&#34;web-password&#34; mapstructure:&#34;web-password&#34; description:&#34;Admin password&#34; env:&#34;PW_WEBPASSWORD&#34;`
+<span id="L15" class="ln">    15  </span>}
+<span id="L16" class="ln">    16  </span>
 </pre><p></p>
 
 <div id="footer">

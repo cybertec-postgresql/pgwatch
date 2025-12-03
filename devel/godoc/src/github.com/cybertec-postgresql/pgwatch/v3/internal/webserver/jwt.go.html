@@ -73,12 +73,12 @@
 <span id="L16" class="ln">    16  </span>	Password string `json:&#34;password&#34;`
 <span id="L17" class="ln">    17  </span>}
 <span id="L18" class="ln">    18  </span>
-<span id="L19" class="ln">    19  </span>func (Server *WebUIServer) IsCorrectPassword(lr loginReq) bool {
-<span id="L20" class="ln">    20  </span>	return (Server.WebUser+Server.WebPassword == &#34;&#34;) ||
-<span id="L21" class="ln">    21  </span>		(Server.WebUser == lr.Username &amp;&amp; Server.WebPassword == lr.Password)
+<span id="L19" class="ln">    19  </span>func (s *WebUIServer) IsCorrectPassword(lr loginReq) bool {
+<span id="L20" class="ln">    20  </span>	return (s.WebUser+s.WebPassword == &#34;&#34;) ||
+<span id="L21" class="ln">    21  </span>		(s.WebUser == lr.Username &amp;&amp; s.WebPassword == lr.Password)
 <span id="L22" class="ln">    22  </span>}
 <span id="L23" class="ln">    23  </span>
-<span id="L24" class="ln">    24  </span>func (Server *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
+<span id="L24" class="ln">    24  </span>func (s *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 <span id="L25" class="ln">    25  </span>	var (
 <span id="L26" class="ln">    26  </span>		err   error
 <span id="L27" class="ln">    27  </span>		lr    loginReq
@@ -96,7 +96,7 @@
 <span id="L39" class="ln">    39  </span>		if err = jsoniter.ConfigFastest.NewDecoder(r.Body).Decode(&amp;lr); err != nil {
 <span id="L40" class="ln">    40  </span>			return
 <span id="L41" class="ln">    41  </span>		}
-<span id="L42" class="ln">    42  </span>		if !Server.IsCorrectPassword(lr) {
+<span id="L42" class="ln">    42  </span>		if !s.IsCorrectPassword(lr) {
 <span id="L43" class="ln">    43  </span>			http.Error(w, &#34;can not authenticate this user&#34;, http.StatusUnauthorized)
 <span id="L44" class="ln">    44  </span>			return
 <span id="L45" class="ln">    45  </span>		}
