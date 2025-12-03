@@ -13,47 +13,10 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	testcontainers "github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 var pgContainer *postgres.PostgresContainer
-var connStr string
-var conn *pgx.Conn
-
-func PGTestsSetup() error {
-	var err error
-	const ImageName = "docker.io/postgres:17-alpine"
-	pgContainer, err = postgres.Run(ctx,
-		ImageName,
-		postgres.WithDatabase("mydatabase"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
-	if err != nil {
-		return err
-	}
-
-	connStr, err = pgContainer.ConnectionString(ctx, "sslmode=disable")
-	if err != nil {
-		return err
-	}
-
-	conn, err = pgx.Connect(ctx, connStr)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func PGTestsTeardown() {
-	_ = pgContainer.Terminate(ctx)
-}
-
-// Tests begin from here ---------------------------------------------------------
 
 func TestReadMetricSchemaType(t *testing.T) {
 	conn, err := pgxmock.NewPool()
@@ -496,7 +459,12 @@ func TestCopyFromMeasurements_CopyFail(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
 
-	_, err := conn.Exec(ctx, `CREATE TABLE IF NOT EXISTS test_metric (
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	r.NoError(err)
+	conn, err := pgx.Connect(ctx, connStr)
+	r.NoError(err)
+
+	_, err = conn.Exec(ctx, `CREATE TABLE IF NOT EXISTS test_metric (
 		time timestamptz not null default now(),
 		dbname text NOT NULL,
 		data jsonb,
@@ -533,6 +501,9 @@ func TestCopyFromMeasurements_CopyFail(t *testing.T) {
 func TestIntervalValidation(t *testing.T) {
 	a := assert.New(t)
 
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	a.NoError(err)
+
 	opts := &CmdOpts{
 		PartitionInterval:   "1 minute",
 		MaintenanceInterval: "-1 hours",
@@ -540,7 +511,7 @@ func TestIntervalValidation(t *testing.T) {
 		BatchingDelay:       time.Second,
 	}
 
-	_, err := NewPostgresWriter(ctx, connStr, opts)
+	_, err = NewPostgresWriter(ctx, connStr, opts)
 	a.EqualError(err, "--partition-interval must be at least 1 hour, got: 1 minute")
 	opts.PartitionInterval = "1 hour"
 
@@ -593,6 +564,9 @@ func TestPartitionInterval(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
 
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	r.NoError(err)
+
 	opts := &CmdOpts{
 		PartitionInterval:   "3 weeks",
 		RetentionInterval:   "14 days",
@@ -631,6 +605,11 @@ func TestPartitionInterval(t *testing.T) {
 func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
+
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	r.NoError(err)
+	conn, err := pgx.Connect(ctx, connStr)
+	r.NoError(err)
 
 	opts := &CmdOpts{
 		PartitionInterval:   "1 hour",
