@@ -8,15 +8,13 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	"github.com/jackc/pgx/v5"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
-
-var pgContainer *postgres.PostgresContainer
 
 func TestReadMetricSchemaType(t *testing.T) {
 	conn, err := pgxmock.NewPool()
@@ -459,6 +457,10 @@ func TestCopyFromMeasurements_CopyFail(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
 
+	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+	r.NoError(err)
+	defer pgTearDown()
+
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	r.NoError(err)
 	conn, err := pgx.Connect(ctx, connStr)
@@ -500,6 +502,10 @@ func TestCopyFromMeasurements_CopyFail(t *testing.T) {
 // cli flags that expect a PostgreSQL interval string
 func TestIntervalValidation(t *testing.T) {
 	a := assert.New(t)
+
+	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+	a.NoError(err)
+	defer pgTearDown()
 
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	a.NoError(err)
@@ -564,6 +570,10 @@ func TestPartitionInterval(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
 
+	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+	r.NoError(err)
+	defer pgTearDown()
+
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	r.NoError(err)
 
@@ -581,7 +591,7 @@ func TestPartitionInterval(t *testing.T) {
 	r.NoError(err)
 
 	m := map[string]map[string]ExistingPartitionInfo{
-		"test_metric_1": {
+		"test_metric": {
 			"test_db": {
 				time.Now(), time.Now().Add(time.Hour),
 			},
@@ -591,13 +601,13 @@ func TestPartitionInterval(t *testing.T) {
 	r.NoError(err)
 
 	var partitionsNum int
-	err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric_1');").Scan(&partitionsNum)
+	err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric');").Scan(&partitionsNum)
 	a.NoError(err)
 	// 1 the metric table itself + 1 dbname partition
 	// + 4 time partitions (1 we asked for + 3 precreated)
 	a.Equal(6, partitionsNum)
 
-	part := partitionMapMetricDbname["test_metric_1"]["test_db"]
+	part := partitionMapMetricDbname["test_metric"]["test_db"]
 	// partition bounds should have a difference of 3 weeks
 	a.Equal(part.StartTime.Add(3*7*24*time.Hour), part.EndTime)
 }
@@ -605,6 +615,10 @@ func TestPartitionInterval(t *testing.T) {
 func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
+
+	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+	r.NoError(err)
+	defer pgTearDown()
 
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	r.NoError(err)
