@@ -6,12 +6,33 @@ import (
 	"os"
 	"testing"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
+
+func TestMain(m *testing.M) {
+	// Setup
+	rpcTeardown, err := testutil.SetupRPCServers()
+	if err != nil {
+		rpcTeardown()
+		panic(err)
+	}
+
+	// Execute all tests
+	exitCode := m.Run()
+
+	// Teardown
+	rpcTeardown()
+	os.Exit(exitCode)
+}
+
+// Tests begin from here ---------------------------------------------------------
 
 func TestCACertParamValidation(t *testing.T) {
 	a := assert.New(t)
