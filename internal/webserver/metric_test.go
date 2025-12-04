@@ -10,47 +10,12 @@ import (
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"
 )
 
-type mockMetricsReaderWriter struct {
-	GetMetricsFunc   func() (*metrics.Metrics, error)
-	UpdateMetricFunc func(name string, m metrics.Metric) error
-	CreateMetricFunc func(name string, m metrics.Metric) error
-	DeleteMetricFunc func(name string) error
-	DeletePresetFunc func(name string) error
-	UpdatePresetFunc func(name string, preset metrics.Preset) error
-	CreatePresetFunc func(name string, preset metrics.Preset) error
-	WriteMetricsFunc func(metricDefs *metrics.Metrics) error
-}
-
-func (m *mockMetricsReaderWriter) GetMetrics() (*metrics.Metrics, error) {
-	return m.GetMetricsFunc()
-}
-func (m *mockMetricsReaderWriter) UpdateMetric(name string, metric metrics.Metric) error {
-	return m.UpdateMetricFunc(name, metric)
-}
-func (m *mockMetricsReaderWriter) CreateMetric(name string, metric metrics.Metric) error {
-	return m.CreateMetricFunc(name, metric)
-}
-func (m *mockMetricsReaderWriter) DeleteMetric(name string) error {
-	return m.DeleteMetricFunc(name)
-}
-func (m *mockMetricsReaderWriter) DeletePreset(name string) error {
-	return m.DeletePresetFunc(name)
-}
-func (m *mockMetricsReaderWriter) UpdatePreset(name string, preset metrics.Preset) error {
-	return m.UpdatePresetFunc(name, preset)
-}
-func (m *mockMetricsReaderWriter) CreatePreset(name string, preset metrics.Preset) error {
-	return m.CreatePresetFunc(name, preset)
-}
-func (m *mockMetricsReaderWriter) WriteMetrics(metricDefs *metrics.Metrics) error {
-	return m.WriteMetricsFunc(metricDefs)
-}
-
-func newTestMetricServer(mrw *mockMetricsReaderWriter) *WebUIServer {
+func newTestMetricServer(mrw *testutil.MockMetricsReaderWriter) *WebUIServer {
 	return &WebUIServer{
 		metricsReaderWriter: mrw,
 	}
@@ -59,7 +24,7 @@ func newTestMetricServer(mrw *mockMetricsReaderWriter) *WebUIServer {
 func TestHandleMetrics(t *testing.T) {
 	t.Run("GET", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) {
 					return &metrics.Metrics{MetricDefs: map[string]metrics.Metric{"foo": {Description: "foo"}}}, nil
 				},
@@ -78,7 +43,7 @@ func TestHandleMetrics(t *testing.T) {
 		})
 
 		t.Run("Failure", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) {
 					return nil, errors.New("fail")
 				},
@@ -99,7 +64,7 @@ func TestHandleMetrics(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			var createdName string
 			var createdMetric metrics.Metric
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				CreateMetricFunc: func(name string, m metrics.Metric) error {
 					createdName = name
 					createdMetric = m
@@ -124,7 +89,7 @@ func TestHandleMetrics(t *testing.T) {
 		})
 
 		t.Run("ReaderFailure", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				CreateMetricFunc: func(_ string, _ metrics.Metric) error {
 					return nil
 				},
@@ -141,7 +106,7 @@ func TestHandleMetrics(t *testing.T) {
 		})
 
 		t.Run("CreateFailure", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				CreateMetricFunc: func(_ string, _ metrics.Metric) error {
 					return errors.New("fail")
 				},
@@ -162,7 +127,7 @@ func TestHandleMetrics(t *testing.T) {
 		})
 
 		t.Run("Conflict", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				CreateMetricFunc: func(_ string, _ metrics.Metric) error {
 					return metrics.ErrMetricExists
 				},
@@ -184,7 +149,7 @@ func TestHandleMetrics(t *testing.T) {
 	})
 
 	t.Run("OPTIONS", func(t *testing.T) {
-		mock := &mockMetricsReaderWriter{}
+		mock := &testutil.MockMetricsReaderWriter{}
 		ts := newTestMetricServer(mock)
 		r := httptest.NewRequest(http.MethodOptions, "/metric", nil)
 		w := httptest.NewRecorder()
@@ -196,7 +161,7 @@ func TestHandleMetrics(t *testing.T) {
 	})
 
 	t.Run("MethodNotAllowed", func(t *testing.T) {
-		mock := &mockMetricsReaderWriter{}
+		mock := &testutil.MockMetricsReaderWriter{}
 		ts := newTestMetricServer(mock)
 		r := httptest.NewRequest(http.MethodPut, "/metric", nil)
 		w := httptest.NewRecorder()
@@ -215,7 +180,7 @@ func (e *errorReader) Read([]byte) (n int, err error) {
 }
 
 func TestGetMetrics_Error(t *testing.T) {
-	mock := &mockMetricsReaderWriter{
+	mock := &testutil.MockMetricsReaderWriter{
 		GetMetricsFunc: func() (*metrics.Metrics, error) {
 			return nil, errors.New("fail")
 		},
@@ -226,7 +191,7 @@ func TestGetMetrics_Error(t *testing.T) {
 }
 
 func TestUpdateMetric_Error(t *testing.T) {
-	mock := &mockMetricsReaderWriter{
+	mock := &testutil.MockMetricsReaderWriter{
 		UpdateMetricFunc: func(_ string, _ metrics.Metric) error {
 			return errors.New("fail")
 		},
@@ -237,7 +202,7 @@ func TestUpdateMetric_Error(t *testing.T) {
 }
 
 func TestDeleteMetric_Error(t *testing.T) {
-	mock := &mockMetricsReaderWriter{
+	mock := &testutil.MockMetricsReaderWriter{
 		DeleteMetricFunc: func(_ string) error {
 			return errors.New("fail")
 		},
@@ -250,7 +215,7 @@ func TestDeleteMetric_Error(t *testing.T) {
 func TestHandlePresets(t *testing.T) {
 	t.Run("GET", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) {
 					return &metrics.Metrics{PresetDefs: map[string]metrics.Preset{"foo": {Description: "foo"}}}, nil
 				},
@@ -269,7 +234,7 @@ func TestHandlePresets(t *testing.T) {
 		})
 
 		t.Run("Failure", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) {
 					return nil, errors.New("fail")
 				},
@@ -290,7 +255,7 @@ func TestHandlePresets(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			var createdName string
 			var createdPreset metrics.Preset
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				CreatePresetFunc: func(name string, p metrics.Preset) error {
 					createdName = name
 					createdPreset = p
@@ -313,7 +278,7 @@ func TestHandlePresets(t *testing.T) {
 		})
 
 		t.Run("ReaderFailure", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				UpdatePresetFunc: func(string, metrics.Preset) error {
 					return nil
 				},
@@ -330,7 +295,7 @@ func TestHandlePresets(t *testing.T) {
 		})
 
 		t.Run("CreateFailure", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				CreatePresetFunc: func(string, metrics.Preset) error {
 					return errors.New("fail")
 				},
@@ -352,7 +317,7 @@ func TestHandlePresets(t *testing.T) {
 	})
 
 	t.Run("OPTIONS", func(t *testing.T) {
-		mock := &mockMetricsReaderWriter{}
+		mock := &testutil.MockMetricsReaderWriter{}
 		ts := newTestMetricServer(mock)
 		r := httptest.NewRequest(http.MethodOptions, "/preset", nil)
 		w := httptest.NewRecorder()
@@ -364,7 +329,7 @@ func TestHandlePresets(t *testing.T) {
 	})
 
 	t.Run("MethodNotAllowed", func(t *testing.T) {
-		mock := &mockMetricsReaderWriter{}
+		mock := &testutil.MockMetricsReaderWriter{}
 		ts := newTestMetricServer(mock)
 		r := httptest.NewRequest(http.MethodPut, "/preset", nil)
 		w := httptest.NewRecorder()
@@ -377,7 +342,7 @@ func TestHandlePresets(t *testing.T) {
 }
 
 func TestGetPresets_Error(t *testing.T) {
-	mock := &mockMetricsReaderWriter{
+	mock := &testutil.MockMetricsReaderWriter{
 		GetMetricsFunc: func() (*metrics.Metrics, error) {
 			return nil, errors.New("fail")
 		},
@@ -388,7 +353,7 @@ func TestGetPresets_Error(t *testing.T) {
 }
 
 func TestUpdatePreset_Error(t *testing.T) {
-	mock := &mockMetricsReaderWriter{
+	mock := &testutil.MockMetricsReaderWriter{
 		UpdatePresetFunc: func(string, metrics.Preset) error {
 			return errors.New("fail")
 		},
@@ -399,7 +364,7 @@ func TestUpdatePreset_Error(t *testing.T) {
 }
 
 func TestDeletePreset_Error(t *testing.T) {
-	mock := &mockMetricsReaderWriter{
+	mock := &testutil.MockMetricsReaderWriter{
 		DeletePresetFunc: func(string) error {
 			return errors.New("fail")
 		},
@@ -421,7 +386,7 @@ func TestHandleMetricItem(t *testing.T) {
 	t.Run("GET", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			metric := metrics.Metric{Description: "test metric", SQLs: map[int]string{130000: "SELECT 1"}}
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) {
 					return &metrics.Metrics{
 						MetricDefs: map[string]metrics.Metric{"test-metric": metric},
@@ -444,7 +409,7 @@ func TestHandleMetricItem(t *testing.T) {
 		})
 
 		t.Run("NotFound", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) {
 					return &metrics.Metrics{MetricDefs: map[string]metrics.Metric{}}, nil
 				},
@@ -461,7 +426,7 @@ func TestHandleMetricItem(t *testing.T) {
 		})
 
 		t.Run("GetMetricsError", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) {
 					return nil, errors.New("database connection failed")
 				},
@@ -482,7 +447,7 @@ func TestHandleMetricItem(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			var updatedName string
 			var updatedMetric metrics.Metric
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				UpdateMetricFunc: func(name string, m metrics.Metric) error {
 					updatedName = name
 					updatedMetric = m
@@ -504,7 +469,7 @@ func TestHandleMetricItem(t *testing.T) {
 		})
 
 		t.Run("InvalidRequestBody", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{}
+			mock := &testutil.MockMetricsReaderWriter{}
 			ts := newTestMetricServer(mock)
 			r := newMetricItemRequest(http.MethodPut, "test-metric", &errorReader{})
 			w := httptest.NewRecorder()
@@ -517,7 +482,7 @@ func TestHandleMetricItem(t *testing.T) {
 		})
 
 		t.Run("InvalidJSON", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{}
+			mock := &testutil.MockMetricsReaderWriter{}
 			ts := newTestMetricServer(mock)
 			r := newMetricItemRequest(http.MethodPut, "test-metric", strings.NewReader("invalid json"))
 			w := httptest.NewRecorder()
@@ -530,7 +495,7 @@ func TestHandleMetricItem(t *testing.T) {
 		})
 
 		t.Run("UpdateError", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				UpdateMetricFunc: func(string, metrics.Metric) error {
 					return errors.New("update operation failed")
 				},
@@ -553,7 +518,7 @@ func TestHandleMetricItem(t *testing.T) {
 	t.Run("DELETE", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			var deletedName string
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				DeleteMetricFunc: func(name string) error {
 					deletedName = name
 					return nil
@@ -570,7 +535,7 @@ func TestHandleMetricItem(t *testing.T) {
 		})
 
 		t.Run("DeleteError", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				DeleteMetricFunc: func(string) error {
 					return errors.New("delete operation failed")
 				},
@@ -588,7 +553,7 @@ func TestHandleMetricItem(t *testing.T) {
 	})
 
 	t.Run("EmptyName", func(t *testing.T) {
-		mock := &mockMetricsReaderWriter{}
+		mock := &testutil.MockMetricsReaderWriter{}
 		ts := newTestMetricServer(mock)
 		r := newMetricItemRequest(http.MethodGet, "", nil)
 		w := httptest.NewRecorder()
@@ -601,7 +566,7 @@ func TestHandleMetricItem(t *testing.T) {
 	})
 
 	t.Run("OPTIONS", func(t *testing.T) {
-		mock := &mockMetricsReaderWriter{}
+		mock := &testutil.MockMetricsReaderWriter{}
 		ts := newTestMetricServer(mock)
 		r := newMetricItemRequest(http.MethodOptions, "test", nil)
 		w := httptest.NewRecorder()
@@ -613,7 +578,7 @@ func TestHandleMetricItem(t *testing.T) {
 	})
 
 	t.Run("MethodNotAllowed", func(t *testing.T) {
-		mock := &mockMetricsReaderWriter{}
+		mock := &testutil.MockMetricsReaderWriter{}
 		ts := newTestMetricServer(mock)
 		r := newMetricItemRequest(http.MethodPost, "test", nil)
 		w := httptest.NewRecorder()
@@ -639,7 +604,7 @@ func TestHandlePresetItem(t *testing.T) {
 	t.Run("GET", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			preset := metrics.Preset{Description: "test preset", Metrics: map[string]float64{"cpu": 1.0}}
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) {
 					return &metrics.Metrics{
 						PresetDefs: map[string]metrics.Preset{"test-preset": preset},
@@ -662,7 +627,7 @@ func TestHandlePresetItem(t *testing.T) {
 		})
 
 		t.Run("NotFound", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) {
 					return &metrics.Metrics{PresetDefs: map[string]metrics.Preset{}}, nil
 				},
@@ -679,7 +644,7 @@ func TestHandlePresetItem(t *testing.T) {
 		})
 
 		t.Run("GetMetricsError", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) {
 					return nil, errors.New("database connection failed")
 				},
@@ -700,7 +665,7 @@ func TestHandlePresetItem(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			var updatedName string
 			var updatedPreset metrics.Preset
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				UpdatePresetFunc: func(name string, p metrics.Preset) error {
 					updatedName = name
 					updatedPreset = p
@@ -722,7 +687,7 @@ func TestHandlePresetItem(t *testing.T) {
 		})
 
 		t.Run("InvalidRequestBody", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{}
+			mock := &testutil.MockMetricsReaderWriter{}
 			ts := newTestMetricServer(mock)
 			r := newPresetItemRequest(http.MethodPut, "test-preset", &errorReader{})
 			w := httptest.NewRecorder()
@@ -735,7 +700,7 @@ func TestHandlePresetItem(t *testing.T) {
 		})
 
 		t.Run("InvalidJSON", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{}
+			mock := &testutil.MockMetricsReaderWriter{}
 			ts := newTestMetricServer(mock)
 			r := newPresetItemRequest(http.MethodPut, "test-preset", strings.NewReader("invalid json"))
 			w := httptest.NewRecorder()
@@ -748,7 +713,7 @@ func TestHandlePresetItem(t *testing.T) {
 		})
 
 		t.Run("UpdateError", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				UpdatePresetFunc: func(string, metrics.Preset) error {
 					return errors.New("update operation failed")
 				},
@@ -771,7 +736,7 @@ func TestHandlePresetItem(t *testing.T) {
 	t.Run("DELETE", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			var deletedName string
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				DeletePresetFunc: func(name string) error {
 					deletedName = name
 					return nil
@@ -788,7 +753,7 @@ func TestHandlePresetItem(t *testing.T) {
 		})
 
 		t.Run("DeleteError", func(t *testing.T) {
-			mock := &mockMetricsReaderWriter{
+			mock := &testutil.MockMetricsReaderWriter{
 				DeletePresetFunc: func(string) error {
 					return errors.New("delete operation failed")
 				},
@@ -806,7 +771,7 @@ func TestHandlePresetItem(t *testing.T) {
 	})
 
 	t.Run("EmptyName", func(t *testing.T) {
-		mock := &mockMetricsReaderWriter{}
+		mock := &testutil.MockMetricsReaderWriter{}
 		ts := newTestMetricServer(mock)
 		r := newPresetItemRequest(http.MethodGet, "", nil)
 		w := httptest.NewRecorder()
@@ -819,7 +784,7 @@ func TestHandlePresetItem(t *testing.T) {
 	})
 
 	t.Run("OPTIONS", func(t *testing.T) {
-		mock := &mockMetricsReaderWriter{}
+		mock := &testutil.MockMetricsReaderWriter{}
 		ts := newTestMetricServer(mock)
 		r := newPresetItemRequest(http.MethodOptions, "test", nil)
 		w := httptest.NewRecorder()
@@ -831,7 +796,7 @@ func TestHandlePresetItem(t *testing.T) {
 	})
 
 	t.Run("MethodNotAllowed", func(t *testing.T) {
-		mock := &mockMetricsReaderWriter{}
+		mock := &testutil.MockMetricsReaderWriter{}
 		ts := newTestMetricServer(mock)
 		r := newPresetItemRequest(http.MethodPost, "test", nil)
 		w := httptest.NewRecorder()
