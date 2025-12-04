@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 21,
   "links": [],
   "panels": [
     {
@@ -4969,6 +4969,152 @@
       "type": "stat"
     },
     {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Percentage of total query execution time spent in JIT. (requires stat_statements_jit metric)",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 2,
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#299c46",
+                "value": 0
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 25
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 6,
+        "x": 6,
+        "y": 18
+      },
+      "id": 50,
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^pct$/",
+          "limit": 1,
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "group": [],
+          "groupBy": [
+            {
+              "params": [
+                "365d"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "none"
+              ],
+              "type": "fill"
+            }
+          ],
+          "measurement": "stat_statements_jit",
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "select\n    (sum(total_jit - total_jit_lag) / sum(total_time - total_time_lag)) * 100 as pct\nfrom\n(\n    select\n        time,\n        (data->>'jit_generation_time')::float8 as total_jit, lag((data->>'jit_generation_time')::float8) over w as total_jit_lag,\n        (data->>'total_time')::float8 as total_time, lag((data->>'total_time')::float8) over w as total_time_lag\n    from\n        stat_statements\n    where \n        dbname = '$dbname' and $__timeFilter(time)\n    window w as (order by time)\n)\nwhere total_time > total_time_lag",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [],
+                "type": "last"
+              }
+            ]
+          ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "tags": [
+            {
+              "key": "dbname",
+              "operator": "=~",
+              "value": "/^$dbname$/"
+            }
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "JIT %",
+      "type": "stat"
+    },
+    {
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -5000,8 +5146,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 13,
+        "h": 7,
+        "w": 12,
         "x": 0,
         "y": 20
       },

@@ -2442,10 +2442,6 @@ metrics:
                 WITH /* pgwatch_generated */ q_data AS (
                     SELECT
                         queryid::text AS tag_queryid,
-                        /*
-                         if security conscious about exposing query texts replace the below expression with a dash ('-') OR
-                         use the stat_statements_no_query_text metric instead, created specifically for this use case.
-                         */
                         array_to_string(array_agg(DISTINCT quote_ident(pg_get_userbyid(userid))), ',') AS users,
                         sum(s.calls)::int8 AS calls,
                         round(sum(s.total_exec_time)::numeric, 3)::double precision AS total_time,
@@ -2463,6 +2459,11 @@ metrics:
                         sum(wal_fpi)::int8 AS wal_fpi,
                         sum(wal_bytes)::int8 AS wal_bytes,
                         round(sum(s.total_plan_time)::numeric, 3)::double precision AS total_plan_time,
+                        round(sum(s.jit_generation_time)::numeric, 3)::double precision as jit_generation_time,
+                        /*
+                         if security conscious about exposing query texts replace the below expression with a dash ('-') OR
+                         use the stat_statements_no_query_text metric instead, created specifically for this use case.
+                        */
                         max(query::varchar(8000)) AS query
                     FROM
                         pg_stat_statements s
@@ -2509,6 +2510,7 @@ metrics:
                     b.wal_fpi,
                     b.wal_bytes,
                     b.total_plan_time,
+                    b.jit_generation_time,
                     ltrim(regexp_replace(b.query, E'[ \\t\\n\\r]+', ' ', 'g')) AS tag_query
                 FROM (
                     SELECT
@@ -2585,15 +2587,24 @@ metrics:
                         temp_blks_written > 0
                     ORDER BY
                         temp_blks_written DESC
-                    LIMIT 100) a) b
+                    LIMIT 100) a
+                UNION
+                SELECT 
+                * 
+                FROM (
+                    SELECT 
+                        *
+                    FROM
+                        q_data
+                    WHERE
+                        jit_generation_time > 0
+                    ORDER BY
+                        jit_generation_time DESC
+                    LIMIT 100) a) b;
             17: |-
                 WITH /* pgwatch_generated */ q_data AS (
                   SELECT
                       queryid::text AS tag_queryid,
-                      /*
-                      NB! if security conscious about exposing query texts replace the below expression with a dash ('-') OR
-                      use the stat_statements_no_query_text metric instead, created specifically for this use case.
-                      */
                       array_to_string(array_agg(DISTINCT quote_ident(pg_get_userbyid(userid))), ',') AS users,
                       sum(s.calls)::int8 AS calls,
                       round(sum(s.total_exec_time)::numeric, 3)::double precision AS total_time,
@@ -2611,6 +2622,11 @@ metrics:
                       sum(wal_fpi)::int8 AS wal_fpi,
                       sum(wal_bytes)::int8 AS wal_bytes,
                       round(sum(s.total_plan_time)::numeric, 3)::double precision AS total_plan_time,
+                      round(sum(s.jit_generation_time)::numeric, 3)::double precision as jit_generation_time,
+                      /*
+                      if security conscious about exposing query texts replace the below expression with a dash ('-') OR
+                      use the stat_statements_no_query_text metric instead, created specifically for this use case.
+                      */
                       max(query::varchar(8000)) AS query
                   FROM
                       pg_stat_statements s
@@ -2657,6 +2673,7 @@ metrics:
                     b.wal_fpi,
                     b.wal_bytes,
                     b.total_plan_time,
+                    b.jit_generation_time,
                     ltrim(regexp_replace(b.query, E'[ \\t\\n\\r]+', ' ', 'g')) AS tag_query
                 FROM (
                     SELECT
@@ -2733,6 +2750,19 @@ metrics:
                         temp_blks_written > 0
                     ORDER BY
                         temp_blks_written DESC
+                        LIMIT 100) a
+                UNION
+                SELECT 
+                * 
+                FROM (
+                    SELECT 
+                        *
+                    FROM
+                        q_data
+                    WHERE
+                        jit_generation_time > 0
+                    ORDER BY
+                        jit_generation_time DESC
                     LIMIT 100) a) b;
     stat_statements_calls:
         description: >
