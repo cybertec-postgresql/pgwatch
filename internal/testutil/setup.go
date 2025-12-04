@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/etcd"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -19,9 +18,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
-
-var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
-const pgImageName = "docker.io/postgres:17-alpine"
 
 func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error) {
 	pgContainer, err := postgres.Run(ctx,
