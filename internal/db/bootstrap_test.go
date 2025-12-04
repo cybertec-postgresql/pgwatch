@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pashagolub/pgxmock/v4"
@@ -12,12 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
-	testcontainers "github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 )
-
-const ImageName = "docker.io/postgres:17-alpine"
 
 var ctx = context.Background()
 
@@ -25,7 +20,8 @@ func TestPing(t *testing.T) {
 	connStr := "foo_boo"
 	assert.Error(t, db.Ping(ctx, connStr))
 
-	pg, err := initTestContainer()
+	pg, teardown, err := testutil.SetupPostgresContainer()
+	defer teardown()
 	require.NoError(t, err)
 	connStr, err = pg.ConnectionString(ctx)
 	assert.NoError(t, err)
@@ -69,25 +65,9 @@ func TestInit(t *testing.T) {
 	assert.NoError(t, conn.ExpectationsWereMet())
 }
 
-func initTestContainer() (*postgres.PostgresContainer, error) {
-	dbName := "pgwatch"
-	dbUser := "pgwatch"
-	dbPassword := "pgwatchadmin"
-
-	return postgres.Run(ctx,
-		ImageName,
-		postgres.WithDatabase(dbName),
-		postgres.WithUsername(dbUser),
-		postgres.WithPassword(dbPassword),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
-}
-
 func TestNew(t *testing.T) {
-	pg, err := initTestContainer()
+	pg, teardown, err := testutil.SetupPostgresContainer()
+	defer teardown()
 	require.NoError(t, err)
 	defer func() { assert.NoError(t, pg.Terminate(ctx)) }()
 	connStr, err := pg.ConnectionString(ctx)
