@@ -21,7 +21,7 @@ import (
 func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error) {
 	pgContainer, err := postgres.Run(ctx,
 		pgImageName,
-		postgres.WithDatabase("mydatabase"),
+		postgres.WithDatabase(MockDatabase),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).
