@@ -3016,7 +3016,6 @@ metrics:
                     round(sum(temp_blk_write_time)::numeric, 3)::double precision as temp_blk_write_time,
                     sum(wal_fpi) as wal_fpi,
                     sum(wal_bytes) as wal_bytes,
-                    round(sum(s.jit_generation_time)::numeric, 3)::double precision as jit_generation_time,
                     round(sum(s.total_plan_time)::numeric, 3)::double precision as total_plan_time
                   from
                     pg_stat_statements s
@@ -3098,18 +3097,6 @@ metrics:
                     temp_blks_written desc
                   limit 100
                 ) a
-                union
-                select * from (
-                  select 
-                      *
-                  from
-                      q_data
-                  where
-                      jit_generation_time > 0
-                  order by
-                      jit_generation_time DESC
-                  limit 100
-                ) a; 
             17: |-
                 with /* pgwatch_generated */ q_data as (
                   select
@@ -3131,7 +3118,6 @@ metrics:
                     round(sum(temp_blk_write_time)::numeric, 3)::double precision as temp_blk_write_time,
                     sum(wal_fpi)::int8 as wal_fpi,
                     sum(wal_bytes)::int8 as wal_bytes,
-                    round(sum(s.jit_generation_time)::numeric, 3)::double precision as jit_generation_time,
                     round(sum(s.total_plan_time)::numeric, 3)::double precision as total_plan_time
                   from
                     pg_stat_statements s
@@ -3212,19 +3198,7 @@ metrics:
                   order by
                     temp_blks_written desc
                   limit 100
-                ) a
-                union
-                select * from (
-                  select 
-                      *
-                  from
-                      q_data
-                  where
-                      jit_generation_time > 0
-                  order by
-                      jit_generation_time DESC
-                  limit 100
-                ) a; 
+                ) a;
         storage_name: stat_statements
     subscription_stats:
         description: >
