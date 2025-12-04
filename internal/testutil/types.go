@@ -1,6 +1,14 @@
 package testutil
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
+)
+
+var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
+const pgImageName = "docker.io/postgres:17-alpine"
 
 // the CN in server test cert is set to `localhost`
 
