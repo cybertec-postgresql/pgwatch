@@ -10,26 +10,10 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-type mockReader struct {
-	toReturn sources.Sources
-	toErr    error
-}
-
-func (m *mockReader) GetSources() (sources.Sources, error) {
-	if m.toErr != nil {
-		return nil, m.toErr
-	}
-	return m.toReturn, nil
-}
-
-func (m *mockReader) WriteSources(sources.Sources) error { return nil }
-func (m *mockReader) DeleteSource(string) error          { return nil }
-func (m *mockReader) UpdateSource(sources.Source) error  { return nil }
-func (m *mockReader) CreateSource(sources.Source) error  { return nil }
 
 func TestReaper_LoadSources(t *testing.T) {
 	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
@@ -43,7 +27,7 @@ func TestReaper_LoadSources(t *testing.T) {
 	})
 
 	t.Run("Test SyncFromReader errror", func(t *testing.T) {
-		reader := &mockReader{toErr: assert.AnError}
+		reader := &testutil.MockReader{ToErr: assert.AnError}
 		r := NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
 		assert.Error(t, r.LoadSources())
 		assert.Equal(t, 0, len(r.monitoredSources), "Expected no monitored sources after error")
@@ -52,7 +36,7 @@ func TestReaper_LoadSources(t *testing.T) {
 	t.Run("Test SyncFromReader success", func(t *testing.T) {
 		source1 := sources.Source{Name: "Source 1", IsEnabled: true, Kind: sources.SourcePostgres}
 		source2 := sources.Source{Name: "Source 2", IsEnabled: true, Kind: sources.SourcePostgres}
-		reader := &mockReader{toReturn: sources.Sources{source1, source2}}
+		reader := &testutil.MockReader{ToReturn: sources.Sources{source1, source2}}
 		r := NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
 		assert.NoError(t, r.LoadSources())
 		assert.Equal(t, 2, len(r.monitoredSources), "Expected two monitored sources after successful load")
@@ -63,7 +47,7 @@ func TestReaper_LoadSources(t *testing.T) {
 	t.Run("Test repeated load", func(t *testing.T) {
 		source1 := sources.Source{Name: "Source 1", IsEnabled: true, Kind: sources.SourcePostgres}
 		source2 := sources.Source{Name: "Source 2", IsEnabled: true, Kind: sources.SourcePostgres}
-		reader := &mockReader{toReturn: sources.Sources{source1, source2}}
+		reader := &testutil.MockReader{ToReturn: sources.Sources{source1, source2}}
 		r := NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
 		assert.NoError(t, r.LoadSources())
 		assert.Equal(t, 2, len(r.monitoredSources), "Expected two monitored sources after first load")
@@ -79,7 +63,7 @@ func TestReaper_LoadSources(t *testing.T) {
 		source3 := sources.Source{Name: "Source 3", IsEnabled: true, Kind: sources.SourcePostgres, Group: "group2"}
 		source4 := sources.Source{Name: "Source 4", IsEnabled: true, Kind: sources.SourcePostgres, Group: "default"} // Default group should not filter
 		newReader := func() sources.ReaderWriter {
-			return &mockReader{toReturn: sources.Sources{source1, source2, source3, source4}}
+			return &testutil.MockReader{ToReturn: sources.Sources{source1, source2, source3, source4}}
 		}
 
 		r := NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: newReader(), Sources: sources.CmdOpts{Groups: []string{"group1", "group2"}}})

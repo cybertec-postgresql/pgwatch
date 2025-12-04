@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -41,3 +42,20 @@ func (receiver *Receiver) DefineMetrics(_ context.Context, metricsStruct *struct
 	}
 	return &pb.Reply{Logmsg: "metrics defined successfully"}, nil
 }
+
+type MockReader struct {
+	ToReturn sources.Sources
+	ToErr    error
+}
+
+func (m *MockReader) GetSources() (sources.Sources, error) {
+	if m.ToErr != nil {
+		return nil, m.ToErr
+	}
+	return m.ToReturn, nil
+}
+
+func (m *MockReader) WriteSources(sources.Sources) error { return nil }
+func (m *MockReader) DeleteSource(string) error          { return nil }
+func (m *MockReader) UpdateSource(sources.Source) error  { return nil }
+func (m *MockReader) CreateSource(sources.Source) error  { return nil }
