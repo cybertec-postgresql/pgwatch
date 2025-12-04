@@ -1,130 +1,15 @@
 package testutil
 
-import (
-	"context"
-	"crypto/tls"
-	"errors"
-	"fmt"
-	"net"
-	"os"
-	"time"
-
-	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/structpb"
-)
+import "fmt"
 
 // the CN in server test cert is set to `localhost`
+
 var CAFile = "ca.crt"
 var TLSConnStr = fmt.Sprintf("grpc://localhost:5050?sslrootca=%s", CAFile)
 
 const TLSServerAddress = "localhost:5050"
 const PlainServerAddress = "localhost:6060"
 const PlainConnStr = "grpc://localhost:6060"
-
-type Receiver struct {
-	pb.UnimplementedReceiverServer
-}
-
-func (receiver *Receiver) UpdateMeasurements(_ context.Context, msg *pb.MeasurementEnvelope) (*pb.Reply, error) {
-	if len(msg.GetData()) == 0 {
-		return nil, errors.New("empty message")
-	}
-	if msg.GetDBName() != "Db" {
-		return nil, errors.New("invalid message")
-	}
-	return &pb.Reply{}, nil
-}
-
-func (receiver *Receiver) SyncMetric(_ context.Context, syncReq *pb.SyncReq) (*pb.Reply, error) {
-	if syncReq == nil {
-		return nil, errors.New("nil sync request")
-	}
-	if syncReq.GetOperation() == pb.SyncOp_InvalidOp {
-		return nil, errors.New("invalid sync request")
-	}
-	return &pb.Reply{}, nil
-}
-
-func (receiver *Receiver) DefineMetrics(_ context.Context, metricsStruct *structpb.Struct) (*pb.Reply, error) {
-	if metricsStruct == nil {
-		return nil, errors.New("nil metrics struct")
-	}
-	if metricsStruct.GetFields() == nil {
-		return nil, errors.New("empty metrics struct")
-	}
-	return &pb.Reply{Logmsg: "metrics defined successfully"}, nil
-}
-
-func LoadServerTLSCredentials() (credentials.TransportCredentials, error) {
-	cert, err := tls.X509KeyPair(Cert, PrivateKey)
-	if err != nil {
-		return nil, err
-	}
-
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-	}
-	return credentials.NewTLS(tlsConfig), nil
-}
-
-func AuthInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	md, _ := metadata.FromIncomingContext(ctx)
-
-	clientUsername := md.Get("username")[0]
-	clientPassword := md.Get("password")[0]
-
-	if clientUsername != "" && clientUsername != "pgwatch" && clientPassword != "pgwatch" {
-		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
-	}
-
-	return handler(ctx, req)
-}
-
-func SetupRPCServers() (func(), error) {
-	err := os.WriteFile(CAFile, []byte(CA), 0644)
-	teardown := func() { _ = os.Remove(CAFile) }
-	if err != nil {
-		return teardown, err
-	}
-
-	addresses := [2]string{PlainServerAddress, TLSServerAddress}
-	for _, address := range addresses {
-		lis, err := net.Listen("tcp", address)
-		if err != nil {
-			return teardown, err
-		}
-
-		var creds credentials.TransportCredentials
-		if address == TLSServerAddress {
-			creds, err = LoadServerTLSCredentials()
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		server := grpc.NewServer(
-			grpc.UnaryInterceptor(AuthInterceptor),
-			grpc.Creds(creds),
-		)
-
-		recv := new(Receiver)
-		pb.RegisterReceiverServer(server, recv)
-
-		go func() {
-			if err := server.Serve(lis); err != nil {
-				panic(err)
-			}
-		}()
-	}
-	// wait a little for servers to start
-	time.Sleep(time.Second)
-	return teardown, nil
-}
 
 var CA = `-----BEGIN CERTIFICATE-----
 MIIDPzCCAiegAwIBAgIUeENQlQFVH5h7HszFJLLWo+KCQwQwDQYJKoZIhvcNAQEL
