@@ -1,4 +1,4 @@
-package sinks
+package sinks_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
@@ -36,7 +37,7 @@ func TestMain(m *testing.M) {
 
 func TestCACertParamValidation(t *testing.T) {
 	a := assert.New(t)
-	_, err := NewRPCWriter(ctx, testutil.TLSConnStr)
+	_, err := sinks.NewRPCWriter(ctx, testutil.TLSConnStr)
 	a.NoError(err)
 
 	_, _ = os.Create("badca.crt")
@@ -49,7 +50,7 @@ func TestCACertParamValidation(t *testing.T) {
 	}
 
 	for param, errMsg := range BadRPCParams {
-		_, err = NewRPCWriter(ctx, fmt.Sprintf("grpc://%s%s", testutil.TLSServerAddress, param))
+		_, err = sinks.NewRPCWriter(ctx, fmt.Sprintf("grpc://%s%s", testutil.TLSServerAddress, param))
 		a.ErrorContains(err, errMsg)
 	}
 }
@@ -57,7 +58,7 @@ func TestCACertParamValidation(t *testing.T) {
 func TestRPCTLSWriter(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := NewRPCWriter(ctx, testutil.TLSConnStr)
+	rw, err := sinks.NewRPCWriter(ctx, testutil.TLSConnStr)
 	a.NoError(err)
 
 	// no error for valid messages
@@ -72,7 +73,7 @@ func TestRPCTLSWriter(t *testing.T) {
 func TestRPCWrite(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := NewRPCWriter(ctx, testutil.PlainConnStr)
+	rw, err := sinks.NewRPCWriter(ctx, testutil.PlainConnStr)
 	a.NoError(err)
 
 	// no error for valid messages
@@ -94,7 +95,7 @@ func TestRPCWrite(t *testing.T) {
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctx)
-	rw, err = NewRPCWriter(ctx, testutil.PlainConnStr)
+	rw, err = sinks.NewRPCWriter(ctx, testutil.PlainConnStr)
 	a.NoError(err)
 	cancel()
 	err = rw.Write(msgs)
@@ -104,35 +105,35 @@ func TestRPCWrite(t *testing.T) {
 func TestRPCSyncMetric(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := NewRPCWriter(ctx, testutil.PlainConnStr)
+	rw, err := sinks.NewRPCWriter(ctx, testutil.PlainConnStr)
 	a.NoError(err)
 
 	// no error for valid Sync requests
-	err = rw.SyncMetric("Test-DB", "DB-Metric", AddOp)
+	err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
 	a.NoError(err)
 
 	// error for invalid Sync requests
-	err = rw.SyncMetric("", "", InvalidOp)
+	err = rw.SyncMetric("", "", sinks.InvalidOp)
 	a.ErrorIs(err, status.Error(codes.Unknown, "invalid sync request"))
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctx)
-	rw, err = NewRPCWriter(ctx, testutil.PlainConnStr)
+	rw, err = sinks.NewRPCWriter(ctx, testutil.PlainConnStr)
 	a.NoError(err)
 	cancel()
-	err = rw.SyncMetric("Test-DB", "DB-Metric", AddOp)
+	err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
 	a.Error(err)
 }
 
 func TestRPCDefineMetric(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := NewRPCWriter(ctx, testutil.PlainConnStr)
+	rw, err := sinks.NewRPCWriter(ctx, testutil.PlainConnStr)
 	a.NoError(err)
 
 	// Test that RPCWriter implements MetricsDefiner interface
-	var writer Writer = rw
-	definer, ok := writer.(MetricsDefiner)
+	var writer sinks.Writer = rw
+	definer, ok := writer.(sinks.MetricsDefiner)
 	a.True(ok, "RPCWriter should implement MetricsDefiner interface")
 
 	// Test with valid metrics
@@ -169,12 +170,12 @@ func TestRPCDefineMetric(t *testing.T) {
 
 	// Test with cancelled context
 	ctx, cancel := context.WithCancel(ctx)
-	rw, err = NewRPCWriter(ctx, testutil.PlainConnStr)
+	rw, err = sinks.NewRPCWriter(ctx, testutil.PlainConnStr)
 	a.NoError(err)
 	cancel()
 
 	writer = rw
-	definer = writer.(MetricsDefiner)
+	definer = writer.(sinks.MetricsDefiner)
 	err = definer.DefineMetrics(testMetrics)
 	a.Error(err)
 }
@@ -183,7 +184,7 @@ func TestAuthCredsSending(t *testing.T) {
 	a := assert.New(t)
 
 	unauthenticatedConnStr := "grpc://notpgwatch:notpgwatch@localhost:6060"
-	rw, err := NewRPCWriter(ctx, unauthenticatedConnStr)
+	rw, err := sinks.NewRPCWriter(ctx, unauthenticatedConnStr)
 	a.NoError(err)
 
 	err = rw.Write(metrics.MeasurementEnvelope{})
