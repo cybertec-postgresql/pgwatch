@@ -7,34 +7,11 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	pgxmock "github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-// Helper function to create a test SourceConn with pgxmock
-func createTestSourceConn(t *testing.T) (*sources.SourceConn, pgxmock.PgxPoolIface) {
-	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
-
-	md := &sources.SourceConn{
-		Conn:   mock,
-		Source: sources.Source{Name: "testdb"},
-		RuntimeInfo: sources.RuntimeInfo{
-			Version:     120000,
-			ChangeState: make(map[string]map[string]string),
-		},
-	}
-	return md, mock
-}
-
-// Helper function to set up transaction expectations for PostgreSQL sources
-func expectTransaction(mock pgxmock.PgxPoolIface, queryRows *pgxmock.Rows) {
-	mock.ExpectBegin()
-	mock.ExpectExec("SET LOCAL lock_timeout").WillReturnResult(pgxmock.NewResult("SET", 0))
-	mock.ExpectQuery("SELECT").WillReturnRows(queryRows)
-	mock.ExpectCommit()
-}
 
 func TestTryCreateMetricsFetchingHelpers(t *testing.T) {
 	ctx := context.Background()
@@ -84,7 +61,8 @@ func TestDetectSprocChanges(t *testing.T) {
 	}
 
 	// Create single connection and reaper to maintain state across calls
-	md, mock := createTestSourceConn(t)
+	md, mock, err := testutil.CreateTestSourceConn()
+	assert.NoError(t, err)
 	defer mock.Close()
 
 	reaper := &Reaper{
@@ -95,7 +73,7 @@ func TestDetectSprocChanges(t *testing.T) {
 	initialRows := pgxmock.NewRows([]string{"tag_sproc", "tag_oid", "md5", "epoch_ns"}).
 		AddRow("func1", "123", "hash1", time.Now().UnixNano()).
 		AddRow("func2", "456", "hash2", time.Now().UnixNano())
-	expectTransaction(mock, initialRows)
+	testutil.ExpectTransaction(mock, initialRows)
 
 	result := reaper.DetectSprocChanges(ctx, md)
 	assert.Equal(t, 0, result.Created) // First run should not count anything as created
@@ -109,7 +87,7 @@ func TestDetectSprocChanges(t *testing.T) {
 	modifiedRows := pgxmock.NewRows([]string{"tag_sproc", "tag_oid", "md5", "epoch_ns"}).
 		AddRow("func1", "123", "new_hash", time.Now().UnixNano()).
 		AddRow("func2", "456", "hash2", time.Now().UnixNano())
-	expectTransaction(mock, modifiedRows)
+	testutil.ExpectTransaction(mock, modifiedRows)
 
 	result = reaper.DetectSprocChanges(ctx, md)
 	assert.Equal(t, 0, result.Created)
@@ -121,7 +99,7 @@ func TestDetectSprocChanges(t *testing.T) {
 		AddRow("func1", "123", "new_hash", time.Now().UnixNano()).
 		AddRow("func2", "456", "hash2", time.Now().UnixNano()).
 		AddRow("func3", "789", "hash3", time.Now().UnixNano()) // new sproc
-	expectTransaction(mock, newSprocRows)
+	testutil.ExpectTransaction(mock, newSprocRows)
 
 	result = reaper.DetectSprocChanges(ctx, md)
 	assert.Equal(t, 1, result.Created) // func3 was created
@@ -140,7 +118,7 @@ func TestDetectSprocChanges(t *testing.T) {
 	droppedSprocRows := pgxmock.NewRows([]string{"tag_sproc", "tag_oid", "md5", "epoch_ns"}).
 		AddRow("func1", "123", "new_hash", time.Now().UnixNano()).
 		AddRow("func3", "789", "hash3", time.Now().UnixNano()) // func2 dropped
-	expectTransaction(mock, droppedSprocRows)
+	testutil.ExpectTransaction(mock, droppedSprocRows)
 
 	result = reaper.DetectSprocChanges(ctx, md)
 	assert.Equal(t, 0, result.Created)
@@ -161,7 +139,8 @@ func TestDetectTableChanges(t *testing.T) {
 	}
 
 	// Create single connection and reaper to maintain state across calls
-	md, mock := createTestSourceConn(t)
+	md, mock, err := testutil.CreateTestSourceConn()
+	assert.NoError(t, err)
 	defer mock.Close()
 
 	reaper := &Reaper{
@@ -172,7 +151,7 @@ func TestDetectTableChanges(t *testing.T) {
 	initialRows := pgxmock.NewRows([]string{"tag_table", "tag_oid", "md5", "epoch_ns"}).
 		AddRow("table1", "123", "hash1", time.Now().UnixNano()).
 		AddRow("table2", "456", "hash2", time.Now().UnixNano())
-	expectTransaction(mock, initialRows)
+	testutil.ExpectTransaction(mock, initialRows)
 
 	result := reaper.DetectTableChanges(ctx, md)
 	assert.Equal(t, 0, result.Created) // First run should not count anything as created
@@ -184,7 +163,7 @@ func TestDetectTableChanges(t *testing.T) {
 	modifiedRows := pgxmock.NewRows([]string{"tag_table", "tag_oid", "md5", "epoch_ns"}).
 		AddRow("table1", "123", "new_hash", time.Now().UnixNano()).
 		AddRow("table2", "456", "hash2", time.Now().UnixNano())
-	expectTransaction(mock, modifiedRows)
+	testutil.ExpectTransaction(mock, modifiedRows)
 
 	result = reaper.DetectTableChanges(ctx, md)
 	assert.Equal(t, 0, result.Created)
@@ -196,7 +175,7 @@ func TestDetectTableChanges(t *testing.T) {
 		AddRow("table1", "123", "new_hash", time.Now().UnixNano()).
 		AddRow("table2", "456", "hash2", time.Now().UnixNano()).
 		AddRow("table3", "789", "hash3", time.Now().UnixNano()) // new table
-	expectTransaction(mock, newTableRows)
+	testutil.ExpectTransaction(mock, newTableRows)
 
 	result = reaper.DetectTableChanges(ctx, md)
 	assert.Equal(t, 1, result.Created) // table3 was created
@@ -216,7 +195,7 @@ func TestDetectTableChanges(t *testing.T) {
 	droppedTableRows := pgxmock.NewRows([]string{"tag_table", "tag_oid", "md5", "epoch_ns"}).
 		AddRow("table1", "123", "new_hash", time.Now().UnixNano()).
 		AddRow("table3", "789", "hash3", time.Now().UnixNano()) // table2 dropped
-	expectTransaction(mock, droppedTableRows)
+	testutil.ExpectTransaction(mock, droppedTableRows)
 
 	result = reaper.DetectTableChanges(ctx, md)
 	assert.Equal(t, 0, result.Created)
@@ -241,8 +220,8 @@ func TestDetectIndexChanges(t *testing.T) {
 	}
 
 	// Create single connection and reaper to maintain state across calls
-	md, mock := createTestSourceConn(t)
-	defer mock.Close()
+	md, mock, err := testutil.CreateTestSourceConn()
+	assert.NoError(t, err)
 
 	reaper := &Reaper{
 		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
@@ -252,7 +231,7 @@ func TestDetectIndexChanges(t *testing.T) {
 	initialRows := pgxmock.NewRows([]string{"tag_index", "table", "md5", "is_valid", "epoch_ns"}).
 		AddRow("idx1", "table1", "hash1", "t", time.Now().UnixNano()).
 		AddRow("idx2", "table1", "hash2", "t", time.Now().UnixNano())
-	expectTransaction(mock, initialRows)
+	testutil.ExpectTransaction(mock, initialRows)
 
 	result := reaper.DetectIndexChanges(ctx, md)
 	assert.Equal(t, 0, result.Created) // First run should not count anything as created
@@ -264,7 +243,7 @@ func TestDetectIndexChanges(t *testing.T) {
 	modifiedRows := pgxmock.NewRows([]string{"tag_index", "table", "md5", "is_valid", "epoch_ns"}).
 		AddRow("idx1", "table1", "hash1", "f", time.Now().UnixNano()). // now invalid
 		AddRow("idx2", "table1", "hash2", "t", time.Now().UnixNano())
-	expectTransaction(mock, modifiedRows)
+	testutil.ExpectTransaction(mock, modifiedRows)
 
 	result = reaper.DetectIndexChanges(ctx, md)
 	assert.Equal(t, 0, result.Created)
@@ -276,7 +255,7 @@ func TestDetectIndexChanges(t *testing.T) {
 		AddRow("idx1", "table1", "hash1", "f", time.Now().UnixNano()).
 		AddRow("idx2", "table1", "hash2", "t", time.Now().UnixNano()).
 		AddRow("idx3", "table2", "hash3", "t", time.Now().UnixNano()) // new index
-	expectTransaction(mock, newIndexRows)
+	testutil.ExpectTransaction(mock, newIndexRows)
 
 	result = reaper.DetectIndexChanges(ctx, md)
 	assert.Equal(t, 1, result.Created) // idx3 was created
@@ -296,7 +275,7 @@ func TestDetectIndexChanges(t *testing.T) {
 	droppedIndexRows := pgxmock.NewRows([]string{"tag_index", "table", "md5", "is_valid", "epoch_ns"}).
 		AddRow("idx1", "table1", "hash1", "f", time.Now().UnixNano()).
 		AddRow("idx3", "table2", "hash3", "t", time.Now().UnixNano()) // idx2 dropped
-	expectTransaction(mock, droppedIndexRows)
+	testutil.ExpectTransaction(mock, droppedIndexRows)
 
 	result = reaper.DetectIndexChanges(ctx, md)
 	assert.Equal(t, 0, result.Created)
@@ -321,8 +300,8 @@ func TestDetectPrivilegeChanges(t *testing.T) {
 	}
 
 	// Create single connection and reaper to maintain state across calls
-	md, mock := createTestSourceConn(t)
-	defer mock.Close()
+	md, mock, err := testutil.CreateTestSourceConn()
+	assert.NoError(t, err)
 
 	reaper := &Reaper{
 		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
@@ -332,7 +311,7 @@ func TestDetectPrivilegeChanges(t *testing.T) {
 	initialRows := pgxmock.NewRows([]string{"object_type", "tag_role", "tag_object", "privilege_type", "epoch_ns"}).
 		AddRow("table", "user1", "table1", "SELECT", time.Now().UnixNano()).
 		AddRow("table", "user2", "table2", "INSERT", time.Now().UnixNano())
-	expectTransaction(mock, initialRows)
+	testutil.ExpectTransaction(mock, initialRows)
 
 	result := reaper.DetectPrivilegeChanges(ctx, md)
 	assert.Equal(t, 0, result.Created) // First run should not count anything as created
@@ -345,7 +324,7 @@ func TestDetectPrivilegeChanges(t *testing.T) {
 		AddRow("table", "user1", "table1", "SELECT", time.Now().UnixNano()).
 		AddRow("table", "user1", "table1", "INSERT", time.Now().UnixNano()). // new privilege
 		AddRow("table", "user2", "table2", "INSERT", time.Now().UnixNano())
-	expectTransaction(mock, newPrivilegeRows)
+	testutil.ExpectTransaction(mock, newPrivilegeRows)
 
 	result = reaper.DetectPrivilegeChanges(ctx, md)
 	assert.Equal(t, 1, result.Created) // new privilege was granted
@@ -365,7 +344,7 @@ func TestDetectPrivilegeChanges(t *testing.T) {
 	revokedPrivilegeRows := pgxmock.NewRows([]string{"object_type", "tag_role", "tag_object", "privilege_type", "epoch_ns"}).
 		AddRow("table", "user1", "table1", "SELECT", time.Now().UnixNano()).
 		AddRow("table", "user2", "table2", "INSERT", time.Now().UnixNano()) // user1 INSERT privilege revoked
-	expectTransaction(mock, revokedPrivilegeRows)
+	testutil.ExpectTransaction(mock, revokedPrivilegeRows)
 
 	result = reaper.DetectPrivilegeChanges(ctx, md)
 	assert.Equal(t, 0, result.Created)

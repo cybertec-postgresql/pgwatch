@@ -10,35 +10,12 @@ import (
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"
 )
 
-type mockSourcesReaderWriter struct {
-	GetSourcesFunc   func() (sources.Sources, error)
-	UpdateSourceFunc func(md sources.Source) error
-	CreateSourceFunc func(md sources.Source) error
-	DeleteSourceFunc func(name string) error
-	WriteSourcesFunc func(sources.Sources) error
-}
-
-func (m *mockSourcesReaderWriter) GetSources() (sources.Sources, error) {
-	return m.GetSourcesFunc()
-}
-func (m *mockSourcesReaderWriter) UpdateSource(md sources.Source) error {
-	return m.UpdateSourceFunc(md)
-}
-func (m *mockSourcesReaderWriter) CreateSource(md sources.Source) error {
-	return m.CreateSourceFunc(md)
-}
-func (m *mockSourcesReaderWriter) DeleteSource(name string) error {
-	return m.DeleteSourceFunc(name)
-}
-func (m *mockSourcesReaderWriter) WriteSources(srcs sources.Sources) error {
-	return m.WriteSourcesFunc(srcs)
-}
-
-func newTestSourceServer(mrw *mockSourcesReaderWriter) *WebUIServer {
+func newTestSourceServer(mrw *testutil.MockSourcesReaderWriter) *WebUIServer {
 	return &WebUIServer{
 		sourcesReaderWriter: mrw,
 	}
@@ -47,7 +24,7 @@ func newTestSourceServer(mrw *mockSourcesReaderWriter) *WebUIServer {
 func TestHandleSources(t *testing.T) {
 	t.Run("GET", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				GetSourcesFunc: func() (sources.Sources, error) {
 					return sources.Sources{{Name: "foo"}}, nil
 				},
@@ -66,7 +43,7 @@ func TestHandleSources(t *testing.T) {
 		})
 
 		t.Run("Failure", func(t *testing.T) {
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				GetSourcesFunc: func() (sources.Sources, error) {
 					return nil, errors.New("fail")
 				},
@@ -86,7 +63,7 @@ func TestHandleSources(t *testing.T) {
 	t.Run("POST", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			var createdSource sources.Source
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				CreateSourceFunc: func(md sources.Source) error {
 					createdSource = md
 					return nil
@@ -105,7 +82,7 @@ func TestHandleSources(t *testing.T) {
 		})
 
 		t.Run("ReaderFailure", func(t *testing.T) {
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				CreateSourceFunc: func(sources.Source) error {
 					return nil
 				},
@@ -122,7 +99,7 @@ func TestHandleSources(t *testing.T) {
 		})
 
 		t.Run("Conflict", func(t *testing.T) {
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				CreateSourceFunc: func(sources.Source) error {
 					return sources.ErrSourceExists
 				},
@@ -141,7 +118,7 @@ func TestHandleSources(t *testing.T) {
 		})
 
 		t.Run("CreateFailure", func(t *testing.T) {
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				CreateSourceFunc: func(sources.Source) error {
 					return errors.New("fail")
 				},
@@ -160,7 +137,7 @@ func TestHandleSources(t *testing.T) {
 		})
 
 		t.Run("ReadAllError", func(t *testing.T) {
-			mock := &mockSourcesReaderWriter{}
+			mock := &testutil.MockSourcesReaderWriter{}
 			ts := newTestSourceServer(mock)
 			r := httptest.NewRequest(http.MethodPost, "/source", &errorReader{})
 			w := httptest.NewRecorder()
@@ -172,7 +149,7 @@ func TestHandleSources(t *testing.T) {
 	})
 
 	t.Run("OPTIONS", func(t *testing.T) {
-		mock := &mockSourcesReaderWriter{}
+		mock := &testutil.MockSourcesReaderWriter{}
 		ts := newTestSourceServer(mock)
 		r := httptest.NewRequest(http.MethodOptions, "/source", nil)
 		w := httptest.NewRecorder()
@@ -184,7 +161,7 @@ func TestHandleSources(t *testing.T) {
 	})
 
 	t.Run("MethodNotAllowed", func(t *testing.T) {
-		mock := &mockSourcesReaderWriter{}
+		mock := &testutil.MockSourcesReaderWriter{}
 		ts := newTestSourceServer(mock)
 		r := httptest.NewRequest(http.MethodPut, "/source", nil)
 		w := httptest.NewRecorder()
@@ -197,7 +174,7 @@ func TestHandleSources(t *testing.T) {
 }
 
 func TestGetSources_Error(t *testing.T) {
-	mock := &mockSourcesReaderWriter{
+	mock := &testutil.MockSourcesReaderWriter{
 		GetSourcesFunc: func() (sources.Sources, error) {
 			return nil, errors.New("fail")
 		},
@@ -208,7 +185,7 @@ func TestGetSources_Error(t *testing.T) {
 }
 
 func TestUpdateSource_Error(t *testing.T) {
-	mock := &mockSourcesReaderWriter{
+	mock := &testutil.MockSourcesReaderWriter{
 		UpdateSourceFunc: func(sources.Source) error {
 			return errors.New("fail")
 		},
@@ -219,7 +196,7 @@ func TestUpdateSource_Error(t *testing.T) {
 }
 
 func TestDeleteSource_Error(t *testing.T) {
-	mock := &mockSourcesReaderWriter{
+	mock := &testutil.MockSourcesReaderWriter{
 		DeleteSourceFunc: func(string) error {
 			return errors.New("fail")
 		},
@@ -241,7 +218,7 @@ func TestHandleSourceItem(t *testing.T) {
 	t.Run("GET", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			source := sources.Source{Name: "test-source", ConnStr: "postgresql://test"}
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				GetSourcesFunc: func() (sources.Sources, error) {
 					return sources.Sources{source}, nil
 				},
@@ -262,7 +239,7 @@ func TestHandleSourceItem(t *testing.T) {
 		})
 
 		t.Run("NotFound", func(t *testing.T) {
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				GetSourcesFunc: func() (sources.Sources, error) {
 					return sources.Sources{}, nil
 				},
@@ -279,7 +256,7 @@ func TestHandleSourceItem(t *testing.T) {
 		})
 
 		t.Run("GetSourcesError", func(t *testing.T) {
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				GetSourcesFunc: func() (sources.Sources, error) {
 					return nil, errors.New("database connection failed")
 				},
@@ -300,7 +277,7 @@ func TestHandleSourceItem(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			existingSource := sources.Source{Name: "test-source", ConnStr: "postgresql://old"}
 			var updatedSource sources.Source
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				GetSourcesFunc: func() (sources.Sources, error) {
 					return sources.Sources{existingSource}, nil
 				},
@@ -324,7 +301,7 @@ func TestHandleSourceItem(t *testing.T) {
 
 		t.Run("CreateNew", func(t *testing.T) {
 			var updatedSource sources.Source
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				GetSourcesFunc: func() (sources.Sources, error) {
 					return sources.Sources{}, nil // No existing sources
 				},
@@ -349,7 +326,7 @@ func TestHandleSourceItem(t *testing.T) {
 
 		t.Run("NameMismatch", func(t *testing.T) {
 			existingSource := sources.Source{Name: "test-source"}
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				GetSourcesFunc: func() (sources.Sources, error) {
 					return sources.Sources{existingSource}, nil
 				},
@@ -370,7 +347,7 @@ func TestHandleSourceItem(t *testing.T) {
 		})
 
 		t.Run("InvalidRequestBody", func(t *testing.T) {
-			mock := &mockSourcesReaderWriter{}
+			mock := &testutil.MockSourcesReaderWriter{}
 			ts := newTestSourceServer(mock)
 			r := newSourceItemRequest(http.MethodPut, "test-source", &errorReader{})
 			w := httptest.NewRecorder()
@@ -383,7 +360,7 @@ func TestHandleSourceItem(t *testing.T) {
 		})
 
 		t.Run("InvalidJSON", func(t *testing.T) {
-			mock := &mockSourcesReaderWriter{}
+			mock := &testutil.MockSourcesReaderWriter{}
 			ts := newTestSourceServer(mock)
 			r := newSourceItemRequest(http.MethodPut, "test-source", strings.NewReader("invalid json"))
 			w := httptest.NewRecorder()
@@ -396,7 +373,7 @@ func TestHandleSourceItem(t *testing.T) {
 		})
 
 		t.Run("UpdateError", func(t *testing.T) {
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				UpdateSourceFunc: func(sources.Source) error {
 					return errors.New("update operation failed")
 				},
@@ -420,7 +397,7 @@ func TestHandleSourceItem(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			existingSource := sources.Source{Name: "test-source"}
 			var deletedName string
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				GetSourcesFunc: func() (sources.Sources, error) {
 					return sources.Sources{existingSource}, nil
 				},
@@ -441,7 +418,7 @@ func TestHandleSourceItem(t *testing.T) {
 
 		t.Run("Idempotent", func(t *testing.T) {
 			var deletedName string
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				GetSourcesFunc: func() (sources.Sources, error) {
 					return sources.Sources{}, nil // No existing sources
 				},
@@ -461,7 +438,7 @@ func TestHandleSourceItem(t *testing.T) {
 		})
 
 		t.Run("DeleteError", func(t *testing.T) {
-			mock := &mockSourcesReaderWriter{
+			mock := &testutil.MockSourcesReaderWriter{
 				DeleteSourceFunc: func(string) error {
 					return errors.New("delete operation failed")
 				},
@@ -479,7 +456,7 @@ func TestHandleSourceItem(t *testing.T) {
 	})
 
 	t.Run("EmptyName", func(t *testing.T) {
-		mock := &mockSourcesReaderWriter{}
+		mock := &testutil.MockSourcesReaderWriter{}
 		ts := newTestSourceServer(mock)
 		r := newSourceItemRequest(http.MethodGet, "", nil)
 		w := httptest.NewRecorder()
@@ -492,7 +469,7 @@ func TestHandleSourceItem(t *testing.T) {
 	})
 
 	t.Run("OPTIONS", func(t *testing.T) {
-		mock := &mockSourcesReaderWriter{}
+		mock := &testutil.MockSourcesReaderWriter{}
 		ts := newTestSourceServer(mock)
 		r := newSourceItemRequest(http.MethodOptions, "test", nil)
 		w := httptest.NewRecorder()
@@ -504,7 +481,7 @@ func TestHandleSourceItem(t *testing.T) {
 	})
 
 	t.Run("MethodNotAllowed", func(t *testing.T) {
-		mock := &mockSourcesReaderWriter{}
+		mock := &testutil.MockSourcesReaderWriter{}
 		ts := newTestSourceServer(mock)
 		r := newSourceItemRequest(http.MethodPost, "test", nil)
 		w := httptest.NewRecorder()

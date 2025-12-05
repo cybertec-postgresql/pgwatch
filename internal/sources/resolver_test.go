@@ -12,23 +12,13 @@ import (
 	client "go.etcd.io/etcd/client/v3"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
-	testcontainers "github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/etcd"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 )
 
 func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
-	pgContainer, err := postgres.Run(ctx,
-		ImageName,
-		postgres.WithDatabase("mydatabase"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
+	pgContainer, pgTeardown, err := testutil.SetupPostgresContainer()
 	require.NoError(t, err)
-	defer func() { assert.NoError(t, pgContainer.Terminate(ctx)) }()
+	defer pgTeardown()
 
 	// Create a new MonitoredDatabase instance
 	md := sources.Source{}
@@ -53,12 +43,9 @@ func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
 }
 
 func TestMonitoredDatabase_ResolveDatabasesFromPatroni(t *testing.T) {
-
-	etcdContainer, err := etcd.Run(ctx, "gcr.io/etcd-development/etcd:v3.5.14",
-		testcontainers.WithWaitStrategy(wait.ForLog("ready to serve client requests").
-			WithStartupTimeout(15*time.Second)))
+	etcdContainer, etcdTeardown, err := testutil.SetupEtcdContainer()
 	require.NoError(t, err)
-	defer func() { assert.NoError(t, etcdContainer.Terminate(ctx)) }()
+	defer etcdTeardown()
 
 	endpoint, err := etcdContainer.ClientEndpoint(ctx)
 	require.NoError(t, err)
@@ -71,17 +58,10 @@ func TestMonitoredDatabase_ResolveDatabasesFromPatroni(t *testing.T) {
 	defer cli.Close()
 
 	// Start postgres server for testing
-	pgContainer, err := postgres.Run(ctx,
-		ImageName,
-		postgres.WithDatabase("mydatabase"),
-		postgres.WithInitScripts("../../docker/bootstrap/create_role_db.sql"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
+	pgContainer, pgTeardown, err := testutil.SetupPostgresContainerWithInitScripts("../../docker/bootstrap/create_role_db.sql")
 	require.NoError(t, err)
-	defer func() { assert.NoError(t, pgContainer.Terminate(ctx)) }()
+	defer pgTeardown()
+
 	pgConnStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	require.NoError(t, err)
 	// Put values to etcd server
