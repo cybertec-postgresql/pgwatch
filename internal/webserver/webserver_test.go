@@ -11,17 +11,11 @@ import (
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
-type mockFS struct {
-	OpenFunc func(name string) (fs.File, error)
-}
-
-func (m mockFS) Open(name string) (fs.File, error) {
-	return m.OpenFunc(name)
-}
 
 func TestServer_handleStatic(t *testing.T) {
 	tempFile := path.Join(t.TempDir(), "file.ext")
@@ -33,7 +27,7 @@ func TestServer_handleStatic(t *testing.T) {
 	origUIFS := uiFS
 	defer func() { uiFS = origUIFS }()
 
-	uiFS = mockFS{
+	uiFS = testutil.MockFS{
 		OpenFunc: func(name string) (fs.File, error) {
 			switch name {
 			case "index.html", "static/file.ext":
