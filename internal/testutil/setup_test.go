@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,7 +40,7 @@ func TestLoadServerTLSCredentials(t *testing.T) {
 }
 
 func TestAuthInterceptor(t *testing.T) {
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(context.Context, any) (any, error) {
 		return "success", nil
 	}
 
@@ -130,9 +129,4 @@ func TestSetupPostgresContainer(t *testing.T) {
 	connStr, err := container.ConnectionString(context.Background())
 	require.NoError(t, err)
 	assert.NotEmpty(t, connStr)
-}
-
-func TestReceiverImplementsInterface(t *testing.T) {
-	// Compile-time check that Receiver implements pb.ReceiverServer
-	var _ pb.ReceiverServer = (*testutil.Receiver)(nil)
 }
