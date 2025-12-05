@@ -8,6 +8,7 @@ import (
 )
 
 var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
+
 const pgImageName = "docker.io/postgres:17-alpine"
 const MockDatabase = "mydatabase"
 
