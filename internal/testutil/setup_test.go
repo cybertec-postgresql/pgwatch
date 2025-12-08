@@ -82,21 +82,42 @@ func TestSetupPostgresContainer(t *testing.T) {
 	}
 
 	container, teardown, err := testutil.SetupPostgresContainer()
-	if err != nil {
-		t.Skipf("Skipping postgres container test: %v", err)
-		return
-	}
-	defer teardown()
+	for i := range 2 {
+		if i == 1 {
+			container, teardown, err = testutil.SetupPostgresContainerWithInitScripts("../../docker/bootstrap/create_role_db.sql")
+		}
 
-	assert.NotNil(t, container)
+		if err != nil {
+			t.Skipf("Skipping postgres container test: %v", err)
+			return
+		}
+		defer teardown()
+
+		assert.NotNil(t, container)
+
+		// Verify container is running
+		state, err := container.State(context.Background())
+		require.NoError(t, err)
+		assert.True(t, state.Running)
+
+		// Verify connection string is available
+		connStr, err := container.ConnectionString(context.Background())
+		require.NoError(t, err)
+		assert.NotEmpty(t, connStr)
+	}
+}
+
+func TestSetupEtcdContainer(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping etcd container test in short mode")
+	}
+
+	etcdContainer, etcdTeardown, err := testutil.SetupEtcdContainer()
+	require.NoError(t, err)
+	defer etcdTeardown()
 
 	// Verify container is running
-	state, err := container.State(context.Background())
+	state, err := etcdContainer.State(context.Background())
 	require.NoError(t, err)
 	assert.True(t, state.Running)
-
-	// Verify connection string is available
-	connStr, err := container.ConnectionString(context.Background())
-	require.NoError(t, err)
-	assert.NotEmpty(t, connStr)
 }
