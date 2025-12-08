@@ -89,11 +89,6 @@ func (md *SourceConn) Connect(ctx context.Context, opts CmdOpts) (err error) {
 		if opts.MaxParallelConnectionsPerDb > 0 {
 			md.ConnConfig.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
 		}
-		// Set lock_timeout at connection level for PostgreSQL sources to avoid
-		// wrapping every query in a transaction with SET LOCAL lock_timeout
-		if md.IsPostgresSource() && opts.ConnLockTimeout != "" && opts.ConnLockTimeout != "0" {
-			md.ConnConfig.ConnConfig.RuntimeParams["lock_timeout"] = opts.ConnLockTimeout
-		}
 		md.Conn, err = NewConnWithConfig(ctx, md.ConnConfig)
 		if err != nil {
 			return err
