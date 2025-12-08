@@ -23,7 +23,6 @@ func (m mockFS) Open(name string) (fs.File, error) {
 	return m.OpenFunc(name)
 }
 
-
 func TestServer_handleStatic(t *testing.T) {
 	tempFile := path.Join(t.TempDir(), "file.ext")
 	assert.NoError(t, os.WriteFile(tempFile, []byte(`{"foo": {"bar": 1}}`), 0644))
