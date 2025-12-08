@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
@@ -17,30 +16,16 @@ import (
 )
 
 func QueryMeasurements(ctx context.Context, md *sources.SourceConn, sql string, args ...any) (metrics.Measurements, error) {
-	var conn db.PgxIface
-	var err error
-	var tx pgx.Tx
 	if strings.TrimSpace(sql) == "" {
 		return nil, errors.New("empty SQL")
 	}
 
-	conn = md.Conn
-	if md.IsPostgresSource() {
-		// we don't want transaction for non-postgres sources, e.g. pgbouncer
-		if tx, err = conn.Begin(ctx); err != nil {
-			return nil, err
-		}
-		defer func() { _ = tx.Commit(ctx) }()
-		_, err = tx.Exec(ctx, "SET LOCAL lock_timeout TO '100ms'")
-		if err != nil {
-			return nil, err
-		}
-		conn = tx
-	} else {
-		// we want simple protocol for non-postgres connections, e.g. pgpool
+	// For non-postgres connections (e.g. pgbouncer, pgpool), use simple protocol
+	if !md.IsPostgresSource() {
 		args = append([]any{pgx.QueryExecModeSimpleProtocol}, args...)
 	}
-	rows, err := conn.Query(ctx, sql, args...)
+	// lock_timeout is set at connection level via RuntimeParams, no need for transaction wrapper
+	rows, err := md.Conn.Query(ctx, sql, args...)
 	if err == nil {
 		return pgx.CollectRows(rows, metrics.RowToMeasurement)
 	}
