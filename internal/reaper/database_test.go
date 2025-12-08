@@ -7,11 +7,24 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	pgxmock "github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// Helper function to create a test SourceConn with pgxmock
+func createTestSourceConn() (*sources.SourceConn, pgxmock.PgxPoolIface, error) {
+	mock, err := pgxmock.NewPool()
+	md := &sources.SourceConn{
+		Conn:   mock,
+		Source: sources.Source{Name: "testdb"},
+		RuntimeInfo: sources.RuntimeInfo{
+			Version:     120000,
+			ChangeState: make(map[string]map[string]string),
+		},
+	}
+	return md, mock, err
+}
 
 func TestTryCreateMetricsFetchingHelpers(t *testing.T) {
 	ctx := context.Background()
@@ -61,7 +74,7 @@ func TestDetectSprocChanges(t *testing.T) {
 	}
 
 	// Create single connection and reaper to maintain state across calls
-	md, mock, err := testutil.CreateTestSourceConn()
+	md, mock, err := createTestSourceConn()
 	assert.NoError(t, err)
 	defer mock.Close()
 
@@ -139,7 +152,7 @@ func TestDetectTableChanges(t *testing.T) {
 	}
 
 	// Create single connection and reaper to maintain state across calls
-	md, mock, err := testutil.CreateTestSourceConn()
+	md, mock, err := createTestSourceConn()
 	assert.NoError(t, err)
 	defer mock.Close()
 
@@ -220,7 +233,7 @@ func TestDetectIndexChanges(t *testing.T) {
 	}
 
 	// Create single connection and reaper to maintain state across calls
-	md, mock, err := testutil.CreateTestSourceConn()
+	md, mock, err := createTestSourceConn()
 	assert.NoError(t, err)
 
 	reaper := &Reaper{
@@ -300,7 +313,7 @@ func TestDetectPrivilegeChanges(t *testing.T) {
 	}
 
 	// Create single connection and reaper to maintain state across calls
-	md, mock, err := testutil.CreateTestSourceConn()
+	md, mock, err := createTestSourceConn()
 	assert.NoError(t, err)
 
 	reaper := &Reaper{
