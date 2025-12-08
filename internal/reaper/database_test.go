@@ -13,8 +13,10 @@ import (
 )
 
 // Helper function to create a test SourceConn with pgxmock
-func createTestSourceConn() (*sources.SourceConn, pgxmock.PgxPoolIface, error) {
+func createTestSourceConn(t *testing.T) (*sources.SourceConn, pgxmock.PgxPoolIface) {
 	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+
 	md := &sources.SourceConn{
 		Conn:   mock,
 		Source: sources.Source{Name: "testdb"},
@@ -23,7 +25,7 @@ func createTestSourceConn() (*sources.SourceConn, pgxmock.PgxPoolIface, error) {
 			ChangeState: make(map[string]map[string]string),
 		},
 	}
-	return md, mock, err
+	return md, mock
 }
 
 func TestTryCreateMetricsFetchingHelpers(t *testing.T) {
@@ -74,8 +76,7 @@ func TestDetectSprocChanges(t *testing.T) {
 	}
 
 	// Create single connection and reaper to maintain state across calls
-	md, mock, err := createTestSourceConn()
-	assert.NoError(t, err)
+	md, mock := createTestSourceConn(t)
 	defer mock.Close()
 
 	reaper := &Reaper{
@@ -152,8 +153,7 @@ func TestDetectTableChanges(t *testing.T) {
 	}
 
 	// Create single connection and reaper to maintain state across calls
-	md, mock, err := createTestSourceConn()
-	assert.NoError(t, err)
+	md, mock := createTestSourceConn(t)
 	defer mock.Close()
 
 	reaper := &Reaper{
@@ -233,8 +233,8 @@ func TestDetectIndexChanges(t *testing.T) {
 	}
 
 	// Create single connection and reaper to maintain state across calls
-	md, mock, err := createTestSourceConn()
-	assert.NoError(t, err)
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
 
 	reaper := &Reaper{
 		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
@@ -313,8 +313,8 @@ func TestDetectPrivilegeChanges(t *testing.T) {
 	}
 
 	// Create single connection and reaper to maintain state across calls
-	md, mock, err := createTestSourceConn()
-	assert.NoError(t, err)
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
 
 	reaper := &Reaper{
 		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
