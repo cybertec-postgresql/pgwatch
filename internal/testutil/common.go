@@ -18,9 +18,3 @@ func CreateTestSourceConn() (*sources.SourceConn, pgxmock.PgxPoolIface, error) {
 	}
 	return md, mock, err
 }
-
-// Helper function to set up query expectations for PostgreSQL sources
-// (lock_timeout is now set at connection level, no transaction needed)
-func ExpectQuery(mock pgxmock.PgxPoolIface, queryRows *pgxmock.Rows) {
-	mock.ExpectQuery("SELECT").WillReturnRows(queryRows)
-}
