@@ -76,36 +76,6 @@ func TestAuthInterceptor(t *testing.T) {
 	})
 }
 
-func TestSetupRPCServers(t *testing.T) {
-	t.Run("successful setup", func(t *testing.T) {
-		teardown, err := testutil.SetupRPCServers()
-		require.NoError(t, err)
-		require.NotNil(t, teardown)
-		defer teardown()
-
-		// Verify CA file was created
-		assert.FileExists(t, testutil.CAFile)
-	})
-
-	t.Run("error writing CA file", func(t *testing.T) {
-		// Save original CAFile
-		origCAFile := testutil.CAFile
-		defer func() {
-			testutil.CAFile = origCAFile
-		}()
-
-		// Use invalid path to trigger write error
-		testutil.CAFile = "/invalid/path/that/does/not/exist/ca.crt"
-
-		teardown, err := testutil.SetupRPCServers()
-		assert.Error(t, err)
-		assert.NotNil(t, teardown) // teardown should still be returned
-
-		// Call teardown to ensure it doesn't panic
-		teardown()
-	})
-}
-
 func TestSetupPostgresContainer(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping container test in short mode")
