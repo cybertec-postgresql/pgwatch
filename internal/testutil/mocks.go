@@ -3,7 +3,6 @@ package testutil
 import (
 	"context"
 	"errors"
-	"io/fs"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
@@ -105,12 +104,4 @@ func (m *MockSourcesReaderWriter) DeleteSource(name string) error {
 }
 func (m *MockSourcesReaderWriter) WriteSources(srcs sources.Sources) error {
 	return m.WriteSourcesFunc(srcs)
-}
-
-type MockFS struct {
-	OpenFunc func(name string) (fs.File, error)
-}
-
-func (m MockFS) Open(name string) (fs.File, error) {
-	return m.OpenFunc(name)
 }
