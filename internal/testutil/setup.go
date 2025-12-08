@@ -55,7 +55,7 @@ func SetupPostgresContainerWithInitScripts(scripts ...string) (*postgres.Postgre
 }
 
 func SetupEtcdContainer() (*etcd.EtcdContainer, func(), error) {
-	etcdContainer, err := etcd.Run(ctx, "gcr.io/etcd-development/etcd:v3.5.14",
+	etcdContainer, err := etcd.Run(ctx, etcdImage,
 		testcontainers.
 			WithWaitStrategy(wait.ForLog("ready to serve client requests").
 			WithStartupTimeout(15*time.Second)))
