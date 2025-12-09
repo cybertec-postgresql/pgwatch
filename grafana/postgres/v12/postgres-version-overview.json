@@ -241,10 +241,6 @@
         "type": "query"
       },
       {
-        "current": {
-          "text": "170004",
-          "value": "170004"
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"

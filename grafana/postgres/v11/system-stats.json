@@ -30,7 +30,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "a.k.a. CPU run  queue length or Load Average, reported e.g. by the \"uptime\" command",
       "fill": 1,
@@ -178,7 +181,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "System-wide CPU utilization as reported by psutil.cpu_percent()",
       "fill": 1,
@@ -330,7 +336,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "fill": 1,
       "gridPos": {
@@ -469,7 +478,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Doesn't have to necessarily equal 100%  to values reported by the \"free\" command - see [here](https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory) for more",
       "fill": 1,
@@ -608,7 +620,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "Doesn't have to necessarily equal 100%  to values reported by the \"free\" command - see [here](https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory) for more",
       "fill": 1,
@@ -747,7 +762,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "For all disks on the host, not only Postgres related",
       "fill": 1,
@@ -892,7 +910,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "For Postgres data / WAL / log folder partitions and user defined tablespace partitions",
       "fill": 1,
@@ -1044,7 +1065,10 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "decimals": 1,
       "description": "For Postgres data / WAL / log folder partitions and user defined tablespace partitions",
       "fill": 1,
@@ -1218,10 +1242,10 @@
     "list": [
       {
         "allValue": null,
-        "current": {
-          "text": null
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "pgwatch-metrics"
         },
-        "datasource": null,
         "definition": "",
         "hide": 0,
         "includeAll": false,

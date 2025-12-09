@@ -2657,10 +2657,6 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "text": "demo",
-          "value": "demo"
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
@@ -2677,10 +2673,6 @@
         "type": "query"
       },
       {
-        "current": {
-          "text": "pgwatch.metric",
-          "value": "pgwatch.metric"
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"

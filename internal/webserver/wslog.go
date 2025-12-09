@@ -70,15 +70,15 @@ func writer(ws *websocket.Conn, l log.LoggerHooker, done <-chan struct{}) {
 	}
 }
 
-func (Server *WebUIServer) serveWsLog(w http.ResponseWriter, r *http.Request) {
+func (s *WebUIServer) serveWsLog(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		Server.Error(err)
+		s.Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	Server.WithField("reguest", r.URL.String()).Debugf("established websocket connection")
-	l, _ := Server.Logger.(log.LoggerHooker)
+	s.WithField("reguest", r.URL.String()).Debugf("established websocket connection")
+	l, _ := s.Logger.(log.LoggerHooker)
 	done := make(chan struct{})
 	go writer(ws, l, done)
 	go reader(ws, done)

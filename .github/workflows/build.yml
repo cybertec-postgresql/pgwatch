@@ -61,7 +61,7 @@ jobs:
       uses: actions/upload-artifact@v5
       with:
         name: webui-build
-        path: internal/webui/build
+        path: internal/webserver/build
 
     - name: GolangCI-Lint
       uses: golangci/golangci-lint-action@v9
@@ -88,7 +88,7 @@ jobs:
       uses: actions/download-artifact@v6
       with:
         name: webui-build
-        path: internal/webui/build        
+        path: internal/webserver/build        
 
     - name: Setup Protobuf
       uses: ./.github/actions/setup-protobuf

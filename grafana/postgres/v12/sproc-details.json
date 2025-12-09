@@ -346,6 +346,32 @@
       ],
       "title": "Avg. runtime ($agg_interval avg.)",
       "type": "timeseries"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      },
+      "id": 3,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+        "mode": "markdown"
+      },
+      "pluginVersion": "12.1.0",
+      "title": "",
+      "transparent": true,
+      "type": "text"
     }
   ],
   "preload": false,
@@ -357,10 +383,6 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "text": "demo",
-          "value": "demo"
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
@@ -375,10 +397,6 @@
         "type": "query"
       },
       {
-        "current": {
-          "text": "public.get_load_average",
-          "value": "public.get_load_average"
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"

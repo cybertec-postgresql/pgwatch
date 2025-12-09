@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 35,
+  "id": 26,
   "links": [],
   "panels": [
     {
@@ -1346,7 +1346,8 @@
     },
     {
       "datasource": {
-        "type": "postgres"
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
       },
       "description": "Interactive treemap visualization showing relative sizes of tables and their indexes. Larger rectangles represent bigger tables.",
       "fieldConfig": {
@@ -1388,7 +1389,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "postgres"
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
           },
           "format": "table",
           "rawQuery": true,
@@ -1401,7 +1403,8 @@
     },
     {
       "datasource": {
-        "type": "postgres"
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
       },
       "description": "Interactive treemap visualization showing table data sizes excluding indexes and TOAST. Useful for identifying tables with large amounts of actual data.",
       "fieldConfig": {
@@ -1439,7 +1442,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "postgres"
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
           },
           "format": "table",
           "rawQuery": true,
@@ -1452,7 +1456,8 @@
     },
     {
       "datasource": {
-        "type": "postgres"
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
       },
       "description": "Interactive treemap visualization showing index sizes. Helps identify large indexes that may need optimization or rebuilding.",
       "fieldConfig": {
@@ -1494,7 +1499,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "postgres"
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
           },
           "format": "table",
           "rawQuery": true,
@@ -1541,12 +1547,9 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "text": "demo",
-          "value": "demo"
-        },
         "datasource": {
-          "type": "postgres"
+          "type": "grafana-postgresql-datasource",
+          "uid": "pgwatch-metrics"
         },
         "definition": "",
         "includeAll": false,

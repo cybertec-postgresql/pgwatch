@@ -9,14 +9,12 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	"github.com/jackc/pgx/v5"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	testcontainers "github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
@@ -461,19 +459,13 @@ func TestCopyFromMeasurements_StateManagement(t *testing.T) {
 func TestCopyFromMeasurements_CopyFail(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
-	const ImageName = "docker.io/postgres:17-alpine"
-	pgContainer, err := postgres.Run(ctx,
-		ImageName,
-		postgres.WithDatabase("mydatabase"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
-	r.NoError(err)
-	defer func() { assert.NoError(t, pgContainer.Terminate(ctx)) }()
 
-	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+	r.NoError(err)
+	defer pgTearDown()
+
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	r.NoError(err)
 	conn, err := pgx.Connect(ctx, connStr)
 	r.NoError(err)
 
@@ -513,21 +505,13 @@ func TestCopyFromMeasurements_CopyFail(t *testing.T) {
 // cli flags that expect a PostgreSQL interval string
 func TestIntervalValidation(t *testing.T) {
 	a := assert.New(t)
-	r := require.New(t)
 
-	const ImageName = "docker.io/postgres:17-alpine"
-	pgContainer, err := postgres.Run(ctx,
-		ImageName,
-		postgres.WithDatabase("mydatabase"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
-	r.NoError(err)
-	defer func() { a.NoError(pgContainer.Terminate(ctx)) }()
+	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+	a.NoError(err)
+	defer pgTearDown()
 
-	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	a.NoError(err)
 
 	opts := &CmdOpts{
 		PartitionInterval:   "1 minute",
@@ -589,19 +573,12 @@ func TestPartitionInterval(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
 
-	const ImageName = "docker.io/postgres:17-alpine"
-	pgContainer, err := postgres.Run(ctx,
-		ImageName,
-		postgres.WithDatabase("mydatabase"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
+	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
 	r.NoError(err)
-	defer func() { a.NoError(pgContainer.Terminate(ctx)) }()
+	defer pgTearDown()
 
-	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	r.NoError(err)
 
 	opts := &CmdOpts{
 		PartitionInterval:   "3 weeks",
@@ -642,20 +619,12 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
 
-	// TODO: move postgres container setup to TestMain()
-	const ImageName = "docker.io/postgres:17-alpine"
-	pgContainer, err := postgres.Run(ctx,
-		ImageName,
-		postgres.WithDatabase("mydatabase"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
+	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
 	r.NoError(err)
-	defer func() { a.NoError(pgContainer.Terminate(ctx)) }()
+	defer pgTearDown()
 
-	connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	r.NoError(err)
 	conn, err := pgx.Connect(ctx, connStr)
 	r.NoError(err)
 
