@@ -235,7 +235,7 @@ func ParseLogsRemote(
 
 				var fileName string
 				if size == latestSize {
-					sql := "select name, size from pg_ls_logdir() where modification > $1 and name like '%csv' order by modification limit 1;"
+					sql := "select name, size from pg_ls_logdir() where modification >= $1 and name like '%csv' order by modification, name limit 1;"
 					err := mdb.Conn.QueryRow(ctx, sql, modification).Scan(&fileName, &latestSize)
 					if err == nil {
 						latestLogFile = fileName
