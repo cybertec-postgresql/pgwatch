@@ -238,46 +238,49 @@ func ParseLogsRemote(
 
 				if entry.Size == size {
 					err := mdb.Conn.QueryRow(ctx, "select name, size from pg_ls_logdir() where modification > $1 order by modification limit 1;", entry.Modification).Scan(&entry.FileName, &entry.Size)
-					if err != nil {
-						continue
+					if err == nil {
+						latestLogFile = entry.FileName
+						size = entry.Size
+						offset = 0
+						logger.Infof("Switching to new logfile: %s", entry.FileName)
+						currInterval = 0 // We already slept. It will be resetted.
+						break
 					}
-					latestLogFile = entry.FileName
-					size = entry.Size
-					offset = 0
-					logger.Infof("Switching to new logfile: %s", entry.FileName)
 				} else {
 					size = entry.Size
+					currInterval = 0 // We already slept. It will be resetted.
+					break
 				}
-				currInterval = 0 // We already slept.
-				break
 			}
 
-			line := lines[linesRead]
-			linesRead++
+			if linesRead < numOfLines {
+				line := lines[linesRead]
+				linesRead++
 
-			matches := LogsMatchRegex.FindStringSubmatch(line)
-			if len(matches) != 0 {
-				result := regexMatchesToMap(LogsMatchRegex, matches)
-				errorSeverity, ok := result["error_severity"]
-				if !ok {
-					logger.Error("error_severity group must be defined in parse regex:", LogsMatchRegex)
-					time.Sleep(time.Minute)
-					break
-				}
-				if serverMessagesLang != "en" {
-					errorSeverity = severityToEnglish(serverMessagesLang, errorSeverity)
-				}
+				matches := LogsMatchRegex.FindStringSubmatch(line)
+				if len(matches) != 0 {
+					result := regexMatchesToMap(LogsMatchRegex, matches)
+					errorSeverity, ok := result["error_severity"]
+					if !ok {
+						logger.Error("error_severity group must be defined in parse regex:", LogsMatchRegex)
+						time.Sleep(time.Minute)
+						break
+					}
+					if serverMessagesLang != "en" {
+						errorSeverity = severityToEnglish(serverMessagesLang, errorSeverity)
+					}
 
-				databaseName, ok := result["database_name"]
-				if !ok {
-					logger.Error("database_name group must be defined in parse regex:", LogsMatchRegex)
-					time.Sleep(time.Minute)
-					break
+					databaseName, ok := result["database_name"]
+					if !ok {
+						logger.Error("database_name group must be defined in parse regex:", LogsMatchRegex)
+						time.Sleep(time.Minute)
+						break
+					}
+					if realDbname == databaseName {
+						eventCounts[errorSeverity]++
+					}
+					eventCountsTotal[errorSeverity]++
 				}
-				if realDbname == databaseName {
-					eventCounts[errorSeverity]++
-				}
-				eventCountsTotal[errorSeverity]++
 			}
 
 			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(interval))) {
