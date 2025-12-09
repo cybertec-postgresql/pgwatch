@@ -123,12 +123,12 @@ func ParseLogs(
 	logger := log.GetLogger(ctx).WithField("source", mdb.Name).WithField("metric", specialMetricServerLogEventCounts)
 	ctx = log.WithLogger(ctx, logger)
 
-	csvlogRegex, err := regexp.Compile(cmp.Or(LogsMatchRegex, CSVLogDefaultRegEx))
+	logsRegex, err := regexp.Compile(cmp.Or(LogsMatchRegex, CSVLogDefaultRegEx))
 	if err != nil {
-		logger.WithError(err).Print("Invalid regex: ", csvlogRegex)
+		logger.WithError(err).Printf("Invalid log parsing regex: %s", logsRegex)
 		return
 	}
-	logger.Debugf("Using %s as log parsing regex", csvlogRegex)
+	logger.Debugf("Using %s as log parsing regex", logsRegex)
 
 	if LogsGlobPath != "" {
 		logsGlobPath = LogsGlobPath
@@ -146,9 +146,11 @@ func ParseLogs(
 	}
 
 	if ok, err := db.IsClientOnSameHost(mdb.Conn); !ok || err != nil {
-		ParseLogsRemote(ctx, mdb, realDbname, interval, storeCh, csvlogRegex, logsGlobPath, serverMessagesLang)
+		logger.Info("DB is not detected to be on the same host. parsing logs remotely")
+		ParseLogsRemote(ctx, mdb, realDbname, interval, storeCh, logsRegex, logsGlobPath, serverMessagesLang)
 	} else {
-		ParseLogsLocal(ctx, mdb, realDbname, interval, storeCh, csvlogRegex, logsGlobPath, serverMessagesLang)
+		logger.Info("DB is on the same host. parsing logs locally")
+		ParseLogsLocal(ctx, mdb, realDbname, interval, storeCh, logsRegex, logsGlobPath, serverMessagesLang)
 	}
 }
 
@@ -165,10 +167,10 @@ func ParseLogsRemote(
 	interval float64,
 	storeCh chan<- MeasurementEnvelope,
 	LogsMatchRegex *regexp.Regexp,
-	LogsGlobPath string,
+	LogsGlobPattern string,
 	serverMessagesLang string,
 ) {
-	var latest string
+	var latestLogFile string
 	var linesRead int // to skip over already parsed lines on Postgres server restart for example
 	var lastSendTime time.Time                    // to storage channel
 	var eventCounts = make(map[string]int64)      // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
@@ -184,37 +186,25 @@ func ParseLogsRemote(
 
 	logger := log.GetLogger(ctx)
 
+	currInterval = time.Second * time.Duration(interval)
 	for { // re-try loop. re-start in case of FS errors or just to refresh host config
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(currInterval):
-			if currInterval == 0 {
-				currInterval = time.Second * time.Duration(interval)
-			}
-		}
-
-		if latest == "" || firstRun {
-			var entry pgDirEntry
-			err := mdb.Conn.QueryRow(ctx, "select * from pg_ls_logdir() order by modification desc limit 1;").Scan(&entry.FileName, &entry.Size, &entry.Modification)
+		if firstRun {
+			err := mdb.Conn.QueryRow(ctx, "select name, size from pg_ls_logdir() order by modification desc limit 1;").Scan(&latestLogFile, &size)
 			if err != nil {
-				logger.Infof("No logfiles found to parse from glob '%s'", LogsGlobPath)
+				logger.Infof("No logfiles found to parse from glob '%s'", LogsGlobPattern)
 				continue
 			}
-
-			latest = entry.FileName
-			size = entry.Size
-			offset = entry.Size // Seek to an end
-
+			offset = size // Seek to an end
 			firstRun = false
-			logger.Infof("Starting to parse logfile: %s", latest)
+			logger.Infof("Starting to parse logfile: %s", latestLogFile)
 		}
 
 		if linesRead == numOfLines && size != offset {
-			err := mdb.Conn.QueryRow(ctx, "select pg_read_file($1, $2, $3)", filepath.Dir(LogsGlobPath) + "/" + latest, offset, size).Scan(&chunk)
-			offset += size
+			logFilePath := filepath.Dir(LogsGlobPattern) + "/" + latestLogFile
+			err := mdb.Conn.QueryRow(ctx, "select pg_read_file($1, $2, $3)", logFilePath, offset, size).Scan(&chunk)
+			offset = size
 			if err != nil {
-				logger.Warningf("Failed to read logfile %s: %s", latest, err)
+				logger.Warningf("Failed to read logfile %s: %s", latestLogFile, err)
 				continue
 			}
 			lines = strings.Split(chunk, "\n")
@@ -231,13 +221,23 @@ func ParseLogsRemote(
 				}
 
 				var entry pgDirEntry
-				_ = mdb.Conn.QueryRow(ctx, "select * from pg_ls_logdir() where name = $1;", latest).Scan(&entry.FileName, &entry.Size, &entry.Modification)
-				size = entry.Size
+				err := mdb.Conn.QueryRow(ctx, "select * from pg_ls_logdir() where name = $1;", latestLogFile).Scan(&entry.FileName, &entry.Size, &entry.Modification)
+				if err != nil {
+					logger.Warn("Failed to read logfile %s status", latestLogFile)
+					continue
+				}
+
 				if entry.Size == size {
-					_ = mdb.Conn.QueryRow(ctx, "select * from pg_ls_logdir() where modification > $1 order by modification limit 1;", entry.Modification).Scan(&entry.FileName, &entry.Size, &entry.Modification)
-					latest = entry.FileName
+					err := mdb.Conn.QueryRow(ctx, "select name, size from pg_ls_logdir() where modification > $1 order by modification limit 1;", entry.Modification).Scan(&entry.FileName, &entry.Size)
+					if err != nil {
+						continue
+					}
+					latestLogFile = entry.FileName
+					size = entry.Size
 					offset = 0
 					logger.Infof("Switching to new logfile: %s", entry.FileName)
+				} else {
+					size = entry.Size
 				}
 				break
 			}
