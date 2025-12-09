@@ -186,9 +186,17 @@ func ParseLogsRemote(
 
 	logger := log.GetLogger(ctx)
 
-	currInterval = time.Second * time.Duration(interval)
 	for { // re-try loop. re-start in case of FS errors or just to refresh host config
-		if firstRun {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(currInterval):
+			if currInterval == 0 {
+				currInterval = time.Second * time.Duration(interval)
+			}
+		}
+
+		if latestLogFile == "" || firstRun {
 			err := mdb.Conn.QueryRow(ctx, "select name, size from pg_ls_logdir() order by modification desc limit 1;").Scan(&latestLogFile, &size)
 			if err != nil {
 				logger.Infof("No logfiles found to parse from glob '%s'", LogsGlobPattern)
@@ -223,8 +231,9 @@ func ParseLogsRemote(
 				var entry pgDirEntry
 				err := mdb.Conn.QueryRow(ctx, "select * from pg_ls_logdir() where name = $1;", latestLogFile).Scan(&entry.FileName, &entry.Size, &entry.Modification)
 				if err != nil {
-					logger.Warn("Failed to read logfile %s status", latestLogFile)
-					continue
+					logger.Warn("Failed to read state info of logfile %s", latestLogFile)
+					latestLogFile = ""
+					break
 				}
 
 				if entry.Size == size {
@@ -239,6 +248,7 @@ func ParseLogsRemote(
 				} else {
 					size = entry.Size
 				}
+				currInterval = 0 // We already slept.
 				break
 			}
 
@@ -282,7 +292,7 @@ func ParseLogsRemote(
 				}
 			}
 
-		} // file read loop
+		} // chunk read loop
 	} // config loop
 
 }
@@ -310,12 +320,14 @@ func ParseLogsLocal(
 
 	logger := log.GetLogger(ctx)
 
-	currInterval = time.Second * time.Duration(interval)
 	for { // re-try loop. re-start in case of FS errors or just to refresh host config
 		select {
 		case <-ctx.Done():
 			return
 		case <-time.After(currInterval):
+			if currInterval == 0 {
+				currInterval = time.Second * time.Duration(interval)
+			}
 		}
 
 		if latest == "" || firstRun {
