@@ -154,12 +154,6 @@ func ParseLogs(
 	}
 }
 
-type pgDirEntry struct {
-	FileName string
-	Size int32
-	Modification time.Time
-}
-
 func ParseLogsRemote(
 	ctx context.Context,
 	mdb *sources.SourceConn,
@@ -196,6 +190,8 @@ func ParseLogsRemote(
 			}
 		}
 
+		// TODO: handle postmaster restarts
+
 		if latestLogFile == "" || firstRun {
 			err := mdb.Conn.QueryRow(ctx, "select name, size from pg_ls_logdir() order by modification desc limit 1;").Scan(&latestLogFile, &size)
 			if err != nil {
@@ -228,26 +224,29 @@ func ParseLogsRemote(
 				case <-time.After(currInterval):
 				}
 
-				var entry pgDirEntry
-				err := mdb.Conn.QueryRow(ctx, "select * from pg_ls_logdir() where name = $1;", latestLogFile).Scan(&entry.FileName, &entry.Size, &entry.Modification)
+				var latestSize int32
+				var modification time.Time
+
+				err := mdb.Conn.QueryRow(ctx, "select size, modification from pg_ls_logdir() where name = $1;", latestLogFile).Scan(&latestSize, &modification)
 				if err != nil {
 					logger.Warn("Failed to read state info of logfile %s", latestLogFile)
 					latestLogFile = ""
 					break
 				}
 
-				if entry.Size == size {
-					err := mdb.Conn.QueryRow(ctx, "select name, size from pg_ls_logdir() where modification > $1 order by modification limit 1;", entry.Modification).Scan(&entry.FileName, &entry.Size)
+				var fileName string
+				if size == latestSize {
+					err := mdb.Conn.QueryRow(ctx, "select name, size from pg_ls_logdir() where modification > $1 order by modification limit 1;", modification).Scan(&fileName, &latestSize)
 					if err == nil {
-						latestLogFile = entry.FileName
-						size = entry.Size
+						latestLogFile = fileName
+						size = latestSize
 						offset = 0
-						logger.Infof("Switching to new logfile: %s", entry.FileName)
+						logger.Infof("Switching to new logfile: %s", fileName)
 						currInterval = 0 // We already slept. It will be resetted.
 						break
 					}
 				} else {
-					size = entry.Size
+					size = latestSize
 					currInterval = 0 // We already slept. It will be resetted.
 					break
 				}
