@@ -9,6 +9,7 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/etcd"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"google.golang.org/grpc"
@@ -33,6 +34,37 @@ func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error) {
 	}
 
 	return pgContainer, tearDown, err
+}
+
+func SetupPostgresContainerWithInitScripts(scripts ...string) (*postgres.PostgresContainer, func(), error) {
+	pgContainer, err := postgres.Run(ctx,
+		pgImageName,
+		postgres.WithDatabase(MockDatabase),
+		postgres.WithInitScripts(scripts...),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(5*time.Second)),
+	)
+
+	tearDown := func() {
+		_ = pgContainer.Terminate(ctx)
+	}
+
+	return pgContainer, tearDown, err
+}
+
+func SetupEtcdContainer() (*etcd.EtcdContainer, func(), error) {
+	etcdContainer, err := etcd.Run(ctx, etcdImage,
+		testcontainers.
+			WithWaitStrategy(wait.ForLog("ready to serve client requests").
+			WithStartupTimeout(15*time.Second)))
+
+	tearDown := func() {
+		_ = etcdContainer.Terminate(ctx)
+	}
+
+	return etcdContainer, tearDown, err
 }
 
 //-----------Setup gRPC test servers-----------------
