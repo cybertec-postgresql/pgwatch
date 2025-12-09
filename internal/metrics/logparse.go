@@ -186,7 +186,7 @@ func ParseLogsRemote(
 
 	logger := log.GetLogger(ctx)
 
-	for { // re-try loop. re-start in case of FS errors or just to refresh host config
+	for { // detect current log file. read new chunks. re-start in case of errors
 		select {
 		case <-ctx.Done():
 			return
@@ -292,8 +292,8 @@ func ParseLogsRemote(
 				}
 			}
 
-		} // chunk read loop
-	} // config loop
+		} // line read loop
+	} // chunk read loop
 
 }
 
