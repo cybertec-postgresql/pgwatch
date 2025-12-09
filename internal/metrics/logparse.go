@@ -190,10 +190,9 @@ func ParseLogsRemote(
 			}
 		}
 
-		// TODO: handle postmaster restarts
-
 		if latestLogFile == "" || firstRun {
-			err := mdb.Conn.QueryRow(ctx, "select name, size from pg_ls_logdir() order by modification desc limit 1;").Scan(&latestLogFile, &size)
+			sql := "select name, size from pg_ls_logdir() where name like '%csv' order by modification desc limit 1;"
+			err := mdb.Conn.QueryRow(ctx, sql).Scan(&latestLogFile, &size)
 			if err != nil {
 				logger.Infof("No logfiles found to parse from glob '%s'", LogsGlobPattern)
 				continue
@@ -236,7 +235,8 @@ func ParseLogsRemote(
 
 				var fileName string
 				if size == latestSize {
-					err := mdb.Conn.QueryRow(ctx, "select name, size from pg_ls_logdir() where modification > $1 order by modification limit 1;", modification).Scan(&fileName, &latestSize)
+					sql := "select name, size from pg_ls_logdir() where modification > $1 and name like '%csv' order by modification limit 1;"
+					err := mdb.Conn.QueryRow(ctx, sql, modification).Scan(&fileName, &latestSize)
 					if err == nil {
 						latestLogFile = fileName
 						size = latestSize
