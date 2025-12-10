@@ -391,9 +391,9 @@ func TestLogParse(t *testing.T) {
 
 		// using UNIX socket depends on whether 
 		// we want local or remote connection
-		is_unix_socket := (mode == "local")
+		isUnixSocket := (mode == "local")
 		mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
-			pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(is_unix_socket))
+			pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(isUnixSocket))
 
 		if mode == "remote" {
 			mock.ExpectQuery(`select name, size from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
@@ -448,8 +448,12 @@ func TestLogParse(t *testing.T) {
 		// gave us flexbility to test more details
 		if mode == "remote" {
 			assert.Equal(t, int64(1), data["error"])
+			assert.Equal(t, int64(1), data["error_total"])
 			measurement = <-storeCh
 			assert.Equal(t, int64(1), measurement.Data[0]["warning"])
+			assert.Equal(t, int64(1), measurement.Data[0]["warning_total"])
+			measurement = <-storeCh
+			assert.Equal(t, int64(1), measurement.Data[0]["error_total"])
 		}
 	}
 }
