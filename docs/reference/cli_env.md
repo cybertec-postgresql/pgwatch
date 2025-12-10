@@ -212,7 +212,7 @@ It reads the configuration from the specified sources and metrics, then begins c
 ```
 
 !!! info
-    To use `config` command, you need to specify the `-m`, `--metrics` option.
+    To use `metric` command, you need to specify the `-m`, `--metrics` option.
 
 - `print-init`
 
