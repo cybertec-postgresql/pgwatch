@@ -370,10 +370,11 @@ func TestLogParse(t *testing.T) {
 	logFile := filepath.Join(tempDir, "test.csv")
 
 	// Create a test log file with CSV format entries
-	logContent := `2023-12-01 10:30:45.123 UTC,"postgres","testdb",12345,"127.0.0.1:54321",session123,1,"SELECT",2023-12-01 10:30:00 UTC,1/234,567,ERROR,"duplicate key value violates unique constraint"
-2023-12-01 10:30:46.124 UTC,"postgres","testdb",12345,"127.0.0.1:54321",session123,2,"SELECT",2023-12-01 10:30:00 UTC,1/234,567,WARNING,"this is a warning message"
-2023-12-01 10:30:47.125 UTC,"postgres","otherdb",12346,"127.0.0.1:54322",session124,1,"INSERT",2023-12-01 10:30:00 UTC,1/235,568,ERROR,"another error message"
-`
+	logContent := `
+	2023-12-01 10:30:45.123 UTC,"postgres","testdb",12345,"127.0.0.1:54321",session123,1,"SELECT",2023-12-01 10:30:00 UTC,1/234,567,ERROR,"duplicate key value violates unique constraint"
+	2023-12-01 10:30:46.124 UTC,"postgres","testdb",12345,"127.0.0.1:54321",session123,2,"SELECT",2023-12-01 10:30:00 UTC,1/234,567,WARNING,"this is a warning message"
+	2023-12-01 10:30:47.125 UTC,"postgres","otherdb",12346,"127.0.0.1:54322",session124,1,"INSERT",2023-12-01 10:30:00 UTC,1/235,568,ERROR,"another error message"
+	`
 
 	err := os.WriteFile(logFile, []byte(logContent), 0644)
 	require.NoError(t, err)
@@ -383,12 +384,12 @@ func TestLogParse(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	// pretend we're connected via UNIX socket
-	mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
-		pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(true))
 	// Mock the language detection query
 	mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 		WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
+	// pretend we're connected via UNIX socket
+	mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
+		pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(true))
 
 	// Create a SourceConn for testing
 	sourceConn := &sources.SourceConn{
