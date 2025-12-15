@@ -2,6 +2,7 @@ package testutil_test
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
@@ -105,6 +106,41 @@ func TestSetupPostgresContainer(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEmpty(t, connStr)
 	}
+}
+
+func TestSetupPostgresContainerWithConfig(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping container test in short mode")
+	}
+
+	// Create a temporary config file with CSV logging enabled
+	tempDir := t.TempDir()
+	configPath := tempDir + "/postgresql.conf"
+	configContent := `
+listen_addresses = '*'
+log_destination = 'csvlog'
+logging_collector = on
+log_directory = 'pg_log'
+log_filename = 'pgwatch.csv'
+`
+	err := os.WriteFile(configPath, []byte(configContent), 0644)
+	require.NoError(t, err)
+
+	container, teardown, err := testutil.SetupPostgresContainerWithConfig(configPath)
+	require.NoError(t, err)
+	defer teardown()
+
+	require.NotNil(t, container)
+
+	// Verify container is running
+	state, err := container.State(context.Background())
+	require.NoError(t, err)
+	assert.True(t, state.Running)
+
+	// Verify connection string is available
+	connStr, err := container.ConnectionString(context.Background())
+	assert.NoError(t, err)
+	assert.NotEmpty(t, connStr)
 }
 
 func TestSetupEtcdContainer(t *testing.T) {
