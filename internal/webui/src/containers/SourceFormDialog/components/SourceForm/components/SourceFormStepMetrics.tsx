@@ -8,6 +8,11 @@ import { useMetrics } from "queries/Metric";
 import { usePresets } from "queries/Preset";
 import { SourceFormValues } from "../SourceForm.types";
 
+type PresetOption = {
+  label: string;
+  description?: string;
+};
+
 export const SourceFormStepMetrics = () => {
   const { control, register, watch, formState: { errors }, clearErrors } = useFormContext<SourceFormValues>();
   const metricsFields = useFieldArray({ control, name: "Metrics" });
@@ -35,10 +40,40 @@ export const SourceFormStepMetrics = () => {
   const presets = usePresets();
   const metrics = useMetrics();
 
-  const presetsOptions = useMemo(
-    () => presets.data ? Object.keys(presets.data).map((key) => ({ label: key })) : [],
-    [presets.data],
-  );
+  const presetPriority = [
+  "minimal",
+  "basic",
+  "full",
+  "exhaustive",
+];
+
+type PresetMeta = {
+  Description?: string;
+};
+
+const presetsOptions = useMemo<PresetOption[]>(() => {
+  if (!presets.data) return [];
+  return Object.entries(presets.data)
+    .sort(([a], [b]) => {
+      const ia = presetPriority.indexOf(a);
+      const ib = presetPriority.indexOf(b);
+
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    })
+    .map(([key, preset]) => {
+      const p = preset as PresetMeta;
+
+      return {
+        label: key,
+        description: p.Description ?? "",
+      };
+    });
+}, [presets.data]);
+
+
 
   const metricsOptions = useMemo(
     () => metrics.data ? Object.keys(metrics.data).map((key) => ({ label: key })) : [],
@@ -83,6 +118,7 @@ export const SourceFormStepMetrics = () => {
                 loading={presets.isLoading}
                 error={hasError("PresetMetrics")}
               />
+
             )}
           />
           <FormHelperText>{getError("PresetMetrics")}</FormHelperText>
@@ -162,6 +198,7 @@ export const SourceFormStepMetrics = () => {
                 options={presetsOptions}
                 loading={presets.isLoading}
               />
+
             )}
           />
         </FormControl>
