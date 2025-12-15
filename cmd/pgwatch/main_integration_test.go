@@ -168,10 +168,10 @@ listen_addresses = '*'
 log_destination = 'csvlog'
 logging_collector = on
 log_directory = 'pg_log'
-log_filename = 'pgwatch'
+log_filename = 'pgwatch-%M%S'
 log_truncate_on_rotation = on
-log_min_messages = warning
-log_min_error_statement = warning
+log_min_messages = notice
+log_rotation_size = 10
 `
 	require.NoError(t, os.WriteFile(pgConfigPath, []byte(pgConfig), 0644))
 
@@ -214,91 +214,125 @@ metrics:
 	Exit = func(code int) { gotExit = int32(code) }
 	defer func() { Exit = os.Exit }()
 
-	t.Run("remotely capture warnings and errors from logs", func(t *testing.T) {
-		os.Args = []string{
-			"pgwatch",
-			"--metrics", metricsYaml,
-			"--sources", sourcesYaml,
-			"--sink", "jsonfile://" + jsonSink,
-			"--web-disable",
-		}
+	os.Args = []string{
+		"pgwatch",
+		"--metrics", metricsYaml,
+		"--sources", sourcesYaml,
+		"--sink", "jsonfile://" + jsonSink,
+		"--web-disable",
+	}
 
-		// Start pgwatch in background
-		go main()
+	// Start pgwatch in background
+	go main()
 
-		// Wait a moment for pgwatch to start and connect
-		time.Sleep(2 * time.Second)
+	// Wait a moment for pgwatch to start and connect
+	time.Sleep(2 * time.Second)
 
-		// Connect to the database and generate warnings and errors
-		conn, err := pgx.Connect(ctx, connStr)
-		require.NoError(t, err)
-		defer conn.Close(ctx)
+	// Connect to the database and generate warnings and errors
+	conn, err := pgx.Connect(ctx, connStr)
+	require.NoError(t, err)
+	defer conn.Close(ctx)
 
-		// Generate WARNING messages using RAISE
-		_, err = conn.Exec(ctx, `
+	// Generate WARNING messages using RAISE
+	_, err = conn.Exec(ctx, `
+		DO $$
+		BEGIN
+			RAISE WARNING 'Test warning message 1';
+			RAISE WARNING 'Test warning message 2';
+			RAISE WARNING 'Test warning message 3';
+		END $$;
+	`)
+	require.NoError(t, err)
+
+	// Generate ERROR messages (these will be logged but won't fail the connection)
+	// We use a function that raises errors we can catch
+	for range 2 {
+		_, _ = conn.Exec(ctx, `
 			DO $$
 			BEGIN
-				RAISE WARNING 'Test warning message 1';
-				RAISE WARNING 'Test warning message 2';
-				RAISE WARNING 'Test warning message 3';
+				RAISE EXCEPTION 'Test error message 1';
 			END $$;
 		`)
-		require.NoError(t, err)
+	}
 
-		// Generate ERROR messages (these will be logged but won't fail the connection)
-		// We use a function that raises errors we can catch
-		for range 2 {
-			_, _ = conn.Exec(ctx, `
-				DO $$
-				BEGIN
-						RAISE EXCEPTION 'Test error message 1';
-				END $$;
-			`)
-		}
+	// Also generate an actual ERROR by trying invalid SQL (this will be caught)
+	_, _ = conn.Exec(ctx, `SELECT * FROM nonexistent_table_12345`)
 
-		// Also generate an actual ERROR by trying invalid SQL (this will be caught)
-		_, _ = conn.Exec(ctx, `SELECT * FROM nonexistent_table_12345`)
+	// Wait for metrics to be collected (log parsing interval + some processing time)
+	time.Sleep(3 * time.Second)
 
-		// Wait for metrics to be collected (log parsing interval + some processing time)
-		time.Sleep(5 * time.Second)
+	// Read and verify output
+	data, err := os.ReadFile(jsonSink)
+	require.NoError(t, err, "output json file should exist")
 
-		// Stop pgwatch
-		cancel()
-		<-mainCtx.Done()
+	// Check that we have server_log_event_counts metric data
+	dataStr := string(data)
+	assert.Contains(t, dataStr, `"metric":"server_log_event_counts"`,
+		"should contain server_log_event_counts metric")
+	assert.Contains(t, dataStr, `"dbname":"logtest"`,
+		"should contain the source name")
 
-		assert.Equal(t, cmdopts.ExitCodeOK, gotExit, "expected exit code 0")
+	// Verify that warnings were captured (we generated 3 warnings)
+	// The log parsing should have captured at least some of them
+	warningCaptured := 
+		strings.Contains(dataStr, `"warning":1`) ||
+		strings.Contains(dataStr, `"warning":2`) ||
+		strings.Contains(dataStr, `"warning":3`) &&
+		strings.Contains(dataStr, `"warning_total":1`) ||
+		strings.Contains(dataStr, `"warning_total":2`) ||
+		strings.Contains(dataStr, `"warning_total":3`)
+	assert.True(t, warningCaptured, "should have captured at least one warning, got: %s", dataStr)
 
-		// Read and verify output
-		data, err := os.ReadFile(jsonSink)
-		require.NoError(t, err, "output json file should exist")
-		t.Log("JSON output:", string(data))
+	// Verify that errors were captured (we generated 3 ERRORs)
+	errorCaptured := 
+		strings.Contains(dataStr, `"error":1`) ||
+		strings.Contains(dataStr, `"error":2`) ||
+		strings.Contains(dataStr, `"error":3`) &&
+		strings.Contains(dataStr, `"error_total":1`) ||
+		strings.Contains(dataStr, `"error_total":2`) ||
+		strings.Contains(dataStr, `"error_total":3`)
+	assert.True(t, errorCaptured, "should have captured at least one error, got: %s", dataStr)
 
-		// Check that we have server_log_event_counts metric data
-		dataStr := string(data)
-		assert.Contains(t, dataStr, `"metric":"server_log_event_counts"`,
-			"should contain server_log_event_counts metric")
-		assert.Contains(t, dataStr, `"dbname":"logtest"`,
-			"should contain the source name")
 
-		// Verify that warnings were captured (we generated 3 warnings)
-		// The log parsing should have captured at least some of them
-		warningCaptured := 
-			strings.Contains(dataStr, `"warning":1`) ||
-			strings.Contains(dataStr, `"warning":2`) ||
-			strings.Contains(dataStr, `"warning":3`) &&
-			strings.Contains(dataStr, `"warning_total":1`) ||
-			strings.Contains(dataStr, `"warning_total":2`) ||
-			strings.Contains(dataStr, `"warning_total":3`)
-		assert.True(t, warningCaptured, "should have captured at least one warning, got: %s", dataStr)
+	var logFile string
+	err = conn.QueryRow(ctx, `SELECT pg_current_logfile();`).Scan(&logFile)
+	assert.NoError(t, err)
 
-		// Verify that errors were captured (we generated 3 ERRORs)
-		errorCaptured := 
-			strings.Contains(dataStr, `"error":1`) ||
-			strings.Contains(dataStr, `"error":2`) ||
-			strings.Contains(dataStr, `"error":3`) &&
-			strings.Contains(dataStr, `"error_total":1`) ||
-			strings.Contains(dataStr, `"error_total":2`) ||
-			strings.Contains(dataStr, `"error_total":3`)
-		assert.True(t, errorCaptured, "should have captured at least one error, got: %s", dataStr)
-	})
+	// Generate enough warnings to get the file rotated
+	_, err = conn.Exec(ctx, `
+		DO $$
+		BEGIN
+			FOR cnt in 1..80 LOOP
+				RAISE WARNING 'Test warning message';
+			END LOOP;
+		END $$;
+	`)
+	assert.NoError(t, err)
+
+	var newLogFile string
+	err = conn.QueryRow(ctx, `SELECT pg_current_logfile();`).Scan(&newLogFile)
+	assert.NoError(t, err)
+	assert.NotEqual(t, logFile, newLogFile)
+
+	time.Sleep(1 * time.Second)
+	_, _ = conn.Exec(ctx, `
+		DO $$
+		BEGIN
+			RAISE NOTICE 'This notice will appear in the new log file';
+		END $$;
+	`)
+	assert.NoError(t, err)
+
+	time.Sleep(3 * time.Second)
+
+	data, err = os.ReadFile(jsonSink)
+	dataStr = string(data)
+	assert.NoError(t, err)
+	assert.Contains(t, dataStr, `"notice":1`, "should contain notice mesage")
+	assert.Contains(t, dataStr, `"notice_total":1`, "should contain notice message")
+
+	// Stop pgwatch
+	cancel()
+	<-mainCtx.Done()
+	assert.Equal(t, cmdopts.ExitCodeOK, gotExit, "expected exit code 0")
 }
