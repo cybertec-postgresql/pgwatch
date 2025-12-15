@@ -389,7 +389,7 @@ func TestLogParse(t *testing.T) {
 		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 			WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
 
-		// using UNIX socket depends on whether 
+		// using UNIX socket depends on whether
 		// we want local or remote connection
 		isUnixSocket := (mode == "local")
 		mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
@@ -431,7 +431,7 @@ func TestLogParse(t *testing.T) {
 
 		// Ensure mock expectations were met.
 		//
-		// Also ensures that the mode detection logic works correctly, 
+		// Also ensures that the mode detection logic works correctly,
 		// because different modes has different query expectations.
 		assert.NoError(t, mock.ExpectationsWereMet())
 
@@ -464,5 +464,71 @@ func TestLogParse(t *testing.T) {
 			measurement = <-storeCh
 			assert.Equal(t, int64(1), measurement.Data[0]["error_total"])
 		}
+	}
+}
+
+func TestCheckHasPrivileges(t *testing.T) {
+	tempDir := t.TempDir()
+	logFile := filepath.Join(tempDir, "test.csv")
+
+	// Create a test log file with CSV format entries
+	logContent := `2023-12-01 10:30:45.123 UTC,"postgres","testdb",12345,"127.0.0.1:54321",session123,1,"SELECT",
+	2023-12-01 10:30:00 UTC,1/234,567,ERROR,"duplicate key value violates unique constraint"
+	2023-12-01 10:30:46.124 UTC,"postgres","testdb",12345,"127.0.0.1:54321",session123,2,"SELECT",2023-12-01 10:30:00 UTC,1/234,567,WARNING,"this is a warning message"`
+	err := os.WriteFile(logFile, []byte(logContent), 0644)
+	require.NoError(t, err)
+
+	names := [2]string{"pg_ls_logdir() fails", "pg_read_file() permission denied"}
+	for _, name := range names {
+		t.Run("checkHasPrivileges fails - "+name, func(t *testing.T) {
+			mock, err := pgxmock.NewPool()
+			require.NoError(t, err)
+			defer mock.Close()
+
+			// Mock the language detection query
+			mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
+				WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
+
+			// Mock IsClientOnSameHost to return false (remote)
+			mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
+				pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
+
+			if name == "pg_ls_logdir() fails" {
+				// Mock pg_ls_logdir() to fail (permission denied)
+				mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
+					WillReturnError(assert.AnError)
+			} else {
+				// Mock pg_ls_logdir() to return a log file
+				mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
+					WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow("log.csv"))
+
+				// Mock pg_read_file() to fail with permission denied error
+				mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
+					WithArgs(filepath.Join(tempDir, "log.csv")).
+					WillReturnError(assert.AnError)
+			}
+
+			sourceConn := &sources.SourceConn{
+				Source: sources.Source{
+					Name: "test-source",
+				},
+				Conn: mock,
+			}
+
+			storeCh := make(chan MeasurementEnvelope, 10)
+			// Parse logs should stop the worker and return due to privilege errors.
+			ParseLogs(ctx, sourceConn, "testdb", 0, storeCh, "", filepath.Join(tempDir, "*.csv"))
+
+			// Ensure mock expectations were met
+			assert.NoError(t, mock.ExpectationsWereMet())
+
+			// No data should be received since checkHasPrivileges should fail
+			select {
+			case measurement := <-storeCh:
+				t.Errorf("Expected no data, but got: %+v", measurement)
+			case <-time.After(time.Second):
+				// Expected: no data received
+			}
+		})
 	}
 }
