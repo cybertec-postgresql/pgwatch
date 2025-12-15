@@ -15,6 +15,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
+	"github.com/jackc/pgx/v5"
 )
 
 const specialMetricServerLogEventCounts = "server_log_event_counts"
@@ -145,12 +146,17 @@ func ParseLogs(
 		return
 	}
 
-	if ok, err := db.IsClientOnSameHost(mdb.Conn); !ok || err != nil {
-		logger.Info("DB is not detected to be on the same host. parsing logs remotely")
-		ParseLogsRemote(ctx, mdb, realDbname, interval, storeCh, logsRegex, logsGlobPath, serverMessagesLang)
-	} else {
+	if ok, err := db.IsClientOnSameHost(mdb.Conn); ok && err == nil {
 		logger.Info("DB is on the same host. parsing logs locally")
 		ParseLogsLocal(ctx, mdb, realDbname, interval, storeCh, logsRegex, logsGlobPath, serverMessagesLang)
+	} else {
+		logsGlobPath = filepath.Dir(logsGlobPath)
+		logger.Info("DB is not detected to be on the same host. parsing logs remotely")
+		if err := checkHasPrivileges(ctx, mdb, logsGlobPath); err == nil {
+			ParseLogsRemote(ctx, mdb, realDbname, interval, storeCh, logsRegex, logsGlobPath, serverMessagesLang)
+		} else {
+			logger.WithError(err).Warn("Can't parse logs remotely. lacking required privileges")
+		}
 	}
 }
 
@@ -203,7 +209,7 @@ func ParseLogsRemote(
 		}
 
 		if linesRead == numOfLines && size != offset {
-			logFilePath := filepath.Dir(LogsGlobPattern) + "/" + latestLogFile
+			logFilePath := LogsGlobPattern + "/" + latestLogFile
 			err := mdb.Conn.QueryRow(ctx, "select pg_read_file($1, $2, $3)", logFilePath, offset, size).Scan(&chunk)
 			offset = size
 			if err != nil {
@@ -518,4 +524,16 @@ func regexMatchesToMap(csvlogRegex *regexp.Regexp, matches []string) map[string]
 		}
 	}
 	return result
+}
+
+func checkHasPrivileges(ctx context.Context, mdb *sources.SourceConn, logsGlobPath string) error {
+	var logFile string
+	err := mdb.Conn.QueryRow(ctx, "select name from pg_ls_logdir() limit 1").Scan(&logFile)
+	if err != nil && err != pgx.ErrNoRows {
+		return err
+	}
+
+	var dummy string
+	err = mdb.Conn.QueryRow(ctx, "select pg_read_file($1, 0, 0)", logsGlobPath + "/" + logFile).Scan(&dummy)
+	return err
 }

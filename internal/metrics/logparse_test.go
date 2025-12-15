@@ -396,6 +396,12 @@ func TestLogParse(t *testing.T) {
 			pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(isUnixSocket))
 
 		if mode == "remote" {
+			mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
+				WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow("log.csv"))
+			mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
+				WithArgs(filepath.Join(tempDir, "log.csv")).
+				WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow("dummy data"))
+
 			mock.ExpectQuery(`select name, size from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
 				WillReturnRows(pgxmock.NewRows([]string{"name", "size"}).AddRow("test.csv", 0))
 			mock.ExpectQuery(`select size, modification from pg_ls_logdir\(\) where name = \$1;`).
@@ -423,7 +429,10 @@ func TestLogParse(t *testing.T) {
 
 		ParseLogs(ctx, sourceConn, "testdb", 0, storeCh, "", filepath.Join(tempDir, "*.csv"))
 
-		// Ensure mock expectations were met
+		// Ensure mock expectations were met.
+		//
+		// Also ensures that the mode detection logic works correctly, 
+		// because different modes has different query expectations.
 		assert.NoError(t, mock.ExpectationsWereMet())
 
 		// Wait for measurements to be sent or timeout
