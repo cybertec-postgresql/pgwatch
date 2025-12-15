@@ -315,7 +315,7 @@ metrics:
 	assert.NotEqual(t, logFile, newLogFile)
 
 	time.Sleep(1 * time.Second)
-	_, _ = conn.Exec(ctx, `
+	_, err = conn.Exec(ctx, `
 		DO $$
 		BEGIN
 			RAISE NOTICE 'This notice will appear in the new log file';
