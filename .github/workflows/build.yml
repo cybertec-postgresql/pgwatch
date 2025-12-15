@@ -41,7 +41,7 @@ jobs:
         node-version: '22'        
 
     - name: Cache npm packages
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           internal/webui/node_modules
