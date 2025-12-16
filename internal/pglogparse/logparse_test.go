@@ -376,14 +376,6 @@ func TestLogParse(t *testing.T) {
 
 func TestCheckHasPrivileges(t *testing.T) {
 	tempDir := t.TempDir()
-	logFile := filepath.Join(tempDir, "test.csv")
-
-	// Create a test log file with CSV format entries
-	logContent := `2023-12-01 10:30:45.123 UTC,"postgres","testdb",12345,"127.0.0.1:54321",session123,1,"SELECT",
-	2023-12-01 10:30:00 UTC,1/234,567,ERROR,"duplicate key value violates unique constraint"
-	2023-12-01 10:30:46.124 UTC,"postgres","testdb",12345,"127.0.0.1:54321",session123,2,"SELECT",2023-12-01 10:30:00 UTC,1/234,567,WARNING,"this is a warning message"`
-	err := os.WriteFile(logFile, []byte(logContent), 0644)
-	require.NoError(t, err)
 
 	names := [2]string{"pg_ls_logdir() fails", "pg_read_file() permission denied"}
 	for _, name := range names {
