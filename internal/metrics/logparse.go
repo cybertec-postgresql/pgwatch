@@ -243,7 +243,7 @@ func ParseLogsRemote(
 				if size == latestSize {
 					sql := "select name, size from pg_ls_logdir() where modification > $1 and name like '%csv' order by modification, name limit 1;"
 					err := mdb.Conn.QueryRow(ctx, sql, modification).Scan(&fileName, &latestSize)
-					if err == nil {
+					if err == nil && latestLogFile != fileName {
 						latestLogFile = fileName
 						size = latestSize
 						offset = 0
@@ -289,7 +289,6 @@ func ParseLogsRemote(
 			}
 
 			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(interval))) {
-				logger.Debugf("Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v", eventCounts, eventCountsTotal)
 				select {
 				case <-ctx.Done():
 					return
