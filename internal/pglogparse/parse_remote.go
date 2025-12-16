@@ -72,18 +72,16 @@ func ParseLogsRemote(
 				continue
 			}
 			lines = strings.Split(chunk, "\n")
-			offset -= int32(len(lines[len(lines)-1])) // last line may be incomplete, re-read it next time
+			if sizeToRead == maxChunkSize {
+				// last line may be incomplete, re-read it next time
+				offset -= int32(len(lines[len(lines)-1]))
+			}
 			numOfLines = len(lines)
 			linesRead = 0
 		}
 
 		for {
 			if linesRead == numOfLines {
-				if offset != size {
-					// we read only maxChunkSize, there is more to read.
-					break
-				}
-
 				select {
 				case <-ctx.Done():
 					return
@@ -101,7 +99,7 @@ func ParseLogsRemote(
 				}
 
 				var fileName string
-				if size == latestSize {
+				if size == latestSize && offset == size {
 					sql := "select name, size from pg_ls_logdir() where modification > $1 and name like '%csv' order by modification, name limit 1;"
 					err := mdb.Conn.QueryRow(ctx, sql, modification).Scan(&fileName, &latestSize)
 					if err == nil && latestLogFile != fileName {
