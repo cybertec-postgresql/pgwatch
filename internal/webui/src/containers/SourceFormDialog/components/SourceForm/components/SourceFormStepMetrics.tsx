@@ -40,12 +40,6 @@ export const SourceFormStepMetrics = () => {
   const presets = usePresets();
   const metrics = useMetrics();
 
-  const presetPriority = [
-  "minimal",
-  "basic",
-  "full",
-  "exhaustive",
-];
 
 type PresetMeta = {
   Description?: string;
@@ -55,6 +49,12 @@ const presetsOptions = useMemo<PresetOption[]>(() => {
   if (!presets.data){
     return [];
   }
+  const presetPriority = [
+  "minimal",
+  "basic",
+  "full",
+  "exhaustive",
+];
   return Object.entries(presets.data)
     .sort(([a], [b]) => {
       const ia = presetPriority.indexOf(a);
@@ -79,7 +79,7 @@ const presetsOptions = useMemo<PresetOption[]>(() => {
         description: p.Description ?? "",
       };
     });
-}, [presets.data, presetPriority]);
+}, [presets.data]);
 
   const metricsOptions = useMemo(
     () => metrics.data ? Object.keys(metrics.data).map((key) => ({ label: key })) : [],
