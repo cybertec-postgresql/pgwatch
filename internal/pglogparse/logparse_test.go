@@ -1,4 +1,4 @@
-package metrics
+package pglogparse
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
@@ -425,7 +426,7 @@ func TestLogParse(t *testing.T) {
 		defer cancel()
 
 		// Create a channel to receive measurement envelopes
-		storeCh := make(chan MeasurementEnvelope, 10)
+		storeCh := make(chan metrics.MeasurementEnvelope, 10)
 
 		ParseLogs(ctx, sourceConn, "testdb", 0, storeCh, "", filepath.Join(tempDir, "*.csv"))
 
@@ -436,7 +437,7 @@ func TestLogParse(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 
 		// Wait for measurements to be sent or timeout
-		var measurement MeasurementEnvelope
+		var measurement metrics.MeasurementEnvelope
 		select {
 		case measurement = <-storeCh:
 			assert.NotEmpty(t, measurement.Data, "Measurement data should not be empty")
@@ -515,9 +516,9 @@ func TestCheckHasPrivileges(t *testing.T) {
 				Conn: mock,
 			}
 
-			storeCh := make(chan MeasurementEnvelope, 10)
+			storeCh := make(chan metrics.MeasurementEnvelope, 10)
 			// Parse logs should stop the worker and return due to privilege errors.
-			ParseLogs(ctx, sourceConn, "testdb", 0, storeCh, "", filepath.Join(tempDir, "*.csv"))
+			ParseLogs(testCtx, sourceConn, "testdb", 0, storeCh, "", filepath.Join(tempDir, "*.csv"))
 
 			// Ensure mock expectations were met
 			assert.NoError(t, mock.ExpectationsWereMet())
