@@ -12,6 +12,8 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
+const maxChunkSize int32 = 10 * 1024 * 1024 // 10 MB
+
 func ParseLogsRemote(
 	ctx context.Context,
 	mdb *sources.SourceConn,
@@ -62,19 +64,26 @@ func ParseLogsRemote(
 
 		if linesRead == numOfLines && size != offset {
 			logFilePath := filepath.Join(LogsDirPath, latestLogFile)
-			err := mdb.Conn.QueryRow(ctx, "select pg_read_file($1, $2, $3)", logFilePath, offset, size).Scan(&chunk)
-			offset = size
+			sizeToRead := min(maxChunkSize, size - offset)
+			err := mdb.Conn.QueryRow(ctx, "select pg_read_file($1, $2, $3)", logFilePath, offset, sizeToRead).Scan(&chunk)
+			offset += sizeToRead
 			if err != nil {
 				logger.Warningf("Failed to read logfile %s: %s", latestLogFile, err)
 				continue
 			}
 			lines = strings.Split(chunk, "\n")
+			offset -= int32(len(lines[len(lines)-1])) // last line may be incomplete, re-read it next time
 			numOfLines = len(lines)
 			linesRead = 0
 		}
 
 		for {
 			if linesRead == numOfLines {
+				if offset != size {
+					// we read only maxChunkSize, there is more to read.
+					break
+				}
+
 				select {
 				case <-ctx.Done():
 					return
