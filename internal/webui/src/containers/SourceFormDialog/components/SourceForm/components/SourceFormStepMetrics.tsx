@@ -52,15 +52,23 @@ type PresetMeta = {
 };
 
 const presetsOptions = useMemo<PresetOption[]>(() => {
-  if (!presets.data) return [];
+  if (!presets.data){
+    return [];
+  }
   return Object.entries(presets.data)
     .sort(([a], [b]) => {
       const ia = presetPriority.indexOf(a);
       const ib = presetPriority.indexOf(b);
 
-      if (ia === -1 && ib === -1) return a.localeCompare(b);
-      if (ia === -1) return 1;
-      if (ib === -1) return -1;
+      if (ia === -1 && ib === -1){
+        return a.localeCompare(b);
+      }
+      if (ia === -1){
+        return 1;
+      }
+      if (ib === -1){ 
+        return -1;
+      }
       return ia - ib;
     })
     .map(([key, preset]) => {
@@ -71,9 +79,7 @@ const presetsOptions = useMemo<PresetOption[]>(() => {
         description: p.Description ?? "",
       };
     });
-}, [presets.data]);
-
-
+}, [presets.data, presetPriority]);
 
   const metricsOptions = useMemo(
     () => metrics.data ? Object.keys(metrics.data).map((key) => ({ label: key })) : [],
