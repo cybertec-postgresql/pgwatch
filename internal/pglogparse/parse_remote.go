@@ -2,6 +2,7 @@ package pglogparse
 
 import (
 	"context"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -60,7 +61,7 @@ func ParseLogsRemote(
 		}
 
 		if linesRead == numOfLines && size != offset {
-			logFilePath := LogsDirPath + "/" + latestLogFile
+			logFilePath := filepath.Join(LogsDirPath, latestLogFile)
 			err := mdb.Conn.QueryRow(ctx, "select pg_read_file($1, $2, $3)", logFilePath, offset, size).Scan(&chunk)
 			offset = size
 			if err != nil {

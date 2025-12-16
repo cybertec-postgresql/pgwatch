@@ -176,6 +176,6 @@ func checkHasPrivileges(ctx context.Context, mdb *sources.SourceConn, logsDirPat
 	}
 
 	var dummy string
-	err = mdb.Conn.QueryRow(ctx, "select pg_read_file($1, 0, 0)", logsDirPath + "/" + logFile).Scan(&dummy)
+	err = mdb.Conn.QueryRow(ctx, "select pg_read_file($1, 0, 0)", filepath.Join(logsDirPath, logFile)).Scan(&dummy)
 	return err
 }
