@@ -13,6 +13,7 @@ type PresetOption = {
   description?: string;
 };
 
+
 export const SourceFormStepMetrics = () => {
   const { control, register, watch, formState: { errors }, clearErrors } = useFormContext<SourceFormValues>();
   const metricsFields = useFieldArray({ control, name: "Metrics" });
@@ -46,34 +47,30 @@ type PresetMeta = {
 };
 
 const presetsOptions = useMemo<PresetOption[]>(() => {
-  if (!presets.data){
+  const PRESET_PRIORITY = ["minimal", "basic", "full", "exhaustive"];
+
+  if (!presets.data) {
     return [];
   }
-  const presetPriority = [
-  "minimal",
-  "basic",
-  "full",
-  "exhaustive",
-];
+
   return Object.entries(presets.data)
     .sort(([a], [b]) => {
-      const ia = presetPriority.indexOf(a);
-      const ib = presetPriority.indexOf(b);
+      const ia = PRESET_PRIORITY.indexOf(a);
+      const ib = PRESET_PRIORITY.indexOf(b);
 
-      if (ia === -1 && ib === -1){
+      if (ia === -1 && ib === -1) {
         return a.localeCompare(b);
       }
-      if (ia === -1){
+      if (ia === -1) {
         return 1;
       }
-      if (ib === -1){ 
+      if (ib === -1) {
         return -1;
       }
       return ia - ib;
     })
     .map(([key, preset]) => {
       const p = preset as PresetMeta;
-
       return {
         label: key,
         description: p.Description ?? "",
