@@ -124,22 +124,12 @@ func ParseLogsRemote(
 				matches := LogsMatchRegex.FindStringSubmatch(line)
 				if len(matches) != 0 {
 					result := regexMatchesToMap(LogsMatchRegex, matches)
-					errorSeverity, ok := result["error_severity"]
-					if !ok {
-						logger.Error("error_severity group must be defined in parse regex:", LogsMatchRegex)
-						time.Sleep(time.Minute)
-						break
-					}
+					errorSeverity := result["error_severity"]
 					if serverMessagesLang != "en" {
 						errorSeverity = severityToEnglish(serverMessagesLang, errorSeverity)
 					}
 
-					databaseName, ok := result["database_name"]
-					if !ok {
-						logger.Error("database_name group must be defined in parse regex:", LogsMatchRegex)
-						time.Sleep(time.Minute)
-						break
-					}
+					databaseName := result["database_name"]
 					if realDbname == databaseName {
 						eventCounts[errorSeverity]++
 					}
