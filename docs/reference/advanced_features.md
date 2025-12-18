@@ -40,7 +40,7 @@ disable the monitoring of such nodes with the "Primary mode only".
 ## Log parsing
 
 pgwatch can parse PostgreSQL server logs to count errors, warnings, and other log events.
-This feature only works with logs being in **CSVLOG** format.
+This feature only works when logs are in **CSVLOG** format.
 
 Only event counts are stored - no error messages, usernames, or other details. Events are grouped by severity level for both the monitored database and the entire instance.
 
@@ -54,6 +54,8 @@ To enable this feature, use the `server_log_event_counts` metric or a preset tha
 
 !!! note
     pgwatch detects local mode when connected via a unix socket or when the `data_directory` system identifier matches the one from `pg_control_system()`. Otherwise, it falls back to remote mode.
+
+For optimal performance, **Local mode** should be preferred for instances running on the same host as the database server.
 
 ## PgBouncer support
 
