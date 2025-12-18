@@ -57,6 +57,9 @@ To enable this feature, use the `server_log_event_counts` metric or a preset tha
 
 For optimal performance, **Local mode** should be preferred for instances running on the same host as the database server.
 
+!!! note
+    pgwatch reads from a single log file each interval with a maximum of 10MBs at a time. Knowing that and based on your log generation rate, adjust your metric interval to avoid having out-of-sync measurements.
+
 ## PgBouncer support
 
 pgwatch also supports collecting internal statistics from the PgBouncer
