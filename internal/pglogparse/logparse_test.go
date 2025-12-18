@@ -309,8 +309,8 @@ func TestLogParse(t *testing.T) {
 				WithArgs(filepath.Join(tempDir, "log.csv")).
 				WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow("dummy data"))
 
-			mock.ExpectQuery(`select name, size from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
-				WillReturnRows(pgxmock.NewRows([]string{"name", "size"}).AddRow("test.csv", 0))
+			mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
+				WillReturnRows(pgxmock.NewRows([]string{"name", "size", "modification"}).AddRow("test.csv", 0, time.Now()))
 			mock.ExpectQuery(`select size, modification from pg_ls_logdir\(\) where name = \$1;`).
 				WithArgs("test.csv").
 				WillReturnRows(pgxmock.NewRows([]string{"size", "modification"}).AddRow(len(logContent), time.Now()))

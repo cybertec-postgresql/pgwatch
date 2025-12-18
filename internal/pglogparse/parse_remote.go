@@ -34,6 +34,7 @@ func ParseLogsRemote(
 
 	var size int32
 	var offset int32
+	var modification time.Time
 	var chunk string
 	var lines []string
 	var numOfLines int
@@ -51,15 +52,15 @@ func ParseLogsRemote(
 		}
 
 		if latestLogFile == "" || firstRun {
-			sql := "select name, size from pg_ls_logdir() where name like '%csv' order by modification desc limit 1;"
-			err := mdb.Conn.QueryRow(ctx, sql).Scan(&latestLogFile, &size)
+			sql := "select name, size, modification from pg_ls_logdir() where name like '%csv' order by modification desc limit 1;"
+			err := mdb.Conn.QueryRow(ctx, sql).Scan(&latestLogFile, &size, &modification)
 			if err != nil {
 				logger.Infof("No logfiles found in log dir: '%s'", LogsDirPath)
 				continue
 			}
 			offset = size // Seek to an end
 			firstRun = false
-			logger.Infof("Starting to parse logfile: %s", latestLogFile)
+			logger.Infof("Starting to parse logfile: '%s'", latestLogFile)
 		}
 
 		if linesRead == numOfLines && size != offset {
@@ -68,7 +69,7 @@ func ParseLogsRemote(
 			err := mdb.Conn.QueryRow(ctx, "select pg_read_file($1, $2, $3)", logFilePath, offset, sizeToRead).Scan(&chunk)
 			offset += sizeToRead
 			if err != nil {
-				logger.Warningf("Failed to read logfile %s: %s", latestLogFile, err)
+				logger.Warningf("Failed to read logfile '%s': %s", latestLogFile, err)
 				continue
 			}
 			lines = strings.Split(chunk, "\n")
@@ -89,24 +90,20 @@ func ParseLogsRemote(
 				}
 
 				var latestSize int32
-				var modification time.Time
-
 				err := mdb.Conn.QueryRow(ctx, "select size, modification from pg_ls_logdir() where name = $1;", latestLogFile).Scan(&latestSize, &modification)
 				if err != nil {
-					logger.Warn("Failed to read state info of logfile %s", latestLogFile)
-					latestLogFile = ""
-					break
+					logger.Warnf("Failed to read state info of logfile: '%s'", latestLogFile)
 				}
 
 				var fileName string
-				if size == latestSize && offset == size {
+				if size == latestSize && offset == size || err != nil {
 					sql := "select name, size from pg_ls_logdir() where modification > $1 and name like '%csv' order by modification, name limit 1;"
 					err := mdb.Conn.QueryRow(ctx, sql, modification).Scan(&fileName, &latestSize)
 					if err == nil && latestLogFile != fileName {
 						latestLogFile = fileName
 						size = latestSize
 						offset = 0
-						logger.Infof("Switching to new logfile: %s", fileName)
+						logger.Infof("Switching to new logfile: '%s'", fileName)
 						currInterval = 0 // We already slept. It will be resetted.
 						break
 					}
