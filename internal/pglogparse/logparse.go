@@ -77,6 +77,7 @@ func ParseLogs(
 		ParseLogsLocal(ctx, mdb, realDbname, interval, storeCh, logsRegex, logsGlobPath, serverMessagesLang)
 	} else {
 		logger.Info("DB is not detected to be on the same host. parsing logs remotely")
+		// TODO: check privileges for local mode also
 		if err := checkHasPrivileges(ctx, mdb, filepath.Dir(logsGlobPath)); err == nil {
 			ParseLogsRemote(ctx, mdb, realDbname, interval, storeCh, logsRegex, filepath.Dir(logsGlobPath), serverMessagesLang)
 		} else {
