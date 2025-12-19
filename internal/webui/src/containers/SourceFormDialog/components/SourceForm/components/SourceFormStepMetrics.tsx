@@ -12,6 +12,24 @@ type PresetOption = {
   label: string;
   description?: string;
 };
+const PRESET_PRIORITY = [
+  "minimal",
+  "basic",
+  "standard",
+  "exhaustive",
+  "full",
+  "aiven",
+  "azure",
+  "gce",
+  "rds",
+  "pgbouncer",
+  "pgpool",
+  "unprivileged",
+  "recommendations",
+  "prometheus-async",
+  "exhaustive_no_python",
+  "debug",
+];
 
 
 export const SourceFormStepMetrics = () => {
@@ -47,7 +65,7 @@ type PresetMeta = {
 };
 
 const presetsOptions = useMemo<PresetOption[]>(() => {
-  const PRESET_PRIORITY = ["minimal", "basic", "full", "exhaustive"];
+  
 
   if (!presets.data) {
     return [];
