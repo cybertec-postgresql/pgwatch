@@ -64,6 +64,7 @@ func (lp *LogParser) ParseLogsRemote() error {
 			}
 			numOfLines = len(lines)
 			linesRead = 0
+			logger.WithField("lines", len(lines)).Info("logs fetched")
 		}
 
 		for {
