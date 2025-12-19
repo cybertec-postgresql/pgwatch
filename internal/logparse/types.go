@@ -28,6 +28,8 @@ var PgSeveritiesLocale = map[string]map[string]string{
 const CSVLogDefaultRegEx = `^^(?P<log_time>.*?),"?(?P<user_name>.*?)"?,"?(?P<database_name>.*?)"?,(?P<process_id>\d+),"?(?P<connection_from>.*?)"?,(?P<session_id>.*?),(?P<session_line_num>\d+),"?(?P<command_tag>.*?)"?,(?P<session_start_time>.*?),(?P<virtual_transaction_id>.*?),(?P<transaction_id>.*?),(?P<error_severity>\w+),`
 const CSVLogDefaultGlobSuffix = "*.csv"
 
+const maxChunkSize int32 = 10 * 1024 * 1024 // 10 MB
+
 func severityToEnglish(serverLang, errorSeverity string) string {
 	if serverLang == "en" {
 		return errorSeverity

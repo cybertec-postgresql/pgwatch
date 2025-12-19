@@ -1,29 +1,14 @@
 package logparse
 
 import (
-	"context"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
-const maxChunkSize int32 = 10 * 1024 * 1024 // 10 MB
-
-func ParseLogsRemote(
-	ctx context.Context,
-	mdb *sources.SourceConn,
-	realDbname string,
-	interval float64,
-	storeCh chan<- metrics.MeasurementEnvelope,
-	LogsMatchRegex *regexp.Regexp,
-	LogsDirPath string,
-	serverMessagesLang string,
-) {
+func (lp *LogParser) ParseLogsRemote() error {
 	var latestLogFile string
 	var linesRead int // to skip over already parsed lines on Postgres server restart for example
 	var lastSendTime time.Time                    // to storage channel
@@ -39,23 +24,23 @@ func ParseLogsRemote(
 	var lines []string
 	var numOfLines int
 
-	logger := log.GetLogger(ctx)
+	logger := log.GetLogger(lp.ctx)
 
 	for { // detect current log file. read new chunks. re-start in case of errors
 		select {
-		case <-ctx.Done():
-			return
+		case <-lp.ctx.Done():
+			return nil
 		case <-time.After(currInterval):
 			if currInterval == 0 {
-				currInterval = time.Second * time.Duration(interval)
+				currInterval = time.Second * time.Duration(lp.Interval)
 			}
 		}
 
 		if latestLogFile == "" || firstRun {
 			sql := "select name, size, modification from pg_ls_logdir() where name like '%csv' order by modification desc limit 1;"
-			err := mdb.Conn.QueryRow(ctx, sql).Scan(&latestLogFile, &size, &modification)
+			err := lp.Mdb.Conn.QueryRow(lp.ctx, sql).Scan(&latestLogFile, &size, &modification)
 			if err != nil {
-				logger.Infof("No logfiles found in log dir: '%s'", LogsDirPath)
+				logger.Infof("No logfiles found in log dir: '%s'", lp.LogFolder)
 				continue
 			}
 			offset = size // Seek to an end
@@ -64,9 +49,9 @@ func ParseLogsRemote(
 		}
 
 		if linesRead == numOfLines && size != offset {
-			logFilePath := filepath.Join(LogsDirPath, latestLogFile)
+			logFilePath := filepath.Join(lp.LogFolder, latestLogFile)
 			sizeToRead := min(maxChunkSize, size - offset)
-			err := mdb.Conn.QueryRow(ctx, "select pg_read_file($1, $2, $3)", logFilePath, offset, sizeToRead).Scan(&chunk)
+			err := lp.Mdb.Conn.QueryRow(lp.ctx, "select pg_read_file($1, $2, $3)", logFilePath, offset, sizeToRead).Scan(&chunk)
 			offset += sizeToRead
 			if err != nil {
 				logger.Warningf("Failed to read logfile '%s': %s", latestLogFile, err)
@@ -84,13 +69,13 @@ func ParseLogsRemote(
 		for {
 			if linesRead == numOfLines {
 				select {
-				case <-ctx.Done():
-					return
+				case <-lp.ctx.Done():
+					return nil
 				case <-time.After(currInterval):
 				}
 
 				var latestSize int32
-				err := mdb.Conn.QueryRow(ctx, "select size, modification from pg_ls_logdir() where name = $1;", latestLogFile).Scan(&latestSize, &modification)
+				err := lp.Mdb.Conn.QueryRow(lp.ctx, "select size, modification from pg_ls_logdir() where name = $1;", latestLogFile).Scan(&latestSize, &modification)
 				if err != nil {
 					logger.Warnf("Failed to read state info of logfile: '%s'", latestLogFile)
 				}
@@ -98,7 +83,7 @@ func ParseLogsRemote(
 				var fileName string
 				if size == latestSize && offset == size || err != nil {
 					sql := "select name, size from pg_ls_logdir() where modification > $1 and name like '%csv' order by modification, name limit 1;"
-					err := mdb.Conn.QueryRow(ctx, sql, modification).Scan(&fileName, &latestSize)
+					err := lp.Mdb.Conn.QueryRow(lp.ctx, sql, modification).Scan(&fileName, &latestSize)
 					if err == nil && latestLogFile != fileName {
 						latestLogFile = fileName
 						size = latestSize
@@ -118,27 +103,27 @@ func ParseLogsRemote(
 				line := lines[linesRead]
 				linesRead++
 
-				matches := LogsMatchRegex.FindStringSubmatch(line)
+				matches := lp.LogsMatchRegex.FindStringSubmatch(line)
 				if len(matches) != 0 {
-					result := regexMatchesToMap(LogsMatchRegex, matches)
+					result := regexMatchesToMap(lp.LogsMatchRegex, matches)
 					errorSeverity := result["error_severity"]
-					if serverMessagesLang != "en" {
-						errorSeverity = severityToEnglish(serverMessagesLang, errorSeverity)
+					if lp.ServerMessagesLang != "en" {
+						errorSeverity = severityToEnglish(lp.ServerMessagesLang, errorSeverity)
 					}
 
 					databaseName := result["database_name"]
-					if realDbname == databaseName {
+					if lp.RealDbname == databaseName {
 						eventCounts[errorSeverity]++
 					}
 					eventCountsTotal[errorSeverity]++
 				}
 			}
 
-			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(interval))) {
+			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(lp.Interval))) {
 				select {
-				case <-ctx.Done():
-					return
-				case storeCh <- eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb):
+				case <-lp.ctx.Done():
+					return nil
+				case lp.StoreCh <- eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, lp.Mdb):
 					zeroEventCounts(eventCounts)
 					zeroEventCounts(eventCountsTotal)
 					lastSendTime = time.Now()
