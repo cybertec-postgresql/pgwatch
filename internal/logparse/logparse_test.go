@@ -16,6 +16,101 @@ import (
 
 var testCtx = context.Background()
 
+func TestNewLogParser(t *testing.T) {
+	tempDir := t.TempDir()
+
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	sourceConn := &sources.SourceConn{
+		Source: sources.Source{
+			Name: "test-source",
+		},
+		Conn: mock,
+	}
+	storeCh := make(chan metrics.MeasurementEnvelope, 10)
+
+	t.Run("success", func(t *testing.T) {
+		// Mock log folder detection
+		mock.ExpectQuery(`select current_setting\('data_directory'\) as dd, current_setting\('log_directory'\) as ld`).
+			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld"}).AddRow("", tempDir))
+
+		// Mock language detection
+		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
+			WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
+
+		lp, err := NewLogParser(testCtx, sourceConn, "testdb", 60.0, storeCh)
+		assert.NoError(t, err)
+		assert.NotNil(t, lp)
+		assert.Equal(t, tempDir, lp.LogFolder)
+		assert.Equal(t, "en", lp.ServerMessagesLang)
+		assert.Equal(t, "testdb", lp.RealDbname)
+		assert.Equal(t, 60.0, lp.Interval)
+		assert.NotNil(t, lp.LogsMatchRegex)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("tryDetermineLogFolder error", func(t *testing.T) {
+		// Mock log folder detection to fail
+		mock.ExpectQuery(`select current_setting\('data_directory'\) as dd, current_setting\('log_directory'\) as ld`).
+			WillReturnError(assert.AnError)
+
+		lp, err := NewLogParser(testCtx, sourceConn, "testdb", 60.0, storeCh)
+		assert.Error(t, err)
+		assert.Nil(t, lp)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("tryDetermineLogMessagesLanguage error", func(t *testing.T) {
+		// Mock log folder detection to succeed
+		mock.ExpectQuery(`select current_setting\('data_directory'\) as dd, current_setting\('log_directory'\) as ld`).
+			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld"}).AddRow("", tempDir))
+
+		// Mock language detection to fail
+		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
+			WillReturnError(assert.AnError)
+
+		lp, err := NewLogParser(testCtx, sourceConn, "testdb", 60.0, storeCh)
+		assert.Error(t, err)
+		assert.Nil(t, lp)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("unknown language defaults to en", func(t *testing.T) {
+		// Mock log folder detection
+		mock.ExpectQuery(`select current_setting\('data_directory'\) as dd, current_setting\('log_directory'\) as ld`).
+			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld"}).AddRow("", tempDir))
+
+		// Mock language detection with unknown language
+		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
+			WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("zz"))
+
+		lp, err := NewLogParser(testCtx, sourceConn, "testdb", 60.0, storeCh)
+		assert.NoError(t, err)
+		assert.NotNil(t, lp)
+		assert.Equal(t, "en", lp.ServerMessagesLang)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("relative log directory", func(t *testing.T) {
+		// Mock log folder detection with relative path
+		mock.ExpectQuery(`select current_setting\('data_directory'\) as dd, current_setting\('log_directory'\) as ld`).
+			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld"}).AddRow("/data", "pg_log"))
+
+		// Mock language detection
+		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
+			WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("de"))
+
+		lp, err := NewLogParser(testCtx, sourceConn, "testdb", 60.0, storeCh)
+		assert.NoError(t, err)
+		assert.NotNil(t, lp)
+		assert.Equal(t, "/data/pg_log", lp.LogFolder)
+		assert.Equal(t, "de", lp.ServerMessagesLang)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}
+
 func TestTryDetermineLogFolder(t *testing.T) {
 	t.Run("absolute log directory", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -189,7 +284,7 @@ func TestLogParse(t *testing.T) {
 		select {
 		case measurement = <-storeCh:
 			assert.NotEmpty(t, measurement.Data, "Measurement data should not be empty")
-		case <-time.After(2*time.Second):
+		case <-time.After(2 * time.Second):
 		}
 
 		assert.Equal(t, "test-source", measurement.DBName)
