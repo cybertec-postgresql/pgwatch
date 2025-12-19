@@ -111,7 +111,7 @@ func TestTryDetermineLogFolder(t *testing.T) {
 
 		logPath, err := tryDetermineLogFolder(testCtx, mock)
 		assert.NoError(t, err)
-		assert.Equal(t, "/var/log/postgresql/*.csv", logPath)
+		assert.Equal(t, "/var/log/postgresql", logPath)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
@@ -126,7 +126,7 @@ func TestTryDetermineLogFolder(t *testing.T) {
 
 		logPath, err := tryDetermineLogFolder(testCtx, mock)
 		assert.NoError(t, err)
-		assert.Equal(t, "/data/log/*.csv", logPath)
+		assert.Equal(t, "/data/log", logPath)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
@@ -292,6 +292,10 @@ func TestLogParse(t *testing.T) {
 	modes := []string{"local", "remote"}
 
 	for _, mode := range modes {
+		// Mock the log folder detection query
+		mock.ExpectQuery(`select current_setting\('data_directory'\) as dd, current_setting\('log_directory'\) as ld`).
+			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld"}).AddRow("", tempDir))
+
 		// Mock the language detection query
 		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 			WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
@@ -334,7 +338,10 @@ func TestLogParse(t *testing.T) {
 		// Create a channel to receive measurement envelopes
 		storeCh := make(chan metrics.MeasurementEnvelope, 10)
 
-		ParseLogs(ctx, sourceConn, "testdb", 0, storeCh, "", filepath.Join(tempDir, "*.csv"))
+		lp, err := NewLogParser(ctx, sourceConn, "testdb", 0, storeCh)
+		require.NoError(t, err)
+		err = lp.ParseLogs()
+		assert.NoError(t, err)
 
 		// Ensure mock expectations were met.
 		//
@@ -384,6 +391,10 @@ func TestCheckHasPrivileges(t *testing.T) {
 			require.NoError(t, err)
 			defer mock.Close()
 
+			// Mock the log folder detection query
+			mock.ExpectQuery(`select current_setting\('data_directory'\) as dd, current_setting\('log_directory'\) as ld`).
+				WillReturnRows(pgxmock.NewRows([]string{"dd", "ld"}).AddRow("", tempDir))
+
 			// Mock the language detection query
 			mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 				WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
@@ -415,8 +426,12 @@ func TestCheckHasPrivileges(t *testing.T) {
 			}
 
 			storeCh := make(chan metrics.MeasurementEnvelope, 10)
+
+			lp, err := NewLogParser(testCtx, sourceConn, "testdb", 0, storeCh)
+			require.NoError(t, err)
 			// Parse logs should stop the worker and return due to privilege errors.
-			ParseLogs(testCtx, sourceConn, "testdb", 0, storeCh, "", filepath.Join(tempDir, "*.csv"))
+			err = lp.ParseLogs()
+			assert.Error(t, err)
 
 			// Ensure mock expectations were met
 			assert.NoError(t, mock.ExpectationsWereMet())
