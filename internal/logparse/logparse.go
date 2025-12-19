@@ -1,7 +1,6 @@
 package logparse
 
 import (
-	"cmp"
 	"context"
 	"path"
 	"path/filepath"
@@ -35,55 +34,77 @@ var PgSeveritiesLocale = map[string]map[string]string{
 const CSVLogDefaultRegEx = `^^(?P<log_time>.*?),"?(?P<user_name>.*?)"?,"?(?P<database_name>.*?)"?,(?P<process_id>\d+),"?(?P<connection_from>.*?)"?,(?P<session_id>.*?),(?P<session_line_num>\d+),"?(?P<command_tag>.*?)"?,(?P<session_start_time>.*?),(?P<virtual_transaction_id>.*?),(?P<transaction_id>.*?),(?P<error_severity>\w+),`
 const CSVLogDefaultGlobSuffix = "*.csv"
 
-func ParseLogs(
+type LogParser struct {
+	ctx                context.Context
+	LogsMatchRegex     *regexp.Regexp
+	LogFolder   	   string
+	ServerMessagesLang string
+	Mdb  		       *sources.SourceConn
+	RealDbname		   string
+	Interval           float64
+	StoreCh            chan<- metrics.MeasurementEnvelope
+}
+
+func NewLogParser(
 	ctx context.Context,
 	mdb *sources.SourceConn,
 	realDbname string,
 	interval float64,
 	storeCh chan<- metrics.MeasurementEnvelope,
-	LogsMatchRegex string,
-	LogsGlobPath string,
-) {
-	var logsGlobPath string
-	var serverMessagesLang string
+) (*LogParser, error) {
 
 	logger := log.GetLogger(ctx).WithField("source", mdb.Name).WithField("metric", specialMetricServerLogEventCounts)
 	ctx = log.WithLogger(ctx, logger)
 
-	logsRegex, err := regexp.Compile(cmp.Or(LogsMatchRegex, CSVLogDefaultRegEx))
+	logsRegex, err := regexp.Compile(CSVLogDefaultRegEx)
 	if err != nil {
-		logger.WithError(err).Printf("Invalid log parsing regex: %s", logsRegex)
-		return
+		logger.WithError(err).Error("Invalid log parsing regex")
+		return nil, err
 	}
 	logger.Debugf("Using %s as log parsing regex", logsRegex)
 
-	if LogsGlobPath != "" {
-		logsGlobPath = LogsGlobPath
-	} else {
-		if logsGlobPath, err = tryDetermineLogFolder(ctx, mdb.Conn); err != nil {
-			logger.WithError(err).Print("Could not determine Postgres logs folder")
-			return
-		}
+	var logFolder string
+	if logFolder, err = tryDetermineLogFolder(ctx, mdb.Conn); err != nil {
+		logger.WithError(err).Error("Could not determine Postgres logs folder")
+		return nil, err
 	}
-	logger.Debugf("Considering log files determined by glob pattern: %s", logsGlobPath)
+	logger.Debugf("Considering log files in folder: %s", logFolder)
 
+	var serverMessagesLang string
 	if serverMessagesLang, err = tryDetermineLogMessagesLanguage(ctx, mdb.Conn); err != nil {
-		logger.WithError(err).Print("Could not determine language (lc_collate) used for server logs")
-		return
+		logger.WithError(err).Error("Could not determine language (lc_collate) used for server logs")
+		return nil, err
 	}
 
-	if ok, err := db.IsClientOnSameHost(mdb.Conn); ok && err == nil {
-		logger.Info("DB is on the same host. parsing logs locally")
-		ParseLogsLocal(ctx, mdb, realDbname, interval, storeCh, logsRegex, logsGlobPath, serverMessagesLang)
-	} else {
-		logger.Info("DB is not detected to be on the same host. parsing logs remotely")
-		// TODO: check privileges for local mode also
-		if err := checkHasPrivileges(ctx, mdb, filepath.Dir(logsGlobPath)); err == nil {
-			ParseLogsRemote(ctx, mdb, realDbname, interval, storeCh, logsRegex, filepath.Dir(logsGlobPath), serverMessagesLang)
-		} else {
-			logger.WithError(err).Warn("Can't parse logs remotely. lacking required privileges")
-		}
+	return &LogParser{
+		ctx: ctx,
+		LogsMatchRegex: logsRegex,
+		LogFolder: logFolder,
+		ServerMessagesLang: serverMessagesLang,
+		Mdb: mdb,
+		RealDbname: realDbname,
+		Interval: interval,
+		StoreCh: storeCh,
+	}, nil
+}
+
+func (lp *LogParser) ParseLogs() error {
+	l := log.GetLogger(lp.ctx)
+	if ok, err := db.IsClientOnSameHost(lp.Mdb.Conn); ok && err == nil {
+		l.Info("DB is on the same host. parsing logs locally")
+		// TODO: check privileges before invoking local parsing
+		ParseLogsLocal(lp.ctx, lp.Mdb, lp.RealDbname, lp.Interval, lp.StoreCh, lp.LogsMatchRegex, filepath.Join(lp.LogFolder, CSVLogDefaultGlobSuffix), lp.ServerMessagesLang)
+		return nil
 	}
+
+	l.Info("DB is not detected to be on the same host. parsing logs remotely")
+	if err := checkHasPrivileges(lp.ctx, lp.Mdb, lp.LogFolder); err == nil {
+		ParseLogsRemote(lp.ctx, lp.Mdb, lp.RealDbname, lp.Interval, lp.StoreCh, lp.LogsMatchRegex, lp.LogFolder, lp.ServerMessagesLang)
+	} else {
+		l.WithError(err).Error("Could't parse logs remotely. lacking required privileges")
+		return err
+	}
+	return nil
 }
 
 // 1. add zero counts for severity levels that didn't have any occurrences in the log
@@ -138,9 +159,9 @@ func tryDetermineLogFolder(ctx context.Context, conn db.PgxIface) (string, error
 	}
 	if strings.HasPrefix(ld, "/") {
 		// we have a full path we can use
-		return path.Join(ld, CSVLogDefaultGlobSuffix), nil
+		return ld, nil
 	}
-	return path.Join(dd, ld, CSVLogDefaultGlobSuffix), nil
+	return path.Join(dd, ld), nil
 }
 
 func tryDetermineLogMessagesLanguage(ctx context.Context, conn db.PgxIface) (string, error) {
