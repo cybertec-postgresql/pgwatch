@@ -73,18 +73,16 @@ func (lp *LogParser) ParseLogs() error {
 	if ok, err := db.IsClientOnSameHost(lp.Mdb.Conn); ok && err == nil {
 		l.Info("DB is on the same host. parsing logs locally")
 		// TODO: check privileges before invoking local parsing
-		ParseLogsLocal(lp.ctx, lp.Mdb, lp.RealDbname, lp.Interval, lp.StoreCh, lp.LogsMatchRegex, filepath.Join(lp.LogFolder, CSVLogDefaultGlobSuffix), lp.ServerMessagesLang)
-		return nil
+		return lp.ParseLogsLocal()
 	}
 
 	l.Info("DB is not detected to be on the same host. parsing logs remotely")
 	if err := checkHasPrivileges(lp.ctx, lp.Mdb, lp.LogFolder); err == nil {
-		lp.ParseLogsRemote()
+		return lp.ParseLogsRemote()
 	} else {
 		l.WithError(err).Error("Could't parse logs remotely. lacking required privileges")
 		return err
 	}
-	return nil
 }
 
 func tryDetermineLogFolder(ctx context.Context, conn db.PgxIface) (string, error) {

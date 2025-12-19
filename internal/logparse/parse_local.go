@@ -2,28 +2,15 @@ package logparse
 
 import (
 	"bufio"
-	"context"
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
-func ParseLogsLocal(
-	ctx context.Context,
-	mdb *sources.SourceConn,
-	realDbname string,
-	interval float64,
-	storeCh chan<- metrics.MeasurementEnvelope,
-	LogsMatchRegex *regexp.Regexp,
-	LogsGlobPath string,
-	serverMessagesLang string,
-) {
+func (lp *LogParser) ParseLogsLocal() error {
 	var latest, previous string
 	var latestHandle *os.File
 	var reader *bufio.Reader
@@ -35,22 +22,23 @@ func ParseLogsLocal(
 	var firstRun = true
 	var currInterval time.Duration
 
-	logger := log.GetLogger(ctx)
+	logger := log.GetLogger(lp.ctx)
+	logsGlobPath := filepath.Join(lp.LogFolder, CSVLogDefaultGlobSuffix)
 
 	for { // re-try loop. re-start in case of FS errors or just to refresh host config
 		select {
-		case <-ctx.Done():
-			return
+		case <-lp.ctx.Done():
+			return nil
 		case <-time.After(currInterval):
 			if currInterval == 0 {
-				currInterval = time.Second * time.Duration(interval)
+				currInterval = time.Second * time.Duration(lp.Interval)
 			}
 		}
 
 		if latest == "" || firstRun {
-			globMatches, err := filepath.Glob(LogsGlobPath)
+			globMatches, err := filepath.Glob(logsGlobPath)
 			if err != nil || len(globMatches) == 0 {
-				logger.Infof("No logfiles found to parse from glob '%s'", LogsGlobPath)
+				logger.Infof("No logfiles found to parse from glob '%s'", logsGlobPath)
 				continue
 			}
 
@@ -111,12 +99,12 @@ func ParseLogsLocal(
 			if err == io.EOF {
 				// // EOF reached, wait for new files to be added
 				select {
-				case <-ctx.Done():
-					return
+				case <-lp.ctx.Done():
+					return nil
 				case <-time.After(currInterval):
 				}
 				// check for newly opened logfiles
-				file, _ := getFileWithNextModTimestamp(LogsGlobPath, latest)
+				file, _ := getFileWithNextModTimestamp(logsGlobPath, latest)
 				if file != "" {
 					previous = latest
 					latest = file
@@ -131,40 +119,40 @@ func ParseLogsLocal(
 			}
 
 			if err == nil && line != "" {
-				matches := LogsMatchRegex.FindStringSubmatch(line)
+				matches := lp.LogsMatchRegex.FindStringSubmatch(line)
 				if len(matches) == 0 {
 					goto send_to_storage_if_needed
 				}
-				result := regexMatchesToMap(LogsMatchRegex, matches)
+				result := regexMatchesToMap(lp.LogsMatchRegex, matches)
 				errorSeverity, ok := result["error_severity"]
 				if !ok {
-					logger.Error("error_severity group must be defined in parse regex:", LogsMatchRegex)
+					logger.Error("error_severity group must be defined in parse regex:", lp.LogsMatchRegex)
 					time.Sleep(time.Minute)
 					break
 				}
-				if serverMessagesLang != "en" {
-					errorSeverity = severityToEnglish(serverMessagesLang, errorSeverity)
+				if lp.ServerMessagesLang != "en" {
+					errorSeverity = severityToEnglish(lp.ServerMessagesLang, errorSeverity)
 				}
 
 				databaseName, ok := result["database_name"]
 				if !ok {
-					logger.Error("database_name group must be defined in parse regex:", LogsMatchRegex)
+					logger.Error("database_name group must be defined in parse regex:", lp.LogsMatchRegex)
 					time.Sleep(time.Minute)
 					break
 				}
-				if realDbname == databaseName {
+				if lp.RealDbname == databaseName {
 					eventCounts[errorSeverity]++
 				}
 				eventCountsTotal[errorSeverity]++
 			}
 
 		send_to_storage_if_needed:
-			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(interval))) {
+			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(lp.Interval))) {
 				logger.Debugf("Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v", eventCounts, eventCountsTotal)
 				select {
-				case <-ctx.Done():
-					return
-				case storeCh <- eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb):
+				case <-lp.ctx.Done():
+					return nil
+				case lp.StoreCh <- eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, lp.Mdb):
 					zeroEventCounts(eventCounts)
 					zeroEventCounts(eventCountsTotal)
 					lastSendTime = time.Now()
