@@ -77,12 +77,11 @@ func (lp *LogParser) ParseLogs() error {
 	}
 
 	l.Info("DB is not detected to be on the same host. parsing logs remotely")
-	if err := checkHasPrivileges(lp.ctx, lp.Mdb, lp.LogFolder); err == nil {
-		return lp.ParseLogsRemote()
-	} else {
+	if err := checkHasPrivileges(lp.ctx, lp.Mdb, lp.LogFolder); err != nil {
 		l.WithError(err).Error("Could't parse logs remotely. lacking required privileges")
 		return err
 	}
+	return lp.ParseLogsRemote()
 }
 
 func tryDetermineLogFolder(ctx context.Context, conn db.PgxIface) (string, error) {
