@@ -1,4 +1,4 @@
-package pglogparse
+package logparse
 
 import (
 	"context"
