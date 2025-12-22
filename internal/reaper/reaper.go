@@ -515,7 +515,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 		r.measurementCache.Put(cacheKey, data)
 	}
 	r.AddSysinfoToMeasurements(data, md)
-	l.WithField("cache", fromCache).WithField("conn_str", md.ConnStr).WithField("rows", len(data)).Info("measurements fetched")
+	l.WithField("cache", fromCache).WithField("rows", len(data)).Info("measurements fetched")
 	return &metrics.MeasurementEnvelope{
 		DBName:     md.Name,
 		MetricName: cmp.Or(metric.StorageName, metricName),
