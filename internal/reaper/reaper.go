@@ -267,9 +267,9 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 				oldMd := r.prevLoopMonitoredDBs.GetMonitoredDatabase(db)
 				if oldMd != nil {
 					oldInterval, ok := oldMd.Metrics[metric]
-					configChanged = ok && 
+					configChanged = ok &&
 						(oldInterval != currentMetricConfig[metric] ||
-						oldMd.ConnStr != md.ConnStr)
+							oldMd.ConnStr != md.ConnStr)
 				}
 			}
 
