@@ -11,6 +11,25 @@ import { usePresetsGridColumns } from "./PresetsGrid.consts";
 import { PresetGridRow } from "./PresetsGrid.types";
 import { PresetsGridToolbar } from "./components/PresetsGridToolbar/PresetsGridToolbar";
 
+const PRESET_ORDER = [
+  "minimal",
+  "basic",
+  "standard",
+  "exhaustive",
+  "full",
+  "aiven",
+  "azure",
+  "gce",
+  "rds",
+  "pgbouncer",
+  "pgpool",
+  "unprivileged",
+  "recommendations",
+  "prometheus-async",
+  "exhaustive_no_python",
+  "debug",
+];
+
 export const PresetsGrid = () => {
   const { classes } = usePageStyles();
 
@@ -24,18 +43,26 @@ export const PresetsGrid = () => {
     onColumnResize
   } = useGridState('PRESETS_GRID', columns);
 
-  const rows: PresetGridRow[] | [] = useMemo(() => {
-    if (data) {
-      return Object.keys(data).map((key) => {
-        const preset = data[key];
-        return {
-          Key: key,
-          Preset: preset,
-        };
-      });
-    }
+  const rows: PresetGridRow[] = useMemo(() => {
+  if (!data) {
     return [];
-  }, [data]);
+  }
+  const orderMap = new Map(
+    PRESET_ORDER.map((name, index) => [name, index])
+  );
+
+  return Object.keys(data)
+    .sort((a, b) => {
+      const aOrder = orderMap.get(a) ?? Number.MAX_SAFE_INTEGER;
+      const bOrder = orderMap.get(b) ?? Number.MAX_SAFE_INTEGER;
+      return aOrder - bOrder;
+    })
+    .map((key) => ({
+      Key: key,
+      Preset: data[key],
+    }));
+}, [data]);
+
 
   if (isLoading) {
     return (
