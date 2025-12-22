@@ -261,8 +261,18 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 			} else {
 				currentMetricConfig = md.Metrics
 			}
+
+			var intervalChanged bool
+			if r.prevLoopMonitoredDBs != nil {
+				oldMd := r.prevLoopMonitoredDBs.GetMonitoredDatabase(db)
+				if oldMd != nil {
+					oldInterval, ok := oldMd.Metrics[metric]
+					intervalChanged = ok && oldInterval != currentMetricConfig[metric]
+				}
+			}
+
 			interval, isMetricActive := currentMetricConfig[metric]
-			singleMetricDisabled = !isMetricActive || interval <= 0
+			singleMetricDisabled = !isMetricActive || interval <= 0 || intervalChanged
 		}
 
 		if ctx.Err() != nil || wholeDbShutDownDueToRoleChange || dbRemovedFromConfig || singleMetricDisabled {
