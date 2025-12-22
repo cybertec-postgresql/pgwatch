@@ -262,17 +262,19 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 				currentMetricConfig = md.Metrics
 			}
 
-			var intervalChanged bool
+			var configChanged bool
 			if r.prevLoopMonitoredDBs != nil {
 				oldMd := r.prevLoopMonitoredDBs.GetMonitoredDatabase(db)
 				if oldMd != nil {
 					oldInterval, ok := oldMd.Metrics[metric]
-					intervalChanged = ok && oldInterval != currentMetricConfig[metric]
+					configChanged = ok && 
+						(oldInterval != currentMetricConfig[metric] ||
+						oldMd.ConnStr != md.ConnStr)
 				}
 			}
 
 			interval, isMetricActive := currentMetricConfig[metric]
-			singleMetricDisabled = !isMetricActive || interval <= 0 || intervalChanged
+			singleMetricDisabled = !isMetricActive || interval <= 0 || configChanged
 		}
 
 		if ctx.Err() != nil || wholeDbShutDownDueToRoleChange || dbRemovedFromConfig || singleMetricDisabled {
@@ -513,7 +515,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 		r.measurementCache.Put(cacheKey, data)
 	}
 	r.AddSysinfoToMeasurements(data, md)
-	l.WithField("cache", fromCache).WithField("rows", len(data)).Info("measurements fetched")
+	l.WithField("cache", fromCache).WithField("conn_str", md.ConnStr).WithField("rows", len(data)).Info("measurements fetched")
 	return &metrics.MeasurementEnvelope{
 		DBName:     md.Name,
 		MetricName: cmp.Or(metric.StorageName, metricName),
