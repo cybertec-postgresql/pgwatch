@@ -1,3 +1,4 @@
+import { PRESET_ORDER } from "constants/presets";
 import { useEffect, useMemo } from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Button, Checkbox, FormControl, FormControlLabel, FormHelperText, IconButton, InputLabel, OutlinedInput } from "@mui/material";
@@ -12,25 +13,10 @@ type PresetOption = {
   label: string;
   description?: string;
 };
-const PRESET_PRIORITY = [
-  "minimal",
-  "basic",
-  "standard",
-  "exhaustive",
-  "full",
-  "aiven",
-  "azure",
-  "gce",
-  "rds",
-  "pgbouncer",
-  "pgpool",
-  "unprivileged",
-  "recommendations",
-  "prometheus-async",
-  "exhaustive_no_python",
-  "debug",
-];
 
+type PresetMeta = {
+  Description?: string;
+};
 
 export const SourceFormStepMetrics = () => {
   const { control, register, watch, formState: { errors }, clearErrors } = useFormContext<SourceFormValues>();
@@ -58,23 +44,16 @@ export const SourceFormStepMetrics = () => {
 
   const presets = usePresets();
   const metrics = useMetrics();
-
-
-type PresetMeta = {
-  Description?: string;
-};
-
 const presetsOptions = useMemo<PresetOption[]>(() => {
   
-
   if (!presets.data) {
     return [];
   }
 
   return Object.entries(presets.data)
     .sort(([a], [b]) => {
-      const ia = PRESET_PRIORITY.indexOf(a);
-      const ib = PRESET_PRIORITY.indexOf(b);
+      const ia = PRESET_ORDER.indexOf(a);
+      const ib = PRESET_ORDER.indexOf(b);
 
       if (ia === -1 && ib === -1) {
         return a.localeCompare(b);

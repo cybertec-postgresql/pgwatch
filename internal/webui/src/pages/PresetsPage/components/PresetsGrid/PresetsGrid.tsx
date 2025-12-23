@@ -1,3 +1,4 @@
+import { PRESET_ORDER } from "constants/presets";
 import { useMemo } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { Error } from "components/Error/Error";
@@ -10,25 +11,6 @@ import { usePresets } from "queries/Preset";
 import { usePresetsGridColumns } from "./PresetsGrid.consts";
 import { PresetGridRow } from "./PresetsGrid.types";
 import { PresetsGridToolbar } from "./components/PresetsGridToolbar/PresetsGridToolbar";
-
-const PRESET_ORDER = [
-  "minimal",
-  "basic",
-  "standard",
-  "exhaustive",
-  "full",
-  "aiven",
-  "azure",
-  "gce",
-  "rds",
-  "pgbouncer",
-  "pgpool",
-  "unprivileged",
-  "recommendations",
-  "prometheus-async",
-  "exhaustive_no_python",
-  "debug",
-];
 
 export const PresetsGrid = () => {
   const { classes } = usePageStyles();
