@@ -1,0 +1,18 @@
+export const PRESET_ORDER = [
+  "minimal",
+  "basic",
+  "standard",
+  "exhaustive",
+  "full",
+  "aiven",
+  "azure",
+  "gce",
+  "rds",
+  "pgbouncer",
+  "pgpool",
+  "unprivileged",
+  "recommendations",
+  "prometheus-async",
+  "exhaustive_no_python",
+  "debug",
+];

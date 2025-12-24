@@ -1,3 +1,4 @@
+import { PRESET_ORDER } from "constants/presets";
 import { useEffect, useMemo } from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Button, Checkbox, FormControl, FormControlLabel, FormHelperText, IconButton, InputLabel, OutlinedInput } from "@mui/material";
@@ -7,6 +8,15 @@ import { useFormStyles } from "styles/form";
 import { useMetrics } from "queries/Metric";
 import { usePresets } from "queries/Preset";
 import { SourceFormValues } from "../SourceForm.types";
+
+type PresetOption = {
+  label: string;
+  description?: string;
+};
+
+type PresetMeta = {
+  Description?: string;
+};
 
 export const SourceFormStepMetrics = () => {
   const { control, register, watch, formState: { errors }, clearErrors } = useFormContext<SourceFormValues>();
@@ -34,11 +44,36 @@ export const SourceFormStepMetrics = () => {
 
   const presets = usePresets();
   const metrics = useMetrics();
+const presetsOptions = useMemo<PresetOption[]>(() => {
+  
+  if (!presets.data) {
+    return [];
+  }
 
-  const presetsOptions = useMemo(
-    () => presets.data ? Object.keys(presets.data).map((key) => ({ label: key })) : [],
-    [presets.data],
-  );
+  return Object.entries(presets.data)
+    .sort(([a], [b]) => {
+      const ia = PRESET_ORDER.indexOf(a);
+      const ib = PRESET_ORDER.indexOf(b);
+
+      if (ia === -1 && ib === -1) {
+        return a.localeCompare(b);
+      }
+      if (ia === -1) {
+        return 1;
+      }
+      if (ib === -1) {
+        return -1;
+      }
+      return ia - ib;
+    })
+    .map(([key, preset]) => {
+      const p = preset as PresetMeta;
+      return {
+        label: key,
+        description: p.Description ?? "",
+      };
+    });
+}, [presets.data]);
 
   const metricsOptions = useMemo(
     () => metrics.data ? Object.keys(metrics.data).map((key) => ({ label: key })) : [],
@@ -83,6 +118,7 @@ export const SourceFormStepMetrics = () => {
                 loading={presets.isLoading}
                 error={hasError("PresetMetrics")}
               />
+
             )}
           />
           <FormHelperText>{getError("PresetMetrics")}</FormHelperText>
@@ -162,6 +198,7 @@ export const SourceFormStepMetrics = () => {
                 options={presetsOptions}
                 loading={presets.isLoading}
               />
+
             )}
           />
         </FormControl>

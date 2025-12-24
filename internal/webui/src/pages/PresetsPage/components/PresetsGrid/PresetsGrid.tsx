@@ -1,3 +1,4 @@
+import { PRESET_ORDER } from "constants/presets";
 import { useMemo } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { Error } from "components/Error/Error";
@@ -24,18 +25,26 @@ export const PresetsGrid = () => {
     onColumnResize
   } = useGridState('PRESETS_GRID', columns);
 
-  const rows: PresetGridRow[] | [] = useMemo(() => {
-    if (data) {
-      return Object.keys(data).map((key) => {
-        const preset = data[key];
-        return {
-          Key: key,
-          Preset: preset,
-        };
-      });
-    }
+  const rows: PresetGridRow[] = useMemo(() => {
+  if (!data) {
     return [];
-  }, [data]);
+  }
+  const orderMap = new Map(
+    PRESET_ORDER.map((name, index) => [name, index])
+  );
+
+  return Object.keys(data)
+    .sort((a, b) => {
+      const aOrder = orderMap.get(a) ?? Number.MAX_SAFE_INTEGER;
+      const bOrder = orderMap.get(b) ?? Number.MAX_SAFE_INTEGER;
+      return aOrder - bOrder;
+    })
+    .map((key) => ({
+      Key: key,
+      Preset: data[key],
+    }));
+}, [data]);
+
 
   if (isLoading) {
     return (
