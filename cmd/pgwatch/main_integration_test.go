@@ -151,4 +151,62 @@ metrics:
 		assert.NoError(t, err)
 		assert.Contains(t, string(datab), "metric fetched via PostgreSQL not OS")
 	})
+
+	t.Run("special source names", func(t *testing.T) {
+		// Test various special source names with dots, capitals, underscores, hyphens, and numbers
+		specialNames := []string{
+			"source.new",
+			"Source.With.Dots",
+			"UPPERCASE_SOURCE",
+			"MixedCase_Source-123",
+			"source-with-hyphens",
+			"source_with_underscores",
+			"Source123.Test_Name-456",
+		}
+
+		specialSourcesYaml := filepath.Join(tempDir, "special_sources.yaml")
+		specialJsonSink := filepath.Join(tempDir, "special_out.json")
+
+		// Build YAML with all special source names
+		yamlContent := ""
+		for _, name := range specialNames {
+			yamlContent += `
+- name: ` + name + `
+  conn_str: ` + connStr + `
+  kind: postgres
+  is_enabled: true
+  custom_metrics:
+    test_metric: 60
+`
+		}
+		require.NoError(t, os.WriteFile(specialSourcesYaml, []byte(yamlContent), 0644))
+
+		os.Args = []string{
+			"pgwatch",
+			"--metrics", metricsYaml,
+			"--sources", specialSourcesYaml,
+			"--sink", "jsonfile://" + specialJsonSink,
+			"--web-disable",
+		}
+
+		go main()
+		<-time.After(5 * time.Second)
+		cancel()
+		<-mainCtx.Done() // Wait for main to finish
+
+		assert.Equal(t, cmdopts.ExitCodeOK, gotExit, "expected exit code 0 with special source names")
+
+		data, err := os.ReadFile(specialJsonSink)
+		assert.NoError(t, err, "output json file should exist")
+		assert.NotEmpty(t, data, "output json file should not be empty")
+
+		// Verify each special source name appears in the output with collected metrics
+		for _, name := range specialNames {
+			assert.Contains(t, string(data), `"dbname":"`+name+`"`,
+				"expected source name %q to appear in output", name)
+		}
+		// Verify the metric data was actually collected
+		assert.Contains(t, string(data), `"test_metric":42`)
+		assert.Contains(t, string(data), `"metric":"test_metric"`)
+	})
 }
