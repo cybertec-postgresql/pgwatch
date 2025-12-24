@@ -165,7 +165,7 @@ metrics:
 		}
 
 		specialSourcesYaml := filepath.Join(tempDir, "special_sources.yaml")
-		specialJsonSink := filepath.Join(tempDir, "special_out.json")
+		specialJSONSink := filepath.Join(tempDir, "special_out.json")
 
 		// Build YAML with all special source names
 		yamlContent := ""
@@ -185,7 +185,7 @@ metrics:
 			"pgwatch",
 			"--metrics", metricsYaml,
 			"--sources", specialSourcesYaml,
-			"--sink", "jsonfile://" + specialJsonSink,
+			"--sink", "jsonfile://" + specialJSONSink,
 			"--web-disable",
 		}
 
@@ -196,7 +196,7 @@ metrics:
 
 		assert.Equal(t, cmdopts.ExitCodeOK, gotExit, "expected exit code 0 with special source names")
 
-		data, err := os.ReadFile(specialJsonSink)
+		data, err := os.ReadFile(specialJSONSink)
 		assert.NoError(t, err, "output json file should exist")
 		assert.NotEmpty(t, data, "output json file should not be empty")
 
