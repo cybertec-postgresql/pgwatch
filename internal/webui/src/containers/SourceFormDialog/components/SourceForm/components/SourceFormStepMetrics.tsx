@@ -36,12 +36,12 @@ export const SourceFormStepMetrics = () => {
   const metrics = useMetrics();
 
   const presetsOptions = useMemo(
-    () => presets.data ? Object.keys(presets.data).map((key) => ({ label: key })) : [],
+    () => presets.data ? Object.keys(presets.data).sort((a, b) => a.localeCompare(b)).map((key) => ({ label: key })) : [],
     [presets.data],
   );
 
   const metricsOptions = useMemo(
-    () => metrics.data ? Object.keys(metrics.data).map((key) => ({ label: key })) : [],
+    () => metrics.data ? Object.keys(metrics.data).sort((a, b) => a.localeCompare(b)).map((key) => ({ label: key })) : [],
     [metrics.data],
   );
 
