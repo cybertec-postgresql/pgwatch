@@ -1,9 +1,9 @@
 import { useState } from "react";
-import ReactMarkdown from 'react-markdown';
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import DataObjectIcon from '@mui/icons-material/DataObject';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { Dialog, DialogContent, DialogTitle, IconButton, Tooltip, Typography, Box } from "@mui/material";
+import { Box, Dialog, DialogContent, DialogTitle, IconButton, Tooltip, Typography } from "@mui/material";
+import ReactMarkdown from 'react-markdown';
 
 type Props = {
   title: string;
@@ -89,7 +89,8 @@ export const TextPopUp = ({ title, content, type = "description" }: Props) => {
                   borderRadius: 1,
                   overflow: 'auto',
                 },
-              }}>
+              }}
+              >
                 <ReactMarkdown>{content}</ReactMarkdown>
               </Box>
             )}

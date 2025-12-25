@@ -1,10 +1,10 @@
 import CheckIcon from "@mui/icons-material/Check";
 import { GridColDef } from "@mui/x-data-grid";
 import { MetricGridRow } from "./MetricsGrid.types";
+import { ListPopUp } from "./components/ListPopUp/ListPopUp";
 import { MetricsGridActions } from "./components/MetricsGridActions/MetricsGridActions";
 import { SqlPopUp } from "./components/SqlPopUp/SqlPopUp";
 import { TextPopUp } from "./components/TextPopUp/TextPopUp";
-import { ListPopUp } from "./components/ListPopUp/ListPopUp";
 
 const getIcon = (value: boolean) => {
   if (value) {
