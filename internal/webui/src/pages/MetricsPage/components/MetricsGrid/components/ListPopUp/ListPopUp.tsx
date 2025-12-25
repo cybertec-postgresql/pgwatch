@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { Dialog, DialogContent, DialogTitle, IconButton, Tooltip, List, ListItem, ListItemText, Chip, Box } from "@mui/material";
+import { Box, Chip, Dialog, DialogContent, DialogTitle, IconButton, List, ListItem, ListItemText, Tooltip } from "@mui/material";
 
 type Props = {
   title: string;
