@@ -36,6 +36,24 @@ func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error) {
 	return pgContainer, tearDown, err
 }
 
+// Creates a PostgreSQL container with CSV logging enabled.
+// This is useful for testing log parsing functionality with server_log_event_counts metric.
+func SetupPostgresContainerWithConfig(configPath string) (*postgres.PostgresContainer, func(), error) {
+	pgContainer, err := postgres.Run(ctx,
+		pgImageName,
+		postgres.WithDatabase(MockDatabase),
+		postgres.WithConfigFile(configPath),
+		testcontainers.WithWaitStrategy(
+			wait.ForListeningPort("5432/tcp").WithStartupTimeout(5*time.Second)),
+	)
+
+	tearDown := func() {
+		_ = pgContainer.Terminate(ctx)
+	}
+
+	return pgContainer, tearDown, err
+}
+
 func SetupPostgresContainerWithInitScripts(scripts ...string) (*postgres.PostgresContainer, func(), error) {
 	pgContainer, err := postgres.Run(ctx,
 		pgImageName,
