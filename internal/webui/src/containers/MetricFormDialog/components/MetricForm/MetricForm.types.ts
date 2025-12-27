@@ -16,7 +16,10 @@ type MetricFormSettings = {
 };
 
 type MetricFormSQL = {
-  SQLs: string;
+  SQLs: {
+    Version: number;
+    SQL: string;
+  }[];
 };
 
 export type MetricFormValues = MetricFormGeneral & MetricFormSettings & MetricFormSQL;
