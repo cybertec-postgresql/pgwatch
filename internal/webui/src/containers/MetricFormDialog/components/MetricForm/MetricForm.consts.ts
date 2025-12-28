@@ -28,10 +28,16 @@ export const metricFormValuesValidationSchema = Yup.object({
     )
     .min(1, "At least one SQL version is required")
     .required("SQLs is required")
-    .test("unique-versions", "Duplicate version numbers are not allowed", function (value) {
-      if (!value || value.length === 0) return true;
-      const versions = value.map(item => item.Version);
-      const uniqueVersions = new Set(versions);
-      return versions.length === uniqueVersions.size;
-    }),
+    .test(
+      "unique-versions",
+      "Duplicate version numbers are not allowed",
+      (value) => {
+        if (!value || value.length === 0) {
+          return true;
+        }
+        const versions = value.map(item => item.Version);
+        const uniqueVersions = new Set(versions);
+        return versions.length === uniqueVersions.size;
+      }
+    ),
 });
