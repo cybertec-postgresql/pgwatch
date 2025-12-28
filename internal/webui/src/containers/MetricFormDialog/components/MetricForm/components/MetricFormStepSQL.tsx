@@ -65,13 +65,15 @@ export const MetricFormStepSQL = () => {
       )}
 
       {/* Scrollable SQL entries container */}
-      <div style={{
-        maxHeight: "400px",
-        overflowY: "auto",
-        overflowX: "hidden",
-        marginBottom: "16px",
-        paddingRight: "8px"
-      }}>
+      <div
+        style={{
+          maxHeight: "400px",
+          overflowY: "auto",
+          overflowX: "hidden",
+          marginBottom: "16px",
+          paddingRight: "8px"
+        }}
+      >
         {fields.map((field, index) => (
           <div
             key={field.id}
