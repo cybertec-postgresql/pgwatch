@@ -64,6 +64,11 @@ export const MetricsGrid = () => {
           columnVisibilityModel={columnVisibility}
           onColumnVisibilityModelChange={onColumnVisibilityChange}
           onColumnResize={onColumnResize}
+          initialState={{
+            sorting: {
+              sortModel: [{ field: 'Key', sort: 'asc' }],
+            },
+          }}
         />
         <MetricFormDialog />
       </MetricFormProvider>
