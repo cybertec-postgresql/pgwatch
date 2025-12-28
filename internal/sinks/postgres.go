@@ -102,8 +102,10 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		return
 	}
 
-	pgw.scheduleJob(pgw.maintenanceInterval, pgw.MaintainUniqueSources)
-	pgw.scheduleJob(pgw.retentionInterval, pgw.DeleteOldPartitions)
+	pgw.scheduleJob(pgw.maintenanceInterval, func() {
+		pgw.DeleteOldPartitions()
+		pgw.MaintainUniqueSources()
+	})
 
 	go pgw.poll()
 	l.Info(`measurements sink is activated`)

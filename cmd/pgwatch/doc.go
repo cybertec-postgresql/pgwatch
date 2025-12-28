@@ -54,9 +54,13 @@
 //	                                     may be ignored by some sinks
 //	                                     (default: 950ms)
 //	                                     [$PW_BATCHING_DELAY]
-//	--retention=                         If set, metrics older than that will
-//	                                     be deleted (default: "14 days")
-//	                                     [$PW_RETENTION]
+//	--retention=                         Delete metrics older than this. 
+//	                                     Must be a valid PostgreSQL interval. 
+//	                                     (default: 14 days) [$PW_RETENTION]
+// --maintenance-interval=               Run pgwatch maintenance tasks on sinks with this interval 
+//										 e.g., deleting old metrics; Set to zero to disable. 
+//										 Must be a valid PostgreSQL interval. 
+// 										 (default: 12 hours) [$PW_MAINTENANCE_INTERVAL]
 //	--real-dbname-field=                 Tag key for real database name
 //	                                     (default: real_dbname)
 //	                                     [$PW_REAL_DBNAME_FIELD]
