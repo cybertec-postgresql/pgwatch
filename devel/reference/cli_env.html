@@ -2224,12 +2224,12 @@ ENV: <code>$PW_PARTITION_INTERVAL</code></p>
 </li>
 <li>
 <p><code>--retention=</code></p>
-<p>Delete metrics older than this. Set to zero to disable. Must be a valid PostgreSQL interval. (default: 14 days)<br>
+<p>Delete metrics older than this. Must be a valid PostgreSQL interval. (default: 14 days)<br>
 ENV: <code>$PW_RETENTION</code></p>
 </li>
 <li>
 <p><code>--maintenance-interval=</code></p>
-<p>Run pgwatch maintenance tasks on sinks with this interval; Set to zero to disable. Must be a valid PostgreSQL interval. (default: 12 hours)<br>
+<p>Run pgwatch maintenance tasks on sinks with this interval e.g., deleting old metrics; Set to zero to disable. Must be a valid PostgreSQL interval. (default: 12 hours)<br>
 ENV: <code>$PW_MAINTENANCE_INTERVAL</code></p>
 </li>
 <li>
