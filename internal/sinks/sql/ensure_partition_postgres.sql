@@ -70,7 +70,7 @@ BEGIN
   THEN
     EXECUTE format('CREATE TABLE subpartitions.%I PARTITION OF public.%I FOR VALUES IN (%L) PARTITION BY RANGE (time)',
                     l_part_name_2nd, metric, dbname);
-    EXECUTE format('COMMENT ON TABLE subpartitions.%s IS $$pgwatch-generated-metric-dbname-lvl$$', l_part_name_2nd);
+    EXECUTE format('COMMENT ON TABLE subpartitions.%I IS $$pgwatch-generated-metric-dbname-lvl$$', l_part_name_2nd);
   END IF;
 
   -- 3. level 
