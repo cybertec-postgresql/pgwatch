@@ -139,3 +139,117 @@ BEGIN
   RETURN i;
 END;
 $SQL$ LANGUAGE plpgsql;
+
+/*
+maintain_unique_sources() maintains a mapping of unique sources in each metric table 
+in admin.all_distinct_dbname_metrics. This is used to avoid listing the same source 
+multiple times in Grafana dropdowns.
+
+Returns the total number of rows affected by all operations.
+*/
+CREATE OR REPLACE FUNCTION admin.maintain_unique_sources()
+RETURNS int AS
+$SQL$
+DECLARE
+  r record;
+  v_found_dbnames text[];
+  v_all_metrics text[] := ARRAY[]::text[];
+  v_rows_affected bigint;
+  v_total_rows_affected bigint := 0;
+  v_metric_name text;
+BEGIN
+  -- Try to get advisory lock (1571543679778230000 is a random bigint)
+  -- This ensures only one instance runs maintenance at a time
+  -- Using xact variant so lock is automatically released at transaction end
+  IF NOT pg_try_advisory_xact_lock(1571543679778230000) THEN
+    RAISE NOTICE 'Skipping admin.all_distinct_dbname_metrics maintenance as another instance has the advisory lock';
+    RETURN 0;
+  END IF;
+  
+  RAISE NOTICE 'Refreshing admin.all_distinct_dbname_metrics listing table';
+  
+  -- Get all top-level metric tables
+  FOR r IN SELECT table_name FROM admin.get_top_level_metric_tables()
+  LOOP
+    v_metric_name := replace(r.table_name, 'public.', '');
+    v_all_metrics := array_append(v_all_metrics, v_metric_name);
+    
+    RAISE DEBUG 'Refreshing all_distinct_dbname_metrics listing for metric: %', v_metric_name;
+    
+    -- Get distinct dbnames from the metric table using recursive CTE
+    -- This is more efficient than DISTINCT for large tables
+    EXECUTE format($f$
+      WITH RECURSIVE t(dbname) AS (
+        SELECT MIN(dbname) AS dbname FROM %I
+        UNION
+        SELECT (SELECT MIN(dbname) FROM %I WHERE dbname > t.dbname) FROM t 
+      )
+      SELECT array_agg(dbname) FROM t WHERE dbname IS NOT NULL
+    $f$, r.table_name, r.table_name) INTO v_found_dbnames;
+    
+    -- Handle case where no dbnames found - delete all entries for this metric
+    IF v_found_dbnames IS NULL THEN
+      WITH deleted AS (
+        DELETE FROM admin.all_distinct_dbname_metrics 
+        WHERE metric = v_metric_name
+        RETURNING 1
+      )
+      SELECT count(*) INTO v_rows_affected FROM deleted;
+      
+      IF v_rows_affected > 0 THEN
+        RAISE DEBUG 'Deleted all admin.all_distinct_dbname_metrics table entries for metric: %', v_metric_name;
+        v_total_rows_affected := v_total_rows_affected + v_rows_affected;
+      END IF;
+      
+      CONTINUE;
+    END IF;
+    
+    -- Delete stale entries (dbnames that no longer exist in the metric table)
+    WITH deleted AS (
+      DELETE FROM admin.all_distinct_dbname_metrics 
+      WHERE NOT dbname = ANY(v_found_dbnames) 
+        AND metric = v_metric_name
+      RETURNING 1
+    )
+    SELECT count(*) INTO v_rows_affected FROM deleted;
+    
+    IF v_rows_affected > 0 THEN
+      RAISE NOTICE 'Removed % stale entries from admin.all_distinct_dbname_metrics table for metric: %', v_rows_affected, v_metric_name;
+      v_total_rows_affected := v_total_rows_affected + v_rows_affected;
+    END IF;
+    
+    -- Add new entries (dbnames that exist in metric table but not in listing)
+    WITH inserted AS (
+      INSERT INTO admin.all_distinct_dbname_metrics (dbname, metric)
+      SELECT unnest(v_found_dbnames), v_metric_name
+      WHERE NOT EXISTS (
+        SELECT 1 FROM admin.all_distinct_dbname_metrics 
+        WHERE dbname = ANY(v_found_dbnames) 
+          AND metric = v_metric_name
+      )
+      RETURNING 1
+    )
+    SELECT count(*) INTO v_rows_affected FROM inserted;
+    
+    IF v_rows_affected > 0 THEN
+      RAISE NOTICE 'Added % entries to admin.all_distinct_dbname_metrics table for metric: %', v_rows_affected, v_metric_name;
+      v_total_rows_affected := v_total_rows_affected + v_rows_affected;
+    END IF;
+  END LOOP;
+  
+  -- Delete entries for dropped metric tables
+  WITH deleted AS (
+    DELETE FROM admin.all_distinct_dbname_metrics 
+    WHERE metric != ALL(v_all_metrics)
+    RETURNING 1
+  )
+  SELECT count(*) INTO v_rows_affected FROM deleted;
+  
+  IF v_rows_affected > 0 THEN
+    RAISE NOTICE 'Removed % stale entries for dropped tables from admin.all_distinct_dbname_metrics table', v_rows_affected;
+    v_total_rows_affected := v_total_rows_affected + v_rows_affected;
+  END IF;
+  
+  RETURN v_total_rows_affected;
+END;
+$SQL$ LANGUAGE plpgsql;

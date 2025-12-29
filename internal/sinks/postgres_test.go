@@ -615,7 +615,7 @@ func TestPartitionInterval(t *testing.T) {
 	a.Equal(part.StartTime.Add(3*7*24*time.Hour), part.EndTime)
 }
 
-func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
+func Test_Maintain(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
 
@@ -683,6 +683,172 @@ func Test_MaintainUniqueSources_DeleteOldPartitions(t *testing.T) {
 		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics;").Scan(&numOfEntries)
 		a.NoError(err)
 		a.Equal(0, numOfEntries)
+	})
+
+	t.Run("MaintainUniqueSources_MultipleMetricsAndSources", func(_ *testing.T) {
+		// Create metric tables with partitions
+		err = pgw.EnsureMetricDummy("test_metric_a")
+		r.NoError(err)
+		err = pgw.EnsureMetricDummy("test_metric_b")
+		r.NoError(err)
+
+		// Create partitions for each dbname
+		_, err = conn.Exec(ctx, `
+			CREATE TABLE subpartitions.test_metric_a_db1 PARTITION OF public.test_metric_a FOR VALUES IN ('db1');
+			CREATE TABLE subpartitions.test_metric_a_db2 PARTITION OF public.test_metric_a FOR VALUES IN ('db2');
+			CREATE TABLE subpartitions.test_metric_a_db3 PARTITION OF public.test_metric_a FOR VALUES IN ('db3');
+			CREATE TABLE subpartitions.test_metric_b_db1 PARTITION OF public.test_metric_b FOR VALUES IN ('db1');
+			CREATE TABLE subpartitions.test_metric_b_db2 PARTITION OF public.test_metric_b FOR VALUES IN ('db2');
+		`)
+		r.NoError(err)
+
+		// Directly insert test data with different dbnames
+		_, err = conn.Exec(ctx, `
+			INSERT INTO test_metric_a (time, dbname, data) VALUES 
+				(now(), 'db1', '{}'::jsonb),
+				(now(), 'db2', '{}'::jsonb),
+				(now(), 'db3', '{}'::jsonb)
+		`)
+		r.NoError(err)
+
+		_, err = conn.Exec(ctx, `
+			INSERT INTO test_metric_b (time, dbname, data) VALUES 
+				(now(), 'db1', '{}'::jsonb),
+				(now(), 'db2', '{}'::jsonb)
+		`)
+		r.NoError(err)
+
+		// Run maintenance
+		pgw.MaintainUniqueSources()
+
+		// Should have 3 entries for test_metric_a and 2 for test_metric_b
+		var count int
+		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = 'test_metric_a';").Scan(&count)
+		a.NoError(err)
+		a.Equal(3, count)
+
+		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = 'test_metric_b';").Scan(&count)
+		a.NoError(err)
+		a.Equal(2, count)
+
+		// Cleanup
+		_, err = conn.Exec(ctx, "DROP TABLE test_metric_a, test_metric_b;")
+		r.NoError(err)
+		pgw.MaintainUniqueSources()
+	})
+
+	t.Run("MaintainUniqueSources_StaleEntriesCleanup", func(_ *testing.T) {
+		// Create metric table
+		err = pgw.EnsureMetricDummy("test_metric_c")
+		r.NoError(err)
+
+		// Create partition for db_active
+		_, err = conn.Exec(ctx, `
+			CREATE TABLE subpartitions.test_metric_c_db_active PARTITION OF public.test_metric_c FOR VALUES IN ('db_active');
+		`)
+		r.NoError(err)
+
+		// Directly insert test data with one active dbname
+		_, err = conn.Exec(ctx, `
+			INSERT INTO test_metric_c (time, dbname, data) VALUES 
+				(now(), 'db_active', '{}'::jsonb)
+		`)
+		r.NoError(err)
+
+		// Manually add the active entry and stale entries to the listing table
+		_, err = conn.Exec(ctx, "INSERT INTO admin.all_distinct_dbname_metrics (dbname, metric) VALUES ('db_active', 'test_metric_c'), ('db_stale1', 'test_metric_c'), ('db_stale2', 'test_metric_c');")
+		r.NoError(err)
+
+		var count int
+		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = 'test_metric_c';").Scan(&count)
+		a.NoError(err)
+		a.Equal(3, count) // 1 active + 2 stale
+
+		// Run maintenance - should remove stale entries
+		pgw.MaintainUniqueSources()
+
+		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = 'test_metric_c';").Scan(&count)
+		a.NoError(err)
+		a.Equal(1, count) // only active one remains
+
+		var dbname string
+		err = conn.QueryRow(ctx, "SELECT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'test_metric_c';").Scan(&dbname)
+		a.NoError(err)
+		a.Equal("db_active", dbname)
+
+		// Cleanup
+		_, err = conn.Exec(ctx, "DROP TABLE test_metric_c;")
+		r.NoError(err)
+		pgw.MaintainUniqueSources()
+	})
+
+	t.Run("MaintainUniqueSources_AdvisoryLock", func(_ *testing.T) {
+		// Create a second connection to simulate concurrent maintenance
+		conn2, err := pgx.Connect(ctx, connStr)
+		r.NoError(err)
+		defer conn2.Close(ctx)
+
+		// Create metric table and partition
+		err = pgw.EnsureMetricDummy("test_metric_d")
+		r.NoError(err)
+
+		_, err = conn.Exec(ctx, `
+			CREATE TABLE subpartitions.test_metric_d_db1 PARTITION OF public.test_metric_d FOR VALUES IN ('db1');
+		`)
+		r.NoError(err)
+
+		// Directly insert test data for only db1
+		_, err = conn.Exec(ctx, `
+			INSERT INTO test_metric_d (time, dbname, data) VALUES 
+				(now(), 'db1', '{}'::jsonb)
+		`)
+		r.NoError(err)
+
+		// Add both active and stale entries to the listing table
+		_, err = conn.Exec(ctx, "INSERT INTO admin.all_distinct_dbname_metrics (dbname, metric) VALUES ('db1', 'test_metric_d'), ('db_stale', 'test_metric_d');")
+		r.NoError(err)
+
+		var count int
+		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = 'test_metric_d';").Scan(&count)
+		a.NoError(err)
+		a.Equal(2, count, "Should have 2 entries initially (1 active + 1 stale)")
+
+		// Acquire the advisory lock using session-level lock in conn2
+		// This will block transaction-level locks from the same lock ID
+		var lockAcquired bool
+		err = conn2.QueryRow(ctx, "SELECT pg_try_advisory_lock(1571543679778230000);").Scan(&lockAcquired)
+		r.NoError(err)
+		a.True(lockAcquired, "Should acquire advisory lock")
+
+		// Try to run maintenance - should skip because lock is held by conn2
+		pgw.MaintainUniqueSources()
+
+		// Stale entry should still exist because maintenance was skipped
+		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = 'test_metric_d';").Scan(&count)
+		a.NoError(err)
+		a.Equal(2, count, "Stale entry should remain because maintenance was skipped due to lock")
+
+		// Release lock from conn2
+		_, err = conn2.Exec(ctx, "SELECT pg_advisory_unlock(1571543679778230000);")
+		r.NoError(err)
+
+		// Now maintenance should work and clean up stale entry
+		pgw.MaintainUniqueSources()
+
+		// Should only have the active entry, stale one removed
+		err = conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = 'test_metric_d';").Scan(&count)
+		a.NoError(err)
+		a.Equal(1, count, "Only active entry should remain after maintenance runs")
+
+		var dbname string
+		err = conn.QueryRow(ctx, "SELECT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'test_metric_d';").Scan(&dbname)
+		a.NoError(err)
+		a.Equal("db1", dbname, "Remaining entry should be the active one")
+
+		// Cleanup
+		_, err = conn.Exec(ctx, "DROP TABLE test_metric_d;")
+		r.NoError(err)
+		pgw.MaintainUniqueSources()
 	})
 
 	t.Run("DeleteOldPartitions", func(_ *testing.T) {

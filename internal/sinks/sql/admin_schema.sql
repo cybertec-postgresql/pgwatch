@@ -50,8 +50,9 @@ create table admin.config (
 
 -- to later change the value call the admin.change_timescale_chunk_interval(interval) function!
 -- as changing the row directly will only be effective for completely new tables (metrics).
-insert into admin.config select 'timescale_chunk_interval', '2 days';
-insert into admin.config select 'timescale_compress_interval', '1 day';
+insert into admin.config (key, value) values 
+  ('timescale_chunk_interval', '2 days'),
+  ('timescale_compress_interval', '1 day');
 
 create or replace function trg_config_modified() returns trigger
 as $$
