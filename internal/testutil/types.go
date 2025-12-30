@@ -9,7 +9,7 @@ import (
 
 var TestContext = log.WithLogger(context.Background(), log.NewNoopLogger())
 
-const PostgresImage = "docker.io/postgres:17-alpine"
+const PostgresImage = "docker.io/postgres:18-alpine"
 const MockDatabase = "mydatabase"
 
 const EtcdVersion = "v3.5.14"

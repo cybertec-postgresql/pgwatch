@@ -58,7 +58,7 @@ RUN go generate ./api/pb/ && \
 # ----------------------------------------------------------------
 # 5. Demo Image with PostgreSQL + Grafana
 # ----------------------------------------------------------------
-FROM postgres:17-bullseye AS demo
+FROM postgres:18-bookworm AS demo
 
 # Copy over the compiled gatherer
 COPY --from=go-builder /pgwatch/pgwatch /pgwatch/
@@ -72,7 +72,7 @@ RUN apt-get update \
     && curl -L "https://www.postgresql.org/media/keys/ACCC4CF8.asc" | apt-key add - \
     && curl -s https://packagecloud.io/install/repositories/timescale/timescaledb/script.deb.sh | bash \
     && apt-get -qy install \
-        timescaledb-2-postgresql-17 postgresql-plpython3-17 postgresql-17-pg-qualstats \
+        timescaledb-2-postgresql-18 postgresql-plpython3-18 postgresql-18-pg-qualstats \
         supervisor python3-psutil libfontconfig1 \
     && apt-get purge -y --auto-remove \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
