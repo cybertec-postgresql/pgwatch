@@ -128,34 +128,10 @@
 				<dd><a href="#GetDefaultBuiltInMetrics">func GetDefaultBuiltInMetrics() []string</a></dd>
 			
 				
-				<dd><a href="#ParseLogs">func ParseLogs(ctx context.Context, mdb *sources.SourceConn, realDbname string, interval float64, storeCh chan&lt;- MeasurementEnvelope, LogsMatchRegex string, LogsGlobPath string)</a></dd>
-			
-				
 				<dd><a href="#RowToMeasurement">func RowToMeasurement(row pgx.CollectableRow) (map[string]any, error)</a></dd>
 			
 				
-				<dd><a href="#getFileWithLatestTimestamp">func getFileWithLatestTimestamp(files []string) (string, error)</a></dd>
-			
-				
-				<dd><a href="#getFileWithNextModTimestamp">func getFileWithNextModTimestamp(logsGlobPath, currentFile string) (string, error)</a></dd>
-			
-				
-				<dd><a href="#regexMatchesToMap">func regexMatchesToMap(csvlogRegex *regexp.Regexp, matches []string) map[string]string</a></dd>
-			
-				
-				<dd><a href="#severityToEnglish">func severityToEnglish(serverLang, errorSeverity string) string</a></dd>
-			
-				
-				<dd><a href="#tryDetermineLogFolder">func tryDetermineLogFolder(ctx context.Context, conn db.PgxIface) (string, error)</a></dd>
-			
-				
-				<dd><a href="#tryDetermineLogMessagesLanguage">func tryDetermineLogMessagesLanguage(ctx context.Context, conn db.PgxIface) (string, error)</a></dd>
-			
-				
 				<dd><a href="#writeMetricsToPostgres">func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *Metrics) error</a></dd>
-			
-				
-				<dd><a href="#zeroEventCounts">func zeroEventCounts(eventCounts map[string]int64)</a></dd>
 			
 			
 				
@@ -192,9 +168,6 @@
 			
 				
 				<dd><a href="#MeasurementEnvelope">type MeasurementEnvelope</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#eventCountsToMetricStoreMessages">func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb *sources.SourceConn) MeasurementEnvelope</a></dd>
 				
 				
 			
@@ -407,8 +380,6 @@
 			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/doc.go.html">doc.go</a>
 			
-				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html">logparse.go</a>
-			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html">postgres.go</a>
 			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres_schema.go.html">postgres_schema.go</a>
@@ -434,15 +405,6 @@
     <span id="TagPrefix">TagPrefix</span>       <a href="https://pkg.go.dev/builtin/#string">string</a> = &#34;tag_&#34;
 )</pre>
 			
-				
-				<pre>const <span id="CSVLogDefaultGlobSuffix">CSVLogDefaultGlobSuffix</span> = &#34;*.csv&#34;</pre>
-			
-				
-				<pre>const <span id="CSVLogDefaultRegEx">CSVLogDefaultRegEx</span> = `^^(?P&lt;log_time&gt;.*?),&#34;?(?P&lt;user_name&gt;.*?)&#34;?,&#34;?(?P&lt;database_name&gt;.*?)&#34;?,(?P&lt;process_id&gt;\d+),&#34;?(?P&lt;connection_from&gt;.*?)&#34;?,(?P&lt;session_id&gt;.*?),(?P&lt;session_line_num&gt;\d+),&#34;?(?P&lt;command_tag&gt;.*?)&#34;?,(?P&lt;session_start_time&gt;.*?),(?P&lt;virtual_transaction_id&gt;.*?),(?P&lt;transaction_id&gt;.*?),(?P&lt;error_severity&gt;\w+),`</pre>
-			
-				
-				<pre>const <span id="specialMetricServerLogEventCounts">specialMetricServerLogEventCounts</span> = &#34;server_log_event_counts&#34;</pre>
-			
 		
 		
 			<h2 id="pkg-variables">Variables</h2>
@@ -456,23 +418,6 @@
     <span id="ErrMetricExists">ErrMetricExists</span>   = <a href="https://pkg.go.dev/errors/">errors</a>.<a href="https://pkg.go.dev/errors/#New">New</a>(&#34;metric already exists&#34;)
     <span id="ErrPresetExists">ErrPresetExists</span>   = <a href="https://pkg.go.dev/errors/">errors</a>.<a href="https://pkg.go.dev/errors/#New">New</a>(&#34;preset already exists&#34;)
 )</pre>
-			
-				
-				<pre>var <span id="PgSeverities">PgSeverities</span> = [...]<a href="https://pkg.go.dev/builtin/#string">string</a>{&#34;DEBUG&#34;, &#34;INFO&#34;, &#34;NOTICE&#34;, &#34;WARNING&#34;, &#34;ERROR&#34;, &#34;LOG&#34;, &#34;FATAL&#34;, &#34;PANIC&#34;}</pre>
-			
-				
-				<pre>var <span id="PgSeveritiesLocale">PgSeveritiesLocale</span> = map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>{
-    &#34;C.&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;NOTICE&#34;: &#34;NOTICE&#34;, &#34;WARNING&#34;: &#34;WARNING&#34;, &#34;ERROR&#34;: &#34;ERROR&#34;, &#34;FATAL&#34;: &#34;FATAL&#34;, &#34;PANIC&#34;: &#34;PANIC&#34;},
-    &#34;de&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;HINWEIS&#34;: &#34;NOTICE&#34;, &#34;WARNUNG&#34;: &#34;WARNING&#34;, &#34;FEHLER&#34;: &#34;ERROR&#34;, &#34;FATAL&#34;: &#34;FATAL&#34;, &#34;PANIK&#34;: &#34;PANIC&#34;},
-    &#34;fr&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;NOTICE&#34;: &#34;NOTICE&#34;, &#34;ATTENTION&#34;: &#34;WARNING&#34;, &#34;ERREUR&#34;: &#34;ERROR&#34;, &#34;FATAL&#34;: &#34;FATAL&#34;, &#34;PANIK&#34;: &#34;PANIC&#34;},
-    &#34;it&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;NOTIFICA&#34;: &#34;NOTICE&#34;, &#34;ATTENZIONE&#34;: &#34;WARNING&#34;, &#34;ERRORE&#34;: &#34;ERROR&#34;, &#34;FATALE&#34;: &#34;FATAL&#34;, &#34;PANICO&#34;: &#34;PANIC&#34;},
-    &#34;ko&#34;: {&#34;디버그&#34;: &#34;DEBUG&#34;, &#34;로그&#34;: &#34;LOG&#34;, &#34;정보&#34;: &#34;INFO&#34;, &#34;알림&#34;: &#34;NOTICE&#34;, &#34;경고&#34;: &#34;WARNING&#34;, &#34;오류&#34;: &#34;ERROR&#34;, &#34;치명적오류&#34;: &#34;FATAL&#34;, &#34;손상&#34;: &#34;PANIC&#34;},
-    &#34;pl&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;DZIENNIK&#34;: &#34;LOG&#34;, &#34;INFORMACJA&#34;: &#34;INFO&#34;, &#34;UWAGA&#34;: &#34;NOTICE&#34;, &#34;OSTRZEŻENIE&#34;: &#34;WARNING&#34;, &#34;BŁĄD&#34;: &#34;ERROR&#34;, &#34;KATASTROFALNY&#34;: &#34;FATAL&#34;, &#34;PANIKA&#34;: &#34;PANIC&#34;},
-    &#34;ru&#34;: {&#34;ОТЛАДКА&#34;: &#34;DEBUG&#34;, &#34;СООБЩЕНИЕ&#34;: &#34;LOG&#34;, &#34;ИНФОРМАЦИЯ&#34;: &#34;INFO&#34;, &#34;ЗАМЕЧАНИЕ&#34;: &#34;NOTICE&#34;, &#34;ПРЕДУПРЕЖДЕНИЕ&#34;: &#34;WARNING&#34;, &#34;ОШИБКА&#34;: &#34;ERROR&#34;, &#34;ВАЖНО&#34;: &#34;FATAL&#34;, &#34;ПАНИКА&#34;: &#34;PANIC&#34;},
-    &#34;sv&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOGG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;NOTIS&#34;: &#34;NOTICE&#34;, &#34;VARNING&#34;: &#34;WARNING&#34;, &#34;FEL&#34;: &#34;ERROR&#34;, &#34;FATALT&#34;: &#34;FATAL&#34;, &#34;PANIK&#34;: &#34;PANIC&#34;},
-    &#34;tr&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;BİLGİ&#34;: &#34;INFO&#34;, &#34;NOT&#34;: &#34;NOTICE&#34;, &#34;UYARI&#34;: &#34;WARNING&#34;, &#34;HATA&#34;: &#34;ERROR&#34;, &#34;ÖLÜMCÜL (FATAL)&#34;: &#34;FATAL&#34;, &#34;KRİTİK&#34;: &#34;PANIC&#34;},
-    &#34;zh&#34;: {&#34;调试&#34;: &#34;DEBUG&#34;, &#34;日志&#34;: &#34;LOG&#34;, &#34;信息&#34;: &#34;INFO&#34;, &#34;注意&#34;: &#34;NOTICE&#34;, &#34;警告&#34;: &#34;WARNING&#34;, &#34;错误&#34;: &#34;ERROR&#34;, &#34;致命错误&#34;: &#34;FATAL&#34;, &#34;比致命错误还过分的错误&#34;: &#34;PANIC&#34;},
-}</pre>
 			
 				
 				<pre>var <span id="defaultMetricsYAML">defaultMetricsYAML</span> []<a href="https://pkg.go.dev/builtin/#byte">byte</a></pre>
@@ -620,25 +565,6 @@
 		
 			
 			
-			<h2 id="ParseLogs">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L111">ParseLogs</a>
-				<a class="permalink" href="#ParseLogs">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func ParseLogs(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>,
-    mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>,
-    realDbname <a href="https://pkg.go.dev/builtin/#string">string</a>,
-    interval <a href="https://pkg.go.dev/builtin/#float64">float64</a>,
-    storeCh chan&lt;- <a href="#MeasurementEnvelope">MeasurementEnvelope</a>,
-    LogsMatchRegex <a href="https://pkg.go.dev/builtin/#string">string</a>,
-    LogsGlobPath <a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
-			
-			
-			
-
-		
-			
-			
 			<h2 id="RowToMeasurement">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/types.go.html#L83">RowToMeasurement</a>
 				<a class="permalink" href="#RowToMeasurement">&#xb6;</a>
 				
@@ -647,84 +573,6 @@
 			<pre>func RowToMeasurement(row pgx.<a href="#CollectableRow">CollectableRow</a>) (map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#any">any</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			<p>RowToMap returns a map scanned from row.
 
-			
-			
-
-		
-			
-			
-			<h2 id="getFileWithLatestTimestamp">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L39">getFileWithLatestTimestamp</a>
-				<a class="permalink" href="#getFileWithLatestTimestamp">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func getFileWithLatestTimestamp(files []<a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-			
-			
-			
-
-		
-			
-			
-			<h2 id="getFileWithNextModTimestamp">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L56">getFileWithNextModTimestamp</a>
-				<a class="permalink" href="#getFileWithNextModTimestamp">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func getFileWithNextModTimestamp(logsGlobPath, currentFile <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-			
-			
-			
-
-		
-			
-			
-			<h2 id="regexMatchesToMap">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L349">regexMatchesToMap</a>
-				<a class="permalink" href="#regexMatchesToMap">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func regexMatchesToMap(csvlogRegex *<a href="https://pkg.go.dev/regexp/">regexp</a>.<a href="https://pkg.go.dev/regexp/#Regexp">Regexp</a>, matches []<a href="https://pkg.go.dev/builtin/#string">string</a>) map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a></pre>
-			
-			
-			
-
-		
-			
-			
-			<h2 id="severityToEnglish">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L303">severityToEnglish</a>
-				<a class="permalink" href="#severityToEnglish">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func severityToEnglish(serverLang, errorSeverity <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
-			
-			
-			
-
-		
-			
-			
-			<h2 id="tryDetermineLogFolder">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L322">tryDetermineLogFolder</a>
-				<a class="permalink" href="#tryDetermineLogFolder">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func tryDetermineLogFolder(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-			
-			
-			
-
-		
-			
-			
-			<h2 id="tryDetermineLogMessagesLanguage">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L336">tryDetermineLogMessagesLanguage</a>
-				<a class="permalink" href="#tryDetermineLogMessagesLanguage">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func tryDetermineLogMessagesLanguage(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-			
 			
 			
 
@@ -740,19 +588,6 @@
 			<p>writeMetricsToPostgres writes the metrics and presets definitions to the
 pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 
-			
-			
-
-		
-			
-			
-			<h2 id="zeroEventCounts">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L316">zeroEventCounts</a>
-				<a class="permalink" href="#zeroEventCounts">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func zeroEventCounts(eventCounts map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a>)</pre>
-			
 			
 			
 
@@ -932,18 +767,6 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 			
 			
 
-			
-				
-				<h3 id="eventCountsToMetricStoreMessages">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/logparse.go.html#L87">eventCountsToMetricStoreMessages</a>
-					<a class="permalink" href="#eventCountsToMetricStoreMessages">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>) <a href="#MeasurementEnvelope">MeasurementEnvelope</a></pre>
-				<p>1. add zero counts for severity levels that didn&apos;t have any occurrences in the log
-
-				
-				
 			
 
 			

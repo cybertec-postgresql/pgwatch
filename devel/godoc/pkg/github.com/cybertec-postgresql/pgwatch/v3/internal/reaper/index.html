@@ -150,7 +150,28 @@ and send measurements to sinks.
 				<dd><a href="#TryCreateMissingExtensions">func TryCreateMissingExtensions(ctx context.Context, md *sources.SourceConn, extensionNames []string, existingExtensions map[string]int) []string</a></dd>
 			
 				
+				<dd><a href="#checkHasPrivileges">func checkHasPrivileges(ctx context.Context, mdb *sources.SourceConn, logsDirPath string) error</a></dd>
+			
+				
+				<dd><a href="#getFileWithLatestTimestamp">func getFileWithLatestTimestamp(files []string) (string, error)</a></dd>
+			
+				
+				<dd><a href="#getFileWithNextModTimestamp">func getFileWithNextModTimestamp(logsGlobPath, currentFile string) (string, error)</a></dd>
+			
+				
 				<dd><a href="#goPsutilCalcCPUUtilization">func goPsutilCalcCPUUtilization(probe0, probe1 cpu.TimesStat) float64</a></dd>
+			
+				
+				<dd><a href="#severityToEnglish">func severityToEnglish(serverLang, errorSeverity string) string</a></dd>
+			
+				
+				<dd><a href="#tryDetermineLogFolder">func tryDetermineLogFolder(ctx context.Context, conn db.PgxIface) (string, error)</a></dd>
+			
+				
+				<dd><a href="#tryDetermineLogMessagesLanguage">func tryDetermineLogMessagesLanguage(ctx context.Context, conn db.PgxIface) (string, error)</a></dd>
+			
+				
+				<dd><a href="#zeroEventCounts">func zeroEventCounts(eventCounts map[string]int64)</a></dd>
 			
 			
 				
@@ -201,6 +222,32 @@ and send measurements to sinks.
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#InstanceMetricCache.Put">func (imc *InstanceMetricCache) Put(key string, data metrics.Measurements)</a></dd>
+				
+			
+				
+				<dd><a href="#LogParser">type LogParser</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewLogParser">func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan&lt;- metrics.MeasurementEnvelope) (*LogParser, error)</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#LogParser.GetMeasurementEnvelope">func (lp *LogParser) GetMeasurementEnvelope() metrics.MeasurementEnvelope</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#LogParser.HasSendIntervalElapsed">func (lp *LogParser) HasSendIntervalElapsed() bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#LogParser.ParseLogs">func (lp *LogParser) ParseLogs() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#LogParser.parseLogsLocal">func (lp *LogParser) parseLogsLocal() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#LogParser.parseLogsRemote">func (lp *LogParser) parseLogsRemote() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#LogParser.regexMatchesToMap">func (lp *LogParser) regexMatchesToMap(matches []string) map[string]string</a></dd>
 				
 			
 				
@@ -293,6 +340,12 @@ and send measurements to sinks.
 			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/file.go.html">file.go</a>
 			
+				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html">logparser.go</a>
+			
+				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser_local.go.html">logparser_local.go</a>
+			
+				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser_remote.go.html">logparser_remote.go</a>
+			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/metric.go.html">metric.go</a>
 			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/psutil.go.html">psutil.go</a>
@@ -342,6 +395,16 @@ and send measurements to sinks.
     <span id="specialMetricInstanceUp">specialMetricInstanceUp</span>           = &#34;instance_up&#34;
 )</pre>
 			
+				
+				<pre>const <span id="csvLogDefaultGlobSuffix">csvLogDefaultGlobSuffix</span> = &#34;*.csv&#34;</pre>
+			
+				
+				<pre>const <span id="csvLogDefaultRegEx">csvLogDefaultRegEx</span> = `^^(?P&lt;log_time&gt;.*?),&#34;?(?P&lt;user_name&gt;.*?)&#34;?,&#34;?(?P&lt;database_name&gt;.*?)&#34;?,(?P&lt;process_id&gt;\d+),&#34;?(?P&lt;connection_from&gt;.*?)&#34;?,(?P&lt;session_id&gt;.*?),(?P&lt;session_line_num&gt;\d+),&#34;?(?P&lt;command_tag&gt;.*?)&#34;?,(?P&lt;session_start_time&gt;.*?),(?P&lt;virtual_transaction_id&gt;.*?),(?P&lt;transaction_id&gt;.*?),(?P&lt;error_severity&gt;\w+),`</pre>
+			
+				
+				<pre>const <span id="maxChunkSize">maxChunkSize</span> <a href="https://pkg.go.dev/builtin/#int32">int32</a> = 10 * 1024 * 1024 <span class="comment">// 10 MB</span>
+</pre>
+			
 		
 		
 			<h2 id="pkg-variables">Variables</h2>
@@ -362,6 +425,23 @@ and send measurements to sinks.
 				
 				<pre>var <span id="metricsConfig">metricsConfig</span> map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a> <span class="comment">// set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state</span>
 </pre>
+			
+				
+				<pre>var <span id="pgSeverities">pgSeverities</span> = [...]<a href="https://pkg.go.dev/builtin/#string">string</a>{&#34;DEBUG&#34;, &#34;INFO&#34;, &#34;NOTICE&#34;, &#34;WARNING&#34;, &#34;ERROR&#34;, &#34;LOG&#34;, &#34;FATAL&#34;, &#34;PANIC&#34;}</pre>
+			
+				
+				<pre>var <span id="pgSeveritiesLocale">pgSeveritiesLocale</span> = map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>{
+    &#34;C.&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;NOTICE&#34;: &#34;NOTICE&#34;, &#34;WARNING&#34;: &#34;WARNING&#34;, &#34;ERROR&#34;: &#34;ERROR&#34;, &#34;FATAL&#34;: &#34;FATAL&#34;, &#34;PANIC&#34;: &#34;PANIC&#34;},
+    &#34;de&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;HINWEIS&#34;: &#34;NOTICE&#34;, &#34;WARNUNG&#34;: &#34;WARNING&#34;, &#34;FEHLER&#34;: &#34;ERROR&#34;, &#34;FATAL&#34;: &#34;FATAL&#34;, &#34;PANIK&#34;: &#34;PANIC&#34;},
+    &#34;fr&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;NOTICE&#34;: &#34;NOTICE&#34;, &#34;ATTENTION&#34;: &#34;WARNING&#34;, &#34;ERREUR&#34;: &#34;ERROR&#34;, &#34;FATAL&#34;: &#34;FATAL&#34;, &#34;PANIK&#34;: &#34;PANIC&#34;},
+    &#34;it&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;NOTIFICA&#34;: &#34;NOTICE&#34;, &#34;ATTENZIONE&#34;: &#34;WARNING&#34;, &#34;ERRORE&#34;: &#34;ERROR&#34;, &#34;FATALE&#34;: &#34;FATAL&#34;, &#34;PANICO&#34;: &#34;PANIC&#34;},
+    &#34;ko&#34;: {&#34;디버그&#34;: &#34;DEBUG&#34;, &#34;로그&#34;: &#34;LOG&#34;, &#34;정보&#34;: &#34;INFO&#34;, &#34;알림&#34;: &#34;NOTICE&#34;, &#34;경고&#34;: &#34;WARNING&#34;, &#34;오류&#34;: &#34;ERROR&#34;, &#34;치명적오류&#34;: &#34;FATAL&#34;, &#34;손상&#34;: &#34;PANIC&#34;},
+    &#34;pl&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;DZIENNIK&#34;: &#34;LOG&#34;, &#34;INFORMACJA&#34;: &#34;INFO&#34;, &#34;UWAGA&#34;: &#34;NOTICE&#34;, &#34;OSTRZEŻENIE&#34;: &#34;WARNING&#34;, &#34;BŁĄD&#34;: &#34;ERROR&#34;, &#34;KATASTROFALNY&#34;: &#34;FATAL&#34;, &#34;PANIKA&#34;: &#34;PANIC&#34;},
+    &#34;ru&#34;: {&#34;ОТЛАДКА&#34;: &#34;DEBUG&#34;, &#34;СООБЩЕНИЕ&#34;: &#34;LOG&#34;, &#34;ИНФОРМАЦИЯ&#34;: &#34;INFO&#34;, &#34;ЗАМЕЧАНИЕ&#34;: &#34;NOTICE&#34;, &#34;ПРЕДУПРЕЖДЕНИЕ&#34;: &#34;WARNING&#34;, &#34;ОШИБКА&#34;: &#34;ERROR&#34;, &#34;ВАЖНО&#34;: &#34;FATAL&#34;, &#34;ПАНИКА&#34;: &#34;PANIC&#34;},
+    &#34;sv&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOGG&#34;: &#34;LOG&#34;, &#34;INFO&#34;: &#34;INFO&#34;, &#34;NOTIS&#34;: &#34;NOTICE&#34;, &#34;VARNING&#34;: &#34;WARNING&#34;, &#34;FEL&#34;: &#34;ERROR&#34;, &#34;FATALT&#34;: &#34;FATAL&#34;, &#34;PANIK&#34;: &#34;PANIC&#34;},
+    &#34;tr&#34;: {&#34;DEBUG&#34;: &#34;DEBUG&#34;, &#34;LOG&#34;: &#34;LOG&#34;, &#34;BİLGİ&#34;: &#34;INFO&#34;, &#34;NOT&#34;: &#34;NOTICE&#34;, &#34;UYARI&#34;: &#34;WARNING&#34;, &#34;HATA&#34;: &#34;ERROR&#34;, &#34;ÖLÜMCÜL (FATAL)&#34;: &#34;FATAL&#34;, &#34;KRİTİK&#34;: &#34;PANIC&#34;},
+    &#34;zh&#34;: {&#34;调试&#34;: &#34;DEBUG&#34;, &#34;日志&#34;: &#34;LOG&#34;, &#34;信息&#34;: &#34;INFO&#34;, &#34;注意&#34;: &#34;NOTICE&#34;, &#34;警告&#34;: &#34;WARNING&#34;, &#34;错误&#34;: &#34;ERROR&#34;, &#34;致命错误&#34;: &#34;FATAL&#34;, &#34;比致命错误还过分的错误&#34;: &#34;PANIC&#34;},
+}</pre>
 			
 				
 				<pre>var <span id="prevCPULoadTimeStats">prevCPULoadTimeStats</span> <a href="https://pkg.go.dev/github.com/shirou/gopsutil/v4/cpu/">cpu</a>.<a href="https://pkg.go.dev/github.com/shirou/gopsutil/v4/cpu/#TimesStat">TimesStat</a></pre>
@@ -541,12 +621,103 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
+			<h2 id="checkHasPrivileges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L116">checkHasPrivileges</a>
+				<a class="permalink" href="#checkHasPrivileges">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func checkHasPrivileges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, logsDirPath <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="getFileWithLatestTimestamp">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser_local.go.html#L164">getFileWithLatestTimestamp</a>
+				<a class="permalink" href="#getFileWithLatestTimestamp">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func getFileWithLatestTimestamp(files []<a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="getFileWithNextModTimestamp">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser_local.go.html#L181">getFileWithNextModTimestamp</a>
+				<a class="permalink" href="#getFileWithNextModTimestamp">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func getFileWithNextModTimestamp(logsGlobPath, currentFile <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
 			<h2 id="goPsutilCalcCPUUtilization">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/psutil.go.html#L23">goPsutilCalcCPUUtilization</a>
 				<a class="permalink" href="#goPsutilCalcCPUUtilization">&#xb6;</a>
 				
 				
 			</h2>
 			<pre>func goPsutilCalcCPUUtilization(probe0, probe1 <a href="https://pkg.go.dev/github.com/shirou/gopsutil/v4/cpu/">cpu</a>.<a href="https://pkg.go.dev/github.com/shirou/gopsutil/v4/cpu/#TimesStat">TimesStat</a>) <a href="https://pkg.go.dev/builtin/#float64">float64</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="severityToEnglish">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L149">severityToEnglish</a>
+				<a class="permalink" href="#severityToEnglish">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func severityToEnglish(serverLang, errorSeverity <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="tryDetermineLogFolder">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L89">tryDetermineLogFolder</a>
+				<a class="permalink" href="#tryDetermineLogFolder">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func tryDetermineLogFolder(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="tryDetermineLogMessagesLanguage">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L103">tryDetermineLogMessagesLanguage</a>
+				<a class="permalink" href="#tryDetermineLogMessagesLanguage">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func tryDetermineLogMessagesLanguage(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/db/#PgxIface">PgxIface</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="zeroEventCounts">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L199">zeroEventCounts</a>
+				<a class="permalink" href="#zeroEventCounts">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func zeroEventCounts(eventCounts map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a>)</pre>
 			
 			
 			
@@ -779,6 +950,124 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
+			<h2 id="LogParser">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L18">LogParser</a>
+				<a class="permalink" href="#LogParser">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type LogParser struct {
+<span id="LogParser.ctx"></span>    ctx                <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
+<span id="LogParser.LogsMatchRegex"></span>    LogsMatchRegex     *<a href="https://pkg.go.dev/regexp/">regexp</a>.<a href="https://pkg.go.dev/regexp/#Regexp">Regexp</a>
+<span id="LogParser.LogFolder"></span>    LogFolder          <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="LogParser.ServerMessagesLang"></span>    ServerMessagesLang <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="LogParser.SourceConn"></span>    SourceConn         *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>
+<span id="LogParser.Interval"></span>    Interval           <a href="https://pkg.go.dev/builtin/#float64">float64</a>
+<span id="LogParser.StoreCh"></span>    StoreCh            chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>
+<span id="LogParser.eventCounts"></span>    eventCounts        map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a> <span class="comment">// for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send</span>
+<span id="LogParser.eventCountsTotal"></span>    eventCountsTotal   map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a> <span class="comment">// for the whole instance</span>
+<span id="LogParser.lastSendTime"></span>    lastSendTime       <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewLogParser">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L31">NewLogParser</a>
+					<a class="permalink" href="#NewLogParser">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewLogParser(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, storeCh chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) (*<a href="#LogParser">LogParser</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+			
+
+			
+				
+				<h3 id="LogParser.GetMeasurementEnvelope">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L175">GetMeasurementEnvelope</a>
+					<a class="permalink" href="#LogParser.GetMeasurementEnvelope">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (lp *<a href="#LogParser">LogParser</a>) GetMeasurementEnvelope() <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a></pre>
+				<p>GetMeasurementEnvelope converts current event counts to a MeasurementEnvelope
+
+				
+				
+				
+			
+				
+				<h3 id="LogParser.HasSendIntervalElapsed">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L69">HasSendIntervalElapsed</a>
+					<a class="permalink" href="#LogParser.HasSendIntervalElapsed">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (lp *<a href="#LogParser">LogParser</a>) HasSendIntervalElapsed() <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="LogParser.ParseLogs">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L73">ParseLogs</a>
+					<a class="permalink" href="#LogParser.ParseLogs">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (lp *<a href="#LogParser">LogParser</a>) ParseLogs() <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="LogParser.parseLogsLocal">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser_local.go.html#L13">parseLogsLocal</a>
+					<a class="permalink" href="#LogParser.parseLogsLocal">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (lp *<a href="#LogParser">LogParser</a>) parseLogsLocal() <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="LogParser.parseLogsRemote">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser_remote.go.html#L11">parseLogsRemote</a>
+					<a class="permalink" href="#LogParser.parseLogsRemote">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (lp *<a href="#LogParser">LogParser</a>) parseLogsRemote() <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="LogParser.regexMatchesToMap">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L161">regexMatchesToMap</a>
+					<a class="permalink" href="#LogParser.regexMatchesToMap">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (lp *<a href="#LogParser">LogParser</a>) regexMatchesToMap(matches []<a href="https://pkg.go.dev/builtin/#string">string</a>) map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+		
+			
+			
 			<h2 id="Reaper">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L34">Reaper</a>
 				<a class="permalink" href="#Reaper">&#xb6;</a>
 				
@@ -822,7 +1111,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="Reaper.AddSysinfoToMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L453">AddSysinfoToMeasurements</a>
+				<h3 id="Reaper.AddSysinfoToMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L461">AddSysinfoToMeasurements</a>
 					<a class="permalink" href="#Reaper.AddSysinfoToMeasurements">&#xb6;</a>
 					
 					
@@ -919,7 +1208,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="Reaper.FetchMetric">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L464">FetchMetric</a>
+				<h3 id="Reaper.FetchMetric">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L472">FetchMetric</a>
 					<a class="permalink" href="#Reaper.FetchMetric">&#xb6;</a>
 					
 					
@@ -982,7 +1271,7 @@ used to detect if the instance is up or down
 				
 			
 				
-				<h3 id="Reaper.LoadSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L374">LoadSources</a>
+				<h3 id="Reaper.LoadSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L382">LoadSources</a>
 					<a class="permalink" href="#Reaper.LoadSources">&#xb6;</a>
 					
 					
@@ -1048,7 +1337,7 @@ start or stop the gatherers accordingly.
 				
 			
 				
-				<h3 id="Reaper.WriteMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L439">WriteMeasurements</a>
+				<h3 id="Reaper.WriteMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L447">WriteMeasurements</a>
 					<a class="permalink" href="#Reaper.WriteMeasurements">&#xb6;</a>
 					
 					
@@ -1061,7 +1350,7 @@ start or stop the gatherers accordingly.
 				
 			
 				
-				<h3 id="Reaper.WriteMonitoredSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L411">WriteMonitoredSources</a>
+				<h3 id="Reaper.WriteMonitoredSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/reaper.go.html#L419">WriteMonitoredSources</a>
 					<a class="permalink" href="#Reaper.WriteMonitoredSources">&#xb6;</a>
 					
 					

@@ -135,6 +135,9 @@ and will not be included in production binaries.
 				<dd><a href="#SetupPostgresContainer">func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error)</a></dd>
 			
 				
+				<dd><a href="#SetupPostgresContainerWithConfig">func SetupPostgresContainerWithConfig(configPath string) (*postgres.PostgresContainer, func(), error)</a></dd>
+			
+				
 				<dd><a href="#SetupPostgresContainerWithInitScripts">func SetupPostgresContainerWithInitScripts(scripts ...string) (*postgres.PostgresContainer, func(), error)</a></dd>
 			
 				
@@ -341,13 +344,13 @@ VwAI/SWm7NlxgF6Sr5CIo2KR
 				<pre>var <span id="TLSConnStr">TLSConnStr</span> = <a href="https://pkg.go.dev/fmt/">fmt</a>.<a href="https://pkg.go.dev/fmt/#Sprintf">Sprintf</a>(&#34;grpc://localhost:5050?sslrootca=%s&#34;, <a href="#CAFile">CAFile</a>)</pre>
 			
 				
-				<pre>var <span id="ctx">ctx</span> = <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#WithLogger">WithLogger</a>(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Background">Background</a>(), <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#NewNoopLogger">NewNoopLogger</a>())</pre>
+				<pre>var <span id="TestContext">TestContext</span> = <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#WithLogger">WithLogger</a>(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Background">Background</a>(), <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/log/#NewNoopLogger">NewNoopLogger</a>())</pre>
 			
 		
 		
 			
 			
-			<h2 id="AuthInterceptor">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/testutil/setup.go.html#L84">AuthInterceptor</a>
+			<h2 id="AuthInterceptor">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/testutil/setup.go.html#L102">AuthInterceptor</a>
 				<a class="permalink" href="#AuthInterceptor">&#xb6;</a>
 				
 				
@@ -360,7 +363,7 @@ VwAI/SWm7NlxgF6Sr5CIo2KR
 		
 			
 			
-			<h2 id="LoadServerTLSCredentials">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/testutil/setup.go.html#L72">LoadServerTLSCredentials</a>
+			<h2 id="LoadServerTLSCredentials">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/testutil/setup.go.html#L90">LoadServerTLSCredentials</a>
 				<a class="permalink" href="#LoadServerTLSCredentials">&#xb6;</a>
 				
 				
@@ -373,7 +376,7 @@ VwAI/SWm7NlxgF6Sr5CIo2KR
 		
 			
 			
-			<h2 id="SetupEtcdContainer">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/testutil/setup.go.html#L57">SetupEtcdContainer</a>
+			<h2 id="SetupEtcdContainer">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/testutil/setup.go.html#L75">SetupEtcdContainer</a>
 				<a class="permalink" href="#SetupEtcdContainer">&#xb6;</a>
 				
 				
@@ -399,7 +402,22 @@ VwAI/SWm7NlxgF6Sr5CIo2KR
 		
 			
 			
-			<h2 id="SetupPostgresContainerWithInitScripts">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/testutil/setup.go.html#L39">SetupPostgresContainerWithInitScripts</a>
+			<h2 id="SetupPostgresContainerWithConfig">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/testutil/setup.go.html#L41">SetupPostgresContainerWithConfig</a>
+				<a class="permalink" href="#SetupPostgresContainerWithConfig">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func SetupPostgresContainerWithConfig(configPath <a href="https://pkg.go.dev/builtin/#string">string</a>) (*<a href="https://pkg.go.dev/github.com/testcontainers/testcontainers-go/modules/postgres/">postgres</a>.<a href="https://pkg.go.dev/github.com/testcontainers/testcontainers-go/modules/postgres/#PostgresContainer">PostgresContainer</a>, func(), <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>Creates a PostgreSQL container with CSV logging enabled.
+This is useful for testing log parsing functionality with server_log_event_counts metric.
+
+			
+			
+
+		
+			
+			
+			<h2 id="SetupPostgresContainerWithInitScripts">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/testutil/setup.go.html#L57">SetupPostgresContainerWithInitScripts</a>
 				<a class="permalink" href="#SetupPostgresContainerWithInitScripts">&#xb6;</a>
 				
 				
@@ -412,7 +430,7 @@ VwAI/SWm7NlxgF6Sr5CIo2KR
 		
 			
 			
-			<h2 id="SetupRPCServers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/testutil/setup.go.html#L97">SetupRPCServers</a>
+			<h2 id="SetupRPCServers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/testutil/setup.go.html#L115">SetupRPCServers</a>
 				<a class="permalink" href="#SetupRPCServers">&#xb6;</a>
 				
 				

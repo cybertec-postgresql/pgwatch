@@ -64,7 +64,7 @@
 <span id="L7" class="ln">     7  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/log&#34;
 <span id="L8" class="ln">     8  </span>)
 <span id="L9" class="ln">     9  </span>
-<span id="L10" class="ln">    10  </span>var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
+<span id="L10" class="ln">    10  </span>var TestContext = log.WithLogger(context.Background(), log.NewNoopLogger())
 <span id="L11" class="ln">    11  </span>
 <span id="L12" class="ln">    12  </span>const pgImageName = &#34;docker.io/postgres:17-alpine&#34;
 <span id="L13" class="ln">    13  </span>const MockDatabase = &#34;mydatabase&#34;
