@@ -33,7 +33,7 @@ docker pull cybertecpostgresql/pgwatch-demo:X.Y.Z
 
 ```bash
 docker run -d --restart=unless-stopped -p 3000:3000 -p 8080:8080 \
---name pw3 cybertecpostgresql/pgwatch-demo:X.Y.Z
+--name pgwatch-demo cybertecpostgresql/pgwatch-demo:X.Y.Z
 ```
 
 Note that we're setting the container to be automatically restarted
@@ -60,12 +60,12 @@ So in short, for plain Docker setups would be best to do something like:
 
 ```bash
 # let's create volumes for Postgres, Grafana and pgwatch marker files / SSL certificates
-for v in pg  grafana pw3 ; do docker volume create $v ; done
+for v in pg  grafana pgwatch ; do docker volume create $v ; done
 
 # launch pgwatch with fully exposed Grafana, Web UI, Postgres
-docker run -d --restart=unless-stopped --name pw3 \
+docker run -d --restart=unless-stopped --name pgwatch \
     -p 3000:3000 -p 127.0.0.1:5432:5432 -p 192.168.1.XYZ:8080:8080 \
-    -v pg:/var/lib/postgresql/data -v grafana:/var/lib/grafana -v pw3:/pgwatch/persistent-config \
+    -v pg:/var/lib/postgresql/data -v grafana:/var/lib/grafana -v pgwatch:/pgwatch/persistent-config \
     cybertecpostgresql/pgwatch-demo:X.Y.Z
 ```
 

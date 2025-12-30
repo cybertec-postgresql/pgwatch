@@ -3,7 +3,7 @@
 mkdir /var/run/grafana && chown grafana /var/run/grafana
 
 if [ ! -f /pgwatch/persistent-config/self-signed-ssl.key -o ! -f /pgwatch/persistent-config/self-signed-ssl.pem ] ; then
-    openssl req -x509 -newkey rsa:4096 -keyout /pgwatch/persistent-config/self-signed-ssl.key -out /pgwatch/persistent-config/self-signed-ssl.pem -days 3650 -nodes -sha256 -subj '/CN=pw3'
+    openssl req -x509 -newkey rsa:4096 -keyout /pgwatch/persistent-config/self-signed-ssl.key -out /pgwatch/persistent-config/self-signed-ssl.pem -days 3650 -nodes -sha256 -subj '/CN=pgwatch'
     cp /pgwatch/persistent-config/self-signed-ssl.pem /etc/ssl/certs/ssl-cert-snakeoil.pem
     cp /pgwatch/persistent-config/self-signed-ssl.key /etc/ssl/private/ssl-cert-snakeoil.key
     chown postgres /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/ssl/private/ssl-cert-snakeoil.key

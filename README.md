@@ -24,7 +24,7 @@ To fetch and run the latest **demo** Docker image, exposing
 - the internal configuration and metrics database on port 5432:
 
 ```shell
-docker run --detach --name pw3 \
+docker run --detach --name pgwatch-demo \
 -p 5432:5432 -p 3000:3000 -p 8080:8080 -e PW_TESTDB=true \
 cybertecpostgresql/pgwatch-demo
 ```

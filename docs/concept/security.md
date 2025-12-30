@@ -50,7 +50,7 @@ pgwatch with following security "checkpoints" enabled:
 1. Password encryption for connect strings stored in the Config DB
 
     ```properties
-    docker run --name pw3 -d --restart=unless-stopped \
+    docker run --name pgwatch -d --restart=unless-stopped \
       -p 3000:3000 -p 8080:8080 \
       -e PW_GRAFANASSL=1 -e PW_WEBSSL=1 \
       -e PW_GRAFANANOANONYMOUS=1 -e PW_GRAFANAUSER=myuser \
