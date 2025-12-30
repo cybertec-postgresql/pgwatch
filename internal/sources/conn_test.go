@@ -17,8 +17,6 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
 
-const ImageName = "docker.io/postgres:17-alpine"
-
 func TestSourceConn_Connect(t *testing.T) {
 
 	t.Run("failed config parsing", func(t *testing.T) {
