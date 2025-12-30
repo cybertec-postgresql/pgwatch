@@ -39,45 +39,26 @@ disable the monitoring of such nodes with the "Primary mode only".
 
 ## Log parsing
 
-As of v1.7.0 the metrics collector daemon, when running on a DB server
-(controlled best over a YAML config), has capabilities to parse the
-database server logs for errors. Out-of-the-box it will though only work
-when logs are written in **CSVLOG** format. For other formats user needs
-to specify a regex that parses out named groups of following fields:
-*database_name*, *error_severity*. See
-[here](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/metrics/logparse.go#L27)
-for an example regex.
+pgwatch can parse PostgreSQL server logs to count errors, warnings, and other log events.
+This feature only works when logs are in **CSVLOG** format.
 
-Note that only the event counts are stored, no error texts, usernames or
-other infos! Errors are grouped by severity for the monitored DB and for
-the whole instance. The metric name to enable log parsing is
-"server_log_event_counts". Also note that for auto-detection of log
-destination / setting to work, the monitoring user needs superuser /
-pg_monitor privileges - if this is not possible then log settings need
-to be specified manually under "Host config" as seen for example
-[here](https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.sources.yaml#L25).
+Only event counts are stored - no error messages, usernames, or other details. Events are grouped by severity level for both the monitored database and the entire instance.
 
-**Sample configuration if not using CSVLOG logging:**
+pgwatch automatically selects between two parsing modes:
 
-On Postgres side (on the monitored DB)
+1. **Local mode** - Used when pgwatch runs on the same host as the database server and can access log files directly. Requires superuser privileges and `pg_read_all_settings` role.
 
-```ini
-    # Debian / Ubuntu default log_line_prefix actually
-    log_line_prefix = '%m [%p] %q%u@%d '
-```
+2. **Remote mode** - Used when pgwatch runs on a different host. Requires `pg_monitor` role and execute privilege on `pg_read_file()`.
 
-YAML config (recommended when "pushing" metrics from DB nodes to a
-central metrics DB)
+To enable this feature, use the `server_log_event_counts` metric or a preset that includes it (e.g., `full`).
 
-```yaml
-    ## logs_glob_path is only needed if the monitoring user is cannot auto-detect it (i.e. not a superuser / pg_monitor role)
-    # logs_glob_path:
-    logs_match_regex: '^(?P<log_time>.*) \[(?P<process_id>\d+)\] (?P<user_name>.*)@(?P<database_name>.*?) (?P<error_severity>.*?): '
-```
+!!! note
+    pgwatch detects local mode when connected via a unix socket or when the `data_directory` system identifier matches the one from `pg_control_system()`. Otherwise, it falls back to remote mode.
 
-For log parsing to work the metric **server_log_event_counts** needs to
-be enabled or a *preset config* including it used - like the "full"
-preset.
+For optimal performance, **Local mode** should be preferred for instances running on the same host as the database server.
+
+!!! note
+    pgwatch reads from a single log file each interval with a maximum of 10MBs at a time. Knowing that and based on your log generation rate, adjust your metric interval to avoid having out-of-sync measurements.
 
 ## PgBouncer support
 
