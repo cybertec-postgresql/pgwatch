@@ -9,11 +9,11 @@ import (
 
 var TestContext = log.WithLogger(context.Background(), log.NewNoopLogger())
 
-const pgImageName = "docker.io/postgres:17-alpine"
+const PostgresImage = "docker.io/postgres:17-alpine"
 const MockDatabase = "mydatabase"
 
 const EtcdVersion = "v3.5.14"
-const etcdImage = "gcr.io/etcd-development/etcd:" + EtcdVersion
+const EtcdImage = "gcr.io/etcd-development/etcd:" + EtcdVersion
 
 // the CN in server test cert is set to `localhost`
 

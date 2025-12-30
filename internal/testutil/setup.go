@@ -21,7 +21,7 @@ import (
 
 func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error) {
 	pgContainer, err := postgres.Run(TestContext,
-		pgImageName,
+		PostgresImage,
 		postgres.WithDatabase(MockDatabase),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
@@ -40,7 +40,7 @@ func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error) {
 // This is useful for testing log parsing functionality with server_log_event_counts metric.
 func SetupPostgresContainerWithConfig(configPath string) (*postgres.PostgresContainer, func(), error) {
 	pgContainer, err := postgres.Run(TestContext,
-		pgImageName,
+		PostgresImage,
 		postgres.WithDatabase(MockDatabase),
 		postgres.WithConfigFile(configPath),
 		testcontainers.WithWaitStrategy(
@@ -56,7 +56,7 @@ func SetupPostgresContainerWithConfig(configPath string) (*postgres.PostgresCont
 
 func SetupPostgresContainerWithInitScripts(scripts ...string) (*postgres.PostgresContainer, func(), error) {
 	pgContainer, err := postgres.Run(TestContext,
-		pgImageName,
+		PostgresImage,
 		postgres.WithDatabase(MockDatabase),
 		postgres.WithInitScripts(scripts...),
 		testcontainers.WithWaitStrategy(
@@ -73,7 +73,7 @@ func SetupPostgresContainerWithInitScripts(scripts ...string) (*postgres.Postgre
 }
 
 func SetupEtcdContainer() (*etcd.EtcdContainer, func(), error) {
-	etcdContainer, err := etcd.Run(TestContext, etcdImage,
+	etcdContainer, err := etcd.Run(TestContext, EtcdImage,
 		testcontainers.
 			WithWaitStrategy(wait.ForLog("ready to serve client requests").
 				WithStartupTimeout(15*time.Second)))
