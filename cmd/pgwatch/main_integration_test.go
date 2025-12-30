@@ -10,6 +10,7 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -348,25 +349,24 @@ metrics:
 
 	// Verify that warnings were captured (we generated 3 warnings)
 	// The log parsing should have captured at least some of them
-	warningCaptured := 
+	warningCaptured :=
 		strings.Contains(dataStr, `"warning":1`) ||
-		strings.Contains(dataStr, `"warning":2`) ||
-		strings.Contains(dataStr, `"warning":3`) &&
-		strings.Contains(dataStr, `"warning_total":1`) ||
-		strings.Contains(dataStr, `"warning_total":2`) ||
-		strings.Contains(dataStr, `"warning_total":3`)
+			strings.Contains(dataStr, `"warning":2`) ||
+			strings.Contains(dataStr, `"warning":3`) &&
+				strings.Contains(dataStr, `"warning_total":1`) ||
+			strings.Contains(dataStr, `"warning_total":2`) ||
+			strings.Contains(dataStr, `"warning_total":3`)
 	assert.True(t, warningCaptured, "should have captured at least one warning, got: %s", dataStr)
 
 	// Verify that errors were captured (we generated 3 ERRORs)
-	errorCaptured := 
+	errorCaptured :=
 		strings.Contains(dataStr, `"error":1`) ||
-		strings.Contains(dataStr, `"error":2`) ||
-		strings.Contains(dataStr, `"error":3`) &&
-		strings.Contains(dataStr, `"error_total":1`) ||
-		strings.Contains(dataStr, `"error_total":2`) ||
-		strings.Contains(dataStr, `"error_total":3`)
+			strings.Contains(dataStr, `"error":2`) ||
+			strings.Contains(dataStr, `"error":3`) &&
+				strings.Contains(dataStr, `"error_total":1`) ||
+			strings.Contains(dataStr, `"error_total":2`) ||
+			strings.Contains(dataStr, `"error_total":3`)
 	assert.True(t, errorCaptured, "should have captured at least one error, got: %s", dataStr)
-
 
 	var logFile string
 	err = conn.QueryRow(ctx, `SELECT pg_current_logfile();`).Scan(&logFile)
