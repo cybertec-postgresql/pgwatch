@@ -14,7 +14,6 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/logparse"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
 )
@@ -293,12 +292,12 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 	ctx = log.WithLogger(ctx, l)
 
 	if metricName == specialMetricServerLogEventCounts {
-		lp, err := logparse.NewLogParser(ctx, md, md.RealDbname, md.GetMetricInterval(metricName), r.measurementCh)
+		lp, err := NewLogParser(ctx, md, md.RealDbname, md.GetMetricInterval(metricName), r.measurementCh)
 		if err != nil {
 			l.WithError(err).Error("Failed to init log parser")
 			return
 		}
-		err = lp.ParseLogs()
+		err = lp.parseLogs()
 		if err != nil {
 			l.WithError(err).Error("Error parsing logs")
 		}

@@ -1,4 +1,4 @@
-package logparse
+package reaper
 
 import (
 	"path/filepath"
@@ -8,9 +8,9 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 )
 
-func (lp *LogParser) ParseLogsRemote() error {
+func (lp *LogParser) parseLogsRemote() error {
 	var latestLogFile string
-	var linesRead int // to skip over already parsed lines on Postgres server restart for example
+	var linesRead int                             // to skip over already parsed lines on Postgres server restart for example
 	var lastSendTime time.Time                    // to storage channel
 	var eventCounts = make(map[string]int64)      // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	var eventCountsTotal = make(map[string]int64) // for the whole instance
@@ -50,7 +50,7 @@ func (lp *LogParser) ParseLogsRemote() error {
 
 		if linesRead == numOfLines && size != offset {
 			logFilePath := filepath.Join(lp.LogFolder, latestLogFile)
-			sizeToRead := min(maxChunkSize, size - offset)
+			sizeToRead := min(maxChunkSize, size-offset)
 			err := lp.Mdb.Conn.QueryRow(lp.ctx, "select pg_read_file($1, $2, $3)", logFilePath, offset, sizeToRead).Scan(&chunk)
 			offset += sizeToRead
 			if err != nil {

@@ -1,4 +1,4 @@
-package logparse
+package reaper
 
 import (
 	"bufio"
@@ -10,11 +10,11 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 )
 
-func (lp *LogParser) ParseLogsLocal() error {
+func (lp *LogParser) parseLogsLocal() error {
 	var latest, previous string
 	var latestHandle *os.File
 	var reader *bufio.Reader
-	var linesRead int // to skip over already parsed lines on Postgres server restart for example
+	var linesRead int                             // to skip over already parsed lines on Postgres server restart for example
 	var lastSendTime time.Time                    // to storage channel
 	var eventCounts = make(map[string]int64)      // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	var eventCountsTotal = make(map[string]int64) // for the whole instance
@@ -23,7 +23,7 @@ func (lp *LogParser) ParseLogsLocal() error {
 	var currInterval time.Duration
 
 	logger := log.GetLogger(lp.ctx)
-	logsGlobPath := filepath.Join(lp.LogFolder, CSVLogDefaultGlobSuffix)
+	logsGlobPath := filepath.Join(lp.LogFolder, csvLogDefaultGlobSuffix)
 
 	for { // re-try loop. re-start in case of FS errors or just to refresh host config
 		select {
