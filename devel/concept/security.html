@@ -1937,7 +1937,7 @@ pgwatch with following security "checkpoints" enabled:</p>
 <li>No viewing of internal logs of components running inside Docker</li>
 <li>
 <p>Password encryption for connect strings stored in the Config DB</p>
-<div class="language-properties highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">docker</span><span class="w"> </span><span class="s">run --name pw3 -d --restart=unless-stopped </span><span class="se">\</span>
+<div class="language-properties highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">docker</span><span class="w"> </span><span class="s">run --name pgwatch -d --restart=unless-stopped </span><span class="se">\</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="s">-p 3000:3000 -p 8080:8080 </span><span class="se">\</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="s">-e PW_GRAFANASSL=1 -e PW_WEBSSL=1 </span><span class="se">\</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="s">-e PW_GRAFANANOANONYMOUS=1 -e PW_GRAFANAUSER=myuser </span><span class="se">\</span>

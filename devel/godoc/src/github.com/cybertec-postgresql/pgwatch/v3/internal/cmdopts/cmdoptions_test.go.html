@@ -118,7 +118,7 @@
 <span id="L61" class="ln">    61  </span>	_, err = New(nil)
 <span id="L62" class="ln">    62  </span>	assert.Error(t, err)
 <span id="L63" class="ln">    63  </span>
-<span id="L64" class="ln">    64  </span>	os.Args = []string{0: &#34;config_test&#34;} <span class="comment">// sources arg is missing, but set PW3_CONFIG</span>
+<span id="L64" class="ln">    64  </span>	os.Args = []string{0: &#34;config_test&#34;} <span class="comment">// sources arg is missing, but set PW_CONFIG</span>
 <span id="L65" class="ln">    65  </span>	t.Setenv(&#34;PW_SOURCES&#34;, &#34;postgresql://foo:baz@bar/test&#34;)
 <span id="L66" class="ln">    66  </span>	_, err = New(nil)
 <span id="L67" class="ln">    67  </span>	assert.NoError(t, err)
