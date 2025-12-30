@@ -104,7 +104,7 @@ func (lp *LogParser) parseLogsRemote() error {
 
 				matches := lp.LogsMatchRegex.FindStringSubmatch(line)
 				if len(matches) != 0 {
-					result := regexMatchesToMap(lp.LogsMatchRegex, matches)
+					result := lp.regexMatchesToMap(matches)
 					errorSeverity := result["error_severity"]
 					if lp.ServerMessagesLang != "en" {
 						errorSeverity = severityToEnglish(lp.ServerMessagesLang, errorSeverity)

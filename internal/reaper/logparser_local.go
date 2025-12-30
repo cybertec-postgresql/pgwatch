@@ -120,7 +120,7 @@ func (lp *LogParser) parseLogsLocal() error {
 				if len(matches) == 0 {
 					goto send_to_storage_if_needed
 				}
-				result := regexMatchesToMap(lp.LogsMatchRegex, matches)
+				result := lp.regexMatchesToMap(matches)
 				errorSeverity, ok := result["error_severity"]
 				if !ok {
 					logger.Error("error_severity group must be defined in parse regex:", lp.LogsMatchRegex)

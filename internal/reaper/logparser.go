@@ -159,12 +159,12 @@ func severityToEnglish(serverLang, errorSeverity string) string {
 	return severityEn
 }
 
-func regexMatchesToMap(csvlogRegex *regexp.Regexp, matches []string) map[string]string {
+func (lp *LogParser) regexMatchesToMap(matches []string) map[string]string {
 	result := make(map[string]string)
-	if len(matches) == 0 || csvlogRegex == nil {
+	if len(matches) == 0 || lp.LogsMatchRegex == nil {
 		return result
 	}
-	for i, name := range csvlogRegex.SubexpNames() {
+	for i, name := range lp.LogsMatchRegex.SubexpNames() {
 		if i != 0 && name != "" {
 			result[name] = matches[i]
 		}

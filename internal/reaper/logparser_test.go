@@ -352,10 +352,12 @@ func TestZeroEventCounts(t *testing.T) {
 
 func TestRegexMatchesToMap(t *testing.T) {
 	t.Run("successful match", func(t *testing.T) {
-		regex := regexp.MustCompile(`(?P<severity>\w+): (?P<message>.+)`)
+		lp := &LogParser{
+			LogsMatchRegex: regexp.MustCompile(`(?P<severity>\w+): (?P<message>.+)`),
+		}
 		matches := []string{"ERROR: Something went wrong", "ERROR", "Something went wrong"}
 
-		result := regexMatchesToMap(regex, matches)
+		result := lp.regexMatchesToMap(matches)
 		expected := map[string]string{
 			"severity": "ERROR",
 			"message":  "Something went wrong",
@@ -365,25 +367,29 @@ func TestRegexMatchesToMap(t *testing.T) {
 	})
 
 	t.Run("no matches", func(t *testing.T) {
-		regex := regexp.MustCompile(`(?P<severity>\w+): (?P<message>.+)`)
+		lp := &LogParser{
+			LogsMatchRegex: regexp.MustCompile(`(?P<severity>\w+): (?P<message>.+)`),
+		}
 		matches := []string{}
 
-		result := regexMatchesToMap(regex, matches)
+		result := lp.regexMatchesToMap(matches)
 		assert.Empty(t, result)
 	})
 
 	t.Run("nil regex", func(t *testing.T) {
+		lp := &LogParser{}
 		matches := []string{"test"}
 
-		result := regexMatchesToMap(nil, matches)
+		result := lp.regexMatchesToMap(matches)
 		assert.Empty(t, result)
 	})
 }
 
 func TestCSVLogRegex(t *testing.T) {
 	// Test the default CSV log regex with sample log lines
-	regex, err := regexp.Compile(csvLogDefaultRegEx)
-	require.NoError(t, err)
+	lp := &LogParser{
+		LogsMatchRegex: regexp.MustCompile(csvLogDefaultRegEx),
+	}
 
 	testLines := []struct {
 		line     string
@@ -421,10 +427,10 @@ func TestCSVLogRegex(t *testing.T) {
 
 	for i, tt := range testLines {
 		t.Run(string(rune('A'+i)), func(t *testing.T) {
-			matches := regex.FindStringSubmatch(tt.line)
+			matches := lp.LogsMatchRegex.FindStringSubmatch(tt.line)
 			assert.NotEmpty(t, matches, "regex should match the log line")
 
-			result := regexMatchesToMap(regex, matches)
+			result := lp.regexMatchesToMap(matches)
 			for key, expected := range tt.expected {
 				assert.Equal(t, expected, result[key], "mismatch for key %s", key)
 			}
