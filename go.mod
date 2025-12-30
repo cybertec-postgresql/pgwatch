@@ -6,7 +6,7 @@ require (
 	github.com/cybertec-postgresql/pgx-migrator v1.2.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/jackc/pgx/v5 v5.7.6
+	github.com/jackc/pgx/v5 v5.8.0
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/json-iterator/go v1.1.12
 	github.com/pashagolub/pgxmock/v4 v4.9.0
@@ -21,7 +21,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.40.0
 	go.etcd.io/etcd/client/v3 v3.6.7
 	go.uber.org/zap v1.27.1
-	google.golang.org/grpc v1.77.0
+	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1

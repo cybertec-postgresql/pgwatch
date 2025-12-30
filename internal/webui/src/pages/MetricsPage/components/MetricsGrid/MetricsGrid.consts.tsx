@@ -1,8 +1,10 @@
 import CheckIcon from "@mui/icons-material/Check";
 import { GridColDef } from "@mui/x-data-grid";
 import { MetricGridRow } from "./MetricsGrid.types";
+import { ListPopUp } from "./components/ListPopUp/ListPopUp";
 import { MetricsGridActions } from "./components/MetricsGridActions/MetricsGridActions";
 import { SqlPopUp } from "./components/SqlPopUp/SqlPopUp";
+import { TextPopUp } from "./components/TextPopUp/TextPopUp";
 
 const getIcon = (value: boolean) => {
   if (value) {
@@ -15,30 +17,46 @@ export const useMetricsGridColumns = (): GridColDef<MetricGridRow>[] => ([
   {
     field: "Key",
     headerName: "Name",
-    width: 150,
+    flex: 1.5,
+    minWidth: 150,
     align: "left",
     headerAlign: "left",
   },
   {
     field: "Description",
     headerName: "Description",
-    width: 200,
-    align: "left",
+    flex: 0.5,
+    minWidth: 100,
+    align: "center",
     headerAlign: "center",
-    valueGetter: (value, row) => row.Metric.Description,
+    renderCell: ({ row }) => (
+      <TextPopUp
+        title={`Description: ${row.Key}`}
+        content={row.Metric.Description}
+        type="description"
+      />
+    ),
   },
   {
     field: "InitSQL",
     headerName: "InitSQL",
-    width: 200,
-    align: "left",
+    flex: 0.5,
+    minWidth: 80,
+    align: "center",
     headerAlign: "center",
-    valueGetter: (value, row) => row.Metric.InitSQL,
+    renderCell: ({ row }) => (
+      <TextPopUp
+        title={`InitSQL: ${row.Key}`}
+        content={row.Metric.InitSQL}
+        type="sql"
+      />
+    ),
   },
   {
     field: "NodeStatus",
     headerName: "Node status",
-    width: 200,
+    flex: 1,
+    minWidth: 120,
     align: "center",
     headerAlign: "center",
     valueGetter: (value, row) => row.Metric.NodeStatus,
@@ -46,15 +64,22 @@ export const useMetricsGridColumns = (): GridColDef<MetricGridRow>[] => ([
   {
     field: "Gauges",
     headerName: "Gauges",
-    width: 200,
+    flex: 0.5,
+    minWidth: 100,
     align: "center",
     headerAlign: "center",
-    valueGetter: (value, row) => row.Metric.Gauges && row.Metric.Gauges.toString(),
+    renderCell: ({ row }) => (
+      <ListPopUp
+        title={`Gauges: ${row.Key}`}
+        items={row.Metric.Gauges}
+      />
+    ),
   },
   {
     field: "IsInstanceLevel",
     headerName: "Instance level?",
-    width: 120,
+    flex: 0.5,
+    minWidth: 100,
     align: "center",
     headerAlign: "center",
     renderCell: ({ row }) => getIcon(row.Metric.IsInstanceLevel),
@@ -62,15 +87,17 @@ export const useMetricsGridColumns = (): GridColDef<MetricGridRow>[] => ([
   {
     field: "StorageName",
     headerName: "Storage name",
-    width: 200,
-    align: "left",
+    flex: 1,
+    minWidth: 120,
+    align: "center",
     headerAlign: "center",
     valueGetter: (value, row) => row.Metric.StorageName,
   },
   {
     field: "SQLs",
     headerName: "SQLs",
-    width: 120,
+    flex: 0.5,
+    minWidth: 80,
     align: "center",
     headerAlign: "center",
     renderCell: ({ row }) => <SqlPopUp SQLs={row.Metric.SQLs} />,
@@ -78,6 +105,8 @@ export const useMetricsGridColumns = (): GridColDef<MetricGridRow>[] => ([
   {
     field: "Actions",
     headerName: "Actions",
+    flex: 0.5,
+    minWidth: 100,
     headerAlign: "center",
     renderCell: ({ row }) => <MetricsGridActions metric={row} />
   },

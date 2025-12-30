@@ -10,7 +10,6 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/cmdopts"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -153,6 +152,81 @@ metrics:
 		datab, err := os.ReadFile(jsonSink)
 		assert.NoError(t, err)
 		assert.Contains(t, string(datab), "metric fetched via PostgreSQL not OS")
+	})
+
+	t.Run("special source names", func(t *testing.T) {
+		// Test various special source names with dots, capitals, underscores, hyphens, and numbers
+		specialNames := []string{
+			"source.new",
+			"Source.With.Dots",
+			"UPPERCASE_SOURCE",
+			"MixedCase_Source-123",
+			"source-with-hyphens",
+			"source_with_underscores",
+			"Source123.Test_Name-456",
+		}
+
+		specialSourcesYaml := filepath.Join(tempDir, "special_sources.yaml")
+
+		// Build YAML with all special source names
+		yamlContent := ""
+		for _, name := range specialNames {
+			yamlContent += `
+- name: ` + name + `
+  conn_str: ` + connStr + `
+  kind: postgres
+  is_enabled: true
+  custom_metrics:
+    test_metric: 60
+`
+		}
+		require.NoError(t, os.WriteFile(specialSourcesYaml, []byte(yamlContent), 0644))
+
+		os.Args = []string{
+			"pgwatch",
+			"--metrics", metricsYaml,
+			"--sources", specialSourcesYaml,
+			"--sink", connStr,
+			"--web-disable",
+		}
+
+		go main()
+		<-time.After(5 * time.Second) // Wait for main to fetch metrics and write to sink
+		cancel()
+		<-mainCtx.Done() // Wait for main to finish
+
+		assert.Equal(t, cmdopts.ExitCodeOK, gotExit, "expected exit code 0 with special source names")
+
+		// Connect to the sink database and verify metrics were collected for each special source name
+		sinkConn, err := pgx.Connect(context.Background(), connStr)
+		require.NoError(t, err)
+		defer sinkConn.Close(context.Background())
+
+		// Query the admin.all_distinct_dbname_metrics table to verify all sources are present
+		rows, err := sinkConn.Query(context.Background(),
+			"SELECT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'test_metric'")
+		require.NoError(t, err)
+
+		foundSources := make(map[string]bool)
+		for rows.Next() {
+			var dbname string
+			require.NoError(t, rows.Scan(&dbname))
+			foundSources[dbname] = true
+		}
+		require.NoError(t, rows.Err())
+
+		// Verify each special source name has metrics in the sink
+		for _, name := range specialNames {
+			assert.True(t, foundSources[name],
+				"expected source name %q to have metrics in the sink database", name)
+		}
+
+		// Also verify actual metrics data exists in the test_metric table
+		var count int
+		err = sinkConn.QueryRow(context.Background(),
+			"SELECT count(*) FROM public.test_metric").Scan(&count)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, count, len(specialNames), "expected metrics to be stored in test_metric table")
 	})
 }
 
