@@ -58,7 +58,7 @@ RUN go generate ./api/pb/ && \
 # ----------------------------------------------------------------
 # 5. Demo Image with PostgreSQL + Grafana
 # ----------------------------------------------------------------
-FROM postgres:17-bullseye AS demo
+FROM postgres:18-bullseye AS demo
 
 # Copy over the compiled gatherer
 COPY --from=go-builder /pgwatch/pgwatch /pgwatch/
