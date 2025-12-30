@@ -7,7 +7,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 )
 
-var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
+var TestContext = log.WithLogger(context.Background(), log.NewNoopLogger())
 
 const pgImageName = "docker.io/postgres:17-alpine"
 const MockDatabase = "mydatabase"

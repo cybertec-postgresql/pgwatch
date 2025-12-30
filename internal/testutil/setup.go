@@ -20,7 +20,7 @@ import (
 )
 
 func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error) {
-	pgContainer, err := postgres.Run(ctx,
+	pgContainer, err := postgres.Run(TestContext,
 		pgImageName,
 		postgres.WithDatabase(MockDatabase),
 		testcontainers.WithWaitStrategy(
@@ -30,7 +30,7 @@ func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error) {
 	)
 
 	tearDown := func() {
-		_ = pgContainer.Terminate(ctx)
+		_ = pgContainer.Terminate(TestContext)
 	}
 
 	return pgContainer, tearDown, err
@@ -39,7 +39,7 @@ func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error) {
 // Creates a PostgreSQL container with CSV logging enabled.
 // This is useful for testing log parsing functionality with server_log_event_counts metric.
 func SetupPostgresContainerWithConfig(configPath string) (*postgres.PostgresContainer, func(), error) {
-	pgContainer, err := postgres.Run(ctx,
+	pgContainer, err := postgres.Run(TestContext,
 		pgImageName,
 		postgres.WithDatabase(MockDatabase),
 		postgres.WithConfigFile(configPath),
@@ -48,14 +48,14 @@ func SetupPostgresContainerWithConfig(configPath string) (*postgres.PostgresCont
 	)
 
 	tearDown := func() {
-		_ = pgContainer.Terminate(ctx)
+		_ = pgContainer.Terminate(TestContext)
 	}
 
 	return pgContainer, tearDown, err
 }
 
 func SetupPostgresContainerWithInitScripts(scripts ...string) (*postgres.PostgresContainer, func(), error) {
-	pgContainer, err := postgres.Run(ctx,
+	pgContainer, err := postgres.Run(TestContext,
 		pgImageName,
 		postgres.WithDatabase(MockDatabase),
 		postgres.WithInitScripts(scripts...),
@@ -66,20 +66,20 @@ func SetupPostgresContainerWithInitScripts(scripts ...string) (*postgres.Postgre
 	)
 
 	tearDown := func() {
-		_ = pgContainer.Terminate(ctx)
+		_ = pgContainer.Terminate(TestContext)
 	}
 
 	return pgContainer, tearDown, err
 }
 
 func SetupEtcdContainer() (*etcd.EtcdContainer, func(), error) {
-	etcdContainer, err := etcd.Run(ctx, etcdImage,
+	etcdContainer, err := etcd.Run(TestContext, etcdImage,
 		testcontainers.
 			WithWaitStrategy(wait.ForLog("ready to serve client requests").
-			WithStartupTimeout(15*time.Second)))
+				WithStartupTimeout(15*time.Second)))
 
 	tearDown := func() {
-		_ = etcdContainer.Terminate(ctx)
+		_ = etcdContainer.Terminate(TestContext)
 	}
 
 	return etcdContainer, tearDown, err

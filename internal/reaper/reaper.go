@@ -297,7 +297,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 			l.WithError(err).Error("Failed to init log parser")
 			return
 		}
-		err = lp.parseLogs()
+		err = lp.ParseLogs()
 		if err != nil {
 			l.WithError(err).Error("Error parsing logs")
 		}

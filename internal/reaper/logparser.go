@@ -20,8 +20,7 @@ type LogParser struct {
 	LogsMatchRegex     *regexp.Regexp
 	LogFolder          string
 	ServerMessagesLang string
-	Mdb                *sources.SourceConn
-	RealDbname         string
+	SourceConn         *sources.SourceConn
 	Interval           float64
 	StoreCh            chan<- metrics.MeasurementEnvelope
 	eventCounts        map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
@@ -59,7 +58,7 @@ func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- m
 		LogsMatchRegex:     logsRegex,
 		LogFolder:          logFolder,
 		ServerMessagesLang: serverMessagesLang,
-		Mdb:                mdb,
+		SourceConn:         mdb,
 		Interval:           mdb.GetMetricInterval(specialMetricServerLogEventCounts),
 		StoreCh:            storeCh,
 		eventCounts:        make(map[string]int64),
@@ -71,16 +70,16 @@ func (lp *LogParser) HasSendIntervalElapsed() bool {
 	return lp.lastSendTime.IsZero() || lp.lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(lp.Interval)))
 }
 
-func (lp *LogParser) parseLogs() error {
+func (lp *LogParser) ParseLogs() error {
 	l := log.GetLogger(lp.ctx)
-	if ok, err := db.IsClientOnSameHost(lp.Mdb.Conn); ok && err == nil {
+	if ok, err := db.IsClientOnSameHost(lp.SourceConn.Conn); ok && err == nil {
 		l.Info("DB is on the same host. parsing logs locally")
 		// TODO: check privileges before invoking local parsing
 		return lp.parseLogsLocal()
 	}
 
 	l.Info("DB is not detected to be on the same host. parsing logs remotely")
-	if err := checkHasPrivileges(lp.ctx, lp.Mdb, lp.LogFolder); err != nil {
+	if err := checkHasPrivileges(lp.ctx, lp.SourceConn, lp.LogFolder); err != nil {
 		l.WithError(err).Error("Could't parse logs remotely. lacking required privileges")
 		return err
 	}
@@ -190,10 +189,10 @@ func (lp *LogParser) GetMeasurementEnvelope() metrics.MeasurementEnvelope {
 		}
 	}
 	return metrics.MeasurementEnvelope{
-		DBName:     lp.Mdb.Name,
+		DBName:     lp.SourceConn.Name,
 		MetricName: specialMetricServerLogEventCounts,
 		Data:       metrics.Measurements{allSeverityCounts},
-		CustomTags: lp.Mdb.CustomTags,
+		CustomTags: lp.SourceConn.CustomTags,
 	}
 }
 
