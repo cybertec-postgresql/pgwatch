@@ -66,11 +66,11 @@
 <span id="L9" class="ln">     9  </span>
 <span id="L10" class="ln">    10  </span>var TestContext = log.WithLogger(context.Background(), log.NewNoopLogger())
 <span id="L11" class="ln">    11  </span>
-<span id="L12" class="ln">    12  </span>const pgImageName = &#34;docker.io/postgres:17-alpine&#34;
+<span id="L12" class="ln">    12  </span>const PostgresImage = &#34;docker.io/postgres:17-alpine&#34;
 <span id="L13" class="ln">    13  </span>const MockDatabase = &#34;mydatabase&#34;
 <span id="L14" class="ln">    14  </span>
 <span id="L15" class="ln">    15  </span>const EtcdVersion = &#34;v3.5.14&#34;
-<span id="L16" class="ln">    16  </span>const etcdImage = &#34;gcr.io/etcd-development/etcd:&#34; + EtcdVersion
+<span id="L16" class="ln">    16  </span>const EtcdImage = &#34;gcr.io/etcd-development/etcd:&#34; + EtcdVersion
 <span id="L17" class="ln">    17  </span>
 <span id="L18" class="ln">    18  </span><span class="comment">// the CN in server test cert is set to `localhost`</span>
 <span id="L19" class="ln">    19  </span>

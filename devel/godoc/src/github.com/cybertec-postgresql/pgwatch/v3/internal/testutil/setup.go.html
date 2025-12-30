@@ -78,7 +78,7 @@
 <span id="L21" class="ln">    21  </span>
 <span id="L22" class="ln">    22  </span>func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error) {
 <span id="L23" class="ln">    23  </span>	pgContainer, err := postgres.Run(TestContext,
-<span id="L24" class="ln">    24  </span>		pgImageName,
+<span id="L24" class="ln">    24  </span>		PostgresImage,
 <span id="L25" class="ln">    25  </span>		postgres.WithDatabase(MockDatabase),
 <span id="L26" class="ln">    26  </span>		testcontainers.WithWaitStrategy(
 <span id="L27" class="ln">    27  </span>			wait.ForLog(&#34;database system is ready to accept connections&#34;).
@@ -97,7 +97,7 @@
 <span id="L40" class="ln">    40  </span><span class="comment">// This is useful for testing log parsing functionality with server_log_event_counts metric.</span>
 <span id="L41" class="ln">    41  </span>func SetupPostgresContainerWithConfig(configPath string) (*postgres.PostgresContainer, func(), error) {
 <span id="L42" class="ln">    42  </span>	pgContainer, err := postgres.Run(TestContext,
-<span id="L43" class="ln">    43  </span>		pgImageName,
+<span id="L43" class="ln">    43  </span>		PostgresImage,
 <span id="L44" class="ln">    44  </span>		postgres.WithDatabase(MockDatabase),
 <span id="L45" class="ln">    45  </span>		postgres.WithConfigFile(configPath),
 <span id="L46" class="ln">    46  </span>		testcontainers.WithWaitStrategy(
@@ -113,7 +113,7 @@
 <span id="L56" class="ln">    56  </span>
 <span id="L57" class="ln">    57  </span>func SetupPostgresContainerWithInitScripts(scripts ...string) (*postgres.PostgresContainer, func(), error) {
 <span id="L58" class="ln">    58  </span>	pgContainer, err := postgres.Run(TestContext,
-<span id="L59" class="ln">    59  </span>		pgImageName,
+<span id="L59" class="ln">    59  </span>		PostgresImage,
 <span id="L60" class="ln">    60  </span>		postgres.WithDatabase(MockDatabase),
 <span id="L61" class="ln">    61  </span>		postgres.WithInitScripts(scripts...),
 <span id="L62" class="ln">    62  </span>		testcontainers.WithWaitStrategy(
@@ -130,7 +130,7 @@
 <span id="L73" class="ln">    73  </span>}
 <span id="L74" class="ln">    74  </span>
 <span id="L75" class="ln">    75  </span>func SetupEtcdContainer() (*etcd.EtcdContainer, func(), error) {
-<span id="L76" class="ln">    76  </span>	etcdContainer, err := etcd.Run(TestContext, etcdImage,
+<span id="L76" class="ln">    76  </span>	etcdContainer, err := etcd.Run(TestContext, EtcdImage,
 <span id="L77" class="ln">    77  </span>		testcontainers.
 <span id="L78" class="ln">    78  </span>			WithWaitStrategy(wait.ForLog(&#34;ready to serve client requests&#34;).
 <span id="L79" class="ln">    79  </span>				WithStartupTimeout(15*time.Second)))
