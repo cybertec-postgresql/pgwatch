@@ -292,7 +292,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 	ctx = log.WithLogger(ctx, l)
 
 	if metricName == specialMetricServerLogEventCounts {
-		lp, err := NewLogParser(ctx, md, md.RealDbname, md.GetMetricInterval(metricName), r.measurementCh)
+		lp, err := NewLogParser(ctx, md, r.measurementCh)
 		if err != nil {
 			l.WithError(err).Error("Failed to init log parser")
 			return

@@ -41,7 +41,7 @@ func TestNewLogParser(t *testing.T) {
 		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 			WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
 
-		lp, err := NewLogParser(testCtx, sourceConn, "testdb", 60.0, storeCh)
+		lp, err := NewLogParser(testCtx, sourceConn, storeCh)
 		assert.NoError(t, err)
 		assert.NotNil(t, lp)
 		assert.Equal(t, tempDir, lp.LogFolder)
@@ -57,7 +57,7 @@ func TestNewLogParser(t *testing.T) {
 		mock.ExpectQuery(`select current_setting\('data_directory'\) as dd, current_setting\('log_directory'\) as ld`).
 			WillReturnError(assert.AnError)
 
-		lp, err := NewLogParser(testCtx, sourceConn, "testdb", 60.0, storeCh)
+		lp, err := NewLogParser(testCtx, sourceConn, storeCh)
 		assert.Error(t, err)
 		assert.Nil(t, lp)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -72,7 +72,7 @@ func TestNewLogParser(t *testing.T) {
 		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 			WillReturnError(assert.AnError)
 
-		lp, err := NewLogParser(testCtx, sourceConn, "testdb", 60.0, storeCh)
+		lp, err := NewLogParser(testCtx, sourceConn, storeCh)
 		assert.Error(t, err)
 		assert.Nil(t, lp)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -87,7 +87,7 @@ func TestNewLogParser(t *testing.T) {
 		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 			WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("zz"))
 
-		lp, err := NewLogParser(testCtx, sourceConn, "testdb", 60.0, storeCh)
+		lp, err := NewLogParser(testCtx, sourceConn, storeCh)
 		assert.NoError(t, err)
 		assert.NotNil(t, lp)
 		assert.Equal(t, "en", lp.ServerMessagesLang)
@@ -103,7 +103,7 @@ func TestNewLogParser(t *testing.T) {
 		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 			WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("de"))
 
-		lp, err := NewLogParser(testCtx, sourceConn, "testdb", 60.0, storeCh)
+		lp, err := NewLogParser(testCtx, sourceConn, storeCh)
 		assert.NoError(t, err)
 		assert.NotNil(t, lp)
 		assert.Equal(t, "/data/pg_log", lp.LogFolder)
@@ -248,7 +248,7 @@ func TestCheckHasPrivileges(t *testing.T) {
 
 			storeCh := make(chan metrics.MeasurementEnvelope, 10)
 
-			lp, err := NewLogParser(testCtx, sourceConn, "testdb", 0, storeCh)
+			lp, err := NewLogParser(testCtx, sourceConn, storeCh)
 			require.NoError(t, err)
 			// Parse logs should stop the worker and return due to privilege errors.
 			err = lp.parseLogs()
@@ -476,7 +476,7 @@ func TestLogParseLocal(t *testing.T) {
 	// Create a channel to receive measurement envelopes
 	storeCh := make(chan metrics.MeasurementEnvelope, 10)
 
-	lp, err := NewLogParser(ctx, sourceConn, "testdb", 0, storeCh)
+	lp, err := NewLogParser(ctx, sourceConn, storeCh)
 	require.NoError(t, err)
 	err = lp.parseLogs()
 	assert.NoError(t, err)
@@ -656,7 +656,7 @@ func TestLogParseRemote(t *testing.T) {
 	// Create a channel to receive measurement envelopes
 	storeCh := make(chan metrics.MeasurementEnvelope, 10)
 
-	lp, err := NewLogParser(ctx, sourceConn, "testdb", 0, storeCh)
+	lp, err := NewLogParser(ctx, sourceConn, storeCh)
 	require.NoError(t, err)
 	err = lp.parseLogs()
 	assert.NoError(t, err)

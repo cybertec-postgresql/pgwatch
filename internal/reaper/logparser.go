@@ -26,13 +26,7 @@ type LogParser struct {
 	StoreCh            chan<- metrics.MeasurementEnvelope
 }
 
-func NewLogParser(
-	ctx context.Context,
-	mdb *sources.SourceConn,
-	realDbname string,
-	interval float64,
-	storeCh chan<- metrics.MeasurementEnvelope,
-) (*LogParser, error) {
+func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- metrics.MeasurementEnvelope) (*LogParser, error) {
 
 	logger := log.GetLogger(ctx).WithField("source", mdb.Name).WithField("metric", specialMetricServerLogEventCounts)
 	ctx = log.WithLogger(ctx, logger)
@@ -63,8 +57,7 @@ func NewLogParser(
 		LogFolder:          logFolder,
 		ServerMessagesLang: serverMessagesLang,
 		Mdb:                mdb,
-		RealDbname:         realDbname,
-		Interval:           interval,
+		Interval:           mdb.GetMetricInterval(specialMetricServerLogEventCounts),
 		StoreCh:            storeCh,
 	}, nil
 }
