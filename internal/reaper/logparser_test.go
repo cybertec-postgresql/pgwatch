@@ -276,19 +276,19 @@ func TestEventCountsToMetricStoreMessages(t *testing.T) {
 			CustomTags: map[string]string{"env": "test"},
 		},
 	}
-
-	eventCounts := map[string]int64{
-		"ERROR":   5,
-		"WARNING": 10,
+	lp := &LogParser{
+		Mdb: mdb,
+		eventCounts: map[string]int64{
+			"ERROR":   5,
+			"WARNING": 10,
+		},
+		eventCountsTotal: map[string]int64{
+			"ERROR":   15,
+			"WARNING": 25,
+			"INFO":    50,
+		},
 	}
-
-	eventCountsTotal := map[string]int64{
-		"ERROR":   15,
-		"WARNING": 25,
-		"INFO":    50,
-	}
-
-	result := eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, mdb)
+	result := lp.GetMeasurementEnvelope()
 
 	assert.Equal(t, "test-db", result.DBName)
 	assert.Equal(t, specialMetricServerLogEventCounts, result.MetricName)

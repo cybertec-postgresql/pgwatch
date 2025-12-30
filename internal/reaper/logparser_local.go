@@ -14,10 +14,7 @@ func (lp *LogParser) parseLogsLocal() error {
 	var latest, previous string
 	var latestHandle *os.File
 	var reader *bufio.Reader
-	var linesRead int                             // to skip over already parsed lines on Postgres server restart for example
-	var lastSendTime time.Time                    // to storage channel
-	var eventCounts = make(map[string]int64)      // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
-	var eventCountsTotal = make(map[string]int64) // for the whole instance
+	var linesRead int // to skip over already parsed lines on Postgres server restart for example
 	var err error
 	var firstRun = true
 	var currInterval time.Duration
@@ -141,21 +138,21 @@ func (lp *LogParser) parseLogsLocal() error {
 					break
 				}
 				if lp.RealDbname == databaseName {
-					eventCounts[errorSeverity]++
+					lp.eventCounts[errorSeverity]++
 				}
-				eventCountsTotal[errorSeverity]++
+				lp.eventCountsTotal[errorSeverity]++
 			}
 
 		send_to_storage_if_needed:
-			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(lp.Interval))) {
-				logger.Debugf("Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v", eventCounts, eventCountsTotal)
+			if lp.HasSendIntervalElapsed() {
+				logger.Debugf("Sending log event counts for last interval to storage channel. Local eventcounts: %+v, global eventcounts: %+v", lp.eventCounts, lp.eventCountsTotal)
 				select {
 				case <-lp.ctx.Done():
 					return nil
-				case lp.StoreCh <- eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, lp.Mdb):
-					zeroEventCounts(eventCounts)
-					zeroEventCounts(eventCountsTotal)
-					lastSendTime = time.Now()
+				case lp.StoreCh <- lp.GetMeasurementEnvelope():
+					zeroEventCounts(lp.eventCounts)
+					zeroEventCounts(lp.eventCountsTotal)
+					lp.lastSendTime = time.Now()
 				}
 			}
 

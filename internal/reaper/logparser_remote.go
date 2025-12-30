@@ -10,10 +10,8 @@ import (
 
 func (lp *LogParser) parseLogsRemote() error {
 	var latestLogFile string
-	var linesRead int                             // to skip over already parsed lines on Postgres server restart for example
-	var lastSendTime time.Time                    // to storage channel
-	var eventCounts = make(map[string]int64)      // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
-	var eventCountsTotal = make(map[string]int64) // for the whole instance
+	var linesRead int // to skip over already parsed lines on Postgres server restart for example
+
 	var firstRun = true
 	var currInterval time.Duration
 
@@ -114,20 +112,20 @@ func (lp *LogParser) parseLogsRemote() error {
 
 					databaseName := result["database_name"]
 					if lp.RealDbname == databaseName {
-						eventCounts[errorSeverity]++
+						lp.eventCounts[errorSeverity]++
 					}
-					eventCountsTotal[errorSeverity]++
+					lp.eventCountsTotal[errorSeverity]++
 				}
 			}
 
-			if lastSendTime.IsZero() || lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(lp.Interval))) {
+			if lp.HasSendIntervalElapsed() {
 				select {
 				case <-lp.ctx.Done():
 					return nil
-				case lp.StoreCh <- eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal, lp.Mdb):
-					zeroEventCounts(eventCounts)
-					zeroEventCounts(eventCountsTotal)
-					lastSendTime = time.Now()
+				case lp.StoreCh <- lp.GetMeasurementEnvelope():
+					zeroEventCounts(lp.eventCounts)
+					zeroEventCounts(lp.eventCountsTotal)
+					lp.lastSendTime = time.Now()
 				}
 			}
 

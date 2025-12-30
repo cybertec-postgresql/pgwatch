@@ -24,6 +24,9 @@ type LogParser struct {
 	RealDbname         string
 	Interval           float64
 	StoreCh            chan<- metrics.MeasurementEnvelope
+	eventCounts        map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
+	eventCountsTotal   map[string]int64 // for the whole instance
+	lastSendTime       time.Time
 }
 
 func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- metrics.MeasurementEnvelope) (*LogParser, error) {
@@ -59,7 +62,13 @@ func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- m
 		Mdb:                mdb,
 		Interval:           mdb.GetMetricInterval(specialMetricServerLogEventCounts),
 		StoreCh:            storeCh,
+		eventCounts:        make(map[string]int64),
+		eventCountsTotal:   make(map[string]int64),
 	}, nil
+}
+
+func (lp *LogParser) HasSendIntervalElapsed() bool {
+	return lp.lastSendTime.IsZero() || lp.lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(lp.Interval)))
 }
 
 func (lp *LogParser) parseLogs() error {
@@ -163,17 +172,17 @@ func regexMatchesToMap(csvlogRegex *regexp.Regexp, matches []string) map[string]
 	return result
 }
 
-// Add zero counts for severity levels that didn't have any occurrences in the log
-func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]int64, mdb *sources.SourceConn) metrics.MeasurementEnvelope {
+// GetMeasurementEnvelope converts current event counts to a MeasurementEnvelope
+func (lp *LogParser) GetMeasurementEnvelope() metrics.MeasurementEnvelope {
 	allSeverityCounts := metrics.NewMeasurement(time.Now().UnixNano())
 	for _, s := range pgSeverities {
-		parsedCount, ok := eventCounts[s]
+		parsedCount, ok := lp.eventCounts[s]
 		if ok {
 			allSeverityCounts[strings.ToLower(s)] = parsedCount
 		} else {
 			allSeverityCounts[strings.ToLower(s)] = int64(0)
 		}
-		parsedCount, ok = eventCountsTotal[s]
+		parsedCount, ok = lp.eventCountsTotal[s]
 		if ok {
 			allSeverityCounts[strings.ToLower(s)+"_total"] = parsedCount
 		} else {
@@ -181,10 +190,10 @@ func eventCountsToMetricStoreMessages(eventCounts, eventCountsTotal map[string]i
 		}
 	}
 	return metrics.MeasurementEnvelope{
-		DBName:     mdb.Name,
+		DBName:     lp.Mdb.Name,
 		MetricName: specialMetricServerLogEventCounts,
 		Data:       metrics.Measurements{allSeverityCounts},
-		CustomTags: mdb.CustomTags,
+		CustomTags: lp.Mdb.CustomTags,
 	}
 }
 
