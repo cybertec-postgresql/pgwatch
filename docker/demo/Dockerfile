@@ -81,7 +81,7 @@ RUN apt-get update \
 RUN curl -L https://apt.grafana.com/gpg.key | apt-key add - \
     && echo "deb https://apt.grafana.com stable main" | tee /etc/apt/sources.list.d/grafana.list \
     && apt-get update \
-    && apt-get -qy install grafana=12.1.0 \
+    && apt-get -qy install grafana=12.3.1 \
     && grafana-cli plugins install marcusolsson-treemap-panel
 COPY docker/demo/grafana.ini /etc/grafana/grafana.ini
 COPY grafana/postgres_datasource.yml /etc/grafana/provisioning/datasources/pg_ds.yml
