@@ -2011,7 +2011,7 @@ This feature only works when logs are in <strong>CSVLOG</strong> format.</p>
 <p>pgwatch automatically selects between two parsing modes:</p>
 <ol>
 <li>
-<p><strong>Local mode</strong> - Used when pgwatch runs on the same host as the database server and can access log files directly. Requires superuser privileges and <code>pg_read_all_settings</code> role.</p>
+<p><strong>Local mode</strong> - Used when pgwatch runs on the same host as the database server and can access log files directly. Requires OS user with read privileges on the logs directory and its files and <code>pg_read_all_settings</code> role.</p>
 </li>
 <li>
 <p><strong>Remote mode</strong> - Used when pgwatch runs on a different host. Requires <code>pg_monitor</code> role and execute privilege on <code>pg_read_file()</code>.</p>

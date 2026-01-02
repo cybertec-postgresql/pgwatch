@@ -263,7 +263,7 @@
 <span id="L206" class="ln">   206  </span>
 <span id="L207" class="ln">   207  </span>	names := [2]string{&#34;pg_ls_logdir() fails&#34;, &#34;pg_read_file() permission denied&#34;}
 <span id="L208" class="ln">   208  </span>	for _, name := range names {
-<span id="L209" class="ln">   209  </span>		t.Run(&#34;checkHasPrivileges fails - &#34;+name, func(t *testing.T) {
+<span id="L209" class="ln">   209  </span>		t.Run(&#34;checkHasRemotePrivileges fails - &#34;+name, func(t *testing.T) {
 <span id="L210" class="ln">   210  </span>			mock, err := pgxmock.NewPool()
 <span id="L211" class="ln">   211  </span>			require.NoError(t, err)
 <span id="L212" class="ln">   212  </span>			defer mock.Close()

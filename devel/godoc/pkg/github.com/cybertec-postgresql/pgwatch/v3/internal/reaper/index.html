@@ -150,7 +150,10 @@ and send measurements to sinks.
 				<dd><a href="#TryCreateMissingExtensions">func TryCreateMissingExtensions(ctx context.Context, md *sources.SourceConn, extensionNames []string, existingExtensions map[string]int) []string</a></dd>
 			
 				
-				<dd><a href="#checkHasPrivileges">func checkHasPrivileges(ctx context.Context, mdb *sources.SourceConn, logsDirPath string) error</a></dd>
+				<dd><a href="#checkHasLocalPrivileges">func checkHasLocalPrivileges(logsDirPath string) error</a></dd>
+			
+				
+				<dd><a href="#checkHasRemotePrivileges">func checkHasRemotePrivileges(ctx context.Context, mdb *sources.SourceConn, logsDirPath string) error</a></dd>
 			
 				
 				<dd><a href="#getFileWithLatestTimestamp">func getFileWithLatestTimestamp(files []string) (string, error)</a></dd>
@@ -426,7 +429,8 @@ and send measurements to sinks.
 				<pre>var <span id="metricsConfig">metricsConfig</span> map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#float64">float64</a> <span class="comment">// set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state</span>
 </pre>
 			
-				
+				<p>Constants and types
+
 				<pre>var <span id="pgSeverities">pgSeverities</span> = [...]<a href="https://pkg.go.dev/builtin/#string">string</a>{&#34;DEBUG&#34;, &#34;INFO&#34;, &#34;NOTICE&#34;, &#34;WARNING&#34;, &#34;ERROR&#34;, &#34;LOG&#34;, &#34;FATAL&#34;, &#34;PANIC&#34;}</pre>
 			
 				
@@ -621,12 +625,25 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="checkHasPrivileges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L116">checkHasPrivileges</a>
-				<a class="permalink" href="#checkHasPrivileges">&#xb6;</a>
+			<h2 id="checkHasLocalPrivileges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L151">checkHasLocalPrivileges</a>
+				<a class="permalink" href="#checkHasLocalPrivileges">&#xb6;</a>
 				
 				
 			</h2>
-			<pre>func checkHasPrivileges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, logsDirPath <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+			<pre>func checkHasLocalPrivileges(logsDirPath <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="checkHasRemotePrivileges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L139">checkHasRemotePrivileges</a>
+				<a class="permalink" href="#checkHasRemotePrivileges">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func checkHasRemotePrivileges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v3/internal/sources/#SourceConn">SourceConn</a>, logsDirPath <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 			
 			
 			
@@ -673,7 +690,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="severityToEnglish">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L149">severityToEnglish</a>
+			<h2 id="severityToEnglish">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L159">severityToEnglish</a>
 				<a class="permalink" href="#severityToEnglish">&#xb6;</a>
 				
 				
@@ -686,7 +703,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="tryDetermineLogFolder">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L89">tryDetermineLogFolder</a>
+			<h2 id="tryDetermineLogFolder">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L112">tryDetermineLogFolder</a>
 				<a class="permalink" href="#tryDetermineLogFolder">&#xb6;</a>
 				
 				
@@ -699,7 +716,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="tryDetermineLogMessagesLanguage">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L103">tryDetermineLogMessagesLanguage</a>
+			<h2 id="tryDetermineLogMessagesLanguage">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L126">tryDetermineLogMessagesLanguage</a>
 				<a class="permalink" href="#tryDetermineLogMessagesLanguage">&#xb6;</a>
 				
 				
@@ -712,7 +729,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="zeroEventCounts">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L199">zeroEventCounts</a>
+			<h2 id="zeroEventCounts">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L209">zeroEventCounts</a>
 				<a class="permalink" href="#zeroEventCounts">&#xb6;</a>
 				
 				
@@ -950,7 +967,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 		
 			
 			
-			<h2 id="LogParser">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L18">LogParser</a>
+			<h2 id="LogParser">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L39">LogParser</a>
 				<a class="permalink" href="#LogParser">&#xb6;</a>
 				
 				
@@ -980,7 +997,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="NewLogParser">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L31">NewLogParser</a>
+				<h3 id="NewLogParser">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L52">NewLogParser</a>
 					<a class="permalink" href="#NewLogParser">&#xb6;</a>
 					
 					
@@ -993,7 +1010,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 
 			
 				
-				<h3 id="LogParser.GetMeasurementEnvelope">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L175">GetMeasurementEnvelope</a>
+				<h3 id="LogParser.GetMeasurementEnvelope">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L185">GetMeasurementEnvelope</a>
 					<a class="permalink" href="#LogParser.GetMeasurementEnvelope">&#xb6;</a>
 					
 					
@@ -1006,7 +1023,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="LogParser.HasSendIntervalElapsed">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L69">HasSendIntervalElapsed</a>
+				<h3 id="LogParser.HasSendIntervalElapsed">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L90">HasSendIntervalElapsed</a>
 					<a class="permalink" href="#LogParser.HasSendIntervalElapsed">&#xb6;</a>
 					
 					
@@ -1018,7 +1035,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="LogParser.ParseLogs">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L73">ParseLogs</a>
+				<h3 id="LogParser.ParseLogs">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L94">ParseLogs</a>
 					<a class="permalink" href="#LogParser.ParseLogs">&#xb6;</a>
 					
 					
@@ -1054,7 +1071,7 @@ whitelisting or &quot;trusted extensions&quot; (a feature from v13). Ignores err
 				
 			
 				
-				<h3 id="LogParser.regexMatchesToMap">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L161">regexMatchesToMap</a>
+				<h3 id="LogParser.regexMatchesToMap">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/reaper/logparser.go.html#L171">regexMatchesToMap</a>
 					<a class="permalink" href="#LogParser.regexMatchesToMap">&#xb6;</a>
 					
 					
