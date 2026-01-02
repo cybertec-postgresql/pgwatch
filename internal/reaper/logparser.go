@@ -94,8 +94,8 @@ func (lp *LogParser) HasSendIntervalElapsed() bool {
 func (lp *LogParser) ParseLogs() error {
 	l := log.GetLogger(lp.ctx)
 	if ok, err := db.IsClientOnSameHost(lp.SourceConn.Conn); ok && err == nil {
+		l.Info("DB is on the same host. parsing logs locally")
 		if err = checkHasLocalPrivileges(lp.LogFolder); err == nil {
-			l.Info("DB is on the same host. parsing logs locally")
 			return lp.parseLogsLocal()
 		}
 		l.WithError(err).Error("Could't parse logs locally. lacking required privileges")
