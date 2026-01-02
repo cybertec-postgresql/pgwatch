@@ -206,7 +206,7 @@ func TestCheckHasPrivileges(t *testing.T) {
 
 	names := [2]string{"pg_ls_logdir() fails", "pg_read_file() permission denied"}
 	for _, name := range names {
-		t.Run("checkHasPrivileges fails - "+name, func(t *testing.T) {
+		t.Run("checkHasRemotePrivileges fails - "+name, func(t *testing.T) {
 			mock, err := pgxmock.NewPool()
 			require.NoError(t, err)
 			defer mock.Close()
