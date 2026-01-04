@@ -61,6 +61,10 @@ func NewSinkWriter(ctx context.Context, opts *CmdOpts) (w Writer, err error) {
 	return mw, nil
 }
 
+func (mw *MultiWriter) Count() int {
+	return len(mw.writers)
+}
+
 func (mw *MultiWriter) AddWriter(w Writer) {
 	mw.Lock()
 	mw.writers = append(mw.writers, w)
@@ -88,4 +92,34 @@ func (mw *MultiWriter) Write(msg metrics.MeasurementEnvelope) (err error) {
 		err = errors.Join(err, w.Write(msg))
 	}
 	return
+}
+
+// Migrator interface implementation for MultiWriter
+
+// Migrate runs migrations on all writers that support it
+func (mw *MultiWriter) Migrate() (err error) {
+	for _, w := range mw.writers {
+		if m, ok := w.(interface {
+			Migrate() error
+		}); ok {
+			err = errors.Join(err, m.Migrate())
+		}
+	}
+	return
+}
+
+// NeedsMigration checks if any writer needs migration
+func (mw *MultiWriter) NeedsMigration() (bool, error) {
+	for _, w := range mw.writers {
+		if m, ok := w.(interface {
+			NeedsMigration() (bool, error)
+		}); ok {
+			if needs, err := m.NeedsMigration(); err != nil {
+				return false, err
+			} else if needs {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }

@@ -64,6 +64,9 @@ func (dmrw *dbMetricReaderWriter) NeedsMigration() (bool, error) {
 	return m.NeedUpgrade(dmrw.ctx, dmrw.configDb)
 }
 
+// ExpectedMigrationsCount is the expected number of migrations in pgwatch.migration table
+const ExpectedMigrationsCount = 2
+
 // migrations holds function returning all updgrade migrations needed
 var migrations func() migrator.Option = func() migrator.Option {
 	return migrator.Migrations(

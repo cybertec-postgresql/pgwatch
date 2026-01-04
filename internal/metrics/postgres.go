@@ -21,10 +21,17 @@ func NewPostgresMetricReaderWriterConn(ctx context.Context, conn db.PgxPoolIface
 	if err := initSchema(ctx, conn); err != nil {
 		return nil, err
 	}
-	return &dbMetricReaderWriter{
+	dmrw := &dbMetricReaderWriter{
 		ctx:      ctx,
 		configDb: conn,
-	}, conn.Ping(ctx)
+	}
+	// Check if migrations are needed
+	if needsMigration, err := dmrw.NeedsMigration(); err != nil {
+		return nil, err
+	} else if needsMigration {
+		return nil, ErrNeedsMigration
+	}
+	return dmrw, conn.Ping(ctx)
 }
 
 type dbMetricReaderWriter struct {
@@ -33,6 +40,7 @@ type dbMetricReaderWriter struct {
 }
 
 var (
+	ErrNeedsMigration = errors.New("config database schema is outdated, please run migrations using `pgwatch config upgrade` command")
 	ErrMetricNotFound = errors.New("metric not found")
 	ErrPresetNotFound = errors.New("preset not found")
 	ErrInvalidMetric  = errors.New("invalid metric")

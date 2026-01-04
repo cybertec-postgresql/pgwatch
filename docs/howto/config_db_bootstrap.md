@@ -50,6 +50,12 @@ Or you can use the `config init` command with the `--metrics` flag, since metric
 pgwatch --metrics=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch config init
 ```
 
+If you're using a PostgreSQL sink for storing measurements, you can also initialize the sink database schema:
+
+```terminal
+pgwatch --sink=postgresql://pgwatch:pgwatchadmin@localhost/measurements config init
+```
+
 ## Usage
 
 You can now configure pgwatch to use the `pgwatch` database as the configuration database for storing monitored sources,

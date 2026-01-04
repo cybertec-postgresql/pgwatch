@@ -106,3 +106,17 @@ comment on table admin.metrics_template IS 'used as a template for all new metri
 create index on admin.metrics_template (dbname, time);
 -- create index on admin.metrics_template using brin (dbname, time);  /* consider BRIN instead for large data amounts */
 -- create index on admin.metrics_template using gin (tag_data) where tag_data notnull;
+
+-- define migrations you need to apply
+-- every change to the database schema should populate this table.
+-- Version value should contain issue number zero padded followed by
+-- short description of the issue\feature\bug implemented\resolved
+CREATE TABLE admin.migration(
+    id bigint PRIMARY KEY,
+    version text NOT NULL
+);
+
+INSERT INTO
+    admin.migration (id, version)
+VALUES
+    (0,  '01110 Apply postgres sink schema migrations');
