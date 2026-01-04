@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
@@ -234,4 +235,92 @@ func TestNeedsSchemaUpgrade(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestConfigInitCommand_InitSources(t *testing.T) {
+	a := assert.New(t)
+
+	t.Run("yaml file creation", func(*testing.T) {
+		fname := t.TempDir() + "/sources.yaml"
+		opts := &Options{
+			Sources: sources.CmdOpts{Sources: fname},
+		}
+		cmd := ConfigInitCommand{owner: opts}
+		err := cmd.InitSources()
+		a.NoError(err)
+		a.FileExists(fname)
+	})
+
+	t.Run("postgres connection - error without setup", func(*testing.T) {
+		opts := &Options{
+			Sources: sources.CmdOpts{Sources: "postgresql://user@host/db"},
+		}
+		cmd := ConfigInitCommand{owner: opts}
+		err := cmd.InitSources()
+		a.Error(err)
+	})
+}
+
+func TestConfigInitCommand_InitMetrics(t *testing.T) {
+	a := assert.New(t)
+
+	t.Run("yaml file creation with default metrics", func(*testing.T) {
+		fname := t.TempDir() + "/metrics.yaml"
+		opts := &Options{
+			Metrics: metrics.CmdOpts{Metrics: fname},
+		}
+		cmd := ConfigInitCommand{owner: opts}
+		err := cmd.InitMetrics()
+		a.NoError(err)
+		a.FileExists(fname)
+	})
+
+	t.Run("postgres connection - error without setup", func(*testing.T) {
+		opts := &Options{
+			Metrics: metrics.CmdOpts{Metrics: "postgresql://user@host/db"},
+		}
+		cmd := ConfigInitCommand{owner: opts}
+		err := cmd.InitMetrics()
+		a.Error(err)
+	})
+}
+
+func TestConfigInitCommand_InitSinks(t *testing.T) {
+	a := assert.New(t)
+
+	t.Run("postgres connection - error without setup", func(*testing.T) {
+		opts := &Options{
+			Sinks: sinks.CmdOpts{Sinks: []string{"postgresql://user@host/db"}},
+		}
+		cmd := ConfigInitCommand{owner: opts}
+		err := cmd.InitSinks()
+		a.Error(err)
+	})
+}
+
+func TestConfigUpgradeCommand_Errors(t *testing.T) {
+	a := assert.New(t)
+
+	t.Run("non-postgres configuration not supported", func(*testing.T) {
+		opts := &Options{
+			Metrics: metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
+			Sources: sources.CmdOpts{Sources: "/tmp/sources.yaml", Refresh: 120, MaxParallelConnectionsPerDb: 1},
+			Sinks:   sinks.CmdOpts{BatchingDelay: time.Second},
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.Error(err)
+		a.ErrorContains(err, "does not support upgrade")
+	})
+
+	t.Run("init metrics reader fails", func(*testing.T) {
+		opts := &Options{
+			Metrics: metrics.CmdOpts{Metrics: "postgresql://invalid@host/db"},
+			Sources: sources.CmdOpts{Sources: "postgresql://invalid@host/db", Refresh: 120, MaxParallelConnectionsPerDb: 1},
+			Sinks:   sinks.CmdOpts{BatchingDelay: time.Second},
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.Error(err)
+	})
 }
