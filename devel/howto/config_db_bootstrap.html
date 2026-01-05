@@ -1965,13 +1965,16 @@ need is to provide the connection string to the database.</p>
 <p>Or you can use the <code>config init</code> command with the <code>--metrics</code> flag, since metrics and sources share the same database.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pgwatch --metrics=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch config init
 </span></code></pre></div>
+<p>If you're using a PostgreSQL sink for storing measurements, you can also initialize the sink database schema:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pgwatch --sink=postgresql://pgwatch:pgwatchadmin@localhost/measurements config init
+</span></code></pre></div>
 <h2 id="usage">Usage</h2>
 <p>You can now configure pgwatch to use the <code>pgwatch</code> database as the configuration database for storing monitored sources,
 metric deinitions and presets.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>$ pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=postgresql://pgwatch@10.0.0.42/measurements
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>...
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>[INFO] [metrics:75] [presets:17] [sources:2] sources and metrics refreshed
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>...
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$ pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=postgresql://pgwatch@10.0.0.42/measurements
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>...
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>[INFO] [metrics:75] [presets:17] [sources:2] sources and metrics refreshed
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>...
 </span></code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
@@ -1982,18 +1985,18 @@ for metrics and YAML file for sources, or vice versa.</p>
 <p>That's it! You have successfully bootstrapped the configuration database for pgwatch.</p>
 <p>If now you want to see the tables created by pgwatch in the configuration database, you can connect to the database
 using the <code>psql</code> command-line tool and list the tables.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$ psql postgresql://pgwatch:pgwatchadmin@localhost/pgwatch
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>psql (17.2)
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>pgwatch=# \dt pgwatch.*
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>           List of relations
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a> Schema  |   Name    | Type  |  Owner
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>---------+-----------+-------+---------
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a> pgwatch | metric    | table | pgwatch
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a> pgwatch | migration | table | pgwatch
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a> pgwatch | preset    | table | pgwatch
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a> pgwatch | source    | table | pgwatch
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>(4 rows)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>$ psql postgresql://pgwatch:pgwatchadmin@localhost/pgwatch
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>psql (17.2)
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>pgwatch=# \dt pgwatch.*
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>           List of relations
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a> Schema  |   Name    | Type  |  Owner
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>---------+-----------+-------+---------
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a> pgwatch | metric    | table | pgwatch
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a> pgwatch | migration | table | pgwatch
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a> pgwatch | preset    | table | pgwatch
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a> pgwatch | source    | table | pgwatch
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>(4 rows)
 </span></code></pre></div>
 <p>You may examine these tables to understand how pgwatch stores metrics and presets definitions, as well as what sources and how to monitor in the database.</p>
 

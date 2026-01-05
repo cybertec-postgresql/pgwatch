@@ -405,12 +405,17 @@
     <span id="TagPrefix">TagPrefix</span>       <a href="https://pkg.go.dev/builtin/#string">string</a> = &#34;tag_&#34;
 )</pre>
 			
+				<p>MigrationsCount is the total number of migrations in pgwatch.migration table
+
+				<pre>const <span id="MigrationsCount">MigrationsCount</span> = 2</pre>
+			
 		
 		
 			<h2 id="pkg-variables">Variables</h2>
 			
 				
 				<pre>var (
+    <span id="ErrNeedsMigration">ErrNeedsMigration</span> = <a href="https://pkg.go.dev/errors/">errors</a>.<a href="https://pkg.go.dev/errors/#New">New</a>(&#34;config database schema is outdated, please run migrations using `pgwatch config upgrade` command&#34;)
     <span id="ErrMetricNotFound">ErrMetricNotFound</span> = <a href="https://pkg.go.dev/errors/">errors</a>.<a href="https://pkg.go.dev/errors/#New">New</a>(&#34;metric not found&#34;)
     <span id="ErrPresetNotFound">ErrPresetNotFound</span> = <a href="https://pkg.go.dev/errors/">errors</a>.<a href="https://pkg.go.dev/errors/#New">New</a>(&#34;preset not found&#34;)
     <span id="ErrInvalidMetric">ErrInvalidMetric</span>  = <a href="https://pkg.go.dev/errors/">errors</a>.<a href="https://pkg.go.dev/errors/#New">New</a>(&#34;invalid metric&#34;)
@@ -579,7 +584,7 @@
 		
 			
 			
-			<h2 id="writeMetricsToPostgres">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L49">writeMetricsToPostgres</a>
+			<h2 id="writeMetricsToPostgres">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L57">writeMetricsToPostgres</a>
 				<a class="permalink" href="#writeMetricsToPostgres">&#xb6;</a>
 				
 				
@@ -1222,7 +1227,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 		
 			
 			
-			<h2 id="dbMetricReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L30">dbMetricReaderWriter</a>
+			<h2 id="dbMetricReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L37">dbMetricReaderWriter</a>
 				<a class="permalink" href="#dbMetricReaderWriter">&#xb6;</a>
 				
 				
@@ -1246,7 +1251,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 
 			
 				
-				<h3 id="dbMetricReaderWriter.CreateMetric">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L135">CreateMetric</a>
+				<h3 id="dbMetricReaderWriter.CreateMetric">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L143">CreateMetric</a>
 					<a class="permalink" href="#dbMetricReaderWriter.CreateMetric">&#xb6;</a>
 					
 					
@@ -1258,7 +1263,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="dbMetricReaderWriter.CreatePreset">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L166">CreatePreset</a>
+				<h3 id="dbMetricReaderWriter.CreatePreset">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L174">CreatePreset</a>
 					<a class="permalink" href="#dbMetricReaderWriter.CreatePreset">&#xb6;</a>
 					
 					
@@ -1270,7 +1275,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="dbMetricReaderWriter.DeleteMetric">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L116">DeleteMetric</a>
+				<h3 id="dbMetricReaderWriter.DeleteMetric">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L124">DeleteMetric</a>
 					<a class="permalink" href="#dbMetricReaderWriter.DeleteMetric">&#xb6;</a>
 					
 					
@@ -1282,7 +1287,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="dbMetricReaderWriter.DeletePreset">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L151">DeletePreset</a>
+				<h3 id="dbMetricReaderWriter.DeletePreset">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L159">DeletePreset</a>
 					<a class="permalink" href="#dbMetricReaderWriter.DeletePreset">&#xb6;</a>
 					
 					
@@ -1294,7 +1299,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="dbMetricReaderWriter.GetMetrics">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L77">GetMetrics</a>
+				<h3 id="dbMetricReaderWriter.GetMetrics">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L85">GetMetrics</a>
 					<a class="permalink" href="#dbMetricReaderWriter.GetMetrics">&#xb6;</a>
 					
 					
@@ -1333,7 +1338,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="dbMetricReaderWriter.UpdateMetric">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L121">UpdateMetric</a>
+				<h3 id="dbMetricReaderWriter.UpdateMetric">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L129">UpdateMetric</a>
 					<a class="permalink" href="#dbMetricReaderWriter.UpdateMetric">&#xb6;</a>
 					
 					
@@ -1345,7 +1350,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="dbMetricReaderWriter.UpdatePreset">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L156">UpdatePreset</a>
+				<h3 id="dbMetricReaderWriter.UpdatePreset">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L164">UpdatePreset</a>
 					<a class="permalink" href="#dbMetricReaderWriter.UpdatePreset">&#xb6;</a>
 					
 					
@@ -1357,7 +1362,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 				
 			
 				
-				<h3 id="dbMetricReaderWriter.WriteMetrics">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L112">WriteMetrics</a>
+				<h3 id="dbMetricReaderWriter.WriteMetrics">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v3/internal/metrics/postgres.go.html#L120">WriteMetrics</a>
 					<a class="permalink" href="#dbMetricReaderWriter.WriteMetrics">&#xb6;</a>
 					
 					

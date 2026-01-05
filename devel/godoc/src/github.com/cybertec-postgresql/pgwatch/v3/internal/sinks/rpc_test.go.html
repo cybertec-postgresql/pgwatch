@@ -63,41 +63,41 @@
 <span id="L6" class="ln">     6  </span>	&#34;os&#34;
 <span id="L7" class="ln">     7  </span>	&#34;testing&#34;
 <span id="L8" class="ln">     8  </span>
-<span id="L9" class="ln">     9  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/log&#34;
-<span id="L10" class="ln">    10  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/metrics&#34;
-<span id="L11" class="ln">    11  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/sinks&#34;
-<span id="L12" class="ln">    12  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/testutil&#34;
-<span id="L13" class="ln">    13  </span>	&#34;github.com/stretchr/testify/assert&#34;
-<span id="L14" class="ln">    14  </span>	&#34;google.golang.org/grpc/codes&#34;
-<span id="L15" class="ln">    15  </span>	&#34;google.golang.org/grpc/status&#34;
-<span id="L16" class="ln">    16  </span>)
-<span id="L17" class="ln">    17  </span>
-<span id="L18" class="ln">    18  </span>var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
-<span id="L19" class="ln">    19  </span>
-<span id="L20" class="ln">    20  </span>func TestMain(m *testing.M) {
-<span id="L21" class="ln">    21  </span>	<span class="comment">// Setup</span>
-<span id="L22" class="ln">    22  </span>	rpcTeardown, err := testutil.SetupRPCServers()
-<span id="L23" class="ln">    23  </span>	if err != nil {
-<span id="L24" class="ln">    24  </span>		rpcTeardown()
-<span id="L25" class="ln">    25  </span>		panic(err)
-<span id="L26" class="ln">    26  </span>	}
-<span id="L27" class="ln">    27  </span>
-<span id="L28" class="ln">    28  </span>	<span class="comment">// Execute all tests</span>
-<span id="L29" class="ln">    29  </span>	exitCode := m.Run()
-<span id="L30" class="ln">    30  </span>
-<span id="L31" class="ln">    31  </span>	<span class="comment">// Teardown</span>
-<span id="L32" class="ln">    32  </span>	rpcTeardown()
-<span id="L33" class="ln">    33  </span>	os.Exit(exitCode)
-<span id="L34" class="ln">    34  </span>}
-<span id="L35" class="ln">    35  </span>
-<span id="L36" class="ln">    36  </span><span class="comment">// Tests begin from here ---------------------------------------------------------</span>
-<span id="L37" class="ln">    37  </span>
-<span id="L38" class="ln">    38  </span>func TestCACertParamValidation(t *testing.T) {
-<span id="L39" class="ln">    39  </span>	a := assert.New(t)
-<span id="L40" class="ln">    40  </span>	_, err := sinks.NewRPCWriter(ctx, testutil.TLSConnStr)
-<span id="L41" class="ln">    41  </span>	a.NoError(err)
-<span id="L42" class="ln">    42  </span>
-<span id="L43" class="ln">    43  </span>	_, _ = os.Create(&#34;badca.crt&#34;)
+<span id="L9" class="ln">     9  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/metrics&#34;
+<span id="L10" class="ln">    10  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/sinks&#34;
+<span id="L11" class="ln">    11  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v3/internal/testutil&#34;
+<span id="L12" class="ln">    12  </span>	&#34;github.com/stretchr/testify/assert&#34;
+<span id="L13" class="ln">    13  </span>	&#34;google.golang.org/grpc/codes&#34;
+<span id="L14" class="ln">    14  </span>	&#34;google.golang.org/grpc/status&#34;
+<span id="L15" class="ln">    15  </span>)
+<span id="L16" class="ln">    16  </span>
+<span id="L17" class="ln">    17  </span>var ctx = testutil.TestContext
+<span id="L18" class="ln">    18  </span>
+<span id="L19" class="ln">    19  </span>func TestMain(m *testing.M) {
+<span id="L20" class="ln">    20  </span>	<span class="comment">// Setup</span>
+<span id="L21" class="ln">    21  </span>	rpcTeardown, err := testutil.SetupRPCServers()
+<span id="L22" class="ln">    22  </span>	if err != nil {
+<span id="L23" class="ln">    23  </span>		rpcTeardown()
+<span id="L24" class="ln">    24  </span>		panic(err)
+<span id="L25" class="ln">    25  </span>	}
+<span id="L26" class="ln">    26  </span>
+<span id="L27" class="ln">    27  </span>	<span class="comment">// Execute all tests</span>
+<span id="L28" class="ln">    28  </span>	exitCode := m.Run()
+<span id="L29" class="ln">    29  </span>
+<span id="L30" class="ln">    30  </span>	<span class="comment">// Teardown</span>
+<span id="L31" class="ln">    31  </span>	rpcTeardown()
+<span id="L32" class="ln">    32  </span>	os.Exit(exitCode)
+<span id="L33" class="ln">    33  </span>}
+<span id="L34" class="ln">    34  </span>
+<span id="L35" class="ln">    35  </span><span class="comment">// Tests begin from here ---------------------------------------------------------</span>
+<span id="L36" class="ln">    36  </span>
+<span id="L37" class="ln">    37  </span>func TestCACertParamValidation(t *testing.T) {
+<span id="L38" class="ln">    38  </span>	a := assert.New(t)
+<span id="L39" class="ln">    39  </span>	_, err := sinks.NewRPCWriter(ctx, testutil.TLSConnStr)
+<span id="L40" class="ln">    40  </span>	a.NoError(err)
+<span id="L41" class="ln">    41  </span>
+<span id="L42" class="ln">    42  </span>	err = os.WriteFile(&#34;badca.crt&#34;, []byte(&#34;&#34;), 0644)
+<span id="L43" class="ln">    43  </span>	a.NoError(err)
 <span id="L44" class="ln">    44  </span>	defer func() { _ = os.Remove(&#34;badca.crt&#34;) }()
 <span id="L45" class="ln">    45  </span>
 <span id="L46" class="ln">    46  </span>	BadRPCParams := map[string]string{

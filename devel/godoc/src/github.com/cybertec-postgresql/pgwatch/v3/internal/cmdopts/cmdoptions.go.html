@@ -231,39 +231,45 @@
 <span id="L174" class="ln">   174  </span>		return
 <span id="L175" class="ln">   175  </span>	}
 <span id="L176" class="ln">   176  </span>	if m, ok := c.MetricsReaderWriter.(metrics.Migrator); ok {
-<span id="L177" class="ln">   177  </span>		return m.NeedsMigration()
+<span id="L177" class="ln">   177  </span>		upgrade, err = m.NeedsMigration()
 <span id="L178" class="ln">   178  </span>	}
-<span id="L179" class="ln">   179  </span>	return
-<span id="L180" class="ln">   180  </span>}
-<span id="L181" class="ln">   181  </span>
-<span id="L182" class="ln">   182  </span><span class="comment">// ValidateConfig checks if the configuration is valid.</span>
-<span id="L183" class="ln">   183  </span><span class="comment">// Configuration database can be specified for one of the --sources or --metrics.</span>
-<span id="L184" class="ln">   184  </span><span class="comment">// If one is specified, the other one is set to the same value.</span>
-<span id="L185" class="ln">   185  </span>func (c *Options) ValidateConfig() error {
-<span id="L186" class="ln">   186  </span>	if len(c.Sources.Sources)+len(c.Metrics.Metrics) == 0 {
-<span id="L187" class="ln">   187  </span>		return errors.New(&#34;both --sources and --metrics are empty&#34;)
-<span id="L188" class="ln">   188  </span>	}
-<span id="L189" class="ln">   189  </span>	switch { <span class="comment">// if specified configuration database, use it for both sources and metrics</span>
-<span id="L190" class="ln">   190  </span>	case c.Sources.Sources == &#34;&#34; &amp;&amp; c.IsPgConnStr(c.Metrics.Metrics):
-<span id="L191" class="ln">   191  </span>		c.Sources.Sources = c.Metrics.Metrics
-<span id="L192" class="ln">   192  </span>	case c.Metrics.Metrics == &#34;&#34; &amp;&amp; c.IsPgConnStr(c.Sources.Sources):
-<span id="L193" class="ln">   193  </span>		c.Metrics.Metrics = c.Sources.Sources
+<span id="L179" class="ln">   179  </span>	if upgrade || err != nil {
+<span id="L180" class="ln">   180  </span>		return
+<span id="L181" class="ln">   181  </span>	}
+<span id="L182" class="ln">   182  </span>	if m, ok := c.SinksWriter.(metrics.Migrator); ok {
+<span id="L183" class="ln">   183  </span>		return m.NeedsMigration()
+<span id="L184" class="ln">   184  </span>	}
+<span id="L185" class="ln">   185  </span>	return
+<span id="L186" class="ln">   186  </span>}
+<span id="L187" class="ln">   187  </span>
+<span id="L188" class="ln">   188  </span><span class="comment">// ValidateConfig checks if the configuration is valid.</span>
+<span id="L189" class="ln">   189  </span><span class="comment">// Configuration database can be specified for one of the --sources or --metrics.</span>
+<span id="L190" class="ln">   190  </span><span class="comment">// If one is specified, the other one is set to the same value.</span>
+<span id="L191" class="ln">   191  </span>func (c *Options) ValidateConfig() error {
+<span id="L192" class="ln">   192  </span>	if len(c.Sources.Sources)+len(c.Metrics.Metrics) == 0 {
+<span id="L193" class="ln">   193  </span>		return errors.New(&#34;both --sources and --metrics are empty&#34;)
 <span id="L194" class="ln">   194  </span>	}
-<span id="L195" class="ln">   195  </span>	if c.Sources.Refresh &lt;= 1 {
-<span id="L196" class="ln">   196  </span>		return errors.New(&#34;--servers-refresh-loop-seconds must be greater than 1&#34;)
-<span id="L197" class="ln">   197  </span>	}
-<span id="L198" class="ln">   198  </span>	if c.Sources.MaxParallelConnectionsPerDb &lt; 1 {
-<span id="L199" class="ln">   199  </span>		return errors.New(&#34;--max-parallel-connections-per-db must be &gt;= 1&#34;)
+<span id="L195" class="ln">   195  </span>	switch { <span class="comment">// if specified configuration database, use it for both sources and metrics</span>
+<span id="L196" class="ln">   196  </span>	case c.Sources.Sources == &#34;&#34; &amp;&amp; c.IsPgConnStr(c.Metrics.Metrics):
+<span id="L197" class="ln">   197  </span>		c.Sources.Sources = c.Metrics.Metrics
+<span id="L198" class="ln">   198  </span>	case c.Metrics.Metrics == &#34;&#34; &amp;&amp; c.IsPgConnStr(c.Sources.Sources):
+<span id="L199" class="ln">   199  </span>		c.Metrics.Metrics = c.Sources.Sources
 <span id="L200" class="ln">   200  </span>	}
-<span id="L201" class="ln">   201  </span>
-<span id="L202" class="ln">   202  </span>	<span class="comment">// validate that input is boolean is set</span>
-<span id="L203" class="ln">   203  </span>	if c.Sinks.BatchingDelay &lt;= 0 || c.Sinks.BatchingDelay &gt; time.Hour {
-<span id="L204" class="ln">   204  </span>		return errors.New(&#34;--batching-delay-ms must be between 0 and 1h&#34;)
-<span id="L205" class="ln">   205  </span>	}
-<span id="L206" class="ln">   206  </span>
-<span id="L207" class="ln">   207  </span>	return nil
-<span id="L208" class="ln">   208  </span>}
-<span id="L209" class="ln">   209  </span>
+<span id="L201" class="ln">   201  </span>	if c.Sources.Refresh &lt;= 1 {
+<span id="L202" class="ln">   202  </span>		return errors.New(&#34;--servers-refresh-loop-seconds must be greater than 1&#34;)
+<span id="L203" class="ln">   203  </span>	}
+<span id="L204" class="ln">   204  </span>	if c.Sources.MaxParallelConnectionsPerDb &lt; 1 {
+<span id="L205" class="ln">   205  </span>		return errors.New(&#34;--max-parallel-connections-per-db must be &gt;= 1&#34;)
+<span id="L206" class="ln">   206  </span>	}
+<span id="L207" class="ln">   207  </span>
+<span id="L208" class="ln">   208  </span>	<span class="comment">// validate that input is boolean is set</span>
+<span id="L209" class="ln">   209  </span>	if c.Sinks.BatchingDelay &lt;= 0 || c.Sinks.BatchingDelay &gt; time.Hour {
+<span id="L210" class="ln">   210  </span>		return errors.New(&#34;--batching-delay-ms must be between 0 and 1h&#34;)
+<span id="L211" class="ln">   211  </span>	}
+<span id="L212" class="ln">   212  </span>
+<span id="L213" class="ln">   213  </span>	return nil
+<span id="L214" class="ln">   214  </span>}
+<span id="L215" class="ln">   215  </span>
 </pre><p></p>
 
 <div id="footer">

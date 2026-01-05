@@ -2135,7 +2135,7 @@
 <h2 id="general-usage">General Usage</h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>  pgwatch [OPTIONS] [config | metric | source]
 </span></code></pre></div>
-<p>When no command is specified, pgwatch starts the monitoring process. 
+<p>When no command is specified, pgwatch starts the monitoring process.
 It reads the configuration from the specified sources and metrics, then begins collecting measurements from the resolved databases.</p>
 <h2 id="options">Options</h2>
 <h3 id="sources">Sources</h3>
@@ -2316,17 +2316,20 @@ ENV: <code>$PW_WEBPASSWORD</code></p>
 </span></code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
-<p>To use <code>config</code> command, you need to specify the <code>-s</code>, <code>--sources</code> and\or <code>-m</code>, <code>--metrics</code> options.</p>
+<p>To use <code>config</code> command, you need to specify at least one of the following: <code>-s</code>, <code>--sources</code>, <code>-m</code>, <code>--metrics</code>, or <code>--sink</code> options.</p>
 </div>
 <ul>
 <li>
 <p><code>init</code></p>
-<p>Initialize the configuration database with the required tables and functions. If file is used, it will
-be created in the specified location and filled with built-in defaults.</p>
+<p>Initialize the configuration and/or sink database with the required tables and functions. If file is used, it will
+be created in the specified location and filled with built-in defaults. Works with PostgreSQL-based sources,
+metrics, and sink databases.</p>
 </li>
 <li>
 <p><code>upgrade</code></p>
-<p>Upgrade the database to the latest version. File or folder based configurations are not supported yet.</p>
+<p>Upgrade the configuration and/or sink database to the latest version by applying all pending migrations.
+File or folder based configurations are not supported. The command will automatically detect which
+databases (sources, metrics, sinks) require migrations and apply them.</p>
 </li>
 </ul>
 <h3 id="manage-metrics">Manage metrics</h3>
