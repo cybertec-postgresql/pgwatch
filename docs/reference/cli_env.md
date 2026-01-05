@@ -8,7 +8,7 @@ title: Command-Line Options & Environment Variables
   pgwatch [OPTIONS] [config | metric | source]
 ```
 
-When no command is specified, pgwatch starts the monitoring process. 
+When no command is specified, pgwatch starts the monitoring process.
 It reads the configuration from the specified sources and metrics, then begins collecting measurements from the resolved databases.
 
 ## Options
@@ -194,16 +194,19 @@ It reads the configuration from the specified sources and metrics, then begins c
 ```
 
 !!! info
-    To use `config` command, you need to specify the `-s`, `--sources` and\or `-m`, `--metrics` options.
+    To use `config` command, you need to specify at least one of the following: `-s`, `--sources`, `-m`, `--metrics`, or `--sink` options.
 
 - `init`
 
-    Initialize the configuration database with the required tables and functions. If file is used, it will
-    be created in the specified location and filled with built-in defaults.
+    Initialize the configuration and/or sink database with the required tables and functions. If file is used, it will
+    be created in the specified location and filled with built-in defaults. Works with PostgreSQL-based sources,
+    metrics, and sink databases.
 
 - `upgrade`
 
-    Upgrade the database to the latest version. File or folder based configurations are not supported yet.
+    Upgrade the configuration and/or sink database to the latest version by applying all pending migrations.
+    File or folder based configurations are not supported. The command will automatically detect which
+    databases (sources, metrics, sinks) require migrations and apply them.
 
 ### Manage metrics
 

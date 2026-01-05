@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
@@ -15,7 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
+var ctx = testutil.TestContext
 
 func TestMain(m *testing.M) {
 	// Setup
@@ -40,7 +39,8 @@ func TestCACertParamValidation(t *testing.T) {
 	_, err := sinks.NewRPCWriter(ctx, testutil.TLSConnStr)
 	a.NoError(err)
 
-	_, _ = os.Create("badca.crt")
+	err = os.WriteFile("badca.crt", []byte(""), 0644)
+	a.NoError(err)
 	defer func() { _ = os.Remove("badca.crt") }()
 
 	BadRPCParams := map[string]string{

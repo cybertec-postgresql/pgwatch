@@ -37,6 +37,9 @@ func (cmd *ConfigInitCommand) Execute([]string) (err error) {
 	if cmd.owner.Sources.Sources > "" && cmd.owner.Metrics.Metrics != cmd.owner.Sources.Sources {
 		err = errors.Join(err, cmd.InitSources())
 	}
+	if len(cmd.owner.Sinks.Sinks) > 0 {
+		err = errors.Join(err, cmd.InitSinks())
+	}
 	cmd.owner.CompleteCommand(map[bool]int32{
 		true:  ExitCodeOK,
 		false: ExitCodeConfigError,
@@ -68,6 +71,13 @@ func (cmd *ConfigInitCommand) InitMetrics() (err error) {
 	return opts.MetricsReaderWriter.WriteMetrics(defMetrics)
 }
 
+// InitSinks initializes the sinks configuration.
+func (cmd *ConfigInitCommand) InitSinks() (err error) {
+	ctx := context.Background()
+	opts := cmd.owner
+	return opts.InitSinkWriter(ctx)
+}
+
 type ConfigUpgradeCommand struct {
 	owner *Options
 }
@@ -78,22 +88,43 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 	if err = opts.ValidateConfig(); err != nil {
 		return
 	}
-	// for now only postgres configuration is upgradable
+	ctx := context.Background()
+	// Upgrade metrics/sources configuration if it's postgres
 	if opts.IsPgConnStr(opts.Metrics.Metrics) && opts.IsPgConnStr(opts.Sources.Sources) {
-		err = opts.InitMetricReader(context.Background())
+		err = opts.InitMetricReader(ctx)
 		if err != nil {
 			opts.CompleteCommand(ExitCodeConfigError)
 			return
 		}
 		if m, ok := opts.MetricsReaderWriter.(metrics.Migrator); ok {
 			err = m.Migrate()
-			opts.CompleteCommand(map[bool]int32{
-				true:  ExitCodeOK,
-				false: ExitCodeConfigError,
-			}[err == nil])
+			if err != nil {
+				opts.CompleteCommand(ExitCodeConfigError)
+				return
+			}
+		}
+	} else {
+		opts.CompleteCommand(ExitCodeConfigError)
+		return errors.New("configuration storage does not support upgrade")
+	}
+	// Upgrade sinks configuration if it's postgres
+	if len(opts.Sinks.Sinks) > 0 {
+		err = opts.InitSinkWriter(ctx)
+		if err != nil {
+			opts.CompleteCommand(ExitCodeConfigError)
 			return
 		}
+		if m, ok := opts.SinksWriter.(metrics.Migrator); ok {
+			err = m.Migrate()
+			if err != nil {
+				opts.CompleteCommand(ExitCodeConfigError)
+				return
+			}
+		} else {
+			opts.CompleteCommand(ExitCodeConfigError)
+			return errors.New("sink storage does not support upgrade")
+		}
 	}
-	opts.CompleteCommand(ExitCodeConfigError)
-	return errors.New("configuration storage does not support upgrade")
+	opts.CompleteCommand(ExitCodeOK)
+	return
 }

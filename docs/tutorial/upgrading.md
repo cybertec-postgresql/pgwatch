@@ -89,8 +89,8 @@ There are no update or migration scripts for the built-in Grafana
 dashboards as it would break possible user applied changes. If you know
 that there are no user changes, then one can just delete or rename the
 existing ones in bulk and import the latest JSON definitions.
-See [here](../concept/long_term_installations.md) for
-some more advice on how to manage dashboards.
+See [some more advice](../concept/long_term_installations.md) on how to
+manage dashboards.
 
 ### Updating the config / metrics DB version
 
@@ -105,31 +105,38 @@ problem-free, consisting of running something like:
     sudo systemctl restart postgresql
 
 For PostgreSQL major version upgrades one should read through the
-according release notes (e.g.
-[here](https://www.postgresql.org/docs/17/release-17.html#id-1.11.6.5.4))
+according [release notes](https://www.postgresql.org/docs/current/release.html)
 and be prepared for the unavoidable downtime.
 
 ### Updating the pgwatch schema
 
 This is the pgwatch specific part, with some coupling between the
-following components - Configuration DB SQL schema and pgwatch binary.
+following components - Configuration DB SQL schema,
+Sink DB SQL schema (if using PostgreSQL sink), and pgwatch binary.
 
 First of all, the pgwatch binary needs to be updated to a newer version.
 Then try to run the pgwatch as usual:
 
     pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch_metrics
     
-    [ERROR] configuration needs upgrade, use "config upgrade" command
+    [ERROR] config database schema is outdated, please run migrations using `pgwatch config upgrade` command
     exit status 4
 
 If you see the above error message, then the pgwatch schema needs updating.
 This is done by running the following command, which will apply all
-the necessary SQL migrations to the configuration database:
+the necessary SQL migrations to the configuration database and sink database:
 
-    pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch config upgrade
+    pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch_metrics config upgrade
 
+    [INFO] Applying migration to config database...
     [INFO] Applying migration named '00824 Refactor recommendations'...
     [INFO] Applied migration named '00824 Refactor recommendations'
+    [INFO] Applying migration to sink database...
+    [INFO] All migrations applied successfully
+
+!!! info
+    The `config upgrade` command will automatically detect which databases (sources, metrics, sinks) need migrations and apply them.
+    You only need to provide the connection strings for the databases you're using.
 
 ### Updating the metrics collector
 

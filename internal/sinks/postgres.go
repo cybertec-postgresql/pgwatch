@@ -15,6 +15,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	migrator "github.com/cybertec-postgresql/pgx-migrator"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -24,93 +25,6 @@ var (
 	highLoadTimeout = time.Second * 5
 	targetColumns   = [...]string{"time", "dbname", "data", "tag_data"}
 )
-
-// PostgresWriter is a sink that writes metric measurements to a Postgres database.
-// At the moment, it supports both Postgres and TimescaleDB as a storage backend.
-// However, one is able to use any Postgres-compatible database as a storage backend,
-// e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
-type PostgresWriter struct {
-	ctx                 context.Context
-	sinkDb              db.PgxPoolIface
-	metricSchema        DbStorageSchemaType
-	opts                *CmdOpts
-	retentionInterval   time.Duration
-	maintenanceInterval time.Duration
-	input               chan metrics.MeasurementEnvelope
-	lastError           chan error
-}
-
-func NewPostgresWriter(ctx context.Context, connstr string, opts *CmdOpts) (pgw *PostgresWriter, err error) {
-	var conn db.PgxPoolIface
-	if conn, err = db.New(ctx, connstr); err != nil {
-		return
-	}
-	return NewWriterFromPostgresConn(ctx, conn, opts)
-}
-
-func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *CmdOpts) (pgw *PostgresWriter, err error) {
-	l := log.GetLogger(ctx).WithField("sink", "postgres").WithField("db", conn.Config().ConnConfig.Database)
-	ctx = log.WithLogger(ctx, l)
-	pgw = &PostgresWriter{
-		ctx:       ctx,
-		opts:      opts,
-		input:     make(chan metrics.MeasurementEnvelope, cacheLimit),
-		lastError: make(chan error),
-		sinkDb:    conn,
-	}
-	if err = db.Init(ctx, pgw.sinkDb, func(ctx context.Context, conn db.PgxIface) error {
-		var isValidPartitionInterval bool
-		if err = conn.QueryRow(ctx,
-			"SELECT extract(epoch from $1::interval), extract(epoch from $2::interval), $3::interval >= '1h'::interval",
-			opts.RetentionInterval, opts.MaintenanceInterval, opts.PartitionInterval,
-		).Scan(&pgw.retentionInterval, &pgw.maintenanceInterval, &isValidPartitionInterval); err != nil {
-			return err
-		}
-
-		// epoch returns seconds but time.Duration represents nanoseconds
-		pgw.retentionInterval *= time.Second
-		pgw.maintenanceInterval *= time.Second
-
-		if !isValidPartitionInterval {
-			return fmt.Errorf("--partition-interval must be at least 1 hour, got: %s", opts.PartitionInterval)
-		}
-		if pgw.maintenanceInterval < 0 {
-			return errors.New("--maintenance-interval must be a positive PostgreSQL interval or 0 to disable it")
-		}
-		if pgw.retentionInterval < time.Hour && pgw.retentionInterval != 0 {
-			return errors.New("--retention must be at least 1 hour PostgreSQL interval or 0 to disable it")
-		}
-
-		l.Info("initialising measurements database...")
-		exists, err := db.DoesSchemaExist(ctx, conn, "admin")
-		if err != nil || exists {
-			return err
-		}
-		for _, sql := range metricSchemaSQLs {
-			if _, err = conn.Exec(ctx, sql); err != nil {
-				return err
-			}
-		}
-		return nil
-	}); err != nil {
-		return
-	}
-	if err = pgw.ReadMetricSchemaType(); err != nil {
-		return
-	}
-	if err = pgw.EnsureBuiltinMetricDummies(); err != nil {
-		return
-	}
-
-	pgw.scheduleJob(pgw.maintenanceInterval, func() {
-		pgw.DeleteOldPartitions()
-		pgw.MaintainUniqueSources()
-	})
-
-	go pgw.poll()
-	l.Info(`measurements sink is activated`)
-	return
-}
 
 //go:embed sql/admin_schema.sql
 var sqlMetricAdminSchema string
@@ -140,6 +54,102 @@ var (
 		sqlMetricChangeCompressionIntervalTimescale,
 	}
 )
+
+// PostgresWriter is a sink that writes metric measurements to a Postgres database.
+// At the moment, it supports both Postgres and TimescaleDB as a storage backend.
+// However, one is able to use any Postgres-compatible database as a storage backend,
+// e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
+type PostgresWriter struct {
+	ctx                 context.Context
+	sinkDb              db.PgxPoolIface
+	metricSchema        DbStorageSchemaType
+	opts                *CmdOpts
+	retentionInterval   time.Duration
+	maintenanceInterval time.Duration
+	input               chan metrics.MeasurementEnvelope
+	lastError           chan error
+}
+
+func NewPostgresWriter(ctx context.Context, connstr string, opts *CmdOpts) (pgw *PostgresWriter, err error) {
+	var conn db.PgxPoolIface
+	if conn, err = db.New(ctx, connstr); err != nil {
+		return
+	}
+	return NewWriterFromPostgresConn(ctx, conn, opts)
+}
+
+var ErrNeedsMigration = errors.New("sink database schema is outdated, please run migrations using `pgwatch config upgrade` command")
+
+func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *CmdOpts) (pgw *PostgresWriter, err error) {
+	l := log.GetLogger(ctx).WithField("sink", "postgres").WithField("db", conn.Config().ConnConfig.Database)
+	ctx = log.WithLogger(ctx, l)
+	pgw = &PostgresWriter{
+		ctx:       ctx,
+		opts:      opts,
+		input:     make(chan metrics.MeasurementEnvelope, cacheLimit),
+		lastError: make(chan error),
+		sinkDb:    conn,
+	}
+	l.Info("initialising measurements database...")
+	if err = pgw.init(); err != nil {
+		return nil, err
+	}
+	if needsMigration, e := pgw.NeedsMigration(); e != nil {
+		return nil, e
+	} else if needsMigration {
+		return nil, ErrNeedsMigration
+	}
+	if err = pgw.ReadMetricSchemaType(); err != nil {
+		return nil, err
+	}
+	if err = pgw.EnsureBuiltinMetricDummies(); err != nil {
+		return nil, err
+	}
+	pgw.scheduleJob(pgw.maintenanceInterval, func() {
+		pgw.DeleteOldPartitions()
+		pgw.MaintainUniqueSources()
+	})
+	go pgw.poll()
+	l.Info(`measurements sink is activated`)
+	return
+}
+
+func (pgw *PostgresWriter) init() (err error) {
+	return db.Init(pgw.ctx, pgw.sinkDb, func(ctx context.Context, conn db.PgxIface) error {
+		var isValidPartitionInterval bool
+		if err = conn.QueryRow(ctx,
+			"SELECT extract(epoch from $1::interval), extract(epoch from $2::interval), $3::interval >= '1h'::interval",
+			pgw.opts.RetentionInterval, pgw.opts.MaintenanceInterval, pgw.opts.PartitionInterval,
+		).Scan(&pgw.retentionInterval, &pgw.maintenanceInterval, &isValidPartitionInterval); err != nil {
+			return err
+		}
+
+		// epoch returns seconds but time.Duration represents nanoseconds
+		pgw.retentionInterval *= time.Second
+		pgw.maintenanceInterval *= time.Second
+
+		if !isValidPartitionInterval {
+			return fmt.Errorf("--partition-interval must be at least 1 hour, got: %s", pgw.opts.PartitionInterval)
+		}
+		if pgw.maintenanceInterval < 0 {
+			return errors.New("--maintenance-interval must be a positive PostgreSQL interval or 0 to disable it")
+		}
+		if pgw.retentionInterval < time.Hour && pgw.retentionInterval != 0 {
+			return errors.New("--retention must be at least 1 hour PostgreSQL interval or 0 to disable it")
+		}
+
+		exists, err := db.DoesSchemaExist(ctx, conn, "admin")
+		if err != nil || exists {
+			return err
+		}
+		for _, sql := range metricSchemaSQLs {
+			if _, err = conn.Exec(ctx, sql); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
 
 type ExistingPartitionInfo struct {
 	StartTime time.Time
@@ -526,4 +536,57 @@ func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric stri
 			)`
 	_, err := pgw.sinkDb.Exec(pgw.ctx, sql, dbUnique, metric)
 	return err
+}
+
+var initMigrator = func(pgw *PostgresWriter) (*migrator.Migrator, error) {
+	return migrator.New(
+		migrator.TableName("admin.migration"),
+		migrator.SetNotice(func(s string) {
+			log.GetLogger(pgw.ctx).Info(s)
+		}),
+		migrations(),
+	)
+}
+
+// Migrate upgrades database with all migrations
+func (pgw *PostgresWriter) Migrate() error {
+	m, err := initMigrator(pgw)
+	if err != nil {
+		return fmt.Errorf("cannot initialize migration: %w", err)
+	}
+	return m.Migrate(pgw.ctx, pgw.sinkDb)
+}
+
+// NeedsMigration checks if database needs migration
+func (pgw *PostgresWriter) NeedsMigration() (bool, error) {
+	m, err := initMigrator(pgw)
+	if err != nil {
+		return false, err
+	}
+	return m.NeedUpgrade(pgw.ctx, pgw.sinkDb)
+}
+
+// MigrationsCount is the total number of migrations in admin.migration table
+const MigrationsCount = 1
+
+// migrations holds function returning all upgrade migrations needed
+var migrations func() migrator.Option = func() migrator.Option {
+	return migrator.Migrations(
+		&migrator.Migration{
+			Name: "01110 Apply postgres sink schema migrations",
+			Func: func(context.Context, pgx.Tx) error {
+				// "migration" table will be created automatically
+				return nil
+			},
+		},
+
+		// adding new migration here, update "admin"."migration" in "admin_schema.sql"!
+
+		// &migrator.Migration{
+		// 	Name: "000XX Short description of a migration",
+		// 	Func: func(ctx context.Context, tx pgx.Tx) error {
+		// 		return executeMigrationScript(ctx, tx, "000XX.sql")
+		// 	},
+		// },
+	)
 }

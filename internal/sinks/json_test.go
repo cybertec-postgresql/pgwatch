@@ -1,4 +1,4 @@
-package sinks
+package sinks_test
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
+	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,8 +28,8 @@ func TestJSONWriter_Write(t *testing.T) {
 	}
 
 	tempFile := t.TempDir() + "/test.json"
-	ctx, cancel := context.WithCancel(context.Background())
-	jw, err := NewJSONWriter(ctx, tempFile)
+	ctx, cancel := context.WithCancel(testutil.TestContext)
+	jw, err := sinks.NewJSONWriter(ctx, tempFile)
 	r.NoError(err)
 
 	err = jw.Write(msg)
@@ -55,16 +57,16 @@ func TestJSONWriter_SyncMetric(t *testing.T) {
 	// Create a temporary file for testing
 	tempFile := t.TempDir() + "/test.json"
 
-	ctx, cancel := context.WithCancel(context.Background())
-	jw, err := NewJSONWriter(ctx, tempFile)
+	ctx, cancel := context.WithCancel(testutil.TestContext)
+	jw, err := sinks.NewJSONWriter(ctx, tempFile)
 	assert.NoError(t, err)
 
 	// Call the function being tested
-	err = jw.SyncMetric("", "", InvalidOp)
+	err = jw.SyncMetric("", "", sinks.InvalidOp)
 	assert.NoError(t, err)
 
 	cancel()
-	err = jw.SyncMetric("", "", InvalidOp)
+	err = jw.SyncMetric("", "", sinks.InvalidOp)
 	assert.Error(t, err, "context canceled")
 
 }

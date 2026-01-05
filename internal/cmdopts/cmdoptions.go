@@ -174,6 +174,12 @@ func (c *Options) NeedsSchemaUpgrade() (upgrade bool, err error) {
 		return
 	}
 	if m, ok := c.MetricsReaderWriter.(metrics.Migrator); ok {
+		upgrade, err = m.NeedsMigration()
+	}
+	if upgrade || err != nil {
+		return
+	}
+	if m, ok := c.SinksWriter.(metrics.Migrator); ok {
 		return m.NeedsMigration()
 	}
 	return

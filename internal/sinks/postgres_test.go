@@ -39,30 +39,124 @@ func TestReadMetricSchemaType(t *testing.T) {
 }
 
 func TestNewWriterFromPostgresConn(t *testing.T) {
-	conn, err := pgxmock.NewPool()
-	assert.NoError(t, err)
-
-	conn.ExpectPing()
-	conn.ExpectQuery("SELECT extract").WithArgs("1 day", "1 day", "1 hour").WillReturnRows(
-		pgxmock.NewRows([]string{"col1", "col2", "col3"}).AddRow((24 * time.Hour).Seconds(), (24 * time.Hour).Seconds(), true),
-	)
-	conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
-	conn.ExpectQuery("SELECT schema_type").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
-	for _, m := range metrics.GetDefaultBuiltInMetrics() {
-		conn.ExpectExec("SELECT admin.ensure_dummy_metrics_table").WithArgs(m).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
-	}
-
+	a := assert.New(t)
 	opts := &CmdOpts{
 		BatchingDelay:       time.Hour,
 		RetentionInterval:   "1 day",
 		MaintenanceInterval: "1 day",
 		PartitionInterval:   "1 hour",
 	}
-	pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
-	assert.NoError(t, err)
-	assert.NotNil(t, pgw)
 
-	assert.NoError(t, conn.ExpectationsWereMet())
+	t.Run("Success", func(*testing.T) {
+		conn, err := pgxmock.NewPool()
+		a.NoError(err)
+
+		conn.ExpectPing()
+		conn.ExpectQuery("SELECT extract").WithArgs("1 day", "1 day", "1 hour").WillReturnRows(
+			pgxmock.NewRows([]string{"col1", "col2", "col3"}).AddRow((24 * time.Hour).Seconds(), (24 * time.Hour).Seconds(), true),
+		)
+		conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
+		// Expect migration check (before ReadMetricSchemaType)
+		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("admin.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
+		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(MigrationsCount))
+		conn.ExpectQuery("SELECT schema_type").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
+		for _, m := range metrics.GetDefaultBuiltInMetrics() {
+			conn.ExpectExec("SELECT admin.ensure_dummy_metrics_table").WithArgs(m).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
+		}
+
+		pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
+		a.NoError(err)
+		a.NotNil(pgw)
+		a.NoError(conn.ExpectationsWereMet())
+	})
+
+	t.Run("InitFail", func(*testing.T) {
+		conn, err := pgxmock.NewPool()
+		a.NoError(err)
+
+		conn.ExpectPing().WillReturnError(assert.AnError)
+
+		pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
+		a.Error(err)
+		a.Nil(pgw)
+		a.NoError(conn.ExpectationsWereMet())
+	})
+
+	t.Run("MigrationCheckFail", func(*testing.T) {
+		conn, err := pgxmock.NewPool()
+		a.NoError(err)
+
+		conn.ExpectPing()
+		conn.ExpectQuery("SELECT extract").WithArgs("1 day", "1 day", "1 hour").WillReturnRows(
+			pgxmock.NewRows([]string{"col1", "col2", "col3"}).AddRow((24 * time.Hour).Seconds(), (24 * time.Hour).Seconds(), true),
+		)
+		conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
+		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("admin.migration").WillReturnError(assert.AnError)
+
+		pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
+		a.Error(err)
+		a.Nil(pgw)
+		a.NoError(conn.ExpectationsWereMet())
+	})
+
+	t.Run("MigrationNeeded", func(*testing.T) {
+		conn, err := pgxmock.NewPool()
+		a.NoError(err)
+
+		conn.ExpectPing()
+		conn.ExpectQuery("SELECT extract").WithArgs("1 day", "1 day", "1 hour").WillReturnRows(
+			pgxmock.NewRows([]string{"col1", "col2", "col3"}).AddRow((24 * time.Hour).Seconds(), (24 * time.Hour).Seconds(), true),
+		)
+		conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
+		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("admin.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
+		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(MigrationsCount - 1))
+
+		pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
+		a.ErrorIs(err, ErrNeedsMigration)
+		a.ErrorContains(err, "sink database schema is outdated")
+		a.ErrorContains(err, "pgwatch config upgrade")
+		a.Nil(pgw)
+		a.NoError(conn.ExpectationsWereMet())
+	})
+
+	t.Run("ReadMetricSchemaTypeFail", func(*testing.T) {
+		conn, err := pgxmock.NewPool()
+		a.NoError(err)
+
+		conn.ExpectPing()
+		conn.ExpectQuery("SELECT extract").WithArgs("1 day", "1 day", "1 hour").WillReturnRows(
+			pgxmock.NewRows([]string{"col1", "col2", "col3"}).AddRow((24 * time.Hour).Seconds(), (24 * time.Hour).Seconds(), true),
+		)
+		conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
+		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("admin.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
+		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(MigrationsCount))
+		conn.ExpectQuery("SELECT schema_type").WillReturnError(assert.AnError)
+
+		pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
+		a.Error(err)
+		a.Nil(pgw)
+		a.NoError(conn.ExpectationsWereMet())
+	})
+
+	t.Run("EnsureBuiltinMetricDummiesFail", func(*testing.T) {
+		conn, err := pgxmock.NewPool()
+		a.NoError(err)
+
+		conn.ExpectPing()
+		conn.ExpectQuery("SELECT extract").WithArgs("1 day", "1 day", "1 hour").WillReturnRows(
+			pgxmock.NewRows([]string{"col1", "col2", "col3"}).AddRow((24 * time.Hour).Seconds(), (24 * time.Hour).Seconds(), true),
+		)
+		conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
+		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("admin.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
+		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(MigrationsCount))
+		conn.ExpectQuery("SELECT schema_type").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
+		conn.ExpectExec("SELECT admin.ensure_dummy_metrics_table").WithArgs(pgxmock.AnyArg()).WillReturnError(assert.AnError)
+
+		pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
+		a.Error(err)
+		a.Nil(pgw)
+		a.NoError(conn.ExpectationsWereMet())
+	})
 }
 
 func TestSyncMetric(t *testing.T) {
