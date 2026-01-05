@@ -58,7 +58,7 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 		conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 		// Expect migration check (before ReadMetricSchemaType)
 		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("admin.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
-		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(ExpectedMigrationsCount))
+		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(MigrationsCount))
 		conn.ExpectQuery("SELECT schema_type").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 		for _, m := range metrics.GetDefaultBuiltInMetrics() {
 			conn.ExpectExec("SELECT admin.ensure_dummy_metrics_table").WithArgs(m).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
@@ -109,7 +109,7 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 		)
 		conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("admin.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
-		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(ExpectedMigrationsCount - 1))
+		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(MigrationsCount - 1))
 
 		pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
 		a.ErrorIs(err, ErrNeedsMigration)
@@ -129,7 +129,7 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 		)
 		conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("admin.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
-		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(ExpectedMigrationsCount))
+		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(MigrationsCount))
 		conn.ExpectQuery("SELECT schema_type").WillReturnError(assert.AnError)
 
 		pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
@@ -148,7 +148,7 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 		)
 		conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("admin.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
-		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(ExpectedMigrationsCount))
+		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(MigrationsCount))
 		conn.ExpectQuery("SELECT schema_type").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 		conn.ExpectExec("SELECT admin.ensure_dummy_metrics_table").WithArgs(pgxmock.AnyArg()).WillReturnError(assert.AnError)
 

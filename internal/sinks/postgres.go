@@ -566,8 +566,8 @@ func (pgw *PostgresWriter) NeedsMigration() (bool, error) {
 	return m.NeedUpgrade(pgw.ctx, pgw.sinkDb)
 }
 
-// ExpectedMigrationsCount is the expected number of migrations in admin.migration table
-const ExpectedMigrationsCount = 1
+// MigrationsCount is the total number of migrations in admin.migration table
+const MigrationsCount = 1
 
 // migrations holds function returning all upgrade migrations needed
 var migrations func() migrator.Option = func() migrator.Option {

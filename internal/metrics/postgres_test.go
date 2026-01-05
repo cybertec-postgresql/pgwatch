@@ -57,7 +57,7 @@ func TestNewPostgresMetricReaderWriterConn(t *testing.T) {
 		conn.ExpectCommit()
 		// Expect migration check
 		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("pgwatch.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
-		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(metrics.ExpectedMigrationsCount))
+		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(metrics.MigrationsCount))
 		conn.ExpectPing()
 
 		readerWriter, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
@@ -175,7 +175,7 @@ func TestNewPostgresMetricReaderWriterConn(t *testing.T) {
 	t.Run("MigrationNeeded", func(*testing.T) {
 		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("pgwatch.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
-		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(metrics.ExpectedMigrationsCount - 1))
+		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(metrics.MigrationsCount - 1))
 		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
 		a.Error(err)
 		a.ErrorContains(err, "config database schema is outdated")
@@ -193,7 +193,7 @@ func TestMetricsToPostgres(t *testing.T) {
 	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 	// Expect migration check
 	conn.ExpectQuery(`SELECT to_regclass`).WithArgs("pgwatch.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
-	conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(metrics.ExpectedMigrationsCount))
+	conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(metrics.MigrationsCount))
 	conn.ExpectPing()
 
 	readerWriter, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
