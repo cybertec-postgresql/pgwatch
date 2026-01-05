@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

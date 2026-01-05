@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	flags "github.com/jessevdk/go-flags"
 	"github.com/stretchr/testify/assert"
 )
