@@ -88,7 +88,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 		if r.Logging.LogLevel == "debug" {
 			r.PrintMemStats()
 		}
-		if err = r.LoadSources(); err != nil {
+		if err = r.LoadSources(ctx); err != nil {
 			logger.WithError(err).Error("could not refresh active sources, using last valid cache")
 		}
 		if err = r.LoadMetrics(); err != nil {
@@ -232,7 +232,7 @@ func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monit
 
 }
 
-func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRoleChange map[string]bool) {
+func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[string]bool) {
 	logger := r.logger
 	// loop over existing channels and stop workers if DB or metric removed from config
 	// or state change makes it uninteresting
@@ -241,13 +241,13 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 		var currentMetricConfig map[string]float64
 		var md *sources.SourceConn
 		var dbRemovedFromConfig bool
-		singleMetricDisabled := false
+		var metricRemovedFromPreset bool
 		splits := strings.Split(dbMetric, dbMetricJoinStr)
 		db := splits[0]
 		metric := splits[1]
 
-		_, wholeDbShutDownDueToRoleChange := hostsToShutDownDueToRoleChange[db]
-		if !wholeDbShutDownDueToRoleChange {
+		_, wholeDbShutDown := hostsToShutDown[db]
+		if !wholeDbShutDown {
 			md = r.monitoredSources.GetMonitoredDatabase(db)
 			if md == nil { // normal removing of DB from config
 				dbRemovedFromConfig = true
@@ -255,17 +255,22 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 			}
 		}
 
-		if !(wholeDbShutDownDueToRoleChange || dbRemovedFromConfig) { // maybe some single metric was disabled
+		// Detects metrics removed from a preset definition.
+		//
+		// If not using presets, a metric removed from configs will
+		// be detected earlier by `LoadSources()` as configs change that 
+		// triggers a restart and get passed in `hostsToShutDown`.
+		if !(wholeDbShutDown || dbRemovedFromConfig) {
 			if md.IsInRecovery && len(md.MetricsStandby) > 0 {
 				currentMetricConfig = md.MetricsStandby
 			} else {
 				currentMetricConfig = md.Metrics
 			}
 			interval, isMetricActive := currentMetricConfig[metric]
-			singleMetricDisabled = !isMetricActive || interval <= 0
+			metricRemovedFromPreset = !isMetricActive || interval <= 0
 		}
 
-		if ctx.Err() != nil || wholeDbShutDownDueToRoleChange || dbRemovedFromConfig || singleMetricDisabled {
+		if ctx.Err() != nil || wholeDbShutDown || dbRemovedFromConfig || metricRemovedFromPreset {
 			logger.WithField("source", db).WithField("metric", metric).Info("stopping gatherer...")
 			cancelFunc()
 			delete(r.cancelFuncs, dbMetric)
@@ -276,7 +281,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDownDueToRol
 	}
 
 	// Destroy conn pools and metric writers
-	r.CloseResourcesForRemovedMonitoredDBs(hostsToShutDownDueToRoleChange)
+	r.CloseResourcesForRemovedMonitoredDBs(hostsToShutDown)
 }
 
 func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceConn, metricName string) {
@@ -379,7 +384,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 }
 
 // LoadSources loads sources from the reader
-func (r *Reaper) LoadSources() (err error) {
+func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 	if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
 		r.logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", r.Metrics.EmergencyPauseTriggerfile)
 		r.monitoredSources = make(sources.SourceConns, 0)
@@ -408,6 +413,10 @@ func (r *Reaper) LoadSources() (err error) {
 			newSrcs[i] = md
 			continue
 		}
+		// Source configs changed, stop all running gatherers to trigger a restart
+		// TODO: Optimize this for single metric addition/deletion/interval-change cases to not do a full restart
+		r.logger.WithField("source", md.Name).Info("Source configs changed, restarting all gatherers...")
+		r.ShutdownOldWorkers(ctx, map[string]bool{md.Name: true})
 	}
 	r.monitoredSources = newSrcs
 	r.logger.WithField("sources", len(r.monitoredSources)).Info("sources refreshed")
