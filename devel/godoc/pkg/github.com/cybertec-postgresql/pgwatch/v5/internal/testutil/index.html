@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+
+  <title>testutil - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/devel/godoc/lib/godoc/style.css">
+
+<script>window.initFuncs = [];</script>
+<script src="/devel/godoc/lib/godoc/jquery.js" defer></script>
+
+
+
+
+<script>var goVersion = "go1.25.5";</script>
+<script src="/devel/godoc/lib/godoc/godocs.js" defer></script>
+
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Package testutil
+    <span class="text-muted"></span>
+  </h1>
+
+
+
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+
+	<script>
+	document.ANALYSIS_DATA = null;
+	document.CALLGRAPH = null;
+	</script>
+
+	
+		
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="#pkg-index" class="indexLink">Index</a></dd>
+			
+			
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="pkg-overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+				<p>Package testutil provides testing utilities for pgwatch tests.
+<p>This package contains mock implementations, test setup helpers, and constants
+used across test files. It should only be imported by test files (*_test.go)
+and will not be included in production binaries.
+<p>The package includes:
+<ul>
+<li>Mock gRPC receivers for testing sink implementations
+<li>PostgreSQL container setup for integration tests
+<li>gRPC server setup with TLS support for testing
+<li>Test certificates and keys for TLS testing
+</ul>
+
+				
+			</div>
+		</div>
+
+		<div id="pkg-index" class="toggleVisible">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
+		</div>
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
+
+		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
+			<div id="manual-nav">
+			<dl>
+			
+				<dd><a href="#pkg-constants">Constants</a></dd>
+			
+			
+				<dd><a href="#pkg-variables">Variables</a></dd>
+			
+			
+				
+				<dd><a href="#AuthInterceptor">func AuthInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error)</a></dd>
+			
+				
+				<dd><a href="#LoadServerTLSCredentials">func LoadServerTLSCredentials() (credentials.TransportCredentials, error)</a></dd>
+			
+				
+				<dd><a href="#SetupEtcdContainer">func SetupEtcdContainer() (*etcd.EtcdContainer, func(), error)</a></dd>
+			
+				
+				<dd><a href="#SetupPostgresContainer">func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error)</a></dd>
+			
+				
+				<dd><a href="#SetupPostgresContainerWithConfig">func SetupPostgresContainerWithConfig(configPath string) (*postgres.PostgresContainer, func(), error)</a></dd>
+			
+				
+				<dd><a href="#SetupPostgresContainerWithInitScripts">func SetupPostgresContainerWithInitScripts(scripts ...string) (*postgres.PostgresContainer, func(), error)</a></dd>
+			
+				
+				<dd><a href="#SetupRPCServers">func SetupRPCServers() (func(), error)</a></dd>
+			
+			
+				
+				<dd><a href="#MockMetricsReaderWriter">type MockMetricsReaderWriter</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MockMetricsReaderWriter.CreateMetric">func (m *MockMetricsReaderWriter) CreateMetric(name string, metric metrics.Metric) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MockMetricsReaderWriter.CreatePreset">func (m *MockMetricsReaderWriter) CreatePreset(name string, preset metrics.Preset) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MockMetricsReaderWriter.DeleteMetric">func (m *MockMetricsReaderWriter) DeleteMetric(name string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MockMetricsReaderWriter.DeletePreset">func (m *MockMetricsReaderWriter) DeletePreset(name string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MockMetricsReaderWriter.GetMetrics">func (m *MockMetricsReaderWriter) GetMetrics() (*metrics.Metrics, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MockMetricsReaderWriter.UpdateMetric">func (m *MockMetricsReaderWriter) UpdateMetric(name string, metric metrics.Metric) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MockMetricsReaderWriter.UpdatePreset">func (m *MockMetricsReaderWriter) UpdatePreset(name string, preset metrics.Preset) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MockMetricsReaderWriter.WriteMetrics">func (m *MockMetricsReaderWriter) WriteMetrics(metricDefs *metrics.Metrics) error</a></dd>
+				
+			
+				
+				<dd><a href="#MockSourcesReaderWriter">type MockSourcesReaderWriter</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MockSourcesReaderWriter.CreateSource">func (m *MockSourcesReaderWriter) CreateSource(md sources.Source) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MockSourcesReaderWriter.DeleteSource">func (m *MockSourcesReaderWriter) DeleteSource(name string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MockSourcesReaderWriter.GetSources">func (m *MockSourcesReaderWriter) GetSources() (sources.Sources, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MockSourcesReaderWriter.UpdateSource">func (m *MockSourcesReaderWriter) UpdateSource(md sources.Source) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MockSourcesReaderWriter.WriteSources">func (m *MockSourcesReaderWriter) WriteSources(srcs sources.Sources) error</a></dd>
+				
+			
+				
+				<dd><a href="#Receiver">type Receiver</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Receiver.DefineMetrics">func (receiver *Receiver) DefineMetrics(_ context.Context, metricsStruct *structpb.Struct) (*pb.Reply, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Receiver.SyncMetric">func (receiver *Receiver) SyncMetric(_ context.Context, syncReq *pb.SyncReq) (*pb.Reply, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Receiver.UpdateMeasurements">func (receiver *Receiver) UpdateMeasurements(_ context.Context, msg *pb.MeasurementEnvelope) (*pb.Reply, error)</a></dd>
+				
+			
+			
+			</dl>
+			</div><!-- #manual-nav -->
+
+		
+
+		
+			<h3>Package files</h3>
+			<p>
+			<span style="font-size:90%">
+			
+				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/doc.go.html">doc.go</a>
+			
+				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html">mocks.go</a>
+			
+				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/setup.go.html">setup.go</a>
+			
+				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/types.go.html">types.go</a>
+			
+			</span>
+			</p>
+		
+		</div><!-- .expanded -->
+		</div><!-- #pkg-index -->
+
+		
+
+		
+			<h2 id="pkg-constants">Constants</h2>
+			
+				
+				<pre>const <span id="EtcdImage">EtcdImage</span> = &#34;gcr.io/etcd-development/etcd:&#34; + <a href="#EtcdVersion">EtcdVersion</a></pre>
+			
+				
+				<pre>const <span id="EtcdVersion">EtcdVersion</span> = &#34;v3.5.14&#34;</pre>
+			
+				
+				<pre>const <span id="MockDatabase">MockDatabase</span> = &#34;mydatabase&#34;</pre>
+			
+				
+				<pre>const <span id="PlainConnStr">PlainConnStr</span> = &#34;grpc://localhost:6060&#34;</pre>
+			
+				
+				<pre>const <span id="PlainServerAddress">PlainServerAddress</span> = &#34;localhost:6060&#34;</pre>
+			
+				
+				<pre>const <span id="PostgresImage">PostgresImage</span> = &#34;docker.io/postgres:18-alpine&#34;</pre>
+			
+				
+				<pre>const <span id="TLSServerAddress">TLSServerAddress</span> = &#34;localhost:5050&#34;</pre>
+			
+		
+		
+			<h2 id="pkg-variables">Variables</h2>
+			
+				
+				<pre>var <span id="CA">CA</span> = `-----BEGIN CERTIFICATE-----
+MIIDPzCCAiegAwIBAgIUeENQlQFVH5h7HszFJLLWo+KCQwQwDQYJKoZIhvcNAQEL
+BQAwEjEQMA4GA1UEAwwHcGd3YXRjaDAeFw0yNTA2MTEwNTI1MDJaFw0zNTA2MDkw
+NTI1MDJaMBIxEDAOBgNVBAMMB3Bnd2F0Y2gwggEiMA0GCSqGSIb3DQEBAQUAA4IB
+DwAwggEKAoIBAQDtTW+kyvb3Y5OaYlriKp8HkHt95lfOgxQNZQfiREfEyLWU59bx
+0ZIvFmejK38Qc0dlca9d+5tEkxotsbggJflLljfmnzhxsuZpr8SjmDd1m8XSo0IA
+oDlVbKO6SZMlsyq3QrAOYAjG1LTPlATqvGAOs9NfFonjwoPXCjIwSfa+wexe5dRD
+gJ114AKXw3ck5ZQ4Pw+w5ylgNSfVl548WY9DSOA+6HlZ17MYA1qmMOTwKae5fmsc
+xlRPoIV3EJrKas7VlbebDOXOSXDV+9aMW6ox1xanUUDUgabzkzntfmuOttaIX1g1
+nSMuHa7EEQF7lxgdg9OU8i/jygdlGcgBUYjtAgMBAAGjgYwwgYkwDAYDVR0TBAUw
+AwEB/zAdBgNVHQ4EFgQUKGJs7OXINd2WL6X2meH90eINoJQwTQYDVR0jBEYwRIAU
+KGJs7OXINd2WL6X2meH90eINoJShFqQUMBIxEDAOBgNVBAMMB3Bnd2F0Y2iCFHhD
+UJUBVR+Yex7MxSSy1qPigkMEMAsGA1UdDwQEAwIBBjANBgkqhkiG9w0BAQsFAAOC
+AQEABdY/4rsgMu+sCqEdacNzHqAz9X1ew37y1UONngm/7LPqbQrzzg/fBvOOJLcd
+IzMJPtpdwokPYOW29jw/hY4R1RWr8012zc8Z0GsuDR7I/Z2Hww7tzYhf1H5mjy1d
+eQDhHNpsSb5pHLoPft5O0sT/0WqAlKWPb2KmSoAio8jE2BSUTK3ZgE0yJIikONon
+HCWOlNCWx+RsyPoRnQqbpVa+SmGBqpiyHchpZ8sFPe+pgPu+8u921lJ0PRvmfp7L
+4YZIaM8LQAV8FWk2VLXmsqYUJYYLAXCG6Unkx1oIOtq1AyAoXHCl/3hKbCeXIrgA
+Cs5qN+ZUHRdKff5gFpraKtHKkw==
+-----END CERTIFICATE-----`</pre>
+			
+				
+				<pre>var <span id="CAFile">CAFile</span> = &#34;ca.crt&#34;</pre>
+			
+				
+				<pre>var <span id="Cert">Cert</span> = []<a href="https://pkg.go.dev/builtin/#byte">byte</a>(`-----BEGIN CERTIFICATE-----
+MIIDZTCCAk2gAwIBAgIQeTQ+4M7xwydf7MvrDnDdsTANBgkqhkiG9w0BAQsFADAS
+MRAwDgYDVQQDDAdwZ3dhdGNoMB4XDTI1MDYxMTA1MjUxOFoXDTI3MDkxNDA1MjUx
+OFowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+MIIBCgKCAQEA69Ja9K4ZHoIdBK+34YE1+0a/sB7YKZJb3+gYFahvszS37Oa6h/0+
+d9TCY58bMpPQSQQdvhG/s1H6Yc4BWTfH/ssRmDhKciMmdfMj/lr8TytglIUPPSzb
+PKy2t9idpk30PwiV1UlijjlFZxoxcO3Aia8mmrDJzkoHsQL96PhDT25YRinnflg8
+vVthasVqGIHNJIXORyz5lgkBW3NeeZPEUSxbvmo63AB1lFJZMz4xlpdN/LVsEOwg
+FrrYzb4mpGkAcTenkOfU4W7m7bxpsusW2JDm2O8bsx+v3cazOqJpCLMHP3Vqnzcl
+loYmeQauBep6H0wspid0YzMVza75pDx7rQIDAQABo4G0MIGxMAkGA1UdEwQCMAAw
+HQYDVR0OBBYEFFcDjPaZMelQIueauIRfo4L4wMehME0GA1UdIwRGMESAFChibOzl
+yDXdli+l9pnh/dHiDaCUoRakFDASMRAwDgYDVQQDDAdwZ3dhdGNoghR4Q1CVAVUf
+mHsezMUkstaj4oJDBDATBgNVHSUEDDAKBggrBgEFBQcDATALBgNVHQ8EBAMCBaAw
+FAYDVR0RBA0wC4IJbG9jYWxob3N0MA0GCSqGSIb3DQEBCwUAA4IBAQCM6tYNxoP2
+Gbp3aAPjoA3+U1gWHPHXOOgyhaQw4jJ7xK1MUlrFgSG6cJgO7IRSCIZp7GDZmIjo
++PqWRgMNK2pFCUCqjrAV6NwMjApLzDdSza9xKb3nWXMKnV6j3tNUFUCS68CHAM7Q
+E1iuepjIy2VReFfjJoPuhp9OQBWobTo3H9F74Sj+Guu0lDcHWbwn5Y92pnKk0vOh
+v1AJ6vwdMpd6DAPlwmY3OcZI2FGYyoPP2CnzHIGP5RoVFp1zkJzoFvnOHnsRMByz
+HpGKqYFQVJSAOMCtL2OMiP8MxtiCsdz6j/e3/VOUQuYoM6fXFhZO64xekZdlh/ZR
+glsaMXQPWvHX
+-----END CERTIFICATE-----`)</pre>
+			
+				
+				<pre>var <span id="PrivateKey">PrivateKey</span> = []<a href="https://pkg.go.dev/builtin/#byte">byte</a>(`-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDr0lr0rhkegh0E
+r7fhgTX7Rr+wHtgpklvf6BgVqG+zNLfs5rqH/T531MJjnxsyk9BJBB2+Eb+zUfph
+zgFZN8f+yxGYOEpyIyZ18yP+WvxPK2CUhQ89LNs8rLa32J2mTfQ/CJXVSWKOOUVn
+GjFw7cCJryaasMnOSgexAv3o+ENPblhGKed+WDy9W2FqxWoYgc0khc5HLPmWCQFb
+c155k8RRLFu+ajrcAHWUUlkzPjGWl038tWwQ7CAWutjNviakaQBxN6eQ59Thbubt
+vGmy6xbYkObY7xuzH6/dxrM6omkIswc/dWqfNyWWhiZ5Bq4F6nofTCymJ3RjMxXN
+rvmkPHutAgMBAAECggEAAc8djQJ35VzEqbhKXhO+bQTMLCb0bA84HrXaV3IxFywY
+nBviAvCNpeAvNJHwJLlvD9xU+RQMRy0iEVWB+6P6qAj5Q9Rst8buwNliZY1foaDY
+zxLdPNAnB2ZgyXTDMtcmwEQJ2DbFp4cnceTIy8+7GiNKlcW06pz1RaWa+opLA+U2
+STIxvTEAvqsyE/0KHbeEltwZxeZ83BsX8vhpyrCVvniFJnIMvyYG7iTzLWuTK98Z
+R3Baqim8CdWbh2W0OOfphAVlTjG6c0r6FqJIqsds9wf2FfuhgUcNQUXke+uuWbPQ
+36RsytymUgqye3DkxrC4dEi27S3cjRh5wK53gqET+QKBgQD8zM5wiindvDRSx+66
+ppbl6RJQcL7uv1os9TeNvfqwnhC75y2k4+2s8kiG2ik7aJiRg4dkj3rVJ4S6wQ67
+sjRVo5z68J1twP6PqvpJyx/G5Fmy8HPJUmy9FM1AdnYCWGX3bh3qNTkxEVn78yFZ
+zfn9CczDAmGErAXPRRDNQQy8ZQKBgQDuzofs5EXTpqw25XveCJKHT3fAis7pkNGu
+jwopiR9peKuJ9nNarHH2wWpHRn6zgHmhmAu7oEzo4OEmk4Elo5ffqqRPZZaU8aEo
+Ow7cRvedoP/EjJaR8m2uQnh9bWXuEVibfKmkrPswYYUCWmwoALFmzd6Gl0dIdyGk
+JXeA/jFZqQKBgQDhFbn5mgsM0rYDvuBgcFOLAaq81KYsDVRNE0kTe0PqXdKoe324
+gvjsNA0/hJ+Rtd+iMGosr1O+1iDn510m4dSXK8Zp6DNDtcLySFnxulngzRDQsidl
+6W3ILO1TqCYKkIq5c+JO1nTFq51jJ2dafntHQaJ/P290oXXKxsPe/TxJwQKBgD6g
+dS8f8lv+Mt22sxRYhSztH0ekX30LWKIBqzWXW2CKn9nvgvL9lGmU8a09hI7Im51Q
+RYtwD5tnFkTKnCzlyTeEBdE4oBPxhkUJr+z+w4NYLJs8D2S5AiCYGAc0wG19qRIl
+0Et6femDOaGTWxfmjp+aT8hWNgCAFZd5p+xxPTn5AoGBAIeUbCRTe0KcVaKw/Lcj
+KHjTih9x9d3f2EbnYbziBZz6fZfWdDIBfA6CbIHil21hNvjDm9Yci5b6FgtUzScb
+j3vPa99sMGc2xie07Cd7LTvZeWIVXeW1Dxzex89CqoJzmONrco1ZKQ+xXbPoZCBj
+VwAI/SWm7NlxgF6Sr5CIo2KR
+-----END PRIVATE KEY-----`)</pre>
+			
+				
+				<pre>var <span id="TLSConnStr">TLSConnStr</span> = <a href="https://pkg.go.dev/fmt/">fmt</a>.<a href="https://pkg.go.dev/fmt/#Sprintf">Sprintf</a>(&#34;grpc://localhost:5050?sslrootca=%s&#34;, <a href="#CAFile">CAFile</a>)</pre>
+			
+				
+				<pre>var <span id="TestContext">TestContext</span> = <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/#WithLogger">WithLogger</a>(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Background">Background</a>(), <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/#NewNoopLogger">NewNoopLogger</a>())</pre>
+			
+		
+		
+			
+			
+			<h2 id="AuthInterceptor">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/setup.go.html#L102">AuthInterceptor</a>
+				<a class="permalink" href="#AuthInterceptor">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func AuthInterceptor(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, req <a href="https://pkg.go.dev/builtin/#any">any</a>, _ *<a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#UnaryServerInfo">UnaryServerInfo</a>, handler <a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#UnaryHandler">UnaryHandler</a>) (<a href="https://pkg.go.dev/builtin/#any">any</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="LoadServerTLSCredentials">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/setup.go.html#L90">LoadServerTLSCredentials</a>
+				<a class="permalink" href="#LoadServerTLSCredentials">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func LoadServerTLSCredentials() (<a href="https://pkg.go.dev/google.golang.org/grpc/credentials/">credentials</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/credentials/#TransportCredentials">TransportCredentials</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="SetupEtcdContainer">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/setup.go.html#L75">SetupEtcdContainer</a>
+				<a class="permalink" href="#SetupEtcdContainer">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func SetupEtcdContainer() (*<a href="https://pkg.go.dev/github.com/testcontainers/testcontainers-go/modules/etcd/">etcd</a>.<a href="https://pkg.go.dev/github.com/testcontainers/testcontainers-go/modules/etcd/#EtcdContainer">EtcdContainer</a>, func(), <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="SetupPostgresContainer">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/setup.go.html#L22">SetupPostgresContainer</a>
+				<a class="permalink" href="#SetupPostgresContainer">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func SetupPostgresContainer() (*<a href="https://pkg.go.dev/github.com/testcontainers/testcontainers-go/modules/postgres/">postgres</a>.<a href="https://pkg.go.dev/github.com/testcontainers/testcontainers-go/modules/postgres/#PostgresContainer">PostgresContainer</a>, func(), <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="SetupPostgresContainerWithConfig">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/setup.go.html#L41">SetupPostgresContainerWithConfig</a>
+				<a class="permalink" href="#SetupPostgresContainerWithConfig">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func SetupPostgresContainerWithConfig(configPath <a href="https://pkg.go.dev/builtin/#string">string</a>) (*<a href="https://pkg.go.dev/github.com/testcontainers/testcontainers-go/modules/postgres/">postgres</a>.<a href="https://pkg.go.dev/github.com/testcontainers/testcontainers-go/modules/postgres/#PostgresContainer">PostgresContainer</a>, func(), <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>Creates a PostgreSQL container with CSV logging enabled.
+This is useful for testing log parsing functionality with server_log_event_counts metric.
+
+			
+			
+
+		
+			
+			
+			<h2 id="SetupPostgresContainerWithInitScripts">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/setup.go.html#L57">SetupPostgresContainerWithInitScripts</a>
+				<a class="permalink" href="#SetupPostgresContainerWithInitScripts">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func SetupPostgresContainerWithInitScripts(scripts ...<a href="https://pkg.go.dev/builtin/#string">string</a>) (*<a href="https://pkg.go.dev/github.com/testcontainers/testcontainers-go/modules/postgres/">postgres</a>.<a href="https://pkg.go.dev/github.com/testcontainers/testcontainers-go/modules/postgres/#PostgresContainer">PostgresContainer</a>, func(), <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="SetupRPCServers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/setup.go.html#L115">SetupRPCServers</a>
+				<a class="permalink" href="#SetupRPCServers">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func SetupRPCServers() (func(), <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+		
+			
+			
+			<h2 id="MockMetricsReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L49">MockMetricsReaderWriter</a>
+				<a class="permalink" href="#MockMetricsReaderWriter">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type MockMetricsReaderWriter struct {
+<span id="MockMetricsReaderWriter.GetMetricsFunc"></span>    GetMetricsFunc   func() (*<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metrics">Metrics</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+<span id="MockMetricsReaderWriter.UpdateMetricFunc"></span>    UpdateMetricFunc func(name <a href="https://pkg.go.dev/builtin/#string">string</a>, m <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+<span id="MockMetricsReaderWriter.CreateMetricFunc"></span>    CreateMetricFunc func(name <a href="https://pkg.go.dev/builtin/#string">string</a>, m <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+<span id="MockMetricsReaderWriter.DeleteMetricFunc"></span>    DeleteMetricFunc func(name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+<span id="MockMetricsReaderWriter.DeletePresetFunc"></span>    DeletePresetFunc func(name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+<span id="MockMetricsReaderWriter.UpdatePresetFunc"></span>    UpdatePresetFunc func(name <a href="https://pkg.go.dev/builtin/#string">string</a>, preset <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Preset">Preset</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+<span id="MockMetricsReaderWriter.CreatePresetFunc"></span>    CreatePresetFunc func(name <a href="https://pkg.go.dev/builtin/#string">string</a>, preset <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Preset">Preset</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+<span id="MockMetricsReaderWriter.WriteMetricsFunc"></span>    WriteMetricsFunc func(metricDefs *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metrics">Metrics</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="MockMetricsReaderWriter.CreateMetric">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L66">CreateMetric</a>
+					<a class="permalink" href="#MockMetricsReaderWriter.CreateMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m *<a href="#MockMetricsReaderWriter">MockMetricsReaderWriter</a>) CreateMetric(name <a href="https://pkg.go.dev/builtin/#string">string</a>, metric <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MockMetricsReaderWriter.CreatePreset">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L78">CreatePreset</a>
+					<a class="permalink" href="#MockMetricsReaderWriter.CreatePreset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m *<a href="#MockMetricsReaderWriter">MockMetricsReaderWriter</a>) CreatePreset(name <a href="https://pkg.go.dev/builtin/#string">string</a>, preset <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Preset">Preset</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MockMetricsReaderWriter.DeleteMetric">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L69">DeleteMetric</a>
+					<a class="permalink" href="#MockMetricsReaderWriter.DeleteMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m *<a href="#MockMetricsReaderWriter">MockMetricsReaderWriter</a>) DeleteMetric(name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MockMetricsReaderWriter.DeletePreset">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L72">DeletePreset</a>
+					<a class="permalink" href="#MockMetricsReaderWriter.DeletePreset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m *<a href="#MockMetricsReaderWriter">MockMetricsReaderWriter</a>) DeletePreset(name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MockMetricsReaderWriter.GetMetrics">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L60">GetMetrics</a>
+					<a class="permalink" href="#MockMetricsReaderWriter.GetMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m *<a href="#MockMetricsReaderWriter">MockMetricsReaderWriter</a>) GetMetrics() (*<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metrics">Metrics</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MockMetricsReaderWriter.UpdateMetric">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L63">UpdateMetric</a>
+					<a class="permalink" href="#MockMetricsReaderWriter.UpdateMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m *<a href="#MockMetricsReaderWriter">MockMetricsReaderWriter</a>) UpdateMetric(name <a href="https://pkg.go.dev/builtin/#string">string</a>, metric <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MockMetricsReaderWriter.UpdatePreset">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L75">UpdatePreset</a>
+					<a class="permalink" href="#MockMetricsReaderWriter.UpdatePreset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m *<a href="#MockMetricsReaderWriter">MockMetricsReaderWriter</a>) UpdatePreset(name <a href="https://pkg.go.dev/builtin/#string">string</a>, preset <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Preset">Preset</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MockMetricsReaderWriter.WriteMetrics">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L81">WriteMetrics</a>
+					<a class="permalink" href="#MockMetricsReaderWriter.WriteMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m *<a href="#MockMetricsReaderWriter">MockMetricsReaderWriter</a>) WriteMetrics(metricDefs *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metrics">Metrics</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="MockSourcesReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L85">MockSourcesReaderWriter</a>
+				<a class="permalink" href="#MockSourcesReaderWriter">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type MockSourcesReaderWriter struct {
+<span id="MockSourcesReaderWriter.GetSourcesFunc"></span>    GetSourcesFunc   func() (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#Sources">Sources</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+<span id="MockSourcesReaderWriter.UpdateSourceFunc"></span>    UpdateSourceFunc func(md <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#Source">Source</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+<span id="MockSourcesReaderWriter.CreateSourceFunc"></span>    CreateSourceFunc func(md <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#Source">Source</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+<span id="MockSourcesReaderWriter.DeleteSourceFunc"></span>    DeleteSourceFunc func(name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+<span id="MockSourcesReaderWriter.WriteSourcesFunc"></span>    WriteSourcesFunc func(<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#Sources">Sources</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="MockSourcesReaderWriter.CreateSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L99">CreateSource</a>
+					<a class="permalink" href="#MockSourcesReaderWriter.CreateSource">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m *<a href="#MockSourcesReaderWriter">MockSourcesReaderWriter</a>) CreateSource(md <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#Source">Source</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MockSourcesReaderWriter.DeleteSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L102">DeleteSource</a>
+					<a class="permalink" href="#MockSourcesReaderWriter.DeleteSource">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m *<a href="#MockSourcesReaderWriter">MockSourcesReaderWriter</a>) DeleteSource(name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MockSourcesReaderWriter.GetSources">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L93">GetSources</a>
+					<a class="permalink" href="#MockSourcesReaderWriter.GetSources">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m *<a href="#MockSourcesReaderWriter">MockSourcesReaderWriter</a>) GetSources() (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#Sources">Sources</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MockSourcesReaderWriter.UpdateSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L96">UpdateSource</a>
+					<a class="permalink" href="#MockSourcesReaderWriter.UpdateSource">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m *<a href="#MockSourcesReaderWriter">MockSourcesReaderWriter</a>) UpdateSource(md <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#Source">Source</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MockSourcesReaderWriter.WriteSources">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L105">WriteSources</a>
+					<a class="permalink" href="#MockSourcesReaderWriter.WriteSources">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (m *<a href="#MockSourcesReaderWriter">MockSourcesReaderWriter</a>) WriteSources(srcs <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#Sources">Sources</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="Receiver">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L13">Receiver</a>
+				<a class="permalink" href="#Receiver">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Receiver struct {
+    <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/">pb</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/#UnimplementedReceiverServer">UnimplementedReceiverServer</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="Receiver.DefineMetrics">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L37">DefineMetrics</a>
+					<a class="permalink" href="#Receiver.DefineMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (receiver *<a href="#Receiver">Receiver</a>) DefineMetrics(_ <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, metricsStruct *<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/">structpb</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/#Struct">Struct</a>) (*<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/">pb</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Receiver.SyncMetric">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L27">SyncMetric</a>
+					<a class="permalink" href="#Receiver.SyncMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (receiver *<a href="#Receiver">Receiver</a>) SyncMetric(_ <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, syncReq *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/">pb</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/#SyncReq">SyncReq</a>) (*<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/">pb</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Receiver.UpdateMeasurements">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L17">UpdateMeasurements</a>
+					<a class="permalink" href="#Receiver.UpdateMeasurements">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (receiver *<a href="#Receiver">Receiver</a>) UpdateMeasurements(_ <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, msg *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/">pb</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/#MeasurementEnvelope">MeasurementEnvelope</a>) (*<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/">pb</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+		
+	
+
+	
+
+
+
+
+
+
+
+<div id="footer">
+Build version go1.25.5.<br>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+</body>
+</html>

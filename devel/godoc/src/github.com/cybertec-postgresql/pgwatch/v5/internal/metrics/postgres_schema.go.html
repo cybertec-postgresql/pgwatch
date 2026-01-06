@@ -1,0 +1,235 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
+
+  <title>src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/postgres_schema.go - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/devel/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/devel/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.25.5";</script>
+<script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Source file
+    <a href="/devel/godoc/src">src</a>/<a href="/devel/godoc/src/github.com">github.com</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5">v5</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal">internal</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics">metrics</a>/<span class="text-muted">postgres_schema.go</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics">github.com/cybertec-postgresql/pgwatch/v5/internal/metrics</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<script type="text/javascript">document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1  </span>package metrics
+<span id="L2" class="ln">     2  </span>
+<span id="L3" class="ln">     3  </span>import (
+<span id="L4" class="ln">     4  </span>	&#34;context&#34;
+<span id="L5" class="ln">     5  </span>	_ &#34;embed&#34;
+<span id="L6" class="ln">     6  </span>	&#34;fmt&#34;
+<span id="L7" class="ln">     7  </span>
+<span id="L8" class="ln">     8  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/db&#34;
+<span id="L9" class="ln">     9  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/log&#34;
+<span id="L10" class="ln">    10  </span>	migrator &#34;github.com/cybertec-postgresql/pgx-migrator&#34;
+<span id="L11" class="ln">    11  </span>	&#34;github.com/jackc/pgx/v5&#34;
+<span id="L12" class="ln">    12  </span>)
+<span id="L13" class="ln">    13  </span>
+<span id="L14" class="ln">    14  </span><span class="comment">//go:embed postgres_schema.sql</span>
+<span id="L15" class="ln">    15  </span>var sqlConfigSchema string
+<span id="L16" class="ln">    16  </span>
+<span id="L17" class="ln">    17  </span>var initSchema = func(ctx context.Context, conn db.PgxIface) (err error) {
+<span id="L18" class="ln">    18  </span>	var exists bool
+<span id="L19" class="ln">    19  </span>	if exists, err = db.DoesSchemaExist(ctx, conn, &#34;pgwatch&#34;); err != nil || exists {
+<span id="L20" class="ln">    20  </span>		return err
+<span id="L21" class="ln">    21  </span>	}
+<span id="L22" class="ln">    22  </span>	tx, err := conn.Begin(ctx)
+<span id="L23" class="ln">    23  </span>	if err != nil {
+<span id="L24" class="ln">    24  </span>		return err
+<span id="L25" class="ln">    25  </span>	}
+<span id="L26" class="ln">    26  </span>	defer func() { _ = tx.Rollback(ctx) }()
+<span id="L27" class="ln">    27  </span>	if _, err := tx.Exec(ctx, sqlConfigSchema); err != nil {
+<span id="L28" class="ln">    28  </span>		return err
+<span id="L29" class="ln">    29  </span>	}
+<span id="L30" class="ln">    30  </span>	if err := writeMetricsToPostgres(ctx, tx, GetDefaultMetrics()); err != nil {
+<span id="L31" class="ln">    31  </span>		return err
+<span id="L32" class="ln">    32  </span>	}
+<span id="L33" class="ln">    33  </span>	if err := tx.Commit(ctx); err != nil {
+<span id="L34" class="ln">    34  </span>		return err
+<span id="L35" class="ln">    35  </span>	}
+<span id="L36" class="ln">    36  </span>	return nil
+<span id="L37" class="ln">    37  </span>}
+<span id="L38" class="ln">    38  </span>
+<span id="L39" class="ln">    39  </span>var initMigrator = func(dmrw *dbMetricReaderWriter) (*migrator.Migrator, error) {
+<span id="L40" class="ln">    40  </span>	return migrator.New(
+<span id="L41" class="ln">    41  </span>		migrator.TableName(&#34;pgwatch.migration&#34;),
+<span id="L42" class="ln">    42  </span>		migrator.SetNotice(func(s string) {
+<span id="L43" class="ln">    43  </span>			log.GetLogger(dmrw.ctx).Info(s)
+<span id="L44" class="ln">    44  </span>		}),
+<span id="L45" class="ln">    45  </span>		migrations(),
+<span id="L46" class="ln">    46  </span>	)
+<span id="L47" class="ln">    47  </span>}
+<span id="L48" class="ln">    48  </span>
+<span id="L49" class="ln">    49  </span><span class="comment">// MigrateDb upgrades database with all migrations</span>
+<span id="L50" class="ln">    50  </span>func (dmrw *dbMetricReaderWriter) Migrate() error {
+<span id="L51" class="ln">    51  </span>	m, err := initMigrator(dmrw)
+<span id="L52" class="ln">    52  </span>	if err != nil {
+<span id="L53" class="ln">    53  </span>		return fmt.Errorf(&#34;cannot initialize migration: %w&#34;, err)
+<span id="L54" class="ln">    54  </span>	}
+<span id="L55" class="ln">    55  </span>	return m.Migrate(dmrw.ctx, dmrw.configDb)
+<span id="L56" class="ln">    56  </span>}
+<span id="L57" class="ln">    57  </span>
+<span id="L58" class="ln">    58  </span><span class="comment">// NeedsMigration checks if database needs migration</span>
+<span id="L59" class="ln">    59  </span>func (dmrw *dbMetricReaderWriter) NeedsMigration() (bool, error) {
+<span id="L60" class="ln">    60  </span>	m, err := initMigrator(dmrw)
+<span id="L61" class="ln">    61  </span>	if err != nil {
+<span id="L62" class="ln">    62  </span>		return false, err
+<span id="L63" class="ln">    63  </span>	}
+<span id="L64" class="ln">    64  </span>	return m.NeedUpgrade(dmrw.ctx, dmrw.configDb)
+<span id="L65" class="ln">    65  </span>}
+<span id="L66" class="ln">    66  </span>
+<span id="L67" class="ln">    67  </span><span class="comment">// MigrationsCount is the total number of migrations in pgwatch.migration table</span>
+<span id="L68" class="ln">    68  </span>const MigrationsCount = 2
+<span id="L69" class="ln">    69  </span>
+<span id="L70" class="ln">    70  </span><span class="comment">// migrations holds function returning all updgrade migrations needed</span>
+<span id="L71" class="ln">    71  </span>var migrations func() migrator.Option = func() migrator.Option {
+<span id="L72" class="ln">    72  </span>	return migrator.Migrations(
+<span id="L73" class="ln">    73  </span>		&amp;migrator.Migration{
+<span id="L74" class="ln">    74  </span>			Name: &#34;00179 Apply metrics migrations for v3&#34;,
+<span id="L75" class="ln">    75  </span>			Func: func(context.Context, pgx.Tx) error {
+<span id="L76" class="ln">    76  </span>				<span class="comment">// &#34;migrations&#34; table will be created automatically</span>
+<span id="L77" class="ln">    77  </span>				return nil
+<span id="L78" class="ln">    78  </span>			},
+<span id="L79" class="ln">    79  </span>		},
+<span id="L80" class="ln">    80  </span>
+<span id="L81" class="ln">    81  </span>		&amp;migrator.Migration{
+<span id="L82" class="ln">    82  </span>			Name: &#34;00824 Refactor recommendations&#34;,
+<span id="L83" class="ln">    83  </span>			Func: func(ctx context.Context, tx pgx.Tx) error {
+<span id="L84" class="ln">    84  </span>				_, err := tx.Exec(ctx, `
+<span id="L85" class="ln">    85  </span>					-- 1. Update all reco_ metrics to use metric_storage_name = &#39;recommendations&#39;
+<span id="L86" class="ln">    86  </span>					UPDATE pgwatch.metric 
+<span id="L87" class="ln">    87  </span>					SET storage_name = &#39;recommendations&#39; 
+<span id="L88" class="ln">    88  </span>					WHERE name LIKE &#39;reco_%&#39; AND COALESCE(storage_name, &#39;&#39;) = &#39;&#39;;
+<span id="L89" class="ln">    89  </span>
+<span id="L90" class="ln">    90  </span>					-- 2. Remove the placeholder &#39;recommendations&#39; metric if it exists
+<span id="L91" class="ln">    91  </span>					DELETE FROM pgwatch.metric WHERE name = &#39;recommendations&#39;;
+<span id="L92" class="ln">    92  </span>
+<span id="L93" class="ln">    93  </span>					-- 3. Update &#39;exhaustive&#39; and &#39;full&#39; presets to replace &#39;recommendations&#39; with individual reco_ metrics
+<span id="L94" class="ln">    94  </span>					UPDATE pgwatch.preset 
+<span id="L95" class="ln">    95  </span>					SET metrics = metrics - &#39;recommendations&#39; || $reco_metrics${
+<span id="L96" class="ln">    96  </span>						&#34;reco_add_index&#34;: 43200, 
+<span id="L97" class="ln">    97  </span>						&#34;reco_default_public_schema&#34;: 50400, 
+<span id="L98" class="ln">    98  </span>						&#34;reco_disabled_triggers&#34;: 57600, 
+<span id="L99" class="ln">    99  </span>						&#34;reco_drop_index&#34;: 64800, 
+<span id="L100" class="ln">   100  </span>						&#34;reco_nested_views&#34;: 72000, 
+<span id="L101" class="ln">   101  </span>						&#34;reco_partial_index_candidates&#34;: 79200, 
+<span id="L102" class="ln">   102  </span>						&#34;reco_sprocs_wo_search_path&#34;: 86400, 
+<span id="L103" class="ln">   103  </span>						&#34;reco_superusers&#34;: 93600
+<span id="L104" class="ln">   104  </span>					}$reco_metrics$::jsonb
+<span id="L105" class="ln">   105  </span>					WHERE name IN (&#39;exhaustive&#39;, &#39;full&#39;) AND metrics ? &#39;recommendations&#39;;
+<span id="L106" class="ln">   106  </span>
+<span id="L107" class="ln">   107  </span>					-- 4. Insert new &#39;recommendations&#39; preset if it doesn&#39;t exist
+<span id="L108" class="ln">   108  </span>					INSERT INTO pgwatch.preset (name, description, metrics) 
+<span id="L109" class="ln">   109  </span>					VALUES (&#39;recommendations&#39;, &#39;performance and security recommendations&#39;, 
+<span id="L110" class="ln">   110  </span>						$reco_metrics${
+<span id="L111" class="ln">   111  </span>							&#34;reco_add_index&#34;: 43200, 
+<span id="L112" class="ln">   112  </span>							&#34;reco_default_public_schema&#34;: 50400, 
+<span id="L113" class="ln">   113  </span>							&#34;reco_disabled_triggers&#34;: 57600, 
+<span id="L114" class="ln">   114  </span>							&#34;reco_drop_index&#34;: 64800, 
+<span id="L115" class="ln">   115  </span>							&#34;reco_nested_views&#34;: 72000, 
+<span id="L116" class="ln">   116  </span>							&#34;reco_partial_index_candidates&#34;: 79200, 
+<span id="L117" class="ln">   117  </span>							&#34;reco_sprocs_wo_search_path&#34;: 86400, 
+<span id="L118" class="ln">   118  </span>							&#34;reco_superusers&#34;: 93600
+<span id="L119" class="ln">   119  </span>						}$reco_metrics$::jsonb)
+<span id="L120" class="ln">   120  </span>					ON CONFLICT (name) DO NOTHING;
+<span id="L121" class="ln">   121  </span>
+<span id="L122" class="ln">   122  </span>					-- 5. Update source configs to replace &#39;recommendations&#39; with individual reco_ metrics
+<span id="L123" class="ln">   123  </span>					UPDATE pgwatch.source 
+<span id="L124" class="ln">   124  </span>					SET config = config - &#39;recommendations&#39; || 
+<span id="L125" class="ln">   125  </span>						$reco_metrics${
+<span id="L126" class="ln">   126  </span>							&#34;reco_add_index&#34;: 43200, 
+<span id="L127" class="ln">   127  </span>							&#34;reco_default_public_schema&#34;: 50400, 
+<span id="L128" class="ln">   128  </span>							&#34;reco_disabled_triggers&#34;: 57600, 
+<span id="L129" class="ln">   129  </span>							&#34;reco_drop_index&#34;: 64800, 
+<span id="L130" class="ln">   130  </span>							&#34;reco_nested_views&#34;: 72000, 
+<span id="L131" class="ln">   131  </span>							&#34;reco_partial_index_candidates&#34;: 79200, 
+<span id="L132" class="ln">   132  </span>							&#34;reco_sprocs_wo_search_path&#34;: 86400, 
+<span id="L133" class="ln">   133  </span>							&#34;reco_superusers&#34;: 93600
+<span id="L134" class="ln">   134  </span>						}$reco_metrics$::jsonb
+<span id="L135" class="ln">   135  </span>					WHERE config ? &#39;recommendations&#39;;
+<span id="L136" class="ln">   136  </span>
+<span id="L137" class="ln">   137  </span>					-- 6. Update source standby configs to replace &#39;recommendations&#39; with individual reco_ metrics
+<span id="L138" class="ln">   138  </span>					UPDATE pgwatch.source 
+<span id="L139" class="ln">   139  </span>					SET config_standby = config_standby - &#39;recommendations&#39; || 
+<span id="L140" class="ln">   140  </span>						$reco_metrics${
+<span id="L141" class="ln">   141  </span>							&#34;reco_add_index&#34;: 43200, 
+<span id="L142" class="ln">   142  </span>							&#34;reco_default_public_schema&#34;: 50400, 
+<span id="L143" class="ln">   143  </span>							&#34;reco_disabled_triggers&#34;: 57600, 
+<span id="L144" class="ln">   144  </span>							&#34;reco_drop_index&#34;: 64800, 
+<span id="L145" class="ln">   145  </span>							&#34;reco_nested_views&#34;: 72000, 
+<span id="L146" class="ln">   146  </span>							&#34;reco_partial_index_candidates&#34;: 79200, 
+<span id="L147" class="ln">   147  </span>							&#34;reco_sprocs_wo_search_path&#34;: 86400, 
+<span id="L148" class="ln">   148  </span>							&#34;reco_superusers&#34;: 93600
+<span id="L149" class="ln">   149  </span>						}$reco_metrics$::jsonb
+<span id="L150" class="ln">   150  </span>					WHERE config_standby ? &#39;recommendations&#39;;
+<span id="L151" class="ln">   151  </span>				`)
+<span id="L152" class="ln">   152  </span>				return err
+<span id="L153" class="ln">   153  </span>			},
+<span id="L154" class="ln">   154  </span>		},
+<span id="L155" class="ln">   155  </span>
+<span id="L156" class="ln">   156  </span>		<span class="comment">// adding new migration here, update &#34;pgwatch&#34;.&#34;migration&#34; in &#34;postgres_schema.sql&#34;</span>
+<span id="L157" class="ln">   157  </span>		<span class="comment">// and &#34;dbapi&#34; variable in main.go!</span>
+<span id="L158" class="ln">   158  </span>
+<span id="L159" class="ln">   159  </span>		<span class="comment">// &amp;migrator.Migration{</span>
+<span id="L160" class="ln">   160  </span>		<span class="comment">// 	Name: &#34;000XX Short description of a migration&#34;,</span>
+<span id="L161" class="ln">   161  </span>		<span class="comment">// 	Func: func(ctx context.Context, tx pgx.Tx) error {</span>
+<span id="L162" class="ln">   162  </span>		<span class="comment">// 		return executeMigrationScript(ctx, tx, &#34;000XX.sql&#34;)</span>
+<span id="L163" class="ln">   163  </span>		<span class="comment">// 	},</span>
+<span id="L164" class="ln">   164  </span>		<span class="comment">// },</span>
+<span id="L165" class="ln">   165  </span>	)
+<span id="L166" class="ln">   166  </span>}
+<span id="L167" class="ln">   167  </span>
+</pre><p></p>
+
+<div id="footer">
+Build version go1.25.5.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+
+</body></html>

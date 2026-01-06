@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+
+  <title>/src/github.com/cybertec-postgresql/pgwatch/v5 - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/devel/godoc/lib/godoc/style.css">
+
+<script>window.initFuncs = [];</script>
+<script src="/devel/godoc/lib/godoc/jquery.js" defer></script>
+
+
+
+
+<script>var goVersion = "go1.25.5";</script>
+<script src="/devel/godoc/lib/godoc/godocs.js" defer></script>
+
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Directory /src/github.com/cybertec-postgresql/pgwatch/v5
+    <span class="text-muted"></span>
+  </h1>
+
+
+
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+
+
+
+
+
+	
+	
+	<div class="pkg-dir">
+		<table>
+			<tr>
+				<th class="pkg-name">Name</th>
+				<th class="pkg-synopsis">Synopsis</th>
+			</tr>
+
+			
+			<tr>
+				<td colspan="2"><a href="..">..</a></td>
+			</tr>
+			
+
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 0px;">
+						<a href="api/?m=all">api</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						package api contains the API definitions for external use, such as the RPC sink.
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 20px;">
+						<a href="api/pb/?m=all">pb</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						Package pb contains the protobuf definitions for pgwatch gRPC API.
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 0px;">
+						<a href="cmd/?m=all">cmd</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 20px;">
+						<a href="cmd/convert_metrics/?m=all">convert_metrics</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						convert_metrics is a tool that converts v2 metric definitions to v3 format.
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 20px;">
+						<a href="cmd/pgwatch/?m=all">pgwatch</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						pgwatch is a command line tool that collects metrics from PostgreSQL databases and forwards to external sinks.
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 0px;">
+						<a href="internal/?m=all">internal</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 20px;">
+						<a href="internal/cmdopts/?m=all">cmdopts</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						Package cmdopts provides functionality to parse command line options and ENV variables.
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 20px;">
+						<a href="internal/db/?m=all">db</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						Package db provides common functionality to work with databases.
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 20px;">
+						<a href="internal/log/?m=all">log</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						Package log contains the logger interface and its implementation used in the project.
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 20px;">
+						<a href="internal/metrics/?m=all">metrics</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						Package metrics is responsible for reading and writing metric definitions.
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 20px;">
+						<a href="internal/reaper/?m=all">reaper</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						Package reaper is responsible to query the metrics from monitored sources and send measurements to sinks.
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 20px;">
+						<a href="internal/sinks/?m=all">sinks</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						Package sinks provides functionality to store monitored data in different ways.
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 20px;">
+						<a href="internal/sources/?m=all">sources</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						Provides functionality to read monitored data from different sources.
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 20px;">
+						<a href="internal/testutil/?m=all">testutil</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						Package testutil provides testing utilities for pgwatch tests.
+					</td>
+				</tr>
+			
+				<tr>
+				
+					<td class="pkg-name" style="padding-left: 20px;">
+						<a href="internal/webserver/?m=all">webserver</a>
+					</td>
+				
+					<td class="pkg-synopsis">
+						Package webserver serves the REST API and the web user interface.
+					</td>
+				</tr>
+			
+		</table>
+	</div>
+
+
+
+<div id="footer">
+Build version go1.25.5.<br>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
+
+  <title>src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/devel/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/devel/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.25.5";</script>
+<script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Source file
+    <a href="/devel/godoc/src">src</a>/<a href="/devel/godoc/src/github.com">github.com</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5">v5</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal">internal</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver">webserver</a>/<span class="text-muted">jwt.go</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver">github.com/cybertec-postgresql/pgwatch/v5/internal/webserver</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<script type="text/javascript">document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1  </span>package webserver
+<span id="L2" class="ln">     2  </span>
+<span id="L3" class="ln">     3  </span>import (
+<span id="L4" class="ln">     4  </span>	&#34;errors&#34;
+<span id="L5" class="ln">     5  </span>	&#34;fmt&#34;
+<span id="L6" class="ln">     6  </span>	&#34;net/http&#34;
+<span id="L7" class="ln">     7  </span>	&#34;time&#34;
+<span id="L8" class="ln">     8  </span>
+<span id="L9" class="ln">     9  </span>	jsoniter &#34;github.com/json-iterator/go&#34;
+<span id="L10" class="ln">    10  </span>
+<span id="L11" class="ln">    11  </span>	&#34;github.com/golang-jwt/jwt/v5&#34;
+<span id="L12" class="ln">    12  </span>)
+<span id="L13" class="ln">    13  </span>
+<span id="L14" class="ln">    14  </span>type loginReq struct {
+<span id="L15" class="ln">    15  </span>	Username string `json:&#34;user&#34;`
+<span id="L16" class="ln">    16  </span>	Password string `json:&#34;password&#34;`
+<span id="L17" class="ln">    17  </span>}
+<span id="L18" class="ln">    18  </span>
+<span id="L19" class="ln">    19  </span>func (s *WebUIServer) IsCorrectPassword(lr loginReq) bool {
+<span id="L20" class="ln">    20  </span>	return (s.WebUser+s.WebPassword == &#34;&#34;) ||
+<span id="L21" class="ln">    21  </span>		(s.WebUser == lr.Username &amp;&amp; s.WebPassword == lr.Password)
+<span id="L22" class="ln">    22  </span>}
+<span id="L23" class="ln">    23  </span>
+<span id="L24" class="ln">    24  </span>func (s *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
+<span id="L25" class="ln">    25  </span>	var (
+<span id="L26" class="ln">    26  </span>		err   error
+<span id="L27" class="ln">    27  </span>		lr    loginReq
+<span id="L28" class="ln">    28  </span>		token string
+<span id="L29" class="ln">    29  </span>	)
+<span id="L30" class="ln">    30  </span>
+<span id="L31" class="ln">    31  </span>	defer func() {
+<span id="L32" class="ln">    32  </span>		if err != nil {
+<span id="L33" class="ln">    33  </span>			http.Error(w, err.Error(), http.StatusInternalServerError)
+<span id="L34" class="ln">    34  </span>		}
+<span id="L35" class="ln">    35  </span>	}()
+<span id="L36" class="ln">    36  </span>
+<span id="L37" class="ln">    37  </span>	switch r.Method {
+<span id="L38" class="ln">    38  </span>	case &#34;POST&#34;:
+<span id="L39" class="ln">    39  </span>		if err = jsoniter.ConfigFastest.NewDecoder(r.Body).Decode(&amp;lr); err != nil {
+<span id="L40" class="ln">    40  </span>			return
+<span id="L41" class="ln">    41  </span>		}
+<span id="L42" class="ln">    42  </span>		if !s.IsCorrectPassword(lr) {
+<span id="L43" class="ln">    43  </span>			http.Error(w, &#34;can not authenticate this user&#34;, http.StatusUnauthorized)
+<span id="L44" class="ln">    44  </span>			return
+<span id="L45" class="ln">    45  </span>		}
+<span id="L46" class="ln">    46  </span>		if token, err = generateJWT(lr.Username); err != nil {
+<span id="L47" class="ln">    47  </span>			return
+<span id="L48" class="ln">    48  </span>		}
+<span id="L49" class="ln">    49  </span>		_, err = w.Write([]byte(token))
+<span id="L50" class="ln">    50  </span>
+<span id="L51" class="ln">    51  </span>	case &#34;GET&#34;:
+<span id="L52" class="ln">    52  </span>		fmt.Fprintf(w, &#34;only POST methods is allowed.&#34;)
+<span id="L53" class="ln">    53  </span>		return
+<span id="L54" class="ln">    54  </span>	}
+<span id="L55" class="ln">    55  </span>}
+<span id="L56" class="ln">    56  </span>
+<span id="L57" class="ln">    57  </span>type EnsureAuth struct {
+<span id="L58" class="ln">    58  </span>	handler http.HandlerFunc
+<span id="L59" class="ln">    59  </span>}
+<span id="L60" class="ln">    60  </span>
+<span id="L61" class="ln">    61  </span>func (ea *EnsureAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+<span id="L62" class="ln">    62  </span>	if err := validateToken(r); err != nil {
+<span id="L63" class="ln">    63  </span>		http.Error(w, err.Error(), http.StatusUnauthorized)
+<span id="L64" class="ln">    64  </span>		return
+<span id="L65" class="ln">    65  </span>	}
+<span id="L66" class="ln">    66  </span>	ea.handler(w, r)
+<span id="L67" class="ln">    67  </span>}
+<span id="L68" class="ln">    68  </span>
+<span id="L69" class="ln">    69  </span>func NewEnsureAuth(handlerToWrap http.HandlerFunc) *EnsureAuth {
+<span id="L70" class="ln">    70  </span>	return &amp;EnsureAuth{handlerToWrap}
+<span id="L71" class="ln">    71  </span>}
+<span id="L72" class="ln">    72  </span>
+<span id="L73" class="ln">    73  </span>var sampleSecretKey = []byte(&#34;5m3R7K4754p4m&#34;)
+<span id="L74" class="ln">    74  </span>
+<span id="L75" class="ln">    75  </span>func generateJWT(username string) (string, error) {
+<span id="L76" class="ln">    76  </span>	token := jwt.New(jwt.SigningMethodHS256)
+<span id="L77" class="ln">    77  </span>	claims := token.Claims.(jwt.MapClaims)
+<span id="L78" class="ln">    78  </span>
+<span id="L79" class="ln">    79  </span>	claims[&#34;authorized&#34;] = true
+<span id="L80" class="ln">    80  </span>	claims[&#34;username&#34;] = username
+<span id="L81" class="ln">    81  </span>	claims[&#34;exp&#34;] = time.Now().Add(time.Hour * 8).Unix()
+<span id="L82" class="ln">    82  </span>
+<span id="L83" class="ln">    83  </span>	return token.SignedString(sampleSecretKey)
+<span id="L84" class="ln">    84  </span>}
+<span id="L85" class="ln">    85  </span>
+<span id="L86" class="ln">    86  </span>func validateToken(r *http.Request) (err error) {
+<span id="L87" class="ln">    87  </span>	var t string
+<span id="L88" class="ln">    88  </span>	if r.Header[&#34;Token&#34;] == nil {
+<span id="L89" class="ln">    89  </span>		t = r.URL.Query().Get(&#34;Token&#34;)
+<span id="L90" class="ln">    90  </span>	} else {
+<span id="L91" class="ln">    91  </span>		t = r.Header[&#34;Token&#34;][0]
+<span id="L92" class="ln">    92  </span>	}
+<span id="L93" class="ln">    93  </span>	if t == &#34;&#34; {
+<span id="L94" class="ln">    94  </span>		return errors.New(&#34;can not find token in header&#34;)
+<span id="L95" class="ln">    95  </span>	}
+<span id="L96" class="ln">    96  </span>
+<span id="L97" class="ln">    97  </span>	_, err = jwt.Parse(t,
+<span id="L98" class="ln">    98  </span>		func(_ *jwt.Token) (any, error) {
+<span id="L99" class="ln">    99  </span>			return sampleSecretKey, nil
+<span id="L100" class="ln">   100  </span>		},
+<span id="L101" class="ln">   101  </span>		jwt.WithExpirationRequired(),
+<span id="L102" class="ln">   102  </span>		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+<span id="L103" class="ln">   103  </span>	return err
+<span id="L104" class="ln">   104  </span>}
+<span id="L105" class="ln">   105  </span>
+</pre><p></p>
+
+<div id="footer">
+Build version go1.25.5.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+
+</body></html>

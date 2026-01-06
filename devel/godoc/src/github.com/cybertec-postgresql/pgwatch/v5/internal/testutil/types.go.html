@@ -1,0 +1,166 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
+
+  <title>src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/types.go - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/devel/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/devel/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.25.5";</script>
+<script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Source file
+    <a href="/devel/godoc/src">src</a>/<a href="/devel/godoc/src/github.com">github.com</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5">v5</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal">internal</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil">testutil</a>/<span class="text-muted">types.go</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil">github.com/cybertec-postgresql/pgwatch/v5/internal/testutil</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<script type="text/javascript">document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1  </span>package testutil
+<span id="L2" class="ln">     2  </span>
+<span id="L3" class="ln">     3  </span>import (
+<span id="L4" class="ln">     4  </span>	&#34;context&#34;
+<span id="L5" class="ln">     5  </span>	&#34;fmt&#34;
+<span id="L6" class="ln">     6  </span>
+<span id="L7" class="ln">     7  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/log&#34;
+<span id="L8" class="ln">     8  </span>)
+<span id="L9" class="ln">     9  </span>
+<span id="L10" class="ln">    10  </span>var TestContext = log.WithLogger(context.Background(), log.NewNoopLogger())
+<span id="L11" class="ln">    11  </span>
+<span id="L12" class="ln">    12  </span>const PostgresImage = &#34;docker.io/postgres:18-alpine&#34;
+<span id="L13" class="ln">    13  </span>const MockDatabase = &#34;mydatabase&#34;
+<span id="L14" class="ln">    14  </span>
+<span id="L15" class="ln">    15  </span>const EtcdVersion = &#34;v3.5.14&#34;
+<span id="L16" class="ln">    16  </span>const EtcdImage = &#34;gcr.io/etcd-development/etcd:&#34; + EtcdVersion
+<span id="L17" class="ln">    17  </span>
+<span id="L18" class="ln">    18  </span><span class="comment">// the CN in server test cert is set to `localhost`</span>
+<span id="L19" class="ln">    19  </span>
+<span id="L20" class="ln">    20  </span>var CAFile = &#34;ca.crt&#34;
+<span id="L21" class="ln">    21  </span>var TLSConnStr = fmt.Sprintf(&#34;grpc://localhost:5050?sslrootca=%s&#34;, CAFile)
+<span id="L22" class="ln">    22  </span>
+<span id="L23" class="ln">    23  </span>const TLSServerAddress = &#34;localhost:5050&#34;
+<span id="L24" class="ln">    24  </span>const PlainServerAddress = &#34;localhost:6060&#34;
+<span id="L25" class="ln">    25  </span>const PlainConnStr = &#34;grpc://localhost:6060&#34;
+<span id="L26" class="ln">    26  </span>
+<span id="L27" class="ln">    27  </span>var CA = `-----BEGIN CERTIFICATE-----
+<span id="L28" class="ln">    28  </span>MIIDPzCCAiegAwIBAgIUeENQlQFVH5h7HszFJLLWo+KCQwQwDQYJKoZIhvcNAQEL
+<span id="L29" class="ln">    29  </span>BQAwEjEQMA4GA1UEAwwHcGd3YXRjaDAeFw0yNTA2MTEwNTI1MDJaFw0zNTA2MDkw
+<span id="L30" class="ln">    30  </span>NTI1MDJaMBIxEDAOBgNVBAMMB3Bnd2F0Y2gwggEiMA0GCSqGSIb3DQEBAQUAA4IB
+<span id="L31" class="ln">    31  </span>DwAwggEKAoIBAQDtTW+kyvb3Y5OaYlriKp8HkHt95lfOgxQNZQfiREfEyLWU59bx
+<span id="L32" class="ln">    32  </span>0ZIvFmejK38Qc0dlca9d+5tEkxotsbggJflLljfmnzhxsuZpr8SjmDd1m8XSo0IA
+<span id="L33" class="ln">    33  </span>oDlVbKO6SZMlsyq3QrAOYAjG1LTPlATqvGAOs9NfFonjwoPXCjIwSfa+wexe5dRD
+<span id="L34" class="ln">    34  </span>gJ114AKXw3ck5ZQ4Pw+w5ylgNSfVl548WY9DSOA+6HlZ17MYA1qmMOTwKae5fmsc
+<span id="L35" class="ln">    35  </span>xlRPoIV3EJrKas7VlbebDOXOSXDV+9aMW6ox1xanUUDUgabzkzntfmuOttaIX1g1
+<span id="L36" class="ln">    36  </span>nSMuHa7EEQF7lxgdg9OU8i/jygdlGcgBUYjtAgMBAAGjgYwwgYkwDAYDVR0TBAUw
+<span id="L37" class="ln">    37  </span>AwEB/zAdBgNVHQ4EFgQUKGJs7OXINd2WL6X2meH90eINoJQwTQYDVR0jBEYwRIAU
+<span id="L38" class="ln">    38  </span>KGJs7OXINd2WL6X2meH90eINoJShFqQUMBIxEDAOBgNVBAMMB3Bnd2F0Y2iCFHhD
+<span id="L39" class="ln">    39  </span>UJUBVR+Yex7MxSSy1qPigkMEMAsGA1UdDwQEAwIBBjANBgkqhkiG9w0BAQsFAAOC
+<span id="L40" class="ln">    40  </span>AQEABdY/4rsgMu+sCqEdacNzHqAz9X1ew37y1UONngm/7LPqbQrzzg/fBvOOJLcd
+<span id="L41" class="ln">    41  </span>IzMJPtpdwokPYOW29jw/hY4R1RWr8012zc8Z0GsuDR7I/Z2Hww7tzYhf1H5mjy1d
+<span id="L42" class="ln">    42  </span>eQDhHNpsSb5pHLoPft5O0sT/0WqAlKWPb2KmSoAio8jE2BSUTK3ZgE0yJIikONon
+<span id="L43" class="ln">    43  </span>HCWOlNCWx+RsyPoRnQqbpVa+SmGBqpiyHchpZ8sFPe+pgPu+8u921lJ0PRvmfp7L
+<span id="L44" class="ln">    44  </span>4YZIaM8LQAV8FWk2VLXmsqYUJYYLAXCG6Unkx1oIOtq1AyAoXHCl/3hKbCeXIrgA
+<span id="L45" class="ln">    45  </span>Cs5qN+ZUHRdKff5gFpraKtHKkw==
+<span id="L46" class="ln">    46  </span>-----END CERTIFICATE-----`
+<span id="L47" class="ln">    47  </span>
+<span id="L48" class="ln">    48  </span>var Cert = []byte(`-----BEGIN CERTIFICATE-----
+<span id="L49" class="ln">    49  </span>MIIDZTCCAk2gAwIBAgIQeTQ+4M7xwydf7MvrDnDdsTANBgkqhkiG9w0BAQsFADAS
+<span id="L50" class="ln">    50  </span>MRAwDgYDVQQDDAdwZ3dhdGNoMB4XDTI1MDYxMTA1MjUxOFoXDTI3MDkxNDA1MjUx
+<span id="L51" class="ln">    51  </span>OFowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+<span id="L52" class="ln">    52  </span>MIIBCgKCAQEA69Ja9K4ZHoIdBK+34YE1+0a/sB7YKZJb3+gYFahvszS37Oa6h/0+
+<span id="L53" class="ln">    53  </span>d9TCY58bMpPQSQQdvhG/s1H6Yc4BWTfH/ssRmDhKciMmdfMj/lr8TytglIUPPSzb
+<span id="L54" class="ln">    54  </span>PKy2t9idpk30PwiV1UlijjlFZxoxcO3Aia8mmrDJzkoHsQL96PhDT25YRinnflg8
+<span id="L55" class="ln">    55  </span>vVthasVqGIHNJIXORyz5lgkBW3NeeZPEUSxbvmo63AB1lFJZMz4xlpdN/LVsEOwg
+<span id="L56" class="ln">    56  </span>FrrYzb4mpGkAcTenkOfU4W7m7bxpsusW2JDm2O8bsx+v3cazOqJpCLMHP3Vqnzcl
+<span id="L57" class="ln">    57  </span>loYmeQauBep6H0wspid0YzMVza75pDx7rQIDAQABo4G0MIGxMAkGA1UdEwQCMAAw
+<span id="L58" class="ln">    58  </span>HQYDVR0OBBYEFFcDjPaZMelQIueauIRfo4L4wMehME0GA1UdIwRGMESAFChibOzl
+<span id="L59" class="ln">    59  </span>yDXdli+l9pnh/dHiDaCUoRakFDASMRAwDgYDVQQDDAdwZ3dhdGNoghR4Q1CVAVUf
+<span id="L60" class="ln">    60  </span>mHsezMUkstaj4oJDBDATBgNVHSUEDDAKBggrBgEFBQcDATALBgNVHQ8EBAMCBaAw
+<span id="L61" class="ln">    61  </span>FAYDVR0RBA0wC4IJbG9jYWxob3N0MA0GCSqGSIb3DQEBCwUAA4IBAQCM6tYNxoP2
+<span id="L62" class="ln">    62  </span>Gbp3aAPjoA3+U1gWHPHXOOgyhaQw4jJ7xK1MUlrFgSG6cJgO7IRSCIZp7GDZmIjo
+<span id="L63" class="ln">    63  </span>+PqWRgMNK2pFCUCqjrAV6NwMjApLzDdSza9xKb3nWXMKnV6j3tNUFUCS68CHAM7Q
+<span id="L64" class="ln">    64  </span>E1iuepjIy2VReFfjJoPuhp9OQBWobTo3H9F74Sj+Guu0lDcHWbwn5Y92pnKk0vOh
+<span id="L65" class="ln">    65  </span>v1AJ6vwdMpd6DAPlwmY3OcZI2FGYyoPP2CnzHIGP5RoVFp1zkJzoFvnOHnsRMByz
+<span id="L66" class="ln">    66  </span>HpGKqYFQVJSAOMCtL2OMiP8MxtiCsdz6j/e3/VOUQuYoM6fXFhZO64xekZdlh/ZR
+<span id="L67" class="ln">    67  </span>glsaMXQPWvHX
+<span id="L68" class="ln">    68  </span>-----END CERTIFICATE-----`)
+<span id="L69" class="ln">    69  </span>
+<span id="L70" class="ln">    70  </span>var PrivateKey = []byte(`-----BEGIN PRIVATE KEY-----
+<span id="L71" class="ln">    71  </span>MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDr0lr0rhkegh0E
+<span id="L72" class="ln">    72  </span>r7fhgTX7Rr+wHtgpklvf6BgVqG+zNLfs5rqH/T531MJjnxsyk9BJBB2+Eb+zUfph
+<span id="L73" class="ln">    73  </span>zgFZN8f+yxGYOEpyIyZ18yP+WvxPK2CUhQ89LNs8rLa32J2mTfQ/CJXVSWKOOUVn
+<span id="L74" class="ln">    74  </span>GjFw7cCJryaasMnOSgexAv3o+ENPblhGKed+WDy9W2FqxWoYgc0khc5HLPmWCQFb
+<span id="L75" class="ln">    75  </span>c155k8RRLFu+ajrcAHWUUlkzPjGWl038tWwQ7CAWutjNviakaQBxN6eQ59Thbubt
+<span id="L76" class="ln">    76  </span>vGmy6xbYkObY7xuzH6/dxrM6omkIswc/dWqfNyWWhiZ5Bq4F6nofTCymJ3RjMxXN
+<span id="L77" class="ln">    77  </span>rvmkPHutAgMBAAECggEAAc8djQJ35VzEqbhKXhO+bQTMLCb0bA84HrXaV3IxFywY
+<span id="L78" class="ln">    78  </span>nBviAvCNpeAvNJHwJLlvD9xU+RQMRy0iEVWB+6P6qAj5Q9Rst8buwNliZY1foaDY
+<span id="L79" class="ln">    79  </span>zxLdPNAnB2ZgyXTDMtcmwEQJ2DbFp4cnceTIy8+7GiNKlcW06pz1RaWa+opLA+U2
+<span id="L80" class="ln">    80  </span>STIxvTEAvqsyE/0KHbeEltwZxeZ83BsX8vhpyrCVvniFJnIMvyYG7iTzLWuTK98Z
+<span id="L81" class="ln">    81  </span>R3Baqim8CdWbh2W0OOfphAVlTjG6c0r6FqJIqsds9wf2FfuhgUcNQUXke+uuWbPQ
+<span id="L82" class="ln">    82  </span>36RsytymUgqye3DkxrC4dEi27S3cjRh5wK53gqET+QKBgQD8zM5wiindvDRSx+66
+<span id="L83" class="ln">    83  </span>ppbl6RJQcL7uv1os9TeNvfqwnhC75y2k4+2s8kiG2ik7aJiRg4dkj3rVJ4S6wQ67
+<span id="L84" class="ln">    84  </span>sjRVo5z68J1twP6PqvpJyx/G5Fmy8HPJUmy9FM1AdnYCWGX3bh3qNTkxEVn78yFZ
+<span id="L85" class="ln">    85  </span>zfn9CczDAmGErAXPRRDNQQy8ZQKBgQDuzofs5EXTpqw25XveCJKHT3fAis7pkNGu
+<span id="L86" class="ln">    86  </span>jwopiR9peKuJ9nNarHH2wWpHRn6zgHmhmAu7oEzo4OEmk4Elo5ffqqRPZZaU8aEo
+<span id="L87" class="ln">    87  </span>Ow7cRvedoP/EjJaR8m2uQnh9bWXuEVibfKmkrPswYYUCWmwoALFmzd6Gl0dIdyGk
+<span id="L88" class="ln">    88  </span>JXeA/jFZqQKBgQDhFbn5mgsM0rYDvuBgcFOLAaq81KYsDVRNE0kTe0PqXdKoe324
+<span id="L89" class="ln">    89  </span>gvjsNA0/hJ+Rtd+iMGosr1O+1iDn510m4dSXK8Zp6DNDtcLySFnxulngzRDQsidl
+<span id="L90" class="ln">    90  </span>6W3ILO1TqCYKkIq5c+JO1nTFq51jJ2dafntHQaJ/P290oXXKxsPe/TxJwQKBgD6g
+<span id="L91" class="ln">    91  </span>dS8f8lv+Mt22sxRYhSztH0ekX30LWKIBqzWXW2CKn9nvgvL9lGmU8a09hI7Im51Q
+<span id="L92" class="ln">    92  </span>RYtwD5tnFkTKnCzlyTeEBdE4oBPxhkUJr+z+w4NYLJs8D2S5AiCYGAc0wG19qRIl
+<span id="L93" class="ln">    93  </span>0Et6femDOaGTWxfmjp+aT8hWNgCAFZd5p+xxPTn5AoGBAIeUbCRTe0KcVaKw/Lcj
+<span id="L94" class="ln">    94  </span>KHjTih9x9d3f2EbnYbziBZz6fZfWdDIBfA6CbIHil21hNvjDm9Yci5b6FgtUzScb
+<span id="L95" class="ln">    95  </span>j3vPa99sMGc2xie07Cd7LTvZeWIVXeW1Dxzex89CqoJzmONrco1ZKQ+xXbPoZCBj
+<span id="L96" class="ln">    96  </span>VwAI/SWm7NlxgF6Sr5CIo2KR
+<span id="L97" class="ln">    97  </span>-----END PRIVATE KEY-----`)
+<span id="L98" class="ln">    98  </span>
+</pre><p></p>
+
+<div id="footer">
+Build version go1.25.5.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+
+</body></html>
