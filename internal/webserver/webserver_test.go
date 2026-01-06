@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )

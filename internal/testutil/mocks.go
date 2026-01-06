@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v5/api/pb"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 

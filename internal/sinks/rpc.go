@@ -10,9 +10,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/api/pb"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/api/pb"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	jsoniter "github.com/json-iterator/go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

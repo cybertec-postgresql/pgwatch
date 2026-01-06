@@ -8,11 +8,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/sinks"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/webserver"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/webserver"
 	"github.com/jackc/pgx/v5"
 	flags "github.com/jessevdk/go-flags"
 )

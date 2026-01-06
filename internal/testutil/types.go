@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 )
 
 var TestContext = log.WithLogger(context.Background(), log.NewNoopLogger())
