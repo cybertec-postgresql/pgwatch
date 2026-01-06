@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"

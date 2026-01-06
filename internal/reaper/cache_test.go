@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/stretchr/testify/assert"
 )
 

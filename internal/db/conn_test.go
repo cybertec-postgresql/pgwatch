@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/db"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/require"
 )

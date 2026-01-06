@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/sources"
-	"github.com/cybertec-postgresql/pgwatch/v3/internal/testutil"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"
 )
