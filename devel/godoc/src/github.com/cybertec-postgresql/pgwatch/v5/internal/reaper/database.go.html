@@ -584,7 +584,7 @@
 <span id="L527" class="ln">   527  </span>	return
 <span id="L528" class="ln">   528  </span>}
 <span id="L529" class="ln">   529  </span>
-<span id="L530" class="ln">   530  </span>func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(shutDownDueToRoleChange map[string]bool) {
+<span id="L530" class="ln">   530  </span>func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[string]bool) {
 <span id="L531" class="ln">   531  </span>	for _, prevDB := range r.prevLoopMonitoredDBs {
 <span id="L532" class="ln">   532  </span>		if r.monitoredSources.GetMonitoredDatabase(prevDB.Name) == nil { <span class="comment">// removed from config</span>
 <span id="L533" class="ln">   533  </span>			prevDB.Conn.Close()
@@ -592,11 +592,11 @@
 <span id="L535" class="ln">   535  </span>		}
 <span id="L536" class="ln">   536  </span>	}
 <span id="L537" class="ln">   537  </span>
-<span id="L538" class="ln">   538  </span>	for roleChangedDB := range shutDownDueToRoleChange {
-<span id="L539" class="ln">   539  </span>		if db := r.monitoredSources.GetMonitoredDatabase(roleChangedDB); db != nil {
+<span id="L538" class="ln">   538  </span>	for toShutDownDB := range hostsToShutDown {
+<span id="L539" class="ln">   539  </span>		if db := r.monitoredSources.GetMonitoredDatabase(toShutDownDB); db != nil {
 <span id="L540" class="ln">   540  </span>			db.Conn.Close()
 <span id="L541" class="ln">   541  </span>		}
-<span id="L542" class="ln">   542  </span>		_ = r.SinksWriter.SyncMetric(roleChangedDB, &#34;&#34;, sinks.DeleteOp)
+<span id="L542" class="ln">   542  </span>		_ = r.SinksWriter.SyncMetric(toShutDownDB, &#34;&#34;, sinks.DeleteOp)
 <span id="L543" class="ln">   543  </span>	}
 <span id="L544" class="ln">   544  </span>}
 <span id="L545" class="ln">   545  </span>
