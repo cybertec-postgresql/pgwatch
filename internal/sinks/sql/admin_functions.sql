@@ -1,3 +1,30 @@
+/*
+  creates a top level metric table if not already existing (non-existing tables show ugly warnings in Grafana).
+  expects the "metrics_template" table to exist.
+*/
+CREATE OR REPLACE FUNCTION admin.ensure_dummy_metrics_table(metric text) RETURNS boolean AS
+$sql$
+DECLARE
+  l_schema_type text;
+BEGIN
+  SELECT schema_type INTO l_schema_type FROM admin.storage_schema_type;
+
+  IF to_regclass(format('public.%I', metric)) IS NOT NULL THEN
+    RETURN false;
+  END IF;
+
+  IF l_schema_type = 'postgres' THEN
+    EXECUTE format('CREATE TABLE public.%I (LIKE admin.metrics_template INCLUDING INDEXES) PARTITION BY LIST (dbname)', metric);
+  ELSIF l_schema_type = 'timescale' THEN
+    PERFORM admin.ensure_partition_timescale(metric);
+  END IF;
+
+  EXECUTE format('COMMENT ON TABLE public.%I IS $$pgwatch-generated-metric-lvl$$', metric);
+
+  RETURN true;
+END;
+$sql$ LANGUAGE plpgsql;
+
 /* 
   get_top_level_metric_tables() returns names of all top-level metric tables
 */
