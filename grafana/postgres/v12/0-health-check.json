@@ -5115,30 +5115,77 @@
       "type": "stat"
     },
     {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Total size of user indexes for the selected DB. requires db_size metric.",
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {},
+          "unit": "bytes"
+        },
         "overrides": []
       },
       "gridPos": {
         "h": 2,
-        "w": 12,
+        "w": 6,
         "x": 12,
         "y": 18
       },
-      "id": 48,
+      "id": 51,
+      "maxDataPoints": 100,
       "options": {
-        "code": {
-          "language": "plaintext",
-          "showLineNumbers": false,
-          "showMiniMap": false
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "",
+          "values": false
         },
-        "content": "### The preset threshold values (green / yellow / red) should be reviewed / adjusted!",
-        "mode": "markdown"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
       "pluginVersion": "12.1.0",
-      "title": "",
-      "transparent": true,
-      "type": "text"
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "group": [],
+          "groupBy": [],
+          "measurement": "db_size",
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  (data->>'indexes_size_b')::int8\nFROM\n  db_size\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [],
+          "sql": {},
+          "tags": [],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Total index size",
+      "type": "stat"
     },
     {
       "fieldConfig": {
@@ -5159,6 +5206,32 @@
           "showMiniMap": false
         },
         "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+        "mode": "markdown"
+      },
+      "pluginVersion": "12.1.0",
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "id": 48,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "### The preset threshold values (green / yellow / red) should be reviewed / adjusted!",
         "mode": "markdown"
       },
       "pluginVersion": "12.1.0",
