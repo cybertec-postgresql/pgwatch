@@ -4,113 +4,88 @@
  "subpartitions" schema - subpartitions of "public" schema top level metric tables (if using time / dbname-time partitioning)
 */
 
-create schema "admin";
-create schema "subpartitions";
+CREATE SCHEMA IF NOT EXISTS "admin";
+CREATE SCHEMA IF NOT EXISTS "subpartitions";
 
-create extension if not exists btree_gin;
+CREATE EXTENSION IF NOT EXISTS btree_gin;
 
-create function admin.get_default_storage_type() returns text as
+CREATE OR REPLACE FUNCTION admin.get_default_storage_type() RETURNS text as
 $$
- select case 
-  when exists(select 1 from pg_extension where extname = 'timescaledb') then
+ SELECT CASE 
+  WHEN EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
     'timescale' 
-  else 
+  ELSE 
     'postgres' 
-  end;
+  END;
 $$
-language sql;
+LANGUAGE SQL;
 
-create table admin.storage_schema_type (
-  schema_type     text        not null default admin.get_default_storage_type(),
-  initialized_on  timestamptz not null default now(),
+CREATE TABLE admin.storage_schema_type (
+  schema_type     text        NOT NULL DEFAULT admin.get_default_storage_type(),
+  initialized_on  timestamptz NOT NULL DEFAULT now(),
   check (schema_type in ('postgres', 'timescale'))
 );
 
-insert into admin.storage_schema_type default values;
+INSERT INTO admin.storage_schema_type DEFAULT values;
 
-comment on table admin.storage_schema_type is 'identifies storage schema for other pgwatch components';
+COMMENT ON TABLE admin.storage_schema_type IS 'identifies storage schema for other pgwatch components';
 
-create unique index max_one_row on admin.storage_schema_type ((1));
+CREATE UNIQUE INDEX max_one_row ON admin.storage_schema_type ((1));
 
 /* for the Grafana drop-down. managed by the gatherer */
-create table admin.all_distinct_dbname_metrics (
-  dbname      text        not null,
-  metric      text        not null,
-  created_on  timestamptz not null default now(),
-  primary key (dbname, metric)
+CREATE TABLE admin.all_distinct_dbname_metrics (
+  dbname      text        NOT NULL,
+  metric      text        NOT NULL,
+  created_on  timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (dbname, metric)
 );
 
 /* currently only used to store TimescaleDB chunk interval */
-create table admin.config (
-    key               text        not null primary key,
-    value             text        not null,
-    created_on        timestamptz not null default now(),
+CREATE TABLE admin.config (
+    key               text        NOT NULL PRIMARY KEY,
+    value             text        NOT NULL,
+    created_on        timestamptz NOT NULL DEFAULT now(),
     last_modified_on  timestamptz
 );
 
 -- to later change the value call the admin.change_timescale_chunk_interval(interval) function!
 -- as changing the row directly will only be effective for completely new tables (metrics).
-insert into admin.config (key, value) values 
+INSERT INTO admin.config (key, value) VALUES 
   ('timescale_chunk_interval', '2 days'),
   ('timescale_compress_interval', '1 day');
 
-create or replace function trg_config_modified() returns trigger
-as $$
-begin
+CREATE OR REPLACE FUNCTION trg_config_modified() RETURNS trigger
+AS $$
+BEGIN
   new.last_modified_on = now();
-  return new;
-end;
+  RETURN new;
+END;
 $$
-language plpgsql;
+LANGUAGE plpgsql;
 
-create trigger config_modified before update on admin.config
-for each row execute function trg_config_modified();
+CREATE TRIGGER config_modified BEFORE UPDATE ON admin.config
+FOR EACH ROW EXECUTE FUNCTION trg_config_modified();
 
-/*
-  creates a top level metric table if not already existing (non-existing tables show ugly warnings in Grafana).
-  expects the "metrics_template" table to exist.
-*/
-create or replace function admin.ensure_dummy_metrics_table(metric text) returns boolean as
-$sql$
-declare
-  l_schema_type text;
-begin
-  select schema_type into l_schema_type from admin.storage_schema_type;
-
-  if to_regclass(format('public.%I', metric)) is not null then
-    return false;
-  end if;
-
-  if l_schema_type = 'postgres' then
-    execute format('CREATE TABLE public.%I (LIKE admin.metrics_template INCLUDING INDEXES) PARTITION BY LIST (dbname)', metric);
-  elsif l_schema_type = 'timescale' then
-    perform admin.ensure_partition_timescale(metric);
-  end if;
-
-  execute format('COMMENT ON TABLE public.%I IS $$pgwatch-generated-metric-lvl$$', metric);
-
-  return true;
-end;
-$sql$ language plpgsql;
-
-create table admin.metrics_template (
-  time      timestamptz not null default now(),
-  dbname    text        not null,
-  data      jsonb       not null,
+CREATE TABLE admin.metrics_template (
+  time      timestamptz NOT NULL DEFAULT now(),
+  dbname    text        NOT NULL,
+  data      jsonb       NOT NULL,
   tag_data  jsonb,
-  check (false)
+  CHECK (false)
 );
 
-comment on table admin.metrics_template IS 'used as a template for all new metric definitions';
+COMMENT ON TABLE admin.metrics_template IS 'used as a template for all new metric definitions';
 
-create index on admin.metrics_template (dbname, time);
+CREATE INDEX ON admin.metrics_template (dbname, time);
 -- create index on admin.metrics_template using brin (dbname, time);  /* consider BRIN instead for large data amounts */
 -- create index on admin.metrics_template using gin (tag_data) where tag_data notnull;
 
--- define migrations you need to apply
--- every change to the database schema should populate this table.
--- Version value should contain issue number zero padded followed by
--- short description of the issue\feature\bug implemented\resolved
+/*
+  Define migrations you need to apply. Every change to the 
+  database schema should populate this table.
+  Version value should contain issue number zero padded followed by
+  short description of the issue\feature\bug implemented\resolved
+*/
 CREATE TABLE admin.migration(
     id bigint PRIMARY KEY,
     version text NOT NULL
