@@ -447,7 +447,8 @@ metrics:
         node_status: standby
     db_size:
         description: >
-            Retrieves the size of the current database and the size of the `pg_catalog` schema, providing insights into the storage usage of the database.
+            Retrieves the size of the current database, the size of the `pg_catalog` schema, and total indexes size
+            providing insights into the storage usage of the database.
             It returns the size in bytes for both the current database and the catalog schema.
             This metric helps administrators monitor database size and storage consumption.
         sqls:
@@ -458,7 +459,9 @@ metrics:
                   (select sum(pg_total_relation_size(c.oid))::int8
                    from pg_class c join pg_namespace n on n.oid = c.relnamespace
                    where nspname = 'pg_catalog' and relkind = 'r'
-                  ) as catalog_size_b
+                  ) as catalog_size_b,
+                  sum(pg_relation_size(indexrelid))::int8 as indexes_size_b
+                from pg_stat_user_indexes
         gauges:
             - '*'
         statement_timeout_seconds: 300
