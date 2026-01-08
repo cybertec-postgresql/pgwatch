@@ -18,9 +18,224 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 12,
+  "id": 24,
   "links": [],
   "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Adding indexes can have unexpected performance effects, so make sure to test them first to ensure that the recommendation has the desired effect.\n\nColumn Guide:\n- **Affected Queries**: number of queries affected by index creation.\n- **Heaviest Query**: the query with the biggest total execution time among all affected queries.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false,
+            "wrapText": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Category"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Table Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 342
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Opens 'Table details' dashboard for this table",
+                    "url": "d/table-details/5-table-details?orgId=1&var-dbname=${__data.fields[\"Source Name\"]}&var-table_full_name=${__value.raw}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Recommendation"
+            },
+            "properties": [
+              {
+                "id": "custom.inspect",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 116
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Object"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 163
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Heaviest Query"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 187
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Opens 'Single query details' dashboard for this query id",
+                    "url": "/d/single-query-details?orgId=1&var-dbname=${__data.fields[\"Source Name\"]}&var-queryid=${__value.raw}&from=${__from}&to=${__to}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Affected Queries"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 144
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 12,
+      "options": {
+        "cellHeight": "md",
+        "enablePagination": false,
+        "showHeader": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT DISTINCT ON (dbname, \"Table Name\", \"Recommendation\")\n    dbname AS \"Source Name\",\n    tag_data->>'object_name' AS \"Table Name\",\n    data->>'affected_query_count' AS \"Affected Queries\",\n    data->>'query_id' AS \"Heaviest Query\",\n    data->>'recommendation' AS \"Recommendation\"\nFROM\n(\n  SELECT\n    *,\n    ROW_NUMBER() OVER(PARTITION BY dbname ORDER BY data->>'epoch_ns' DESC) AS rn\n  FROM recommendations\n  WHERE $__timeFilter(time) AND tag_data->>'reco_topic' = 'create_index'\n)\nWHERE \n  rn <= 10\n  AND dbname IN ($dbname)\nORDER BY dbname, \"Table Name\", \"Recommendation\"",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Missing Indexes",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        }
+      ],
+      "type": "table"
+    },
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
@@ -35,6 +250,9 @@
             "align": "auto",
             "cellOptions": {
               "type": "auto"
+            },
+            "footer": {
+              "reducers": []
             },
             "inspect": false
           },
@@ -59,22 +277,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Time"
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "index_def_hash"
+              "options": "Index def"
             },
             "properties": [
               {
@@ -86,14 +289,19 @@
                 "value": 2
               },
               {
-                "id": "custom.align"
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "max_index_size"
+              "options": "Max Index size"
             },
             "properties": [
               {
@@ -105,14 +313,19 @@
                 "value": 1
               },
               {
-                "id": "custom.align"
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 150
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "table_full_name"
+              "options": "Table Name"
             },
             "properties": [
               {
@@ -134,14 +347,19 @@
                 ]
               },
               {
-                "id": "custom.align"
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 337
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "count"
+              "options": "Count"
             },
             "properties": [
               {
@@ -149,7 +367,28 @@
                 "value": "short"
               },
               {
-                "id": "custom.align"
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.width",
+                "value": 106
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 121
               }
             ]
           }
@@ -159,22 +398,14 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 8
       },
       "id": 8,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -202,7 +433,7 @@
           "policy": "default",
           "query": "select \"index_def\", \"max_index_size\", \"count\" from (select mode(\"index_def\") as \"index_def\", count(distinct(\"index_full_name_val\")), max(\"index_size_b\") as \"max_index_size\"  from index_stats where \"dbname\" =~ /^$dbname$/  AND $timeFilter group by \"table_full_name\", \"index_def_hash\", \"dbname\") where \"count\" > 1 group by \"table_full_name\", \"index_def_hash\", \"dbname\"",
           "rawQuery": true,
-          "rawSql": "--select \"index_def\", \"max_index_size\", \"count\" from (select mode(\"index_def\") as \"index_def\", count(distinct(\"index_full_name_val\")), max(\"index_size_b\") as \"max_index_size\"  \n-- from index_stats where \"dbname\" =~ /^$dbname$/  AND $timeFilter group by \"table_full_name\", \"index_def_hash\", \"dbname\") where \"count\" > 1 \n--group by \"table_full_name\", \"index_def_hash\", \"dbname\"\nSELECT\n  dbname,\n  tag_data->>'table_full_name' as table_full_name,\n  data->>'index_def' as index_def,\n  max((data->>'index_size_b')::int8) as max_index_size,\n  count(*)\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2, 3\nHAVING\n  count(*) > 1",
+          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  max((data->>'index_size_b')::int8) as \"Max Index size\",\n  count(*) AS \"Count\",\n  data->>'index_def' as \"Index def\"\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2, 5\nHAVING\n  count(*) > 1",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -230,8 +461,7 @@
           ]
         }
       ],
-      "timeFrom": "15m",
-      "title": "Duplicate indexes",
+      "title": "Duplicate Indexes",
       "transformations": [
         {
           "id": "merge",
@@ -281,32 +511,9 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Time"
+              "options": "Table Name"
             },
             "properties": [
-              {
-                "id": "displayName",
-                "value": "Time"
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "table_full_name"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "short"
-              },
-              {
-                "id": "decimals",
-                "value": 2
-              },
               {
                 "id": "links",
                 "value": [
@@ -318,14 +525,19 @@
                 ]
               },
               {
-                "id": "custom.align"
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 428
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "index_size"
+              "options": "Index Size"
             },
             "properties": [
               {
@@ -337,7 +549,52 @@
                 "value": 1
               },
               {
-                "id": "custom.align"
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 127
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 144
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Index Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 521
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Scans (from last reset)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 311
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
               }
             ]
           }
@@ -347,22 +604,14 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 13
       },
       "id": 10,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -390,7 +639,7 @@
           "policy": "default",
           "query": "select \"index_size\", \"idx_scans_from_last_reset\" from (select last(\"index_size_b\") as \"index_size\", last(\"idx_scan\") as \"idx_scans_from_last_reset\", last(\"is_pk\") as \"is_pk\" from index_stats where \"dbname\" =~ /^$dbname$/  AND $timeFilter group by \"table_full_name\", \"index_full_name\", \"dbname\") where  \"idx_scans_from_last_reset\" = 0 and \"is_pk\" = false group by \"table_full_name\", \"index_full_name\", \"dbname\"",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  tag_data->>'table_full_name' as table_full_name,\n  max((data->>'index_size_b')::int8) as index_size,\n  max((data->>'idx_scan')::int8) as idx_scans_from_last_reset\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n  AND (data->>'idx_scan')::int8 = 0\n  AND (data->>'is_pk_int')::int8 = 0\n  AND coalesce((data->>'is_uq_or_exc')::int8, 0) = 0\nGROUP BY\n  1, 2, 3\nORDER BY\n  4 desc",
+          "rawSql": "SELECT\n  dbname as \"Source Name\",\n  tag_data->>'index_full_name' as \"Index Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  max((data->>'index_size_b')::int8) as \"Index Size\",\n  max((data->>'idx_scan')::int8) as \"Scans (from last reset)\"\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n  AND (data->>'idx_scan')::int8 = 0\n  AND (data->>'is_pk_int')::int8 = 0\n  AND coalesce((data->>'is_uq_or_exc')::int8, 0) = 0\nGROUP BY\n  1, 2, 3\nORDER BY\n  4 desc",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -418,7 +667,6 @@
           ]
         }
       ],
-      "timeFrom": "15m",
       "title": "Unused indexes (Non-PK)",
       "transformations": [
         {
@@ -534,22 +782,14 @@
         "h": 4,
         "w": 24,
         "x": 0,
-        "y": 10
+        "y": 18
       },
       "id": 11,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -605,7 +845,6 @@
           ]
         }
       ],
-      "timeFrom": "15m",
       "title": "Invalid indexes",
       "transformations": [
         {
@@ -655,22 +894,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Time"
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "table_full_name"
+              "options": "Table Name"
             },
             "properties": [
               {
@@ -692,20 +916,21 @@
                 ]
               },
               {
-                "id": "custom.align"
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 432
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "top"
+              "options": "Index Size"
             },
             "properties": [
-              {
-                "id": "displayName",
-                "value": "index_size"
-              },
               {
                 "id": "unit",
                 "value": "bytes"
@@ -715,14 +940,19 @@
                 "value": 1
               },
               {
-                "id": "custom.align"
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 136
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "idx_scans_from_last_reset"
+              "options": "Scans (from last reset)"
             },
             "properties": [
               {
@@ -731,10 +961,39 @@
               },
               {
                 "id": "decimals",
-                "value": 1
+                "value": 0
               },
               {
-                "id": "custom.align"
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 202
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 137
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Index Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 537
               }
             ]
           }
@@ -744,22 +1003,14 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 22
       },
       "id": 9,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -787,7 +1038,7 @@
           "policy": "default",
           "query": "select \"dbname\", \"index_full_name\", \"table_full_name\", top(\"index_size_b\", 20), \"idx_scans_from_last_reset\" from (select last(\"index_size_b\") as \"index_size_b\", last(\"idx_scan\") as idx_scans_from_last_reset from index_stats where \"dbname\" =~ /^$dbname$/  AND $timeFilter group by \"table_full_name\", \"index_full_name\", \"dbname\")",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  tag_data->>'table_full_name' as table_full_name,\n  max((data->>'index_size_b')::int8) as top,\n  max((data->>'idx_scan')::int8) as scans_from_last_reset\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2, 3\nORDER BY\n  4 DESC\nLIMIT\n  20",
+          "rawSql": "SELECT\n  dbname as \"Source Name\",\n  tag_data->>'index_full_name' as \"Index Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  max((data->>'index_size_b')::int8) as \"Index Size\",\n  max((data->>'idx_scan')::int8) as \"Scans (from last reset)\"\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2, 3\nORDER BY\n  4 DESC\nLIMIT\n  20",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -815,7 +1066,6 @@
           ]
         }
       ],
-      "timeFrom": "15m",
       "title": "Top 20 biggest indexes",
       "transformations": [
         {
@@ -836,7 +1086,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 30
       },
       "id": 6,
       "options": {
@@ -848,7 +1098,7 @@
         "content": "## Brought to you by\n\n<a href=\"https://www.cybertec-postgresql.com/en/\">\n  <img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\" width=\"600\" />\n</a>",
         "mode": "markdown"
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "title": "",
       "transparent": true,
       "type": "text"
@@ -856,29 +1106,24 @@
   ],
   "preload": false,
   "refresh": "",
-  "schemaVersion": 41,
+  "schemaVersion": 42,
   "tags": [
     "pgwatch"
   ],
   "templating": {
     "list": [
       {
-        "current": {
-          "text": "All",
-          "value": [
-            "$__all"
-          ]
-        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
         },
         "definition": "",
         "includeAll": true,
+        "label": "Source Name",
         "multi": true,
         "name": "dbname",
         "options": [],
-        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'index_stats' ORDER BY 1;",
+        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics ORDER BY 1;",
         "refresh": 1,
         "regex": "",
         "type": "query"
@@ -886,12 +1131,12 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Index overview",
   "uid": "index-overview",
-  "version": 7
+  "version": 34
 }
