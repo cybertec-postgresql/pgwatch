@@ -26,7 +26,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Adding indexes can have unexpected performance effects, so make sure to test them first to ensure that the recommendation has the desired effect.\n\nColumn Guide:\n- **Affected Queries**: number of queries affected by index creation.\n- **Heaviest Query**: the query with the biggest total execution time among all affected queries.",
+      "description": "Adding indexes can have unexpected performance effects, so ensure that you test them first to verify that the recommendation has the desired effect.\n\nRequires reco_add_index metric. \n\nColumn Guide:\n- **Affected Queries**: number of queries affected by index creation.\n- **Heaviest Query**: the query with the biggest total execution time among all affected queries.",
       "fieldConfig": {
         "defaults": {
           "color": {
