@@ -1503,7 +1503,7 @@ metrics:
                         json_array_length(indexes->'queryids') as affected_query_count,
                         indexes->>'ddl' as recommendation 
                     from 
-                        pg_qualstats_index_advisor() pqa,
+                        pg_qualstats_index_advisor(min_filter => 3000, min_selectivity => 85) pqa,
                         json_array_elements(pqa->'indexes') as indexes,
                         json_array_elements_text(indexes->'queryids') as query_id
                 )
@@ -1528,7 +1528,7 @@ metrics:
                         json_array_length(indexes->'queryids') as affected_query_count,
                         indexes->>'ddl' as recommendation
                     from 
-                        pg_qualstats_index_advisor() pqa,
+                        pg_qualstats_index_advisor(min_filter => 3000, min_selectivity => 85) pqa,
                         json_array_elements(pqa->'indexes') as indexes,
                         json_array_elements_text(indexes->'queryids') as query_id
                 )
