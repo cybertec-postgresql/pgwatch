@@ -1507,7 +1507,7 @@ metrics:
                         json_array_elements(pqa->'indexes') as indexes,
                         json_array_elements_text(indexes->'queryids') as query_id
                 )
-                select 
+                select distinct on (object_name, qrs.recommendation) 
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     object_name as tag_object_name,
                     'create_index'::text as tag_reco_topic,
@@ -1518,7 +1518,7 @@ metrics:
                     qrs
                 join pg_stat_statements s on qrs.query_id = s.queryid
                 where object_name > '' and recommendation > ''
-                order by s.total_time desc
+                order by object_name, qrs.recommendation, s.total_time desc
                 limit 10;
             13: |-
                 with qrs as (
@@ -1532,7 +1532,7 @@ metrics:
                         json_array_elements(pqa->'indexes') as indexes,
                         json_array_elements_text(indexes->'queryids') as query_id
                 )
-                select 
+                select distinct on (object_name, qrs.recommendation) 
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     object_name as tag_object_name,
                     'create_index'::text as tag_reco_topic,
@@ -1543,7 +1543,7 @@ metrics:
                     qrs
                 join pg_stat_statements s on qrs.query_id = s.queryid
                 where object_name > '' and qrs.recommendation > ''
-                order by s.total_exec_time desc
+                order by object_name, qrs.recommendation, s.total_exec_time desc
                 limit 10;
         init_sql: "CREATE EXTENSION IF NOT EXISTS pg_qualstats; CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
         node_status: primary
