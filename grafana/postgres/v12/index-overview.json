@@ -716,22 +716,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Time"
-              },
-              {
-                "id": "custom.align"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "table_full_name"
+              "options": "Table Name"
             },
             "properties": [
               {
@@ -760,7 +745,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "index_size"
+              "options": "Index Size"
             },
             "properties": [
               {
@@ -772,7 +757,36 @@
                 "value": 1
               },
               {
-                "id": "custom.align"
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 430
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 140
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Index Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 523
               }
             ]
           }
@@ -817,7 +831,7 @@
           "policy": "default",
           "query": "select \"index_size\" from (select last(\"index_size_b\") as \"index_size\", last(\"is_invalid_int\") as \"is_invalid_int\" from index_stats where \"dbname\" =~ /^$dbname$/  AND $timeFilter group by \"table_full_name\", \"index_full_name\", \"dbname\") where  \"is_invalid_int\" = 1 group by \"table_full_name\", \"index_full_name\", \"dbname\"",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  tag_data->>'table_full_name' as table_full_name,\n  max((data->>'index_size_b')::int8) as index_size\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n  AND (data->>'is_invalid_int')::int8 = 1\nGROUP BY\n  1, 2, 3\nORDER BY\n  4 desc",
+          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'index_full_name' as \"Index Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  max((data->>'index_size_b')::int8) as \"Index Size\"\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n  AND (data->>'is_invalid_int')::int8 = 1\nGROUP BY\n  1, 2, 3\nORDER BY\n  4 desc",
           "refId": "A",
           "resultFormat": "table",
           "select": [
