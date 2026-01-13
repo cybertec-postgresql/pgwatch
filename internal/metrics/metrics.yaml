@@ -1496,33 +1496,56 @@ metrics:
             This metric helps administrators optimize database performance by suggesting index creation.
         sqls:
             11: |-
-                with r as (select /* pgwatch_generated */
-                    (regexp_matches(v::text, E'ON (.*?) '))[1] as object_name,
-                    COALESCE(v->>'ddl', v::text) as recommendation,
-                    v->>'queryids' as queryids
-                    from json_array_elements(pg_qualstats_index_advisor() -> 'indexes') v),
-                limited_r as (select * from r limit 10),
-                rr as (select
+                with qrs as (
+                    select 
+                        query_id::int8, 
+                        (regexp_matches(indexes->>'ddl', E'ON (.*?) '))[1] as object_name,
+                        json_array_length(indexes->'queryids') as affected_query_count,
+                        indexes->>'ddl' as recommendation 
+                    from 
+                        pg_qualstats_index_advisor(min_filter => 3000, min_selectivity => 90) pqa,
+                        json_array_elements(pqa->'indexes') as indexes,
+                        json_array_elements_text(indexes->'queryids') as query_id
+                )
+                select distinct on (object_name, qrs.recommendation) 
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                    object_name as tag_object_name,
                     'create_index'::text as tag_reco_topic,
-                    string_agg(object_name, ',') as tag_object_name,
-                    string_agg(recommendation, ', ') as recommendation,
-                    string_agg(queryids, ', ') as extra_info
-                    from limited_r),
-                last_reco(s) as (
-                    select case when count(*) > 10 then format(' and found %s more...', count(*)-10) end from r),
-                total_count as (
-                    select count(*) as total from r)
-                select 
-                    epoch_ns,
-                    tag_reco_topic,
-                    concat(tag_object_name, s) as tag_object_name,
-                    recommendation,
-                    case when extra_info > '' then 'affected queries: ' || extra_info end,
-                    total as total_recommendations
-                from rr, last_reco, total_count
-                where tag_object_name > '';
-        init_sql: "CREATE EXTENSION IF NOT EXISTS pg_qualstats;"
+                    qrs.query_id,
+                    qrs.affected_query_count,
+                    qrs.recommendation
+                from 
+                    qrs
+                join pg_stat_statements s on qrs.query_id = s.queryid
+                where object_name > '' and recommendation > ''
+                order by object_name, qrs.recommendation, s.total_time desc
+                limit 10;
+            13: |-
+                with qrs as (
+                    select 
+                        (regexp_matches(indexes->>'ddl', E'ON (.*?) '))[1] as object_name,
+                        query_id::int8, 
+                        json_array_length(indexes->'queryids') as affected_query_count,
+                        indexes->>'ddl' as recommendation
+                    from 
+                        pg_qualstats_index_advisor(min_filter => 3000, min_selectivity => 90) pqa,
+                        json_array_elements(pqa->'indexes') as indexes,
+                        json_array_elements_text(indexes->'queryids') as query_id
+                )
+                select distinct on (object_name, qrs.recommendation) 
+                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                    object_name as tag_object_name,
+                    'create_index'::text as tag_reco_topic,
+                    qrs.query_id,
+                    qrs.affected_query_count,
+                    qrs.recommendation
+                from 
+                    qrs
+                join pg_stat_statements s on qrs.query_id = s.queryid
+                where object_name > '' and qrs.recommendation > ''
+                order by object_name, qrs.recommendation, s.total_exec_time desc
+                limit 10;
+        init_sql: "CREATE EXTENSION IF NOT EXISTS pg_qualstats; CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
         node_status: primary
         is_private: true
         storage_name: "recommendations"
