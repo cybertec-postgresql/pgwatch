@@ -169,11 +169,11 @@ Here is the structure of a metric definition in YAML format:
 
     !!! Notice
         Note the "minimally supported" part - i.e.
-        if your query will work from version v11.x to v17.x, then you only
-        need one entry called "11". If there was a breaking change in
-        the internal catalogs at v13 so that the query stopped working,
-        you need a new entry named "13" that will be used for all
-        versions above v13.
+        if your query will work from version v14.x to v18.x, then you only
+        need one entry called "14". If there was a breaking change in
+        the internal catalogs at v15 so that the query stopped working,
+        you need a new entry named "15" that will be used for all
+        versions above v14.
 
 - *gauges*
 
