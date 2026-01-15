@@ -681,7 +681,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'index_full_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\",\n  0::int8 as \"Scans\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused'\n",
+          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'object_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\",\n  0::int8 as \"Scans\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused'\n",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -869,7 +869,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'index_full_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid'\n",
+          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'object_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid'\n",
           "refId": "A",
           "resultFormat": "table",
           "select": [

@@ -1714,7 +1714,7 @@ metrics:
                     reco_topic as tag_reco_topic,
                     issue_type as tag_issue_type,
                     table_full_name as tag_table_full_name,
-                    index_full_name as tag_index_full_name,
+                    index_full_name as tag_object_name,
                     index_size_b,
                     duplicate_count,
                     oids,
