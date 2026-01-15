@@ -904,25 +904,6 @@ metrics:
                              order by idx_scan desc nulls last
                              limit 200
                          ) z
-                    union
-                    /* biggest unused non-constraint */
-                    select *
-                    from (
-                             select q.indexrelid
-                             from q_index_details q
-                             where idx_scan = 0
-                             and not (indisprimary or indisunique or indisexclusion)
-                             order by index_size_b desc
-                             limit 200
-                         ) z
-                    union
-                    /* all invalid */
-                    select *
-                    from (
-                             select q.indexrelid
-                             from q_index_details q
-                             where not indisvalid
-                         ) zz
                 )
                 select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -1661,6 +1642,8 @@ metrics:
                       and indisvalid
                       and not indisprimary
                       and not indisreplident
+                      and not indisunique
+                      and not indisexclusion
                       and not schemaname like '_timescaledb%'
                       and (pg_relation_size(indexrelid)::numeric / database_size_b) >= 0.005
                 ),
