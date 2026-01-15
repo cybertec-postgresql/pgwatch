@@ -1706,6 +1706,9 @@ metrics:
                 order by index_size_b desc, tag_issue_type
                 limit 100;
         node_status: primary
+        gauges:
+            - "duplicate_count"
+            - "index_size_b"
         storage_name: "recommendations"
     reco_nested_views:
         description: >
