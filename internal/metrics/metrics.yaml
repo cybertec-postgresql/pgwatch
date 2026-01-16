@@ -830,25 +830,6 @@ metrics:
                              order by idx_scan desc nulls last
                              limit 200
                          ) z
-                    union
-                    /* biggest unused non-constraint */
-                    select *
-                    from (
-                             select q.indexrelid
-                             from q_index_details q
-                             where idx_scan = 0
-                             and not (indisprimary or indisunique or indisexclusion)
-                             order by index_size_b desc
-                             limit 200
-                         ) z
-                    union
-                    /* all invalid */
-                    select *
-                    from (
-                             select q.indexrelid
-                             from q_index_details q
-                             where not indisvalid
-                         ) zz
                 )
                 select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -1519,48 +1500,116 @@ metrics:
         storage_name: "recommendations"
     reco_drop_index:
         description: >
-            Retrieves recommendations for dropping unused or invalid indexes in the PostgreSQL database.
+            Retrieves recommendations for dropping unused, duplicate or invalid indexes in the PostgreSQL database.
             It provides insights into indexes that have not been scanned and are consuming a significant portion of the database size.
             This metric helps administrators optimize database performance by suggesting the removal of unnecessary indexes.
         sqls:
-            14: |
-                with q_database_size as (
-                  select pg_database_size(current_database()) as database_size_b
+            14: |-
+                with /* pgwatch_generated */
+                q_database_size as (
+                    select pg_database_size(current_database()) as database_size_b
                 ),
-                r as (select /* pgwatch_generated */
-                    indexrelid::regclass::text as object_name
+                -- Invalid indexes
+                invalid_indexes as (
+                    select
+                        'drop_index'::text as reco_topic,
+                        'invalid'::text as issue_type,
+                        quote_ident(schemaname)||'.'||quote_ident(indexrelname) as index_full_name,
+                        quote_ident(schemaname)||'.'||quote_ident(relname) as table_full_name,
+                        pg_relation_size(indexrelid) as index_size_b,
+                        null::int as duplicate_count,
+                        array[indexrelid] as oids,
+                        null::text as index_def
+                    from pg_index
+                    join pg_stat_user_indexes using (indexrelid)
+                    where not indisvalid
+                      and not schemaname like '_timescaledb%'
+                ),
+                -- Unused indexes (at least 0.5% of DB size)
+                unused_indexes as (
+                    select
+                        'drop_index'::text as reco_topic,
+                        'unused'::text as issue_type,
+                        quote_ident(schemaname)||'.'||quote_ident(indexrelname) as index_full_name,
+                        quote_ident(schemaname)||'.'||quote_ident(relname) as table_full_name,
+                        pg_relation_size(indexrelid) as index_size_b,
+                        null::int as duplicate_count,
+                        array[indexrelid] as oids,
+                        null::text as index_def
                     from pg_stat_user_indexes
                     join pg_index using (indexrelid)
-                    join q_database_size on true
+                    cross join q_database_size
                     where idx_scan = 0
-                    and ((pg_relation_size(indexrelid)::numeric / database_size_b) > 0.005 /* 0.5% DB size threshold */
-                      or not indisvalid)
-                    and not indisprimary
-                    and not indisreplident
-                    and not schemaname like '_timescaledb%'),
-                limited_r as (select * from r limit 25),
-                rr as (select
+                      and indisvalid
+                      and not indisprimary
+                      and not indisreplident
+                      and not indisunique
+                      and not indisexclusion
+                      and not schemaname like '_timescaledb%'
+                      and (pg_relation_size(indexrelid)::numeric / database_size_b) >= 0.005
+                ),
+                -- Duplicate indexes detection
+                index_defs as (
+                    select
+                        sui.indexrelid,
+                        sui.relid,
+                        sui.schemaname,
+                        pg_relation_size(sui.indexrelid) as index_size_b,
+                        regexp_replace(
+                            regexp_replace(pg_get_indexdef(sui.indexrelid), sui.indexrelname, 'X'),
+                            '^CREATE UNIQUE', 'CREATE'
+                        ) as normalized_def
+                    from pg_stat_user_indexes sui
+                    where not sui.schemaname like '_timescaledb%'
+                ),
+                duplicate_groups as (
+                    select
+                        relid,
+                        schemaname,
+                        normalized_def,
+                        count(*) as dup_count,
+                        max(index_size_b) as max_size_b,
+                        array_agg(indexrelid order by index_size_b desc)::oid[] as oids
+                    from index_defs
+                    group by relid, schemaname, normalized_def
+                    having count(*) > 1
+                ),
+                duplicate_indexes as (
+                    select
+                        'drop_index'::text as reco_topic,
+                        'duplicate'::text as issue_type,
+                        null::text as index_full_name,
+                        quote_ident(schemaname)||'.'||quote_ident(relid::regclass::text) as table_full_name,
+                        dg.max_size_b as index_size_b,
+                        dg.dup_count::int as duplicate_count,
+                        dg.oids,
+                        normalized_def::text as index_def
+                    from duplicate_groups dg
+                ),
+                all_recommendations as (
+                    select * from invalid_indexes
+                    union all
+                    select * from unused_indexes
+                    union all
+                    select * from duplicate_indexes
+                )
+                select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-                    'drop_index'::text as tag_reco_topic,
-                    string_agg(object_name, ',') as tag_object_name,
-                    'drop unused or invalid indexes to improve performance'::text as recommendation,
-                    'Make sure to also check replica pg_stat_user_indexes.idx_scan count if using them for queries'::text as extra_info
-                    from limited_r),
-                last_reco(s) as (
-                    select case when count(*) > 25 then format(' and found %s more...', count(*)-25) end from r),
-                total_count as (
-                    select count(*) as total from r)
-                select 
-                    epoch_ns,
-                    tag_reco_topic,
-                    concat(tag_object_name, s) as tag_object_name,
-                    recommendation,
-                    extra_info,
-                    total as total_recommendations
-                from rr, last_reco, total_count
-                where tag_object_name > '';
-        init_sql: "CREATE EXTENSION IF NOT EXISTS pg_qualstats;"
+                    reco_topic as tag_reco_topic,
+                    issue_type as tag_issue_type,
+                    table_full_name as tag_table_full_name,
+                    index_full_name as tag_object_name,
+                    index_size_b,
+                    duplicate_count,
+                    oids,
+                    index_def
+                from all_recommendations
+                order by index_size_b desc, tag_issue_type
+                limit 100;
         node_status: primary
+        gauges:
+            - "duplicate_count"
+            - "index_size_b"
         storage_name: "recommendations"
     reco_nested_views:
         description: >

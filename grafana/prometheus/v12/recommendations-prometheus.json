@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 27,
+  "id": 33,
   "links": [],
   "panels": [
     {
@@ -47,9 +47,12 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
+            },
+            "footer": {
+              "reducers": []
             },
             "inspect": false
           },
@@ -60,10 +63,6 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -77,7 +76,151 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "decmbytes"
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Database"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 156
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "exported_instance"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Status"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "issue_type"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom.viz",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sys_id"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom.viz",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "reco_topic"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Recommendation"
+              },
+              {
+                "id": "custom.width",
+                "value": 166
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "real_dbname"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Real DB name"
+              },
+              {
+                "id": "custom.width",
+                "value": 183
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Table"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 277
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 93
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Index Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 298
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Recommendation"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 147
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Real DB name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 185
               }
             ]
           }
@@ -92,26 +235,13 @@
       "id": 2,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Size (MB)"
-          }
-        ]
+        "sortBy": []
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "topk(10, pgwatch_index_stats_size_b{dbname=~\"$dbname\"} / 1024 / 1024 and on(index_name, dbname) (rate(pgwatch_index_stats_idx_scan{}[$agg_interval]) == 0))",
+          "expr": "topk(10, metrics_recommendations_index_size_b{dbname=~\"$dbname\", issue_type=\"unused\"} / 1024 / 1024)",
           "format": "table",
           "instant": true,
           "legendFormat": "Size (MB)",
@@ -124,17 +254,18 @@
           "id": "organize",
           "options": {
             "excludeByName": {
+              "Time": true,
               "__name__": true,
               "instance": true,
-              "job": true,
-              "Time": true
+              "job": true
             },
             "includeByName": {},
             "indexByName": {},
             "renameByName": {
+              "Value": "Size (MB)",
               "dbname": "Database",
-              "index_name": "Index Name",
-              "Value": "Size (MB)"
+              "object_name": "Index Name",
+              "table_full_name": "Table"
             }
           }
         }
@@ -153,9 +284,13 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
+            },
+            "filterable": false,
+            "footer": {
+              "reducers": []
             },
             "inspect": false
           },
@@ -166,15 +301,128 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Database"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 125
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "exported_instance"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Status"
+              },
+              {
+                "id": "custom.hideFrom.viz",
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "index_def"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Index def"
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
+              },
+              {
+                "id": "custom.width",
+                "value": 647
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "issue_type"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom.viz",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "real_dbname"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Real DB name"
+              },
+              {
+                "id": "custom.width",
+                "value": 179
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "reco_topic"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "recommendation"
+              },
+              {
+                "id": "custom.width",
+                "value": 140
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sys_id"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom.viz",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Table"
+            },
+            "properties": [
+              {
+                "id": "custom.inspect",
+                "value": true
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -185,20 +433,12 @@
       "id": 3,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "group by (dbname, index_columns) (count by (dbname, index_columns) (pgwatch_duplicate_indexes_index_name{dbname=~\"$dbname\"}) > 1)",
+          "expr": "metrics_recommendations_duplicate_count{dbname=~\"$dbname\", issue_type=\"duplicate\"}",
           "format": "table",
           "instant": true,
           "legendFormat": "Duplicate Count",
@@ -211,17 +451,17 @@
           "id": "organize",
           "options": {
             "excludeByName": {
+              "Time": true,
               "__name__": true,
               "instance": true,
-              "job": true,
-              "Time": true
+              "job": true
             },
             "includeByName": {},
             "indexByName": {},
             "renameByName": {
+              "Value": "Duplicate Count",
               "dbname": "Database",
-              "index_columns": "Index Columns",
-              "Value": "Duplicate Count"
+              "table_full_name": "Table"
             }
           }
         }
@@ -256,6 +496,9 @@
             "align": "auto",
             "cellOptions": {
               "type": "auto"
+            },
+            "footer": {
+              "reducers": []
             },
             "inspect": false
           },
@@ -312,14 +555,6 @@
       "id": 5,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true,
         "sortBy": [
           {
@@ -328,7 +563,7 @@
           }
         ]
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "expr": "topk(10, (pgwatch_stat_statements_shared_blks_hit{dbname=~\"$dbname\"} / (pgwatch_stat_statements_shared_blks_hit{} + pgwatch_stat_statements_shared_blks_read{} + 0.01) * 100) < 95 and pgwatch_stat_statements_calls{} > 10)",
@@ -365,19 +600,19 @@
           "id": "organize",
           "options": {
             "excludeByName": {
+              "Time": true,
               "__name__": true,
               "instance": true,
-              "job": true,
-              "Time": true
+              "job": true
             },
             "includeByName": {},
             "indexByName": {},
             "renameByName": {
-              "dbname": "Database",
-              "queryid": "Query ID",
               "Value #A": "Cache Hit %",
               "Value #B": "Total Time (ms)",
-              "Value #C": "Calls"
+              "Value #C": "Calls",
+              "dbname": "Database",
+              "queryid": "Query ID"
             }
           }
         }
@@ -500,18 +735,18 @@
           "id": "organize",
           "options": {
             "excludeByName": {
+              "Time": true,
               "__name__": true,
               "instance": true,
-              "job": true,
-              "Time": true
+              "job": true
             },
             "includeByName": {},
             "indexByName": {},
             "renameByName": {
-              "dbname": "Database",
-              "queryid": "Query ID",
               "Value #A": "I/O Time %",
-              "Value #B": "Total Time (ms)"
+              "Value #B": "Total Time (ms)",
+              "dbname": "Database",
+              "queryid": "Query ID"
             }
           }
         }
@@ -601,17 +836,17 @@
           "id": "organize",
           "options": {
             "excludeByName": {
+              "Time": true,
               "__name__": true,
               "instance": true,
-              "job": true,
-              "Time": true
+              "job": true
             },
             "includeByName": {},
             "indexByName": {},
             "renameByName": {
+              "Value": "Current Value",
               "dbname": "Database",
-              "setting_name": "Setting",
-              "Value": "Current Value"
+              "setting_name": "Setting"
             }
           }
         }
@@ -766,19 +1001,19 @@
           "id": "organize",
           "options": {
             "excludeByName": {
+              "Time": true,
               "__name__": true,
               "instance": true,
-              "job": true,
-              "Time": true
+              "job": true
             },
             "includeByName": {},
             "indexByName": {},
             "renameByName": {
-              "dbname": "Database",
-              "table_name": "Table",
               "Value #A": "Dead Tuples",
               "Value #B": "Days Since Last Vacuum",
-              "Value #C": "Days Since Last Analyze"
+              "Value #C": "Days Since Last Analyze",
+              "dbname": "Database",
+              "table_name": "Table"
             }
           }
         }
@@ -786,8 +1021,9 @@
       "type": "table"
     }
   ],
+  "preload": false,
   "refresh": "5m",
-  "schemaVersion": 39,
+  "schemaVersion": 42,
   "tags": [
     "pgwatch",
     "prometheus"
@@ -796,7 +1032,6 @@
     "list": [
       {
         "current": {
-          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -804,7 +1039,6 @@
           "type": "prometheus"
         },
         "definition": "label_values(pgwatch_instance_up, dbname)",
-        "hide": 0,
         "includeAll": true,
         "label": "Database",
         "multi": true,
@@ -813,20 +1047,16 @@
         "query": "label_values(pgwatch_instance_up, dbname)",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 1,
         "type": "query"
       },
       {
         "current": {
-          "selected": false,
           "text": "5m",
           "value": "5m"
         },
-        "hide": 0,
         "includeAll": false,
         "label": "Aggregation interval",
-        "multi": false,
         "name": "agg_interval",
         "options": [
           {
@@ -856,20 +1086,17 @@
           }
         ],
         "query": "1m,5m,10m,30m,1h",
-        "queryValue": "",
-        "skipUrlSync": false,
         "type": "custom"
       }
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Recommendations (Prometheus)",
   "uid": "recommendations-prometheus",
-  "version": 1,
-  "weekStart": ""
+  "version": 8
 }

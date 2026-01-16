@@ -26,7 +26,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Adding indexes can have unexpected performance effects, so ensure that you test them first to verify that the recommendation has the desired effect.\n\nRequires reco_add_index metric. \n\nColumn Guide:\n- **Affected Queries**: number of queries affected by index creation.\n- **Heaviest Query**: the query with the biggest total execution time among all affected queries.\n- **Recommendation**: the recommended index ddl.",
+      "description": "Adding indexes can have unexpected performance effects, so ensure that you test them first to verify that the recommendation has the desired effect.\n\nRequires `reco_add_index` metric. \n\nColumn Guide:\n- **Affected Queries**: number of queries affected by index creation.\n- **Heaviest Query**: the query with the biggest total execution time among all affected queries.\n- **Recommendation**: the recommended index ddl.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -79,7 +79,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 342
+                "value": 243
               },
               {
                 "id": "links",
@@ -241,6 +241,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
+      "description": "Requires `reco_drop_index` metric.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -353,7 +354,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 337
+                "value": 236
               }
             ]
           },
@@ -390,6 +391,30 @@
               {
                 "id": "custom.width",
                 "value": 121
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Num of duplicates"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 154
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "OIDs"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 312
               }
             ]
           }
@@ -433,9 +458,8 @@
           "metricColumn": "none",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "select \"index_def\", \"max_index_size\", \"count\" from (select mode(\"index_def\") as \"index_def\", count(distinct(\"index_full_name_val\")), max(\"index_size_b\") as \"max_index_size\"  from index_stats where \"dbname\" =~ /^$dbname$/  AND $timeFilter group by \"table_full_name\", \"index_def_hash\", \"dbname\") where \"count\" > 1 group by \"table_full_name\", \"index_def_hash\", \"dbname\"",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  max((data->>'index_size_b')::int8) as \"Max Index size\",\n  count(*) AS \"Count\",\n  data->>'index_def' as \"Index def\"\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2, 5\nHAVING\n  count(*) > 1",
+          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  (data->>'index_size_b')::int8 as \"Max Index size\",\n  data->>'duplicate_count' as \"Num of duplicates\",\n  data->>'oids' as \"OIDs\",\n  data->>'index_def' as \"Index def\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'duplicate' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'duplicate'\n\n",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -496,7 +520,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Before dropping indexes make sure they are not used on replicas, if having any. FYI - one could also adjust the default 0 threshold so that \"little used\" indexes are shown",
+      "description": "Before dropping indexes make sure they are not used on replicas, if having any. FYI - one could also adjust the default 0 threshold so that \"little used\" indexes are shown.\n\nRequires `reco_drop_index` metric.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -553,14 +577,14 @@
               },
               {
                 "id": "custom.width",
-                "value": 428
+                "value": 385
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "Index Size"
+              "options": "Index size"
             },
             "properties": [
               {
@@ -574,10 +598,6 @@
               {
                 "id": "custom.align",
                 "value": "left"
-              },
-              {
-                "id": "custom.width",
-                "value": 127
               }
             ]
           },
@@ -589,7 +609,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 144
+                "value": 218
               }
             ]
           },
@@ -601,27 +621,23 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 521
+                "value": 448
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "Scans (from last reset)"
+              "options": "Scans"
             },
             "properties": [
               {
-                "id": "custom.width",
-                "value": 311
+                "id": "decimals",
+                "value": 0
               },
               {
                 "id": "custom.align",
                 "value": "left"
-              },
-              {
-                "id": "decimals",
-                "value": 0
               }
             ]
           }
@@ -664,9 +680,8 @@
           "metricColumn": "none",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "select \"index_size\", \"idx_scans_from_last_reset\" from (select last(\"index_size_b\") as \"index_size\", last(\"idx_scan\") as \"idx_scans_from_last_reset\", last(\"is_pk\") as \"is_pk\" from index_stats where \"dbname\" =~ /^$dbname$/  AND $timeFilter group by \"table_full_name\", \"index_full_name\", \"dbname\") where  \"idx_scans_from_last_reset\" = 0 and \"is_pk\" = false group by \"table_full_name\", \"index_full_name\", \"dbname\"",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname as \"Source Name\",\n  tag_data->>'index_full_name' as \"Index Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  max((data->>'index_size_b')::int8) as \"Index Size\",\n  max((data->>'idx_scan')::int8) as \"Scans (from last reset)\"\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n  AND (data->>'idx_scan')::int8 = 0\n  AND (data->>'is_pk_int')::int8 = 0\n  AND coalesce((data->>'is_uq_or_exc')::int8, 0) = 0\nGROUP BY\n  1, 2, 3\nORDER BY\n  4 desc",
+          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'object_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\",\n  0::int8 as \"Scans\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused'\n",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -710,6 +725,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
+      "description": "Requires `reco_drop_index` metric.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -751,14 +767,6 @@
             },
             "properties": [
               {
-                "id": "unit",
-                "value": "short"
-              },
-              {
-                "id": "decimals",
-                "value": 2
-              },
-              {
                 "id": "links",
                 "value": [
                   {
@@ -770,13 +778,17 @@
               },
               {
                 "id": "custom.align"
+              },
+              {
+                "id": "custom.width",
+                "value": 385
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "Index Size"
+              "options": "Index size"
             },
             "properties": [
               {
@@ -790,10 +802,6 @@
               {
                 "id": "custom.align",
                 "value": "left"
-              },
-              {
-                "id": "custom.width",
-                "value": 430
               }
             ]
           },
@@ -805,7 +813,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 140
+                "value": 221
               }
             ]
           },
@@ -817,7 +825,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 523
+                "value": 449
               }
             ]
           }
@@ -860,9 +868,8 @@
           "metricColumn": "none",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "select \"index_size\" from (select last(\"index_size_b\") as \"index_size\", last(\"is_invalid_int\") as \"is_invalid_int\" from index_stats where \"dbname\" =~ /^$dbname$/  AND $timeFilter group by \"table_full_name\", \"index_full_name\", \"dbname\") where  \"is_invalid_int\" = 1 group by \"table_full_name\", \"index_full_name\", \"dbname\"",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'index_full_name' as \"Index Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  max((data->>'index_size_b')::int8) as \"Index Size\"\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n  AND (data->>'is_invalid_int')::int8 = 1\nGROUP BY\n  1, 2, 3\nORDER BY\n  4 desc",
+          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'object_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid'\n",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -1086,7 +1093,6 @@
           "metricColumn": "none",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "select \"dbname\", \"index_full_name\", \"table_full_name\", top(\"index_size_b\", 20), \"idx_scans_from_last_reset\" from (select last(\"index_size_b\") as \"index_size_b\", last(\"idx_scan\") as idx_scans_from_last_reset from index_stats where \"dbname\" =~ /^$dbname$/  AND $timeFilter group by \"table_full_name\", \"index_full_name\", \"dbname\")",
           "rawQuery": true,
           "rawSql": "SELECT\n  dbname as \"Source Name\",\n  tag_data->>'index_full_name' as \"Index Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  max((data->>'index_size_b')::int8) as \"Index Size\",\n  max((data->>'idx_scan')::int8) as \"Scans (from last reset)\"\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2, 3\nORDER BY\n  4 DESC\nLIMIT\n  20",
           "refId": "A",
@@ -1211,5 +1217,5 @@
   "timezone": "browser",
   "title": "Index overview",
   "uid": "index-overview",
-  "version": 6
+  "version": 22
 }

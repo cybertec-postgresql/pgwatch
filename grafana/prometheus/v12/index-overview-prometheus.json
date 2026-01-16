@@ -514,8 +514,8 @@
       "pluginVersion": "12.1.0",
       "targets": [
         {
-          "expr": "sum by (index_name, dbname) (pgwatch_index_stats_is_invalid_int{dbname=~\"$dbname\"} == 1)",
-          "legendFormat": "{{dbname}}.{{index_name}} - Invalid",
+          "expr": "sum by (object_name, dbname) (metrics_recommendations_index_size_b{dbname=~\"$dbname\", issue_type=\"invalid\"})",
+          "legendFormat": "{{dbname}}.{{object_name}} - Invalid",
           "refId": "A"
         }
       ],
@@ -609,8 +609,8 @@
       },
       "targets": [
         {
-          "expr": "topk(10, sum by (index_name, dbname) (pgwatch_index_stats_index_size_b{dbname=~\"$dbname\"} and pgwatch_index_stats_idx_scan{dbname=~\"$dbname\"} == 0 and pgwatch_index_stats_is_pk_int{dbname=~\"$dbname\"} == 0))",
-          "legendFormat": "{{dbname}}.{{index_name}} - Unused size",
+          "expr": "topk(10, sum by (object_name, dbname) (metrics_recommendations_index_size_b{dbname=~\"$dbname\", issue_type=\"unused\"}))",
+          "legendFormat": "{{dbname}}.{{object_name}} - Unused size",
           "refId": "A"
         }
       ],
