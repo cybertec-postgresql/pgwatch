@@ -49,11 +49,9 @@ language:
 
 ### [PostgreSQL](https://www.postgresql.org/)
 
-PostgreSQL is a world's most advanced Open Source RDBMS.
+PostgreSQL is the world's most advanced Open Source RDBMS.
 
-Postgres storage is based on the JSONB datatype so minimally
-version 9.4+ is required, but for bigger setups where partitioning
-is a must, v11+ is needed. Any already existing Postgres database
+Postgres version 14+ is required. Any already existing Postgres database
 will do the trick, see the [Bootstrapping the Metrics DB](../howto/metrics_db_bootstrap.md) section for details.
 
 ### [TimescaleDB](https://www.timescale.com/)
