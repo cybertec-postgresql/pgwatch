@@ -119,6 +119,8 @@ BEGIN
           IF metric_timestamp >= l_part_start AND metric_timestamp < l_part_end THEN
               part_available_from := l_part_start;
               part_available_to := l_part_end;
+          ELSEIF metric_timestamp < l_part_start THEN
+              EXIT; -- No need to create further partitions
           END IF;
       END IF;
 
