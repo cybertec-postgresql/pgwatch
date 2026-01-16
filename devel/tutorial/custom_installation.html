@@ -1986,7 +1986,7 @@ visualize the gathered metrics.</p>
 <h2 id="configuration-database-based-setup">Configuration Database based setup</h2>
 <h3 id="overview-of-installation-steps">Overview of installation steps</h3>
 <ol>
-<li>Install Postgres or use any available existing instance - v11+
+<li>Install Postgres or use any available existing instance - v14+
     is required but the latest major version is recommended.</li>
 <li>Bootstrap the configuration database.</li>
 <li>Bootstrap the metrics measurements storage database aka sink (PostgreSQL here).</li>
@@ -2013,7 +2013,7 @@ syntax differences.</p>
 <li>
 <p><strong>Install Postgres</strong></p>
 <p>Follow the standard Postgres install procedure basically. Use the
-latest major version available, but minimally v11+ is required.</p>
+latest major version available, but minimally v14+ is required.</p>
 <p>To get the latest Postgres versions, official Postgres PGDG repos
 are to be preferred over default disto repos. Follow the
 instructions from:</p>
@@ -2272,7 +2272,7 @@ setting up a Postgres database for the configuration, one would use a
 YAML file. For details on individual steps like installing pgwatch see the above
 paragraph.</p>
 <ol>
-<li>Install Postgres or use any available existing instance - v11+
+<li>Install Postgres or use any available existing instance - v14+
     is required but the latest major version is recommended.</li>
 <li>Edit the YAML file to include the sources to be monitored.</li>
 <li>Bootstrap the metrics measurements storage database aka sink (PostgreSQL here).</li>
