@@ -397,7 +397,19 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 		return err
 	}
 	srcs = slices.DeleteFunc(srcs, func(s sources.Source) bool {
-		return !s.IsEnabled || len(r.Sources.Groups) > 0 && !s.IsDefaultGroup() && !slices.Contains(r.Sources.Groups, s.Group)
+	if !s.IsEnabled {
+		return true
+	}
+
+	// If groups are specified, be strict:
+	// ONLY include sources whose group is explicitly listed
+	if len(r.Sources.Groups) > 0 {
+		return !slices.Contains(r.Sources.Groups, s.Group)
+	}
+
+	return false
+
+
 	})
 	if newSrcs, err = srcs.ResolveDatabases(); err != nil {
 		r.logger.WithError(err).Error("could not resolve databases from sources")
