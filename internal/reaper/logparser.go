@@ -35,18 +35,27 @@ const csvLogDefaultRegEx = `^^(?P<log_time>.*?),"?(?P<user_name>.*?)"?,"?(?P<dat
 const csvLogDefaultGlobSuffix = "*.csv"
 
 const maxChunkSize int32 = 10 * 1024 * 1024 // 10 MB
+const maxTrackedFiles = 100                 // max log files to track offsets for
+
+// fileState stores the parsing state for a log file
+type fileState struct {
+	offset   int64 // last read position (bytes for remote, lines for local)
+	fileSize int64 // file size when offset was saved (for truncation detection)
+}
 
 type LogParser struct {
-	ctx                context.Context
-	LogsMatchRegex     *regexp.Regexp
-	LogFolder          string
-	ServerMessagesLang string
-	SourceConn         *sources.SourceConn
-	Interval           float64
-	StoreCh            chan<- metrics.MeasurementEnvelope
-	eventCounts        map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
-	eventCountsTotal   map[string]int64 // for the whole instance
-	lastSendTime       time.Time
+	ctx                   context.Context
+	LogsMatchRegex        *regexp.Regexp
+	LogFolder             string
+	ServerMessagesLang    string
+	SourceConn            *sources.SourceConn
+	Interval              float64
+	StoreCh               chan<- metrics.MeasurementEnvelope
+	eventCounts           map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
+	eventCountsTotal      map[string]int64 // for the whole instance
+	lastSendTime          time.Time
+	fileStates            map[string]*fileState // tracks parsing state per log file
+	logTruncateOnRotation bool                  // PostgreSQL's log_truncate_on_rotation setting
 }
 
 func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- metrics.MeasurementEnvelope) (*LogParser, error) {
@@ -74,16 +83,25 @@ func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- m
 		return nil, err
 	}
 
+	var logTruncateOnRotation bool
+	if logTruncateOnRotation, err = tryDetermineLogTruncateOnRotation(ctx, mdb.Conn); err != nil {
+		logger.WithError(err).Warning("Could not determine log_truncate_on_rotation setting, assuming off")
+		logTruncateOnRotation = false
+	}
+	logger.Debugf("log_truncate_on_rotation is set to: %v", logTruncateOnRotation)
+
 	return &LogParser{
-		ctx:                ctx,
-		LogsMatchRegex:     logsRegex,
-		LogFolder:          logFolder,
-		ServerMessagesLang: serverMessagesLang,
-		SourceConn:         mdb,
-		Interval:           mdb.GetMetricInterval(specialMetricServerLogEventCounts),
-		StoreCh:            storeCh,
-		eventCounts:        make(map[string]int64),
-		eventCountsTotal:   make(map[string]int64),
+		ctx:                   ctx,
+		LogsMatchRegex:        logsRegex,
+		LogFolder:             logFolder,
+		ServerMessagesLang:    serverMessagesLang,
+		SourceConn:            mdb,
+		Interval:              mdb.GetMetricInterval(specialMetricServerLogEventCounts),
+		StoreCh:               storeCh,
+		eventCounts:           make(map[string]int64),
+		eventCountsTotal:      make(map[string]int64),
+		fileStates:            make(map[string]*fileState),
+		logTruncateOnRotation: logTruncateOnRotation,
 	}, nil
 }
 
@@ -134,6 +152,16 @@ func tryDetermineLogMessagesLanguage(ctx context.Context, conn db.PgxIface) (str
 		return "en", nil
 	}
 	return lc, nil
+}
+
+func tryDetermineLogTruncateOnRotation(ctx context.Context, conn db.PgxIface) (bool, error) {
+	sql := `select current_setting('log_truncate_on_rotation')`
+	var setting string
+	err := conn.QueryRow(ctx, sql).Scan(&setting)
+	if err != nil {
+		return false, err
+	}
+	return setting == "on", nil
 }
 
 func checkHasRemotePrivileges(ctx context.Context, mdb *sources.SourceConn, logsDirPath string) error {
