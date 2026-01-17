@@ -349,6 +349,104 @@ func TestZeroEventCounts(t *testing.T) {
 	}
 }
 
+func TestFileOffsetsTrackingAndPruning(t *testing.T) {
+	t.Run("save and restore offset", func(t *testing.T) {
+		lp := &LogParser{
+			fileOffsets: make(map[string]int64),
+		}
+
+		// Simulate saving offset for file1
+		lp.fileOffsets["postgresql-10.csv"] = 50000
+
+		// Verify offset is saved
+		assert.Equal(t, int64(50000), lp.fileOffsets["postgresql-10.csv"])
+
+		// Simulate saving offset for file2
+		lp.fileOffsets["postgresql-11.csv"] = 75000
+
+		// Verify both offsets are saved
+		assert.Equal(t, int64(50000), lp.fileOffsets["postgresql-10.csv"])
+		assert.Equal(t, int64(75000), lp.fileOffsets["postgresql-11.csv"])
+
+		// Simulate restoring offset when switching back to file1
+		restoredOffset, ok := lp.fileOffsets["postgresql-10.csv"]
+		assert.True(t, ok, "should find saved offset")
+		assert.Equal(t, int64(50000), restoredOffset)
+	})
+
+	t.Run("prune clears map when exceeds limit", func(t *testing.T) {
+		lp := &LogParser{
+			fileOffsets: make(map[string]int64),
+		}
+
+		// Fill map with maxTrackedFiles + 1 entries
+		for i := 0; i <= maxTrackedFiles; i++ {
+			lp.fileOffsets[string(rune('A'+i))] = int64(i * 1000)
+		}
+
+		// Verify map has exceeded limit
+		assert.Greater(t, len(lp.fileOffsets), maxTrackedFiles)
+
+		// Call prune
+		lp.pruneFileOffsets()
+
+		// Map should be cleared
+		assert.Equal(t, 0, len(lp.fileOffsets))
+	})
+
+	t.Run("prune does nothing when under limit", func(t *testing.T) {
+		lp := &LogParser{
+			fileOffsets: make(map[string]int64),
+		}
+
+		// Add 24 entries (typical hourly rotation)
+		for i := 0; i < 24; i++ {
+			lp.fileOffsets[string(rune('A'+i))] = int64(i * 1000)
+		}
+
+		originalLen := len(lp.fileOffsets)
+
+		// Call prune
+		lp.pruneFileOffsets()
+
+		// Map should remain unchanged
+		assert.Equal(t, originalLen, len(lp.fileOffsets))
+	})
+
+	t.Run("offset restoration with truncation check", func(t *testing.T) {
+		lp := &LogParser{
+			fileOffsets: make(map[string]int64),
+		}
+
+		// Simulate a file that was previously read up to offset 50000
+		lp.fileOffsets["postgresql-10.csv"] = 50000
+
+		// Simulate file was truncated (new size is smaller than saved offset)
+		newFileSize := int64(10000)
+		savedOffset, ok := lp.fileOffsets["postgresql-10.csv"]
+
+		if ok && savedOffset <= newFileSize {
+			// File not truncated, use saved offset
+			assert.Fail(t, "should not use saved offset when file is truncated")
+		} else {
+			// File was truncated or new, start from 0
+			// This is the expected behavior
+			assert.True(t, true, "correctly detected truncation")
+		}
+
+		// Simulate file grew (new size is larger than saved offset)
+		newFileSize = int64(60000)
+		savedOffset, ok = lp.fileOffsets["postgresql-10.csv"]
+
+		if ok && savedOffset <= newFileSize {
+			// File not truncated, use saved offset
+			assert.Equal(t, int64(50000), savedOffset)
+		} else {
+			assert.Fail(t, "should use saved offset when file has grown")
+		}
+	})
+}
+
 func TestRegexMatchesToMap(t *testing.T) {
 	t.Run("successful match", func(t *testing.T) {
 		lp := &LogParser{

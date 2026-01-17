@@ -35,6 +35,7 @@ const csvLogDefaultRegEx = `^^(?P<log_time>.*?),"?(?P<user_name>.*?)"?,"?(?P<dat
 const csvLogDefaultGlobSuffix = "*.csv"
 
 const maxChunkSize int32 = 10 * 1024 * 1024 // 10 MB
+const maxTrackedFiles = 100                 // max log files to track offsets for
 
 type LogParser struct {
 	ctx                context.Context
@@ -47,6 +48,7 @@ type LogParser struct {
 	eventCounts        map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	eventCountsTotal   map[string]int64 // for the whole instance
 	lastSendTime       time.Time
+	fileOffsets        map[string]int64 // tracks last read offset per log file for resumption
 }
 
 func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- metrics.MeasurementEnvelope) (*LogParser, error) {
@@ -84,6 +86,7 @@ func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- m
 		StoreCh:            storeCh,
 		eventCounts:        make(map[string]int64),
 		eventCountsTotal:   make(map[string]int64),
+		fileOffsets:        make(map[string]int64),
 	}, nil
 }
 
@@ -209,5 +212,13 @@ func (lp *LogParser) GetMeasurementEnvelope() metrics.MeasurementEnvelope {
 func zeroEventCounts(eventCounts map[string]int64) {
 	for _, severity := range pgSeverities {
 		eventCounts[severity] = 0
+	}
+}
+
+// pruneFileOffsets clears the file offsets map if it grows too large.
+// This prevents unbounded memory growth with timestamp-based log filenames.
+func (lp *LogParser) pruneFileOffsets() {
+	if len(lp.fileOffsets) > maxTrackedFiles {
+		clear(lp.fileOffsets)
 	}
 }

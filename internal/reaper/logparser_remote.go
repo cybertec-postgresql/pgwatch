@@ -82,10 +82,19 @@ func (lp *LogParser) parseLogsRemote() error {
 					sql := "select name, size from pg_ls_logdir() where modification > $1 and name like '%csv' order by modification, name limit 1;"
 					err := lp.SourceConn.Conn.QueryRow(lp.ctx, sql, modification).Scan(&fileName, &latestSize)
 					if err == nil && latestLogFile != fileName {
+						// Save current file's offset before switching
+						lp.fileOffsets[latestLogFile] = int64(offset)
+						lp.pruneFileOffsets() // prevent unbounded map growth
 						latestLogFile = fileName
 						size = latestSize
-						offset = 0
-						logger.Infof("Switching to new logfile: '%s'", fileName)
+						// Restore offset if we've seen this file before and it hasn't been truncated
+						if savedOffset, ok := lp.fileOffsets[fileName]; ok && savedOffset <= int64(latestSize) {
+							offset = int32(savedOffset)
+							logger.Infof("Switching to logfile: '%s' (resuming from offset %d)", fileName, offset)
+						} else {
+							offset = 0
+							logger.Infof("Switching to new logfile: '%s'", fileName)
+						}
 						currInterval = 0 // We already slept. It will be resetted.
 						break
 					}
