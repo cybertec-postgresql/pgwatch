@@ -103,12 +103,21 @@ func (lp *LogParser) parseLogsLocal() error {
 				// check for newly opened logfiles
 				file, _ := getFileWithNextModTimestamp(logsGlobPath, latest)
 				if file != "" {
+					// Save current file's line count before switching
+					lp.fileOffsets[latest] = int64(linesRead)
+					lp.pruneFileOffsets() // prevent unbounded map growth
 					previous = latest
 					latest = file
 					_ = latestHandle.Close()
 					latestHandle = nil
-					logger.Infof("Switching to new logfile: %s", file)
-					linesRead = 0
+					// Restore line count if we've seen this file before
+					if savedLines, ok := lp.fileOffsets[file]; ok {
+						linesRead = int(savedLines)
+						logger.Infof("Switching to logfile: %s (resuming from line %d)", file, linesRead)
+					} else {
+						linesRead = 0
+						logger.Infof("Switching to new logfile: %s", file)
+					}
 					break
 				}
 			} else {
