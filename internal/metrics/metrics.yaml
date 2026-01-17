@@ -1420,7 +1420,8 @@ metrics:
                     'create_index'::text as tag_reco_topic,
                     qrs.query_id,
                     qrs.affected_query_count,
-                    qrs.recommendation
+                    qrs.recommendation,
+                    s.total_exec_time
                 from 
                     qrs
                 join pg_stat_statements s on qrs.query_id = s.queryid

@@ -186,7 +186,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n    dbname AS \"Source Name\",\n    tag_data->>'object_name' AS \"Table Name\",\n    data->>'affected_query_count' AS \"Affected Queries\",\n    data->>'query_id' AS \"Heaviest Query\",\n    data->>'recommendation' AS \"Recommendation\"\nFROM recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) and tag_data->>'reco_topic' = 'create_index' \n    group by dbname\n  )\n  AND dbname IN ($dbname)\n",
+          "rawSql": "SELECT\n    dbname AS \"Source Name\",\n    tag_data->>'object_name' AS \"Table Name\",\n    data->>'affected_query_count' AS \"Affected Queries\",\n    data->>'query_id' AS \"Heaviest Query\",\n    data->>'recommendation' AS \"Recommendation\"\nFROM recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) and tag_data->>'reco_topic' = 'create_index' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'create_index' \nORDER BY (data->>'total_exec_time')::float8 DESC",
           "refId": "A",
           "select": [
             [
