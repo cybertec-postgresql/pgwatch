@@ -106,7 +106,7 @@
       },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "max(last_over_time(pgwatch_db_stats_in_recovery_int{dbname='$dbname'}[$__interval]))",
+          "expr": "max(pgwatch_db_stats_in_recovery_int{dbname='$dbname'})",
           "instant": true,
           "interval": "",
           "legendFormat": "",
@@ -401,7 +401,7 @@
           "refId": "A"
         }
       ],
-      "title": "Active connections (max.)",
+      "title": "Active queries (max.)",
       "type": "stat"
     },
     {
@@ -420,19 +420,20 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-green"
+                "color": "dark-green",
+                "value": 0
               },
               {
-                "color": "dark-yellow",
-                "value": 500
+                "color": "#EAB839",
+                "value": 50
               },
               {
                 "color": "dark-red",
-                "value": 1000
+                "value": 75
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -471,14 +472,14 @@
       },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "max_over_time(pgwatch_settings_max_connections{dbname='$dbname'}[$__interval])",
+          "expr": "100.0 * max(max_over_time(pgwatch_backends_total{dbname='$dbname'}[$__interval])) / max(max_over_time(pgwatch_settings_max_connections{dbname='$dbname'}[$__interval]))",
           "instant": true,
           "interval": "",
           "legendFormat": "",
           "refId": "A"
         }
       ],
-      "title": "Max. connections",
+      "title": "Connections used",
       "type": "stat"
     },
     {
@@ -1345,22 +1346,46 @@
         "type": "prometheus",
         "uid": "pgwatch-prometheus"
       },
-      "description": "Checkpoints should normally be performed by the background \"Checkpointer\" process. If seeing high numbers then adjusting server configuration is recommended.",
+      "description": "WAL archiving failures can result in filled disk space",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "dark-green",
+                  "index": 0,
+                  "text": "OK"
+                },
+                "1": {
+                  "color": "dark-red",
+                  "index": 1,
+                  "text": "FAILING"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "dark-yellow",
+                  "index": 2,
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-green"
-              },
-              {
-                "color": "#EAB839",
-                "value": 1
+                "color": "dark-green",
+                "value": 0
               }
             ]
           },
@@ -1401,14 +1426,16 @@
         "type": "prometheus",
         "uid": "pgwatch-prometheus"
       },
+          "editorMode": "code",
           "exemplar": true,
-          "expr": "max(increase(pgwatch_bgwriter_checkpoints_req{dbname='$dbname'}[$__range]))",
+          "expr": "max(pgwatch_archiver_is_failing_int{dbname='$dbname'})",
           "interval": "",
           "legendFormat": "",
+          "range": true,
           "refId": "A"
         }
       ],
-      "title": "Checkpoints requested",
+      "title": "WAL archiving status",
       "type": "stat"
     },
     {
