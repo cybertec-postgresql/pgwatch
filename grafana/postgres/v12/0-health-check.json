@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 21,
+  "id": 2,
   "links": [],
   "panels": [
     {
@@ -1184,7 +1184,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "\"max_connections\" configuration setting. Changing requires re-start. 500/1000 Warn / Error thresholds by default",
+      "description": "client connections / \"max_connections\" configuration setting.",
       "fieldConfig": {
         "defaults": {
           "decimals": 0,
@@ -1208,15 +1208,15 @@
               },
               {
                 "color": "#FA6400",
-                "value": 500
+                "value": 50
               },
               {
                 "color": "#d44a3a",
-                "value": 1000
+                "value": 75
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1281,7 +1281,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT (data->>'max_connections')::int\nFROM settings\nWHERE $__timeFilter(time) AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1",
+          "rawSql": "WITH s(max_connections) AS (\n  SELECT (data->>'max_connections')::int\n  FROM settings\n  WHERE $__timeFilter(time) AND dbname = '$dbname'\n  ORDER BY time DESC\n  LIMIT 1\n)\n\nSELECT round(((b.data->>'total')::float / s.max_connections) * 100)\nFROM backends b, s\nWHERE $__timeFilter(b.time) AND b.dbname = '$dbname'\nORDER BY b.time DESC\nLIMIT 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1316,7 +1316,7 @@
         }
       ],
       "timeFrom": "6h",
-      "title": "Max. connections",
+      "title": "Connections used %",
       "type": "stat"
     },
     {
