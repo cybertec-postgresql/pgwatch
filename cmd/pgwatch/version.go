@@ -4,19 +4,21 @@ import "fmt"
 
 // version output variables
 var (
-	commit  = "unknown"
-	version = "unknown"
-	date    = "unknown"
-	dbapi   = "00824"
+	commit       = "unknown"
+	version      = "unknown"
+	date         = "unknown"
+	ConfigSchema = "00824"
+	SinkSchema   = "01110"
 )
 
 func printVersion() {
 	fmt.Printf(`
 Version info:
-  Version:      %s
-  DB Schema:    %s
-  Git Commit:   %s
-  Built:        %s
+  Version:       %s
+  ConfigSchema:  %s
+  SinkSchema:    %s
+  Git Commit:    %s
+  Built:         %s
 
-`, version, dbapi, commit, date)
+`, version, ConfigSchema, SinkSchema, commit, date)
 }
