@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 )
@@ -104,8 +105,7 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 			}
 		}
 	} else {
-		opts.CompleteCommand(ExitCodeConfigError)
-		return errors.New("configuration storage does not support upgrade")
+		log.GetLogger(ctx).Warn("configuration storage does not support upgrade, skipping")
 	}
 	// Upgrade sinks configuration if it's postgres
 	if len(opts.Sinks.Sinks) > 0 {
