@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 26,
+  "id": 25,
   "links": [],
   "panels": [
     {
@@ -155,6 +155,18 @@
               {
                 "id": "unit",
                 "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dbname"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Source Name"
               }
             ]
           }
@@ -317,6 +329,18 @@
                 "value": "s"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dbname"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Source Name"
+              }
+            ]
           }
         ]
       },
@@ -329,17 +353,9 @@
       "id": 13,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -477,6 +493,18 @@
                 "value": "s"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dbname"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Source Name"
+              }
+            ]
           }
         ]
       },
@@ -489,17 +517,9 @@
       "id": 5,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -637,6 +657,18 @@
                 "value": "s"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dbname"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Source Name"
+              }
+            ]
           }
         ]
       },
@@ -649,17 +681,9 @@
       "id": 4,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -797,6 +821,18 @@
                 "value": "s"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dbname"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Source Name"
+              }
+            ]
           }
         ]
       },
@@ -809,17 +845,9 @@
       "id": 6,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -957,6 +985,18 @@
                 "value": "s"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dbname"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Source Name"
+              }
+            ]
           }
         ]
       },
@@ -969,17 +1009,9 @@
       "id": 7,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -1117,6 +1149,18 @@
                 "value": "s"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dbname"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Source Name"
+              }
+            ]
           }
         ]
       },
@@ -1129,17 +1173,9 @@
       "id": 8,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -1292,6 +1328,18 @@
                 "value": "s"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dbname"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Source Name"
+              }
+            ]
           }
         ]
       },
@@ -1304,17 +1352,9 @@
       "id": 11,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -1332,12 +1372,191 @@
       "type": "table"
     },
     {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Tables with the oldest non-frozen transaction id age.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "left",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "table_full_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Table Name"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "View Table Details",
+                    "url": "/d/table-details/table-details?orgId=1&var-dbname=${dbname}&var-table_full_name=${__data.fields.table_full_name}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 440
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_vacuum"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Vacuum"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "custom.width"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_analyze"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Last Analyze"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "tx_freeze_age"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Oldest non-frozen xid age"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Oldest non-frozen xid age"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 246
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dbname"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Source Name"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 57
+      },
+      "id": 202,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n*\nFROM\n(\n  SELECT DISTINCT ON (dbname, table_full_name)\n  dbname,\n  tag_data->>'table_full_name' as table_full_name,\n  data->>'tx_freeze_age' as tx_freeze_age,\n  (data->>'seconds_since_last_vacuum')::int8  as last_vacuum,\n  (data->>'seconds_since_last_analyze')::int8 as last_analyze\n  FROM\n    table_stats\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  ORDER BY\n    1, 2, time DESC\n)\nORDER BY 3 DESC NULLS LAST\nLIMIT $top\n",
+          "refId": "A",
+          "resultFormat": "table",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Tables with oldest non-frozen xid age",
+      "type": "table"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 57
+        "y": 64
       },
       "id": 200,
       "panels": [],
@@ -1376,7 +1595,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 58
+        "y": 65
       },
       "id": 3,
       "maxDataPoints": 100,
@@ -1430,7 +1649,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 68
+        "y": 75
       },
       "id": 1,
       "options": {
@@ -1486,7 +1705,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 78
+        "y": 85
       },
       "id": 2,
       "maxDataPoints": 100,
@@ -1520,7 +1739,7 @@
         "h": 5,
         "w": 11,
         "x": 0,
-        "y": 85
+        "y": 92
       },
       "id": 201,
       "options": {
@@ -1532,7 +1751,7 @@
         "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
         "mode": "markdown"
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "title": "",
       "transparent": true,
       "type": "text"
@@ -1553,7 +1772,7 @@
         },
         "definition": "",
         "includeAll": false,
-        "label": "Monitored Source",
+        "label": "Source Name",
         "name": "dbname",
         "options": [],
         "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'table_stats' ORDER BY 1;",
