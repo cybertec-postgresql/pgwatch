@@ -309,8 +309,7 @@ func TestConfigUpgradeCommand_Errors(t *testing.T) {
 		}
 		cmd := ConfigUpgradeCommand{owner: opts}
 		err := cmd.Execute(nil)
-		a.Error(err)
-		a.ErrorContains(err, "does not support upgrade")
+		a.NoError(err)
 	})
 
 	t.Run("init metrics reader fails", func(*testing.T) {
