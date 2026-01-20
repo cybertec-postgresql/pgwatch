@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 17,
   "links": [],
   "panels": [
     {
@@ -554,7 +554,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Connected sessions, including Postgres internal processes like Autovacuum. < 1 Warn / > 300 Error thresholds by default",
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "decimals": 0,
@@ -650,7 +650,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT (data->>'numbackends')::int\nFROM db_stats\nWHERE $__timeFilter(time) AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1",
+          "rawSql": "SELECT (data->>'active')::int\nFROM backends\nWHERE $__timeFilter(time) AND dbname = '$dbname'\nORDER BY time DESC\nLIMIT 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -684,7 +684,7 @@
           ]
         }
       ],
-      "title": "Active connections",
+      "title": "Active queries",
       "type": "stat"
     },
     {
@@ -1184,7 +1184,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "client connections / \"max_connections\" configuration setting.",
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "decimals": 0,
@@ -1281,7 +1281,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "WITH s(max_connections) AS (\n  SELECT (data->>'max_connections')::int\n  FROM settings\n  WHERE $__timeFilter(time) AND dbname = '$dbname'\n  ORDER BY time DESC\n  LIMIT 1\n)\n\nSELECT round(((b.data->>'total')::float / s.max_connections) * 100)\nFROM backends b, s\nWHERE $__timeFilter(b.time) AND b.dbname = '$dbname'\nORDER BY b.time DESC\nLIMIT 1",
+          "rawSql": "WITH s(max_connections) AS (\n  SELECT (data->>'max_connections')::int\n  FROM settings\n  WHERE $__timeFilter(time) AND dbname = '$dbname'\n  ORDER BY time DESC\n  LIMIT 1\n)\n\nSELECT round(((b.data->>'numbackends')::float / s.max_connections) * 100)\nFROM db_stats b, s\nWHERE $__timeFilter(b.time) AND b.dbname = '$dbname'\nORDER BY b.time DESC\nLIMIT 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
