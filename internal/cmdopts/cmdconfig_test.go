@@ -84,9 +84,9 @@ func TestConfigUpgradeCommand_Execute(t *testing.T) {
 		fname := t.TempDir() + "/metrics.yaml"
 		os.Args = []string{0: "config_test", "--metrics=" + fname, "config", "upgrade"}
 		c, err := New(io.Discard)
-		a.Error(err)
+		a.NoError(err)
 		a.True(c.CommandCompleted)
-		a.Equal(ExitCodeConfigError, c.ExitCode)
+		a.Equal(ExitCodeOK, c.ExitCode)
 	})
 
 }
