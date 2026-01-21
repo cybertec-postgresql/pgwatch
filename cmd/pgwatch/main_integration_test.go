@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
@@ -470,4 +471,92 @@ presets:
 	cancel()
 	<-mainCtx.Done()
 	assert.Equal(t, cmdopts.ExitCodeOK, gotExit)
+}
+
+// TestMain_Integration_PartitionPrecreation tests that pgwatch does not create
+// excessive partitions when restarted multiple times if they are not needed.
+func TestMain_Integration_PartitionPrecreation(t *testing.T) {
+	tempDir := t.TempDir()
+
+	pg, tearDown, err := testutil.SetupPostgresContainer()
+	require.NoError(t, err)
+	defer tearDown()
+
+	connStr, err := pg.ConnectionString(testutil.TestContext, "sslmode=disable")
+	require.NoError(t, err)
+
+	var gotExit int32
+	Exit = func(code int) { gotExit = int32(code) }
+	defer func() { Exit = os.Exit }()
+
+	metricsYaml := filepath.Join(tempDir, "metrics.yaml")
+	sourcesYaml := filepath.Join(tempDir, "sources.yaml")
+
+	require.NoError(t, os.WriteFile(metricsYaml, []byte(`
+metrics:
+    partition_test_metric:
+        sqls:
+            11: select (extract(epoch from now()) * 1e9)::int8 as epoch_ns, 1 as value
+`), 0644))
+
+	require.NoError(t, os.WriteFile(sourcesYaml, []byte(`
+- name: partition_test_source
+  conn_str: `+connStr+`
+  kind: postgres
+  is_enabled: true
+  custom_metrics:
+    partition_test_metric: 300
+`), 0644))
+
+	sinkConn, err := pgx.Connect(context.Background(), connStr)
+	require.NoError(t, err)
+	defer sinkConn.Close(context.Background())
+
+	os.Args = []string{
+		"pgwatch",
+		"--metrics", metricsYaml,
+		"--sources", sourcesYaml,
+		"--sink", connStr,
+		"--web-disable",
+	}
+
+	// Restart pgwatch multiple times to trigger partition precreation
+	for range 5 {
+		// Clear the partition cache (to mock a real restart)
+		sinks.ResetPartitionCache()
+
+		mainCtx, cancel = context.WithCancel(context.Background())
+		go main()
+
+		// Wait for partitions to be created
+		time.Sleep(2 * time.Second)
+
+		cancel()
+		<-mainCtx.Done()
+		assert.Equal(t, cmdopts.ExitCodeOK, gotExit, "expected exit code 0")
+	}
+
+	// Query the number of partitions created for our specific metric
+	var partitionCount int
+	err = sinkConn.QueryRow(context.Background(), `
+		SELECT count(*)
+		FROM pg_class c 
+		JOIN pg_inherits i ON c.oid = i.inhrelid
+		WHERE c.relkind IN ('r', 'p')
+		AND c.relnamespace = 'subpartitions'::regnamespace
+		AND pg_catalog.obj_description(c.oid, 'pg_class') IN ('pgwatch-generated-metric-time-lvl', 'pgwatch-generated-metric-dbname-time-lvl')
+		AND c.oid::regclass::text LIKE '%partition_test_metric_partition_test_source%'
+	`).Scan(&partitionCount)
+	require.NoError(t, err)
+
+	// Should not have more than 4 partitions despite multiple restarts
+	assert.Equal(t, 4, partitionCount,
+		"expected 4 partitions for partition_test_metric after multiple consecutive restarts, but found %d", partitionCount)
+
+	// Also verify that metrics were actually collected
+	var metricCount int
+	err = sinkConn.QueryRow(context.Background(),
+		`SELECT count(*) FROM public.partition_test_metric WHERE dbname = 'partition_test_source'`).Scan(&metricCount)
+	require.NoError(t, err)
+	assert.Greater(t, metricCount, 0, "expected some metrics to be collected")
 }

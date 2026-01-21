@@ -202,6 +202,13 @@ var (
 	partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo) // metric[dbname = min/max bounds]
 )
 
+// ResetPartitionCache clears the partition cache 
+func ResetPartitionCache() {
+	forceRecreatePartitions = false
+	partitionMapMetric = make(map[string]ExistingPartitionInfo)
+	partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo)
+}
+
 // SyncMetric ensures that tables exist for newly added metrics and/or sources
 func (pgw *PostgresWriter) SyncMetric(sourceName, metricName string, op SyncOp) error {
 	if op == AddOp {
