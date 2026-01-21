@@ -83,14 +83,26 @@ type ConfigUpgradeCommand struct {
 }
 
 // Execute upgrades the configuration schema.
+// Supports upgrading metrics/sources database, sink database, or both independently.
+// When using YAML files for sources/metrics, only the sink can be upgraded.
 func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 	opts := cmd.owner
-	if err = opts.ValidateConfig(); err != nil {
-		return
-	}
 	ctx := context.Background()
-	// Upgrade metrics/sources configuration if it's postgres
-	if opts.IsPgConnStr(opts.Metrics.Metrics) && opts.IsPgConnStr(opts.Sources.Sources) {
+
+	hasMetricsPg := opts.IsPgConnStr(opts.Metrics.Metrics)
+	hasSourcesPg := opts.IsPgConnStr(opts.Sources.Sources)
+	hasSinks := len(opts.Sinks.Sinks) > 0
+
+	// Require at least one upgradable target
+	if !hasMetricsPg && !hasSourcesPg && !hasSinks {
+		opts.CompleteCommand(ExitCodeConfigError)
+		return errors.New("no upgradable configuration specified: provide --sink or postgres connection strings for --sources/--metrics")
+	}
+
+	var upgraded bool
+
+	// Upgrade metrics if postgres
+	if hasMetricsPg {
 		err = opts.InitMetricReader(ctx)
 		if err != nil {
 			opts.CompleteCommand(ExitCodeConfigError)
@@ -102,13 +114,29 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 				opts.CompleteCommand(ExitCodeConfigError)
 				return
 			}
+			upgraded = true
 		}
-	} else {
-		opts.CompleteCommand(ExitCodeConfigError)
-		return errors.New("configuration storage does not support upgrade")
 	}
-	// Upgrade sinks configuration if it's postgres
-	if len(opts.Sinks.Sinks) > 0 {
+
+	// Upgrade sources configuration if postgres
+	if hasSourcesPg {
+		err = opts.InitSourceReader(ctx)
+		if err != nil {
+			opts.CompleteCommand(ExitCodeConfigError)
+			return
+		}
+		if m, ok := opts.SourcesReaderWriter.(metrics.Migrator); ok {
+			err = m.Migrate()
+			if err != nil {
+				opts.CompleteCommand(ExitCodeConfigError)
+				return
+			}
+			upgraded = true
+		}
+	}
+
+	// Upgrade sinks configuration if specified
+	if hasSinks {
 		err = opts.InitSinkWriter(ctx)
 		if err != nil {
 			opts.CompleteCommand(ExitCodeConfigError)
@@ -120,11 +148,18 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 				opts.CompleteCommand(ExitCodeConfigError)
 				return
 			}
+			upgraded = true
 		} else {
 			opts.CompleteCommand(ExitCodeConfigError)
 			return errors.New("sink storage does not support upgrade")
 		}
 	}
+
+	if !upgraded {
+		opts.CompleteCommand(ExitCodeConfigError)
+		return errors.New("no configuration was upgraded: ensure postgres connection strings are provided")
+	}
+
 	opts.CompleteCommand(ExitCodeOK)
 	return
 }
