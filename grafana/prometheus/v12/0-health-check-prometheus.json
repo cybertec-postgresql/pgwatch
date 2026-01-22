@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 40,
   "links": [],
   "panels": [
     {
@@ -97,16 +97,16 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "max(last_over_time(pgwatch_db_stats_in_recovery_int{dbname='$dbname'}[$__interval]))",
+          "expr": "max(pgwatch_db_stats_in_recovery_int{dbname='$dbname'})",
           "instant": true,
           "interval": "",
           "legendFormat": "",
@@ -172,13 +172,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "max(abs(pgwatch_db_stats_postmaster_uptime_s{dbname='$dbname'}))",
           "instant": true,
@@ -243,13 +243,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "max_over_time(pgwatch_settings_server_version_num{dbname='$dbname'}[$__interval])",
@@ -315,13 +315,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_backends_longest_query_seconds{dbname='$dbname'}[$__interval]))",
           "interval": "10m",
@@ -385,13 +385,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "editorMode": "code",
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_backends_active{dbname='$dbname'}[$__range]))",
@@ -401,7 +401,7 @@
           "refId": "A"
         }
       ],
-      "title": "Active connections (max.)",
+      "title": "Active queries (max.)",
       "type": "stat"
     },
     {
@@ -409,7 +409,6 @@
         "type": "prometheus",
         "uid": "pgwatch-prometheus"
       },
-      "description": "PostgreSQL configurations setting. Changing requires restart. Numbers above 500+ are not recommended",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -420,19 +419,20 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-green"
+                "color": "dark-green",
+                "value": 0
               },
               {
-                "color": "dark-yellow",
-                "value": 500
+                "color": "#EAB839",
+                "value": 50
               },
               {
                 "color": "dark-red",
-                "value": 1000
+                "value": 75
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -462,23 +462,23 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "max_over_time(pgwatch_settings_max_connections{dbname='$dbname'}[$__interval])",
+          "expr": "100.0 * max(max_over_time(pgwatch_db_stats_numbackends{dbname='$dbname'}[$__interval])) / max(max_over_time(pgwatch_settings_max_connections{dbname='$dbname'}[$__interval]))",
           "instant": true,
           "interval": "",
           "legendFormat": "",
           "refId": "A"
         }
       ],
-      "title": "Max. connections",
+      "title": "Connections used %",
       "type": "stat"
     },
     {
@@ -539,13 +539,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_backends_waiting{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -617,13 +617,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "100 * avg(increase(pgwatch_db_stats_blks_hit{dbname='$dbname'}[$__range])) / (avg(increase(pgwatch_db_stats_blks_read{dbname='$dbname'}[$__range])) + avg(increase(pgwatch_db_stats_blks_hit{dbname='$dbname'}[$__range])))",
           "instant": false,
@@ -692,13 +692,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "100 * avg(increase(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$__range])) / (avg(increase(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$__range])) + avg(increase(pgwatch_db_stats_xact_commit{dbname='$dbname'}[$__range])))",
           "interval": "",
@@ -760,13 +760,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "avg(rate(pgwatch_db_stats_xact_rollback{dbname='$dbname'}[$__range])) + avg(rate(pgwatch_db_stats_xact_commit{dbname='$dbname'}[$__range]))",
           "instant": false,
@@ -829,13 +829,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": false,
           "expr": "avg(rate(pgwatch_stat_statements_calls_calls{dbname='$dbname'}[$__range]))",
           "instant": false,
@@ -901,13 +901,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_backends_idleintransaction{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -969,13 +969,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "60 * avg(rate(pgwatch_db_stats_tup_inserted{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -1037,13 +1037,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "60 * avg(rate(pgwatch_db_stats_tup_updated{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -1105,13 +1105,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "60 * avg(rate(pgwatch_db_stats_tup_deleted{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -1180,13 +1180,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "100 * avg(increase(pgwatch_db_stats_tup_fetched{dbname='$dbname'}[$__range])) / avg(increase(pgwatch_db_stats_tup_returned{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -1250,13 +1250,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "max(pgwatch_db_size_size_b{dbname='$dbname'})",
           "instant": true,
@@ -1322,13 +1322,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "avg(delta(pgwatch_db_size_size_b{dbname='$dbname'}[1d]))",
           "instant": false,
@@ -1345,22 +1345,46 @@
         "type": "prometheus",
         "uid": "pgwatch-prometheus"
       },
-      "description": "Checkpoints should normally be performed by the background \"Checkpointer\" process. If seeing high numbers then adjusting server configuration is recommended.",
+      "description": "WAL archiving failures can result in filled disk space",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [],
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "dark-green",
+                  "index": 0,
+                  "text": "OK"
+                },
+                "1": {
+                  "color": "dark-red",
+                  "index": 1,
+                  "text": "FAILING"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "dark-yellow",
+                  "index": 2,
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-green"
-              },
-              {
-                "color": "#EAB839",
-                "value": 1
+                "color": "dark-green",
+                "value": 0
               }
             ]
           },
@@ -1394,21 +1418,23 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
+          "editorMode": "code",
           "exemplar": true,
-          "expr": "max(increase(pgwatch_bgwriter_checkpoints_req{dbname='$dbname'}[$__range]))",
+          "expr": "max(pgwatch_archiver_is_failing_int{dbname='$dbname'})",
           "interval": "",
           "legendFormat": "",
+          "range": true,
           "refId": "A"
         }
       ],
-      "title": "Checkpoints requested",
+      "title": "WAL archiving status",
       "type": "stat"
     },
     {
@@ -1465,13 +1491,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "max(rate(pgwatch_wal_xlog_location_b{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -1536,13 +1562,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "max(increase(pgwatch_db_stats_temp_bytes{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -1608,13 +1634,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "sum(max(increase(pgwatch_table_stats_seq_scan{dbname='$dbname',table_size_cardinality_mb=~\"3|4|5|6|7|8\"}[$__range])))",
           "interval": "",
@@ -1681,13 +1707,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_backends_longest_autovacuum_seconds{dbname='$dbname'}[1d]))",
           "interval": "",
@@ -1752,13 +1778,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_db_stats_backup_duration_s{dbname='$dbname'}[1d]))",
           "interval": "",
@@ -1825,13 +1851,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_table_stats_tx_freeze_age{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -1897,13 +1923,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "max(max_over_time({__name__=~\"(pgwatch_backends_max_xmin_age_tx|replication_slots_xmin_age_tx)\",dbname='$dbname'}[$__range]))",
           "instant": true,
@@ -1970,13 +1996,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "max(max_over_time(pgwatch_replication_replay_lag_b{dbname='$dbname'}[$__range]))",
           "interval": "",
@@ -2040,13 +2066,13 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
           "exemplar": true,
           "expr": "max(pgwatch_replication_slots_non_active_int{dbname='$dbname'})",
           "instant": true,
