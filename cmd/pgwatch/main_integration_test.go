@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
@@ -522,9 +521,6 @@ metrics:
 
 	// Restart pgwatch multiple times to trigger partition precreation
 	for range 5 {
-		// Clear the partition cache (to mock a real restart)
-		sinks.ResetPartitionCache()
-
 		mainCtx, cancel = context.WithCancel(context.Background())
 		go main()
 
