@@ -415,7 +415,7 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 
 	switch pgw.metricSchema {
 	case DbStorageSchemaPostgres:
-		err = pgw.EnsureMetricDbnameTime(pgPartBoundsDbName, pgw.forceRecreatePartitions)
+		err = pgw.EnsureMetricDbnameTime(pgPartBoundsDbName)
 	case DbStorageSchemaTimescale:
 		err = pgw.EnsureMetricTimescale(pgPartBounds)
 	default:
@@ -465,7 +465,7 @@ func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]Existin
 	return
 }
 
-func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[string]map[string]ExistingPartitionInfo, force bool) (err error) {
+func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[string]map[string]ExistingPartitionInfo) (err error) {
 	var rows pgx.Rows
 	sqlEnsure := `select * from admin.ensure_partition_metric_dbname_time($1, $2, $3, $4)`
 	for metric, dbnameTimestampMap := range metricDbnamePartBounds {
@@ -479,7 +479,7 @@ func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[str
 				return fmt.Errorf("zero StartTime/EndTime in partitioning request: [%s:%v]", metric, pb)
 			}
 			partInfo, ok := pgw.partitionMapMetricDbname[metric][dbname]
-			if !ok || (ok && (pb.StartTime.Before(partInfo.StartTime))) || force {
+			if !ok || (ok && (pb.StartTime.Before(partInfo.StartTime))) || pgw.forceRecreatePartitions {
 				if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.StartTime, pgw.opts.PartitionInterval); err != nil {
 					return
 				}
@@ -488,7 +488,7 @@ func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[str
 				}
 				pgw.partitionMapMetricDbname[metric][dbname] = partInfo
 			}
-			if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || force {
+			if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || pgw.forceRecreatePartitions {
 				if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.EndTime, pgw.opts.PartitionInterval); err != nil {
 					return
 				}

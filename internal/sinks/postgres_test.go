@@ -694,7 +694,7 @@ func TestPartitionInterval(t *testing.T) {
 			},
 		},
 	}
-	err = pgw.EnsureMetricDbnameTime(m, false)
+	err = pgw.EnsureMetricDbnameTime(m)
 	r.NoError(err)
 
 	var partitionsNum int
