@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.25.5";</script>
+<script>var goVersion = "go1.25.6";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -751,7 +751,7 @@
 <span id="L694" class="ln">   694  </span>			},
 <span id="L695" class="ln">   695  </span>		},
 <span id="L696" class="ln">   696  </span>	}
-<span id="L697" class="ln">   697  </span>	err = pgw.EnsureMetricDbnameTime(m, false)
+<span id="L697" class="ln">   697  </span>	err = pgw.EnsureMetricDbnameTime(m)
 <span id="L698" class="ln">   698  </span>	r.NoError(err)
 <span id="L699" class="ln">   699  </span>
 <span id="L700" class="ln">   700  </span>	var partitionsNum int
@@ -761,7 +761,7 @@
 <span id="L704" class="ln">   704  </span>	<span class="comment">// + 4 time partitions (1 we asked for + 3 precreated)</span>
 <span id="L705" class="ln">   705  </span>	a.Equal(6, partitionsNum)
 <span id="L706" class="ln">   706  </span>
-<span id="L707" class="ln">   707  </span>	part := partitionMapMetricDbname[&#34;test_metric&#34;][&#34;test_db&#34;]
+<span id="L707" class="ln">   707  </span>	part := pgw.partitionMapMetricDbname[&#34;test_metric&#34;][&#34;test_db&#34;]
 <span id="L708" class="ln">   708  </span>	<span class="comment">// partition bounds should have a difference of 3 weeks</span>
 <span id="L709" class="ln">   709  </span>	a.Equal(part.StartTime.Add(3*7*24*time.Hour), part.EndTime)
 <span id="L710" class="ln">   710  </span>}
@@ -1078,7 +1078,7 @@
 </pre><p></p>
 
 <div id="footer">
-Build version go1.25.5.<br/>
+Build version go1.25.6.<br/>
 </div>
 
 </div><!-- .container -->

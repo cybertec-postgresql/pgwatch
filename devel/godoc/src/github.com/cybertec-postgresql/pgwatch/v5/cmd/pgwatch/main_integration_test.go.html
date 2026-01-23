@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.25.5";</script>
+<script>var goVersion = "go1.25.6";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -529,10 +529,95 @@
 <span id="L472" class="ln">   472  </span>	assert.Equal(t, cmdopts.ExitCodeOK, gotExit)
 <span id="L473" class="ln">   473  </span>}
 <span id="L474" class="ln">   474  </span>
+<span id="L475" class="ln">   475  </span><span class="comment">// TestMain_Integration_PartitionPrecreation tests that pgwatch does not create</span>
+<span id="L476" class="ln">   476  </span><span class="comment">// excessive partitions when restarted multiple times if they are not needed.</span>
+<span id="L477" class="ln">   477  </span>func TestMain_Integration_PartitionPrecreation(t *testing.T) {
+<span id="L478" class="ln">   478  </span>	tempDir := t.TempDir()
+<span id="L479" class="ln">   479  </span>
+<span id="L480" class="ln">   480  </span>	pg, tearDown, err := testutil.SetupPostgresContainer()
+<span id="L481" class="ln">   481  </span>	require.NoError(t, err)
+<span id="L482" class="ln">   482  </span>	defer tearDown()
+<span id="L483" class="ln">   483  </span>
+<span id="L484" class="ln">   484  </span>	connStr, err := pg.ConnectionString(testutil.TestContext, &#34;sslmode=disable&#34;)
+<span id="L485" class="ln">   485  </span>	require.NoError(t, err)
+<span id="L486" class="ln">   486  </span>
+<span id="L487" class="ln">   487  </span>	var gotExit int32
+<span id="L488" class="ln">   488  </span>	Exit = func(code int) { gotExit = int32(code) }
+<span id="L489" class="ln">   489  </span>	defer func() { Exit = os.Exit }()
+<span id="L490" class="ln">   490  </span>
+<span id="L491" class="ln">   491  </span>	metricsYaml := filepath.Join(tempDir, &#34;metrics.yaml&#34;)
+<span id="L492" class="ln">   492  </span>	sourcesYaml := filepath.Join(tempDir, &#34;sources.yaml&#34;)
+<span id="L493" class="ln">   493  </span>
+<span id="L494" class="ln">   494  </span>	require.NoError(t, os.WriteFile(metricsYaml, []byte(`
+<span id="L495" class="ln">   495  </span>metrics:
+<span id="L496" class="ln">   496  </span>    partition_test_metric:
+<span id="L497" class="ln">   497  </span>        sqls:
+<span id="L498" class="ln">   498  </span>            11: select (extract(epoch from now()) * 1e9)::int8 as epoch_ns, 1 as value
+<span id="L499" class="ln">   499  </span>`), 0644))
+<span id="L500" class="ln">   500  </span>
+<span id="L501" class="ln">   501  </span>	require.NoError(t, os.WriteFile(sourcesYaml, []byte(`
+<span id="L502" class="ln">   502  </span>- name: partition_test_source
+<span id="L503" class="ln">   503  </span>  conn_str: `+connStr+`
+<span id="L504" class="ln">   504  </span>  kind: postgres
+<span id="L505" class="ln">   505  </span>  is_enabled: true
+<span id="L506" class="ln">   506  </span>  custom_metrics:
+<span id="L507" class="ln">   507  </span>    partition_test_metric: 300
+<span id="L508" class="ln">   508  </span>`), 0644))
+<span id="L509" class="ln">   509  </span>
+<span id="L510" class="ln">   510  </span>	sinkConn, err := pgx.Connect(context.Background(), connStr)
+<span id="L511" class="ln">   511  </span>	require.NoError(t, err)
+<span id="L512" class="ln">   512  </span>	defer sinkConn.Close(context.Background())
+<span id="L513" class="ln">   513  </span>
+<span id="L514" class="ln">   514  </span>	os.Args = []string{
+<span id="L515" class="ln">   515  </span>		&#34;pgwatch&#34;,
+<span id="L516" class="ln">   516  </span>		&#34;--metrics&#34;, metricsYaml,
+<span id="L517" class="ln">   517  </span>		&#34;--sources&#34;, sourcesYaml,
+<span id="L518" class="ln">   518  </span>		&#34;--sink&#34;, connStr,
+<span id="L519" class="ln">   519  </span>		&#34;--web-disable&#34;,
+<span id="L520" class="ln">   520  </span>	}
+<span id="L521" class="ln">   521  </span>
+<span id="L522" class="ln">   522  </span>	<span class="comment">// Restart pgwatch multiple times to trigger partition precreation</span>
+<span id="L523" class="ln">   523  </span>	for range 5 {
+<span id="L524" class="ln">   524  </span>		mainCtx, cancel = context.WithCancel(context.Background())
+<span id="L525" class="ln">   525  </span>		go main()
+<span id="L526" class="ln">   526  </span>
+<span id="L527" class="ln">   527  </span>		<span class="comment">// Wait for partitions to be created</span>
+<span id="L528" class="ln">   528  </span>		time.Sleep(2 * time.Second)
+<span id="L529" class="ln">   529  </span>
+<span id="L530" class="ln">   530  </span>		cancel()
+<span id="L531" class="ln">   531  </span>		&lt;-mainCtx.Done()
+<span id="L532" class="ln">   532  </span>		assert.Equal(t, cmdopts.ExitCodeOK, gotExit, &#34;expected exit code 0&#34;)
+<span id="L533" class="ln">   533  </span>	}
+<span id="L534" class="ln">   534  </span>
+<span id="L535" class="ln">   535  </span>	<span class="comment">// Query the number of partitions created for our specific metric</span>
+<span id="L536" class="ln">   536  </span>	var partitionCount int
+<span id="L537" class="ln">   537  </span>	err = sinkConn.QueryRow(context.Background(), `
+<span id="L538" class="ln">   538  </span>		SELECT count(*)
+<span id="L539" class="ln">   539  </span>		FROM pg_class c 
+<span id="L540" class="ln">   540  </span>		JOIN pg_inherits i ON c.oid = i.inhrelid
+<span id="L541" class="ln">   541  </span>		WHERE c.relkind IN (&#39;r&#39;, &#39;p&#39;)
+<span id="L542" class="ln">   542  </span>		AND c.relnamespace = &#39;subpartitions&#39;::regnamespace
+<span id="L543" class="ln">   543  </span>		AND pg_catalog.obj_description(c.oid, &#39;pg_class&#39;) IN (&#39;pgwatch-generated-metric-time-lvl&#39;, &#39;pgwatch-generated-metric-dbname-time-lvl&#39;)
+<span id="L544" class="ln">   544  </span>		AND c.oid::regclass::text LIKE &#39;%partition_test_metric_partition_test_source%&#39;
+<span id="L545" class="ln">   545  </span>	`).Scan(&amp;partitionCount)
+<span id="L546" class="ln">   546  </span>	require.NoError(t, err)
+<span id="L547" class="ln">   547  </span>
+<span id="L548" class="ln">   548  </span>	<span class="comment">// Should not have more than 4 partitions despite multiple restarts</span>
+<span id="L549" class="ln">   549  </span>	assert.Equal(t, 4, partitionCount,
+<span id="L550" class="ln">   550  </span>		&#34;expected 4 partitions for partition_test_metric after multiple consecutive restarts, but found %d&#34;, partitionCount)
+<span id="L551" class="ln">   551  </span>
+<span id="L552" class="ln">   552  </span>	<span class="comment">// Also verify that metrics were actually collected</span>
+<span id="L553" class="ln">   553  </span>	var metricCount int
+<span id="L554" class="ln">   554  </span>	err = sinkConn.QueryRow(context.Background(),
+<span id="L555" class="ln">   555  </span>		`SELECT count(*) FROM public.partition_test_metric WHERE dbname = &#39;partition_test_source&#39;`).Scan(&amp;metricCount)
+<span id="L556" class="ln">   556  </span>	require.NoError(t, err)
+<span id="L557" class="ln">   557  </span>	assert.Greater(t, metricCount, 0, &#34;expected some metrics to be collected&#34;)
+<span id="L558" class="ln">   558  </span>}
+<span id="L559" class="ln">   559  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.25.5.<br/>
+Build version go1.25.6.<br/>
 </div>
 
 </div><!-- .container -->

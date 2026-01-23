@@ -15,7 +15,7 @@
 
 
 
-<script>var goVersion = "go1.25.5";</script>
+<script>var goVersion = "go1.25.6";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer></script>
 
 </head>
@@ -215,7 +215,7 @@
 					<dd>&nbsp; &nbsp; <a href="#PostgresWriter.EnsureBuiltinMetricDummies">func (pgw *PostgresWriter) EnsureBuiltinMetricDummies() (err error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#PostgresWriter.EnsureMetricDbnameTime">func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[string]map[string]ExistingPartitionInfo, force bool) (err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#PostgresWriter.EnsureMetricDbnameTime">func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[string]map[string]ExistingPartitionInfo) (err error)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#PostgresWriter.EnsureMetricDummy">func (pgw *PostgresWriter) EnsureMetricDummy(metric string) (err error)</a></dd>
@@ -418,13 +418,6 @@
 )</pre>
 			
 				
-				<pre>var (
-    <span id="forceRecreatePartitions">forceRecreatePartitions</span>  = <a href="https://pkg.go.dev/builtin/#false">false</a>                                             <span class="comment">// to signal override PG metrics storage cache</span>
-    <span id="partitionMapMetric">partitionMapMetric</span>       = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#ExistingPartitionInfo">ExistingPartitionInfo</a>)            <span class="comment">// metric = min/max bounds</span>
-    <span id="partitionMapMetricDbname">partitionMapMetricDbname</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#ExistingPartitionInfo">ExistingPartitionInfo</a>) <span class="comment">// metric[dbname = min/max bounds]</span>
-)</pre>
-			
-				
 				<pre>var <span id="ErrNeedsMigration">ErrNeedsMigration</span> = <a href="https://pkg.go.dev/errors/">errors</a>.<a href="https://pkg.go.dev/errors/#New">New</a>(&#34;sink database schema is outdated, please run migrations using `pgwatch config upgrade` command&#34;)</pre>
 			
 				
@@ -554,7 +547,7 @@
 		
 			
 			
-			<h2 id="DbStorageSchemaType">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L167">DbStorageSchemaType</a>
+			<h2 id="DbStorageSchemaType">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L173">DbStorageSchemaType</a>
 				<a class="permalink" href="#DbStorageSchemaType">&#xb6;</a>
 				
 				
@@ -582,7 +575,7 @@
 		
 			
 			
-			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L154">ExistingPartitionInfo</a>
+			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L160">ExistingPartitionInfo</a>
 				<a class="permalink" href="#ExistingPartitionInfo">&#xb6;</a>
 				
 				
@@ -686,7 +679,7 @@ such as log aggregators, analytics systems, and data processing pipelines, ML mo
 		
 			
 			
-			<h2 id="MeasurementMessagePostgres">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L159">MeasurementMessagePostgres</a>
+			<h2 id="MeasurementMessagePostgres">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L165">MeasurementMessagePostgres</a>
 				<a class="permalink" href="#MeasurementMessagePostgres">&#xb6;</a>
 				
 				
@@ -864,14 +857,17 @@ However, one is able to use any Postgres-compatible database as a storage backen
 e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 
 			<pre>type PostgresWriter struct {
-<span id="PostgresWriter.ctx"></span>    ctx                 <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
-<span id="PostgresWriter.sinkDb"></span>    sinkDb              <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/#PgxPoolIface">PgxPoolIface</a>
-<span id="PostgresWriter.metricSchema"></span>    metricSchema        <a href="#DbStorageSchemaType">DbStorageSchemaType</a>
-<span id="PostgresWriter.opts"></span>    opts                *<a href="#CmdOpts">CmdOpts</a>
-<span id="PostgresWriter.retentionInterval"></span>    retentionInterval   <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>
-<span id="PostgresWriter.maintenanceInterval"></span>    maintenanceInterval <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>
-<span id="PostgresWriter.input"></span>    input               chan <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>
-<span id="PostgresWriter.lastError"></span>    lastError           chan <a href="https://pkg.go.dev/builtin/#error">error</a>
+<span id="PostgresWriter.ctx"></span>    ctx                      <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
+<span id="PostgresWriter.sinkDb"></span>    sinkDb                   <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/#PgxPoolIface">PgxPoolIface</a>
+<span id="PostgresWriter.metricSchema"></span>    metricSchema             <a href="#DbStorageSchemaType">DbStorageSchemaType</a>
+<span id="PostgresWriter.opts"></span>    opts                     *<a href="#CmdOpts">CmdOpts</a>
+<span id="PostgresWriter.retentionInterval"></span>    retentionInterval        <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>
+<span id="PostgresWriter.maintenanceInterval"></span>    maintenanceInterval      <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>
+<span id="PostgresWriter.input"></span>    input                    chan <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>
+<span id="PostgresWriter.lastError"></span>    lastError                chan <a href="https://pkg.go.dev/builtin/#error">error</a>
+<span id="PostgresWriter.forceRecreatePartitions"></span>    forceRecreatePartitions  <a href="https://pkg.go.dev/builtin/#bool">bool</a>                                        <span class="comment">// to signal override PG metrics storage cache</span>
+<span id="PostgresWriter.partitionMapMetric"></span>    partitionMapMetric       map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#ExistingPartitionInfo">ExistingPartitionInfo</a>            <span class="comment">// metric = min/max bounds</span>
+<span id="PostgresWriter.partitionMapMetricDbname"></span>    partitionMapMetricDbname map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#ExistingPartitionInfo">ExistingPartitionInfo</a> <span class="comment">// metric[dbname = min/max bounds]</span>
 }
 </pre>
 
@@ -885,7 +881,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 
 			
 				
-				<h3 id="NewPostgresWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L73">NewPostgresWriter</a>
+				<h3 id="NewPostgresWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L76">NewPostgresWriter</a>
 					<a class="permalink" href="#NewPostgresWriter">&#xb6;</a>
 					
 					
@@ -896,7 +892,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="NewWriterFromPostgresConn">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L83">NewWriterFromPostgresConn</a>
+				<h3 id="NewWriterFromPostgresConn">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L86">NewWriterFromPostgresConn</a>
 					<a class="permalink" href="#NewWriterFromPostgresConn">&#xb6;</a>
 					
 					
@@ -952,7 +948,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 					
 					
 				</h3>
-				<pre>func (pgw *<a href="#PostgresWriter">PostgresWriter</a>) EnsureMetricDbnameTime(metricDbnamePartBounds map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#ExistingPartitionInfo">ExistingPartitionInfo</a>, force <a href="https://pkg.go.dev/builtin/#bool">bool</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func (pgw *<a href="#PostgresWriter">PostgresWriter</a>) EnsureMetricDbnameTime(metricDbnamePartBounds map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="#ExistingPartitionInfo">ExistingPartitionInfo</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
@@ -1025,7 +1021,7 @@ This is used to avoid listing the same source multiple times in Grafana dropdown
 				
 			
 				
-				<h3 id="PostgresWriter.ReadMetricSchemaType">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L189">ReadMetricSchemaType</a>
+				<h3 id="PostgresWriter.ReadMetricSchemaType">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L195">ReadMetricSchemaType</a>
 					<a class="permalink" href="#PostgresWriter.ReadMetricSchemaType">&#xb6;</a>
 					
 					
@@ -1076,7 +1072,7 @@ This is used to avoid listing the same source multiple times in Grafana dropdown
 				
 			
 				
-				<h3 id="PostgresWriter.init">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L117">init</a>
+				<h3 id="PostgresWriter.init">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L123">init</a>
 					<a class="permalink" href="#PostgresWriter.init">&#xb6;</a>
 					
 					
@@ -1101,7 +1097,7 @@ This is used to avoid listing the same source multiple times in Grafana dropdown
 				
 			
 				
-				<h3 id="PostgresWriter.scheduleJob">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L174">scheduleJob</a>
+				<h3 id="PostgresWriter.scheduleJob">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L180">scheduleJob</a>
 					<a class="permalink" href="#PostgresWriter.scheduleJob">&#xb6;</a>
 					
 					
@@ -1590,7 +1586,7 @@ These constants are used both in Go code and protobuf definitions.
 
 
 <div id="footer">
-Build version go1.25.5.<br>
+Build version go1.25.6.<br>
 </div>
 
 </div><!-- .container -->
