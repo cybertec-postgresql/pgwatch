@@ -159,15 +159,28 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 	promw.totalScrapes.Add(1)
 	ch <- promw.totalScrapes
 
+	//  ATOMIC SWAP
+	promAsyncMetricCacheLock.Lock()
 	if len(promAsyncMetricCache) == 0 {
+		promAsyncMetricCacheLock.Unlock()
 		promw.logger.Warning("No dbs configured for monitoring. Check config")
 		ch <- promw.totalScrapeFailures
 		promw.lastScrapeErrors.Set(0)
 		ch <- promw.lastScrapeErrors
 		return
 	}
+
+	snapshot := promAsyncMetricCache
+
+	promAsyncMetricCache = make(map[string]map[string]metrics.MeasurementEnvelope, len(snapshot))
+	for dbname := range snapshot {
+		promAsyncMetricCache[dbname] = make(map[string]metrics.MeasurementEnvelope)
+	}
+	promAsyncMetricCacheLock.Unlock()
+	// END ATOMIC SWAP
+
 	t1 := time.Now()
-	for dbname, metricsMessages := range promAsyncMetricCache {
+	for _, metricsMessages := range snapshot {
 		for metric, metricMessages := range metricsMessages {
 			if metric == "change_events" {
 				continue // not supported
@@ -178,9 +191,6 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 				ch <- pm
 			}
 		}
-		promAsyncMetricCacheLock.Lock()
-		promAsyncMetricCache[dbname] = make(map[string]metrics.MeasurementEnvelope) // clear the cache for this db after metrics are collected
-		promAsyncMetricCacheLock.Unlock()
 	}
 	promw.logger.WithField("count", rows).WithField("elapsed", time.Since(t1)).Info("measurements written")
 	ch <- promw.totalScrapeFailures
