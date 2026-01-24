@@ -7,8 +7,8 @@ var (
 	commit       = "unknown"
 	version      = "unknown"
 	date         = "unknown"
-	ConfigSchema = "00824"
-	SinkSchema   = "01110"
+	configSchema = "00824"
+	sinkSchema   = "01110"
 )
 
 func printVersion() {
@@ -20,5 +20,5 @@ Version info:
   Git Commit:    %s
   Built:         %s
 
-`, version, ConfigSchema, SinkSchema, commit, date)
+`, version, configSchema, sinkSchema, commit, date)
 }

@@ -74,7 +74,7 @@ func TestConfigInitCommand_Execute(t *testing.T) {
 func TestConfigUpgradeCommand_Execute(t *testing.T) {
 	a := assert.New(t)
 
-	t.Run("sources and metrics are empty", func(*testing.T) {
+	t.Run("no upgrade target specified", func(*testing.T) {
 		os.Args = []string{0: "config_test", "config", "upgrade"}
 		_, err := New(io.Discard)
 		a.Error(err)
@@ -84,9 +84,8 @@ func TestConfigUpgradeCommand_Execute(t *testing.T) {
 		fname := t.TempDir() + "/metrics.yaml"
 		os.Args = []string{0: "config_test", "--metrics=" + fname, "config", "upgrade"}
 		c, err := New(io.Discard)
-		a.NoError(err)
-		a.True(c.CommandCompleted)
-		a.Equal(ExitCodeOK, c.ExitCode)
+		a.Error(err)
+		a.False(c.CommandCompleted)
 	})
 
 }
@@ -309,7 +308,8 @@ func TestConfigUpgradeCommand_Errors(t *testing.T) {
 		}
 		cmd := ConfigUpgradeCommand{owner: opts}
 		err := cmd.Execute(nil)
-		a.NoError(err)
+		a.Error(err)
+
 	})
 
 	t.Run("init metrics reader fails", func(*testing.T) {

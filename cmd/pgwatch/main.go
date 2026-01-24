@@ -67,6 +67,22 @@ func main() {
 
 	// check if some sub-command was executed and exit
 	if opts.CommandCompleted {
+		if err != nil {
+			var upgErr *cmdopts.ErrUpgradeNotSupported
+			if errors.As(err, &upgErr) {
+				log.GetLogger(mainCtx).Warnf(
+					"[%s] configuration storage does not support upgrade, skipping",
+					upgErr.Target,
+				)
+				exitCode.Store(cmdopts.ExitCodeOK)
+				return
+			}
+
+			log.GetLogger(mainCtx).Error(err)
+			exitCode.Store(opts.ExitCode)
+			return
+		}
+
 		exitCode.Store(opts.ExitCode)
 		return
 	}
