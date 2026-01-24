@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 )
@@ -86,45 +85,72 @@ type ConfigUpgradeCommand struct {
 // Execute upgrades the configuration schema.
 func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 	opts := cmd.owner
-	if err = opts.ValidateConfig(); err != nil {
-		return
-	}
 	ctx := context.Background()
-	// Upgrade metrics/sources configuration if it's postgres
-	if opts.IsPgConnStr(opts.Metrics.Metrics) && opts.IsPgConnStr(opts.Sources.Sources) {
-		err = opts.InitMetricReader(ctx)
-		if err != nil {
+	upgraded := false
+
+	// ---- Metrics upgrade ----
+	if opts.Metrics.Metrics != "" {
+		if !opts.IsPgConnStr(opts.Metrics.Metrics) {
+			return &ErrUpgradeNotSupported{
+				Target: "metrics.yaml",
+			}
+		}
+		if err = opts.InitMetricReader(ctx); err != nil {
 			opts.CompleteCommand(ExitCodeConfigError)
 			return
 		}
-		if m, ok := opts.MetricsReaderWriter.(metrics.Migrator); ok {
-			err = m.Migrate()
-			if err != nil {
-				opts.CompleteCommand(ExitCodeConfigError)
-				return
-			}
+		m, ok := opts.MetricsReaderWriter.(metrics.Migrator)
+		if !ok {
+			return errors.New("metrics backend does not implement migrator")
 		}
-	} else {
-		log.GetLogger(ctx).Warn("configuration storage does not support upgrade, skipping")
+		if err = m.Migrate(); err != nil {
+			opts.CompleteCommand(ExitCodeConfigError)
+			return
+		}
+		upgraded = true
 	}
-	// Upgrade sinks configuration if it's postgres
-	if len(opts.Sinks.Sinks) > 0 {
-		err = opts.InitSinkWriter(ctx)
-		if err != nil {
+
+	// ---- Sources upgrade ----
+	if opts.Sources.Sources != "" {
+		if !opts.IsPgConnStr(opts.Sources.Sources) {
+			return &ErrUpgradeNotSupported{
+				Target: "metrics.yaml",
+			}
+		}
+		if err = opts.InitSourceReader(ctx); err != nil {
 			opts.CompleteCommand(ExitCodeConfigError)
 			return
 		}
-		if m, ok := opts.SinksWriter.(metrics.Migrator); ok {
-			err = m.Migrate()
-			if err != nil {
-				opts.CompleteCommand(ExitCodeConfigError)
-				return
-			}
-		} else {
-			opts.CompleteCommand(ExitCodeConfigError)
-			return errors.New("sink storage does not support upgrade")
+		m, ok := opts.SourcesReaderWriter.(metrics.Migrator)
+		if !ok {
+			return errors.New("sources backend does not implement migrator")
 		}
+		if err = m.Migrate(); err != nil {
+			opts.CompleteCommand(ExitCodeConfigError)
+			return
+		}
+		upgraded = true
+	}
+
+	// ---- Sinks upgrade ----
+	if len(opts.Sinks.Sinks) > 0 {
+		if err = opts.InitSinkWriter(ctx); err != nil {
+			opts.CompleteCommand(ExitCodeConfigError)
+			return
+		}
+		m, ok := opts.SinksWriter.(metrics.Migrator)
+		if !ok {
+			return errors.New("sinks backend does not implement migrator")
+		}
+		if err = m.Migrate(); err != nil {
+			opts.CompleteCommand(ExitCodeConfigError)
+			return
+		}
+		upgraded = true
+	}
+	if !upgraded {
+		return errors.New("nothing to upgrade: please specify --metrics, --sources, or --sink")
 	}
 	opts.CompleteCommand(ExitCodeOK)
-	return
+	return nil
 }
