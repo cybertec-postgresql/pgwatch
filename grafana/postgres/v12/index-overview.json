@@ -18,7 +18,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 15,
   "links": [],
   "panels": [
     {
@@ -161,7 +160,6 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
-          "editorMode": "code",
           "format": "table",
           "group": [],
           "groupBy": [
@@ -330,7 +328,6 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
-          "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
           "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_blks_read')::int8 - lag((data->>'idx_blks_read')::int8) over w, 0) as blks_read\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(blks_read) as total_blks_read\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_blks_read desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(blks_read) as blks_read,\n  index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
@@ -449,7 +446,6 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
-          "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
           "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_blks_hit')::int8 - lag((data->>'idx_blks_hit')::int8) over w, 0) as blks_hit\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(blks_hit) as total_blks_hit\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_blks_hit desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(blks_hit) as blks_hit,\n  index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
@@ -568,7 +564,6 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
-          "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
           "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_tup_read')::int8 - lag((data->>'idx_tup_read')::int8) over w, 0) as tuples_read\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(tuples_read) as total_tuples_read\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_tuples_read desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(tuples_read) as tuples_read,\n  index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
@@ -687,7 +682,6 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
-          "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
           "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_tup_fetch')::int8 - lag((data->>'idx_tup_fetch')::int8) over w, 0) as tuples_fetched\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(tuples_fetched) as total_tuples_fetched\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_tuples_fetched desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(tuples_fetched) as tuples_fetched,\n  index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
@@ -800,18 +794,6 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Source Name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 116
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "Object"
             },
             "properties": [
@@ -879,7 +861,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n    dbname AS \"Source Name\",\n    tag_data->>'object_name' AS \"Table Name\",\n    data->>'affected_query_count' AS \"Affected Queries\",\n    data->>'query_id' AS \"Heaviest Query\",\n    data->>'recommendation' AS \"Recommendation\"\nFROM recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) and tag_data->>'reco_topic' = 'create_index' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'create_index' \nORDER BY (data->>'total_exec_time')::float8 DESC",
+          "rawSql": "SELECT\n    tag_data->>'object_name' AS \"Table Name\",\n    data->>'affected_query_count' AS \"Affected Queries\",\n    data->>'query_id' AS \"Heaviest Query\",\n    data->>'recommendation' AS \"Recommendation\"\nFROM recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) and tag_data->>'reco_topic' = 'create_index' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'create_index' \nORDER BY (data->>'total_exec_time')::float8 DESC",
           "refId": "A",
           "select": [
             [
@@ -919,6 +901,392 @@
         }
       ],
       "title": "Missing Indexes",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Requires `reco_drop_index` metric.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "displayName": "",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Table Name"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "Opens 'Table details' dashboard",
+                    "url": "/d/table-details?var-dbname=${__data.fields[\"dbname\"]}&var-table_full_name=${__data.fields[\"table_full_name\"]}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.align"
+              },
+              {
+                "id": "custom.width",
+                "value": 385
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Index size"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Index Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 449
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "id": 11,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "group": [],
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'object_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid'\n",
+          "refId": "A",
+          "resultFormat": "table",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "tags": [],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Invalid indexes",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Before dropping indexes make sure they are not used on replicas, if having any. FYI - one could also adjust the default 0 threshold so that \"little used\" indexes are shown.\n\nRequires `reco_drop_index` metric.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "displayName": "",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Table Name"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "Opens 'Table details' dashboard",
+                    "url": "/d/table-details?var-dbname=${__data.fields[\"dbname\"]}&var-table_full_name=${__data.fields[\"table_full_name\"]}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 385
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Index size"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Index Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 448
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Scans"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "id": 10,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "group": [],
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'object_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\",\n  0::int8 as \"Scans\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused'\n",
+          "refId": "A",
+          "resultFormat": "table",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": [],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Unused indexes (Non-PK)",
       "transformations": [
         {
           "id": "merge",
@@ -1078,18 +1446,6 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Source Name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 121
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "Num of duplicates"
             },
             "properties": [
@@ -1114,10 +1470,10 @@
         ]
       },
       "gridPos": {
-        "h": 5,
+        "h": 6,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 39
       },
       "id": 8,
       "options": {
@@ -1131,7 +1487,6 @@
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
-          "editorMode": "code",
           "format": "table",
           "group": [],
           "groupBy": [
@@ -1152,7 +1507,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  (data->>'index_size_b')::int8 as \"Max Index size\",\n  data->>'duplicate_count' as \"Num of duplicates\",\n  data->>'oids' as \"OIDs\",\n  data->>'index_def' as \"Index def\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'duplicate' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'duplicate'\n\n",
+          "rawSql": "SELECT\n  tag_data->>'table_full_name' as \"Table Name\",\n  (data->>'index_size_b')::int8 as \"Max Index size\",\n  data->>'duplicate_count' as \"Num of duplicates\",\n  data->>'oids' as \"OIDs\",\n  data->>'index_def' as \"Index def\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n     and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'duplicate' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'duplicate'\n\n",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -1169,23 +1524,6 @@
               }
             ]
           ],
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          },
           "tags": [],
           "timeColumn": "time",
           "where": [
@@ -1209,408 +1547,15 @@
       "type": "table"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
-      },
-      "description": "Before dropping indexes make sure they are not used on replicas, if having any. FYI - one could also adjust the default 0 threshold so that \"little used\" indexes are shown.\n\nRequires `reco_drop_index` metric.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "footer": {
-              "reducers": []
-            },
-            "inspect": false
-          },
-          "decimals": 2,
-          "displayName": "",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Table Name"
-            },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "targetBlank": true,
-                    "title": "Opens 'Table details' dashboard",
-                    "url": "/d/table-details?var-dbname=${__data.fields[\"dbname\"]}&var-table_full_name=${__data.fields[\"table_full_name\"]}"
-                  }
-                ]
-              },
-              {
-                "id": "custom.align",
-                "value": "left"
-              },
-              {
-                "id": "custom.width",
-                "value": 385
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Index size"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              },
-              {
-                "id": "decimals",
-                "value": 1
-              },
-              {
-                "id": "custom.align",
-                "value": "left"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Source Name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 218
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Index Name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 448
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Scans"
-            },
-            "properties": [
-              {
-                "id": "decimals",
-                "value": 0
-              },
-              {
-                "id": "custom.align",
-                "value": "left"
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 24,
-        "x": 0,
-        "y": 37
-      },
-      "id": 10,
-      "options": {
-        "cellHeight": "sm",
-        "showHeader": true
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
-          },
-          "format": "table",
-          "group": [],
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "null"
-              ],
-              "type": "fill"
-            }
-          ],
-          "metricColumn": "none",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'object_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\",\n  0::int8 as \"Scans\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused'\n",
-          "refId": "A",
-          "resultFormat": "table",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": [],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
-        }
-      ],
-      "title": "Unused indexes (Non-PK)",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {
-            "reducers": []
-          }
-        }
-      ],
-      "type": "table"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "pgwatch-metrics"
-      },
-      "description": "Requires `reco_drop_index` metric.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "footer": {
-              "reducers": []
-            },
-            "inspect": false
-          },
-          "decimals": 2,
-          "displayName": "",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Table Name"
-            },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "targetBlank": true,
-                    "title": "Opens 'Table details' dashboard",
-                    "url": "/d/table-details?var-dbname=${__data.fields[\"dbname\"]}&var-table_full_name=${__data.fields[\"table_full_name\"]}"
-                  }
-                ]
-              },
-              {
-                "id": "custom.align"
-              },
-              {
-                "id": "custom.width",
-                "value": 385
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Index size"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              },
-              {
-                "id": "decimals",
-                "value": 1
-              },
-              {
-                "id": "custom.align",
-                "value": "left"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Source Name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 221
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Index Name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 449
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 24,
-        "x": 0,
-        "y": 42
-      },
-      "id": 11,
-      "options": {
-        "cellHeight": "sm",
-        "showHeader": true
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "pgwatch-metrics"
-          },
-          "format": "table",
-          "group": [],
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "null"
-              ],
-              "type": "fill"
-            }
-          ],
-          "metricColumn": "none",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  dbname AS \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'object_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid'\n",
-          "refId": "A",
-          "resultFormat": "table",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": [],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
-        }
-      ],
-      "title": "Invalid indexes",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {
-            "reducers": []
-          }
-        }
-      ],
-      "type": "table"
-    },
-    {
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 7,
         "w": 24,
         "x": 0,
-        "y": 46
+        "y": 45
       },
       "id": 6,
       "options": {
