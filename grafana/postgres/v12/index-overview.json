@@ -481,6 +481,244 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_tup_read')::int8 - lag((data->>'idx_tup_read')::int8) over w, 0) as tuples_read\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(tuples_read) as total_tuples_read\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_tuples_read desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(tuples_read) as tuples_read,\n  index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Top $top indexes by number of tuples read",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_tup_fetch')::int8 - lag((data->>'idx_tup_fetch')::int8) over w, 0) as tuples_fetched\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(tuples_fetched) as total_tuples_fetched\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_tuples_fetched desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(tuples_fetched) as tuples_fetched,\n  index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Top $top indexes by number of tuples fetched",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
       "description": "Adding indexes can have unexpected performance effects, so ensure that you test them first to verify that the recommendation has the desired effect.\n\nRequires `reco_add_index` metric. \n\nColumn Guide:\n- **Affected Queries**: number of queries affected by index creation.\n- **Heaviest Query**: the query with the biggest total execution time among all affected queries.\n- **Recommendation**: the recommended index ddl.",
       "fieldConfig": {
         "defaults": {
@@ -622,7 +860,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 24
       },
       "id": 12,
       "options": {
@@ -879,7 +1117,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 32
       },
       "id": 8,
       "options": {
@@ -1102,7 +1340,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 29
+        "y": 37
       },
       "id": 10,
       "options": {
@@ -1290,7 +1528,7 @@
         "h": 4,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 42
       },
       "id": 11,
       "options": {
@@ -1372,7 +1610,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 46
       },
       "id": 6,
       "options": {
