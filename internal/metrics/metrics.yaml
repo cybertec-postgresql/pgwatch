@@ -738,14 +738,6 @@ metrics:
                              order by index_size_b desc
                              limit 200
                          ) z
-                    union
-                    /* all invalid */
-                    select *
-                    from (
-                             select q.indexrelid
-                             from q_index_details q
-                             where not indisvalid
-                         ) zz
                 )
                 select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -757,6 +749,8 @@ metrics:
                   coalesce(idx_scan, 0) as idx_scan,
                   coalesce(idx_tup_read, 0) as idx_tup_read,
                   coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
+                  coalesce(idx_blks_read, 0) as idx_blks_read,
+                  coalesce(idx_blks_hit, 0) as idx_blks_hit,
                   coalesce(index_size_b, 0) as index_size_b,
                   quote_ident(schemaname)||'.'||quote_ident(indexrelname) as index_full_name_val,
                   md5(regexp_replace(regexp_replace(pg_get_indexdef(indexrelid),indexrelname,'X'), '^CREATE UNIQUE','CREATE')) as tag_index_def_hash,
@@ -841,6 +835,8 @@ metrics:
                   coalesce(idx_scan, 0) as idx_scan,
                   coalesce(idx_tup_read, 0) as idx_tup_read,
                   coalesce(idx_tup_fetch, 0) as idx_tup_fetch,
+                  coalesce(idx_blks_read, 0) as idx_blks_read,
+                  coalesce(idx_blks_hit, 0) as idx_blks_hit,
                   coalesce(index_size_b, 0) as index_size_b,
                   quote_ident(schemaname)||'.'||quote_ident(indexrelname) as index_full_name_val,
                   md5(regexp_replace(regexp_replace(pg_get_indexdef(indexrelid),indexrelname,'X'), '^CREATE UNIQUE','CREATE')) as tag_index_def_hash,
