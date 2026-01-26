@@ -81,7 +81,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 417
+                "value": 530
               }
             ]
           },
@@ -105,14 +105,14 @@
               },
               {
                 "id": "custom.width",
-                "value": 211
+                "value": 347
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "Scans (from last reset)"
+              "options": "Scans"
             },
             "properties": [
               {
@@ -137,7 +137,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 385
+                "value": 461
               }
             ]
           }
@@ -182,7 +182,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  tag_data->>'index_full_name' as \"Index Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  max((data->>'index_size_b')::int8) as \"Index Size\",\n  max((data->>'idx_scan')::int8) as \"Scans (from last reset)\"\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2\nORDER BY\n  3 DESC\nLIMIT\n  $top",
+          "rawSql": "with index_scan_changes as (\n  select\n    dbname,\n    tag_data ->> 'index_full_name' as index_full_name,\n    tag_data ->> 'table_full_name' as table_full_name,\n    coalesce(\n      (data ->> 'idx_scan') :: int8 - lag((data ->> 'idx_scan') :: int8) over w,\n      0\n    ) as idx_scans\n  from\n    index_stats\n  where\n    dbname in ($dbname)\n    and $__timeFilter(time) window w as (\n      partition by dbname,\n      tag_data ->> 'table_full_name',\n      tag_data ->> 'index_full_name'\n      order by\n        time\n    )\n),\ntotal_scans as (\n  select\n    dbname,\n    table_full_name,\n    index_full_name,\n    sum(idx_scans) as total_idx_scans\n  from\n    index_scan_changes\n  group by\n    1,\n    2,\n    3\n  order by\n    total_idx_scans desc\n  limit\n    $top\n)\nselect\n  tag_data ->> 'index_full_name' as \"Index Name\",\n  tag_data ->> 'table_full_name' as \"Table Name\",\n  max((data ->> 'index_size_b') :: int8) as \"Index Size\",\n  max(t.total_idx_scans) as \"Scans\"\nfrom\n  index_stats s\n  join total_scans t on t.dbname = s.dbname\n  and t.table_full_name = s.tag_data ->> 'table_full_name'\n  and t.index_full_name = s.tag_data ->> 'index_full_name'\nwhere\n  time in (\n    select\n      max(time)\n    from\n      index_stats\n    where\n      $__timeFilter(time)\n      and dbname in ($dbname)\n    group by\n      dbname\n  )\n  and s.dbname in ($dbname)\ngroup by\n  1,\n  2\norder by\n  3 desc\nlimit\n  $top",
           "refId": "A",
           "resultFormat": "table",
           "select": [
