@@ -7,6 +7,7 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
+	"github.com/jackc/pgx/v5"
 	pgxmock "github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -448,5 +449,194 @@ func TestDetectConfigurationChanges(t *testing.T) {
 	assert.Equal(t, "200", md.ChangeState["configuration_hashes"]["max_connections"])
 	assert.Equal(t, "256MB", md.ChangeState["configuration_hashes"]["shared_buffers"])
 
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestQueryMeasurementsEmptySQL(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+
+	// Empty SQL should be rejected.
+	_, err := QueryMeasurements(ctx, md, "  ")
+	assert.Error(t, err)
+}
+
+func TestQueryMeasurementsNonPostgresUsesSimpleProtocol(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+	md.Kind = sources.SourcePgBouncer
+
+	// Non-Postgres sources use the simple protocol by default.
+	rows := pgxmock.NewRows([]string{"epoch_ns", "value"}).
+		AddRow(time.Now().UnixNano(), 42)
+	mock.ExpectQuery("SELECT").WithArgs(pgx.QueryExecModeSimpleProtocol).WillReturnRows(rows)
+
+	data, err := QueryMeasurements(ctx, md, "SELECT")
+	require.NoError(t, err)
+	require.Len(t, data, 1)
+	assert.EqualValues(t, 42, data[0]["value"])
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestQueryMeasurementsNonPostgresPreservesArgs(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+	md.Kind = sources.SourcePgBouncer
+
+	// Simple protocol is prepended while preserving original args.
+	rows := pgxmock.NewRows([]string{"epoch_ns", "value"}).
+		AddRow(time.Now().UnixNano(), 7)
+	mock.ExpectQuery("SELECT").
+		WithArgs(pgx.QueryExecModeSimpleProtocol, "role", 5).
+		WillReturnRows(rows)
+
+	data, err := QueryMeasurements(ctx, md, "SELECT", "role", 5)
+	require.NoError(t, err)
+	require.Len(t, data, 1)
+	assert.EqualValues(t, 7, data[0]["value"])
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestQueryMeasurementsQueryError(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+
+	// Query errors should propagate.
+	mock.ExpectQuery("SELECT").WillReturnError(assert.AnError)
+
+	_, err := QueryMeasurements(ctx, md, "SELECT")
+	assert.Error(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestQueryMeasurementsPostgresPreservesArgs(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+
+	// Postgres sources keep provided args intact.
+	rows := pgxmock.NewRows([]string{"epoch_ns", "value"}).
+		AddRow(time.Now().UnixNano(), 3)
+	mock.ExpectQuery("SELECT").
+		WithArgs("role", 2).
+		WillReturnRows(rows)
+
+	data, err := QueryMeasurements(ctx, md, "SELECT", "role", 2)
+	require.NoError(t, err)
+	require.Len(t, data, 1)
+	assert.EqualValues(t, 3, data[0]["value"])
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetInstanceUpMeasurement(t *testing.T) {
+	ctx := context.Background()
+	reaper := &Reaper{}
+
+	t.Run("up", func(t *testing.T) {
+		// Healthy connection reports instance_up=1.
+		md, mock := createTestSourceConn(t)
+		defer mock.Close()
+		mock.ExpectPing()
+
+		data, err := reaper.GetInstanceUpMeasurement(ctx, md)
+		require.NoError(t, err)
+		require.Len(t, data, 1)
+		assert.Equal(t, 1, data[0]["instance_up"])
+		assert.NotZero(t, data[0][metrics.EpochColumnName])
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("down", func(t *testing.T) {
+		// Ping error reports instance_up=0.
+		md, mock := createTestSourceConn(t)
+		defer mock.Close()
+		mock.ExpectPing().WillReturnError(assert.AnError)
+
+		data, err := reaper.GetInstanceUpMeasurement(ctx, md)
+		assert.Error(t, err)
+		require.Len(t, data, 1)
+		assert.Equal(t, 0, data[0]["instance_up"])
+		assert.NotZero(t, data[0][metrics.EpochColumnName])
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("pgbouncer", func(t *testing.T) {
+		// PgBouncer still follows the ping path.
+		md, mock := createTestSourceConn(t)
+		defer mock.Close()
+		md.Kind = sources.SourcePgBouncer
+		mock.ExpectPing()
+
+		data, err := reaper.GetInstanceUpMeasurement(ctx, md)
+		require.NoError(t, err)
+		require.Len(t, data, 1)
+		assert.Equal(t, 1, data[0]["instance_up"])
+		assert.NotZero(t, data[0][metrics.EpochColumnName])
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}
+
+func TestTryCreateMissingExtensions(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+
+	// Only available and missing extensions are attempted.
+	mock.ExpectQuery("select name::text from pg_available_extensions").WillReturnRows(
+		pgxmock.NewRows([]string{"name"}).
+			AddRow("pg_stat_statements"),
+	)
+	mock.ExpectQuery("create extension pg_stat_statements").WillReturnError(assert.AnError)
+
+	created := TryCreateMissingExtensions(ctx, md,
+		[]string{"pg_stat_statements", "hstore", "unknown_ext"},
+		map[string]int{"hstore": 1},
+	)
+
+	assert.Equal(t, []string{"pg_stat_statements"}, created)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestTryCreateMissingExtensionsAvailableQueryFails(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+
+	// Failure to list available extensions returns no creations.
+	mock.ExpectQuery("select name::text from pg_available_extensions").WillReturnError(assert.AnError)
+
+	created := TryCreateMissingExtensions(ctx, md,
+		[]string{"pg_stat_statements"},
+		map[string]int{},
+	)
+
+	assert.Empty(t, created)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestTryCreateMissingExtensionsCreatesAvailable(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+
+	// Available extensions are created and returned.
+	mock.ExpectQuery("select name::text from pg_available_extensions").WillReturnRows(
+		pgxmock.NewRows([]string{"name"}).
+			AddRow("pg_stat_statements"),
+	)
+	mock.ExpectQuery("create extension pg_stat_statements").WillReturnRows(
+		pgxmock.NewRows([]string{"epoch_ns"}),
+	)
+
+	created := TryCreateMissingExtensions(ctx, md,
+		[]string{"pg_stat_statements"},
+		map[string]int{},
+	)
+
+	assert.Equal(t, []string{"pg_stat_statements"}, created)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
