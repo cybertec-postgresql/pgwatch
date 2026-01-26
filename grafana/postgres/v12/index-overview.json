@@ -18,6 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": 15,
   "links": [],
   "panels": [
     {
@@ -181,7 +182,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  tag_data->>'index_full_name' as \"Index Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  max((data->>'index_size_b')::int8) as \"Index Size\",\n  max((data->>'idx_scan')::int8) as \"Scans (from last reset)\"\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2\nORDER BY\n  4 DESC\nLIMIT\n  $top",
+          "rawSql": "SELECT\n  tag_data->>'index_full_name' as \"Index Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  max((data->>'index_size_b')::int8) as \"Index Size\",\n  max((data->>'idx_scan')::int8) as \"Scans (from last reset)\"\nFROM\n  index_stats\nWHERE\n  time in (select max(time) from index_stats where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2\nORDER BY\n  3 DESC\nLIMIT\n  $top",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -298,7 +299,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 11,
+        "w": 12,
         "x": 0,
         "y": 8
       },
@@ -332,7 +333,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  tag_data->>'index_full_name' as \"Index Name\",\n  max((data->>'idx_blks_read')::int8) - min((data->>'idx_blks_read')::int8) as blks_read\nFROM\n  index_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname IN ($dbname)\n  AND data->>'idx_blks_read' IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1\nLIMIT $top",
+          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_blks_read')::int8 - lag((data->>'idx_blks_read')::int8) over w, 0) as blks_read\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(blks_read) as total_blks_read\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_blks_read desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(blks_read) as blks_read,\n  index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
           "refId": "A",
           "sql": {
             "columns": [
@@ -417,8 +418,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 13,
-        "x": 11,
+        "w": 12,
+        "x": 12,
         "y": 8
       },
       "id": 14,
@@ -451,7 +452,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  tag_data->>'index_full_name' as \"Index Name\",\n  max((data->>'idx_blks_hit')::int8) - min((data->>'idx_blks_hit')::int8) as blks_read\nFROM\n  index_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname IN ($dbname)\n  AND data->>'idx_blks_hit' IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1\nLIMIT $top",
+          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_blks_hit')::int8 - lag((data->>'idx_blks_hit')::int8) over w, 0) as blks_hit\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(blks_hit) as total_blks_hit\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_blks_hit desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(blks_hit) as blks_hit,\n  index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
           "refId": "A",
           "sql": {
             "columns": [
