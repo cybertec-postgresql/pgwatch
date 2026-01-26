@@ -18,6 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": 15,
   "links": [],
   "panels": [
     {
@@ -80,7 +81,11 @@
               },
               {
                 "id": "custom.width",
-                "value": 530
+                "value": 480
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               }
             ]
           },
@@ -136,7 +141,11 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 461
+                "value": 392
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               }
             ]
           }
@@ -180,7 +189,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "with index_scan_changes as (\n  select\n    dbname,\n    tag_data ->> 'index_full_name' as index_full_name,\n    tag_data ->> 'table_full_name' as table_full_name,\n    coalesce(\n      (data ->> 'idx_scan') :: int8 - lag((data ->> 'idx_scan') :: int8) over w,\n      0\n    ) as idx_scans\n  from\n    index_stats\n  where\n    dbname in ($dbname)\n    and $__timeFilter(time) window w as (\n      partition by dbname,\n      tag_data ->> 'table_full_name',\n      tag_data ->> 'index_full_name'\n      order by\n        time\n    )\n),\ntotal_scans as (\n  select\n    dbname,\n    table_full_name,\n    index_full_name,\n    sum(idx_scans) as total_idx_scans\n  from\n    index_scan_changes\n  group by\n    1,\n    2,\n    3\n  order by\n    total_idx_scans desc\n  limit\n    $top\n)\nselect\n  tag_data ->> 'index_full_name' as \"Index Name\",\n  tag_data ->> 'table_full_name' as \"Table Name\",\n  max((data ->> 'index_size_b') :: int8) as \"Index Size\",\n  max(t.total_idx_scans) as \"Scans\"\nfrom\n  index_stats s\n  join total_scans t on t.dbname = s.dbname\n  and t.table_full_name = s.tag_data ->> 'table_full_name'\n  and t.index_full_name = s.tag_data ->> 'index_full_name'\nwhere\n  time in (\n    select\n      max(time)\n    from\n      index_stats\n    where\n      $__timeFilter(time)\n      and dbname in ($dbname)\n    group by\n      dbname\n  )\n  and s.dbname in ($dbname)\ngroup by\n  1,\n  2\norder by\n  3 desc\nlimit\n  $top",
+          "rawSql": "with index_scan_changes as (\n  select\n    dbname,\n    tag_data ->> 'index_full_name' as index_full_name,\n    tag_data ->> 'table_full_name' as table_full_name,\n    coalesce(\n      (data ->> 'idx_scan') :: int8 - lag((data ->> 'idx_scan') :: int8) over w,\n      0\n    ) as idx_scans\n  from\n    index_stats\n  where\n    dbname in ($dbname)\n    and $__timeFilter(time) window w as (\n      partition by dbname,\n      tag_data ->> 'table_full_name',\n      tag_data ->> 'index_full_name'\n      order by\n        time\n    )\n),\ntotal_scans as (\n  select\n    dbname,\n    table_full_name,\n    index_full_name,\n    sum(idx_scans) as total_idx_scans\n  from\n    index_scan_changes\n  group by\n    1,\n    2,\n    3\n  order by\n    total_idx_scans desc\n  limit\n    $top\n)\nselect\n  s.dbname as \"Source Name\",\n  tag_data ->> 'index_full_name' as \"Index Name\",\n  tag_data ->> 'table_full_name' as \"Table Name\",\n  max((data ->> 'index_size_b') :: int8) as \"Index Size\",\n  max(t.total_idx_scans) as \"Scans\"\nfrom\n  index_stats s\n  join total_scans t on t.dbname = s.dbname\n  and t.table_full_name = s.tag_data ->> 'table_full_name'\n  and t.index_full_name = s.tag_data ->> 'index_full_name'\nwhere\n  time in (\n    select\n      max(time)\n    from\n      index_stats\n    where\n      $__timeFilter(time)\n      and dbname in ($dbname)\n    group by\n      dbname\n  )\n  and s.dbname in ($dbname)\ngroup by\n  1,\n  2,\n  3\norder by\n  4 desc\nlimit\n  $top",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -330,7 +339,7 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_blks_read')::int8 - lag((data->>'idx_blks_read')::int8) over w, 0) as blks_read\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(blks_read) as total_blks_read\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_blks_read desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(blks_read) as blks_read,\n  index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
+          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_blks_read')::int8 - lag((data->>'idx_blks_read')::int8) over w, 0) as blks_read\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(blks_read) as total_blks_read\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_blks_read desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(blks_read) as blks_read,\n  dbname || ' ' || index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
           "refId": "A",
           "sql": {
             "columns": [
@@ -448,7 +457,7 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_blks_hit')::int8 - lag((data->>'idx_blks_hit')::int8) over w, 0) as blks_hit\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(blks_hit) as total_blks_hit\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_blks_hit desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(blks_hit) as blks_hit,\n  index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
+          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_blks_hit')::int8 - lag((data->>'idx_blks_hit')::int8) over w, 0) as blks_hit\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(blks_hit) as total_blks_hit\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_blks_hit desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(blks_hit) as blks_hit,\n  dbname || ' ' || index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
           "refId": "A",
           "sql": {
             "columns": [
@@ -566,7 +575,7 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_tup_read')::int8 - lag((data->>'idx_tup_read')::int8) over w, 0) as tuples_read\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(tuples_read) as total_tuples_read\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_tuples_read desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(tuples_read) as tuples_read,\n  index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
+          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_tup_read')::int8 - lag((data->>'idx_tup_read')::int8) over w, 0) as tuples_read\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(tuples_read) as total_tuples_read\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_tuples_read desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(tuples_read) as tuples_read,\n  dbname || ' ' || index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
           "refId": "A",
           "sql": {
             "columns": [
@@ -684,7 +693,7 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_tup_fetch')::int8 - lag((data->>'idx_tup_fetch')::int8) over w, 0) as tuples_fetched\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(tuples_fetched) as total_tuples_fetched\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_tuples_fetched desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(tuples_fetched) as tuples_fetched,\n  index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
+          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_tup_fetch')::int8 - lag((data->>'idx_tup_fetch')::int8) over w, 0) as tuples_fetched\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(tuples_fetched) as total_tuples_fetched\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_tuples_fetched desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(tuples_fetched) as tuples_fetched,\n  dbname || ' ' || index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
           "refId": "A",
           "sql": {
             "columns": [
@@ -835,6 +844,18 @@
                 "value": 144
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 151
+              }
+            ]
           }
         ]
       },
@@ -861,7 +882,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n    tag_data->>'object_name' AS \"Table Name\",\n    data->>'affected_query_count' AS \"Affected Queries\",\n    data->>'query_id' AS \"Heaviest Query\",\n    data->>'recommendation' AS \"Recommendation\"\nFROM recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) and tag_data->>'reco_topic' = 'create_index' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'create_index' \nORDER BY (data->>'total_exec_time')::float8 DESC",
+          "rawSql": "SELECT\n    dbname as \"Source Name\",\n    tag_data->>'object_name' AS \"Table Name\",\n    data->>'affected_query_count' AS \"Affected Queries\",\n    data->>'query_id' AS \"Heaviest Query\",\n    data->>'recommendation' AS \"Recommendation\"\nFROM recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) and tag_data->>'reco_topic' = 'create_index' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'create_index' \nORDER BY (data->>'total_exec_time')::float8 DESC",
           "refId": "A",
           "select": [
             [
@@ -972,7 +993,11 @@
               },
               {
                 "id": "custom.width",
-                "value": 385
+                "value": 245
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               }
             ]
           },
@@ -1004,7 +1029,11 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 449
+                "value": 203
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               }
             ]
           }
@@ -1019,7 +1048,8 @@
       "id": 11,
       "options": {
         "cellHeight": "sm",
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": []
       },
       "pluginVersion": "12.3.1",
       "targets": [
@@ -1048,7 +1078,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'object_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid'\n",
+          "rawSql": "SELECT\n  dbname as \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'object_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'invalid'\n",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -1166,7 +1196,11 @@
               },
               {
                 "id": "custom.width",
-                "value": 385
+                "value": 173
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               }
             ]
           },
@@ -1187,6 +1221,10 @@
               {
                 "id": "custom.align",
                 "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 126
               }
             ]
           },
@@ -1198,7 +1236,11 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 448
+                "value": 179
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               }
             ]
           },
@@ -1217,6 +1259,18 @@
                 "value": "left"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 137
+              }
+            ]
           }
         ]
       },
@@ -1229,7 +1283,8 @@
       "id": 10,
       "options": {
         "cellHeight": "sm",
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": []
       },
       "pluginVersion": "12.3.1",
       "targets": [
@@ -1258,7 +1313,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'object_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\",\n  0::int8 as \"Scans\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused'\n",
+          "rawSql": "SELECT\n  dbname as \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  tag_data->>'object_name' as \"Index Name\",\n  (data->>'index_size_b')::int8 as \"Index size\",\n  0::int8 as \"Scans\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n      and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'unused'\n",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -1275,6 +1330,23 @@
               }
             ]
           ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
           "tags": [],
           "timeColumn": "time",
           "where": [
@@ -1415,31 +1487,11 @@
               },
               {
                 "id": "custom.width",
-                "value": 236
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Count"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "short"
+                "value": 222
               },
               {
-                "id": "custom.align",
-                "value": "left"
-              },
-              {
-                "id": "decimals",
-                "value": 0
-              },
-              {
-                "id": "custom.width",
-                "value": 106
+                "id": "custom.inspect",
+                "value": true
               }
             ]
           },
@@ -1463,7 +1515,23 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 312
+                "value": 244
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 146
               }
             ]
           }
@@ -1507,7 +1575,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  tag_data->>'table_full_name' as \"Table Name\",\n  (data->>'index_size_b')::int8 as \"Max Index size\",\n  data->>'duplicate_count' as \"Num of duplicates\",\n  data->>'oids' as \"OIDs\",\n  data->>'index_def' as \"Index def\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n     and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'duplicate' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'duplicate'\n\n",
+          "rawSql": "SELECT\n  dbname as \"Source Name\",\n  tag_data->>'table_full_name' as \"Table Name\",\n  (data->>'index_size_b')::int8 as \"Max Index size\",\n  data->>'duplicate_count' as \"Num of duplicates\",\n  data->>'oids' as \"OIDs\",\n  data->>'index_def' as \"Index def\"\nFROM\n  recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) \n     and tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'duplicate' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'drop_index' and tag_data->>'issue_type' = 'duplicate'\n\n",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -1706,5 +1774,5 @@
   "timezone": "browser",
   "title": "Index overview",
   "uid": "index-overview",
-  "version": 20
+  "version": 70
 }
