@@ -109,7 +109,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 347
+                "value": 301
               }
             ]
           },
@@ -189,7 +189,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "with index_scan_changes as (\n  select\n    dbname,\n    tag_data ->> 'index_full_name' as index_full_name,\n    tag_data ->> 'table_full_name' as table_full_name,\n    coalesce(\n      (data ->> 'idx_scan') :: int8 - lag((data ->> 'idx_scan') :: int8) over w,\n      0\n    ) as idx_scans\n  from\n    index_stats\n  where\n    dbname in ($dbname)\n    and $__timeFilter(time) window w as (\n      partition by dbname,\n      tag_data ->> 'table_full_name',\n      tag_data ->> 'index_full_name'\n      order by\n        time\n    )\n),\ntotal_scans as (\n  select\n    dbname,\n    table_full_name,\n    index_full_name,\n    sum(idx_scans) as total_idx_scans\n  from\n    index_scan_changes\n  group by\n    1,\n    2,\n    3\n  order by\n    total_idx_scans desc\n  limit\n    $top\n)\nselect\n  s.dbname as \"Source Name\",\n  tag_data ->> 'index_full_name' as \"Index Name\",\n  tag_data ->> 'table_full_name' as \"Table Name\",\n  max((data ->> 'index_size_b') :: int8) as \"Index Size\",\n  max(t.total_idx_scans) as \"Scans\"\nfrom\n  index_stats s\n  join total_scans t on t.dbname = s.dbname\n  and t.table_full_name = s.tag_data ->> 'table_full_name'\n  and t.index_full_name = s.tag_data ->> 'index_full_name'\nwhere\n  time in (\n    select\n      max(time)\n    from\n      index_stats\n    where\n      $__timeFilter(time)\n      and dbname in ($dbname)\n    group by\n      dbname\n  )\n  and s.dbname in ($dbname)\ngroup by\n  1,\n  2,\n  3\norder by\n  4 desc\nlimit\n  $top",
+          "rawSql": "WITH index_scan_changes AS (\n  SELECT\n    time,\n    dbname,\n    tag_data ->> 'index_full_name' AS index_full_name,\n    tag_data ->> 'table_full_name' AS table_full_name,\n    (data ->> 'idx_scan')::int8 - LEAD((data ->> 'idx_scan')::int8) OVER w AS idx_scans,\n    (data ->> 'index_size_b')::int8 AS index_size_b,\n    ROW_NUMBER() OVER w AS rn\n  FROM\n    index_stats\n  WHERE\n    dbname IN ($dbname)\n  WINDOW w AS (\n    PARTITION BY dbname,\n      tag_data ->> 'table_full_name',\n      tag_data ->> 'index_full_name'\n    ORDER BY time DESC\n  )\n),\ntotal_scans AS (\n  SELECT\n    dbname,\n    table_full_name,\n    index_full_name,\n    SUM(COALESCE(idx_scans, 0)) AS total_idx_scans,\n    MAX(index_size_b) FILTER (WHERE rn = 1) AS latest_index_size\n  FROM\n    index_scan_changes\n  WHERE\n    $__timeFilter(time)\n  GROUP BY\n    dbname, table_full_name, index_full_name\n)\nSELECT\n  dbname AS \"Source Name\",\n  index_full_name AS \"Index Name\",\n  table_full_name AS \"Table Name\",\n  latest_index_size AS \"Index Size\",\n  total_idx_scans AS \"Scans\"\nFROM\n  total_scans\nORDER BY\n  latest_index_size DESC\nLIMIT $top",
           "refId": "A",
           "resultFormat": "table",
           "select": [
