@@ -596,6 +596,7 @@
           }
         }
       ],
+      "description": "Tuples Read = Number of index entries returned by scans on this index",
       "title": "Top $top indexes by number of tuples read",
       "type": "timeseries"
     },
@@ -714,6 +715,7 @@
           }
         }
       ],
+      "description": "Tuples Fetched = Number of live rows fetched from the table by simple index scans using this index",
       "title": "Top $top indexes by number of tuples fetched",
       "type": "timeseries"
     },
