@@ -76,7 +76,8 @@ func (cmd *MetricPrintSQLCommand) Execute(args []string) error {
 	for _, name := range args {
 		if m, ok := metrics.MetricDefs[name]; ok {
 			if v := m.GetSQL(cmd.Version); v > "" {
-				fmt.Fprintln(w, "--", name, v)
+				fmt.Fprintln(w, "--", name)
+				fmt.Fprintln(w, v)
 			}
 		}
 	}
