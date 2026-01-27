@@ -33,9 +33,12 @@ func TestStateStore(t *testing.T) {
 		ss, err := NewStateStore(stateFile)
 		require.NoError(t, err)
 
-		ss.SetOffset("file1.log", 100, 1000)
-		ss.SetOffset("file2.log", 200, 2000)
-		ss.SetOffset("file3.log", 300, 3000)
+		err = ss.SetOffset("file1.log", 100, 1000)
+		require.NoError(t, err)
+		err = ss.SetOffset("file2.log", 200, 2000)
+		require.NoError(t, err)
+		err = ss.SetOffset("file3.log", 300, 3000)
+		require.NoError(t, err)
 
 		assert.Equal(t, int64(100), ss.GetOffset("file1.log"))
 		assert.Equal(t, int64(200), ss.GetOffset("file2.log"))
@@ -55,6 +58,7 @@ func TestStateStore(t *testing.T) {
 		ss1, err := NewStateStore(stateFile)
 		require.NoError(t, err)
 		ss1.SetOffset("test.log", 999, 9999)
+		require.NoError(t, err)
 
 		// Second instance (simulates restart)
 		ss2, err := NewStateStore(stateFile)
