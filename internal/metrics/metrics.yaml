@@ -703,41 +703,30 @@ metrics:
                     /* biggest */
                     select *
                     from (
-                             select indexrelid
-                             from q_index_details
-                             where idx_scan > 1
-                             order by index_size_b desc
-                             limit 200
-                         ) x
+                        select indexrelid
+                        from q_index_details
+                        where idx_scan > 1
+                        order by index_size_b desc
+                        limit 100
+                    ) x
                     union
                     /* most block traffic */
                     select *
                     from (
-                             select indexrelid
-                             from q_index_details
-                             order by coalesce(idx_blks_read, 0) + coalesce(idx_blks_hit, 0) desc
-                             limit 200
-                         ) y
+                        select indexrelid
+                        from q_index_details
+                        order by coalesce(idx_blks_read, 0) + coalesce(idx_blks_hit, 0) desc
+                        limit 100
+                    ) y
                     union
                     /* most scans */
                     select *
                     from (
-                             select indexrelid
-                             from q_index_details
-                             order by idx_scan desc nulls last
-                             limit 200
-                         ) z
-                    union
-                    /* biggest unused non-constraint */
-                    select *
-                    from (
-                             select q.indexrelid
-                             from q_index_details q
-                             where idx_scan = 0
-                             and not (indisprimary or indisunique or indisexclusion)
-                             order by index_size_b desc
-                             limit 200
-                         ) z
+                        select indexrelid
+                        from q_index_details
+                        order by idx_scan desc nulls last
+                        limit 100
+                    ) z
                 )
                 select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -800,30 +789,30 @@ metrics:
                     /* biggest */
                     select *
                     from (
-                             select indexrelid
-                             from q_index_details
-                             where idx_scan > 1
-                             order by index_size_b desc
-                             limit 200
-                         ) x
+                        select indexrelid
+                        from q_index_details
+                        where idx_scan > 1
+                        order by index_size_b desc
+                        limit 100
+                    ) x
                     union
                     /* most block traffic */
                     select *
                     from (
-                             select indexrelid
-                             from q_index_details
-                             order by coalesce(idx_blks_read, 0) + coalesce(idx_blks_hit, 0) desc
-                             limit 200
-                         ) y
+                        select indexrelid
+                        from q_index_details
+                        order by coalesce(idx_blks_read, 0) + coalesce(idx_blks_hit, 0) desc
+                        limit 100
+                    ) y
                     union
                     /* most scans */
                     select *
                     from (
-                             select indexrelid
-                             from q_index_details
-                             order by idx_scan desc nulls last
-                             limit 200
-                         ) z
+                        select indexrelid
+                        from q_index_details
+                        order by idx_scan desc nulls last
+                        limit 100
+                    ) z
                 )
                 select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
