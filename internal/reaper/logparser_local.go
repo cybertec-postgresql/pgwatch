@@ -65,45 +65,61 @@ func (lp *LogParser) parseLogsLocal() error {
 			}
 			defer latestHandle.Close()
 
-			// Determine the offset to resume from:
-			// 1) If we have a saved offset for this filename, use it (resume).
-			// 2) Else if firstRun, seek to end and store that offset so we don't read historical content.
-			// 3) Else (no saved offset, not first run) fall back to previous behavior: try skipping already-parsed lines.
+			// ✅ UPDATED: Try to load offset from persistent storage first
 			offset = 0
-			if v, ok := lp.readOffsets[latest]; ok && v > 0 {
-				// use saved offset
-				fi, ferr := latestHandle.Stat()
-				if ferr == nil {
-					// if saved offset is beyond current file size (truncated), reset to 0
-					if v > fi.Size() {
-						logger.Debugf("Saved offset %d beyond filesize %d for %s, resetting to 0", v, fi.Size(), latest)
-						offset = 0
+
+			// Priority 1: Check persistent state store
+			if lp.stateStore != nil {
+				savedOffset := lp.stateStore.GetOffset(latest)
+				if savedOffset > 0 {
+					fi, ferr := latestHandle.Stat()
+					if ferr == nil {
+						// Validate offset is still valid
+						if savedOffset > fi.Size() {
+							logger.Debugf("Saved offset %d beyond filesize %d for %s, resetting to 0", savedOffset, fi.Size(), latest)
+							offset = 0
+						} else {
+							offset = savedOffset
+							logger.Infof("Resuming %s from saved offset %d", latest, offset)
+						}
+					} else {
+						offset = savedOffset
+					}
+				}
+			}
+
+			// Priority 2: Check in-memory offset (fallback)
+			if offset == 0 {
+				if v, ok := lp.readOffsets[latest]; ok && v > 0 {
+					fi, ferr := latestHandle.Stat()
+					if ferr == nil {
+						if v > fi.Size() {
+							logger.Debugf("In-memory offset %d beyond filesize %d for %s, resetting to 0", v, fi.Size(), latest)
+							offset = 0
+						} else {
+							offset = v
+							logger.Debugf("Resuming %s from in-memory offset %d", latest, offset)
+						}
 					} else {
 						offset = v
 					}
-				} else {
-					offset = v
 				}
-				if _, err = latestHandle.Seek(offset, io.SeekStart); err != nil {
-					logger.Warningf("Failed to seek logfile %s to offset %d: %s", latest, offset, err)
-					// continue with offset = 0
-					offset = 0
-					_, _ = latestHandle.Seek(0, io.SeekStart)
-				}
-			} else if previous == latest && linesRead > 0 { // handle postmaster restarts (legacy fallback)
+			}
+
+			// Priority 3: Handle legacy line-skipping (backward compatibility)
+			if offset == 0 && previous == latest && linesRead > 0 {
 				reader = bufio.NewReader(latestHandle)
 				i := 1
 				for i <= linesRead {
 					s, rerr := reader.ReadString('\n')
 					if rerr == io.EOF && i < linesRead {
-						logger.Warningf("Failed to open logfile %s: %s", latest, rerr)
+						logger.Warningf("Failed to skip lines in %s: %s", latest, rerr)
 						linesRead = 0
 						offset = 0
 						break
 					} else if rerr != nil {
-						logger.Warningf("Failed to skip %d logfile lines for %s, there might be duplicates reported. Error: %s", linesRead, latest, rerr)
+						logger.Warningf("Failed to skip %d logfile lines for %s: %s", linesRead, latest, rerr)
 						linesRead = i
-						// update offset by what we skipped so far
 						offset += int64(len(s))
 						break
 					}
@@ -111,14 +127,32 @@ func (lp *LogParser) parseLogsLocal() error {
 					i++
 				}
 				logger.Debugf("Skipped %d already processed lines from %s", linesRead, latest)
-				lp.readOffsets[latest] = offset
-				// Ensure file is positioned at offset for subsequent reads
-				_, _ = latestHandle.Seek(offset, io.SeekStart)
-			} else if firstRun { // seek to end
+			}
+
+			// Priority 4: First run - seek to end
+			if offset == 0 && firstRun {
 				off, _ := latestHandle.Seek(0, 2)
 				offset = off
 				firstRun = false
-				lp.readOffsets[latest] = offset
+				logger.Info("First run, seeking to end of file")
+			}
+
+			// Seek to determined offset
+			if offset > 0 {
+				if _, err = latestHandle.Seek(offset, io.SeekStart); err != nil {
+					logger.Warningf("Failed to seek %s to offset %d: %s", latest, offset, err)
+					offset = 0
+					_, _ = latestHandle.Seek(0, io.SeekStart)
+				}
+			}
+
+			// Update in-memory tracking
+			lp.readOffsets[latest] = offset
+
+			// Save to persistent storage
+			if lp.stateStore != nil {
+				fi, _ := latestHandle.Stat()
+				_ = lp.stateStore.SetOffset(latest, offset, fi.Size())
 			}
 
 			// create a reader positioned at the chosen offset
@@ -137,15 +171,19 @@ func (lp *LogParser) parseLogsLocal() error {
 			}
 
 			if err == io.EOF {
-				// update stored offset to current in-memory offset
+				// ✅ UPDATED: Save offset to persistent storage before switching files
+				if lp.stateStore != nil {
+					fi, _ := latestHandle.Stat()
+					_ = lp.stateStore.SetOffset(latest, offset, fi.Size())
+				}
 				lp.readOffsets[latest] = offset
 
-				// EOF reached, wait for new files to be added / new data appended
 				select {
 				case <-lp.ctx.Done():
 					return nil
 				case <-time.After(currInterval):
 				}
+
 				// check for newly opened logfiles
 				file, _ := getFileWithNextModTimestamp(logsGlobPath, latest)
 				if file != "" {
@@ -154,16 +192,21 @@ func (lp *LogParser) parseLogsLocal() error {
 					_ = latestHandle.Close()
 					latestHandle = nil
 					logger.Infof("Switching to new logfile: %s", file)
-					// reset offset for the new file; it will be set when the file is opened
 					offset = 0
 					linesRead = 0
 					break
 				}
 			} else {
-				// successfully read a line; advance offset and counters
+				// successfully read a line
 				offset += int64(len(line))
 				lp.readOffsets[latest] = offset
 				linesRead++
+
+				// ✅ ADDED: Periodically save state (every 100 lines to reduce I/O)
+				if linesRead%100 == 0 && lp.stateStore != nil {
+					fi, _ := latestHandle.Stat()
+					_ = lp.stateStore.SetOffset(latest, offset, fi.Size())
+				}
 			}
 
 			if err == nil && line != "" {

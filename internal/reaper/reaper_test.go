@@ -12,7 +12,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
-  "github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -99,14 +99,14 @@ func TestReaper_LoadSources(t *testing.T) {
 
 	t.Run("Test source config changes trigger restart", func(t *testing.T) {
 		baseSource := sources.Source{
-			Name:                 "TestSource",
-			IsEnabled:            true,
-			Kind:                 sources.SourcePostgres,
-			ConnStr:              "postgres://localhost:5432/testdb",
-			Metrics:              map[string]float64{"cpu": 10, "memory": 20},
-			MetricsStandby:       map[string]float64{"cpu": 30},
-			CustomTags:           map[string]string{"env": "test"},
-			Group:                "default",
+			Name:           "TestSource",
+			IsEnabled:      true,
+			Kind:           sources.SourcePostgres,
+			ConnStr:        "postgres://localhost:5432/testdb",
+			Metrics:        map[string]float64{"cpu": 10, "memory": 20},
+			MetricsStandby: map[string]float64{"cpu": 30},
+			CustomTags:     map[string]string{"env": "test"},
+			Group:          "default",
 		}
 
 		testCases := []struct {

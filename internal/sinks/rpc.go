@@ -47,7 +47,6 @@ func convertSyncOp(op SyncOp) pb.SyncOp {
 	}
 }
 
-
 func NewRPCWriter(ctx context.Context, connStr string) (*RPCWriter, error) {
 	uri, err := url.Parse(connStr)
 	if err != nil {
@@ -77,14 +76,14 @@ func NewRPCWriter(ctx context.Context, connStr string) (*RPCWriter, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	password, _ := uri.User.Password()
-	md := metadata.Pairs(  
-		"username", uri.User.Username(),  
+	md := metadata.Pairs(
+		"username", uri.User.Username(),
 		"password", password,
-	)  
+	)
 	newCtx := metadata.NewOutgoingContext(ctx, md)
-	
+
 	client := pb.NewReceiverClient(conn)
 	rw := &RPCWriter{
 		ctx:    newCtx,

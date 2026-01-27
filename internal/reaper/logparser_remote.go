@@ -39,7 +39,18 @@ func (lp *LogParser) parseLogsRemote() error {
 				logger.Infof("No logfiles found in log dir: '%s'", lp.LogFolder)
 				continue
 			}
-			offset = size // Seek to an end
+			// ✅ UPDATED: Check for saved offset
+			if lp.stateStore != nil {
+				savedOffset := lp.stateStore.GetOffset(latestLogFile)
+				if savedOffset > 0 && savedOffset <= int64(size) {
+					offset = int32(savedOffset)
+					logger.Infof("Resuming %s from saved offset %d", latestLogFile, offset)
+				} else {
+					offset = size // Seek to end
+				}
+			} else {
+				offset = size // Seek to end
+			}
 			firstRun = false
 			logger.Infof("Starting to parse logfile: '%s'", latestLogFile)
 		}
@@ -53,9 +64,13 @@ func (lp *LogParser) parseLogsRemote() error {
 				logger.Warningf("Failed to read logfile '%s': %s", latestLogFile, err)
 				continue
 			}
+			// ✅ ADDED: Save offset after successful read
+			if lp.stateStore != nil {
+				_ = lp.stateStore.SetOffset(latestLogFile, int64(offset), int64(size))
+			}
+
 			lines = strings.Split(chunk, "\n")
 			if sizeToRead == maxChunkSize {
-				// last line may be incomplete, re-read it next time
 				offset -= int32(len(lines[len(lines)-1]))
 			}
 			numOfLines = len(lines)
@@ -82,11 +97,29 @@ func (lp *LogParser) parseLogsRemote() error {
 					sql := "select name, size from pg_ls_logdir() where modification > $1 and name like '%csv' order by modification, name limit 1;"
 					err := lp.SourceConn.Conn.QueryRow(lp.ctx, sql, modification).Scan(&fileName, &latestSize)
 					if err == nil && latestLogFile != fileName {
+						// ✅ UPDATED: Save state for old file before switching
+						if lp.stateStore != nil {
+							_ = lp.stateStore.SetOffset(latestLogFile, int64(offset), int64(size))
+						}
+
 						latestLogFile = fileName
 						size = latestSize
-						offset = 0
+
+						// ✅ UPDATED: Try to resume from saved offset for new file
+						if lp.stateStore != nil {
+							savedOffset := lp.stateStore.GetOffset(fileName)
+							if savedOffset > 0 && savedOffset <= int64(latestSize) {
+								offset = int32(savedOffset)
+								logger.Infof("Resuming %s from saved offset %d", fileName, offset)
+							} else {
+								offset = 0
+							}
+						} else {
+							offset = 0
+						}
+
 						logger.Infof("Switching to new logfile: '%s'", fileName)
-						currInterval = 0 // We already slept. It will be resetted.
+						currInterval = 0
 						break
 					}
 				} else {

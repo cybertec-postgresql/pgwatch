@@ -258,7 +258,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[str
 		// Detects metrics removed from a preset definition.
 		//
 		// If not using presets, a metric removed from configs will
-		// be detected earlier by `LoadSources()` as configs change that 
+		// be detected earlier by `LoadSources()` as configs change that
 		// triggers a restart and get passed in `hostsToShutDown`.
 		if !(wholeDbShutDown || dbRemovedFromConfig) {
 			if md.IsInRecovery && len(md.MetricsStandby) > 0 {

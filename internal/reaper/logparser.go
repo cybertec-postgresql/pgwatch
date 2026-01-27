@@ -51,6 +51,8 @@ type LogParser struct {
 	// readOffsets stores last read byte offset per logfile when parsing local files.
 	// This allows resuming from the previous offset if the file is reused (not truncated).
 	readOffsets map[string]int64
+	stateStore  *StateStore // to store read offsets across restarts
+
 }
 
 func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- metrics.MeasurementEnvelope) (*LogParser, error) {
@@ -78,6 +80,14 @@ func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- m
 		return nil, err
 	}
 
+	// ADD: Create state store
+	stateFilePath := filepath.Join(logFolder, ".pgwatch_reaper_state.json")
+	stateStore, err := NewStateStore(stateFilePath)
+	if err != nil {
+		logger.WithError(err).Warning("Failed to create state store, offset tracking will be in-memory only")
+		stateStore = nil
+	}
+
 	return &LogParser{
 		ctx:                ctx,
 		LogsMatchRegex:     logsRegex,
@@ -89,6 +99,8 @@ func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- m
 		eventCounts:        make(map[string]int64),
 		eventCountsTotal:   make(map[string]int64),
 		readOffsets:        make(map[string]int64),
+		stateStore:         stateStore, // ADD THIS
+
 	}, nil
 }
 
