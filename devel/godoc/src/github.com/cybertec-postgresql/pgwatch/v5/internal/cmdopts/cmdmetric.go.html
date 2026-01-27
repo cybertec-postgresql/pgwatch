@@ -133,14 +133,15 @@
 <span id="L76" class="ln">    76  </span>	for _, name := range args {
 <span id="L77" class="ln">    77  </span>		if m, ok := metrics.MetricDefs[name]; ok {
 <span id="L78" class="ln">    78  </span>			if v := m.GetSQL(cmd.Version); v &gt; &#34;&#34; {
-<span id="L79" class="ln">    79  </span>				fmt.Fprintln(w, &#34;--&#34;, name, v)
-<span id="L80" class="ln">    80  </span>			}
-<span id="L81" class="ln">    81  </span>		}
-<span id="L82" class="ln">    82  </span>	}
-<span id="L83" class="ln">    83  </span>	cmd.owner.CompleteCommand(ExitCodeOK)
-<span id="L84" class="ln">    84  </span>	return nil
-<span id="L85" class="ln">    85  </span>}
-<span id="L86" class="ln">    86  </span>
+<span id="L79" class="ln">    79  </span>				fmt.Fprintln(w, &#34;--&#34;, name)
+<span id="L80" class="ln">    80  </span>				fmt.Fprintln(w, v)
+<span id="L81" class="ln">    81  </span>			}
+<span id="L82" class="ln">    82  </span>		}
+<span id="L83" class="ln">    83  </span>	}
+<span id="L84" class="ln">    84  </span>	cmd.owner.CompleteCommand(ExitCodeOK)
+<span id="L85" class="ln">    85  </span>	return nil
+<span id="L86" class="ln">    86  </span>}
+<span id="L87" class="ln">    87  </span>
 </pre><p></p>
 
 <div id="footer">
