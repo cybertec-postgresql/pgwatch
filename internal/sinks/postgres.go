@@ -60,14 +60,17 @@ var (
 // However, one is able to use any Postgres-compatible database as a storage backend,
 // e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 type PostgresWriter struct {
-	ctx                 context.Context
-	sinkDb              db.PgxPoolIface
-	metricSchema        DbStorageSchemaType
-	opts                *CmdOpts
-	retentionInterval   time.Duration
-	maintenanceInterval time.Duration
-	input               chan metrics.MeasurementEnvelope
-	lastError           chan error
+	ctx                      context.Context
+	sinkDb                   db.PgxPoolIface
+	metricSchema             DbStorageSchemaType
+	opts                     *CmdOpts
+	retentionInterval        time.Duration
+	maintenanceInterval      time.Duration
+	input                    chan metrics.MeasurementEnvelope
+	lastError                chan error
+	forceRecreatePartitions  bool // to signal override PG metrics storage cache
+	partitionMapMetric       map[string]ExistingPartitionInfo // metric = min/max bounds
+	partitionMapMetricDbname map[string]map[string]ExistingPartitionInfo // metric[dbname = min/max bounds]
 }
 
 func NewPostgresWriter(ctx context.Context, connstr string, opts *CmdOpts) (pgw *PostgresWriter, err error) {
@@ -84,11 +87,14 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 	l := log.GetLogger(ctx).WithField("sink", "postgres").WithField("db", conn.Config().ConnConfig.Database)
 	ctx = log.WithLogger(ctx, l)
 	pgw = &PostgresWriter{
-		ctx:       ctx,
-		opts:      opts,
-		input:     make(chan metrics.MeasurementEnvelope, cacheLimit),
-		lastError: make(chan error),
-		sinkDb:    conn,
+		ctx:                      ctx,
+		opts:                     opts,
+		input:                    make(chan metrics.MeasurementEnvelope, cacheLimit),
+		lastError:                make(chan error),
+		sinkDb:                   conn,
+		forceRecreatePartitions:  false,
+		partitionMapMetric:       make(map[string]ExistingPartitionInfo),
+		partitionMapMetricDbname: make(map[string]map[string]ExistingPartitionInfo),
 	}
 	l.Info("initialising measurements database...")
 	if err = pgw.init(); err != nil {
@@ -195,12 +201,6 @@ func (pgw *PostgresWriter) ReadMetricSchemaType() (err error) {
 	}
 	return
 }
-
-var (
-	forceRecreatePartitions  = false                                             // to signal override PG metrics storage cache
-	partitionMapMetric       = make(map[string]ExistingPartitionInfo)            // metric = min/max bounds
-	partitionMapMetricDbname = make(map[string]map[string]ExistingPartitionInfo) // metric[dbname = min/max bounds]
-)
 
 // SyncMetric ensures that tables exist for newly added metrics and/or sources
 func (pgw *PostgresWriter) SyncMetric(sourceName, metricName string, op SyncOp) error {
@@ -415,13 +415,13 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 
 	switch pgw.metricSchema {
 	case DbStorageSchemaPostgres:
-		err = pgw.EnsureMetricDbnameTime(pgPartBoundsDbName, forceRecreatePartitions)
+		err = pgw.EnsureMetricDbnameTime(pgPartBoundsDbName)
 	case DbStorageSchemaTimescale:
 		err = pgw.EnsureMetricTimescale(pgPartBounds)
 	default:
 		logger.Fatal("unknown storage schema...")
 	}
-	forceRecreatePartitions = false
+	pgw.forceRecreatePartitions = false
 	if err != nil {
 		pgw.lastError <- err
 	}
@@ -435,9 +435,9 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 		if err != nil {
 			logger.Error(err)
 			if PgError, ok := err.(*pgconn.PgError); ok {
-				forceRecreatePartitions = PgError.Code == "23514"
+				pgw.forceRecreatePartitions = PgError.Code == "23514"
 			}
-			if forceRecreatePartitions {
+			if pgw.forceRecreatePartitions {
 				logger.Warning("Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run")
 			}
 		}
@@ -454,48 +454,48 @@ func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]Existin
 	logger := log.GetLogger(pgw.ctx)
 	sqlEnsure := `select * from admin.ensure_partition_timescale($1)`
 	for metric := range pgPartBounds {
-		if _, ok := partitionMapMetric[metric]; !ok {
+		if _, ok := pgw.partitionMapMetric[metric]; !ok {
 			if _, err = pgw.sinkDb.Exec(pgw.ctx, sqlEnsure, metric); err != nil {
 				logger.Errorf("Failed to create a TimescaleDB table for metric '%s': %v", metric, err)
 				return err
 			}
-			partitionMapMetric[metric] = ExistingPartitionInfo{}
+			pgw.partitionMapMetric[metric] = ExistingPartitionInfo{}
 		}
 	}
 	return
 }
 
-func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[string]map[string]ExistingPartitionInfo, force bool) (err error) {
+func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[string]map[string]ExistingPartitionInfo) (err error) {
 	var rows pgx.Rows
 	sqlEnsure := `select * from admin.ensure_partition_metric_dbname_time($1, $2, $3, $4)`
 	for metric, dbnameTimestampMap := range metricDbnamePartBounds {
-		_, ok := partitionMapMetricDbname[metric]
+		_, ok := pgw.partitionMapMetricDbname[metric]
 		if !ok {
-			partitionMapMetricDbname[metric] = make(map[string]ExistingPartitionInfo)
+			pgw.partitionMapMetricDbname[metric] = make(map[string]ExistingPartitionInfo)
 		}
 
 		for dbname, pb := range dbnameTimestampMap {
 			if pb.StartTime.IsZero() || pb.EndTime.IsZero() {
 				return fmt.Errorf("zero StartTime/EndTime in partitioning request: [%s:%v]", metric, pb)
 			}
-			partInfo, ok := partitionMapMetricDbname[metric][dbname]
-			if !ok || (ok && (pb.StartTime.Before(partInfo.StartTime))) || force {
+			partInfo, ok := pgw.partitionMapMetricDbname[metric][dbname]
+			if !ok || (ok && (pb.StartTime.Before(partInfo.StartTime))) || pgw.forceRecreatePartitions {
 				if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.StartTime, pgw.opts.PartitionInterval); err != nil {
 					return
 				}
 				if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
 					return err
 				}
-				partitionMapMetricDbname[metric][dbname] = partInfo
+				pgw.partitionMapMetricDbname[metric][dbname] = partInfo
 			}
-			if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || force {
-				if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.StartTime, pgw.opts.PartitionInterval); err != nil {
+			if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || pgw.forceRecreatePartitions {
+				if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.EndTime, pgw.opts.PartitionInterval); err != nil {
 					return
 				}
 				if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
 					return err
 				}
-				partitionMapMetricDbname[metric][dbname] = partInfo
+				pgw.partitionMapMetricDbname[metric][dbname] = partInfo
 			}
 		}
 	}

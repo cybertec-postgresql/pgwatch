@@ -694,7 +694,7 @@ func TestPartitionInterval(t *testing.T) {
 			},
 		},
 	}
-	err = pgw.EnsureMetricDbnameTime(m, false)
+	err = pgw.EnsureMetricDbnameTime(m)
 	r.NoError(err)
 
 	var partitionsNum int
@@ -704,7 +704,7 @@ func TestPartitionInterval(t *testing.T) {
 	// + 4 time partitions (1 we asked for + 3 precreated)
 	a.Equal(6, partitionsNum)
 
-	part := partitionMapMetricDbname["test_metric"]["test_db"]
+	part := pgw.partitionMapMetricDbname["test_metric"]["test_db"]
 	// partition bounds should have a difference of 3 weeks
 	a.Equal(part.StartTime.Add(3*7*24*time.Hour), part.EndTime)
 }
