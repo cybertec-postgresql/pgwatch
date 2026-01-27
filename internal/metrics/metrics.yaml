@@ -2201,7 +2201,7 @@ metrics:
                     b.wal_fpi,
                     b.wal_bytes,
                     b.total_plan_time,
-                    ltrim(regexp_replace(b.query, E'[ \\t\\n\\r]+', ' ', 'g')) AS tag_query
+                    ltrim(b.query) AS tag_query
                 FROM (
                     SELECT
                         *
@@ -2351,7 +2351,7 @@ metrics:
                     b.wal_bytes,
                     b.total_plan_time,
                     b.jit_generation_time,
-                    ltrim(regexp_replace(b.query, E'[ \\t\\n\\r]+', ' ', 'g')) AS tag_query
+                    ltrim(b.query) AS tag_query
                 FROM (
                     SELECT
                         *
@@ -2514,7 +2514,7 @@ metrics:
                     b.wal_bytes,
                     b.total_plan_time,
                     b.jit_generation_time,
-                    ltrim(regexp_replace(b.query, E'[ \\t\\n\\r]+', ' ', 'g')) AS tag_query
+                    ltrim(b.query) AS tag_query
                 FROM (
                     SELECT
                         *
