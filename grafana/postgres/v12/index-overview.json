@@ -360,7 +360,7 @@
           }
         }
       ],
-      "title": "Top $top indexes by reads (blocks)",
+      "title": "Top $top indexes by disk reads (blocks)",
       "type": "timeseries"
     },
     {
