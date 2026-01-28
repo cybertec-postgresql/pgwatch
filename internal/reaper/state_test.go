@@ -57,7 +57,7 @@ func TestStateStore(t *testing.T) {
 		// First instance
 		ss1, err := NewStateStore(stateFile)
 		require.NoError(t, err)
-		ss1.SetOffset("test.log", 999, 9999)
+		err = ss1.SetOffset("test.log", 999, 9999)
 		require.NoError(t, err)
 
 		// Second instance (simulates restart)
