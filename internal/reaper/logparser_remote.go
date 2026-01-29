@@ -75,6 +75,13 @@ func (lp *LogParser) parseLogsRemote() error {
 				err := lp.SourceConn.Conn.QueryRow(lp.ctx, "select size, modification from pg_ls_logdir() where name = $1;", latestLogFile).Scan(&latestSize, &modification)
 				if err != nil {
 					logger.Warnf("Failed to read state info of logfile: '%s'", latestLogFile)
+				} else if latestSize < size {
+					logger.Infof("File %s truncated (size reduced from %d to %d). Resetting offset to 0.", latestLogFile, size, latestSize)
+					offset = 0
+					size = latestSize
+					linesRead = 0
+					numOfLines = 0
+					break
 				}
 
 				var fileName string
@@ -82,10 +89,21 @@ func (lp *LogParser) parseLogsRemote() error {
 					sql := "select name, size from pg_ls_logdir() where modification > $1 and name like '%csv' order by modification, name limit 1;"
 					err := lp.SourceConn.Conn.QueryRow(lp.ctx, sql, modification).Scan(&fileName, &latestSize)
 					if err == nil && latestLogFile != fileName {
+						// Save state before switching
+						lp.fileStates[latestLogFile] = &fileState{offset: int64(offset), fileSize: int64(size)}
+						if len(lp.fileStates) > maxTrackedFiles {
+							clear(lp.fileStates)
+						}
 						latestLogFile = fileName
 						size = latestSize
-						offset = 0
-						logger.Infof("Switching to new logfile: '%s'", fileName)
+						// Restore offset if file wasn't truncated
+						if state, ok := lp.fileStates[fileName]; ok && !lp.logTruncateOnRotation && int64(latestSize) >= state.fileSize {
+							offset = int32(state.offset)
+							logger.Infof("Resuming logfile '%s' from offset %d", fileName, offset)
+						} else {
+							offset = 0
+							logger.Infof("Switching to logfile '%s'", fileName)
+						}
 						currInterval = 0 // We already slept. It will be resetted.
 						break
 					}

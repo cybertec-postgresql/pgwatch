@@ -80,6 +80,7 @@ func (lp *LogParser) parseLogsLocal() error {
 				logger.Debugf("Skipped %d already processed lines from %s", linesRead, latest)
 			} else if firstRun { // seek to end
 				_, _ = latestHandle.Seek(0, 2)
+				reader.Reset(latestHandle)
 				firstRun = false
 			}
 		}
@@ -94,6 +95,23 @@ func (lp *LogParser) parseLogsLocal() error {
 			}
 
 			if err == io.EOF {
+				// Check for truncation of current file
+				if fi, err := latestHandle.Stat(); err == nil {
+					if sysOffset, err := latestHandle.Seek(0, 1); err == nil {
+						if sysOffset > fi.Size() {
+							logger.Infof("File %s truncated (size %d < offset %d). Resetting...", latest, fi.Size(), sysOffset)
+							if _, err := latestHandle.Seek(0, 0); err == nil {
+								reader.Reset(latestHandle)
+								linesRead = 0
+								continue
+							}
+						} else if sysOffset < fi.Size() {
+							// File grew but reader hit EOF. Reset reader to ensure it picks up new content.
+							reader.Reset(latestHandle)
+						}
+					}
+				}
+
 				// // EOF reached, wait for new files to be added
 				select {
 				case <-lp.ctx.Done():
@@ -103,12 +121,30 @@ func (lp *LogParser) parseLogsLocal() error {
 				// check for newly opened logfiles
 				file, _ := getFileWithNextModTimestamp(logsGlobPath, latest)
 				if file != "" {
+					// Save state before switching
+					if fi, err := os.Stat(latest); err == nil {
+						lp.fileStates[latest] = &fileState{offset: int64(linesRead), fileSize: fi.Size()}
+					}
+					if len(lp.fileStates) > maxTrackedFiles {
+						clear(lp.fileStates)
+					}
 					previous = latest
 					latest = file
 					_ = latestHandle.Close()
 					latestHandle = nil
-					logger.Infof("Switching to new logfile: %s", file)
-					linesRead = 0
+					// Restore offset if file wasn't truncated
+					if state, ok := lp.fileStates[file]; ok && !lp.logTruncateOnRotation {
+						if fi, err := os.Stat(file); err == nil && fi.Size() >= state.fileSize {
+							linesRead = int(state.offset)
+							logger.Infof("Resuming logfile %s from line %d", file, linesRead)
+						} else {
+							linesRead = 0
+							logger.Infof("Logfile %s was truncated, starting from beginning", file)
+						}
+					} else {
+						linesRead = 0
+						logger.Infof("Switching to logfile %s", file)
+					}
 					break
 				}
 			} else {

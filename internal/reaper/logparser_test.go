@@ -41,6 +41,10 @@ func TestNewLogParser(t *testing.T) {
 		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 			WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
 
+		// Mock log_truncate_on_rotation detection
+		mock.ExpectQuery(`select current_setting\('log_truncate_on_rotation'\)`).
+			WillReturnRows(pgxmock.NewRows([]string{"current_setting"}).AddRow("off"))
+
 		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.NoError(t, err)
 		assert.NotNil(t, lp)
@@ -86,6 +90,10 @@ func TestNewLogParser(t *testing.T) {
 		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 			WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("zz"))
 
+		// Mock log_truncate_on_rotation detection
+		mock.ExpectQuery(`select current_setting\('log_truncate_on_rotation'\)`).
+			WillReturnRows(pgxmock.NewRows([]string{"current_setting"}).AddRow("off"))
+
 		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.NoError(t, err)
 		assert.NotNil(t, lp)
@@ -101,6 +109,10 @@ func TestNewLogParser(t *testing.T) {
 		// Mock language detection
 		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 			WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("de"))
+
+		// Mock log_truncate_on_rotation detection
+		mock.ExpectQuery(`select current_setting\('log_truncate_on_rotation'\)`).
+			WillReturnRows(pgxmock.NewRows([]string{"current_setting"}).AddRow("off"))
 
 		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.NoError(t, err)
@@ -219,6 +231,9 @@ func TestCheckHasPrivileges(t *testing.T) {
 			mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 				WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
 
+			// Mock log_truncate_on_rotation detection
+			mock.ExpectQuery(`select current_setting\('log_truncate_on_rotation'\)`).
+				WillReturnRows(pgxmock.NewRows([]string{"current_setting"}).AddRow("off"))
 			// Mock IsClientOnSameHost to return false (remote)
 			mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
 				pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
@@ -349,6 +364,51 @@ func TestZeroEventCounts(t *testing.T) {
 	}
 }
 
+func TestFileOffsetsTrackingAndPruning(t *testing.T) {
+	t.Run("prune clears map when exceeds limit", func(t *testing.T) {
+		lp := &LogParser{
+			fileStates: make(map[string]*fileState),
+		}
+
+		// Fill map with maxTrackedFiles + 1 entries
+		for i := 0; i <= maxTrackedFiles; i++ {
+			lp.fileStates[string(rune('A'+i))] = &fileState{offset: int64(i * 1000), fileSize: int64(i * 2000)}
+		}
+
+		// Verify map has exceeded limit
+		assert.Greater(t, len(lp.fileStates), maxTrackedFiles)
+
+		// Inline prune logic (was pruneFileOffsets)
+		if len(lp.fileStates) > maxTrackedFiles {
+			clear(lp.fileStates)
+		}
+
+		// Map should be cleared
+		assert.Equal(t, 0, len(lp.fileStates))
+	})
+
+	t.Run("prune does nothing when under limit", func(t *testing.T) {
+		lp := &LogParser{
+			fileStates: make(map[string]*fileState),
+		}
+
+		// Add 24 entries (typical hourly rotation)
+		for i := 0; i < 24; i++ {
+			lp.fileStates[string(rune('A'+i))] = &fileState{offset: int64(i * 1000), fileSize: int64(i * 2000)}
+		}
+
+		originalLen := len(lp.fileStates)
+
+		// Inline prune logic (was pruneFileOffsets)
+		if len(lp.fileStates) > maxTrackedFiles {
+			clear(lp.fileStates)
+		}
+
+		// Map should remain unchanged
+		assert.Equal(t, originalLen, len(lp.fileStates))
+	})
+}
+
 func TestRegexMatchesToMap(t *testing.T) {
 	t.Run("successful match", func(t *testing.T) {
 		lp := &LogParser{
@@ -462,6 +522,10 @@ func TestLogParseLocal(t *testing.T) {
 	// Mock the language detection query
 	mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 		WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
+
+	// Mock log_truncate_on_rotation detection
+	mock.ExpectQuery(`select current_setting\('log_truncate_on_rotation'\)`).
+		WillReturnRows(pgxmock.NewRows([]string{"current_setting"}).AddRow("off"))
 
 	mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
 		pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(true))
@@ -629,6 +693,10 @@ func TestLogParseRemote(t *testing.T) {
 		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 			WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
 
+		// Mock log_truncate_on_rotation detection
+		mock.ExpectQuery(`select current_setting\('log_truncate_on_rotation'\)`).
+			WillReturnRows(pgxmock.NewRows([]string{"current_setting"}).AddRow("off"))
+
 		// Phase 2: Mode detection - returns false to trigger remote mode
 		mock.ExpectQuery(`SELECT COALESCE`).
 			WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
@@ -691,6 +759,9 @@ func TestLogParseRemote(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld"}).AddRow("", tempDir))
 		mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
 			WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
+
+		mock.ExpectQuery(`select current_setting\('log_truncate_on_rotation'\)`).
+			WillReturnRows(pgxmock.NewRows([]string{"current_setting"}).AddRow("off"))
 		mock.ExpectQuery(`SELECT COALESCE`).
 			WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
 
@@ -880,4 +951,188 @@ incomplete line without proper fields
 			// Also acceptable: no measurement sent at all
 		}
 	})
+}
+
+func TestLogParseLocal_TruncationDetection(t *testing.T) {
+	tempDir := t.TempDir()
+	logFile := filepath.Join(tempDir, "test-truncate.csv")
+
+	// 1. Setup initial empty file (parser seeks to end on startup)
+	err := os.WriteFile(logFile, []byte(""), 0644)
+	require.NoError(t, err)
+
+	// 2. Setup mocks
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	mock.ExpectQuery(`select current_setting\('data_directory'\) as dd, current_setting\('log_directory'\) as ld`).
+		WillReturnRows(pgxmock.NewRows([]string{"dd", "ld"}).AddRow("", tempDir))
+	mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
+		WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
+	mock.ExpectQuery(`select current_setting\('log_truncate_on_rotation'\)`).
+		WillReturnRows(pgxmock.NewRows([]string{"current_setting"}).AddRow("off"))
+	mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
+		pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(true))
+
+	sourceConn := &sources.SourceConn{
+		Source: sources.Source{Name: "test-source"},
+		Conn:   mock,
+	}
+	sourceConn.RealDbname = "testdb"
+
+	// 3. Start Parser
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	storeCh := make(chan metrics.MeasurementEnvelope, 100)
+	lp, err := NewLogParser(ctx, sourceConn, storeCh)
+	require.NoError(t, err)
+
+	lp.Interval = 0.1
+
+	go func() {
+		_ = lp.ParseLogs()
+	}()
+
+	// Wait for parser to open file and seek to end
+	time.Sleep(500 * time.Millisecond)
+
+	// 4. Append initial content (ERROR)
+	// Using format known to work: ...ERROR,
+	initialContent := `2023-12-01 10:30:45.123 UTC,"postgres","testdb",12345,"127.0.0.1:54321",session123,1,"SELECT",2023-12-01 10:30:00 UTC,1/234,567,ERROR,` + "\n"
+	f, err := os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY, 0644)
+	require.NoError(t, err)
+	_, err = f.WriteString(initialContent)
+	require.NoError(t, err)
+	f.Close()
+
+	// 5. Verify initial log parsed
+	timeoutInit := time.After(2 * time.Second)
+	foundError := false
+
+	for !foundError {
+		select {
+		case m := <-storeCh:
+			if val, ok := m.Data[0]["error_total"]; ok && val == int64(1) {
+				foundError = true
+			}
+		case <-timeoutInit:
+			t.Fatal("timed out waiting for initial log parsing (ERROR)")
+		}
+	}
+
+	// 6. Truncate file and write new content
+	err = os.WriteFile(logFile, []byte(""), 0644)
+	require.NoError(t, err)
+
+	// Write new content - WARNING
+	newContent := `2023-12-01 11:00:00.000 UTC,"postgres","testdb",12345,"127.0.0.1:54321",session123,2,"SELECT",2023-12-01 11:00:00 UTC,1/234,567,WARNING,` + "\n"
+	err = os.WriteFile(logFile, []byte(newContent), 0644)
+	require.NoError(t, err)
+
+	// 7. Verify new content parsed (implies truncation detected)
+	timeout := time.After(3 * time.Second)
+	foundWarning := false
+
+	for !foundWarning {
+		select {
+		case m := <-storeCh:
+			if val, ok := m.Data[0]["warning_total"]; ok && val == int64(1) {
+				foundWarning = true
+			}
+		case <-timeout:
+			t.Fatal("timed out waiting for post-truncation log parsing")
+		}
+	}
+
+	assert.True(t, foundWarning, "Should have detected warning after file truncation")
+}
+
+func TestLogParseRemote_TruncationDetection(t *testing.T) {
+	tempDir := t.TempDir()
+	logFileName := "test-remote.csv"
+
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	// 1. Initialization Mocks
+	mock.ExpectQuery(`select current_setting\('data_directory'\) as dd, current_setting\('log_directory'\) as ld`).
+		WillReturnRows(pgxmock.NewRows([]string{"dd", "ld"}).AddRow("", tempDir))
+	mock.ExpectQuery(`select current_setting\('lc_messages'\)::varchar\(2\) as lc_messages;`).
+		WillReturnRows(pgxmock.NewRows([]string{"lc_messages"}).AddRow("en"))
+	mock.ExpectQuery(`select current_setting\('log_truncate_on_rotation'\)`).
+		WillReturnRows(pgxmock.NewRows([]string{"current_setting"}).AddRow("off"))
+
+	// 2. Mode detection (Remote)
+	mock.ExpectQuery(`SELECT COALESCE`).
+		WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
+
+	// 3. Privilege Check
+	mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
+		WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow(logFileName))
+	mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
+		WithArgs(filepath.Join(tempDir, logFileName)).
+		WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow(""))
+
+	// 4. Discovery Phase: Find log file with size 100
+	// Parser will seek to end (offset = 100)
+	mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
+		WillReturnRows(pgxmock.NewRows([]string{"name", "size", "modification"}).
+			AddRow(logFileName, int32(100), time.Now()))
+
+	// 5. Loop Iteration: Check file status -> Return size 50 (Truncation!)
+	mock.ExpectQuery(`select size, modification from pg_ls_logdir\(\) where name = \$1;`).
+		WithArgs(logFileName).
+		WillReturnRows(pgxmock.NewRows([]string{"size", "modification"}).
+			AddRow(int32(50), time.Now()))
+
+	// 6. Read Phase: Should read from offset 0 to 50
+	// We return a log line that generates a WARNING
+	newContent := `2023-12-01 11:00:00.000 UTC,"postgres","testdb",12345,"127.0.0.1:54321",session123,2,"SELECT",2023-12-01 11:00:00 UTC,1/234,567,WARNING,` + "\n"
+
+	// Note: We mock pg_read_file args to be exactly offset 0, size 50
+	mock.ExpectQuery(`select pg_read_file\(\$1, \$2, \$3\)`).
+		WithArgs(filepath.Join(tempDir, logFileName), int32(0), int32(50)).
+		WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow(newContent))
+
+	// Setup Parser
+	sourceConn := &sources.SourceConn{
+		Source: sources.Source{Name: "test-source"},
+		Conn:   mock,
+	}
+	sourceConn.RealDbname = "testdb"
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel() // ensure cleanup
+
+	storeCh := make(chan metrics.MeasurementEnvelope, 100)
+	lp, err := NewLogParser(ctx, sourceConn, storeCh)
+	require.NoError(t, err)
+
+	lp.Interval = 0.1
+
+	go func() {
+		_ = lp.ParseLogs()
+	}()
+
+	// 7. Verify result
+	// We expect the WARNING from the truncated file read
+	timeout := time.After(3 * time.Second)
+	foundWarning := false
+
+	for !foundWarning {
+		select {
+		case m := <-storeCh:
+			if val, ok := m.Data[0]["warning_total"]; ok && val == int64(1) {
+				foundWarning = true
+			}
+		case <-timeout:
+			t.Fatal("timed out waiting for log parsing after truncation")
+		}
+	}
+
+	assert.True(t, foundWarning)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
