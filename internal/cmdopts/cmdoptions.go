@@ -186,11 +186,11 @@ func (c *Options) NeedsSchemaUpgrade() (upgrade bool, err error) {
 }
 
 // ValidateConfig checks if the configuration is valid.
-// Configuration database can be specified for one of the --sources or --metrics.
+// Configuration database can be specified for one of the --sources or --metrics or --sink.
 // If one is specified, the other one is set to the same value.
 func (c *Options) ValidateConfig() error {
-	if len(c.Sources.Sources)+len(c.Metrics.Metrics) == 0 {
-		return errors.New("both --sources and --metrics are empty")
+	if len(c.Sources.Sources) == 0 && len(c.Metrics.Metrics) == 0 && len(c.Sinks.Sinks) == 0 {
+		return errors.New("at least one of --sources, --metrics, or --sink must be provided")
 	}
 	switch { // if specified configuration database, use it for both sources and metrics
 	case c.Sources.Sources == "" && c.IsPgConnStr(c.Metrics.Metrics):
