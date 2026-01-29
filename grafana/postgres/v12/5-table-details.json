@@ -962,7 +962,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  (data->>'seconds_since_last_vacuum')::int8\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data @> jsonb_build_object('table_full_name', '$table_full_name')\nORDER BY time DESC\nLIMIT 1\n",
+          "rawSql": "SELECT\n  time,\n  (data->>'seconds_since_last_vacuum')::int8\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname  = '$dbname'\n  AND tag_data @> jsonb_build_object('table_full_name', '$table_full_name')\nORDER BY time DESC\nLIMIT 1\n",
           "refId": "A",
           "select": [
             [
@@ -1066,7 +1066,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  (data->>'seconds_since_last_analyze')::int8\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data @> jsonb_build_object('table_full_name', '$table_full_name')\nORDER BY time DESC\nLIMIT 1\n",
+          "rawSql": "SELECT\n  time,\n  (data->>'seconds_since_last_analyze')::int8\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n AND dbname = '$dbname'\n  AND tag_data @> jsonb_build_object('table_full_name', '$table_full_name')\nORDER BY time DESC\nLIMIT 1\n",
           "refId": "A",
           "select": [
             [
@@ -2627,7 +2627,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 6,
         "w": 12,
         "x": 0,
         "y": 30
@@ -2810,5 +2810,5 @@
   "timezone": "browser",
   "title": "5. Table Details",
   "uid": "table-details",
-  "version": 33
+  "version": 11
 }
