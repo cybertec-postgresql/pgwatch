@@ -301,7 +301,7 @@ func TestConfigInitCommand_InitSinks(t *testing.T) {
 func TestConfigUpgradeCommand_Errors(t *testing.T) {
 	a := assert.New(t)
 
-	t.Run("non-postgres configuration not supported", func(*testing.T) {
+	t.Run("no upgradable configuration specified", func(*testing.T) {
 		opts := &Options{
 			Metrics: metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
 			Sources: sources.CmdOpts{Sources: "/tmp/sources.yaml", Refresh: 120, MaxParallelConnectionsPerDb: 1},
@@ -310,7 +310,7 @@ func TestConfigUpgradeCommand_Errors(t *testing.T) {
 		cmd := ConfigUpgradeCommand{owner: opts}
 		err := cmd.Execute(nil)
 		a.Error(err)
-		a.ErrorContains(err, "does not support upgrade")
+		a.ErrorContains(err, "no upgradable configuration specified")
 	})
 
 	t.Run("init metrics reader fails", func(*testing.T) {
@@ -322,5 +322,18 @@ func TestConfigUpgradeCommand_Errors(t *testing.T) {
 		cmd := ConfigUpgradeCommand{owner: opts}
 		err := cmd.Execute(nil)
 		a.Error(err)
+	})
+
+	t.Run("sink-only upgrade with yaml sources and metrics", func(*testing.T) {
+		opts := &Options{
+			Metrics: metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
+			Sources: sources.CmdOpts{Sources: "/tmp/sources.yaml", Refresh: 120, MaxParallelConnectionsPerDb: 1},
+			Sinks:   sinks.CmdOpts{Sinks: []string{"postgresql://invalid@host/db"}, BatchingDelay: time.Second},
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		// Should fail to connect, but should NOT fail with "no upgradable configuration"
+		a.Error(err)
+		a.NotContains(err.Error(), "no upgradable configuration")
 	})
 }
