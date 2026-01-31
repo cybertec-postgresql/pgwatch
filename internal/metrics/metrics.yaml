@@ -1400,6 +1400,16 @@ metrics:
                         json_array_elements_text(indexes->'queryids') as query_id
                     where
                         indexes->>'ddl' > ''
+                ), aggregated_stat_statements as (
+                    select 
+                        queryid,
+                        sum(total_exec_time) as total_exec_time,
+                        sum(calls) as calls
+                    from 
+                        pg_stat_statements
+                    where 
+                        queryid in (select query_id from qrs)
+                    group by queryid
                 )
                 select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
@@ -1410,7 +1420,7 @@ metrics:
                     sum(s.total_exec_time / s.calls) as total_avg_exec_time
                 from 
                     qrs
-                join pg_stat_statements s on qrs.query_id = s.queryid
+                join aggregated_stat_statements s on qrs.query_id = s.queryid
                 where object_name > ''
                 group by object_name, qrs.recommendation
                 order by total_avg_exec_time desc
