@@ -724,7 +724,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Adding indexes can have unexpected performance effects, so ensure that you test them first to verify that the recommendation has the desired effect.\n\nRequires `reco_add_index` metric. \n\nColumn Guide:\n- **Affected Queries**: number of queries affected by index creation.\n- **Heaviest Query**: the query with the biggest total execution time among all affected queries.\n- **Recommendation**: the recommended index ddl.",
+      "description": "Adding indexes can have unexpected performance effects, so ensure that you test them first to verify that the recommendation has the desired effect.\n\nRequires `reco_add_index` metric. \n\nColumn Guide:\n- **Sum. Avg Queries Exec Time**: the sum of the average execution time for all queries that should be optimized by this index.\n- **Affected Queries**: all affected query ids to investigate further\n- **Recommendation**: the recommended index ddl.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -760,24 +760,12 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Category"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 150
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "Table Name"
             },
             "properties": [
               {
                 "id": "custom.width",
-                "value": 243
+                "value": 182
               },
               {
                 "id": "links",
@@ -787,6 +775,10 @@
                     "url": "d/table-details/5-table-details?orgId=1&var-dbname=${__data.fields[\"Source Name\"]}&var-table_full_name=${__value.raw}"
                   }
                 ]
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               }
             ]
           },
@@ -805,45 +797,16 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Object"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 163
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Heaviest Query"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 187
-              },
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "title": "Opens 'Single query details' dashboard for this query id",
-                    "url": "/d/single-query-details?orgId=1&var-dbname=${__data.fields[\"Source Name\"]}&var-queryid=${__value.raw}&from=${__from}&to=${__to}"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "Affected Queries"
             },
             "properties": [
               {
                 "id": "custom.width",
-                "value": 144
+                "value": 372
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               }
             ]
           },
@@ -856,6 +819,22 @@
               {
                 "id": "custom.width",
                 "value": 151
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum. Avg Exec Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 193
+              },
+              {
+                "id": "unit",
+                "value": "ms"
               }
             ]
           }
@@ -884,7 +863,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n    dbname as \"Source Name\",\n    tag_data->>'object_name' AS \"Table Name\",\n    data->>'affected_query_count' AS \"Affected Queries\",\n    data->>'query_id' AS \"Heaviest Query\",\n    data->>'recommendation' AS \"Recommendation\"\nFROM recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) and tag_data->>'reco_topic' = 'create_index' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'create_index' \nORDER BY (data->>'total_exec_time')::float8 DESC",
+          "rawSql": "SELECT\n    dbname as \"Source Name\",\n    tag_data->>'object_name' AS \"Table Name\",\n    data->>'total_avg_exec_time' AS \"Sum. Avg Exec Time\",\n    data->>'affected_query_ids' AS \"Affected Queries\",\n    data->>'recommendation' AS \"Recommendation\"\nFROM recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where time <= $__timeTo() AND dbname in ($dbname) and tag_data->>'reco_topic' = 'create_index' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'create_index' \nORDER BY (data->>'total_avg_exec_time')::float8 DESC",
           "refId": "A",
           "select": [
             [
