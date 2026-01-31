@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { AutocompleteRenderInputParams, Autocomplete as MuiAutocomplete, TextField, Paper, Popper, Typography } from "@mui/material";
+import {
+  AutocompleteRenderInputParams,
+  Autocomplete as MuiAutocomplete,
+  Paper,
+  Popper,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { ControllerRenderProps } from "react-hook-form";
 
 type Option = {
@@ -21,14 +28,13 @@ export const Autocomplete = (props: Props) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   const customInput = (params: AutocompleteRenderInputParams) => (
-    <TextField
-      {...params}
-      label={label}
-      error={error}
-    />
+    <TextField {...params} label={label} error={error} />
   );
 
-  const handleOptionMouseEnter = (option: Option, event: React.MouseEvent<HTMLElement>) => {
+  const handleOptionMouseEnter = (
+    option: Option,
+    event: React.MouseEvent<HTMLElement>
+  ) => {
     if (option.description) {
       setHoveredOption(option);
       setAnchorEl(event.currentTarget);
@@ -40,9 +46,12 @@ export const Autocomplete = (props: Props) => {
     setAnchorEl(null);
   };
 
-  const renderOption = (props: React.HTMLAttributes<HTMLLIElement>, option: Option) => (
+  const renderOption = (
+    liProps: React.HTMLAttributes<HTMLLIElement>,
+    option: Option
+  ) => (
     <li
-      {...props}
+      {...liProps}
       onMouseEnter={(e) => handleOptionMouseEnter(option, e)}
       onMouseLeave={handleOptionMouseLeave}
     >
@@ -64,15 +73,15 @@ export const Autocomplete = (props: Props) => {
           popper: {
             modifiers: [
               {
-                name: 'flip',
-                enabled: false
+                name: "flip",
+                enabled: false,
               },
               {
-                name: 'preventOverflow',
-                enabled: false
-              }
-            ]
-          }
+                name: "preventOverflow",
+                enabled: false,
+              },
+            ],
+          },
         }}
       />
       <Popper
