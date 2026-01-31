@@ -52,7 +52,7 @@ func TestNewPostgresMetricReaderWriterConn(t *testing.T) {
 		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").WillReturnResult(pgxmock.NewResult("CREATE", 1))
 		conn.ExpectBegin()
 		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(metricsCount))
-		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(presetsCount))
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(4)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(presetsCount))
 		conn.ExpectCommit()
 		conn.ExpectCommit()
 		// Expect migration check
@@ -125,7 +125,7 @@ func TestNewPostgresMetricReaderWriterConn(t *testing.T) {
 		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").WillReturnResult(pgxmock.NewResult("CREATE", 1))
 		conn.ExpectBegin()
 		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(metricsCount))
-		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnError(assert.AnError)
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(4)...).WillReturnError(assert.AnError)
 		conn.ExpectRollback()
 		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
 		a.Error(err)
@@ -139,7 +139,7 @@ func TestNewPostgresMetricReaderWriterConn(t *testing.T) {
 		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").WillReturnResult(pgxmock.NewResult("CREATE", 1))
 		conn.ExpectBegin()
 		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(metricsCount))
-		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(presetsCount))
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(4)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(presetsCount))
 		conn.ExpectCommit().WillReturnError(assert.AnError)
 		conn.ExpectRollback()
 		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
@@ -154,7 +154,7 @@ func TestNewPostgresMetricReaderWriterConn(t *testing.T) {
 		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").WillReturnResult(pgxmock.NewResult("CREATE", 1))
 		conn.ExpectBegin()
 		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(metricsCount))
-		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(presetsCount))
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(4)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(presetsCount))
 		conn.ExpectCommit()
 		conn.ExpectCommit().WillReturnError(assert.AnError)
 		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
@@ -205,8 +205,8 @@ func TestMetricsToPostgres(t *testing.T) {
 			AddRow("test", metrics.SQLs{11: "select"}, "init", "desc", "primary", []string{"*"}, true, "storage")
 	}
 	presetRows := func() *pgxmock.Rows {
-		return pgxmock.NewRows([]string{"name", "description", "metrics"}).
-			AddRow("test", "desc", map[string]float64{"metric": 30})
+		return pgxmock.NewRows([]string{"name", "description", "metrics", "sort_order"}).
+			AddRow("test", "desc", map[string]float64{"metric": 30}, 1)
 	}
 
 	t.Run("GetMetrics", func(*testing.T) {
@@ -275,13 +275,13 @@ func TestMetricsToPostgres(t *testing.T) {
 	})
 
 	t.Run("UpdatePreset", func(*testing.T) {
-		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(4)...).WillReturnResult(pgxmock.NewResult("INSERT", 1))
 		err = readerWriter.UpdatePreset("test", metrics.Preset{})
 		a.NoError(err)
 	})
 
 	t.Run("FailUpdatePreset", func(*testing.T) {
-		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 0))
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(4)...).WillReturnResult(pgxmock.NewResult("INSERT", 0))
 		err = readerWriter.UpdatePreset("test", metrics.Preset{})
 		a.ErrorIs(err, metrics.ErrPresetNotFound)
 	})
