@@ -26,13 +26,12 @@ export const PresetsGrid = () => {
 
   const rows: PresetGridRow[] | [] = useMemo(() => {
     if (data) {
-      return Object.keys(data).map((key) => {
-        const preset = data[key];
-        return {
+      return Object.entries(data)
+        .sort(([, a], [, b]) => a.SortOrder - b.SortOrder)
+        .map(([key, preset]) => ({
           Key: key,
           Preset: preset,
-        };
-      });
+        }));
     }
     return [];
   }, [data]);

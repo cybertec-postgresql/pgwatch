@@ -65,7 +65,7 @@ func (dmrw *dbMetricReaderWriter) NeedsMigration() (bool, error) {
 }
 
 // MigrationsCount is the total number of migrations in pgwatch.migration table
-const MigrationsCount = 2
+const MigrationsCount = 3
 
 // migrations holds function returning all updgrade migrations needed
 var migrations func() migrator.Option = func() migrator.Option {
@@ -150,6 +150,26 @@ var migrations func() migrator.Option = func() migrator.Option {
 					WHERE config_standby ? 'recommendations';
 				`)
 				return err
+			},
+		},
+
+		&migrator.Migration{
+			Name: "00003 Add sort_order to preset table",
+			Func: func(ctx context.Context, tx pgx.Tx) error {
+				// Add sort_order column
+				_, err := tx.Exec(ctx, `ALTER TABLE pgwatch.preset ADD COLUMN IF NOT EXISTS sort_order int NOT NULL DEFAULT 0;`)
+				if err != nil {
+					return err
+				}
+				// Backfill sort_order for built-in presets from YAML values
+				defaultMetrics := GetDefaultMetrics()
+				for presetName, preset := range defaultMetrics.PresetDefs {
+					_, err := tx.Exec(ctx, `UPDATE pgwatch.preset SET sort_order = $1 WHERE name = $2`, preset.SortOrder, presetName)
+					if err != nil {
+						return err
+					}
+				}
+				return nil
 			},
 		},
 

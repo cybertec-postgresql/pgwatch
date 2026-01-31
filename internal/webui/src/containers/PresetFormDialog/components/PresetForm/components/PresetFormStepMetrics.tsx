@@ -19,7 +19,11 @@ export const PresetFormStepMetrics = () => {
   const { data, isLoading, isError, error } = useMetrics();
 
   const options = useMemo(
-    () => data ? Object.keys(data).sort((a, b) => a.localeCompare(b)).map((name) => ({ label: name })) : [],
+    () => data
+      ? Object.keys(data)
+          .sort((a, b) => a.localeCompare(b))
+          .map((name) => ({ label: name, description: data[name].Description }))
+      : [],
     [data],
   );
 

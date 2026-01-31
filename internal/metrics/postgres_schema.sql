@@ -19,7 +19,8 @@ COMMENT ON COlUMN pgwatch.metric.storage_name IS 'data is stored in the specifie
 CREATE TABLE IF NOT EXISTS pgwatch.preset (
 	name text PRIMARY KEY,
 	description text NOT NULL,
-	metrics jsonb NOT NULL
+	metrics jsonb NOT NULL,
+	sort_order int NOT NULL DEFAULT 0
 );
 
 CREATE OR REPLACE FUNCTION pgwatch.update_preset()
@@ -84,4 +85,5 @@ INSERT INTO
     pgwatch.migration (id, version)
 VALUES
     (0,  '00179 Apply metrics migrations for v3'),
-    (1,  '00824 Refactor recommendations metrics to use metric_storage_name');
+    (1,  '00824 Refactor recommendations metrics to use metric_storage_name'),
+    (2,  '01050 Add sort_order column to preset table');
