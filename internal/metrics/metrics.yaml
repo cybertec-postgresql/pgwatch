@@ -1391,28 +1391,30 @@ metrics:
                 with qrs as (
                     select 
                         (regexp_matches(indexes->>'ddl', E'ON (.*?) '))[1] as object_name,
-                        query_id::int8, 
-                        json_array_length(indexes->'queryids') as affected_query_count,
+                        query_id::bigint, 
+                        indexes->>'queryids' as affected_query_ids,
                         indexes->>'ddl' as recommendation
                     from 
                         pg_qualstats_index_advisor(min_filter => 3000, min_selectivity => 90) pqa,
                         json_array_elements(pqa->'indexes') as indexes,
                         json_array_elements_text(indexes->'queryids') as query_id
+                    where
+                        indexes->>'ddl' > ''
                 )
-                select distinct on (object_name, qrs.recommendation) 
+                select
                     (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                     object_name as tag_object_name,
                     'create_index'::text as tag_reco_topic,
-                    qrs.query_id,
-                    qrs.affected_query_count,
+                    max(qrs.affected_query_ids) as affected_query_ids,
                     qrs.recommendation,
-                    s.total_exec_time
+                    sum(s.total_exec_time / s.calls) as total_avg_exec_time
                 from 
                     qrs
                 join pg_stat_statements s on qrs.query_id = s.queryid
-                where object_name > '' and qrs.recommendation > ''
-                order by object_name, qrs.recommendation, s.total_exec_time desc
-                limit 10;
+                where object_name > ''
+                group by object_name, qrs.recommendation
+                order by total_avg_exec_time desc
+                limit 25;
         init_sql: "CREATE EXTENSION IF NOT EXISTS pg_qualstats; CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
         node_status: primary
         is_private: true
