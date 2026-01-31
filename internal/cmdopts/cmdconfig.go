@@ -114,7 +114,7 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 	if opts.Sources.Sources != "" {
 		if !opts.IsPgConnStr(opts.Sources.Sources) {
 			return &ErrUpgradeNotSupported{
-				Target: "metrics.yaml",
+				Target: "sources.yaml",
 			}
 		}
 		if err = opts.InitSourceReader(ctx); err != nil {
