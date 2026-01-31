@@ -10,13 +10,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func TestCollect_RaceCondition_Real(t *testing.T) {
+func TestCollect_RaceCondition_Real(_ *testing.T) {
 	// 1. Initialize the real PrometheusWriter
 	// Note: In the current buggy code, this shares the global 'promAsyncMetricCache'
 	promw, _ := NewPrometheusWriter(context.Background(), "127.0.0.1:0/pgwatch")
 
 	// 2. Register a metric so Write() actually puts data into the map
-	promw.SyncMetric("race_db", "test_metric", AddOp)
+	_ = promw.SyncMetric("race_db", "test_metric", AddOp)
 
 	var wg sync.WaitGroup
 	done := make(chan struct{})
@@ -31,7 +31,7 @@ func TestCollect_RaceCondition_Real(t *testing.T) {
 				return
 			default:
 				// Call the REAL Write method
-				promw.Write(metrics.MeasurementEnvelope{
+				_ = promw.Write(metrics.MeasurementEnvelope{
 					DBName:     "race_db",
 					MetricName: "test_metric",
 					Data: metrics.Measurements{
