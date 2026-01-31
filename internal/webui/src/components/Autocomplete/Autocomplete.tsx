@@ -68,6 +68,10 @@ export const Autocomplete = (props: Props) => {
         renderInput={customInput}
         renderOption={renderOption}
         onChange={(_, value) => field.onChange(value ? value.label : "")}
+        onClose={() => {
+          setHoveredOption(null);
+          setAnchorEl(null);
+        }}
         loading={loading}
         componentsProps={{
           popper: {
