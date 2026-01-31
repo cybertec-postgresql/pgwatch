@@ -8,6 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func anyArgs(n int) []any {
+	args := make([]any, n)
+	for i := range args {
+		args[i] = pgxmock.AnyArg()
+	}
+	return args
+}
+
 func TestMigrate(t *testing.T) {
 	a := assert.New(t)
 	conn, err := pgxmock.NewPool()
@@ -22,7 +30,10 @@ func TestMigrate(t *testing.T) {
 	conn.ExpectExec(`INSERT INTO`).WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	conn.ExpectBegin()
 	conn.ExpectExec(`ALTER TABLE pgwatch\.preset`).WillReturnResult(pgxmock.NewResult("ALTER", 1))
-	conn.ExpectExec(`UPDATE pgwatch\.preset`).WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+	// Expect 16 UPDATEs for built-in presets (from GetDefaultMetrics())
+	for i := 0; i < 16; i++ {
+		conn.ExpectExec(`UPDATE pgwatch\.preset`).WithArgs(anyArgs(2)...).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	}
 	conn.ExpectExec(`INSERT INTO`).WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 	dmrw := &dbMetricReaderWriter{ctx, conn}

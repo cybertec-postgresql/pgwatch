@@ -162,29 +162,14 @@ var migrations func() migrator.Option = func() migrator.Option {
 					return err
 				}
 				// Backfill sort_order for built-in presets from YAML values
-				_, err = tx.Exec(ctx, `
-					UPDATE pgwatch.preset SET sort_order = CASE name
-						WHEN 'minimal' THEN 1
-						WHEN 'basic' THEN 2
-						WHEN 'standard' THEN 3
-						WHEN 'exhaustive' THEN 4
-						WHEN 'full' THEN 5
-						WHEN 'aiven' THEN 6
-						WHEN 'azure' THEN 7
-						WHEN 'gce' THEN 8
-						WHEN 'rds' THEN 9
-						WHEN 'pgbouncer' THEN 10
-						WHEN 'pgpool' THEN 11
-						WHEN 'unprivileged' THEN 12
-						WHEN 'recommendations' THEN 13
-						WHEN 'prometheus-async' THEN 14
-						WHEN 'exhaustive_no_python' THEN 15
-						WHEN 'debug' THEN 16
-						ELSE 0
-					END
-					WHERE name IN ('minimal', 'basic', 'standard', 'exhaustive', 'full', 'aiven', 'azure', 'gce', 'rds', 'pgbouncer', 'pgpool', 'unprivileged', 'recommendations', 'prometheus-async', 'exhaustive_no_python', 'debug');
-				`)
-				return err
+				defaultMetrics := GetDefaultMetrics()
+				for presetName, preset := range defaultMetrics.PresetDefs {
+					_, err := tx.Exec(ctx, `UPDATE pgwatch.preset SET sort_order = $1 WHERE name = $2`, preset.SortOrder, presetName)
+					if err != nil {
+						return err
+					}
+				}
+				return nil
 			},
 		},
 
