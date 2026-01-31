@@ -71,9 +71,9 @@ func writeMetricsToPostgres(ctx context.Context, conn db.PgxIface, metricDefs *M
 		}
 	}
 	for presetName, preset := range metricDefs.PresetDefs {
-		_, err = tx.Exec(ctx, `INSERT INTO pgwatch.preset (name, description, metrics) 
-		VALUES ($1, $2, $3) ON CONFLICT (name) DO UPDATE SET description = $2, metrics = $3;`,
-			presetName, preset.Description, preset.Metrics)
+		_, err = tx.Exec(ctx, `INSERT INTO pgwatch.preset (name, description, metrics, sort_order) 
+		VALUES ($1, $2, $3, $4) ON CONFLICT (name) DO UPDATE SET description = $2, metrics = $3, sort_order = $4;`,
+			presetName, preset.Description, preset.Metrics, preset.SortOrder)
 		if err != nil {
 			return err
 		}
@@ -100,7 +100,7 @@ func (dmrw *dbMetricReaderWriter) GetMetrics() (metricDefMapNew *Metrics, err er
 		}
 		metricDefMapNew.MetricDefs[name] = metric
 	}
-	rows, err = conn.Query(ctx, `SELECT name, description, metrics FROM pgwatch.preset`)
+	rows, err = conn.Query(ctx, `SELECT name, description, metrics, sort_order FROM pgwatch.preset`)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (dmrw *dbMetricReaderWriter) GetMetrics() (metricDefMapNew *Metrics, err er
 	for rows.Next() {
 		preset := Preset{}
 		var name string
-		err = rows.Scan(&name, &preset.Description, &preset.Metrics)
+		err = rows.Scan(&name, &preset.Description, &preset.Metrics, &preset.SortOrder)
 		if err != nil {
 			return nil, err
 		}
@@ -162,9 +162,9 @@ func (dmrw *dbMetricReaderWriter) DeletePreset(presetName string) error {
 }
 
 func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName string, preset Preset) error {
-	sql := `INSERT INTO pgwatch.preset(name, description, metrics) VALUES ($1, $2, $3)
-	ON CONFLICT (name) DO UPDATE SET description = $2, metrics = $3`
-	ct, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParamToJSONB(preset.Metrics))
+	sql := `INSERT INTO pgwatch.preset(name, description, metrics, sort_order) VALUES ($1, $2, $3, $4)
+	ON CONFLICT (name) DO UPDATE SET description = $2, metrics = $3, sort_order = $4`
+	ct, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParamToJSONB(preset.Metrics), preset.SortOrder)
 	if err == nil && ct.RowsAffected() == 0 {
 		return ErrPresetNotFound
 	}
@@ -172,8 +172,8 @@ func (dmrw *dbMetricReaderWriter) UpdatePreset(presetName string, preset Preset)
 }
 
 func (dmrw *dbMetricReaderWriter) CreatePreset(presetName string, preset Preset) error {
-	sql := `INSERT INTO pgwatch.preset(name, description, metrics) VALUES ($1, $2, $3)`
-	_, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParamToJSONB(preset.Metrics))
+	sql := `INSERT INTO pgwatch.preset(name, description, metrics, sort_order) VALUES ($1, $2, $3, $4)`
+	_, err := dmrw.configDb.Exec(dmrw.ctx, sql, presetName, preset.Description, db.MarshallParamToJSONB(preset.Metrics), preset.SortOrder)
 	if err != nil {
 		// Check for unique constraint violation using PostgreSQL error code
 		var pgErr *pgconn.PgError

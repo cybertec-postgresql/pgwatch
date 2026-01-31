@@ -36,7 +36,9 @@ export const SourceFormStepMetrics = () => {
   const metrics = useMetrics();
 
   const presetsOptions = useMemo(
-    () => presets.data ? Object.keys(presets.data).sort((a, b) => a.localeCompare(b)).map((key) => ({ label: key })) : [],
+    () => presets.data ? Object.entries(presets.data)
+      .sort(([, a], [, b]) => a.SortOrder - b.SortOrder)
+      .map(([key]) => ({ label: key })) : [],
     [presets.data],
   );
 

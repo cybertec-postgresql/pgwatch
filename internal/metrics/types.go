@@ -70,6 +70,7 @@ type PresetDefs map[string]Preset
 type Preset struct {
 	Description string
 	Metrics     map[string]float64
+	SortOrder   int `yaml:"sort_order"`
 }
 
 const (

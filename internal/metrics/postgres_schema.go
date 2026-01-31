@@ -65,7 +65,7 @@ func (dmrw *dbMetricReaderWriter) NeedsMigration() (bool, error) {
 }
 
 // MigrationsCount is the total number of migrations in pgwatch.migration table
-const MigrationsCount = 2
+const MigrationsCount = 3
 
 // migrations holds function returning all updgrade migrations needed
 var migrations func() migrator.Option = func() migrator.Option {
@@ -148,6 +148,41 @@ var migrations func() migrator.Option = func() migrator.Option {
 							"reco_superusers": 93600
 						}$reco_metrics$::jsonb
 					WHERE config_standby ? 'recommendations';
+				`)
+				return err
+			},
+		},
+
+		&migrator.Migration{
+			Name: "00003 Add sort_order to preset table",
+			Func: func(ctx context.Context, tx pgx.Tx) error {
+				// Add sort_order column
+				_, err := tx.Exec(ctx, `ALTER TABLE pgwatch.preset ADD COLUMN IF NOT EXISTS sort_order int NOT NULL DEFAULT 0;`)
+				if err != nil {
+					return err
+				}
+				// Backfill sort_order for built-in presets from YAML values
+				_, err = tx.Exec(ctx, `
+					UPDATE pgwatch.preset SET sort_order = CASE name
+						WHEN 'minimal' THEN 1
+						WHEN 'basic' THEN 2
+						WHEN 'standard' THEN 3
+						WHEN 'exhaustive' THEN 4
+						WHEN 'full' THEN 5
+						WHEN 'aiven' THEN 6
+						WHEN 'azure' THEN 7
+						WHEN 'gce' THEN 8
+						WHEN 'rds' THEN 9
+						WHEN 'pgbouncer' THEN 10
+						WHEN 'pgpool' THEN 11
+						WHEN 'unprivileged' THEN 12
+						WHEN 'recommendations' THEN 13
+						WHEN 'prometheus-async' THEN 14
+						WHEN 'exhaustive_no_python' THEN 15
+						WHEN 'debug' THEN 16
+						ELSE 0
+					END
+					WHERE name IN ('minimal', 'basic', 'standard', 'exhaustive', 'full', 'aiven', 'azure', 'gce', 'rds', 'pgbouncer', 'pgpool', 'unprivileged', 'recommendations', 'prometheus-async', 'exhaustive_no_python', 'debug');
 				`)
 				return err
 			},
