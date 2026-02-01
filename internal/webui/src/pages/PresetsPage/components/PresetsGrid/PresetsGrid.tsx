@@ -1,7 +1,12 @@
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import { Box, IconButton } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { useQueryClient } from "@tanstack/react-query";
 import { Error as ErrorComponent } from "components/Error/Error";
 import { Loading } from "components/Loading/Loading";
+import { QueryKeys } from "consts/queryKeys";
 import { PresetFormDialog } from "containers/PresetFormDialog/PresetFormDialog";
 import { PresetFormProvider } from "contexts/PresetForm/PresetForm.provider";
 import { useGridState } from "hooks/useGridState";
@@ -10,11 +15,6 @@ import { usePresets, useReorderPresets } from "queries/Preset";
 import { usePresetsGridColumns } from "./PresetsGrid.consts";
 import { PresetGridRow } from "./PresetsGrid.types";
 import { PresetsGridToolbar } from "./components/PresetsGridToolbar/PresetsGridToolbar";
-import { useQueryClient } from "@tanstack/react-query";
-import { QueryKeys } from "consts/queryKeys";
-import { Box, IconButton } from "@mui/material";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
 export const PresetsGrid = () => {
   const { classes } = usePageStyles();
@@ -40,10 +40,10 @@ export const PresetsGrid = () => {
   const handleMoveRow = useCallback(
     (rowKey: string, direction: "up" | "down") => {
       const currentIndex = orderedRows.findIndex((r) => r.Key === rowKey);
-      if (currentIndex === -1) return;
+      if (currentIndex === -1) {return;}
 
       const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-      if (newIndex < 0 || newIndex >= orderedRows.length) return;
+      if (newIndex < 0 || newIndex >= orderedRows.length) {return;}
 
       // reorder rows
       const newOrderedRows = Array.from(orderedRows);
