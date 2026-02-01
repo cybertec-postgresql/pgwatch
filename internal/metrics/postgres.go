@@ -34,6 +34,23 @@ func NewPostgresMetricReaderWriterConn(ctx context.Context, conn db.PgxPoolIface
 	return dmrw, conn.Ping(ctx)
 }
 
+func NewPostgresMetricMigrator(ctx context.Context, connstr string) (Migrator, error) {
+	conn, err := db.New(ctx, connstr)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := initSchema(ctx, conn); err != nil {
+		return nil, err
+	}
+	// create struct but don't check for migrations
+	dmrw := &dbMetricReaderWriter{
+		ctx:      ctx,
+		configDb: conn,
+	}
+	return dmrw, conn.Ping(ctx)
+}
+
 type dbMetricReaderWriter struct {
 	ctx      context.Context
 	configDb db.PgxIface

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 )
 
@@ -91,17 +92,15 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 	ctx := context.Background()
 	// Upgrade metrics/sources configuration if it's postgres
 	if opts.IsPgConnStr(opts.Metrics.Metrics) && opts.IsPgConnStr(opts.Sources.Sources) {
-		err = opts.InitMetricReader(ctx)
+		var m metrics.Migrator
+		m, err = metrics.NewPostgresMetricMigrator(ctx, opts.Metrics.Metrics)
 		if err != nil {
 			opts.CompleteCommand(ExitCodeConfigError)
 			return
 		}
-		if m, ok := opts.MetricsReaderWriter.(metrics.Migrator); ok {
-			err = m.Migrate()
-			if err != nil {
-				opts.CompleteCommand(ExitCodeConfigError)
-				return
-			}
+		if err = m.Migrate(); err != nil {
+			opts.CompleteCommand(ExitCodeConfigError)
+			return
 		}
 	} else {
 		opts.CompleteCommand(ExitCodeConfigError)
@@ -109,20 +108,15 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 	}
 	// Upgrade sinks configuration if it's postgres
 	if len(opts.Sinks.Sinks) > 0 {
-		err = opts.InitSinkWriter(ctx)
+		var m metrics.Migrator
+		m, err = sinks.NewPostgresSinkMigrator(ctx, opts.Sinks.Sinks[0], &opts.Sinks)
 		if err != nil {
 			opts.CompleteCommand(ExitCodeConfigError)
 			return
 		}
-		if m, ok := opts.SinksWriter.(metrics.Migrator); ok {
-			err = m.Migrate()
-			if err != nil {
-				opts.CompleteCommand(ExitCodeConfigError)
-				return
-			}
-		} else {
+		if err = m.Migrate(); err != nil {
 			opts.CompleteCommand(ExitCodeConfigError)
-			return errors.New("sink storage does not support upgrade")
+			return
 		}
 	}
 	opts.CompleteCommand(ExitCodeOK)
