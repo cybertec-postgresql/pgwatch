@@ -31,3 +31,22 @@ export const useAddPreset = () => useMutation({
   mutationKey: [QueryKeys.Preset],
   mutationFn: async (data: PresetRequestBody) => await services.addPreset(data),
 });
+
+type ReorderPresetData = {
+  Name: string;
+  Data: {
+    Description?: string;
+    Metrics: Record<string, number>;
+    SortOrder: number;
+  };
+};
+
+export const useReorderPresets = () => useMutation({
+  mutationKey: [QueryKeys.Preset],
+  mutationFn: async (presets: ReorderPresetData[]) => {
+    // Update all presets with their new sort orders
+    await Promise.all(
+      presets.map(preset => services.editPreset(preset))
+    );
+  },
+});
