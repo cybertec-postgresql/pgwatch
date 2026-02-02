@@ -74,27 +74,28 @@ func TestReaper_LoadSources(t *testing.T) {
 	})
 
 	t.Run("Test group limited sources", func(t *testing.T) {
-		source1 := sources.Source{Name: "Source 1", IsEnabled: true, Kind: sources.SourcePostgres, Group: ""} // Empty group should not filter
+		source1 := sources.Source{Name: "Source 1", IsEnabled: true, Kind: sources.SourcePostgres, Group: ""}
 		source2 := sources.Source{Name: "Source 2", IsEnabled: true, Kind: sources.SourcePostgres, Group: "group1"}
-		source3 := sources.Source{Name: "Source 3", IsEnabled: true, Kind: sources.SourcePostgres, Group: "group2"}
-		source4 := sources.Source{Name: "Source 4", IsEnabled: true, Kind: sources.SourcePostgres, Group: "default"} // Default group should not filter
+		source3 := sources.Source{Name: "Source 3", IsEnabled: true, Kind: sources.SourcePostgres, Group: "group1"}
+		source4 := sources.Source{Name: "Source 4", IsEnabled: true, Kind: sources.SourcePostgres, Group: "group2"}
+		source5 := sources.Source{Name: "Source 5", IsEnabled: true, Kind: sources.SourcePostgres, Group: "default"}
 		newReader := &testutil.MockSourcesReaderWriter{
 			GetSourcesFunc: func() (sources.Sources, error) {
-				return sources.Sources{source1, source2, source3, source4}, nil
+				return sources.Sources{source1, source2, source3, source4, source5}, nil
 			},
 		}
 
 		r := NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: newReader, Sources: sources.CmdOpts{Groups: []string{"group1", "group2"}}})
 		assert.NoError(t, r.LoadSources(ctx))
-		assert.Equal(t, 4, len(r.monitoredSources), "Expected four monitored sources after load")
+		assert.Equal(t, 3, len(r.monitoredSources), "Expected three monitored sources after load")
 
 		r = NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: newReader, Sources: sources.CmdOpts{Groups: []string{"group1"}}})
 		assert.NoError(t, r.LoadSources(ctx))
-		assert.Equal(t, 3, len(r.monitoredSources), "Expected three monitored sources after group filtering")
+		assert.Equal(t, 2, len(r.monitoredSources), "Expected two monitored source after group filtering")
 
 		r = NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: newReader})
 		assert.NoError(t, r.LoadSources(ctx))
-		assert.Equal(t, 4, len(r.monitoredSources), "Expected four monitored sources after resetting groups")
+		assert.Equal(t, 5, len(r.monitoredSources), "Expected five monitored sources after resetting groups")
 	})
 
 	t.Run("Test source config changes trigger restart", func(t *testing.T) {
