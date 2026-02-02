@@ -300,7 +300,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "binBps"
         },
         "overrides": []
       },
@@ -339,7 +339,7 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_blks_read')::int8 - lag((data->>'idx_blks_read')::int8) over w, 0) as blks_read\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(blks_read) as total_blks_read\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_blks_read desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(blks_read) as blks_read,\n  dbname || ' ' || index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
+          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_blks_read')::int8 - lag((data->>'idx_blks_read')::int8) over w, 0) as blks_read\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(blks_read) as total_blks_read\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_blks_read desc\n  limit $top\n), blocks(size) as (\n  select (data->>'block_size')::int8\n  from settings\n  where time <= $__timeTo()\n  order by time desc\n  limit 1\n)\n\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(blks_read) * (select size from blocks) as blks_read,\n  dbname || ' ' || index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
           "refId": "A",
           "sql": {
             "columns": [
@@ -360,7 +360,7 @@
           }
         }
       ],
-      "title": "Top $top indexes by disk reads (blocks)",
+      "title": "Top $top indexes by disk reads",
       "type": "timeseries"
     },
     {
@@ -418,7 +418,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "binBps"
         },
         "overrides": []
       },
@@ -457,7 +457,7 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_blks_hit')::int8 - lag((data->>'idx_blks_hit')::int8) over w, 0) as blks_hit\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(blks_hit) as total_blks_hit\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_blks_hit desc\n  limit $top\n)\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(blks_hit) as blks_hit,\n  dbname || ' ' || index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
+          "rawSql": "with index_stats_changes as (\n  select\n  time,\n  dbname,\n  tag_data->>'index_full_name' as index_full_name,\n  coalesce((data->>'idx_blks_hit')::int8 - lag((data->>'idx_blks_hit')::int8) over w, 0) as blks_hit\n  from index_stats \n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, tag_data->>'index_full_name' order by time)\n), top_indexes as (\n  select\n    dbname,\n    index_full_name,\n    sum(blks_hit) as total_blks_hit\n  from index_stats_changes\n  group by dbname, index_full_name\n  order by total_blks_hit desc\n  limit $top\n), blocks(size) as (\n  select (data->>'block_size')::int8\n  from settings\n  where time <= $__timeTo()\n  order by time desc\n  limit 1\n)\n\nselect \n  $__timeGroup(time, $agg_interval),\n  sum(blks_hit) * (select size from blocks) as blks_hit,\n  dbname || ' ' || index_full_name as metric\nfrom index_stats_changes\nwhere dbname in (select dbname from top_indexes)\nand index_full_name in (select index_full_name from top_indexes)\ngroup by 1, dbname, index_full_name\norder by 1, dbname, index_full_name",
           "refId": "A",
           "sql": {
             "columns": [
@@ -478,7 +478,7 @@
           }
         }
       ],
-      "title": "Top $top indexes by cache hits (blocks)",
+      "title": "Top $top indexes by cache hits",
       "type": "timeseries"
     },
     {
@@ -486,6 +486,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
+      "description": "Tuples Read = Number of index entries returned by scans on this index",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -596,7 +597,6 @@
           }
         }
       ],
-      "description": "Tuples Read = Number of index entries returned by scans on this index",
       "title": "Top $top indexes by number of tuples read",
       "type": "timeseries"
     },
@@ -605,6 +605,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
+      "description": "Tuples Fetched = Number of live rows fetched from the table by simple index scans using this index",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -715,7 +716,6 @@
           }
         }
       ],
-      "description": "Tuples Fetched = Number of live rows fetched from the table by simple index scans using this index",
       "title": "Top $top indexes by number of tuples fetched",
       "type": "timeseries"
     },
@@ -724,7 +724,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Adding indexes can have unexpected performance effects, so ensure that you test them first to verify that the recommendation has the desired effect.\n\nRequires `reco_add_index` metric. \n\nColumn Guide:\n- **Affected Queries**: number of queries affected by index creation.\n- **Heaviest Query**: the query with the biggest total execution time among all affected queries.\n- **Recommendation**: the recommended index ddl.",
+      "description": "Adding indexes can have unexpected performance effects, so ensure that you test them first to verify that the recommendation has the desired effect.\n\nRequires `reco_add_index` metric. \n\nColumn Guide:\n- **Sum. Avg Queries Exec Time**: the sum of the average execution time for all queries that should be optimized by this index.\n- **Affected Queries**: all affected query ids to investigate further\n- **Recommendation**: the recommended index ddl.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -760,24 +760,12 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Category"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 150
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "Table Name"
             },
             "properties": [
               {
                 "id": "custom.width",
-                "value": 243
+                "value": 182
               },
               {
                 "id": "links",
@@ -787,6 +775,10 @@
                     "url": "d/table-details/5-table-details?orgId=1&var-dbname=${__data.fields[\"Source Name\"]}&var-table_full_name=${__value.raw}"
                   }
                 ]
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               }
             ]
           },
@@ -805,45 +797,16 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Object"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 163
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Heaviest Query"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 187
-              },
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "title": "Opens 'Single query details' dashboard for this query id",
-                    "url": "/d/single-query-details?orgId=1&var-dbname=${__data.fields[\"Source Name\"]}&var-queryid=${__value.raw}&from=${__from}&to=${__to}"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "Affected Queries"
             },
             "properties": [
               {
                 "id": "custom.width",
-                "value": 144
+                "value": 372
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               }
             ]
           },
@@ -856,6 +819,22 @@
               {
                 "id": "custom.width",
                 "value": 151
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sum. Avg Exec Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 193
+              },
+              {
+                "id": "unit",
+                "value": "ms"
               }
             ]
           }
@@ -884,7 +863,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n    dbname as \"Source Name\",\n    tag_data->>'object_name' AS \"Table Name\",\n    data->>'affected_query_count' AS \"Affected Queries\",\n    data->>'query_id' AS \"Heaviest Query\",\n    data->>'recommendation' AS \"Recommendation\"\nFROM recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where $__timeFilter(time) AND dbname in ($dbname) and tag_data->>'reco_topic' = 'create_index' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'create_index' \nORDER BY (data->>'total_exec_time')::float8 DESC",
+          "rawSql": "SELECT\n    dbname as \"Source Name\",\n    tag_data->>'object_name' AS \"Table Name\",\n    data->>'total_avg_exec_time' AS \"Sum. Avg Exec Time\",\n    data->>'affected_query_ids' AS \"Affected Queries\",\n    data->>'recommendation' AS \"Recommendation\"\nFROM recommendations \nWHERE \n  time in (\n    select max(time) \n    from recommendations \n    where time <= $__timeTo() AND dbname in ($dbname) and tag_data->>'reco_topic' = 'create_index' \n    group by dbname\n  )\n  AND dbname IN ($dbname) AND tag_data->>'reco_topic' = 'create_index' \nORDER BY (data->>'total_avg_exec_time')::float8 DESC",
           "refId": "A",
           "select": [
             [
@@ -1776,5 +1755,5 @@
   "timezone": "browser",
   "title": "Index overview",
   "uid": "index-overview",
-  "version": 70
+  "version": 102
 }
