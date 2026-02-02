@@ -451,18 +451,17 @@ func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.Sou
 // GetInstanceUpMeasurement returns a single measurement with "instance_up" metric
 // used to detect if the instance is up or down
 func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.SourceConn) (metrics.Measurements, error) {
-	err := md.Conn.Ping(ctx)
 	return metrics.Measurements{
 		metrics.Measurement{
 			metrics.EpochColumnName: time.Now().UnixNano(),
 			"instance_up": func() int {
-				if err == nil {
+				if md.Conn.Ping(ctx) == nil {
 					return 1
 				}
 				return 0
 			}(), // true if connection is up
 		},
-	}, err
+	}, nil // always return nil error for the status metric
 }
 
 func (r *Reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.SourceConn) (metrics.Measurements, error) {

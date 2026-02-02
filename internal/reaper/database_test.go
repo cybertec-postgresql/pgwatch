@@ -458,3 +458,63 @@ func TestDetectConfigurationChanges(t *testing.T) {
 
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
+
+func TestGetInstanceUpMeasurement(t *testing.T) {
+	ctx := context.Background()
+	reaper := &Reaper{}
+
+	testCases := []struct {
+		name            string
+		pingError       error
+		expectedUpValue int
+	}{
+		{
+			name:            "connection is up",
+			pingError:       nil,
+			expectedUpValue: 1,
+		},
+		{
+			name:            "connection is down",
+			pingError:       assert.AnError,
+			expectedUpValue: 0,
+		},
+		{
+			name:            "connection timeout",
+			pingError:       context.DeadlineExceeded,
+			expectedUpValue: 0,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			md, mock := createTestSourceConn(t)
+			defer mock.Close()
+
+			// Setup ping expectation
+			if tc.pingError == nil {
+				mock.ExpectPing()
+			} else {
+				mock.ExpectPing().WillReturnError(tc.pingError)
+			}
+
+			measurements, err := reaper.GetInstanceUpMeasurement(ctx, md)
+
+			// Should never return an error
+			assert.NoError(t, err)
+			require.NotNil(t, measurements)
+			require.Len(t, measurements, 1)
+
+			// Check instance_up metric value
+			measurement := measurements[0]
+			assert.Contains(t, measurement, "instance_up")
+			assert.Equal(t, tc.expectedUpValue, measurement["instance_up"])
+
+			// Verify epoch is set and valid
+			assert.Contains(t, measurement, metrics.EpochColumnName)
+			assert.Greater(t, measurement[metrics.EpochColumnName].(int64), int64(0))
+			assert.LessOrEqual(t, measurement[metrics.EpochColumnName].(int64), time.Now().UnixNano())
+
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
