@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"fmt"
 	"maps"
 	"time"
 
@@ -154,9 +155,46 @@ type MeasurementEnvelope struct {
 }
 
 type Metrics struct {
-	MetricDefs MetricDefs `yaml:"metrics"`
-	PresetDefs PresetDefs `yaml:"presets"`
+	MetricDefs MetricDefs `yaml:"metrics,omitempty"`
+	PresetDefs PresetDefs `yaml:"presets,omitempty"`
 }
+
+// FilterByNames returns a new Metrics struct containing only the specified metrics and/or presets.
+// When a preset is requested, it includes both the preset definition and all its metrics.
+// If names is empty, returns a full copy of all metrics and presets.
+// Returns an error if any name is not found.
+func (m *Metrics) FilterByNames(names []string) (*Metrics, error) {
+	result := &Metrics{
+		MetricDefs: make(MetricDefs),
+		PresetDefs: make(PresetDefs),
+	}
+
+	// If no names provided, return full copy
+	if len(names) == 0 {
+		maps.Copy(result.MetricDefs, m.MetricDefs)
+		maps.Copy(result.PresetDefs, m.PresetDefs)
+		return result, nil
+	}
+
+	for _, name := range names {
+		if preset, ok := m.PresetDefs[name]; ok {
+			result.PresetDefs[name] = preset
+			// Include all metrics from the preset
+			for metricName := range preset.Metrics {
+				if metric, exists := m.MetricDefs[metricName]; exists {
+					result.MetricDefs[metricName] = metric
+				}
+			}
+		} else if metric, ok := m.MetricDefs[name]; ok {
+			result.MetricDefs[name] = metric
+		} else {
+			return nil, fmt.Errorf("metric or preset '%s' not found", name)
+		}
+	}
+
+	return result, nil
+}
+
 type Reader interface {
 	GetMetrics() (*Metrics, error)
 }

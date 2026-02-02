@@ -211,26 +211,69 @@ It reads the configuration from the specified sources and metrics, then begins c
 ### Manage metrics
 
 ```terminal
-  pgwatch [OPTIONS] metric <print-init | print-sql>
+  pgwatch [OPTIONS] metric <print-init | print-sql | list>
 ```
 
 !!! info
     To use `metric` command, you need to specify the `-m`, `--metrics` option.
 
+- `list [name...]`
+
+    Export metric and/or preset definitions in YAML format. When no names are provided, outputs all built-in metrics and presets.
+    When names are specified, outputs only the requested metrics and/or presets. For presets, both the preset definition
+    and all its component metrics are included.
+
+    Examples:
+
+    ```terminal
+    # Export all metrics and presets
+    pgwatch metric list > custom-metrics.yaml
+
+    # Export a specific metric
+    pgwatch metric list cpu_load
+
+    # Export specific presets with their metrics
+    pgwatch metric list minimal standard
+
+    # Export a mix of metrics and presets
+    pgwatch metric list cpu_load db_size minimal
+    ```
+
+    This command is useful for:
+
+    - Creating custom metrics.yaml files by redirecting output
+    - Inspecting metric definitions before deploying
+    - Copying specific metrics to customize for your needs
+    - Understanding what metrics are included in presets
+
 - `print-init`
 
     Get and print init SQL for a given metric(s) or preset(s)
 
-    Examples: `pgwatch metric print-init bgwriter cpu_load`,  
-    `pgwatch metric print-init exhaustive`
+    Examples:
+
+    ```terminal
+    # Print init SQL for a specific metric
+    pgwatch metric print-init bgwriter cpu_load
+
+    # Print init SQL for a specific preset
+    pgwatch metric print-init exhaustive
+    ```
 
 - `print-sql`
 
     Get and print SQL for a given metric. Optional parameter `-v, --version=` specifies
     PostgreSQL version to get SQL for.
 
-    Examples: `pgwatch metric print-sql bgwriter`,  
-    `pgwatch metric print-sql bgwriter -v 14`
+    Examples:
+
+    ```terminal
+    # Print SQL for a specific metric
+    pgwatch metric print-sql bgwriter
+
+    # Print SQL for a specific metric and PostgreSQL version
+    pgwatch metric print-sql bgwriter -v 14
+    ```
 
 ### Manage sources
 

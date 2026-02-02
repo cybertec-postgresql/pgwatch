@@ -37,6 +37,19 @@ or at least adjust the metric fetching intervals according to your monitoring go
 You can find the full list in pgwatch's default [metrics.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/metrics/metrics.yaml) file,
 for a more user-friendly experience, consider browsing them via the [Web UI](../gallery/webui.md)
 
+!!! tip "Exporting Metric Definitions"
+    You can export metric and preset definitions in YAML format using the CLI:
+
+    ```terminal
+    # Export all built-in metrics and presets
+    pgwatch metric list > custom-metrics.yaml
+    
+    # Export specific metrics or presets
+    pgwatch metric list minimal cpu_load db_size
+    ```
+    
+    See the [CLI reference](cli_env.md#manage-metrics) for more details.
+
 Some things to note about the built-in metrics:
 
 - Only half of them are included in the *Preset configs* and are
