@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"slices"
+
+	"gopkg.in/yaml.v3"
 )
 
 type MetricCommand struct {
 	owner     *Options
 	PrintInit MetricPrintInitCommand `command:"print-init" description:"Get and print init SQL for a given metric or preset"`
 	PrintSQL  MetricPrintSQLCommand  `command:"print-sql" description:"Get and print SQL for a given metric"`
+	List      MetricListCommand      `command:"list" description:"List available metrics and presets"`
 }
 
 func NewMetricCommand(owner *Options) *MetricCommand {
@@ -18,6 +20,7 @@ func NewMetricCommand(owner *Options) *MetricCommand {
 		owner:     owner,
 		PrintInit: MetricPrintInitCommand{owner: owner},
 		PrintSQL:  MetricPrintSQLCommand{owner: owner},
+		List:      MetricListCommand{owner: owner},
 	}
 }
 
@@ -34,21 +37,15 @@ func (cmd *MetricPrintInitCommand) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	w := cmd.owner.OutputWriter
-	for _, name := range args {
-		if preset, ok := metrics.PresetDefs[name]; ok {
-			for k := range preset.Metrics {
-				args = append(args, k)
-			}
-		}
+	metrics, err = metrics.FilterByNames(args)
+	if err != nil {
+		return err
 	}
-	slices.Sort(args)
-	args = slices.Compact(args)
-	for _, mname := range args {
-		if m, ok := metrics.MetricDefs[mname]; ok && m.InitSQL != "" {
-
+	w := cmd.owner.OutputWriter
+	for mname, mdef := range metrics.MetricDefs {
+		if mdef.InitSQL > "" {
 			fmt.Fprintln(w, "--", mname)
-			fmt.Fprintln(w, m.InitSQL)
+			fmt.Fprintln(w, mdef.InitSQL)
 		}
 	}
 	cmd.owner.CompleteCommand(ExitCodeOK)
@@ -69,6 +66,10 @@ func (cmd *MetricPrintSQLCommand) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
+	metrics, err = metrics.FilterByNames(args)
+	if err != nil {
+		return err
+	}
 	w := cmd.owner.OutputWriter
 	if cmd.Version == 0 {
 		cmd.Version = math.MaxInt32
@@ -81,6 +82,31 @@ func (cmd *MetricPrintSQLCommand) Execute(args []string) error {
 			}
 		}
 	}
+	cmd.owner.CompleteCommand(ExitCodeOK)
+	return nil
+}
+
+type MetricListCommand struct {
+	owner *Options
+}
+
+func (cmd *MetricListCommand) Execute(args []string) error {
+	err := cmd.owner.InitMetricReader(context.Background())
+	if err != nil {
+		return err
+	}
+	allMetrics, err := cmd.owner.MetricsReaderWriter.GetMetrics()
+	if err != nil {
+		return err
+	}
+	result, err := allMetrics.FilterByNames(args)
+	if err != nil {
+		return err
+	}
+	w := cmd.owner.OutputWriter
+
+	yamlData, _ := yaml.Marshal(result)
+	fmt.Fprint(w, string(yamlData))
 	cmd.owner.CompleteCommand(ExitCodeOK)
 	return nil
 }
