@@ -161,6 +161,14 @@
 				
 			
 				
+				<dd><a href="#MetricListCommand">type MetricListCommand</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MetricListCommand.Execute">func (cmd *MetricListCommand) Execute(args []string) error</a></dd>
+				
+			
+				
 				<dd><a href="#MetricPrintInitCommand">type MetricPrintInitCommand</a></dd>
 				
 				
@@ -484,7 +492,7 @@
 		
 			
 			
-			<h2 id="MetricCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L10">MetricCommand</a>
+			<h2 id="MetricCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L11">MetricCommand</a>
 				<a class="permalink" href="#MetricCommand">&#xb6;</a>
 				
 				
@@ -494,6 +502,7 @@
 <span id="MetricCommand.owner"></span>    owner     *<a href="#Options">Options</a>
 <span id="MetricCommand.PrintInit"></span>    PrintInit <a href="#MetricPrintInitCommand">MetricPrintInitCommand</a> `command:&#34;print-init&#34; description:&#34;Get and print init SQL for a given metric or preset&#34;`
 <span id="MetricCommand.PrintSQL"></span>    PrintSQL  <a href="#MetricPrintSQLCommand">MetricPrintSQLCommand</a>  `command:&#34;print-sql&#34; description:&#34;Get and print SQL for a given metric&#34;`
+<span id="MetricCommand.List"></span>    List      <a href="#MetricListCommand">MetricListCommand</a>      `command:&#34;list&#34; description:&#34;List available metrics and presets&#34;`
 }
 </pre>
 
@@ -507,7 +516,7 @@
 
 			
 				
-				<h3 id="NewMetricCommand">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L16">NewMetricCommand</a>
+				<h3 id="NewMetricCommand">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L18">NewMetricCommand</a>
 					<a class="permalink" href="#NewMetricCommand">&#xb6;</a>
 					
 					
@@ -522,7 +531,44 @@
 		
 			
 			
-			<h2 id="MetricPrintInitCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L24">MetricPrintInitCommand</a>
+			<h2 id="MetricListCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L89">MetricListCommand</a>
+				<a class="permalink" href="#MetricListCommand">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type MetricListCommand struct {
+<span id="MetricListCommand.owner"></span>    owner *<a href="#Options">Options</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="MetricListCommand.Execute">func (*MetricListCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L93">Execute</a>
+					<a class="permalink" href="#MetricListCommand.Execute">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (cmd *<a href="#MetricListCommand">MetricListCommand</a>) Execute(args []<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="MetricPrintInitCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L27">MetricPrintInitCommand</a>
 				<a class="permalink" href="#MetricPrintInitCommand">&#xb6;</a>
 				
 				
@@ -545,7 +591,7 @@
 
 			
 				
-				<h3 id="MetricPrintInitCommand.Execute">func (*MetricPrintInitCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L28">Execute</a>
+				<h3 id="MetricPrintInitCommand.Execute">func (*MetricPrintInitCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L31">Execute</a>
 					<a class="permalink" href="#MetricPrintInitCommand.Execute">&#xb6;</a>
 					
 					
@@ -559,7 +605,7 @@
 		
 			
 			
-			<h2 id="MetricPrintSQLCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L58">MetricPrintSQLCommand</a>
+			<h2 id="MetricPrintSQLCommand">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L55">MetricPrintSQLCommand</a>
 				<a class="permalink" href="#MetricPrintSQLCommand">&#xb6;</a>
 				
 				
@@ -583,7 +629,7 @@
 
 			
 				
-				<h3 id="MetricPrintSQLCommand.Execute">func (*MetricPrintSQLCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L63">Execute</a>
+				<h3 id="MetricPrintSQLCommand.Execute">func (*MetricPrintSQLCommand) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdmetric.go.html#L60">Execute</a>
 					<a class="permalink" href="#MetricPrintSQLCommand.Execute">&#xb6;</a>
 					
 					
