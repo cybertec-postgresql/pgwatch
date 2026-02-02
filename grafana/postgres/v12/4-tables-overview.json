@@ -157,19 +157,7 @@
                 "value": "s"
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "dbname"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Source Name"
-              }
-            ]
-          }
+          }          
         ]
       },
       "gridPos": {
@@ -329,19 +317,7 @@
                 "value": "s"
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "dbname"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Source Name"
-              }
-            ]
-          }
+          }          
         ]
       },
       "gridPos": {
@@ -493,19 +469,7 @@
                 "value": "s"
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "dbname"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Source Name"
-              }
-            ]
-          }
+          }          
         ]
       },
       "gridPos": {
@@ -657,19 +621,7 @@
                 "value": "s"
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "dbname"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Source Name"
-              }
-            ]
-          }
+          }          
         ]
       },
       "gridPos": {
@@ -821,19 +773,7 @@
                 "value": "s"
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "dbname"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Source Name"
-              }
-            ]
-          }
+          }          
         ]
       },
       "gridPos": {
@@ -985,19 +925,7 @@
                 "value": "s"
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "dbname"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Source Name"
-              }
-            ]
-          }
+          }          
         ]
       },
       "gridPos": {
@@ -1149,19 +1077,7 @@
                 "value": "s"
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "dbname"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Source Name"
-              }
-            ]
-          }
+          }          
         ]
       },
       "gridPos": {
@@ -1328,19 +1244,7 @@
                 "value": "s"
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "dbname"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Source Name"
-              }
-            ]
-          }
+          }          
         ]
       },
       "gridPos": {
