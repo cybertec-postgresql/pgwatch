@@ -2333,7 +2333,7 @@ databases (sources, metrics, sinks) require migrations and apply them.</p>
 </li>
 </ul>
 <h3 id="manage-metrics">Manage metrics</h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>  pgwatch [OPTIONS] metric &lt;print-init | print-sql&gt;
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>  pgwatch [OPTIONS] metric &lt;print-init | print-sql | list&gt;
 </span></code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
@@ -2341,21 +2341,57 @@ databases (sources, metrics, sinks) require migrations and apply them.</p>
 </div>
 <ul>
 <li>
+<p><code>list [name...]</code></p>
+<p>Export metric and/or preset definitions in YAML format. When no names are provided, outputs all built-in metrics and presets.
+When names are specified, outputs only the requested metrics and/or presets. For presets, both the preset definition
+and all its component metrics are included.</p>
+<p>Examples:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a># Export all metrics and presets
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>pgwatch metric list &gt; custom-metrics.yaml
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a># Export a specific metric
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>pgwatch metric list cpu_load
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a># Export specific presets with their metrics
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>pgwatch metric list minimal standard
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a># Export a mix of metrics and presets
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>pgwatch metric list cpu_load db_size minimal
+</span></code></pre></div>
+<p>This command is useful for:</p>
+<ul>
+<li>Creating custom metrics.yaml files by redirecting output</li>
+<li>Inspecting metric definitions before deploying</li>
+<li>Copying specific metrics to customize for your needs</li>
+<li>Understanding what metrics are included in presets</li>
+</ul>
+</li>
+<li>
 <p><code>print-init</code></p>
 <p>Get and print init SQL for a given metric(s) or preset(s)</p>
-<p>Examples: <code>pgwatch metric print-init bgwriter cpu_load</code>,<br>
-<code>pgwatch metric print-init exhaustive</code></p>
+<p>Examples:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a># Print init SQL for a specific metric
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>pgwatch metric print-init bgwriter cpu_load
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a># Print init SQL for a specific preset
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>pgwatch metric print-init exhaustive
+</span></code></pre></div>
 </li>
 <li>
 <p><code>print-sql</code></p>
 <p>Get and print SQL for a given metric. Optional parameter <code>-v, --version=</code> specifies
 PostgreSQL version to get SQL for.</p>
-<p>Examples: <code>pgwatch metric print-sql bgwriter</code>,<br>
-<code>pgwatch metric print-sql bgwriter -v 14</code></p>
+<p>Examples:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># Print SQL for a specific metric
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>pgwatch metric print-sql bgwriter
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a># Print SQL for a specific metric and PostgreSQL version
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>pgwatch metric print-sql bgwriter -v 14
+</span></code></pre></div>
 </li>
 </ul>
 <h3 id="manage-sources">Manage sources</h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>    pgwatch [OPTIONS] source &lt;ping | resolve&gt;
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>    pgwatch [OPTIONS] source &lt;ping | resolve&gt;
 </span></code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
@@ -2370,13 +2406,13 @@ PostgreSQL version to get SQL for.</p>
 <p><code>resolve</code></p>
 <p>Connect to the configured source(s) and return resolved connection strings for the monitoring targets discovered.</p>
 <p>Example (say we have a source pg-stage1 defined as postgres-continuous-discovery):</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>    pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch source resolve
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    pg-stage1_postgres=postgresql://pgwatch:pgwatch@localhost:5432/postgres
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    pg-stage1_pagila=postgresql://pgwatch:pgwatch@localhost:5432/pagila
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    pg-stage1_test=postgresql://pgwatch:pgwatch@localhost:5432/test
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    pg-stage1_timetable=postgresql://pgwatch:pgwatch@localhost:5432/timetable
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    pg-stage1_test602=postgresql://pgwatch:pgwatch@localhost:5432/test602
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>    pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch source resolve
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    pg-stage1_postgres=postgresql://pgwatch:pgwatch@localhost:5432/postgres
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    pg-stage1_pagila=postgresql://pgwatch:pgwatch@localhost:5432/pagila
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    pg-stage1_test=postgresql://pgwatch:pgwatch@localhost:5432/test
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    pg-stage1_timetable=postgresql://pgwatch:pgwatch@localhost:5432/timetable
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    pg-stage1_test602=postgresql://pgwatch:pgwatch@localhost:5432/test602
 </span></code></pre></div>
 </li>
 </ul>
