@@ -454,7 +454,7 @@
 <span id="L397" class="ln">   397  </span>		return err
 <span id="L398" class="ln">   398  </span>	}
 <span id="L399" class="ln">   399  </span>	srcs = slices.DeleteFunc(srcs, func(s sources.Source) bool {
-<span id="L400" class="ln">   400  </span>		return !s.IsEnabled || len(r.Sources.Groups) &gt; 0 &amp;&amp; !s.IsDefaultGroup() &amp;&amp; !slices.Contains(r.Sources.Groups, s.Group)
+<span id="L400" class="ln">   400  </span>		return !s.IsEnabled || len(r.Sources.Groups) &gt; 0 &amp;&amp; !slices.Contains(r.Sources.Groups, s.Group)
 <span id="L401" class="ln">   401  </span>	})
 <span id="L402" class="ln">   402  </span>	if newSrcs, err = srcs.ResolveDatabases(); err != nil {
 <span id="L403" class="ln">   403  </span>		r.logger.WithError(err).Error(&#34;could not resolve databases from sources&#34;)

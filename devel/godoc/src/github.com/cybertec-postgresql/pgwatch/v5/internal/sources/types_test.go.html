@@ -88,114 +88,94 @@
 <span id="L31" class="ln">    31  </span>	}
 <span id="L32" class="ln">    32  </span>}
 <span id="L33" class="ln">    33  </span>
-<span id="L34" class="ln">    34  </span>func TestSource_IsDefaultGroup(t *testing.T) {
-<span id="L35" class="ln">    35  </span>	sources := sources.Sources{
-<span id="L36" class="ln">    36  </span>		{
-<span id="L37" class="ln">    37  </span>			Name:  &#34;test_source&#34;,
-<span id="L38" class="ln">    38  </span>			Group: &#34;default&#34;,
-<span id="L39" class="ln">    39  </span>		},
-<span id="L40" class="ln">    40  </span>		{
-<span id="L41" class="ln">    41  </span>			Name:  &#34;test_source3&#34;,
-<span id="L42" class="ln">    42  </span>			Group: &#34;&#34;,
-<span id="L43" class="ln">    43  </span>		},
+<span id="L34" class="ln">    34  </span>func TestSource_Equal(t *testing.T) {
+<span id="L35" class="ln">    35  </span>	var correctInterval float64 = 60
+<span id="L36" class="ln">    36  </span>	var incorrectInterval float64 = 10
+<span id="L37" class="ln">    37  </span>
+<span id="L38" class="ln">    38  </span>	s1 := sources.Source{
+<span id="L39" class="ln">    39  </span>		Metrics:        map[string]float64{&#34;wal&#34;: correctInterval},
+<span id="L40" class="ln">    40  </span>		MetricsStandby: map[string]float64{&#34;wal&#34;: correctInterval},
+<span id="L41" class="ln">    41  </span>	}
+<span id="L42" class="ln">    42  </span>
+<span id="L43" class="ln">    43  </span>	srcs := sources.Sources{
 <span id="L44" class="ln">    44  </span>		{
-<span id="L45" class="ln">    45  </span>			Name:  &#34;test_source2&#34;,
-<span id="L46" class="ln">    46  </span>			Group: &#34;custom_group&#34;,
+<span id="L45" class="ln">    45  </span>			PresetMetrics:        &#34;basic&#34;,
+<span id="L46" class="ln">    46  </span>			PresetMetricsStandby: &#34;basic&#34;,
 <span id="L47" class="ln">    47  </span>		},
-<span id="L48" class="ln">    48  </span>	}
-<span id="L49" class="ln">    49  </span>	assert.True(t, sources[0].IsDefaultGroup())
-<span id="L50" class="ln">    50  </span>	assert.True(t, sources[1].IsDefaultGroup())
-<span id="L51" class="ln">    51  </span>	assert.False(t, sources[2].IsDefaultGroup())
-<span id="L52" class="ln">    52  </span>}
-<span id="L53" class="ln">    53  </span>
-<span id="L54" class="ln">    54  </span>func TestSource_Equal(t *testing.T) {
-<span id="L55" class="ln">    55  </span>	var correctInterval float64 = 60
-<span id="L56" class="ln">    56  </span>	var incorrectInterval float64 = 10
-<span id="L57" class="ln">    57  </span>
-<span id="L58" class="ln">    58  </span>	s1 := sources.Source{
-<span id="L59" class="ln">    59  </span>		Metrics:        map[string]float64{&#34;wal&#34;: correctInterval},
-<span id="L60" class="ln">    60  </span>		MetricsStandby: map[string]float64{&#34;wal&#34;: correctInterval},
-<span id="L61" class="ln">    61  </span>	}
-<span id="L62" class="ln">    62  </span>
-<span id="L63" class="ln">    63  </span>	srcs := sources.Sources{
+<span id="L48" class="ln">    48  </span>		{
+<span id="L49" class="ln">    49  </span>			PresetMetrics:        &#34;basic&#34;,
+<span id="L50" class="ln">    50  </span>			PresetMetricsStandby: &#34;basic&#34;,
+<span id="L51" class="ln">    51  </span>			Metrics:              map[string]float64{&#34;wal&#34;: correctInterval},
+<span id="L52" class="ln">    52  </span>			MetricsStandby:       map[string]float64{&#34;wal&#34;: correctInterval},
+<span id="L53" class="ln">    53  </span>		},
+<span id="L54" class="ln">    54  </span>		{
+<span id="L55" class="ln">    55  </span>			PresetMetrics:        &#34;basic&#34;,
+<span id="L56" class="ln">    56  </span>			PresetMetricsStandby: &#34;basic&#34;,
+<span id="L57" class="ln">    57  </span>			Metrics:              map[string]float64{&#34;wal&#34;: incorrectInterval},
+<span id="L58" class="ln">    58  </span>			MetricsStandby:       map[string]float64{&#34;wal&#34;: incorrectInterval},
+<span id="L59" class="ln">    59  </span>		},
+<span id="L60" class="ln">    60  </span>		{
+<span id="L61" class="ln">    61  </span>			Metrics:        map[string]float64{&#34;wal&#34;: incorrectInterval},
+<span id="L62" class="ln">    62  </span>			MetricsStandby: map[string]float64{&#34;wal&#34;: incorrectInterval},
+<span id="L63" class="ln">    63  </span>		},
 <span id="L64" class="ln">    64  </span>		{
-<span id="L65" class="ln">    65  </span>			PresetMetrics:        &#34;basic&#34;,
-<span id="L66" class="ln">    66  </span>			PresetMetricsStandby: &#34;basic&#34;,
+<span id="L65" class="ln">    65  </span>			Metrics:        map[string]float64{&#34;wal&#34;: correctInterval, &#34;db_size&#34;: correctInterval},
+<span id="L66" class="ln">    66  </span>			MetricsStandby: map[string]float64{&#34;wal&#34;: correctInterval, &#34;db_size&#34;: correctInterval},
 <span id="L67" class="ln">    67  </span>		},
 <span id="L68" class="ln">    68  </span>		{
-<span id="L69" class="ln">    69  </span>			PresetMetrics:        &#34;basic&#34;,
-<span id="L70" class="ln">    70  </span>			PresetMetricsStandby: &#34;basic&#34;,
-<span id="L71" class="ln">    71  </span>			Metrics:              map[string]float64{&#34;wal&#34;: correctInterval},
-<span id="L72" class="ln">    72  </span>			MetricsStandby:       map[string]float64{&#34;wal&#34;: correctInterval},
-<span id="L73" class="ln">    73  </span>		},
-<span id="L74" class="ln">    74  </span>		{
-<span id="L75" class="ln">    75  </span>			PresetMetrics:        &#34;basic&#34;,
-<span id="L76" class="ln">    76  </span>			PresetMetricsStandby: &#34;basic&#34;,
-<span id="L77" class="ln">    77  </span>			Metrics:              map[string]float64{&#34;wal&#34;: incorrectInterval},
-<span id="L78" class="ln">    78  </span>			MetricsStandby:       map[string]float64{&#34;wal&#34;: incorrectInterval},
-<span id="L79" class="ln">    79  </span>		},
-<span id="L80" class="ln">    80  </span>		{
-<span id="L81" class="ln">    81  </span>			Metrics:        map[string]float64{&#34;wal&#34;: incorrectInterval},
-<span id="L82" class="ln">    82  </span>			MetricsStandby: map[string]float64{&#34;wal&#34;: incorrectInterval},
-<span id="L83" class="ln">    83  </span>		},
-<span id="L84" class="ln">    84  </span>		{
-<span id="L85" class="ln">    85  </span>			Metrics:        map[string]float64{&#34;wal&#34;: correctInterval, &#34;db_size&#34;: correctInterval},
-<span id="L86" class="ln">    86  </span>			MetricsStandby: map[string]float64{&#34;wal&#34;: correctInterval, &#34;db_size&#34;: correctInterval},
-<span id="L87" class="ln">    87  </span>		},
-<span id="L88" class="ln">    88  </span>		{
-<span id="L89" class="ln">    89  </span>			Metrics:        map[string]float64{&#34;wal&#34;: correctInterval},
-<span id="L90" class="ln">    90  </span>			MetricsStandby: map[string]float64{&#34;wal&#34;: correctInterval},
-<span id="L91" class="ln">    91  </span>		},
-<span id="L92" class="ln">    92  </span>	}
-<span id="L93" class="ln">    93  </span>
-<span id="L94" class="ln">    94  </span>	assert.False(t, s1.Equal(srcs[0]))
-<span id="L95" class="ln">    95  </span>	assert.False(t, s1.Equal(srcs[1]))
-<span id="L96" class="ln">    96  </span>	assert.False(t, s1.Equal(srcs[2]))
-<span id="L97" class="ln">    97  </span>	assert.False(t, s1.Equal(srcs[3]))
-<span id="L98" class="ln">    98  </span>	assert.False(t, s1.Equal(srcs[4]))
-<span id="L99" class="ln">    99  </span>	assert.True(t, s1.Equal(srcs[5]))
-<span id="L100" class="ln">   100  </span>
-<span id="L101" class="ln">   101  </span>	s1 = sources.Source{
-<span id="L102" class="ln">   102  </span>		PresetMetrics:        &#34;basic&#34;,
-<span id="L103" class="ln">   103  </span>		PresetMetricsStandby: &#34;basic&#34;,
-<span id="L104" class="ln">   104  </span>		Metrics:              map[string]float64{&#34;wal&#34;: correctInterval},
-<span id="L105" class="ln">   105  </span>		MetricsStandby:       map[string]float64{&#34;wal&#34;: correctInterval},
-<span id="L106" class="ln">   106  </span>	}
-<span id="L107" class="ln">   107  </span>
-<span id="L108" class="ln">   108  </span>	srcs = sources.Sources{
+<span id="L69" class="ln">    69  </span>			Metrics:        map[string]float64{&#34;wal&#34;: correctInterval},
+<span id="L70" class="ln">    70  </span>			MetricsStandby: map[string]float64{&#34;wal&#34;: correctInterval},
+<span id="L71" class="ln">    71  </span>		},
+<span id="L72" class="ln">    72  </span>	}
+<span id="L73" class="ln">    73  </span>
+<span id="L74" class="ln">    74  </span>	assert.False(t, s1.Equal(srcs[0]))
+<span id="L75" class="ln">    75  </span>	assert.False(t, s1.Equal(srcs[1]))
+<span id="L76" class="ln">    76  </span>	assert.False(t, s1.Equal(srcs[2]))
+<span id="L77" class="ln">    77  </span>	assert.False(t, s1.Equal(srcs[3]))
+<span id="L78" class="ln">    78  </span>	assert.False(t, s1.Equal(srcs[4]))
+<span id="L79" class="ln">    79  </span>	assert.True(t, s1.Equal(srcs[5]))
+<span id="L80" class="ln">    80  </span>
+<span id="L81" class="ln">    81  </span>	s1 = sources.Source{
+<span id="L82" class="ln">    82  </span>		PresetMetrics:        &#34;basic&#34;,
+<span id="L83" class="ln">    83  </span>		PresetMetricsStandby: &#34;basic&#34;,
+<span id="L84" class="ln">    84  </span>		Metrics:              map[string]float64{&#34;wal&#34;: correctInterval},
+<span id="L85" class="ln">    85  </span>		MetricsStandby:       map[string]float64{&#34;wal&#34;: correctInterval},
+<span id="L86" class="ln">    86  </span>	}
+<span id="L87" class="ln">    87  </span>
+<span id="L88" class="ln">    88  </span>	srcs = sources.Sources{
+<span id="L89" class="ln">    89  </span>		{
+<span id="L90" class="ln">    90  </span>			PresetMetrics:        &#34;basic&#34;,
+<span id="L91" class="ln">    91  </span>			PresetMetricsStandby: &#34;basic&#34;,
+<span id="L92" class="ln">    92  </span>		},
+<span id="L93" class="ln">    93  </span>		{
+<span id="L94" class="ln">    94  </span>			PresetMetrics:        &#34;basic&#34;,
+<span id="L95" class="ln">    95  </span>			PresetMetricsStandby: &#34;basic&#34;,
+<span id="L96" class="ln">    96  </span>			Metrics:              map[string]float64{&#34;wal&#34;: incorrectInterval},
+<span id="L97" class="ln">    97  </span>			MetricsStandby:       map[string]float64{&#34;wal&#34;: incorrectInterval},
+<span id="L98" class="ln">    98  </span>		},
+<span id="L99" class="ln">    99  </span>		{
+<span id="L100" class="ln">   100  </span>			PresetMetrics:        &#34;azure&#34;,
+<span id="L101" class="ln">   101  </span>			PresetMetricsStandby: &#34;azure&#34;,
+<span id="L102" class="ln">   102  </span>		},
+<span id="L103" class="ln">   103  </span>		{
+<span id="L104" class="ln">   104  </span>			PresetMetrics:        &#34;azure&#34;,
+<span id="L105" class="ln">   105  </span>			PresetMetricsStandby: &#34;azure&#34;,
+<span id="L106" class="ln">   106  </span>			Metrics:              map[string]float64{&#34;wal&#34;: correctInterval},
+<span id="L107" class="ln">   107  </span>			MetricsStandby:       map[string]float64{&#34;wal&#34;: correctInterval},
+<span id="L108" class="ln">   108  </span>		},
 <span id="L109" class="ln">   109  </span>		{
-<span id="L110" class="ln">   110  </span>			PresetMetrics:        &#34;basic&#34;,
-<span id="L111" class="ln">   111  </span>			PresetMetricsStandby: &#34;basic&#34;,
+<span id="L110" class="ln">   110  </span>			Metrics:        map[string]float64{&#34;wal&#34;: correctInterval},
+<span id="L111" class="ln">   111  </span>			MetricsStandby: map[string]float64{&#34;wal&#34;: correctInterval},
 <span id="L112" class="ln">   112  </span>		},
-<span id="L113" class="ln">   113  </span>		{
-<span id="L114" class="ln">   114  </span>			PresetMetrics:        &#34;basic&#34;,
-<span id="L115" class="ln">   115  </span>			PresetMetricsStandby: &#34;basic&#34;,
-<span id="L116" class="ln">   116  </span>			Metrics:              map[string]float64{&#34;wal&#34;: incorrectInterval},
-<span id="L117" class="ln">   117  </span>			MetricsStandby:       map[string]float64{&#34;wal&#34;: incorrectInterval},
-<span id="L118" class="ln">   118  </span>		},
-<span id="L119" class="ln">   119  </span>		{
-<span id="L120" class="ln">   120  </span>			PresetMetrics:        &#34;azure&#34;,
-<span id="L121" class="ln">   121  </span>			PresetMetricsStandby: &#34;azure&#34;,
-<span id="L122" class="ln">   122  </span>		},
-<span id="L123" class="ln">   123  </span>		{
-<span id="L124" class="ln">   124  </span>			PresetMetrics:        &#34;azure&#34;,
-<span id="L125" class="ln">   125  </span>			PresetMetricsStandby: &#34;azure&#34;,
-<span id="L126" class="ln">   126  </span>			Metrics:              map[string]float64{&#34;wal&#34;: correctInterval},
-<span id="L127" class="ln">   127  </span>			MetricsStandby:       map[string]float64{&#34;wal&#34;: correctInterval},
-<span id="L128" class="ln">   128  </span>		},
-<span id="L129" class="ln">   129  </span>		{
-<span id="L130" class="ln">   130  </span>			Metrics:        map[string]float64{&#34;wal&#34;: correctInterval},
-<span id="L131" class="ln">   131  </span>			MetricsStandby: map[string]float64{&#34;wal&#34;: correctInterval},
-<span id="L132" class="ln">   132  </span>		},
-<span id="L133" class="ln">   133  </span>	}
-<span id="L134" class="ln">   134  </span>
-<span id="L135" class="ln">   135  </span>	assert.True(t, s1.Equal(srcs[0]))
-<span id="L136" class="ln">   136  </span>	assert.True(t, s1.Equal(srcs[1]))
-<span id="L137" class="ln">   137  </span>	assert.False(t, s1.Equal(srcs[2]))
-<span id="L138" class="ln">   138  </span>	assert.False(t, s1.Equal(srcs[3]))
-<span id="L139" class="ln">   139  </span>	assert.False(t, s1.Equal(srcs[4]))
-<span id="L140" class="ln">   140  </span>}
-<span id="L141" class="ln">   141  </span>
+<span id="L113" class="ln">   113  </span>	}
+<span id="L114" class="ln">   114  </span>
+<span id="L115" class="ln">   115  </span>	assert.True(t, s1.Equal(srcs[0]))
+<span id="L116" class="ln">   116  </span>	assert.True(t, s1.Equal(srcs[1]))
+<span id="L117" class="ln">   117  </span>	assert.False(t, s1.Equal(srcs[2]))
+<span id="L118" class="ln">   118  </span>	assert.False(t, s1.Equal(srcs[3]))
+<span id="L119" class="ln">   119  </span>	assert.False(t, s1.Equal(srcs[4]))
+<span id="L120" class="ln">   120  </span>}
+<span id="L121" class="ln">   121  </span>
 </pre><p></p>
 
 <div id="footer">
