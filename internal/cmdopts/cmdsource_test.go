@@ -3,6 +3,7 @@ package cmdopts
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
@@ -12,6 +13,29 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestSourceListCommand_Execute(t *testing.T) {
+	f, err := os.CreateTemp(t.TempDir(), "sample.config.yaml")
+	require.NoError(t, err)
+	defer f.Close()
+
+	_, err = f.WriteString(`
+- name: test1
+  kind: postgres
+  is_enabled: true
+  conn_str: postgresql://foo@bar/baz`)
+	require.NoError(t, err)
+
+	w := &strings.Builder{}
+	os.Args = []string{0: "config_test", "--sources=" + f.Name(), "source", "list"}
+	_, err = New(w)
+	assert.NoError(t, err)
+	assert.Contains(t, w.String(), "test1")
+
+	os.Args = []string{0: "config_test", "--sources=nonexistent.yaml", "source", "list"}
+	_, err = New(w)
+	assert.Error(t, err)
+}
 
 func TestSourcePingCommand_Execute(t *testing.T) {
 

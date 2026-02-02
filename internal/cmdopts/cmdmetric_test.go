@@ -68,3 +68,17 @@ func TestMetricPrintSQL_Execute(t *testing.T) {
 	_, err = New(w)
 	assert.Error(t, err, "should error when no config database found")
 }
+
+func TestMetricList_Execute(t *testing.T) {
+	var err error
+
+	w := &strings.Builder{}
+	os.Args = []string{0: "config_test", "metric", "list"}
+	_, err = New(w)
+	assert.Contains(t, w.String(), "cpu_load")
+	assert.NoError(t, err)
+
+	os.Args = []string{0: "config_test", "--metrics=foo", "metric", "list"}
+	_, err = New(w)
+	assert.Error(t, err, "should error when no metric definitions found")
+}

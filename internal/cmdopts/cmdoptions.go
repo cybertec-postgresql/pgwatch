@@ -2,6 +2,7 @@ package cmdopts
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -54,6 +55,24 @@ type Options struct {
 	CommandCompleted bool
 
 	OutputWriter io.Writer
+	OutputFormat string `short:"o" long:"output" description:"Output format" choice:"text" choice:"json" default:"text"`
+}
+
+type TextPrinter interface {
+	PrintText(w io.Writer) error
+}
+
+func (c *Options) Print(data any) error {
+	if c.OutputFormat == "json" {
+		e := json.NewEncoder(c.OutputWriter)
+		e.SetIndent("", "  ")
+		return e.Encode(data)
+	}
+	if p, ok := data.(TextPrinter); ok {
+		return p.PrintText(c.OutputWriter)
+	}
+	_, err := fmt.Fprintln(c.OutputWriter, data)
+	return err
 }
 
 func addCommands(parser *flags.Parser, opts *Options) {
