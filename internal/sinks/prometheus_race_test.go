@@ -1,19 +1,19 @@
 package sinks
 
 import (
-	"context"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 func TestCollect_RaceCondition_Real(_ *testing.T) {
 	// 1. Initialize the real PrometheusWriter
 	// Note: In the current buggy code, this shares the global 'promAsyncMetricCache'
-	promw, _ := NewPrometheusWriter(context.Background(), "127.0.0.1:0/pgwatch")
+	promw, _ := NewPrometheusWriter(testutil.TestContext, "127.0.0.1:0/pgwatch")
 
 	// 2. Register a metric so Write() actually puts data into the map
 	_ = promw.SyncMetric("race_db", "test_metric", AddOp)
@@ -22,9 +22,7 @@ func TestCollect_RaceCondition_Real(_ *testing.T) {
 	done := make(chan struct{})
 
 	// --- The Writer (Simulating Database Updates) ---
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case <-done:
@@ -44,17 +42,15 @@ func TestCollect_RaceCondition_Real(_ *testing.T) {
 				// No sleep here -> hammer the map as fast as possible
 			}
 		}
-	}()
+	})
 
 	// --- The Collector (Simulating Prometheus Scrapes) ---
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		// Prometheus provides a channel to receive metrics
 		ch := make(chan prometheus.Metric, 10000)
 
 		// Scrape 50 times (more than enough to trigger a race in a tight loop)
-		for i := 0; i < 50; i++ {
+		for range 50 {
 			// Call the REAL Collect method
 			promw.Collect(ch)
 
@@ -69,7 +65,7 @@ func TestCollect_RaceCondition_Real(_ *testing.T) {
 			}
 		}
 		close(done) // Tell the writer to stop
-	}()
+	})
 
 	wg.Wait()
 }
