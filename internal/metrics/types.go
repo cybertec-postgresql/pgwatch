@@ -209,11 +209,6 @@ type Writer interface {
 	CreatePreset(presetName string, preset Preset) error
 }
 
-type Migrator interface {
-	Migrate() error
-	NeedsMigration() (bool, error)
-}
-
 type ReaderWriter interface {
 	Reader
 	Writer
