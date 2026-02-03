@@ -15,7 +15,9 @@ export const StepButtons = (props: Props) => {
   const { formState: { errors } } = useFormContext<PresetFormValues>();
 
   const handleStepChange = (_e: any, value?: PresetFormStep) => {
-    value && setCurrentStep(value);
+    if (value) {
+      setCurrentStep(value);
+    }
   };
 
   const isStepError = (step: PresetFormStep) => {
@@ -37,7 +39,7 @@ export const StepButtons = (props: Props) => {
     </ToggleButton>
   ));
 
-  return(
+  return (
     <ToggleButtonGroup
       color="primary"
       value={currentStep}

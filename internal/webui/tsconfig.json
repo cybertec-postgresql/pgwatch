@@ -4,7 +4,12 @@
     "rootDir": "src",
     "outDir": "build/dist",
     "target": "es2019",
-    "lib": ["es2019", "dom", "dom.iterable", "esnext"],
+    "lib": [
+      "es2019",
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "module": "esnext",
     "moduleResolution": "node",
@@ -28,10 +33,9 @@
   },
   "exclude": [
     "node_modules",
-    "build",
-    "webpack",
-    "jest",
-    "public"
+    "dist"
   ],
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
