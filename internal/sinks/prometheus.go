@@ -108,8 +108,10 @@ func (promw *PrometheusWriter) Write(msg metrics.MeasurementEnvelope) error {
 	return nil
 }
 
+type PromMetricCache = map[string]map[string]metrics.MeasurementEnvelope // [dbUnique][metric]lastly_fetched_data
+
 // Async Prom cache
-var promAsyncMetricCache = make(map[string]map[string]metrics.MeasurementEnvelope) // [dbUnique][metric]lastly_fetched_data
+var promAsyncMetricCache = make(PromMetricCache)
 var promAsyncMetricCacheLock = sync.RWMutex{}
 
 func (promw *PrometheusWriter) PromAsyncCacheAddMetricData(dbUnique, metric string, msgArr metrics.MeasurementEnvelope) { // cache structure: [dbUnique][metric]lastly_fetched_data
@@ -124,8 +126,7 @@ func (promw *PrometheusWriter) PromAsyncCacheInitIfRequired(dbUnique, _ string) 
 	promAsyncMetricCacheLock.Lock()
 	defer promAsyncMetricCacheLock.Unlock()
 	if _, ok := promAsyncMetricCache[dbUnique]; !ok {
-		metricMap := make(map[string]metrics.MeasurementEnvelope)
-		promAsyncMetricCache[dbUnique] = metricMap
+		promAsyncMetricCache[dbUnique] = make(map[string]metrics.MeasurementEnvelope)
 	}
 }
 
@@ -159,15 +160,21 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 	promw.totalScrapes.Add(1)
 	ch <- promw.totalScrapes
 
+	promAsyncMetricCacheLock.Lock()
 	if len(promAsyncMetricCache) == 0 {
+		promAsyncMetricCacheLock.Unlock()
 		promw.logger.Warning("No dbs configured for monitoring. Check config")
 		ch <- promw.totalScrapeFailures
 		promw.lastScrapeErrors.Set(0)
 		ch <- promw.lastScrapeErrors
 		return
 	}
+	snapshot := promAsyncMetricCache
+	promAsyncMetricCache = make(PromMetricCache, len(snapshot))
+	promAsyncMetricCacheLock.Unlock()
+
 	t1 := time.Now()
-	for dbname, metricsMessages := range promAsyncMetricCache {
+	for _, metricsMessages := range snapshot {
 		for metric, metricMessages := range metricsMessages {
 			if metric == "change_events" {
 				continue // not supported
@@ -178,9 +185,6 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 				ch <- pm
 			}
 		}
-		promAsyncMetricCacheLock.Lock()
-		promAsyncMetricCache[dbname] = make(map[string]metrics.MeasurementEnvelope) // clear the cache for this db after metrics are collected
-		promAsyncMetricCacheLock.Unlock()
 	}
 	promw.logger.WithField("count", rows).WithField("elapsed", time.Since(t1)).Info("measurements written")
 	ch <- promw.totalScrapeFailures
