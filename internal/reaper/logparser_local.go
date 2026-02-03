@@ -62,7 +62,12 @@ func (lp *LogParser) parseLogsLocal() error {
 			}
 			defer latestHandle.Close()
 			reader = bufio.NewReader(latestHandle)
-			if previous == latest && linesRead > 0 { // handle postmaster restarts
+
+			linesOffset, ok := lp.fileOffsets[latest]
+			if ok && lp.LogTruncOnRotation == "off" {
+				linesRead = int(linesOffset)
+			}
+			if (ok || previous == latest) && linesRead > 0 { // skip already read lines
 				i := 1
 				for i <= linesRead {
 					_, err = reader.ReadString('\n')
@@ -94,7 +99,7 @@ func (lp *LogParser) parseLogsLocal() error {
 			}
 
 			if err == io.EOF {
-				// // EOF reached, wait for new files to be added
+				// EOF reached, wait for new files to be added
 				select {
 				case <-lp.ctx.Done():
 					return nil
@@ -102,7 +107,13 @@ func (lp *LogParser) parseLogsLocal() error {
 				}
 				// check for newly opened logfiles
 				file, _ := getFileWithNextModTimestamp(logsGlobPath, latest)
-				if file != "" {
+				if file != "" && file != latest {
+					if lp.LogTruncOnRotation == "off" {
+						lp.fileOffsets[latest] = uint64(linesRead)
+						if len(lp.fileOffsets) > maxTrackedFiles {
+							clear(lp.fileOffsets) // To avoid unbounded growth
+						}
+					}
 					previous = latest
 					latest = file
 					_ = latestHandle.Close()
