@@ -12,7 +12,6 @@ import (
 
 func TestCollect_RaceCondition_Real(_ *testing.T) {
 	// 1. Initialize the real PrometheusWriter
-	// Note: In the current buggy code, this shares the global 'promAsyncMetricCache'
 	promw, _ := NewPrometheusWriter(testutil.TestContext, "127.0.0.1:0/pgwatch")
 
 	// 2. Register a metric so Write() actually puts data into the map
