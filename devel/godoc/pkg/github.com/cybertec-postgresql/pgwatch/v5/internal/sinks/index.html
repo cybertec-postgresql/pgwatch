@@ -255,6 +255,11 @@
 				
 			
 				
+				<dd><a href="#PromMetricCache">type PromMetricCache</a></dd>
+				
+				
+			
+				
 				<dd><a href="#PrometheusWriter">type PrometheusWriter</a></dd>
 				
 					
@@ -463,8 +468,7 @@
 			
 				<p>Async Prom cache
 
-				<pre>var <span id="promAsyncMetricCache">promAsyncMetricCache</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) <span class="comment">// [dbUnique][metric]lastly_fetched_data</span>
-</pre>
+				<pre>var <span id="promAsyncMetricCache">promAsyncMetricCache</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(<a href="#PromMetricCache">PromMetricCache</a>)</pre>
 			
 				
 				<pre>var <span id="promAsyncMetricCacheLock">promAsyncMetricCacheLock</span> = <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a>{}</pre>
@@ -1115,6 +1119,29 @@ This is used to avoid listing the same source multiple times in Grafana dropdown
 		
 			
 			
+			<h2 id="PromMetricCache">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L111">PromMetricCache</a>
+				<a class="permalink" href="#PromMetricCache">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type PromMetricCache = map[<a href="https://pkg.go.dev/builtin/#string">string</a>]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a> <span class="comment">// [dbUnique][metric]lastly_fetched_data</span>
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
 			<h2 id="PrometheusWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L23">PrometheusWriter</a>
 				<a class="permalink" href="#PrometheusWriter">&#xb6;</a>
 				
@@ -1156,7 +1183,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 
 			
 				
-				<h3 id="PrometheusWriter.Collect">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L156">Collect</a>
+				<h3 id="PrometheusWriter.Collect">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L157">Collect</a>
 					<a class="permalink" href="#PrometheusWriter.Collect">&#xb6;</a>
 					
 					
@@ -1180,7 +1207,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.Describe">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L153">Describe</a>
+				<h3 id="PrometheusWriter.Describe">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L154">Describe</a>
 					<a class="permalink" href="#PrometheusWriter.Describe">&#xb6;</a>
 					
 					
@@ -1192,7 +1219,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.MetricStoreMessageToPromMetrics">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L191">MetricStoreMessageToPromMetrics</a>
+				<h3 id="PrometheusWriter.MetricStoreMessageToPromMetrics">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L195">MetricStoreMessageToPromMetrics</a>
 					<a class="permalink" href="#PrometheusWriter.MetricStoreMessageToPromMetrics">&#xb6;</a>
 					
 					
@@ -1216,7 +1243,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.PromAsyncCacheAddMetricData">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L115">PromAsyncCacheAddMetricData</a>
+				<h3 id="PrometheusWriter.PromAsyncCacheAddMetricData">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L117">PromAsyncCacheAddMetricData</a>
 					<a class="permalink" href="#PrometheusWriter.PromAsyncCacheAddMetricData">&#xb6;</a>
 					
 					
@@ -1228,7 +1255,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.PromAsyncCacheInitIfRequired">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L123">PromAsyncCacheInitIfRequired</a>
+				<h3 id="PrometheusWriter.PromAsyncCacheInitIfRequired">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L125">PromAsyncCacheInitIfRequired</a>
 					<a class="permalink" href="#PrometheusWriter.PromAsyncCacheInitIfRequired">&#xb6;</a>
 					
 					
@@ -1240,7 +1267,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.PurgeMetricsFromPromAsyncCacheIfAny">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L132">PurgeMetricsFromPromAsyncCacheIfAny</a>
+				<h3 id="PrometheusWriter.PurgeMetricsFromPromAsyncCacheIfAny">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L133">PurgeMetricsFromPromAsyncCacheIfAny</a>
 					<a class="permalink" href="#PrometheusWriter.PurgeMetricsFromPromAsyncCacheIfAny">&#xb6;</a>
 					
 					
@@ -1252,7 +1279,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.SyncMetric">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L143">SyncMetric</a>
+				<h3 id="PrometheusWriter.SyncMetric">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L144">SyncMetric</a>
 					<a class="permalink" href="#PrometheusWriter.SyncMetric">&#xb6;</a>
 					
 					
