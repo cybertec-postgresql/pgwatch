@@ -156,13 +156,34 @@ func (c *Options) InitSourceReader(ctx context.Context) (err error) {
 
 // InitConfigReaders creates the configuration readers based on the configuration kind from the options.
 func (c *Options) InitConfigReaders(ctx context.Context) error {
-	return errors.Join(c.InitMetricReader(ctx), c.InitSourceReader(ctx))
+	err := errors.Join(c.InitMetricReader(ctx), c.InitSourceReader(ctx))
+	if err != nil {
+		return err
+	}
+	if m, ok := c.MetricsReaderWriter.(metrics.Migrator); ok {
+		if needsMigration, err := m.NeedsMigration(); err != nil {
+			return err
+		} else if needsMigration {
+			return metrics.ErrNeedsMigration
+		}
+	}
+	return nil
 }
 
 // InitSinkWriter creates a new MultiWriter instance if needed.
 func (c *Options) InitSinkWriter(ctx context.Context) (err error) {
 	c.SinksWriter, err = sinks.NewSinkWriter(ctx, &c.Sinks)
-	return
+	if err != nil {
+		return err
+	}
+	if m, ok := c.SinksWriter.(metrics.Migrator); ok {
+		if needsMigration, err := m.NeedsMigration(); err != nil {
+			return err
+		} else if needsMigration {
+			return sinks.ErrNeedsMigration
+		}
+	}
+	return nil
 }
 
 // NeedsSchemaUpgrade checks if the configuration database schema needs an upgrade.

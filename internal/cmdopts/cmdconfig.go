@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 )
 
@@ -109,7 +110,7 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 	}
 	// Upgrade sinks configuration if it's postgres
 	if len(opts.Sinks.Sinks) > 0 {
-		err = opts.InitSinkWriter(ctx)
+		opts.SinksWriter, err = sinks.NewSinkWriter(ctx, &opts.Sinks)
 		if err != nil {
 			opts.CompleteCommand(ExitCodeConfigError)
 			return

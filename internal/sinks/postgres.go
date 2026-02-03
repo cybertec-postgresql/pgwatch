@@ -100,11 +100,6 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 	if err = pgw.init(); err != nil {
 		return nil, err
 	}
-	if needsMigration, e := pgw.NeedsMigration(); e != nil {
-		return nil, e
-	} else if needsMigration {
-		return nil, ErrNeedsMigration
-	}
 	if err = pgw.ReadMetricSchemaType(); err != nil {
 		return nil, err
 	}

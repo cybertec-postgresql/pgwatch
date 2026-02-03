@@ -25,12 +25,6 @@ func NewPostgresMetricReaderWriterConn(ctx context.Context, conn db.PgxPoolIface
 		ctx:      ctx,
 		configDb: conn,
 	}
-	// Check if migrations are needed
-	if needsMigration, err := dmrw.NeedsMigration(); err != nil {
-		return nil, err
-	} else if needsMigration {
-		return nil, ErrNeedsMigration
-	}
 	return dmrw, conn.Ping(ctx)
 }
 
