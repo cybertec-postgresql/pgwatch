@@ -114,8 +114,8 @@ func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (string, str
 			current_setting('log_directory') as ld,
 			current_setting('lc_messages')::varchar(2) as lc_messages,
 			current_setting('log_truncate_on_rotation') as log_trunc`
-	var dd, ld, lc, log_trunc string
-	err := conn.QueryRow(ctx, sql).Scan(&dd, &ld, &lc, &log_trunc)
+	var dd, ld, lc, logTrunc string
+	err := conn.QueryRow(ctx, sql).Scan(&dd, &ld, &lc, &logTrunc)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -125,7 +125,7 @@ func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (string, str
 	if _, ok := pgSeveritiesLocale[lc]; !ok {
 		lc = "en"
 	}
-	return ld, lc, log_trunc, nil
+	return ld, lc, logTrunc, nil
 }
 
 func checkHasRemotePrivileges(ctx context.Context, mdb *sources.SourceConn, logsDirPath string) error {

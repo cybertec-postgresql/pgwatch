@@ -123,7 +123,7 @@ func TestTryDetermineLogSettings(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
-	t.Run("relative log directory - unkonwn lang", func(t *testing.T) {
+	t.Run("relative log directory - unknown lang", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
