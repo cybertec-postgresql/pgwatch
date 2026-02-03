@@ -49,11 +49,15 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-npm-        
  
-    - name: Build
+    - name: WebUI Build and Lint
       run: |
         cd internal/webui
-        yarn install --network-timeout 100000 && yarn build
-        cd -
+        yarn install --network-timeout 100000
+        yarn lint:ts
+        yarn build
+
+    - name: Go Build
+      run: |
         go generate ./api/pb/
         go build ./cmd/pgwatch
 
