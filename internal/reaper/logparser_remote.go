@@ -13,8 +13,8 @@ func (lp *LogParser) parseLogsRemote() error {
 	var linesRead int // to skip over already parsed lines on Postgres server restart for example
 	var firstRun = true
 	var currInterval time.Duration
-	var size int32
-	var offset int32
+	var size uint64
+	var offset uint64
 	var modification time.Time
 	var chunk string
 	var lines []string
@@ -56,7 +56,7 @@ func (lp *LogParser) parseLogsRemote() error {
 			lines = strings.Split(chunk, "\n")
 			if sizeToRead == maxChunkSize {
 				// last line may be incomplete, re-read it next time
-				offset -= int32(len(lines[len(lines)-1]))
+				offset -= uint64(len(lines[len(lines)-1]))
 			}
 			numOfLines = len(lines)
 			linesRead = 0
@@ -71,7 +71,7 @@ func (lp *LogParser) parseLogsRemote() error {
 				case <-time.After(currInterval):
 				}
 
-				var latestSize int32
+				var latestSize uint64
 				err := lp.SourceConn.Conn.QueryRow(lp.ctx, "select size, modification from pg_ls_logdir() where name = $1;", latestLogFile).Scan(&latestSize, &modification)
 				if err != nil {
 					logger.Warnf("Failed to read state info of logfile: '%s'", latestLogFile)
@@ -82,9 +82,19 @@ func (lp *LogParser) parseLogsRemote() error {
 					sql := "select name, size from pg_ls_logdir() where modification > $1 and name like '%csv' order by modification, name limit 1;"
 					err := lp.SourceConn.Conn.QueryRow(lp.ctx, sql, modification).Scan(&fileName, &latestSize)
 					if err == nil && latestLogFile != fileName {
+						if lp.LogTruncOnRotation == "off" {
+							lp.fileOffsets[latestLogFile] = size
+							if len(lp.fileOffsets) > maxTrackedFiles {
+								clear(lp.fileOffsets) // To avoid unbounded growth
+							}
+						}
 						latestLogFile = fileName
 						size = latestSize
-						offset = 0
+						if lastOffset, ok := lp.fileOffsets[latestLogFile]; ok && lp.LogTruncOnRotation == "off" {
+							offset = lastOffset
+						} else {
+							offset = 0
+						}
 						logger.Infof("Switching to new logfile: '%s'", fileName)
 						currInterval = 0 // We already slept. It will be resetted.
 						break

@@ -34,19 +34,22 @@ var pgSeveritiesLocale = map[string]map[string]string{
 const csvLogDefaultRegEx = `^^(?P<log_time>.*?),"?(?P<user_name>.*?)"?,"?(?P<database_name>.*?)"?,(?P<process_id>\d+),"?(?P<connection_from>.*?)"?,(?P<session_id>.*?),(?P<session_line_num>\d+),"?(?P<command_tag>.*?)"?,(?P<session_start_time>.*?),(?P<virtual_transaction_id>.*?),(?P<transaction_id>.*?),(?P<error_severity>\w+),`
 const csvLogDefaultGlobSuffix = "*.csv"
 
-const maxChunkSize int32 = 10 * 1024 * 1024 // 10 MB
+const maxChunkSize uint64 = 10 * 1024 * 1024 // 10 MB
+const maxTrackedFiles = 1000
 
 type LogParser struct {
 	ctx                context.Context
 	LogsMatchRegex     *regexp.Regexp
 	LogFolder          string
 	ServerMessagesLang string
+	LogTruncOnRotation string
 	SourceConn         *sources.SourceConn
 	Interval           float64
 	StoreCh            chan<- metrics.MeasurementEnvelope
 	eventCounts        map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	eventCountsTotal   map[string]int64 // for the whole instance
 	lastSendTime       time.Time
+	fileOffsets        map[string]uint64 // map of log file paths to last read offsets
 }
 
 func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- metrics.MeasurementEnvelope) (*LogParser, error) {
@@ -61,29 +64,25 @@ func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- m
 	}
 	logger.Debugf("Using %s as log parsing regex", logsRegex)
 
-	var logFolder string
-	if logFolder, err = tryDetermineLogFolder(ctx, mdb.Conn); err != nil {
-		logger.WithError(err).Error("Could not determine Postgres logs folder")
+	var logFolder, serverMessagesLang, logTrunc string
+	if logFolder, serverMessagesLang, logTrunc, err = tryDetermineLogSettings(ctx, mdb.Conn); err != nil {
+		logger.WithError(err).Error("Could not determine Postgres logs settings")
 		return nil, err
 	}
 	logger.Debugf("Considering log files in folder: %s", logFolder)
-
-	var serverMessagesLang string
-	if serverMessagesLang, err = tryDetermineLogMessagesLanguage(ctx, mdb.Conn); err != nil {
-		logger.WithError(err).Error("Could not determine language (lc_collate) used for server logs")
-		return nil, err
-	}
 
 	return &LogParser{
 		ctx:                ctx,
 		LogsMatchRegex:     logsRegex,
 		LogFolder:          logFolder,
 		ServerMessagesLang: serverMessagesLang,
+		LogTruncOnRotation: logTrunc,
 		SourceConn:         mdb,
 		Interval:           mdb.GetMetricInterval(specialMetricServerLogEventCounts),
 		StoreCh:            storeCh,
 		eventCounts:        make(map[string]int64),
 		eventCountsTotal:   make(map[string]int64),
+		fileOffsets:        make(map[string]uint64),
 	}, nil
 }
 
@@ -109,31 +108,24 @@ func (lp *LogParser) ParseLogs() error {
 	return lp.parseLogsRemote()
 }
 
-func tryDetermineLogFolder(ctx context.Context, conn db.PgxIface) (string, error) {
-	sql := `select current_setting('data_directory') as dd, current_setting('log_directory') as ld`
-	var dd, ld string
-	err := conn.QueryRow(ctx, sql).Scan(&dd, &ld)
+func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (string, string, string, error) {
+	sql := `select 
+			current_setting('data_directory') as dd, 
+			current_setting('log_directory') as ld,
+			current_setting('lc_messages')::varchar(2) as lc_messages,
+			current_setting('log_truncate_on_rotation') as log_trunc`
+	var dd, ld, lc, log_trunc string
+	err := conn.QueryRow(ctx, sql).Scan(&dd, &ld, &lc, &log_trunc)
 	if err != nil {
-		return "", err
+		return "", "", "", err
 	}
-	if strings.HasPrefix(ld, "/") {
-		// we have a full path we can use
-		return ld, nil
-	}
-	return path.Join(dd, ld), nil
-}
-
-func tryDetermineLogMessagesLanguage(ctx context.Context, conn db.PgxIface) (string, error) {
-	sql := `select current_setting('lc_messages')::varchar(2) as lc_messages;`
-	var lc string
-	err := conn.QueryRow(ctx, sql).Scan(&lc)
-	if err != nil {
-		return "", err
+	if !strings.HasPrefix(ld, "/") {
+		ld = path.Join(dd, ld)
 	}
 	if _, ok := pgSeveritiesLocale[lc]; !ok {
-		return "en", nil
+		lc = "en"
 	}
-	return lc, nil
+	return ld, lc, log_trunc, nil
 }
 
 func checkHasRemotePrivileges(ctx context.Context, mdb *sources.SourceConn, logsDirPath string) error {
