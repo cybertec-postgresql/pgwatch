@@ -15,7 +15,9 @@ export const StepButtons = (props: Props) => {
   const { formState: { errors } } = useFormContext<MetricFormValues>();
 
   const handleStepChange = (_e: any, value?: MetricFormStep) => {
-    value && setCurrentStep(value);
+    if (value) {
+      setCurrentStep(value);
+    }
   };
 
   const isStepError = (step: MetricFormStep) => {
