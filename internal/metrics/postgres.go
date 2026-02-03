@@ -44,7 +44,7 @@ var (
 )
 
 // make sure *dbMetricReaderWriter implements the Migrator interface
-var _ Migrator = (*dbMetricReaderWriter)(nil)
+var _ db.Migrator = (*dbMetricReaderWriter)(nil)
 
 // writeMetricsToPostgres writes the metrics and presets definitions to the
 // pgwatch.metric and pgwatch.preset tables in the ConfigDB.

@@ -46,6 +46,12 @@ type PgxPoolIface interface {
 	Stat() *pgxpool.Stat
 }
 
+// Migrator is an interface for database schema migration
+type Migrator interface {
+	Migrate() error
+	NeedsMigration() (bool, error)
+}
+
 func MarshallParamToJSONB(v any) any {
 	if v == nil {
 		return nil

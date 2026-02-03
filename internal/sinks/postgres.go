@@ -68,10 +68,13 @@ type PostgresWriter struct {
 	maintenanceInterval      time.Duration
 	input                    chan metrics.MeasurementEnvelope
 	lastError                chan error
-	forceRecreatePartitions  bool // to signal override PG metrics storage cache
-	partitionMapMetric       map[string]ExistingPartitionInfo // metric = min/max bounds
+	forceRecreatePartitions  bool                                        // to signal override PG metrics storage cache
+	partitionMapMetric       map[string]ExistingPartitionInfo            // metric = min/max bounds
 	partitionMapMetricDbname map[string]map[string]ExistingPartitionInfo // metric[dbname = min/max bounds]
 }
+
+// make sure *dbMetricReaderWriter implements the Migrator interface
+var _ db.Migrator = (*PostgresWriter)(nil)
 
 func NewPostgresWriter(ctx context.Context, connstr string, opts *CmdOpts) (pgw *PostgresWriter, err error) {
 	var conn db.PgxPoolIface

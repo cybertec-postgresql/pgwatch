@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
@@ -160,7 +161,7 @@ func (c *Options) InitConfigReaders(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if m, ok := c.MetricsReaderWriter.(metrics.Migrator); ok {
+	if m, ok := c.MetricsReaderWriter.(db.Migrator); ok {
 		if needsMigration, err := m.NeedsMigration(); err != nil {
 			return err
 		} else if needsMigration {
@@ -176,7 +177,7 @@ func (c *Options) InitSinkWriter(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	if m, ok := c.SinksWriter.(metrics.Migrator); ok {
+	if m, ok := c.SinksWriter.(db.Migrator); ok {
 		if needsMigration, err := m.NeedsMigration(); err != nil {
 			return err
 		} else if needsMigration {
@@ -188,19 +189,19 @@ func (c *Options) InitSinkWriter(ctx context.Context) (err error) {
 
 // NeedsSchemaUpgrade checks if the configuration database schema needs an upgrade.
 func (c *Options) NeedsSchemaUpgrade() (upgrade bool, err error) {
-	if m, ok := c.SourcesReaderWriter.(metrics.Migrator); ok {
+	if m, ok := c.SourcesReaderWriter.(db.Migrator); ok {
 		upgrade, err = m.NeedsMigration()
 	}
 	if upgrade || err != nil {
 		return
 	}
-	if m, ok := c.MetricsReaderWriter.(metrics.Migrator); ok {
+	if m, ok := c.MetricsReaderWriter.(db.Migrator); ok {
 		upgrade, err = m.NeedsMigration()
 	}
 	if upgrade || err != nil {
 		return
 	}
-	if m, ok := c.SinksWriter.(metrics.Migrator); ok {
+	if m, ok := c.SinksWriter.(db.Migrator); ok {
 		return m.NeedsMigration()
 	}
 	return
