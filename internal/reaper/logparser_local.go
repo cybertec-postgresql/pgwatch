@@ -67,7 +67,7 @@ func (lp *LogParser) parseLogsLocal() error {
 			if ok && lp.LogTruncOnRotation == "off" {
 				linesRead = int(linesOffset)
 			}
-			if ok || previous == latest && linesRead > 0 { // skip already read lines
+			if (ok || previous == latest) && linesRead > 0 { // skip already read lines
 				i := 1
 				for i <= linesRead {
 					_, err = reader.ReadString('\n')
