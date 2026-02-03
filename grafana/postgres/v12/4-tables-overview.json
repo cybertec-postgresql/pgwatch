@@ -47,7 +47,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -90,7 +90,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 240
               }
             ]
           },
@@ -208,7 +208,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -250,7 +250,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 240
               }
             ]
           },
@@ -360,7 +360,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -402,7 +402,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 240
               }
             ]
           },
@@ -512,7 +512,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -554,7 +554,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 240
               }
             ]
           },
@@ -664,7 +664,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -706,7 +706,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 240
               }
             ]
           },
@@ -816,7 +816,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -858,7 +858,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 240
               }
             ]
           },
@@ -968,7 +968,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -1010,7 +1010,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 240
               }
             ]
           },
@@ -1120,7 +1120,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -1161,7 +1161,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 240
               }
             ]
           },
@@ -1331,7 +1331,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 440
+                "value": 550
               }
             ]
           },
