@@ -123,6 +123,9 @@
 				<dd><a href="#MarshallParamToJSONB">func MarshallParamToJSONB(v any) any</a></dd>
 			
 				
+				<dd><a href="#NeedsMigration">func NeedsMigration(storage any, needsMigrationErr error) error</a></dd>
+			
+				
 				<dd><a href="#Ping">func Ping(ctx context.Context, connStr string) error</a></dd>
 			
 			
@@ -133,6 +136,11 @@
 			
 				
 				<dd><a href="#ConnInitCallback">type ConnInitCallback</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Migrator">type Migrator</a></dd>
 				
 				
 			
@@ -229,7 +237,7 @@
 		
 			
 			
-			<h2 id="IsClientOnSameHost">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/db/conn.go.html#L71">IsClientOnSameHost</a>
+			<h2 id="IsClientOnSameHost">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/db/conn.go.html#L88">IsClientOnSameHost</a>
 				<a class="permalink" href="#IsClientOnSameHost">&#xb6;</a>
 				
 				
@@ -243,12 +251,25 @@
 		
 			
 			
-			<h2 id="MarshallParamToJSONB">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/db/conn.go.html#L49">MarshallParamToJSONB</a>
+			<h2 id="MarshallParamToJSONB">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/db/conn.go.html#L66">MarshallParamToJSONB</a>
 				<a class="permalink" href="#MarshallParamToJSONB">&#xb6;</a>
 				
 				
 			</h2>
 			<pre>func MarshallParamToJSONB(v <a href="https://pkg.go.dev/builtin/#any">any</a>) <a href="https://pkg.go.dev/builtin/#any">any</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="NeedsMigration">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/db/conn.go.html#L55">NeedsMigration</a>
+				<a class="permalink" href="#NeedsMigration">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func NeedsMigration(storage <a href="https://pkg.go.dev/builtin/#any">any</a>, needsMigrationErr <a href="https://pkg.go.dev/builtin/#error">error</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 			
 			
 			
@@ -299,6 +320,32 @@
 			</h2>
 			
 			<pre>type ConnInitCallback = func(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, <a href="#PgxIface">PgxIface</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Migrator">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/db/conn.go.html#L50">Migrator</a>
+				<a class="permalink" href="#Migrator">&#xb6;</a>
+				
+				
+			</h2>
+			<p>Migrator is an interface for database schema migration
+
+			<pre>type Migrator interface {
+    Migrate() <a href="https://pkg.go.dev/builtin/#error">error</a>
+    NeedsMigration() (<a href="https://pkg.go.dev/builtin/#bool">bool</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+}</pre>
 
 			
 

@@ -266,16 +266,11 @@
 <span id="L209" class="ln">   209  </span>	CreatePreset(presetName string, preset Preset) error
 <span id="L210" class="ln">   210  </span>}
 <span id="L211" class="ln">   211  </span>
-<span id="L212" class="ln">   212  </span>type Migrator interface {
-<span id="L213" class="ln">   213  </span>	Migrate() error
-<span id="L214" class="ln">   214  </span>	NeedsMigration() (bool, error)
+<span id="L212" class="ln">   212  </span>type ReaderWriter interface {
+<span id="L213" class="ln">   213  </span>	Reader
+<span id="L214" class="ln">   214  </span>	Writer
 <span id="L215" class="ln">   215  </span>}
 <span id="L216" class="ln">   216  </span>
-<span id="L217" class="ln">   217  </span>type ReaderWriter interface {
-<span id="L218" class="ln">   218  </span>	Reader
-<span id="L219" class="ln">   219  </span>	Writer
-<span id="L220" class="ln">   220  </span>}
-<span id="L221" class="ln">   221  </span>
 </pre><p></p>
 
 <div id="footer">
