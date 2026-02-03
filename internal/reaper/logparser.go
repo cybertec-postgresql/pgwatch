@@ -35,7 +35,7 @@ const csvLogDefaultRegEx = `^^(?P<log_time>.*?),"?(?P<user_name>.*?)"?,"?(?P<dat
 const csvLogDefaultGlobSuffix = "*.csv"
 
 const maxChunkSize uint64 = 10 * 1024 * 1024 // 10 MB
-const maxTrackedFiles = 1000
+const maxTrackedFiles = 2500
 
 type LogParser struct {
 	ctx                context.Context
