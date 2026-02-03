@@ -55,9 +55,6 @@ func TestNewPostgresMetricReaderWriterConn(t *testing.T) {
 		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(presetsCount))
 		conn.ExpectCommit()
 		conn.ExpectCommit()
-		// Expect migration check
-		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("pgwatch.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
-		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(metrics.MigrationsCount))
 		conn.ExpectPing()
 
 		readerWriter, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
@@ -163,24 +160,12 @@ func TestNewPostgresMetricReaderWriterConn(t *testing.T) {
 		a.NoError(conn.ExpectationsWereMet())
 	})
 
-	t.Run("MigrationCheckFail", func(*testing.T) {
+	t.Run("SchemaExists", func(*testing.T) {
 		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
-		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("pgwatch.migration").WillReturnError(assert.AnError)
+		conn.ExpectPing()
 		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
-		a.Error(err)
-		a.Nil(rw)
-		a.NoError(conn.ExpectationsWereMet())
-	})
-
-	t.Run("MigrationNeeded", func(*testing.T) {
-		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
-		conn.ExpectQuery(`SELECT to_regclass`).WithArgs("pgwatch.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
-		conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(metrics.MigrationsCount - 1))
-		rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
-		a.Error(err)
-		a.ErrorContains(err, "config database schema is outdated")
-		a.ErrorContains(err, "pgwatch config upgrade")
-		a.Nil(rw)
+		a.NoError(err)
+		a.NotNil(rw)
 		a.NoError(conn.ExpectationsWereMet())
 	})
 }
@@ -191,9 +176,6 @@ func TestMetricsToPostgres(t *testing.T) {
 	a.NoError(err)
 
 	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
-	// Expect migration check
-	conn.ExpectQuery(`SELECT to_regclass`).WithArgs("pgwatch.migration").WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
-	conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(metrics.MigrationsCount))
 	conn.ExpectPing()
 
 	readerWriter, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
