@@ -357,7 +357,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		a.Contains(output.String(), "[WARN] configuration storage does not support upgrade, skipping")
 	})
 
-	t.Run("successful sink upgrade only - with pre-initialized writer", func(t *testing.T) {
+	t.Run("successful sink upgrade only - with pre-initialized writer", func(*testing.T) {
 		opts := &Options{
 			Sinks:        sinks.CmdOpts{Sinks: []string{"postgresql://localhost/db"}},
 			SinksWriter:  &mockMigratableSinksWriter{},
@@ -369,7 +369,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		a.Equal(ExitCodeOK, opts.ExitCode)
 	})
 
-	t.Run("sink upgrade with migration error - pre-initialized writer", func(t *testing.T) {
+	t.Run("sink upgrade with migration error - pre-initialized writer", func(*testing.T) {
 		opts := &Options{
 			Sinks:        sinks.CmdOpts{Sinks: []string{"postgresql://localhost/db"}},
 			SinksWriter:  &mockMigratableSinksWriter{migrateErr: errors.New("sink migration failed")},
@@ -382,7 +382,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		a.Equal(ExitCodeConfigError, opts.ExitCode)
 	})
 
-	t.Run("non-migratable sink - logs warning", func(t *testing.T) {
+	t.Run("non-migratable sink - logs warning", func(*testing.T) {
 		var output bytes.Buffer
 		opts := &Options{
 			Sinks:        sinks.CmdOpts{Sinks: []string{"jsonfile://test.json"}},
@@ -396,7 +396,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		a.Contains(output.String(), "[WARN] sink storage does not support upgrade, skipping")
 	})
 
-	t.Run("yaml sources/metrics with postgres sink - upgrades sink only", func(t *testing.T) {
+	t.Run("yaml sources/metrics with postgres sink - upgrades sink only", func(*testing.T) {
 		var output bytes.Buffer
 		opts := &Options{
 			Metrics:      metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
@@ -412,7 +412,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		a.Contains(output.String(), "[WARN] configuration storage does not support upgrade, skipping")
 	})
 
-	t.Run("postgres sources/metrics with non-postgres sink - config upgrades, sink warns", func(t *testing.T) {
+	t.Run("postgres sources/metrics with non-postgres sink - config upgrades, sink warns", func(*testing.T) {
 		var output bytes.Buffer
 		opts := &Options{
 			Metrics:             metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
@@ -429,7 +429,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		a.Contains(output.String(), "[WARN] sink storage does not support upgrade, skipping")
 	})
 
-	t.Run("only metrics specified as yaml - logs warning", func(t *testing.T) {
+	t.Run("only metrics specified as yaml - logs warning", func(*testing.T) {
 		var output bytes.Buffer
 		opts := &Options{
 			Metrics:      metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
@@ -442,7 +442,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		a.Contains(output.String(), "[WARN] configuration storage does not support upgrade, skipping")
 	})
 
-	t.Run("only sources specified as yaml - logs warning", func(t *testing.T) {
+	t.Run("only sources specified as yaml - logs warning", func(*testing.T) {
 		var output bytes.Buffer
 		opts := &Options{
 			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml"},
@@ -455,7 +455,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		a.Contains(output.String(), "[WARN] configuration storage does not support upgrade, skipping")
 	})
 
-	t.Run("both metrics and sources specified, only metrics is postgres", func(t *testing.T) {
+	t.Run("both metrics and sources specified, only metrics is postgres", func(*testing.T) {
 		var output bytes.Buffer
 		opts := &Options{
 			Metrics:      metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
@@ -469,7 +469,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		a.Contains(output.String(), "[WARN] configuration storage does not support upgrade, skipping")
 	})
 
-	t.Run("pre-initialized non-migratable metrics reader", func(t *testing.T) {
+	t.Run("pre-initialized non-migratable metrics reader", func(*testing.T) {
 		var output bytes.Buffer
 		opts := &Options{
 			Metrics:             metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
@@ -484,7 +484,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		a.Contains(output.String(), "[WARN] configuration storage does not support upgrade, skipping")
 	})
 
-	t.Run("pre-initialized migratable metrics reader - succeeds", func(t *testing.T) {
+	t.Run("pre-initialized migratable metrics reader - succeeds", func(*testing.T) {
 		opts := &Options{
 			Metrics:             metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
 			Sources:             sources.CmdOpts{Sources: "postgresql://localhost/db"},
@@ -497,7 +497,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		a.Equal(ExitCodeOK, opts.ExitCode)
 	})
 
-	t.Run("pre-initialized metrics reader with migration error", func(t *testing.T) {
+	t.Run("pre-initialized metrics reader with migration error", func(*testing.T) {
 		opts := &Options{
 			Metrics:             metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
 			Sources:             sources.CmdOpts{Sources: "postgresql://localhost/db"},
@@ -511,7 +511,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		a.Equal(ExitCodeConfigError, opts.ExitCode)
 	})
 
-	t.Run("both metrics and sink upgradeable - both succeed", func(t *testing.T) {
+	t.Run("both metrics and sink upgradeable - both succeed", func(*testing.T) {
 		opts := &Options{
 			Metrics:             metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
 			Sources:             sources.CmdOpts{Sources: "postgresql://localhost/db"},
