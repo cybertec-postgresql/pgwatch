@@ -35,8 +35,52 @@ export const SourceFormStepMetrics = () => {
   const presets = usePresets();
   const metrics = useMetrics();
 
+  // Define the logical order for presets
+  const sortPresets = (presetKeys: string[]) => {
+    const order = [
+      'minimal',
+      'basic',
+      'standard',
+      'exhaustive',
+      'full',
+      'exhaustive_no_python',
+      // Cloud providers (alphabetically)
+      'aiven',
+      'azure',
+      'gce',
+      'rds',
+      // Special presets (alphabetically)
+      'debug',
+      'pgbouncer',
+      'pgpool',
+      'recommendations',
+    ];
+
+    return presetKeys.sort((a, b) => {
+      const indexA = order.indexOf(a);
+      const indexB = order.indexOf(b);
+
+      // If both are in the order array, sort by their position
+      if (indexA !== -1 && indexB !== -1) {
+        return indexA - indexB;
+      }
+
+      // If only one is in the order array, it comes first
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+
+      // If neither is in the order array, sort alphabetically
+      return a.localeCompare(b);
+    });
+  };
+
   const presetsOptions = useMemo(
-    () => presets.data ? Object.keys(presets.data).sort((a, b) => a.localeCompare(b)).map((key) => ({ label: key })) : [],
+    () => presets.data
+      ? sortPresets(Object.keys(presets.data)).map((key) => ({
+        label: key,
+        description: presets.data[key].Description
+      }))
+      : [],
     [presets.data],
   );
 
@@ -230,7 +274,7 @@ export const SourceFormStepMetrics = () => {
             <Checkbox
               {...onlyIfMasterField}
               size="medium"
-              checked={onlyIfMasterField.value} 
+              checked={onlyIfMasterField.value}
             />
           }
         />

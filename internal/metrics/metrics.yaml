@@ -4391,24 +4391,6 @@ presets:
             reco_partial_index_candidates: 79200
             reco_sprocs_wo_search_path: 86400
             reco_superusers: 93600
-    prometheus-async:
-        description: Tuned for the Prometheus async scrapping
-        metrics:
-            backends: 30
-            bgwriter: 60
-            checkpointer: 60
-            db_size: 300
-            db_stats: 30
-            locks_mode: 30
-            replication: 120
-            replication_slots: 120
-            settings: 300
-            sproc_stats: 180
-            stat_statements_calls: 60
-            table_io_stats: 300
-            table_stats: 300
-            wait_events: 60
-            wal: 60
     rds:
         description: similar to 'exhaustive' with stuff that's not accessible on AWS RDS removed
         metrics:
@@ -4480,29 +4462,6 @@ presets:
             wal: 60
             wal_receiver: 120
             wal_size: 300
-    unprivileged:
-        description: no wrappers + only pg_stat_statements extension expected (developer mode)
-        metrics:
-            archiver: 60
-            archiver_pending_count: 120
-            bgwriter: 60
-            checkpointer: 60
-            change_events: 300
-            db_size: 300
-            db_stats: 60
-            index_stats: 900
-            instance_up: 60
-            locks: 60
-            locks_mode: 60
-            replication: 120
-            replication_slots: 120
-            sequence_health: 3600
-            settings: 7200
-            sproc_stats: 180
-            stat_statements_calls: 60
-            table_io_stats: 600
-            table_stats: 300
-            wal: 60
     debug:
         description: all available metrics with 30 second intervals for debugging and development
         metrics:
