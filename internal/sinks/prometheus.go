@@ -108,8 +108,10 @@ func (promw *PrometheusWriter) Write(msg metrics.MeasurementEnvelope) error {
 	return nil
 }
 
+type PromMetricCache = map[string]map[string]metrics.MeasurementEnvelope // [dbUnique][metric]lastly_fetched_data
+
 // Async Prom cache
-var promAsyncMetricCache = make(map[string]map[string]metrics.MeasurementEnvelope) // [dbUnique][metric]lastly_fetched_data
+var promAsyncMetricCache = make(PromMetricCache)
 var promAsyncMetricCacheLock = sync.RWMutex{}
 
 func (promw *PrometheusWriter) PromAsyncCacheAddMetricData(dbUnique, metric string, msgArr metrics.MeasurementEnvelope) { // cache structure: [dbUnique][metric]lastly_fetched_data
@@ -124,8 +126,7 @@ func (promw *PrometheusWriter) PromAsyncCacheInitIfRequired(dbUnique, _ string) 
 	promAsyncMetricCacheLock.Lock()
 	defer promAsyncMetricCacheLock.Unlock()
 	if _, ok := promAsyncMetricCache[dbUnique]; !ok {
-		metricMap := make(map[string]metrics.MeasurementEnvelope)
-		promAsyncMetricCache[dbUnique] = metricMap
+		promAsyncMetricCache[dbUnique] = make(map[string]metrics.MeasurementEnvelope)
 	}
 }
 
@@ -159,7 +160,6 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 	promw.totalScrapes.Add(1)
 	ch <- promw.totalScrapes
 
-	//  ATOMIC SWAP
 	promAsyncMetricCacheLock.Lock()
 	if len(promAsyncMetricCache) == 0 {
 		promAsyncMetricCacheLock.Unlock()
@@ -169,15 +169,9 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 		ch <- promw.lastScrapeErrors
 		return
 	}
-
 	snapshot := promAsyncMetricCache
-
-	promAsyncMetricCache = make(map[string]map[string]metrics.MeasurementEnvelope, len(snapshot))
-	for dbname := range snapshot {
-		promAsyncMetricCache[dbname] = make(map[string]metrics.MeasurementEnvelope)
-	}
+	promAsyncMetricCache = make(PromMetricCache, len(snapshot))
 	promAsyncMetricCacheLock.Unlock()
-	// END ATOMIC SWAP
 
 	t1 := time.Now()
 	for _, metricsMessages := range snapshot {
