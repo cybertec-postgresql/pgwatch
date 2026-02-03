@@ -25,12 +25,6 @@ func NewPostgresMetricReaderWriterConn(ctx context.Context, conn db.PgxPoolIface
 		ctx:      ctx,
 		configDb: conn,
 	}
-	// Check if migrations are needed
-	if needsMigration, err := dmrw.NeedsMigration(); err != nil {
-		return nil, err
-	} else if needsMigration {
-		return nil, ErrNeedsMigration
-	}
 	return dmrw, conn.Ping(ctx)
 }
 
@@ -50,7 +44,7 @@ var (
 )
 
 // make sure *dbMetricReaderWriter implements the Migrator interface
-var _ Migrator = (*dbMetricReaderWriter)(nil)
+var _ db.Migrator = (*dbMetricReaderWriter)(nil)
 
 // writeMetricsToPostgres writes the metrics and presets definitions to the
 // pgwatch.metric and pgwatch.preset tables in the ConfigDB.

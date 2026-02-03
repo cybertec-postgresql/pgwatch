@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 )
 
@@ -96,7 +98,7 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 			opts.CompleteCommand(ExitCodeConfigError)
 			return
 		}
-		if m, ok := opts.MetricsReaderWriter.(metrics.Migrator); ok {
+		if m, ok := opts.MetricsReaderWriter.(db.Migrator); ok {
 			err = m.Migrate()
 			if err != nil {
 				opts.CompleteCommand(ExitCodeConfigError)
@@ -109,12 +111,12 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 	}
 	// Upgrade sinks configuration if it's postgres
 	if len(opts.Sinks.Sinks) > 0 {
-		err = opts.InitSinkWriter(ctx)
+		opts.SinksWriter, err = sinks.NewSinkWriter(ctx, &opts.Sinks)
 		if err != nil {
 			opts.CompleteCommand(ExitCodeConfigError)
 			return
 		}
-		if m, ok := opts.SinksWriter.(metrics.Migrator); ok {
+		if m, ok := opts.SinksWriter.(db.Migrator); ok {
 			err = m.Migrate()
 			if err != nil {
 				opts.CompleteCommand(ExitCodeConfigError)
