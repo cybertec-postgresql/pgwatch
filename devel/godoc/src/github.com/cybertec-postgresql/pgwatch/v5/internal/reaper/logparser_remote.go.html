@@ -70,8 +70,8 @@
 <span id="L13" class="ln">    13  </span>	var linesRead int <span class="comment">// to skip over already parsed lines on Postgres server restart for example</span>
 <span id="L14" class="ln">    14  </span>	var firstRun = true
 <span id="L15" class="ln">    15  </span>	var currInterval time.Duration
-<span id="L16" class="ln">    16  </span>	var size int32
-<span id="L17" class="ln">    17  </span>	var offset int32
+<span id="L16" class="ln">    16  </span>	var size uint64
+<span id="L17" class="ln">    17  </span>	var offset uint64
 <span id="L18" class="ln">    18  </span>	var modification time.Time
 <span id="L19" class="ln">    19  </span>	var chunk string
 <span id="L20" class="ln">    20  </span>	var lines []string
@@ -113,7 +113,7 @@
 <span id="L56" class="ln">    56  </span>			lines = strings.Split(chunk, &#34;\n&#34;)
 <span id="L57" class="ln">    57  </span>			if sizeToRead == maxChunkSize {
 <span id="L58" class="ln">    58  </span>				<span class="comment">// last line may be incomplete, re-read it next time</span>
-<span id="L59" class="ln">    59  </span>				offset -= int32(len(lines[len(lines)-1]))
+<span id="L59" class="ln">    59  </span>				offset -= uint64(len(lines[len(lines)-1]))
 <span id="L60" class="ln">    60  </span>			}
 <span id="L61" class="ln">    61  </span>			numOfLines = len(lines)
 <span id="L62" class="ln">    62  </span>			linesRead = 0
@@ -128,7 +128,7 @@
 <span id="L71" class="ln">    71  </span>				case &lt;-time.After(currInterval):
 <span id="L72" class="ln">    72  </span>				}
 <span id="L73" class="ln">    73  </span>
-<span id="L74" class="ln">    74  </span>				var latestSize int32
+<span id="L74" class="ln">    74  </span>				var latestSize uint64
 <span id="L75" class="ln">    75  </span>				err := lp.SourceConn.Conn.QueryRow(lp.ctx, &#34;select size, modification from pg_ls_logdir() where name = $1;&#34;, latestLogFile).Scan(&amp;latestSize, &amp;modification)
 <span id="L76" class="ln">    76  </span>				if err != nil {
 <span id="L77" class="ln">    77  </span>					logger.Warnf(&#34;Failed to read state info of logfile: &#39;%s&#39;&#34;, latestLogFile)
@@ -139,56 +139,66 @@
 <span id="L82" class="ln">    82  </span>					sql := &#34;select name, size from pg_ls_logdir() where modification &gt; $1 and name like &#39;%csv&#39; order by modification, name limit 1;&#34;
 <span id="L83" class="ln">    83  </span>					err := lp.SourceConn.Conn.QueryRow(lp.ctx, sql, modification).Scan(&amp;fileName, &amp;latestSize)
 <span id="L84" class="ln">    84  </span>					if err == nil &amp;&amp; latestLogFile != fileName {
-<span id="L85" class="ln">    85  </span>						latestLogFile = fileName
-<span id="L86" class="ln">    86  </span>						size = latestSize
-<span id="L87" class="ln">    87  </span>						offset = 0
-<span id="L88" class="ln">    88  </span>						logger.Infof(&#34;Switching to new logfile: &#39;%s&#39;&#34;, fileName)
-<span id="L89" class="ln">    89  </span>						currInterval = 0 <span class="comment">// We already slept. It will be resetted.</span>
-<span id="L90" class="ln">    90  </span>						break
-<span id="L91" class="ln">    91  </span>					}
-<span id="L92" class="ln">    92  </span>				} else {
-<span id="L93" class="ln">    93  </span>					size = latestSize
-<span id="L94" class="ln">    94  </span>					currInterval = 0 <span class="comment">// We already slept. It will be resetted.</span>
-<span id="L95" class="ln">    95  </span>					break
-<span id="L96" class="ln">    96  </span>				}
-<span id="L97" class="ln">    97  </span>			}
-<span id="L98" class="ln">    98  </span>
-<span id="L99" class="ln">    99  </span>			if linesRead &lt; numOfLines {
-<span id="L100" class="ln">   100  </span>				line := lines[linesRead]
-<span id="L101" class="ln">   101  </span>				linesRead++
-<span id="L102" class="ln">   102  </span>
-<span id="L103" class="ln">   103  </span>				matches := lp.LogsMatchRegex.FindStringSubmatch(line)
-<span id="L104" class="ln">   104  </span>				if len(matches) != 0 {
-<span id="L105" class="ln">   105  </span>					result := lp.regexMatchesToMap(matches)
-<span id="L106" class="ln">   106  </span>					errorSeverity := result[&#34;error_severity&#34;]
-<span id="L107" class="ln">   107  </span>					if lp.ServerMessagesLang != &#34;en&#34; {
-<span id="L108" class="ln">   108  </span>						errorSeverity = severityToEnglish(lp.ServerMessagesLang, errorSeverity)
-<span id="L109" class="ln">   109  </span>					}
-<span id="L110" class="ln">   110  </span>
-<span id="L111" class="ln">   111  </span>					databaseName := result[&#34;database_name&#34;]
-<span id="L112" class="ln">   112  </span>					if lp.SourceConn.RealDbname == databaseName {
-<span id="L113" class="ln">   113  </span>						lp.eventCounts[errorSeverity]++
-<span id="L114" class="ln">   114  </span>					}
-<span id="L115" class="ln">   115  </span>					lp.eventCountsTotal[errorSeverity]++
-<span id="L116" class="ln">   116  </span>				}
-<span id="L117" class="ln">   117  </span>			}
-<span id="L118" class="ln">   118  </span>
-<span id="L119" class="ln">   119  </span>			if lp.HasSendIntervalElapsed() {
-<span id="L120" class="ln">   120  </span>				select {
-<span id="L121" class="ln">   121  </span>				case &lt;-lp.ctx.Done():
-<span id="L122" class="ln">   122  </span>					return nil
-<span id="L123" class="ln">   123  </span>				case lp.StoreCh &lt;- lp.GetMeasurementEnvelope():
-<span id="L124" class="ln">   124  </span>					zeroEventCounts(lp.eventCounts)
-<span id="L125" class="ln">   125  </span>					zeroEventCounts(lp.eventCountsTotal)
-<span id="L126" class="ln">   126  </span>					lp.lastSendTime = time.Now()
-<span id="L127" class="ln">   127  </span>				}
-<span id="L128" class="ln">   128  </span>			}
-<span id="L129" class="ln">   129  </span>
-<span id="L130" class="ln">   130  </span>		} <span class="comment">// line read loop</span>
-<span id="L131" class="ln">   131  </span>	} <span class="comment">// chunk read loop</span>
-<span id="L132" class="ln">   132  </span>
-<span id="L133" class="ln">   133  </span>}
-<span id="L134" class="ln">   134  </span>
+<span id="L85" class="ln">    85  </span>						if lp.LogTruncOnRotation == &#34;off&#34; {
+<span id="L86" class="ln">    86  </span>							lp.fileOffsets[latestLogFile] = size
+<span id="L87" class="ln">    87  </span>							if len(lp.fileOffsets) &gt; maxTrackedFiles {
+<span id="L88" class="ln">    88  </span>								clear(lp.fileOffsets) <span class="comment">// To avoid unbounded growth</span>
+<span id="L89" class="ln">    89  </span>							}
+<span id="L90" class="ln">    90  </span>						}
+<span id="L91" class="ln">    91  </span>						latestLogFile = fileName
+<span id="L92" class="ln">    92  </span>						size = latestSize
+<span id="L93" class="ln">    93  </span>						if lastOffset, ok := lp.fileOffsets[latestLogFile]; ok &amp;&amp; lp.LogTruncOnRotation == &#34;off&#34; {
+<span id="L94" class="ln">    94  </span>							offset = lastOffset
+<span id="L95" class="ln">    95  </span>						} else {
+<span id="L96" class="ln">    96  </span>							offset = 0
+<span id="L97" class="ln">    97  </span>						}
+<span id="L98" class="ln">    98  </span>						logger.Infof(&#34;Switching to new logfile: &#39;%s&#39;&#34;, fileName)
+<span id="L99" class="ln">    99  </span>						currInterval = 0 <span class="comment">// We already slept. It will be resetted.</span>
+<span id="L100" class="ln">   100  </span>						break
+<span id="L101" class="ln">   101  </span>					}
+<span id="L102" class="ln">   102  </span>				} else {
+<span id="L103" class="ln">   103  </span>					size = latestSize
+<span id="L104" class="ln">   104  </span>					currInterval = 0 <span class="comment">// We already slept. It will be resetted.</span>
+<span id="L105" class="ln">   105  </span>					break
+<span id="L106" class="ln">   106  </span>				}
+<span id="L107" class="ln">   107  </span>			}
+<span id="L108" class="ln">   108  </span>
+<span id="L109" class="ln">   109  </span>			if linesRead &lt; numOfLines {
+<span id="L110" class="ln">   110  </span>				line := lines[linesRead]
+<span id="L111" class="ln">   111  </span>				linesRead++
+<span id="L112" class="ln">   112  </span>
+<span id="L113" class="ln">   113  </span>				matches := lp.LogsMatchRegex.FindStringSubmatch(line)
+<span id="L114" class="ln">   114  </span>				if len(matches) != 0 {
+<span id="L115" class="ln">   115  </span>					result := lp.regexMatchesToMap(matches)
+<span id="L116" class="ln">   116  </span>					errorSeverity := result[&#34;error_severity&#34;]
+<span id="L117" class="ln">   117  </span>					if lp.ServerMessagesLang != &#34;en&#34; {
+<span id="L118" class="ln">   118  </span>						errorSeverity = severityToEnglish(lp.ServerMessagesLang, errorSeverity)
+<span id="L119" class="ln">   119  </span>					}
+<span id="L120" class="ln">   120  </span>
+<span id="L121" class="ln">   121  </span>					databaseName := result[&#34;database_name&#34;]
+<span id="L122" class="ln">   122  </span>					if lp.SourceConn.RealDbname == databaseName {
+<span id="L123" class="ln">   123  </span>						lp.eventCounts[errorSeverity]++
+<span id="L124" class="ln">   124  </span>					}
+<span id="L125" class="ln">   125  </span>					lp.eventCountsTotal[errorSeverity]++
+<span id="L126" class="ln">   126  </span>				}
+<span id="L127" class="ln">   127  </span>			}
+<span id="L128" class="ln">   128  </span>
+<span id="L129" class="ln">   129  </span>			if lp.HasSendIntervalElapsed() {
+<span id="L130" class="ln">   130  </span>				select {
+<span id="L131" class="ln">   131  </span>				case &lt;-lp.ctx.Done():
+<span id="L132" class="ln">   132  </span>					return nil
+<span id="L133" class="ln">   133  </span>				case lp.StoreCh &lt;- lp.GetMeasurementEnvelope():
+<span id="L134" class="ln">   134  </span>					zeroEventCounts(lp.eventCounts)
+<span id="L135" class="ln">   135  </span>					zeroEventCounts(lp.eventCountsTotal)
+<span id="L136" class="ln">   136  </span>					lp.lastSendTime = time.Now()
+<span id="L137" class="ln">   137  </span>				}
+<span id="L138" class="ln">   138  </span>			}
+<span id="L139" class="ln">   139  </span>
+<span id="L140" class="ln">   140  </span>		} <span class="comment">// line read loop</span>
+<span id="L141" class="ln">   141  </span>	} <span class="comment">// chunk read loop</span>
+<span id="L142" class="ln">   142  </span>
+<span id="L143" class="ln">   143  </span>}
+<span id="L144" class="ln">   144  </span>
 </pre><p></p>
 
 <div id="footer">

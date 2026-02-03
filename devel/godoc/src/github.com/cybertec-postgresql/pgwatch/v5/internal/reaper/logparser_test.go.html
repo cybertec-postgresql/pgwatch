@@ -90,855 +90,830 @@
 <span id="L33" class="ln">    33  </span>	storeCh := make(chan metrics.MeasurementEnvelope, 10)
 <span id="L34" class="ln">    34  </span>
 <span id="L35" class="ln">    35  </span>	t.Run(&#34;success&#34;, func(t *testing.T) {
-<span id="L36" class="ln">    36  </span>		<span class="comment">// Mock log folder detection</span>
-<span id="L37" class="ln">    37  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L38" class="ln">    38  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).AddRow(&#34;&#34;, tempDir))
-<span id="L39" class="ln">    39  </span>
-<span id="L40" class="ln">    40  </span>		<span class="comment">// Mock language detection</span>
-<span id="L41" class="ln">    41  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L42" class="ln">    42  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;en&#34;))
+<span id="L36" class="ln">    36  </span>		mock.ExpectQuery(`select 
+<span id="L37" class="ln">    37  </span>			current_setting\(&#39;data_directory&#39;\) as dd, 
+<span id="L38" class="ln">    38  </span>			current_setting\(&#39;log_directory&#39;\) as ld,
+<span id="L39" class="ln">    39  </span>			current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages,
+<span id="L40" class="ln">    40  </span>			current_setting\(&#39;log_truncate_on_rotation&#39;\) as log_trunc`).
+<span id="L41" class="ln">    41  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;, &#34;lc_messages&#34;, &#34;log_trunc&#34;}).
+<span id="L42" class="ln">    42  </span>				AddRow(&#34;&#34;, tempDir, &#34;en&#34;, &#34;off&#34;))
 <span id="L43" class="ln">    43  </span>
 <span id="L44" class="ln">    44  </span>		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
 <span id="L45" class="ln">    45  </span>		assert.NoError(t, err)
 <span id="L46" class="ln">    46  </span>		assert.NotNil(t, lp)
 <span id="L47" class="ln">    47  </span>		assert.Equal(t, tempDir, lp.LogFolder)
 <span id="L48" class="ln">    48  </span>		assert.Equal(t, &#34;en&#34;, lp.ServerMessagesLang)
-<span id="L49" class="ln">    49  </span>		assert.Equal(t, 60.0, lp.Interval)
-<span id="L50" class="ln">    50  </span>		assert.NotNil(t, lp.LogsMatchRegex)
-<span id="L51" class="ln">    51  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L52" class="ln">    52  </span>	})
-<span id="L53" class="ln">    53  </span>
-<span id="L54" class="ln">    54  </span>	t.Run(&#34;tryDetermineLogFolder error&#34;, func(t *testing.T) {
-<span id="L55" class="ln">    55  </span>		<span class="comment">// Mock log folder detection to fail</span>
-<span id="L56" class="ln">    56  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L57" class="ln">    57  </span>			WillReturnError(assert.AnError)
-<span id="L58" class="ln">    58  </span>
-<span id="L59" class="ln">    59  </span>		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
-<span id="L60" class="ln">    60  </span>		assert.Error(t, err)
-<span id="L61" class="ln">    61  </span>		assert.Nil(t, lp)
-<span id="L62" class="ln">    62  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L63" class="ln">    63  </span>	})
-<span id="L64" class="ln">    64  </span>
-<span id="L65" class="ln">    65  </span>	t.Run(&#34;tryDetermineLogMessagesLanguage error&#34;, func(t *testing.T) {
-<span id="L66" class="ln">    66  </span>		<span class="comment">// Mock log folder detection to succeed</span>
-<span id="L67" class="ln">    67  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L68" class="ln">    68  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).AddRow(&#34;&#34;, tempDir))
-<span id="L69" class="ln">    69  </span>
-<span id="L70" class="ln">    70  </span>		<span class="comment">// Mock language detection to fail</span>
-<span id="L71" class="ln">    71  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L72" class="ln">    72  </span>			WillReturnError(assert.AnError)
-<span id="L73" class="ln">    73  </span>
-<span id="L74" class="ln">    74  </span>		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
-<span id="L75" class="ln">    75  </span>		assert.Error(t, err)
-<span id="L76" class="ln">    76  </span>		assert.Nil(t, lp)
-<span id="L77" class="ln">    77  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L78" class="ln">    78  </span>	})
-<span id="L79" class="ln">    79  </span>
-<span id="L80" class="ln">    80  </span>	t.Run(&#34;unknown language defaults to en&#34;, func(t *testing.T) {
-<span id="L81" class="ln">    81  </span>		<span class="comment">// Mock log folder detection</span>
-<span id="L82" class="ln">    82  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L83" class="ln">    83  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).AddRow(&#34;&#34;, tempDir))
+<span id="L49" class="ln">    49  </span>		assert.Equal(t, &#34;off&#34;, lp.LogTruncOnRotation)
+<span id="L50" class="ln">    50  </span>		assert.Equal(t, 60.0, lp.Interval)
+<span id="L51" class="ln">    51  </span>		assert.NotNil(t, lp.LogsMatchRegex)
+<span id="L52" class="ln">    52  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L53" class="ln">    53  </span>	})
+<span id="L54" class="ln">    54  </span>
+<span id="L55" class="ln">    55  </span>	t.Run(&#34;tryDetermineLogSettings error&#34;, func(t *testing.T) {
+<span id="L56" class="ln">    56  </span>		mock.ExpectQuery(`select 
+<span id="L57" class="ln">    57  </span>			current_setting\(&#39;data_directory&#39;\) as dd, 
+<span id="L58" class="ln">    58  </span>			current_setting\(&#39;log_directory&#39;\) as ld,
+<span id="L59" class="ln">    59  </span>			current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages,
+<span id="L60" class="ln">    60  </span>			current_setting\(&#39;log_truncate_on_rotation&#39;\) as log_trunc`).
+<span id="L61" class="ln">    61  </span>			WillReturnError(assert.AnError)
+<span id="L62" class="ln">    62  </span>
+<span id="L63" class="ln">    63  </span>		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+<span id="L64" class="ln">    64  </span>		assert.Error(t, err)
+<span id="L65" class="ln">    65  </span>		assert.Nil(t, lp)
+<span id="L66" class="ln">    66  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L67" class="ln">    67  </span>	})
+<span id="L68" class="ln">    68  </span>
+<span id="L69" class="ln">    69  </span>	t.Run(&#34;unknown language defaults to en&#34;, func(t *testing.T) {
+<span id="L70" class="ln">    70  </span>		mock.ExpectQuery(`select 
+<span id="L71" class="ln">    71  </span>			current_setting\(&#39;data_directory&#39;\) as dd, 
+<span id="L72" class="ln">    72  </span>			current_setting\(&#39;log_directory&#39;\) as ld,
+<span id="L73" class="ln">    73  </span>			current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages,
+<span id="L74" class="ln">    74  </span>			current_setting\(&#39;log_truncate_on_rotation&#39;\) as log_trunc`).
+<span id="L75" class="ln">    75  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;, &#34;lc_messages&#34;, &#34;log_trunc&#34;}).
+<span id="L76" class="ln">    76  </span>				AddRow(&#34;&#34;, tempDir, &#34;zz&#34;, &#34;off&#34;))
+<span id="L77" class="ln">    77  </span>
+<span id="L78" class="ln">    78  </span>		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+<span id="L79" class="ln">    79  </span>		assert.NoError(t, err)
+<span id="L80" class="ln">    80  </span>		assert.NotNil(t, lp)
+<span id="L81" class="ln">    81  </span>		assert.Equal(t, &#34;en&#34;, lp.ServerMessagesLang)
+<span id="L82" class="ln">    82  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L83" class="ln">    83  </span>	})
 <span id="L84" class="ln">    84  </span>
-<span id="L85" class="ln">    85  </span>		<span class="comment">// Mock language detection with unknown language</span>
-<span id="L86" class="ln">    86  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L87" class="ln">    87  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;zz&#34;))
-<span id="L88" class="ln">    88  </span>
-<span id="L89" class="ln">    89  </span>		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
-<span id="L90" class="ln">    90  </span>		assert.NoError(t, err)
-<span id="L91" class="ln">    91  </span>		assert.NotNil(t, lp)
-<span id="L92" class="ln">    92  </span>		assert.Equal(t, &#34;en&#34;, lp.ServerMessagesLang)
-<span id="L93" class="ln">    93  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L94" class="ln">    94  </span>	})
-<span id="L95" class="ln">    95  </span>
-<span id="L96" class="ln">    96  </span>	t.Run(&#34;relative log directory&#34;, func(t *testing.T) {
-<span id="L97" class="ln">    97  </span>		<span class="comment">// Mock log folder detection with relative path</span>
-<span id="L98" class="ln">    98  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L99" class="ln">    99  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).AddRow(&#34;/data&#34;, &#34;pg_log&#34;))
-<span id="L100" class="ln">   100  </span>
-<span id="L101" class="ln">   101  </span>		<span class="comment">// Mock language detection</span>
-<span id="L102" class="ln">   102  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L103" class="ln">   103  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;de&#34;))
-<span id="L104" class="ln">   104  </span>
-<span id="L105" class="ln">   105  </span>		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
-<span id="L106" class="ln">   106  </span>		assert.NoError(t, err)
-<span id="L107" class="ln">   107  </span>		assert.NotNil(t, lp)
-<span id="L108" class="ln">   108  </span>		assert.Equal(t, &#34;/data/pg_log&#34;, lp.LogFolder)
-<span id="L109" class="ln">   109  </span>		assert.Equal(t, &#34;de&#34;, lp.ServerMessagesLang)
-<span id="L110" class="ln">   110  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L111" class="ln">   111  </span>	})
-<span id="L112" class="ln">   112  </span>}
-<span id="L113" class="ln">   113  </span>
-<span id="L114" class="ln">   114  </span>func TestTryDetermineLogFolder(t *testing.T) {
-<span id="L115" class="ln">   115  </span>	t.Run(&#34;absolute log directory&#34;, func(t *testing.T) {
-<span id="L116" class="ln">   116  </span>		mock, err := pgxmock.NewPool()
-<span id="L117" class="ln">   117  </span>		require.NoError(t, err)
-<span id="L118" class="ln">   118  </span>		defer mock.Close()
-<span id="L119" class="ln">   119  </span>
-<span id="L120" class="ln">   120  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L121" class="ln">   121  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).
-<span id="L122" class="ln">   122  </span>				AddRow(&#34;/data&#34;, &#34;/var/log/postgresql&#34;))
-<span id="L123" class="ln">   123  </span>
-<span id="L124" class="ln">   124  </span>		logPath, err := tryDetermineLogFolder(testutil.TestContext, mock)
-<span id="L125" class="ln">   125  </span>		assert.NoError(t, err)
-<span id="L126" class="ln">   126  </span>		assert.Equal(t, &#34;/var/log/postgresql&#34;, logPath)
-<span id="L127" class="ln">   127  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L128" class="ln">   128  </span>	})
-<span id="L129" class="ln">   129  </span>
-<span id="L130" class="ln">   130  </span>	t.Run(&#34;relative log directory&#34;, func(t *testing.T) {
-<span id="L131" class="ln">   131  </span>		mock, err := pgxmock.NewPool()
-<span id="L132" class="ln">   132  </span>		require.NoError(t, err)
-<span id="L133" class="ln">   133  </span>		defer mock.Close()
-<span id="L134" class="ln">   134  </span>
-<span id="L135" class="ln">   135  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L136" class="ln">   136  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).
-<span id="L137" class="ln">   137  </span>				AddRow(&#34;/data&#34;, &#34;log&#34;))
+<span id="L85" class="ln">    85  </span>	t.Run(&#34;relative log directory&#34;, func(t *testing.T) {
+<span id="L86" class="ln">    86  </span>		mock.ExpectQuery(`select 
+<span id="L87" class="ln">    87  </span>			current_setting\(&#39;data_directory&#39;\) as dd, 
+<span id="L88" class="ln">    88  </span>			current_setting\(&#39;log_directory&#39;\) as ld,
+<span id="L89" class="ln">    89  </span>			current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages,
+<span id="L90" class="ln">    90  </span>			current_setting\(&#39;log_truncate_on_rotation&#39;\) as log_trunc`).
+<span id="L91" class="ln">    91  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;, &#34;lc_messages&#34;, &#34;log_trunc&#34;}).
+<span id="L92" class="ln">    92  </span>				AddRow(&#34;/data&#34;, &#34;pg_log&#34;, &#34;de&#34;, &#34;on&#34;))
+<span id="L93" class="ln">    93  </span>
+<span id="L94" class="ln">    94  </span>		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+<span id="L95" class="ln">    95  </span>		assert.NoError(t, err)
+<span id="L96" class="ln">    96  </span>		assert.NotNil(t, lp)
+<span id="L97" class="ln">    97  </span>		assert.Equal(t, &#34;/data/pg_log&#34;, lp.LogFolder)
+<span id="L98" class="ln">    98  </span>		assert.Equal(t, &#34;de&#34;, lp.ServerMessagesLang)
+<span id="L99" class="ln">    99  </span>		assert.Equal(t, &#34;on&#34;, lp.LogTruncOnRotation)
+<span id="L100" class="ln">   100  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L101" class="ln">   101  </span>	})
+<span id="L102" class="ln">   102  </span>}
+<span id="L103" class="ln">   103  </span>
+<span id="L104" class="ln">   104  </span>func TestTryDetermineLogSettings(t *testing.T) {
+<span id="L105" class="ln">   105  </span>	t.Run(&#34;absolute log directory - known lang&#34;, func(t *testing.T) {
+<span id="L106" class="ln">   106  </span>		mock, err := pgxmock.NewPool()
+<span id="L107" class="ln">   107  </span>		require.NoError(t, err)
+<span id="L108" class="ln">   108  </span>		defer mock.Close()
+<span id="L109" class="ln">   109  </span>
+<span id="L110" class="ln">   110  </span>		mock.ExpectQuery(`select 
+<span id="L111" class="ln">   111  </span>			current_setting\(&#39;data_directory&#39;\) as dd, 
+<span id="L112" class="ln">   112  </span>			current_setting\(&#39;log_directory&#39;\) as ld,
+<span id="L113" class="ln">   113  </span>			current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages,
+<span id="L114" class="ln">   114  </span>			current_setting\(&#39;log_truncate_on_rotation&#39;\) as log_trunc`).
+<span id="L115" class="ln">   115  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;, &#34;lc_messages&#34;, &#34;log_trunc&#34;}).
+<span id="L116" class="ln">   116  </span>				AddRow(&#34;/data&#34;, &#34;/var/log/postgresql&#34;, &#34;de&#34;, &#34;off&#34;))
+<span id="L117" class="ln">   117  </span>
+<span id="L118" class="ln">   118  </span>		logPath, lang, logTrunc, err := tryDetermineLogSettings(testutil.TestContext, mock)
+<span id="L119" class="ln">   119  </span>		assert.NoError(t, err)
+<span id="L120" class="ln">   120  </span>		assert.Equal(t, &#34;/var/log/postgresql&#34;, logPath)
+<span id="L121" class="ln">   121  </span>		assert.Equal(t, &#34;de&#34;, lang)
+<span id="L122" class="ln">   122  </span>		assert.Equal(t, &#34;off&#34;, logTrunc)
+<span id="L123" class="ln">   123  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L124" class="ln">   124  </span>	})
+<span id="L125" class="ln">   125  </span>
+<span id="L126" class="ln">   126  </span>	t.Run(&#34;relative log directory - unknown lang&#34;, func(t *testing.T) {
+<span id="L127" class="ln">   127  </span>		mock, err := pgxmock.NewPool()
+<span id="L128" class="ln">   128  </span>		require.NoError(t, err)
+<span id="L129" class="ln">   129  </span>		defer mock.Close()
+<span id="L130" class="ln">   130  </span>
+<span id="L131" class="ln">   131  </span>		mock.ExpectQuery(`select 
+<span id="L132" class="ln">   132  </span>			current_setting\(&#39;data_directory&#39;\) as dd, 
+<span id="L133" class="ln">   133  </span>			current_setting\(&#39;log_directory&#39;\) as ld,
+<span id="L134" class="ln">   134  </span>			current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages,
+<span id="L135" class="ln">   135  </span>			current_setting\(&#39;log_truncate_on_rotation&#39;\) as log_trunc`).
+<span id="L136" class="ln">   136  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;, &#34;lc_messages&#34;, &#34;log_trunc&#34;}).
+<span id="L137" class="ln">   137  </span>				AddRow(&#34;/data&#34;, &#34;log&#34;, &#34;xx&#34;, &#34;off&#34;))
 <span id="L138" class="ln">   138  </span>
-<span id="L139" class="ln">   139  </span>		logPath, err := tryDetermineLogFolder(testutil.TestContext, mock)
+<span id="L139" class="ln">   139  </span>		logPath, lang, logTrunc, err := tryDetermineLogSettings(testutil.TestContext, mock)
 <span id="L140" class="ln">   140  </span>		assert.NoError(t, err)
 <span id="L141" class="ln">   141  </span>		assert.Equal(t, &#34;/data/log&#34;, logPath)
-<span id="L142" class="ln">   142  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L143" class="ln">   143  </span>	})
-<span id="L144" class="ln">   144  </span>
-<span id="L145" class="ln">   145  </span>	t.Run(&#34;query error&#34;, func(t *testing.T) {
-<span id="L146" class="ln">   146  </span>		mock, err := pgxmock.NewPool()
-<span id="L147" class="ln">   147  </span>		require.NoError(t, err)
-<span id="L148" class="ln">   148  </span>		defer mock.Close()
-<span id="L149" class="ln">   149  </span>
-<span id="L150" class="ln">   150  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L151" class="ln">   151  </span>			WillReturnError(assert.AnError)
-<span id="L152" class="ln">   152  </span>
-<span id="L153" class="ln">   153  </span>		logPath, err := tryDetermineLogFolder(testutil.TestContext, mock)
-<span id="L154" class="ln">   154  </span>		assert.Error(t, err)
-<span id="L155" class="ln">   155  </span>		assert.Equal(t, &#34;&#34;, logPath)
-<span id="L156" class="ln">   156  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L157" class="ln">   157  </span>	})
-<span id="L158" class="ln">   158  </span>}
-<span id="L159" class="ln">   159  </span>
-<span id="L160" class="ln">   160  </span>func TestTryDetermineLogMessagesLanguage(t *testing.T) {
-<span id="L161" class="ln">   161  </span>	t.Run(&#34;known language&#34;, func(t *testing.T) {
-<span id="L162" class="ln">   162  </span>		mock, err := pgxmock.NewPool()
-<span id="L163" class="ln">   163  </span>		require.NoError(t, err)
-<span id="L164" class="ln">   164  </span>		defer mock.Close()
-<span id="L165" class="ln">   165  </span>
-<span id="L166" class="ln">   166  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L167" class="ln">   167  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;de&#34;))
-<span id="L168" class="ln">   168  </span>
-<span id="L169" class="ln">   169  </span>		lang, err := tryDetermineLogMessagesLanguage(testutil.TestContext, mock)
-<span id="L170" class="ln">   170  </span>		assert.NoError(t, err)
-<span id="L171" class="ln">   171  </span>		assert.Equal(t, &#34;de&#34;, lang)
-<span id="L172" class="ln">   172  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L173" class="ln">   173  </span>	})
-<span id="L174" class="ln">   174  </span>
-<span id="L175" class="ln">   175  </span>	t.Run(&#34;unknown language defaults to en&#34;, func(t *testing.T) {
-<span id="L176" class="ln">   176  </span>		mock, err := pgxmock.NewPool()
-<span id="L177" class="ln">   177  </span>		require.NoError(t, err)
-<span id="L178" class="ln">   178  </span>		defer mock.Close()
-<span id="L179" class="ln">   179  </span>
-<span id="L180" class="ln">   180  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L181" class="ln">   181  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;xx&#34;))
-<span id="L182" class="ln">   182  </span>
-<span id="L183" class="ln">   183  </span>		lang, err := tryDetermineLogMessagesLanguage(testutil.TestContext, mock)
-<span id="L184" class="ln">   184  </span>		assert.NoError(t, err)
-<span id="L185" class="ln">   185  </span>		assert.Equal(t, &#34;en&#34;, lang)
-<span id="L186" class="ln">   186  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L187" class="ln">   187  </span>	})
-<span id="L188" class="ln">   188  </span>
-<span id="L189" class="ln">   189  </span>	t.Run(&#34;query error&#34;, func(t *testing.T) {
-<span id="L190" class="ln">   190  </span>		mock, err := pgxmock.NewPool()
-<span id="L191" class="ln">   191  </span>		require.NoError(t, err)
-<span id="L192" class="ln">   192  </span>		defer mock.Close()
-<span id="L193" class="ln">   193  </span>
-<span id="L194" class="ln">   194  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L195" class="ln">   195  </span>			WillReturnError(assert.AnError)
-<span id="L196" class="ln">   196  </span>
-<span id="L197" class="ln">   197  </span>		lang, err := tryDetermineLogMessagesLanguage(testutil.TestContext, mock)
-<span id="L198" class="ln">   198  </span>		assert.Error(t, err)
-<span id="L199" class="ln">   199  </span>		assert.Equal(t, &#34;&#34;, lang)
-<span id="L200" class="ln">   200  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L201" class="ln">   201  </span>	})
-<span id="L202" class="ln">   202  </span>}
-<span id="L203" class="ln">   203  </span>
-<span id="L204" class="ln">   204  </span>func TestCheckHasPrivileges(t *testing.T) {
-<span id="L205" class="ln">   205  </span>	tempDir := t.TempDir()
-<span id="L206" class="ln">   206  </span>
-<span id="L207" class="ln">   207  </span>	names := [2]string{&#34;pg_ls_logdir() fails&#34;, &#34;pg_read_file() permission denied&#34;}
-<span id="L208" class="ln">   208  </span>	for _, name := range names {
-<span id="L209" class="ln">   209  </span>		t.Run(&#34;checkHasRemotePrivileges fails - &#34;+name, func(t *testing.T) {
-<span id="L210" class="ln">   210  </span>			mock, err := pgxmock.NewPool()
-<span id="L211" class="ln">   211  </span>			require.NoError(t, err)
-<span id="L212" class="ln">   212  </span>			defer mock.Close()
+<span id="L142" class="ln">   142  </span>		assert.Equal(t, &#34;en&#34;, lang)
+<span id="L143" class="ln">   143  </span>		assert.Equal(t, &#34;off&#34;, logTrunc)
+<span id="L144" class="ln">   144  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L145" class="ln">   145  </span>	})
+<span id="L146" class="ln">   146  </span>
+<span id="L147" class="ln">   147  </span>	t.Run(&#34;query error&#34;, func(t *testing.T) {
+<span id="L148" class="ln">   148  </span>		mock, err := pgxmock.NewPool()
+<span id="L149" class="ln">   149  </span>		require.NoError(t, err)
+<span id="L150" class="ln">   150  </span>		defer mock.Close()
+<span id="L151" class="ln">   151  </span>
+<span id="L152" class="ln">   152  </span>		mock.ExpectQuery(`select 
+<span id="L153" class="ln">   153  </span>			current_setting\(&#39;data_directory&#39;\) as dd, 
+<span id="L154" class="ln">   154  </span>			current_setting\(&#39;log_directory&#39;\) as ld,
+<span id="L155" class="ln">   155  </span>			current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages,
+<span id="L156" class="ln">   156  </span>			current_setting\(&#39;log_truncate_on_rotation&#39;\) as log_trunc`).
+<span id="L157" class="ln">   157  </span>			WillReturnError(assert.AnError)
+<span id="L158" class="ln">   158  </span>
+<span id="L159" class="ln">   159  </span>		logPath, lang, logTrunc, err := tryDetermineLogSettings(testutil.TestContext, mock)
+<span id="L160" class="ln">   160  </span>		assert.Error(t, err)
+<span id="L161" class="ln">   161  </span>		assert.Equal(t, &#34;&#34;, logPath)
+<span id="L162" class="ln">   162  </span>		assert.Equal(t, &#34;&#34;, lang)
+<span id="L163" class="ln">   163  </span>		assert.Equal(t, &#34;&#34;, logTrunc)
+<span id="L164" class="ln">   164  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L165" class="ln">   165  </span>	})
+<span id="L166" class="ln">   166  </span>}
+<span id="L167" class="ln">   167  </span>
+<span id="L168" class="ln">   168  </span>func TestCheckHasPrivileges(t *testing.T) {
+<span id="L169" class="ln">   169  </span>	tempDir := t.TempDir()
+<span id="L170" class="ln">   170  </span>
+<span id="L171" class="ln">   171  </span>	names := [2]string{&#34;pg_ls_logdir() fails&#34;, &#34;pg_read_file() permission denied&#34;}
+<span id="L172" class="ln">   172  </span>	for _, name := range names {
+<span id="L173" class="ln">   173  </span>		t.Run(&#34;checkHasRemotePrivileges fails - &#34;+name, func(t *testing.T) {
+<span id="L174" class="ln">   174  </span>			mock, err := pgxmock.NewPool()
+<span id="L175" class="ln">   175  </span>			require.NoError(t, err)
+<span id="L176" class="ln">   176  </span>			defer mock.Close()
+<span id="L177" class="ln">   177  </span>
+<span id="L178" class="ln">   178  </span>			mock.ExpectQuery(`select 
+<span id="L179" class="ln">   179  </span>				current_setting\(&#39;data_directory&#39;\) as dd, 
+<span id="L180" class="ln">   180  </span>				current_setting\(&#39;log_directory&#39;\) as ld,
+<span id="L181" class="ln">   181  </span>				current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages,
+<span id="L182" class="ln">   182  </span>				current_setting\(&#39;log_truncate_on_rotation&#39;\) as log_trunc`).
+<span id="L183" class="ln">   183  </span>				WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;, &#34;lc_messages&#34;, &#34;log_trunc&#34;}).
+<span id="L184" class="ln">   184  </span>					AddRow(&#34;&#34;, tempDir, &#34;en&#34;, &#34;off&#34;))
+<span id="L185" class="ln">   185  </span>
+<span id="L186" class="ln">   186  </span>			<span class="comment">// Mock IsClientOnSameHost to return false (remote)</span>
+<span id="L187" class="ln">   187  </span>			mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
+<span id="L188" class="ln">   188  </span>				pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(false))
+<span id="L189" class="ln">   189  </span>
+<span id="L190" class="ln">   190  </span>			if name == &#34;pg_ls_logdir() fails&#34; {
+<span id="L191" class="ln">   191  </span>				<span class="comment">// Mock pg_ls_logdir() to fail (permission denied)</span>
+<span id="L192" class="ln">   192  </span>				mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
+<span id="L193" class="ln">   193  </span>					WillReturnError(assert.AnError)
+<span id="L194" class="ln">   194  </span>			} else {
+<span id="L195" class="ln">   195  </span>				<span class="comment">// Mock pg_ls_logdir() to return a log file</span>
+<span id="L196" class="ln">   196  </span>				mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
+<span id="L197" class="ln">   197  </span>					WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(&#34;log.csv&#34;))
+<span id="L198" class="ln">   198  </span>
+<span id="L199" class="ln">   199  </span>				<span class="comment">// Mock pg_read_file() to fail with permission denied error</span>
+<span id="L200" class="ln">   200  </span>				mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
+<span id="L201" class="ln">   201  </span>					WithArgs(filepath.Join(tempDir, &#34;log.csv&#34;)).
+<span id="L202" class="ln">   202  </span>					WillReturnError(assert.AnError)
+<span id="L203" class="ln">   203  </span>			}
+<span id="L204" class="ln">   204  </span>
+<span id="L205" class="ln">   205  </span>			sourceConn := &amp;sources.SourceConn{
+<span id="L206" class="ln">   206  </span>				Source: sources.Source{
+<span id="L207" class="ln">   207  </span>					Name: &#34;test-source&#34;,
+<span id="L208" class="ln">   208  </span>				},
+<span id="L209" class="ln">   209  </span>				Conn: mock,
+<span id="L210" class="ln">   210  </span>			}
+<span id="L211" class="ln">   211  </span>
+<span id="L212" class="ln">   212  </span>			storeCh := make(chan metrics.MeasurementEnvelope, 10)
 <span id="L213" class="ln">   213  </span>
-<span id="L214" class="ln">   214  </span>			<span class="comment">// Mock the log folder detection query</span>
-<span id="L215" class="ln">   215  </span>			mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L216" class="ln">   216  </span>				WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).AddRow(&#34;&#34;, tempDir))
-<span id="L217" class="ln">   217  </span>
-<span id="L218" class="ln">   218  </span>			<span class="comment">// Mock the language detection query</span>
-<span id="L219" class="ln">   219  </span>			mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L220" class="ln">   220  </span>				WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;en&#34;))
-<span id="L221" class="ln">   221  </span>
-<span id="L222" class="ln">   222  </span>			<span class="comment">// Mock IsClientOnSameHost to return false (remote)</span>
-<span id="L223" class="ln">   223  </span>			mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
-<span id="L224" class="ln">   224  </span>				pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(false))
-<span id="L225" class="ln">   225  </span>
-<span id="L226" class="ln">   226  </span>			if name == &#34;pg_ls_logdir() fails&#34; {
-<span id="L227" class="ln">   227  </span>				<span class="comment">// Mock pg_ls_logdir() to fail (permission denied)</span>
-<span id="L228" class="ln">   228  </span>				mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
-<span id="L229" class="ln">   229  </span>					WillReturnError(assert.AnError)
-<span id="L230" class="ln">   230  </span>			} else {
-<span id="L231" class="ln">   231  </span>				<span class="comment">// Mock pg_ls_logdir() to return a log file</span>
-<span id="L232" class="ln">   232  </span>				mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
-<span id="L233" class="ln">   233  </span>					WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(&#34;log.csv&#34;))
-<span id="L234" class="ln">   234  </span>
-<span id="L235" class="ln">   235  </span>				<span class="comment">// Mock pg_read_file() to fail with permission denied error</span>
-<span id="L236" class="ln">   236  </span>				mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
-<span id="L237" class="ln">   237  </span>					WithArgs(filepath.Join(tempDir, &#34;log.csv&#34;)).
-<span id="L238" class="ln">   238  </span>					WillReturnError(assert.AnError)
-<span id="L239" class="ln">   239  </span>			}
-<span id="L240" class="ln">   240  </span>
-<span id="L241" class="ln">   241  </span>			sourceConn := &amp;sources.SourceConn{
-<span id="L242" class="ln">   242  </span>				Source: sources.Source{
-<span id="L243" class="ln">   243  </span>					Name: &#34;test-source&#34;,
-<span id="L244" class="ln">   244  </span>				},
-<span id="L245" class="ln">   245  </span>				Conn: mock,
-<span id="L246" class="ln">   246  </span>			}
-<span id="L247" class="ln">   247  </span>
-<span id="L248" class="ln">   248  </span>			storeCh := make(chan metrics.MeasurementEnvelope, 10)
-<span id="L249" class="ln">   249  </span>
-<span id="L250" class="ln">   250  </span>			lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
-<span id="L251" class="ln">   251  </span>			require.NoError(t, err)
-<span id="L252" class="ln">   252  </span>			<span class="comment">// Parse logs should stop the worker and return due to privilege errors.</span>
-<span id="L253" class="ln">   253  </span>			err = lp.ParseLogs()
-<span id="L254" class="ln">   254  </span>			assert.Error(t, err)
+<span id="L214" class="ln">   214  </span>			lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+<span id="L215" class="ln">   215  </span>			require.NoError(t, err)
+<span id="L216" class="ln">   216  </span>			<span class="comment">// Parse logs should stop the worker and return due to privilege errors.</span>
+<span id="L217" class="ln">   217  </span>			err = lp.ParseLogs()
+<span id="L218" class="ln">   218  </span>			assert.Error(t, err)
+<span id="L219" class="ln">   219  </span>
+<span id="L220" class="ln">   220  </span>			<span class="comment">// Ensure mock expectations were met</span>
+<span id="L221" class="ln">   221  </span>			assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L222" class="ln">   222  </span>
+<span id="L223" class="ln">   223  </span>			<span class="comment">// No data should be received since checkHasPrivileges should fail</span>
+<span id="L224" class="ln">   224  </span>			select {
+<span id="L225" class="ln">   225  </span>			case measurement := &lt;-storeCh:
+<span id="L226" class="ln">   226  </span>				t.Errorf(&#34;Expected no data, but got: %+v&#34;, measurement)
+<span id="L227" class="ln">   227  </span>			case &lt;-time.After(time.Second):
+<span id="L228" class="ln">   228  </span>				<span class="comment">// Expected: no data received</span>
+<span id="L229" class="ln">   229  </span>			}
+<span id="L230" class="ln">   230  </span>		})
+<span id="L231" class="ln">   231  </span>	}
+<span id="L232" class="ln">   232  </span>}
+<span id="L233" class="ln">   233  </span>
+<span id="L234" class="ln">   234  </span>func TestEventCountsToMetricStoreMessages(t *testing.T) {
+<span id="L235" class="ln">   235  </span>	mdb := &amp;sources.SourceConn{
+<span id="L236" class="ln">   236  </span>		Source: sources.Source{
+<span id="L237" class="ln">   237  </span>			Name:       &#34;test-db&#34;,
+<span id="L238" class="ln">   238  </span>			Kind:       sources.SourcePostgres,
+<span id="L239" class="ln">   239  </span>			CustomTags: map[string]string{&#34;env&#34;: &#34;test&#34;},
+<span id="L240" class="ln">   240  </span>		},
+<span id="L241" class="ln">   241  </span>	}
+<span id="L242" class="ln">   242  </span>	lp := &amp;LogParser{
+<span id="L243" class="ln">   243  </span>		SourceConn: mdb,
+<span id="L244" class="ln">   244  </span>		eventCounts: map[string]int64{
+<span id="L245" class="ln">   245  </span>			&#34;ERROR&#34;:   5,
+<span id="L246" class="ln">   246  </span>			&#34;WARNING&#34;: 10,
+<span id="L247" class="ln">   247  </span>		},
+<span id="L248" class="ln">   248  </span>		eventCountsTotal: map[string]int64{
+<span id="L249" class="ln">   249  </span>			&#34;ERROR&#34;:   15,
+<span id="L250" class="ln">   250  </span>			&#34;WARNING&#34;: 25,
+<span id="L251" class="ln">   251  </span>			&#34;INFO&#34;:    50,
+<span id="L252" class="ln">   252  </span>		},
+<span id="L253" class="ln">   253  </span>	}
+<span id="L254" class="ln">   254  </span>	result := lp.GetMeasurementEnvelope()
 <span id="L255" class="ln">   255  </span>
-<span id="L256" class="ln">   256  </span>			<span class="comment">// Ensure mock expectations were met</span>
-<span id="L257" class="ln">   257  </span>			assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L258" class="ln">   258  </span>
-<span id="L259" class="ln">   259  </span>			<span class="comment">// No data should be received since checkHasPrivileges should fail</span>
-<span id="L260" class="ln">   260  </span>			select {
-<span id="L261" class="ln">   261  </span>			case measurement := &lt;-storeCh:
-<span id="L262" class="ln">   262  </span>				t.Errorf(&#34;Expected no data, but got: %+v&#34;, measurement)
-<span id="L263" class="ln">   263  </span>			case &lt;-time.After(time.Second):
-<span id="L264" class="ln">   264  </span>				<span class="comment">// Expected: no data received</span>
-<span id="L265" class="ln">   265  </span>			}
-<span id="L266" class="ln">   266  </span>		})
-<span id="L267" class="ln">   267  </span>	}
-<span id="L268" class="ln">   268  </span>}
+<span id="L256" class="ln">   256  </span>	assert.Equal(t, &#34;test-db&#34;, result.DBName)
+<span id="L257" class="ln">   257  </span>	assert.Equal(t, specialMetricServerLogEventCounts, result.MetricName)
+<span id="L258" class="ln">   258  </span>	assert.Equal(t, map[string]string{&#34;env&#34;: &#34;test&#34;}, result.CustomTags)
+<span id="L259" class="ln">   259  </span>
+<span id="L260" class="ln">   260  </span>	<span class="comment">// Check that all severities are present in the measurement</span>
+<span id="L261" class="ln">   261  </span>	assert.Len(t, result.Data, 1)
+<span id="L262" class="ln">   262  </span>	measurement := result.Data[0]
+<span id="L263" class="ln">   263  </span>
+<span id="L264" class="ln">   264  </span>	<span class="comment">// Check individual severities</span>
+<span id="L265" class="ln">   265  </span>	assert.Equal(t, int64(5), measurement[&#34;error&#34;])
+<span id="L266" class="ln">   266  </span>	assert.Equal(t, int64(10), measurement[&#34;warning&#34;])
+<span id="L267" class="ln">   267  </span>	assert.Equal(t, int64(0), measurement[&#34;info&#34;])  <span class="comment">// Not in eventCounts</span>
+<span id="L268" class="ln">   268  </span>	assert.Equal(t, int64(0), measurement[&#34;debug&#34;]) <span class="comment">// Not in either map</span>
 <span id="L269" class="ln">   269  </span>
-<span id="L270" class="ln">   270  </span>func TestEventCountsToMetricStoreMessages(t *testing.T) {
-<span id="L271" class="ln">   271  </span>	mdb := &amp;sources.SourceConn{
-<span id="L272" class="ln">   272  </span>		Source: sources.Source{
-<span id="L273" class="ln">   273  </span>			Name:       &#34;test-db&#34;,
-<span id="L274" class="ln">   274  </span>			Kind:       sources.SourcePostgres,
-<span id="L275" class="ln">   275  </span>			CustomTags: map[string]string{&#34;env&#34;: &#34;test&#34;},
-<span id="L276" class="ln">   276  </span>		},
-<span id="L277" class="ln">   277  </span>	}
-<span id="L278" class="ln">   278  </span>	lp := &amp;LogParser{
-<span id="L279" class="ln">   279  </span>		SourceConn: mdb,
-<span id="L280" class="ln">   280  </span>		eventCounts: map[string]int64{
-<span id="L281" class="ln">   281  </span>			&#34;ERROR&#34;:   5,
-<span id="L282" class="ln">   282  </span>			&#34;WARNING&#34;: 10,
-<span id="L283" class="ln">   283  </span>		},
-<span id="L284" class="ln">   284  </span>		eventCountsTotal: map[string]int64{
-<span id="L285" class="ln">   285  </span>			&#34;ERROR&#34;:   15,
-<span id="L286" class="ln">   286  </span>			&#34;WARNING&#34;: 25,
-<span id="L287" class="ln">   287  </span>			&#34;INFO&#34;:    50,
-<span id="L288" class="ln">   288  </span>		},
-<span id="L289" class="ln">   289  </span>	}
-<span id="L290" class="ln">   290  </span>	result := lp.GetMeasurementEnvelope()
-<span id="L291" class="ln">   291  </span>
-<span id="L292" class="ln">   292  </span>	assert.Equal(t, &#34;test-db&#34;, result.DBName)
-<span id="L293" class="ln">   293  </span>	assert.Equal(t, specialMetricServerLogEventCounts, result.MetricName)
-<span id="L294" class="ln">   294  </span>	assert.Equal(t, map[string]string{&#34;env&#34;: &#34;test&#34;}, result.CustomTags)
-<span id="L295" class="ln">   295  </span>
-<span id="L296" class="ln">   296  </span>	<span class="comment">// Check that all severities are present in the measurement</span>
-<span id="L297" class="ln">   297  </span>	assert.Len(t, result.Data, 1)
-<span id="L298" class="ln">   298  </span>	measurement := result.Data[0]
-<span id="L299" class="ln">   299  </span>
-<span id="L300" class="ln">   300  </span>	<span class="comment">// Check individual severities</span>
-<span id="L301" class="ln">   301  </span>	assert.Equal(t, int64(5), measurement[&#34;error&#34;])
-<span id="L302" class="ln">   302  </span>	assert.Equal(t, int64(10), measurement[&#34;warning&#34;])
-<span id="L303" class="ln">   303  </span>	assert.Equal(t, int64(0), measurement[&#34;info&#34;])  <span class="comment">// Not in eventCounts</span>
-<span id="L304" class="ln">   304  </span>	assert.Equal(t, int64(0), measurement[&#34;debug&#34;]) <span class="comment">// Not in either map</span>
-<span id="L305" class="ln">   305  </span>
-<span id="L306" class="ln">   306  </span>	<span class="comment">// Check total counts</span>
-<span id="L307" class="ln">   307  </span>	assert.Equal(t, int64(15), measurement[&#34;error_total&#34;])
-<span id="L308" class="ln">   308  </span>	assert.Equal(t, int64(25), measurement[&#34;warning_total&#34;])
-<span id="L309" class="ln">   309  </span>	assert.Equal(t, int64(50), measurement[&#34;info_total&#34;])
-<span id="L310" class="ln">   310  </span>	assert.Equal(t, int64(0), measurement[&#34;debug_total&#34;])
-<span id="L311" class="ln">   311  </span>}
-<span id="L312" class="ln">   312  </span>
-<span id="L313" class="ln">   313  </span>func TestSeverityToEnglish(t *testing.T) {
-<span id="L314" class="ln">   314  </span>	tests := []struct {
-<span id="L315" class="ln">   315  </span>		serverLang    string
-<span id="L316" class="ln">   316  </span>		errorSeverity string
-<span id="L317" class="ln">   317  </span>		expected      string
-<span id="L318" class="ln">   318  </span>	}{
-<span id="L319" class="ln">   319  </span>		{&#34;en&#34;, &#34;ERROR&#34;, &#34;ERROR&#34;},
-<span id="L320" class="ln">   320  </span>		{&#34;de&#34;, &#34;FEHLER&#34;, &#34;ERROR&#34;},
-<span id="L321" class="ln">   321  </span>		{&#34;fr&#34;, &#34;ERREUR&#34;, &#34;ERROR&#34;},
-<span id="L322" class="ln">   322  </span>		{&#34;de&#34;, &#34;WARNUNG&#34;, &#34;WARNING&#34;},
-<span id="L323" class="ln">   323  </span>		{&#34;ru&#34;, &#34;ОШИБКА&#34;, &#34;ERROR&#34;},
-<span id="L324" class="ln">   324  </span>		{&#34;zh&#34;, &#34;错误&#34;, &#34;ERROR&#34;},
-<span id="L325" class="ln">   325  </span>		{&#34;unknown&#34;, &#34;ERROR&#34;, &#34;ERROR&#34;},                  <span class="comment">// Unknown language, return as-is</span>
-<span id="L326" class="ln">   326  </span>		{&#34;de&#34;, &#34;UNKNOWN_SEVERITY&#34;, &#34;UNKNOWN_SEVERITY&#34;}, <span class="comment">// Unknown severity in known language</span>
-<span id="L327" class="ln">   327  </span>	}
+<span id="L270" class="ln">   270  </span>	<span class="comment">// Check total counts</span>
+<span id="L271" class="ln">   271  </span>	assert.Equal(t, int64(15), measurement[&#34;error_total&#34;])
+<span id="L272" class="ln">   272  </span>	assert.Equal(t, int64(25), measurement[&#34;warning_total&#34;])
+<span id="L273" class="ln">   273  </span>	assert.Equal(t, int64(50), measurement[&#34;info_total&#34;])
+<span id="L274" class="ln">   274  </span>	assert.Equal(t, int64(0), measurement[&#34;debug_total&#34;])
+<span id="L275" class="ln">   275  </span>}
+<span id="L276" class="ln">   276  </span>
+<span id="L277" class="ln">   277  </span>func TestSeverityToEnglish(t *testing.T) {
+<span id="L278" class="ln">   278  </span>	tests := []struct {
+<span id="L279" class="ln">   279  </span>		serverLang    string
+<span id="L280" class="ln">   280  </span>		errorSeverity string
+<span id="L281" class="ln">   281  </span>		expected      string
+<span id="L282" class="ln">   282  </span>	}{
+<span id="L283" class="ln">   283  </span>		{&#34;en&#34;, &#34;ERROR&#34;, &#34;ERROR&#34;},
+<span id="L284" class="ln">   284  </span>		{&#34;de&#34;, &#34;FEHLER&#34;, &#34;ERROR&#34;},
+<span id="L285" class="ln">   285  </span>		{&#34;fr&#34;, &#34;ERREUR&#34;, &#34;ERROR&#34;},
+<span id="L286" class="ln">   286  </span>		{&#34;de&#34;, &#34;WARNUNG&#34;, &#34;WARNING&#34;},
+<span id="L287" class="ln">   287  </span>		{&#34;ru&#34;, &#34;ОШИБКА&#34;, &#34;ERROR&#34;},
+<span id="L288" class="ln">   288  </span>		{&#34;zh&#34;, &#34;错误&#34;, &#34;ERROR&#34;},
+<span id="L289" class="ln">   289  </span>		{&#34;unknown&#34;, &#34;ERROR&#34;, &#34;ERROR&#34;},                  <span class="comment">// Unknown language, return as-is</span>
+<span id="L290" class="ln">   290  </span>		{&#34;de&#34;, &#34;UNKNOWN_SEVERITY&#34;, &#34;UNKNOWN_SEVERITY&#34;}, <span class="comment">// Unknown severity in known language</span>
+<span id="L291" class="ln">   291  </span>	}
+<span id="L292" class="ln">   292  </span>
+<span id="L293" class="ln">   293  </span>	for _, tt := range tests {
+<span id="L294" class="ln">   294  </span>		t.Run(tt.serverLang+&#34;_&#34;+tt.errorSeverity, func(t *testing.T) {
+<span id="L295" class="ln">   295  </span>			result := severityToEnglish(tt.serverLang, tt.errorSeverity)
+<span id="L296" class="ln">   296  </span>			assert.Equal(t, tt.expected, result)
+<span id="L297" class="ln">   297  </span>		})
+<span id="L298" class="ln">   298  </span>	}
+<span id="L299" class="ln">   299  </span>}
+<span id="L300" class="ln">   300  </span>
+<span id="L301" class="ln">   301  </span>func TestZeroEventCounts(t *testing.T) {
+<span id="L302" class="ln">   302  </span>	eventCounts := map[string]int64{
+<span id="L303" class="ln">   303  </span>		&#34;ERROR&#34;:   5,
+<span id="L304" class="ln">   304  </span>		&#34;WARNING&#34;: 10,
+<span id="L305" class="ln">   305  </span>		&#34;INFO&#34;:    15,
+<span id="L306" class="ln">   306  </span>	}
+<span id="L307" class="ln">   307  </span>
+<span id="L308" class="ln">   308  </span>	zeroEventCounts(eventCounts)
+<span id="L309" class="ln">   309  </span>
+<span id="L310" class="ln">   310  </span>	<span class="comment">// Check that all pgSeverities are zeroed</span>
+<span id="L311" class="ln">   311  </span>	for _, severity := range pgSeverities {
+<span id="L312" class="ln">   312  </span>		assert.Equal(t, int64(0), eventCounts[severity])
+<span id="L313" class="ln">   313  </span>	}
+<span id="L314" class="ln">   314  </span>}
+<span id="L315" class="ln">   315  </span>
+<span id="L316" class="ln">   316  </span>func TestRegexMatchesToMap(t *testing.T) {
+<span id="L317" class="ln">   317  </span>	t.Run(&#34;successful match&#34;, func(t *testing.T) {
+<span id="L318" class="ln">   318  </span>		lp := &amp;LogParser{
+<span id="L319" class="ln">   319  </span>			LogsMatchRegex: regexp.MustCompile(`(?P&lt;severity&gt;\w+): (?P&lt;message&gt;.+)`),
+<span id="L320" class="ln">   320  </span>		}
+<span id="L321" class="ln">   321  </span>		matches := []string{&#34;ERROR: Something went wrong&#34;, &#34;ERROR&#34;, &#34;Something went wrong&#34;}
+<span id="L322" class="ln">   322  </span>
+<span id="L323" class="ln">   323  </span>		result := lp.regexMatchesToMap(matches)
+<span id="L324" class="ln">   324  </span>		expected := map[string]string{
+<span id="L325" class="ln">   325  </span>			&#34;severity&#34;: &#34;ERROR&#34;,
+<span id="L326" class="ln">   326  </span>			&#34;message&#34;:  &#34;Something went wrong&#34;,
+<span id="L327" class="ln">   327  </span>		}
 <span id="L328" class="ln">   328  </span>
-<span id="L329" class="ln">   329  </span>	for _, tt := range tests {
-<span id="L330" class="ln">   330  </span>		t.Run(tt.serverLang+&#34;_&#34;+tt.errorSeverity, func(t *testing.T) {
-<span id="L331" class="ln">   331  </span>			result := severityToEnglish(tt.serverLang, tt.errorSeverity)
-<span id="L332" class="ln">   332  </span>			assert.Equal(t, tt.expected, result)
-<span id="L333" class="ln">   333  </span>		})
-<span id="L334" class="ln">   334  </span>	}
-<span id="L335" class="ln">   335  </span>}
-<span id="L336" class="ln">   336  </span>
-<span id="L337" class="ln">   337  </span>func TestZeroEventCounts(t *testing.T) {
-<span id="L338" class="ln">   338  </span>	eventCounts := map[string]int64{
-<span id="L339" class="ln">   339  </span>		&#34;ERROR&#34;:   5,
-<span id="L340" class="ln">   340  </span>		&#34;WARNING&#34;: 10,
-<span id="L341" class="ln">   341  </span>		&#34;INFO&#34;:    15,
-<span id="L342" class="ln">   342  </span>	}
-<span id="L343" class="ln">   343  </span>
-<span id="L344" class="ln">   344  </span>	zeroEventCounts(eventCounts)
+<span id="L329" class="ln">   329  </span>		assert.Equal(t, expected, result)
+<span id="L330" class="ln">   330  </span>	})
+<span id="L331" class="ln">   331  </span>
+<span id="L332" class="ln">   332  </span>	t.Run(&#34;no matches&#34;, func(t *testing.T) {
+<span id="L333" class="ln">   333  </span>		lp := &amp;LogParser{
+<span id="L334" class="ln">   334  </span>			LogsMatchRegex: regexp.MustCompile(`(?P&lt;severity&gt;\w+): (?P&lt;message&gt;.+)`),
+<span id="L335" class="ln">   335  </span>		}
+<span id="L336" class="ln">   336  </span>		matches := []string{}
+<span id="L337" class="ln">   337  </span>
+<span id="L338" class="ln">   338  </span>		result := lp.regexMatchesToMap(matches)
+<span id="L339" class="ln">   339  </span>		assert.Empty(t, result)
+<span id="L340" class="ln">   340  </span>	})
+<span id="L341" class="ln">   341  </span>
+<span id="L342" class="ln">   342  </span>	t.Run(&#34;nil regex&#34;, func(t *testing.T) {
+<span id="L343" class="ln">   343  </span>		lp := &amp;LogParser{}
+<span id="L344" class="ln">   344  </span>		matches := []string{&#34;test&#34;}
 <span id="L345" class="ln">   345  </span>
-<span id="L346" class="ln">   346  </span>	<span class="comment">// Check that all pgSeverities are zeroed</span>
-<span id="L347" class="ln">   347  </span>	for _, severity := range pgSeverities {
-<span id="L348" class="ln">   348  </span>		assert.Equal(t, int64(0), eventCounts[severity])
-<span id="L349" class="ln">   349  </span>	}
-<span id="L350" class="ln">   350  </span>}
-<span id="L351" class="ln">   351  </span>
-<span id="L352" class="ln">   352  </span>func TestRegexMatchesToMap(t *testing.T) {
-<span id="L353" class="ln">   353  </span>	t.Run(&#34;successful match&#34;, func(t *testing.T) {
-<span id="L354" class="ln">   354  </span>		lp := &amp;LogParser{
-<span id="L355" class="ln">   355  </span>			LogsMatchRegex: regexp.MustCompile(`(?P&lt;severity&gt;\w+): (?P&lt;message&gt;.+)`),
-<span id="L356" class="ln">   356  </span>		}
-<span id="L357" class="ln">   357  </span>		matches := []string{&#34;ERROR: Something went wrong&#34;, &#34;ERROR&#34;, &#34;Something went wrong&#34;}
-<span id="L358" class="ln">   358  </span>
-<span id="L359" class="ln">   359  </span>		result := lp.regexMatchesToMap(matches)
-<span id="L360" class="ln">   360  </span>		expected := map[string]string{
-<span id="L361" class="ln">   361  </span>			&#34;severity&#34;: &#34;ERROR&#34;,
-<span id="L362" class="ln">   362  </span>			&#34;message&#34;:  &#34;Something went wrong&#34;,
-<span id="L363" class="ln">   363  </span>		}
-<span id="L364" class="ln">   364  </span>
-<span id="L365" class="ln">   365  </span>		assert.Equal(t, expected, result)
-<span id="L366" class="ln">   366  </span>	})
-<span id="L367" class="ln">   367  </span>
-<span id="L368" class="ln">   368  </span>	t.Run(&#34;no matches&#34;, func(t *testing.T) {
-<span id="L369" class="ln">   369  </span>		lp := &amp;LogParser{
-<span id="L370" class="ln">   370  </span>			LogsMatchRegex: regexp.MustCompile(`(?P&lt;severity&gt;\w+): (?P&lt;message&gt;.+)`),
-<span id="L371" class="ln">   371  </span>		}
-<span id="L372" class="ln">   372  </span>		matches := []string{}
-<span id="L373" class="ln">   373  </span>
-<span id="L374" class="ln">   374  </span>		result := lp.regexMatchesToMap(matches)
-<span id="L375" class="ln">   375  </span>		assert.Empty(t, result)
-<span id="L376" class="ln">   376  </span>	})
-<span id="L377" class="ln">   377  </span>
-<span id="L378" class="ln">   378  </span>	t.Run(&#34;nil regex&#34;, func(t *testing.T) {
-<span id="L379" class="ln">   379  </span>		lp := &amp;LogParser{}
-<span id="L380" class="ln">   380  </span>		matches := []string{&#34;test&#34;}
-<span id="L381" class="ln">   381  </span>
-<span id="L382" class="ln">   382  </span>		result := lp.regexMatchesToMap(matches)
-<span id="L383" class="ln">   383  </span>		assert.Empty(t, result)
-<span id="L384" class="ln">   384  </span>	})
-<span id="L385" class="ln">   385  </span>}
-<span id="L386" class="ln">   386  </span>
-<span id="L387" class="ln">   387  </span>func TestCSVLogRegex(t *testing.T) {
-<span id="L388" class="ln">   388  </span>	<span class="comment">// Test the default CSV log regex with sample log lines</span>
-<span id="L389" class="ln">   389  </span>	lp := &amp;LogParser{
-<span id="L390" class="ln">   390  </span>		LogsMatchRegex: regexp.MustCompile(csvLogDefaultRegEx),
-<span id="L391" class="ln">   391  </span>	}
-<span id="L392" class="ln">   392  </span>
-<span id="L393" class="ln">   393  </span>	testLines := []struct {
-<span id="L394" class="ln">   394  </span>		line     string
-<span id="L395" class="ln">   395  </span>		expected map[string]string
-<span id="L396" class="ln">   396  </span>	}{
-<span id="L397" class="ln">   397  </span>		{
-<span id="L398" class="ln">   398  </span>			line: `2023-12-01 10:30:45.123 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,1,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,ERROR,`,
-<span id="L399" class="ln">   399  </span>			expected: map[string]string{
-<span id="L400" class="ln">   400  </span>				&#34;log_time&#34;:         &#34;2023-12-01 10:30:45.123 UTC&#34;,
-<span id="L401" class="ln">   401  </span>				&#34;user_name&#34;:        &#34;postgres&#34;,
-<span id="L402" class="ln">   402  </span>				&#34;database_name&#34;:    &#34;testdb&#34;,
-<span id="L403" class="ln">   403  </span>				&#34;process_id&#34;:       &#34;12345&#34;,
-<span id="L404" class="ln">   404  </span>				&#34;connection_from&#34;:  &#34;127.0.0.1:54321&#34;,
-<span id="L405" class="ln">   405  </span>				&#34;session_id&#34;:       &#34;session123&#34;,
-<span id="L406" class="ln">   406  </span>				&#34;session_line_num&#34;: &#34;1&#34;,
-<span id="L407" class="ln">   407  </span>				&#34;command_tag&#34;:      &#34;SELECT&#34;,
-<span id="L408" class="ln">   408  </span>				&#34;error_severity&#34;:   &#34;ERROR&#34;,
-<span id="L409" class="ln">   409  </span>			},
-<span id="L410" class="ln">   410  </span>		},
-<span id="L411" class="ln">   411  </span>		{
-<span id="L412" class="ln">   412  </span>			line: `2023-12-01 10:30:45.123 UTC,postgres,testdb,12345,127.0.0.1:54321,session123,1,SELECT,2023-12-01 10:30:00 UTC,1/234,567,WARNING,`,
-<span id="L413" class="ln">   413  </span>			expected: map[string]string{
-<span id="L414" class="ln">   414  </span>				&#34;log_time&#34;:         &#34;2023-12-01 10:30:45.123 UTC&#34;,
-<span id="L415" class="ln">   415  </span>				&#34;user_name&#34;:        &#34;postgres&#34;,
-<span id="L416" class="ln">   416  </span>				&#34;database_name&#34;:    &#34;testdb&#34;,
-<span id="L417" class="ln">   417  </span>				&#34;process_id&#34;:       &#34;12345&#34;,
-<span id="L418" class="ln">   418  </span>				&#34;connection_from&#34;:  &#34;127.0.0.1:54321&#34;,
-<span id="L419" class="ln">   419  </span>				&#34;session_id&#34;:       &#34;session123&#34;,
-<span id="L420" class="ln">   420  </span>				&#34;session_line_num&#34;: &#34;1&#34;,
-<span id="L421" class="ln">   421  </span>				&#34;command_tag&#34;:      &#34;SELECT&#34;,
-<span id="L422" class="ln">   422  </span>				&#34;error_severity&#34;:   &#34;WARNING&#34;,
-<span id="L423" class="ln">   423  </span>			},
-<span id="L424" class="ln">   424  </span>		},
-<span id="L425" class="ln">   425  </span>	}
-<span id="L426" class="ln">   426  </span>
-<span id="L427" class="ln">   427  </span>	for i, tt := range testLines {
-<span id="L428" class="ln">   428  </span>		t.Run(string(rune(&#39;A&#39;+i)), func(t *testing.T) {
-<span id="L429" class="ln">   429  </span>			matches := lp.LogsMatchRegex.FindStringSubmatch(tt.line)
-<span id="L430" class="ln">   430  </span>			assert.NotEmpty(t, matches, &#34;regex should match the log line&#34;)
-<span id="L431" class="ln">   431  </span>
-<span id="L432" class="ln">   432  </span>			result := lp.regexMatchesToMap(matches)
-<span id="L433" class="ln">   433  </span>			for key, expected := range tt.expected {
-<span id="L434" class="ln">   434  </span>				assert.Equal(t, expected, result[key], &#34;mismatch for key %s&#34;, key)
-<span id="L435" class="ln">   435  </span>			}
-<span id="L436" class="ln">   436  </span>		})
-<span id="L437" class="ln">   437  </span>	}
-<span id="L438" class="ln">   438  </span>}
-<span id="L439" class="ln">   439  </span>
-<span id="L440" class="ln">   440  </span>func TestLogParseLocal(t *testing.T) {
-<span id="L441" class="ln">   441  </span>	tempDir := t.TempDir()
-<span id="L442" class="ln">   442  </span>	logFile := filepath.Join(tempDir, &#34;test.csv&#34;)
-<span id="L443" class="ln">   443  </span>
-<span id="L444" class="ln">   444  </span>	<span class="comment">// Create a test log file with CSV format entries</span>
-<span id="L445" class="ln">   445  </span>	logContent := `2023-12-01 10:30:45.123 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,1,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,ERROR,&#34;duplicate key value violates unique constraint&#34;
-<span id="L446" class="ln">   446  </span>	2023-12-01 10:30:46.124 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,2,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,WARNING,&#34;this is a warning message&#34;
-<span id="L447" class="ln">   447  </span>	2023-12-01 10:30:47.125 UTC,&#34;postgres&#34;,&#34;otherdb&#34;,12346,&#34;127.0.0.1:54322&#34;,session124,1,&#34;INSERT&#34;,2023-12-01 10:30:00 UTC,1/235,568,ERROR,&#34;another error message&#34;
-<span id="L448" class="ln">   448  </span>	`
-<span id="L449" class="ln">   449  </span>
-<span id="L450" class="ln">   450  </span>	err := os.WriteFile(logFile, []byte(logContent), 0644)
-<span id="L451" class="ln">   451  </span>	require.NoError(t, err)
+<span id="L346" class="ln">   346  </span>		result := lp.regexMatchesToMap(matches)
+<span id="L347" class="ln">   347  </span>		assert.Empty(t, result)
+<span id="L348" class="ln">   348  </span>	})
+<span id="L349" class="ln">   349  </span>}
+<span id="L350" class="ln">   350  </span>
+<span id="L351" class="ln">   351  </span>func TestCSVLogRegex(t *testing.T) {
+<span id="L352" class="ln">   352  </span>	<span class="comment">// Test the default CSV log regex with sample log lines</span>
+<span id="L353" class="ln">   353  </span>	lp := &amp;LogParser{
+<span id="L354" class="ln">   354  </span>		LogsMatchRegex: regexp.MustCompile(csvLogDefaultRegEx),
+<span id="L355" class="ln">   355  </span>	}
+<span id="L356" class="ln">   356  </span>
+<span id="L357" class="ln">   357  </span>	testLines := []struct {
+<span id="L358" class="ln">   358  </span>		line     string
+<span id="L359" class="ln">   359  </span>		expected map[string]string
+<span id="L360" class="ln">   360  </span>	}{
+<span id="L361" class="ln">   361  </span>		{
+<span id="L362" class="ln">   362  </span>			line: `2023-12-01 10:30:45.123 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,1,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,ERROR,`,
+<span id="L363" class="ln">   363  </span>			expected: map[string]string{
+<span id="L364" class="ln">   364  </span>				&#34;log_time&#34;:         &#34;2023-12-01 10:30:45.123 UTC&#34;,
+<span id="L365" class="ln">   365  </span>				&#34;user_name&#34;:        &#34;postgres&#34;,
+<span id="L366" class="ln">   366  </span>				&#34;database_name&#34;:    &#34;testdb&#34;,
+<span id="L367" class="ln">   367  </span>				&#34;process_id&#34;:       &#34;12345&#34;,
+<span id="L368" class="ln">   368  </span>				&#34;connection_from&#34;:  &#34;127.0.0.1:54321&#34;,
+<span id="L369" class="ln">   369  </span>				&#34;session_id&#34;:       &#34;session123&#34;,
+<span id="L370" class="ln">   370  </span>				&#34;session_line_num&#34;: &#34;1&#34;,
+<span id="L371" class="ln">   371  </span>				&#34;command_tag&#34;:      &#34;SELECT&#34;,
+<span id="L372" class="ln">   372  </span>				&#34;error_severity&#34;:   &#34;ERROR&#34;,
+<span id="L373" class="ln">   373  </span>			},
+<span id="L374" class="ln">   374  </span>		},
+<span id="L375" class="ln">   375  </span>		{
+<span id="L376" class="ln">   376  </span>			line: `2023-12-01 10:30:45.123 UTC,postgres,testdb,12345,127.0.0.1:54321,session123,1,SELECT,2023-12-01 10:30:00 UTC,1/234,567,WARNING,`,
+<span id="L377" class="ln">   377  </span>			expected: map[string]string{
+<span id="L378" class="ln">   378  </span>				&#34;log_time&#34;:         &#34;2023-12-01 10:30:45.123 UTC&#34;,
+<span id="L379" class="ln">   379  </span>				&#34;user_name&#34;:        &#34;postgres&#34;,
+<span id="L380" class="ln">   380  </span>				&#34;database_name&#34;:    &#34;testdb&#34;,
+<span id="L381" class="ln">   381  </span>				&#34;process_id&#34;:       &#34;12345&#34;,
+<span id="L382" class="ln">   382  </span>				&#34;connection_from&#34;:  &#34;127.0.0.1:54321&#34;,
+<span id="L383" class="ln">   383  </span>				&#34;session_id&#34;:       &#34;session123&#34;,
+<span id="L384" class="ln">   384  </span>				&#34;session_line_num&#34;: &#34;1&#34;,
+<span id="L385" class="ln">   385  </span>				&#34;command_tag&#34;:      &#34;SELECT&#34;,
+<span id="L386" class="ln">   386  </span>				&#34;error_severity&#34;:   &#34;WARNING&#34;,
+<span id="L387" class="ln">   387  </span>			},
+<span id="L388" class="ln">   388  </span>		},
+<span id="L389" class="ln">   389  </span>	}
+<span id="L390" class="ln">   390  </span>
+<span id="L391" class="ln">   391  </span>	for i, tt := range testLines {
+<span id="L392" class="ln">   392  </span>		t.Run(string(rune(&#39;A&#39;+i)), func(t *testing.T) {
+<span id="L393" class="ln">   393  </span>			matches := lp.LogsMatchRegex.FindStringSubmatch(tt.line)
+<span id="L394" class="ln">   394  </span>			assert.NotEmpty(t, matches, &#34;regex should match the log line&#34;)
+<span id="L395" class="ln">   395  </span>
+<span id="L396" class="ln">   396  </span>			result := lp.regexMatchesToMap(matches)
+<span id="L397" class="ln">   397  </span>			for key, expected := range tt.expected {
+<span id="L398" class="ln">   398  </span>				assert.Equal(t, expected, result[key], &#34;mismatch for key %s&#34;, key)
+<span id="L399" class="ln">   399  </span>			}
+<span id="L400" class="ln">   400  </span>		})
+<span id="L401" class="ln">   401  </span>	}
+<span id="L402" class="ln">   402  </span>}
+<span id="L403" class="ln">   403  </span>
+<span id="L404" class="ln">   404  </span>func TestLogParseLocal(t *testing.T) {
+<span id="L405" class="ln">   405  </span>	tempDir := t.TempDir()
+<span id="L406" class="ln">   406  </span>	logFile := filepath.Join(tempDir, &#34;test.csv&#34;)
+<span id="L407" class="ln">   407  </span>
+<span id="L408" class="ln">   408  </span>	<span class="comment">// Create a test log file with CSV format entries</span>
+<span id="L409" class="ln">   409  </span>	logContent := `2023-12-01 10:30:45.123 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,1,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,ERROR,&#34;duplicate key value violates unique constraint&#34;
+<span id="L410" class="ln">   410  </span>	2023-12-01 10:30:46.124 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,2,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,WARNING,&#34;this is a warning message&#34;
+<span id="L411" class="ln">   411  </span>	2023-12-01 10:30:47.125 UTC,&#34;postgres&#34;,&#34;otherdb&#34;,12346,&#34;127.0.0.1:54322&#34;,session124,1,&#34;INSERT&#34;,2023-12-01 10:30:00 UTC,1/235,568,ERROR,&#34;another error message&#34;
+<span id="L412" class="ln">   412  </span>	`
+<span id="L413" class="ln">   413  </span>
+<span id="L414" class="ln">   414  </span>	err := os.WriteFile(logFile, []byte(logContent), 0644)
+<span id="L415" class="ln">   415  </span>	require.NoError(t, err)
+<span id="L416" class="ln">   416  </span>
+<span id="L417" class="ln">   417  </span>	<span class="comment">// Create a mock database connection</span>
+<span id="L418" class="ln">   418  </span>	mock, err := pgxmock.NewPool()
+<span id="L419" class="ln">   419  </span>	require.NoError(t, err)
+<span id="L420" class="ln">   420  </span>	defer mock.Close()
+<span id="L421" class="ln">   421  </span>
+<span id="L422" class="ln">   422  </span>	mock.ExpectQuery(`select 
+<span id="L423" class="ln">   423  </span>		current_setting\(&#39;data_directory&#39;\) as dd, 
+<span id="L424" class="ln">   424  </span>		current_setting\(&#39;log_directory&#39;\) as ld,
+<span id="L425" class="ln">   425  </span>		current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages,
+<span id="L426" class="ln">   426  </span>		current_setting\(&#39;log_truncate_on_rotation&#39;\) as log_trunc`).
+<span id="L427" class="ln">   427  </span>		WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;, &#34;lc_messages&#34;, &#34;log_trunc&#34;}).
+<span id="L428" class="ln">   428  </span>			AddRow(&#34;&#34;, tempDir, &#34;en&#34;, &#34;off&#34;))
+<span id="L429" class="ln">   429  </span>
+<span id="L430" class="ln">   430  </span>	mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
+<span id="L431" class="ln">   431  </span>		pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(true))
+<span id="L432" class="ln">   432  </span>
+<span id="L433" class="ln">   433  </span>	<span class="comment">// Create a SourceConn for testing</span>
+<span id="L434" class="ln">   434  </span>	sourceConn := &amp;sources.SourceConn{
+<span id="L435" class="ln">   435  </span>		Source: sources.Source{
+<span id="L436" class="ln">   436  </span>			Name: &#34;test-source&#34;,
+<span id="L437" class="ln">   437  </span>		},
+<span id="L438" class="ln">   438  </span>		Conn: mock,
+<span id="L439" class="ln">   439  </span>	}
+<span id="L440" class="ln">   440  </span>
+<span id="L441" class="ln">   441  </span>	<span class="comment">// Create a context with timeout to prevent test from hanging</span>
+<span id="L442" class="ln">   442  </span>	ctx, cancel := context.WithTimeout(testutil.TestContext, 2*time.Second)
+<span id="L443" class="ln">   443  </span>	defer cancel()
+<span id="L444" class="ln">   444  </span>
+<span id="L445" class="ln">   445  </span>	<span class="comment">// Create a channel to receive measurement envelopes</span>
+<span id="L446" class="ln">   446  </span>	storeCh := make(chan metrics.MeasurementEnvelope, 10)
+<span id="L447" class="ln">   447  </span>
+<span id="L448" class="ln">   448  </span>	lp, err := NewLogParser(ctx, sourceConn, storeCh)
+<span id="L449" class="ln">   449  </span>	require.NoError(t, err)
+<span id="L450" class="ln">   450  </span>	err = lp.ParseLogs()
+<span id="L451" class="ln">   451  </span>	assert.NoError(t, err)
 <span id="L452" class="ln">   452  </span>
-<span id="L453" class="ln">   453  </span>	<span class="comment">// Create a mock database connection</span>
-<span id="L454" class="ln">   454  </span>	mock, err := pgxmock.NewPool()
-<span id="L455" class="ln">   455  </span>	require.NoError(t, err)
-<span id="L456" class="ln">   456  </span>	defer mock.Close()
-<span id="L457" class="ln">   457  </span>
-<span id="L458" class="ln">   458  </span>	<span class="comment">// Mock the log folder detection query</span>
-<span id="L459" class="ln">   459  </span>	mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L460" class="ln">   460  </span>		WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).AddRow(&#34;&#34;, tempDir))
-<span id="L461" class="ln">   461  </span>
-<span id="L462" class="ln">   462  </span>	<span class="comment">// Mock the language detection query</span>
-<span id="L463" class="ln">   463  </span>	mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L464" class="ln">   464  </span>		WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;en&#34;))
-<span id="L465" class="ln">   465  </span>
-<span id="L466" class="ln">   466  </span>	mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
-<span id="L467" class="ln">   467  </span>		pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(true))
-<span id="L468" class="ln">   468  </span>
-<span id="L469" class="ln">   469  </span>	<span class="comment">// Create a SourceConn for testing</span>
-<span id="L470" class="ln">   470  </span>	sourceConn := &amp;sources.SourceConn{
-<span id="L471" class="ln">   471  </span>		Source: sources.Source{
-<span id="L472" class="ln">   472  </span>			Name: &#34;test-source&#34;,
-<span id="L473" class="ln">   473  </span>		},
-<span id="L474" class="ln">   474  </span>		Conn: mock,
-<span id="L475" class="ln">   475  </span>	}
-<span id="L476" class="ln">   476  </span>
-<span id="L477" class="ln">   477  </span>	<span class="comment">// Create a context with timeout to prevent test from hanging</span>
-<span id="L478" class="ln">   478  </span>	ctx, cancel := context.WithTimeout(testutil.TestContext, 2*time.Second)
-<span id="L479" class="ln">   479  </span>	defer cancel()
-<span id="L480" class="ln">   480  </span>
-<span id="L481" class="ln">   481  </span>	<span class="comment">// Create a channel to receive measurement envelopes</span>
-<span id="L482" class="ln">   482  </span>	storeCh := make(chan metrics.MeasurementEnvelope, 10)
+<span id="L453" class="ln">   453  </span>	<span class="comment">// Ensure mock expectations were met.</span>
+<span id="L454" class="ln">   454  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L455" class="ln">   455  </span>
+<span id="L456" class="ln">   456  </span>	<span class="comment">// Wait for measurements to be sent or timeout</span>
+<span id="L457" class="ln">   457  </span>	var measurement metrics.MeasurementEnvelope
+<span id="L458" class="ln">   458  </span>	select {
+<span id="L459" class="ln">   459  </span>	case measurement = &lt;-storeCh:
+<span id="L460" class="ln">   460  </span>		assert.NotEmpty(t, measurement.Data, &#34;Measurement data should not be empty&#34;)
+<span id="L461" class="ln">   461  </span>	case &lt;-time.After(2 * time.Second):
+<span id="L462" class="ln">   462  </span>	}
+<span id="L463" class="ln">   463  </span>
+<span id="L464" class="ln">   464  </span>	assert.Equal(t, &#34;test-source&#34;, measurement.DBName)
+<span id="L465" class="ln">   465  </span>	assert.Equal(t, specialMetricServerLogEventCounts, measurement.MetricName)
+<span id="L466" class="ln">   466  </span>
+<span id="L467" class="ln">   467  </span>	<span class="comment">// Verify the data contains expected fields for both local and total counts</span>
+<span id="L468" class="ln">   468  </span>	data := measurement.Data[0]
+<span id="L469" class="ln">   469  </span>	<span class="comment">// Check that severity counts are present</span>
+<span id="L470" class="ln">   470  </span>	_, hasError := data[&#34;error&#34;]
+<span id="L471" class="ln">   471  </span>	_, hasWarning := data[&#34;warning&#34;]
+<span id="L472" class="ln">   472  </span>	assert.True(t, hasError &amp;&amp; hasWarning, &#34;Should have at least error and warning&#34;)
+<span id="L473" class="ln">   473  </span>}
+<span id="L474" class="ln">   474  </span>
+<span id="L475" class="ln">   475  </span>func TestGetFileWithLatestTimestamp(t *testing.T) {
+<span id="L476" class="ln">   476  </span>	<span class="comment">// Create temporary test files</span>
+<span id="L477" class="ln">   477  </span>	tempDir := t.TempDir()
+<span id="L478" class="ln">   478  </span>
+<span id="L479" class="ln">   479  </span>	t.Run(&#34;single file&#34;, func(t *testing.T) {
+<span id="L480" class="ln">   480  </span>		file1 := filepath.Join(tempDir, &#34;test1.log&#34;)
+<span id="L481" class="ln">   481  </span>		err := os.WriteFile(file1, []byte(&#34;test&#34;), 0644)
+<span id="L482" class="ln">   482  </span>		require.NoError(t, err)
 <span id="L483" class="ln">   483  </span>
-<span id="L484" class="ln">   484  </span>	lp, err := NewLogParser(ctx, sourceConn, storeCh)
-<span id="L485" class="ln">   485  </span>	require.NoError(t, err)
-<span id="L486" class="ln">   486  </span>	err = lp.ParseLogs()
-<span id="L487" class="ln">   487  </span>	assert.NoError(t, err)
+<span id="L484" class="ln">   484  </span>		latest, err := getFileWithLatestTimestamp([]string{file1})
+<span id="L485" class="ln">   485  </span>		assert.NoError(t, err)
+<span id="L486" class="ln">   486  </span>		assert.Equal(t, file1, latest)
+<span id="L487" class="ln">   487  </span>	})
 <span id="L488" class="ln">   488  </span>
-<span id="L489" class="ln">   489  </span>	<span class="comment">// Ensure mock expectations were met.</span>
-<span id="L490" class="ln">   490  </span>	assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L491" class="ln">   491  </span>
-<span id="L492" class="ln">   492  </span>	<span class="comment">// Wait for measurements to be sent or timeout</span>
-<span id="L493" class="ln">   493  </span>	var measurement metrics.MeasurementEnvelope
-<span id="L494" class="ln">   494  </span>	select {
-<span id="L495" class="ln">   495  </span>	case measurement = &lt;-storeCh:
-<span id="L496" class="ln">   496  </span>		assert.NotEmpty(t, measurement.Data, &#34;Measurement data should not be empty&#34;)
-<span id="L497" class="ln">   497  </span>	case &lt;-time.After(2 * time.Second):
-<span id="L498" class="ln">   498  </span>	}
+<span id="L489" class="ln">   489  </span>	t.Run(&#34;multiple files with different timestamps&#34;, func(t *testing.T) {
+<span id="L490" class="ln">   490  </span>		file1 := filepath.Join(tempDir, &#34;old.log&#34;)
+<span id="L491" class="ln">   491  </span>		file2 := filepath.Join(tempDir, &#34;new.log&#34;)
+<span id="L492" class="ln">   492  </span>
+<span id="L493" class="ln">   493  </span>		<span class="comment">// Create first file</span>
+<span id="L494" class="ln">   494  </span>		err := os.WriteFile(file1, []byte(&#34;old&#34;), 0644)
+<span id="L495" class="ln">   495  </span>		require.NoError(t, err)
+<span id="L496" class="ln">   496  </span>
+<span id="L497" class="ln">   497  </span>		<span class="comment">// Wait to ensure different timestamps</span>
+<span id="L498" class="ln">   498  </span>		time.Sleep(10 * time.Millisecond)
 <span id="L499" class="ln">   499  </span>
-<span id="L500" class="ln">   500  </span>	assert.Equal(t, &#34;test-source&#34;, measurement.DBName)
-<span id="L501" class="ln">   501  </span>	assert.Equal(t, specialMetricServerLogEventCounts, measurement.MetricName)
-<span id="L502" class="ln">   502  </span>
-<span id="L503" class="ln">   503  </span>	<span class="comment">// Verify the data contains expected fields for both local and total counts</span>
-<span id="L504" class="ln">   504  </span>	data := measurement.Data[0]
-<span id="L505" class="ln">   505  </span>	<span class="comment">// Check that severity counts are present</span>
-<span id="L506" class="ln">   506  </span>	_, hasError := data[&#34;error&#34;]
-<span id="L507" class="ln">   507  </span>	_, hasWarning := data[&#34;warning&#34;]
-<span id="L508" class="ln">   508  </span>	assert.True(t, hasError &amp;&amp; hasWarning, &#34;Should have at least error and warning&#34;)
-<span id="L509" class="ln">   509  </span>}
-<span id="L510" class="ln">   510  </span>
-<span id="L511" class="ln">   511  </span>func TestGetFileWithLatestTimestamp(t *testing.T) {
-<span id="L512" class="ln">   512  </span>	<span class="comment">// Create temporary test files</span>
-<span id="L513" class="ln">   513  </span>	tempDir := t.TempDir()
+<span id="L500" class="ln">   500  </span>		<span class="comment">// Create second file (newer)</span>
+<span id="L501" class="ln">   501  </span>		err = os.WriteFile(file2, []byte(&#34;new&#34;), 0644)
+<span id="L502" class="ln">   502  </span>		require.NoError(t, err)
+<span id="L503" class="ln">   503  </span>
+<span id="L504" class="ln">   504  </span>		latest, err := getFileWithLatestTimestamp([]string{file1, file2})
+<span id="L505" class="ln">   505  </span>		assert.NoError(t, err)
+<span id="L506" class="ln">   506  </span>		assert.Equal(t, file2, latest)
+<span id="L507" class="ln">   507  </span>	})
+<span id="L508" class="ln">   508  </span>
+<span id="L509" class="ln">   509  </span>	t.Run(&#34;empty file list&#34;, func(t *testing.T) {
+<span id="L510" class="ln">   510  </span>		latest, err := getFileWithLatestTimestamp([]string{})
+<span id="L511" class="ln">   511  </span>		assert.NoError(t, err)
+<span id="L512" class="ln">   512  </span>		assert.Equal(t, &#34;&#34;, latest)
+<span id="L513" class="ln">   513  </span>	})
 <span id="L514" class="ln">   514  </span>
-<span id="L515" class="ln">   515  </span>	t.Run(&#34;single file&#34;, func(t *testing.T) {
-<span id="L516" class="ln">   516  </span>		file1 := filepath.Join(tempDir, &#34;test1.log&#34;)
-<span id="L517" class="ln">   517  </span>		err := os.WriteFile(file1, []byte(&#34;test&#34;), 0644)
-<span id="L518" class="ln">   518  </span>		require.NoError(t, err)
-<span id="L519" class="ln">   519  </span>
-<span id="L520" class="ln">   520  </span>		latest, err := getFileWithLatestTimestamp([]string{file1})
-<span id="L521" class="ln">   521  </span>		assert.NoError(t, err)
-<span id="L522" class="ln">   522  </span>		assert.Equal(t, file1, latest)
-<span id="L523" class="ln">   523  </span>	})
-<span id="L524" class="ln">   524  </span>
-<span id="L525" class="ln">   525  </span>	t.Run(&#34;multiple files with different timestamps&#34;, func(t *testing.T) {
-<span id="L526" class="ln">   526  </span>		file1 := filepath.Join(tempDir, &#34;old.log&#34;)
-<span id="L527" class="ln">   527  </span>		file2 := filepath.Join(tempDir, &#34;new.log&#34;)
-<span id="L528" class="ln">   528  </span>
-<span id="L529" class="ln">   529  </span>		<span class="comment">// Create first file</span>
-<span id="L530" class="ln">   530  </span>		err := os.WriteFile(file1, []byte(&#34;old&#34;), 0644)
-<span id="L531" class="ln">   531  </span>		require.NoError(t, err)
-<span id="L532" class="ln">   532  </span>
-<span id="L533" class="ln">   533  </span>		<span class="comment">// Wait to ensure different timestamps</span>
-<span id="L534" class="ln">   534  </span>		time.Sleep(10 * time.Millisecond)
-<span id="L535" class="ln">   535  </span>
-<span id="L536" class="ln">   536  </span>		<span class="comment">// Create second file (newer)</span>
-<span id="L537" class="ln">   537  </span>		err = os.WriteFile(file2, []byte(&#34;new&#34;), 0644)
-<span id="L538" class="ln">   538  </span>		require.NoError(t, err)
-<span id="L539" class="ln">   539  </span>
-<span id="L540" class="ln">   540  </span>		latest, err := getFileWithLatestTimestamp([]string{file1, file2})
-<span id="L541" class="ln">   541  </span>		assert.NoError(t, err)
-<span id="L542" class="ln">   542  </span>		assert.Equal(t, file2, latest)
-<span id="L543" class="ln">   543  </span>	})
-<span id="L544" class="ln">   544  </span>
-<span id="L545" class="ln">   545  </span>	t.Run(&#34;empty file list&#34;, func(t *testing.T) {
-<span id="L546" class="ln">   546  </span>		latest, err := getFileWithLatestTimestamp([]string{})
-<span id="L547" class="ln">   547  </span>		assert.NoError(t, err)
-<span id="L548" class="ln">   548  </span>		assert.Equal(t, &#34;&#34;, latest)
-<span id="L549" class="ln">   549  </span>	})
-<span id="L550" class="ln">   550  </span>
-<span id="L551" class="ln">   551  </span>	t.Run(&#34;non-existent file&#34;, func(t *testing.T) {
-<span id="L552" class="ln">   552  </span>		nonExistent := filepath.Join(tempDir, &#34;nonexistent.log&#34;)
-<span id="L553" class="ln">   553  </span>		latest, err := getFileWithLatestTimestamp([]string{nonExistent})
-<span id="L554" class="ln">   554  </span>		assert.Error(t, err)
-<span id="L555" class="ln">   555  </span>		assert.Equal(t, &#34;&#34;, latest)
-<span id="L556" class="ln">   556  </span>	})
-<span id="L557" class="ln">   557  </span>}
-<span id="L558" class="ln">   558  </span>
-<span id="L559" class="ln">   559  </span>func TestGetFileWithNextModTimestamp(t *testing.T) {
-<span id="L560" class="ln">   560  </span>	tempDir := t.TempDir()
-<span id="L561" class="ln">   561  </span>
-<span id="L562" class="ln">   562  </span>	t.Run(&#34;finds next file&#34;, func(t *testing.T) {
-<span id="L563" class="ln">   563  </span>		file1 := filepath.Join(tempDir, &#34;first.log&#34;)
-<span id="L564" class="ln">   564  </span>		file2 := filepath.Join(tempDir, &#34;second.log&#34;)
-<span id="L565" class="ln">   565  </span>		file3 := filepath.Join(tempDir, &#34;third.log&#34;)
-<span id="L566" class="ln">   566  </span>
-<span id="L567" class="ln">   567  </span>		<span class="comment">// Create files with increasing timestamps</span>
-<span id="L568" class="ln">   568  </span>		err := os.WriteFile(file1, []byte(&#34;first&#34;), 0644)
-<span id="L569" class="ln">   569  </span>		require.NoError(t, err)
-<span id="L570" class="ln">   570  </span>
-<span id="L571" class="ln">   571  </span>		time.Sleep(10 * time.Millisecond)
-<span id="L572" class="ln">   572  </span>		err = os.WriteFile(file2, []byte(&#34;second&#34;), 0644)
-<span id="L573" class="ln">   573  </span>		require.NoError(t, err)
-<span id="L574" class="ln">   574  </span>
-<span id="L575" class="ln">   575  </span>		time.Sleep(10 * time.Millisecond)
-<span id="L576" class="ln">   576  </span>		err = os.WriteFile(file3, []byte(&#34;third&#34;), 0644)
-<span id="L577" class="ln">   577  </span>		require.NoError(t, err)
-<span id="L578" class="ln">   578  </span>
-<span id="L579" class="ln">   579  </span>		globPattern := filepath.Join(tempDir, &#34;*.log&#34;)
-<span id="L580" class="ln">   580  </span>		next, err := getFileWithNextModTimestamp(globPattern, file1)
-<span id="L581" class="ln">   581  </span>		assert.NoError(t, err)
-<span id="L582" class="ln">   582  </span>		assert.Equal(t, file2, next)
-<span id="L583" class="ln">   583  </span>	})
-<span id="L584" class="ln">   584  </span>
-<span id="L585" class="ln">   585  </span>	t.Run(&#34;no next file&#34;, func(t *testing.T) {
-<span id="L586" class="ln">   586  </span>		file1 := filepath.Join(tempDir, &#34;only.log&#34;)
-<span id="L587" class="ln">   587  </span>		err := os.WriteFile(file1, []byte(&#34;only&#34;), 0644)
-<span id="L588" class="ln">   588  </span>		require.NoError(t, err)
+<span id="L515" class="ln">   515  </span>	t.Run(&#34;non-existent file&#34;, func(t *testing.T) {
+<span id="L516" class="ln">   516  </span>		nonExistent := filepath.Join(tempDir, &#34;nonexistent.log&#34;)
+<span id="L517" class="ln">   517  </span>		latest, err := getFileWithLatestTimestamp([]string{nonExistent})
+<span id="L518" class="ln">   518  </span>		assert.Error(t, err)
+<span id="L519" class="ln">   519  </span>		assert.Equal(t, &#34;&#34;, latest)
+<span id="L520" class="ln">   520  </span>	})
+<span id="L521" class="ln">   521  </span>}
+<span id="L522" class="ln">   522  </span>
+<span id="L523" class="ln">   523  </span>func TestGetFileWithNextModTimestamp(t *testing.T) {
+<span id="L524" class="ln">   524  </span>	tempDir := t.TempDir()
+<span id="L525" class="ln">   525  </span>
+<span id="L526" class="ln">   526  </span>	t.Run(&#34;finds next file&#34;, func(t *testing.T) {
+<span id="L527" class="ln">   527  </span>		file1 := filepath.Join(tempDir, &#34;first.log&#34;)
+<span id="L528" class="ln">   528  </span>		file2 := filepath.Join(tempDir, &#34;second.log&#34;)
+<span id="L529" class="ln">   529  </span>		file3 := filepath.Join(tempDir, &#34;third.log&#34;)
+<span id="L530" class="ln">   530  </span>
+<span id="L531" class="ln">   531  </span>		<span class="comment">// Create files with increasing timestamps</span>
+<span id="L532" class="ln">   532  </span>		err := os.WriteFile(file1, []byte(&#34;first&#34;), 0644)
+<span id="L533" class="ln">   533  </span>		require.NoError(t, err)
+<span id="L534" class="ln">   534  </span>
+<span id="L535" class="ln">   535  </span>		time.Sleep(10 * time.Millisecond)
+<span id="L536" class="ln">   536  </span>		err = os.WriteFile(file2, []byte(&#34;second&#34;), 0644)
+<span id="L537" class="ln">   537  </span>		require.NoError(t, err)
+<span id="L538" class="ln">   538  </span>
+<span id="L539" class="ln">   539  </span>		time.Sleep(10 * time.Millisecond)
+<span id="L540" class="ln">   540  </span>		err = os.WriteFile(file3, []byte(&#34;third&#34;), 0644)
+<span id="L541" class="ln">   541  </span>		require.NoError(t, err)
+<span id="L542" class="ln">   542  </span>
+<span id="L543" class="ln">   543  </span>		globPattern := filepath.Join(tempDir, &#34;*.log&#34;)
+<span id="L544" class="ln">   544  </span>		next, err := getFileWithNextModTimestamp(globPattern, file1)
+<span id="L545" class="ln">   545  </span>		assert.NoError(t, err)
+<span id="L546" class="ln">   546  </span>		assert.Equal(t, file2, next)
+<span id="L547" class="ln">   547  </span>	})
+<span id="L548" class="ln">   548  </span>
+<span id="L549" class="ln">   549  </span>	t.Run(&#34;no next file&#34;, func(t *testing.T) {
+<span id="L550" class="ln">   550  </span>		file1 := filepath.Join(tempDir, &#34;only.log&#34;)
+<span id="L551" class="ln">   551  </span>		err := os.WriteFile(file1, []byte(&#34;only&#34;), 0644)
+<span id="L552" class="ln">   552  </span>		require.NoError(t, err)
+<span id="L553" class="ln">   553  </span>
+<span id="L554" class="ln">   554  </span>		globPattern := filepath.Join(tempDir, &#34;*.log&#34;)
+<span id="L555" class="ln">   555  </span>		next, err := getFileWithNextModTimestamp(globPattern, file1)
+<span id="L556" class="ln">   556  </span>		assert.NoError(t, err)
+<span id="L557" class="ln">   557  </span>		assert.Equal(t, &#34;&#34;, next)
+<span id="L558" class="ln">   558  </span>	})
+<span id="L559" class="ln">   559  </span>
+<span id="L560" class="ln">   560  </span>	t.Run(&#34;invalid glob pattern&#34;, func(t *testing.T) {
+<span id="L561" class="ln">   561  </span>		invalidGlob := &#34;[&#34;
+<span id="L562" class="ln">   562  </span>		file1 := filepath.Join(tempDir, &#34;test.log&#34;)
+<span id="L563" class="ln">   563  </span>		next, err := getFileWithNextModTimestamp(invalidGlob, file1)
+<span id="L564" class="ln">   564  </span>		assert.Error(t, err)
+<span id="L565" class="ln">   565  </span>		assert.Equal(t, &#34;&#34;, next)
+<span id="L566" class="ln">   566  </span>	})
+<span id="L567" class="ln">   567  </span>}
+<span id="L568" class="ln">   568  </span>
+<span id="L569" class="ln">   569  </span>func TestLogParseRemote(t *testing.T) {
+<span id="L570" class="ln">   570  </span>	const (
+<span id="L571" class="ln">   571  </span>		testTimeout       = 3 * time.Second
+<span id="L572" class="ln">   572  </span>		channelBufferSize = 10
+<span id="L573" class="ln">   573  </span>		logFileName       = &#34;postgresql.csv&#34;
+<span id="L574" class="ln">   574  </span>		testDbName        = &#34;testdb&#34;
+<span id="L575" class="ln">   575  </span>	)
+<span id="L576" class="ln">   576  </span>
+<span id="L577" class="ln">   577  </span>	<span class="comment">// Sample log content with 3 entries: 2 ERRORs in different DBs, 1 WARNING</span>
+<span id="L578" class="ln">   578  </span>	logContent := `2023-12-01 10:30:45.123 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,1,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,ERROR,&#34;duplicate key value violates unique constraint&#34;
+<span id="L579" class="ln">   579  </span>2023-12-01 10:30:46.124 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,2,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,WARNING,&#34;this is a warning message&#34;
+<span id="L580" class="ln">   580  </span>2023-12-01 10:30:47.125 UTC,&#34;postgres&#34;,&#34;otherdb&#34;,12346,&#34;127.0.0.1:54322&#34;,session124,1,&#34;INSERT&#34;,2023-12-01 10:30:00 UTC,1/235,568,ERROR,&#34;another error message&#34;
+<span id="L581" class="ln">   581  </span>`
+<span id="L582" class="ln">   582  </span>
+<span id="L583" class="ln">   583  </span>	t.Run(&#34;success - parses CSV logs with correct counts&#34;, func(t *testing.T) {
+<span id="L584" class="ln">   584  </span>		tempDir := t.TempDir()
+<span id="L585" class="ln">   585  </span>
+<span id="L586" class="ln">   586  </span>		mock, err := pgxmock.NewPool()
+<span id="L587" class="ln">   587  </span>		require.NoError(t, err)
+<span id="L588" class="ln">   588  </span>		defer mock.Close()
 <span id="L589" class="ln">   589  </span>
-<span id="L590" class="ln">   590  </span>		globPattern := filepath.Join(tempDir, &#34;*.log&#34;)
-<span id="L591" class="ln">   591  </span>		next, err := getFileWithNextModTimestamp(globPattern, file1)
-<span id="L592" class="ln">   592  </span>		assert.NoError(t, err)
-<span id="L593" class="ln">   593  </span>		assert.Equal(t, &#34;&#34;, next)
-<span id="L594" class="ln">   594  </span>	})
-<span id="L595" class="ln">   595  </span>
-<span id="L596" class="ln">   596  </span>	t.Run(&#34;invalid glob pattern&#34;, func(t *testing.T) {
-<span id="L597" class="ln">   597  </span>		invalidGlob := &#34;[&#34;
-<span id="L598" class="ln">   598  </span>		file1 := filepath.Join(tempDir, &#34;test.log&#34;)
-<span id="L599" class="ln">   599  </span>		next, err := getFileWithNextModTimestamp(invalidGlob, file1)
-<span id="L600" class="ln">   600  </span>		assert.Error(t, err)
-<span id="L601" class="ln">   601  </span>		assert.Equal(t, &#34;&#34;, next)
-<span id="L602" class="ln">   602  </span>	})
-<span id="L603" class="ln">   603  </span>}
-<span id="L604" class="ln">   604  </span>
-<span id="L605" class="ln">   605  </span>func TestLogParseRemote(t *testing.T) {
-<span id="L606" class="ln">   606  </span>	const (
-<span id="L607" class="ln">   607  </span>		testTimeout       = 3 * time.Second
-<span id="L608" class="ln">   608  </span>		channelBufferSize = 10
-<span id="L609" class="ln">   609  </span>		logFileName       = &#34;postgresql.csv&#34;
-<span id="L610" class="ln">   610  </span>		testDbName        = &#34;testdb&#34;
-<span id="L611" class="ln">   611  </span>	)
-<span id="L612" class="ln">   612  </span>
-<span id="L613" class="ln">   613  </span>	<span class="comment">// Sample log content with 3 entries: 2 ERRORs in different DBs, 1 WARNING</span>
-<span id="L614" class="ln">   614  </span>	logContent := `2023-12-01 10:30:45.123 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,1,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,ERROR,&#34;duplicate key value violates unique constraint&#34;
-<span id="L615" class="ln">   615  </span>2023-12-01 10:30:46.124 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,2,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,WARNING,&#34;this is a warning message&#34;
-<span id="L616" class="ln">   616  </span>2023-12-01 10:30:47.125 UTC,&#34;postgres&#34;,&#34;otherdb&#34;,12346,&#34;127.0.0.1:54322&#34;,session124,1,&#34;INSERT&#34;,2023-12-01 10:30:00 UTC,1/235,568,ERROR,&#34;another error message&#34;
-<span id="L617" class="ln">   617  </span>`
-<span id="L618" class="ln">   618  </span>
-<span id="L619" class="ln">   619  </span>	t.Run(&#34;success - parses CSV logs with correct counts&#34;, func(t *testing.T) {
-<span id="L620" class="ln">   620  </span>		tempDir := t.TempDir()
-<span id="L621" class="ln">   621  </span>
-<span id="L622" class="ln">   622  </span>		mock, err := pgxmock.NewPool()
-<span id="L623" class="ln">   623  </span>		require.NoError(t, err)
-<span id="L624" class="ln">   624  </span>		defer mock.Close()
-<span id="L625" class="ln">   625  </span>
-<span id="L626" class="ln">   626  </span>		<span class="comment">// Phase 1: NewLogParser initialization queries</span>
-<span id="L627" class="ln">   627  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L628" class="ln">   628  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).AddRow(&#34;&#34;, tempDir))
-<span id="L629" class="ln">   629  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L630" class="ln">   630  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;en&#34;))
+<span id="L590" class="ln">   590  </span>		mock.ExpectQuery(`select 
+<span id="L591" class="ln">   591  </span>			current_setting\(&#39;data_directory&#39;\) as dd, 
+<span id="L592" class="ln">   592  </span>			current_setting\(&#39;log_directory&#39;\) as ld,
+<span id="L593" class="ln">   593  </span>			current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages,
+<span id="L594" class="ln">   594  </span>			current_setting\(&#39;log_truncate_on_rotation&#39;\) as log_trunc`).
+<span id="L595" class="ln">   595  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;, &#34;lc_messages&#34;, &#34;log_trunc&#34;}).
+<span id="L596" class="ln">   596  </span>				AddRow(&#34;&#34;, tempDir, &#34;en&#34;, &#34;off&#34;))
+<span id="L597" class="ln">   597  </span>
+<span id="L598" class="ln">   598  </span>		<span class="comment">// Phase 2: Mode detection - returns false to trigger remote mode</span>
+<span id="L599" class="ln">   599  </span>		mock.ExpectQuery(`SELECT COALESCE`).
+<span id="L600" class="ln">   600  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(false))
+<span id="L601" class="ln">   601  </span>
+<span id="L602" class="ln">   602  </span>		<span class="comment">// Phase 3: Privilege check - verifies pg_ls_logdir() and pg_read_file() permissions</span>
+<span id="L603" class="ln">   603  </span>		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
+<span id="L604" class="ln">   604  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(logFileName))
+<span id="L605" class="ln">   605  </span>		mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
+<span id="L606" class="ln">   606  </span>			WithArgs(filepath.Join(tempDir, logFileName)).
+<span id="L607" class="ln">   607  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;pg_read_file&#34;}).AddRow(&#34;&#34;)) <span class="comment">// 0 bytes read = permission test</span>
+<span id="L608" class="ln">   608  </span>
+<span id="L609" class="ln">   609  </span>		<span class="comment">// Phase 4: Log file discovery - finds the most recent CSV log file with existing content</span>
+<span id="L610" class="ln">   610  </span>		<span class="comment">// Note: parseLogsRemote sets offset = size on first run, so it starts at EOF and only reads new data</span>
+<span id="L611" class="ln">   611  </span>		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like &#39;%csv&#39; order by modification desc limit 1;`).
+<span id="L612" class="ln">   612  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;, &#34;size&#34;, &#34;modification&#34;}).
+<span id="L613" class="ln">   613  </span>				AddRow(logFileName, int32(len(logContent)), time.Now()))
+<span id="L614" class="ln">   614  </span>
+<span id="L615" class="ln">   615  </span>		sourceConn := &amp;sources.SourceConn{
+<span id="L616" class="ln">   616  </span>			Source: sources.Source{
+<span id="L617" class="ln">   617  </span>				Name:    &#34;test-source&#34;,
+<span id="L618" class="ln">   618  </span>				Metrics: map[string]float64{specialMetricServerLogEventCounts: 60}, <span class="comment">// 60s interval - won&#39;t trigger during test</span>
+<span id="L619" class="ln">   619  </span>			},
+<span id="L620" class="ln">   620  </span>			Conn: mock,
+<span id="L621" class="ln">   621  </span>		}
+<span id="L622" class="ln">   622  </span>		sourceConn.RealDbname = testDbName
+<span id="L623" class="ln">   623  </span>
+<span id="L624" class="ln">   624  </span>		ctx, cancel := context.WithTimeout(testutil.TestContext, 500*time.Millisecond)
+<span id="L625" class="ln">   625  </span>		defer cancel()
+<span id="L626" class="ln">   626  </span>
+<span id="L627" class="ln">   627  </span>		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
+<span id="L628" class="ln">   628  </span>
+<span id="L629" class="ln">   629  </span>		lp, err := NewLogParser(ctx, sourceConn, storeCh)
+<span id="L630" class="ln">   630  </span>		require.NoError(t, err)
 <span id="L631" class="ln">   631  </span>
-<span id="L632" class="ln">   632  </span>		<span class="comment">// Phase 2: Mode detection - returns false to trigger remote mode</span>
-<span id="L633" class="ln">   633  </span>		mock.ExpectQuery(`SELECT COALESCE`).
-<span id="L634" class="ln">   634  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(false))
-<span id="L635" class="ln">   635  </span>
-<span id="L636" class="ln">   636  </span>		<span class="comment">// Phase 3: Privilege check - verifies pg_ls_logdir() and pg_read_file() permissions</span>
-<span id="L637" class="ln">   637  </span>		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
-<span id="L638" class="ln">   638  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(logFileName))
-<span id="L639" class="ln">   639  </span>		mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
-<span id="L640" class="ln">   640  </span>			WithArgs(filepath.Join(tempDir, logFileName)).
-<span id="L641" class="ln">   641  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;pg_read_file&#34;}).AddRow(&#34;&#34;)) <span class="comment">// 0 bytes read = permission test</span>
+<span id="L632" class="ln">   632  </span>		<span class="comment">// Run ParseLogs in a goroutine since it runs infinitely until context cancels</span>
+<span id="L633" class="ln">   633  </span>		go func() {
+<span id="L634" class="ln">   634  </span>			_ = lp.ParseLogs()
+<span id="L635" class="ln">   635  </span>		}()
+<span id="L636" class="ln">   636  </span>
+<span id="L637" class="ln">   637  </span>		<span class="comment">// Wait for context to timeout</span>
+<span id="L638" class="ln">   638  </span>		<span class="comment">// Note: parseLogsRemote starts reading from EOF, so existing log content isn&#39;t parsed</span>
+<span id="L639" class="ln">   639  </span>		<span class="comment">// This test verifies the initialization and setup flow</span>
+<span id="L640" class="ln">   640  </span>		&lt;-ctx.Done()
+<span id="L641" class="ln">   641  </span>		time.Sleep(100 * time.Millisecond)
 <span id="L642" class="ln">   642  </span>
-<span id="L643" class="ln">   643  </span>		<span class="comment">// Phase 4: Log file discovery - finds the most recent CSV log file with existing content</span>
-<span id="L644" class="ln">   644  </span>		<span class="comment">// Note: parseLogsRemote sets offset = size on first run, so it starts at EOF and only reads new data</span>
-<span id="L645" class="ln">   645  </span>		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like &#39;%csv&#39; order by modification desc limit 1;`).
-<span id="L646" class="ln">   646  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;, &#34;size&#34;, &#34;modification&#34;}).
-<span id="L647" class="ln">   647  </span>				AddRow(logFileName, int32(len(logContent)), time.Now()))
+<span id="L643" class="ln">   643  </span>		<span class="comment">// Verify mock expectations were met (privilege check + file discovery)</span>
+<span id="L644" class="ln">   644  </span>		assert.NoError(t, mock.ExpectationsWereMet(), &#34;All mock expectations should be met&#34;)
+<span id="L645" class="ln">   645  </span>
+<span id="L646" class="ln">   646  </span>		cancel()
+<span id="L647" class="ln">   647  </span>	})
 <span id="L648" class="ln">   648  </span>
-<span id="L649" class="ln">   649  </span>		sourceConn := &amp;sources.SourceConn{
-<span id="L650" class="ln">   650  </span>			Source: sources.Source{
-<span id="L651" class="ln">   651  </span>				Name:    &#34;test-source&#34;,
-<span id="L652" class="ln">   652  </span>				Metrics: map[string]float64{specialMetricServerLogEventCounts: 60}, <span class="comment">// 60s interval - won&#39;t trigger during test</span>
-<span id="L653" class="ln">   653  </span>			},
-<span id="L654" class="ln">   654  </span>			Conn: mock,
-<span id="L655" class="ln">   655  </span>		}
-<span id="L656" class="ln">   656  </span>		sourceConn.RealDbname = testDbName
-<span id="L657" class="ln">   657  </span>
-<span id="L658" class="ln">   658  </span>		ctx, cancel := context.WithTimeout(testutil.TestContext, 500*time.Millisecond)
-<span id="L659" class="ln">   659  </span>		defer cancel()
-<span id="L660" class="ln">   660  </span>
-<span id="L661" class="ln">   661  </span>		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
-<span id="L662" class="ln">   662  </span>
-<span id="L663" class="ln">   663  </span>		lp, err := NewLogParser(ctx, sourceConn, storeCh)
-<span id="L664" class="ln">   664  </span>		require.NoError(t, err)
+<span id="L649" class="ln">   649  </span>	t.Run(&#34;handles empty log directory gracefully&#34;, func(t *testing.T) {
+<span id="L650" class="ln">   650  </span>		tempDir := t.TempDir()
+<span id="L651" class="ln">   651  </span>		mock, err := pgxmock.NewPool()
+<span id="L652" class="ln">   652  </span>		require.NoError(t, err)
+<span id="L653" class="ln">   653  </span>		defer mock.Close()
+<span id="L654" class="ln">   654  </span>
+<span id="L655" class="ln">   655  </span>		<span class="comment">// Setup mocks for initialization</span>
+<span id="L656" class="ln">   656  </span>		mock.ExpectQuery(`select 
+<span id="L657" class="ln">   657  </span>			current_setting\(&#39;data_directory&#39;\) as dd, 
+<span id="L658" class="ln">   658  </span>			current_setting\(&#39;log_directory&#39;\) as ld,
+<span id="L659" class="ln">   659  </span>			current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages,
+<span id="L660" class="ln">   660  </span>			current_setting\(&#39;log_truncate_on_rotation&#39;\) as log_trunc`).
+<span id="L661" class="ln">   661  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;, &#34;lc_messages&#34;, &#34;log_trunc&#34;}).
+<span id="L662" class="ln">   662  </span>				AddRow(&#34;&#34;, tempDir, &#34;en&#34;, &#34;off&#34;))
+<span id="L663" class="ln">   663  </span>		mock.ExpectQuery(`SELECT COALESCE`).
+<span id="L664" class="ln">   664  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(false))
 <span id="L665" class="ln">   665  </span>
-<span id="L666" class="ln">   666  </span>		<span class="comment">// Run ParseLogs in a goroutine since it runs infinitely until context cancels</span>
-<span id="L667" class="ln">   667  </span>		go func() {
-<span id="L668" class="ln">   668  </span>			_ = lp.ParseLogs()
-<span id="L669" class="ln">   669  </span>		}()
-<span id="L670" class="ln">   670  </span>
-<span id="L671" class="ln">   671  </span>		<span class="comment">// Wait for context to timeout</span>
-<span id="L672" class="ln">   672  </span>		<span class="comment">// Note: parseLogsRemote starts reading from EOF, so existing log content isn&#39;t parsed</span>
-<span id="L673" class="ln">   673  </span>		<span class="comment">// This test verifies the initialization and setup flow</span>
-<span id="L674" class="ln">   674  </span>		&lt;-ctx.Done()
-<span id="L675" class="ln">   675  </span>		time.Sleep(100 * time.Millisecond)
-<span id="L676" class="ln">   676  </span>
-<span id="L677" class="ln">   677  </span>		<span class="comment">// Verify mock expectations were met (privilege check + file discovery)</span>
-<span id="L678" class="ln">   678  </span>		assert.NoError(t, mock.ExpectationsWereMet(), &#34;All mock expectations should be met&#34;)
+<span id="L666" class="ln">   666  </span>		<span class="comment">// Privilege check passes</span>
+<span id="L667" class="ln">   667  </span>		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
+<span id="L668" class="ln">   668  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(logFileName))
+<span id="L669" class="ln">   669  </span>		mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
+<span id="L670" class="ln">   670  </span>			WithArgs(filepath.Join(tempDir, logFileName)).
+<span id="L671" class="ln">   671  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;pg_read_file&#34;}).AddRow(&#34;&#34;))
+<span id="L672" class="ln">   672  </span>
+<span id="L673" class="ln">   673  </span>		<span class="comment">// No CSV files found initially - parseLogsRemote will keep retrying</span>
+<span id="L674" class="ln">   674  </span>		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like &#39;%csv&#39; order by modification desc limit 1;`).
+<span id="L675" class="ln">   675  </span>			WillReturnError(assert.AnError)
+<span id="L676" class="ln">   676  </span>		<span class="comment">// Expect it to retry</span>
+<span id="L677" class="ln">   677  </span>		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like &#39;%csv&#39; order by modification desc limit 1;`).
+<span id="L678" class="ln">   678  </span>			WillReturnError(assert.AnError)
 <span id="L679" class="ln">   679  </span>
-<span id="L680" class="ln">   680  </span>		cancel()
-<span id="L681" class="ln">   681  </span>	})
-<span id="L682" class="ln">   682  </span>
-<span id="L683" class="ln">   683  </span>	t.Run(&#34;handles empty log directory gracefully&#34;, func(t *testing.T) {
-<span id="L684" class="ln">   684  </span>		tempDir := t.TempDir()
-<span id="L685" class="ln">   685  </span>		mock, err := pgxmock.NewPool()
-<span id="L686" class="ln">   686  </span>		require.NoError(t, err)
-<span id="L687" class="ln">   687  </span>		defer mock.Close()
-<span id="L688" class="ln">   688  </span>
-<span id="L689" class="ln">   689  </span>		<span class="comment">// Setup mocks for initialization</span>
-<span id="L690" class="ln">   690  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L691" class="ln">   691  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).AddRow(&#34;&#34;, tempDir))
-<span id="L692" class="ln">   692  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L693" class="ln">   693  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;en&#34;))
-<span id="L694" class="ln">   694  </span>		mock.ExpectQuery(`SELECT COALESCE`).
-<span id="L695" class="ln">   695  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(false))
-<span id="L696" class="ln">   696  </span>
-<span id="L697" class="ln">   697  </span>		<span class="comment">// Privilege check passes</span>
-<span id="L698" class="ln">   698  </span>		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
-<span id="L699" class="ln">   699  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(logFileName))
-<span id="L700" class="ln">   700  </span>		mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
-<span id="L701" class="ln">   701  </span>			WithArgs(filepath.Join(tempDir, logFileName)).
-<span id="L702" class="ln">   702  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;pg_read_file&#34;}).AddRow(&#34;&#34;))
-<span id="L703" class="ln">   703  </span>
-<span id="L704" class="ln">   704  </span>		<span class="comment">// No CSV files found initially - parseLogsRemote will keep retrying</span>
-<span id="L705" class="ln">   705  </span>		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like &#39;%csv&#39; order by modification desc limit 1;`).
-<span id="L706" class="ln">   706  </span>			WillReturnError(assert.AnError)
-<span id="L707" class="ln">   707  </span>		<span class="comment">// Expect it to retry</span>
-<span id="L708" class="ln">   708  </span>		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like &#39;%csv&#39; order by modification desc limit 1;`).
-<span id="L709" class="ln">   709  </span>			WillReturnError(assert.AnError)
-<span id="L710" class="ln">   710  </span>
-<span id="L711" class="ln">   711  </span>		sourceConn := &amp;sources.SourceConn{
-<span id="L712" class="ln">   712  </span>			Source: sources.Source{
-<span id="L713" class="ln">   713  </span>				Name:    &#34;test-source&#34;,
-<span id="L714" class="ln">   714  </span>				Metrics: map[string]float64{specialMetricServerLogEventCounts: 0.1},
-<span id="L715" class="ln">   715  </span>			},
-<span id="L716" class="ln">   716  </span>			Conn: mock,
-<span id="L717" class="ln">   717  </span>		}
-<span id="L718" class="ln">   718  </span>
-<span id="L719" class="ln">   719  </span>		ctx, cancel := context.WithTimeout(testutil.TestContext, 500*time.Millisecond)
-<span id="L720" class="ln">   720  </span>		defer cancel()
-<span id="L721" class="ln">   721  </span>
-<span id="L722" class="ln">   722  </span>		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
-<span id="L723" class="ln">   723  </span>
-<span id="L724" class="ln">   724  </span>		lp, err := NewLogParser(ctx, sourceConn, storeCh)
-<span id="L725" class="ln">   725  </span>		require.NoError(t, err)
+<span id="L680" class="ln">   680  </span>		sourceConn := &amp;sources.SourceConn{
+<span id="L681" class="ln">   681  </span>			Source: sources.Source{
+<span id="L682" class="ln">   682  </span>				Name:    &#34;test-source&#34;,
+<span id="L683" class="ln">   683  </span>				Metrics: map[string]float64{specialMetricServerLogEventCounts: 0.1},
+<span id="L684" class="ln">   684  </span>			},
+<span id="L685" class="ln">   685  </span>			Conn: mock,
+<span id="L686" class="ln">   686  </span>		}
+<span id="L687" class="ln">   687  </span>
+<span id="L688" class="ln">   688  </span>		ctx, cancel := context.WithTimeout(testutil.TestContext, 500*time.Millisecond)
+<span id="L689" class="ln">   689  </span>		defer cancel()
+<span id="L690" class="ln">   690  </span>
+<span id="L691" class="ln">   691  </span>		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
+<span id="L692" class="ln">   692  </span>
+<span id="L693" class="ln">   693  </span>		lp, err := NewLogParser(ctx, sourceConn, storeCh)
+<span id="L694" class="ln">   694  </span>		require.NoError(t, err)
+<span id="L695" class="ln">   695  </span>
+<span id="L696" class="ln">   696  </span>		<span class="comment">// Run in goroutine since it runs infinitely until context cancels</span>
+<span id="L697" class="ln">   697  </span>		go func() {
+<span id="L698" class="ln">   698  </span>			_ = lp.ParseLogs()
+<span id="L699" class="ln">   699  </span>		}()
+<span id="L700" class="ln">   700  </span>
+<span id="L701" class="ln">   701  </span>		<span class="comment">// Wait for context to timeout</span>
+<span id="L702" class="ln">   702  </span>		&lt;-ctx.Done()
+<span id="L703" class="ln">   703  </span>		time.Sleep(100 * time.Millisecond)
+<span id="L704" class="ln">   704  </span>
+<span id="L705" class="ln">   705  </span>		<span class="comment">// No measurements should be received since no files were found</span>
+<span id="L706" class="ln">   706  </span>		select {
+<span id="L707" class="ln">   707  </span>		case m := &lt;-storeCh:
+<span id="L708" class="ln">   708  </span>			t.Errorf(&#34;Expected no measurements, but received: %+v&#34;, m)
+<span id="L709" class="ln">   709  </span>		default:
+<span id="L710" class="ln">   710  </span>			<span class="comment">// Expected: no measurements</span>
+<span id="L711" class="ln">   711  </span>		}
+<span id="L712" class="ln">   712  </span>	})
+<span id="L713" class="ln">   713  </span>
+<span id="L714" class="ln">   714  </span>	t.Run(&#34;malformed CSV entries are skipped gracefully&#34;, func(t *testing.T) {
+<span id="L715" class="ln">   715  </span>		tempDir := t.TempDir()
+<span id="L716" class="ln">   716  </span>		<span class="comment">// Mix of valid and malformed log entries</span>
+<span id="L717" class="ln">   717  </span>		malformedContent := `2023-12-01 10:30:45.123 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,1,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,ERROR,&#34;valid entry&#34;
+<span id="L718" class="ln">   718  </span>this is not a valid CSV line at all
+<span id="L719" class="ln">   719  </span>incomplete line without proper fields
+<span id="L720" class="ln">   720  </span>2023-12-01 10:30:47.125 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12346,&#34;127.0.0.1:54322&#34;,session124,1,&#34;INSERT&#34;,2023-12-01 10:30:00 UTC,1/235,568,WARNING,&#34;another valid entry&#34;
+<span id="L721" class="ln">   721  </span>`
+<span id="L722" class="ln">   722  </span>
+<span id="L723" class="ln">   723  </span>		mock, err := pgxmock.NewPool()
+<span id="L724" class="ln">   724  </span>		require.NoError(t, err)
+<span id="L725" class="ln">   725  </span>		defer mock.Close()
 <span id="L726" class="ln">   726  </span>
-<span id="L727" class="ln">   727  </span>		<span class="comment">// Run in goroutine since it runs infinitely until context cancels</span>
-<span id="L728" class="ln">   728  </span>		go func() {
-<span id="L729" class="ln">   729  </span>			_ = lp.ParseLogs()
-<span id="L730" class="ln">   730  </span>		}()
-<span id="L731" class="ln">   731  </span>
-<span id="L732" class="ln">   732  </span>		<span class="comment">// Wait for context to timeout</span>
-<span id="L733" class="ln">   733  </span>		&lt;-ctx.Done()
-<span id="L734" class="ln">   734  </span>		time.Sleep(100 * time.Millisecond)
-<span id="L735" class="ln">   735  </span>
-<span id="L736" class="ln">   736  </span>		<span class="comment">// No measurements should be received since no files were found</span>
-<span id="L737" class="ln">   737  </span>		select {
-<span id="L738" class="ln">   738  </span>		case m := &lt;-storeCh:
-<span id="L739" class="ln">   739  </span>			t.Errorf(&#34;Expected no measurements, but received: %+v&#34;, m)
-<span id="L740" class="ln">   740  </span>		default:
-<span id="L741" class="ln">   741  </span>			<span class="comment">// Expected: no measurements</span>
-<span id="L742" class="ln">   742  </span>		}
-<span id="L743" class="ln">   743  </span>	})
-<span id="L744" class="ln">   744  </span>
-<span id="L745" class="ln">   745  </span>	t.Run(&#34;malformed CSV entries are skipped gracefully&#34;, func(t *testing.T) {
-<span id="L746" class="ln">   746  </span>		tempDir := t.TempDir()
-<span id="L747" class="ln">   747  </span>		<span class="comment">// Mix of valid and malformed log entries</span>
-<span id="L748" class="ln">   748  </span>		malformedContent := `2023-12-01 10:30:45.123 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12345,&#34;127.0.0.1:54321&#34;,session123,1,&#34;SELECT&#34;,2023-12-01 10:30:00 UTC,1/234,567,ERROR,&#34;valid entry&#34;
-<span id="L749" class="ln">   749  </span>this is not a valid CSV line at all
-<span id="L750" class="ln">   750  </span>incomplete line without proper fields
-<span id="L751" class="ln">   751  </span>2023-12-01 10:30:47.125 UTC,&#34;postgres&#34;,&#34;testdb&#34;,12346,&#34;127.0.0.1:54322&#34;,session124,1,&#34;INSERT&#34;,2023-12-01 10:30:00 UTC,1/235,568,WARNING,&#34;another valid entry&#34;
-<span id="L752" class="ln">   752  </span>`
-<span id="L753" class="ln">   753  </span>
-<span id="L754" class="ln">   754  </span>		mock, err := pgxmock.NewPool()
-<span id="L755" class="ln">   755  </span>		require.NoError(t, err)
-<span id="L756" class="ln">   756  </span>		defer mock.Close()
-<span id="L757" class="ln">   757  </span>
-<span id="L758" class="ln">   758  </span>		<span class="comment">// Setup all required mocks</span>
-<span id="L759" class="ln">   759  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L760" class="ln">   760  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).AddRow(&#34;&#34;, tempDir))
-<span id="L761" class="ln">   761  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L762" class="ln">   762  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;en&#34;))
-<span id="L763" class="ln">   763  </span>		mock.ExpectQuery(`SELECT COALESCE`).
-<span id="L764" class="ln">   764  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(false))
-<span id="L765" class="ln">   765  </span>		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
-<span id="L766" class="ln">   766  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(logFileName))
-<span id="L767" class="ln">   767  </span>		mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
-<span id="L768" class="ln">   768  </span>			WithArgs(filepath.Join(tempDir, logFileName)).
-<span id="L769" class="ln">   769  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;pg_read_file&#34;}).AddRow(&#34;&#34;))
-<span id="L770" class="ln">   770  </span>
-<span id="L771" class="ln">   771  </span>		<span class="comment">// Start at EOF (existing content won&#39;t be parsed initially)</span>
-<span id="L772" class="ln">   772  </span>		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like &#39;%csv&#39; order by modification desc limit 1;`).
-<span id="L773" class="ln">   773  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;, &#34;size&#34;, &#34;modification&#34;}).
-<span id="L774" class="ln">   774  </span>				AddRow(logFileName, int32(len(malformedContent)), time.Now()))
-<span id="L775" class="ln">   775  </span>
-<span id="L776" class="ln">   776  </span>		sourceConn := &amp;sources.SourceConn{
-<span id="L777" class="ln">   777  </span>			Source: sources.Source{
-<span id="L778" class="ln">   778  </span>				Name:    &#34;test-source&#34;,
-<span id="L779" class="ln">   779  </span>				Metrics: map[string]float64{specialMetricServerLogEventCounts: 60}, <span class="comment">// Long interval</span>
-<span id="L780" class="ln">   780  </span>			},
-<span id="L781" class="ln">   781  </span>			Conn: mock,
-<span id="L782" class="ln">   782  </span>		}
-<span id="L783" class="ln">   783  </span>		sourceConn.RealDbname = testDbName
+<span id="L727" class="ln">   727  </span>		<span class="comment">// Setup all required mocks</span>
+<span id="L728" class="ln">   728  </span>		mock.ExpectQuery(`select 
+<span id="L729" class="ln">   729  </span>			current_setting\(&#39;data_directory&#39;\) as dd, 
+<span id="L730" class="ln">   730  </span>			current_setting\(&#39;log_directory&#39;\) as ld,
+<span id="L731" class="ln">   731  </span>			current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages,
+<span id="L732" class="ln">   732  </span>			current_setting\(&#39;log_truncate_on_rotation&#39;\) as log_trunc`).
+<span id="L733" class="ln">   733  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;, &#34;lc_messages&#34;, &#34;log_trunc&#34;}).
+<span id="L734" class="ln">   734  </span>				AddRow(&#34;&#34;, tempDir, &#34;en&#34;, &#34;off&#34;))
+<span id="L735" class="ln">   735  </span>		mock.ExpectQuery(`SELECT COALESCE`).
+<span id="L736" class="ln">   736  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(false))
+<span id="L737" class="ln">   737  </span>		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
+<span id="L738" class="ln">   738  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(logFileName))
+<span id="L739" class="ln">   739  </span>		mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
+<span id="L740" class="ln">   740  </span>			WithArgs(filepath.Join(tempDir, logFileName)).
+<span id="L741" class="ln">   741  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;pg_read_file&#34;}).AddRow(&#34;&#34;))
+<span id="L742" class="ln">   742  </span>
+<span id="L743" class="ln">   743  </span>		<span class="comment">// Start at EOF (existing content won&#39;t be parsed initially)</span>
+<span id="L744" class="ln">   744  </span>		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like &#39;%csv&#39; order by modification desc limit 1;`).
+<span id="L745" class="ln">   745  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;, &#34;size&#34;, &#34;modification&#34;}).
+<span id="L746" class="ln">   746  </span>				AddRow(logFileName, int32(len(malformedContent)), time.Now()))
+<span id="L747" class="ln">   747  </span>
+<span id="L748" class="ln">   748  </span>		sourceConn := &amp;sources.SourceConn{
+<span id="L749" class="ln">   749  </span>			Source: sources.Source{
+<span id="L750" class="ln">   750  </span>				Name:    &#34;test-source&#34;,
+<span id="L751" class="ln">   751  </span>				Metrics: map[string]float64{specialMetricServerLogEventCounts: 60}, <span class="comment">// Long interval</span>
+<span id="L752" class="ln">   752  </span>			},
+<span id="L753" class="ln">   753  </span>			Conn: mock,
+<span id="L754" class="ln">   754  </span>		}
+<span id="L755" class="ln">   755  </span>		sourceConn.RealDbname = testDbName
+<span id="L756" class="ln">   756  </span>
+<span id="L757" class="ln">   757  </span>		ctx, cancel := context.WithTimeout(testutil.TestContext, 500*time.Millisecond)
+<span id="L758" class="ln">   758  </span>		defer cancel()
+<span id="L759" class="ln">   759  </span>
+<span id="L760" class="ln">   760  </span>		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
+<span id="L761" class="ln">   761  </span>
+<span id="L762" class="ln">   762  </span>		lp, err := NewLogParser(ctx, sourceConn, storeCh)
+<span id="L763" class="ln">   763  </span>		require.NoError(t, err)
+<span id="L764" class="ln">   764  </span>
+<span id="L765" class="ln">   765  </span>		<span class="comment">// Run in goroutine</span>
+<span id="L766" class="ln">   766  </span>		go func() {
+<span id="L767" class="ln">   767  </span>			_ = lp.ParseLogs()
+<span id="L768" class="ln">   768  </span>		}()
+<span id="L769" class="ln">   769  </span>
+<span id="L770" class="ln">   770  </span>		<span class="comment">// Wait for context to finish</span>
+<span id="L771" class="ln">   771  </span>		&lt;-ctx.Done()
+<span id="L772" class="ln">   772  </span>		time.Sleep(100 * time.Millisecond)
+<span id="L773" class="ln">   773  </span>
+<span id="L774" class="ln">   774  </span>		<span class="comment">// This test verifies the parser doesn&#39;t crash on malformed entries</span>
+<span id="L775" class="ln">   775  </span>		<span class="comment">// Since we start at EOF and use a long interval, no parsing happens during the test</span>
+<span id="L776" class="ln">   776  </span>		<span class="comment">// The real test is that initialization succeeds without errors</span>
+<span id="L777" class="ln">   777  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L778" class="ln">   778  </span>
+<span id="L779" class="ln">   779  </span>		cancel()
+<span id="L780" class="ln">   780  </span>	})
+<span id="L781" class="ln">   781  </span>
+<span id="L782" class="ln">   782  </span>	t.Run(&#34;file read permission denied during parse&#34;, func(t *testing.T) {
+<span id="L783" class="ln">   783  </span>		tempDir := t.TempDir()
 <span id="L784" class="ln">   784  </span>
-<span id="L785" class="ln">   785  </span>		ctx, cancel := context.WithTimeout(testutil.TestContext, 500*time.Millisecond)
-<span id="L786" class="ln">   786  </span>		defer cancel()
-<span id="L787" class="ln">   787  </span>
-<span id="L788" class="ln">   788  </span>		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
-<span id="L789" class="ln">   789  </span>
-<span id="L790" class="ln">   790  </span>		lp, err := NewLogParser(ctx, sourceConn, storeCh)
-<span id="L791" class="ln">   791  </span>		require.NoError(t, err)
-<span id="L792" class="ln">   792  </span>
-<span id="L793" class="ln">   793  </span>		<span class="comment">// Run in goroutine</span>
-<span id="L794" class="ln">   794  </span>		go func() {
-<span id="L795" class="ln">   795  </span>			_ = lp.ParseLogs()
-<span id="L796" class="ln">   796  </span>		}()
-<span id="L797" class="ln">   797  </span>
-<span id="L798" class="ln">   798  </span>		<span class="comment">// Wait for context to finish</span>
-<span id="L799" class="ln">   799  </span>		&lt;-ctx.Done()
-<span id="L800" class="ln">   800  </span>		time.Sleep(100 * time.Millisecond)
-<span id="L801" class="ln">   801  </span>
-<span id="L802" class="ln">   802  </span>		<span class="comment">// This test verifies the parser doesn&#39;t crash on malformed entries</span>
-<span id="L803" class="ln">   803  </span>		<span class="comment">// Since we start at EOF and use a long interval, no parsing happens during the test</span>
-<span id="L804" class="ln">   804  </span>		<span class="comment">// The real test is that initialization succeeds without errors</span>
-<span id="L805" class="ln">   805  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L806" class="ln">   806  </span>
-<span id="L807" class="ln">   807  </span>		cancel()
-<span id="L808" class="ln">   808  </span>	})
+<span id="L785" class="ln">   785  </span>		mock, err := pgxmock.NewPool()
+<span id="L786" class="ln">   786  </span>		require.NoError(t, err)
+<span id="L787" class="ln">   787  </span>		defer mock.Close()
+<span id="L788" class="ln">   788  </span>
+<span id="L789" class="ln">   789  </span>		<span class="comment">// Setup mocks - privilege check passes initially</span>
+<span id="L790" class="ln">   790  </span>		mock.ExpectQuery(`select 
+<span id="L791" class="ln">   791  </span>			current_setting\(&#39;data_directory&#39;\) as dd, 
+<span id="L792" class="ln">   792  </span>			current_setting\(&#39;log_directory&#39;\) as ld,
+<span id="L793" class="ln">   793  </span>			current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages,
+<span id="L794" class="ln">   794  </span>			current_setting\(&#39;log_truncate_on_rotation&#39;\) as log_trunc`).
+<span id="L795" class="ln">   795  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;, &#34;lc_messages&#34;, &#34;log_trunc&#34;}).
+<span id="L796" class="ln">   796  </span>				AddRow(&#34;&#34;, tempDir, &#34;en&#34;, &#34;off&#34;))
+<span id="L797" class="ln">   797  </span>		mock.ExpectQuery(`SELECT COALESCE`).
+<span id="L798" class="ln">   798  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(false))
+<span id="L799" class="ln">   799  </span>		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
+<span id="L800" class="ln">   800  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(logFileName))
+<span id="L801" class="ln">   801  </span>		mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
+<span id="L802" class="ln">   802  </span>			WithArgs(filepath.Join(tempDir, logFileName)).
+<span id="L803" class="ln">   803  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;pg_read_file&#34;}).AddRow(&#34;&#34;))
+<span id="L804" class="ln">   804  </span>
+<span id="L805" class="ln">   805  </span>		<span class="comment">// File discovery succeeds</span>
+<span id="L806" class="ln">   806  </span>		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like &#39;%csv&#39; order by modification desc limit 1;`).
+<span id="L807" class="ln">   807  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;, &#34;size&#34;, &#34;modification&#34;}).
+<span id="L808" class="ln">   808  </span>				AddRow(logFileName, int32(0), time.Now()))
 <span id="L809" class="ln">   809  </span>
-<span id="L810" class="ln">   810  </span>	t.Run(&#34;file read permission denied during parse&#34;, func(t *testing.T) {
-<span id="L811" class="ln">   811  </span>		tempDir := t.TempDir()
-<span id="L812" class="ln">   812  </span>
-<span id="L813" class="ln">   813  </span>		mock, err := pgxmock.NewPool()
-<span id="L814" class="ln">   814  </span>		require.NoError(t, err)
-<span id="L815" class="ln">   815  </span>		defer mock.Close()
-<span id="L816" class="ln">   816  </span>
-<span id="L817" class="ln">   817  </span>		<span class="comment">// Setup mocks - privilege check passes initially</span>
-<span id="L818" class="ln">   818  </span>		mock.ExpectQuery(`select current_setting\(&#39;data_directory&#39;\) as dd, current_setting\(&#39;log_directory&#39;\) as ld`).
-<span id="L819" class="ln">   819  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;dd&#34;, &#34;ld&#34;}).AddRow(&#34;&#34;, tempDir))
-<span id="L820" class="ln">   820  </span>		mock.ExpectQuery(`select current_setting\(&#39;lc_messages&#39;\)::varchar\(2\) as lc_messages;`).
-<span id="L821" class="ln">   821  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;lc_messages&#34;}).AddRow(&#34;en&#34;))
-<span id="L822" class="ln">   822  </span>		mock.ExpectQuery(`SELECT COALESCE`).
-<span id="L823" class="ln">   823  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(false))
-<span id="L824" class="ln">   824  </span>		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
-<span id="L825" class="ln">   825  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(logFileName))
-<span id="L826" class="ln">   826  </span>		mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
-<span id="L827" class="ln">   827  </span>			WithArgs(filepath.Join(tempDir, logFileName)).
-<span id="L828" class="ln">   828  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;pg_read_file&#34;}).AddRow(&#34;&#34;))
-<span id="L829" class="ln">   829  </span>
-<span id="L830" class="ln">   830  </span>		<span class="comment">// File discovery succeeds</span>
-<span id="L831" class="ln">   831  </span>		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like &#39;%csv&#39; order by modification desc limit 1;`).
-<span id="L832" class="ln">   832  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;, &#34;size&#34;, &#34;modification&#34;}).
-<span id="L833" class="ln">   833  </span>				AddRow(logFileName, int32(0), time.Now()))
-<span id="L834" class="ln">   834  </span>
-<span id="L835" class="ln">   835  </span>		<span class="comment">// File state shows it has grown</span>
-<span id="L836" class="ln">   836  </span>		mock.ExpectQuery(`select size, modification from pg_ls_logdir\(\) where name = \$1;`).
-<span id="L837" class="ln">   837  </span>			WithArgs(logFileName).
-<span id="L838" class="ln">   838  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;size&#34;, &#34;modification&#34;}).
-<span id="L839" class="ln">   839  </span>				AddRow(int32(len(logContent)), time.Now()))
-<span id="L840" class="ln">   840  </span>
-<span id="L841" class="ln">   841  </span>		<span class="comment">// But pg_read_file fails with permission error during actual read</span>
-<span id="L842" class="ln">   842  </span>		mock.ExpectQuery(`select pg_read_file\(\$1, \$2, \$3\)`).
-<span id="L843" class="ln">   843  </span>			WithArgs(filepath.Join(tempDir, logFileName), int32(0), int32(len(logContent))).
-<span id="L844" class="ln">   844  </span>			WillReturnError(assert.AnError)
+<span id="L810" class="ln">   810  </span>		<span class="comment">// File state shows it has grown</span>
+<span id="L811" class="ln">   811  </span>		mock.ExpectQuery(`select size, modification from pg_ls_logdir\(\) where name = \$1;`).
+<span id="L812" class="ln">   812  </span>			WithArgs(logFileName).
+<span id="L813" class="ln">   813  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;size&#34;, &#34;modification&#34;}).
+<span id="L814" class="ln">   814  </span>				AddRow(int32(len(logContent)), time.Now()))
+<span id="L815" class="ln">   815  </span>
+<span id="L816" class="ln">   816  </span>		<span class="comment">// But pg_read_file fails with permission error during actual read</span>
+<span id="L817" class="ln">   817  </span>		mock.ExpectQuery(`select pg_read_file\(\$1, \$2, \$3\)`).
+<span id="L818" class="ln">   818  </span>			WithArgs(filepath.Join(tempDir, logFileName), int32(0), int32(len(logContent))).
+<span id="L819" class="ln">   819  </span>			WillReturnError(assert.AnError)
+<span id="L820" class="ln">   820  </span>
+<span id="L821" class="ln">   821  </span>		sourceConn := &amp;sources.SourceConn{
+<span id="L822" class="ln">   822  </span>			Source: sources.Source{
+<span id="L823" class="ln">   823  </span>				Name:    &#34;test-source&#34;,
+<span id="L824" class="ln">   824  </span>				Metrics: map[string]float64{specialMetricServerLogEventCounts: 0.1},
+<span id="L825" class="ln">   825  </span>			},
+<span id="L826" class="ln">   826  </span>			Conn: mock,
+<span id="L827" class="ln">   827  </span>		}
+<span id="L828" class="ln">   828  </span>
+<span id="L829" class="ln">   829  </span>		ctx, cancel := context.WithTimeout(testutil.TestContext, 500*time.Millisecond)
+<span id="L830" class="ln">   830  </span>		defer cancel()
+<span id="L831" class="ln">   831  </span>
+<span id="L832" class="ln">   832  </span>		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
+<span id="L833" class="ln">   833  </span>
+<span id="L834" class="ln">   834  </span>		lp, err := NewLogParser(ctx, sourceConn, storeCh)
+<span id="L835" class="ln">   835  </span>		require.NoError(t, err)
+<span id="L836" class="ln">   836  </span>
+<span id="L837" class="ln">   837  </span>		<span class="comment">// Run in goroutine</span>
+<span id="L838" class="ln">   838  </span>		go func() {
+<span id="L839" class="ln">   839  </span>			_ = lp.ParseLogs() <span class="comment">// It will log a warning and continue retrying</span>
+<span id="L840" class="ln">   840  </span>		}()
+<span id="L841" class="ln">   841  </span>
+<span id="L842" class="ln">   842  </span>		<span class="comment">// Wait for context to finish</span>
+<span id="L843" class="ln">   843  </span>		&lt;-ctx.Done()
+<span id="L844" class="ln">   844  </span>		time.Sleep(100 * time.Millisecond)
 <span id="L845" class="ln">   845  </span>
-<span id="L846" class="ln">   846  </span>		sourceConn := &amp;sources.SourceConn{
-<span id="L847" class="ln">   847  </span>			Source: sources.Source{
-<span id="L848" class="ln">   848  </span>				Name:    &#34;test-source&#34;,
-<span id="L849" class="ln">   849  </span>				Metrics: map[string]float64{specialMetricServerLogEventCounts: 0.1},
-<span id="L850" class="ln">   850  </span>			},
-<span id="L851" class="ln">   851  </span>			Conn: mock,
-<span id="L852" class="ln">   852  </span>		}
-<span id="L853" class="ln">   853  </span>
-<span id="L854" class="ln">   854  </span>		ctx, cancel := context.WithTimeout(testutil.TestContext, 500*time.Millisecond)
-<span id="L855" class="ln">   855  </span>		defer cancel()
-<span id="L856" class="ln">   856  </span>
-<span id="L857" class="ln">   857  </span>		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
-<span id="L858" class="ln">   858  </span>
-<span id="L859" class="ln">   859  </span>		lp, err := NewLogParser(ctx, sourceConn, storeCh)
-<span id="L860" class="ln">   860  </span>		require.NoError(t, err)
-<span id="L861" class="ln">   861  </span>
-<span id="L862" class="ln">   862  </span>		<span class="comment">// Run in goroutine</span>
-<span id="L863" class="ln">   863  </span>		go func() {
-<span id="L864" class="ln">   864  </span>			_ = lp.ParseLogs() <span class="comment">// It will log a warning and continue retrying</span>
-<span id="L865" class="ln">   865  </span>		}()
-<span id="L866" class="ln">   866  </span>
-<span id="L867" class="ln">   867  </span>		<span class="comment">// Wait for context to finish</span>
-<span id="L868" class="ln">   868  </span>		&lt;-ctx.Done()
-<span id="L869" class="ln">   869  </span>		time.Sleep(100 * time.Millisecond)
-<span id="L870" class="ln">   870  </span>
-<span id="L871" class="ln">   871  </span>		<span class="comment">// No measurements should be sent since read failed</span>
-<span id="L872" class="ln">   872  </span>		select {
-<span id="L873" class="ln">   873  </span>		case m := &lt;-storeCh:
-<span id="L874" class="ln">   874  </span>			<span class="comment">// The parser might send an empty measurement before the error</span>
-<span id="L875" class="ln">   875  </span>			<span class="comment">// Verify it&#39;s zeroed</span>
-<span id="L876" class="ln">   876  </span>			data := m.Data[0]
-<span id="L877" class="ln">   877  </span>			assert.Equal(t, int64(0), data[&#34;error&#34;], &#34;Should have 0 errors since read failed&#34;)
-<span id="L878" class="ln">   878  </span>			assert.Equal(t, int64(0), data[&#34;warning&#34;], &#34;Should have 0 warnings since read failed&#34;)
-<span id="L879" class="ln">   879  </span>		default:
-<span id="L880" class="ln">   880  </span>			<span class="comment">// Also acceptable: no measurement sent at all</span>
-<span id="L881" class="ln">   881  </span>		}
-<span id="L882" class="ln">   882  </span>	})
-<span id="L883" class="ln">   883  </span>}
-<span id="L884" class="ln">   884  </span>
+<span id="L846" class="ln">   846  </span>		<span class="comment">// No measurements should be sent since read failed</span>
+<span id="L847" class="ln">   847  </span>		select {
+<span id="L848" class="ln">   848  </span>		case m := &lt;-storeCh:
+<span id="L849" class="ln">   849  </span>			<span class="comment">// The parser might send an empty measurement before the error</span>
+<span id="L850" class="ln">   850  </span>			<span class="comment">// Verify it&#39;s zeroed</span>
+<span id="L851" class="ln">   851  </span>			data := m.Data[0]
+<span id="L852" class="ln">   852  </span>			assert.Equal(t, int64(0), data[&#34;error&#34;], &#34;Should have 0 errors since read failed&#34;)
+<span id="L853" class="ln">   853  </span>			assert.Equal(t, int64(0), data[&#34;warning&#34;], &#34;Should have 0 warnings since read failed&#34;)
+<span id="L854" class="ln">   854  </span>		default:
+<span id="L855" class="ln">   855  </span>			<span class="comment">// Also acceptable: no measurement sent at all</span>
+<span id="L856" class="ln">   856  </span>		}
+<span id="L857" class="ln">   857  </span>	})
+<span id="L858" class="ln">   858  </span>}
+<span id="L859" class="ln">   859  </span>
 </pre><p></p>
 
 <div id="footer">
