@@ -3,6 +3,7 @@ package cmdopts
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
@@ -87,16 +88,23 @@ type ConfigUpgradeCommand struct {
 // Execute upgrades the configuration schema.
 func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 	opts := cmd.owner
-	if err = opts.ValidateConfig(); err != nil {
-		return
+	// For upgrade command, validate that at least one component is specified
+	if len(opts.Sources.Sources)+len(opts.Metrics.Metrics)+len(opts.Sinks.Sinks) == 0 {
+		opts.CompleteCommand(ExitCodeConfigError)
+		return errors.New("at least one of --sources, --metrics, or --sink must be specified")
 	}
+
 	ctx := context.Background()
+	var upgraded bool // track if any component was upgraded
+
 	// Upgrade metrics/sources configuration if it's postgres
 	if opts.IsPgConnStr(opts.Metrics.Metrics) && opts.IsPgConnStr(opts.Sources.Sources) {
-		err = opts.InitMetricReader(ctx)
-		if err != nil {
-			opts.CompleteCommand(ExitCodeConfigError)
-			return
+		if opts.MetricsReaderWriter == nil {
+			err = opts.InitMetricReader(ctx)
+			if err != nil {
+				opts.CompleteCommand(ExitCodeConfigError)
+				return
+			}
 		}
 		if m, ok := opts.MetricsReaderWriter.(db.Migrator); ok {
 			err = m.Migrate()
@@ -104,17 +112,23 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 				opts.CompleteCommand(ExitCodeConfigError)
 				return
 			}
+			upgraded = true
+		} else {
+			fmt.Fprintln(opts.OutputWriter, "[WARN] configuration storage does not support upgrade, skipping")
 		}
-	} else {
-		opts.CompleteCommand(ExitCodeConfigError)
-		return errors.New("configuration storage does not support upgrade")
+	} else if opts.Metrics.Metrics > "" || opts.Sources.Sources > "" {
+		// At least one is specified but not postgres connection - log warning
+		fmt.Fprintln(opts.OutputWriter, "[WARN] configuration storage does not support upgrade, skipping")
 	}
+
 	// Upgrade sinks configuration if it's postgres
 	if len(opts.Sinks.Sinks) > 0 {
-		opts.SinksWriter, err = sinks.NewSinkWriter(ctx, &opts.Sinks)
-		if err != nil {
-			opts.CompleteCommand(ExitCodeConfigError)
-			return
+		if opts.SinksWriter == nil {
+			opts.SinksWriter, err = sinks.NewSinkWriter(ctx, &opts.Sinks)
+			if err != nil {
+				opts.CompleteCommand(ExitCodeConfigError)
+				return
+			}
 		}
 		if m, ok := opts.SinksWriter.(db.Migrator); ok {
 			err = m.Migrate()
@@ -122,11 +136,18 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 				opts.CompleteCommand(ExitCodeConfigError)
 				return
 			}
+			upgraded = true
 		} else {
-			opts.CompleteCommand(ExitCodeConfigError)
-			return errors.New("sink storage does not support upgrade")
+			fmt.Fprintln(opts.OutputWriter, "[WARN] sink storage does not support upgrade, skipping")
 		}
 	}
+
+	// Only fail if nothing was upgraded
+	if !upgraded {
+		opts.CompleteCommand(ExitCodeConfigError)
+		return errors.New("no components support upgrade")
+	}
+
 	opts.CompleteCommand(ExitCodeOK)
 	return
 }

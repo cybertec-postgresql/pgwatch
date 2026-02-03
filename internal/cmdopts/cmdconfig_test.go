@@ -1,6 +1,8 @@
 package cmdopts
 
 import (
+	"bytes"
+	"errors"
 	"io"
 	"os"
 	"testing"
@@ -303,24 +305,243 @@ func TestConfigUpgradeCommand_Errors(t *testing.T) {
 
 	t.Run("non-postgres configuration not supported", func(*testing.T) {
 		opts := &Options{
-			Metrics: metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
-			Sources: sources.CmdOpts{Sources: "/tmp/sources.yaml", Refresh: 120, MaxParallelConnectionsPerDb: 1},
-			Sinks:   sinks.CmdOpts{BatchingDelay: time.Second},
+			Metrics:      metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
+			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml", Refresh: 120, MaxParallelConnectionsPerDb: 1},
+			Sinks:        sinks.CmdOpts{BatchingDelay: time.Second},
+			OutputWriter: t.Output(),
 		}
 		cmd := ConfigUpgradeCommand{owner: opts}
 		err := cmd.Execute(nil)
 		a.Error(err)
-		a.ErrorContains(err, "does not support upgrade")
+		a.ErrorContains(err, "no components support upgrade")
 	})
 
 	t.Run("init metrics reader fails", func(*testing.T) {
 		opts := &Options{
-			Metrics: metrics.CmdOpts{Metrics: "postgresql://invalid@host/db"},
-			Sources: sources.CmdOpts{Sources: "postgresql://invalid@host/db", Refresh: 120, MaxParallelConnectionsPerDb: 1},
-			Sinks:   sinks.CmdOpts{BatchingDelay: time.Second},
+			Metrics:      metrics.CmdOpts{Metrics: "postgresql://invalid@host/db"},
+			Sources:      sources.CmdOpts{Sources: "postgresql://invalid@host/db", Refresh: 120, MaxParallelConnectionsPerDb: 1},
+			Sinks:        sinks.CmdOpts{BatchingDelay: time.Second},
+			OutputWriter: t.Output(),
 		}
 		cmd := ConfigUpgradeCommand{owner: opts}
 		err := cmd.Execute(nil)
 		a.Error(err)
 	})
 }
+
+func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
+	a := assert.New(t)
+
+	t.Run("no components specified - returns error", func(*testing.T) {
+		opts := &Options{
+			OutputWriter: io.Discard,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.Error(err)
+		a.ErrorContains(err, "at least one of --sources, --metrics, or --sink must be specified")
+		a.Equal(ExitCodeConfigError, opts.ExitCode)
+	})
+
+	t.Run("yaml sources/metrics - logs warning", func(*testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Metrics:      metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
+			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml"},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.Error(err)
+		a.ErrorContains(err, "no components support upgrade")
+		a.Contains(output.String(), "[WARN] configuration storage does not support upgrade, skipping")
+	})
+
+	t.Run("successful sink upgrade only - with pre-initialized writer", func(t *testing.T) {
+		opts := &Options{
+			Sinks:        sinks.CmdOpts{Sinks: []string{"postgresql://localhost/db"}},
+			SinksWriter:  &mockMigratableSinksWriter{},
+			OutputWriter: io.Discard,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.NoError(err)
+		a.Equal(ExitCodeOK, opts.ExitCode)
+	})
+
+	t.Run("sink upgrade with migration error - pre-initialized writer", func(t *testing.T) {
+		opts := &Options{
+			Sinks:        sinks.CmdOpts{Sinks: []string{"postgresql://localhost/db"}},
+			SinksWriter:  &mockMigratableSinksWriter{migrateErr: errors.New("sink migration failed")},
+			OutputWriter: io.Discard,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.Error(err)
+		a.ErrorContains(err, "sink migration failed")
+		a.Equal(ExitCodeConfigError, opts.ExitCode)
+	})
+
+	t.Run("non-migratable sink - logs warning", func(t *testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Sinks:        sinks.CmdOpts{Sinks: []string{"jsonfile://test.json"}},
+			SinksWriter:  &mockNonMigratableSinksWriter{},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.Error(err)
+		a.ErrorContains(err, "no components support upgrade")
+		a.Contains(output.String(), "[WARN] sink storage does not support upgrade, skipping")
+	})
+
+	t.Run("yaml sources/metrics with postgres sink - upgrades sink only", func(t *testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Metrics:      metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
+			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml"},
+			Sinks:        sinks.CmdOpts{Sinks: []string{"postgresql://localhost/db"}},
+			SinksWriter:  &mockMigratableSinksWriter{},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.NoError(err)
+		a.Equal(ExitCodeOK, opts.ExitCode)
+		a.Contains(output.String(), "[WARN] configuration storage does not support upgrade, skipping")
+	})
+
+	t.Run("postgres sources/metrics with non-postgres sink - config upgrades, sink warns", func(t *testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Metrics:             metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
+			Sources:             sources.CmdOpts{Sources: "postgresql://localhost/db"},
+			Sinks:               sinks.CmdOpts{Sinks: []string{"jsonfile://test.json"}},
+			MetricsReaderWriter: &mockMigratableMetricsReader{},
+			SinksWriter:         &mockNonMigratableSinksWriter{},
+			OutputWriter:        &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.NoError(err)
+		a.Equal(ExitCodeOK, opts.ExitCode)
+		a.Contains(output.String(), "[WARN] sink storage does not support upgrade, skipping")
+	})
+
+	t.Run("only metrics specified as yaml - logs warning", func(t *testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Metrics:      metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.Error(err)
+		a.ErrorContains(err, "no components support upgrade")
+		a.Contains(output.String(), "[WARN] configuration storage does not support upgrade, skipping")
+	})
+
+	t.Run("only sources specified as yaml - logs warning", func(t *testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml"},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.Error(err)
+		a.ErrorContains(err, "no components support upgrade")
+		a.Contains(output.String(), "[WARN] configuration storage does not support upgrade, skipping")
+	})
+
+	t.Run("both metrics and sources specified, only metrics is postgres", func(t *testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Metrics:      metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
+			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml"},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.Error(err)
+		a.ErrorContains(err, "no components support upgrade")
+		a.Contains(output.String(), "[WARN] configuration storage does not support upgrade, skipping")
+	})
+
+	t.Run("pre-initialized non-migratable metrics reader", func(t *testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Metrics:             metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
+			Sources:             sources.CmdOpts{Sources: "postgresql://localhost/db"},
+			MetricsReaderWriter: &mockNonMigratableMetricsReader{},
+			OutputWriter:        &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.Error(err)
+		a.ErrorContains(err, "no components support upgrade")
+		a.Contains(output.String(), "[WARN] configuration storage does not support upgrade, skipping")
+	})
+
+	t.Run("pre-initialized migratable metrics reader - succeeds", func(t *testing.T) {
+		opts := &Options{
+			Metrics:             metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
+			Sources:             sources.CmdOpts{Sources: "postgresql://localhost/db"},
+			MetricsReaderWriter: &mockMigratableMetricsReader{},
+			OutputWriter:        io.Discard,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.NoError(err)
+		a.Equal(ExitCodeOK, opts.ExitCode)
+	})
+
+	t.Run("pre-initialized metrics reader with migration error", func(t *testing.T) {
+		opts := &Options{
+			Metrics:             metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
+			Sources:             sources.CmdOpts{Sources: "postgresql://localhost/db"},
+			MetricsReaderWriter: &mockMigratableMetricsReader{migrateErr: errors.New("migration failed")},
+			OutputWriter:        io.Discard,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.Error(err)
+		a.ErrorContains(err, "migration failed")
+		a.Equal(ExitCodeConfigError, opts.ExitCode)
+	})
+
+	t.Run("both metrics and sink upgradeable - both succeed", func(t *testing.T) {
+		opts := &Options{
+			Metrics:             metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
+			Sources:             sources.CmdOpts{Sources: "postgresql://localhost/db"},
+			Sinks:               sinks.CmdOpts{Sinks: []string{"postgresql://localhost/db"}},
+			MetricsReaderWriter: &mockMigratableMetricsReader{},
+			SinksWriter:         &mockMigratableSinksWriter{},
+			OutputWriter:        io.Discard,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.NoError(err)
+		a.Equal(ExitCodeOK, opts.ExitCode)
+	})
+}
+
+// Additional mock types for non-migratable readers/writers
+type mockNonMigratableMetricsReader struct{}
+
+func (m *mockNonMigratableMetricsReader) GetMetrics() (*metrics.Metrics, error) {
+	return &metrics.Metrics{}, nil
+}
+func (m *mockNonMigratableMetricsReader) WriteMetrics(*metrics.Metrics) error       { return nil }
+func (m *mockNonMigratableMetricsReader) DeleteMetric(string) error                 { return nil }
+func (m *mockNonMigratableMetricsReader) UpdateMetric(string, metrics.Metric) error { return nil }
+func (m *mockNonMigratableMetricsReader) CreateMetric(string, metrics.Metric) error { return nil }
+func (m *mockNonMigratableMetricsReader) DeletePreset(string) error                 { return nil }
+func (m *mockNonMigratableMetricsReader) UpdatePreset(string, metrics.Preset) error { return nil }
+func (m *mockNonMigratableMetricsReader) CreatePreset(string, metrics.Preset) error { return nil }
+
+type mockNonMigratableSinksWriter struct{}
+
+func (m *mockNonMigratableSinksWriter) SyncMetric(string, string, sinks.SyncOp) error { return nil }
+func (m *mockNonMigratableSinksWriter) Write(metrics.MeasurementEnvelope) error       { return nil }
