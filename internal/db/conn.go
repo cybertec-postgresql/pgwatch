@@ -52,7 +52,7 @@ type Migrator interface {
 	NeedsMigration() (bool, error)
 }
 
-func NeedsMigration(ctx context.Context, storage any, needsMigrationErr error) error {
+func NeedsMigration(storage any, needsMigrationErr error) error {
 	if m, ok := storage.(Migrator); ok {
 		if needsMigration, err := m.NeedsMigration(); err != nil {
 			return err

@@ -161,7 +161,7 @@ func (c *Options) InitConfigReaders(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return db.NeedsMigration(ctx, c.MetricsReaderWriter, metrics.ErrNeedsMigration)
+	return db.NeedsMigration(c.MetricsReaderWriter, metrics.ErrNeedsMigration)
 }
 
 // InitSinkWriter creates a new MultiWriter instance if needed.
@@ -170,7 +170,7 @@ func (c *Options) InitSinkWriter(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	return db.NeedsMigration(ctx, c.SinksWriter, sinks.ErrNeedsMigration)
+	return db.NeedsMigration(c.SinksWriter, sinks.ErrNeedsMigration)
 }
 
 // NeedsSchemaUpgrade checks if the configuration database schema needs an upgrade.
