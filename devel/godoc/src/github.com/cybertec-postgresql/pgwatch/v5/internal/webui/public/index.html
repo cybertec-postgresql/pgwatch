@@ -1,35 +1,143 @@
-<!DOCTYPE html><html lang="en"><head></head><body>{{if .BasePath}}<base href="/{{.BasePath}}/"/>{{end}}
-    <meta charset="utf-8"/>
-    <link rel="icon" href="./favicon.ico"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta name="theme-color" content="#000000"/>
-    <meta name="description" content="Web site created using create-react-app"/>
-    <link rel="apple-touch-icon" href="./logo192.png"/>
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="./manifest.json"/>
-    <!--
-      Notice the use of relative paths above.
-      They work correctly both with client-side routing and a non-root public URL.
-    -->
-    <title>pgwatch dashboard</title>
-    <script>window.__PGWATCH_BASE_PATH__='{{if .BasePath}}/{{.BasePath}}{{end}}';</script>
-  
-  
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+  <title>src/github.com/cybertec-postgresql/pgwatch/v5/internal/webui/public/ - GoPages</title>
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-  
+<link type="text/css" rel="stylesheet" href="/devel/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/devel/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.25.6";</script>
+<script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Directory
+    <a href="/devel/godoc/src">src</a>/<a href="/devel/godoc/src/github.com">github.com</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5">v5</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal">internal</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webui">webui</a>/<span class="text-muted">public/</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/webui/public">github.com/cybertec-postgresql/pgwatch/v5/internal/webui/public</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+
+<p>
+</p><table class="layout">
+<tbody><tr>
+	<th align="left">File</th>
+	<td width="25"> </td>
+	<th align="right">Bytes</th>
+	<td width="25"> </td>
+	<th align="left">Modified</th>
+</tr>
+<tr>
+	<td><a href="..">..</a></td>
+</tr>
+
+<tr>
+	
+	<td align="left"><a href="favicon.ico">favicon.ico</a></td>
+	<td></td>
+	<td align="right">8594</td>
+	<td></td>
+	<td align="left">2026-02-03 12:49:32.438383565 +0000 UTC</td>
+</tr>
+
+<tr>
+	
+	<td align="left"><a href="logo.png">logo.png</a></td>
+	<td></td>
+	<td align="right">41974</td>
+	<td></td>
+	<td align="left">2026-02-03 12:49:32.438383565 +0000 UTC</td>
+</tr>
+
+<tr>
+	
+	<td align="left"><a href="logo.svg">logo.svg</a></td>
+	<td></td>
+	<td align="right">9747</td>
+	<td></td>
+	<td align="left">2026-02-03 12:49:32.438383565 +0000 UTC</td>
+</tr>
+
+<tr>
+	
+	<td align="left"><a href="logo192.png">logo192.png</a></td>
+	<td></td>
+	<td align="right">19548</td>
+	<td></td>
+	<td align="left">2026-02-03 12:49:32.438383565 +0000 UTC</td>
+</tr>
+
+<tr>
+	
+	<td align="left"><a href="manifest.json">manifest.json</a></td>
+	<td></td>
+	<td align="right">398</td>
+	<td></td>
+	<td align="left">2026-02-03 12:49:32.438383565 +0000 UTC</td>
+</tr>
+
+<tr>
+	
+	<td align="left"><a href="robots.txt">robots.txt</a></td>
+	<td></td>
+	<td align="right">67</td>
+	<td></td>
+	<td align="left">2026-02-03 12:49:32.438383565 +0000 UTC</td>
+</tr>
+
+
+</tbody></table>
+<p></p>
+
+
+<div id="footer">
+Build version go1.25.6.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
 
 </body></html>
