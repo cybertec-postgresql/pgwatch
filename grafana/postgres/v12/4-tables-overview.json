@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 25,
+  "id": 8,
   "links": [],
   "panels": [
     {
@@ -94,7 +94,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 403
               }
             ]
           },
@@ -161,7 +161,7 @@
                 "value": "s"
               }
             ]
-          }          
+          }
         ]
       },
       "gridPos": {
@@ -173,17 +173,9 @@
       "id": 12,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -258,7 +250,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 403
               }
             ]
           },
@@ -325,7 +317,7 @@
                 "value": "s"
               }
             ]
-          }          
+          }
         ]
       },
       "gridPos": {
@@ -414,7 +406,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 403
               }
             ]
           },
@@ -481,7 +473,7 @@
                 "value": "s"
               }
             ]
-          }          
+          }
         ]
       },
       "gridPos": {
@@ -570,7 +562,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 403
               }
             ]
           },
@@ -637,7 +629,7 @@
                 "value": "s"
               }
             ]
-          }          
+          }
         ]
       },
       "gridPos": {
@@ -726,7 +718,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 403
               }
             ]
           },
@@ -793,7 +785,7 @@
                 "value": "s"
               }
             ]
-          }          
+          }
         ]
       },
       "gridPos": {
@@ -882,7 +874,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 403
               }
             ]
           },
@@ -949,7 +941,7 @@
                 "value": "s"
               }
             ]
-          }          
+          }
         ]
       },
       "gridPos": {
@@ -1038,7 +1030,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 403
               }
             ]
           },
@@ -1105,7 +1097,7 @@
                 "value": "s"
               }
             ]
-          }          
+          }
         ]
       },
       "gridPos": {
@@ -1276,7 +1268,7 @@
                 "value": "s"
               }
             ]
-          }          
+          }
         ]
       },
       "gridPos": {
@@ -1774,5 +1766,5 @@
   "timezone": "",
   "title": "4. Tables Overview",
   "uid": "tables-overview",
-  "version": 2
+  "version": 12
 }
