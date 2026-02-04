@@ -94,5 +94,5 @@ CREATE TABLE admin.migration(
 INSERT INTO
     admin.migration (id, version)
 VALUES
-    (0,  '01110 Apply postgres sink schema migrations');
+    (0,  '01110 Apply postgres sink schema migrations'),
     (1,  '01180 Apply admin functions migrations for v5');
