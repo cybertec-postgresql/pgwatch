@@ -95,59 +95,55 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 	}
 
 	ctx := context.Background()
-	var upgraded bool // track if any component was upgraded
 
-	// Upgrade metrics/sources configuration if it's postgres
-	if opts.IsPgConnStr(opts.Metrics.Metrics) && opts.IsPgConnStr(opts.Sources.Sources) {
-		if opts.MetricsReaderWriter == nil {
-			err = opts.InitMetricReader(ctx)
-			if err != nil {
-				opts.CompleteCommand(ExitCodeConfigError)
-				return
-			}
+	f := func(uri string, newMigratorFunc func() (any, error)) error {
+		if uri == "" {
+			return nil
 		}
-		if m, ok := opts.MetricsReaderWriter.(db.Migrator); ok {
-			err = m.Migrate()
-			if err != nil {
-				opts.CompleteCommand(ExitCodeConfigError)
-				return
-			}
-			upgraded = true
-		} else {
-			fmt.Fprintln(opts.OutputWriter, "[WARN] configuration storage does not support upgrade, skipping")
+		if !opts.IsPgConnStr(uri) {
+			return fmt.Errorf("cannot upgrade storage %s: %w", uri, errors.ErrUnsupported)
 		}
-	} else if opts.Metrics.Metrics > "" || opts.Sources.Sources > "" {
-		// At least one is specified but not postgres connection - log warning
-		fmt.Fprintln(opts.OutputWriter, "[WARN] configuration storage does not support upgrade, skipping")
+		m, initErr := newMigratorFunc()
+		if initErr != nil {
+			return initErr
+		}
+		return m.(db.Migrator).Migrate()
+
 	}
 
-	// Upgrade sinks configuration if it's postgres
-	if len(opts.Sinks.Sinks) > 0 {
-		if opts.SinksWriter == nil {
-			opts.SinksWriter, err = sinks.NewSinkWriter(ctx, &opts.Sinks)
-			if err != nil {
-				opts.CompleteCommand(ExitCodeConfigError)
-				return
-			}
-		}
-		if m, ok := opts.SinksWriter.(db.Migrator); ok {
-			err = m.Migrate()
-			if err != nil {
-				opts.CompleteCommand(ExitCodeConfigError)
-				return
-			}
-			upgraded = true
-		} else {
-			fmt.Fprintln(opts.OutputWriter, "[WARN] sink storage does not support upgrade, skipping")
-		}
+	err = f(opts.Sources.Sources, func() (any, error) {
+		return sources.NewPostgresSourcesReaderWriter(ctx, opts.Sources.Sources)
+	})
+
+	err = errors.Join(err, f(opts.Metrics.Metrics, func() (any, error) {
+		return metrics.NewPostgresMetricReaderWriter(ctx, opts.Metrics.Metrics)
+	}))
+
+	for _, uri := range opts.Sinks.Sinks {
+		err = errors.Join(err, f(uri, func() (any, error) {
+			return sinks.NewPostgresSinkMigrator(ctx, uri)
+		}))
 	}
 
-	// Only fail if nothing was upgraded
-	if !upgraded {
-		opts.CompleteCommand(ExitCodeConfigError)
-		return errors.New("no components support upgrade")
+	if err == nil {
+		opts.CompleteCommand(ExitCodeOK)
+		return nil
 	}
 
-	opts.CompleteCommand(ExitCodeOK)
-	return
+	// Check if all errors are ErrUnsupported
+	allUnsupported := true
+	for _, e := range err.(interface{ Unwrap() []error }).Unwrap() {
+		if !errors.Is(e, errors.ErrUnsupported) {
+			allUnsupported = false
+			break
+		}
+		fmt.Fprintln(opts.OutputWriter, e)
+	}
+
+	if allUnsupported {
+		opts.CompleteCommand(ExitCodeOK)
+		return nil
+	}
+	opts.CompleteCommand(ExitCodeConfigError)
+	return err
 }

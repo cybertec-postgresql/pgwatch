@@ -18,6 +18,7 @@ import (
 	migrator "github.com/cybertec-postgresql/pgx-migrator"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -534,6 +535,30 @@ func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric stri
 			)`
 	_, err := pgw.sinkDb.Exec(pgw.ctx, sql, dbUnique, metric)
 	return err
+}
+
+func NewPostgresSinkMigrator(ctx context.Context, connStr string) (db.Migrator, error) {
+	conn, err := pgxpool.New(ctx, connStr)
+	if err != nil {
+		return nil, err
+	}
+	pgw := &PostgresWriter{
+		ctx:    ctx,
+		sinkDb: conn,
+	}
+	exists, err := db.DoesSchemaExist(ctx, conn, "admin")
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return pgw, nil
+	}
+	for _, sql := range metricSchemaSQLs {
+		if _, err = conn.Exec(ctx, sql); err != nil {
+			return nil, err
+		}
+	}
+	return pgw, nil
 }
 
 var initMigrator = func(pgw *PostgresWriter) (*migrator.Migrator, error) {
