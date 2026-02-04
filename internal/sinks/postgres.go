@@ -607,6 +607,9 @@ var migrations func() migrator.Option = func() migrator.Option {
 			Name: "01180 Apply admin functions migrations for v5",
 			Func: func(ctx context.Context, tx pgx.Tx) error {
 				_, err := tx.Exec(ctx, `DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time`)
+				if err != nil {
+					return err
+				}
 
 				_, err = tx.Exec(ctx, sqlMetricEnsurePartitionPostgres)
 				if err != nil {
