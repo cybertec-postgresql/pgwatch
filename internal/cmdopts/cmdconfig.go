@@ -3,6 +3,7 @@ package cmdopts
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
@@ -87,46 +88,62 @@ type ConfigUpgradeCommand struct {
 // Execute upgrades the configuration schema.
 func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 	opts := cmd.owner
-	if err = opts.ValidateConfig(); err != nil {
-		return
-	}
-	ctx := context.Background()
-	// Upgrade metrics/sources configuration if it's postgres
-	if opts.IsPgConnStr(opts.Metrics.Metrics) && opts.IsPgConnStr(opts.Sources.Sources) {
-		err = opts.InitMetricReader(ctx)
-		if err != nil {
-			opts.CompleteCommand(ExitCodeConfigError)
-			return
-		}
-		if m, ok := opts.MetricsReaderWriter.(db.Migrator); ok {
-			err = m.Migrate()
-			if err != nil {
-				opts.CompleteCommand(ExitCodeConfigError)
-				return
-			}
-		}
-	} else {
+	// For upgrade command, validate that at least one component is specified
+	if len(opts.Sources.Sources)+len(opts.Metrics.Metrics)+len(opts.Sinks.Sinks) == 0 {
 		opts.CompleteCommand(ExitCodeConfigError)
-		return errors.New("configuration storage does not support upgrade")
+		return errors.New("at least one of --sources, --metrics, or --sink must be specified")
 	}
-	// Upgrade sinks configuration if it's postgres
-	if len(opts.Sinks.Sinks) > 0 {
-		opts.SinksWriter, err = sinks.NewSinkWriter(ctx, &opts.Sinks)
-		if err != nil {
-			opts.CompleteCommand(ExitCodeConfigError)
-			return
+
+	ctx := context.Background()
+
+	f := func(uri string, newMigratorFunc func() (any, error)) error {
+		if uri == "" {
+			return nil
 		}
-		if m, ok := opts.SinksWriter.(db.Migrator); ok {
-			err = m.Migrate()
-			if err != nil {
-				opts.CompleteCommand(ExitCodeConfigError)
-				return
-			}
-		} else {
-			opts.CompleteCommand(ExitCodeConfigError)
-			return errors.New("sink storage does not support upgrade")
+		if !opts.IsPgConnStr(uri) {
+			return fmt.Errorf("cannot upgrade storage %s: %w", uri, errors.ErrUnsupported)
 		}
+		m, initErr := newMigratorFunc()
+		if initErr != nil {
+			return initErr
+		}
+		return m.(db.Migrator).Migrate()
+
 	}
-	opts.CompleteCommand(ExitCodeOK)
-	return
+
+	err = f(opts.Sources.Sources, func() (any, error) {
+		return sources.NewPostgresSourcesReaderWriter(ctx, opts.Sources.Sources)
+	})
+
+	err = errors.Join(err, f(opts.Metrics.Metrics, func() (any, error) {
+		return metrics.NewPostgresMetricReaderWriter(ctx, opts.Metrics.Metrics)
+	}))
+
+	for _, uri := range opts.Sinks.Sinks {
+		err = errors.Join(err, f(uri, func() (any, error) {
+			return sinks.NewPostgresSinkMigrator(ctx, uri)
+		}))
+	}
+
+	if err == nil {
+		opts.CompleteCommand(ExitCodeOK)
+		return nil
+	}
+
+	// Check if all errors are ErrUnsupported
+	allUnsupported := true
+	for _, e := range err.(interface{ Unwrap() []error }).Unwrap() {
+		if !errors.Is(e, errors.ErrUnsupported) {
+			allUnsupported = false
+			break
+		}
+		fmt.Fprintln(opts.OutputWriter, e)
+	}
+
+	if allUnsupported {
+		opts.CompleteCommand(ExitCodeOK)
+		return nil
+	}
+	opts.CompleteCommand(ExitCodeConfigError)
+	return err
 }

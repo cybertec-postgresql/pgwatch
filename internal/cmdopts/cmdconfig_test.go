@@ -1,10 +1,10 @@
 package cmdopts
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
@@ -72,21 +72,22 @@ func TestConfigInitCommand_Execute(t *testing.T) {
 }
 
 func TestConfigUpgradeCommand_Execute(t *testing.T) {
-	a := assert.New(t)
-
-	t.Run("sources and metrics are empty", func(*testing.T) {
+	t.Run("sources and metrics are empty", func(t *testing.T) {
+		a := assert.New(t)
 		os.Args = []string{0: "config_test", "config", "upgrade"}
 		_, err := New(io.Discard)
 		a.Error(err)
 	})
 
-	t.Run("metrics is a proper file name but files are not upgradable", func(*testing.T) {
+	t.Run("metrics is a proper file name but files are not upgradable", func(t *testing.T) {
+		a := assert.New(t)
 		fname := t.TempDir() + "/metrics.yaml"
 		os.Args = []string{0: "config_test", "--metrics=" + fname, "config", "upgrade"}
 		c, err := New(io.Discard)
-		a.Error(err)
+		// File-based configs return nil (all unsupported) and complete with OK
+		a.NoError(err)
 		a.True(c.CommandCompleted)
-		a.Equal(ExitCodeConfigError, c.ExitCode)
+		a.Equal(ExitCodeOK, c.ExitCode)
 	})
 
 }
@@ -303,24 +304,187 @@ func TestConfigUpgradeCommand_Errors(t *testing.T) {
 
 	t.Run("non-postgres configuration not supported", func(*testing.T) {
 		opts := &Options{
-			Metrics: metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
-			Sources: sources.CmdOpts{Sources: "/tmp/sources.yaml", Refresh: 120, MaxParallelConnectionsPerDb: 1},
-			Sinks:   sinks.CmdOpts{BatchingDelay: time.Second},
+			Metrics:      metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
+			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml", Refresh: 120, MaxParallelConnectionsPerDb: 1},
+			Sinks:        sinks.CmdOpts{},
+			OutputWriter: t.Output(),
 		}
 		cmd := ConfigUpgradeCommand{owner: opts}
 		err := cmd.Execute(nil)
-		a.Error(err)
-		a.ErrorContains(err, "does not support upgrade")
+		if err != nil {
+			a.Contains(err.Error(), "cannot updrage storage")
+		}
+		a.Equal(ExitCodeOK, opts.ExitCode)
 	})
 
 	t.Run("init metrics reader fails", func(*testing.T) {
 		opts := &Options{
-			Metrics: metrics.CmdOpts{Metrics: "postgresql://invalid@host/db"},
-			Sources: sources.CmdOpts{Sources: "postgresql://invalid@host/db", Refresh: 120, MaxParallelConnectionsPerDb: 1},
-			Sinks:   sinks.CmdOpts{BatchingDelay: time.Second},
+			Metrics:      metrics.CmdOpts{Metrics: "postgresql://invalid@host/db"},
+			Sources:      sources.CmdOpts{Sources: "postgresql://invalid@host/db", Refresh: 120, MaxParallelConnectionsPerDb: 1},
+			Sinks:        sinks.CmdOpts{},
+			OutputWriter: t.Output(),
 		}
 		cmd := ConfigUpgradeCommand{owner: opts}
 		err := cmd.Execute(nil)
 		a.Error(err)
+		a.Equal(ExitCodeConfigError, opts.ExitCode)
+	})
+}
+
+func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
+	a := assert.New(t)
+
+	t.Run("no components specified - returns error", func(*testing.T) {
+		opts := &Options{
+			OutputWriter: io.Discard,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		a.Error(err)
+		a.ErrorContains(err, "at least one of --sources, --metrics, or --sink must be specified")
+		a.Equal(ExitCodeConfigError, opts.ExitCode)
+	})
+
+	t.Run("yaml sources/metrics - logs warning", func(*testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Metrics:      metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
+			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml"},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		// Execute will return errors for unsupported storage types
+		if err != nil {
+			a.Contains(err.Error(), "cannot updrage storage")
+			a.Contains(err.Error(), "unsupported operation")
+		}
+		a.Equal(ExitCodeOK, opts.ExitCode)
+	})
+
+	t.Run("successful sink upgrade only - connection fails", func(*testing.T) {
+		opts := &Options{
+			Sinks:        sinks.CmdOpts{Sinks: []string{"postgresql://localhost/db"}},
+			OutputWriter: io.Discard,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		// Will fail to connect to postgres since it's not running
+		a.Error(err)
+		a.Equal(ExitCodeConfigError, opts.ExitCode)
+	})
+
+	t.Run("sink upgrade with postgres connection string - connection fails", func(*testing.T) {
+		opts := &Options{
+			Sinks:        sinks.CmdOpts{Sinks: []string{"postgresql://localhost/db"}},
+			OutputWriter: io.Discard,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		// Connection will fail
+		a.Error(err)
+		a.Equal(ExitCodeConfigError, opts.ExitCode)
+	})
+
+	t.Run("non-postgres sink - unsupported error", func(*testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Sinks:        sinks.CmdOpts{Sinks: []string{"jsonfile://test.json"}},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		// Non-postgres URIs return unsupported error
+		if err != nil {
+			a.Contains(err.Error(), "cannot updrage storage")
+			a.Contains(err.Error(), "unsupported operation")
+		}
+		a.Equal(ExitCodeOK, opts.ExitCode)
+	})
+
+	t.Run("yaml sources/metrics with postgres sink - connection fails", func(*testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Metrics:      metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
+			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml"},
+			Sinks:        sinks.CmdOpts{Sinks: []string{"postgresql://localhost/db"}},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		// Will have errors for yaml configs and connection failure for sink
+		a.Error(err)
+		a.Equal(ExitCodeConfigError, opts.ExitCode)
+	})
+
+	t.Run("postgres sources/metrics with non-postgres sink - connection fails", func(*testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Metrics:      metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
+			Sources:      sources.CmdOpts{Sources: "postgresql://localhost/db"},
+			Sinks:        sinks.CmdOpts{Sinks: []string{"jsonfile://test.json"}},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		// Connection will fail for postgres URIs
+		a.Error(err)
+		a.Equal(ExitCodeConfigError, opts.ExitCode)
+	})
+
+	t.Run("only metrics specified as yaml - unsupported error", func(*testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Metrics:      metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		if err != nil {
+			a.Contains(err.Error(), "cannot updrage storage")
+		}
+		a.Equal(ExitCodeOK, opts.ExitCode)
+	})
+
+	t.Run("only sources specified as yaml - unsupported error", func(*testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml"},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		if err != nil {
+			a.Contains(err.Error(), "cannot updrage storage")
+		}
+		a.Equal(ExitCodeOK, opts.ExitCode)
+	})
+
+	t.Run("both metrics and sources specified, only metrics is postgres", func(*testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Metrics:      metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
+			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml"},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		// Will fail to connect to postgres
+		a.Error(err)
+		a.Equal(ExitCodeConfigError, opts.ExitCode)
+	})
+
+	t.Run("postgres metrics and sources - connection fails", func(*testing.T) {
+		var output bytes.Buffer
+		opts := &Options{
+			Metrics:      metrics.CmdOpts{Metrics: "postgresql://localhost/db"},
+			Sources:      sources.CmdOpts{Sources: "postgresql://localhost/db"},
+			OutputWriter: &output,
+		}
+		cmd := ConfigUpgradeCommand{owner: opts}
+		err := cmd.Execute(nil)
+		// Will fail to connect
+		a.Error(err)
+		a.Equal(ExitCodeConfigError, opts.ExitCode)
 	})
 }

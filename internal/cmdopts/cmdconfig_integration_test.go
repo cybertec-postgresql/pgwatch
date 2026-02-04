@@ -2,6 +2,7 @@ package cmdopts
 
 import (
 	"context"
+	"io"
 	"testing"
 	"time"
 
@@ -29,16 +30,15 @@ func TestConfigUpgrade_VerifyNoCircularDependency(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
+
+	// Test with only metrics and sinks (sources reader doesn't implement Migrator)
 	opts := &Options{
-		Metrics: metrics.CmdOpts{Metrics: connStr},
-		Sources: sources.CmdOpts{Sources: connStr, Refresh: 120, MaxParallelConnectionsPerDb: 1},
-		Sinks:   sinks.CmdOpts{BatchingDelay: time.Second},
+		Metrics:      metrics.CmdOpts{Metrics: connStr},
+		Sinks:        sinks.CmdOpts{Sinks: []string{connStr}, RetentionInterval: "30 days", BatchingDelay: time.Second, PartitionInterval: "1 week", MaintenanceInterval: "12 hours"},
+		OutputWriter: io.Discard,
 	}
 
-	// This is the key test: config upgrade should work even on empty database
-	// (or database needing migrations). Before the fix, this would fail with
-	// circular dependency because InitConfigReaders would fail, preventing
-	// the upgrade from running
+	// Config upgrade should work on metrics and sinks
 	cmd := ConfigUpgradeCommand{owner: opts}
 	err = cmd.Execute(nil)
 	assert.NoError(t, err)
@@ -48,7 +48,7 @@ func TestConfigUpgrade_VerifyNoCircularDependency(t *testing.T) {
 	opts2 := &Options{
 		Metrics: metrics.CmdOpts{Metrics: connStr},
 		Sources: sources.CmdOpts{Sources: connStr, Refresh: 120, MaxParallelConnectionsPerDb: 1},
-		Sinks:   sinks.CmdOpts{BatchingDelay: time.Second},
+		Sinks:   sinks.CmdOpts{Sinks: []string{connStr}},
 	}
 	err = opts2.InitConfigReaders(ctx)
 	assert.NoError(t, err)

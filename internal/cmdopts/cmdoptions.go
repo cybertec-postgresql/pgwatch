@@ -14,7 +14,6 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/webserver"
-	"github.com/jackc/pgx/v5"
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -122,8 +121,7 @@ func (c *Options) GetConfigKind(arg string) (_ Kind, err error) {
 }
 
 func (c *Options) IsPgConnStr(arg string) bool {
-	_, err := pgx.ParseConfig(arg)
-	return err == nil
+	return db.IsPgConnStr(arg)
 }
 
 // InitMetricReader creates a new source reader based on the configuration kind from the options.

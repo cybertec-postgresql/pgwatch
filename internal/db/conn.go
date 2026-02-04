@@ -84,6 +84,11 @@ func MarshallParamToJSONB(v any) any {
 	return nil
 }
 
+func IsPgConnStr(arg string) bool {
+	_, err := pgx.ParseConfig(arg)
+	return err == nil
+}
+
 // Function to determine if the client is connected to the same host as the PostgreSQL server
 func IsClientOnSameHost(conn PgxIface) (bool, error) {
 	ctx := context.Background()
