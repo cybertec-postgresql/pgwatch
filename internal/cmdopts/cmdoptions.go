@@ -207,7 +207,7 @@ func (c *Options) ValidateConfig() error {
 		c.Metrics.Metrics = c.Sources.Sources
 	}
 	if c.Sources.Refresh <= 1 {
-		return errors.New("--servers-refresh-loop-seconds must be greater than 1")
+		return errors.New("--refresh must be greater than 1")
 	}
 	if c.Sources.MaxParallelConnectionsPerDb < 1 {
 		return errors.New("--max-parallel-connections-per-db must be >= 1")
@@ -215,7 +215,7 @@ func (c *Options) ValidateConfig() error {
 
 	// validate that input is boolean is set
 	if c.Sinks.BatchingDelay <= 0 || c.Sinks.BatchingDelay > time.Hour {
-		return errors.New("--batching-delay-ms must be between 0 and 1h")
+		return errors.New("--batching-delay must be between 0 and 1h")
 	}
 
 	return nil
