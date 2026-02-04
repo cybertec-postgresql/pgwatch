@@ -18,15 +18,20 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+type PromMetricCache = map[string]map[string]metrics.MeasurementEnvelope // [dbUnique][metric]lastly_fetched_data
+
 // PrometheusWriter is a sink that allows to expose metric measurements to Prometheus scrapper.
 // Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints.
 type PrometheusWriter struct {
-	logger                            log.Logger
-	ctx                               context.Context
-	lastScrapeErrors                  prometheus.Gauge
-	totalScrapes, totalScrapeFailures prometheus.Counter
-	PrometheusNamespace               string
-	gauges                            map[string]([]string) // map of metric names to their gauge names, used for Prometheus gauge metrics
+	sync.RWMutex
+	logger              log.Logger
+	ctx                 context.Context
+	lastScrapeErrors    prometheus.Gauge
+	totalScrapes        prometheus.Counter
+	totalScrapeFailures prometheus.Counter
+	gauges              map[string]([]string) // map of metric names to their gauge names, used for Prometheus gauge metrics
+	Namespace           string
+	Cache               PromMetricCache // [dbUnique][metric]lastly_fetched_data
 }
 
 const promInstanceUpStateMetric = "instance_up"
@@ -46,9 +51,10 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 	l := log.GetLogger(ctx).WithField("sink", "prometheus").WithField("address", addr)
 	ctx = log.WithLogger(ctx, l)
 	promw = &PrometheusWriter{
-		ctx:                 ctx,
-		logger:              l,
-		PrometheusNamespace: namespace,
+		ctx:       ctx,
+		logger:    l,
+		Namespace: namespace,
+		Cache:     make(PromMetricCache),
 		lastScrapeErrors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "exporter_last_scrape_errors",
@@ -108,36 +114,30 @@ func (promw *PrometheusWriter) Write(msg metrics.MeasurementEnvelope) error {
 	return nil
 }
 
-type PromMetricCache = map[string]map[string]metrics.MeasurementEnvelope // [dbUnique][metric]lastly_fetched_data
-
-// Async Prom cache
-var promAsyncMetricCache = make(PromMetricCache)
-var promAsyncMetricCacheLock = sync.RWMutex{}
-
 func (promw *PrometheusWriter) PromAsyncCacheAddMetricData(dbUnique, metric string, msgArr metrics.MeasurementEnvelope) { // cache structure: [dbUnique][metric]lastly_fetched_data
-	promAsyncMetricCacheLock.Lock()
-	defer promAsyncMetricCacheLock.Unlock()
-	if _, ok := promAsyncMetricCache[dbUnique]; ok {
-		promAsyncMetricCache[dbUnique][metric] = msgArr
+	promw.Lock()
+	defer promw.Unlock()
+	if _, ok := promw.Cache[dbUnique]; ok {
+		promw.Cache[dbUnique][metric] = msgArr
 	}
 }
 
 func (promw *PrometheusWriter) PromAsyncCacheInitIfRequired(dbUnique, _ string) { // cache structure: [dbUnique][metric]lastly_fetched_data
-	promAsyncMetricCacheLock.Lock()
-	defer promAsyncMetricCacheLock.Unlock()
-	if _, ok := promAsyncMetricCache[dbUnique]; !ok {
-		promAsyncMetricCache[dbUnique] = make(map[string]metrics.MeasurementEnvelope)
+	promw.Lock()
+	defer promw.Unlock()
+	if _, ok := promw.Cache[dbUnique]; !ok {
+		promw.Cache[dbUnique] = make(map[string]metrics.MeasurementEnvelope)
 	}
 }
 
 func (promw *PrometheusWriter) PurgeMetricsFromPromAsyncCacheIfAny(dbUnique, metric string) {
-	promAsyncMetricCacheLock.Lock()
-	defer promAsyncMetricCacheLock.Unlock()
+	promw.Lock()
+	defer promw.Unlock()
 
 	if metric == "" {
-		delete(promAsyncMetricCache, dbUnique) // whole host removed from config
+		delete(promw.Cache, dbUnique) // whole host removed from config
 	} else {
-		delete(promAsyncMetricCache[dbUnique], metric)
+		delete(promw.Cache[dbUnique], metric)
 	}
 }
 
@@ -160,18 +160,21 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 	promw.totalScrapes.Add(1)
 	ch <- promw.totalScrapes
 
-	promAsyncMetricCacheLock.Lock()
-	if len(promAsyncMetricCache) == 0 {
-		promAsyncMetricCacheLock.Unlock()
+	promw.Lock()
+	if len(promw.Cache) == 0 {
+		promw.Unlock()
 		promw.logger.Warning("No dbs configured for monitoring. Check config")
 		ch <- promw.totalScrapeFailures
 		promw.lastScrapeErrors.Set(0)
 		ch <- promw.lastScrapeErrors
 		return
 	}
-	snapshot := promAsyncMetricCache
-	promAsyncMetricCache = make(PromMetricCache, len(snapshot))
-	promAsyncMetricCacheLock.Unlock()
+	snapshot := promw.Cache
+	promw.Cache = make(PromMetricCache, len(snapshot))
+	for dbUnique := range snapshot {
+		promw.Cache[dbUnique] = make(map[string]metrics.MeasurementEnvelope)
+	}
+	promw.Unlock()
 
 	t1 := time.Now()
 	for _, metricsMessages := range snapshot {
@@ -258,12 +261,12 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Measu
 				fieldPromDataType = prometheus.GaugeValue
 			}
 			var desc *prometheus.Desc
-			if promw.PrometheusNamespace != "" {
+			if promw.Namespace != "" {
 				if msg.MetricName == promInstanceUpStateMetric { // handle the special "instance_up" check
-					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s", promw.PrometheusNamespace, msg.MetricName),
+					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s", promw.Namespace, msg.MetricName),
 						msg.MetricName, labelKeys, nil)
 				} else {
-					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s_%s", promw.PrometheusNamespace, msg.MetricName, field),
+					desc = prometheus.NewDesc(fmt.Sprintf("%s_%s_%s", promw.Namespace, msg.MetricName, field),
 						msg.MetricName, labelKeys, nil)
 				}
 			} else {
