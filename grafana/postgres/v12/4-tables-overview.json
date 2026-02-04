@@ -184,7 +184,7 @@
           },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "select\n  x.*,\n  (data->>'seconds_since_last_vacuum')::int8 as last_vacuum,\n  (data->>'seconds_since_last_analyze')::int8 as last_analyze\nfrom (\nSELECT\n  tag_data->>'table_full_name' as table_full_name,\n  max((data->>'total_relation_size_b')::int8) as total_relation_size,\n  max((data->>'table_size_b')::int8) as data_size\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1 \nORDER BY 3 DESC NULLS LAST\nLIMIT $top\n) x\njoin lateral (select data from table_stats where dbname = '$dbname' and tag_data->>'table_full_name' = x.table_full_name and $__timeFilter(time) order by time desc limit 1) y on true",
+          "rawSql": "select\n  x.*,\n  (data->>'seconds_since_last_vacuum')::int8 as last_vacuum,\n  (data->>'seconds_since_last_analyze')::int8 as last_analyze\nfrom (\nSELECT\n  tag_data->>'table_full_name' as table_full_name,\n  max((data->>'total_relation_size_b')::int8) as total_relation_size,\n  max((data->>'table_size_b')::int8) as data_size\nFROM\n  table_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\nGROUP BY 1 \nORDER BY 2 DESC NULLS LAST\nLIMIT $top\n) x\njoin lateral (select data from table_stats where dbname = '$dbname' and tag_data->>'table_full_name' = x.table_full_name and $__timeFilter(time) order by time desc limit 1) y on true",
           "refId": "A",
           "resultFormat": "table"
         }
