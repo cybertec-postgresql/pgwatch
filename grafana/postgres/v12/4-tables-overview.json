@@ -1457,7 +1457,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n*\nFROM\n(\n  SELECT DISTINCT ON (table_full_name)\n  tag_data->>'table_full_name' as table_full_name,\n  data->>'tx_freeze_age' as tx_freeze_age,\n  (data->>'seconds_since_last_vacuum')::int8  as last_vacuum,\n  (data->>'seconds_since_last_analyze')::int8 as last_analyze\n  FROM\n    table_stats\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  ORDER BY\n    1, time DESC\n)\nORDER BY 3 DESC NULLS LAST\nLIMIT $top\n",
+          "rawSql": "SELECT\n*\nFROM\n(\n  SELECT DISTINCT ON (table_full_name)\n  tag_data->>'table_full_name' as table_full_name,\n  data->>'tx_freeze_age' as tx_freeze_age,\n  (data->>'seconds_since_last_vacuum')::int8  as last_vacuum,\n  (data->>'seconds_since_last_analyze')::int8 as last_analyze\n  FROM\n    table_stats\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  ORDER BY\n    1, time DESC\n)\nORDER BY 2 DESC NULLS LAST\nLIMIT $top\n",
           "refId": "A",
           "resultFormat": "table",
           "sql": {
