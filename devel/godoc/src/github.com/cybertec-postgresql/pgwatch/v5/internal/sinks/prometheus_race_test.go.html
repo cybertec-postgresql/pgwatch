@@ -69,64 +69,63 @@
 <span id="L12" class="ln">    12  </span>
 <span id="L13" class="ln">    13  </span>func TestCollect_RaceCondition_Real(_ *testing.T) {
 <span id="L14" class="ln">    14  </span>	<span class="comment">// 1. Initialize the real PrometheusWriter</span>
-<span id="L15" class="ln">    15  </span>	<span class="comment">// Note: In the current buggy code, this shares the global &#39;promAsyncMetricCache&#39;</span>
-<span id="L16" class="ln">    16  </span>	promw, _ := NewPrometheusWriter(testutil.TestContext, &#34;127.0.0.1:0/pgwatch&#34;)
-<span id="L17" class="ln">    17  </span>
-<span id="L18" class="ln">    18  </span>	<span class="comment">// 2. Register a metric so Write() actually puts data into the map</span>
-<span id="L19" class="ln">    19  </span>	_ = promw.SyncMetric(&#34;race_db&#34;, &#34;test_metric&#34;, AddOp)
-<span id="L20" class="ln">    20  </span>
-<span id="L21" class="ln">    21  </span>	var wg sync.WaitGroup
-<span id="L22" class="ln">    22  </span>	done := make(chan struct{})
-<span id="L23" class="ln">    23  </span>
-<span id="L24" class="ln">    24  </span>	<span class="comment">// --- The Writer (Simulating Database Updates) ---</span>
-<span id="L25" class="ln">    25  </span>	wg.Go(func() {
-<span id="L26" class="ln">    26  </span>		for {
-<span id="L27" class="ln">    27  </span>			select {
-<span id="L28" class="ln">    28  </span>			case &lt;-done:
-<span id="L29" class="ln">    29  </span>				return
-<span id="L30" class="ln">    30  </span>			default:
-<span id="L31" class="ln">    31  </span>				<span class="comment">// Call the REAL Write method</span>
-<span id="L32" class="ln">    32  </span>				_ = promw.Write(metrics.MeasurementEnvelope{
-<span id="L33" class="ln">    33  </span>					DBName:     &#34;race_db&#34;,
-<span id="L34" class="ln">    34  </span>					MetricName: &#34;test_metric&#34;,
-<span id="L35" class="ln">    35  </span>					Data: metrics.Measurements{
-<span id="L36" class="ln">    36  </span>						{
-<span id="L37" class="ln">    37  </span>							metrics.EpochColumnName: time.Now().UnixNano(),
-<span id="L38" class="ln">    38  </span>							&#34;value&#34;:                 int64(100),
-<span id="L39" class="ln">    39  </span>						},
-<span id="L40" class="ln">    40  </span>					},
-<span id="L41" class="ln">    41  </span>				})
-<span id="L42" class="ln">    42  </span>				<span class="comment">// No sleep here -&gt; hammer the map as fast as possible</span>
-<span id="L43" class="ln">    43  </span>			}
-<span id="L44" class="ln">    44  </span>		}
-<span id="L45" class="ln">    45  </span>	})
-<span id="L46" class="ln">    46  </span>
-<span id="L47" class="ln">    47  </span>	<span class="comment">// --- The Collector (Simulating Prometheus Scrapes) ---</span>
-<span id="L48" class="ln">    48  </span>	wg.Go(func() {
-<span id="L49" class="ln">    49  </span>		<span class="comment">// Prometheus provides a channel to receive metrics</span>
-<span id="L50" class="ln">    50  </span>		ch := make(chan prometheus.Metric, 10000)
-<span id="L51" class="ln">    51  </span>
-<span id="L52" class="ln">    52  </span>		<span class="comment">// Scrape 50 times (more than enough to trigger a race in a tight loop)</span>
-<span id="L53" class="ln">    53  </span>		for range 50 {
-<span id="L54" class="ln">    54  </span>			<span class="comment">// Call the REAL Collect method</span>
-<span id="L55" class="ln">    55  </span>			promw.Collect(ch)
-<span id="L56" class="ln">    56  </span>
-<span id="L57" class="ln">    57  </span>			<span class="comment">// Drain the channel so it doesn&#39;t block</span>
-<span id="L58" class="ln">    58  </span>		drainLoop:
-<span id="L59" class="ln">    59  </span>			for {
-<span id="L60" class="ln">    60  </span>				select {
-<span id="L61" class="ln">    61  </span>				case &lt;-ch:
-<span id="L62" class="ln">    62  </span>				default:
-<span id="L63" class="ln">    63  </span>					break drainLoop
-<span id="L64" class="ln">    64  </span>				}
-<span id="L65" class="ln">    65  </span>			}
-<span id="L66" class="ln">    66  </span>		}
-<span id="L67" class="ln">    67  </span>		close(done) <span class="comment">// Tell the writer to stop</span>
-<span id="L68" class="ln">    68  </span>	})
-<span id="L69" class="ln">    69  </span>
-<span id="L70" class="ln">    70  </span>	wg.Wait()
-<span id="L71" class="ln">    71  </span>}
-<span id="L72" class="ln">    72  </span>
+<span id="L15" class="ln">    15  </span>	promw, _ := NewPrometheusWriter(testutil.TestContext, &#34;127.0.0.1:0/pgwatch&#34;)
+<span id="L16" class="ln">    16  </span>
+<span id="L17" class="ln">    17  </span>	<span class="comment">// 2. Register a metric so Write() actually puts data into the map</span>
+<span id="L18" class="ln">    18  </span>	_ = promw.SyncMetric(&#34;race_db&#34;, &#34;test_metric&#34;, AddOp)
+<span id="L19" class="ln">    19  </span>
+<span id="L20" class="ln">    20  </span>	var wg sync.WaitGroup
+<span id="L21" class="ln">    21  </span>	done := make(chan struct{})
+<span id="L22" class="ln">    22  </span>
+<span id="L23" class="ln">    23  </span>	<span class="comment">// --- The Writer (Simulating Database Updates) ---</span>
+<span id="L24" class="ln">    24  </span>	wg.Go(func() {
+<span id="L25" class="ln">    25  </span>		for {
+<span id="L26" class="ln">    26  </span>			select {
+<span id="L27" class="ln">    27  </span>			case &lt;-done:
+<span id="L28" class="ln">    28  </span>				return
+<span id="L29" class="ln">    29  </span>			default:
+<span id="L30" class="ln">    30  </span>				<span class="comment">// Call the REAL Write method</span>
+<span id="L31" class="ln">    31  </span>				_ = promw.Write(metrics.MeasurementEnvelope{
+<span id="L32" class="ln">    32  </span>					DBName:     &#34;race_db&#34;,
+<span id="L33" class="ln">    33  </span>					MetricName: &#34;test_metric&#34;,
+<span id="L34" class="ln">    34  </span>					Data: metrics.Measurements{
+<span id="L35" class="ln">    35  </span>						{
+<span id="L36" class="ln">    36  </span>							metrics.EpochColumnName: time.Now().UnixNano(),
+<span id="L37" class="ln">    37  </span>							&#34;value&#34;:                 int64(100),
+<span id="L38" class="ln">    38  </span>						},
+<span id="L39" class="ln">    39  </span>					},
+<span id="L40" class="ln">    40  </span>				})
+<span id="L41" class="ln">    41  </span>				<span class="comment">// No sleep here -&gt; hammer the map as fast as possible</span>
+<span id="L42" class="ln">    42  </span>			}
+<span id="L43" class="ln">    43  </span>		}
+<span id="L44" class="ln">    44  </span>	})
+<span id="L45" class="ln">    45  </span>
+<span id="L46" class="ln">    46  </span>	<span class="comment">// --- The Collector (Simulating Prometheus Scrapes) ---</span>
+<span id="L47" class="ln">    47  </span>	wg.Go(func() {
+<span id="L48" class="ln">    48  </span>		<span class="comment">// Prometheus provides a channel to receive metrics</span>
+<span id="L49" class="ln">    49  </span>		ch := make(chan prometheus.Metric, 10000)
+<span id="L50" class="ln">    50  </span>
+<span id="L51" class="ln">    51  </span>		<span class="comment">// Scrape 50 times (more than enough to trigger a race in a tight loop)</span>
+<span id="L52" class="ln">    52  </span>		for range 50 {
+<span id="L53" class="ln">    53  </span>			<span class="comment">// Call the REAL Collect method</span>
+<span id="L54" class="ln">    54  </span>			promw.Collect(ch)
+<span id="L55" class="ln">    55  </span>
+<span id="L56" class="ln">    56  </span>			<span class="comment">// Drain the channel so it doesn&#39;t block</span>
+<span id="L57" class="ln">    57  </span>		drainLoop:
+<span id="L58" class="ln">    58  </span>			for {
+<span id="L59" class="ln">    59  </span>				select {
+<span id="L60" class="ln">    60  </span>				case &lt;-ch:
+<span id="L61" class="ln">    61  </span>				default:
+<span id="L62" class="ln">    62  </span>					break drainLoop
+<span id="L63" class="ln">    63  </span>				}
+<span id="L64" class="ln">    64  </span>			}
+<span id="L65" class="ln">    65  </span>		}
+<span id="L66" class="ln">    66  </span>		close(done) <span class="comment">// Tell the writer to stop</span>
+<span id="L67" class="ln">    67  </span>	})
+<span id="L68" class="ln">    68  </span>
+<span id="L69" class="ln">    69  </span>	wg.Wait()
+<span id="L70" class="ln">    70  </span>}
+<span id="L71" class="ln">    71  </span>
 </pre><p></p>
 
 <div id="footer">

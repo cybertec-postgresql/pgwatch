@@ -469,13 +469,6 @@
     )
 }</pre>
 			
-				<p>Async Prom cache
-
-				<pre>var <span id="promAsyncMetricCache">promAsyncMetricCache</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(<a href="#PromMetricCache">PromMetricCache</a>)</pre>
-			
-				
-				<pre>var <span id="promAsyncMetricCacheLock">promAsyncMetricCacheLock</span> = <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a>{}</pre>
-			
 				
 				<pre>var <span id="sqlMetricAdminFunctions">sqlMetricAdminFunctions</span> <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
 			
@@ -1135,7 +1128,7 @@ This is used to avoid listing the same source multiple times in Grafana dropdown
 		
 			
 			
-			<h2 id="PromMetricCache">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L111">PromMetricCache</a>
+			<h2 id="PromMetricCache">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L21">PromMetricCache</a>
 				<a class="permalink" href="#PromMetricCache">&#xb6;</a>
 				
 				
@@ -1158,7 +1151,7 @@ This is used to avoid listing the same source multiple times in Grafana dropdown
 		
 			
 			
-			<h2 id="PrometheusWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L23">PrometheusWriter</a>
+			<h2 id="PrometheusWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L25">PrometheusWriter</a>
 				<a class="permalink" href="#PrometheusWriter">&#xb6;</a>
 				
 				
@@ -1167,12 +1160,15 @@ This is used to avoid listing the same source multiple times in Grafana dropdown
 Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints.
 
 			<pre>type PrometheusWriter struct {
-<span id="PrometheusWriter.logger"></span>    logger                            <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/#Logger">Logger</a>
-<span id="PrometheusWriter.ctx"></span>    ctx                               <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
-<span id="PrometheusWriter.lastScrapeErrors"></span>    lastScrapeErrors                  <a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/">prometheus</a>.<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/#Gauge">Gauge</a>
-<span id="PrometheusWriter.totalScrapes"></span>    totalScrapes, totalScrapeFailures <a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/">prometheus</a>.<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/#Counter">Counter</a>
-<span id="PrometheusWriter.PrometheusNamespace"></span>    PrometheusNamespace               <a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="PrometheusWriter.gauges"></span>    gauges                            map[<a href="https://pkg.go.dev/builtin/#string">string</a>]([]<a href="https://pkg.go.dev/builtin/#string">string</a>) <span class="comment">// map of metric names to their gauge names, used for Prometheus gauge metrics</span>
+    <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#RWMutex">RWMutex</a>
+<span id="PrometheusWriter.logger"></span>    logger              <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/#Logger">Logger</a>
+<span id="PrometheusWriter.ctx"></span>    ctx                 <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
+<span id="PrometheusWriter.lastScrapeErrors"></span>    lastScrapeErrors    <a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/">prometheus</a>.<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/#Gauge">Gauge</a>
+<span id="PrometheusWriter.totalScrapes"></span>    totalScrapes        <a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/">prometheus</a>.<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/#Counter">Counter</a>
+<span id="PrometheusWriter.totalScrapeFailures"></span>    totalScrapeFailures <a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/">prometheus</a>.<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/#Counter">Counter</a>
+<span id="PrometheusWriter.gauges"></span>    gauges              map[<a href="https://pkg.go.dev/builtin/#string">string</a>]([]<a href="https://pkg.go.dev/builtin/#string">string</a>) <span class="comment">// map of metric names to their gauge names, used for Prometheus gauge metrics</span>
+<span id="PrometheusWriter.Namespace"></span>    Namespace           <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="PrometheusWriter.Cache"></span>    Cache               <a href="#PromMetricCache">PromMetricCache</a> <span class="comment">// [dbUnique][metric]lastly_fetched_data</span>
 }
 </pre>
 
@@ -1186,7 +1182,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 
 			
 				
-				<h3 id="NewPrometheusWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L41">NewPrometheusWriter</a>
+				<h3 id="NewPrometheusWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L46">NewPrometheusWriter</a>
 					<a class="permalink" href="#NewPrometheusWriter">&#xb6;</a>
 					
 					
@@ -1211,7 +1207,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.DefineMetrics">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L95">DefineMetrics</a>
+				<h3 id="PrometheusWriter.DefineMetrics">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L101">DefineMetrics</a>
 					<a class="permalink" href="#PrometheusWriter.DefineMetrics">&#xb6;</a>
 					
 					
@@ -1235,7 +1231,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.MetricStoreMessageToPromMetrics">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L195">MetricStoreMessageToPromMetrics</a>
+				<h3 id="PrometheusWriter.MetricStoreMessageToPromMetrics">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L198">MetricStoreMessageToPromMetrics</a>
 					<a class="permalink" href="#PrometheusWriter.MetricStoreMessageToPromMetrics">&#xb6;</a>
 					
 					
@@ -1247,7 +1243,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.Println">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L37">Println</a>
+				<h3 id="PrometheusWriter.Println">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L42">Println</a>
 					<a class="permalink" href="#PrometheusWriter.Println">&#xb6;</a>
 					
 					
@@ -1307,7 +1303,7 @@ Prometheus collects metrics data from pgwatch by scraping metrics HTTP endpoints
 				
 			
 				
-				<h3 id="PrometheusWriter.Write">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L103">Write</a>
+				<h3 id="PrometheusWriter.Write">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L109">Write</a>
 					<a class="permalink" href="#PrometheusWriter.Write">&#xb6;</a>
 					
 					
