@@ -264,7 +264,7 @@
 <span id="L207" class="ln">   207  </span>		c.Metrics.Metrics = c.Sources.Sources
 <span id="L208" class="ln">   208  </span>	}
 <span id="L209" class="ln">   209  </span>	if c.Sources.Refresh &lt;= 1 {
-<span id="L210" class="ln">   210  </span>		return errors.New(&#34;--servers-refresh-loop-seconds must be greater than 1&#34;)
+<span id="L210" class="ln">   210  </span>		return errors.New(&#34;--refresh must be greater than 1&#34;)
 <span id="L211" class="ln">   211  </span>	}
 <span id="L212" class="ln">   212  </span>	if c.Sources.MaxParallelConnectionsPerDb &lt; 1 {
 <span id="L213" class="ln">   213  </span>		return errors.New(&#34;--max-parallel-connections-per-db must be &gt;= 1&#34;)
@@ -272,7 +272,7 @@
 <span id="L215" class="ln">   215  </span>
 <span id="L216" class="ln">   216  </span>	<span class="comment">// validate that input is boolean is set</span>
 <span id="L217" class="ln">   217  </span>	if c.Sinks.BatchingDelay &lt;= 0 || c.Sinks.BatchingDelay &gt; time.Hour {
-<span id="L218" class="ln">   218  </span>		return errors.New(&#34;--batching-delay-ms must be between 0 and 1h&#34;)
+<span id="L218" class="ln">   218  </span>		return errors.New(&#34;--batching-delay must be between 0 and 1h&#34;)
 <span id="L219" class="ln">   219  </span>	}
 <span id="L220" class="ln">   220  </span>
 <span id="L221" class="ln">   221  </span>	return nil
