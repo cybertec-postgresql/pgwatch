@@ -47,7 +47,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -77,6 +77,10 @@
               {
                 "id": "displayName",
                 "value": "Table Name"
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               },
               {
                 "id": "links",
@@ -208,7 +212,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -237,6 +241,10 @@
               {
                 "id": "displayName",
                 "value": "Table Name"
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               },
               {
                 "id": "links",
@@ -360,7 +368,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -389,6 +397,10 @@
               {
                 "id": "displayName",
                 "value": "Table Name"
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               },
               {
                 "id": "links",
@@ -512,7 +524,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -541,6 +553,10 @@
               {
                 "id": "displayName",
                 "value": "Table Name"
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               },
               {
                 "id": "links",
@@ -664,7 +680,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -693,6 +709,10 @@
               {
                 "id": "displayName",
                 "value": "Table Name"
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               },
               {
                 "id": "links",
@@ -816,7 +836,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -845,6 +865,10 @@
               {
                 "id": "displayName",
                 "value": "Table Name"
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               },
               {
                 "id": "links",
@@ -968,7 +992,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -997,6 +1021,10 @@
               {
                 "id": "displayName",
                 "value": "Table Name"
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               },
               {
                 "id": "links",
@@ -1120,7 +1148,7 @@
             "mode": "thresholds"
           },
           "custom": {
-            "align": "auto",
+            "align": "left",
             "cellOptions": {
               "type": "auto"
             },
@@ -1148,6 +1176,10 @@
               {
                 "id": "displayName",
                 "value": "Table Name"
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               },
               {
                 "id": "links",
@@ -1318,6 +1350,10 @@
               {
                 "id": "displayName",
                 "value": "Table Name"
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
               },
               {
                 "id": "links",
