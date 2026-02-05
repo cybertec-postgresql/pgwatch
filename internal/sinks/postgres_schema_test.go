@@ -21,7 +21,7 @@ func TestPostgresWriterMigrate(t *testing.T) {
 	a.NoError(err)
 
 	// Mock the migrator to use simple migrations for testing
-	initMigrator = func(pgw *PostgresWriter) (*migrator.Migrator, error) {
+	initMigrator = func(_ *PostgresWriter) (*migrator.Migrator, error) {
 		return migrator.New(
 			migrator.TableName("admin.migration"),
 			migrator.Migrations(
