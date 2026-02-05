@@ -603,6 +603,23 @@ var migrations func() migrator.Option = func() migrator.Option {
 			},
 		},
 
+		&migrator.Migration{
+			Name: "01180 Apply admin functions migrations for v5",
+			Func: func(ctx context.Context, tx pgx.Tx) error {
+				_, err := tx.Exec(ctx, `DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time`)
+				if err != nil {
+					return err
+				}
+
+				_, err = tx.Exec(ctx, sqlMetricEnsurePartitionPostgres)
+				if err != nil {
+					return err
+				}
+				_, err = tx.Exec(ctx, sqlMetricAdminFunctions)
+				return err
+			},
+		},
+
 		// adding new migration here, update "admin"."migration" in "admin_schema.sql"!
 
 		// &migrator.Migration{
