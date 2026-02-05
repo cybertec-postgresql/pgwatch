@@ -334,7 +334,62 @@
         "uid": "pgwatch-prometheus"
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
         "overrides": []
       },
       "gridPos": {
@@ -342,6 +397,54 @@
         "w": 24,
         "x": 0,
         "y": 15
+      },
+      "id": 5,
+      "interval": "$agg_interval",
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+         ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "alias": "sb_hit_ratio",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
+          "expr": "(increase(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval]) * 100) / (increase(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval]) + increase(pgwatch_stat_statements_shared_blks_read{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval]) + 0.01)",
+          "legendFormat": "Hit ratio",
+          "refId": "A"
+        }
+      ],
+      "title": "Shared Buffers Hit Ratio",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 20
       },
       "id": 4,
       "options": {
