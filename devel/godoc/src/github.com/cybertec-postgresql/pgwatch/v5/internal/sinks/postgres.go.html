@@ -660,17 +660,34 @@
 <span id="L603" class="ln">   603  </span>			},
 <span id="L604" class="ln">   604  </span>		},
 <span id="L605" class="ln">   605  </span>
-<span id="L606" class="ln">   606  </span>		<span class="comment">// adding new migration here, update &#34;admin&#34;.&#34;migration&#34; in &#34;admin_schema.sql&#34;!</span>
-<span id="L607" class="ln">   607  </span>
-<span id="L608" class="ln">   608  </span>		<span class="comment">// &amp;migrator.Migration{</span>
-<span id="L609" class="ln">   609  </span>		<span class="comment">// 	Name: &#34;000XX Short description of a migration&#34;,</span>
-<span id="L610" class="ln">   610  </span>		<span class="comment">// 	Func: func(ctx context.Context, tx pgx.Tx) error {</span>
-<span id="L611" class="ln">   611  </span>		<span class="comment">// 		return executeMigrationScript(ctx, tx, &#34;000XX.sql&#34;)</span>
-<span id="L612" class="ln">   612  </span>		<span class="comment">// 	},</span>
-<span id="L613" class="ln">   613  </span>		<span class="comment">// },</span>
-<span id="L614" class="ln">   614  </span>	)
-<span id="L615" class="ln">   615  </span>}
-<span id="L616" class="ln">   616  </span>
+<span id="L606" class="ln">   606  </span>		&amp;migrator.Migration{
+<span id="L607" class="ln">   607  </span>			Name: &#34;01180 Apply admin functions migrations for v5&#34;,
+<span id="L608" class="ln">   608  </span>			Func: func(ctx context.Context, tx pgx.Tx) error {
+<span id="L609" class="ln">   609  </span>				_, err := tx.Exec(ctx, `DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time`)
+<span id="L610" class="ln">   610  </span>				if err != nil {
+<span id="L611" class="ln">   611  </span>					return err
+<span id="L612" class="ln">   612  </span>				}
+<span id="L613" class="ln">   613  </span>
+<span id="L614" class="ln">   614  </span>				_, err = tx.Exec(ctx, sqlMetricEnsurePartitionPostgres)
+<span id="L615" class="ln">   615  </span>				if err != nil {
+<span id="L616" class="ln">   616  </span>					return err
+<span id="L617" class="ln">   617  </span>				}
+<span id="L618" class="ln">   618  </span>				_, err = tx.Exec(ctx, sqlMetricAdminFunctions)
+<span id="L619" class="ln">   619  </span>				return err
+<span id="L620" class="ln">   620  </span>			},
+<span id="L621" class="ln">   621  </span>		},
+<span id="L622" class="ln">   622  </span>
+<span id="L623" class="ln">   623  </span>		<span class="comment">// adding new migration here, update &#34;admin&#34;.&#34;migration&#34; in &#34;admin_schema.sql&#34;!</span>
+<span id="L624" class="ln">   624  </span>
+<span id="L625" class="ln">   625  </span>		<span class="comment">// &amp;migrator.Migration{</span>
+<span id="L626" class="ln">   626  </span>		<span class="comment">// 	Name: &#34;000XX Short description of a migration&#34;,</span>
+<span id="L627" class="ln">   627  </span>		<span class="comment">// 	Func: func(ctx context.Context, tx pgx.Tx) error {</span>
+<span id="L628" class="ln">   628  </span>		<span class="comment">// 		return executeMigrationScript(ctx, tx, &#34;000XX.sql&#34;)</span>
+<span id="L629" class="ln">   629  </span>		<span class="comment">// 	},</span>
+<span id="L630" class="ln">   630  </span>		<span class="comment">// },</span>
+<span id="L631" class="ln">   631  </span>	)
+<span id="L632" class="ln">   632  </span>}
+<span id="L633" class="ln">   633  </span>
 </pre><p></p>
 
 <div id="footer">
