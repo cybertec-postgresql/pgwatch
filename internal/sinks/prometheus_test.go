@@ -7,6 +7,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -270,5 +271,177 @@ func TestDefineMetrics(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotContains(t, promw.gauges, "old_metric")
 		assert.Contains(t, promw.gauges, "new_metric")
+	})
+}
+
+// =============================================================================
+// Collect Tests
+// =============================================================================
+
+// newTestPrometheusWriterWithMetrics creates a PrometheusWriter with initialized internal metrics
+func newTestPrometheusWriterWithMetrics(namespace string, gauges map[string][]string) *PrometheusWriter {
+	promw := newTestPrometheusWriter(namespace, gauges)
+	promw.totalScrapes = prometheus.NewCounter(prometheus.CounterOpts{Name: "test_scrapes"})
+	promw.totalScrapeFailures = prometheus.NewCounter(prometheus.CounterOpts{Name: "test_failures"})
+	promw.lastScrapeErrors = prometheus.NewGauge(prometheus.GaugeOpts{Name: "test_errors"})
+	return promw
+}
+
+func TestCollect(t *testing.T) {
+	t.Run("empty cache emits only internal metrics", func(t *testing.T) {
+		promw := newTestPrometheusWriterWithMetrics("pgwatch", nil)
+
+		ch := make(chan prometheus.Metric, 100)
+		promw.Collect(ch)
+
+		// Should emit totalScrapes, totalScrapeFailures, lastScrapeErrors
+		assert.Len(t, ch, 3)
+	})
+
+	t.Run("preserves db entries after swap so new writes succeed", func(t *testing.T) {
+		// This tests the critical invariant: after Collect swaps the cache,
+		// the db entries must be preserved so subsequent Write() calls don't lose data
+		promw := newTestPrometheusWriterWithMetrics("pgwatch", nil)
+
+		// Initialize db
+		promw.PromAsyncCacheInitIfRequired("db1", "metric")
+		promw.Cache["db1"]["backends"] = metrics.MeasurementEnvelope{
+			DBName:     "db1",
+			MetricName: "backends",
+			Data: metrics.Measurements{
+				{metrics.EpochColumnName: time.Now().UnixNano(), "count": int64(10)},
+			},
+		}
+
+		ch := make(chan prometheus.Metric, 100)
+		promw.Collect(ch)
+
+		// After collect, db entry must still exist (empty but present)
+		assert.Contains(t, promw.Cache, "db1")
+
+		// New write should succeed (not be silently dropped)
+		newMsg := metrics.MeasurementEnvelope{
+			DBName:     "db1",
+			MetricName: "backends",
+			Data: metrics.Measurements{
+				{metrics.EpochColumnName: time.Now().UnixNano(), "count": int64(20)},
+			},
+		}
+		err := promw.Write(newMsg)
+		assert.NoError(t, err)
+
+		// Verify the write actually stored data
+		assert.Equal(t, newMsg, promw.Cache["db1"]["backends"])
+	})
+
+	t.Run("collects from multiple dbs with multiple metrics", func(t *testing.T) {
+		promw := newTestPrometheusWriterWithMetrics("pgwatch", nil)
+
+		// Setup: 2 dbs, each with 2 metrics, each metric with 2 fields
+		promw.PromAsyncCacheInitIfRequired("db1", "metric")
+		promw.PromAsyncCacheInitIfRequired("db2", "metric")
+
+		now := time.Now().UnixNano()
+		promw.Cache["db1"]["backends"] = metrics.MeasurementEnvelope{
+			DBName: "db1", MetricName: "backends",
+			Data: metrics.Measurements{{metrics.EpochColumnName: now, "active": int64(5), "idle": int64(3)}},
+		}
+		promw.Cache["db1"]["locks"] = metrics.MeasurementEnvelope{
+			DBName: "db1", MetricName: "locks",
+			Data: metrics.Measurements{{metrics.EpochColumnName: now, "count": int64(2)}},
+		}
+		promw.Cache["db2"]["backends"] = metrics.MeasurementEnvelope{
+			DBName: "db2", MetricName: "backends",
+			Data: metrics.Measurements{{metrics.EpochColumnName: now, "active": int64(10), "idle": int64(7)}},
+		}
+		promw.Cache["db2"]["connections"] = metrics.MeasurementEnvelope{
+			DBName: "db2", MetricName: "connections",
+			Data: metrics.Measurements{{metrics.EpochColumnName: now, "total": int64(100)}},
+		}
+
+		ch := make(chan prometheus.Metric, 100)
+		promw.Collect(ch)
+
+		// Expected: 3 internal metrics + (2+1+2+1) = 9 total
+		// db1/backends: 2 fields, db1/locks: 1 field, db2/backends: 2 fields, db2/connections: 1 field
+		assert.Len(t, ch, 9)
+
+		// Both dbs should still exist after collect
+		assert.Contains(t, promw.Cache, "db1")
+		assert.Contains(t, promw.Cache, "db2")
+	})
+
+	t.Run("successive collects return fresh data each time", func(t *testing.T) {
+		promw := newTestPrometheusWriterWithMetrics("pgwatch", nil)
+		promw.PromAsyncCacheInitIfRequired("db1", "metric")
+
+		// First collect with some data
+		promw.Cache["db1"]["metric1"] = metrics.MeasurementEnvelope{
+			DBName: "db1", MetricName: "metric1",
+			Data: metrics.Measurements{{metrics.EpochColumnName: time.Now().UnixNano(), "val": int64(1)}},
+		}
+
+		ch1 := make(chan prometheus.Metric, 100)
+		promw.Collect(ch1)
+		firstCollectCount := len(ch1)
+
+		// Second collect without new data - should only have internal metrics
+		ch2 := make(chan prometheus.Metric, 100)
+		promw.Collect(ch2)
+		secondCollectCount := len(ch2)
+
+		assert.Equal(t, 4, firstCollectCount) // 3 internal + 1 metric field
+		assert.Equal(t, 3, secondCollectCount) // only 3 internal metrics (no data)
+	})
+
+	t.Run("skips change_events metric", func(t *testing.T) {
+		promw := newTestPrometheusWriterWithMetrics("pgwatch", nil)
+		promw.PromAsyncCacheInitIfRequired("db1", "change_events")
+
+		promw.Cache["db1"]["change_events"] = metrics.MeasurementEnvelope{
+			DBName: "db1", MetricName: "change_events",
+			Data: metrics.Measurements{{metrics.EpochColumnName: time.Now().UnixNano(), "value": int64(1)}},
+		}
+		promw.Cache["db1"]["backends"] = metrics.MeasurementEnvelope{
+			DBName: "db1", MetricName: "backends",
+			Data: metrics.Measurements{{metrics.EpochColumnName: time.Now().UnixNano(), "count": int64(5)}},
+		}
+
+		ch := make(chan prometheus.Metric, 100)
+		promw.Collect(ch)
+
+		// Should have 3 internal + 1 (backends), change_events skipped
+		assert.Len(t, ch, 4)
+	})
+
+	t.Run("handles db with empty metrics map", func(t *testing.T) {
+		promw := newTestPrometheusWriterWithMetrics("pgwatch", nil)
+
+		// Initialize db but don't add any metrics
+		promw.PromAsyncCacheInitIfRequired("empty_db", "metric")
+		// Don't add any actual metric data
+
+		ch := make(chan prometheus.Metric, 100)
+		promw.Collect(ch)
+
+		// Should only have internal metrics, no panic
+		assert.Len(t, ch, 3)
+		// DB should still exist
+		assert.Contains(t, promw.Cache, "empty_db")
+	})
+
+	t.Run("totalScrapes increments on each collect", func(t *testing.T) {
+		promw := newTestPrometheusWriterWithMetrics("pgwatch", nil)
+
+		ch := make(chan prometheus.Metric, 100)
+
+		// Collect 3 times
+		promw.Collect(ch)
+		promw.Collect(ch)
+		promw.Collect(ch)
+
+		// Drain and check - we should see incrementing totalScrapes
+		// Each collect adds 3 metrics, so 9 total
+		assert.Len(t, ch, 9)
 	})
 }
