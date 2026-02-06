@@ -136,3 +136,139 @@ func TestPurgeMetricsFromPromAsyncCacheIfAny(t *testing.T) {
 		promw.PurgeMetricsFromPromAsyncCacheIfAny("non_existent", "metric")
 	})
 }
+
+// =============================================================================
+// SyncMetric Tests
+// =============================================================================
+
+func TestPrometheusSyncMetric(t *testing.T) {
+	t.Run("AddOp initializes cache", func(t *testing.T) {
+		promw := newTestPrometheusWriter("pgwatch", nil)
+
+		err := promw.SyncMetric("test_db", "test_metric", AddOp)
+
+		assert.NoError(t, err)
+		assert.Contains(t, promw.Cache, "test_db")
+	})
+
+	t.Run("DeleteOp removes metric", func(t *testing.T) {
+		promw := newTestPrometheusWriter("pgwatch", nil)
+		promw.PromAsyncCacheInitIfRequired("test_db", "test_metric")
+		promw.Cache["test_db"]["test_metric"] = metrics.MeasurementEnvelope{}
+
+		err := promw.SyncMetric("test_db", "test_metric", DeleteOp)
+
+		assert.NoError(t, err)
+		assert.NotContains(t, promw.Cache["test_db"], "test_metric")
+	})
+
+	t.Run("DeleteOp with empty metric removes entire db", func(t *testing.T) {
+		promw := newTestPrometheusWriter("pgwatch", nil)
+		promw.PromAsyncCacheInitIfRequired("test_db", "metric")
+
+		err := promw.SyncMetric("test_db", "", DeleteOp)
+
+		assert.NoError(t, err)
+		assert.NotContains(t, promw.Cache, "test_db")
+	})
+}
+
+// =============================================================================
+// Write Tests
+// =============================================================================
+
+func TestPrometheusWrite(t *testing.T) {
+	t.Run("writes data to cache", func(t *testing.T) {
+		promw := newTestPrometheusWriter("pgwatch", nil)
+		promw.PromAsyncCacheInitIfRequired("test_db", "test_metric")
+
+		msg := metrics.MeasurementEnvelope{
+			DBName:     "test_db",
+			MetricName: "test_metric",
+			Data: metrics.Measurements{
+				{metrics.EpochColumnName: time.Now().UnixNano(), "value": int64(100)},
+			},
+		}
+
+		err := promw.Write(msg)
+
+		assert.NoError(t, err)
+		assert.Equal(t, msg, promw.Cache["test_db"]["test_metric"])
+	})
+
+	t.Run("ignores empty data", func(t *testing.T) {
+		promw := newTestPrometheusWriter("pgwatch", nil)
+		promw.PromAsyncCacheInitIfRequired("test_db", "test_metric")
+
+		msg := metrics.MeasurementEnvelope{
+			DBName:     "test_db",
+			MetricName: "test_metric",
+			Data:       metrics.Measurements{},
+		}
+
+		err := promw.Write(msg)
+
+		assert.NoError(t, err)
+		assert.NotContains(t, promw.Cache["test_db"], "test_metric")
+	})
+
+	t.Run("ignores nil data", func(t *testing.T) {
+		promw := newTestPrometheusWriter("pgwatch", nil)
+		promw.PromAsyncCacheInitIfRequired("test_db", "test_metric")
+
+		msg := metrics.MeasurementEnvelope{
+			DBName:     "test_db",
+			MetricName: "test_metric",
+			Data:       nil,
+		}
+
+		err := promw.Write(msg)
+
+		assert.NoError(t, err)
+	})
+}
+
+// =============================================================================
+// DefineMetrics Tests
+// =============================================================================
+
+func TestDefineMetrics(t *testing.T) {
+	t.Run("sets up gauges from metric definitions", func(t *testing.T) {
+		promw := newTestPrometheusWriter("pgwatch", nil)
+
+		m := &metrics.Metrics{
+			MetricDefs: map[string]metrics.Metric{
+				"backends":   {Gauges: []string{"active", "idle"}},
+				"locks":      {Gauges: []string{"*"}},
+				"wal":        {Gauges: []string{}},
+				"table_size": {},
+			},
+		}
+
+		err := promw.DefineMetrics(m)
+
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"active", "idle"}, promw.gauges["backends"])
+		assert.Equal(t, []string{"*"}, promw.gauges["locks"])
+		assert.Equal(t, []string{}, promw.gauges["wal"])
+		assert.Nil(t, promw.gauges["table_size"])
+	})
+
+	t.Run("overwrites existing gauges", func(t *testing.T) {
+		promw := newTestPrometheusWriter("pgwatch", map[string][]string{
+			"old_metric": {"old_gauge"},
+		})
+
+		m := &metrics.Metrics{
+			MetricDefs: map[string]metrics.Metric{
+				"new_metric": {Gauges: []string{"new_gauge"}},
+			},
+		}
+
+		err := promw.DefineMetrics(m)
+
+		assert.NoError(t, err)
+		assert.NotContains(t, promw.gauges, "old_metric")
+		assert.Contains(t, promw.gauges, "new_metric")
+	})
+}
