@@ -57,6 +57,14 @@ export const useFormStyles = makeStyles()(
       maxWidth: "100%",
       width: "100%",
     },
+    widthQuarter: {
+      flex: "0 0 20%",
+      maxWidth: "25%",
+    },
+    widthThreeQuarter: {
+      flex: "0 0 75%",
+      maxWidth: "75%",
+    },
     hidden: {
       display: "none",
     }

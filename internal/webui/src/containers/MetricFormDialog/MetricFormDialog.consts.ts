@@ -14,21 +14,16 @@ export const getMetricInitialValues = (data?: MetricGridRow): MetricFormValues =
     Gauges: convertGauges(data?.Metric.Gauges ?? [""]),
     InitSQL: data?.Metric.InitSQL ?? "",
     IsInstanceLevel: data?.Metric.IsInstanceLevel ?? false,
-    SQLs: yaml.stringify(data?.Metric.SQLs) ?? "",
+    SQLs: (data?.Metric.SQLs) ?? "",
   };
 };
 
 export const createMetricRequest = (values: MetricFormValues): MetricRequestBody => {
-  const sqls: Record<number, string> = {};
-  yaml.parse(values.SQLs, (key, value) => {
-    if (key) {
-      const version = Number(key);
-      if (Number.isNaN(version)) {
-        throw new Error("Version is not a valid number");
-      }
-      sqls[Number(key)] = String(value);
-    }
-  });
+  const formattedSQLs = values.SQLs.reduce((acc, current) => {
+    // Key = Version, Value = SQL
+    acc[current.Version] = current.SQL; 
+    return acc;
+  }, {} as Record<string, string>);
 
   return {
     Name: values.Name,
@@ -39,7 +34,7 @@ export const createMetricRequest = (values: MetricFormValues): MetricRequestBody
       Gauges: values.Gauges?.split("\n"),
       InitSQL: values.InitSQL,
       IsInstanceLevel: values.IsInstanceLevel,
-      SQLs: sqls,
+      SQLs: formattedSQLs,
     },
   };
 };
