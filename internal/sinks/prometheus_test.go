@@ -1,6 +1,7 @@
 package sinks
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -8,7 +9,9 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
 	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // newTestPrometheusWriter creates a PrometheusWriter for testing without starting HTTP server
@@ -444,4 +447,440 @@ func TestCollect(t *testing.T) {
 		// Each collect adds 3 metrics, so 9 total
 		assert.Len(t, ch, 9)
 	})
+}
+
+// =============================================================================
+// MetricStoreMessageToPromMetrics Tests
+// =============================================================================
+
+// extractMetricInfo writes a prometheus.Metric to dto.Metric for inspection
+func extractMetricInfo(m prometheus.Metric) (labels map[string]string, value float64, metricType dto.MetricType) {
+	var dtoMetric dto.Metric
+	_ = m.Write(&dtoMetric)
+
+	labels = make(map[string]string)
+	for _, lp := range dtoMetric.Label {
+		labels[lp.GetName()] = lp.GetValue()
+	}
+
+	if dtoMetric.Gauge != nil {
+		value = dtoMetric.Gauge.GetValue()
+		metricType = dto.MetricType_GAUGE
+	} else if dtoMetric.Counter != nil {
+		value = dtoMetric.Counter.GetValue()
+		metricType = dto.MetricType_COUNTER
+	}
+
+	return
+}
+
+func TestMetricStoreMessageToPromMetrics_EmptyData(t *testing.T) {
+	promw := newTestPrometheusWriter("pgwatch", nil)
+
+	msg := metrics.MeasurementEnvelope{
+		DBName:     "test_db",
+		MetricName: "test_metric",
+		Data:       metrics.Measurements{},
+	}
+
+	result := promw.MetricStoreMessageToPromMetrics(msg)
+
+	assert.Empty(t, result)
+}
+
+func TestMetricStoreMessageToPromMetrics_StaleData(t *testing.T) {
+	promw := newTestPrometheusWriter("pgwatch", nil)
+
+	// Create timestamp past the staleness threshold (10 minutes)
+	staleTime := time.Now().Add(-promScrapingStalenessHardDropLimit - time.Second)
+
+	msg := metrics.MeasurementEnvelope{
+		DBName:     "test_db",
+		MetricName: "test_metric",
+		Data: metrics.Measurements{
+			{
+				metrics.EpochColumnName: staleTime.UnixNano(),
+				"value":                 int64(42),
+			},
+		},
+	}
+
+	// Initialize cache so staleness check can purge it
+	promw.PromAsyncCacheInitIfRequired("test_db", "test_metric")
+
+	result := promw.MetricStoreMessageToPromMetrics(msg)
+
+	assert.Empty(t, result)
+}
+
+func TestMetricStoreMessageToPromMetrics_TagFieldsBecomeLabels(t *testing.T) {
+	promw := newTestPrometheusWriter("pgwatch", nil)
+
+	msg := metrics.MeasurementEnvelope{
+		DBName:     "test_db",
+		MetricName: "backends",
+		Data: metrics.Measurements{
+			{
+				metrics.EpochColumnName: time.Now().UnixNano(),
+				"tag_database":          "myapp",
+				"tag_state":             "active",
+				"connections":           int64(25),
+			},
+		},
+	}
+
+	result := promw.MetricStoreMessageToPromMetrics(msg)
+
+	require.Len(t, result, 1)
+
+	labels, value, _ := extractMetricInfo(result[0])
+
+	assert.Equal(t, float64(25), value)
+	assert.Equal(t, "test_db", labels["dbname"])
+	assert.Equal(t, "myapp", labels["database"])  // tag_database -> database
+	assert.Equal(t, "active", labels["state"])    // tag_state -> state
+}
+
+func TestMetricStoreMessageToPromMetrics_NumericTypes(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    any
+		expected float64
+	}{
+		{"int", int(10), 10.0},
+		{"int32", int32(20), 20.0},
+		{"int64", int64(30), 30.0},
+		{"float32", float32(40.5), 40.5},
+		{"float64", float64(50.5), 50.5},
+		{"bool_true", true, 1.0},
+		{"bool_false", false, 0.0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			promw := newTestPrometheusWriter("pgwatch", nil)
+
+			msg := metrics.MeasurementEnvelope{
+				DBName:     "test_db",
+				MetricName: "test_metric",
+				Data: metrics.Measurements{
+					{
+						metrics.EpochColumnName: time.Now().UnixNano(),
+						"value":                 tt.input,
+					},
+				},
+			}
+
+			result := promw.MetricStoreMessageToPromMetrics(msg)
+			require.Len(t, result, 1)
+
+			_, value, _ := extractMetricInfo(result[0])
+			assert.InDelta(t, tt.expected, value, 0.01)
+		})
+	}
+}
+
+func TestMetricStoreMessageToPromMetrics_StringValuesBecomeLabels(t *testing.T) {
+	promw := newTestPrometheusWriter("pgwatch", nil)
+
+	msg := metrics.MeasurementEnvelope{
+		DBName:     "test_db",
+		MetricName: "test_metric",
+		Data: metrics.Measurements{
+			{
+				metrics.EpochColumnName: time.Now().UnixNano(),
+				"status":                "healthy",
+				"region":                "us-east",
+				"count":                 int64(100),
+			},
+		},
+	}
+
+	result := promw.MetricStoreMessageToPromMetrics(msg)
+
+	require.Len(t, result, 1)
+
+	labels, value, _ := extractMetricInfo(result[0])
+
+	assert.Equal(t, float64(100), value)
+	assert.Equal(t, "healthy", labels["status"])
+	assert.Equal(t, "us-east", labels["region"])
+}
+
+func TestMetricStoreMessageToPromMetrics_InstanceUpIsGauge(t *testing.T) {
+	promw := newTestPrometheusWriter("pgwatch", nil)
+
+	msg := metrics.MeasurementEnvelope{
+		DBName:     "test_db",
+		MetricName: "instance_up",
+		Data: metrics.Measurements{
+			{
+				metrics.EpochColumnName: time.Now().UnixNano(),
+				"up":                    int64(1),
+			},
+		},
+	}
+
+	result := promw.MetricStoreMessageToPromMetrics(msg)
+
+	require.Len(t, result, 1)
+
+	_, _, metricType := extractMetricInfo(result[0])
+	assert.Equal(t, dto.MetricType_GAUGE, metricType)
+}
+
+func TestMetricStoreMessageToPromMetrics_GaugesListDeterminesType(t *testing.T) {
+	t.Run("specific field in gauges list becomes gauge", func(t *testing.T) {
+		promw := newTestPrometheusWriter("pgwatch", map[string][]string{
+			"test_metric": {"gauge_field"},
+		})
+
+		msg := metrics.MeasurementEnvelope{
+			DBName:     "test_db",
+			MetricName: "test_metric",
+			Data: metrics.Measurements{
+				{
+					metrics.EpochColumnName: time.Now().UnixNano(),
+					"gauge_field":           int64(50),
+					"counter_field":         int64(100),
+				},
+			},
+		}
+
+		result := promw.MetricStoreMessageToPromMetrics(msg)
+		require.Len(t, result, 2)
+
+		for _, m := range result {
+			desc := m.Desc().String()
+			_, _, metricType := extractMetricInfo(m)
+
+			if strings.Contains(desc, "gauge_field") {
+				assert.Equal(t, dto.MetricType_GAUGE, metricType)
+			} else if strings.Contains(desc, "counter_field") {
+				assert.Equal(t, dto.MetricType_COUNTER, metricType)
+			}
+		}
+	})
+
+	t.Run("wildcard makes all fields gauges", func(t *testing.T) {
+		promw := newTestPrometheusWriter("pgwatch", map[string][]string{
+			"test_metric": {"*"},
+		})
+
+		msg := metrics.MeasurementEnvelope{
+			DBName:     "test_db",
+			MetricName: "test_metric",
+			Data: metrics.Measurements{
+				{
+					metrics.EpochColumnName: time.Now().UnixNano(),
+					"field1":                int64(10),
+					"field2":                int64(20),
+				},
+			},
+		}
+
+		result := promw.MetricStoreMessageToPromMetrics(msg)
+		require.Len(t, result, 2)
+
+		for _, m := range result {
+			_, _, metricType := extractMetricInfo(m)
+			assert.Equal(t, dto.MetricType_GAUGE, metricType)
+		}
+	})
+}
+
+func TestMetricStoreMessageToPromMetrics_NamespacePrefixing(t *testing.T) {
+	tests := []struct {
+		name           string
+		namespace      string
+		metricName     string
+		field          string
+		expectedInDesc string
+	}{
+		{
+			name:           "with namespace regular metric",
+			namespace:      "pgwatch",
+			metricName:     "backends",
+			field:          "connections",
+			expectedInDesc: "pgwatch_backends_connections",
+		},
+		{
+			name:           "with namespace instance_up omits field",
+			namespace:      "pgwatch",
+			metricName:     "instance_up",
+			field:          "up",
+			expectedInDesc: "pgwatch_instance_up",
+		},
+		{
+			name:           "without namespace regular metric",
+			namespace:      "",
+			metricName:     "backends",
+			field:          "connections",
+			expectedInDesc: "backends_connections",
+		},
+		{
+			name:           "without namespace instance_up uses field name",
+			namespace:      "",
+			metricName:     "instance_up",
+			field:          "up",
+			expectedInDesc: "\"up\"",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			promw := newTestPrometheusWriter(tt.namespace, nil)
+
+			msg := metrics.MeasurementEnvelope{
+				DBName:     "test_db",
+				MetricName: tt.metricName,
+				Data: metrics.Measurements{
+					{
+						metrics.EpochColumnName: time.Now().UnixNano(),
+						tt.field:                int64(1),
+					},
+				},
+			}
+
+			result := promw.MetricStoreMessageToPromMetrics(msg)
+			require.Len(t, result, 1)
+
+			desc := result[0].Desc().String()
+			assert.Contains(t, desc, tt.expectedInDesc)
+		})
+	}
+}
+
+func TestMetricStoreMessageToPromMetrics_CustomTags(t *testing.T) {
+	promw := newTestPrometheusWriter("pgwatch", nil)
+
+	msg := metrics.MeasurementEnvelope{
+		DBName:     "test_db",
+		MetricName: "test_metric",
+		CustomTags: map[string]string{
+			"env":    "production",
+			"region": "us-west-2",
+		},
+		Data: metrics.Measurements{
+			{
+				metrics.EpochColumnName: time.Now().UnixNano(),
+				"value":                 int64(42),
+			},
+		},
+	}
+
+	result := promw.MetricStoreMessageToPromMetrics(msg)
+	require.Len(t, result, 1)
+
+	labels, _, _ := extractMetricInfo(result[0])
+
+	assert.Equal(t, "production", labels["env"])
+	assert.Equal(t, "us-west-2", labels["region"])
+	assert.Equal(t, "test_db", labels["dbname"])
+}
+
+func TestMetricStoreMessageToPromMetrics_NullValuesSkipped(t *testing.T) {
+	promw := newTestPrometheusWriter("pgwatch", nil)
+
+	msg := metrics.MeasurementEnvelope{
+		DBName:     "test_db",
+		MetricName: "test_metric",
+		Data: metrics.Measurements{
+			{
+				metrics.EpochColumnName: time.Now().UnixNano(),
+				"valid_value":           int64(100),
+				"null_value":            nil,
+				"empty_string":          "",
+			},
+		},
+	}
+
+	result := promw.MetricStoreMessageToPromMetrics(msg)
+	require.Len(t, result, 1)
+
+	_, value, _ := extractMetricInfo(result[0])
+	assert.Equal(t, float64(100), value)
+}
+
+func TestMetricStoreMessageToPromMetrics_MultipleRows(t *testing.T) {
+	promw := newTestPrometheusWriter("pgwatch", nil)
+
+	msg := metrics.MeasurementEnvelope{
+		DBName:     "test_db",
+		MetricName: "backends",
+		Data: metrics.Measurements{
+			{
+				metrics.EpochColumnName: time.Now().UnixNano(),
+				"tag_database":          "db1",
+				"connections":           int64(10),
+			},
+			{
+				metrics.EpochColumnName: time.Now().UnixNano(),
+				"tag_database":          "db2",
+				"connections":           int64(20),
+			},
+			{
+				metrics.EpochColumnName: time.Now().UnixNano(),
+				"tag_database":          "db3",
+				"connections":           int64(30),
+			},
+		},
+	}
+
+	result := promw.MetricStoreMessageToPromMetrics(msg)
+	require.Len(t, result, 3)
+
+	databases := make(map[string]float64)
+	for _, m := range result {
+		labels, value, _ := extractMetricInfo(m)
+		databases[labels["database"]] = value
+	}
+
+	assert.Equal(t, float64(10), databases["db1"])
+	assert.Equal(t, float64(20), databases["db2"])
+	assert.Equal(t, float64(30), databases["db3"])
+}
+
+func TestMetricStoreMessageToPromMetrics_UnsupportedDataType(t *testing.T) {
+	promw := newTestPrometheusWriter("pgwatch", nil)
+
+	msg := metrics.MeasurementEnvelope{
+		DBName:     "test_db",
+		MetricName: "test_metric",
+		Data: metrics.Measurements{
+			{
+				metrics.EpochColumnName: time.Now().UnixNano(),
+				"valid_field":           int64(42),
+				"slice_field":           []int{1, 2, 3},
+				"map_field":             map[string]int{"a": 1},
+			},
+		},
+	}
+
+	result := promw.MetricStoreMessageToPromMetrics(msg)
+
+	// Should only produce metric for valid_field, unsupported types skipped
+	assert.Len(t, result, 1)
+}
+
+func TestMetricStoreMessageToPromMetrics_MultipleFieldsPerRow(t *testing.T) {
+	promw := newTestPrometheusWriter("pgwatch", nil)
+
+	msg := metrics.MeasurementEnvelope{
+		DBName:     "test_db",
+		MetricName: "db_stats",
+		Data: metrics.Measurements{
+			{
+				metrics.EpochColumnName: time.Now().UnixNano(),
+				"xact_commit":           int64(1000),
+				"xact_rollback":         int64(5),
+				"blks_read":             int64(500),
+				"blks_hit":              int64(9500),
+			},
+		},
+	}
+
+	result := promw.MetricStoreMessageToPromMetrics(msg)
+
+	assert.Len(t, result, 4)
 }
