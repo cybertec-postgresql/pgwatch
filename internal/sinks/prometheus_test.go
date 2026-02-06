@@ -128,7 +128,7 @@ func TestPurgeMetricsFromPromAsyncCacheIfAny(t *testing.T) {
 		assert.Contains(t, promw.Cache["test_db"], "metric2")
 	})
 
-	t.Run("handles non-existent db gracefully", func(t *testing.T) {
+	t.Run("handles non-existent db gracefully", func(_ *testing.T) {
 		promw := newTestPrometheusWriter("pgwatch", nil)
 
 		// Should not panic
