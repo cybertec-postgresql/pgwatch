@@ -92,12 +92,11 @@
         "y": 0
       },
       "id": 1,
-      "interval": "$agg_interval",
       "options": {
         "legend": {
           "calcs": [
             "mean"
-         ],
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -116,12 +115,12 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"} / pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}",
+          "expr": "sum by (dbname, queryid) (pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"}) / sum by (dbname, queryid) (pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"})",
           "legendFormat": "Avg runtime",
           "refId": "A"
         }
       ],
-      "title": "Avg. runtime ($agg_interval avg.)",
+      "title": "Avg. runtime ($__rate_interval avg.)",
       "type": "timeseries"
     },
     {
@@ -194,12 +193,11 @@
         "y": 5
       },
       "id": 2,
-      "interval": "$agg_interval",
       "options": {
         "legend": {
           "calcs": [
             "mean"
-         ],
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -218,12 +216,12 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "sum by (dbname, queryid) (increase(pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval]))",
+          "expr": "sum by (dbname, queryid) (increase(pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]))",
           "legendFormat": "Calls",
           "refId": "A"
         }
       ],
-      "title": "Calls ($agg_interval aggregate)",
+      "title": "Calls ($__rate_interval aggregate)",
       "type": "timeseries"
     },
     {
@@ -296,12 +294,11 @@
         "y": 10
       },
       "id": 3,
-      "interval": "$agg_interval",
       "options": {
         "legend": {
           "calcs": [
             "mean"
-         ],
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -320,12 +317,12 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "sum by (dbname, queryid) (increase(pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval]))",
+          "expr": "sum by (dbname, queryid) (increase(pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]))",
           "legendFormat": "Total runtime",
           "refId": "A"
         }
       ],
-      "title": "Total runtime ($agg_interval aggregate)",
+      "title": "Total runtime ($__rate_interval aggregate)",
       "type": "timeseries"
     },
     {
@@ -399,12 +396,11 @@
         "y": 15
       },
       "id": 5,
-      "interval": "$agg_interval",
       "options": {
         "legend": {
           "calcs": [
             "mean"
-         ],
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -423,7 +419,7 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "(increase(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval]) * 100) / (increase(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval]) + increase(pgwatch_stat_statements_shared_blks_read{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval]) + 0.01)",
+          "expr": "(increase(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 100) / (increase(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) + increase(pgwatch_stat_statements_shared_blks_read{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) + 0.01)",
           "legendFormat": "Hit ratio",
           "refId": "A"
         }
@@ -501,7 +497,6 @@
         "y": 20
       },
       "id": 6,
-      "interval": "$agg_interval",
       "options": {
         "legend": {
           "calcs": [],
@@ -523,7 +518,7 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "sum by (dbname, queryid) (increase(pgwatch_stat_statements_temp_blks_read{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval]))",
+          "expr": "sum by (dbname, queryid) (increase(pgwatch_stat_statements_temp_blks_read{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]))",
           "legendFormat": "Temp blks read",
           "refId": "A"
         },
@@ -533,12 +528,12 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "sum by (dbname, queryid) (increase(pgwatch_stat_statements_temp_blks_written{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval]))",
+          "expr": "sum by (dbname, queryid) (increase(pgwatch_stat_statements_temp_blks_written{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]))",
           "legendFormat": "Temp blks written",
           "refId": "B"
         }
       ],
-      "title": "Temp Blocks Read/Written ($agg_interval aggregate)",
+      "title": "Temp Blocks Read/Written ($__rate_interval aggregate)",
       "type": "timeseries"
     },
     {
@@ -612,12 +607,11 @@
         "y": 25
       },
       "id": 7,
-      "interval": "$agg_interval",
       "options": {
         "legend": {
           "calcs": [
             "mean"
-         ],
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -636,7 +630,7 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "sum by (dbname, queryid) (increase(pgwatch_stat_statements_blk_read_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval]))",
+          "expr": "sum by (dbname, queryid) (increase(pgwatch_stat_statements_blk_read_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]))",
           "legendFormat": "Blk read time",
           "refId": "A"
         },
@@ -646,12 +640,12 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "sum by (dbname, queryid) (increase(pgwatch_stat_statements_blk_write_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval]))",
+          "expr": "sum by (dbname, queryid) (increase(pgwatch_stat_statements_blk_write_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]))",
           "legendFormat": "Blk write time",
           "refId": "B"
         }
       ],
-      "title": "Backend block Read/Write time ($agg_interval aggregate)",
+      "title": "Backend block Read/Write time ($__rate_interval aggregate)",
       "type": "timeseries"
     },
     {
@@ -724,12 +718,11 @@
         "y": 30
       },
       "id": 8,
-      "interval": "$agg_interval",
       "options": {
         "legend": {
           "calcs": [
             "mean"
-         ],
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -748,12 +741,12 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "((sum by (dbname, queryid) (increase(pgwatch_stat_statements_blk_read_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval])) + sum by (dbname, queryid) (increase(pgwatch_stat_statements_blk_write_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval]))) * 100) / (sum by (dbname, queryid) (increase(pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$agg_interval])) + 0.01)",
+          "expr": "((sum by (dbname, queryid) (increase(pgwatch_stat_statements_blk_read_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])) + sum by (dbname, queryid) (increase(pgwatch_stat_statements_blk_write_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]))) * 100) / (sum by (dbname, queryid) (increase(pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])) + 0.01)",
           "legendFormat": "IO time %",
           "refId": "A"
         }
       ],
-      "title": "% of total_time spent in direct IO ($agg_interval avg.)",
+      "title": "% of total_time spent in direct IO ($__rate_interval avg.)",
       "type": "timeseries"
     },
     {
@@ -852,91 +845,13 @@
           "text": "",
           "value": ""
         },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "pgwatch-prometheus"
-        },
-        "definition": "label_values(pgwatch_stat_statements_calls{dbname=\"$dbname\"}, queryid)",
         "hide": 0,
-        "includeAll": false,
         "label": "Query ID",
-        "multi": false,
         "name": "queryid",
         "options": [],
-        "query": {
-          "query": "label_values(pgwatch_stat_statements_calls{dbname=\"$dbname\"}, queryid)",
-          "refId": "PrometheusVariableQueryEditor-VariableQuery"
-        },
-        "refresh": 1,
-        "regex": "",
+        "query": "",
         "skipUrlSync": false,
-        "sort": 1,
-        "type": "query"
-      },
-      {
-        "auto": false,
-        "auto_count": 30,
-        "auto_min": "10s",
-        "current": {
-          "selected": false,
-          "text": "5m",
-          "value": "5m"
-        },
-        "hide": 0,
-        "label": "Aggregation interval",
-        "name": "agg_interval",
-        "options": [
-          {
-            "selected": false,
-            "text": "1m",
-            "value": "1m"
-          },
-          {
-            "selected": true,
-            "text": "5m",
-            "value": "5m"
-          },
-          {
-            "selected": false,
-            "text": "10m",
-            "value": "10m"
-          },
-          {
-            "selected": false,
-            "text": "15m",
-            "value": "15m"
-          },
-          {
-            "selected": false,
-            "text": "30m",
-            "value": "30m"
-          },
-          {
-            "selected": false,
-            "text": "1h",
-            "value": "1h"
-          },
-          {
-            "selected": false,
-            "text": "6h",
-            "value": "6h"
-          },
-          {
-            "selected": false,
-            "text": "12h",
-            "value": "12h"
-          },
-          {
-            "selected": false,
-            "text": "1d",
-            "value": "1d"
-          }
-        ],
-        "query": "1m,5m,10m,15m,30m,1h,6h,12h,1d",
-        "queryValue": "",
-        "refresh": 2,
-        "skipUrlSync": false,
-        "type": "interval"
+        "type": "textbox"
       },
       {
         "datasource": {
