@@ -678,6 +678,80 @@
       ],
       "title": "Maintenance Operation Times",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 200,
+      "panels": [],
+      "title": "Index Bloat Overview",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
+      "description": "Top indexes ranked by bloat ratio",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "inspect": false
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 0.5
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 201,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Value"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "topk(10, (pgwatch_index_stats_index_size_b{dbname=~\"$dbname\"} - pgwatch_index_stats_index_used_size_b{dbname=~\"$dbname\"}) / pgwatch_index_stats_index_size_b{dbname=~\"$dbname\"})",
+          "legendFormat": "{{dbname}}.{{table_name}}.{{index_name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 Bloated Indexes",
+      "type": "table"
     }
   ],
   "refresh": "30s",
