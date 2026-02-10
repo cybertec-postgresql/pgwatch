@@ -606,7 +606,12 @@ var migrations func() migrator.Option = func() migrator.Option {
 		&migrator.Migration{
 			Name: "01180 Apply admin functions migrations for v5",
 			Func: func(ctx context.Context, tx pgx.Tx) error {
-				_, err := tx.Exec(ctx, `DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time`)
+				_, err := tx.Exec(ctx, `
+					DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time;
+					DROP FUNCTION IF EXISTS admin.ensure_partition_metric_time;
+					DROP FUNCTION IF EXISTS admin.get_old_time_partitions(integer, text);
+					DROP FUNCTION IF EXISTS admin.drop_old_time_partitions(integer, boolean, text);
+				`)
 				if err != nil {
 					return err
 				}
