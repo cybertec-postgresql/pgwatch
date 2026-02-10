@@ -61,10 +61,12 @@ export const MetricFormStepSQL = () => {
                             label="Version"
                             options={VersionOptions}
                             freeSolo
+                            inputValue={field.value}
                             value={field.value}
-                            onInputChange={(_, value) => field.onChange(value)}
-                            // TDDO: Restrict input to numbers and dots only, but allow free solo for custom versions
-
+                            onInputChange={(_, value) => {
+                              field.value = value.replace(/[^0-9.]/g, ""); // Allow only numbers and dots
+                              field.onChange(field.value)
+                            }}
                           />
                         )}
                       />
