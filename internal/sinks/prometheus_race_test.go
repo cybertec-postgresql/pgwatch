@@ -68,3 +68,68 @@ func TestCollect_RaceCondition_Real(_ *testing.T) {
 
 	wg.Wait()
 }
+
+func TestGaugesMap_RaceCondition(_ *testing.T) {
+	// 1. Initialize PrometheusWriter
+	promw, _ := NewPrometheusWriter(testutil.TestContext, "127.0.0.1:0/pgwatch")
+
+	// 2. Register a metric so Write() actually puts data into the map
+	_ = promw.SyncMetric("race_db", "test_metric", AddOp)
+
+	// 3. Pre-fill cache so Collect has something to do
+	_ = promw.Write(metrics.MeasurementEnvelope{
+		DBName:     "race_db",
+		MetricName: "test_metric",
+		Data: metrics.Measurements{
+			{
+				metrics.EpochColumnName: time.Now().UnixNano(),
+				"value":                 int64(100),
+			},
+		},
+	})
+
+	var wg sync.WaitGroup
+	done := make(chan struct{})
+
+	// --- The Config Reloader (Simulating configuration updates) ---
+	wg.Go(func() {
+		for {
+			select {
+			case <-done:
+				return
+			default:
+				// Call the REAL DefineMetrics method (Writes to gauges map)
+				_ = promw.DefineMetrics(&metrics.Metrics{
+					MetricDefs: metrics.MetricDefs{
+						"test_metric": {Gauges: []string{"value"}},
+					},
+				})
+			}
+		}
+	})
+
+	// --- The Collector (Simulating Prometheus Scrapes) ---
+	wg.Go(func() {
+		// Prometheus provides a channel to receive metrics
+		ch := make(chan prometheus.Metric, 10000)
+
+		// Scrape 50 times (more than enough to trigger a race in a tight loop)
+		for range 50 {
+			// Call the REAL Collect method (Reads from gauges map)
+			promw.Collect(ch)
+
+			// Drain the channel so it doesn't block
+		drainLoop:
+			for {
+				select {
+				case <-ch:
+				default:
+					break drainLoop
+				}
+			}
+		}
+		close(done) // Tell the reloader to stop
+	})
+
+	wg.Wait()
+}
