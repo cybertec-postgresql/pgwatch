@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
@@ -25,6 +26,7 @@ func NewYAMLMetricReaderWriter(ctx context.Context, path string) (ReaderWriter, 
 type fileMetricReader struct {
 	ctx  context.Context
 	path string
+	mu   sync.Mutex
 }
 
 func (fmr *fileMetricReader) WriteMetrics(metricDefs *Metrics) error {
@@ -80,6 +82,8 @@ func (fmr *fileMetricReader) getMetrics(metricsFilePath string) (metrics *Metric
 }
 
 func (fmr *fileMetricReader) DeleteMetric(metricName string) error {
+	fmr.mu.Lock()
+	defer fmr.mu.Unlock()
 	metrics, err := fmr.GetMetrics()
 	if err != nil {
 		return err
@@ -89,6 +93,8 @@ func (fmr *fileMetricReader) DeleteMetric(metricName string) error {
 }
 
 func (fmr *fileMetricReader) UpdateMetric(metricName string, metric Metric) error {
+	fmr.mu.Lock()
+	defer fmr.mu.Unlock()
 	metrics, err := fmr.GetMetrics()
 	if err != nil {
 		return err
@@ -98,6 +104,8 @@ func (fmr *fileMetricReader) UpdateMetric(metricName string, metric Metric) erro
 }
 
 func (fmr *fileMetricReader) CreateMetric(metricName string, metric Metric) error {
+	fmr.mu.Lock()
+	defer fmr.mu.Unlock()
 	metrics, err := fmr.GetMetrics()
 	if err != nil {
 		return err
@@ -111,6 +119,8 @@ func (fmr *fileMetricReader) CreateMetric(metricName string, metric Metric) erro
 }
 
 func (fmr *fileMetricReader) DeletePreset(presetName string) error {
+	fmr.mu.Lock()
+	defer fmr.mu.Unlock()
 	metrics, err := fmr.GetMetrics()
 	if err != nil {
 		return err
@@ -120,6 +130,8 @@ func (fmr *fileMetricReader) DeletePreset(presetName string) error {
 }
 
 func (fmr *fileMetricReader) UpdatePreset(presetName string, preset Preset) error {
+	fmr.mu.Lock()
+	defer fmr.mu.Unlock()
 	metrics, err := fmr.GetMetrics()
 	if err != nil {
 		return err
@@ -129,6 +141,8 @@ func (fmr *fileMetricReader) UpdatePreset(presetName string, preset Preset) erro
 }
 
 func (fmr *fileMetricReader) CreatePreset(presetName string, preset Preset) error {
+	fmr.mu.Lock()
+	defer fmr.mu.Unlock()
 	metrics, err := fmr.GetMetrics()
 	if err != nil {
 		return err
