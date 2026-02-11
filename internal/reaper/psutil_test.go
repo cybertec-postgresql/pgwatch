@@ -7,7 +7,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 
 	"maps"
-
+	"os"
 	"github.com/stretchr/testify/assert"
 )
 
