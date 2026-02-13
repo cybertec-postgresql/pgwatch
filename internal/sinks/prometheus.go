@@ -99,6 +99,8 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 }
 
 func (promw *PrometheusWriter) DefineMetrics(metrics *metrics.Metrics) (err error) {
+	promw.Lock()
+	defer promw.Unlock()
 	promw.gauges = make(map[string]([]string))
 	for name, m := range metrics.MetricDefs {
 		promw.gauges[name] = m.Gauges
@@ -202,7 +204,9 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Measu
 		return promMetrics
 	}
 
+	promw.RLock()
 	gauges := promw.gauges[msg.MetricName]
+	promw.RUnlock()
 
 	epochTime = time.Unix(0, msg.Data.GetEpoch())
 
