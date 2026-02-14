@@ -26,7 +26,7 @@ func NewYAMLMetricReaderWriter(ctx context.Context, path string) (ReaderWriter, 
 type fileMetricReader struct {
 	ctx  context.Context
 	path string
-	mu   sync.Mutex
+	mu   sync.RWMutex
 }
 
 func (fmr *fileMetricReader) WriteMetrics(metricDefs *Metrics) error {
@@ -37,7 +37,7 @@ func (fmr *fileMetricReader) WriteMetrics(metricDefs *Metrics) error {
 //go:embed metrics.yaml
 var defaultMetricsYAML []byte
 
-func (fmr *fileMetricReader) GetMetrics() (metrics *Metrics, err error) {
+func (fmr *fileMetricReader) getMetricsNoLock() (metrics *Metrics, err error) {
 	metrics = &Metrics{MetricDefs{}, PresetDefs{}}
 	if fmr.path == "" {
 		err = yaml.Unmarshal(defaultMetricsYAML, metrics)
@@ -71,6 +71,12 @@ func (fmr *fileMetricReader) GetMetrics() (metrics *Metrics, err error) {
 	return
 }
 
+func (fmr *fileMetricReader) GetMetrics() (metrics *Metrics, err error) {
+	fmr.mu.RLock()
+	defer fmr.mu.RUnlock()
+	return fmr.getMetricsNoLock()
+}
+
 func (fmr *fileMetricReader) getMetrics(metricsFilePath string) (metrics *Metrics, err error) {
 	var yamlFile []byte
 	if yamlFile, err = os.ReadFile(metricsFilePath); err != nil {
@@ -84,7 +90,7 @@ func (fmr *fileMetricReader) getMetrics(metricsFilePath string) (metrics *Metric
 func (fmr *fileMetricReader) DeleteMetric(metricName string) error {
 	fmr.mu.Lock()
 	defer fmr.mu.Unlock()
-	metrics, err := fmr.GetMetrics()
+	metrics, err := fmr.getMetricsNoLock()
 	if err != nil {
 		return err
 	}
@@ -95,7 +101,7 @@ func (fmr *fileMetricReader) DeleteMetric(metricName string) error {
 func (fmr *fileMetricReader) UpdateMetric(metricName string, metric Metric) error {
 	fmr.mu.Lock()
 	defer fmr.mu.Unlock()
-	metrics, err := fmr.GetMetrics()
+	metrics, err := fmr.getMetricsNoLock()
 	if err != nil {
 		return err
 	}
@@ -106,7 +112,7 @@ func (fmr *fileMetricReader) UpdateMetric(metricName string, metric Metric) erro
 func (fmr *fileMetricReader) CreateMetric(metricName string, metric Metric) error {
 	fmr.mu.Lock()
 	defer fmr.mu.Unlock()
-	metrics, err := fmr.GetMetrics()
+	metrics, err := fmr.getMetricsNoLock()
 	if err != nil {
 		return err
 	}
@@ -121,7 +127,7 @@ func (fmr *fileMetricReader) CreateMetric(metricName string, metric Metric) erro
 func (fmr *fileMetricReader) DeletePreset(presetName string) error {
 	fmr.mu.Lock()
 	defer fmr.mu.Unlock()
-	metrics, err := fmr.GetMetrics()
+	metrics, err := fmr.getMetricsNoLock()
 	if err != nil {
 		return err
 	}
@@ -132,7 +138,7 @@ func (fmr *fileMetricReader) DeletePreset(presetName string) error {
 func (fmr *fileMetricReader) UpdatePreset(presetName string, preset Preset) error {
 	fmr.mu.Lock()
 	defer fmr.mu.Unlock()
-	metrics, err := fmr.GetMetrics()
+	metrics, err := fmr.getMetricsNoLock()
 	if err != nil {
 		return err
 	}
@@ -143,7 +149,7 @@ func (fmr *fileMetricReader) UpdatePreset(presetName string, preset Preset) erro
 func (fmr *fileMetricReader) CreatePreset(presetName string, preset Preset) error {
 	fmr.mu.Lock()
 	defer fmr.mu.Unlock()
-	metrics, err := fmr.GetMetrics()
+	metrics, err := fmr.getMetricsNoLock()
 	if err != nil {
 		return err
 	}
