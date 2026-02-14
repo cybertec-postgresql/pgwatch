@@ -59,7 +59,7 @@ pgwatch --sink=postgresql://pgwatch:pgwatchadmin@localhost/measurements config i
 ## Usage
 
 You can now configure pgwatch to use the `pgwatch` database as the configuration database for storing monitored sources,
-metric deinitions and presets.
+metric definitions and presets.
 
 ```terminal
 $ pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=postgresql://pgwatch@10.0.0.42/measurements

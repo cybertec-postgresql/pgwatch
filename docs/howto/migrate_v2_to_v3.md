@@ -73,7 +73,7 @@ from pgwatch2.monitored_db;
     You may skip this step if you have not created custom metrics or presets.
     All built-in metrics and presets are already included in pgwatch3.
 
-Exucute the following queries to migrate the metrics and presets:
+Execute the following queries to migrate the metrics and presets:
 
 ```sql
 insert into pgwatch.preset

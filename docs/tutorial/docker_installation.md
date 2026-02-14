@@ -220,7 +220,7 @@ Source file `sources.yaml` in the same directory:
 
 ```yaml
 - name: demo
-  conn_str: postgresql://pgwatch:pgwatchadmin@postgres/pgwatch'
+  conn_str: postgresql://pgwatch:pgwatchadmin@postgres/pgwatch
   preset_metrics: exhaustive
   is_enabled: true
   group: default
