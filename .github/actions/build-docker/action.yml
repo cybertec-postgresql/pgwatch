@@ -35,6 +35,10 @@ inputs:
     description: 'Cache scope for build cache'
     required: false
     default: 'default'
+  load:
+    description: 'Load built image into Docker daemon (true/false)'
+    required: false
+    default: 'false'
 
 outputs:
   image-id:
@@ -100,6 +104,7 @@ runs:
         file: ${{ inputs.dockerfile }}
         platforms: ${{ inputs.platforms }}
         push: ${{ inputs.push == 'true' }}
+        load: ${{ inputs.load == 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         build-args: ${{ inputs.build-args }}

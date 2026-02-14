@@ -168,6 +168,17 @@ jobs:
           GIT_HASH=${{ steps.meta.outputs.GIT_HASH }}
           GIT_TIME=${{ steps.meta.outputs.GIT_TIME }}
           VERSION=${{ steps.meta.outputs.VERSION }}   
+        load: 'true'
+
+    - name: Run vulnerability scanner
+      uses: aquasecurity/trivy-action@0.33.1
+      with:
+        image-ref: 'cybertecpostgresql/pgwatch:${{ steps.meta.outputs.VERSION }}'
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        pkg-types: 'os,library'
+        severity: 'CRITICAL,HIGH'   
 
   build-docs:
     if: true # false to skip job during debug
