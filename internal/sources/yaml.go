@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
@@ -23,6 +24,7 @@ func NewYAMLSourcesReaderWriter(ctx context.Context, path string) (ReaderWriter,
 type fileSourcesReaderWriter struct {
 	ctx  context.Context
 	path string
+	mu   sync.RWMutex
 }
 
 func (fcr *fileSourcesReaderWriter) WriteSources(mds Sources) error {
@@ -31,7 +33,9 @@ func (fcr *fileSourcesReaderWriter) WriteSources(mds Sources) error {
 }
 
 func (fcr *fileSourcesReaderWriter) UpdateSource(md Source) error {
-	dbs, err := fcr.GetSources()
+	fcr.mu.Lock()
+	defer fcr.mu.Unlock()
+	dbs, err := fcr.getSourcesNoLock()
 	if err != nil {
 		return err
 	}
@@ -46,7 +50,9 @@ func (fcr *fileSourcesReaderWriter) UpdateSource(md Source) error {
 }
 
 func (fcr *fileSourcesReaderWriter) CreateSource(md Source) error {
-	dbs, err := fcr.GetSources()
+	fcr.mu.Lock()
+	defer fcr.mu.Unlock()
+	dbs, err := fcr.getSourcesNoLock()
 	if err != nil {
 		return err
 	}
@@ -61,7 +67,9 @@ func (fcr *fileSourcesReaderWriter) CreateSource(md Source) error {
 }
 
 func (fcr *fileSourcesReaderWriter) DeleteSource(name string) error {
-	dbs, err := fcr.GetSources()
+	fcr.mu.Lock()
+	defer fcr.mu.Unlock()
+	dbs, err := fcr.getSourcesNoLock()
 	if err != nil {
 		return err
 	}
@@ -69,7 +77,7 @@ func (fcr *fileSourcesReaderWriter) DeleteSource(name string) error {
 	return fcr.WriteSources(dbs)
 }
 
-func (fcr *fileSourcesReaderWriter) GetSources() (dbs Sources, err error) {
+func (fcr *fileSourcesReaderWriter) getSourcesNoLock() (dbs Sources, err error) {
 	var fi fs.FileInfo
 	if fi, err = os.Stat(fcr.path); err != nil {
 		return
@@ -97,6 +105,12 @@ func (fcr *fileSourcesReaderWriter) GetSources() (dbs Sources, err error) {
 		return nil, err
 	}
 	return dbs.Validate()
+}
+
+func (fcr *fileSourcesReaderWriter) GetSources() (dbs Sources, err error) {
+	fcr.mu.RLock()
+	defer fcr.mu.RUnlock()
+	return fcr.getSourcesNoLock()
 }
 
 func (fcr *fileSourcesReaderWriter) getSources(configFilePath string) (dbs Sources, err error) {

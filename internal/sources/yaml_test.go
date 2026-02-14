@@ -1,9 +1,12 @@
 package sources_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -227,4 +230,130 @@ func TestYAMLCreateSource(t *testing.T) {
 		a.Error(err)
 		a.ErrorIs(sources.ErrSourceExists, err)
 	})
+}
+
+func TestConcurrentSourceUpdates(t *testing.T) {
+	a := assert.New(t)
+	tempDir := t.TempDir()
+	tempFile := filepath.Join(tempDir, "sources.yaml")
+
+	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tempFile)
+	a.NoError(err)
+
+	initialSources := sources.Sources{}
+	err = yamlrw.WriteSources(initialSources)
+	a.NoError(err)
+
+	numGoroutines := 10
+	var wg sync.WaitGroup
+	errorChan := make(chan error, numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+
+			sourceName := fmt.Sprintf("source_%d", id)
+			testSource := sources.Source{
+				Name:    sourceName,
+				ConnStr: fmt.Sprintf("postgresql://localhost/db_%d", id),
+				Kind:    sources.SourcePostgres,
+			}
+
+			time.Sleep(time.Millisecond * time.Duration(id%3))
+
+			err := yamlrw.UpdateSource(testSource)
+			if err != nil {
+				errorChan <- fmt.Errorf("goroutine %d: %w", id, err)
+			}
+		}(i)
+	}
+
+	wg.Wait()
+	close(errorChan)
+
+	for err := range errorChan {
+		t.Logf("Error during concurrent update: %v", err)
+	}
+
+	finalSources, err := yamlrw.GetSources()
+	a.NoError(err)
+
+	a.Equal(numGoroutines, len(finalSources),
+		"Expected %d sources, but got %d. Some updates were lost due to race condition!",
+		numGoroutines, len(finalSources))
+
+	// Print missing if test fails
+	if len(finalSources) != numGoroutines {
+		for i := 0; i < numGoroutines; i++ {
+			sourceName := fmt.Sprintf("source_%d", i)
+			found := false
+			for _, src := range finalSources {
+				if src.Name == sourceName {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Logf("LOST UPDATE: %s was not saved", sourceName)
+			}
+		}
+	}
+}
+
+func TestConcurrentReadsDuringSourceWrites(t *testing.T) {
+	a := assert.New(t)
+	tempDir := t.TempDir()
+	tempFile := filepath.Join(tempDir, "sources.yaml")
+
+	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tempFile)
+	a.NoError(err)
+
+	err = yamlrw.WriteSources(sources.Sources{})
+	a.NoError(err)
+
+	var wg sync.WaitGroup
+	stopReading := make(chan struct{})
+
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func(readerID int) {
+			defer wg.Done()
+			for {
+				select {
+				case <-stopReading:
+					return
+				default:
+					_, err := yamlrw.GetSources()
+					if err != nil {
+						t.Logf("Reader %d error: %v", readerID, err)
+					}
+					time.Sleep(time.Millisecond)
+				}
+			}
+		}(i)
+	}
+
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			err := yamlrw.UpdateSource(sources.Source{
+				Name:    fmt.Sprintf("source_%d", id),
+				ConnStr: fmt.Sprintf("postgresql://localhost/db_%d", id),
+				Kind:    sources.SourcePostgres,
+			})
+			if err != nil {
+				t.Logf("Error updating source_%d: %v", id, err)
+			}
+		}(i)
+	}
+
+	time.Sleep(100 * time.Millisecond)
+	close(stopReading)
+	wg.Wait()
+
+	finalSources, err := yamlrw.GetSources()
+	a.NoError(err)
+	a.Equal(20, len(finalSources), "Expected 20 sources")
 }
