@@ -15,7 +15,7 @@ type MessageType string
 // MessageChanType represents the format of the message channel
 type MessageChanType chan MessageType
 
-// BrokerHook is the implementation of the logrus hook for publicating logs to subscribers
+// BrokerHook is the implementation of the logrus hook for publishing logs to subscribers
 type BrokerHook struct {
 	highLoadTimeout time.Duration     // wait this amount of time before skip log entry
 	subscribers     []MessageChanType //
