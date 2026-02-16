@@ -50,7 +50,7 @@ COPY --from=webui-builder /webserver/build ./internal/webserver/build
 
 # Generate protobuf and build the application
 RUN go generate ./api/pb/ && \
-    CGO_ENABLED=0 GOEXPERIMENT=greenteagc go build -ldflags "\
+    CGO_ENABLED=0 go build -ldflags "\
         -X 'main.commit=${GIT_HASH}' \
         -X 'main.date=${GIT_TIME}' \
         -X 'main.version=${VERSION}'" ./cmd/pgwatch
