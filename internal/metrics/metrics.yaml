@@ -4192,6 +4192,7 @@ metrics:
             Estimates B-tree indexes bloat by comparing actual index size against expected size derived from pg_stats and pg_class catalog metadata.
             It reports bloat percentage, real size, extra bloat bytes, and fillfactor for each index, helping identify candidates for REINDEX or maintenance.
             Based on the bloat estimation queries from https://github.com/ioguix/pgsql-bloat-estimation.
+            **Note - The query filters to bloated indexes over 1 MiB; for large databases, you might only care about indexes over 100 MiB or so**
         sqls:
             14: |-
                 SELECT /* pgwatch_generated */
@@ -4297,7 +4298,7 @@ metrics:
                     (bs * relpages::float / (1024 * 1024)) > 1 /* exclude indexes below 1 MiB */
                     AND relpages > est_pages_ff
                 ORDER BY is_na, bloat_pct desc
-                LIMIT 100
+                LIMIT 100;
         gauges:
             - real_size
             - extra_size
