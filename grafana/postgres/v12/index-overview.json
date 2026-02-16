@@ -189,7 +189,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "WITH index_scan_changes AS (\n  SELECT\n    time,\n    dbname,\n    tag_data ->> 'index_full_name' AS index_full_name,\n    tag_data ->> 'table_full_name' AS table_full_name,\n    (data ->> 'idx_scan')::int8 - LEAD((data ->> 'idx_scan')::int8) OVER w AS idx_scans,\n    (data ->> 'index_size_b')::int8 AS index_size_b,\n    ROW_NUMBER() OVER w AS rn\n  FROM\n    index_stats\n  WHERE\n    dbname IN ($dbname)\n  WINDOW w AS (\n    PARTITION BY dbname,\n      tag_data ->> 'table_full_name',\n      tag_data ->> 'index_full_name'\n    ORDER BY time DESC\n  )\n),\ntotal_scans AS (\n  SELECT\n    dbname,\n    table_full_name,\n    index_full_name,\n    SUM(COALESCE(idx_scans, 0)) AS total_idx_scans,\n    MAX(index_size_b) FILTER (WHERE rn = 1) AS latest_index_size\n  FROM\n    index_scan_changes\n  WHERE\n    $__timeFilter(time)\n  GROUP BY\n    dbname, table_full_name, index_full_name\n)\nSELECT\n  dbname AS \"Source Name\",\n  index_full_name AS \"Index Name\",\n  table_full_name AS \"Table Name\",\n  latest_index_size AS \"Index Size\",\n  total_idx_scans AS \"Scans\"\nFROM\n  total_scans\nORDER BY\n  latest_index_size DESC\nLIMIT $top",
+          "rawSql": "WITH index_scan_changes AS (\n  SELECT\n    time,\n    dbname,\n    tag_data ->> 'index_full_name' AS index_full_name,\n    tag_data ->> 'table_full_name' AS table_full_name,\n    (data ->> 'idx_scan')::int8 - LEAD((data ->> 'idx_scan')::int8) OVER w AS idx_scans,\n    (data ->> 'index_size_b')::int8 AS index_size_b,\n    ROW_NUMBER() OVER w AS rn\n  FROM\n    index_stats\n  WHERE\n    dbname IN ($dbname)\n  WINDOW w AS (\n    PARTITION BY dbname,\n      tag_data ->> 'table_full_name',\n      tag_data ->> 'index_full_name'\n    ORDER BY time DESC\n  )\n),\ntotal_scans AS (\n  SELECT\n    dbname,\n    table_full_name,\n    index_full_name,\n    SUM(COALESCE(idx_scans, 0)) AS total_idx_scans,\n    MAX(index_size_b) FILTER (WHERE rn = 1) AS latest_index_size\n  FROM\n    index_scan_changes\n  WHERE\n    $__timeFilter(time)\n  GROUP BY\n    dbname, table_full_name, index_full_name\n)\nSELECT\n  dbname AS \"Source Name\",\n  table_full_name AS \"Table Name\",\n  index_full_name AS \"Index Name\",\n  latest_index_size AS \"Index Size\",\n  total_idx_scans AS \"Scans\"\nFROM\n  total_scans\nORDER BY\n  latest_index_size DESC\nLIMIT $top",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -235,6 +235,247 @@
         }
       ],
       "title": "Top $top biggest indexes",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "displayName": "",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Table Name"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "Opens 'Table details' dashboard",
+                    "url": "/d/table-details?var-dbname=${__data.fields[\"dbname\"]}&var-table_full_name=${__data.fields[\"table_full_name\"]}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 265
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Index Size"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 301
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Index Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 306
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 186
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Estimated Bloat size"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Estimated Bloat %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 17,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "table",
+          "group": [],
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "WITH last_fetch_time(time) AS (\n  SELECT time\n  FROM btree_bloat\n  WHERE time <= $__timeTo()\n  ORDER BY time DESC\n  LIMIT 1\n)\n\nSELECT\n  dbname AS \"Source Name\",\n  tag_data->>'tblname' AS \"Table Name\",\n  tag_data->>'idxname' AS \"Index Name\",\n  data->>'real_size' AS \"Index Size\",\n  data->>'bloat_pct' AS \"Estimated Bloat %\",\n  data->>'bloat_size' AS \"Estimated Bloat size\"\nFROM\n  btree_bloat\nWHERE time = (SELECT time FROM last_fetch_time)\nORDER BY (data->>'bloat_pct')::float8 DESC\nLIMIT $top\n",
+          "refId": "A",
+          "resultFormat": "table",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "tags": [],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Top $top indexes by estimated bloat %",
       "transformations": [
         {
           "id": "merge",
@@ -308,7 +549,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 8
+        "y": 16
       },
       "id": 13,
       "options": {
@@ -426,7 +667,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 8
+        "y": 16
       },
       "id": 14,
       "options": {
@@ -545,7 +786,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 24
       },
       "id": 15,
       "options": {
@@ -664,7 +905,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 24
       },
       "id": 16,
       "options": {
@@ -844,7 +1085,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 32
       },
       "id": 12,
       "options": {
@@ -1024,7 +1265,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 32
+        "y": 40
       },
       "id": 11,
       "options": {
@@ -1259,7 +1500,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 32
+        "y": 40
       },
       "id": 10,
       "options": {
@@ -1522,7 +1763,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 39
+        "y": 47
       },
       "id": 8,
       "options": {
@@ -1604,7 +1845,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 53
       },
       "id": 6,
       "options": {
@@ -1755,5 +1996,5 @@
   "timezone": "browser",
   "title": "Index overview",
   "uid": "index-overview",
-  "version": 102
+  "version": 4
 }
