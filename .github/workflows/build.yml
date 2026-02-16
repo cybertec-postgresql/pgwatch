@@ -29,7 +29,7 @@ jobs:
     - name: Set up Golang
       uses: actions/setup-go@v6
       with:
-        go-version: '1.25'
+        go-version: '1.26'
         cache-dependency-path: 'go.sum'
 
     - name: Setup Protobuf
@@ -84,7 +84,7 @@ jobs:
     - name: Set up Golang
       uses: actions/setup-go@v6
       with:
-        go-version: '1.25'
+        go-version: '1.26'
         cache-dependency-path: 'go.sum'
 
     - name: Download webui artifact
@@ -119,7 +119,7 @@ jobs:
     - name: Set up Golang
       uses: actions/setup-go@v6
       with:
-        go-version: '1.25'
+        go-version: '1.26'
         cache-dependency-path: 'go.sum'
 
     - name: Set up Node.js
@@ -187,7 +187,7 @@ jobs:
     - name: Set up Golang
       uses: actions/setup-go@v6
       with:
-        go-version: '1.25'      
+        go-version: '1.26'      
     
     - name: Set up gopages
       run: go install github.com/johnstarich/go/gopages@v0.1.29

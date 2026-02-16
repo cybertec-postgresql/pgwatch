@@ -53,8 +53,8 @@ func downloadAndExtractMetrics(t *testing.T, dest string) string {
 
 	var extracted string
 	for _, f := range r.File {
-		if strings.HasPrefix(f.Name, metricsRoot) {
-			rel := strings.TrimPrefix(f.Name, metricsRoot)
+		if after, ok := strings.CutPrefix(f.Name, metricsRoot); ok {
+			rel := after
 			if rel == "" {
 				extracted = filepath.Join(dest, "metrics")
 				_ = os.MkdirAll(extracted, 0755)
