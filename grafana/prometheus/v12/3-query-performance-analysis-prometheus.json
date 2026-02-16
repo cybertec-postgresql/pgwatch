@@ -80,6 +80,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details-prometheus/single-query-details-prometheus?var-dbname=${__field.labels.dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -187,6 +193,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details-prometheus/single-query-details-prometheus?var-dbname=${__field.labels.dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -294,6 +306,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details-prometheus/single-query-details-prometheus?var-dbname=${__field.labels.dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -402,6 +420,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details-prometheus/single-query-details-prometheus?var-dbname=${__field.labels.dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -510,6 +534,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details-prometheus/single-query-details-prometheus?var-dbname=${__field.labels.dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -618,6 +648,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details-prometheus/single-query-details-prometheus?var-dbname=${__field.labels.dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -726,6 +762,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details-prometheus/single-query-details-prometheus?var-dbname=${__field.labels.dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
