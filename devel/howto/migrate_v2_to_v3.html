@@ -2031,7 +2031,7 @@ the password <code>pgwatch2admin</code>, you can migrate the configuration datab
 <p>You may skip this step if you have not created custom metrics or presets.
 All built-in metrics and presets are already included in pgwatch3.</p>
 </div>
-<p>Exucute the following queries to migrate the metrics and presets:</p>
+<p>Execute the following queries to migrate the metrics and presets:</p>
 <div class="language-sql highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">insert</span><span class="w"> </span><span class="k">into</span><span class="w"> </span><span class="n">pgwatch</span><span class="p">.</span><span class="n">preset</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">select</span><span class="w"> </span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="n">pc_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span>

@@ -72,7 +72,7 @@
 <span id="L15" class="ln">    15  </span><span class="comment">// MessageChanType represents the format of the message channel</span>
 <span id="L16" class="ln">    16  </span>type MessageChanType chan MessageType
 <span id="L17" class="ln">    17  </span>
-<span id="L18" class="ln">    18  </span><span class="comment">// BrokerHook is the implementation of the logrus hook for publicating logs to subscribers</span>
+<span id="L18" class="ln">    18  </span><span class="comment">// BrokerHook is the implementation of the logrus hook for publishing logs to subscribers</span>
 <span id="L19" class="ln">    19  </span>type BrokerHook struct {
 <span id="L20" class="ln">    20  </span>	highLoadTimeout time.Duration     <span class="comment">// wait this amount of time before skip log entry</span>
 <span id="L21" class="ln">    21  </span>	subscribers     []MessageChanType <span class="comment">//</span>
