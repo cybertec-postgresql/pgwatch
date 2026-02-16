@@ -23,7 +23,7 @@ RUN yarn build
 # ----------------------------------------------------------------
 # 3. Go Dependencies and Tools (cached separately)
 # ----------------------------------------------------------------
-FROM golang:1.25 AS go-deps
+FROM golang:1.26 AS go-deps
 # Install protoc and required tools for protobuf generation
 RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -50,7 +50,7 @@ COPY --from=webui-builder /webserver/build ./internal/webserver/build
 
 # Generate protobuf and build the application
 RUN go generate ./api/pb/ && \
-    CGO_ENABLED=0 GOEXPERIMENT=greenteagc go build -ldflags "\
+    CGO_ENABLED=0 go build -ldflags "\
         -X 'main.commit=${GIT_HASH}' \
         -X 'main.date=${GIT_TIME}' \
         -X 'main.version=${VERSION}'" ./cmd/pgwatch
