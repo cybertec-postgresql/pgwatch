@@ -518,8 +518,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
-        "w": 24,
+        "h": 8,
+        "w": 12,
         "x": 0,
         "y": 19
       },
@@ -552,6 +552,108 @@
         }
       ],
       "title": "Top 10 indexes by estimated bloat %",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
+      "description": "The top 10 indexes by estimated bloat size among the top ~100 indexes by bloat % retrieved by the `btree_bloat` metric.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "showValues": false,
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "topk(10, pgwatch_btree_bloat_bloat_size{dbname=\"$dbname\"})",
+          "legendFormat": "{{dbname}}: {{schemaname}}.{{tblname}}.{{idxname}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 indexes by estimated bloat size",
       "type": "timeseries"
     },
     {
@@ -600,7 +702,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 28
+        "y": 27
       },
       "id": 8,
       "options": {
@@ -699,7 +801,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 28
+        "y": 27
       },
       "id": 9,
       "options": {
@@ -734,7 +836,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 35
       },
       "id": 10,
       "panels": [],
@@ -770,7 +872,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 36
       },
       "id": 11,
       "options": {
@@ -895,5 +997,5 @@
   "timezone": "",
   "title": "Index Overview (Prometheus)",
   "uid": "index-overview-prometheus",
-  "version": 4
+  "version": 5
 }
