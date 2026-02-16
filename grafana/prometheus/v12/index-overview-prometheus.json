@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 22,
+  "id": 34,
   "links": [],
   "panels": [
     {
@@ -70,6 +70,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -121,6 +122,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "expr": "topk(10, sum by (index_name, dbname) (rate(pgwatch_index_stats_idx_scan{dbname=~\"$dbname\"}[$agg_interval])))",
@@ -166,6 +168,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -217,6 +220,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "expr": "topk(10, sum by (index_name, dbname) (rate(pgwatch_index_stats_idx_tup_fetch{dbname=~\"$dbname\"}[$agg_interval])))",
@@ -275,6 +279,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -326,6 +331,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "expr": "topk(10, sum by (index_name, dbname) (pgwatch_index_stats_idx_tup_read{dbname=~\"$dbname\"}) / sum by (index_name, dbname) (pgwatch_index_stats_idx_tup_fetch{dbname=~\"$dbname\"} > 0))",
@@ -371,6 +377,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -422,6 +429,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "expr": "topk(10, sum by (index_name, dbname) (pgwatch_index_stats_index_size_b{dbname=~\"$dbname\"}))",
@@ -444,6 +452,107 @@
       "panels": [],
       "title": "Index Health and Issues",
       "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "showValues": false,
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "expr": "topk(10, pgwatch_btree_bloat_bloat_pct{dbname=\"$dbname\"})",
+          "legendFormat": "{{dbname}}: {{schemaname}}.{{tblname}}.{{idxname}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 indexes by estimated bloat %",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -491,7 +600,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 28
       },
       "id": 8,
       "options": {
@@ -511,7 +620,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "expr": "sum by (object_name, dbname) (metrics_recommendations_index_size_b{dbname=~\"$dbname\", issue_type=\"invalid\"})",
@@ -557,6 +666,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -589,7 +699,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 19
+        "y": 28
       },
       "id": 9,
       "options": {
@@ -607,6 +717,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "expr": "topk(10, sum by (object_name, dbname) (metrics_recommendations_index_size_b{dbname=~\"$dbname\", issue_type=\"unused\"}))",
@@ -623,7 +734,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 36
       },
       "id": 10,
       "panels": [],
@@ -659,7 +770,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 37
       },
       "id": 11,
       "options": {
@@ -679,7 +790,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "expr": "count by (dbname) (pgwatch_index_stats_is_pk_int{dbname=~\"$dbname\"} == 1)",
@@ -706,8 +817,9 @@
       "type": "stat"
     }
   ],
+  "preload": false,
   "refresh": "30s",
-  "schemaVersion": 39,
+  "schemaVersion": 42,
   "tags": [
     "pgwatch",
     "prometheus"
@@ -724,7 +836,6 @@
           "type": "prometheus"
         },
         "definition": "label_values(pgwatch_instance_up, dbname)",
-        "hide": 0,
         "includeAll": true,
         "label": "Database",
         "multi": true,
@@ -733,20 +844,16 @@
         "query": "label_values(pgwatch_instance_up, dbname)",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 1,
         "type": "query"
       },
       {
         "current": {
-          "selected": false,
-          "text": "5m",
-          "value": "5m"
+          "text": "1h",
+          "value": "1h"
         },
-        "hide": 0,
         "includeAll": false,
         "label": "Aggregation interval",
-        "multi": false,
         "name": "agg_interval",
         "options": [
           {
@@ -755,7 +862,7 @@
             "value": "1m"
           },
           {
-            "selected": true,
+            "selected": false,
             "text": "5m",
             "value": "5m"
           },
@@ -770,14 +877,12 @@
             "value": "30m"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "1h",
             "value": "1h"
           }
         ],
         "query": "1m,5m,10m,30m,1h",
-        "queryValue": "",
-        "skipUrlSync": false,
         "type": "custom"
       }
     ]
@@ -790,6 +895,5 @@
   "timezone": "",
   "title": "Index Overview (Prometheus)",
   "uid": "index-overview-prometheus",
-  "version": 1,
-  "weekStart": ""
+  "version": 4
 }
