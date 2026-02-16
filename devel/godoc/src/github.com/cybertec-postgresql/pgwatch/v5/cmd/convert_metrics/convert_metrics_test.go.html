@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.25.7";</script>
+<script>var goVersion = "go1.26.0";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -110,8 +110,8 @@
 <span id="L53" class="ln">    53  </span>
 <span id="L54" class="ln">    54  </span>	var extracted string
 <span id="L55" class="ln">    55  </span>	for _, f := range r.File {
-<span id="L56" class="ln">    56  </span>		if strings.HasPrefix(f.Name, metricsRoot) {
-<span id="L57" class="ln">    57  </span>			rel := strings.TrimPrefix(f.Name, metricsRoot)
+<span id="L56" class="ln">    56  </span>		if after, ok := strings.CutPrefix(f.Name, metricsRoot); ok {
+<span id="L57" class="ln">    57  </span>			rel := after
 <span id="L58" class="ln">    58  </span>			if rel == &#34;&#34; {
 <span id="L59" class="ln">    59  </span>				extracted = filepath.Join(dest, &#34;metrics&#34;)
 <span id="L60" class="ln">    60  </span>				_ = os.MkdirAll(extracted, 0755)
@@ -190,7 +190,7 @@
 </pre><p></p>
 
 <div id="footer">
-Build version go1.25.7.<br/>
+Build version go1.26.0.<br/>
 </div>
 
 </div><!-- .container -->

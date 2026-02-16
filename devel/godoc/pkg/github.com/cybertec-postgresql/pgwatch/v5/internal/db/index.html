@@ -15,7 +15,7 @@
 
 
 
-<script>var goVersion = "go1.25.7";</script>
+<script>var goVersion = "go1.26.0";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer></script>
 
 </head>
@@ -414,9 +414,9 @@
 
 			<pre>type PgxIface interface {
     Begin(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/">pgx</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/#Tx">Tx</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
-    Exec(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, <a href="https://pkg.go.dev/builtin/#string">string</a>, ...interface{}) (<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgconn/">pgconn</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgconn/#CommandTag">CommandTag</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
-    QueryRow(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, <a href="https://pkg.go.dev/builtin/#string">string</a>, ...interface{}) <a href="https://pkg.go.dev/github.com/jackc/pgx/v5/">pgx</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/#Row">Row</a>
-    Query(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, query <a href="https://pkg.go.dev/builtin/#string">string</a>, args ...interface{}) (<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/">pgx</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/#Rows">Rows</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+    Exec(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, <a href="https://pkg.go.dev/builtin/#string">string</a>, ...<a href="https://pkg.go.dev/builtin/#any">any</a>) (<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgconn/">pgconn</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgconn/#CommandTag">CommandTag</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+    QueryRow(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, <a href="https://pkg.go.dev/builtin/#string">string</a>, ...<a href="https://pkg.go.dev/builtin/#any">any</a>) <a href="https://pkg.go.dev/github.com/jackc/pgx/v5/">pgx</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/#Row">Row</a>
+    Query(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, query <a href="https://pkg.go.dev/builtin/#string">string</a>, args ...<a href="https://pkg.go.dev/builtin/#any">any</a>) (<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/">pgx</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/#Rows">Rows</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
     CopyFrom(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, tableName <a href="https://pkg.go.dev/github.com/jackc/pgx/v5/">pgx</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/#Identifier">Identifier</a>, columnNames []<a href="https://pkg.go.dev/builtin/#string">string</a>, rowSrc <a href="https://pkg.go.dev/github.com/jackc/pgx/v5/">pgx</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/#CopyFromSource">CopyFromSource</a>) (<a href="https://pkg.go.dev/builtin/#int64">int64</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
 }</pre>
 
@@ -496,7 +496,7 @@
 			</h2>
 			
 			<pre>type Querier interface {
-    Query(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, query <a href="https://pkg.go.dev/builtin/#string">string</a>, args ...interface{}) (<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/">pgx</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/#Rows">Rows</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+    Query(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, query <a href="https://pkg.go.dev/builtin/#string">string</a>, args ...<a href="https://pkg.go.dev/builtin/#any">any</a>) (<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/">pgx</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/#Rows">Rows</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
 }</pre>
 
 			
@@ -522,7 +522,7 @@
 
 
 <div id="footer">
-Build version go1.25.7.<br>
+Build version go1.26.0.<br>
 </div>
 
 </div><!-- .container -->

@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.25.7";</script>
+<script>var goVersion = "go1.26.0";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -200,10 +200,259 @@
 <span id="L143" class="ln">   143  </span>
 <span id="L144" class="ln">   144  </span>}
 <span id="L145" class="ln">   145  </span>
+<span id="L146" class="ln">   146  </span>func TestNewHostConfig_BasicParsing(t *testing.T) {
+<span id="L147" class="ln">   147  </span>	tests := []struct {
+<span id="L148" class="ln">   148  </span>		name     string
+<span id="L149" class="ln">   149  </span>		uri      string
+<span id="L150" class="ln">   150  </span>		expected sources.HostConfig
+<span id="L151" class="ln">   151  </span>		wantErr  bool
+<span id="L152" class="ln">   152  </span>	}{
+<span id="L153" class="ln">   153  </span>		{
+<span id="L154" class="ln">   154  </span>			name: &#34;simple etcd URI&#34;,
+<span id="L155" class="ln">   155  </span>			uri:  &#34;etcd://localhost:2379/service/demo&#34;,
+<span id="L156" class="ln">   156  </span>			expected: sources.HostConfig{
+<span id="L157" class="ln">   157  </span>				DcsType:      &#34;etcd&#34;,
+<span id="L158" class="ln">   158  </span>				DcsEndpoints: []string{&#34;http://localhost:2379&#34;},
+<span id="L159" class="ln">   159  </span>				Path:         &#34;/service/demo&#34;,
+<span id="L160" class="ln">   160  </span>			},
+<span id="L161" class="ln">   161  </span>		},
+<span id="L162" class="ln">   162  </span>		{
+<span id="L163" class="ln">   163  </span>			name: &#34;etcd with multiple hosts&#34;,
+<span id="L164" class="ln">   164  </span>			uri:  &#34;etcd://host1:2379,host2:2379,host3:2379/service/demo&#34;,
+<span id="L165" class="ln">   165  </span>			expected: sources.HostConfig{
+<span id="L166" class="ln">   166  </span>				DcsType:      &#34;etcd&#34;,
+<span id="L167" class="ln">   167  </span>				DcsEndpoints: []string{&#34;http://host1:2379&#34;, &#34;http://host2:2379&#34;, &#34;http://host3:2379&#34;},
+<span id="L168" class="ln">   168  </span>				Path:         &#34;/service/demo&#34;,
+<span id="L169" class="ln">   169  </span>			},
+<span id="L170" class="ln">   170  </span>		},
+<span id="L171" class="ln">   171  </span>		{
+<span id="L172" class="ln">   172  </span>			name: &#34;zookeeper URI&#34;,
+<span id="L173" class="ln">   173  </span>			uri:  &#34;zookeeper://localhost:2181/patroni&#34;,
+<span id="L174" class="ln">   174  </span>			expected: sources.HostConfig{
+<span id="L175" class="ln">   175  </span>				DcsType:      &#34;zookeeper&#34;,
+<span id="L176" class="ln">   176  </span>				DcsEndpoints: []string{&#34;localhost:2181&#34;},
+<span id="L177" class="ln">   177  </span>				Path:         &#34;/patroni&#34;,
+<span id="L178" class="ln">   178  </span>			},
+<span id="L179" class="ln">   179  </span>		},
+<span id="L180" class="ln">   180  </span>		{
+<span id="L181" class="ln">   181  </span>			name: &#34;consul URI&#34;,
+<span id="L182" class="ln">   182  </span>			uri:  &#34;consul://localhost:8500/service&#34;,
+<span id="L183" class="ln">   183  </span>			expected: sources.HostConfig{
+<span id="L184" class="ln">   184  </span>				DcsType:      &#34;consul&#34;,
+<span id="L185" class="ln">   185  </span>				DcsEndpoints: []string{&#34;localhost:8500&#34;},
+<span id="L186" class="ln">   186  </span>				Path:         &#34;/service&#34;,
+<span id="L187" class="ln">   187  </span>			},
+<span id="L188" class="ln">   188  </span>		},
+<span id="L189" class="ln">   189  </span>		{
+<span id="L190" class="ln">   190  </span>			name:    &#34;invalid URI - no scheme&#34;,
+<span id="L191" class="ln">   191  </span>			uri:     &#34;localhost:2379/service&#34;,
+<span id="L192" class="ln">   192  </span>			wantErr: true,
+<span id="L193" class="ln">   193  </span>		},
+<span id="L194" class="ln">   194  </span>		{
+<span id="L195" class="ln">   195  </span>			name:    &#34;unsupported scheme&#34;,
+<span id="L196" class="ln">   196  </span>			uri:     &#34;redis://localhost:6379&#34;,
+<span id="L197" class="ln">   197  </span>			wantErr: true,
+<span id="L198" class="ln">   198  </span>		},
+<span id="L199" class="ln">   199  </span>	}
+<span id="L200" class="ln">   200  </span>
+<span id="L201" class="ln">   201  </span>	for _, tt := range tests {
+<span id="L202" class="ln">   202  </span>		t.Run(tt.name, func(t *testing.T) {
+<span id="L203" class="ln">   203  </span>			hc, err := sources.NewHostConfig(tt.uri)
+<span id="L204" class="ln">   204  </span>			if tt.wantErr {
+<span id="L205" class="ln">   205  </span>				assert.Error(t, err)
+<span id="L206" class="ln">   206  </span>				return
+<span id="L207" class="ln">   207  </span>			}
+<span id="L208" class="ln">   208  </span>			require.NoError(t, err)
+<span id="L209" class="ln">   209  </span>			assert.Equal(t, tt.expected.DcsType, hc.DcsType)
+<span id="L210" class="ln">   210  </span>			assert.Equal(t, tt.expected.DcsEndpoints, hc.DcsEndpoints)
+<span id="L211" class="ln">   211  </span>			assert.Equal(t, tt.expected.Path, hc.Path)
+<span id="L212" class="ln">   212  </span>		})
+<span id="L213" class="ln">   213  </span>	}
+<span id="L214" class="ln">   214  </span>}
+<span id="L215" class="ln">   215  </span>
+<span id="L216" class="ln">   216  </span>func TestNewHostConfig_WithUserInfo(t *testing.T) {
+<span id="L217" class="ln">   217  </span>	tests := []struct {
+<span id="L218" class="ln">   218  </span>		name     string
+<span id="L219" class="ln">   219  </span>		uri      string
+<span id="L220" class="ln">   220  </span>		username string
+<span id="L221" class="ln">   221  </span>		password string
+<span id="L222" class="ln">   222  </span>	}{
+<span id="L223" class="ln">   223  </span>		{
+<span id="L224" class="ln">   224  </span>			name:     &#34;username only&#34;,
+<span id="L225" class="ln">   225  </span>			uri:      &#34;etcd://admin@localhost:2379/service&#34;,
+<span id="L226" class="ln">   226  </span>			username: &#34;admin&#34;,
+<span id="L227" class="ln">   227  </span>			password: &#34;&#34;,
+<span id="L228" class="ln">   228  </span>		},
+<span id="L229" class="ln">   229  </span>		{
+<span id="L230" class="ln">   230  </span>			name:     &#34;username and password&#34;,
+<span id="L231" class="ln">   231  </span>			uri:      &#34;etcd://admin:secret@localhost:2379/service&#34;,
+<span id="L232" class="ln">   232  </span>			username: &#34;admin&#34;,
+<span id="L233" class="ln">   233  </span>			password: &#34;secret&#34;,
+<span id="L234" class="ln">   234  </span>		},
+<span id="L235" class="ln">   235  </span>		{
+<span id="L236" class="ln">   236  </span>			name:     &#34;multiple hosts with auth&#34;,
+<span id="L237" class="ln">   237  </span>			uri:      &#34;etcd://user:pass@host1:2379,host2:2379/service&#34;,
+<span id="L238" class="ln">   238  </span>			username: &#34;user&#34;,
+<span id="L239" class="ln">   239  </span>			password: &#34;pass&#34;,
+<span id="L240" class="ln">   240  </span>		},
+<span id="L241" class="ln">   241  </span>	}
+<span id="L242" class="ln">   242  </span>
+<span id="L243" class="ln">   243  </span>	for _, tt := range tests {
+<span id="L244" class="ln">   244  </span>		t.Run(tt.name, func(t *testing.T) {
+<span id="L245" class="ln">   245  </span>			hc, err := sources.NewHostConfig(tt.uri)
+<span id="L246" class="ln">   246  </span>			require.NoError(t, err)
+<span id="L247" class="ln">   247  </span>			assert.Equal(t, tt.username, hc.Username)
+<span id="L248" class="ln">   248  </span>			assert.Equal(t, tt.password, hc.Password)
+<span id="L249" class="ln">   249  </span>		})
+<span id="L250" class="ln">   250  </span>	}
+<span id="L251" class="ln">   251  </span>}
+<span id="L252" class="ln">   252  </span>
+<span id="L253" class="ln">   253  </span>func TestNewHostConfig_WithQueryParameters(t *testing.T) {
+<span id="L254" class="ln">   254  </span>	tests := []struct {
+<span id="L255" class="ln">   255  </span>		name     string
+<span id="L256" class="ln">   256  </span>		uri      string
+<span id="L257" class="ln">   257  </span>		caFile   string
+<span id="L258" class="ln">   258  </span>		certFile string
+<span id="L259" class="ln">   259  </span>		keyFile  string
+<span id="L260" class="ln">   260  </span>	}{
+<span id="L261" class="ln">   261  </span>		{
+<span id="L262" class="ln">   262  </span>			name:     &#34;all TLS parameters&#34;,
+<span id="L263" class="ln">   263  </span>			uri:      &#34;etcd://localhost:2379/service?ca_file=/path/to/ca.crt&amp;cert_file=/path/to/cert.crt&amp;key_file=/path/to/key.key&#34;,
+<span id="L264" class="ln">   264  </span>			caFile:   &#34;/path/to/ca.crt&#34;,
+<span id="L265" class="ln">   265  </span>			certFile: &#34;/path/to/cert.crt&#34;,
+<span id="L266" class="ln">   266  </span>			keyFile:  &#34;/path/to/key.key&#34;,
+<span id="L267" class="ln">   267  </span>		},
+<span id="L268" class="ln">   268  </span>		{
+<span id="L269" class="ln">   269  </span>			name:   &#34;only ca_file&#34;,
+<span id="L270" class="ln">   270  </span>			uri:    &#34;etcd://localhost:2379/service?ca_file=/ca.crt&#34;,
+<span id="L271" class="ln">   271  </span>			caFile: &#34;/ca.crt&#34;,
+<span id="L272" class="ln">   272  </span>		},
+<span id="L273" class="ln">   273  </span>		{
+<span id="L274" class="ln">   274  </span>			name:     &#34;cert and key only&#34;,
+<span id="L275" class="ln">   275  </span>			uri:      &#34;etcd://localhost:2379/service?cert_file=/cert.crt&amp;key_file=/key.key&#34;,
+<span id="L276" class="ln">   276  </span>			certFile: &#34;/cert.crt&#34;,
+<span id="L277" class="ln">   277  </span>			keyFile:  &#34;/key.key&#34;,
+<span id="L278" class="ln">   278  </span>		},
+<span id="L279" class="ln">   279  </span>		{
+<span id="L280" class="ln">   280  </span>			name: &#34;no TLS parameters&#34;,
+<span id="L281" class="ln">   281  </span>			uri:  &#34;etcd://localhost:2379/service&#34;,
+<span id="L282" class="ln">   282  </span>		},
+<span id="L283" class="ln">   283  </span>		{
+<span id="L284" class="ln">   284  </span>			name:     &#34;TLS params with multiple hosts&#34;,
+<span id="L285" class="ln">   285  </span>			uri:      &#34;etcd://host1:2379,host2:2379/service?ca_file=/ca.crt&amp;cert_file=/cert.crt&#34;,
+<span id="L286" class="ln">   286  </span>			caFile:   &#34;/ca.crt&#34;,
+<span id="L287" class="ln">   287  </span>			certFile: &#34;/cert.crt&#34;,
+<span id="L288" class="ln">   288  </span>		},
+<span id="L289" class="ln">   289  </span>	}
+<span id="L290" class="ln">   290  </span>
+<span id="L291" class="ln">   291  </span>	for _, tt := range tests {
+<span id="L292" class="ln">   292  </span>		t.Run(tt.name, func(t *testing.T) {
+<span id="L293" class="ln">   293  </span>			hc, err := sources.NewHostConfig(tt.uri)
+<span id="L294" class="ln">   294  </span>			require.NoError(t, err)
+<span id="L295" class="ln">   295  </span>			assert.Equal(t, tt.caFile, hc.CAFile)
+<span id="L296" class="ln">   296  </span>			assert.Equal(t, tt.certFile, hc.CertFile)
+<span id="L297" class="ln">   297  </span>			assert.Equal(t, tt.keyFile, hc.KeyFile)
+<span id="L298" class="ln">   298  </span>		})
+<span id="L299" class="ln">   299  </span>	}
+<span id="L300" class="ln">   300  </span>}
+<span id="L301" class="ln">   301  </span>
+<span id="L302" class="ln">   302  </span>func TestNewHostConfig_WithAuthAndTLS(t *testing.T) {
+<span id="L303" class="ln">   303  </span>	uri := &#34;etcd://admin:secret@host1:2379,host2:2379/service/demo?ca_file=/ca.crt&amp;cert_file=/cert.crt&amp;key_file=/key.key&#34;
+<span id="L304" class="ln">   304  </span>	hc, err := sources.NewHostConfig(uri)
+<span id="L305" class="ln">   305  </span>	require.NoError(t, err)
+<span id="L306" class="ln">   306  </span>
+<span id="L307" class="ln">   307  </span>	assert.Equal(t, &#34;etcd&#34;, hc.DcsType)
+<span id="L308" class="ln">   308  </span>	assert.Equal(t, []string{&#34;http://host1:2379&#34;, &#34;http://host2:2379&#34;}, hc.DcsEndpoints)
+<span id="L309" class="ln">   309  </span>	assert.Equal(t, &#34;/service/demo&#34;, hc.Path)
+<span id="L310" class="ln">   310  </span>	assert.Equal(t, &#34;admin&#34;, hc.Username)
+<span id="L311" class="ln">   311  </span>	assert.Equal(t, &#34;secret&#34;, hc.Password)
+<span id="L312" class="ln">   312  </span>	assert.Equal(t, &#34;/ca.crt&#34;, hc.CAFile)
+<span id="L313" class="ln">   313  </span>	assert.Equal(t, &#34;/cert.crt&#34;, hc.CertFile)
+<span id="L314" class="ln">   314  </span>	assert.Equal(t, &#34;/key.key&#34;, hc.KeyFile)
+<span id="L315" class="ln">   315  </span>}
+<span id="L316" class="ln">   316  </span>
+<span id="L317" class="ln">   317  </span>func TestNewHostConfig_PathVariations(t *testing.T) {
+<span id="L318" class="ln">   318  </span>	tests := []struct {
+<span id="L319" class="ln">   319  </span>		name  string
+<span id="L320" class="ln">   320  </span>		uri   string
+<span id="L321" class="ln">   321  </span>		path  string
+<span id="L322" class="ln">   322  </span>		scope bool
+<span id="L323" class="ln">   323  </span>	}{
+<span id="L324" class="ln">   324  </span>		{
+<span id="L325" class="ln">   325  </span>			name:  &#34;namespace only&#34;,
+<span id="L326" class="ln">   326  </span>			uri:   &#34;etcd://localhost:2379/service&#34;,
+<span id="L327" class="ln">   327  </span>			path:  &#34;/service&#34;,
+<span id="L328" class="ln">   328  </span>			scope: false,
+<span id="L329" class="ln">   329  </span>		},
+<span id="L330" class="ln">   330  </span>		{
+<span id="L331" class="ln">   331  </span>			name:  &#34;namespace and scope&#34;,
+<span id="L332" class="ln">   332  </span>			uri:   &#34;etcd://localhost:2379/service/demo&#34;,
+<span id="L333" class="ln">   333  </span>			path:  &#34;/service/demo&#34;,
+<span id="L334" class="ln">   334  </span>			scope: true,
+<span id="L335" class="ln">   335  </span>		},
+<span id="L336" class="ln">   336  </span>		{
+<span id="L337" class="ln">   337  </span>			name:  &#34;deep path&#34;,
+<span id="L338" class="ln">   338  </span>			uri:   &#34;etcd://localhost:2379/service/demo/v1&#34;,
+<span id="L339" class="ln">   339  </span>			path:  &#34;/service/demo/v1&#34;,
+<span id="L340" class="ln">   340  </span>			scope: true,
+<span id="L341" class="ln">   341  </span>		},
+<span id="L342" class="ln">   342  </span>		{
+<span id="L343" class="ln">   343  </span>			name:  &#34;no path&#34;,
+<span id="L344" class="ln">   344  </span>			uri:   &#34;etcd://localhost:2379&#34;,
+<span id="L345" class="ln">   345  </span>			path:  &#34;&#34;,
+<span id="L346" class="ln">   346  </span>			scope: false,
+<span id="L347" class="ln">   347  </span>		},
+<span id="L348" class="ln">   348  </span>	}
+<span id="L349" class="ln">   349  </span>
+<span id="L350" class="ln">   350  </span>	for _, tt := range tests {
+<span id="L351" class="ln">   351  </span>		t.Run(tt.name, func(t *testing.T) {
+<span id="L352" class="ln">   352  </span>			hc, err := sources.NewHostConfig(tt.uri)
+<span id="L353" class="ln">   353  </span>			require.NoError(t, err)
+<span id="L354" class="ln">   354  </span>			assert.Equal(t, tt.path, hc.Path)
+<span id="L355" class="ln">   355  </span>			assert.Equal(t, tt.scope, hc.IsScopeSpecified())
+<span id="L356" class="ln">   356  </span>		})
+<span id="L357" class="ln">   357  </span>	}
+<span id="L358" class="ln">   358  </span>}
+<span id="L359" class="ln">   359  </span>
+<span id="L360" class="ln">   360  </span>func TestNewHostConfig_EdgeCases(t *testing.T) {
+<span id="L361" class="ln">   361  </span>	tests := []struct {
+<span id="L362" class="ln">   362  </span>		name    string
+<span id="L363" class="ln">   363  </span>		uri     string
+<span id="L364" class="ln">   364  </span>		wantErr bool
+<span id="L365" class="ln">   365  </span>	}{
+<span id="L366" class="ln">   366  </span>		{
+<span id="L367" class="ln">   367  </span>			name:    &#34;empty URI&#34;,
+<span id="L368" class="ln">   368  </span>			uri:     &#34;&#34;,
+<span id="L369" class="ln">   369  </span>			wantErr: true,
+<span id="L370" class="ln">   370  </span>		},
+<span id="L371" class="ln">   371  </span>		{
+<span id="L372" class="ln">   372  </span>			name:    &#34;URI without scheme separator&#34;,
+<span id="L373" class="ln">   373  </span>			uri:     &#34;etcdlocalhost:2379&#34;,
+<span id="L374" class="ln">   374  </span>			wantErr: true,
+<span id="L375" class="ln">   375  </span>		},
+<span id="L376" class="ln">   376  </span>		{
+<span id="L377" class="ln">   377  </span>			name:    &#34;URI with invalid host format&#34;,
+<span id="L378" class="ln">   378  </span>			uri:     &#34;etcd://[::1:2379/service&#34;, <span class="comment">// malformed IPv6</span>
+<span id="L379" class="ln">   379  </span>			wantErr: true,
+<span id="L380" class="ln">   380  </span>		},
+<span id="L381" class="ln">   381  </span>	}
+<span id="L382" class="ln">   382  </span>
+<span id="L383" class="ln">   383  </span>	for _, tt := range tests {
+<span id="L384" class="ln">   384  </span>		t.Run(tt.name, func(t *testing.T) {
+<span id="L385" class="ln">   385  </span>			_, err := sources.NewHostConfig(tt.uri)
+<span id="L386" class="ln">   386  </span>			if tt.wantErr {
+<span id="L387" class="ln">   387  </span>				assert.Error(t, err)
+<span id="L388" class="ln">   388  </span>			} else {
+<span id="L389" class="ln">   389  </span>				assert.NoError(t, err)
+<span id="L390" class="ln">   390  </span>			}
+<span id="L391" class="ln">   391  </span>		})
+<span id="L392" class="ln">   392  </span>	}
+<span id="L393" class="ln">   393  </span>}
+<span id="L394" class="ln">   394  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.25.7.<br/>
+Build version go1.26.0.<br/>
 </div>
 
 </div><!-- .container -->

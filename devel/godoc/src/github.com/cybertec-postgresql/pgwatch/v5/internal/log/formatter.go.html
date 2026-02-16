@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.25.7";</script>
+<script>var goVersion = "go1.26.0";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -198,11 +198,11 @@
 <span id="L141" class="ln">   141  </span>
 <span id="L142" class="ln">   142  </span>func trimFilename(s string) string {
 <span id="L143" class="ln">   143  </span>	const sub = &#34;internal/&#34;
-<span id="L144" class="ln">   144  </span>	idx := strings.Index(s, sub)
-<span id="L145" class="ln">   145  </span>	if idx == -1 {
+<span id="L144" class="ln">   144  </span>	_, after, ok := strings.Cut(s, sub)
+<span id="L145" class="ln">   145  </span>	if !ok {
 <span id="L146" class="ln">   146  </span>		return s
 <span id="L147" class="ln">   147  </span>	}
-<span id="L148" class="ln">   148  </span>	return s[idx+len(sub):]
+<span id="L148" class="ln">   148  </span>	return after
 <span id="L149" class="ln">   149  </span>}
 <span id="L150" class="ln">   150  </span>
 <span id="L151" class="ln">   151  </span>func (f *Formatter) writeCaller(b *bytes.Buffer, entry *logrus.Entry) {
@@ -303,7 +303,7 @@
 </pre><p></p>
 
 <div id="footer">
-Build version go1.25.7.<br/>
+Build version go1.26.0.<br/>
 </div>
 
 </div><!-- .container -->
