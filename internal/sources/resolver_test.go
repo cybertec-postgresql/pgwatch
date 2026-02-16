@@ -142,3 +142,252 @@ func TestMonitoredDatabase_UnsupportedDCS(t *testing.T) {
 	assert.EqualError(t, err, "unsupported DCS type: unknown")
 
 }
+
+func TestNewHostConfig_BasicParsing(t *testing.T) {
+	tests := []struct {
+		name     string
+		uri      string
+		expected sources.HostConfig
+		wantErr  bool
+	}{
+		{
+			name: "simple etcd URI",
+			uri:  "etcd://localhost:2379/service/demo",
+			expected: sources.HostConfig{
+				DcsType:      "etcd",
+				DcsEndpoints: []string{"http://localhost:2379"},
+				Path:         "/service/demo",
+			},
+		},
+		{
+			name: "etcd with multiple hosts",
+			uri:  "etcd://host1:2379,host2:2379,host3:2379/service/demo",
+			expected: sources.HostConfig{
+				DcsType:      "etcd",
+				DcsEndpoints: []string{"http://host1:2379", "http://host2:2379", "http://host3:2379"},
+				Path:         "/service/demo",
+			},
+		},
+		{
+			name: "zookeeper URI",
+			uri:  "zookeeper://localhost:2181/patroni",
+			expected: sources.HostConfig{
+				DcsType:      "zookeeper",
+				DcsEndpoints: []string{"localhost:2181"},
+				Path:         "/patroni",
+			},
+		},
+		{
+			name: "consul URI",
+			uri:  "consul://localhost:8500/service",
+			expected: sources.HostConfig{
+				DcsType:      "consul",
+				DcsEndpoints: []string{"localhost:8500"},
+				Path:         "/service",
+			},
+		},
+		{
+			name:    "invalid URI - no scheme",
+			uri:     "localhost:2379/service",
+			wantErr: true,
+		},
+		{
+			name:    "unsupported scheme",
+			uri:     "redis://localhost:6379",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hc, err := sources.NewHostConfig(tt.uri)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected.DcsType, hc.DcsType)
+			assert.Equal(t, tt.expected.DcsEndpoints, hc.DcsEndpoints)
+			assert.Equal(t, tt.expected.Path, hc.Path)
+		})
+	}
+}
+
+func TestNewHostConfig_WithUserInfo(t *testing.T) {
+	tests := []struct {
+		name     string
+		uri      string
+		username string
+		password string
+	}{
+		{
+			name:     "username only",
+			uri:      "etcd://admin@localhost:2379/service",
+			username: "admin",
+			password: "",
+		},
+		{
+			name:     "username and password",
+			uri:      "etcd://admin:secret@localhost:2379/service",
+			username: "admin",
+			password: "secret",
+		},
+		{
+			name:     "multiple hosts with auth",
+			uri:      "etcd://user:pass@host1:2379,host2:2379/service",
+			username: "user",
+			password: "pass",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hc, err := sources.NewHostConfig(tt.uri)
+			require.NoError(t, err)
+			assert.Equal(t, tt.username, hc.Username)
+			assert.Equal(t, tt.password, hc.Password)
+		})
+	}
+}
+
+func TestNewHostConfig_WithQueryParameters(t *testing.T) {
+	tests := []struct {
+		name     string
+		uri      string
+		caFile   string
+		certFile string
+		keyFile  string
+	}{
+		{
+			name:     "all TLS parameters",
+			uri:      "etcd://localhost:2379/service?ca_file=/path/to/ca.crt&cert_file=/path/to/cert.crt&key_file=/path/to/key.key",
+			caFile:   "/path/to/ca.crt",
+			certFile: "/path/to/cert.crt",
+			keyFile:  "/path/to/key.key",
+		},
+		{
+			name:   "only ca_file",
+			uri:    "etcd://localhost:2379/service?ca_file=/ca.crt",
+			caFile: "/ca.crt",
+		},
+		{
+			name:     "cert and key only",
+			uri:      "etcd://localhost:2379/service?cert_file=/cert.crt&key_file=/key.key",
+			certFile: "/cert.crt",
+			keyFile:  "/key.key",
+		},
+		{
+			name: "no TLS parameters",
+			uri:  "etcd://localhost:2379/service",
+		},
+		{
+			name:     "TLS params with multiple hosts",
+			uri:      "etcd://host1:2379,host2:2379/service?ca_file=/ca.crt&cert_file=/cert.crt",
+			caFile:   "/ca.crt",
+			certFile: "/cert.crt",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hc, err := sources.NewHostConfig(tt.uri)
+			require.NoError(t, err)
+			assert.Equal(t, tt.caFile, hc.CAFile)
+			assert.Equal(t, tt.certFile, hc.CertFile)
+			assert.Equal(t, tt.keyFile, hc.KeyFile)
+		})
+	}
+}
+
+func TestNewHostConfig_WithAuthAndTLS(t *testing.T) {
+	uri := "etcd://admin:secret@host1:2379,host2:2379/service/demo?ca_file=/ca.crt&cert_file=/cert.crt&key_file=/key.key"
+	hc, err := sources.NewHostConfig(uri)
+	require.NoError(t, err)
+
+	assert.Equal(t, "etcd", hc.DcsType)
+	assert.Equal(t, []string{"http://host1:2379", "http://host2:2379"}, hc.DcsEndpoints)
+	assert.Equal(t, "/service/demo", hc.Path)
+	assert.Equal(t, "admin", hc.Username)
+	assert.Equal(t, "secret", hc.Password)
+	assert.Equal(t, "/ca.crt", hc.CAFile)
+	assert.Equal(t, "/cert.crt", hc.CertFile)
+	assert.Equal(t, "/key.key", hc.KeyFile)
+}
+
+func TestNewHostConfig_PathVariations(t *testing.T) {
+	tests := []struct {
+		name  string
+		uri   string
+		path  string
+		scope bool
+	}{
+		{
+			name:  "namespace only",
+			uri:   "etcd://localhost:2379/service",
+			path:  "/service",
+			scope: false,
+		},
+		{
+			name:  "namespace and scope",
+			uri:   "etcd://localhost:2379/service/demo",
+			path:  "/service/demo",
+			scope: true,
+		},
+		{
+			name:  "deep path",
+			uri:   "etcd://localhost:2379/service/demo/v1",
+			path:  "/service/demo/v1",
+			scope: true,
+		},
+		{
+			name:  "no path",
+			uri:   "etcd://localhost:2379",
+			path:  "",
+			scope: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hc, err := sources.NewHostConfig(tt.uri)
+			require.NoError(t, err)
+			assert.Equal(t, tt.path, hc.Path)
+			assert.Equal(t, tt.scope, hc.IsScopeSpecified())
+		})
+	}
+}
+
+func TestNewHostConfig_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name    string
+		uri     string
+		wantErr bool
+	}{
+		{
+			name:    "empty URI",
+			uri:     "",
+			wantErr: true,
+		},
+		{
+			name:    "URI without scheme separator",
+			uri:     "etcdlocalhost:2379",
+			wantErr: true,
+		},
+		{
+			name:    "URI with invalid host format",
+			uri:     "etcd://[::1:2379/service", // malformed IPv6
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := sources.NewHostConfig(tt.uri)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
