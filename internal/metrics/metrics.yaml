@@ -4293,7 +4293,9 @@ metrics:
                     ) AS rows_data_stats
                 ) AS rows_hdr_pdg_stats
                 ) AS relation_stats
-                WHERE (bs * relpages::float / (1024 * 1024)) > 1 /* exclude indexes below 1 MiB */
+                WHERE 
+                    (bs * relpages::float / (1024 * 1024)) > 1 /* exclude indexes below 1 MiB */
+                    AND relpages > est_pages_ff
                 ORDER BY is_na, bloat_pct desc
                 LIMIT 100
         gauges:
@@ -4336,6 +4338,7 @@ presets:
             stat_statements: 180
             stat_statements_calls: 60
             table_bloat_approx_summary_sql: 7200
+            btree_bloat: 7200
             table_io_stats: 300
             table_stats: 300
             wal: 60
@@ -4363,6 +4366,7 @@ presets:
             stat_statements: 180
             stat_statements_calls: 60
             table_bloat_approx_summary_sql: 7200
+            btree_bloat: 7200
             table_io_stats: 600
             wal: 60
             wal_receiver: 60
@@ -4401,6 +4405,7 @@ presets:
             stat_statements: 180
             stat_statements_calls: 60
             table_bloat_approx_summary_sql: 7200
+            btree_bloat: 7200
             table_io_stats: 600
             table_stats: 300
             wal: 60
@@ -4449,6 +4454,7 @@ presets:
             stat_statements: 180
             stat_statements_calls: 60
             table_bloat_approx_summary_sql: 7200
+            btree_bloat: 7200
             table_io_stats: 600
             table_stats: 300
             wal: 60
@@ -4475,6 +4481,7 @@ presets:
             stat_statements: 180
             stat_statements_calls: 60
             table_bloat_approx_summary_sql: 7200
+            btree_bloat: 7200
             table_io_stats: 600
             table_stats: 300
             wal: 60
@@ -4528,6 +4535,7 @@ presets:
             stat_statements: 180
             stat_statements_calls: 60
             table_bloat_approx_summary_sql: 7200
+            btree_bloat: 7200
             table_io_stats: 600
             table_stats: 300
             wal: 60
@@ -4571,6 +4579,7 @@ presets:
             stat_statements: 180
             stat_statements_calls: 60
             table_bloat_approx_summary_sql: 7200
+            btree_bloat: 7200
             table_io_stats: 600
             table_stats: 300
             wal: 60
@@ -4638,6 +4647,7 @@ presets:
             table_bloat_approx_stattuple: 30
             table_bloat_approx_summary: 30
             table_bloat_approx_summary_sql: 30
+            btree_bloat: 30
             table_hashes: 30
             table_io_stats: 30
             table_stats: 30
