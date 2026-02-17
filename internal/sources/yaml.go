@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
@@ -23,30 +24,45 @@ func NewYAMLSourcesReaderWriter(ctx context.Context, path string) (ReaderWriter,
 type fileSourcesReaderWriter struct {
 	ctx  context.Context
 	path string
+	sync.Mutex
 }
 
+// WriteSources writes sources to file with locking
 func (fcr *fileSourcesReaderWriter) WriteSources(mds Sources) error {
+	fcr.Lock()
+	defer fcr.Unlock()
+	return fcr.writeSources(mds)
+}
+
+// writeSources writes sources to file without locking (internal use only)
+func (fcr *fileSourcesReaderWriter) writeSources(mds Sources) error {
 	yamlData, _ := yaml.Marshal(mds)
 	return os.WriteFile(fcr.path, yamlData, 0644)
 }
 
+// UpdateSource updates an existing source or creates it if it doesn't exist, then writes the updated sources back to file
 func (fcr *fileSourcesReaderWriter) UpdateSource(md Source) error {
-	dbs, err := fcr.GetSources()
+	fcr.Lock()
+	defer fcr.Unlock()
+	dbs, err := fcr.getSources()
 	if err != nil {
 		return err
 	}
 	for i, db := range dbs {
 		if db.Name == md.Name {
 			dbs[i] = md
-			return fcr.WriteSources(dbs)
+			return fcr.writeSources(dbs)
 		}
 	}
 	dbs = append(dbs, md)
-	return fcr.WriteSources(dbs)
+	return fcr.writeSources(dbs)
 }
 
+// CreateSource creates a new source if it doesn't already exist, then writes the updated sources back to file
 func (fcr *fileSourcesReaderWriter) CreateSource(md Source) error {
-	dbs, err := fcr.GetSources()
+	fcr.Lock()
+	defer fcr.Unlock()
+	dbs, err := fcr.getSources()
 	if err != nil {
 		return err
 	}
@@ -57,19 +73,30 @@ func (fcr *fileSourcesReaderWriter) CreateSource(md Source) error {
 		}
 	}
 	dbs = append(dbs, md)
-	return fcr.WriteSources(dbs)
+	return fcr.writeSources(dbs)
 }
 
+// DeleteSource deletes a source by name and writes the updated sources back to file
 func (fcr *fileSourcesReaderWriter) DeleteSource(name string) error {
-	dbs, err := fcr.GetSources()
+	fcr.Lock()
+	defer fcr.Unlock()
+	dbs, err := fcr.getSources()
 	if err != nil {
 		return err
 	}
 	dbs = slices.DeleteFunc(dbs, func(md Source) bool { return md.Name == name })
-	return fcr.WriteSources(dbs)
+	return fcr.writeSources(dbs)
 }
 
+// GetSources reads sources from file with locking
 func (fcr *fileSourcesReaderWriter) GetSources() (dbs Sources, err error) {
+	fcr.Lock()
+	defer fcr.Unlock()
+	return fcr.getSources()
+}
+
+// getSources reads sources from file without locking (internal use only)
+func (fcr *fileSourcesReaderWriter) getSources() (dbs Sources, err error) {
 	var fi fs.FileInfo
 	if fi, err = os.Stat(fcr.path); err != nil {
 		return
@@ -85,13 +112,13 @@ func (fcr *fileSourcesReaderWriter) GetSources() (dbs Sources, err error) {
 				return nil
 			}
 			var mdbs Sources
-			if mdbs, err = fcr.getSources(path); err == nil {
+			if mdbs, err = fcr.loadSourcesFromFile(path); err == nil {
 				dbs = append(dbs, mdbs...)
 			}
 			return err
 		})
 	case mode.IsRegular():
-		dbs, err = fcr.getSources(fcr.path)
+		dbs, err = fcr.loadSourcesFromFile(fcr.path)
 	}
 	if err != nil {
 		return nil, err
@@ -99,7 +126,8 @@ func (fcr *fileSourcesReaderWriter) GetSources() (dbs Sources, err error) {
 	return dbs.Validate()
 }
 
-func (fcr *fileSourcesReaderWriter) getSources(configFilePath string) (dbs Sources, err error) {
+// loadSourcesFromFile reads sources from a single YAML file, expands environment variables, and returns them
+func (fcr *fileSourcesReaderWriter) loadSourcesFromFile(configFilePath string) (dbs Sources, err error) {
 	var yamlFile []byte
 	if yamlFile, err = os.ReadFile(configFilePath); err != nil {
 		return

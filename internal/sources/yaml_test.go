@@ -1,13 +1,15 @@
 package sources_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
+	"github.com/stretchr/testify/assert"
 )
 
 // the number of entries in the sample.sources.yaml file
@@ -227,4 +229,40 @@ func TestYAMLCreateSource(t *testing.T) {
 		a.Error(err)
 		a.ErrorIs(sources.ErrSourceExists, err)
 	})
+}
+
+func TestConcurrentSourceUpdates(t *testing.T) {
+	a := assert.New(t)
+	tempDir := t.TempDir()
+	tempFile := filepath.Join(tempDir, "sources.yaml")
+
+	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tempFile)
+	a.NoError(err)
+
+	err = yamlrw.WriteSources(sources.Sources{})
+	a.NoError(err)
+
+	numGoroutines := 10
+	var wg sync.WaitGroup
+
+	// Each goroutine will add a unique source
+	for id := range numGoroutines {
+		wg.Go(func() {
+			testSource := sources.Source{
+				Name:          fmt.Sprintf("source_%d", id),
+				ConnStr:       fmt.Sprintf("postgresql://localhost/test_%d", id),
+				Kind:          sources.SourcePostgres,
+				PresetMetrics: "basic",
+			}
+			time.Sleep(time.Millisecond * time.Duration(id%3))
+			err := yamlrw.UpdateSource(testSource)
+			a.NoError(err, "Error during concurrent update")
+		})
+	}
+
+	wg.Wait()
+
+	finalSources, err := yamlrw.GetSources()
+	a.NoError(err)
+	a.Equal(numGoroutines, len(finalSources), "Some updates were lost due to race condition!")
 }
