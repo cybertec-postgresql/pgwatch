@@ -250,6 +250,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
+      "description": "Note: The `btree_bloat` metric query filters to bloated indexes over 1 MiB by default; for large databases, you might only care about indexes over 100 MiB or so, so modify the metric accordingly in your metric configs.",
       "fieldConfig": {
         "defaults": {
           "color": {
