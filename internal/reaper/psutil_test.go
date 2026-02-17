@@ -1,6 +1,7 @@
 package reaper
 
 import (
+	"runtime"
 	"slices"
 	"testing"
 
@@ -8,6 +9,7 @@ import (
 
 	"maps"
 	"os"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -75,38 +77,32 @@ func TestGetLoadAvgLocal(t *testing.T) {
 }
 
 func TestGetPathUnderlyingDeviceID(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("GetPathUnderlyingDeviceID is not implemented")
+	}
+	a := assert.New(t)
 	tmpDir := t.TempDir()
 	createFile := func(name string) string {
 		f, err := os.CreateTemp(tmpDir, name)
-		if err != nil {
-			t.Fatalf("failed to create temp file: %v", err)
-		}
+		a.NoError(err)
 		defer f.Close()
 		return f.Name()
 	}
 
-	// Test with a valid file
 	file1Path := createFile("file1")
 	devID1, err := GetPathUnderlyingDeviceID(file1Path)
-	if err != nil {
-		t.Fatalf("GetPathUnderlyingDeviceID failed: %v", err)
-	}
+	a.NoError(err)
 
-	// Consistency Check
 	file2Path := createFile("file2")
 	devID2, err := GetPathUnderlyingDeviceID(file2Path)
-	if err != nil {
-		t.Fatalf("GetPathUnderlyingDeviceID failed on second file: %v", err)
-	}
-
-	if devID1 != devID2 {
-		t.Errorf("Expected files in same directory to have same DeviceID, got %d and %d", devID1, devID2)
-	}
+	a.NoError(err)
+	a.Equal(devID1, devID2)
 }
 
 func TestGetPathUnderlyingDeviceID_NotFound(t *testing.T) {
-	_, err := GetPathUnderlyingDeviceID("/this/path/should/not/exist/nofile")
-	if err == nil {
-		t.Error("Expected error for non-existent file, got nil")
+	if runtime.GOOS != "linux" {
+		t.Skip("GetPathUnderlyingDeviceID is not implemented")
 	}
+	_, err := GetPathUnderlyingDeviceID("/this/path/should/not/exist/nofile")
+	assert.Error(t, err)
 }
