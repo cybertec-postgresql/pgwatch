@@ -71,7 +71,7 @@
                   {
                     "targetBlank": true,
                     "title": "Opens 'Table details' dashboard",
-                    "url": "/d/table-details?var-dbname=${__data.fields[\"dbname\"]}&var-table_full_name=${__data.fields[\"table_full_name\"]}"
+                    "url": "/d/table-details?var-dbname=${__data.fields['Source Name']}&var-table_full_name=${__data.fields['Table Name']}"
                   }
                 ]
               },
@@ -296,7 +296,7 @@
                   {
                     "targetBlank": true,
                     "title": "Opens 'Table details' dashboard",
-                    "url": "/d/table-details?var-dbname=${__data.fields[\"dbname\"]}&var-table_full_name=${__data.fields[\"table_full_name\"]}"
+                    "url": "/d/table-details?var-dbname=${__data.fields['Source Name']}&var-table_full_name=${__data.fields['Table Name']}"
                   }
                 ]
               },
@@ -431,7 +431,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "WITH last_fetch_time(time) AS (\n  SELECT time\n  FROM btree_bloat\n  WHERE time <= $__timeTo()\n  ORDER BY time DESC\n  LIMIT 1\n)\n\nSELECT\n  dbname AS \"Source Name\",\n  tag_data->>'tblname' AS \"Table Name\",\n  tag_data->>'idxname' AS \"Index Name\",\n  data->>'real_size' AS \"Index Size\",\n  data->>'bloat_pct' AS \"Estimated Bloat %\",\n  data->>'bloat_size' AS \"Estimated Bloat size\"\nFROM\n  btree_bloat\nWHERE time = (SELECT time FROM last_fetch_time)\n  AND dbname IN ($dbname)\nORDER BY (data->>'bloat_pct')::float8 DESC\nLIMIT $top\n",
+          "rawSql": "WITH last_fetch_time(time) AS (\n  SELECT time\n  FROM btree_bloat\n  WHERE time <= $__timeTo()\n  ORDER BY time DESC\n  LIMIT 1\n)\n\nSELECT\n  dbname AS \"Source Name\",\n  (tag_data->>'schemaname')::text || '.' || (tag_data->>'tblname')::text AS \"Table Name\",\n  tag_data->>'idxname' AS \"Index Name\",\n  data->>'real_size' AS \"Index Size\",\n  data->>'bloat_pct' AS \"Estimated Bloat %\",\n  data->>'bloat_size' AS \"Estimated Bloat size\"\nFROM\n  btree_bloat\nWHERE time = (SELECT time FROM last_fetch_time)\n  AND dbname IN ($dbname)\nORDER BY (data->>'bloat_pct')::float8 DESC\nLIMIT $top\n",
           "refId": "A",
           "resultFormat": "table",
           "select": [
