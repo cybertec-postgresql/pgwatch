@@ -19,69 +19,12 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 77,
+  "id": 28,
   "links": [],
   "panels": [
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
       "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisGridShow": true,
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "ms"
-        },
+        "defaults": {},
         "overrides": []
       },
       "gridPos": {
@@ -90,38 +33,19 @@
         "x": 0,
         "y": 0
       },
-      "id": 1,
+      "id": 4,
       "options": {
-        "legend": {
-          "calcs": [
-            "mean"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "code": {
+          "language": "sql",
+          "showLineNumbers": true,
+          "showMiniMap": false
         },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
+        "content": "$sql_text",
+        "mode": "code"
       },
-      "pluginVersion": "12.1.0",
-      "interval": "9m",
-      "targets": [
-        {
-          "alias": "avg_runtime",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "pgwatch-prometheus"
-          },
-          "expr": "sum(rate(pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])) by (queryid, dbname) / sum(rate(pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])) by (queryid, dbname)",
-          "legendFormat": "Avg runtime",
-          "refId": "A"
-        }
-      ],
-      "title": "Avg. runtime",
-      "type": "timeseries"
+      "pluginVersion": "12.3.1",
+      "title": "SQL",
+      "type": "text"
     },
     {
       "datasource": {
@@ -158,6 +82,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -187,7 +112,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 6,
         "w": 24,
         "x": 0,
         "y": 5
@@ -196,7 +121,9 @@
       "options": {
         "legend": {
           "calcs": [
-            "mean"
+            "mean",
+            "max",
+            "min"
           ],
           "displayMode": "list",
           "placement": "bottom",
@@ -208,8 +135,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.1.0",
-      "interval": "9m",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "calls",
@@ -217,8 +143,10 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "sum by (dbname, queryid) (rate(pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]))",
-          "legendFormat": "Calls",
+          "expr": "rate(pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
+          "interval": "9m",
+          "legendFormat": "{{queryid}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -260,6 +188,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -270,7 +199,6 @@
             }
           },
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -289,16 +217,18 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 24,
+        "h": 7,
+        "w": 12,
         "x": 0,
-        "y": 10
+        "y": 11
       },
-      "id": 3,
+      "id": 1,
       "options": {
         "legend": {
           "calcs": [
-            "mean"
+            "mean",
+            "max",
+            "min"
           ],
           "displayMode": "list",
           "placement": "bottom",
@@ -310,21 +240,22 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.1.0",
-      "interval": "9m",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
-          "alias": "total_runtime",
+          "alias": "avg_runtime",
           "datasource": {
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "sum by (dbname, queryid) (rate(pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]))",
-          "legendFormat": "Total runtime",
+          "expr": "rate(pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
+          "interval": "9m",
+          "legendFormat": "{{queryid}}",
+          "range": true,
           "refId": "A"
         }
       ],
-      "title": "Total runtime",
+      "title": "Execution time per second",
       "type": "timeseries"
     },
     {
@@ -362,6 +293,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -372,8 +304,113 @@
             }
           },
           "mappings": [],
-          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 11
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "min"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "alias": "avg_runtime",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "pgwatch-prometheus"
+          },
+          "expr": "rate(pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) / rate(pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
+          "interval": "9m",
+          "legendFormat": "{{queryid}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Execution time per call",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "pgwatch-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "showValues": false,
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
           "max": 100,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -395,13 +432,15 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 18
       },
       "id": 5,
       "options": {
         "legend": {
           "calcs": [
-            "mean"
+            "mean",
+            "max",
+            "min"
           ],
           "displayMode": "list",
           "placement": "bottom",
@@ -413,8 +452,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.1.0",
-      "interval": "9m",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "sb_hit_ratio",
@@ -422,8 +460,10 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "(rate(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 100) / (rate(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) + rate(pgwatch_stat_statements_shared_blks_read{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) + 0.01)",
-          "legendFormat": "Hit ratio",
+          "expr": "(rate(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 100) \n/\n(\n  rate(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) \n  + \n  rate(pgwatch_stat_statements_shared_blks_read{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])\n)",
+          "interval": "9m",
+          "legendFormat": "{{queryid}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -465,6 +505,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -489,7 +530,7 @@
               }
             ]
           },
-          "unit": "blocks/s"
+          "unit": "binBps"
         },
         "overrides": []
       },
@@ -497,7 +538,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 23
       },
       "id": 6,
       "options": {
@@ -513,8 +554,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.1.0",
-      "interval": "9m",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "temp_blks_read",
@@ -522,8 +562,10 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "sum by (dbname, queryid) (rate(pgwatch_stat_statements_temp_blks_read{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]))",
-          "legendFormat": "Temp blks read",
+          "expr": "rate(pgwatch_stat_statements_temp_blks_read{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 8192",
+          "interval": "9m",
+          "legendFormat": "Temp Blocks read",
+          "range": true,
           "refId": "A"
         },
         {
@@ -532,12 +574,14 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "expr": "sum by (dbname, queryid) (rate(pgwatch_stat_statements_temp_blks_written{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]))",
-          "legendFormat": "Temp blks written",
+          "expr": "rate(pgwatch_stat_statements_temp_blks_written{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 8192",
+          "interval": "9m",
+          "legendFormat": "Temp Blocks written",
+          "range": true,
           "refId": "B"
         }
       ],
-      "title": "Temp Blocks Read/Written",
+      "title": "Temp Bytes Read/Written",
       "type": "timeseries"
     },
     {
@@ -576,6 +620,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -608,9 +653,10 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 25
+        "y": 28
       },
       "id": 7,
+      "interval": "9m",
       "options": {
         "legend": {
           "calcs": [
@@ -626,8 +672,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.1.0",
-      "interval": "9m",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "blk_read_time",
@@ -637,6 +682,7 @@
           },
           "expr": "sum by (dbname, queryid) (rate(pgwatch_stat_statements_blk_read_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]))",
           "legendFormat": "Blk read time",
+          "range": true,
           "refId": "A"
         },
         {
@@ -688,6 +734,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -720,9 +767,10 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 33
       },
       "id": 8,
+      "interval": "9m",
       "options": {
         "legend": {
           "calcs": [
@@ -738,8 +786,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.1.0",
-      "interval": "9m",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "io_time_pct",
@@ -749,6 +796,7 @@
           },
           "expr": "((sum by (dbname, queryid) (rate(pgwatch_stat_statements_blk_read_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])) + sum by (dbname, queryid) (rate(pgwatch_stat_statements_blk_write_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]))) * 100) / (sum by (dbname, queryid) (rate(pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])) + 0.01)",
           "legendFormat": "IO time %",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -756,44 +804,15 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "pgwatch-prometheus"
-      },
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
       "gridPos": {
         "h": 5,
-        "w": 24,
-        "x": 0,
-        "y": 35
-      },
-      "id": 4,
-      "options": {
-        "code": {
-          "language": "sql",
-          "showLineNumbers": true,
-          "showMiniMap": false
-        },
-        "content": "$sql_text",
-        "mode": "code"
-      },
-      "pluginVersion": "12.1.0",
-      "title": "SQL",
-      "type": "text"
-    },
-    {
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
         "w": 10,
         "x": 0,
-        "y": 40
+        "y": 38
       },
       "id": 9,
       "options": {
@@ -805,13 +824,15 @@
         "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
         "mode": "markdown"
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "title": "",
       "transparent": true,
       "type": "text"
     }
   ],
-  "schemaVersion": 39,
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 42,
   "tags": [
     "pgwatch",
     "prometheus"
@@ -819,20 +840,13 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "demo",
-          "value": "demo"
-        },
         "datasource": {
           "type": "prometheus",
           "uid": "pgwatch-prometheus"
         },
         "definition": "label_values(pgwatch_stat_statements_calls, dbname)",
-        "hide": 0,
         "includeAll": false,
         "label": "Database",
-        "multi": false,
         "name": "dbname",
         "options": [],
         "query": {
@@ -841,7 +855,6 @@
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 1,
         "type": "query"
       },
@@ -851,12 +864,10 @@
           "text": "",
           "value": ""
         },
-        "hide": 0,
         "label": "Query ID",
         "name": "queryid",
         "options": [],
         "query": "",
-        "skipUrlSync": false,
         "type": "textbox"
       },
       {
@@ -875,18 +886,17 @@
         },
         "refresh": 1,
         "regex": "/^(?!-$).+/",
-        "skipUrlSync": false,
         "type": "query"
       }
     ]
   },
   "time": {
-    "from": "now-12h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Single Query Details (Prometheus)",
   "uid": "single-query-details-prometheus",
-  "version": 1
+  "version": 6
 }
