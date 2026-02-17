@@ -1,9 +1,12 @@
 package metrics_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/stretchr/testify/assert"
@@ -390,4 +393,84 @@ func TestMetricsDir(t *testing.T) {
 	a.Equal("preset1 description", ms.PresetDefs["preset1"].Description)
 	a.Equal("metric2 description", ms.MetricDefs["metric2"].Description)
 	a.Equal("preset2 description", ms.PresetDefs["preset2"].Description)
+}
+
+func TestConcurrentMetricUpdates(t *testing.T) {
+	a := assert.New(t)
+	tempDir := t.TempDir()
+	tempFile := filepath.Join(tempDir, "metrics.yaml")
+
+	yamlrw, err := metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
+	a.NoError(err)
+
+	// Create initial empty metrics file
+	initialMetrics := &metrics.Metrics{
+		MetricDefs: make(map[string]metrics.Metric),
+		PresetDefs: make(map[string]metrics.Preset),
+	}
+	err = yamlrw.WriteMetrics(initialMetrics)
+	a.NoError(err)
+
+	numGoroutines := 10
+	var wg sync.WaitGroup
+
+	// Each goroutine will add a unique metric
+	for id := range numGoroutines {
+		wg.Go(func() {
+			metricName := fmt.Sprintf("metric_%d", id)
+			testMetric := metrics.Metric{
+				Description: fmt.Sprintf("Test metric %d", id),
+				SQLs: map[int]string{
+					1: fmt.Sprintf("SELECT %d", id),
+				},
+			}
+			time.Sleep(time.Millisecond * time.Duration(id%3))
+			err := yamlrw.UpdateMetric(metricName, testMetric)
+			a.NoError(err, "Error during concurrent update")
+		})
+	}
+	wg.Wait()
+
+	finalMetrics, err := yamlrw.GetMetrics()
+	a.NoError(err)
+	a.Equal(numGoroutines, len(finalMetrics.MetricDefs), "Some updates were lost due to race condition!")
+}
+
+func TestConcurrentPresetUpdates(t *testing.T) {
+	a := assert.New(t)
+	tempDir := t.TempDir()
+	tempFile := filepath.Join(tempDir, "metrics.yaml")
+
+	yamlrw, err := metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
+	a.NoError(err)
+
+	// Create initial empty metrics file
+	initialMetrics := &metrics.Metrics{
+		MetricDefs: make(map[string]metrics.Metric),
+		PresetDefs: make(map[string]metrics.Preset),
+	}
+	err = yamlrw.WriteMetrics(initialMetrics)
+	a.NoError(err)
+
+	numGoroutines := 10
+	var wg sync.WaitGroup
+
+	for id := range numGoroutines {
+		wg.Go(func() {
+			presetName := fmt.Sprintf("preset_%d", id)
+			testPreset := metrics.Preset{
+				Description: fmt.Sprintf("Test preset %d", id),
+				Metrics:     map[string]float64{fmt.Sprintf("metric_%d", id): 60},
+			}
+			time.Sleep(time.Millisecond * time.Duration(id%3))
+			err := yamlrw.UpdatePreset(presetName, testPreset)
+			a.NoError(err, "Error during concurrent update")
+		})
+	}
+	wg.Wait()
+
+	// ensure all presets were saved
+	finalMetrics, err := yamlrw.GetMetrics()
+	a.NoError(err)
+	a.Equal(numGoroutines, len(finalMetrics.PresetDefs), "Some updates were lost due to race condition!")
 }
