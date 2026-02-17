@@ -99,6 +99,8 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 }
 
 func (promw *PrometheusWriter) DefineMetrics(metrics *metrics.Metrics) (err error) {
+	promw.Lock()
+	defer promw.Unlock()
 	promw.gauges = make(map[string]([]string))
 	for name, m := range metrics.MetricDefs {
 		promw.gauges[name] = m.Gauges
@@ -117,9 +119,10 @@ func (promw *PrometheusWriter) Write(msg metrics.MeasurementEnvelope) error {
 func (promw *PrometheusWriter) PromAsyncCacheAddMetricData(dbUnique, metric string, msgArr metrics.MeasurementEnvelope) { // cache structure: [dbUnique][metric]lastly_fetched_data
 	promw.Lock()
 	defer promw.Unlock()
-	if _, ok := promw.Cache[dbUnique]; ok {
-		promw.Cache[dbUnique][metric] = msgArr
+	if _, ok := promw.Cache[dbUnique]; !ok {
+		promw.Cache[dbUnique] = make(map[string]metrics.MeasurementEnvelope)
 	}
+	promw.Cache[dbUnique][metric] = msgArr
 }
 
 func (promw *PrometheusWriter) PromAsyncCacheInitIfRequired(dbUnique, _ string) { // cache structure: [dbUnique][metric]lastly_fetched_data
@@ -170,10 +173,7 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 	snapshot := promw.Cache
-	promw.Cache = make(PromMetricCache, len(snapshot))
-	for dbUnique := range snapshot {
-		promw.Cache[dbUnique] = make(map[string]metrics.MeasurementEnvelope)
-	}
+	promw.Cache = make(PromMetricCache)
 	promw.Unlock()
 
 	t1 := time.Now()
@@ -202,7 +202,9 @@ func (promw *PrometheusWriter) MetricStoreMessageToPromMetrics(msg metrics.Measu
 		return promMetrics
 	}
 
+	promw.RLock()
 	gauges := promw.gauges[msg.MetricName]
+	promw.RUnlock()
 
 	epochTime = time.Unix(0, msg.Data.GetEpoch())
 

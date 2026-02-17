@@ -22,10 +22,9 @@ linters:
         text: SA5008    # duplicate struct tag "choice" (staticcheck)
       - path: (.+)\.go$
         text: QF1001    # could apply De Morgan's law
-      - path: api/
-        text: "var-naming: avoid meaningless package names"
-        linters:
+      - linters:
           - revive
+        text: "var-naming: avoid"
     paths:
       - third_party$
       - builtin$

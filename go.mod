@@ -1,6 +1,6 @@
 module github.com/cybertec-postgresql/pgwatch/v5
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/cybertec-postgresql/pgx-migrator v1.3.0
@@ -19,9 +19,9 @@ require (
 	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/etcd v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.40.0
-	go.etcd.io/etcd/client/v3 v3.6.7
+	go.etcd.io/etcd/client/v3 v3.6.8
 	go.uber.org/zap v1.27.1
-	google.golang.org/grpc v1.78.0
+	google.golang.org/grpc v1.79.1
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
@@ -83,8 +83,8 @@ require (
 	github.com/tklauser/go-sysconf v0.3.16 // indirect
 	github.com/tklauser/numcpus v0.11.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	go.etcd.io/etcd/api/v3 v3.6.7 // indirect
-	go.etcd.io/etcd/client/pkg/v3 v3.6.7 // indirect
+	go.etcd.io/etcd/api/v3 v3.6.8 // indirect
+	go.etcd.io/etcd/client/pkg/v3 v3.6.8 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.64.0 // indirect
 	go.opentelemetry.io/otel v1.39.0 // indirect

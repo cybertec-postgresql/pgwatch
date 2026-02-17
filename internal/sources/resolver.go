@@ -213,8 +213,44 @@ func (hc HostConfig) IsScopeSpecified() bool {
 }
 
 func NewHostConfig(URI string) (hc HostConfig, err error) {
+	// Extract scheme
+	before, after, ok := strings.Cut(URI, "://")
+	if !ok {
+		return hc, fmt.Errorf("invalid URI: missing scheme")
+	}
+	scheme := before
+	remainder := after // skip "://"
+
+	// Find where the host portion ends (at first '/' or '?' or end of string)
+	hostEnd := strings.IndexAny(remainder, "/?")
+	var hostPart, pathAndQuery string
+	if hostEnd == -1 {
+		hostPart = remainder
+		pathAndQuery = ""
+	} else {
+		hostPart = remainder[:hostEnd]
+		pathAndQuery = remainder[hostEnd:]
+	}
+
+	// Check for user info (username:password@)
+	var userInfo string
+	if atIdx := strings.LastIndex(hostPart, "@"); atIdx != -1 {
+		userInfo = hostPart[:atIdx]
+		hostPart = hostPart[atIdx+1:]
+	}
+
+	// Split hosts by comma for multiple endpoints
+	hosts := strings.Split(hostPart, ",")
+
+	// Parse a clean URL with just the first host to extract other components
+	cleanURI := scheme + "://"
+	if userInfo != "" {
+		cleanURI += userInfo + "@"
+	}
+	cleanURI += hosts[0] + pathAndQuery
+
 	var url *url.URL
-	url, err = url.Parse(URI)
+	url, err = url.Parse(cleanURI)
 	if err != nil {
 		return
 	}
@@ -222,16 +258,15 @@ func NewHostConfig(URI string) (hc HostConfig, err error) {
 	switch url.Scheme {
 	case dcsTypeEtcd:
 		hc.DcsType = dcsTypeEtcd
-		for h := range strings.SplitSeq(url.Host, ",") {
+		for _, h := range hosts {
 			hc.DcsEndpoints = append(hc.DcsEndpoints, "http://"+h)
 		}
 	case dcsTypeZookeeper:
 		hc.DcsType = dcsTypeZookeeper
-		hc.DcsEndpoints = []string{url.Host} // Zookeeper usually has a
-		// single endpoint, but can be a list of hosts separated by commas
+		hc.DcsEndpoints = hosts // Use the split hosts directly
 	case dcsTypeConsul:
 		hc.DcsType = dcsTypeConsul
-		hc.DcsEndpoints = strings.Split(url.Host, ",")
+		hc.DcsEndpoints = hosts // Use the split hosts directly
 	default:
 		return hc, fmt.Errorf("unsupported DCS type: %s", url.Scheme)
 	}

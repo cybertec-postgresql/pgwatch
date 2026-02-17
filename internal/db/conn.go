@@ -15,15 +15,15 @@ import (
 )
 
 type Querier interface {
-	Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
+	Query(ctx context.Context, query string, args ...any) (pgx.Rows, error)
 }
 
 // PgxIface is common interface for every pgx class
 type PgxIface interface {
 	Begin(ctx context.Context) (pgx.Tx, error)
-	Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error)
-	QueryRow(context.Context, string, ...interface{}) pgx.Row
-	Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
+	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+	QueryRow(context.Context, string, ...any) pgx.Row
+	Query(ctx context.Context, query string, args ...any) (pgx.Rows, error)
 	CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error)
 }
 

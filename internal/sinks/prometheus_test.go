@@ -25,6 +25,15 @@ func newTestPrometheusWriter(namespace string, gauges map[string][]string) *Prom
 	}
 }
 
+// newTestPrometheusWriterWithMetrics creates a PrometheusWriter with initialized internal metrics
+func newTestPrometheusWriterWithMetrics(namespace string, gauges map[string][]string) *PrometheusWriter {
+	promw := newTestPrometheusWriter(namespace, gauges)
+	promw.totalScrapes = prometheus.NewCounter(prometheus.CounterOpts{Name: "test_scrapes"})
+	promw.totalScrapeFailures = prometheus.NewCounter(prometheus.CounterOpts{Name: "test_failures"})
+	promw.lastScrapeErrors = prometheus.NewGauge(prometheus.GaugeOpts{Name: "test_errors"})
+	return promw
+}
+
 // =============================================================================
 // Cache Operations Tests
 // =============================================================================
@@ -82,18 +91,22 @@ func TestPromAsyncCacheAddMetricData(t *testing.T) {
 		assert.Equal(t, msg, promw.Cache["test_db"]["test_metric"])
 	})
 
-	t.Run("ignores data for uninitialized db", func(t *testing.T) {
+	t.Run("lazily creates db entry for uninitialized db", func(t *testing.T) {
 		promw := newTestPrometheusWriter("pgwatch", nil)
 
 		msg := metrics.MeasurementEnvelope{
-			DBName:     "unknown_db",
+			DBName:     "new_db",
 			MetricName: "test_metric",
+			Data: metrics.Measurements{
+				{metrics.EpochColumnName: time.Now().UnixNano(), "value": int64(42)},
+			},
 		}
 
-		// Should not panic and should not add data
-		promw.PromAsyncCacheAddMetricData("unknown_db", "test_metric", msg)
+		// PromAsyncCacheAddMetricData now lazily creates the map entry
+		promw.PromAsyncCacheAddMetricData("new_db", "test_metric", msg)
 
-		assert.NotContains(t, promw.Cache, "unknown_db")
+		assert.Contains(t, promw.Cache, "new_db")
+		assert.Equal(t, msg, promw.Cache["new_db"]["test_metric"])
 	})
 
 	t.Run("overwrites existing metric data", func(t *testing.T) {
@@ -281,15 +294,6 @@ func TestDefineMetrics(t *testing.T) {
 // Collect Tests
 // =============================================================================
 
-// newTestPrometheusWriterWithMetrics creates a PrometheusWriter with initialized internal metrics
-func newTestPrometheusWriterWithMetrics(namespace string, gauges map[string][]string) *PrometheusWriter {
-	promw := newTestPrometheusWriter(namespace, gauges)
-	promw.totalScrapes = prometheus.NewCounter(prometheus.CounterOpts{Name: "test_scrapes"})
-	promw.totalScrapeFailures = prometheus.NewCounter(prometheus.CounterOpts{Name: "test_failures"})
-	promw.lastScrapeErrors = prometheus.NewGauge(prometheus.GaugeOpts{Name: "test_errors"})
-	return promw
-}
-
 func TestCollect(t *testing.T) {
 	t.Run("empty cache emits only internal metrics", func(t *testing.T) {
 		promw := newTestPrometheusWriterWithMetrics("pgwatch", nil)
@@ -301,87 +305,99 @@ func TestCollect(t *testing.T) {
 		assert.Len(t, ch, 3)
 	})
 
-	t.Run("preserves db entries after swap so new writes succeed", func(t *testing.T) {
-		// This tests the critical invariant: after Collect swaps the cache,
-		// the db entries must be preserved so subsequent Write() calls don't lose data
-		promw := newTestPrometheusWriterWithMetrics("pgwatch", nil)
+	t.Run("cache is empty after collect with no preallocation", func(t *testing.T) {
+		promw := newTestPrometheusWriterWithMetrics("test", nil)
 
-		// Initialize db
-		promw.PromAsyncCacheInitIfRequired("db1", "metric")
-		promw.Cache["db1"]["backends"] = metrics.MeasurementEnvelope{
-			DBName:     "db1",
-			MetricName: "backends",
-			Data: metrics.Measurements{
-				{metrics.EpochColumnName: time.Now().UnixNano(), "count": int64(10)},
-			},
+		// Populate cache with multiple databases
+		for _, db := range []string{"db1", "db2", "db3", "db4", "db5"} {
+			promw.Cache[db] = map[string]metrics.MeasurementEnvelope{
+				"metric": {
+					DBName:     db,
+					MetricName: "metric",
+					Data: metrics.Measurements{
+						{metrics.EpochColumnName: time.Now().UnixNano(), "value": int64(1)},
+					},
+				},
+			}
 		}
+		assert.Len(t, promw.Cache, 5)
 
 		ch := make(chan prometheus.Metric, 100)
 		promw.Collect(ch)
 
-		// After collect, db entry must still exist (empty but present)
-		assert.Contains(t, promw.Cache, "db1")
+		// New cache must be completely empty — no pre-allocated db maps
+		assert.Empty(t, promw.Cache)
+	})
 
-		// New write should succeed (not be silently dropped)
-		newMsg := metrics.MeasurementEnvelope{
+	t.Run("write succeeds after collect via lazy initialization", func(t *testing.T) {
+		promw := newTestPrometheusWriterWithMetrics("test", nil)
+
+		// Write initial data
+		msg := metrics.MeasurementEnvelope{
 			DBName:     "db1",
-			MetricName: "backends",
+			MetricName: "metric1",
 			Data: metrics.Measurements{
-				{metrics.EpochColumnName: time.Now().UnixNano(), "count": int64(20)},
+				{metrics.EpochColumnName: time.Now().UnixNano(), "value": int64(100)},
 			},
 		}
-		err := promw.Write(newMsg)
-		assert.NoError(t, err)
+		require.NoError(t, promw.Write(msg))
 
-		// Verify the write actually stored data
-		assert.Equal(t, newMsg, promw.Cache["db1"]["backends"])
+		// Collect swaps the cache with a fresh empty map
+		ch := make(chan prometheus.Metric, 100)
+		promw.Collect(ch)
+		assert.Empty(t, promw.Cache, "cache should be empty after Collect")
+
+		// Write after Collect — must work because PromAsyncCacheAddMetricData
+		// lazily creates the db map
+		msg.Data[0]["value"] = int64(200)
+		require.NoError(t, promw.Write(msg))
+
+		assert.Contains(t, promw.Cache, "db1")
+		assert.Equal(t, int64(200), promw.Cache["db1"]["metric1"].Data[0]["value"])
 	})
 
 	t.Run("collects from multiple dbs with multiple metrics", func(t *testing.T) {
 		promw := newTestPrometheusWriterWithMetrics("pgwatch", nil)
 
 		// Setup: 2 dbs, each with 2 metrics, each metric with 2 fields
-		promw.PromAsyncCacheInitIfRequired("db1", "metric")
-		promw.PromAsyncCacheInitIfRequired("db2", "metric")
-
 		now := time.Now().UnixNano()
-		promw.Cache["db1"]["backends"] = metrics.MeasurementEnvelope{
-			DBName: "db1", MetricName: "backends",
-			Data: metrics.Measurements{{metrics.EpochColumnName: now, "active": int64(5), "idle": int64(3)}},
+		promw.Cache["db1"] = map[string]metrics.MeasurementEnvelope{
+			"backends": {
+				DBName: "db1", MetricName: "backends",
+				Data: metrics.Measurements{{metrics.EpochColumnName: now, "active": int64(5), "idle": int64(3)}},
+			},
+			"locks": {
+				DBName: "db1", MetricName: "locks",
+				Data: metrics.Measurements{{metrics.EpochColumnName: now, "count": int64(2)}},
+			},
 		}
-		promw.Cache["db1"]["locks"] = metrics.MeasurementEnvelope{
-			DBName: "db1", MetricName: "locks",
-			Data: metrics.Measurements{{metrics.EpochColumnName: now, "count": int64(2)}},
-		}
-		promw.Cache["db2"]["backends"] = metrics.MeasurementEnvelope{
-			DBName: "db2", MetricName: "backends",
-			Data: metrics.Measurements{{metrics.EpochColumnName: now, "active": int64(10), "idle": int64(7)}},
-		}
-		promw.Cache["db2"]["connections"] = metrics.MeasurementEnvelope{
-			DBName: "db2", MetricName: "connections",
-			Data: metrics.Measurements{{metrics.EpochColumnName: now, "total": int64(100)}},
+		promw.Cache["db2"] = map[string]metrics.MeasurementEnvelope{
+			"backends": {
+				DBName: "db2", MetricName: "backends",
+				Data: metrics.Measurements{{metrics.EpochColumnName: now, "active": int64(10), "idle": int64(7)}},
+			},
+			"connections": {
+				DBName: "db2", MetricName: "connections",
+				Data: metrics.Measurements{{metrics.EpochColumnName: now, "total": int64(100)}},
+			},
 		}
 
 		ch := make(chan prometheus.Metric, 100)
 		promw.Collect(ch)
 
 		// Expected: 3 internal metrics + (2+1+2+1) = 9 total
-		// db1/backends: 2 fields, db1/locks: 1 field, db2/backends: 2 fields, db2/connections: 1 field
 		assert.Len(t, ch, 9)
-
-		// Both dbs should still exist after collect
-		assert.Contains(t, promw.Cache, "db1")
-		assert.Contains(t, promw.Cache, "db2")
 	})
 
 	t.Run("successive collects return fresh data each time", func(t *testing.T) {
 		promw := newTestPrometheusWriterWithMetrics("pgwatch", nil)
-		promw.PromAsyncCacheInitIfRequired("db1", "metric")
 
 		// First collect with some data
-		promw.Cache["db1"]["metric1"] = metrics.MeasurementEnvelope{
-			DBName: "db1", MetricName: "metric1",
-			Data: metrics.Measurements{{metrics.EpochColumnName: time.Now().UnixNano(), "val": int64(1)}},
+		promw.Cache["db1"] = map[string]metrics.MeasurementEnvelope{
+			"metric1": {
+				DBName: "db1", MetricName: "metric1",
+				Data: metrics.Measurements{{metrics.EpochColumnName: time.Now().UnixNano(), "val": int64(1)}},
+			},
 		}
 
 		ch1 := make(chan prometheus.Metric, 100)
@@ -399,15 +415,17 @@ func TestCollect(t *testing.T) {
 
 	t.Run("skips change_events metric", func(t *testing.T) {
 		promw := newTestPrometheusWriterWithMetrics("pgwatch", nil)
-		promw.PromAsyncCacheInitIfRequired("db1", "change_events")
 
-		promw.Cache["db1"]["change_events"] = metrics.MeasurementEnvelope{
-			DBName: "db1", MetricName: "change_events",
-			Data: metrics.Measurements{{metrics.EpochColumnName: time.Now().UnixNano(), "value": int64(1)}},
-		}
-		promw.Cache["db1"]["backends"] = metrics.MeasurementEnvelope{
-			DBName: "db1", MetricName: "backends",
-			Data: metrics.Measurements{{metrics.EpochColumnName: time.Now().UnixNano(), "count": int64(5)}},
+		now := time.Now().UnixNano()
+		promw.Cache["db1"] = map[string]metrics.MeasurementEnvelope{
+			"change_events": {
+				DBName: "db1", MetricName: "change_events",
+				Data: metrics.Measurements{{metrics.EpochColumnName: now, "value": int64(1)}},
+			},
+			"backends": {
+				DBName: "db1", MetricName: "backends",
+				Data: metrics.Measurements{{metrics.EpochColumnName: now, "count": int64(5)}},
+			},
 		}
 
 		ch := make(chan prometheus.Metric, 100)
@@ -429,8 +447,6 @@ func TestCollect(t *testing.T) {
 
 		// Should only have internal metrics, no panic
 		assert.Len(t, ch, 3)
-		// DB should still exist
-		assert.Contains(t, promw.Cache, "empty_db")
 	})
 
 	t.Run("totalScrapes increments on each collect", func(t *testing.T) {
