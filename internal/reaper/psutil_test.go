@@ -1,12 +1,14 @@
 package reaper
 
 import (
+	"runtime"
 	"slices"
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 
 	"maps"
+	"os"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -72,4 +74,35 @@ func TestGetLoadAvgLocal(t *testing.T) {
 	expectedKeys := []string{metrics.EpochColumnName, "load_1min", "load_5min", "load_15min"}
 	resultKeys := slices.Collect(maps.Keys(result[0]))
 	a.ElementsMatch(resultKeys, expectedKeys)
+}
+
+func TestGetPathUnderlyingDeviceID(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("GetPathUnderlyingDeviceID is not implemented")
+	}
+	a := assert.New(t)
+	tmpDir := t.TempDir()
+	createFile := func(name string) string {
+		f, err := os.CreateTemp(tmpDir, name)
+		a.NoError(err)
+		defer f.Close()
+		return f.Name()
+	}
+
+	file1Path := createFile("file1")
+	devID1, err := GetPathUnderlyingDeviceID(file1Path)
+	a.NoError(err)
+
+	file2Path := createFile("file2")
+	devID2, err := GetPathUnderlyingDeviceID(file2Path)
+	a.NoError(err)
+	a.Equal(devID1, devID2)
+}
+
+func TestGetPathUnderlyingDeviceID_NotFound(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("GetPathUnderlyingDeviceID is not implemented")
+	}
+	_, err := GetPathUnderlyingDeviceID("/this/path/should/not/exist/nofile")
+	assert.Error(t, err)
 }

@@ -10,6 +10,8 @@ func GetPathUnderlyingDeviceID(path string) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer fp.Close()
+
 	fi, err := fp.Stat()
 	if err != nil {
 		return 0, err
