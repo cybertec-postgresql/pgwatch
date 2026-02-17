@@ -342,7 +342,13 @@ At the moment, sources definitions support two storages:
 					<dd>&nbsp; &nbsp; <a href="#fileSourcesReaderWriter.expandEnvVars">func (fcr *fileSourcesReaderWriter) expandEnvVars(md Source) Source</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#fileSourcesReaderWriter.getSources">func (fcr *fileSourcesReaderWriter) getSources(configFilePath string) (dbs Sources, err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#fileSourcesReaderWriter.getSources">func (fcr *fileSourcesReaderWriter) getSources() (dbs Sources, err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#fileSourcesReaderWriter.loadSourcesFromFile">func (fcr *fileSourcesReaderWriter) loadSourcesFromFile(configFilePath string) (dbs Sources, err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#fileSourcesReaderWriter.writeSources">func (fcr *fileSourcesReaderWriter) writeSources(mds Sources) error</a></dd>
 				
 			
 			
@@ -750,7 +756,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 				
 			
 				
-				<h3 id="NewYAMLSourcesReaderWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L16">NewYAMLSourcesReaderWriter</a>
+				<h3 id="NewYAMLSourcesReaderWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L17">NewYAMLSourcesReaderWriter</a>
 					<a class="permalink" href="#NewYAMLSourcesReaderWriter">&#xb6;</a>
 					
 					
@@ -1361,7 +1367,7 @@ additionally matching/not matching specified regex patterns
 		
 			
 			
-			<h2 id="fileSourcesReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L23">fileSourcesReaderWriter</a>
+			<h2 id="fileSourcesReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L24">fileSourcesReaderWriter</a>
 				<a class="permalink" href="#fileSourcesReaderWriter">&#xb6;</a>
 				
 				
@@ -1370,6 +1376,7 @@ additionally matching/not matching specified regex patterns
 			<pre>type fileSourcesReaderWriter struct {
 <span id="fileSourcesReaderWriter.ctx"></span>    ctx  <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
 <span id="fileSourcesReaderWriter.path"></span>    path <a href="https://pkg.go.dev/builtin/#string">string</a>
+    <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#Mutex">Mutex</a>
 }
 </pre>
 
@@ -1385,67 +1392,72 @@ additionally matching/not matching specified regex patterns
 
 			
 				
-				<h3 id="fileSourcesReaderWriter.CreateSource">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L48">CreateSource</a>
+				<h3 id="fileSourcesReaderWriter.CreateSource">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L62">CreateSource</a>
 					<a class="permalink" href="#fileSourcesReaderWriter.CreateSource">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fcr *fileSourcesReaderWriter) CreateSource(md <a href="#Source">Source</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
+				<p>CreateSource creates a new source if it doesn&apos;t already exist, then writes the updated sources back to file
+
 				
 				
 				
 			
 				
-				<h3 id="fileSourcesReaderWriter.DeleteSource">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L63">DeleteSource</a>
+				<h3 id="fileSourcesReaderWriter.DeleteSource">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L80">DeleteSource</a>
 					<a class="permalink" href="#fileSourcesReaderWriter.DeleteSource">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fcr *fileSourcesReaderWriter) DeleteSource(name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
+				<p>DeleteSource deletes a source by name and writes the updated sources back to file
+
 				
 				
 				
 			
 				
-				<h3 id="fileSourcesReaderWriter.GetSources">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L72">GetSources</a>
+				<h3 id="fileSourcesReaderWriter.GetSources">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L92">GetSources</a>
 					<a class="permalink" href="#fileSourcesReaderWriter.GetSources">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fcr *fileSourcesReaderWriter) GetSources() (dbs <a href="#Sources">Sources</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				
+				<p>GetSources reads sources from file with locking
+
 				
 				
 				
 			
 				
-				<h3 id="fileSourcesReaderWriter.UpdateSource">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L33">UpdateSource</a>
+				<h3 id="fileSourcesReaderWriter.UpdateSource">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L44">UpdateSource</a>
 					<a class="permalink" href="#fileSourcesReaderWriter.UpdateSource">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fcr *fileSourcesReaderWriter) UpdateSource(md <a href="#Source">Source</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
+				<p>UpdateSource updates an existing source or creates it if it doesn&apos;t exist, then writes the updated sources back to file
+
 				
 				
 				
 			
 				
-				<h3 id="fileSourcesReaderWriter.WriteSources">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L28">WriteSources</a>
+				<h3 id="fileSourcesReaderWriter.WriteSources">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L31">WriteSources</a>
 					<a class="permalink" href="#fileSourcesReaderWriter.WriteSources">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fcr *fileSourcesReaderWriter) WriteSources(mds <a href="#Sources">Sources</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
+				<p>WriteSources writes sources to file with locking
+
 				
 				
 				
 			
 				
-				<h3 id="fileSourcesReaderWriter.expandEnvVars">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L117">expandEnvVars</a>
+				<h3 id="fileSourcesReaderWriter.expandEnvVars">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L145">expandEnvVars</a>
 					<a class="permalink" href="#fileSourcesReaderWriter.expandEnvVars">&#xb6;</a>
 					
 					
@@ -1457,13 +1469,40 @@ additionally matching/not matching specified regex patterns
 				
 			
 				
-				<h3 id="fileSourcesReaderWriter.getSources">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L102">getSources</a>
+				<h3 id="fileSourcesReaderWriter.getSources">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L99">getSources</a>
 					<a class="permalink" href="#fileSourcesReaderWriter.getSources">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (fcr *fileSourcesReaderWriter) getSources(configFilePath <a href="https://pkg.go.dev/builtin/#string">string</a>) (dbs <a href="#Sources">Sources</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func (fcr *fileSourcesReaderWriter) getSources() (dbs <a href="#Sources">Sources</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>getSources reads sources from file without locking (internal use only)
+
 				
+				
+				
+			
+				
+				<h3 id="fileSourcesReaderWriter.loadSourcesFromFile">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L130">loadSourcesFromFile</a>
+					<a class="permalink" href="#fileSourcesReaderWriter.loadSourcesFromFile">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (fcr *fileSourcesReaderWriter) loadSourcesFromFile(configFilePath <a href="https://pkg.go.dev/builtin/#string">string</a>) (dbs <a href="#Sources">Sources</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>loadSourcesFromFile reads sources from a single YAML file, expands environment variables, and returns them
+
+				
+				
+				
+			
+				
+				<h3 id="fileSourcesReaderWriter.writeSources">func (*fileSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/yaml.go.html#L38">writeSources</a>
+					<a class="permalink" href="#fileSourcesReaderWriter.writeSources">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (fcr *fileSourcesReaderWriter) writeSources(mds <a href="#Sources">Sources</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>writeSources writes sources to file without locking (internal use only)
+
 				
 				
 				

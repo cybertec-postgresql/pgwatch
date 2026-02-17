@@ -358,7 +358,13 @@
 					<dd>&nbsp; &nbsp; <a href="#fileMetricReader.WriteMetrics">func (fmr *fileMetricReader) WriteMetrics(metricDefs *Metrics) error</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#fileMetricReader.getMetrics">func (fmr *fileMetricReader) getMetrics(metricsFilePath string) (metrics *Metrics, err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#fileMetricReader.getMetrics">func (fmr *fileMetricReader) getMetrics() (metrics *Metrics, err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#fileMetricReader.loadMetricsFromFile">func (fmr *fileMetricReader) loadMetricsFromFile(metricsFilePath string) (metrics *Metrics, err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#fileMetricReader.writeMetrics">func (fmr *fileMetricReader) writeMetrics(metricDefs *Metrics) error</a></dd>
 				
 			
 			
@@ -1149,7 +1155,7 @@ Returns an error if any name is not found.
 				
 			
 				
-				<h3 id="NewYAMLMetricReaderWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L15">NewYAMLMetricReaderWriter</a>
+				<h3 id="NewYAMLMetricReaderWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L16">NewYAMLMetricReaderWriter</a>
 					<a class="permalink" href="#NewYAMLMetricReaderWriter">&#xb6;</a>
 					
 					
@@ -1484,7 +1490,7 @@ Returns an error if any name is not found.
 		
 			
 			
-			<h2 id="fileMetricReader">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L25">fileMetricReader</a>
+			<h2 id="fileMetricReader">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L26">fileMetricReader</a>
 				<a class="permalink" href="#fileMetricReader">&#xb6;</a>
 				
 				
@@ -1493,6 +1499,7 @@ Returns an error if any name is not found.
 			<pre>type fileMetricReader struct {
 <span id="fileMetricReader.ctx"></span>    ctx  <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
 <span id="fileMetricReader.path"></span>    path <a href="https://pkg.go.dev/builtin/#string">string</a>
+    <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#Mutex">Mutex</a>
 }
 </pre>
 
@@ -1508,109 +1515,144 @@ Returns an error if any name is not found.
 
 			
 				
-				<h3 id="fileMetricReader.CreateMetric">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L100">CreateMetric</a>
+				<h3 id="fileMetricReader.CreateMetric">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L126">CreateMetric</a>
 					<a class="permalink" href="#fileMetricReader.CreateMetric">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fmr *fileMetricReader) CreateMetric(metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, metric <a href="#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
+				<p>CreateMetric creates a new metric if it doesn&apos;t already exist, then writes the updated metrics back to file
+
 				
 				
 				
 			
 				
-				<h3 id="fileMetricReader.CreatePreset">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L131">CreatePreset</a>
+				<h3 id="fileMetricReader.CreatePreset">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L166">CreatePreset</a>
 					<a class="permalink" href="#fileMetricReader.CreatePreset">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fmr *fileMetricReader) CreatePreset(presetName <a href="https://pkg.go.dev/builtin/#string">string</a>, preset <a href="#Preset">Preset</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
+				<p>CreatePreset creates a new preset if it doesn&apos;t already exist, then writes the updated metrics back to file
+
 				
 				
 				
 			
 				
-				<h3 id="fileMetricReader.DeleteMetric">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L82">DeleteMetric</a>
+				<h3 id="fileMetricReader.DeleteMetric">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L102">DeleteMetric</a>
 					<a class="permalink" href="#fileMetricReader.DeleteMetric">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fmr *fileMetricReader) DeleteMetric(metricName <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
+				<p>DeleteMetric deletes a metric by name and writes the updated metrics back to file
+
 				
 				
 				
 			
 				
-				<h3 id="fileMetricReader.DeletePreset">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L113">DeletePreset</a>
+				<h3 id="fileMetricReader.DeletePreset">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L142">DeletePreset</a>
 					<a class="permalink" href="#fileMetricReader.DeletePreset">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fmr *fileMetricReader) DeletePreset(presetName <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
+				<p>DeletePreset deletes a preset by name and writes the updated metrics back to file
+
 				
 				
 				
 			
 				
-				<h3 id="fileMetricReader.GetMetrics">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L38">GetMetrics</a>
+				<h3 id="fileMetricReader.GetMetrics">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L49">GetMetrics</a>
 					<a class="permalink" href="#fileMetricReader.GetMetrics">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fmr *fileMetricReader) GetMetrics() (metrics *<a href="#Metrics">Metrics</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				
+				<p>GetMetrics reads metrics from file or returns default metrics if path is empty with locking
+
 				
 				
 				
 			
 				
-				<h3 id="fileMetricReader.UpdateMetric">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L91">UpdateMetric</a>
+				<h3 id="fileMetricReader.UpdateMetric">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L114">UpdateMetric</a>
 					<a class="permalink" href="#fileMetricReader.UpdateMetric">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fmr *fileMetricReader) UpdateMetric(metricName <a href="https://pkg.go.dev/builtin/#string">string</a>, metric <a href="#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
+				<p>UpdateMetric updates an existing metric or creates it if it doesn&apos;t exist, then writes the updated metrics back to file
+
 				
 				
 				
 			
 				
-				<h3 id="fileMetricReader.UpdatePreset">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L122">UpdatePreset</a>
+				<h3 id="fileMetricReader.UpdatePreset">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L154">UpdatePreset</a>
 					<a class="permalink" href="#fileMetricReader.UpdatePreset">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fmr *fileMetricReader) UpdatePreset(presetName <a href="https://pkg.go.dev/builtin/#string">string</a>, preset <a href="#Preset">Preset</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
+				<p>UpdatePreset updates an existing preset or creates it if it doesn&apos;t exist, then writes the updated metrics back to file
+
 				
 				
 				
 			
 				
-				<h3 id="fileMetricReader.WriteMetrics">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L30">WriteMetrics</a>
+				<h3 id="fileMetricReader.WriteMetrics">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L33">WriteMetrics</a>
 					<a class="permalink" href="#fileMetricReader.WriteMetrics">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (fmr *fileMetricReader) WriteMetrics(metricDefs *<a href="#Metrics">Metrics</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
+				<p>WriteMetrics writes metrics to file with locking
+
 				
 				
 				
 			
 				
-				<h3 id="fileMetricReader.getMetrics">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L72">getMetrics</a>
+				<h3 id="fileMetricReader.getMetrics">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L56">getMetrics</a>
 					<a class="permalink" href="#fileMetricReader.getMetrics">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (fmr *fileMetricReader) getMetrics(metricsFilePath <a href="https://pkg.go.dev/builtin/#string">string</a>) (metrics *<a href="#Metrics">Metrics</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func (fmr *fileMetricReader) getMetrics() (metrics *<a href="#Metrics">Metrics</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>getMetrics reads metrics from file or returns default metrics if path is empty without locking (internal use only)
+
 				
+				
+				
+			
+				
+				<h3 id="fileMetricReader.loadMetricsFromFile">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L91">loadMetricsFromFile</a>
+					<a class="permalink" href="#fileMetricReader.loadMetricsFromFile">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (fmr *fileMetricReader) loadMetricsFromFile(metricsFilePath <a href="https://pkg.go.dev/builtin/#string">string</a>) (metrics *<a href="#Metrics">Metrics</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>loadMetricsFromFile reads metrics from a single YAML file
+
+				
+				
+				
+			
+				
+				<h3 id="fileMetricReader.writeMetrics">func (*fileMetricReader) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/yaml.go.html#L40">writeMetrics</a>
+					<a class="permalink" href="#fileMetricReader.writeMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (fmr *fileMetricReader) writeMetrics(metricDefs *<a href="#Metrics">Metrics</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>writeMetrics writes metrics to file without locking (internal use only)
+
 				
 				
 				
