@@ -144,7 +144,7 @@
             "uid": "pgwatch-prometheus"
           },
           "expr": "rate(pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "{{queryid}}",
           "range": true,
           "refId": "A"
@@ -249,7 +249,7 @@
             "uid": "pgwatch-prometheus"
           },
           "expr": "rate(pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "{{queryid}}",
           "range": true,
           "refId": "A"
@@ -354,7 +354,7 @@
             "uid": "pgwatch-prometheus"
           },
           "expr": "rate(pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) / rate(pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "{{queryid}}",
           "range": true,
           "refId": "A"
@@ -461,7 +461,7 @@
             "uid": "pgwatch-prometheus"
           },
           "expr": "(rate(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 100) \n/\n(\n  rate(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) \n  + \n  rate(pgwatch_stat_statements_shared_blks_read{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])\n)",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "{{queryid}}",
           "range": true,
           "refId": "A"
@@ -564,7 +564,7 @@
           },
           "editorMode": "code",
           "expr": "(rate(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 8192)\n/\nrate(pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "Shared Buffers bytes hit",
           "range": true,
           "refId": "A"
@@ -576,7 +576,7 @@
             "uid": "pgwatch-prometheus"
           },
           "expr": "(rate(pgwatch_stat_statements_shared_blks_read{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 8192)\n/\nrate(pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "Shared Buffers bytes read",
           "range": true,
           "refId": "B"
@@ -682,7 +682,7 @@
             "uid": "pgwatch-prometheus"
           },
           "expr": "rate(pgwatch_stat_statements_temp_blks_read{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 8192",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "Temp Bytes read",
           "range": true,
           "refId": "A"
@@ -694,7 +694,7 @@
             "uid": "pgwatch-prometheus"
           },
           "editorMode": "code",          "expr": "rate(pgwatch_stat_statements_temp_blks_written{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 8192",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "Temp Bytes written",
           "range": true,
           "refId": "B"
@@ -800,7 +800,7 @@
             "uid": "pgwatch-prometheus"
           },
           "expr": "(rate(pgwatch_stat_statements_temp_blks_read{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 8192)\n/\nrate(pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "Temp Bytes read",
           "range": true,
           "refId": "A"
@@ -812,7 +812,7 @@
             "uid": "pgwatch-prometheus"
           },
           "expr": "(rate(pgwatch_stat_statements_temp_blks_written{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 8192)\n/\nrate(pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "Temp Bytes written",
           "range": true,
           "refId": "B"
@@ -917,7 +917,7 @@
             "uid": "pgwatch-prometheus"
           },
           "expr": "rate(pgwatch_stat_statements_blk_read_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "Blk read time",
           "range": true,
           "refId": "A"
@@ -929,7 +929,7 @@
             "uid": "pgwatch-prometheus"
           },
           "expr": "rate(pgwatch_stat_statements_blk_write_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "Blk write time",
           "range": true,
           "refId": "B"
@@ -1035,7 +1035,7 @@
             "uid": "pgwatch-prometheus"
           },
           "expr": "(\n  rate(pgwatch_stat_statements_blk_read_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) \n  + \n  rate(pgwatch_stat_statements_blk_write_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])\n) * 100\n/ \nrate(pgwatch_stat_statements_total_time{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "IO time %",
           "range": true,
           "refId": "A"
