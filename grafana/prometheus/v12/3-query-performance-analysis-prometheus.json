@@ -133,7 +133,7 @@
           },
           "expr": "topk($top_n, rate(pgwatch_stat_statements_calls{dbname=~\"$dbname\"}[$__rate_interval]))",
           "instant": false,
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "QueryID: {{queryid}}",
           "range": true,
           "refId": "A"
@@ -240,7 +240,7 @@
           },
           "expr": "topk($top_n, rate(pgwatch_stat_statements_total_time{dbname=~\"$dbname\"}[$__rate_interval]))",
           "instant": false,
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "QueryID: {{queryid}}",
           "range": true,
           "refId": "A"
@@ -347,7 +347,7 @@
           },
           "expr": "topk($top_n, rate(pgwatch_stat_statements_total_time{dbname=~\"$dbname\"}[$__rate_interval])/rate(pgwatch_stat_statements_calls{dbname=~\"$dbname\"}[$__rate_interval]))",
           "instant": false,
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "QueryID: {{queryid}}",
           "range": true,
           "refId": "A"
@@ -455,7 +455,7 @@
           },
           "expr": "topk($top_n, \n  rate(pgwatch_stat_statements_shared_blks_read{dbname=~\"$dbname\"}[$__rate_interval]) * 8192\n)",
           "instant": false,
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "QueryID: {{queryid}}",
           "range": true,
           "refId": "A"
@@ -563,7 +563,7 @@
           },
           "expr": "bottomk($top_n, \n  rate(pgwatch_stat_statements_shared_blks_hit{dbname=~\"$dbname\"}[$__rate_interval])\n  /\n  (\n    rate(pgwatch_stat_statements_shared_blks_hit{dbname=~\"$dbname\"}[$__rate_interval])\n    +\n    rate(pgwatch_stat_statements_shared_blks_read{dbname=~\"$dbname\"}[$__rate_interval])\n  )\n)",
           "instant": false,
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "QueryID: {{queryid}}",
           "range": true,
           "refId": "A"
@@ -671,7 +671,7 @@
           },
           "expr": "topk($top_n, \n  rate(pgwatch_stat_statements_shared_blks_written{dbname=~\"$dbname\"}[$__rate_interval]) * 8192\n)",
           "instant": false,
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "QueryID: {{queryid}}",
           "range": true,
           "refId": "A"
@@ -779,7 +779,7 @@
           },
           "expr": "topk($top_n, \n  (\n    rate(pgwatch_stat_statements_temp_blks_read{dbname=~\"$dbname\"}[$__rate_interval]) * 8192\n    +\n    rate(pgwatch_stat_statements_temp_blks_written{dbname=~\"$dbname\"}[$__rate_interval]) * 8192\n  )\n  /\n  rate(pgwatch_stat_statements_calls{dbname=~\"$dbname\"}[$__rate_interval])\n)",
           "instant": false,
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "QueryID: {{queryid}}",
           "range": true,
           "refId": "A"
@@ -893,14 +893,14 @@
       "targets": [
         {
           "expr": "sum by (dbname) (rate(pgwatch_stat_statements_shared_blks_hit{dbname=~\"$dbname\"}[$__rate_interval]) * 8192)",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "Buffer cache hits",
           "range": true,
           "refId": "A"
         },
         {
           "expr": "sum by (dbname) (rate(pgwatch_stat_statements_shared_blks_read{dbname=~\"$dbname\"}[$__rate_interval]) * 8192)",
-          "interval": "9m",
+          "interval": "3m",
           "legendFormat": "Disk reads",
           "range": true,
           "refId": "B"
