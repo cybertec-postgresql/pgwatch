@@ -562,7 +562,6 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "editorMode": "code",
           "expr": "(rate(pgwatch_stat_statements_shared_blks_hit{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 8192)\n/\nrate(pgwatch_stat_statements_calls{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval])",
           "interval": "3m",
           "legendFormat": "Shared Buffers bytes hit",
@@ -693,7 +692,7 @@
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
           },
-          "editorMode": "code",          "expr": "rate(pgwatch_stat_statements_temp_blks_written{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 8192",
+          "expr": "rate(pgwatch_stat_statements_temp_blks_written{dbname=\"$dbname\", queryid=\"$queryid\"}[$__rate_interval]) * 8192",
           "interval": "3m",
           "legendFormat": "Temp Bytes written",
           "range": true,
