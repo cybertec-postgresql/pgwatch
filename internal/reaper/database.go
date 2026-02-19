@@ -473,35 +473,54 @@ func (r *Reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.So
 // whitelisting or "trusted extensions" (a feature from v13). Ignores errors.
 func TryCreateMissingExtensions(ctx context.Context, md *sources.SourceConn, extensionNames []string, existingExtensions map[string]int) []string {
 	// TODO: move to sources package and use direct pgx connection
-	sqlAvailable := `select name::text from pg_available_extensions`
+	var queryArgs []any
+	l := log.GetLogger(ctx)
 	extsCreated := make([]string, 0)
 
-	// For security reasons don't allow to execute random strings but check that it's an existing extension
-	data, err := QueryMeasurements(ctx, md, sqlAvailable)
-	if err != nil {
-		log.GetLogger(ctx).Infof("[%s] Failed to get a list of available extensions: %v", md, err)
-		return extsCreated
+	if !md.IsPostgresSource() {
+		queryArgs = append(queryArgs, pgx.QueryExecModeSimpleProtocol)
 	}
 
-	availableExts := make(map[string]bool)
-	for _, row := range data {
-		availableExts[row["name"].(string)] = true
+	sqlAvailable := `select name::text from pg_available_extensions`
+
+	// Use direct pgx Query instead of QueryMeasurements wrapper
+	rows, err := md.Conn.Query(ctx, sqlAvailable, queryArgs...)
+	if err != nil {
+		l.Infof("[%s] Failed to get a list of available extensions: %v", md, err)
+		return extsCreated
+	}
+	defer rows.Close()
+
+	// For security reasons don't allow to execute random strings but check that it's an existing extension
+	availableExtentions := make(map[string]bool)
+	var extentionName string
+	for rows.Next() {
+		if err := rows.Scan(&extentionName); err != nil {
+			l.Infof("[%s] Failed to scan extension name: %v", md, err)
+			continue
+		}
+		availableExtentions[extentionName] = true
 	}
 
 	for _, extToCreate := range extensionNames {
 		if _, ok := existingExtensions[extToCreate]; ok {
 			continue
 		}
-		_, ok := availableExts[extToCreate]
+		_, ok := availableExtentions[extToCreate]
 		if !ok {
 			log.GetLogger(ctx).Errorf("[%s] Requested extension %s not available on instance, cannot try to create...", md, extToCreate)
 		} else {
 			sqlCreateExt := `create extension ` + extToCreate
-			_, err := QueryMeasurements(ctx, md, sqlCreateExt)
-			if err != nil {
-				log.GetLogger(ctx).Errorf("[%s] Failed to create extension %s (based on --try-create-listed-exts-if-missing input): %v", md, extToCreate, err)
+			execArgs := []any{}
+			if !md.IsPostgresSource() {
+				execArgs = append(execArgs, pgx.QueryExecModeSimpleProtocol)
 			}
-			extsCreated = append(extsCreated, extToCreate)
+
+			if _, err := md.Conn.Exec(ctx, sqlCreateExt, execArgs...); err != nil {
+				l.Errorf("[%s] Failed to create extension %s (based on --try-create-listed-exts-if-missing input): %v", md, extToCreate, err)
+			} else {
+				extsCreated = append(extsCreated, extToCreate)
+			}
 		}
 	}
 
