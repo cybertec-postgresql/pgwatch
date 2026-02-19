@@ -543,7 +543,11 @@
       "id": 11,
       "options": {
         "legend": {
-          "calcs": [],
+          "calcs": [
+            "mean",
+            "max",
+            "min"
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
