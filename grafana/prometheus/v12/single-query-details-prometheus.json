@@ -557,7 +557,6 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "alias": "temp_blks_read",
           "datasource": {
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
@@ -569,7 +568,6 @@
           "refId": "A"
         },
         {
-          "alias": "temp_blks_written",
           "datasource": {
             "type": "prometheus",
             "uid": "pgwatch-prometheus"
