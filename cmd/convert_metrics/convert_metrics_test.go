@@ -69,6 +69,7 @@ func downloadAndExtractMetrics(t *testing.T, dest string) string {
 				if err != nil {
 					t.Fatalf("failed to create file: %v", err)
 				}
+				defer out.Close()
 				rc, err := f.Open()
 				if err != nil {
 					out.Close()
