@@ -125,7 +125,7 @@ func TestGetToken(t *testing.T) {
 
 	payload, err := jsoniter.ConfigFastest.Marshal(credentials)
 	if err != nil {
-		fmt.Println("Error marshaling ", err)
+		t.Log("Error marshaling ", err)
 	}
 
 	reqToken, err := http.NewRequest("POST", host+"/login", strings.NewReader(string(payload)))
@@ -136,7 +136,7 @@ func TestGetToken(t *testing.T) {
 	assert.Equal(t, rr.Code, http.StatusOK, "TOKEN RESPONSE OK")
 
 	token, err := io.ReadAll(rr.Body)
-	fmt.Println(string(token))
+	t.Log("Token response body:", string(token))
 	assert.Equal(t, err, nil)
 	assert.NotEqual(t, token, nil)
 
