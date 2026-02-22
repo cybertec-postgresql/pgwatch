@@ -627,11 +627,5 @@ var migrations func() migrator.Option = func() migrator.Option {
 
 		// adding new migration here, update "admin"."migration" in "admin_schema.sql"!
 
-		// &migrator.Migration{
-		// 	Name: "000XX Short description of a migration",
-		// 	Func: func(ctx context.Context, tx pgx.Tx) error {
-		// 		return executeMigrationScript(ctx, tx, "000XX.sql")
-		// 	},
-		// },
 	)
 }

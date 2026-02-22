@@ -155,12 +155,5 @@ var migrations func() migrator.Option = func() migrator.Option {
 
 		// adding new migration here, update "pgwatch"."migration" in "postgres_schema.sql"
 		// and "dbapi" variable in main.go!
-
-		// &migrator.Migration{
-		// 	Name: "000XX Short description of a migration",
-		// 	Func: func(ctx context.Context, tx pgx.Tx) error {
-		// 		return executeMigrationScript(ctx, tx, "000XX.sql")
-		// 	},
-		// },
 	)
 }

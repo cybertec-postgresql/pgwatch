@@ -95,7 +95,6 @@ func (r *Reaper) Reap(ctx context.Context) {
 			logger.WithError(err).Error("could not refresh metric definitions, using last valid cache")
 		}
 
-		// UpdateMonitoredDBCache(r.monitoredSources)
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
 		for _, monitoredSource := range r.monitoredSources {
 			srcL := logger.WithField("source", monitoredSource.Name)
@@ -378,7 +377,6 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 		case <-ctx.Done():
 			return
 		case <-time.After(time.Second * time.Duration(interval)):
-			// continue
 		}
 	}
 }

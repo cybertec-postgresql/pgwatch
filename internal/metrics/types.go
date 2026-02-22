@@ -92,7 +92,6 @@ func (m *Measurement) ScanRow(rows pgx.Rows) error {
 	if err != nil {
 		return err
 	}
-	// *rs = make(Measurement, len(values))
 	for i := range values {
 		(*m)[string(rows.FieldDescriptions()[i].Name)] = values[i]
 	}
