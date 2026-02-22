@@ -179,6 +179,89 @@ func TestMultiWriterMigrate(t *testing.T) {
 	}
 }
 
+type mockMetricsDefiner struct {
+	defineErr error
+}
+
+func (m *mockMetricsDefiner) SyncMetric(string, string, sinks.SyncOp) error {
+	return nil
+}
+
+func (m *mockMetricsDefiner) Write(metrics.MeasurementEnvelope) error {
+	return nil
+}
+
+func (m *mockMetricsDefiner) DefineMetrics(*metrics.Metrics) error {
+	return m.defineErr
+}
+
+
+func TestDefineMetrics(t *testing.T) {
+	tests := []struct {
+		name        string
+		writers     []sinks.Writer
+		expectError bool
+	}{
+		{
+			name:        "writer without DefineMetrics — no error expected",
+			writers:     []sinks.Writer{&MockWriter{}},
+			expectError: false,
+		},
+		{
+			name:        "single definer — success",
+			writers:     []sinks.Writer{&mockMetricsDefiner{defineErr: nil}},
+			expectError: false,
+		},
+		{
+			name:        "single definer — error (BUG: returns nil instead of error)",
+			writers:     []sinks.Writer{&mockMetricsDefiner{defineErr: assert.AnError}},
+			expectError: true,
+		},
+		{
+			name: "two definers — both error (BUG: returns nil instead of joined error)",
+			writers: []sinks.Writer{
+				&mockMetricsDefiner{defineErr: assert.AnError},
+				&mockMetricsDefiner{defineErr: assert.AnError},
+			},
+			expectError: true,
+		},
+		{
+			name: "mixed writers — one error (BUG: returns nil instead of error)",
+			writers: []sinks.Writer{
+				&MockWriter{},
+				&mockMetricsDefiner{defineErr: assert.AnError},
+			},
+			expectError: true,
+		},
+		{
+			name: "mixed writers — all succeed",
+			writers: []sinks.Writer{
+				&MockWriter{},
+				&mockMetricsDefiner{defineErr: nil},
+			},
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mw := &sinks.MultiWriter{}
+			for _, w := range tt.writers {
+				mw.AddWriter(w)
+			}
+
+			err := mw.DefineMetrics(&metrics.Metrics{})
+
+			if tt.expectError {
+				assert.Error(t, err,
+					"DefineMetrics must propagate errors from child writers, but returned nil")
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestMultiWriterNeedsMigration(t *testing.T) {
 	tests := []struct {
 		name               string
