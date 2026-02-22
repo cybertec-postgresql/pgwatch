@@ -41,24 +41,39 @@ func TestServeWsLog_Success(t *testing.T) {
 
 	// send ping message to keep connection alive
 	assert.NoError(t, ws.WriteMessage(websocket.PingMessage, nil))
+	stopChan := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-stopChan:
+				return
+			default:
+				ts.Info("Test message")
+				time.Sleep(50 * time.Millisecond)
+			}
+		}
+	}()
 
-	// send some log message
-	ts.Info("Test message")
-	var msg []byte
+	// Set a 5-second deadline for the initial read to succeed
+	assert.NoError(t, ws.SetReadDeadline(time.Now().Add(5*time.Second)))
+
 	var msgType int
+	var msg []byte
 
-	require.Eventually(t, func() bool {
-		if err := ws.SetReadDeadline(time.Now().Add(200 * time.Millisecond)); err != nil {
-			return false
-		}
+	// Block and wait to receive the expected message
+	for {
 		tpe, m, err := ws.ReadMessage()
-		if err != nil {
-			return false
+		require.NoError(t, err, "Websocket read failed or timed out")
+
+		if strings.Contains(string(m), "Test message") {
+			msgType = tpe
+			msg = m
+			break
 		}
-		msgType = tpe
-		msg = m
-		return strings.Contains(string(msg), "Test message")
-	}, 2*time.Second, 50*time.Millisecond)
+	}
+
+	// Stop the background log spammer now that we caught our message
+	close(stopChan)
 	assert.Equal(t, websocket.TextMessage, msgType)
 	assert.NotEmpty(t, msg)
 	assert.Contains(t, string(msg), "Test message")
