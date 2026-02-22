@@ -2,7 +2,6 @@ package webserver
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -48,8 +47,9 @@ func (s *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 		}
 		_, err = w.Write([]byte(token))
 
-	case "GET":
-		fmt.Fprintf(w, "only POST methods is allowed.")
+	default:
+		w.Header().Set("Allow", "POST")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 }
