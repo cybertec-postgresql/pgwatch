@@ -1,6 +1,7 @@
 package sinks_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
@@ -85,6 +86,42 @@ func TestWriteMeasurements(t *testing.T) {
 	mw.AddWriter(mockWriter)
 	err := mw.Write(metrics.MeasurementEnvelope{})
 	assert.NoError(t, err)
+}
+
+type MockWriterWithDefiner struct {
+	shouldError bool
+}
+
+func (mw *MockWriterWithDefiner) SyncMetric(_, _ string, _ sinks.SyncOp) error {
+	return nil
+}
+
+func (mw *MockWriterWithDefiner) Write(_ metrics.MeasurementEnvelope) error {
+	return nil
+}
+
+func (mw *MockWriterWithDefiner) DefineMetrics(metrics *metrics.Metrics) error {
+	if mw.shouldError {
+		return errors.New("metric err")
+	}
+	return nil
+}
+
+func TestDefineMetrics(t *testing.T) {
+	t.Run("when there is error", func(t *testing.T) {
+		mw := &sinks.MultiWriter{}
+		mockWriter := &MockWriterWithDefiner{shouldError: true}
+		mw.AddWriter(mockWriter)
+		err := mw.DefineMetrics(&metrics.Metrics{})
+		assert.Error(t, err)
+	})
+	t.Run("when there is no error", func(t *testing.T) {
+		mw := &sinks.MultiWriter{}
+		mockWriter := &MockWriterWithDefiner{shouldError: false}
+		mw.AddWriter(mockWriter)
+		err := mw.DefineMetrics(&metrics.Metrics{})
+		assert.NoError(t, err)
+	})
 }
 
 // mockMigratableWriter implements Writer and Migrator interfaces
