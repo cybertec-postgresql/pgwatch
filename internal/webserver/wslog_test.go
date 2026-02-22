@@ -48,7 +48,9 @@ func TestServeWsLog_Success(t *testing.T) {
 	var msgType int
 
 	require.Eventually(t, func() bool {
-		ws.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
+		if err := ws.SetReadDeadline(time.Now().Add(200 * time.Millisecond)); err != nil {
+			return false
+		}
 		tpe, m, err := ws.ReadMessage()
 		if err != nil {
 			return false
