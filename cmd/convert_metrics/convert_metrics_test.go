@@ -65,18 +65,19 @@ func downloadAndExtractMetrics(t *testing.T, dest string) string {
 				_ = os.MkdirAll(path, 0755)
 			} else {
 				_ = os.MkdirAll(filepath.Dir(path), 0755)
-				out, err := os.Create(path)
-				if err != nil {
-					t.Fatalf("failed to create file: %v", err)
-				}
-				rc, err := f.Open()
-				if err != nil {
-					out.Close()
-					t.Fatalf("failed to open file in zip: %v", err)
-				}
-				_, _ = io.Copy(out, rc)
-				_ = out.Close()
-				_ = rc.Close()
+				func(){
+					out, err := os.Create(path)
+					if err != nil {
+						t.Fatalf("failed to create file: %v", err)
+					}
+					defer out.Close()
+					rc, err := f.Open()
+					if err != nil {
+						t.Fatalf("failed to open file in zip: %v", err)
+					}
+					defer rc.Close()
+					_, _ = io.Copy(out, rc)
+				}()
 			}
 		}
 	}
