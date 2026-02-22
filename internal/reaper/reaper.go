@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"sync"
+
 	"sync/atomic"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
@@ -37,6 +39,7 @@ type Reaper struct {
 	measurementCh        chan metrics.MeasurementEnvelope
 	measurementCache     *InstanceMetricCache
 	logger               log.Logger
+	mu 					 sync.RWMutex
 	monitoredSources     sources.SourceConns
 	prevLoopMonitoredDBs sources.SourceConns
 	cancelFuncs          map[string]context.CancelFunc
@@ -97,7 +100,11 @@ func (r *Reaper) Reap(ctx context.Context) {
 
 		// UpdateMonitoredDBCache(r.monitoredSources)
 		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
-		for _, monitoredSource := range r.monitoredSources {
+		r.mu.RLock()
+		srcs := slices.Clone(r.monitoredSources)
+		r.mu.RUnlock()
+
+		for _, monitoredSource := range srcs {
 			srcL := logger.WithField("source", monitoredSource.Name)
 			ctx = log.WithLogger(ctx, srcL)
 
@@ -418,7 +425,9 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 		r.logger.WithField("source", md.Name).Info("Source configs changed, restarting all gatherers...")
 		r.ShutdownOldWorkers(ctx, map[string]bool{md.Name: true})
 	}
+	r.mu.Lock()
 	r.monitoredSources = newSrcs
+	r.mu.Unlock()
 	r.logger.WithField("sources", len(r.monitoredSources)).Info("sources refreshed")
 	return nil
 }
@@ -427,9 +436,12 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 // every monitoredDbsDatastoreSyncIntervalSeconds (default 10min)
 func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
 	for {
-		if len(r.monitoredSources) > 0 {
+		r.mu.RLock()
+		srcs := slices.Clone(r.monitoredSources)
+		r.mu.RUnlock()
+		if len(srcs) > 0 {
 			now := time.Now().UnixNano()
-			for _, mdb := range r.monitoredSources {
+			for _, mdb := range srcs {
 				db := metrics.NewMeasurement(now)
 				db["tag_group"] = mdb.Group
 				db["master_only"] = mdb.OnlyIfMaster
