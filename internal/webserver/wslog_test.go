@@ -43,12 +43,20 @@ func TestServeWsLog_Success(t *testing.T) {
 	assert.NoError(t, ws.WriteMessage(websocket.PingMessage, nil))
 
 	// send some log message
-	time.Sleep(100 * time.Millisecond)
 	ts.Info("Test message")
-	// check output though the websocket
-	assert.NoError(t, ws.SetReadDeadline(time.Now().Add(2*time.Second)))
-	msgType, msg, err := ws.ReadMessage()
-	assert.NoError(t, err)
+	var msg []byte
+	var msgType int
+
+	require.Eventually(t, func() bool {
+		ws.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
+		tpe, m, err := ws.ReadMessage()
+		if err != nil {
+			return false
+		}
+		msgType = tpe
+		msg = m
+		return strings.Contains(string(msg), "Test message")
+	}, 2*time.Second, 50*time.Millisecond)
 	assert.Equal(t, websocket.TextMessage, msgType)
 	assert.NotEmpty(t, msg)
 	assert.Contains(t, string(msg), "Test message")
