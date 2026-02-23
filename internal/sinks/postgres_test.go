@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
@@ -974,4 +977,135 @@ func Test_Maintain(t *testing.T) {
 			a.Equal(pgw.maintenanceInterval, v)
 		}
 	})
+}
+
+// TestLastErrorChannelNoDeadlock verifies that flush() errors don't cause deadlock.
+// The fix uses a buffered channel + non-blocking send.
+// See: https://github.com/cybertec-postgresql/pgwatch/issues/1212
+func TestLastErrorChannelNoDeadlock(t *testing.T) {
+	conn, err := pgxmock.NewPool()
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	pgw := &PostgresWriter{
+		ctx:                      ctx,
+		sinkDb:                   conn,
+		opts:                     &CmdOpts{BatchingDelay: 10 * time.Millisecond},
+		input:                    make(chan metrics.MeasurementEnvelope, cacheLimit),
+		lastError:                make(chan error, 1),
+		metricSchema:             DbStorageSchemaTimescale,
+		partitionMapMetric:       make(map[string]ExistingPartitionInfo),
+		partitionMapMetricDbname: make(map[string]map[string]ExistingPartitionInfo),
+	}
+
+	conn.ExpectExec("select \\* from admin.ensure_partition_timescale").
+		WithArgs("test_metric").
+		WillReturnError(errors.New("simulated partition error"))
+
+	conn.ExpectExec("select \\* from admin.ensure_partition_timescale").
+		WithArgs("test_metric").
+		WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
+
+	go pgw.poll()
+
+	msg := metrics.MeasurementEnvelope{
+		MetricName: "test_metric",
+		DBName:     "test_db",
+		Data: metrics.Measurements{
+			{metrics.EpochColumnName: time.Now().UnixNano(), "value": int64(42)},
+		},
+	}
+
+	// First write triggers error
+	err = pgw.Write(msg)
+	assert.NoError(t, err)
+
+	time.Sleep(50 * time.Millisecond)
+
+	// Second write should return the buffered error
+	err = pgw.Write(msg)
+	assert.Error(t, err, "should receive buffered error from previous flush")
+
+	// Third write should work normally (error was consumed)
+	err = pgw.Write(msg)
+	assert.NoError(t, err)
+}
+
+type fastErrorDB struct {
+	execErr     error
+	copyFromErr error
+}
+
+func (f *fastErrorDB) Exec(context.Context, string, ...any) (pgconn.CommandTag, error) {
+	return pgconn.CommandTag{}, f.execErr
+}
+
+func (f *fastErrorDB) CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error) {
+	for rowSrc.Next() {
+	}
+	return 0, f.copyFromErr
+}
+
+func (f *fastErrorDB) Begin(ctx context.Context) (pgx.Tx, error)                            { return nil, nil }
+func (f *fastErrorDB) QueryRow(context.Context, string, ...any) pgx.Row                     { return nil }
+func (f *fastErrorDB) Query(ctx context.Context, q string, a ...any) (pgx.Rows, error)      { return nil, nil }
+func (f *fastErrorDB) Acquire(ctx context.Context) (*pgxpool.Conn, error)                   { return nil, nil }
+func (f *fastErrorDB) BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error) { return nil, nil }
+func (f *fastErrorDB) Close()                                                                {}
+func (f *fastErrorDB) Config() *pgxpool.Config                                               { return nil }
+func (f *fastErrorDB) Ping(ctx context.Context) error                                        { return nil }
+func (f *fastErrorDB) Stat() *pgxpool.Stat                                                   { return nil }
+
+// TestLastErrorChannelDeadlock verifies the fix for issue #1212.
+// See: https://github.com/cybertec-postgresql/pgwatch/issues/1212
+func TestLastErrorChannelDeadlock(t *testing.T) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	fakeDB := &fastErrorDB{
+		execErr:     errors.New("simulated partition error"),
+		copyFromErr: errors.New("simulated copy error"),
+	}
+
+	pgw := &PostgresWriter{
+		ctx:                      ctx,
+		sinkDb:                   fakeDB,
+		opts:                     &CmdOpts{BatchingDelay: 10 * time.Millisecond},
+		input:                    make(chan metrics.MeasurementEnvelope, cacheLimit),
+		lastError:                make(chan error, 1),
+		metricSchema:             DbStorageSchemaTimescale,
+		partitionMapMetric:       make(map[string]ExistingPartitionInfo),
+		partitionMapMetricDbname: make(map[string]map[string]ExistingPartitionInfo),
+	}
+
+	go pgw.poll()
+
+	msg := metrics.MeasurementEnvelope{
+		MetricName: "test_metric",
+		DBName:     "test_db",
+		Data: metrics.Measurements{
+			{metrics.EpochColumnName: time.Now().UnixNano(), "value": int64(42)},
+		},
+	}
+
+	err := pgw.Write(msg)
+	assert.NoError(t, err)
+	time.Sleep(100 * time.Millisecond)
+
+	var writeSucceeded atomic.Bool
+	go func() {
+		for i := 0; i < cacheLimit+10; i++ {
+			select {
+			case pgw.input <- msg:
+			case <-time.After(500 * time.Millisecond):
+				return
+			}
+		}
+		writeSucceeded.Store(true)
+	}()
+
+	time.Sleep(700 * time.Millisecond)
+	assert.True(t, writeSucceeded.Load(), "poll() should not deadlock; all messages should be processed")
 }
