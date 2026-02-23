@@ -979,60 +979,6 @@ func Test_Maintain(t *testing.T) {
 	})
 }
 
-// TestLastErrorChannelNoDeadlock verifies that flush() errors don't cause deadlock.
-// The fix uses a buffered channel + non-blocking send.
-// See: https://github.com/cybertec-postgresql/pgwatch/issues/1212
-func TestLastErrorChannelNoDeadlock(t *testing.T) {
-	conn, err := pgxmock.NewPool()
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	pgw := &PostgresWriter{
-		ctx:                      ctx,
-		sinkDb:                   conn,
-		opts:                     &CmdOpts{BatchingDelay: 10 * time.Millisecond},
-		input:                    make(chan metrics.MeasurementEnvelope, cacheLimit),
-		lastError:                make(chan error, 1),
-		metricSchema:             DbStorageSchemaTimescale,
-		partitionMapMetric:       make(map[string]ExistingPartitionInfo),
-		partitionMapMetricDbname: make(map[string]map[string]ExistingPartitionInfo),
-	}
-
-	conn.ExpectExec("select \\* from admin.ensure_partition_timescale").
-		WithArgs("test_metric").
-		WillReturnError(errors.New("simulated partition error"))
-
-	conn.ExpectExec("select \\* from admin.ensure_partition_timescale").
-		WithArgs("test_metric").
-		WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
-
-	go pgw.poll()
-
-	msg := metrics.MeasurementEnvelope{
-		MetricName: "test_metric",
-		DBName:     "test_db",
-		Data: metrics.Measurements{
-			{metrics.EpochColumnName: time.Now().UnixNano(), "value": int64(42)},
-		},
-	}
-
-	// First write triggers error
-	err = pgw.Write(msg)
-	assert.NoError(t, err)
-
-	time.Sleep(50 * time.Millisecond)
-
-	// Second write should return the buffered error
-	err = pgw.Write(msg)
-	assert.Error(t, err, "should receive buffered error from previous flush")
-
-	// Third write should work normally (error was consumed)
-	err = pgw.Write(msg)
-	assert.NoError(t, err)
-}
-
 type fastErrorDB struct {
 	execErr     error
 	copyFromErr error
@@ -1042,21 +988,21 @@ func (f *fastErrorDB) Exec(context.Context, string, ...any) (pgconn.CommandTag, 
 	return pgconn.CommandTag{}, f.execErr
 }
 
-func (f *fastErrorDB) CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error) {
+func (f *fastErrorDB) CopyFrom(_ context.Context, _ pgx.Identifier, _ []string, rowSrc pgx.CopyFromSource) (int64, error) {
 	for rowSrc.Next() {
 	}
 	return 0, f.copyFromErr
 }
 
-func (f *fastErrorDB) Begin(ctx context.Context) (pgx.Tx, error)                            { return nil, nil }
-func (f *fastErrorDB) QueryRow(context.Context, string, ...any) pgx.Row                     { return nil }
-func (f *fastErrorDB) Query(ctx context.Context, q string, a ...any) (pgx.Rows, error)      { return nil, nil }
-func (f *fastErrorDB) Acquire(ctx context.Context) (*pgxpool.Conn, error)                   { return nil, nil }
-func (f *fastErrorDB) BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error) { return nil, nil }
-func (f *fastErrorDB) Close()                                                                {}
-func (f *fastErrorDB) Config() *pgxpool.Config                                               { return nil }
-func (f *fastErrorDB) Ping(ctx context.Context) error                                        { return nil }
-func (f *fastErrorDB) Stat() *pgxpool.Stat                                                   { return nil }
+func (f *fastErrorDB) Begin(context.Context) (pgx.Tx, error)                    { return nil, nil }
+func (f *fastErrorDB) QueryRow(context.Context, string, ...any) pgx.Row         { return nil }
+func (f *fastErrorDB) Query(context.Context, string, ...any) (pgx.Rows, error)  { return nil, nil }
+func (f *fastErrorDB) Acquire(context.Context) (*pgxpool.Conn, error)           { return nil, nil }
+func (f *fastErrorDB) BeginTx(context.Context, pgx.TxOptions) (pgx.Tx, error)   { return nil, nil }
+func (f *fastErrorDB) Close()                                                    {}
+func (f *fastErrorDB) Config() *pgxpool.Config                                   { return nil }
+func (f *fastErrorDB) Ping(context.Context) error                                { return nil }
+func (f *fastErrorDB) Stat() *pgxpool.Stat                                       { return nil }
 
 // TestLastErrorChannelDeadlock verifies the fix for issue #1212.
 // See: https://github.com/cybertec-postgresql/pgwatch/issues/1212
