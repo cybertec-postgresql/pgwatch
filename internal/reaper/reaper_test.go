@@ -371,7 +371,7 @@ func (m *MockSinkWriter) Write(msg metrics.MeasurementEnvelope) error {
 	return m.WriteError
 }
 
-func (m *MockSinkWriter) SyncMetric(dbUnique, metricName string, op sinks.SyncOp) error {
+func (m *MockSinkWriter) SyncMetric(_, _ string, _ sinks.SyncOp) error {
 	m.SyncCalled = true
 	return nil
 }
@@ -581,7 +581,7 @@ func TestFetchMetric_SwitchCases_PgxMock(t *testing.T) {
 				NodeStatus: "primary",
 			},
 			isInRecovery: true,
-			mockDB: func(mock pgxmock.PgxPoolIface) {
+			mockDB: func(_ pgxmock.PgxPoolIface) {
 				// We expect no queries because the function should exit early
 			},
 			expectNilEnv: true, // Should return nil, nil
@@ -594,7 +594,7 @@ func TestFetchMetric_SwitchCases_PgxMock(t *testing.T) {
 				NodeStatus: "standby",
 			},
 			isInRecovery: false,
-			mockDB: func(mock pgxmock.PgxPoolIface) {
+			mockDB: func(_ pgxmock.PgxPoolIface) {
 				// We expect no queries because the function should exit early
 			},
 			expectNilEnv: true,
