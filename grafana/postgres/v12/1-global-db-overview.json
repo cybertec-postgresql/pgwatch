@@ -116,7 +116,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "with session_changes as (\r\n  SELECT \r\n  dbname,\r\n  time,\r\n  coalesce((data->>'sessions')::int8 - lag((data->>'sessions')::int8) over w, 0) as established\r\nfrom db_stats \r\nwhere dbname in ($dbname) and $__timeFilter(time)\r\nwindow w as (partition by dbname order by time)\r\n)\r\nselect \r\n  $__timeGroup(time, $agg_interval),\r\n  sum(established) as value,\r\n  dbname as metric\r\nfrom session_changes\r\ngroup by 1, dbname\r\norder by 1, dbname",
+          "rawSql": "WITH combined_data AS (\n  SELECT \n    dbname, \n    time, \n    (data->>'sessions')::int8 AS sessions\n  FROM db_stats \n  WHERE dbname IN ($dbname) \n    AND $__timeFilter(time)\n  \n  UNION ALL\n  \n  SELECT dbname, time, sessions\n  FROM (\n    SELECT DISTINCT ON (dbname) \n      dbname, \n      time, \n      (data->>'sessions')::int8 AS sessions\n    FROM db_stats\n    WHERE dbname IN ($dbname) \n      AND time < $__timeFrom()::timestamptz\n    ORDER BY dbname, time DESC\n  ) previous_rows\n),\nsession_changes AS (\n  SELECT\n    dbname,\n    time,\n    sessions - lag(sessions) OVER (PARTITION BY dbname ORDER BY time) AS established\n  FROM combined_data\n)\nSELECT\n  $__timeGroup(time, $agg_interval),\n  SUM(established) AS value,\n  dbname AS metric\nFROM session_changes\nWHERE established IS NOT NULL\n  AND time >= $__timeFrom()::timestamptz\nGROUP BY 1, dbname\nORDER BY 1, dbname;",
           "refId": "A",
           "sql": {
             "columns": [
