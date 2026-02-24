@@ -59,54 +59,54 @@
 <span id="L2" class="ln">     2  </span>
 <span id="L3" class="ln">     3  </span>import (
 <span id="L4" class="ln">     4  </span>	&#34;errors&#34;
-<span id="L5" class="ln">     5  </span>	&#34;fmt&#34;
-<span id="L6" class="ln">     6  </span>	&#34;net/http&#34;
-<span id="L7" class="ln">     7  </span>	&#34;time&#34;
-<span id="L8" class="ln">     8  </span>
-<span id="L9" class="ln">     9  </span>	jsoniter &#34;github.com/json-iterator/go&#34;
-<span id="L10" class="ln">    10  </span>
-<span id="L11" class="ln">    11  </span>	&#34;github.com/golang-jwt/jwt/v5&#34;
-<span id="L12" class="ln">    12  </span>)
-<span id="L13" class="ln">    13  </span>
-<span id="L14" class="ln">    14  </span>type loginReq struct {
-<span id="L15" class="ln">    15  </span>	Username string `json:&#34;user&#34;`
-<span id="L16" class="ln">    16  </span>	Password string `json:&#34;password&#34;`
-<span id="L17" class="ln">    17  </span>}
-<span id="L18" class="ln">    18  </span>
-<span id="L19" class="ln">    19  </span>func (s *WebUIServer) IsCorrectPassword(lr loginReq) bool {
-<span id="L20" class="ln">    20  </span>	return (s.WebUser+s.WebPassword == &#34;&#34;) ||
-<span id="L21" class="ln">    21  </span>		(s.WebUser == lr.Username &amp;&amp; s.WebPassword == lr.Password)
-<span id="L22" class="ln">    22  </span>}
-<span id="L23" class="ln">    23  </span>
-<span id="L24" class="ln">    24  </span>func (s *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
-<span id="L25" class="ln">    25  </span>	var (
-<span id="L26" class="ln">    26  </span>		err   error
-<span id="L27" class="ln">    27  </span>		lr    loginReq
-<span id="L28" class="ln">    28  </span>		token string
-<span id="L29" class="ln">    29  </span>	)
-<span id="L30" class="ln">    30  </span>
-<span id="L31" class="ln">    31  </span>	defer func() {
-<span id="L32" class="ln">    32  </span>		if err != nil {
-<span id="L33" class="ln">    33  </span>			http.Error(w, err.Error(), http.StatusInternalServerError)
-<span id="L34" class="ln">    34  </span>		}
-<span id="L35" class="ln">    35  </span>	}()
-<span id="L36" class="ln">    36  </span>
-<span id="L37" class="ln">    37  </span>	switch r.Method {
-<span id="L38" class="ln">    38  </span>	case &#34;POST&#34;:
-<span id="L39" class="ln">    39  </span>		if err = jsoniter.ConfigFastest.NewDecoder(r.Body).Decode(&amp;lr); err != nil {
-<span id="L40" class="ln">    40  </span>			return
-<span id="L41" class="ln">    41  </span>		}
-<span id="L42" class="ln">    42  </span>		if !s.IsCorrectPassword(lr) {
-<span id="L43" class="ln">    43  </span>			http.Error(w, &#34;can not authenticate this user&#34;, http.StatusUnauthorized)
-<span id="L44" class="ln">    44  </span>			return
-<span id="L45" class="ln">    45  </span>		}
-<span id="L46" class="ln">    46  </span>		if token, err = generateJWT(lr.Username); err != nil {
-<span id="L47" class="ln">    47  </span>			return
-<span id="L48" class="ln">    48  </span>		}
-<span id="L49" class="ln">    49  </span>		_, err = w.Write([]byte(token))
-<span id="L50" class="ln">    50  </span>
-<span id="L51" class="ln">    51  </span>	case &#34;GET&#34;:
-<span id="L52" class="ln">    52  </span>		fmt.Fprintf(w, &#34;only POST methods is allowed.&#34;)
+<span id="L5" class="ln">     5  </span>	&#34;net/http&#34;
+<span id="L6" class="ln">     6  </span>	&#34;time&#34;
+<span id="L7" class="ln">     7  </span>
+<span id="L8" class="ln">     8  </span>	jsoniter &#34;github.com/json-iterator/go&#34;
+<span id="L9" class="ln">     9  </span>
+<span id="L10" class="ln">    10  </span>	&#34;github.com/golang-jwt/jwt/v5&#34;
+<span id="L11" class="ln">    11  </span>)
+<span id="L12" class="ln">    12  </span>
+<span id="L13" class="ln">    13  </span>type loginReq struct {
+<span id="L14" class="ln">    14  </span>	Username string `json:&#34;user&#34;`
+<span id="L15" class="ln">    15  </span>	Password string `json:&#34;password&#34;`
+<span id="L16" class="ln">    16  </span>}
+<span id="L17" class="ln">    17  </span>
+<span id="L18" class="ln">    18  </span>func (s *WebUIServer) IsCorrectPassword(lr loginReq) bool {
+<span id="L19" class="ln">    19  </span>	return (s.WebUser+s.WebPassword == &#34;&#34;) ||
+<span id="L20" class="ln">    20  </span>		(s.WebUser == lr.Username &amp;&amp; s.WebPassword == lr.Password)
+<span id="L21" class="ln">    21  </span>}
+<span id="L22" class="ln">    22  </span>
+<span id="L23" class="ln">    23  </span>func (s *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
+<span id="L24" class="ln">    24  </span>	var (
+<span id="L25" class="ln">    25  </span>		err   error
+<span id="L26" class="ln">    26  </span>		lr    loginReq
+<span id="L27" class="ln">    27  </span>		token string
+<span id="L28" class="ln">    28  </span>	)
+<span id="L29" class="ln">    29  </span>
+<span id="L30" class="ln">    30  </span>	defer func() {
+<span id="L31" class="ln">    31  </span>		if err != nil {
+<span id="L32" class="ln">    32  </span>			http.Error(w, err.Error(), http.StatusInternalServerError)
+<span id="L33" class="ln">    33  </span>		}
+<span id="L34" class="ln">    34  </span>	}()
+<span id="L35" class="ln">    35  </span>
+<span id="L36" class="ln">    36  </span>	switch r.Method {
+<span id="L37" class="ln">    37  </span>	case &#34;POST&#34;:
+<span id="L38" class="ln">    38  </span>		if err = jsoniter.ConfigFastest.NewDecoder(r.Body).Decode(&amp;lr); err != nil {
+<span id="L39" class="ln">    39  </span>			return
+<span id="L40" class="ln">    40  </span>		}
+<span id="L41" class="ln">    41  </span>		if !s.IsCorrectPassword(lr) {
+<span id="L42" class="ln">    42  </span>			http.Error(w, &#34;can not authenticate this user&#34;, http.StatusUnauthorized)
+<span id="L43" class="ln">    43  </span>			return
+<span id="L44" class="ln">    44  </span>		}
+<span id="L45" class="ln">    45  </span>		if token, err = generateJWT(lr.Username); err != nil {
+<span id="L46" class="ln">    46  </span>			return
+<span id="L47" class="ln">    47  </span>		}
+<span id="L48" class="ln">    48  </span>		_, err = w.Write([]byte(token))
+<span id="L49" class="ln">    49  </span>
+<span id="L50" class="ln">    50  </span>	default:
+<span id="L51" class="ln">    51  </span>		w.Header().Set(&#34;Allow&#34;, &#34;POST&#34;)
+<span id="L52" class="ln">    52  </span>		http.Error(w, &#34;only POST method is allowed&#34;, http.StatusMethodNotAllowed)
 <span id="L53" class="ln">    53  </span>		return
 <span id="L54" class="ln">    54  </span>	}
 <span id="L55" class="ln">    55  </span>}
