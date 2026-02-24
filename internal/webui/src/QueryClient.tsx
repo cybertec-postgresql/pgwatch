@@ -28,7 +28,7 @@ export const QueryClientProvider = ({ children }: Props) => {
       onSuccess: (_data, _variables, _context, mutation) => {
         callAlert("success", "Success");
         if (mutation.options.mutationKey) {
-          queryClient.invalidateQueries(mutation.options.mutationKey);
+          queryClient.invalidateQueries({ queryKey: mutation.options.mutationKey });
         }
       },
       onError: (error) => {
@@ -43,7 +43,7 @@ export const QueryClientProvider = ({ children }: Props) => {
   });
 
   return (
-    <ClientProvider client={queryClient} contextSharing={true}>
+    <ClientProvider client={queryClient}>
       {children}
     </ClientProvider>
   );

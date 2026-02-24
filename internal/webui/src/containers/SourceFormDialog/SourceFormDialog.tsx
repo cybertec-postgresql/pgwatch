@@ -58,8 +58,8 @@ export const SourceFormDialog = () => {
   };
 
   const isLoading = useMemo(
-    () => addSource.isLoading || editSource.isLoading,
-    [addSource.isLoading, editSource.isLoading],
+    () => addSource.isPending || editSource.isPending,
+    [addSource.isPending, editSource.isPending],
   );
 
   return (

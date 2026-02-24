@@ -36,8 +36,8 @@ export const MetricFormDialog = () => {
     [addMetric.isSuccess, editMetric.isSuccess],
   );
   const isLoading = useMemo(
-    () => addMetric.isLoading || editMetric.isLoading,
-    [addMetric.isLoading, editMetric.isLoading],
+    () => addMetric.isPending || editMetric.isPending,
+    [addMetric.isPending, editMetric.isPending],
   );
 
   useEffect(() => {
