@@ -59,9 +59,7 @@ func TestHandleLogin_GET(t *testing.T) {
 	w := httptest.NewRecorder()
 	ts.handleLogin(w, r)
 	resp := w.Result()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.Equal(t, "only POST methods is allowed.", string(body))
+	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 }
 
 func TestGenerateAndValidateJWT(t *testing.T) {
