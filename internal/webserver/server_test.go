@@ -2,7 +2,6 @@ package webserver_test
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -110,7 +109,6 @@ func TestServerNoAuth(t *testing.T) {
 	assert.NoError(t, err)
 	restsrv.Handler.ServeHTTP(rr, reqConnect)
 	assert.Equal(t, http.StatusUnauthorized, rr.Code, "REQUEST WITHOUT AUTHENTICATION")
-
 }
 
 func TestGetToken(t *testing.T) {
@@ -124,9 +122,7 @@ func TestGetToken(t *testing.T) {
 	}
 
 	payload, err := jsoniter.ConfigFastest.Marshal(credentials)
-	if err != nil {
-		t.Log("Error marshaling ", err)
-	}
+	assert.NoError(t, err)
 
 	reqToken, err := http.NewRequest("POST", host+"/login", strings.NewReader(string(payload)))
 	assert.Equal(t, err, nil)
@@ -136,8 +132,6 @@ func TestGetToken(t *testing.T) {
 	assert.Equal(t, rr.Code, http.StatusOK, "TOKEN RESPONSE OK")
 
 	token, err := io.ReadAll(rr.Body)
-	t.Log("Token response body:", string(token))
 	assert.Equal(t, err, nil)
 	assert.NotEqual(t, token, nil)
-
 }
