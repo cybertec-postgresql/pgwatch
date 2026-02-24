@@ -77,7 +77,7 @@ func (mw *MultiWriter) DefineMetrics(metrics *metrics.Metrics) (err error) {
 			err = errors.Join(err, definer.DefineMetrics(metrics))
 		}
 	}
-	return nil
+	return
 }
 
 func (mw *MultiWriter) SyncMetric(sourceName, metricName string, op SyncOp) (err error) {
