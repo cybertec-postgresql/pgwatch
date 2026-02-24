@@ -49,7 +49,7 @@ func (s *WebUIServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	default:
 		w.Header().Set("Allow", "POST")
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "only POST method is allowed", http.StatusMethodNotAllowed)
 		return
 	}
 }
