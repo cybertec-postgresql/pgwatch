@@ -522,6 +522,12 @@
               }
             ]
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "unit": "short"
         },
         "overrides": []
@@ -624,6 +630,12 @@
               }
             ]
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "unit": "ms"
         },
         "overrides": []
@@ -724,6 +736,12 @@
               }
             ]
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "unit": "short"
         },
         "overrides": []
@@ -826,6 +844,12 @@
               }
             ]
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "unit": "decmbytes"
         },
         "overrides": []
@@ -926,6 +950,12 @@
               }
             ]
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "unit": "decmbytes"
         },
         "overrides": []
@@ -1028,6 +1058,12 @@
               }
             ]
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "unit": "decmbytes"
         },
         "overrides": []
@@ -1129,6 +1165,12 @@
               }
             ]
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "unit": "decmbytes"
         },
         "overrides": []
