@@ -288,42 +288,140 @@
 <span id="L231" class="ln">   231  </span>	})
 <span id="L232" class="ln">   232  </span>}
 <span id="L233" class="ln">   233  </span>
-<span id="L234" class="ln">   234  </span>func TestConcurrentSourceUpdates(t *testing.T) {
+<span id="L234" class="ln">   234  </span>func TestExpandEnvVars(t *testing.T) {
 <span id="L235" class="ln">   235  </span>	a := assert.New(t)
-<span id="L236" class="ln">   236  </span>	tempDir := t.TempDir()
-<span id="L237" class="ln">   237  </span>	tempFile := filepath.Join(tempDir, &#34;sources.yaml&#34;)
-<span id="L238" class="ln">   238  </span>
-<span id="L239" class="ln">   239  </span>	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tempFile)
-<span id="L240" class="ln">   240  </span>	a.NoError(err)
-<span id="L241" class="ln">   241  </span>
-<span id="L242" class="ln">   242  </span>	err = yamlrw.WriteSources(sources.Sources{})
-<span id="L243" class="ln">   243  </span>	a.NoError(err)
-<span id="L244" class="ln">   244  </span>
-<span id="L245" class="ln">   245  </span>	numGoroutines := 10
-<span id="L246" class="ln">   246  </span>	var wg sync.WaitGroup
-<span id="L247" class="ln">   247  </span>
-<span id="L248" class="ln">   248  </span>	<span class="comment">// Each goroutine will add a unique source</span>
-<span id="L249" class="ln">   249  </span>	for id := range numGoroutines {
-<span id="L250" class="ln">   250  </span>		wg.Go(func() {
-<span id="L251" class="ln">   251  </span>			testSource := sources.Source{
-<span id="L252" class="ln">   252  </span>				Name:          fmt.Sprintf(&#34;source_%d&#34;, id),
-<span id="L253" class="ln">   253  </span>				ConnStr:       fmt.Sprintf(&#34;postgresql://localhost/test_%d&#34;, id),
-<span id="L254" class="ln">   254  </span>				Kind:          sources.SourcePostgres,
-<span id="L255" class="ln">   255  </span>				PresetMetrics: &#34;basic&#34;,
-<span id="L256" class="ln">   256  </span>			}
-<span id="L257" class="ln">   257  </span>			time.Sleep(time.Millisecond * time.Duration(id%3))
-<span id="L258" class="ln">   258  </span>			err := yamlrw.UpdateSource(testSource)
-<span id="L259" class="ln">   259  </span>			a.NoError(err, &#34;Error during concurrent update&#34;)
-<span id="L260" class="ln">   260  </span>		})
-<span id="L261" class="ln">   261  </span>	}
-<span id="L262" class="ln">   262  </span>
-<span id="L263" class="ln">   263  </span>	wg.Wait()
+<span id="L236" class="ln">   236  </span>
+<span id="L237" class="ln">   237  </span>	<span class="comment">// Set environment variables for testing</span>
+<span id="L238" class="ln">   238  </span>	t.Setenv(&#34;PGW_TEST_NAME&#34;, &#34;expanded_name&#34;)
+<span id="L239" class="ln">   239  </span>	t.Setenv(&#34;PGW_TEST_GROUP&#34;, &#34;expanded_group&#34;)
+<span id="L240" class="ln">   240  </span>	t.Setenv(&#34;PGW_TEST_CONNSTR&#34;, &#34;postgresql://localhost/expanded&#34;)
+<span id="L241" class="ln">   241  </span>	t.Setenv(&#34;PGW_TEST_KIND&#34;, &#34;postgres&#34;)
+<span id="L242" class="ln">   242  </span>	t.Setenv(&#34;PGW_TEST_INCLUDE&#34;, &#34;include_pattern&#34;)
+<span id="L243" class="ln">   243  </span>	t.Setenv(&#34;PGW_TEST_EXCLUDE&#34;, &#34;exclude_pattern&#34;)
+<span id="L244" class="ln">   244  </span>	t.Setenv(&#34;PGW_TEST_PRESET&#34;, &#34;exhaustive&#34;)
+<span id="L245" class="ln">   245  </span>	t.Setenv(&#34;PGW_TEST_PRESET_STANDBY&#34;, &#34;standby_preset&#34;)
+<span id="L246" class="ln">   246  </span>
+<span id="L247" class="ln">   247  </span>	t.Run(&#34;all fields expanded&#34;, func(*testing.T) {
+<span id="L248" class="ln">   248  </span>		tmpFile := filepath.Join(t.TempDir(), &#34;env_sources.yaml&#34;)
+<span id="L249" class="ln">   249  </span>		yamlContent := `
+<span id="L250" class="ln">   250  </span>- name: $PGW_TEST_NAME
+<span id="L251" class="ln">   251  </span>  group: $PGW_TEST_GROUP
+<span id="L252" class="ln">   252  </span>  conn_str: $PGW_TEST_CONNSTR
+<span id="L253" class="ln">   253  </span>  kind: $PGW_TEST_KIND
+<span id="L254" class="ln">   254  </span>  include_pattern: $PGW_TEST_INCLUDE
+<span id="L255" class="ln">   255  </span>  exclude_pattern: $PGW_TEST_EXCLUDE
+<span id="L256" class="ln">   256  </span>  preset_metrics: $PGW_TEST_PRESET
+<span id="L257" class="ln">   257  </span>  preset_metrics_standby: $PGW_TEST_PRESET_STANDBY
+<span id="L258" class="ln">   258  </span>`
+<span id="L259" class="ln">   259  </span>		err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+<span id="L260" class="ln">   260  </span>		a.NoError(err)
+<span id="L261" class="ln">   261  </span>
+<span id="L262" class="ln">   262  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+<span id="L263" class="ln">   263  </span>		a.NoError(err)
 <span id="L264" class="ln">   264  </span>
-<span id="L265" class="ln">   265  </span>	finalSources, err := yamlrw.GetSources()
-<span id="L266" class="ln">   266  </span>	a.NoError(err)
-<span id="L267" class="ln">   267  </span>	a.Equal(numGoroutines, len(finalSources), &#34;Some updates were lost due to race condition!&#34;)
-<span id="L268" class="ln">   268  </span>}
-<span id="L269" class="ln">   269  </span>
+<span id="L265" class="ln">   265  </span>		dbs, err := yamlrw.GetSources()
+<span id="L266" class="ln">   266  </span>		a.NoError(err)
+<span id="L267" class="ln">   267  </span>		a.Len(dbs, 1)
+<span id="L268" class="ln">   268  </span>
+<span id="L269" class="ln">   269  </span>		src := dbs[0]
+<span id="L270" class="ln">   270  </span>		a.Equal(&#34;expanded_name&#34;, src.Name)
+<span id="L271" class="ln">   271  </span>		a.Equal(&#34;expanded_group&#34;, src.Group)
+<span id="L272" class="ln">   272  </span>		a.Equal(&#34;postgresql://localhost/expanded&#34;, src.ConnStr)
+<span id="L273" class="ln">   273  </span>		a.Equal(sources.SourcePostgres, src.Kind)
+<span id="L274" class="ln">   274  </span>		a.Equal(&#34;include_pattern&#34;, src.IncludePattern)
+<span id="L275" class="ln">   275  </span>		a.Equal(&#34;exclude_pattern&#34;, src.ExcludePattern)
+<span id="L276" class="ln">   276  </span>		a.Equal(&#34;exhaustive&#34;, src.PresetMetrics)
+<span id="L277" class="ln">   277  </span>		a.Equal(&#34;standby_preset&#34;, src.PresetMetricsStandby)
+<span id="L278" class="ln">   278  </span>	})
+<span id="L279" class="ln">   279  </span>
+<span id="L280" class="ln">   280  </span>	t.Run(&#34;no expansion without dollar prefix&#34;, func(*testing.T) {
+<span id="L281" class="ln">   281  </span>		tmpFile := filepath.Join(t.TempDir(), &#34;no_env_sources.yaml&#34;)
+<span id="L282" class="ln">   282  </span>		yamlContent := `
+<span id="L283" class="ln">   283  </span>- name: literal_name
+<span id="L284" class="ln">   284  </span>  group: literal_group
+<span id="L285" class="ln">   285  </span>  conn_str: postgresql://localhost/literal
+<span id="L286" class="ln">   286  </span>  kind: postgres
+<span id="L287" class="ln">   287  </span>  include_pattern: literal_include
+<span id="L288" class="ln">   288  </span>  exclude_pattern: literal_exclude
+<span id="L289" class="ln">   289  </span>  preset_metrics: basic
+<span id="L290" class="ln">   290  </span>  preset_metrics_standby: basic_standby
+<span id="L291" class="ln">   291  </span>`
+<span id="L292" class="ln">   292  </span>		err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+<span id="L293" class="ln">   293  </span>		a.NoError(err)
+<span id="L294" class="ln">   294  </span>
+<span id="L295" class="ln">   295  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+<span id="L296" class="ln">   296  </span>		a.NoError(err)
+<span id="L297" class="ln">   297  </span>
+<span id="L298" class="ln">   298  </span>		dbs, err := yamlrw.GetSources()
+<span id="L299" class="ln">   299  </span>		a.NoError(err)
+<span id="L300" class="ln">   300  </span>		a.Len(dbs, 1)
+<span id="L301" class="ln">   301  </span>
+<span id="L302" class="ln">   302  </span>		src := dbs[0]
+<span id="L303" class="ln">   303  </span>		a.Equal(&#34;literal_name&#34;, src.Name)
+<span id="L304" class="ln">   304  </span>		a.Equal(&#34;literal_group&#34;, src.Group)
+<span id="L305" class="ln">   305  </span>		a.Equal(&#34;postgresql://localhost/literal&#34;, src.ConnStr)
+<span id="L306" class="ln">   306  </span>		a.Equal(sources.SourcePostgres, src.Kind)
+<span id="L307" class="ln">   307  </span>		a.Equal(&#34;literal_include&#34;, src.IncludePattern)
+<span id="L308" class="ln">   308  </span>		a.Equal(&#34;literal_exclude&#34;, src.ExcludePattern)
+<span id="L309" class="ln">   309  </span>		a.Equal(&#34;basic&#34;, src.PresetMetrics)
+<span id="L310" class="ln">   310  </span>		a.Equal(&#34;basic_standby&#34;, src.PresetMetricsStandby)
+<span id="L311" class="ln">   311  </span>	})
+<span id="L312" class="ln">   312  </span>
+<span id="L313" class="ln">   313  </span>	t.Run(&#34;unset env var expands to empty&#34;, func(*testing.T) {
+<span id="L314" class="ln">   314  </span>		tmpFile := filepath.Join(t.TempDir(), &#34;unset_env_sources.yaml&#34;)
+<span id="L315" class="ln">   315  </span>		yamlContent := `
+<span id="L316" class="ln">   316  </span>- name: $PGW_UNSET_VAR
+<span id="L317" class="ln">   317  </span>  conn_str: postgresql://localhost/test
+<span id="L318" class="ln">   318  </span>`
+<span id="L319" class="ln">   319  </span>		err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+<span id="L320" class="ln">   320  </span>		a.NoError(err)
+<span id="L321" class="ln">   321  </span>
+<span id="L322" class="ln">   322  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+<span id="L323" class="ln">   323  </span>		a.NoError(err)
+<span id="L324" class="ln">   324  </span>
+<span id="L325" class="ln">   325  </span>		dbs, err := yamlrw.GetSources()
+<span id="L326" class="ln">   326  </span>		a.NoError(err)
+<span id="L327" class="ln">   327  </span>		a.Len(dbs, 1)
+<span id="L328" class="ln">   328  </span>		a.Equal(&#34;&#34;, dbs[0].Name)
+<span id="L329" class="ln">   329  </span>	})
+<span id="L330" class="ln">   330  </span>}
+<span id="L331" class="ln">   331  </span>
+<span id="L332" class="ln">   332  </span>func TestConcurrentSourceUpdates(t *testing.T) {
+<span id="L333" class="ln">   333  </span>	a := assert.New(t)
+<span id="L334" class="ln">   334  </span>	tempDir := t.TempDir()
+<span id="L335" class="ln">   335  </span>	tempFile := filepath.Join(tempDir, &#34;sources.yaml&#34;)
+<span id="L336" class="ln">   336  </span>
+<span id="L337" class="ln">   337  </span>	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tempFile)
+<span id="L338" class="ln">   338  </span>	a.NoError(err)
+<span id="L339" class="ln">   339  </span>
+<span id="L340" class="ln">   340  </span>	err = yamlrw.WriteSources(sources.Sources{})
+<span id="L341" class="ln">   341  </span>	a.NoError(err)
+<span id="L342" class="ln">   342  </span>
+<span id="L343" class="ln">   343  </span>	numGoroutines := 10
+<span id="L344" class="ln">   344  </span>	var wg sync.WaitGroup
+<span id="L345" class="ln">   345  </span>
+<span id="L346" class="ln">   346  </span>	<span class="comment">// Each goroutine will add a unique source</span>
+<span id="L347" class="ln">   347  </span>	for id := range numGoroutines {
+<span id="L348" class="ln">   348  </span>		wg.Go(func() {
+<span id="L349" class="ln">   349  </span>			testSource := sources.Source{
+<span id="L350" class="ln">   350  </span>				Name:          fmt.Sprintf(&#34;source_%d&#34;, id),
+<span id="L351" class="ln">   351  </span>				ConnStr:       fmt.Sprintf(&#34;postgresql://localhost/test_%d&#34;, id),
+<span id="L352" class="ln">   352  </span>				Kind:          sources.SourcePostgres,
+<span id="L353" class="ln">   353  </span>				PresetMetrics: &#34;basic&#34;,
+<span id="L354" class="ln">   354  </span>			}
+<span id="L355" class="ln">   355  </span>			time.Sleep(time.Millisecond * time.Duration(id%3))
+<span id="L356" class="ln">   356  </span>			err := yamlrw.UpdateSource(testSource)
+<span id="L357" class="ln">   357  </span>			a.NoError(err, &#34;Error during concurrent update&#34;)
+<span id="L358" class="ln">   358  </span>		})
+<span id="L359" class="ln">   359  </span>	}
+<span id="L360" class="ln">   360  </span>
+<span id="L361" class="ln">   361  </span>	wg.Wait()
+<span id="L362" class="ln">   362  </span>
+<span id="L363" class="ln">   363  </span>	finalSources, err := yamlrw.GetSources()
+<span id="L364" class="ln">   364  </span>	a.NoError(err)
+<span id="L365" class="ln">   365  </span>	a.Equal(numGoroutines, len(finalSources), &#34;Some updates were lost due to race condition!&#34;)
+<span id="L366" class="ln">   366  </span>}
+<span id="L367" class="ln">   367  </span>
 </pre><p></p>
 
 <div id="footer">
