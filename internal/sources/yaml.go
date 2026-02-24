@@ -143,6 +143,12 @@ func (fcr *fileSourcesReaderWriter) loadSourcesFromFile(configFilePath string) (
 }
 
 func (fcr *fileSourcesReaderWriter) expandEnvVars(md Source) Source {
+	if strings.HasPrefix(md.ConnStr, "$") {
+		md.ConnStr = os.ExpandEnv(md.ConnStr)
+	}
+	if strings.HasPrefix(md.Group, "$") {
+		md.Group = os.ExpandEnv(md.Group)
+	}
 	if strings.HasPrefix(string(md.Kind), "$") {
 		md.Kind = Kind(os.ExpandEnv(string(md.Kind)))
 	}
