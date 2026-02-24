@@ -38,10 +38,12 @@
     pgbouncer_clients: 10
   is_enabled: true
 
-- name: envvar
-  kind: $kind
+- name: $MY_SOURCE_ENV
+  group: $MY_GROUP_ENV
+  conn_str: $MY_VERY_SECRET_CONN_STR
+  kind: $MY_KIND_ENV
   is_enabled: true
-  include_pattern: $include_pattern
-  exclude_pattern: $exclude_pattern
-  preset_metrics: $preset_metrics
-  preset_metrics_standby: $preset_metrics_standby
+  include_pattern: $MY_INCLUDE_PATTERN
+  exclude_pattern: $MY_EXCLUDE_PATTERN
+  preset_metrics: $MY_PRESET_METRICS
+  preset_metrics_standby: $MY_PRESET_METRICS_STANDBY

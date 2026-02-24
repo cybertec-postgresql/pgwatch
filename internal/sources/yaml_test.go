@@ -231,6 +231,104 @@ func TestYAMLCreateSource(t *testing.T) {
 	})
 }
 
+func TestExpandEnvVars(t *testing.T) {
+	a := assert.New(t)
+
+	// Set environment variables for testing
+	t.Setenv("PGW_TEST_NAME", "expanded_name")
+	t.Setenv("PGW_TEST_GROUP", "expanded_group")
+	t.Setenv("PGW_TEST_CONNSTR", "postgresql://localhost/expanded")
+	t.Setenv("PGW_TEST_KIND", "postgres")
+	t.Setenv("PGW_TEST_INCLUDE", "include_pattern")
+	t.Setenv("PGW_TEST_EXCLUDE", "exclude_pattern")
+	t.Setenv("PGW_TEST_PRESET", "exhaustive")
+	t.Setenv("PGW_TEST_PRESET_STANDBY", "standby_preset")
+
+	t.Run("all fields expanded", func(*testing.T) {
+		tmpFile := filepath.Join(t.TempDir(), "env_sources.yaml")
+		yamlContent := `
+- name: $PGW_TEST_NAME
+  group: $PGW_TEST_GROUP
+  conn_str: $PGW_TEST_CONNSTR
+  kind: $PGW_TEST_KIND
+  include_pattern: $PGW_TEST_INCLUDE
+  exclude_pattern: $PGW_TEST_EXCLUDE
+  preset_metrics: $PGW_TEST_PRESET
+  preset_metrics_standby: $PGW_TEST_PRESET_STANDBY
+`
+		err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+		a.NoError(err)
+
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+		a.NoError(err)
+
+		dbs, err := yamlrw.GetSources()
+		a.NoError(err)
+		a.Len(dbs, 1)
+
+		src := dbs[0]
+		a.Equal("expanded_name", src.Name)
+		a.Equal("expanded_group", src.Group)
+		a.Equal("postgresql://localhost/expanded", src.ConnStr)
+		a.Equal(sources.SourcePostgres, src.Kind)
+		a.Equal("include_pattern", src.IncludePattern)
+		a.Equal("exclude_pattern", src.ExcludePattern)
+		a.Equal("exhaustive", src.PresetMetrics)
+		a.Equal("standby_preset", src.PresetMetricsStandby)
+	})
+
+	t.Run("no expansion without dollar prefix", func(*testing.T) {
+		tmpFile := filepath.Join(t.TempDir(), "no_env_sources.yaml")
+		yamlContent := `
+- name: literal_name
+  group: literal_group
+  conn_str: postgresql://localhost/literal
+  kind: postgres
+  include_pattern: literal_include
+  exclude_pattern: literal_exclude
+  preset_metrics: basic
+  preset_metrics_standby: basic_standby
+`
+		err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+		a.NoError(err)
+
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+		a.NoError(err)
+
+		dbs, err := yamlrw.GetSources()
+		a.NoError(err)
+		a.Len(dbs, 1)
+
+		src := dbs[0]
+		a.Equal("literal_name", src.Name)
+		a.Equal("literal_group", src.Group)
+		a.Equal("postgresql://localhost/literal", src.ConnStr)
+		a.Equal(sources.SourcePostgres, src.Kind)
+		a.Equal("literal_include", src.IncludePattern)
+		a.Equal("literal_exclude", src.ExcludePattern)
+		a.Equal("basic", src.PresetMetrics)
+		a.Equal("basic_standby", src.PresetMetricsStandby)
+	})
+
+	t.Run("unset env var expands to empty", func(*testing.T) {
+		tmpFile := filepath.Join(t.TempDir(), "unset_env_sources.yaml")
+		yamlContent := `
+- name: $PGW_UNSET_VAR
+  conn_str: postgresql://localhost/test
+`
+		err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+		a.NoError(err)
+
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+		a.NoError(err)
+
+		dbs, err := yamlrw.GetSources()
+		a.NoError(err)
+		a.Len(dbs, 1)
+		a.Equal("", dbs[0].Name)
+	})
+}
+
 func TestConcurrentSourceUpdates(t *testing.T) {
 	a := assert.New(t)
 	tempDir := t.TempDir()
