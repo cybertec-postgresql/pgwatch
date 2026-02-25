@@ -111,15 +111,18 @@ func (fmr *fileMetricReader) DeleteMetric(metricName string) error {
 }
 
 // UpdateMetric updates an existing metric or creates it if it doesn't exist, then writes the updated metrics back to file
-func (fmr *fileMetricReader) UpdateMetric(metricName string, metric Metric) error {
-	fmr.Lock()
-	defer fmr.Unlock()
-	metrics, err := fmr.getMetrics()
-	if err != nil {
-		return err
-	}
-	metrics.MetricDefs[metricName] = metric
-	return fmr.writeMetrics(metrics)
+func (fmr *fileMetricReader) UpdateMetric(oldMetricName string, metricName string, metric Metric) error {
+    fmr.Lock()
+    defer fmr.Unlock()
+    metrics, err := fmr.getMetrics()
+    if err != nil {
+        return err
+    }
+    if oldMetricName != metricName {
+        delete(metrics.MetricDefs, oldMetricName)
+    }
+    metrics.MetricDefs[metricName] = metric
+    return fmr.writeMetrics(metrics)
 }
 
 // CreateMetric creates a new metric if it doesn't already exist, then writes the updated metrics back to file

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Button, Dialog, DialogActions, DialogContent } from "@mui/material";
 import { useMetricFormContext } from "contexts/MetricForm/MetricForm.context";
@@ -18,9 +18,12 @@ export const MetricFormDialog = () => {
   const { handleSubmit, reset, setError } = formMethods;
   const { classes } = useFormStyles();
 
+  const [nameOrig, setNameOrig] = useState<string>("");
+
   useEffect(() => {
     const initialValues = getMetricInitialValues(data);
     reset(initialValues);
+    setNameOrig(initialValues.Name);
   }, [data, open, reset]);
 
   const submitTitle = useMemo(
@@ -50,7 +53,7 @@ export const MetricFormDialog = () => {
     try {
       const metric = createMetricRequest(values);
       if (data) {
-        editMetric.mutate(metric);
+        editMetric.mutate({metric: metric, oldName: nameOrig});
       } else {
         addMetric.mutate(metric);
       }

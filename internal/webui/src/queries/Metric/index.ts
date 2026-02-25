@@ -24,7 +24,7 @@ export const useDeleteMetric = () => useMutation({
 
 export const useEditMetric = () => useMutation({
   mutationKey: [QueryKeys.Metric],
-  mutationFn: async (data: MetricRequestBody) => await services.editMetric(data),
+  mutationFn: async (data: { metric: MetricRequestBody, oldName: string }) => await services.editMetric(data),
 });
 
 export const useAddMetric = () => useMutation({

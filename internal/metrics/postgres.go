@@ -120,7 +120,14 @@ func (dmrw *dbMetricReaderWriter) DeleteMetric(metricName string) error {
 	return err
 }
 
-func (dmrw *dbMetricReaderWriter) UpdateMetric(metricName string, metric Metric) error {
+func (dmrw *dbMetricReaderWriter) UpdateMetric(oldMetricName string, metricName string, metric Metric) error {
+	if oldMetricName != metricName {
+        _, err := dmrw.configDb.Exec(dmrw.ctx, `DELETE FROM pgwatch.metric WHERE name = $1`, oldMetricName)
+        if err != nil {
+            return err
+        }
+        return dmrw.CreateMetric(metricName, metric)
+    }
 	ct, err := dmrw.configDb.Exec(dmrw.ctx, `INSERT INTO pgwatch.metric
 (name, sqls, init_sql, description, node_status, gauges, is_instance_level, storage_name)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 

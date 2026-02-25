@@ -30,7 +30,7 @@ func (dmrw *defaultMetricReader) DeleteMetric(string) error {
 	return errors.ErrUnsupported
 }
 
-func (dmrw *defaultMetricReader) UpdateMetric(string, Metric) error {
+func (dmrw *defaultMetricReader) UpdateMetric(string, string, Metric) error {
 	return errors.ErrUnsupported
 }
 

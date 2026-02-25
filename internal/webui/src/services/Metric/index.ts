@@ -44,8 +44,8 @@ export default class MetricService {
       then(response => response);
   };
 
-  public async editMetric(data: MetricRequestBody) {
-    return await this.api.put(`/metric/${encodeURIComponent(data.Name)}`, data.Data).
+  public async editMetric(data: { metric: MetricRequestBody, oldName: string }) {
+    return await this.api.put(`/metric/${encodeURIComponent(data.oldName)}`, {name: data.metric.Name,data: data.metric.Data }).
       then(response => response);
   };
 }

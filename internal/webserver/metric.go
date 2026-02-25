@@ -71,13 +71,13 @@ func (s *WebUIServer) GetMetrics() (res string, err error) {
 }
 
 // UpdateMetric updates the stored metric information
-func (s *WebUIServer) UpdateMetric(name string, params []byte) error {
+func (s *WebUIServer) UpdateMetric(oldName string, name string, params []byte) error {
 	var m metrics.Metric
 	err := jsoniter.ConfigFastest.Unmarshal(params, &m)
 	if err != nil {
 		return err
 	}
-	return s.metricsReaderWriter.UpdateMetric(name, m)
+	return s.metricsReaderWriter.UpdateMetric(oldName, name, m)
 }
 
 // CreateMetric creates new metrics (for REST collection endpoint)
@@ -180,15 +180,17 @@ func (s *WebUIServer) updateMetricByName(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	var m metrics.Metric
-	if err = jsoniter.ConfigFastest.Unmarshal(params, &m); err != nil {
-		status = http.StatusBadRequest
-		return
-	}
-
-	if err = s.metricsReaderWriter.UpdateMetric(name, m); err != nil {
-		return
-	}
+    var body struct {
+        Name string        `json:"name"`
+        Data metrics.Metric
+    }
+    if err = jsoniter.ConfigFastest.Unmarshal(params, &body); err != nil {
+        status = http.StatusBadRequest
+        return
+    }
+    if err = s.metricsReaderWriter.UpdateMetric(name, body.Name, body.Data); err != nil {
+        return
+    }
 
 	w.WriteHeader(http.StatusOK)
 }
