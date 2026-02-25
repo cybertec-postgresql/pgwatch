@@ -15,7 +15,7 @@ export const TestConnection = ({ ConnStr }: Props) => {
 
   return (
     <Tooltip title="Test connection">
-      <IconButton onClick={handleTestConnection} disabled={testConnection.isLoading}>
+      <IconButton onClick={handleTestConnection} disabled={testConnection.isPending}>
         <CableIcon />
       </IconButton>
     </Tooltip>
