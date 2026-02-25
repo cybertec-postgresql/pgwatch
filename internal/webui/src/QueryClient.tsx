@@ -9,38 +9,51 @@ type Props = {
   children: JSX.Element
 };
 
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error) => {
+      if (axios.isAxiosError(error) && isUnauthorized(error)) {
+        // handled in component below
+      }
+    }
+  }),
+  mutationCache: new MutationCache({
+    onSuccess: (_data, _variables, _context, mutation) => {
+      if (mutation.options.mutationKey) {
+        queryClient.invalidateQueries({ queryKey: mutation.options.mutationKey });
+      }
+    },
+  })
+});
+
 export const QueryClientProvider = ({ children }: Props) => {
   const { callAlert } = useAlert();
   const navigate = useNavigate();
 
-  const queryClient = new QueryClient({
-    queryCache: new QueryCache({
-      onError: (error) => {
-        if (axios.isAxiosError(error)) {
-          if (isUnauthorized(error)) {
-            callAlert("error", `${error.response?.data}`);
-            logout(navigate);
-          }
-        }
+  queryClient.getQueryCache().config.onError = (error) => {
+    if (axios.isAxiosError(error)) {
+      if (isUnauthorized(error)) {
+        callAlert("error", `${error.response?.data}`);
+        logout(navigate);
       }
-    }),
-    mutationCache: new MutationCache({
-      onSuccess: (_data, _variables, _context, mutation) => {
-        callAlert("success", "Success");
-        if (mutation.options.mutationKey) {
-          queryClient.invalidateQueries({ queryKey: mutation.options.mutationKey });
-        }
-      },
-      onError: (error) => {
-        if (axios.isAxiosError(error)) {
-          callAlert("error", `${error.response?.data}`);
-          if (isUnauthorized(error)) {
-            logout(navigate);
-          }
-        }
+    }
+  };
+
+  queryClient.getMutationCache().config.onError = (error) => {
+    if (axios.isAxiosError(error)) {
+      callAlert("error", `${error.response?.data}`);
+      if (isUnauthorized(error)) {
+        logout(navigate);
       }
-    })
-  });
+    }
+  };
+
+  queryClient.getMutationCache().config.onSuccess = (_data, _variables, _context, mutation) => {
+    callAlert("success", "Success");
+    if (mutation.options.mutationKey) {
+      queryClient.invalidateQueries({ queryKey: mutation.options.mutationKey });
+    }
+  };
 
   return (
     <ClientProvider client={queryClient}>
