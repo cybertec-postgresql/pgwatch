@@ -48,13 +48,6 @@ export const QueryClientProvider = ({ children }: Props) => {
     }
   };
 
-  queryClient.getMutationCache().config.onSuccess = (_data, _variables, _context, mutation) => {
-    callAlert("success", "Success");
-    if (mutation.options.mutationKey) {
-      queryClient.invalidateQueries({ queryKey: mutation.options.mutationKey });
-    }
-  };
-
   return (
     <ClientProvider client={queryClient}>
       {children}
