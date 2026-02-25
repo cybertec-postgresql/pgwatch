@@ -31,8 +31,8 @@ export const PresetFormDialog = () => {
     [addPreset.isSuccess, editPreset.isSuccess],
   );
   const isLoading = useMemo(
-    () => addPreset.isLoading || editPreset.isLoading,
-    [addPreset.isLoading, editPreset.isLoading]
+    () => addPreset.isPending || editPreset.isPending,
+    [addPreset.isPending, editPreset.isPending]
   );
 
   useEffect(() => {
