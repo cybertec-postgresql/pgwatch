@@ -21,6 +21,9 @@ export const EnabledSourceSwitch = ({ source }: EnabledSourceSwitchProps) => {
       IsEnabled: value,
     });
   };
+  useEffect(() => {
+    setChecked(source.IsEnabled);
+  }, [source.IsEnabled]);
 
   useEffect(() => {
     if (status === "error") {
