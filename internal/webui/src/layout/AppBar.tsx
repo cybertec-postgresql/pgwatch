@@ -15,7 +15,14 @@ export const AppBar = () => {
       to={item.link}
     >
       {({ isActive }) => (
-        <Button variant={isActive ? "contained" : "outlined"} sx={{ color: "white" }} style={{ border: 0 }} fullWidth>{item.title}</Button>
+        <Button variant="text" sx={{
+          color: isActive ? "#1565c0" : "white",
+          backgroundColor: isActive ? "white" : "transparent",
+          fontWeight: isActive ? "bold" : "normal",
+          boxShadow: isActive ? 1 : 0, '&:hover': { backgroundColor: isActive ? "white" : "rgba(255,255,255,0.1)" }
+        }} style={{ border: 0 }} fullWidth>
+          {item.title}
+        </Button>
       )}
     </NavLink>
   ));
