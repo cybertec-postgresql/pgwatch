@@ -61,7 +61,7 @@ jobs:
         go build ./cmd/pgwatch
 
     - name: Upload webui as artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: webui-build
         path: internal/webserver/build
