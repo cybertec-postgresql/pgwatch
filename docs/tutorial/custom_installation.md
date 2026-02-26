@@ -241,8 +241,15 @@ syntax differences.
     basically something like:
 
         ```terminal
-        wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
-        echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
+        wget -q -O - https://apt.grafana.com/gpg.key | \
+            gpg --dearmor | \
+            sudo tee /usr/share/keyrings/grafana.gpg > /dev/null
+
+        # Add the Grafana apt repository
+        echo "deb [signed-by=/usr/share/keyrings/grafana.gpg] \
+            https://apt.grafana.com stable main" | \
+            sudo tee /etc/apt/sources.list.d/grafana.list
+
         sudo apt-get update && sudo apt-get install grafana
 
         # review / change config settings and security, etc
@@ -326,6 +333,21 @@ paragraph.
     dashboards to start analyzing the metrics.
 1. Make sure that there are auto-start services for all
     components in place and optionally set up also backups.
+
+### Starting pgwatch with a YAML sources file
+
+When using a YAML sources file, pass the file path directly to `--sources`:
+```bash
+pgwatch \
+    --sources=/etc/pgwatch/sources.yaml \
+    --sink=postgresql://pgwatch:xyz@localhost:5432/pgwatch_metrics \
+    --log-level=debug
+```
+
+If using the SystemD service, update the `ExecStart` line in
+`/etc/systemd/system/pgwatch.service` to reference your YAML file path
+instead of a PostgreSQL connection string, then run
+`sudo systemctl daemon-reload`.
 
 ### YAML Configuration file
 
