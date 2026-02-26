@@ -17,8 +17,6 @@ Any interaction that is modified, generated, or assistedâ€”in whole or in partâ€
 
 - AI-integrated IDEs and Code Generation Tools (e.g., GitHub Copilot, Cursor).
 
-- Automated linguistic tools (e.g., Spell-checkers, Grammar-checkers, or Translation tools).
-
 **Disclosure Format:** Every such interaction must include the specific name and version of the tool(s) used (e.g., _"Drafted with the assistance of GPT-4o"_ or _"Spell-checked via Grammarly v1.2"_).
 
 ## 3. ENFORCEMENT AND TERMINATION
