@@ -103,8 +103,9 @@ jobs:
 
     - name: Coveralls
       uses: coverallsapp/github-action@v2
+      continue-on-error: true
       with:
-        file: profile.cov 
+        file: profile.cov
 
   goreleaser:
     if: true # false to skip job during debug    
