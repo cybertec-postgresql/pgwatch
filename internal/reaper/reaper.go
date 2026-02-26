@@ -444,7 +444,7 @@ func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
 			}
 		}
 		select {
-		case <-time.After(time.Second * monitoredDbsDatastoreSyncIntervalSeconds):
+		case <-time.After(time.Second * time.Duration(monitoredDbsDatastoreSyncIntervalSeconds)):
 			// continue
 		case <-ctx.Done():
 			return

@@ -975,3 +975,203 @@ func Test_Maintain(t *testing.T) {
 		}
 	})
 }
+
+func TestPostgresWriter_EnsureMetricTimescale(t *testing.T) {
+	a := assert.New(t)
+	conn, err := pgxmock.NewPool()
+	a.NoError(err)
+
+	pgw := &PostgresWriter{
+		ctx:                  ctx,
+		sinkDb:               conn,
+		partitionMapMetric:   make(map[string]ExistingPartitionInfo),
+		metricSchema:         DbStorageSchemaTimescale,
+		forceRecreatePartitions: false,
+	}
+
+	t.Run("create new metric table", func(t *testing.T) {
+		conn.ExpectExec("select \\* from admin.ensure_partition_timescale").
+			WithArgs("test_metric").
+			WillReturnResult(pgxmock.NewResult("SELECT", 1))
+
+		pgPartBounds := map[string]ExistingPartitionInfo{
+			"test_metric": {},
+		}
+
+		err = pgw.EnsureMetricTimescale(pgPartBounds)
+		a.NoError(err)
+		a.Contains(pgw.partitionMapMetric, "test_metric")
+		a.NoError(conn.ExpectationsWereMet())
+	})
+
+	t.Run("existing metric table", func(t *testing.T) {
+		// Pre-populate the partition map
+		pgw.partitionMapMetric["existing_metric"] = ExistingPartitionInfo{}
+
+		pgPartBounds := map[string]ExistingPartitionInfo{
+			"existing_metric": {},
+		}
+
+		err = pgw.EnsureMetricTimescale(pgPartBounds)
+		a.NoError(err)
+		// Should not execute query for existing metric
+		a.NoError(conn.ExpectationsWereMet())
+	})
+
+	t.Run("query error", func(t *testing.T) {
+		conn.ExpectExec("select \\* from admin.ensure_partition_timescale").
+			WithArgs("fail_metric").
+			WillReturnError(assert.AnError)
+
+		pgPartBounds := map[string]ExistingPartitionInfo{
+			"fail_metric": {},
+		}
+
+		err = pgw.EnsureMetricTimescale(pgPartBounds)
+		a.Error(err)
+		a.NoError(conn.ExpectationsWereMet())
+	})
+}
+
+func TestPostgresWriter_DeleteOldPartitions(t *testing.T) {
+	a := assert.New(t)
+	conn, err := pgxmock.NewPool()
+	a.NoError(err)
+
+	pgw := &PostgresWriter{
+		ctx:    ctx,
+		sinkDb: conn,
+		opts:   &CmdOpts{RetentionInterval: "7 days"},
+	}
+
+	t.Run("delete old partitions", func(t *testing.T) {
+		conn.ExpectQuery("SELECT admin.drop_old_time_partitions").
+			WithArgs("7 days").
+			WillReturnRows(pgxmock.NewRows([]string{"drop_old_time_partitions"}).AddRow(5))
+
+		// Should not panic
+		a.NotPanics(func() { pgw.DeleteOldPartitions() })
+		a.NoError(conn.ExpectationsWereMet())
+	})
+
+	t.Run("query error", func(t *testing.T) {
+		conn.ExpectQuery("SELECT admin.drop_old_time_partitions").
+			WithArgs("7 days").
+			WillReturnError(assert.AnError)
+
+		// Should not panic
+		a.NotPanics(func() { pgw.DeleteOldPartitions() })
+		a.NoError(conn.ExpectationsWereMet())
+	})
+
+	t.Run("no partitions to drop", func(t *testing.T) {
+		conn.ExpectQuery("SELECT admin.drop_old_time_partitions").
+			WithArgs("7 days").
+			WillReturnRows(pgxmock.NewRows([]string{"drop_old_time_partitions"}).AddRow(0))
+
+		// Should not panic
+		a.NotPanics(func() { pgw.DeleteOldPartitions() })
+		a.NoError(conn.ExpectationsWereMet())
+	})
+}
+
+func TestCopyFromMeasurements_NextEnvelope(t *testing.T) {
+	a := assert.New(t)
+
+	t.Run("single envelope", func(t *testing.T) {
+		data := []metrics.MeasurementEnvelope{
+			{
+				MetricName: "metric1",
+				Data: metrics.Measurements{
+					{"epoch_ns": int64(1000), "value": 1},
+					{"epoch_ns": int64(2000), "value": 2},
+				},
+			},
+		}
+
+		cfm := newCopyFromMeasurements(data)
+		a.True(cfm.NextEnvelope())
+		a.Equal(0, cfm.envelopeIdx)
+		a.Equal(-1, cfm.measurementIdx)
+		a.False(cfm.NextEnvelope())
+	})
+
+	t.Run("multiple envelopes", func(t *testing.T) {
+		data := []metrics.MeasurementEnvelope{
+			{
+				MetricName: "metric1",
+				Data: metrics.Measurements{
+					{"epoch_ns": int64(1000), "value": 1},
+				},
+			},
+			{
+				MetricName: "metric1",
+				Data: metrics.Measurements{
+					{"epoch_ns": int64(2000), "value": 2},
+				},
+			},
+		}
+
+		cfm := newCopyFromMeasurements(data)
+		a.True(cfm.NextEnvelope())
+		a.Equal(0, cfm.envelopeIdx)
+		a.True(cfm.NextEnvelope())
+		a.Equal(1, cfm.envelopeIdx)
+		a.False(cfm.NextEnvelope())
+	})
+
+	t.Run("empty data", func(t *testing.T) {
+		cfm := newCopyFromMeasurements([]metrics.MeasurementEnvelope{})
+		a.False(cfm.NextEnvelope())
+	})
+}
+
+func TestCopyFromMeasurements_MetricName(t *testing.T) {
+	a := assert.New(t)
+
+	t.Run("get metric name", func(t *testing.T) {
+		data := []metrics.MeasurementEnvelope{
+			{
+				MetricName: "metric1",
+				Data: metrics.Measurements{
+					{"epoch_ns": int64(1000), "value": 1},
+				},
+			},
+			{
+				MetricName: "metric2",
+				Data: metrics.Measurements{
+					{"epoch_ns": int64(2000), "value": 2},
+				},
+			},
+		}
+
+		cfm := newCopyFromMeasurements(data)
+		// Before calling NextEnvelope, should return first envelope's metric name
+		ident := cfm.MetricName()
+		a.NotNil(ident)
+		a.Equal("metric1", ident[0])
+		
+		// After calling NextEnvelope, should return next envelope's metric name
+		cfm.NextEnvelope()
+		ident = cfm.MetricName()
+		a.NotNil(ident)
+		a.Equal("metric2", ident[0])
+	})
+
+	t.Run("last envelope", func(t *testing.T) {
+		data := []metrics.MeasurementEnvelope{
+			{
+				MetricName: "metric1",
+				Data: metrics.Measurements{
+					{"epoch_ns": int64(1000), "value": 1},
+				},
+			},
+		}
+
+		cfm := newCopyFromMeasurements(data)
+		cfm.NextEnvelope()
+		cfm.Next()
+		ident := cfm.MetricName()
+		a.Nil(ident)
+	})
+}

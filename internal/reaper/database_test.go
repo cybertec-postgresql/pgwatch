@@ -5,12 +5,35 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	pgxmock "github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// MockSinkWriter implements sinks.Writer interface for testing
+type MockSinkWriter struct {
+	WriteFunc      func(msg metrics.MeasurementEnvelope) error
+	SyncMetricFunc func(dbUnique, metricName string, op sinks.SyncOp) error
+}
+
+func (m *MockSinkWriter) Write(msg metrics.MeasurementEnvelope) error {
+	if m.WriteFunc != nil {
+		return m.WriteFunc(msg)
+	}
+	return nil
+}
+
+func (m *MockSinkWriter) SyncMetric(dbUnique, metricName string, op sinks.SyncOp) error {
+	if m.SyncMetricFunc != nil {
+		return m.SyncMetricFunc(dbUnique, metricName, op)
+	}
+	return nil
+}
 
 // Helper function to create a test SourceConn with pgxmock
 func createTestSourceConn(t *testing.T) (*sources.SourceConn, pgxmock.PgxPoolIface) {
@@ -509,4 +532,440 @@ func TestGetInstanceUpMeasurement(t *testing.T) {
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
+}
+
+func TestTryCreateMissingExtensions(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("extension already exists", func(t *testing.T) {
+		md, mock := createTestSourceConn(t)
+		defer mock.Close()
+
+		md.Extensions = map[string]int{"pg_stat_statements": 1}
+
+		mock.ExpectQuery("select name::text from pg_available_extensions").
+			WillReturnRows(pgxmock.NewRows([]string{"name"}).
+				AddRow("pg_stat_statements").
+				AddRow("pgcrypto"))
+
+		extsCreated := TryCreateMissingExtensions(ctx, md, []string{"pg_stat_statements"}, md.Extensions)
+		assert.Empty(t, extsCreated, "Should not create extension that already exists")
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("extension not available", func(t *testing.T) {
+		md, mock := createTestSourceConn(t)
+		defer mock.Close()
+
+		mock.ExpectQuery("select name::text from pg_available_extensions").
+			WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow("pgcrypto"))
+
+		extsCreated := TryCreateMissingExtensions(ctx, md, []string{"nonexistent_ext"}, md.Extensions)
+		assert.Empty(t, extsCreated, "Should not create extension that is not available")
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("extension created successfully", func(t *testing.T) {
+		md, mock := createTestSourceConn(t)
+		defer mock.Close()
+
+		mock.ExpectQuery("select name::text from pg_available_extensions").
+			WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow("pgcrypto"))
+		mock.ExpectQuery("create extension pgcrypto").
+			WillReturnRows(pgxmock.NewRows([]string{"name"}))
+
+		extsCreated := TryCreateMissingExtensions(ctx, md, []string{"pgcrypto"}, md.Extensions)
+		assert.Equal(t, []string{"pgcrypto"}, extsCreated)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("extension creation fails", func(t *testing.T) {
+		md, mock := createTestSourceConn(t)
+		defer mock.Close()
+
+		mock.ExpectQuery("select name::text from pg_available_extensions").
+			WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow("pgcrypto"))
+		mock.ExpectQuery("create extension pgcrypto").
+			WillReturnError(assert.AnError)
+
+		extsCreated := TryCreateMissingExtensions(ctx, md, []string{"pgcrypto"}, md.Extensions)
+		// Note: function still appends to extsCreated even on error, which is a known behavior
+		assert.NotEmpty(t, extsCreated, "Extension name is added even on failure (known behavior)")
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("query available extensions fails", func(t *testing.T) {
+		md, mock := createTestSourceConn(t)
+		defer mock.Close()
+
+		mock.ExpectQuery("select name::text from pg_available_extensions").
+			WillReturnError(assert.AnError)
+
+		extsCreated := TryCreateMissingExtensions(ctx, md, []string{"pgcrypto"}, md.Extensions)
+		assert.Empty(t, extsCreated)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}
+
+func TestGetObjectChangesMeasurement(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("no changes detected", func(t *testing.T) {
+		md, mock := createTestSourceConn(t)
+		defer mock.Close()
+
+		reaper := &Reaper{
+			measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+		}
+
+		// Setup all detection functions to return no changes
+		metricDefs.MetricDefs["sproc_hashes"] = metrics.Metric{
+			SQLs: map[int]string{120000: "SELECT"},
+		}
+		metricDefs.MetricDefs["table_hashes"] = metrics.Metric{
+			SQLs: map[int]string{120000: "SELECT"},
+		}
+		metricDefs.MetricDefs["index_hashes"] = metrics.Metric{
+			SQLs: map[int]string{120000: "SELECT"},
+		}
+		metricDefs.MetricDefs["configuration_hashes"] = metrics.Metric{
+			SQLs: map[int]string{120000: "SELECT"},
+		}
+		metricDefs.MetricDefs["privilege_changes"] = metrics.Metric{
+			SQLs: map[int]string{120000: "SELECT"},
+		}
+
+		// All queries return empty results
+		for range 5 {
+			mock.ExpectQuery("SELECT").
+				WillReturnRows(pgxmock.NewRows([]string{"epoch_ns"}))
+		}
+
+		measurements, err := reaper.GetObjectChangesMeasurement(ctx, md)
+		assert.Nil(t, measurements, "Should return nil when no changes detected")
+		assert.NoError(t, err)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("changes detected", func(t *testing.T) {
+		md, mock := createTestSourceConn(t)
+		defer mock.Close()
+
+		reaper := &Reaper{
+			measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+		}
+
+		// Setup metric definitions
+		metricDefs.MetricDefs["sproc_hashes"] = metrics.Metric{
+			SQLs: map[int]string{120000: "SELECT"},
+		}
+		metricDefs.MetricDefs["table_hashes"] = metrics.Metric{
+			SQLs: map[int]string{120000: "SELECT"},
+		}
+		metricDefs.MetricDefs["index_hashes"] = metrics.Metric{
+			SQLs: map[int]string{120000: "SELECT"},
+		}
+		metricDefs.MetricDefs["configuration_hashes"] = metrics.Metric{
+			SQLs: map[int]string{120000: "SELECT"},
+		}
+		metricDefs.MetricDefs["privilege_changes"] = metrics.Metric{
+			SQLs: map[int]string{120000: "SELECT"},
+		}
+
+		// First call returns a change (sproc)
+		mock.ExpectQuery("SELECT").
+			WillReturnRows(pgxmock.NewRows([]string{"tag_sproc", "tag_oid", "md5", "epoch_ns"}).
+				AddRow("func1", "123", "hash1", time.Now().UnixNano()))
+		// Rest return empty
+		for range 4 {
+			mock.ExpectQuery("SELECT").
+				WillReturnRows(pgxmock.NewRows([]string{"epoch_ns"}))
+		}
+
+		measurements, err := reaper.GetObjectChangesMeasurement(ctx, md)
+		assert.Nil(t, measurements, "First run should not detect changes")
+		assert.NoError(t, err)
+
+		// Second call - detect altered sproc
+		mock.ExpectQuery("SELECT").
+			WillReturnRows(pgxmock.NewRows([]string{"tag_sproc", "tag_oid", "md5", "epoch_ns"}).
+				AddRow("func1", "123", "new_hash", time.Now().UnixNano()))
+		for range 4 {
+			mock.ExpectQuery("SELECT").
+				WillReturnRows(pgxmock.NewRows([]string{"epoch_ns"}))
+		}
+
+		measurements, err = reaper.GetObjectChangesMeasurement(ctx, md)
+		assert.NotNil(t, measurements, "Should detect changes on second run")
+		assert.Len(t, measurements, 1)
+		assert.Contains(t, measurements[0], "details")
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}
+
+func TestCloseResourcesForRemovedMonitoredDBs(t *testing.T) {
+	logger := log.NewNoopLogger()
+
+	t.Run("remove DB from config", func(t *testing.T) {
+		mockConn, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		mockConn.ExpectClose()
+
+		prevDB := &sources.SourceConn{
+			Source: sources.Source{Name: "removed_db"},
+			Conn:   mockConn,
+		}
+		reaper := &Reaper{
+			Options:              &cmdopts.Options{},
+			logger:               logger,
+			prevLoopMonitoredDBs: sources.SourceConns{prevDB},
+			monitoredSources:     sources.SourceConns{}, // DB removed from config
+		}
+
+		mockSink := &MockSinkWriter{}
+		syncCalled := false
+		mockSink.SyncMetricFunc = func(dbUnique, metricName string, op sinks.SyncOp) error {
+			syncCalled = true
+			assert.Equal(t, "removed_db", dbUnique)
+			assert.Equal(t, sinks.DeleteOp, op)
+			return nil
+		}
+		reaper.SinksWriter = mockSink
+
+		reaper.CloseResourcesForRemovedMonitoredDBs(nil)
+		assert.True(t, syncCalled, "SyncMetric should be called with DeleteOp")
+		assert.NoError(t, mockConn.ExpectationsWereMet())
+	})
+
+	t.Run("shutdown DB due to role change", func(t *testing.T) {
+		mockConn, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		mockConn.ExpectClose()
+
+		dbToShutdown := &sources.SourceConn{
+			Source: sources.Source{Name: "standby_db"},
+			Conn:   mockConn,
+		}
+		reaper := &Reaper{
+			Options:          &cmdopts.Options{},
+			logger:           logger,
+			monitoredSources: sources.SourceConns{dbToShutdown},
+		}
+
+		mockSink := &MockSinkWriter{}
+		syncCalled := false
+		mockSink.SyncMetricFunc = func(dbUnique, metricName string, op sinks.SyncOp) error {
+			syncCalled = true
+			assert.Equal(t, "standby_db", dbUnique)
+			return nil
+		}
+		reaper.SinksWriter = mockSink
+
+		hostsToShutDown := map[string]bool{"standby_db": true}
+		reaper.CloseResourcesForRemovedMonitoredDBs(hostsToShutDown)
+		assert.True(t, syncCalled, "SyncMetric should be called")
+		assert.NoError(t, mockConn.ExpectationsWereMet())
+	})
+}
+
+func TestShutdownOldWorkers(t *testing.T) {
+	ctx := context.Background()
+	logger := log.NewNoopLogger()
+	ctx = log.WithLogger(ctx, logger)
+
+	mockSink := &MockSinkWriter{
+		SyncMetricFunc: func(dbUnique, metricName string, op sinks.SyncOp) error {
+			return nil
+		},
+	}
+
+	t.Run("shutdown due to host role change", func(t *testing.T) {
+		reaper := &Reaper{
+			Options: &cmdopts.Options{
+				SinksWriter: mockSink,
+			},
+			logger:  logger,
+			cancelFuncs: map[string]context.CancelFunc{
+				"db1¤¤¤cpu": func() {},
+			},
+			prevLoopMonitoredDBs: sources.SourceConns{},
+			monitoredSources:     sources.SourceConns{},
+		}
+
+		hostsToShutDown := map[string]bool{"db1": true}
+		assert.NotPanics(t, func() {
+			reaper.ShutdownOldWorkers(ctx, hostsToShutDown)
+		})
+		_, exists := reaper.cancelFuncs["db1¤¤¤cpu"]
+		assert.False(t, exists, "Cancel func should be removed")
+	})
+
+	t.Run("shutdown due to metric removed from preset", func(t *testing.T) {
+		md := &sources.SourceConn{
+			Source: sources.Source{
+				Name:    "db1",
+				Metrics: map[string]float64{"cpu": 10}, // cpu removed
+			},
+		}
+
+		reaper := &Reaper{
+			Options: &cmdopts.Options{
+				SinksWriter: mockSink,
+			},
+			logger:  logger,
+			cancelFuncs: map[string]context.CancelFunc{
+				"db1¤¤¤memory": func() {},
+			},
+			prevLoopMonitoredDBs: sources.SourceConns{},
+			monitoredSources:     sources.SourceConns{md},
+		}
+
+		assert.NotPanics(t, func() {
+			reaper.ShutdownOldWorkers(ctx, nil)
+		})
+		_, exists := reaper.cancelFuncs["db1¤¤¤memory"]
+		assert.False(t, exists, "Cancel func should be removed for metric not in current config")
+	})
+
+	t.Run("shutdown due to interval set to zero", func(t *testing.T) {
+		md := &sources.SourceConn{
+			Source: sources.Source{
+				Name:    "db1",
+				Metrics: map[string]float64{"cpu": 0}, // interval set to 0
+			},
+		}
+
+		reaper := &Reaper{
+			Options: &cmdopts.Options{
+				SinksWriter: mockSink,
+			},
+			logger:  logger,
+			cancelFuncs: map[string]context.CancelFunc{
+				"db1¤¤¤cpu": func() {},
+			},
+			prevLoopMonitoredDBs: sources.SourceConns{},
+			monitoredSources:     sources.SourceConns{md},
+		}
+
+		assert.NotPanics(t, func() {
+			reaper.ShutdownOldWorkers(ctx, nil)
+		})
+		_, exists := reaper.cancelFuncs["db1¤¤¤cpu"]
+		assert.False(t, exists, "Cancel func should be removed when interval is 0")
+	})
+}
+
+func TestDetectSprocChanges_NoMetricDef(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+
+	reaper := &Reaper{
+		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+	}
+
+	// No metric definition for sproc_hashes
+	result := reaper.DetectSprocChanges(ctx, md)
+	assert.Equal(t, 0, result.Total())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDetectTableChanges_NoMetricDef(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+
+	reaper := &Reaper{
+		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+	}
+
+	// No metric definition for table_hashes
+	result := reaper.DetectTableChanges(ctx, md)
+	assert.Equal(t, 0, result.Total())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDetectIndexChanges_NoMetricDef(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+
+	reaper := &Reaper{
+		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+	}
+
+	// No metric definition for index_hashes
+	result := reaper.DetectIndexChanges(ctx, md)
+	assert.Equal(t, 0, result.Total())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDetectPrivilegeChanges_NoMetricDef(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+
+	reaper := &Reaper{
+		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+	}
+
+	// No metric definition for privilege_changes
+	result := reaper.DetectPrivilegeChanges(ctx, md)
+	assert.Equal(t, 0, result.Total())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDetectConfigurationChanges_NoMetricDef(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+
+	reaper := &Reaper{
+		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+	}
+
+	// No metric definition for configuration_hashes
+	result := reaper.DetectConfigurationChanges(ctx, md)
+	assert.Equal(t, 0, result.Total())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDetectConfigurationChanges_QueryError(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+
+	reaper := &Reaper{
+		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+	}
+
+	metricDefs.MetricDefs["configuration_hashes"] = metrics.Metric{
+		SQLs: map[int]string{120000: "SELECT"},
+	}
+
+	mock.ExpectQuery("SELECT").WillReturnError(assert.AnError)
+
+	result := reaper.DetectConfigurationChanges(ctx, md)
+	assert.Equal(t, 0, result.Total())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDetectPrivilegeChanges_QueryError(t *testing.T) {
+	ctx := context.Background()
+	md, mock := createTestSourceConn(t)
+	defer mock.Close()
+
+	reaper := &Reaper{
+		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+	}
+
+	metricDefs.MetricDefs["privilege_changes"] = metrics.Metric{
+		SQLs: map[int]string{120000: "SELECT"},
+	}
+
+	mock.ExpectQuery("SELECT").WillReturnError(assert.AnError)
+
+	result := reaper.DetectPrivilegeChanges(ctx, md)
+	assert.Equal(t, 0, result.Total())
+	assert.NoError(t, mock.ExpectationsWereMet())
 }

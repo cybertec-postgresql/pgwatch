@@ -11,8 +11,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
+var (
 	monitoredDbsDatastoreSyncIntervalSeconds = 600              // write actively monitored DBs listing to metrics store after so many seconds
+)
+
+const (
 	monitoredDbsDatastoreSyncMetricName      = "configured_dbs" // FYI - for Postgres datastore there's also the admin.all_unique_dbnames table with all recent DB unique names with some metric data
 	dbMetricJoinStr                          = "¤¤¤"            // just some unlikely string for a DB name to avoid using maps of maps for DB+metric data
 
