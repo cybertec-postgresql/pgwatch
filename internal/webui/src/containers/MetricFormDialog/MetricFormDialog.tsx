@@ -20,7 +20,17 @@ export const MetricFormDialog = () => {
 
   useEffect(() => {
     const initialValues = getMetricInitialValues(data);
-    reset(initialValues);
+    // Convert SQLs object to array format for the form
+    const formattedValues = {
+      ...initialValues,
+      SQLs: initialValues?.SQLs && !Array.isArray(initialValues.SQLs)
+        ? Object.entries(initialValues.SQLs).map(([key, value]) => ({
+            Version: key, 
+            SQL: value as string
+          }))
+        : [] 
+    };
+    reset(formattedValues);
   }, [data, open, reset]);
 
   const submitTitle = useMemo(
