@@ -6,6 +6,7 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 )
@@ -273,3 +274,111 @@ func TestMetricsToPostgres(t *testing.T) {
 }
 
 // Additional tests for GetMetrics, WriteMetrics, DeleteMetric, UpdateMetric, DeletePreset, and UpdatePreset follow a similar pattern.
+
+func TestCreateMetric(t *testing.T) {
+	a := assert.New(t)
+	conn, err := pgxmock.NewPool()
+	a.NoError(err)
+
+	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
+	conn.ExpectPing()
+
+	readerWriter, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
+	a.NoError(err)
+	a.NotNil(readerWriter)
+
+	t.Run("Success", func(*testing.T) {
+		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		err = readerWriter.CreateMetric("new_metric", metrics.Metric{})
+		a.NoError(err)
+	})
+
+	t.Run("Duplicate", func(*testing.T) {
+		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnError(&pgconn.PgError{Code: "23505"})
+		err = readerWriter.CreateMetric("existing_metric", metrics.Metric{})
+		a.ErrorIs(err, metrics.ErrMetricExists)
+	})
+
+	t.Run("ExecError", func(*testing.T) {
+		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnError(assert.AnError)
+		err = readerWriter.CreateMetric("fail_metric", metrics.Metric{})
+		a.Error(err)
+		a.NotErrorIs(err, metrics.ErrMetricExists)
+	})
+
+	a.NoError(conn.ExpectationsWereMet())
+}
+
+func TestCreatePreset(t *testing.T) {
+	a := assert.New(t)
+	conn, err := pgxmock.NewPool()
+	a.NoError(err)
+
+	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
+	conn.ExpectPing()
+
+	readerWriter, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
+	a.NoError(err)
+	a.NotNil(readerWriter)
+
+	t.Run("Success", func(*testing.T) {
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		err = readerWriter.CreatePreset("new_preset", metrics.Preset{})
+		a.NoError(err)
+	})
+
+	t.Run("Duplicate", func(*testing.T) {
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnError(&pgconn.PgError{Code: "23505"})
+		err = readerWriter.CreatePreset("existing_preset", metrics.Preset{})
+		a.ErrorIs(err, metrics.ErrPresetExists)
+	})
+
+	t.Run("ExecError", func(*testing.T) {
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnError(assert.AnError)
+		err = readerWriter.CreatePreset("fail_preset", metrics.Preset{})
+		a.Error(err)
+		a.NotErrorIs(err, metrics.ErrPresetExists)
+	})
+
+	a.NoError(conn.ExpectationsWereMet())
+}
+
+func TestDeleteAndUpdateErrors(t *testing.T) {
+	a := assert.New(t)
+	conn, err := pgxmock.NewPool()
+	a.NoError(err)
+
+	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
+	conn.ExpectPing()
+
+	readerWriter, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
+	a.NoError(err)
+	a.NotNil(readerWriter)
+
+	t.Run("DeleteMetricError", func(*testing.T) {
+		conn.ExpectExec(`DELETE.+metric`).WithArgs("test").WillReturnError(assert.AnError)
+		err = readerWriter.DeleteMetric("test")
+		a.Error(err)
+	})
+
+	t.Run("UpdateMetricExecError", func(*testing.T) {
+		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnError(assert.AnError)
+		err = readerWriter.UpdateMetric("test", metrics.Metric{})
+		a.Error(err)
+	})
+
+	t.Run("DeletePresetError", func(*testing.T) {
+		conn.ExpectExec(`DELETE.+preset`).WithArgs("test").WillReturnError(assert.AnError)
+		err = readerWriter.DeletePreset("test")
+		a.Error(err)
+	})
+
+	t.Run("UpdatePresetExecError", func(*testing.T) {
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnError(assert.AnError)
+		err = readerWriter.UpdatePreset("test", metrics.Preset{})
+		a.Error(err)
+	})
+
+	a.NoError(conn.ExpectationsWereMet())
+}
+
