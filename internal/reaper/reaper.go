@@ -39,7 +39,7 @@ type Reaper struct {
 	measurementCh        chan metrics.MeasurementEnvelope
 	measurementCache     *InstanceMetricCache
 	logger               log.Logger
-	mu 					 sync.RWMutex
+	mu                   sync.RWMutex
 	monitoredSources     sources.SourceConns
 	prevLoopMonitoredDBs sources.SourceConns
 	cancelFuncs          map[string]context.CancelFunc
