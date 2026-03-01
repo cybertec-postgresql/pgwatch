@@ -278,7 +278,7 @@ where
 	return
 }
 
-// TryCreateMissingExtensions called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
+// TryCreateMissingExtensions should be called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
 // With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific
 // whitelisting or "trusted extensions"
 func (md *SourceConn) TryCreateMissingExtensions(ctx context.Context, extensions []string) (string, error) {
@@ -306,8 +306,8 @@ func (md *SourceConn) TryCreateMissingExtensions(ctx context.Context, extensions
 			err = errors.Join(err, fmt.Errorf("requested extension %s is not available on instance", extToCreate))
 			continue
 		}
-		if _, execErr := md.Conn.Exec(ctx, fmt.Sprintf(`create extension if not exists "%s"`, extToCreate)); execErr != nil {
-			err = errors.Join(err, fmt.Errorf("failed to create extension %s: %w", extToCreate, execErr))
+		if _, e := md.Conn.Exec(ctx, fmt.Sprintf(`create extension if not exists "%s"`, extToCreate)); e != nil {
+			err = errors.Join(err, fmt.Errorf("failed to create extension %s: %w", extToCreate, e))
 		} else {
 			CreatedExts = append(CreatedExts, extToCreate)
 		}
@@ -316,18 +316,18 @@ func (md *SourceConn) TryCreateMissingExtensions(ctx context.Context, extensions
 }
 
 // TryCreateMetricsHelpers should be called once on daemon startup to try to create "metric fething helper" functions automatically
-func (md *SourceConn) TryCreateMetricsHelpers(ctx context.Context, getSqlFn func(string) string) (err error) {
+func (md *SourceConn) TryCreateMetricsHelpers(ctx context.Context, getSQLFn func(string) string) (err error) {
 	md.RLock()
 	defer md.RUnlock()
+	var sql string
 	metrics := maps.Clone(md.Metrics)
 	maps.Insert(metrics, maps.All(md.MetricsStandby))
 	for metricName := range metrics {
-		if sql := getSqlFn(metricName); sql == "" {
+		if sql = getSQLFn(metricName); sql == "" {
 			continue
-		} else {
-			if _, err = md.Conn.Exec(ctx, sql); err != nil {
-				err = errors.Join(err, fmt.Errorf("failed to create helper for metric %s: %w", metricName, err))
-			}
+		}
+		if _, e := md.Conn.Exec(ctx, sql); e != nil {
+			err = errors.Join(err, fmt.Errorf("failed to create helper for metric %s: %w", metricName, e))
 		}
 	}
 	return
