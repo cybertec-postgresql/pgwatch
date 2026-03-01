@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"strings"
 	"time"
 
@@ -466,64 +465,6 @@ func (r *Reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.So
 	m := metrics.NewMeasurement(time.Now().UnixNano())
 	m["details"] = strings.Join([]string{spN.String(), tblN.String(), idxN.String(), cnfN.String(), privN.String()}, " ")
 	return metrics.Measurements{m}, nil
-}
-
-// Called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
-// With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific
-// whitelisting or "trusted extensions" (a feature from v13). Ignores errors.
-func TryCreateMissingExtensions(ctx context.Context, md *sources.SourceConn, extensionNames []string, existingExtensions map[string]int) []string {
-	// TODO: move to sources package and use direct pgx connection
-	sqlAvailable := `select name::text from pg_available_extensions`
-	extsCreated := make([]string, 0)
-
-	// For security reasons don't allow to execute random strings but check that it's an existing extension
-	data, err := QueryMeasurements(ctx, md, sqlAvailable)
-	if err != nil {
-		log.GetLogger(ctx).Infof("[%s] Failed to get a list of available extensions: %v", md, err)
-		return extsCreated
-	}
-
-	availableExts := make(map[string]bool)
-	for _, row := range data {
-		availableExts[row["name"].(string)] = true
-	}
-
-	for _, extToCreate := range extensionNames {
-		if _, ok := existingExtensions[extToCreate]; ok {
-			continue
-		}
-		_, ok := availableExts[extToCreate]
-		if !ok {
-			log.GetLogger(ctx).Errorf("[%s] Requested extension %s not available on instance, cannot try to create...", md, extToCreate)
-		} else {
-			sqlCreateExt := `create extension ` + extToCreate
-			_, err := QueryMeasurements(ctx, md, sqlCreateExt)
-			if err != nil {
-				log.GetLogger(ctx).Errorf("[%s] Failed to create extension %s (based on --try-create-listed-exts-if-missing input): %v", md, extToCreate, err)
-			}
-			extsCreated = append(extsCreated, extToCreate)
-		}
-	}
-
-	return extsCreated
-}
-
-// Called once on daemon startup to try to create "metric fething helper" functions automatically
-func TryCreateMetricsFetchingHelpers(ctx context.Context, md *sources.SourceConn) (err error) {
-	sl := log.GetLogger(ctx).WithField("source", md.Name)
-	metrics := maps.Clone(md.Metrics)
-	maps.Insert(metrics, maps.All(md.MetricsStandby))
-	for metricName := range metrics {
-		metric, ok := metricDefs.GetMetricDef(metricName)
-		if !ok {
-			continue
-		}
-		if _, err = md.Conn.Exec(ctx, metric.InitSQL); err != nil {
-			return
-		}
-		sl.WithField("metric", metricName).Info("Successfully created metric fetching helpers")
-	}
-	return
 }
 
 func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[string]bool) {
