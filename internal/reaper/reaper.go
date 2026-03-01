@@ -217,16 +217,24 @@ func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monit
 	if r.Sources.TryCreateListedExtsIfMissing > "" {
 		srcL.Info("trying to create extensions if missing")
 		extsToCreate := strings.Split(r.Sources.TryCreateListedExtsIfMissing, ",")
-		monitoredSource.RLock()
-		extsCreated := TryCreateMissingExtensions(ctx, monitoredSource, extsToCreate, monitoredSource.Extensions)
-		monitoredSource.RUnlock()
-		srcL.Infof("%d/%d extensions created based on --try-create-listed-exts-if-missing input %v", len(extsCreated), len(extsToCreate), extsCreated)
+		extsCreated, err := monitoredSource.TryCreateMissingExtensions(ctx, extsToCreate)
+		if err != nil {
+			srcL.Warning(err)
+		}
+		if extsCreated != "" {
+			srcL.Infof("%d/%d extensions created: %s", len(extsCreated), len(extsToCreate), extsCreated)
+		}
 	}
 
 	if r.Sources.CreateHelpers {
 		srcL.Info("trying to create helper objects if missing")
-		if err := TryCreateMetricsFetchingHelpers(ctx, monitoredSource); err != nil {
-			srcL.WithError(err).Warning("failed to create helper functions")
+		if err := monitoredSource.TryCreateMetricsHelpers(ctx, func(metric string) string {
+			if m, ok := metricDefs.GetMetricDef(metric); ok {
+				return m.InitSQL
+			}
+			return ""
+		}); err != nil {
+			srcL.Warning(err)
 		}
 	}
 
@@ -258,7 +266,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[str
 		// Detects metrics removed from a preset definition.
 		//
 		// If not using presets, a metric removed from configs will
-		// be detected earlier by `LoadSources()` as configs change that 
+		// be detected earlier by `LoadSources()` as configs change that
 		// triggers a restart and get passed in `hostsToShutDown`.
 		if !(wholeDbShutDown || dbRemovedFromConfig) {
 			if md.IsInRecovery && len(md.MetricsStandby) > 0 {
