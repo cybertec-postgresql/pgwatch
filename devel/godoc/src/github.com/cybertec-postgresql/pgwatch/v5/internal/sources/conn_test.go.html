@@ -432,6 +432,171 @@
 <span id="L375" class="ln">   375  </span>	assert.Equal(t, &#34;&#34;, md.GetClusterIdentifier())
 <span id="L376" class="ln">   376  </span>}
 <span id="L377" class="ln">   377  </span>
+<span id="L378" class="ln">   378  </span>func TestTryCreateMetricsFetchingHelpers(t *testing.T) {
+<span id="L379" class="ln">   379  </span>	ctx := context.Background()
+<span id="L380" class="ln">   380  </span>	mock, err := pgxmock.NewPool()
+<span id="L381" class="ln">   381  </span>	assert.NoError(t, err)
+<span id="L382" class="ln">   382  </span>	defer mock.Close()
+<span id="L383" class="ln">   383  </span>
+<span id="L384" class="ln">   384  </span>	fn := func(metric string) string {
+<span id="L385" class="ln">   385  </span>		if metric == &#34;metric1&#34; {
+<span id="L386" class="ln">   386  </span>			return &#34;CREATE FUNCTION metric1&#34;
+<span id="L387" class="ln">   387  </span>		}
+<span id="L388" class="ln">   388  </span>		return &#34;&#34;
+<span id="L389" class="ln">   389  </span>	}
+<span id="L390" class="ln">   390  </span>
+<span id="L391" class="ln">   391  </span>	md := &amp;sources.SourceConn{
+<span id="L392" class="ln">   392  </span>		Conn: mock,
+<span id="L393" class="ln">   393  </span>		Source: sources.Source{
+<span id="L394" class="ln">   394  </span>			Name:           &#34;testdb&#34;,
+<span id="L395" class="ln">   395  </span>			Metrics:        map[string]float64{&#34;metric1&#34;: 42, &#34;nonexistent&#34;: 0},
+<span id="L396" class="ln">   396  </span>			MetricsStandby: map[string]float64{&#34;metric1&#34;: 42},
+<span id="L397" class="ln">   397  </span>		},
+<span id="L398" class="ln">   398  </span>	}
+<span id="L399" class="ln">   399  </span>
+<span id="L400" class="ln">   400  </span>	t.Run(&#34;success&#34;, func(t *testing.T) {
+<span id="L401" class="ln">   401  </span>		mock.ExpectExec(&#34;CREATE FUNCTION metric1&#34;).WillReturnResult(pgxmock.NewResult(&#34;CREATE&#34;, 1))
+<span id="L402" class="ln">   402  </span>
+<span id="L403" class="ln">   403  </span>		err = md.TryCreateMetricsHelpers(ctx, fn)
+<span id="L404" class="ln">   404  </span>		assert.NoError(t, err)
+<span id="L405" class="ln">   405  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L406" class="ln">   406  </span>	})
+<span id="L407" class="ln">   407  </span>
+<span id="L408" class="ln">   408  </span>	t.Run(&#34;error on exec&#34;, func(t *testing.T) {
+<span id="L409" class="ln">   409  </span>		mock.ExpectExec(&#34;CREATE FUNCTION metric1&#34;).WillReturnError(assert.AnError)
+<span id="L410" class="ln">   410  </span>
+<span id="L411" class="ln">   411  </span>		err = md.TryCreateMetricsHelpers(ctx, fn)
+<span id="L412" class="ln">   412  </span>		assert.Error(t, err)
+<span id="L413" class="ln">   413  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L414" class="ln">   414  </span>	})
+<span id="L415" class="ln">   415  </span>
+<span id="L416" class="ln">   416  </span>}
+<span id="L417" class="ln">   417  </span>
+<span id="L418" class="ln">   418  </span>func TestTryCreateMissingExtensions(t *testing.T) {
+<span id="L419" class="ln">   419  </span>	ctx := context.Background()
+<span id="L420" class="ln">   420  </span>
+<span id="L421" class="ln">   421  </span>	availableExtsRows := func() *pgxmock.Rows {
+<span id="L422" class="ln">   422  </span>		return pgxmock.NewRows([]string{&#34;name&#34;}).
+<span id="L423" class="ln">   423  </span>			AddRow(&#34;pg_stat_statements&#34;).
+<span id="L424" class="ln">   424  </span>			AddRow(&#34;pg_trgm&#34;)
+<span id="L425" class="ln">   425  </span>	}
+<span id="L426" class="ln">   426  </span>
+<span id="L427" class="ln">   427  </span>	t.Run(&#34;extension already loaded&#34;, func(t *testing.T) {
+<span id="L428" class="ln">   428  </span>		mock, err := pgxmock.NewPool()
+<span id="L429" class="ln">   429  </span>		require.NoError(t, err)
+<span id="L430" class="ln">   430  </span>		defer mock.Close()
+<span id="L431" class="ln">   431  </span>
+<span id="L432" class="ln">   432  </span>		md := &amp;sources.SourceConn{
+<span id="L433" class="ln">   433  </span>			Conn: mock,
+<span id="L434" class="ln">   434  </span>			RuntimeInfo: sources.RuntimeInfo{
+<span id="L435" class="ln">   435  </span>				Extensions: map[string]int{&#34;pg_stat_statements&#34;: 10800},
+<span id="L436" class="ln">   436  </span>			},
+<span id="L437" class="ln">   437  </span>		}
+<span id="L438" class="ln">   438  </span>
+<span id="L439" class="ln">   439  </span>		mock.ExpectQuery(&#34;select name&#34;).WillReturnRows(availableExtsRows())
+<span id="L440" class="ln">   440  </span>
+<span id="L441" class="ln">   441  </span>		created, err := md.TryCreateMissingExtensions(ctx, []string{&#34;pg_stat_statements&#34;})
+<span id="L442" class="ln">   442  </span>		assert.NoError(t, err)
+<span id="L443" class="ln">   443  </span>		assert.Empty(t, created)
+<span id="L444" class="ln">   444  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L445" class="ln">   445  </span>	})
+<span id="L446" class="ln">   446  </span>
+<span id="L447" class="ln">   447  </span>	t.Run(&#34;extension not available on instance&#34;, func(t *testing.T) {
+<span id="L448" class="ln">   448  </span>		mock, err := pgxmock.NewPool()
+<span id="L449" class="ln">   449  </span>		require.NoError(t, err)
+<span id="L450" class="ln">   450  </span>		defer mock.Close()
+<span id="L451" class="ln">   451  </span>
+<span id="L452" class="ln">   452  </span>		md := &amp;sources.SourceConn{
+<span id="L453" class="ln">   453  </span>			Conn:        mock,
+<span id="L454" class="ln">   454  </span>			RuntimeInfo: sources.RuntimeInfo{Extensions: map[string]int{}},
+<span id="L455" class="ln">   455  </span>		}
+<span id="L456" class="ln">   456  </span>
+<span id="L457" class="ln">   457  </span>		mock.ExpectQuery(&#34;select name&#34;).WillReturnRows(availableExtsRows())
+<span id="L458" class="ln">   458  </span>
+<span id="L459" class="ln">   459  </span>		created, err := md.TryCreateMissingExtensions(ctx, []string{&#34;missing_ext&#34;})
+<span id="L460" class="ln">   460  </span>		assert.Error(t, err)
+<span id="L461" class="ln">   461  </span>		assert.Empty(t, created)
+<span id="L462" class="ln">   462  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L463" class="ln">   463  </span>	})
+<span id="L464" class="ln">   464  </span>
+<span id="L465" class="ln">   465  </span>	t.Run(&#34;extension created successfully&#34;, func(t *testing.T) {
+<span id="L466" class="ln">   466  </span>		mock, err := pgxmock.NewPool()
+<span id="L467" class="ln">   467  </span>		require.NoError(t, err)
+<span id="L468" class="ln">   468  </span>		defer mock.Close()
+<span id="L469" class="ln">   469  </span>
+<span id="L470" class="ln">   470  </span>		md := &amp;sources.SourceConn{
+<span id="L471" class="ln">   471  </span>			Conn:        mock,
+<span id="L472" class="ln">   472  </span>			RuntimeInfo: sources.RuntimeInfo{Extensions: map[string]int{}},
+<span id="L473" class="ln">   473  </span>		}
+<span id="L474" class="ln">   474  </span>
+<span id="L475" class="ln">   475  </span>		mock.ExpectQuery(&#34;select name&#34;).WillReturnRows(availableExtsRows())
+<span id="L476" class="ln">   476  </span>		mock.ExpectExec(`create extension if not exists`).WillReturnResult(pgxmock.NewResult(&#34;CREATE EXTENSION&#34;, 1))
+<span id="L477" class="ln">   477  </span>
+<span id="L478" class="ln">   478  </span>		created, err := md.TryCreateMissingExtensions(ctx, []string{&#34;pg_stat_statements&#34;})
+<span id="L479" class="ln">   479  </span>		assert.NoError(t, err)
+<span id="L480" class="ln">   480  </span>		assert.Equal(t, &#34;pg_stat_statements&#34;, created)
+<span id="L481" class="ln">   481  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L482" class="ln">   482  </span>	})
+<span id="L483" class="ln">   483  </span>
+<span id="L484" class="ln">   484  </span>	t.Run(&#34;extension creation fails&#34;, func(t *testing.T) {
+<span id="L485" class="ln">   485  </span>		mock, err := pgxmock.NewPool()
+<span id="L486" class="ln">   486  </span>		require.NoError(t, err)
+<span id="L487" class="ln">   487  </span>		defer mock.Close()
+<span id="L488" class="ln">   488  </span>
+<span id="L489" class="ln">   489  </span>		md := &amp;sources.SourceConn{
+<span id="L490" class="ln">   490  </span>			Conn:        mock,
+<span id="L491" class="ln">   491  </span>			RuntimeInfo: sources.RuntimeInfo{Extensions: map[string]int{}},
+<span id="L492" class="ln">   492  </span>		}
+<span id="L493" class="ln">   493  </span>
+<span id="L494" class="ln">   494  </span>		mock.ExpectQuery(&#34;select name&#34;).WillReturnRows(availableExtsRows())
+<span id="L495" class="ln">   495  </span>		mock.ExpectExec(`create extension if not exists`).WillReturnError(assert.AnError)
+<span id="L496" class="ln">   496  </span>
+<span id="L497" class="ln">   497  </span>		created, err := md.TryCreateMissingExtensions(ctx, []string{&#34;pg_stat_statements&#34;})
+<span id="L498" class="ln">   498  </span>		assert.Error(t, err)
+<span id="L499" class="ln">   499  </span>		assert.Empty(t, created)
+<span id="L500" class="ln">   500  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L501" class="ln">   501  </span>	})
+<span id="L502" class="ln">   502  </span>
+<span id="L503" class="ln">   503  </span>	t.Run(&#34;query available extensions fails&#34;, func(t *testing.T) {
+<span id="L504" class="ln">   504  </span>		mock, err := pgxmock.NewPool()
+<span id="L505" class="ln">   505  </span>		require.NoError(t, err)
+<span id="L506" class="ln">   506  </span>		defer mock.Close()
+<span id="L507" class="ln">   507  </span>
+<span id="L508" class="ln">   508  </span>		md := &amp;sources.SourceConn{
+<span id="L509" class="ln">   509  </span>			Conn:        mock,
+<span id="L510" class="ln">   510  </span>			RuntimeInfo: sources.RuntimeInfo{Extensions: map[string]int{}},
+<span id="L511" class="ln">   511  </span>		}
+<span id="L512" class="ln">   512  </span>
+<span id="L513" class="ln">   513  </span>		mock.ExpectQuery(&#34;select name&#34;).WillReturnError(assert.AnError)
+<span id="L514" class="ln">   514  </span>
+<span id="L515" class="ln">   515  </span>		created, err := md.TryCreateMissingExtensions(ctx, []string{&#34;pg_stat_statements&#34;})
+<span id="L516" class="ln">   516  </span>		assert.Error(t, err)
+<span id="L517" class="ln">   517  </span>		assert.Empty(t, created)
+<span id="L518" class="ln">   518  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L519" class="ln">   519  </span>	})
+<span id="L520" class="ln">   520  </span>
+<span id="L521" class="ln">   521  </span>	t.Run(&#34;mixed: one created, one already loaded, one unavailable&#34;, func(t *testing.T) {
+<span id="L522" class="ln">   522  </span>		mock, err := pgxmock.NewPool()
+<span id="L523" class="ln">   523  </span>		require.NoError(t, err)
+<span id="L524" class="ln">   524  </span>		defer mock.Close()
+<span id="L525" class="ln">   525  </span>
+<span id="L526" class="ln">   526  </span>		md := &amp;sources.SourceConn{
+<span id="L527" class="ln">   527  </span>			Conn: mock,
+<span id="L528" class="ln">   528  </span>			RuntimeInfo: sources.RuntimeInfo{
+<span id="L529" class="ln">   529  </span>				Extensions: map[string]int{&#34;pg_trgm&#34;: 10000},
+<span id="L530" class="ln">   530  </span>			},
+<span id="L531" class="ln">   531  </span>		}
+<span id="L532" class="ln">   532  </span>
+<span id="L533" class="ln">   533  </span>		mock.ExpectQuery(&#34;select name&#34;).WillReturnRows(availableExtsRows())
+<span id="L534" class="ln">   534  </span>		mock.ExpectExec(`create extension if not exists`).WillReturnResult(pgxmock.NewResult(&#34;CREATE EXTENSION&#34;, 1))
+<span id="L535" class="ln">   535  </span>
+<span id="L536" class="ln">   536  </span>		created, err := md.TryCreateMissingExtensions(ctx, []string{&#34;pg_stat_statements&#34;, &#34;pg_trgm&#34;, &#34;missing_ext&#34;})
+<span id="L537" class="ln">   537  </span>		assert.Error(t, err) <span class="comment">// missing_ext not available</span>
+<span id="L538" class="ln">   538  </span>		assert.Equal(t, &#34;pg_stat_statements&#34;, created)
+<span id="L539" class="ln">   539  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L540" class="ln">   540  </span>	})
+<span id="L541" class="ln">   541  </span>}
+<span id="L542" class="ln">   542  </span>
 </pre><p></p>
 
 <div id="footer">
