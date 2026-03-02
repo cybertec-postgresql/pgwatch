@@ -449,7 +449,8 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 				
 			</h2>
-			
+			<p>MockMetricsReaderWriter implements MetricsReaderWriter interface
+
 			<pre>type MockMetricsReaderWriter struct {
 <span id="MockMetricsReaderWriter.GetMetricsFunc"></span>    GetMetricsFunc   func() (*<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metrics">Metrics</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
 <span id="MockMetricsReaderWriter.UpdateMetricFunc"></span>    UpdateMetricFunc func(name <a href="https://pkg.go.dev/builtin/#string">string</a>, m <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
@@ -572,12 +573,13 @@ This is useful for testing log parsing functionality with server_log_event_count
 		
 			
 			
-			<h2 id="MockSourcesReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L85">MockSourcesReaderWriter</a>
+			<h2 id="MockSourcesReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L86">MockSourcesReaderWriter</a>
 				<a class="permalink" href="#MockSourcesReaderWriter">&#xb6;</a>
 				
 				
 			</h2>
-			
+			<p>MockSourcesReaderWriter implements SourcesReaderWriter interface
+
 			<pre>type MockSourcesReaderWriter struct {
 <span id="MockSourcesReaderWriter.GetSourcesFunc"></span>    GetSourcesFunc   func() (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#Sources">Sources</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
 <span id="MockSourcesReaderWriter.UpdateSourceFunc"></span>    UpdateSourceFunc func(md <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#Source">Source</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
@@ -599,7 +601,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 
 			
 				
-				<h3 id="MockSourcesReaderWriter.CreateSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L99">CreateSource</a>
+				<h3 id="MockSourcesReaderWriter.CreateSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L100">CreateSource</a>
 					<a class="permalink" href="#MockSourcesReaderWriter.CreateSource">&#xb6;</a>
 					
 					
@@ -611,7 +613,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockSourcesReaderWriter.DeleteSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L102">DeleteSource</a>
+				<h3 id="MockSourcesReaderWriter.DeleteSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L103">DeleteSource</a>
 					<a class="permalink" href="#MockSourcesReaderWriter.DeleteSource">&#xb6;</a>
 					
 					
@@ -623,7 +625,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockSourcesReaderWriter.GetSources">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L93">GetSources</a>
+				<h3 id="MockSourcesReaderWriter.GetSources">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L94">GetSources</a>
 					<a class="permalink" href="#MockSourcesReaderWriter.GetSources">&#xb6;</a>
 					
 					
@@ -635,7 +637,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockSourcesReaderWriter.UpdateSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L96">UpdateSource</a>
+				<h3 id="MockSourcesReaderWriter.UpdateSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L97">UpdateSource</a>
 					<a class="permalink" href="#MockSourcesReaderWriter.UpdateSource">&#xb6;</a>
 					
 					
@@ -647,7 +649,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockSourcesReaderWriter.WriteSources">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L105">WriteSources</a>
+				<h3 id="MockSourcesReaderWriter.WriteSources">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L106">WriteSources</a>
 					<a class="permalink" href="#MockSourcesReaderWriter.WriteSources">&#xb6;</a>
 					
 					
@@ -661,12 +663,13 @@ This is useful for testing log parsing functionality with server_log_event_count
 		
 			
 			
-			<h2 id="Receiver">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L13">Receiver</a>
+			<h2 id="Receiver">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L14">Receiver</a>
 				<a class="permalink" href="#Receiver">&#xb6;</a>
 				
 				
 			</h2>
-			
+			<p>Receiver implements the ReceiverServer interface for testing purposes
+
 			<pre>type Receiver struct {
     <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/">pb</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/#UnimplementedReceiverServer">UnimplementedReceiverServer</a>
 }
@@ -684,7 +687,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 
 			
 				
-				<h3 id="Receiver.DefineMetrics">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L37">DefineMetrics</a>
+				<h3 id="Receiver.DefineMetrics">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L38">DefineMetrics</a>
 					<a class="permalink" href="#Receiver.DefineMetrics">&#xb6;</a>
 					
 					
@@ -696,7 +699,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="Receiver.SyncMetric">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L27">SyncMetric</a>
+				<h3 id="Receiver.SyncMetric">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L28">SyncMetric</a>
 					<a class="permalink" href="#Receiver.SyncMetric">&#xb6;</a>
 					
 					
@@ -708,7 +711,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="Receiver.UpdateMeasurements">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L17">UpdateMeasurements</a>
+				<h3 id="Receiver.UpdateMeasurements">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L18">UpdateMeasurements</a>
 					<a class="permalink" href="#Receiver.UpdateMeasurements">&#xb6;</a>
 					
 					
