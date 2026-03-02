@@ -98,7 +98,7 @@ It reads the configuration from the specified sources and metrics, then begins c
     ENV: `$PW_PARTITION_INTERVAL`
 
     Example:
-    `--partition-inteval="3 weeks 4 days"`,
+    `--partition-interval="3 weeks 4 days"`,
 
 - `--retention=`
 
