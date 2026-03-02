@@ -374,3 +374,168 @@ func TestSourceConn_GetClusterIdentifier(t *testing.T) {
 	}
 	assert.Equal(t, "", md.GetClusterIdentifier())
 }
+
+func TestTryCreateMetricsFetchingHelpers(t *testing.T) {
+	ctx := context.Background()
+	mock, err := pgxmock.NewPool()
+	assert.NoError(t, err)
+	defer mock.Close()
+
+	fn := func(metric string) string {
+		if metric == "metric1" {
+			return "CREATE FUNCTION metric1"
+		}
+		return ""
+	}
+
+	md := &sources.SourceConn{
+		Conn: mock,
+		Source: sources.Source{
+			Name:           "testdb",
+			Metrics:        map[string]float64{"metric1": 42, "nonexistent": 0},
+			MetricsStandby: map[string]float64{"metric1": 42},
+		},
+	}
+
+	t.Run("success", func(t *testing.T) {
+		mock.ExpectExec("CREATE FUNCTION metric1").WillReturnResult(pgxmock.NewResult("CREATE", 1))
+
+		err = md.TryCreateMetricsHelpers(ctx, fn)
+		assert.NoError(t, err)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("error on exec", func(t *testing.T) {
+		mock.ExpectExec("CREATE FUNCTION metric1").WillReturnError(assert.AnError)
+
+		err = md.TryCreateMetricsHelpers(ctx, fn)
+		assert.Error(t, err)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+}
+
+func TestTryCreateMissingExtensions(t *testing.T) {
+	ctx := context.Background()
+
+	availableExtsRows := func() *pgxmock.Rows {
+		return pgxmock.NewRows([]string{"name"}).
+			AddRow("pg_stat_statements").
+			AddRow("pg_trgm")
+	}
+
+	t.Run("extension already loaded", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+
+		md := &sources.SourceConn{
+			Conn: mock,
+			RuntimeInfo: sources.RuntimeInfo{
+				Extensions: map[string]int{"pg_stat_statements": 10800},
+			},
+		}
+
+		mock.ExpectQuery("select name").WillReturnRows(availableExtsRows())
+
+		created, err := md.TryCreateMissingExtensions(ctx, []string{"pg_stat_statements"})
+		assert.NoError(t, err)
+		assert.Empty(t, created)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("extension not available on instance", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+
+		md := &sources.SourceConn{
+			Conn:        mock,
+			RuntimeInfo: sources.RuntimeInfo{Extensions: map[string]int{}},
+		}
+
+		mock.ExpectQuery("select name").WillReturnRows(availableExtsRows())
+
+		created, err := md.TryCreateMissingExtensions(ctx, []string{"missing_ext"})
+		assert.Error(t, err)
+		assert.Empty(t, created)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("extension created successfully", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+
+		md := &sources.SourceConn{
+			Conn:        mock,
+			RuntimeInfo: sources.RuntimeInfo{Extensions: map[string]int{}},
+		}
+
+		mock.ExpectQuery("select name").WillReturnRows(availableExtsRows())
+		mock.ExpectExec(`create extension if not exists`).WillReturnResult(pgxmock.NewResult("CREATE EXTENSION", 1))
+
+		created, err := md.TryCreateMissingExtensions(ctx, []string{"pg_stat_statements"})
+		assert.NoError(t, err)
+		assert.Equal(t, "pg_stat_statements", created)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("extension creation fails", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+
+		md := &sources.SourceConn{
+			Conn:        mock,
+			RuntimeInfo: sources.RuntimeInfo{Extensions: map[string]int{}},
+		}
+
+		mock.ExpectQuery("select name").WillReturnRows(availableExtsRows())
+		mock.ExpectExec(`create extension if not exists`).WillReturnError(assert.AnError)
+
+		created, err := md.TryCreateMissingExtensions(ctx, []string{"pg_stat_statements"})
+		assert.Error(t, err)
+		assert.Empty(t, created)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("query available extensions fails", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+
+		md := &sources.SourceConn{
+			Conn:        mock,
+			RuntimeInfo: sources.RuntimeInfo{Extensions: map[string]int{}},
+		}
+
+		mock.ExpectQuery("select name").WillReturnError(assert.AnError)
+
+		created, err := md.TryCreateMissingExtensions(ctx, []string{"pg_stat_statements"})
+		assert.Error(t, err)
+		assert.Empty(t, created)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("mixed: one created, one already loaded, one unavailable", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+
+		md := &sources.SourceConn{
+			Conn: mock,
+			RuntimeInfo: sources.RuntimeInfo{
+				Extensions: map[string]int{"pg_trgm": 10000},
+			},
+		}
+
+		mock.ExpectQuery("select name").WillReturnRows(availableExtsRows())
+		mock.ExpectExec(`create extension if not exists`).WillReturnResult(pgxmock.NewResult("CREATE EXTENSION", 1))
+
+		created, err := md.TryCreateMissingExtensions(ctx, []string{"pg_stat_statements", "pg_trgm", "missing_ext"})
+		assert.Error(t, err) // missing_ext not available
+		assert.Equal(t, "pg_stat_statements", created)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}

@@ -43,7 +43,7 @@ For the fastest development and deployment experience, the Docker compose files 
     ```shell
     git clone https://github.com/cybertec-postgresql/pgwatch.git && cd pgwatch
 
-    git checkout v3.7.0 # or any other version you want to use
+    git checkout v5.0.0 # or any other version you want to use
 
     docker compose -f ./docker/docker-compose.yml up --detach
     ```
