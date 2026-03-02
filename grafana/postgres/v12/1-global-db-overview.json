@@ -116,7 +116,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH combined_data AS (\n  SELECT \n    dbname, \n    time, \n    (data->>'sessions')::int8 AS sessions\n  FROM db_stats \n  WHERE dbname IN ($dbname) \n    AND $__timeFilter(time)\n  \n  UNION ALL\n  \n  SELECT dbname, time, sessions\n  FROM (\n    SELECT DISTINCT ON (dbname) \n      dbname, \n      time, \n      (data->>'sessions')::int8 AS sessions\n    FROM db_stats\n    WHERE dbname IN ($dbname) \n      AND time < $__timeFrom()::timestamptz\n    ORDER BY dbname, time DESC\n  ) previous_rows\n),\nsession_changes AS (\n  SELECT\n    dbname,\n    time,\n    sessions - lag(sessions) OVER (PARTITION BY dbname ORDER BY time) AS established\n  FROM combined_data\n)\nSELECT\n  $__timeGroup(time, $agg_interval),\n  SUM(established) AS value,\n  dbname AS metric\nFROM session_changes\nWHERE established IS NOT NULL\n  AND time >= $__timeFrom()::timestamptz\nGROUP BY 1, dbname\nORDER BY 1, dbname;",
+          "rawSql": "WITH last_out_of_range_rows AS (\n  SELECT DISTINCT ON (dbname)\n    dbname,\n    time,\n    (data->>'sessions')::int8 AS sessions\n  FROM db_stats\n  WHERE dbname IN ($dbname)\n    AND time < $__timeFrom()::timestamptz\n  ORDER BY dbname, time DESC\n),\nsession_changes AS (\n  SELECT\n    dbname,\n    time,\n    (data->>'sessions')::int8 - lag((data->>'sessions')::int8) OVER w AS established\n  FROM db_stats\n  WHERE dbname IN ($dbname)\n    AND time >= (SELECT time FROM last_out_of_range_rows r WHERE r.dbname = db_stats.dbname)\n    AND time <= $__timeTo()::timestamptz\n  WINDOW w AS (PARTITION BY dbname ORDER BY time)\n)\nSELECT\n  $__timeGroup(time, $agg_interval),\n  SUM(established) AS value,\n  dbname AS metric\nFROM session_changes\nWHERE established IS NOT NULL\nGROUP BY 1, dbname\nORDER BY 1, dbname",
           "refId": "A",
           "sql": {
             "columns": [
@@ -240,7 +240,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((c - c_lag) / extract(epoch from time - time_lag)) as \" \"\nfrom (\n  select \n    (data->>'calls')::bigint as c, lag((data->>'calls')::bigint) over w as c_lag,\n    time, lag(time) over w as time_lag, dbname\n  from stat_statements_calls\n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname order by time)        \n) x\nwhere c > c_lag and time > time_lag\ngroup by 1, 2\norder by 1\n",
+          "rawSql": "WITH last_out_of_range_rows AS (\n  SELECT DISTINCT ON (dbname)\n    dbname,\n    time\n  FROM stat_statements_calls\n  WHERE dbname IN ($dbname)\n    AND time < $__timeFrom()::timestamptz\n  ORDER BY dbname, time DESC\n)\nSELECT\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((c - c_lag) / extract(epoch from time - time_lag)) AS \" \"\nFROM (\n  SELECT\n    (data->>'calls')::bigint AS c, lag((data->>'calls')::bigint) OVER w AS c_lag,\n    time, lag(time) OVER w AS time_lag, dbname\n  FROM stat_statements_calls\n  WHERE dbname IN ($dbname)\n    AND time >= (SELECT time FROM last_out_of_range_rows r WHERE r.dbname = stat_statements_calls.dbname)\n    AND time <= $__timeTo()::timestamptz\n  WINDOW w AS (PARTITION BY dbname ORDER BY time)\n) x\nWHERE time >= $__timeFrom()::timestamptz\n  AND c > c_lag\n  AND time > time_lag\nGROUP BY 1, 2\nORDER BY 1;",
           "refId": "A",
           "select": [
             [
