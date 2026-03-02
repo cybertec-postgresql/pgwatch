@@ -55,7 +55,7 @@
         "x": 0,
         "y": 0
       },
-      "id": 9,
+      "id": 1,
       "options": {
         "code": {
           "language": "sql",
@@ -353,7 +353,8 @@
           "policy": "default",
           "query": "SELECT non_negative_derivative(mean(\"total_time\")) / non_negative_derivative(mean(\"calls\")) FROM \"stat_statements\" WHERE \"queryid\" =~ /^$queryid$/ AND $timeFilter GROUP BY time($__interval), \"queryid\" fill(null)",
           "rawQuery": true,
-          "rawSql": "WITH baseline AS (\n  SELECT time\n  FROM stat_statements\n  WHERE dbname = '$dbname'\n    AND tag_data @> '{\"queryid\": \"$queryid\"}'\n    AND time < $__timeFrom()::timestamptz\n  ORDER BY time DESC\n  LIMIT 1\n)\nSELECT\n  $__timeGroup(time, $agg_interval),\n  sum(tt - tt_lag) / NULLIF(extract(epoch from '$agg_interval'::interval), 0) as \"total_time_per_sec\"\nFROM (\n  SELECT\n    (data->>'total_time')::float8 as tt, lag((data->>'total_time')::float8) over w as tt_lag,\n    time\n  FROM stat_statements\n  WHERE dbname = '$dbname'\n    AND tag_data @> '{\"queryid\": \"$queryid\"}'\n    AND time <= $__timeTo()::timestamptz\n    AND time >= (SELECT time FROM baseline)\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE tt >= tt_lag\n  AND time >= $__timeFrom()::timestamptz\nGROUP BY 1\nORDER BY 1",          "refId": "A",
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\nselect\n  $__timeGroup(time, $agg_interval),\n  sum(tt - tt_lag) / nullif(extract(epoch from '$agg_interval'::interval), 0) as \"total_time_per_sec\"\nfrom (\n  select\n    (data->>'total_time')::float8 as tt, lag((data->>'total_time')::float8) over w as tt_lag,\n    time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time <= $__timeTo()::timestamptz\n    and time >= (select time from baseline)\n  window w as (order by time)\n) x\nwhere tt >= tt_lag\n  and time >= $__timeFrom()::timestamptz\ngroup by 1\norder by 1",
+          "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
@@ -513,7 +514,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "WITH baseline AS (\n  SELECT time\n  FROM stat_statements\n  WHERE dbname = '$dbname'\n    AND tag_data @> '{\"queryid\": \"$queryid\"}'\n    AND time < $__timeFrom()::timestamptz\n  ORDER BY time DESC\n  LIMIT 1\n)\nSELECT\n  $__timeGroup(time, $agg_interval),\n  avg(case when c = c_lag then null else (tt - tt_lag) / NULLIF(c - c_lag, 0) end) as \"time_per_call\"\nFROM (\n  SELECT\n    (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag,\n    (data->>'total_time')::float8 as tt, lag((data->>'total_time')::float8) over w as tt_lag,\n    time\n  FROM stat_statements\n  WHERE dbname = '$dbname'\n    AND tag_data @> '{\"queryid\": \"$queryid\"}'\n    AND time <= $__timeTo()::timestamptz\n    AND time >= (SELECT time FROM baseline)\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE c >= c_lag\n  AND time >= $__timeFrom()::timestamptz\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\nselect\n  $__timeGroup(time, $agg_interval),\n  avg(case when c = c_lag then null else (tt - tt_lag) / nullif(c - c_lag, 0) end) as \"time_per_call\"\nfrom (\n  select\n    (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag,\n    (data->>'total_time')::float8 as tt, lag((data->>'total_time')::float8) over w as tt_lag,\n    time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time <= $__timeTo()::timestamptz\n    and time >= (select time from baseline)\n  window w as (order by time)\n) x\nwhere c >= c_lag\n  and time >= $__timeFrom()::timestamptz\ngroup by 1\norder by 1",
           "resultFormat": "time_series",
           "select": [
             [
@@ -598,6 +599,7 @@
               "mode": "off"
             }
           },
+          "displayName": "$queryid",
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -613,22 +615,24 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 24,
+        "h": 6,
+        "w": 12,
         "x": 0,
-        "y": 20
+        "y": 18
       },
       "id": 4,
       "interval": "5m",
       "options": {
         "legend": {
           "calcs": [
-            "mean"
+            "mean",
+            "max",
+            "min"
           ],
           "displayMode": "list",
           "placement": "bottom",
@@ -670,7 +674,7 @@
           "policy": "default",
           "query": "SELECT non_negative_derivative(mean(\"shared_blks_hit\")) / (non_negative_derivative(mean(\"shared_blks_hit\")) + non_negative_derivative(mean(\"shared_blks_read\"))) * 100 FROM \"stat_statements\" WHERE \"queryid\" =~ /^$queryid$/ AND $timeFilter GROUP BY time($__interval), \"queryid\" fill(null)",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg(case when hit = hit_lag and read = read_lag then null else ((hit-hit_lag)::numeric * 100) / ((hit-hit_lag) + (read-read_lag)) end) as \"sb_hit_ratio\"\nfrom (\n        select \n          (data->>'shared_blks_hit')::int8 as hit, lag((data->>'shared_blks_hit')::int8) over w as hit_lag,\n          (data->>'shared_blks_read')::int8 as read, lag((data->>'shared_blks_read')::int8) over w as read_lag,\n          time\n        from stat_statements\n        where dbname = '$dbname' and $__timeFilter(time) and tag_data @> '{\"queryid\": \"$queryid\"}'\n        window w as (order by time)\n) x\nwhere hit >= hit_lag and read >= read_lag\ngroup by 1\norder by 1",
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\nselect\n  $__timeGroup(time, $agg_interval),\n  avg(case when hit = hit_lag and read = read_lag then null else ((hit-hit_lag)::numeric * 100) / nullif((hit-hit_lag) + (read-read_lag), 0) end) as \"sb_hit_ratio\"\nfrom (\n  select\n    (data->>'shared_blks_hit')::int8 as hit, lag((data->>'shared_blks_hit')::int8) over w as hit_lag,\n    (data->>'shared_blks_read')::int8 as read, lag((data->>'shared_blks_read')::int8) over w as read_lag,\n    time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time <= $__timeTo()::timestamptz\n    and time >= (select time from baseline)\n  window w as (order by time)\n) x\nwhere hit >= hit_lag and read >= read_lag\n  and time >= $__timeFrom()::timestamptz\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -747,6 +751,167 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.name}",
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 5,
+      "interval": "5m",
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "min"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "alias": "sb_hit_ratio",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [
+            {
+              "params": [
+                "$interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "measurement": "stat_statements",
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT non_negative_derivative(mean(\"shared_blks_hit\")) / (non_negative_derivative(mean(\"shared_blks_hit\")) + non_negative_derivative(mean(\"shared_blks_read\"))) * 100 FROM \"stat_statements\" WHERE \"queryid\" =~ /^$queryid$/ AND $timeFilter GROUP BY time($__interval), \"queryid\" fill(null)",
+          "rawQuery": true,
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n),\nbase_data as (\n  select\n    (data->>'shared_blks_hit')::int8 as hit, lag((data->>'shared_blks_hit')::int8) over w as hit_lag,\n    (data->>'shared_blks_read')::int8 as read, lag((data->>'shared_blks_read')::int8) over w as read_lag,\n    (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag,\n    time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time <= $__timeTo()::timestamptz\n    and time >= (select time from baseline)\n  window w as (order by time)\n)\nselect\n  $__timeGroup(time, $agg_interval),\n  avg(case when c = c_lag then null else ((hit - hit_lag)::numeric * 8192) / nullif(c - c_lag, 0) end) as \"Shared Buffers bytes hit\",\n  avg(case when c = c_lag then null else ((read - read_lag)::numeric * 8192) / nullif(c - c_lag, 0) end) as \"Shared Buffers bytes read\"\nfrom base_data\nwhere hit >= hit_lag and read >= read_lag and c >= c_lag\n  and time >= $__timeFrom()::timestamptz\ngroup by 1\norder by 1",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "shared_blks_hit"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              },
+              {
+                "params": [
+                  "1h"
+                ],
+                "type": "non_negative_derivative"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "queryid",
+              "operator": "=~",
+              "value": "/^$queryid$/"
+            }
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Shared Buffers Hit/Read per call",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -781,7 +946,7 @@
         "x": 0,
         "y": 25
       },
-      "id": 5,
+      "id": 6,
       "interval": "5m",
       "options": {
         "legend": {
@@ -943,7 +1108,7 @@
         "x": 0,
         "y": 30
       },
-      "id": 6,
+      "id": 7,
       "interval": "5m",
       "options": {
         "legend": {
@@ -1212,7 +1377,7 @@
         "x": 0,
         "y": 45
       },
-      "id": 7,
+      "id": 9,
       "options": {
         "code": {
           "language": "plaintext",
