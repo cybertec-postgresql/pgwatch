@@ -101,6 +101,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 			ctx = log.WithLogger(ctx, srcL)
 
 			if monitoredSource.Connect(ctx, r.Sources) != nil {
+				r.WriteInstanceDown(monitoredSource)
 				srcL.Warning("could not init connection, retrying on next iteration")
 				continue
 			}
@@ -428,6 +429,18 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 	r.monitoredSources = newSrcs
 	r.logger.WithField("sources", len(r.monitoredSources)).Info("sources refreshed")
 	return nil
+}
+
+// WriteInstanceDown writes instance_up = 0 metric to sinks for the given source
+func (r *Reaper) WriteInstanceDown(md *sources.SourceConn) {
+	r.measurementCh <- metrics.MeasurementEnvelope{
+		DBName:     md.Name,
+		MetricName: specialMetricInstanceUp,
+		Data: metrics.Measurements{metrics.Measurement{
+			metrics.EpochColumnName: time.Now().UnixNano(),
+			specialMetricInstanceUp: 0},
+		},
+	}
 }
 
 // WriteMeasurements() writes the metrics to the sinks
