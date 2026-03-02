@@ -10,6 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+// Receiver implements the ReceiverServer interface for testing purposes
 type Receiver struct {
 	pb.UnimplementedReceiverServer
 }
@@ -44,8 +45,7 @@ func (receiver *Receiver) DefineMetrics(_ context.Context, metricsStruct *struct
 	return &pb.Reply{Logmsg: "metrics defined successfully"}, nil
 }
 
-//---------------Sources-Metrics Mocks--------------
-
+// MockMetricsReaderWriter implements MetricsReaderWriter interface
 type MockMetricsReaderWriter struct {
 	GetMetricsFunc   func() (*metrics.Metrics, error)
 	UpdateMetricFunc func(name string, m metrics.Metric) error
@@ -82,6 +82,7 @@ func (m *MockMetricsReaderWriter) WriteMetrics(metricDefs *metrics.Metrics) erro
 	return m.WriteMetricsFunc(metricDefs)
 }
 
+// MockSourcesReaderWriter implements SourcesReaderWriter interface
 type MockSourcesReaderWriter struct {
 	GetSourcesFunc   func() (sources.Sources, error)
 	UpdateSourceFunc func(md sources.Source) error
