@@ -422,7 +422,10 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	}
 	pgw.forceRecreatePartitions = false
 	if err != nil {
-		pgw.lastError <- err
+		select {
+		case pgw.lastError <- err:
+		default:
+		}
 	}
 
 	var rowsBatched, n int64
@@ -446,7 +449,10 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 		logger.WithField("rows", rowsBatched).WithField("elapsed", diff).Info("measurements written")
 		return
 	}
-	pgw.lastError <- err
+	select {
+	case pgw.lastError <- err:
+	default:
+	}
 }
 
 func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]ExistingPartitionInfo) (err error) {
