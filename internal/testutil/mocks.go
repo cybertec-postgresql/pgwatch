@@ -6,6 +6,7 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v5/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -104,4 +105,39 @@ func (m *MockSourcesReaderWriter) DeleteSource(name string) error {
 }
 func (m *MockSourcesReaderWriter) WriteSources(srcs sources.Sources) error {
 	return m.WriteSourcesFunc(srcs)
+}
+
+// MockWriter implements Writer and Migrator interfaces
+type MockWriter struct {
+	err               error
+	needsMigration    bool
+	needsMigrationErr error
+}
+
+func NewMockWriter(err error, needsMigration bool, needsMigrationErr error) *MockWriter {
+	return &MockWriter{
+		err:               err,
+		needsMigration:    needsMigration,
+		needsMigrationErr: needsMigrationErr,
+	}
+}
+
+func (m *MockWriter) SyncMetric(string, string, sinks.SyncOp) error {
+	return m.err
+}
+
+func (m *MockWriter) Write(metrics.MeasurementEnvelope) error {
+	return m.err
+}
+
+func (m *MockWriter) Migrate() error {
+	return m.err
+}
+
+func (m *MockWriter) NeedsMigration() (bool, error) {
+	return m.needsMigration, m.needsMigrationErr
+}
+
+func (m *MockWriter) DefineMetrics(*metrics.Metrics) error {
+	return m.err
 }
