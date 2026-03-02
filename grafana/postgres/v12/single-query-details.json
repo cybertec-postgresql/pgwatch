@@ -1249,18 +1249,15 @@
         "type": "query"
       },
       {
-        "datasource": {
-          "type": "grafana-postgresql-datasource",
-          "uid": "pgwatch-metrics"
+        "current": {
+          "text": "",
+          "value": ""
         },
-        "definition": "select distinct tag_data->>'queryid' from stat_statements WHERE time > current_date -3 and dbname = '$dbname' order by 1;",
-        "includeAll": false,
+        "label": "Query ID",
         "name": "queryid",
         "options": [],
-        "query": "select distinct tag_data->>'queryid' from stat_statements WHERE time > current_date -3 and dbname = '$dbname' order by 1;",
-        "refresh": 1,
-        "regex": "",
-        "type": "query"
+        "query": "",
+        "type": "textbox"
       },
       {
         "auto": false,
