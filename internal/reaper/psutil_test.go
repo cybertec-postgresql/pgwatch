@@ -1,7 +1,6 @@
 package reaper
 
 import (
-	"runtime"
 	"slices"
 	"testing"
 
@@ -77,9 +76,6 @@ func TestGetLoadAvgLocal(t *testing.T) {
 }
 
 func TestGetPathUnderlyingDeviceID(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skip("GetPathUnderlyingDeviceID is not implemented")
-	}
 	a := assert.New(t)
 	tmpDir := t.TempDir()
 	createFile := func(name string) string {
@@ -100,9 +96,6 @@ func TestGetPathUnderlyingDeviceID(t *testing.T) {
 }
 
 func TestGetPathUnderlyingDeviceID_NotFound(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skip("GetPathUnderlyingDeviceID is not implemented")
-	}
 	_, err := GetPathUnderlyingDeviceID("/this/path/should/not/exist/nofile")
 	assert.Error(t, err)
 }
