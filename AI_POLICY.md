@@ -11,16 +11,12 @@ The use of Artificial Intelligence (AI), Large Language Models (LLM), or any aut
 
 ## 2. MANDATORY ATTRIBUTION
 
-Any interaction that is modified, generated, or assisted—in whole or in part—by automated tools must be explicitly disclosed within the same interaction. This includes, but is not limited to:
+Any interaction that is modified, generated, or assisted—in whole or in part—by automated tools must be explicitly disclosed within the same interaction.
 
-- AI Assistants and Chatbots (e.g., ChatGPT, Claude, Gemini).
+Every such interaction must include the specific name of the tool(s) used (e.g., _"Drafted with the assistance of GPT-4o"_, _"Pull request changes implemented by GitHub Copilot"_, _"Issue revealed by Gemini"_, etc.).
 
-- AI-integrated IDEs and Code Generation Tools (e.g., GitHub Copilot, Cursor).
+## 3. ENFORCEMENT
 
-**Disclosure Format:** Every such interaction must include the specific name and version of the tool(s) used (e.g., _"Drafted with the assistance of GPT-4o"_).
-
-## 3. ENFORCEMENT AND TERMINATION
-
-Adherence to this policy is a prerequisite for participating in this community. Failure to provide accurate attribution, or any attempt to obfuscate the use of automated tools, shall result in the immediate and permanent termination of the user’s access to the project repositories and community channels, including an unconditional ban from future participation.
+Adherence is a prerequisite for participation. The project maintainers reserve the right to address violations at their discretion.
 
 _THIS POLICY IS PROVIDED "AS IS" AND THE PROJECT MAINTAINERS RESERVE THE RIGHT TO UPDATE THESE TERMS AT ANY TIME._
