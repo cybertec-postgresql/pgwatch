@@ -2,6 +2,7 @@ package reaper
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -574,11 +575,22 @@ func TestReaper_FetchMetric(t *testing.T) {
 	})
 }
 
+type mockErr string
+
+func (m mockErr) SyncMetric(string, string, sinks.SyncOp) error {
+	return errors.New(string(m))
+}
+
+func (m mockErr) Write(metrics.MeasurementEnvelope) error {
+	return errors.New(string(m))
+}
+
 func TestWriteMeasurements(t *testing.T) {
 	ctx, cancel := context.WithCancel(log.WithLogger(t.Context(), log.NewNoopLogger()))
 	defer cancel()
+	var err mockErr = "write error"
 	r := NewReaper(ctx, &cmdopts.Options{
-		SinksWriter: testutil.NewMockWriter(assert.AnError, false, nil),
+		SinksWriter: err,
 	})
 	go r.WriteMeasurements(ctx)
 	r.WriteInstanceDown(&sources.SourceConn{})

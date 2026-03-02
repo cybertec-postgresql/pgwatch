@@ -6,11 +6,11 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v5/api/pb"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+// Receiver implements the ReceiverServer interface for testing purposes
 type Receiver struct {
 	pb.UnimplementedReceiverServer
 }
@@ -45,8 +45,7 @@ func (receiver *Receiver) DefineMetrics(_ context.Context, metricsStruct *struct
 	return &pb.Reply{Logmsg: "metrics defined successfully"}, nil
 }
 
-//---------------Sources-Metrics Mocks--------------
-
+// MockMetricsReaderWriter implements MetricsReaderWriter interface
 type MockMetricsReaderWriter struct {
 	GetMetricsFunc   func() (*metrics.Metrics, error)
 	UpdateMetricFunc func(name string, m metrics.Metric) error
@@ -83,6 +82,7 @@ func (m *MockMetricsReaderWriter) WriteMetrics(metricDefs *metrics.Metrics) erro
 	return m.WriteMetricsFunc(metricDefs)
 }
 
+// MockSourcesReaderWriter implements SourcesReaderWriter interface
 type MockSourcesReaderWriter struct {
 	GetSourcesFunc   func() (sources.Sources, error)
 	UpdateSourceFunc func(md sources.Source) error
@@ -105,39 +105,4 @@ func (m *MockSourcesReaderWriter) DeleteSource(name string) error {
 }
 func (m *MockSourcesReaderWriter) WriteSources(srcs sources.Sources) error {
 	return m.WriteSourcesFunc(srcs)
-}
-
-// MockWriter implements Writer and Migrator interfaces
-type MockWriter struct {
-	err               error
-	needsMigration    bool
-	needsMigrationErr error
-}
-
-func NewMockWriter(err error, needsMigration bool, needsMigrationErr error) *MockWriter {
-	return &MockWriter{
-		err:               err,
-		needsMigration:    needsMigration,
-		needsMigrationErr: needsMigrationErr,
-	}
-}
-
-func (m *MockWriter) SyncMetric(string, string, sinks.SyncOp) error {
-	return m.err
-}
-
-func (m *MockWriter) Write(metrics.MeasurementEnvelope) error {
-	return m.err
-}
-
-func (m *MockWriter) Migrate() error {
-	return m.err
-}
-
-func (m *MockWriter) NeedsMigration() (bool, error) {
-	return m.needsMigration, m.needsMigrationErr
-}
-
-func (m *MockWriter) DefineMetrics(*metrics.Metrics) error {
-	return m.err
 }
