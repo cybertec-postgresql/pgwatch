@@ -306,10 +306,10 @@ and send measurements to sinks.
 					<dd>&nbsp; &nbsp; <a href="#Reaper.ShutdownOldWorkers">func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[string]bool)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.WriteMeasurements">func (r *Reaper) WriteMeasurements(ctx context.Context)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Reaper.WriteInstanceDown">func (r *Reaper) WriteInstanceDown(md *sources.SourceConn)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.WriteMonitoredSources">func (r *Reaper) WriteMonitoredSources(ctx context.Context)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Reaper.WriteMeasurements">func (r *Reaper) WriteMeasurements(ctx context.Context)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#Reaper.reapMetricMeasurements">func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceConn, metricName string)</a></dd>
@@ -376,14 +376,6 @@ and send measurements to sinks.
 			
 				
 				<pre>const (
-    <span id="monitoredDbsDatastoreSyncIntervalSeconds">monitoredDbsDatastoreSyncIntervalSeconds</span> = 600              <span class="comment">// write actively monitored DBs listing to metrics store after so many seconds</span>
-    <span id="monitoredDbsDatastoreSyncMetricName">monitoredDbsDatastoreSyncMetricName</span>      = &#34;configured_dbs&#34; <span class="comment">// FYI - for Postgres datastore there&#39;s also the admin.all_unique_dbnames table with all recent DB unique names with some metric data</span>
-    <span id="dbMetricJoinStr">dbMetricJoinStr</span>                          = &#34;¤¤¤&#34;            <span class="comment">// just some unlikely string for a DB name to avoid using maps of maps for DB+metric data</span>
-
-)</pre>
-			
-				
-				<pre>const (
     <span id="specialMetricChangeEvents">specialMetricChangeEvents</span>         = &#34;change_events&#34;
     <span id="specialMetricServerLogEventCounts">specialMetricServerLogEventCounts</span> = &#34;server_log_event_counts&#34;
     <span id="specialMetricInstanceUp">specialMetricInstanceUp</span>           = &#34;instance_up&#34;
@@ -394,6 +386,10 @@ and send measurements to sinks.
 			
 				
 				<pre>const <span id="csvLogDefaultRegEx">csvLogDefaultRegEx</span> = `^^(?P&lt;log_time&gt;.*?),&#34;?(?P&lt;user_name&gt;.*?)&#34;?,&#34;?(?P&lt;database_name&gt;.*?)&#34;?,(?P&lt;process_id&gt;\d+),&#34;?(?P&lt;connection_from&gt;.*?)&#34;?,(?P&lt;session_id&gt;.*?),(?P&lt;session_line_num&gt;\d+),&#34;?(?P&lt;command_tag&gt;.*?)&#34;?,(?P&lt;session_start_time&gt;.*?),(?P&lt;virtual_transaction_id&gt;.*?),(?P&lt;transaction_id&gt;.*?),(?P&lt;error_severity&gt;\w+),`</pre>
+			
+				
+				<pre>const <span id="dbMetricJoinStr">dbMetricJoinStr</span> = &#34;¤¤¤&#34; <span class="comment">// just some unlikely string for a DB name to avoid using maps of maps for DB+metric data</span>
+</pre>
 			
 				
 				<pre>const <span id="maxChunkSize">maxChunkSize</span> <a href="https://pkg.go.dev/builtin/#uint64">uint64</a> = 10 * 1024 * 1024 <span class="comment">// 10 MB</span>
@@ -694,7 +690,7 @@ and send measurements to sinks.
 		
 			
 			
-			<h2 id="ChangeDetectionResults">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L62">ChangeDetectionResults</a>
+			<h2 id="ChangeDetectionResults">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L57">ChangeDetectionResults</a>
 				<a class="permalink" href="#ChangeDetectionResults">&#xb6;</a>
 				
 				
@@ -720,7 +716,7 @@ and send measurements to sinks.
 
 			
 				
-				<h3 id="ChangeDetectionResults.String">func (*ChangeDetectionResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L73">String</a>
+				<h3 id="ChangeDetectionResults.String">func (*ChangeDetectionResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L68">String</a>
 					<a class="permalink" href="#ChangeDetectionResults.String">&#xb6;</a>
 					
 					
@@ -732,7 +728,7 @@ and send measurements to sinks.
 				
 			
 				
-				<h3 id="ChangeDetectionResults.Total">func (*ChangeDetectionResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L69">Total</a>
+				<h3 id="ChangeDetectionResults.Total">func (*ChangeDetectionResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L64">Total</a>
 					<a class="permalink" href="#ChangeDetectionResults.Total">&#xb6;</a>
 					
 					
@@ -746,7 +742,7 @@ and send measurements to sinks.
 		
 			
 			
-			<h2 id="ConcurrentMetricDefs">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L21">ConcurrentMetricDefs</a>
+			<h2 id="ConcurrentMetricDefs">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L16">ConcurrentMetricDefs</a>
 				<a class="permalink" href="#ConcurrentMetricDefs">&#xb6;</a>
 				
 				
@@ -768,7 +764,7 @@ and send measurements to sinks.
 
 			
 				
-				<h3 id="NewConcurrentMetricDefs">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L26">NewConcurrentMetricDefs</a>
+				<h3 id="NewConcurrentMetricDefs">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L21">NewConcurrentMetricDefs</a>
 					<a class="permalink" href="#NewConcurrentMetricDefs">&#xb6;</a>
 					
 					
@@ -781,7 +777,7 @@ and send measurements to sinks.
 
 			
 				
-				<h3 id="ConcurrentMetricDefs.Assign">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L55">Assign</a>
+				<h3 id="ConcurrentMetricDefs.Assign">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L50">Assign</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.Assign">&#xb6;</a>
 					
 					
@@ -793,7 +789,7 @@ and send measurements to sinks.
 				
 			
 				
-				<h3 id="ConcurrentMetricDefs.GetMetricDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L35">GetMetricDef</a>
+				<h3 id="ConcurrentMetricDefs.GetMetricDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L30">GetMetricDef</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.GetMetricDef">&#xb6;</a>
 					
 					
@@ -805,7 +801,7 @@ and send measurements to sinks.
 				
 			
 				
-				<h3 id="ConcurrentMetricDefs.GetPresetDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L42">GetPresetDef</a>
+				<h3 id="ConcurrentMetricDefs.GetPresetDef">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L37">GetPresetDef</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.GetPresetDef">&#xb6;</a>
 					
 					
@@ -817,7 +813,7 @@ and send measurements to sinks.
 				
 			
 				
-				<h3 id="ConcurrentMetricDefs.GetPresetMetrics">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L49">GetPresetMetrics</a>
+				<h3 id="ConcurrentMetricDefs.GetPresetMetrics">func (*ConcurrentMetricDefs) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L44">GetPresetMetrics</a>
 					<a class="permalink" href="#ConcurrentMetricDefs.GetPresetMetrics">&#xb6;</a>
 					
 					
@@ -831,7 +827,7 @@ and send measurements to sinks.
 		
 			
 			
-			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L77">ExistingPartitionInfo</a>
+			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L72">ExistingPartitionInfo</a>
 				<a class="permalink" href="#ExistingPartitionInfo">&#xb6;</a>
 				
 				
@@ -1081,7 +1077,7 @@ and send measurements to sinks.
 
 			
 				
-				<h3 id="Reaper.AddSysinfoToMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L478">AddSysinfoToMeasurements</a>
+				<h3 id="Reaper.AddSysinfoToMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L461">AddSysinfoToMeasurements</a>
 					<a class="permalink" href="#Reaper.AddSysinfoToMeasurements">&#xb6;</a>
 					
 					
@@ -1178,7 +1174,7 @@ and send measurements to sinks.
 				
 			
 				
-				<h3 id="Reaper.FetchMetric">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L489">FetchMetric</a>
+				<h3 id="Reaper.FetchMetric">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L472">FetchMetric</a>
 					<a class="permalink" href="#Reaper.FetchMetric">&#xb6;</a>
 					
 					
@@ -1228,7 +1224,7 @@ used to detect if the instance is up or down
 				
 			
 				
-				<h3 id="Reaper.LoadMetrics">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L83">LoadMetrics</a>
+				<h3 id="Reaper.LoadMetrics">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L78">LoadMetrics</a>
 					<a class="permalink" href="#Reaper.LoadMetrics">&#xb6;</a>
 					
 					
@@ -1307,27 +1303,26 @@ start or stop the gatherers accordingly.
 				
 			
 				
-				<h3 id="Reaper.WriteMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L464">WriteMeasurements</a>
-					<a class="permalink" href="#Reaper.WriteMeasurements">&#xb6;</a>
+				<h3 id="Reaper.WriteInstanceDown">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L435">WriteInstanceDown</a>
+					<a class="permalink" href="#Reaper.WriteInstanceDown">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) WriteMeasurements(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>)</pre>
-				<p>WriteMeasurements() writes the metrics to the sinks
+				<pre>func (r *<a href="#Reaper">Reaper</a>) WriteInstanceDown(md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>)</pre>
+				<p>WriteInstanceDown writes instance_up = 0 metric to sinks for the given source
 
 				
 				
 				
 			
 				
-				<h3 id="Reaper.WriteMonitoredSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L436">WriteMonitoredSources</a>
-					<a class="permalink" href="#Reaper.WriteMonitoredSources">&#xb6;</a>
+				<h3 id="Reaper.WriteMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L447">WriteMeasurements</a>
+					<a class="permalink" href="#Reaper.WriteMeasurements">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) WriteMonitoredSources(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>)</pre>
-				<p>WriteMonitoredSources writes actively monitored DBs listing to sinks
-every monitoredDbsDatastoreSyncIntervalSeconds (default 10min)
+				<pre>func (r *<a href="#Reaper">Reaper</a>) WriteMeasurements(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>)</pre>
+				<p>WriteMeasurements() writes the metrics to the sinks
 
 				
 				
