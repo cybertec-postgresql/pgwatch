@@ -73,7 +73,7 @@
             },
             "properties": [
               {
-                "id": "custom.hidden",
+                "id": "custom.hideFrom.viz",
                 "value": true
               }
             ]
@@ -407,18 +407,10 @@
       "id": 2,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -508,6 +500,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -536,6 +534,8 @@
       "options": {
         "legend": {
           "calcs": [
+            "min",
+            "max",
             "mean"
           ],
           "displayMode": "table",
@@ -550,7 +550,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -610,6 +610,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -638,19 +644,23 @@
       "options": {
         "legend": {
           "calcs": [
+            "min",
+            "max",
             "mean"
           ],
           "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -710,6 +720,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -738,6 +754,8 @@
       "options": {
         "legend": {
           "calcs": [
+            "min",
+            "max",
             "mean"
           ],
           "displayMode": "table",
@@ -748,11 +766,11 @@
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
+          "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -812,6 +830,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -840,6 +864,8 @@
       "options": {
         "legend": {
           "calcs": [
+            "min",
+            "max",
             "mean"
           ],
           "displayMode": "table",
@@ -848,11 +874,11 @@
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -912,6 +938,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -940,6 +972,8 @@
       "options": {
         "legend": {
           "calcs": [
+            "min",
+            "max",
             "mean"
           ],
           "displayMode": "table",
@@ -950,11 +984,11 @@
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
+          "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -1014,6 +1048,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1042,19 +1082,23 @@
       "options": {
         "legend": {
           "calcs": [
+            "min",
+            "max",
             "mean"
           ],
           "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -1115,6 +1159,12 @@
               "mode": "off"
             }
           },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1143,6 +1193,8 @@
       "options": {
         "legend": {
           "calcs": [
+            "min",
+            "max",
             "mean"
           ],
           "displayMode": "table",
@@ -1153,11 +1205,11 @@
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
+          "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "datasource": {
@@ -1194,7 +1246,7 @@
         "content": "## Brought to you by\n\n<a href=\"https://www.cybertec-postgresql.com/en/\">\n  <img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\" width=\"400\" />\n</a>",
         "mode": "markdown"
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "title": "",
       "transparent": true,
       "type": "text"
@@ -1372,5 +1424,5 @@
   "timezone": "browser",
   "title": "3. Query Performance Analysis",
   "uid": "query-performance-analysis",
-  "version": 49 
+  "version": 49
 }
