@@ -411,8 +411,8 @@ func TestReaper_FetchMetric(t *testing.T) {
 		}
 		md, mock := createTestSourceConn(t)
 		defer mock.Close()
-		md.Source.Name = "mydb"
-		md.Source.CustomTags = map[string]string{"env": "prod"}
+		md.Name = "mydb"
+		md.CustomTags = map[string]string{"env": "prod"}
 
 		rows := pgxmock.NewRows([]string{"epoch_ns", "value"}).
 			AddRow(time.Now().UnixNano(), int64(42))
@@ -521,7 +521,7 @@ func TestReaper_FetchMetric(t *testing.T) {
 
 	t.Run("cache hit serves data without querying DB", func(t *testing.T) {
 		r := newFetchMetricReaper()
-		r.Options.Metrics.InstanceLevelCacheMaxSeconds = 30
+		r.Metrics.InstanceLevelCacheMaxSeconds = 30
 
 		metricDefs.MetricDefs["cached_metric"] = metrics.Metric{
 			SQLs:            metrics.SQLs{0: "SELECT 1"},
@@ -529,7 +529,7 @@ func TestReaper_FetchMetric(t *testing.T) {
 		}
 		md, mock := createTestSourceConn(t)
 		defer mock.Close()
-		md.Source.Metrics = map[string]float64{"cached_metric": 10}
+		md.Metrics = map[string]float64{"cached_metric": 10}
 
 		// Pre-populate the cache
 		cachedData := metrics.Measurements{
@@ -552,8 +552,8 @@ func TestReaper_FetchMetric(t *testing.T) {
 
 	t.Run("sysinfo fields added to measurements", func(t *testing.T) {
 		r := newFetchMetricReaper()
-		r.Options.Sinks.RealDbnameField = "real_dbname"
-		r.Options.Sinks.SystemIdentifierField = "sys_id"
+		r.Sinks.RealDbnameField = "real_dbname"
+		r.Sinks.SystemIdentifierField = "sys_id"
 		metricDefs.MetricDefs["sysinfo_metric"] = metrics.Metric{
 			SQLs: metrics.SQLs{0: "SELECT sysinfo"},
 		}
