@@ -20,8 +20,17 @@ var prevCPULoadTimeStatsLock sync.RWMutex
 var prevCPULoadTimeStats cpu.TimesStat
 var prevCPULoadTimestamp time.Time
 
+// cpuTotal returns the total number of seconds across all CPU states.
+// Guest and GuestNice are intentionally excluded because on Linux they are
+// already counted within User and Nice respectively (/proc/stat semantics),
+// so including them would double-count and skew percentage calculations.
+func cpuTotal(c cpu.TimesStat) float64 {
+	return c.User + c.System + c.Idle + c.Nice + c.Iowait + c.Irq +
+		c.Softirq + c.Steal
+}
+
 func goPsutilCalcCPUUtilization(probe0, probe1 cpu.TimesStat) float64 {
-	return 100 - (100.0 * (probe1.Idle - probe0.Idle + probe1.Iowait - probe0.Iowait + probe1.Steal - probe0.Steal) / (probe1.Total() - probe0.Total()))
+	return 100 - (100.0 * (probe1.Idle - probe0.Idle + probe1.Iowait - probe0.Iowait + probe1.Steal - probe0.Steal) / (cpuTotal(probe1) - cpuTotal(probe0)))
 }
 
 // Simulates "psutil" metric output. Assumes the result from last call as input, otherwise uses a 1s measurement
@@ -31,20 +40,20 @@ func GetGoPsutilCPU(interval float64) ([]map[string]any, error) {
 	prevTimeStat := prevCPULoadTimeStats
 	prevCPULoadTimeStatsLock.RUnlock()
 
-	if prevTime.IsZero() || (time.Now().UnixNano()-prevTime.UnixNano()) < 1e9 { // give "short" stats on first run, based on a 1s probe
+	if prevTime.IsZero() || time.Since(prevTime) < time.Second { // give "short" stats on first run, based on a 1s probe
 		probe0, err := cpu.Times(false)
 		if err != nil {
 			return nil, err
 		}
 		prevTimeStat = probe0[0]
-		time.Sleep(1e9)
+		time.Sleep(time.Second)
 	}
 
 	curCallStats, err := cpu.Times(false)
 	if err != nil {
 		return nil, err
 	}
-	if prevTime.IsZero() || time.Now().UnixNano()-prevTime.UnixNano() < 1e9 || time.Now().Unix()-prevTime.Unix() >= int64(interval) {
+	if prevTime.IsZero() || time.Since(prevTime) < time.Second || time.Since(prevTime) >= time.Duration(float64(time.Second)*interval) {
 		prevCPULoadTimeStatsLock.Lock() // update the cache
 		prevCPULoadTimeStats = curCallStats[0]
 		prevCPULoadTimestamp = time.Now()
@@ -67,12 +76,13 @@ func GetGoPsutilCPU(interval float64) ([]map[string]any, error) {
 	retMap["load_1m"] = math.Round(100*la.Load1) / 100
 	retMap["load_5m_norm"] = math.Round(100*la.Load5/float64(cpus)) / 100
 	retMap["load_5m"] = math.Round(100*la.Load5) / 100
-	retMap["user"] = math.Round(10000.0*(curCallStats[0].User-prevTimeStat.User)/(curCallStats[0].Total()-prevTimeStat.Total())) / 100
-	retMap["system"] = math.Round(10000.0*(curCallStats[0].System-prevTimeStat.System)/(curCallStats[0].Total()-prevTimeStat.Total())) / 100
-	retMap["idle"] = math.Round(10000.0*(curCallStats[0].Idle-prevTimeStat.Idle)/(curCallStats[0].Total()-prevTimeStat.Total())) / 100
-	retMap["iowait"] = math.Round(10000.0*(curCallStats[0].Iowait-prevTimeStat.Iowait)/(curCallStats[0].Total()-prevTimeStat.Total())) / 100
-	retMap["irqs"] = math.Round(10000.0*(curCallStats[0].Irq-prevTimeStat.Irq+curCallStats[0].Softirq-prevTimeStat.Softirq)/(curCallStats[0].Total()-prevTimeStat.Total())) / 100
-	retMap["other"] = math.Round(10000.0*(curCallStats[0].Steal-prevTimeStat.Steal+curCallStats[0].Guest-prevTimeStat.Guest+curCallStats[0].GuestNice-prevTimeStat.GuestNice)/(curCallStats[0].Total()-prevTimeStat.Total())) / 100
+	totalDiff := cpuTotal(curCallStats[0]) - cpuTotal(prevTimeStat)
+	retMap["user"] = math.Round(10000.0*(curCallStats[0].User-prevTimeStat.User)/totalDiff) / 100
+	retMap["system"] = math.Round(10000.0*(curCallStats[0].System-prevTimeStat.System)/totalDiff) / 100
+	retMap["idle"] = math.Round(10000.0*(curCallStats[0].Idle-prevTimeStat.Idle)/totalDiff) / 100
+	retMap["iowait"] = math.Round(10000.0*(curCallStats[0].Iowait-prevTimeStat.Iowait)/totalDiff) / 100
+	retMap["irqs"] = math.Round(10000.0*(curCallStats[0].Irq-prevTimeStat.Irq+curCallStats[0].Softirq-prevTimeStat.Softirq)/totalDiff) / 100
+	retMap["other"] = math.Round(10000.0*(curCallStats[0].Steal-prevTimeStat.Steal+curCallStats[0].Guest-prevTimeStat.Guest+curCallStats[0].GuestNice-prevTimeStat.GuestNice)/totalDiff) / 100
 
 	return []map[string]any{retMap}, nil
 }
@@ -172,7 +182,7 @@ func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]an
 	if !strings.HasPrefix(logDirPath, "/") {
 		logDirPath = path.Join(dataDirPath, logDirPath)
 	}
-	if len(logDirPath) > 0 && CheckFolderExistsAndReadable(logDirPath) { // syslog etc considered out of scope
+	if logDirPath != "" && CheckFolderExistsAndReadable(logDirPath) { // syslog etc considered out of scope
 		ldDevice, err = GetPathUnderlyingDeviceID(logDirPath)
 		if err != nil {
 			return nil, err
@@ -199,7 +209,7 @@ func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]an
 		walDirPath = path.Join(dataDirPath, "pg_wal")
 	}
 
-	if len(walDirPath) > 0 {
+	if walDirPath != "" {
 		walDevice, err = GetPathUnderlyingDeviceID(walDirPath)
 		if err != nil {
 			return nil, err
