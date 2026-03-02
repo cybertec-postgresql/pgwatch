@@ -22,6 +22,53 @@
   "id": 2,
   "links": [],
   "panels": [
+        {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": []
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Metric"
+            },
+            "properties": []
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": []
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 9,
+      "options": {
+        "code": {
+          "language": "sql",
+          "showLineNumbers": true,
+          "showMiniMap": false
+        },
+        "content": "$sql_text",
+        "mode": "code"
+      },
+      "pluginVersion": "12.1.0",
+      "title": "SQL",
+      "type": "text"
+    },
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
@@ -89,7 +136,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 5
       },
       "id": 3,
       "interval": "5m",
@@ -246,7 +293,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 10
       },
       "id": 2,
       "interval": "5m",
@@ -409,7 +456,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 10
+        "y": 15
       },
       "id": 1,
       "interval": "5m",
@@ -572,7 +619,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 20
       },
       "id": 4,
       "interval": "5m",
@@ -730,7 +777,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 25
       },
       "id": 5,
       "interval": "5m",
@@ -892,7 +939,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 25
+        "y": 30
       },
       "id": 6,
       "interval": "5m",
@@ -1055,7 +1102,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 35
       },
       "id": 8,
       "interval": "5m",
@@ -1155,60 +1202,13 @@
     {
       "fieldConfig": {
         "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": []
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Metric"
-            },
-            "properties": []
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Value"
-            },
-            "properties": []
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 24,
-        "x": 0,
-        "y": 35
-      },
-      "id": 9,
-      "options": {
-        "code": {
-          "language": "sql",
-          "showLineNumbers": true,
-          "showMiniMap": false
-        },
-        "content": "$sql_text",
-        "mode": "code"
-      },
-      "pluginVersion": "12.1.0",
-      "title": "SQL",
-      "type": "text"
-    },
-    {
-      "fieldConfig": {
-        "defaults": {},
         "overrides": []
       },
       "gridPos": {
         "h": 4,
         "w": 10,
         "x": 0,
-        "y": 40
+        "y": 45
       },
       "id": 7,
       "options": {
