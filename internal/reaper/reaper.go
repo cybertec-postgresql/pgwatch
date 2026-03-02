@@ -80,7 +80,6 @@ func (r *Reaper) Reap(ctx context.Context) {
 	logger := r.logger
 
 	go r.WriteMeasurements(ctx)
-	go r.WriteMonitoredSources(ctx)
 
 	r.ready.Store(true)
 
@@ -429,35 +428,6 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 	r.monitoredSources = newSrcs
 	r.logger.WithField("sources", len(r.monitoredSources)).Info("sources refreshed")
 	return nil
-}
-
-// WriteMonitoredSources writes actively monitored DBs listing to sinks
-// every monitoredDbsDatastoreSyncIntervalSeconds (default 10min)
-func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
-	for {
-		if len(r.monitoredSources) > 0 {
-			now := time.Now().UnixNano()
-			for _, mdb := range r.monitoredSources {
-				db := metrics.NewMeasurement(now)
-				db["tag_group"] = mdb.Group
-				db["master_only"] = mdb.OnlyIfMaster
-				for k, v := range mdb.CustomTags {
-					db[metrics.TagPrefix+k] = v
-				}
-				r.measurementCh <- metrics.MeasurementEnvelope{
-					DBName:     mdb.Name,
-					MetricName: monitoredDbsDatastoreSyncMetricName,
-					Data:       metrics.Measurements{db},
-				}
-			}
-		}
-		select {
-		case <-time.After(time.Second * monitoredDbsDatastoreSyncIntervalSeconds):
-			// continue
-		case <-ctx.Done():
-			return
-		}
-	}
 }
 
 // WriteMeasurements() writes the metrics to the sinks
