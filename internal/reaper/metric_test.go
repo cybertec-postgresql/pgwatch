@@ -4,11 +4,30 @@ import (
 	"context"
 	"testing"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 )
+
+// mockDefinerWriter implements sinks.Writer and sinks.MetricsDefiner for testing.
+type mockDefinerWriter struct {
+	defineErr    error
+	defineCalled bool
+	receivedDefs *metrics.Metrics
+}
+
+func (m *mockDefinerWriter) SyncMetric(string, string, sinks.SyncOp) error { return nil }
+func (m *mockDefinerWriter) Write(metrics.MeasurementEnvelope) error       { return nil }
+func (m *mockDefinerWriter) DefineMetrics(defs *metrics.Metrics) error {
+	m.defineCalled = true
+	m.receivedDefs = defs
+	return m.defineErr
+}
 
 var (
 	initialMetricDefs = metrics.MetricDefs{
@@ -89,4 +108,138 @@ func TestConcurrentMetricDefs_RandomAccess(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestReaper_LoadMetrics(t *testing.T) {
+	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+
+	t.Run("returns error from GetMetrics", func(t *testing.T) {
+		r := NewReaper(ctx, &cmdopts.Options{
+			MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
+				GetMetricsFunc: func() (*metrics.Metrics, error) {
+					return nil, assert.AnError
+				},
+			},
+		})
+		assert.ErrorIs(t, r.LoadMetrics(), assert.AnError)
+	})
+
+	t.Run("updates metricDefs on success", func(t *testing.T) {
+		defs := &metrics.Metrics{
+			MetricDefs: metrics.MetricDefs{"m1": {Description: "M1"}},
+			PresetDefs: metrics.PresetDefs{"p1": {Description: "P1", Metrics: map[string]float64{"m1": 1.0}}},
+		}
+		r := NewReaper(ctx, &cmdopts.Options{
+			MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
+				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
+			},
+		})
+		assert.NoError(t, r.LoadMetrics())
+
+		m, ok := metricDefs.GetMetricDef("m1")
+		assert.True(t, ok)
+		assert.Equal(t, "M1", m.Description)
+
+		p, ok := metricDefs.GetPresetDef("p1")
+		assert.True(t, ok)
+		assert.Equal(t, "P1", p.Description)
+	})
+
+	t.Run("calls DefineMetrics on MetricsDefiner sink", func(t *testing.T) {
+		defs := &metrics.Metrics{
+			MetricDefs: metrics.MetricDefs{"m2": {Description: "M2"}},
+			PresetDefs: metrics.PresetDefs{},
+		}
+		mock := &mockDefinerWriter{}
+		r := NewReaper(ctx, &cmdopts.Options{
+			MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
+				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
+			},
+			SinksWriter: mock,
+		})
+		assert.NoError(t, r.LoadMetrics())
+		assert.True(t, mock.defineCalled, "DefineMetrics should be called on MetricsDefiner sink")
+		assert.Equal(t, defs, mock.receivedDefs)
+	})
+
+	t.Run("DefineMetrics error is logged not returned", func(t *testing.T) {
+		defs := &metrics.Metrics{
+			MetricDefs: metrics.MetricDefs{"m3": {Description: "M3"}},
+			PresetDefs: metrics.PresetDefs{},
+		}
+		mock := &mockDefinerWriter{defineErr: assert.AnError}
+		r := NewReaper(ctx, &cmdopts.Options{
+			MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
+				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
+			},
+			SinksWriter: mock,
+		})
+		assert.NoError(t, r.LoadMetrics(), "DefineMetrics error should not propagate")
+		assert.True(t, mock.defineCalled)
+	})
+
+	t.Run("resolves preset metrics for monitored sources", func(t *testing.T) {
+		defs := &metrics.Metrics{
+			MetricDefs: metrics.MetricDefs{
+				"m1": {Description: "M1"},
+				"m2": {Description: "M2"},
+			},
+			PresetDefs: metrics.PresetDefs{
+				"preset1":  {Metrics: map[string]float64{"m1": 10.0}},
+				"standby1": {Metrics: map[string]float64{"m2": 20.0}},
+			},
+		}
+		r := NewReaper(ctx, &cmdopts.Options{
+			MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
+				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
+			},
+		})
+		r.monitoredSources = sources.SourceConns{
+			sources.NewSourceConn(sources.Source{
+				Name:                 "src1",
+				PresetMetrics:        "preset1",
+				PresetMetricsStandby: "standby1",
+			}),
+		}
+		assert.NoError(t, r.LoadMetrics())
+
+		sc := r.monitoredSources[0]
+		assert.Equal(t, map[string]float64{"m1": 10.0}, sc.Metrics)
+		assert.Equal(t, map[string]float64{"m2": 20.0}, sc.MetricsStandby)
+	})
+
+	t.Run("skips preset resolution for sources without presets", func(t *testing.T) {
+		customMetrics := map[string]float64{"cpu": 5.0}
+		defs := &metrics.Metrics{
+			MetricDefs: metrics.MetricDefs{"cpu": {Description: "CPU"}},
+			PresetDefs: metrics.PresetDefs{},
+		}
+		r := NewReaper(ctx, &cmdopts.Options{
+			MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
+				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
+			},
+		})
+		r.monitoredSources = sources.SourceConns{
+			sources.NewSourceConn(sources.Source{
+				Name:    "src2",
+				Metrics: customMetrics,
+			}),
+		}
+		assert.NoError(t, r.LoadMetrics())
+		assert.Equal(t, customMetrics, r.monitoredSources[0].Metrics, "custom metrics should be unchanged")
+	})
+}
+
+func TestChangeDetectionResults(t *testing.T) {
+	a := assert.New(t)
+
+	cdr := &ChangeDetectionResults{
+		Target:  "test",
+		Created: 2,
+		Altered: 3,
+		Dropped: 1,
+	}
+
+	a.Equal(6, cdr.Total(), "Total should be sum of Created, Altered, and Dropped")
+	a.Equal("test: 2/3/1", cdr.String(), "String representation should match expected format")
 }
