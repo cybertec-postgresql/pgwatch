@@ -1,20 +1,21 @@
 package reaper
 
 import (
-	"runtime"
-	"slices"
-	"testing"
-
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
-
 	"maps"
 	"os"
+	"slices"
+	"testing"
+	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetGoPsutilCPU(t *testing.T) {
 	a := assert.New(t)
+
+	// Sleep past one kernel tick (USER_HZ=100 → 10ms) so totalDiff is non-zero
+	time.Sleep(100 * time.Millisecond)
 
 	// Call the GetGoPsutilCPU function with a 1-second interval
 	result, err := GetGoPsutilCPU(1.0)
@@ -77,9 +78,6 @@ func TestGetLoadAvgLocal(t *testing.T) {
 }
 
 func TestGetPathUnderlyingDeviceID(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skip("GetPathUnderlyingDeviceID is not implemented")
-	}
 	a := assert.New(t)
 	tmpDir := t.TempDir()
 	createFile := func(name string) string {
@@ -100,9 +98,66 @@ func TestGetPathUnderlyingDeviceID(t *testing.T) {
 }
 
 func TestGetPathUnderlyingDeviceID_NotFound(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skip("GetPathUnderlyingDeviceID is not implemented")
-	}
 	_, err := GetPathUnderlyingDeviceID("/this/path/should/not/exist/nofile")
 	assert.Error(t, err)
+}
+
+func TestGetGoPsutilDiskPG_Basic(t *testing.T) {
+	a := assert.New(t)
+	tmpDir := t.TempDir()
+
+	a.True(CheckFolderExistsAndReadable(tmpDir))
+	a.False(CheckFolderExistsAndReadable(""))
+
+	pgDirs := metrics.Measurements{
+		{"name": "data_directory", "path": tmpDir},
+	}
+	result, err := GetGoPsutilDiskPG(pgDirs)
+	a.NoError(err)
+	a.Len(result, 1)
+	a.Equal("data_directory", result[0]["tag_dir_or_tablespace"])
+	a.Equal(tmpDir, result[0]["tag_path"])
+
+	expectedKeys := []string{metrics.EpochColumnName, "tag_dir_or_tablespace", "tag_path", "total", "used", "free", "percent"}
+	resultKeys := slices.Collect(maps.Keys(result[0]))
+	a.ElementsMatch(expectedKeys, resultKeys)
+}
+
+func TestGetGoPsutilDiskPG_SameDeviceCachedUsage(t *testing.T) {
+	a := assert.New(t)
+	tmpDir := t.TempDir()
+
+	// Same path twice → same device ID → both rows reported with the same usage values
+	pgDirs := metrics.Measurements{
+		{"name": "data_directory", "path": tmpDir},
+		{"name": "pg_wal", "path": tmpDir},
+	}
+	result, err := GetGoPsutilDiskPG(pgDirs)
+	a.NoError(err)
+	a.Len(result, 2)
+	a.Equal("data_directory", result[0]["tag_dir_or_tablespace"])
+	a.Equal("pg_wal", result[1]["tag_dir_or_tablespace"])
+	// Usage values must be identical since they share a device
+	a.Equal(result[0]["total"], result[1]["total"])
+	a.Equal(result[0]["used"], result[1]["used"])
+}
+
+func TestGetGoPsutilDiskPG_NonExistentPathSkipped(t *testing.T) {
+	a := assert.New(t)
+	tmpDir := t.TempDir()
+
+	pgDirs := metrics.Measurements{
+		{"name": "log_directory", "path": "/this/path/does/not/exist"},
+		{"name": "data_directory", "path": tmpDir},
+	}
+	result, err := GetGoPsutilDiskPG(pgDirs)
+	a.NoError(err)
+	a.Len(result, 1)
+	a.Equal("data_directory", result[0]["tag_dir_or_tablespace"])
+}
+
+func TestGetGoPsutilDiskPG_Empty(t *testing.T) {
+	result, err := GetGoPsutilDiskPG(metrics.Measurements{})
+	assert.NoError(t, err)
+	assert.Empty(t, result)
 }
