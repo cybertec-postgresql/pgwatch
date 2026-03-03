@@ -35,7 +35,7 @@ const sqlPgDirs = `select name, path from
 	('data_directory', current_setting('data_directory')),
 	('pg_wal', current_setting('data_directory')||'/pg_wal'),
 	('log_directory', case 
-        when current_setting('log_directory') ~ '/.+' then current_setting('log_directory') 
+        when current_setting('log_directory') ~ '^(\w:)?\/.+' then current_setting('log_directory') 
         else current_setting('data_directory') || '/' || current_setting('log_directory') 
     end)) as d(name, path)
 union all
