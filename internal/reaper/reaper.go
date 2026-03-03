@@ -80,7 +80,6 @@ func (r *Reaper) Reap(ctx context.Context) {
 	logger := r.logger
 
 	go r.WriteMeasurements(ctx)
-	go r.WriteMonitoredSources(ctx)
 
 	r.ready.Store(true)
 
@@ -102,6 +101,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 			ctx = log.WithLogger(ctx, srcL)
 
 			if monitoredSource.Connect(ctx, r.Sources) != nil {
+				r.WriteInstanceDown(monitoredSource)
 				srcL.Warning("could not init connection, retrying on next iteration")
 				continue
 			}
@@ -431,32 +431,15 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 	return nil
 }
 
-// WriteMonitoredSources writes actively monitored DBs listing to sinks
-// every monitoredDbsDatastoreSyncIntervalSeconds (default 10min)
-func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
-	for {
-		if len(r.monitoredSources) > 0 {
-			now := time.Now().UnixNano()
-			for _, mdb := range r.monitoredSources {
-				db := metrics.NewMeasurement(now)
-				db["tag_group"] = mdb.Group
-				db["master_only"] = mdb.OnlyIfMaster
-				for k, v := range mdb.CustomTags {
-					db[metrics.TagPrefix+k] = v
-				}
-				r.measurementCh <- metrics.MeasurementEnvelope{
-					DBName:     mdb.Name,
-					MetricName: monitoredDbsDatastoreSyncMetricName,
-					Data:       metrics.Measurements{db},
-				}
-			}
-		}
-		select {
-		case <-time.After(time.Second * monitoredDbsDatastoreSyncIntervalSeconds):
-			// continue
-		case <-ctx.Done():
-			return
-		}
+// WriteInstanceDown writes instance_up = 0 metric to sinks for the given source
+func (r *Reaper) WriteInstanceDown(md *sources.SourceConn) {
+	r.measurementCh <- metrics.MeasurementEnvelope{
+		DBName:     md.Name,
+		MetricName: specialMetricInstanceUp,
+		Data: metrics.Measurements{metrics.Measurement{
+			metrics.EpochColumnName: time.Now().UnixNano(),
+			specialMetricInstanceUp: 0},
+		},
 	}
 }
 
