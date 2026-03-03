@@ -30,10 +30,17 @@ const (
 	metricPsutilMem         = "psutil_mem"
 )
 
-const (
-	sqlPgDirs = `select current_setting('data_directory') as dd, current_setting('log_directory') as ld`
-	sqlTsDirs = `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E'pg\\_%'])`
-)
+const sqlPgDirs = `select name, path from 
+(values 
+	('data_directory', current_setting('data_directory')),
+	('pg_wal', current_setting('data_directory')||'/pg_wal'),
+	('log_directory', case 
+        when current_setting('log_directory') ~ '/.+' then current_setting('log_directory') 
+        else current_setting('data_directory') || '/' || current_setting('log_directory') 
+    end)) as d(name, path)
+union all
+select spcname::text, pg_catalog.pg_tablespace_location(oid)
+from pg_catalog.pg_tablespace where spcname !~ 'pg_.+'`
 
 var directlyFetchableOSMetrics = []string{metricPsutilCPU, metricPsutilDisk, metricPsutilDiskIoTotal, metricPsutilMem, metricCPULoad}
 
@@ -42,7 +49,7 @@ func IsDirectlyFetchableMetric(md *sources.SourceConn, metric string) bool {
 }
 
 func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.SourceConn, metricName string) (*metrics.MeasurementEnvelope, error) {
-	var data, dataDirs, dataTblspDirs metrics.Measurements
+	var data, pgDirs metrics.Measurements
 	var err error
 
 	switch metricName {
@@ -51,13 +58,10 @@ func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.Sourc
 	case metricPsutilCPU:
 		data, err = GetGoPsutilCPU(md.GetMetricInterval(metricName))
 	case metricPsutilDisk:
-		if dataDirs, err = QueryMeasurements(ctx, md, sqlPgDirs); err != nil {
+		if pgDirs, err = QueryMeasurements(ctx, md, sqlPgDirs); err != nil {
 			return nil, err
 		}
-		if dataTblspDirs, err = QueryMeasurements(ctx, md, sqlTsDirs); err != nil {
-			return nil, err
-		}
-		data, err = GetGoPsutilDiskPG(dataDirs, dataTblspDirs)
+		data, err = GetGoPsutilDiskPG(pgDirs)
 	case metricPsutilDiskIoTotal:
 		data, err = GetGoPsutilDiskTotals()
 	case metricPsutilMem:

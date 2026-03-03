@@ -147,118 +147,48 @@ func GetLoadAvgLocal() ([]map[string]any, error) {
 }
 
 func CheckFolderExistsAndReadable(path string) bool {
+	if path == "" {
+		return false
+	}
 	_, err := os.ReadDir(path)
 	return err == nil
 }
 
-func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]any, error) {
-	var ddDevice, ldDevice, walDevice uint64
-
-	data := DataDirs
-
-	dataDirPath := data[0]["dd"].(string)
-	ddUsage, err := disk.Usage(dataDirPath)
-	if err != nil {
-		return nil, err
-	}
-
-	retRows := make([]map[string]any, 0)
+func GetGoPsutilDiskPG(pgDirs metrics.Measurements) (metrics.Measurements, error) {
+	usageCache := make(map[uint64]*disk.UsageStat)
+	retRows := make(metrics.Measurements, 0)
 	epochNs := time.Now().UnixNano()
-	dd := metrics.NewMeasurement(epochNs)
-	dd["tag_dir_or_tablespace"] = "data_directory"
-	dd["tag_path"] = dataDirPath
-	dd["total"] = float64(ddUsage.Total)
-	dd["used"] = float64(ddUsage.Used)
-	dd["free"] = float64(ddUsage.Free)
-	dd["percent"] = math.Round(100*ddUsage.UsedPercent) / 100
-	retRows = append(retRows, dd)
 
-	ddDevice, err = GetPathUnderlyingDeviceID(dataDirPath)
-	if err != nil {
-		return nil, err
-	}
+	for _, row := range pgDirs {
+		path := row["path"].(string)
+		name := row["name"].(string)
 
-	logDirPath := data[0]["ld"].(string)
-	if !strings.HasPrefix(logDirPath, "/") {
-		logDirPath = path.Join(dataDirPath, logDirPath)
-	}
-	if logDirPath != "" && CheckFolderExistsAndReadable(logDirPath) { // syslog etc considered out of scope
-		ldDevice, err = GetPathUnderlyingDeviceID(logDirPath)
-		if err != nil {
-			return nil, err
+		if !CheckFolderExistsAndReadable(path) { // syslog etc considered out of scope
+			continue
 		}
-		if ldDevice != ddDevice { // no point to report same data in case of single folder configuration
-			ld := metrics.NewMeasurement(epochNs)
-			ldUsage, err := disk.Usage(logDirPath)
-			if err != nil {
-				return nil, err
-			}
 
-			ld["tag_dir_or_tablespace"] = "log_directory"
-			ld["tag_path"] = logDirPath
-			ld["total"] = float64(ldUsage.Total)
-			ld["used"] = float64(ldUsage.Used)
-			ld["free"] = float64(ldUsage.Free)
-			ld["percent"] = math.Round(100*ldUsage.UsedPercent) / 100
-			retRows = append(retRows, ld)
-		}
-	}
-
-	var walDirPath string
-	if CheckFolderExistsAndReadable(path.Join(dataDirPath, "pg_wal")) {
-		walDirPath = path.Join(dataDirPath, "pg_wal")
-	}
-
-	if walDirPath != "" {
-		walDevice, err = GetPathUnderlyingDeviceID(walDirPath)
+		devID, err := GetPathUnderlyingDeviceID(path)
 		if err != nil {
 			return nil, err
 		}
 
-		if walDevice != ddDevice || walDevice != ldDevice { // no point to report same data in case of single folder configuration
-			walUsage, err := disk.Usage(walDirPath)
+		usage, ok := usageCache[devID]
+		if !ok {
+			usage, err = disk.Usage(path)
 			if err != nil {
 				return nil, err
 			}
-
-			wd := metrics.NewMeasurement(epochNs)
-			wd["tag_dir_or_tablespace"] = "pg_wal"
-			wd["tag_path"] = walDirPath
-			wd["total"] = float64(walUsage.Total)
-			wd["used"] = float64(walUsage.Used)
-			wd["free"] = float64(walUsage.Free)
-			wd["percent"] = math.Round(100*walUsage.UsedPercent) / 100
-			retRows = append(retRows, wd)
+			usageCache[devID] = usage
 		}
-	}
 
-	data = TblspaceDirs
-	if len(data) > 0 {
-		for _, row := range data {
-			tsPath := row["location"].(string)
-			tsName := row["name"].(string)
-
-			tsDevice, err := GetPathUnderlyingDeviceID(tsPath)
-			if err != nil {
-				return nil, err
-			}
-
-			if tsDevice == ddDevice || tsDevice == ldDevice || tsDevice == walDevice {
-				continue
-			}
-			tsUsage, err := disk.Usage(tsPath)
-			if err != nil {
-				return nil, err
-			}
-			ts := metrics.NewMeasurement(epochNs)
-			ts["tag_dir_or_tablespace"] = tsName
-			ts["tag_path"] = tsPath
-			ts["total"] = float64(tsUsage.Total)
-			ts["used"] = float64(tsUsage.Used)
-			ts["free"] = float64(tsUsage.Free)
-			ts["percent"] = math.Round(100*tsUsage.UsedPercent) / 100
-			retRows = append(retRows, ts)
-		}
+		m := metrics.NewMeasurement(epochNs)
+		m["tag_dir_or_tablespace"] = name
+		m["tag_path"] = path
+		m["total"] = float64(usage.Total)
+		m["used"] = float64(usage.Used)
+		m["free"] = float64(usage.Free)
+		m["percent"] = math.Round(100*usage.UsedPercent) / 100
+		retRows = append(retRows, m)
 	}
 
 	return retRows, nil
