@@ -57,14 +57,28 @@
 <script type="text/javascript">document.ANALYSIS_DATA = null;</script>
 <pre><span id="L1" class="ln">     1  </span>package reaper
 <span id="L2" class="ln">     2  </span>
-<span id="L3" class="ln">     3  </span>import &#34;errors&#34;
-<span id="L4" class="ln">     4  </span>
-<span id="L5" class="ln">     5  </span>var ErrNotImplemented = errors.New(&#34;not implemented&#34;)
-<span id="L6" class="ln">     6  </span>
-<span id="L7" class="ln">     7  </span>func GetPathUnderlyingDeviceID(_ string) (uint64, error) {
-<span id="L8" class="ln">     8  </span>	return 0, ErrNotImplemented
-<span id="L9" class="ln">     9  </span>}
-<span id="L10" class="ln">    10  </span>
+<span id="L3" class="ln">     3  </span>import (
+<span id="L4" class="ln">     4  </span>	&#34;os&#34;
+<span id="L5" class="ln">     5  </span>	&#34;syscall&#34;
+<span id="L6" class="ln">     6  </span>)
+<span id="L7" class="ln">     7  </span>
+<span id="L8" class="ln">     8  </span><span class="comment">// GetPathUnderlyingDeviceID returns the volume serial number for the volume</span>
+<span id="L9" class="ln">     9  </span><span class="comment">// that hosts the given path. This is the Windows equivalent of the Unix</span>
+<span id="L10" class="ln">    10  </span><span class="comment">// device ID (Stat_t.Dev) and uniquely identifies the underlying disk volume.</span>
+<span id="L11" class="ln">    11  </span>func GetPathUnderlyingDeviceID(path string) (uint64, error) {
+<span id="L12" class="ln">    12  </span>	f, err := os.Open(path)
+<span id="L13" class="ln">    13  </span>	if err != nil {
+<span id="L14" class="ln">    14  </span>		return 0, err
+<span id="L15" class="ln">    15  </span>	}
+<span id="L16" class="ln">    16  </span>	defer f.Close()
+<span id="L17" class="ln">    17  </span>
+<span id="L18" class="ln">    18  </span>	var info syscall.ByHandleFileInformation
+<span id="L19" class="ln">    19  </span>	if err = syscall.GetFileInformationByHandle(syscall.Handle(f.Fd()), &amp;info); err != nil {
+<span id="L20" class="ln">    20  </span>		return 0, err
+<span id="L21" class="ln">    21  </span>	}
+<span id="L22" class="ln">    22  </span>	return uint64(info.VolumeSerialNumber), nil
+<span id="L23" class="ln">    23  </span>}
+<span id="L24" class="ln">    24  </span>
 </pre><p></p>
 
 <div id="footer">

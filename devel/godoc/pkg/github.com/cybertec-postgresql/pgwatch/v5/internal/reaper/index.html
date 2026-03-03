@@ -120,19 +120,19 @@ and send measurements to sinks.
 				<dd><a href="#DoesEmergencyTriggerfileExist">func DoesEmergencyTriggerfileExist(fname string) bool</a></dd>
 			
 				
-				<dd><a href="#GetGoPsutilCPU">func GetGoPsutilCPU(interval float64) ([]map[string]any, error)</a></dd>
+				<dd><a href="#GetGoPsutilCPU">func GetGoPsutilCPU(interval float64) (metrics.Measurements, error)</a></dd>
 			
 				
-				<dd><a href="#GetGoPsutilDiskPG">func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[string]any) ([]map[string]any, error)</a></dd>
+				<dd><a href="#GetGoPsutilDiskPG">func GetGoPsutilDiskPG(pgDirs metrics.Measurements) (metrics.Measurements, error)</a></dd>
 			
 				
-				<dd><a href="#GetGoPsutilDiskTotals">func GetGoPsutilDiskTotals() ([]map[string]any, error)</a></dd>
+				<dd><a href="#GetGoPsutilDiskTotals">func GetGoPsutilDiskTotals() (metrics.Measurements, error)</a></dd>
 			
 				
-				<dd><a href="#GetGoPsutilMem">func GetGoPsutilMem() ([]map[string]any, error)</a></dd>
+				<dd><a href="#GetGoPsutilMem">func GetGoPsutilMem() (metrics.Measurements, error)</a></dd>
 			
 				
-				<dd><a href="#GetLoadAvgLocal">func GetLoadAvgLocal() ([]map[string]any, error)</a></dd>
+				<dd><a href="#GetLoadAvgLocal">func GetLoadAvgLocal() (metrics.Measurements, error)</a></dd>
 			
 				
 				<dd><a href="#GetPathUnderlyingDeviceID">func GetPathUnderlyingDeviceID(path string) (uint64, error)</a></dd>
@@ -150,6 +150,9 @@ and send measurements to sinks.
 				<dd><a href="#checkHasRemotePrivileges">func checkHasRemotePrivileges(ctx context.Context, mdb *sources.SourceConn, logsDirPath string) error</a></dd>
 			
 				
+				<dd><a href="#cpuTotal">func cpuTotal(c cpu.TimesStat) float64</a></dd>
+			
+				
 				<dd><a href="#getFileWithLatestTimestamp">func getFileWithLatestTimestamp(files []string) (string, error)</a></dd>
 			
 				
@@ -157,6 +160,9 @@ and send measurements to sinks.
 			
 				
 				<dd><a href="#goPsutilCalcCPUUtilization">func goPsutilCalcCPUUtilization(probe0, probe1 cpu.TimesStat) float64</a></dd>
+			
+				
+				<dd><a href="#init">func init()</a></dd>
 			
 				
 				<dd><a href="#severityToEnglish">func severityToEnglish(serverLang, errorSeverity string) string</a></dd>
@@ -370,12 +376,6 @@ and send measurements to sinks.
 			
 				
 				<pre>const (
-    <span id="sqlPgDirs">sqlPgDirs</span> = `select current_setting(&#39;data_directory&#39;) as dd, current_setting(&#39;log_directory&#39;) as ld`
-    <span id="sqlTsDirs">sqlTsDirs</span> = `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E&#39;pg\\_%&#39;])`
-)</pre>
-			
-				
-				<pre>const (
     <span id="specialMetricChangeEvents">specialMetricChangeEvents</span>         = &#34;change_events&#34;
     <span id="specialMetricServerLogEventCounts">specialMetricServerLogEventCounts</span> = &#34;server_log_event_counts&#34;
     <span id="specialMetricInstanceUp">specialMetricInstanceUp</span>           = &#34;instance_up&#34;
@@ -397,6 +397,19 @@ and send measurements to sinks.
 			
 				
 				<pre>const <span id="maxTrackedFiles">maxTrackedFiles</span> = 2500</pre>
+			
+				
+				<pre>const <span id="sqlPgDirs">sqlPgDirs</span> = `select name, path from 
+(values 
+    (&#39;data_directory&#39;, current_setting(&#39;data_directory&#39;)),
+    (&#39;pg_wal&#39;, current_setting(&#39;data_directory&#39;)||&#39;/pg_wal&#39;),
+    (&#39;log_directory&#39;, case 
+        when current_setting(&#39;log_directory&#39;) ~ &#39;^(\w:)?\/.+&#39; then current_setting(&#39;log_directory&#39;) 
+        else current_setting(&#39;data_directory&#39;) || &#39;/&#39; || current_setting(&#39;log_directory&#39;) 
+    end)) as d(name, path)
+union all
+select spcname::text, pg_catalog.pg_tablespace_location(oid)
+from pg_catalog.pg_tablespace where spcname !~ &#39;pg_.+&#39;`</pre>
 			
 		
 		
@@ -454,7 +467,7 @@ and send measurements to sinks.
 		
 			
 			
-			<h2 id="CheckFolderExistsAndReadable">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L139">CheckFolderExistsAndReadable</a>
+			<h2 id="CheckFolderExistsAndReadable">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L146">CheckFolderExistsAndReadable</a>
 				<a class="permalink" href="#CheckFolderExistsAndReadable">&#xb6;</a>
 				
 				
@@ -480,13 +493,13 @@ and send measurements to sinks.
 		
 			
 			
-			<h2 id="GetGoPsutilCPU">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L28">GetGoPsutilCPU</a>
+			<h2 id="GetGoPsutilCPU">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L43">GetGoPsutilCPU</a>
 				<a class="permalink" href="#GetGoPsutilCPU">&#xb6;</a>
 				
 				
 			</h2>
-			<pre>func GetGoPsutilCPU(interval <a href="https://pkg.go.dev/builtin/#float64">float64</a>) ([]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#any">any</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-			<p>Simulates &quot;psutil&quot; metric output. Assumes the result from last call as input, otherwise uses a 1s measurement
+			<pre>func GetGoPsutilCPU(interval <a href="https://pkg.go.dev/builtin/#float64">float64</a>) (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>GetGoPsutilCPU simulates &quot;psutil&quot; metric output. Assumes the result from last call as input
 
 			
 			
@@ -494,12 +507,12 @@ and send measurements to sinks.
 		
 			
 			
-			<h2 id="GetGoPsutilDiskPG">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L144">GetGoPsutilDiskPG</a>
+			<h2 id="GetGoPsutilDiskPG">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L154">GetGoPsutilDiskPG</a>
 				<a class="permalink" href="#GetGoPsutilDiskPG">&#xb6;</a>
 				
 				
 			</h2>
-			<pre>func GetGoPsutilDiskPG(DataDirs, TblspaceDirs []map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#any">any</a>) ([]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#any">any</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<pre>func GetGoPsutilDiskPG(pgDirs <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>) (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			
 			
 			
@@ -507,12 +520,12 @@ and send measurements to sinks.
 		
 			
 			
-			<h2 id="GetGoPsutilDiskTotals">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L101">GetGoPsutilDiskTotals</a>
+			<h2 id="GetGoPsutilDiskTotals">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L108">GetGoPsutilDiskTotals</a>
 				<a class="permalink" href="#GetGoPsutilDiskTotals">&#xb6;</a>
 				
 				
 			</h2>
-			<pre>func GetGoPsutilDiskTotals() ([]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#any">any</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<pre>func GetGoPsutilDiskTotals() (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			
 			
 			
@@ -520,12 +533,12 @@ and send measurements to sinks.
 		
 			
 			
-			<h2 id="GetGoPsutilMem">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L80">GetGoPsutilMem</a>
+			<h2 id="GetGoPsutilMem">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L87">GetGoPsutilMem</a>
 				<a class="permalink" href="#GetGoPsutilMem">&#xb6;</a>
 				
 				
 			</h2>
-			<pre>func GetGoPsutilMem() ([]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#any">any</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<pre>func GetGoPsutilMem() (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			
 			
 			
@@ -533,12 +546,12 @@ and send measurements to sinks.
 		
 			
 			
-			<h2 id="GetLoadAvgLocal">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L125">GetLoadAvgLocal</a>
+			<h2 id="GetLoadAvgLocal">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L132">GetLoadAvgLocal</a>
 				<a class="permalink" href="#GetLoadAvgLocal">&#xb6;</a>
 				
 				
 			</h2>
-			<pre>func GetLoadAvgLocal() ([]map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#any">any</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<pre>func GetLoadAvgLocal() (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			
 			
 			
@@ -559,7 +572,7 @@ and send measurements to sinks.
 		
 			
 			
-			<h2 id="IsDirectlyFetchableMetric">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/file.go.html#L40">IsDirectlyFetchableMetric</a>
+			<h2 id="IsDirectlyFetchableMetric">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/file.go.html#L47">IsDirectlyFetchableMetric</a>
 				<a class="permalink" href="#IsDirectlyFetchableMetric">&#xb6;</a>
 				
 				
@@ -611,6 +624,23 @@ and send measurements to sinks.
 		
 			
 			
+			<h2 id="cpuTotal">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L33">cpuTotal</a>
+				<a class="permalink" href="#cpuTotal">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func cpuTotal(c <a href="https://pkg.go.dev/github.com/shirou/gopsutil/v4/cpu/">cpu</a>.<a href="https://pkg.go.dev/github.com/shirou/gopsutil/v4/cpu/#TimesStat">TimesStat</a>) <a href="https://pkg.go.dev/builtin/#float64">float64</a></pre>
+			<p>cpuTotal returns the total number of seconds across all CPU states.
+Guest and GuestNice are intentionally excluded because on Linux they are
+already counted within User and Nice respectively (/proc/stat semantics),
+so including them would double-count and skew percentage calculations.
+
+			
+			
+
+		
+			
+			
 			<h2 id="getFileWithLatestTimestamp">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser_local.go.html#L175">getFileWithLatestTimestamp</a>
 				<a class="permalink" href="#getFileWithLatestTimestamp">&#xb6;</a>
 				
@@ -637,12 +667,25 @@ and send measurements to sinks.
 		
 			
 			
-			<h2 id="goPsutilCalcCPUUtilization">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L23">goPsutilCalcCPUUtilization</a>
+			<h2 id="goPsutilCalcCPUUtilization">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L38">goPsutilCalcCPUUtilization</a>
 				<a class="permalink" href="#goPsutilCalcCPUUtilization">&#xb6;</a>
 				
 				
 			</h2>
 			<pre>func goPsutilCalcCPUUtilization(probe0, probe1 <a href="https://pkg.go.dev/github.com/shirou/gopsutil/v4/cpu/">cpu</a>.<a href="https://pkg.go.dev/github.com/shirou/gopsutil/v4/cpu/#TimesStat">TimesStat</a>) <a href="https://pkg.go.dev/builtin/#float64">float64</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="init">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html#L21">init</a>
+				<a class="permalink" href="#init">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func init()</pre>
 			
 			
 			
@@ -1186,7 +1229,7 @@ and send measurements to sinks.
 				
 			
 				
-				<h3 id="Reaper.FetchStatsDirectlyFromOS">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/file.go.html#L44">FetchStatsDirectlyFromOS</a>
+				<h3 id="Reaper.FetchStatsDirectlyFromOS">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/file.go.html#L51">FetchStatsDirectlyFromOS</a>
 					<a class="permalink" href="#Reaper.FetchStatsDirectlyFromOS">&#xb6;</a>
 					
 					

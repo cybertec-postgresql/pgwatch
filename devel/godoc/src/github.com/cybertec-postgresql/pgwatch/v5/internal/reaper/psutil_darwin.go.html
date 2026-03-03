@@ -57,14 +57,16 @@
 <script type="text/javascript">document.ANALYSIS_DATA = null;</script>
 <pre><span id="L1" class="ln">     1  </span>package reaper
 <span id="L2" class="ln">     2  </span>
-<span id="L3" class="ln">     3  </span>import &#34;errors&#34;
+<span id="L3" class="ln">     3  </span>import &#34;hash/fnv&#34;
 <span id="L4" class="ln">     4  </span>
-<span id="L5" class="ln">     5  </span>var ErrNotImplemented = errors.New(&#34;not implemented&#34;)
-<span id="L6" class="ln">     6  </span>
-<span id="L7" class="ln">     7  </span>func GetPathUnderlyingDeviceID(path string) (uint64, error) {
-<span id="L8" class="ln">     8  </span>	return 0, ErrNotImplemented
-<span id="L9" class="ln">     9  </span>}
-<span id="L10" class="ln">    10  </span>
+<span id="L5" class="ln">     5  </span><span class="comment">// GetPathUnderlyingDeviceID on Darwin falls back to an FNV hash of the path.</span>
+<span id="L6" class="ln">     6  </span><span class="comment">// Identical paths still get the same ID, so deduplication works correctly.</span>
+<span id="L7" class="ln">     7  </span>func GetPathUnderlyingDeviceID(p string) (uint64, error) {
+<span id="L8" class="ln">     8  </span>	h := fnv.New64a()
+<span id="L9" class="ln">     9  </span>	_, _ = h.Write([]byte(p))
+<span id="L10" class="ln">    10  </span>	return h.Sum64(), nil
+<span id="L11" class="ln">    11  </span>}
+<span id="L12" class="ln">    12  </span>
 </pre><p></p>
 
 <div id="footer">

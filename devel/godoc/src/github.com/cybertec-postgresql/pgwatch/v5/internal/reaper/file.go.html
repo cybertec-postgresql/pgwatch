@@ -87,50 +87,54 @@
 <span id="L30" class="ln">    30  </span>	metricPsutilMem         = &#34;psutil_mem&#34;
 <span id="L31" class="ln">    31  </span>)
 <span id="L32" class="ln">    32  </span>
-<span id="L33" class="ln">    33  </span>const (
-<span id="L34" class="ln">    34  </span>	sqlPgDirs = `select current_setting(&#39;data_directory&#39;) as dd, current_setting(&#39;log_directory&#39;) as ld`
-<span id="L35" class="ln">    35  </span>	sqlTsDirs = `select spcname::text as name, pg_catalog.pg_tablespace_location(oid) as location from pg_catalog.pg_tablespace where not spcname like any(array[E&#39;pg\\_%&#39;])`
-<span id="L36" class="ln">    36  </span>)
-<span id="L37" class="ln">    37  </span>
-<span id="L38" class="ln">    38  </span>var directlyFetchableOSMetrics = []string{metricPsutilCPU, metricPsutilDisk, metricPsutilDiskIoTotal, metricPsutilMem, metricCPULoad}
-<span id="L39" class="ln">    39  </span>
-<span id="L40" class="ln">    40  </span>func IsDirectlyFetchableMetric(md *sources.SourceConn, metric string) bool {
-<span id="L41" class="ln">    41  </span>	return slices.Contains(directlyFetchableOSMetrics, metric) &amp;&amp; md.IsClientOnSameHost()
-<span id="L42" class="ln">    42  </span>}
-<span id="L43" class="ln">    43  </span>
-<span id="L44" class="ln">    44  </span>func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.SourceConn, metricName string) (*metrics.MeasurementEnvelope, error) {
-<span id="L45" class="ln">    45  </span>	var data, dataDirs, dataTblspDirs metrics.Measurements
-<span id="L46" class="ln">    46  </span>	var err error
-<span id="L47" class="ln">    47  </span>
-<span id="L48" class="ln">    48  </span>	switch metricName {
-<span id="L49" class="ln">    49  </span>	case metricCPULoad:
-<span id="L50" class="ln">    50  </span>		data, err = GetLoadAvgLocal()
-<span id="L51" class="ln">    51  </span>	case metricPsutilCPU:
-<span id="L52" class="ln">    52  </span>		data, err = GetGoPsutilCPU(md.GetMetricInterval(metricName))
-<span id="L53" class="ln">    53  </span>	case metricPsutilDisk:
-<span id="L54" class="ln">    54  </span>		if dataDirs, err = QueryMeasurements(ctx, md, sqlPgDirs); err != nil {
-<span id="L55" class="ln">    55  </span>			return nil, err
-<span id="L56" class="ln">    56  </span>		}
-<span id="L57" class="ln">    57  </span>		if dataTblspDirs, err = QueryMeasurements(ctx, md, sqlTsDirs); err != nil {
-<span id="L58" class="ln">    58  </span>			return nil, err
-<span id="L59" class="ln">    59  </span>		}
-<span id="L60" class="ln">    60  </span>		data, err = GetGoPsutilDiskPG(dataDirs, dataTblspDirs)
-<span id="L61" class="ln">    61  </span>	case metricPsutilDiskIoTotal:
-<span id="L62" class="ln">    62  </span>		data, err = GetGoPsutilDiskTotals()
-<span id="L63" class="ln">    63  </span>	case metricPsutilMem:
-<span id="L64" class="ln">    64  </span>		data, err = GetGoPsutilMem()
-<span id="L65" class="ln">    65  </span>	}
-<span id="L66" class="ln">    66  </span>	if err != nil {
-<span id="L67" class="ln">    67  </span>		return nil, err
-<span id="L68" class="ln">    68  </span>	}
-<span id="L69" class="ln">    69  </span>	return &amp;metrics.MeasurementEnvelope{
-<span id="L70" class="ln">    70  </span>		DBName:     md.Name,
-<span id="L71" class="ln">    71  </span>		MetricName: metricName,
-<span id="L72" class="ln">    72  </span>		CustomTags: md.CustomTags,
-<span id="L73" class="ln">    73  </span>		Data:       data,
-<span id="L74" class="ln">    74  </span>	}, nil
-<span id="L75" class="ln">    75  </span>}
-<span id="L76" class="ln">    76  </span>
+<span id="L33" class="ln">    33  </span>const sqlPgDirs = `select name, path from 
+<span id="L34" class="ln">    34  </span>(values 
+<span id="L35" class="ln">    35  </span>	(&#39;data_directory&#39;, current_setting(&#39;data_directory&#39;)),
+<span id="L36" class="ln">    36  </span>	(&#39;pg_wal&#39;, current_setting(&#39;data_directory&#39;)||&#39;/pg_wal&#39;),
+<span id="L37" class="ln">    37  </span>	(&#39;log_directory&#39;, case 
+<span id="L38" class="ln">    38  </span>        when current_setting(&#39;log_directory&#39;) ~ &#39;^(\w:)?\/.+&#39; then current_setting(&#39;log_directory&#39;) 
+<span id="L39" class="ln">    39  </span>        else current_setting(&#39;data_directory&#39;) || &#39;/&#39; || current_setting(&#39;log_directory&#39;) 
+<span id="L40" class="ln">    40  </span>    end)) as d(name, path)
+<span id="L41" class="ln">    41  </span>union all
+<span id="L42" class="ln">    42  </span>select spcname::text, pg_catalog.pg_tablespace_location(oid)
+<span id="L43" class="ln">    43  </span>from pg_catalog.pg_tablespace where spcname !~ &#39;pg_.+&#39;`
+<span id="L44" class="ln">    44  </span>
+<span id="L45" class="ln">    45  </span>var directlyFetchableOSMetrics = []string{metricPsutilCPU, metricPsutilDisk, metricPsutilDiskIoTotal, metricPsutilMem, metricCPULoad}
+<span id="L46" class="ln">    46  </span>
+<span id="L47" class="ln">    47  </span>func IsDirectlyFetchableMetric(md *sources.SourceConn, metric string) bool {
+<span id="L48" class="ln">    48  </span>	return slices.Contains(directlyFetchableOSMetrics, metric) &amp;&amp; md.IsClientOnSameHost()
+<span id="L49" class="ln">    49  </span>}
+<span id="L50" class="ln">    50  </span>
+<span id="L51" class="ln">    51  </span>func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.SourceConn, metricName string) (*metrics.MeasurementEnvelope, error) {
+<span id="L52" class="ln">    52  </span>	var data, pgDirs metrics.Measurements
+<span id="L53" class="ln">    53  </span>	var err error
+<span id="L54" class="ln">    54  </span>
+<span id="L55" class="ln">    55  </span>	switch metricName {
+<span id="L56" class="ln">    56  </span>	case metricCPULoad:
+<span id="L57" class="ln">    57  </span>		data, err = GetLoadAvgLocal()
+<span id="L58" class="ln">    58  </span>	case metricPsutilCPU:
+<span id="L59" class="ln">    59  </span>		data, err = GetGoPsutilCPU(md.GetMetricInterval(metricName))
+<span id="L60" class="ln">    60  </span>	case metricPsutilDisk:
+<span id="L61" class="ln">    61  </span>		if pgDirs, err = QueryMeasurements(ctx, md, sqlPgDirs); err != nil {
+<span id="L62" class="ln">    62  </span>			return nil, err
+<span id="L63" class="ln">    63  </span>		}
+<span id="L64" class="ln">    64  </span>		data, err = GetGoPsutilDiskPG(pgDirs)
+<span id="L65" class="ln">    65  </span>	case metricPsutilDiskIoTotal:
+<span id="L66" class="ln">    66  </span>		data, err = GetGoPsutilDiskTotals()
+<span id="L67" class="ln">    67  </span>	case metricPsutilMem:
+<span id="L68" class="ln">    68  </span>		data, err = GetGoPsutilMem()
+<span id="L69" class="ln">    69  </span>	}
+<span id="L70" class="ln">    70  </span>	if err != nil {
+<span id="L71" class="ln">    71  </span>		return nil, err
+<span id="L72" class="ln">    72  </span>	}
+<span id="L73" class="ln">    73  </span>	return &amp;metrics.MeasurementEnvelope{
+<span id="L74" class="ln">    74  </span>		DBName:     md.Name,
+<span id="L75" class="ln">    75  </span>		MetricName: metricName,
+<span id="L76" class="ln">    76  </span>		CustomTags: md.CustomTags,
+<span id="L77" class="ln">    77  </span>		Data:       data,
+<span id="L78" class="ln">    78  </span>	}, nil
+<span id="L79" class="ln">    79  </span>}
+<span id="L80" class="ln">    80  </span>
 </pre><p></p>
 
 <div id="footer">
