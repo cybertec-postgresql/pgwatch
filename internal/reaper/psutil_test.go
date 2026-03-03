@@ -1,19 +1,21 @@
 package reaper
 
 import (
-	"slices"
-	"testing"
-
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
-
 	"maps"
 	"os"
+	"slices"
+	"testing"
+	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetGoPsutilCPU(t *testing.T) {
 	a := assert.New(t)
+
+	// Sleep past one kernel tick (USER_HZ=100 → 10ms) so totalDiff is non-zero
+	time.Sleep(100 * time.Millisecond)
 
 	// Call the GetGoPsutilCPU function with a 1-second interval
 	result, err := GetGoPsutilCPU(1.0)

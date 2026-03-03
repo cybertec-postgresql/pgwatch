@@ -3,8 +3,6 @@ package reaper
 import (
 	"math"
 	"os"
-	"path"
-	"strings"
 	"sync"
 	"time"
 
@@ -20,6 +18,14 @@ var prevCPULoadTimeStatsLock sync.RWMutex
 var prevCPULoadTimeStats cpu.TimesStat
 var prevCPULoadTimestamp time.Time
 
+func init() {
+	// initialize the cache with current stats so the first call returns a meaningful delta
+	if probe, err := cpu.Times(false); err == nil {
+		prevCPULoadTimeStats = probe[0]
+		prevCPULoadTimestamp = time.Now()
+	}
+}
+
 // cpuTotal returns the total number of seconds across all CPU states.
 // Guest and GuestNice are intentionally excluded because on Linux they are
 // already counted within User and Nice respectively (/proc/stat semantics),
@@ -33,27 +39,18 @@ func goPsutilCalcCPUUtilization(probe0, probe1 cpu.TimesStat) float64 {
 	return 100 - (100.0 * (probe1.Idle - probe0.Idle + probe1.Iowait - probe0.Iowait + probe1.Steal - probe0.Steal) / (cpuTotal(probe1) - cpuTotal(probe0)))
 }
 
-// Simulates "psutil" metric output. Assumes the result from last call as input, otherwise uses a 1s measurement
-func GetGoPsutilCPU(interval float64) ([]map[string]any, error) {
+// GetGoPsutilCPU simulates "psutil" metric output. Assumes the result from last call as input
+func GetGoPsutilCPU(interval float64) (metrics.Measurements, error) {
 	prevCPULoadTimeStatsLock.RLock()
 	prevTime := prevCPULoadTimestamp
 	prevTimeStat := prevCPULoadTimeStats
 	prevCPULoadTimeStatsLock.RUnlock()
 
-	if prevTime.IsZero() || time.Since(prevTime) < time.Second { // give "short" stats on first run, based on a 1s probe
-		probe0, err := cpu.Times(false)
-		if err != nil {
-			return nil, err
-		}
-		prevTimeStat = probe0[0]
-		time.Sleep(time.Second)
-	}
-
 	curCallStats, err := cpu.Times(false)
 	if err != nil {
 		return nil, err
 	}
-	if prevTime.IsZero() || time.Since(prevTime) < time.Second || time.Since(prevTime) >= time.Duration(float64(time.Second)*interval) {
+	if time.Since(prevTime) >= time.Duration(float64(time.Second)*interval) {
 		prevCPULoadTimeStatsLock.Lock() // update the cache
 		prevCPULoadTimeStats = curCallStats[0]
 		prevCPULoadTimestamp = time.Now()
@@ -84,10 +81,10 @@ func GetGoPsutilCPU(interval float64) ([]map[string]any, error) {
 	retMap["irqs"] = math.Round(10000.0*(curCallStats[0].Irq-prevTimeStat.Irq+curCallStats[0].Softirq-prevTimeStat.Softirq)/totalDiff) / 100
 	retMap["other"] = math.Round(10000.0*(curCallStats[0].Steal-prevTimeStat.Steal+curCallStats[0].Guest-prevTimeStat.Guest+curCallStats[0].GuestNice-prevTimeStat.GuestNice)/totalDiff) / 100
 
-	return []map[string]any{retMap}, nil
+	return metrics.Measurements{retMap}, nil
 }
 
-func GetGoPsutilMem() ([]map[string]any, error) {
+func GetGoPsutilMem() (metrics.Measurements, error) {
 	vm, err := mem.VirtualMemory()
 	if err != nil {
 		return nil, err
@@ -105,10 +102,10 @@ func GetGoPsutilMem() ([]map[string]any, error) {
 	retMap["swap_free"] = int64(vm.SwapFree)
 	retMap["swap_percent"] = math.Round(100*float64(vm.SwapCached)/float64(vm.SwapTotal)) / 100
 
-	return []map[string]any{retMap}, nil
+	return metrics.Measurements{retMap}, nil
 }
 
-func GetGoPsutilDiskTotals() ([]map[string]any, error) {
+func GetGoPsutilDiskTotals() (metrics.Measurements, error) {
 	d, err := disk.IOCounters()
 	if err != nil {
 		return nil, err
@@ -129,10 +126,10 @@ func GetGoPsutilDiskTotals() ([]map[string]any, error) {
 	retMap["read_count"] = reads
 	retMap["write_count"] = writes
 
-	return []map[string]any{retMap}, nil
+	return metrics.Measurements{retMap}, nil
 }
 
-func GetLoadAvgLocal() ([]map[string]any, error) {
+func GetLoadAvgLocal() (metrics.Measurements, error) {
 	la, err := load.Avg()
 	if err != nil {
 		return nil, err
@@ -143,7 +140,7 @@ func GetLoadAvgLocal() ([]map[string]any, error) {
 	row["load_5min"] = la.Load5
 	row["load_15min"] = la.Load15
 
-	return []map[string]any{row}, nil
+	return metrics.Measurements{row}, nil
 }
 
 func CheckFolderExistsAndReadable(path string) bool {
