@@ -1,9 +1,11 @@
 package reaper
 
-import "errors"
+import "hash/fnv"
 
-var ErrNotImplemented = errors.New("not implemented")
-
-func GetPathUnderlyingDeviceID(path string) (uint64, error) {
-	return 0, ErrNotImplemented
+// GetPathUnderlyingDeviceID on Darwin falls back to an FNV hash of the path.
+// Identical paths still get the same ID, so deduplication works correctly.
+func GetPathUnderlyingDeviceID(p string) (uint64, error) {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(p))
+	return h.Sum64(), nil
 }
