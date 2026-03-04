@@ -18,6 +18,7 @@ func newTestPrometheusWriter(namespace string) *PrometheusWriter {
 		logger:    log.GetLogger(testutil.TestContext),
 		Namespace: namespace,
 		Cache:     make(PromMetricCache),
+		registry:  prometheus.NewRegistry(),
 		lastScrapeErrors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "test_last_scrape_errors",
@@ -31,6 +32,22 @@ func newTestPrometheusWriter(namespace string) *PrometheusWriter {
 			Name:      "test_total_scrape_failures",
 		}),
 	}
+}
+
+// TestIsolatedRegistry_NoConflict verifies that two PrometheusWriter instances
+// with the same namespace can be scraped independently without "collected before"
+// duplicate metric errors. Each writer is the sole collector in its own registry.
+func TestIsolatedRegistry_NoConflict(t *testing.T) {
+	promw1 := newTestPrometheusWriter("same_namespace")
+	promw2 := newTestPrometheusWriter("same_namespace")
+
+	require.NoError(t, promw1.registry.Register(promw1))
+	require.NoError(t, promw2.registry.Register(promw2))
+
+	_, err := promw1.registry.Gather()
+	assert.NoError(t, err)
+	_, err = promw2.registry.Gather()
+	assert.NoError(t, err)
 }
 
 // TestLazyInitialization_WriteAfterCollect verifies that Write() works after

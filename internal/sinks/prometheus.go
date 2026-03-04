@@ -32,6 +32,7 @@ type PrometheusWriter struct {
 	gauges              map[string]([]string) // map of metric names to their gauge names, used for Prometheus gauge metrics
 	Namespace           string
 	Cache               PromMetricCache // [dbUnique][metric]lastly_fetched_data
+	registry            *prometheus.Registry
 }
 
 const promInstanceUpStateMetric = "instance_up"
@@ -72,14 +73,15 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 		}),
 	}
 
-	if err = prometheus.Register(promw); err != nil {
+	promw.registry = prometheus.NewRegistry()
+	if err = promw.registry.Register(promw); err != nil {
 		return
 	}
 
 	promServer := &http.Server{
 		Addr: addr,
 		Handler: promhttp.HandlerFor(
-			prometheus.DefaultGatherer,
+			promw.registry,
 			promhttp.HandlerOpts{
 				ErrorLog:      promw,
 				ErrorHandling: promhttp.ContinueOnError,
