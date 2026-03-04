@@ -34,7 +34,7 @@ type dbMetricReaderWriter struct {
 }
 
 var (
-	ErrNeedsMigration = errors.New("config database schema is outdated, please run migrations using `pgwatch config upgrade` command")
+	ErrNeedsMigration = errors.New("metrics config database schema is outdated, please run migrations using `pgwatch [OPTIONS] --metrics=... config upgrade` command")
 	ErrMetricNotFound = errors.New("metric not found")
 	ErrPresetNotFound = errors.New("preset not found")
 	ErrInvalidMetric  = errors.New("invalid metric")
