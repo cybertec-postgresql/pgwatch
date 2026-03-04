@@ -1,9 +1,23 @@
 package reaper
 
-import "errors"
+import (
+	"os"
+	"syscall"
+)
 
-var ErrNotImplemented = errors.New("not implemented")
+// GetPathUnderlyingDeviceID returns the volume serial number for the volume
+// that hosts the given path. This is the Windows equivalent of the Unix
+// device ID (Stat_t.Dev) and uniquely identifies the underlying disk volume.
+func GetPathUnderlyingDeviceID(path string) (uint64, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
 
-func GetPathUnderlyingDeviceID(_ string) (uint64, error) {
-	return 0, ErrNotImplemented
+	var info syscall.ByHandleFileInformation
+	if err = syscall.GetFileInformationByHandle(syscall.Handle(f.Fd()), &info); err != nil {
+		return 0, err
+	}
+	return uint64(info.VolumeSerialNumber), nil
 }
