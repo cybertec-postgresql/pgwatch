@@ -1165,7 +1165,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\nselect\n  $__timeGroup(time, $agg_interval),\n  avg(case when c = c_lag then null else ((read - read_lag)::numeric * 8192) / nullif(c - c_lag, 0) end) as \"Temp Bytes read\",\n  avg(case when c = c_lag then null else ((written - written_lag)::numeric * 8192) / nullif(c - c_lag, 0) end) as \"Temp Bytes written\"\from (\n  select\n    (data->>'temp_blks_read')::int8 as read, lag((data->>'temp_blks_read')::int8) over w as read_lag,\n    (data->>'temp_blks_written')::int8 as written, lag((data->>'temp_blks_written')::int8) over w as written_lag,\n    (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag,\n    time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time <= $__timeTo()::timestamptz\n    and time >= (select time from baseline)\n  window w as (order by time)\n) x\nwhere read >= read_lag and written >= written_lag and c >= c_lag\n  and time >= $__timeFrom()::timestamptz\ngroup by 1\norder by 1",
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\nselect\n  $__timeGroup(time, $agg_interval),\n  avg(case when c = c_lag then null else ((read - read_lag)::numeric * 8192) / nullif(c - c_lag, 0) end) as \"Temp Bytes read\",\n  avg(case when c = c_lag then null else ((written - written_lag)::numeric * 8192) / nullif(c - c_lag, 0) end) as \"Temp Bytes written\"\nfrom (\n  select\n    (data->>'temp_blks_read')::int8 as read, lag((data->>'temp_blks_read')::int8) over w as read_lag,\n    (data->>'temp_blks_written')::int8 as written, lag((data->>'temp_blks_written')::int8) over w as written_lag,\n    (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag,\n    time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time <= $__timeTo()::timestamptz\n    and time >= (select time from baseline)\n  window w as (order by time)\n) x\nwhere read >= read_lag and written >= written_lag and c >= c_lag\n  and time >= $__timeFrom()::timestamptz\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1267,7 +1267,7 @@
               }
             ]
           },
-          "unit": "ms"
+          "unit": "ms/s"
         },
         "overrides": []
       },
@@ -1329,7 +1329,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  sum(read-read_lag) as \"blk_read_time\",\n  sum(write-write_lag) as \"blk_write_time\"\nfrom (\n        select \n          (data->>'blk_read_time')::numeric as read, lag((data->>'blk_read_time')::numeric) over w as read_lag,\n          (data->>'blk_write_time')::numeric as write, lag((data->>'blk_write_time')::numeric) over w as write_lag,\n          time\n        from stat_statements\n        where dbname = '$dbname' and $__timeFilter(time) and tag_data @> '{\"queryid\": \"$queryid\"}'\n        window w as (order by time)\n) x\nwhere read >= read_lag and write>= write_lag\ngroup by 1\norder by 1",
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\nselect\n  $__timeGroup(time, $agg_interval),\n  sum(read - read_lag) / nullif(extract(epoch from '$agg_interval'::interval), 0) as \"blk_read_time\",\n  sum(write - write_lag) / nullif(extract(epoch from '$agg_interval'::interval), 0) as \"blk_write_time\"\nfrom (\n  select\n    (data->>'blk_read_time')::numeric as read, lag((data->>'blk_read_time')::numeric) over w as read_lag,\n    (data->>'blk_write_time')::numeric as write, lag((data->>'blk_write_time')::numeric) over w as write_lag,\n    time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time <= $__timeTo()::timestamptz\n    and time >= (select time from baseline)\n  window w as (order by time)\n) x\nwhere read >= read_lag and write >= write_lag\n  and time >= $__timeFrom()::timestamptz\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1445,7 +1445,9 @@
       "options": {
         "legend": {
           "calcs": [
-            "mean"
+            "mean",
+            "max",
+            "min"
           ],
           "displayMode": "list",
           "placement": "bottom",
@@ -1485,9 +1487,8 @@
           "metricColumn": "none",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT ((non_negative_derivative(mean(\"blk_read_time\"))  + non_negative_derivative(mean(\"blk_write_time\"))) /  non_negative_derivative(mean(\"total_time\"))) * 100  FROM \"stat_statements\" WHERE \"queryid\" =~ /^$queryid$/ AND $timeFilter GROUP BY time($__interval), \"queryid\" fill(null)",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  avg(case when tt = tt_lag then null else (read-read_lag+write-write_lag)::numeric*100 / (tt-tt_lag) end) as \"io_time_pct\"\nfrom (\n        select \n          (data->>'blk_read_time')::numeric as read, lag((data->>'blk_read_time')::numeric) over w as read_lag,\n          (data->>'blk_write_time')::numeric as write, lag((data->>'blk_write_time')::numeric) over w as write_lag,\n          (data->>'total_time')::numeric as tt, lag((data->>'total_time')::numeric) over w as tt_lag,\n          time\n        from stat_statements\n        where dbname = '$dbname' and $__timeFilter(time) and tag_data @> '{\"queryid\": \"$queryid\"}'\n        window w as (order by time)\n) x\nwhere read >= read_lag and write>= write_lag\ngroup by 1\norder by 1",
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\nselect\n  $__timeGroup(time, $agg_interval),\n  avg(case when tt = tt_lag then null else (read - read_lag + write - write_lag)::numeric * 100 / nullif(tt - tt_lag, 0) end) as \"io_time_pct\"\nfrom (\n  select\n    (data->>'blk_read_time')::numeric as read, lag((data->>'blk_read_time')::numeric) over w as read_lag,\n    (data->>'blk_write_time')::numeric as write, lag((data->>'blk_write_time')::numeric) over w as write_lag,\n    (data->>'total_time')::numeric as tt, lag((data->>'total_time')::numeric) over w as tt_lag,\n    time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time <= $__timeTo()::timestamptz\n    and time >= (select time from baseline)\n  window w as (order by time)\n) x\nwhere read >= read_lag and write >= write_lag\n  and time >= $__timeFrom()::timestamptz\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
