@@ -936,21 +936,25 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "binBps"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 24,
+        "h": 6,
+        "w": 12,
         "x": 0,
-        "y": 25
+        "y": 24
       },
       "id": 6,
       "interval": "5m",
       "options": {
         "legend": {
-          "calcs": [],
+          "calcs": [
+            "mean",
+            "max",
+            "min"
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -996,7 +1000,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  sum(read-read_lag) as \"temp_blks_read\",\n  sum(written-written_lag) as \"temp_blks_written\"\nfrom (\n        select \n          (data->>'temp_blks_read')::int8 as read, lag((data->>'temp_blks_read')::int8) over w as read_lag,\n          (data->>'temp_blks_written')::int8 as written, lag((data->>'temp_blks_written')::int8) over w as written_lag,\n          time\n        from stat_statements\n        where dbname = '$dbname' and $__timeFilter(time) and tag_data @> '{\"queryid\": \"$queryid\"}'\n        window w as (order by time)\n) x\nwhere read >= read_lag and written >= written_lag\ngroup by 1\norder by 1",
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\nselect\n  $__timeGroup(time, $agg_interval),\n  sum(read - read_lag) * 8192 / nullif(extract(epoch from '$agg_interval'::interval), 0) as \"Temp Bytes read\",\n  sum(written - written_lag) * 8192 / nullif(extract(epoch from '$agg_interval'::interval), 0) as \"Temp Bytes written\"\nfrom (\n  select\n    (data->>'temp_blks_read')::int8 as read, lag((data->>'temp_blks_read')::int8) over w as read_lag,\n    (data->>'temp_blks_written')::int8 as written, lag((data->>'temp_blks_written')::int8) over w as written_lag,\n    time\n  FROM stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time <= $__timeTo()::timestamptz\n    and time >= (select time from baseline)\n  window w as (order by time)\n) x\nwhere read >= read_lag and written >= written_lag\n  and time >= $__timeFrom()::timestamptz\ngroup by 1\norder by 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1036,7 +1040,172 @@
           ]
         }
       ],
-      "title": "Temp Blocks Read/Written ($agg_interval aggregate)",
+      "title": "Temp Bytes Read/Written per second ($agg_interval aggregate)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "id": 10,
+      "interval": "5m",
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "min"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "alias": "temp_blks_written",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "queryid"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "measurement": "stat_statements",
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\nselect\n  $__timeGroup(time, $agg_interval),\n  avg(case when c = c_lag then null else ((read - read_lag)::numeric * 8192) / nullif(c - c_lag, 0) end) as \"Temp Bytes read\",\n  avg(case when c = c_lag then null else ((written - written_lag)::numeric * 8192) / nullif(c - c_lag, 0) end) as \"Temp Bytes written\"\from (\n  select\n    (data->>'temp_blks_read')::int8 as read, lag((data->>'temp_blks_read')::int8) over w as read_lag,\n    (data->>'temp_blks_written')::int8 as written, lag((data->>'temp_blks_written')::int8) over w as written_lag,\n    (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag,\n    time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time <= $__timeTo()::timestamptz\n    and time >= (select time from baseline)\n  window w as (order by time)\n) x\nwhere read >= read_lag and written >= written_lag and c >= c_lag\n  and time >= $__timeFrom()::timestamptz\ngroup by 1\norder by 1",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "temp_blks_written"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              },
+              {
+                "params": [
+                  "$rate_unit"
+                ],
+                "type": "non_negative_derivative"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "queryid",
+              "operator": "=~",
+              "value": "/^$queryid$/"
+            }
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Temp Bytes Read/Written per call ($agg_interval aggregate)",
       "type": "timeseries"
     },
     {
