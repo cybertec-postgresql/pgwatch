@@ -111,9 +111,9 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 
 	}
 
-	err = f(opts.Metrics.Metrics, func() (any, error) {
+	err = errors.Join(f(opts.Metrics.Metrics, func() (any, error) {
 		return metrics.NewPostgresMetricReaderWriter(ctx, opts.Metrics.Metrics)
-	})
+	}))
 
 	for _, uri := range opts.Sinks.Sinks {
 		err = errors.Join(err, f(uri, func() (any, error) {
