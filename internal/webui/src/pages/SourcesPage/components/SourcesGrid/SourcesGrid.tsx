@@ -19,7 +19,7 @@ export const SourcesGrid = () => {
     columnVisibility, 
     columnsWithSizing, 
     onColumnVisibilityChange, 
-    onColumnResize
+    onColumnWidthChange
   } = useGridState('SOURCES_GRID', columns, {
     Kind: false,
     IncludePattern: false,
@@ -31,16 +31,12 @@ export const SourcesGrid = () => {
   });
 
   if (isLoading) {
-    return (
-      <Loading />
-    );
+     return <Loading />;
   }
 
   if (isError) {
     const err = error as Error;
-    return (
-      <Error message={err.message} />
-    );
+    return <Error message={err.message} />;
   }
 
   return (
@@ -56,7 +52,7 @@ export const SourcesGrid = () => {
           }}
           columnVisibilityModel={columnVisibility}
           onColumnVisibilityModelChange={onColumnVisibilityChange}
-          onColumnResize={onColumnResize}
+          onColumnWidthChange={onColumnWidthChange}
         />
         <SourceFormDialog />
       </SourceFormProvider>

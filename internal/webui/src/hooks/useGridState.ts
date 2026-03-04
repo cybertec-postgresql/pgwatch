@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { GridColDef, GridColumnVisibilityModel } from '@mui/x-data-grid';
 
 export interface GridColumnSizingModel {
@@ -44,30 +44,27 @@ export const useGridState = (
     };
   });
 
-  const saveToStorage = useCallback((newState: GridState) => {
-    localStorage.setItem(storageKey, JSON.stringify(newState));
+  const handleColumnVisibilityChange = useCallback((newModel: GridColumnVisibilityModel) => {
+    setGridState(prev => {
+      const newState = { ...prev, columnVisibility: newModel };
+      localStorage.setItem(storageKey, JSON.stringify(newState));
+      return newState;
+    });
   }, [storageKey]);
 
-  const handleColumnVisibilityChange = useCallback((newModel: GridColumnVisibilityModel) => {
-    const newState = {
-      ...gridState,
-      columnVisibility: newModel
-    };
-    setGridState(newState);
-    saveToStorage(newState);
-  }, [gridState, saveToStorage]);
-
-  const handleColumnResize = useCallback((params: any) => {
-    const newState = {
-      ...gridState,
-      columnSizing: {
-        ...gridState.columnSizing,
-        [params.field || params.colDef?.field]: params.width
-      }
-    };
-    setGridState(newState);
-    saveToStorage(newState);
-  }, [gridState, saveToStorage]);
+  const handleColumnWidthChange = useCallback((params: any) => {
+    setGridState(prev => {
+      const newState = {
+        ...prev,
+        columnSizing: {
+          ...prev.columnSizing,
+          [params.colDef?.field ?? params.field]: params.width
+        }
+      };
+      localStorage.setItem(storageKey, JSON.stringify(newState));
+      return newState;
+    });
+  }, [storageKey]);
 
   const resetColumnSizes = useCallback(() => {
     const defaultSizing = columns?.reduce((acc, col) => ({
@@ -75,26 +72,28 @@ export const useGridState = (
       [col.field]: col.width || 150
     }), {});
 
-    const newState = {
-      ...gridState,
-      columnSizing: defaultSizing
-    };
-    setGridState(newState);
-    saveToStorage(newState);
-  }, [columns, gridState, saveToStorage]);
+    setGridState(prev => {
+      const newState = { ...prev, columnSizing: defaultSizing };
+      localStorage.setItem(storageKey, JSON.stringify(newState));
+      return newState;
+    });
+  }, [columns, storageKey]);
 
   // Generate columns with applied widths
-  const columnsWithSizing = columns?.map(col => ({
-    ...col,
-    width: gridState.columnSizing[col.field] || col.width || 150
-  }));
+  const columnsWithSizing = useMemo(() =>
+    columns?.map(col => ({
+      ...col,
+      width: gridState.columnSizing[col.field] || col.width || 150
+    })),
+    [columns, gridState.columnSizing]
+  );
 
   return {
     columnVisibility: gridState.columnVisibility,
     columnSizing: gridState.columnSizing,
     columnsWithSizing,
     onColumnVisibilityChange: handleColumnVisibilityChange,
-    onColumnResize: handleColumnResize,
+    onColumnWidthChange: handleColumnWidthChange,
     resetColumnSizes
   };
 };
