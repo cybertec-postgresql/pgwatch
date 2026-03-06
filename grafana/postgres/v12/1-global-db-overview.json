@@ -509,7 +509,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((tt - tt_lag) / (c - c_lag)) as \" \"\nfrom (\n  select \n    (data->>'total_time')::numeric as tt, lag((data->>'total_time')::numeric) over w as tt_lag,\n    (data->>'calls')::bigint as c, lag((data->>'calls')::bigint) over w as c_lag,\n    time, dbname\n  from stat_statements\n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname, (tag_data->>'queryid')::text order by time)\n) x\nwhere c > c_lag and tt > tt_lag\ngroup by 1, 2\norder by 1",
+          "rawSql": "WITH last_out_of_range_rows AS (\n  SELECT DISTINCT ON (dbname)\n    dbname,\n    time\n  FROM stat_statements\n  WHERE dbname IN ($dbname)\n    AND time < $__timeFrom()::timestamptz\n  ORDER BY dbname, time DESC\n)\nSELECT\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((tt - tt_lag) / (c - c_lag)) AS \" \"\nFROM (\n  SELECT\n    (data->>'total_time')::numeric AS tt, lag((data->>'total_time')::numeric) OVER w AS tt_lag,\n    (data->>'calls')::bigint AS c, lag((data->>'calls')::bigint) OVER w AS c_lag,\n    time, dbname\n  FROM stat_statements\n  WHERE dbname IN ($dbname)\n    AND time >= (SELECT time FROM last_out_of_range_rows r WHERE r.dbname = stat_statements.dbname)\n    AND time <= $__timeTo()::timestamptz\n  WINDOW w AS (PARTITION BY dbname, (tag_data->>'queryid')::text ORDER BY time)\n) x\nWHERE time >= $__timeFrom()::timestamptz\n  AND c > c_lag\n  AND tt > tt_lag\nGROUP BY 1, 2\nORDER BY 1",
           "refId": "A",
           "select": [
             [
