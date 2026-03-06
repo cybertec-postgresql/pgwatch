@@ -41,10 +41,11 @@ export const SqlPopUp = ({ SQLs }: Props) => {
       <Dialog
         open={open}
         onClose={handleClose}
-        maxWidth="md"
+        maxWidth="xl"        // SQL lines are long, needs full width
+        fullWidth            // stretches to maxWidth instead of hugging content
       >
         <DialogTitle>SQLs</DialogTitle>
-        <DialogContent sx={{ width: 750, maxHeight: 600 }}>
+        <DialogContent sx={{maxHeight: 700 }}>
           <DataGrid
             getRowId={(row) => row.version}
             columns={columns}
@@ -52,6 +53,14 @@ export const SqlPopUp = ({ SQLs }: Props) => {
             pageSizeOptions={[]}
             getRowHeight={() => "auto"}
             autoHeight
+            disableColumnMenu
+            sx={{
+              // let the pre block breathe inside auto-height rows
+              "& .MuiDataGrid-cell": {
+                alignItems: "flex-start",
+                py: 1,
+              },
+            }}
           />
         </DialogContent>
       </Dialog>
