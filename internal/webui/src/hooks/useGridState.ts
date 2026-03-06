@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { GridColDef, GridColumnVisibilityModel } from '@mui/x-data-grid';
 
 export interface GridColumnSizingModel {
@@ -22,79 +22,73 @@ export const useGridState = (
       [col.field]: defaultHidden[col.field] === false ? false : true
     }), {});
 
-    // Initialize default column sizing from column definitions
-    const defaultSizing = columns?.reduce((acc, col) => ({
-      ...acc,
-      [col.field]: col.width || 150 // Use column width or default to 150
-    }), {});
-
     // Load saved state from localStorage
     const saved = localStorage.getItem(storageKey);
     const savedState = saved ? JSON.parse(saved) : {};
 
     return {
-      columnVisibility: {
+     columnVisibility: {
         ...defaultVisibility,
         ...(savedState.columnVisibility || {})
       },
-      columnSizing: {
-        ...defaultSizing,
-        ...(savedState.columnSizing || {})
-      }
+      columnSizing: savedState.columnSizing || {}
     };
   });
 
-  const saveToStorage = useCallback((newState: GridState) => {
-    localStorage.setItem(storageKey, JSON.stringify(newState));
+  const handleColumnVisibilityChange = useCallback((newModel: GridColumnVisibilityModel) => {
+   setGridState(prev => {
+      const newState = {
+        ...prev,
+        columnSizing: {
+          ...prev.columnSizing,
+          [params.colDef?.field ?? params.field]: params.width
+        }
+      };
+      localStorage.setItem(storageKey, JSON.stringify(newState));
+      return newState;
+    });
   }, [storageKey]);
 
-  const handleColumnVisibilityChange = useCallback((newModel: GridColumnVisibilityModel) => {
-    const newState = {
-      ...gridState,
-      columnVisibility: newModel
-    };
-    setGridState(newState);
-    saveToStorage(newState);
-  }, [gridState, saveToStorage]);
+  const handleColumnWidthChange = useCallback((params: any) => {
+    setGridState(prev => {
+      const newState = {
+        ...prev,
+        columnSizing: {
+          ...prev.columnSizing,
+          [params.colDef?.field ?? params.field]: params.width
+        }
+      };
+      localStorage.setItem(storageKey, JSON.stringify(newState));
+      return newState;
+    });
+  }, [storageKey]);
 
-  const handleColumnResize = useCallback((params: any) => {
-    const newState = {
-      ...gridState,
-      columnSizing: {
-        ...gridState.columnSizing,
-        [params.field || params.colDef?.field]: params.width
+ const resetColumnSizes = useCallback(() => {
+    setGridState(prev => {
+      const newState = { ...prev, columnSizing: {} };
+      localStorage.setItem(storageKey, JSON.stringify(newState));
+      return newState;
+    });
+  }, [storageKey]);
+
+  const columnsWithSizing = useMemo(() =>
+    columns?.map(col => {
+      const userWidth = gridState.columnSizing[col.field];
+      if (userWidth !== undefined) {
+        const { flex, ...colWithoutFlex } = col as any;
+        return { ...colWithoutFlex, width: userWidth };
       }
-    };
-    setGridState(newState);
-    saveToStorage(newState);
-  }, [gridState, saveToStorage]);
-
-  const resetColumnSizes = useCallback(() => {
-    const defaultSizing = columns?.reduce((acc, col) => ({
-      ...acc,
-      [col.field]: col.width || 150
-    }), {});
-
-    const newState = {
-      ...gridState,
-      columnSizing: defaultSizing
-    };
-    setGridState(newState);
-    saveToStorage(newState);
-  }, [columns, gridState, saveToStorage]);
-
-  // Generate columns with applied widths
-  const columnsWithSizing = columns?.map(col => ({
-    ...col,
-    width: gridState.columnSizing[col.field] || col.width || 150
-  }));
+      return col;
+    }),
+    [columns, gridState.columnSizing]
+  );
 
   return {
     columnVisibility: gridState.columnVisibility,
     columnSizing: gridState.columnSizing,
     columnsWithSizing,
     onColumnVisibilityChange: handleColumnVisibilityChange,
-    onColumnResize: handleColumnResize,
+    onColumnWidthChange: handleColumnWidthChange,
     resetColumnSizes
   };
 };
