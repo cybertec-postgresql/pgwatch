@@ -89,9 +89,9 @@ type ConfigUpgradeCommand struct {
 func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 	opts := cmd.owner
 	// For upgrade command, validate that at least one component is specified
-	if len(opts.Sources.Sources)+len(opts.Metrics.Metrics)+len(opts.Sinks.Sinks) == 0 {
+	if len(opts.Metrics.Metrics)+len(opts.Sinks.Sinks) == 0 {
 		opts.CompleteCommand(ExitCodeConfigError)
-		return errors.New("at least one of --sources, --metrics, or --sink must be specified")
+		return errors.New("at least --metrics or --sink must be specified")
 	}
 
 	ctx := context.Background()
@@ -111,11 +111,7 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 
 	}
 
-	err = f(opts.Sources.Sources, func() (any, error) {
-		return sources.NewPostgresSourcesReaderWriter(ctx, opts.Sources.Sources)
-	})
-
-	err = errors.Join(err, f(opts.Metrics.Metrics, func() (any, error) {
+	err = errors.Join(f(opts.Metrics.Metrics, func() (any, error) {
 		return metrics.NewPostgresMetricReaderWriter(ctx, opts.Metrics.Metrics)
 	}))
 

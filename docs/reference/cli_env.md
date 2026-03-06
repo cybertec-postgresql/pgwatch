@@ -204,9 +204,9 @@ It reads the configuration from the specified sources and metrics, then begins c
 
 - `upgrade`
 
-    Upgrade the configuration and/or sink database to the latest version by applying all pending migrations.
+    Upgrades the metrics configuration and/or sink database to the latest version by applying all pending migrations.
     File or folder based configurations are not supported. The command will automatically detect which
-    databases (sources, metrics, sinks) require migrations and apply them.
+    databases (metrics, sinks) require migrations and apply them.
 
 ### Manage metrics
 

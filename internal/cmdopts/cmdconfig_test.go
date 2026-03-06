@@ -341,7 +341,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		cmd := ConfigUpgradeCommand{owner: opts}
 		err := cmd.Execute(nil)
 		a.Error(err)
-		a.ErrorContains(err, "at least one of --sources, --metrics, or --sink must be specified")
+		a.ErrorContains(err, "at least --metrics or --sink must be specified")
 		a.Equal(ExitCodeConfigError, opts.ExitCode)
 	})
 
@@ -449,7 +449,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 	t.Run("only sources specified as yaml - unsupported error", func(*testing.T) {
 		var output bytes.Buffer
 		opts := &Options{
-			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml"},
+			Metrics:      metrics.CmdOpts{Metrics: "/tmp/sources.yaml"},
 			OutputWriter: &output,
 		}
 		cmd := ConfigUpgradeCommand{owner: opts}

@@ -85,7 +85,7 @@ func NewPostgresWriter(ctx context.Context, connstr string, opts *CmdOpts) (pgw 
 	return NewWriterFromPostgresConn(ctx, conn, opts)
 }
 
-var ErrNeedsMigration = errors.New("sink database schema is outdated, please run migrations using `pgwatch config upgrade` command")
+var ErrNeedsMigration = errors.New("sink database schema is outdated, please run migrations using `pgwatch [OPTIONS] --sink=... config upgrade` command")
 
 func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *CmdOpts) (pgw *PostgresWriter, err error) {
 	l := log.GetLogger(ctx).WithField("sink", "postgres").WithField("db", conn.Config().ConnConfig.Database)
