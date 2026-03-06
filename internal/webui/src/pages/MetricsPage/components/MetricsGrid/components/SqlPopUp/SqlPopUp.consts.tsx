@@ -1,7 +1,7 @@
 import { GridColDef } from "@mui/x-data-grid";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import sql from "react-syntax-highlighter/dist/esm/languages/hljs/sql";
-import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { atomOneLight } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 SyntaxHighlighter.registerLanguage("sql", sql);
 
@@ -19,7 +19,7 @@ export const useSqlPopUpColumns = (): GridColDef[] => [
     renderCell: (params) => (
       <SyntaxHighlighter
         language="sql"
-        style={atomOneDark}
+        style={atomOneLight}
         wrapLongLines={true}
         customStyle={{
           margin: 0,
