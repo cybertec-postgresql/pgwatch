@@ -15,6 +15,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -77,6 +78,8 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 	if err = promw.registry.Register(promw); err != nil {
 		return
 	}
+	promw.registry.MustRegister(collectors.NewGoCollector())
+	promw.registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 
 	promServer := &http.Server{
 		Addr: addr,
