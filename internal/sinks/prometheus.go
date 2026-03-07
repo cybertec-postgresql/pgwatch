@@ -15,6 +15,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -32,6 +33,7 @@ type PrometheusWriter struct {
 	gauges              map[string]([]string) // map of metric names to their gauge names, used for Prometheus gauge metrics
 	Namespace           string
 	Cache               PromMetricCache // [dbUnique][metric]lastly_fetched_data
+	registry            *prometheus.Registry
 }
 
 const promInstanceUpStateMetric = "instance_up"
@@ -72,14 +74,17 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 		}),
 	}
 
-	if err = prometheus.Register(promw); err != nil {
+	promw.registry = prometheus.NewRegistry()
+	if err = promw.registry.Register(promw); err != nil {
 		return
 	}
+	promw.registry.MustRegister(collectors.NewGoCollector())
+	promw.registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 
 	promServer := &http.Server{
 		Addr: addr,
 		Handler: promhttp.HandlerFor(
-			prometheus.DefaultGatherer,
+			promw.registry,
 			promhttp.HandlerOpts{
 				ErrorLog:      promw,
 				ErrorHandling: promhttp.ContinueOnError,
