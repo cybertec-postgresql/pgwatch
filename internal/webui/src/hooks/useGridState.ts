@@ -37,13 +37,7 @@ export const useGridState = (
 
   const handleColumnVisibilityChange = useCallback((newModel: GridColumnVisibilityModel) => {
    setGridState(prev => {
-      const newState = {
-        ...prev,
-        columnSizing: {
-          ...prev.columnSizing,
-          [params.colDef?.field ?? params.field]: params.width
-        }
-      };
+      const newState = { ...prev, columnVisibility: newModel };
       localStorage.setItem(storageKey, JSON.stringify(newState));
       return newState;
     });
@@ -75,7 +69,7 @@ export const useGridState = (
     columns?.map(col => {
       const userWidth = gridState.columnSizing[col.field];
       if (userWidth !== undefined) {
-        const { flex, ...colWithoutFlex } = col as any;
+        const { flex, minWidth, ...colWithoutFlex } = col as any;
         return { ...colWithoutFlex, width: userWidth };
       }
       return col;
