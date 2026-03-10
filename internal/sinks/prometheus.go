@@ -28,8 +28,8 @@ type PromMetricCache = map[string]map[string]metrics.MeasurementEnvelope // [dbU
 //
 //   - Metrics are collected periodically by reaper and cached in-memory.
 //     On scrape, the collector reads a snapshot of the cache
-//     and emits fresh MustNewConstMetric values. The cache is NOT consumed on
-//     scrape — parallel or back-to-back scrapes see the same data until the
+//     and emits fresh NewConstMetric values. The cache is NOT consumed on
+//     scrape, so parallel or back-to-back scrapes see the same data until the
 //     next Write() updates arrive.
 //
 //   - This is an "unchecked collector": Describe() sends no descriptors, which
@@ -59,10 +59,6 @@ const promInstanceUpStateMetric = "instance_up"
 
 // timestamps older than that will be ignored on the Prom scraper side anyway, so better don't emit at all and just log a notice
 const promCacheTTL = time.Minute * time.Duration(10)
-
-func (promw *PrometheusWriter) Println(v ...any) {
-	promw.logger.Errorln(v...)
-}
 
 func NewPrometheusWriter(ctx context.Context, connstr string) (promw *PrometheusWriter, err error) {
 	addr, namespace, found := strings.Cut(connstr, "/")
@@ -118,6 +114,11 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 
 	l.Info(`measurements sink is activated`)
 	return
+}
+
+// Println implements promhttp.Logger
+func (promw *PrometheusWriter) Println(v ...any) {
+	promw.logger.Errorln(v...)
 }
 
 // DefineMetrics is called by reaper on startup and whenever metric definitions change
