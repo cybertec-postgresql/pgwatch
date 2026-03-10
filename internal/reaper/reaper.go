@@ -80,7 +80,6 @@ func (r *Reaper) Reap(ctx context.Context) {
 	logger := r.logger
 
 	go r.WriteMeasurements(ctx)
-	go r.WriteMonitoredSources(ctx)
 
 	r.ready.Store(true)
 
@@ -102,6 +101,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 			ctx = log.WithLogger(ctx, srcL)
 
 			if monitoredSource.Connect(ctx, r.Sources) != nil {
+				r.WriteInstanceDown(monitoredSource)
 				srcL.Warning("could not init connection, retrying on next iteration")
 				continue
 			}
@@ -217,16 +217,24 @@ func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monit
 	if r.Sources.TryCreateListedExtsIfMissing > "" {
 		srcL.Info("trying to create extensions if missing")
 		extsToCreate := strings.Split(r.Sources.TryCreateListedExtsIfMissing, ",")
-		monitoredSource.RLock()
-		extsCreated := TryCreateMissingExtensions(ctx, monitoredSource, extsToCreate, monitoredSource.Extensions)
-		monitoredSource.RUnlock()
-		srcL.Infof("%d/%d extensions created based on --try-create-listed-exts-if-missing input %v", len(extsCreated), len(extsToCreate), extsCreated)
+		extsCreated, err := monitoredSource.TryCreateMissingExtensions(ctx, extsToCreate)
+		if err != nil {
+			srcL.Warning(err)
+		}
+		if extsCreated != "" {
+			srcL.Infof("%d/%d extensions created: %s", len(extsCreated), len(extsToCreate), extsCreated)
+		}
 	}
 
 	if r.Sources.CreateHelpers {
 		srcL.Info("trying to create helper objects if missing")
-		if err := TryCreateMetricsFetchingHelpers(ctx, monitoredSource); err != nil {
-			srcL.WithError(err).Warning("failed to create helper functions")
+		if err := monitoredSource.TryCreateMetricsHelpers(ctx, func(metric string) string {
+			if m, ok := metricDefs.GetMetricDef(metric); ok {
+				return m.InitSQL
+			}
+			return ""
+		}); err != nil {
+			srcL.Warning(err)
 		}
 	}
 
@@ -258,7 +266,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[str
 		// Detects metrics removed from a preset definition.
 		//
 		// If not using presets, a metric removed from configs will
-		// be detected earlier by `LoadSources()` as configs change that 
+		// be detected earlier by `LoadSources()` as configs change that
 		// triggers a restart and get passed in `hostsToShutDown`.
 		if !(wholeDbShutDown || dbRemovedFromConfig) {
 			if md.IsInRecovery && len(md.MetricsStandby) > 0 {
@@ -423,32 +431,15 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 	return nil
 }
 
-// WriteMonitoredSources writes actively monitored DBs listing to sinks
-// every monitoredDbsDatastoreSyncIntervalSeconds (default 10min)
-func (r *Reaper) WriteMonitoredSources(ctx context.Context) {
-	for {
-		if len(r.monitoredSources) > 0 {
-			now := time.Now().UnixNano()
-			for _, mdb := range r.monitoredSources {
-				db := metrics.NewMeasurement(now)
-				db["tag_group"] = mdb.Group
-				db["master_only"] = mdb.OnlyIfMaster
-				for k, v := range mdb.CustomTags {
-					db[metrics.TagPrefix+k] = v
-				}
-				r.measurementCh <- metrics.MeasurementEnvelope{
-					DBName:     mdb.Name,
-					MetricName: monitoredDbsDatastoreSyncMetricName,
-					Data:       metrics.Measurements{db},
-				}
-			}
-		}
-		select {
-		case <-time.After(time.Second * monitoredDbsDatastoreSyncIntervalSeconds):
-			// continue
-		case <-ctx.Done():
-			return
-		}
+// WriteInstanceDown writes instance_up = 0 metric to sinks for the given source
+func (r *Reaper) WriteInstanceDown(md *sources.SourceConn) {
+	r.measurementCh <- metrics.MeasurementEnvelope{
+		DBName:     md.Name,
+		MetricName: specialMetricInstanceUp,
+		Data: metrics.Measurements{metrics.Measurement{
+			metrics.EpochColumnName: time.Now().UnixNano(),
+			specialMetricInstanceUp: 0},
+		},
 	}
 }
 

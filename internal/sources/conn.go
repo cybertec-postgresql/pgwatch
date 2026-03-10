@@ -2,10 +2,14 @@ package sources
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"maps"
 	"math"
 	"regexp"
+	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -271,6 +275,61 @@ from
 where 
 	proname = $1 and n.nspname = 'public'`
 	_ = md.Conn.QueryRow(ctx, sql, functionName).Scan(&exists)
+	return
+}
+
+// TryCreateMissingExtensions should be called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
+// With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific
+// whitelisting or "trusted extensions"
+func (md *SourceConn) TryCreateMissingExtensions(ctx context.Context, extensions []string) (string, error) {
+	md.RLock()
+	defer md.RUnlock()
+
+	sqlAvailableExts := `select name::text from pg_available_extensions order by 1`
+	CreatedExts := make([]string, 0)
+
+	// For security reasons don't allow to execute random strings but check that it's an existing extension
+	data, err := md.Conn.Query(ctx, sqlAvailableExts)
+	if err != nil {
+		return "", err
+	}
+	availableExts, err := pgx.CollectRows(data, pgx.RowTo[string])
+	if err != nil {
+		return "", err
+	}
+
+	for _, extToCreate := range extensions {
+		if _, ok := md.Extensions[extToCreate]; ok {
+			continue
+		}
+		if _, ok := slices.BinarySearch(availableExts, extToCreate); !ok {
+			err = errors.Join(err, fmt.Errorf("requested extension %s is not available on instance", extToCreate))
+			continue
+		}
+		if _, e := md.Conn.Exec(ctx, fmt.Sprintf(`create extension if not exists "%s"`, extToCreate)); e != nil {
+			err = errors.Join(err, fmt.Errorf("failed to create extension %s: %w", extToCreate, e))
+		} else {
+			CreatedExts = append(CreatedExts, extToCreate)
+		}
+	}
+	return strings.Join(CreatedExts, ","), err
+}
+
+// TryCreateMetricsHelpers should be called once on daemon startup to try to create "metric fething helper" functions automatically
+func (md *SourceConn) TryCreateMetricsHelpers(ctx context.Context, getSQLFn func(string) string) (err error) {
+	md.RLock()
+	defer md.RUnlock()
+	var sql string
+	metrics := maps.Clone(md.Metrics)
+	maps.Insert(metrics, maps.All(md.MetricsStandby))
+	for metricName := range metrics {
+		if sql = getSQLFn(metricName); sql == "" {
+			continue
+		}
+		if _, e := md.Conn.Exec(ctx, sql); e != nil {
+			err = errors.Join(err, fmt.Errorf("failed to create helper for metric %s: %w", metricName, e))
+		}
+	}
 	return
 }
 
