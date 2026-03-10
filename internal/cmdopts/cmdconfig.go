@@ -103,12 +103,21 @@ func (cmd *ConfigUpgradeCommand) Execute([]string) (err error) {
 		if !opts.IsPgConnStr(uri) {
 			return fmt.Errorf("cannot upgrade storage %s: %w", uri, errors.ErrUnsupported)
 		}
-		m, initErr := newMigratorFunc()
+		obj, initErr := newMigratorFunc()
 		if initErr != nil {
 			return initErr
 		}
-		return m.(db.Migrator).Migrate()
+		if m, ok := obj.(db.Migrator); ok {
+			return m.Migrate()
+		}
+		return nil
+	}
 
+	switch {
+	case opts.Sources.Sources == "" && opts.IsPgConnStr(opts.Metrics.Metrics):
+		opts.Sources.Sources = opts.Metrics.Metrics
+	case opts.Metrics.Metrics == "" && opts.IsPgConnStr(opts.Sources.Sources):
+		opts.Metrics.Metrics = opts.Sources.Sources
 	}
 
 	err = f(opts.Sources.Sources, func() (any, error) {
