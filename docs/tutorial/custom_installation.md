@@ -237,17 +237,16 @@ syntax differences.
         psql -c "create database pgwatch_grafana owner pgwatch_grafana"
         ```
 
-    2. Follow the instructions from [Grafana documentation](https://grafana.com/docs/grafana/latest/installation/),
+    2. Follow the instructions from [Grafana documentation](https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/),
     basically something like:
 
         ```terminal
-        wget -q -O - https://apt.grafana.com/gpg.key | \
-            gpg --dearmor | \
-            sudo tee /usr/share/keyrings/grafana.gpg > /dev/null
+        sudo mkdir -p /etc/apt/keyrings
+        sudo wget -O /etc/apt/keyrings/grafana.asc https://apt.grafana.com/gpg-full.key
+        sudo chmod 644 /etc/apt/keyrings/grafana.asc
 
         # Add the Grafana apt repository
-        echo "deb [signed-by=/usr/share/keyrings/grafana.gpg] \
-            https://apt.grafana.com stable main" | \
+        echo "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main" | \
             sudo tee /etc/apt/sources.list.d/grafana.list
 
         sudo apt-get update && sudo apt-get install grafana
