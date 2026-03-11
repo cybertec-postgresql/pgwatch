@@ -79,8 +79,13 @@ func (hook *BrokerHook) Fire(entry *logrus.Entry) error {
 	if hook.ctx.Err() != nil {
 		return nil
 	}
+	entryCopy := entry.Dup()
+	entryCopy.Level = entry.Level
+	entryCopy.Caller = entry.Caller
+	entryCopy.Message = entry.Message
+	entryCopy.Buffer = entry.Buffer
 	select {
-	case hook.input <- entry:
+	case hook.input <- entryCopy:
 		// entry sent
 	case <-time.After(hook.highLoadTimeout):
 		// entry dropped due to a huge load, check stdout or file for detailed log
@@ -132,11 +137,11 @@ func (hook *BrokerHook) poll(input <-chan *logrus.Entry) {
 
 // send sends cached messages to the postgres server
 func (hook *BrokerHook) send(entry *logrus.Entry) {
+	hook.mu.Lock()
+	defer hook.mu.Unlock()
 	if len(hook.subscribers) == 0 {
 		return // Nothing to do here.
 	}
-	hook.mu.Lock()
-	defer hook.mu.Unlock()
 	msg, err := hook.formatter.Format(entry)
 	for _, subscriber := range hook.subscribers {
 		select {
