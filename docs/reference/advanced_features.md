@@ -48,7 +48,7 @@ pgwatch automatically selects between two parsing modes:
 
 1. **Local mode** - Used when pgwatch runs on the same host as the database server and can access log files directly. Requires OS user with read privileges on the logs directory and its files and `pg_read_all_settings` role.
 
-2. **Remote mode** - Used when pgwatch runs on a different host. Requires `pg_monitor` role and execute privilege on `pg_read_file()`.
+2. **Remote mode** - Used when pgwatch runs on a different host. Requires `pg_monitor` role and execute privilege on `pg_read_file(text, bigint, bigint)`.
 
 To enable this feature, use the `server_log_event_counts` metric or a preset that includes it (e.g., `full`).
 
