@@ -168,9 +168,6 @@ and send measurements to sinks.
 				<dd><a href="#severityToEnglish">func severityToEnglish(serverLang, errorSeverity string) string</a></dd>
 			
 				
-				<dd><a href="#tryDetermineLogSettings">func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (string, string, string, error)</a></dd>
-			
-				
 				<dd><a href="#zeroEventCounts">func zeroEventCounts(eventCounts map[string]int64)</a></dd>
 			
 			
@@ -225,10 +222,18 @@ and send measurements to sinks.
 				
 			
 				
+				<dd><a href="#LogConfig">type LogConfig</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#tryDetermineLogSettings">func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (cfg *LogConfig, err error)</a></dd>
+				
+				
+			
+				
 				<dd><a href="#LogParser">type LogParser</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#NewLogParser">func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan&lt;- metrics.MeasurementEnvelope) (*LogParser, error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#NewLogParser">func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan&lt;- metrics.MeasurementEnvelope) (lp *LogParser, err error)</a></dd>
 				
 				
 					
@@ -598,7 +603,7 @@ from pg_catalog.pg_tablespace where spcname !~ &#39;pg_.+&#39;`</pre>
 		
 			
 			
-			<h2 id="checkHasLocalPrivileges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L143">checkHasLocalPrivileges</a>
+			<h2 id="checkHasLocalPrivileges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L155">checkHasLocalPrivileges</a>
 				<a class="permalink" href="#checkHasLocalPrivileges">&#xb6;</a>
 				
 				
@@ -611,7 +616,7 @@ from pg_catalog.pg_tablespace where spcname !~ &#39;pg_.+&#39;`</pre>
 		
 			
 			
-			<h2 id="checkHasRemotePrivileges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L131">checkHasRemotePrivileges</a>
+			<h2 id="checkHasRemotePrivileges">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L143">checkHasRemotePrivileges</a>
 				<a class="permalink" href="#checkHasRemotePrivileges">&#xb6;</a>
 				
 				
@@ -693,7 +698,7 @@ so including them would double-count and skew percentage calculations.
 		
 			
 			
-			<h2 id="severityToEnglish">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L151">severityToEnglish</a>
+			<h2 id="severityToEnglish">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L163">severityToEnglish</a>
 				<a class="permalink" href="#severityToEnglish">&#xb6;</a>
 				
 				
@@ -706,20 +711,7 @@ so including them would double-count and skew percentage calculations.
 		
 			
 			
-			<h2 id="tryDetermineLogSettings">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L111">tryDetermineLogSettings</a>
-				<a class="permalink" href="#tryDetermineLogSettings">&#xb6;</a>
-				
-				
-			</h2>
-			<pre>func tryDetermineLogSettings(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/#PgxIface">PgxIface</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-			
-			
-			
-
-		
-			
-			
-			<h2 id="zeroEventCounts">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L201">zeroEventCounts</a>
+			<h2 id="zeroEventCounts">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L213">zeroEventCounts</a>
 				<a class="permalink" href="#zeroEventCounts">&#xb6;</a>
 				
 				
@@ -957,25 +949,18 @@ so including them would double-count and skew percentage calculations.
 		
 			
 			
-			<h2 id="LogParser">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L40">LogParser</a>
-				<a class="permalink" href="#LogParser">&#xb6;</a>
+			<h2 id="LogConfig">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L54">LogConfig</a>
+				<a class="permalink" href="#LogConfig">&#xb6;</a>
 				
 				
 			</h2>
 			
-			<pre>type LogParser struct {
-<span id="LogParser.ctx"></span>    ctx                <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
-<span id="LogParser.LogsMatchRegex"></span>    LogsMatchRegex     *<a href="https://pkg.go.dev/regexp/">regexp</a>.<a href="https://pkg.go.dev/regexp/#Regexp">Regexp</a>
-<span id="LogParser.LogFolder"></span>    LogFolder          <a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="LogParser.ServerMessagesLang"></span>    ServerMessagesLang <a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="LogParser.LogTruncOnRotation"></span>    LogTruncOnRotation <a href="https://pkg.go.dev/builtin/#string">string</a>
-<span id="LogParser.SourceConn"></span>    SourceConn         *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>
-<span id="LogParser.Interval"></span>    Interval           <a href="https://pkg.go.dev/builtin/#float64">float64</a>
-<span id="LogParser.StoreCh"></span>    StoreCh            chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>
-<span id="LogParser.eventCounts"></span>    eventCounts        map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a> <span class="comment">// for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send</span>
-<span id="LogParser.eventCountsTotal"></span>    eventCountsTotal   map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a> <span class="comment">// for the whole instance</span>
-<span id="LogParser.lastSendTime"></span>    lastSendTime       <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>
-<span id="LogParser.fileOffsets"></span>    fileOffsets        map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#uint64">uint64</a> <span class="comment">// map of log file paths to last read offsets</span>
+			<pre>type LogConfig struct {
+<span id="LogConfig.CollectorEnabled"></span>    CollectorEnabled   <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+<span id="LogConfig.CSVDestination"></span>    CSVDestination     <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+<span id="LogConfig.TruncateOnRotation"></span>    TruncateOnRotation <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+<span id="LogConfig.Directory"></span>    Directory          <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="LogConfig.ServerMessagesLang"></span>    ServerMessagesLang <a href="https://pkg.go.dev/builtin/#string">string</a>
 }
 </pre>
 
@@ -989,12 +974,57 @@ so including them would double-count and skew percentage calculations.
 
 			
 				
-				<h3 id="NewLogParser">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L55">NewLogParser</a>
+				<h3 id="tryDetermineLogSettings">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L121">tryDetermineLogSettings</a>
+					<a class="permalink" href="#tryDetermineLogSettings">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func tryDetermineLogSettings(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/#PgxIface">PgxIface</a>) (cfg *<a href="#LogConfig">LogConfig</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+			
+
+			
+		
+			
+			
+			<h2 id="LogParser">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L41">LogParser</a>
+				<a class="permalink" href="#LogParser">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type LogParser struct {
+    *<a href="#LogConfig">LogConfig</a>
+<span id="LogParser.ctx"></span>    ctx              <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
+<span id="LogParser.LogsMatchRegex"></span>    LogsMatchRegex   *<a href="https://pkg.go.dev/regexp/">regexp</a>.<a href="https://pkg.go.dev/regexp/#Regexp">Regexp</a>
+<span id="LogParser.SourceConn"></span>    SourceConn       *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>
+<span id="LogParser.Interval"></span>    Interval         <a href="https://pkg.go.dev/builtin/#float64">float64</a>
+<span id="LogParser.StoreCh"></span>    StoreCh          chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>
+<span id="LogParser.eventCounts"></span>    eventCounts      map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a> <span class="comment">// for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send</span>
+<span id="LogParser.eventCountsTotal"></span>    eventCountsTotal map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a> <span class="comment">// for the whole instance</span>
+<span id="LogParser.lastSendTime"></span>    lastSendTime     <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>
+<span id="LogParser.fileOffsets"></span>    fileOffsets      map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#uint64">uint64</a> <span class="comment">// map of log file paths to last read offsets</span>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewLogParser">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L62">NewLogParser</a>
 					<a class="permalink" href="#NewLogParser">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func NewLogParser(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>, storeCh chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) (*<a href="#LogParser">LogParser</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func NewLogParser(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>, storeCh chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) (lp *<a href="#LogParser">LogParser</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
@@ -1002,7 +1032,7 @@ so including them would double-count and skew percentage calculations.
 
 			
 				
-				<h3 id="LogParser.GetMeasurementEnvelope">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L177">GetMeasurementEnvelope</a>
+				<h3 id="LogParser.GetMeasurementEnvelope">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L189">GetMeasurementEnvelope</a>
 					<a class="permalink" href="#LogParser.GetMeasurementEnvelope">&#xb6;</a>
 					
 					
@@ -1015,7 +1045,7 @@ so including them would double-count and skew percentage calculations.
 				
 			
 				
-				<h3 id="LogParser.HasSendIntervalElapsed">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L89">HasSendIntervalElapsed</a>
+				<h3 id="LogParser.HasSendIntervalElapsed">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L99">HasSendIntervalElapsed</a>
 					<a class="permalink" href="#LogParser.HasSendIntervalElapsed">&#xb6;</a>
 					
 					
@@ -1027,7 +1057,7 @@ so including them would double-count and skew percentage calculations.
 				
 			
 				
-				<h3 id="LogParser.ParseLogs">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L93">ParseLogs</a>
+				<h3 id="LogParser.ParseLogs">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L103">ParseLogs</a>
 					<a class="permalink" href="#LogParser.ParseLogs">&#xb6;</a>
 					
 					
@@ -1063,7 +1093,7 @@ so including them would double-count and skew percentage calculations.
 				
 			
 				
-				<h3 id="LogParser.regexMatchesToMap">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L163">regexMatchesToMap</a>
+				<h3 id="LogParser.regexMatchesToMap">func (*LogParser) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/logparser.go.html#L175">regexMatchesToMap</a>
 					<a class="permalink" href="#LogParser.regexMatchesToMap">&#xb6;</a>
 					
 					

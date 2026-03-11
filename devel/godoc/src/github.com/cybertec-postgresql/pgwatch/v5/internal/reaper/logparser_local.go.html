@@ -77,7 +77,7 @@
 <span id="L20" class="ln">    20  </span>	var currInterval time.Duration
 <span id="L21" class="ln">    21  </span>
 <span id="L22" class="ln">    22  </span>	logger := log.GetLogger(lp.ctx)
-<span id="L23" class="ln">    23  </span>	logsGlobPath := filepath.Join(lp.LogFolder, csvLogDefaultGlobSuffix)
+<span id="L23" class="ln">    23  </span>	logsGlobPath := filepath.Join(lp.Directory, csvLogDefaultGlobSuffix)
 <span id="L24" class="ln">    24  </span>
 <span id="L25" class="ln">    25  </span>	for { <span class="comment">// re-try loop. re-start in case of FS errors or just to refresh host config</span>
 <span id="L26" class="ln">    26  </span>		select {
@@ -121,7 +121,7 @@
 <span id="L64" class="ln">    64  </span>			reader = bufio.NewReader(latestHandle)
 <span id="L65" class="ln">    65  </span>
 <span id="L66" class="ln">    66  </span>			linesOffset, ok := lp.fileOffsets[latest]
-<span id="L67" class="ln">    67  </span>			if ok &amp;&amp; lp.LogTruncOnRotation == &#34;off&#34; {
+<span id="L67" class="ln">    67  </span>			if ok &amp;&amp; !lp.TruncateOnRotation {
 <span id="L68" class="ln">    68  </span>				linesRead = int(linesOffset)
 <span id="L69" class="ln">    69  </span>			}
 <span id="L70" class="ln">    70  </span>			if (ok || previous == latest) &amp;&amp; linesRead &gt; 0 { <span class="comment">// skip already read lines</span>
@@ -165,7 +165,7 @@
 <span id="L108" class="ln">   108  </span>				<span class="comment">// check for newly opened logfiles</span>
 <span id="L109" class="ln">   109  </span>				file, _ := getFileWithNextModTimestamp(logsGlobPath, latest)
 <span id="L110" class="ln">   110  </span>				if file != &#34;&#34; &amp;&amp; file != latest {
-<span id="L111" class="ln">   111  </span>					if lp.LogTruncOnRotation == &#34;off&#34; {
+<span id="L111" class="ln">   111  </span>					if !lp.TruncateOnRotation {
 <span id="L112" class="ln">   112  </span>						lp.fileOffsets[latest] = uint64(linesRead)
 <span id="L113" class="ln">   113  </span>						if len(lp.fileOffsets) &gt; maxTrackedFiles {
 <span id="L114" class="ln">   114  </span>							clear(lp.fileOffsets) <span class="comment">// To avoid unbounded growth</span>
