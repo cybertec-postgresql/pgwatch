@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var expectedSettingsQuery string = `select 
+var expectedSettingsQuery = `select 
 current_setting\('logging_collector'\) as is_enabled,
 current_setting\('log_destination'\) as ldest,
 current_setting\('data_directory'\) as dd, 
