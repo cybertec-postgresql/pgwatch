@@ -20,7 +20,7 @@ func (lp *LogParser) parseLogsLocal() error {
 	var currInterval time.Duration
 
 	logger := log.GetLogger(lp.ctx)
-	logsGlobPath := filepath.Join(lp.LogCfg.LogFolder, csvLogDefaultGlobSuffix)
+	logsGlobPath := filepath.Join(lp.Directory, csvLogDefaultGlobSuffix)
 
 	for { // re-try loop. re-start in case of FS errors or just to refresh host config
 		select {
@@ -64,7 +64,7 @@ func (lp *LogParser) parseLogsLocal() error {
 			reader = bufio.NewReader(latestHandle)
 
 			linesOffset, ok := lp.fileOffsets[latest]
-			if ok && lp.LogCfg.LogTruncOnRotation == "off" {
+			if ok && !lp.TruncateOnRotation {
 				linesRead = int(linesOffset)
 			}
 			if (ok || previous == latest) && linesRead > 0 { // skip already read lines
@@ -108,7 +108,7 @@ func (lp *LogParser) parseLogsLocal() error {
 				// check for newly opened logfiles
 				file, _ := getFileWithNextModTimestamp(logsGlobPath, latest)
 				if file != "" && file != latest {
-					if lp.LogCfg.LogTruncOnRotation == "off" {
+					if !lp.TruncateOnRotation {
 						lp.fileOffsets[latest] = uint64(linesRead)
 						if len(lp.fileOffsets) > maxTrackedFiles {
 							clear(lp.fileOffsets) // To avoid unbounded growth
@@ -138,8 +138,8 @@ func (lp *LogParser) parseLogsLocal() error {
 					time.Sleep(time.Minute)
 					break
 				}
-				if lp.LogCfg.ServerMessagesLang != "en" {
-					errorSeverity = severityToEnglish(lp.LogCfg.ServerMessagesLang, errorSeverity)
+				if lp.ServerMessagesLang != "en" {
+					errorSeverity = severityToEnglish(lp.ServerMessagesLang, errorSeverity)
 				}
 
 				databaseName, ok := result["database_name"]

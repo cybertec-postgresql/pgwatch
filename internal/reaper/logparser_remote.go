@@ -36,7 +36,7 @@ func (lp *LogParser) parseLogsRemote() error {
 			sql := "select name, size, modification from pg_ls_logdir() where name like '%csv' order by modification desc limit 1;"
 			err := lp.SourceConn.Conn.QueryRow(lp.ctx, sql).Scan(&latestLogFile, &size, &modification)
 			if err != nil {
-				logger.Infof("No logfiles found in log dir: '%s'", lp.LogCfg.LogFolder)
+				logger.Infof("No logfiles found in log dir: '%s'", lp.Directory)
 				continue
 			}
 			offset = size // Seek to an end
@@ -45,7 +45,7 @@ func (lp *LogParser) parseLogsRemote() error {
 		}
 
 		if linesRead == numOfLines && size != offset {
-			logFilePath := filepath.Join(lp.LogCfg.LogFolder, latestLogFile)
+			logFilePath := filepath.Join(lp.Directory, latestLogFile)
 			sizeToRead := min(maxChunkSize, size-offset)
 			err := lp.SourceConn.Conn.QueryRow(lp.ctx, "select pg_read_file($1, $2, $3)", logFilePath, offset, sizeToRead).Scan(&chunk)
 			offset += sizeToRead
@@ -82,7 +82,7 @@ func (lp *LogParser) parseLogsRemote() error {
 					sql := "select name, size from pg_ls_logdir() where modification > $1 and name like '%csv' order by modification, name limit 1;"
 					err := lp.SourceConn.Conn.QueryRow(lp.ctx, sql, modification).Scan(&fileName, &latestSize)
 					if err == nil && latestLogFile != fileName {
-						if lp.LogCfg.LogTruncOnRotation == "off" {
+						if !lp.TruncateOnRotation {
 							lp.fileOffsets[latestLogFile] = size
 							if len(lp.fileOffsets) > maxTrackedFiles {
 								clear(lp.fileOffsets) // To avoid unbounded growth
@@ -90,7 +90,7 @@ func (lp *LogParser) parseLogsRemote() error {
 						}
 						latestLogFile = fileName
 						size = latestSize
-						if lastOffset, ok := lp.fileOffsets[latestLogFile]; ok && lp.LogCfg.LogTruncOnRotation == "off" {
+						if lastOffset, ok := lp.fileOffsets[latestLogFile]; ok && !lp.TruncateOnRotation {
 							offset = lastOffset
 						} else {
 							offset = 0
@@ -114,8 +114,8 @@ func (lp *LogParser) parseLogsRemote() error {
 				if len(matches) != 0 {
 					result := lp.regexMatchesToMap(matches)
 					errorSeverity := result["error_severity"]
-					if lp.LogCfg.ServerMessagesLang != "en" {
-						errorSeverity = severityToEnglish(lp.LogCfg.ServerMessagesLang, errorSeverity)
+					if lp.ServerMessagesLang != "en" {
+						errorSeverity = severityToEnglish(lp.ServerMessagesLang, errorSeverity)
 					}
 
 					databaseName := result["database_name"]
