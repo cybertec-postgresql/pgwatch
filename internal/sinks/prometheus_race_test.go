@@ -12,7 +12,8 @@ import (
 
 func TestCollect_RaceCondition_Real(_ *testing.T) {
 	// 1. Initialize the real PrometheusWriter
-	promw, _ := NewPrometheusWriter(testutil.TestContext, "127.0.0.1:0/pgwatch")
+	promw, _ := NewPrometheusWriter(testutil.TestContext, "127.0.0.1:0/")
+	promw.Println("init done")
 
 	// 2. Register a metric so Write() actually puts data into the map
 	_ = promw.SyncMetric("race_db", "test_metric", AddOp)
@@ -67,6 +68,7 @@ func TestCollect_RaceCondition_Real(_ *testing.T) {
 	})
 
 	wg.Wait()
+	_ = promw.SyncMetric("race_db", "test_metric", DeleteOp)
 }
 
 func TestGaugesMap_RaceCondition(_ *testing.T) {
@@ -132,4 +134,5 @@ func TestGaugesMap_RaceCondition(_ *testing.T) {
 	})
 
 	wg.Wait()
+	_ = promw.SyncMetric("race_db", "", DeleteOp)
 }

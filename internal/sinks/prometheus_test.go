@@ -99,14 +99,14 @@ func TestCollect_CachePreserved(t *testing.T) {
 // This is the fix for the "collected metric was collected before" error.
 func TestCollect_DeterministicLabelOrdering(t *testing.T) {
 	promw := newTestPrometheusWriter("test")
-	promw.gauges = map[string][]string{"metric1": {"*"}}
+	promw.gauges = map[string][]string{promInstanceUpStateMetric: {"*"}}
 
 	// Create two data rows with the same labels but potentially different
 	// map iteration orders (Go randomizes map iteration).
 	promw.Cache["db1"] = map[string]metrics.MeasurementEnvelope{
 		"metric1": {
 			DBName:     "db1",
-			MetricName: "metric1",
+			MetricName: promInstanceUpStateMetric,
 			Data: metrics.Measurements{
 				{
 					metrics.EpochColumnName: time.Now().UnixNano(),
@@ -147,16 +147,21 @@ func TestCollect_DeduplicateMetrics(t *testing.T) {
 		"metric1": {
 			DBName:     "db1",
 			MetricName: "metric1",
+			CustomTags: map[string]string{"sys_id": "42"}, // custom tags should not affect identity
 			Data: metrics.Measurements{
 				{
 					metrics.EpochColumnName: time.Now().UnixNano(),
 					"tag_host":              "server1",
 					"value":                 int64(42),
+					"bool_val":              false,
+					"extra_field1":          "ignored", // extra fields should not affect identity
 				},
 				{
 					metrics.EpochColumnName: time.Now().UnixNano(),
 					"tag_host":              "server1",
-					"value":                 int64(99), // different value, same identity
+					"value":                 int64(99), // different values, same identity
+					"bool_val":              true,
+					"extra_field1":          "ignored", // extra fields should not affect identity
 				},
 			},
 		},
@@ -167,12 +172,13 @@ func TestCollect_DeduplicateMetrics(t *testing.T) {
 	close(ch)
 
 	var count int
-	for range ch {
+	for c := range ch {
+		t.Log(c.Desc())
 		count++
 	}
 	// Should deduplicate — only the first occurrence is emitted.
-	// 1 data metric + 3 meta-metrics = 4 total.
-	assert.Equal(t, 1+3, count, "duplicate metric identity should be deduplicated (1 data + 3 meta)")
+	// 2 data metrics + 3 meta-metrics = 5 total.
+	assert.Equal(t, 2+3, count, "duplicate metric identity should be deduplicated (1 data + 3 meta)")
 }
 
 // TestCollect_InvalidMetricDoesNotPanic verifies that a malformed metric
@@ -235,4 +241,25 @@ func TestCollect_StaleMetricsDropped(t *testing.T) {
 	}
 	// 0 data metrics + 3 meta-metrics
 	assert.Equal(t, 3, count, "stale metrics should be dropped, only meta-metrics remain")
+}
+
+func TestPrometheusWriteEmpty(t *testing.T) {
+	promw := newTestPrometheusWriter("test")
+	assert.NoError(t, promw.Write(metrics.MeasurementEnvelope{}))
+	ch := make(chan prometheus.Metric, 100)
+	written, errCount := promw.WritePromMetrics(metrics.MeasurementEnvelope{}, ch)
+	assert.Zero(t, errCount)
+	assert.Zero(t, written)
+	close(ch)
+}
+
+func TestPrometheusWRiteUnsupportedMetric(t *testing.T) {
+	promw := newTestPrometheusWriter("test")
+	assert.NoError(t, promw.Write(metrics.MeasurementEnvelope{
+		DBName:     "db1",
+		MetricName: "change_events", // unsupported metric
+		Data: metrics.Measurements{
+			{metrics.EpochColumnName: time.Now().UnixNano(), "value": int64(100)},
+		},
+	}))
 }

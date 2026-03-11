@@ -153,8 +153,16 @@ func (promw *PrometheusWriter) SyncMetric(sourceName, metricName string, op Sync
 	return nil
 }
 
+var notSupportedMetrics = map[string]struct{}{
+	"change_events":     {}, // fully consist of text columns
+	"pgbouncer_stats":   {}, // this and below metrics column names cannot be renamed with tag_ prefix
+	"pgbouncer_clients": {},
+	"pgpool_processes":  {},
+	"pgpool_stats":      {},
+}
+
 func (promw *PrometheusWriter) AddCacheEntry(dbUnique, metric string, msgArr metrics.MeasurementEnvelope) { // cache structure: [dbUnique][metric]lastly_fetched_data
-	if metric == "change_events" {
+	if _, ok := notSupportedMetrics[metric]; ok {
 		return // not supported
 	}
 	promw.Lock()
@@ -276,11 +284,7 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 			} else {
 				switch t := v.(type) {
 				case int, int32, int64, float32, float64:
-					f, err := strconv.ParseFloat(fmt.Sprintf("%v", v), 64)
-					if err != nil {
-						promw.logger.Debugf("skipping scraping column %s of [%s:%s]: %v", k, msg.DBName, msg.MetricName, err)
-					}
-					fields[k] = f
+					fields[k], _ = strconv.ParseFloat(fmt.Sprintf("%v", v), 64)
 				case bool:
 					fields[k] = map[bool]float64{true: 1, false: 0}[t]
 				default:
@@ -331,10 +335,7 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 			desc := prometheus.NewDesc(fqName, msg.MetricName, labelKeys, nil)
 			m, err := prometheus.NewConstMetric(desc, fieldPromDataType, value, labelValues...)
 			if err != nil {
-				promw.logger.
-					WithField("metric", msg.MetricName).
-					WithField("source", msg.DBName).
-					Warningf("skipping metric %s: %v", fqName, err)
+				promw.logger.Warningf("skipping metric %s of [%s:%s]: %v", fqName, msg.DBName, msg.MetricName, err)
 				errorCount++
 				continue
 			}
