@@ -2,8 +2,8 @@ package reaper
 
 import (
 	"context"
+	"errors"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -40,9 +40,7 @@ const maxTrackedFiles = 2500
 type LogParser struct {
 	ctx                context.Context
 	LogsMatchRegex     *regexp.Regexp
-	LogFolder          string
-	ServerMessagesLang string
-	LogTruncOnRotation string
+	LogCfg             *LogConfigs
 	SourceConn         *sources.SourceConn
 	Interval           float64
 	StoreCh            chan<- metrics.MeasurementEnvelope
@@ -50,6 +48,14 @@ type LogParser struct {
 	eventCountsTotal   map[string]int64 // for the whole instance
 	lastSendTime       time.Time
 	fileOffsets        map[string]uint64 // map of log file paths to last read offsets
+}
+
+type LogConfigs struct {
+	IsLogCollectorEnabled string
+	LogDestination		  string
+	ServerMessagesLang    string
+	LogTruncOnRotation    string
+	LogFolder		      string
 }
 
 func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- metrics.MeasurementEnvelope) (*LogParser, error) {
@@ -64,22 +70,29 @@ func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- m
 	}
 	logger.Debugf("Using %s as log parsing regex", logsRegex)
 
-	var logFolder, serverMessagesLang, logTrunc string
-	if logFolder, serverMessagesLang, logTrunc, err = tryDetermineLogSettings(ctx, mdb.Conn); err != nil {
+	var logCfg *LogConfigs
+	if logCfg, err = tryDetermineLogSettings(ctx, mdb.Conn); err != nil {
 		logger.WithError(err).Error("Could not determine Postgres logs settings")
 		return nil, err
 	}
-	logger.Debugf("Considering log files in folder: %s", logFolder)
+
+	if logCfg.IsLogCollectorEnabled != "on" {
+		return nil, errors.New("logging_collector is not enabled on the db server")
+	}
+
+	if !strings.Contains(logCfg.LogDestination, "csvlog") {
+		return nil, errors.New("log_destination must contain 'csvlog' for log parsing to work")
+	}
+
+	logger.Debugf("Considering log files in folder: %s", logCfg.LogFolder)
 
 	return &LogParser{
 		ctx:                ctx,
 		LogsMatchRegex:     logsRegex,
-		LogFolder:          logFolder,
-		ServerMessagesLang: serverMessagesLang,
-		LogTruncOnRotation: logTrunc,
 		SourceConn:         mdb,
 		Interval:           mdb.GetMetricInterval(specialMetricServerLogEventCounts),
 		StoreCh:            storeCh,
+		LogCfg:             logCfg,
 		eventCounts:        make(map[string]int64),
 		eventCountsTotal:   make(map[string]int64),
 		fileOffsets:        make(map[string]uint64),
@@ -94,38 +107,55 @@ func (lp *LogParser) ParseLogs() error {
 	l := log.GetLogger(lp.ctx)
 	if ok, err := db.IsClientOnSameHost(lp.SourceConn.Conn); ok && err == nil {
 		l.Info("DB is on the same host. parsing logs locally")
-		if err = checkHasLocalPrivileges(lp.LogFolder); err == nil {
+		if err = checkHasLocalPrivileges(lp.LogCfg.LogFolder); err == nil {
 			return lp.parseLogsLocal()
 		}
 		l.WithError(err).Error("Could't parse logs locally. lacking required privileges")
 	}
 
 	l.Info("DB is not detected to be on the same host. parsing logs remotely")
-	if err := checkHasRemotePrivileges(lp.ctx, lp.SourceConn, lp.LogFolder); err != nil {
+	if err := checkHasRemotePrivileges(lp.ctx, lp.SourceConn, lp.LogCfg.LogFolder); err != nil {
 		l.WithError(err).Error("Could't parse logs remotely. lacking required privileges")
 		return err
 	}
 	return lp.parseLogsRemote()
 }
 
-func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (string, string, string, error) {
+func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (*LogConfigs, error) {
 	sql := `select 
+			current_setting('logging_collector') as is_enabled,
+			current_setting('log_destination') as ldest,
 			current_setting('data_directory') as dd, 
 			current_setting('log_directory') as ld,
 			current_setting('lc_messages')::varchar(2) as lc_messages,
 			current_setting('log_truncate_on_rotation') as log_trunc`
-	var dd, ld, lc, logTrunc string
-	err := conn.QueryRow(ctx, sql).Scan(&dd, &ld, &lc, &logTrunc)
-	if err != nil {
-		return "", "", "", err
-	}
-	if !strings.HasPrefix(ld, "/") {
-		ld = path.Join(dd, ld)
-	}
-	if _, ok := pgSeveritiesLocale[lc]; !ok {
-		lc = "en"
-	}
-	return ld, lc, logTrunc, nil
+
+	logCfg := &LogConfigs{}
+    var dataDir, logDir string
+    err := conn.QueryRow(ctx, sql).Scan(
+        &logCfg.IsLogCollectorEnabled,
+        &logCfg.LogDestination,
+        &dataDir,
+        &logDir,
+        &logCfg.ServerMessagesLang,
+        &logCfg.LogTruncOnRotation,
+    )
+    if err != nil {
+        return nil, err
+    }
+
+	// TODO: what if the pg server runs on windows?
+    if strings.HasPrefix(logDir, "/") {
+        logCfg.LogFolder = logDir
+    } else {
+        logCfg.LogFolder = filepath.Join(dataDir, logDir)
+    }
+
+    if _, ok := pgSeveritiesLocale[logCfg.ServerMessagesLang]; !ok {
+        logCfg.ServerMessagesLang = "en"
+    }
+
+    return logCfg, nil
 }
 
 func checkHasRemotePrivileges(ctx context.Context, mdb *sources.SourceConn, logsDirPath string) error {
