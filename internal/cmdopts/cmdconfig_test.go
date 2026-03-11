@@ -62,7 +62,7 @@ func TestConfigInitCommand_Execute(t *testing.T) {
 		a.Equal(ExitCodeConfigError, opts.ExitCode)
 	})
 
-	t.Run("metrics is proper postgres connectin string", func(*testing.T) {
+	t.Run("metrics is proper postgres connection string", func(*testing.T) {
 		os.Args = []string{0: "config_test", "--metrics=postgresql://foo@bar/baz", "config", "init"}
 		opts, err := New(io.Discard)
 		a.Error(err)
@@ -312,7 +312,7 @@ func TestConfigUpgradeCommand_Errors(t *testing.T) {
 		cmd := ConfigUpgradeCommand{owner: opts}
 		err := cmd.Execute(nil)
 		if err != nil {
-			a.Contains(err.Error(), "cannot updrage storage")
+			a.Contains(err.Error(), "cannot upgrade storage")
 		}
 		a.Equal(ExitCodeOK, opts.ExitCode)
 	})
@@ -356,7 +356,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		err := cmd.Execute(nil)
 		// Execute will return errors for unsupported storage types
 		if err != nil {
-			a.Contains(err.Error(), "cannot updrage storage")
+			a.Contains(err.Error(), "cannot upgrade storage")
 			a.Contains(err.Error(), "unsupported operation")
 		}
 		a.Equal(ExitCodeOK, opts.ExitCode)
@@ -396,7 +396,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		err := cmd.Execute(nil)
 		// Non-postgres URIs return unsupported error
 		if err != nil {
-			a.Contains(err.Error(), "cannot updrage storage")
+			a.Contains(err.Error(), "cannot upgrade storage")
 			a.Contains(err.Error(), "unsupported operation")
 		}
 		a.Equal(ExitCodeOK, opts.ExitCode)
@@ -441,7 +441,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		cmd := ConfigUpgradeCommand{owner: opts}
 		err := cmd.Execute(nil)
 		if err != nil {
-			a.Contains(err.Error(), "cannot updrage storage")
+			a.Contains(err.Error(), "cannot upgrade storage")
 		}
 		a.Equal(ExitCodeOK, opts.ExitCode)
 	})
@@ -455,7 +455,7 @@ func TestConfigUpgradeCommand_Execute_Coverage(t *testing.T) {
 		cmd := ConfigUpgradeCommand{owner: opts}
 		err := cmd.Execute(nil)
 		if err != nil {
-			a.Contains(err.Error(), "cannot updrage storage")
+			a.Contains(err.Error(), "cannot upgrade storage")
 		}
 		a.Equal(ExitCodeOK, opts.ExitCode)
 	})
