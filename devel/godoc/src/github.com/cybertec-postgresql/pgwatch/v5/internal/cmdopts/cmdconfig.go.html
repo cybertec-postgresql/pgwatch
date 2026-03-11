@@ -160,51 +160,60 @@
 <span id="L103" class="ln">   103  </span>		if !opts.IsPgConnStr(uri) {
 <span id="L104" class="ln">   104  </span>			return fmt.Errorf(&#34;cannot upgrade storage %s: %w&#34;, uri, errors.ErrUnsupported)
 <span id="L105" class="ln">   105  </span>		}
-<span id="L106" class="ln">   106  </span>		m, initErr := newMigratorFunc()
+<span id="L106" class="ln">   106  </span>		obj, initErr := newMigratorFunc()
 <span id="L107" class="ln">   107  </span>		if initErr != nil {
 <span id="L108" class="ln">   108  </span>			return initErr
 <span id="L109" class="ln">   109  </span>		}
-<span id="L110" class="ln">   110  </span>		return m.(db.Migrator).Migrate()
-<span id="L111" class="ln">   111  </span>
-<span id="L112" class="ln">   112  </span>	}
-<span id="L113" class="ln">   113  </span>
-<span id="L114" class="ln">   114  </span>	err = f(opts.Sources.Sources, func() (any, error) {
-<span id="L115" class="ln">   115  </span>		return sources.NewPostgresSourcesReaderWriter(ctx, opts.Sources.Sources)
-<span id="L116" class="ln">   116  </span>	})
-<span id="L117" class="ln">   117  </span>
-<span id="L118" class="ln">   118  </span>	err = errors.Join(err, f(opts.Metrics.Metrics, func() (any, error) {
-<span id="L119" class="ln">   119  </span>		return metrics.NewPostgresMetricReaderWriter(ctx, opts.Metrics.Metrics)
-<span id="L120" class="ln">   120  </span>	}))
-<span id="L121" class="ln">   121  </span>
-<span id="L122" class="ln">   122  </span>	for _, uri := range opts.Sinks.Sinks {
-<span id="L123" class="ln">   123  </span>		err = errors.Join(err, f(uri, func() (any, error) {
-<span id="L124" class="ln">   124  </span>			return sinks.NewPostgresSinkMigrator(ctx, uri)
-<span id="L125" class="ln">   125  </span>		}))
-<span id="L126" class="ln">   126  </span>	}
-<span id="L127" class="ln">   127  </span>
-<span id="L128" class="ln">   128  </span>	if err == nil {
-<span id="L129" class="ln">   129  </span>		opts.CompleteCommand(ExitCodeOK)
-<span id="L130" class="ln">   130  </span>		return nil
-<span id="L131" class="ln">   131  </span>	}
-<span id="L132" class="ln">   132  </span>
-<span id="L133" class="ln">   133  </span>	<span class="comment">// Check if all errors are ErrUnsupported</span>
-<span id="L134" class="ln">   134  </span>	allUnsupported := true
-<span id="L135" class="ln">   135  </span>	for _, e := range err.(interface{ Unwrap() []error }).Unwrap() {
-<span id="L136" class="ln">   136  </span>		if !errors.Is(e, errors.ErrUnsupported) {
-<span id="L137" class="ln">   137  </span>			allUnsupported = false
-<span id="L138" class="ln">   138  </span>			break
-<span id="L139" class="ln">   139  </span>		}
-<span id="L140" class="ln">   140  </span>		fmt.Fprintln(opts.OutputWriter, e)
-<span id="L141" class="ln">   141  </span>	}
-<span id="L142" class="ln">   142  </span>
-<span id="L143" class="ln">   143  </span>	if allUnsupported {
-<span id="L144" class="ln">   144  </span>		opts.CompleteCommand(ExitCodeOK)
-<span id="L145" class="ln">   145  </span>		return nil
-<span id="L146" class="ln">   146  </span>	}
-<span id="L147" class="ln">   147  </span>	opts.CompleteCommand(ExitCodeConfigError)
-<span id="L148" class="ln">   148  </span>	return err
-<span id="L149" class="ln">   149  </span>}
-<span id="L150" class="ln">   150  </span>
+<span id="L110" class="ln">   110  </span>		if m, ok := obj.(db.Migrator); ok {
+<span id="L111" class="ln">   111  </span>			return m.Migrate()
+<span id="L112" class="ln">   112  </span>		}
+<span id="L113" class="ln">   113  </span>		return nil
+<span id="L114" class="ln">   114  </span>	}
+<span id="L115" class="ln">   115  </span>
+<span id="L116" class="ln">   116  </span>	switch {
+<span id="L117" class="ln">   117  </span>	case opts.Sources.Sources == &#34;&#34; &amp;&amp; opts.IsPgConnStr(opts.Metrics.Metrics):
+<span id="L118" class="ln">   118  </span>		opts.Sources.Sources = opts.Metrics.Metrics
+<span id="L119" class="ln">   119  </span>	case opts.Metrics.Metrics == &#34;&#34; &amp;&amp; opts.IsPgConnStr(opts.Sources.Sources):
+<span id="L120" class="ln">   120  </span>		opts.Metrics.Metrics = opts.Sources.Sources
+<span id="L121" class="ln">   121  </span>	}
+<span id="L122" class="ln">   122  </span>
+<span id="L123" class="ln">   123  </span>	err = f(opts.Sources.Sources, func() (any, error) {
+<span id="L124" class="ln">   124  </span>		return sources.NewPostgresSourcesReaderWriter(ctx, opts.Sources.Sources)
+<span id="L125" class="ln">   125  </span>	})
+<span id="L126" class="ln">   126  </span>
+<span id="L127" class="ln">   127  </span>	err = errors.Join(err, f(opts.Metrics.Metrics, func() (any, error) {
+<span id="L128" class="ln">   128  </span>		return metrics.NewPostgresMetricReaderWriter(ctx, opts.Metrics.Metrics)
+<span id="L129" class="ln">   129  </span>	}))
+<span id="L130" class="ln">   130  </span>
+<span id="L131" class="ln">   131  </span>	for _, uri := range opts.Sinks.Sinks {
+<span id="L132" class="ln">   132  </span>		err = errors.Join(err, f(uri, func() (any, error) {
+<span id="L133" class="ln">   133  </span>			return sinks.NewPostgresSinkMigrator(ctx, uri)
+<span id="L134" class="ln">   134  </span>		}))
+<span id="L135" class="ln">   135  </span>	}
+<span id="L136" class="ln">   136  </span>
+<span id="L137" class="ln">   137  </span>	if err == nil {
+<span id="L138" class="ln">   138  </span>		opts.CompleteCommand(ExitCodeOK)
+<span id="L139" class="ln">   139  </span>		return nil
+<span id="L140" class="ln">   140  </span>	}
+<span id="L141" class="ln">   141  </span>
+<span id="L142" class="ln">   142  </span>	<span class="comment">// Check if all errors are ErrUnsupported</span>
+<span id="L143" class="ln">   143  </span>	allUnsupported := true
+<span id="L144" class="ln">   144  </span>	for _, e := range err.(interface{ Unwrap() []error }).Unwrap() {
+<span id="L145" class="ln">   145  </span>		if !errors.Is(e, errors.ErrUnsupported) {
+<span id="L146" class="ln">   146  </span>			allUnsupported = false
+<span id="L147" class="ln">   147  </span>			break
+<span id="L148" class="ln">   148  </span>		}
+<span id="L149" class="ln">   149  </span>		fmt.Fprintln(opts.OutputWriter, e)
+<span id="L150" class="ln">   150  </span>	}
+<span id="L151" class="ln">   151  </span>
+<span id="L152" class="ln">   152  </span>	if allUnsupported {
+<span id="L153" class="ln">   153  </span>		opts.CompleteCommand(ExitCodeOK)
+<span id="L154" class="ln">   154  </span>		return nil
+<span id="L155" class="ln">   155  </span>	}
+<span id="L156" class="ln">   156  </span>	opts.CompleteCommand(ExitCodeConfigError)
+<span id="L157" class="ln">   157  </span>	return err
+<span id="L158" class="ln">   158  </span>}
+<span id="L159" class="ln">   159  </span>
 </pre><p></p>
 
 <div id="footer">

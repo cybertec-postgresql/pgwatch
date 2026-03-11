@@ -119,7 +119,7 @@
 <span id="L62" class="ln">    62  </span>		a.Equal(ExitCodeConfigError, opts.ExitCode)
 <span id="L63" class="ln">    63  </span>	})
 <span id="L64" class="ln">    64  </span>
-<span id="L65" class="ln">    65  </span>	t.Run(&#34;metrics is proper postgres connectin string&#34;, func(*testing.T) {
+<span id="L65" class="ln">    65  </span>	t.Run(&#34;metrics is proper postgres connection string&#34;, func(*testing.T) {
 <span id="L66" class="ln">    66  </span>		os.Args = []string{0: &#34;config_test&#34;, &#34;--metrics=postgresql://foo@bar/baz&#34;, &#34;config&#34;, &#34;init&#34;}
 <span id="L67" class="ln">    67  </span>		opts, err := New(io.Discard)
 <span id="L68" class="ln">    68  </span>		a.Error(err)
@@ -369,7 +369,7 @@
 <span id="L312" class="ln">   312  </span>		cmd := ConfigUpgradeCommand{owner: opts}
 <span id="L313" class="ln">   313  </span>		err := cmd.Execute(nil)
 <span id="L314" class="ln">   314  </span>		if err != nil {
-<span id="L315" class="ln">   315  </span>			a.Contains(err.Error(), &#34;cannot updrage storage&#34;)
+<span id="L315" class="ln">   315  </span>			a.Contains(err.Error(), &#34;cannot upgrade storage&#34;)
 <span id="L316" class="ln">   316  </span>		}
 <span id="L317" class="ln">   317  </span>		a.Equal(ExitCodeOK, opts.ExitCode)
 <span id="L318" class="ln">   318  </span>	})
@@ -413,7 +413,7 @@
 <span id="L356" class="ln">   356  </span>		err := cmd.Execute(nil)
 <span id="L357" class="ln">   357  </span>		<span class="comment">// Execute will return errors for unsupported storage types</span>
 <span id="L358" class="ln">   358  </span>		if err != nil {
-<span id="L359" class="ln">   359  </span>			a.Contains(err.Error(), &#34;cannot updrage storage&#34;)
+<span id="L359" class="ln">   359  </span>			a.Contains(err.Error(), &#34;cannot upgrade storage&#34;)
 <span id="L360" class="ln">   360  </span>			a.Contains(err.Error(), &#34;unsupported operation&#34;)
 <span id="L361" class="ln">   361  </span>		}
 <span id="L362" class="ln">   362  </span>		a.Equal(ExitCodeOK, opts.ExitCode)
@@ -453,7 +453,7 @@
 <span id="L396" class="ln">   396  </span>		err := cmd.Execute(nil)
 <span id="L397" class="ln">   397  </span>		<span class="comment">// Non-postgres URIs return unsupported error</span>
 <span id="L398" class="ln">   398  </span>		if err != nil {
-<span id="L399" class="ln">   399  </span>			a.Contains(err.Error(), &#34;cannot updrage storage&#34;)
+<span id="L399" class="ln">   399  </span>			a.Contains(err.Error(), &#34;cannot upgrade storage&#34;)
 <span id="L400" class="ln">   400  </span>			a.Contains(err.Error(), &#34;unsupported operation&#34;)
 <span id="L401" class="ln">   401  </span>		}
 <span id="L402" class="ln">   402  </span>		a.Equal(ExitCodeOK, opts.ExitCode)
@@ -498,7 +498,7 @@
 <span id="L441" class="ln">   441  </span>		cmd := ConfigUpgradeCommand{owner: opts}
 <span id="L442" class="ln">   442  </span>		err := cmd.Execute(nil)
 <span id="L443" class="ln">   443  </span>		if err != nil {
-<span id="L444" class="ln">   444  </span>			a.Contains(err.Error(), &#34;cannot updrage storage&#34;)
+<span id="L444" class="ln">   444  </span>			a.Contains(err.Error(), &#34;cannot upgrade storage&#34;)
 <span id="L445" class="ln">   445  </span>		}
 <span id="L446" class="ln">   446  </span>		a.Equal(ExitCodeOK, opts.ExitCode)
 <span id="L447" class="ln">   447  </span>	})
@@ -512,7 +512,7 @@
 <span id="L455" class="ln">   455  </span>		cmd := ConfigUpgradeCommand{owner: opts}
 <span id="L456" class="ln">   456  </span>		err := cmd.Execute(nil)
 <span id="L457" class="ln">   457  </span>		if err != nil {
-<span id="L458" class="ln">   458  </span>			a.Contains(err.Error(), &#34;cannot updrage storage&#34;)
+<span id="L458" class="ln">   458  </span>			a.Contains(err.Error(), &#34;cannot upgrade storage&#34;)
 <span id="L459" class="ln">   459  </span>		}
 <span id="L460" class="ln">   460  </span>		a.Equal(ExitCodeOK, opts.ExitCode)
 <span id="L461" class="ln">   461  </span>	})
