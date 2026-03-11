@@ -16,6 +16,8 @@ services:
       - "-cpg_stat_statements.track_planning=on"
       - "-ctrack_io_timing=on"
       - "-ctrack_functions=pl"
+      - "-clog_destination=csvlog"
+      - "-clogging_collector=on"
     ports:
       - "5432:5432"
     environment:
@@ -70,7 +72,7 @@ services:
         fi
         
         # Start PostgreSQL with custom data directory
-        exec postgres -D /var/lib/postgresql/standby -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=all -c track_io_timing=on -c track_functions=pl
+        exec postgres -D /var/lib/postgresql/standby -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=all -c track_io_timing=on -c track_functions=pl -c log_destination=csvlog -c logging_collector=on
       "
     links:
       - postgres
