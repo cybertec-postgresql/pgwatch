@@ -3,8 +3,10 @@ import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import sql from "react-syntax-highlighter/dist/esm/languages/hljs/sql";
 import { atomOneLight } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
+SyntaxHighlighter.registerLanguage("sql", sql);
+
 export const useSqlPopUpColumns = (): GridColDef[] => [
-  {
+  { 
     field: "version",
     headerName: "Version",
     width: 80,
