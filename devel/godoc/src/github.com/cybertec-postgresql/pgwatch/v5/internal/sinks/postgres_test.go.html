@@ -1033,6 +1033,112 @@
 <span id="L976" class="ln">   976  </span>	})
 <span id="L977" class="ln">   977  </span>}
 <span id="L978" class="ln">   978  </span>
+<span id="L979" class="ln">   979  </span><span class="comment">// TestEnsureMetricDbnameTime_SpecialSourceNames verifies that source names with special characters</span>
+<span id="L980" class="ln">   980  </span><span class="comment">// (dots, uppercase, hyphens, underscores) are accepted by the partition functions.</span>
+<span id="L981" class="ln">   981  </span>func TestEnsureMetricDbnameTime_SpecialSourceNames(t *testing.T) {
+<span id="L982" class="ln">   982  </span>	r := require.New(t)
+<span id="L983" class="ln">   983  </span>	a := assert.New(t)
+<span id="L984" class="ln">   984  </span>
+<span id="L985" class="ln">   985  </span>	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+<span id="L986" class="ln">   986  </span>	r.NoError(err)
+<span id="L987" class="ln">   987  </span>	defer pgTearDown()
+<span id="L988" class="ln">   988  </span>
+<span id="L989" class="ln">   989  </span>	connStr, err := pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
+<span id="L990" class="ln">   990  </span>	r.NoError(err)
+<span id="L991" class="ln">   991  </span>
+<span id="L992" class="ln">   992  </span>	opts := &amp;CmdOpts{
+<span id="L993" class="ln">   993  </span>		PartitionInterval:   &#34;1 day&#34;,
+<span id="L994" class="ln">   994  </span>		RetentionInterval:   &#34;7 days&#34;,
+<span id="L995" class="ln">   995  </span>		MaintenanceInterval: &#34;12 hours&#34;,
+<span id="L996" class="ln">   996  </span>		BatchingDelay:       time.Second,
+<span id="L997" class="ln">   997  </span>	}
+<span id="L998" class="ln">   998  </span>	pgw, err := NewPostgresWriter(ctx, connStr, opts)
+<span id="L999" class="ln">   999  </span>	r.NoError(err)
+<span id="L1000" class="ln">  1000  </span>
+<span id="L1001" class="ln">  1001  </span>	specialNames := []string{
+<span id="L1002" class="ln">  1002  </span>		&#34;source.new&#34;,
+<span id="L1003" class="ln">  1003  </span>		&#34;Source.With.Dots&#34;,
+<span id="L1004" class="ln">  1004  </span>		&#34;UPPERCASE_SOURCE&#34;,
+<span id="L1005" class="ln">  1005  </span>		&#34;MixedCase_Source-123&#34;,
+<span id="L1006" class="ln">  1006  </span>		&#34;source-with-hyphens&#34;,
+<span id="L1007" class="ln">  1007  </span>		&#34;source_with_underscores&#34;,
+<span id="L1008" class="ln">  1008  </span>		&#34;Source123.Test_Name-456&#34;,
+<span id="L1009" class="ln">  1009  </span>	}
+<span id="L1010" class="ln">  1010  </span>
+<span id="L1011" class="ln">  1011  </span>	m := make(map[string]map[string]ExistingPartitionInfo)
+<span id="L1012" class="ln">  1012  </span>	m[&#34;test_metric&#34;] = make(map[string]ExistingPartitionInfo)
+<span id="L1013" class="ln">  1013  </span>	for _, name := range specialNames {
+<span id="L1014" class="ln">  1014  </span>		m[&#34;test_metric&#34;][name] = ExistingPartitionInfo{
+<span id="L1015" class="ln">  1015  </span>			StartTime: time.Now(),
+<span id="L1016" class="ln">  1016  </span>			EndTime:   time.Now().Add(time.Hour),
+<span id="L1017" class="ln">  1017  </span>		}
+<span id="L1018" class="ln">  1018  </span>	}
+<span id="L1019" class="ln">  1019  </span>
+<span id="L1020" class="ln">  1020  </span>	err = pgw.EnsureMetricDbnameTime(m)
+<span id="L1021" class="ln">  1021  </span>	r.NoError(err, &#34;EnsureMetricDbnameTime should handle special source names&#34;)
+<span id="L1022" class="ln">  1022  </span>
+<span id="L1023" class="ln">  1023  </span>	conn, err := pgx.Connect(ctx, connStr)
+<span id="L1024" class="ln">  1024  </span>	r.NoError(err)
+<span id="L1025" class="ln">  1025  </span>	defer conn.Close(ctx)
+<span id="L1026" class="ln">  1026  </span>
+<span id="L1027" class="ln">  1027  </span>	var partitionCount int
+<span id="L1028" class="ln">  1028  </span>	err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;test_metric&#39;) WHERE level = 1&#34;).Scan(&amp;partitionCount)
+<span id="L1029" class="ln">  1029  </span>	r.NoError(err)
+<span id="L1030" class="ln">  1030  </span>	a.Equal(len(specialNames), partitionCount, &#34;expected one dbname-level partition per special source name&#34;)
+<span id="L1031" class="ln">  1031  </span>}
+<span id="L1032" class="ln">  1032  </span>
+<span id="L1033" class="ln">  1033  </span><span class="comment">// TestEnsureMetricDbnameTime_IdempotentAcrossRestarts verifies that repeated calls to</span>
+<span id="L1034" class="ln">  1034  </span><span class="comment">// EnsureMetricDbnameTime with fresh writer instances (simulating process restarts)</span>
+<span id="L1035" class="ln">  1035  </span><span class="comment">// do not create duplicate partitions.</span>
+<span id="L1036" class="ln">  1036  </span>func TestEnsureMetricDbnameTime_IdempotentAcrossRestarts(t *testing.T) {
+<span id="L1037" class="ln">  1037  </span>	r := require.New(t)
+<span id="L1038" class="ln">  1038  </span>	a := assert.New(t)
+<span id="L1039" class="ln">  1039  </span>
+<span id="L1040" class="ln">  1040  </span>	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+<span id="L1041" class="ln">  1041  </span>	r.NoError(err)
+<span id="L1042" class="ln">  1042  </span>	defer pgTearDown()
+<span id="L1043" class="ln">  1043  </span>
+<span id="L1044" class="ln">  1044  </span>	connStr, err := pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
+<span id="L1045" class="ln">  1045  </span>	r.NoError(err)
+<span id="L1046" class="ln">  1046  </span>
+<span id="L1047" class="ln">  1047  </span>	opts := &amp;CmdOpts{
+<span id="L1048" class="ln">  1048  </span>		PartitionInterval:   &#34;1 day&#34;,
+<span id="L1049" class="ln">  1049  </span>		RetentionInterval:   &#34;7 days&#34;,
+<span id="L1050" class="ln">  1050  </span>		MaintenanceInterval: &#34;12 hours&#34;,
+<span id="L1051" class="ln">  1051  </span>		BatchingDelay:       time.Second,
+<span id="L1052" class="ln">  1052  </span>	}
+<span id="L1053" class="ln">  1053  </span>
+<span id="L1054" class="ln">  1054  </span>	m := map[string]map[string]ExistingPartitionInfo{
+<span id="L1055" class="ln">  1055  </span>		&#34;restart_test_metric&#34;: {
+<span id="L1056" class="ln">  1056  </span>			&#34;test_source&#34;: {
+<span id="L1057" class="ln">  1057  </span>				StartTime: time.Now(),
+<span id="L1058" class="ln">  1058  </span>				EndTime:   time.Now().Add(time.Hour),
+<span id="L1059" class="ln">  1059  </span>			},
+<span id="L1060" class="ln">  1060  </span>		},
+<span id="L1061" class="ln">  1061  </span>	}
+<span id="L1062" class="ln">  1062  </span>
+<span id="L1063" class="ln">  1063  </span>	var partitionCountAfterFirst int
+<span id="L1064" class="ln">  1064  </span>	for i := range 5 {
+<span id="L1065" class="ln">  1065  </span>		pgw, err := NewPostgresWriter(ctx, connStr, opts)
+<span id="L1066" class="ln">  1066  </span>		r.NoError(err)
+<span id="L1067" class="ln">  1067  </span>		r.NoError(pgw.EnsureMetricDbnameTime(m))
+<span id="L1068" class="ln">  1068  </span>
+<span id="L1069" class="ln">  1069  </span>		conn, err := pgx.Connect(ctx, connStr)
+<span id="L1070" class="ln">  1070  </span>		r.NoError(err)
+<span id="L1071" class="ln">  1071  </span>		var count int
+<span id="L1072" class="ln">  1072  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;restart_test_metric&#39;) WHERE isleaf&#34;).Scan(&amp;count)
+<span id="L1073" class="ln">  1073  </span>		conn.Close(ctx)
+<span id="L1074" class="ln">  1074  </span>		r.NoError(err)
+<span id="L1075" class="ln">  1075  </span>
+<span id="L1076" class="ln">  1076  </span>		if i == 0 {
+<span id="L1077" class="ln">  1077  </span>			partitionCountAfterFirst = count
+<span id="L1078" class="ln">  1078  </span>		} else {
+<span id="L1079" class="ln">  1079  </span>			a.Equal(partitionCountAfterFirst, count,
+<span id="L1080" class="ln">  1080  </span>				&#34;partition count should not grow on restart %d&#34;, i+1)
+<span id="L1081" class="ln">  1081  </span>		}
+<span id="L1082" class="ln">  1082  </span>	}
+<span id="L1083" class="ln">  1083  </span>}
+<span id="L1084" class="ln">  1084  </span>
 </pre><p></p>
 
 <div id="footer">
