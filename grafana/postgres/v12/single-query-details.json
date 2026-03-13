@@ -19,7 +19,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
   "links": [],
   "panels": [
     {
@@ -65,7 +64,7 @@
         "content": "$sql_text",
         "mode": "code"
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "title": "SQL",
       "type": "text"
     },
@@ -103,6 +102,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -112,8 +112,8 @@
               "mode": "off"
             }
           },
-          "mappings": [],
           "displayName": "$queryid",
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -156,7 +156,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "calls",
@@ -231,7 +231,7 @@
           ]
         }
       ],
-      "title": "Calls ($agg_interval aggregate)",
+      "title": "Calls",
       "type": "timeseries"
     },
     {
@@ -269,6 +269,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -278,9 +279,8 @@
               "mode": "off"
             }
           },
-          "mappings": [],
           "displayName": "$queryid",
-          "min": 0,
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -302,7 +302,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 11
+        "y": 10
       },
       "id": 3,
       "interval": "5m",
@@ -323,7 +323,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "avg_runtime",
@@ -393,7 +393,7 @@
           ]
         }
       ],
-      "title": "Execution time per second ($agg_interval avg.)",
+      "title": "Execution time per second",
       "type": "timeseries"
     },
     {
@@ -431,6 +431,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -440,9 +441,8 @@
               "mode": "off"
             }
           },
-          "mappings": [],
           "displayName": "$queryid",
-          "min": 0,
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -464,7 +464,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 11
+        "y": 10
       },
       "id": 4,
       "interval": "5m",
@@ -485,7 +485,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "avg_runtime",
@@ -515,6 +515,7 @@
           "policy": "default",
           "rawQuery": true,
           "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\nselect\n  $__timeGroup(time, $agg_interval),\n  avg(case when c = c_lag then null else (tt - tt_lag) / nullif(c - c_lag, 0) end) as \"time_per_call\"\nfrom (\n  select\n    (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag,\n    (data->>'total_time')::float8 as tt, lag((data->>'total_time')::float8) over w as tt_lag,\n    time\n  from stat_statements\n  where dbname = '$dbname'\n    and tag_data @> '{\"queryid\": \"$queryid\"}'\n    and time <= $__timeTo()::timestamptz\n    and time >= (select time from baseline)\n  window w as (order by time)\n) x\nwhere c >= c_lag\n  and time >= $__timeFrom()::timestamptz\ngroup by 1\norder by 1",
+          "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
@@ -553,7 +554,7 @@
           ]
         }
       ],
-      "title": "Execution time per call ($agg_interval avg.)",
+      "title": "Execution time per call",
       "type": "timeseries"
     },
     {
@@ -590,6 +591,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -601,7 +603,6 @@
           },
           "displayName": "$queryid",
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -623,9 +624,9 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 17
       },
-      "id": 4,
+      "id": 11,
       "interval": "5m",
       "options": {
         "legend": {
@@ -644,7 +645,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "sb_hit_ratio",
@@ -751,6 +752,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -762,7 +764,6 @@
           },
           "displayName": "${__field.name}",
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -784,7 +785,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 17
       },
       "id": 5,
       "interval": "5m",
@@ -805,7 +806,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "sb_hit_ratio",
@@ -912,6 +913,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -922,7 +924,6 @@
             }
           },
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -944,7 +945,7 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 24
+        "y": 23
       },
       "id": 6,
       "interval": "5m",
@@ -965,7 +966,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "temp_blks_written",
@@ -1040,7 +1041,7 @@
           ]
         }
       ],
-      "title": "Temp Bytes Read/Written per second ($agg_interval aggregate)",
+      "title": "Temp Bytes Read/Written per second",
       "type": "timeseries"
     },
     {
@@ -1077,6 +1078,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1087,7 +1089,6 @@
             }
           },
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1109,7 +1110,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 24
+        "y": 23
       },
       "id": 10,
       "interval": "5m",
@@ -1130,7 +1131,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "temp_blks_written",
@@ -1205,7 +1206,7 @@
           ]
         }
       ],
-      "title": "Temp Bytes Read/Written per call ($agg_interval aggregate)",
+      "title": "Temp Bytes Read/Written per call",
       "type": "timeseries"
     },
     {
@@ -1243,6 +1244,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1253,7 +1255,6 @@
             }
           },
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1275,7 +1276,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 29
       },
       "id": 7,
       "interval": "5m",
@@ -1294,7 +1295,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "blk_read_time",
@@ -1369,7 +1370,7 @@
           ]
         }
       ],
-      "title": "Backend block Read/Write time ($agg_interval aggregate)",
+      "title": "Backend block Read/Write time",
       "type": "timeseries"
     },
     {
@@ -1406,6 +1407,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1416,7 +1418,6 @@
             }
           },
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1438,7 +1439,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 34
       },
       "id": 8,
       "interval": "5m",
@@ -1459,7 +1460,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "alias": "io_time_pct",
@@ -1542,10 +1543,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 10,
+        "h": 5,
+        "w": 11,
         "x": 0,
-        "y": 45
+        "y": 39
       },
       "id": 9,
       "options": {
@@ -1557,7 +1558,7 @@
         "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
         "mode": "markdown"
       },
-      "pluginVersion": "12.1.0",
+      "pluginVersion": "12.3.1",
       "title": "",
       "transparent": true,
       "type": "text"
@@ -1565,7 +1566,7 @@
   ],
   "preload": false,
   "refresh": "",
-  "schemaVersion": 41,
+  "schemaVersion": 42,
   "tags": [
     "pgwatch"
   ],
@@ -1578,6 +1579,7 @@
         },
         "definition": "",
         "includeAll": false,
+        "label": "Database",
         "name": "dbname",
         "options": [],
         "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_statements' ORDER BY 1;",
@@ -1601,25 +1603,31 @@
         "auto_count": 30,
         "auto_min": "10s",
         "current": {
-          "text": "30m",
-          "value": "30m"
+          "text": "3m",
+          "value": "3m"
         },
+        "label": "Agg Interval",
         "name": "agg_interval",
         "options": [
           {
-            "selected": false,
-            "text": "1m",
-            "value": "1m"
+            "selected": true,
+            "text": "3m",
+            "value": "3m"
           },
           {
             "selected": false,
-            "text": "5m",
-            "value": "5m"
+            "text": "6m",
+            "value": "6m"
           },
           {
             "selected": false,
-            "text": "10m",
-            "value": "10m"
+            "text": "9m",
+            "value": "9m"
+          },
+          {
+            "selected": false,
+            "text": "12m",
+            "value": "12m"
           },
           {
             "selected": false,
@@ -1627,32 +1635,12 @@
             "value": "15m"
           },
           {
-            "selected": true,
+            "selected": false,
             "text": "30m",
             "value": "30m"
-          },
-          {
-            "selected": false,
-            "text": "1h",
-            "value": "1h"
-          },
-          {
-            "selected": false,
-            "text": "6h",
-            "value": "6h"
-          },
-          {
-            "selected": false,
-            "text": "12h",
-            "value": "12h"
-          },
-          {
-            "selected": false,
-            "text": "1d",
-            "value": "1d"
           }
         ],
-        "query": "1m,5m,10m,15m,30m,1h,6h,12h,1d",
+        "query": "3m,6m,9m,12m,15m,30m",
         "refresh": 2,
         "type": "interval"
       },
@@ -1674,12 +1662,12 @@
     ]
   },
   "time": {
-    "from": "now-12h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Single query details",
   "uid": "single-query-details",
-  "version": 2
+  "version": 6
 }
