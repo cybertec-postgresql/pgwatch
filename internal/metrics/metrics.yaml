@@ -325,10 +325,14 @@ metrics:
                 select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   CASE
-                    WHEN relkind = 'r' THEN 'Table'   -- TODO all relkinds covered?
+                    WHEN relkind = 'r' THEN 'Table'   
                     WHEN relkind = 'i' THEN 'Index'
                     WHEN relkind = 't' THEN 'Toast'
                     WHEN relkind = 'm' THEN 'Materialized view'
+                    WHEN relkind = 'S' THEN 'Sequence'
+                    WHEN relkind = 'v' THEN 'View'
+                    WHEN relkind = 'p' THEN 'Partitioned table'
+                    WHEN relkind = 'I' THEN 'Partitioned index'
                     ELSE 'Other'
                   END as tag_relkind,
                   count(*) * (current_setting('block_size')::int8) size_b
