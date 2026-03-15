@@ -166,10 +166,10 @@ type Preset struct {
 	Metrics     map[string]int
 }
 
-// Expects "preset metrics" definition file named preset-config.yaml to be present in provided --metrics folder
+// Expects "preset metrics" definition file named preset-configs.yaml to be present in provided --metrics folder
 func ReadPresetsFromFolder(folder string) (presets Presets, err error) {
 	var presetMetrics []byte
-	fmt.Printf("Searching for presents from path %s ...\n", folder)
+	fmt.Printf("Searching for presets from path %s ...\n", folder)
 	if presetMetrics, err = os.ReadFile(path.Join(folder, PresetConfigYAMLFile)); err != nil {
 		return
 	}
