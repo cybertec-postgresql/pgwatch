@@ -19,9 +19,8 @@ type MessageChanType chan MessageType
 type BrokerHook struct {
 	highLoadTimeout time.Duration     // wait this amount of time before skip log entry
 	subscribers     []MessageChanType //
-	input           chan *logrus.Entry
+	input           chan MessageType
 	ctx             context.Context
-	lastError       chan error
 	level           string
 	mu              *sync.Mutex
 	formatter       logrus.Formatter
@@ -34,8 +33,7 @@ const highLoadLimit = 200 * time.Millisecond
 func NewBrokerHook(ctx context.Context, level string) *BrokerHook {
 	l := &BrokerHook{
 		highLoadTimeout: highLoadLimit,
-		input:           make(chan *logrus.Entry, cacheLimit),
-		lastError:       make(chan error),
+		input:           make(chan MessageType, cacheLimit),
 		ctx:             ctx,
 		level:           level,
 		mu:              new(sync.Mutex),
@@ -79,18 +77,20 @@ func (hook *BrokerHook) Fire(entry *logrus.Entry) error {
 	if hook.ctx.Err() != nil {
 		return nil
 	}
+	hook.mu.Lock()
+	f := hook.formatter
+	hook.mu.Unlock()
+	raw, err := f.Format(entry)
+	if err != nil {
+		return err
+	}
 	select {
-	case hook.input <- entry:
+	case hook.input <- MessageType(raw):
 		// entry sent
 	case <-time.After(hook.highLoadTimeout):
 		// entry dropped due to a huge load, check stdout or file for detailed log
 	}
-	select {
-	case err := <-hook.lastError:
-		return err
-	default:
-		return nil
-	}
+	return nil
 }
 
 // Levels returns the available logging levels
@@ -119,38 +119,29 @@ func (hook *BrokerHook) Levels() []logrus.Level {
 
 // poll checks for incoming messages and caches them internally
 // until either a maximum amount is reached, or a timeout occurs.
-func (hook *BrokerHook) poll(input <-chan *logrus.Entry) {
+func (hook *BrokerHook) poll(input <-chan MessageType) {
 	for {
 		select {
 		case <-hook.ctx.Done(): //check context with high priority
 			return
-		case entry := <-input:
-			hook.send(entry)
+		case msg := <-input:
+			hook.send(msg)
 		}
 	}
 }
 
-// send sends cached messages to the postgres server
-func (hook *BrokerHook) send(entry *logrus.Entry) {
-	if len(hook.subscribers) == 0 {
-		return // Nothing to do here.
-	}
+// send sends out a pre-formatted message to all subscribers
+func (hook *BrokerHook) send(msg MessageType) {
 	hook.mu.Lock()
 	defer hook.mu.Unlock()
-	msg, err := hook.formatter.Format(entry)
+	if len(hook.subscribers) == 0 {
+		return
+	}
 	for _, subscriber := range hook.subscribers {
 		select {
-		case subscriber <- MessageType(msg):
+		case subscriber <- msg:
 		default:
 			//no time to wait
-		}
-	}
-	if err != nil {
-		select {
-		case hook.lastError <- err:
-			//error sent to the logger
-		default:
-			//there is unprocessed error already
 		}
 	}
 }

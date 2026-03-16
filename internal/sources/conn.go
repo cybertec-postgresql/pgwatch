@@ -315,7 +315,7 @@ func (md *SourceConn) TryCreateMissingExtensions(ctx context.Context, extensions
 	return strings.Join(CreatedExts, ","), err
 }
 
-// TryCreateMetricsHelpers should be called once on daemon startup to try to create "metric fething helper" functions automatically
+// TryCreateMetricsHelpers should be called once on daemon startup to try to create "metric fetching helper" functions automatically
 func (md *SourceConn) TryCreateMetricsHelpers(ctx context.Context, getSQLFn func(string) string) (err error) {
 	md.RLock()
 	defer md.RUnlock()

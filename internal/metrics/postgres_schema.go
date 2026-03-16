@@ -67,7 +67,7 @@ func (dmrw *dbMetricReaderWriter) NeedsMigration() (bool, error) {
 // MigrationsCount is the total number of migrations in pgwatch.migration table
 const MigrationsCount = 2
 
-// migrations holds function returning all updgrade migrations needed
+// migrations holds function returning all upgrade migrations needed
 var migrations func() migrator.Option = func() migrator.Option {
 	return migrator.Migrations(
 		&migrator.Migration{

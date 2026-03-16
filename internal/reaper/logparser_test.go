@@ -16,6 +16,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var expectedSettingsQuery = `select current_setting`
+
 func TestNewLogParser(t *testing.T) {
 	tempDir := t.TempDir()
 
@@ -33,33 +35,26 @@ func TestNewLogParser(t *testing.T) {
 	storeCh := make(chan metrics.MeasurementEnvelope, 10)
 
 	t.Run("success", func(t *testing.T) {
-		mock.ExpectQuery(`select 
-			current_setting\('data_directory'\) as dd, 
-			current_setting\('log_directory'\) as ld,
-			current_setting\('lc_messages'\)::varchar\(2\) as lc_messages,
-			current_setting\('log_truncate_on_rotation'\) as log_trunc`).
-			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld", "lc_messages", "log_trunc"}).
-				AddRow("", tempDir, "en", "off"))
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
+				AddRow(true, true, false, tempDir, "en"))
 
 		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+
 		assert.NoError(t, err)
 		assert.NotNil(t, lp)
-		assert.Equal(t, tempDir, lp.LogFolder)
+		assert.Equal(t, true, lp.CollectorEnabled)
+		assert.True(t, lp.CSVDestination)
+		assert.Equal(t, tempDir, lp.Directory)
 		assert.Equal(t, "en", lp.ServerMessagesLang)
-		assert.Equal(t, "off", lp.LogTruncOnRotation)
+		assert.Equal(t, false, lp.TruncateOnRotation)
 		assert.Equal(t, 60.0, lp.Interval)
 		assert.NotNil(t, lp.LogsMatchRegex)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("tryDetermineLogSettings error", func(t *testing.T) {
-		mock.ExpectQuery(`select 
-			current_setting\('data_directory'\) as dd, 
-			current_setting\('log_directory'\) as ld,
-			current_setting\('lc_messages'\)::varchar\(2\) as lc_messages,
-			current_setting\('log_truncate_on_rotation'\) as log_trunc`).
-			WillReturnError(assert.AnError)
-
+		mock.ExpectQuery(expectedSettingsQuery).WillReturnError(assert.AnError)
 		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.Error(t, err)
 		assert.Nil(t, lp)
@@ -67,13 +62,9 @@ func TestNewLogParser(t *testing.T) {
 	})
 
 	t.Run("unknown language defaults to en", func(t *testing.T) {
-		mock.ExpectQuery(`select 
-			current_setting\('data_directory'\) as dd, 
-			current_setting\('log_directory'\) as ld,
-			current_setting\('lc_messages'\)::varchar\(2\) as lc_messages,
-			current_setting\('log_truncate_on_rotation'\) as log_trunc`).
-			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld", "lc_messages", "log_trunc"}).
-				AddRow("", tempDir, "zz", "off"))
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
+				AddRow(true, true, false, tempDir, "zz"))
 
 		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.NoError(t, err)
@@ -83,21 +74,37 @@ func TestNewLogParser(t *testing.T) {
 	})
 
 	t.Run("relative log directory", func(t *testing.T) {
-		mock.ExpectQuery(`select 
-			current_setting\('data_directory'\) as dd, 
-			current_setting\('log_directory'\) as ld,
-			current_setting\('lc_messages'\)::varchar\(2\) as lc_messages,
-			current_setting\('log_truncate_on_rotation'\) as log_trunc`).
-			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld", "lc_messages", "log_trunc"}).
-				AddRow("/data", "pg_log", "de", "on"))
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
+				AddRow(true, true, true, "/data/pg_log", "de"))
 
 		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.NoError(t, err)
 		assert.NotNil(t, lp)
-		assert.Equal(t, "/data/pg_log", lp.LogFolder)
+		assert.Equal(t, "/data/pg_log", lp.Directory)
 		assert.Equal(t, "de", lp.ServerMessagesLang)
-		assert.Equal(t, "on", lp.LogTruncOnRotation)
+		assert.Equal(t, true, lp.TruncateOnRotation)
 		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("logging_collector disabled", func(t *testing.T) {
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
+				AddRow(false, true, true, "/data/pg_log", "de"))
+
+		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		assert.Equal(t, err.Error(), "logging_collector is not enabled on the db server")
+		assert.Nil(t, lp)
+	})
+
+	t.Run("csvlog not in log_destination", func(t *testing.T) {
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
+				AddRow(true, false, true, "/data/pg_log", "de"))
+
+		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		assert.Equal(t, err.Error(), "log_destination must contain 'csvlog' for log parsing to work")
+		assert.Nil(t, lp)
 	})
 }
 
@@ -107,19 +114,15 @@ func TestTryDetermineLogSettings(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		mock.ExpectQuery(`select 
-			current_setting\('data_directory'\) as dd, 
-			current_setting\('log_directory'\) as ld,
-			current_setting\('lc_messages'\)::varchar\(2\) as lc_messages,
-			current_setting\('log_truncate_on_rotation'\) as log_trunc`).
-			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld", "lc_messages", "log_trunc"}).
-				AddRow("/data", "/var/log/postgresql", "de", "off"))
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
+				AddRow(true, true, false, "/var/log/postgresql", "de"))
 
-		logPath, lang, logTrunc, err := tryDetermineLogSettings(testutil.TestContext, mock)
+		logCfg, err := tryDetermineLogSettings(testutil.TestContext, mock)
 		assert.NoError(t, err)
-		assert.Equal(t, "/var/log/postgresql", logPath)
-		assert.Equal(t, "de", lang)
-		assert.Equal(t, "off", logTrunc)
+		assert.Equal(t, "/var/log/postgresql", logCfg.Directory)
+		assert.Equal(t, "de", logCfg.ServerMessagesLang)
+		assert.Equal(t, false, logCfg.TruncateOnRotation)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
@@ -128,19 +131,15 @@ func TestTryDetermineLogSettings(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		mock.ExpectQuery(`select 
-			current_setting\('data_directory'\) as dd, 
-			current_setting\('log_directory'\) as ld,
-			current_setting\('lc_messages'\)::varchar\(2\) as lc_messages,
-			current_setting\('log_truncate_on_rotation'\) as log_trunc`).
-			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld", "lc_messages", "log_trunc"}).
-				AddRow("/data", "log", "xx", "off"))
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
+				AddRow(true, true, false, "/data/log", "xx"))
 
-		logPath, lang, logTrunc, err := tryDetermineLogSettings(testutil.TestContext, mock)
+		logCfg, err := tryDetermineLogSettings(testutil.TestContext, mock)
 		assert.NoError(t, err)
-		assert.Equal(t, "/data/log", logPath)
-		assert.Equal(t, "en", lang)
-		assert.Equal(t, "off", logTrunc)
+		assert.Equal(t, "/data/log", logCfg.Directory)
+		assert.Equal(t, "en", logCfg.ServerMessagesLang)
+		assert.Equal(t, false, logCfg.TruncateOnRotation)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
@@ -149,18 +148,12 @@ func TestTryDetermineLogSettings(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		mock.ExpectQuery(`select 
-			current_setting\('data_directory'\) as dd, 
-			current_setting\('log_directory'\) as ld,
-			current_setting\('lc_messages'\)::varchar\(2\) as lc_messages,
-			current_setting\('log_truncate_on_rotation'\) as log_trunc`).
+		mock.ExpectQuery(expectedSettingsQuery).
 			WillReturnError(assert.AnError)
 
-		logPath, lang, logTrunc, err := tryDetermineLogSettings(testutil.TestContext, mock)
+		logCfg, err := tryDetermineLogSettings(testutil.TestContext, mock)
 		assert.Error(t, err)
-		assert.Equal(t, "", logPath)
-		assert.Equal(t, "", lang)
-		assert.Equal(t, "", logTrunc)
+		assert.Nil(t, logCfg)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
@@ -175,13 +168,9 @@ func TestCheckHasPrivileges(t *testing.T) {
 			require.NoError(t, err)
 			defer mock.Close()
 
-			mock.ExpectQuery(`select 
-				current_setting\('data_directory'\) as dd, 
-				current_setting\('log_directory'\) as ld,
-				current_setting\('lc_messages'\)::varchar\(2\) as lc_messages,
-				current_setting\('log_truncate_on_rotation'\) as log_trunc`).
-				WillReturnRows(pgxmock.NewRows([]string{"dd", "ld", "lc_messages", "log_trunc"}).
-					AddRow("", tempDir, "en", "off"))
+			mock.ExpectQuery(expectedSettingsQuery).
+				WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
+					AddRow(true, true, false, tempDir, "en"))
 
 			// Mock IsClientOnSameHost to return false (remote)
 			mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
@@ -419,13 +408,9 @@ func TestLogParseLocal(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	mock.ExpectQuery(`select 
-		current_setting\('data_directory'\) as dd, 
-		current_setting\('log_directory'\) as ld,
-		current_setting\('lc_messages'\)::varchar\(2\) as lc_messages,
-		current_setting\('log_truncate_on_rotation'\) as log_trunc`).
-		WillReturnRows(pgxmock.NewRows([]string{"dd", "ld", "lc_messages", "log_trunc"}).
-			AddRow("", tempDir, "en", "off"))
+	mock.ExpectQuery(expectedSettingsQuery).
+		WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
+			AddRow(true, true, false, tempDir, "en"))
 
 	mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
 		pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(true))
@@ -587,13 +572,9 @@ func TestLogParseRemote(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		mock.ExpectQuery(`select 
-			current_setting\('data_directory'\) as dd, 
-			current_setting\('log_directory'\) as ld,
-			current_setting\('lc_messages'\)::varchar\(2\) as lc_messages,
-			current_setting\('log_truncate_on_rotation'\) as log_trunc`).
-			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld", "lc_messages", "log_trunc"}).
-				AddRow("", tempDir, "en", "off"))
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
+				AddRow(true, true, false, tempDir, "en"))
 
 		// Phase 2: Mode detection - returns false to trigger remote mode
 		mock.ExpectQuery(`SELECT COALESCE`).
@@ -653,13 +634,9 @@ func TestLogParseRemote(t *testing.T) {
 		defer mock.Close()
 
 		// Setup mocks for initialization
-		mock.ExpectQuery(`select 
-			current_setting\('data_directory'\) as dd, 
-			current_setting\('log_directory'\) as ld,
-			current_setting\('lc_messages'\)::varchar\(2\) as lc_messages,
-			current_setting\('log_truncate_on_rotation'\) as log_trunc`).
-			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld", "lc_messages", "log_trunc"}).
-				AddRow("", tempDir, "en", "off"))
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
+				AddRow(true, true, false, tempDir, "en"))
 		mock.ExpectQuery(`SELECT COALESCE`).
 			WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
 
@@ -725,13 +702,9 @@ incomplete line without proper fields
 		defer mock.Close()
 
 		// Setup all required mocks
-		mock.ExpectQuery(`select 
-			current_setting\('data_directory'\) as dd, 
-			current_setting\('log_directory'\) as ld,
-			current_setting\('lc_messages'\)::varchar\(2\) as lc_messages,
-			current_setting\('log_truncate_on_rotation'\) as log_trunc`).
-			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld", "lc_messages", "log_trunc"}).
-				AddRow("", tempDir, "en", "off"))
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
+				AddRow(true, true, false, tempDir, "en"))
 		mock.ExpectQuery(`SELECT COALESCE`).
 			WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
 		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
@@ -787,13 +760,9 @@ incomplete line without proper fields
 		defer mock.Close()
 
 		// Setup mocks - privilege check passes initially
-		mock.ExpectQuery(`select 
-			current_setting\('data_directory'\) as dd, 
-			current_setting\('log_directory'\) as ld,
-			current_setting\('lc_messages'\)::varchar\(2\) as lc_messages,
-			current_setting\('log_truncate_on_rotation'\) as log_trunc`).
-			WillReturnRows(pgxmock.NewRows([]string{"dd", "ld", "lc_messages", "log_trunc"}).
-				AddRow("", tempDir, "en", "off"))
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
+				AddRow(true, true, false, tempDir, "en"))
 		mock.ExpectQuery(`SELECT COALESCE`).
 			WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
 		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
