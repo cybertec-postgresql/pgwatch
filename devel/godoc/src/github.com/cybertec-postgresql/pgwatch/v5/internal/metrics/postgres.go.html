@@ -200,7 +200,7 @@
 <span id="L143" class="ln">   143  </span>	if err != nil {
 <span id="L144" class="ln">   144  </span>		<span class="comment">// Check for unique constraint violation using PostgreSQL error code</span>
 <span id="L145" class="ln">   145  </span>		var pgErr *pgconn.PgError
-<span id="L146" class="ln">   146  </span>		if errors.As(err, &amp;pgErr) &amp;&amp; pgErr.SQLState() == &#34;23505&#34; {
+<span id="L146" class="ln">   146  </span>		if errors.As(err, &amp;pgErr) &amp;&amp; pgErr.Code == &#34;23505&#34; {
 <span id="L147" class="ln">   147  </span>			return ErrMetricExists
 <span id="L148" class="ln">   148  </span>		}
 <span id="L149" class="ln">   149  </span>	}
