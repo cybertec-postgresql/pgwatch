@@ -107,12 +107,12 @@ func (lp *LogParser) ParseLogs() error {
 		if err = checkHasLocalPrivileges(lp.Directory); err == nil {
 			return lp.parseLogsLocal()
 		}
-		l.WithError(err).Error("Could't parse logs locally, lacking required privileges")
+		l.WithError(err).Error("Couldn't parse logs locally, lacking required privileges")
 	}
 
 	l.Info("DB is not detected to be on the same host, parsing logs remotely")
 	if err := checkHasRemotePrivileges(lp.ctx, lp.SourceConn, lp.Directory); err != nil {
-		l.WithError(err).Error("could't parse logs remotely, lacking required privileges")
+		l.WithError(err).Error("couldn't parse logs remotely, lacking required privileges")
 		return err
 	}
 	return lp.parseLogsRemote()
