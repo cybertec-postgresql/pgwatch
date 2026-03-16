@@ -383,7 +383,7 @@
 <span id="L326" class="ln">   326  </span>			}
 <span id="L327" class="ln">   327  </span>
 <span id="L328" class="ln">   328  </span>			if _, ok = metricDefs.GetMetricDef(metricName); !ok {
-<span id="L329" class="ln">   329  </span>				l.Error(&#34;Could not get metric version properties&#34;)
+<span id="L329" class="ln">   329  </span>				l.WithField(&#34;source&#34;, md.Name).Error(&#34;metric definition not found&#34;)
 <span id="L330" class="ln">   330  </span>				return
 <span id="L331" class="ln">   331  </span>			}
 <span id="L332" class="ln">   332  </span>		}
@@ -557,7 +557,7 @@
 <span id="L500" class="ln">   500  </span>		default:
 <span id="L501" class="ln">   501  </span>			sql = metric.GetSQL(md.Version)
 <span id="L502" class="ln">   502  </span>			if sql == &#34;&#34; {
-<span id="L503" class="ln">   503  </span>				l.Warning(&#34;Ignoring fetching because of empty SQL&#34;)
+<span id="L503" class="ln">   503  </span>				l.WithField(&#34;source&#34;, md.Name).WithField(&#34;version&#34;, md.Version).Warning(&#34;no SQL found for metric version&#34;)
 <span id="L504" class="ln">   504  </span>				return nil, nil
 <span id="L505" class="ln">   505  </span>			}
 <span id="L506" class="ln">   506  </span>			data, err = QueryMeasurements(ctx, md, sql)
