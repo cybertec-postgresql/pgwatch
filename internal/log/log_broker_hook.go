@@ -132,11 +132,11 @@ func (hook *BrokerHook) poll(input <-chan *logrus.Entry) {
 
 // send sends cached messages to the postgres server
 func (hook *BrokerHook) send(entry *logrus.Entry) {
+	hook.mu.Lock()
+	defer hook.mu.Unlock()
 	if len(hook.subscribers) == 0 {
 		return // Nothing to do here.
 	}
-	hook.mu.Lock()
-	defer hook.mu.Unlock()
 	msg, err := hook.formatter.Format(entry)
 	for _, subscriber := range hook.subscribers {
 		select {
