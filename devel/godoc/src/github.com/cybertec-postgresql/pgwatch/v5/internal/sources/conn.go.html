@@ -372,7 +372,7 @@
 <span id="L315" class="ln">   315  </span>	return strings.Join(CreatedExts, &#34;,&#34;), err
 <span id="L316" class="ln">   316  </span>}
 <span id="L317" class="ln">   317  </span>
-<span id="L318" class="ln">   318  </span><span class="comment">// TryCreateMetricsHelpers should be called once on daemon startup to try to create &#34;metric fething helper&#34; functions automatically</span>
+<span id="L318" class="ln">   318  </span><span class="comment">// TryCreateMetricsHelpers should be called once on daemon startup to try to create &#34;metric fetching helper&#34; functions automatically</span>
 <span id="L319" class="ln">   319  </span>func (md *SourceConn) TryCreateMetricsHelpers(ctx context.Context, getSQLFn func(string) string) (err error) {
 <span id="L320" class="ln">   320  </span>	md.RLock()
 <span id="L321" class="ln">   321  </span>	defer md.RUnlock()

@@ -164,12 +164,12 @@
 <span id="L107" class="ln">   107  </span>		if err = checkHasLocalPrivileges(lp.Directory); err == nil {
 <span id="L108" class="ln">   108  </span>			return lp.parseLogsLocal()
 <span id="L109" class="ln">   109  </span>		}
-<span id="L110" class="ln">   110  </span>		l.WithError(err).Error(&#34;Could&#39;t parse logs locally, lacking required privileges&#34;)
+<span id="L110" class="ln">   110  </span>		l.WithError(err).Error(&#34;Couldn&#39;t parse logs locally, lacking required privileges&#34;)
 <span id="L111" class="ln">   111  </span>	}
 <span id="L112" class="ln">   112  </span>
 <span id="L113" class="ln">   113  </span>	l.Info(&#34;DB is not detected to be on the same host, parsing logs remotely&#34;)
 <span id="L114" class="ln">   114  </span>	if err := checkHasRemotePrivileges(lp.ctx, lp.SourceConn, lp.Directory); err != nil {
-<span id="L115" class="ln">   115  </span>		l.WithError(err).Error(&#34;could&#39;t parse logs remotely, lacking required privileges&#34;)
+<span id="L115" class="ln">   115  </span>		l.WithError(err).Error(&#34;couldn&#39;t parse logs remotely, lacking required privileges&#34;)
 <span id="L116" class="ln">   116  </span>		return err
 <span id="L117" class="ln">   117  </span>	}
 <span id="L118" class="ln">   118  </span>	return lp.parseLogsRemote()

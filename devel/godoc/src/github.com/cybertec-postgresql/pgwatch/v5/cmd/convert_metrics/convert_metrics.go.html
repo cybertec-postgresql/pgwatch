@@ -223,10 +223,10 @@
 <span id="L166" class="ln">   166  </span>	Metrics     map[string]int
 <span id="L167" class="ln">   167  </span>}
 <span id="L168" class="ln">   168  </span>
-<span id="L169" class="ln">   169  </span><span class="comment">// Expects &#34;preset metrics&#34; definition file named preset-config.yaml to be present in provided --metrics folder</span>
+<span id="L169" class="ln">   169  </span><span class="comment">// Expects &#34;preset metrics&#34; definition file named preset-configs.yaml to be present in provided --metrics folder</span>
 <span id="L170" class="ln">   170  </span>func ReadPresetsFromFolder(folder string) (presets Presets, err error) {
 <span id="L171" class="ln">   171  </span>	var presetMetrics []byte
-<span id="L172" class="ln">   172  </span>	fmt.Printf(&#34;Searching for presents from path %s ...\n&#34;, folder)
+<span id="L172" class="ln">   172  </span>	fmt.Printf(&#34;Searching for presets from path %s ...\n&#34;, folder)
 <span id="L173" class="ln">   173  </span>	if presetMetrics, err = os.ReadFile(path.Join(folder, PresetConfigYAMLFile)); err != nil {
 <span id="L174" class="ln">   174  </span>		return
 <span id="L175" class="ln">   175  </span>	}
