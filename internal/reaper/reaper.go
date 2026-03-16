@@ -186,7 +186,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 				} else if !metricDefExists {
 					epoch, ok := lastSQLFetchError.Load(metricName)
 					if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) { // complain only 1x per hour
-						srcL.WithField("metric", metricName).Warning("metric definition not found - metric will be skipped. Please verify metric name in configuration or add metric definition")
+						srcL.WithField("metric", metricName).Warning("metric definition not found")
 						lastSQLFetchError.Store(metricName, time.Now().Unix())
 					}
 				}
@@ -326,7 +326,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 			}
 
 			if _, ok = metricDefs.GetMetricDef(metricName); !ok {
-				l.WithField("source", md.Name).Error("metric definition not found - gatherer will be stopped. Please verify metric name or add metric definition")
+				l.WithField("source", md.Name).Error("metric definition not found")
 				return
 			}
 		}
@@ -500,7 +500,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 		default:
 			sql = metric.GetSQL(md.Version)
 			if sql == "" {
-				l.WithField("source", md.Name).WithField("version", md.Version).Warning("metric SQL is empty for this PostgreSQL version - metric will be skipped. Please verify metric definition includes SQL for this version")
+				l.WithField("source", md.Name).WithField("version", md.Version).Warning("no SQL found for metric version")
 				return nil, nil
 			}
 			data, err = QueryMeasurements(ctx, md, sql)
