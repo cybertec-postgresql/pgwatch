@@ -153,10 +153,10 @@
 					<dd>&nbsp; &nbsp; <a href="#BrokerHook.SetBrokerFormatter">func (hook *BrokerHook) SetBrokerFormatter(formatter logrus.Formatter)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#BrokerHook.poll">func (hook *BrokerHook) poll(input &lt;-chan *logrus.Entry)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#BrokerHook.poll">func (hook *BrokerHook) poll(input &lt;-chan MessageType)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#BrokerHook.send">func (hook *BrokerHook) send(entry *logrus.Entry)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#BrokerHook.send">func (hook *BrokerHook) send(msg MessageType)</a></dd>
 				
 			
 				
@@ -392,9 +392,8 @@ combination with logger.WithField(s) for great effect
 			<pre>type BrokerHook struct {
 <span id="BrokerHook.highLoadTimeout"></span>    highLoadTimeout <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>     <span class="comment">// wait this amount of time before skip log entry</span>
 <span id="BrokerHook.subscribers"></span>    subscribers     []<a href="#MessageChanType">MessageChanType</a> <span class="comment">//</span>
-<span id="BrokerHook.input"></span>    input           chan *<a href="https://pkg.go.dev/github.com/sirupsen/logrus/">logrus</a>.<a href="https://pkg.go.dev/github.com/sirupsen/logrus/#Entry">Entry</a>
+<span id="BrokerHook.input"></span>    input           chan <a href="#MessageType">MessageType</a>
 <span id="BrokerHook.ctx"></span>    ctx             <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
-<span id="BrokerHook.lastError"></span>    lastError       chan <a href="https://pkg.go.dev/builtin/#error">error</a>
 <span id="BrokerHook.level"></span>    level           <a href="https://pkg.go.dev/builtin/#string">string</a>
 <span id="BrokerHook.mu"></span>    mu              *<a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#Mutex">Mutex</a>
 <span id="BrokerHook.formatter"></span>    formatter       <a href="https://pkg.go.dev/github.com/sirupsen/logrus/">logrus</a>.<a href="https://pkg.go.dev/github.com/sirupsen/logrus/#Formatter">Formatter</a>
@@ -411,7 +410,7 @@ combination with logger.WithField(s) for great effect
 
 			
 				
-				<h3 id="NewBrokerHook">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log_broker_hook.go.html#L34">NewBrokerHook</a>
+				<h3 id="NewBrokerHook">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log_broker_hook.go.html#L33">NewBrokerHook</a>
 					<a class="permalink" href="#NewBrokerHook">&#xb6;</a>
 					
 					
@@ -425,7 +424,7 @@ combination with logger.WithField(s) for great effect
 
 			
 				
-				<h3 id="BrokerHook.AddSubscriber">func (*BrokerHook) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log_broker_hook.go.html#L49">AddSubscriber</a>
+				<h3 id="BrokerHook.AddSubscriber">func (*BrokerHook) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log_broker_hook.go.html#L47">AddSubscriber</a>
 					<a class="permalink" href="#BrokerHook.AddSubscriber">&#xb6;</a>
 					
 					
@@ -438,7 +437,7 @@ combination with logger.WithField(s) for great effect
 				
 			
 				
-				<h3 id="BrokerHook.Fire">func (*BrokerHook) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log_broker_hook.go.html#L78">Fire</a>
+				<h3 id="BrokerHook.Fire">func (*BrokerHook) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log_broker_hook.go.html#L76">Fire</a>
 					<a class="permalink" href="#BrokerHook.Fire">&#xb6;</a>
 					
 					
@@ -464,7 +463,7 @@ combination with logger.WithField(s) for great effect
 				
 			
 				
-				<h3 id="BrokerHook.RemoveSubscriber">func (*BrokerHook) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log_broker_hook.go.html#L56">RemoveSubscriber</a>
+				<h3 id="BrokerHook.RemoveSubscriber">func (*BrokerHook) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log_broker_hook.go.html#L54">RemoveSubscriber</a>
 					<a class="permalink" href="#BrokerHook.RemoveSubscriber">&#xb6;</a>
 					
 					
@@ -477,7 +476,7 @@ combination with logger.WithField(s) for great effect
 				
 			
 				
-				<h3 id="BrokerHook.SetBrokerFormatter">func (*BrokerHook) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log_broker_hook.go.html#L67">SetBrokerFormatter</a>
+				<h3 id="BrokerHook.SetBrokerFormatter">func (*BrokerHook) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log_broker_hook.go.html#L65">SetBrokerFormatter</a>
 					<a class="permalink" href="#BrokerHook.SetBrokerFormatter">&#xb6;</a>
 					
 					
@@ -495,7 +494,7 @@ combination with logger.WithField(s) for great effect
 					
 					
 				</h3>
-				<pre>func (hook *<a href="#BrokerHook">BrokerHook</a>) poll(input &lt;-chan *<a href="https://pkg.go.dev/github.com/sirupsen/logrus/">logrus</a>.<a href="https://pkg.go.dev/github.com/sirupsen/logrus/#Entry">Entry</a>)</pre>
+				<pre>func (hook *<a href="#BrokerHook">BrokerHook</a>) poll(input &lt;-chan <a href="#MessageType">MessageType</a>)</pre>
 				<p>poll checks for incoming messages and caches them internally
 until either a maximum amount is reached, or a timeout occurs.
 
@@ -509,8 +508,8 @@ until either a maximum amount is reached, or a timeout occurs.
 					
 					
 				</h3>
-				<pre>func (hook *<a href="#BrokerHook">BrokerHook</a>) send(entry *<a href="https://pkg.go.dev/github.com/sirupsen/logrus/">logrus</a>.<a href="https://pkg.go.dev/github.com/sirupsen/logrus/#Entry">Entry</a>)</pre>
-				<p>send sends cached messages to the postgres server
+				<pre>func (hook *<a href="#BrokerHook">BrokerHook</a>) send(msg <a href="#MessageType">MessageType</a>)</pre>
+				<p>send sends out a pre-formatted message to all subscribers
 
 				
 				
