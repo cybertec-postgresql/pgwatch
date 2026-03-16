@@ -79,13 +79,8 @@ func (hook *BrokerHook) Fire(entry *logrus.Entry) error {
 	if hook.ctx.Err() != nil {
 		return nil
 	}
-	entryCopy := entry.Dup()
-	entryCopy.Level = entry.Level
-	entryCopy.Caller = entry.Caller
-	entryCopy.Message = entry.Message
-	entryCopy.Buffer = entry.Buffer
 	select {
-	case hook.input <- entryCopy:
+	case hook.input <- entry:
 		// entry sent
 	case <-time.After(hook.highLoadTimeout):
 		// entry dropped due to a huge load, check stdout or file for detailed log
