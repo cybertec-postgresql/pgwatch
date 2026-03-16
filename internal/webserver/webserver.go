@@ -29,10 +29,7 @@ var buildFS embed.FS
 var uiFS fs.FS
 
 func init() {
-	var err error
-	if uiFS, err = fs.Sub(buildFS, "build"); err != nil {
-		panic("failed to initialize embedded UI filesystem: " + err.Error())
-	}
+	uiFS, _ = fs.Sub(buildFS, "build")
 }
 
 type ReadyChecker interface {
