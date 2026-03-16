@@ -6,6 +6,7 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 )
@@ -170,17 +171,24 @@ func TestNewPostgresMetricReaderWriterConn(t *testing.T) {
 	})
 }
 
-func TestMetricsToPostgres(t *testing.T) {
-	a := assert.New(t)
+func newTestReaderWriter(t *testing.T) (pgxmock.PgxPoolIface, metrics.ReaderWriter) {
+	t.Helper()
 	conn, err := pgxmock.NewPool()
-	a.NoError(err)
-
-	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
+	if err != nil {
+		t.Fatalf("pgxmock.NewPool: %v", err)
+	}
+	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 	conn.ExpectPing()
+	rw, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
+	if err != nil {
+		t.Fatalf("NewPostgresMetricReaderWriterConn: %v", err)
+	}
+	return conn, rw
+}
 
-	readerWriter, err := metrics.NewPostgresMetricReaderWriterConn(ctx, conn)
-	a.NoError(err)
-	a.NotNil(readerWriter)
+func TestMetricsToPostgres(t *testing.T) {
+	conn, rw := newTestReaderWriter(t)
 
 	metricsRows := func() *pgxmock.Rows {
 		return pgxmock.NewRows([]string{"name", "sqls", "init_sql", "description", "node_status", "gauges", "is_instance_level", "storage_name"}).
@@ -191,85 +199,140 @@ func TestMetricsToPostgres(t *testing.T) {
 			AddRow("test", "desc", map[string]float64{"metric": 30})
 	}
 
-	t.Run("GetMetrics", func(*testing.T) {
+	t.Run("GetMetrics", func(t *testing.T) {
 		conn.ExpectQuery(`SELECT.+FROM.+metric`).WillReturnRows(metricsRows())
 		conn.ExpectQuery(`SELECT.+FROM.+preset`).WillReturnRows(presetRows())
-
-		m, err := readerWriter.GetMetrics()
-		a.NoError(err)
-		a.Len(m.MetricDefs, 1)
+		m, err := rw.GetMetrics()
+		assert.NoError(t, err)
+		assert.Len(t, m.MetricDefs, 1)
 	})
 
-	t.Run("GetMetricsFail", func(*testing.T) {
+	t.Run("GetMetricsFail", func(t *testing.T) {
 		conn.ExpectQuery(`SELECT.+FROM.+metric`).WillReturnError(assert.AnError)
-		_, err = readerWriter.GetMetrics()
-		a.Error(err)
+		_, err := rw.GetMetrics()
+		assert.Error(t, err)
 	})
 
-	t.Run("GetPresetsFail", func(*testing.T) {
+	t.Run("GetPresetsFail", func(t *testing.T) {
 		conn.ExpectQuery(`SELECT.+FROM.+metric`).WillReturnRows(metricsRows())
 		conn.ExpectQuery(`SELECT.+FROM.+preset`).WillReturnError(assert.AnError)
-		_, err = readerWriter.GetMetrics()
-		a.Error(err)
+		_, err := rw.GetMetrics()
+		assert.Error(t, err)
 	})
 
-	t.Run("GetMetricsScanFail", func(*testing.T) {
+	t.Run("GetMetricsScanFail", func(t *testing.T) {
 		conn.ExpectQuery(`SELECT.+FROM.+metric`).WillReturnRows(metricsRows().RowError(0, assert.AnError))
-		_, err = readerWriter.GetMetrics()
-		a.Error(err)
+		_, err := rw.GetMetrics()
+		assert.Error(t, err)
 	})
 
-	t.Run("GetPresetsScanFail", func(*testing.T) {
+	t.Run("GetPresetsScanFail", func(t *testing.T) {
 		conn.ExpectQuery(`SELECT.+FROM.+metric`).WillReturnRows(metricsRows())
 		conn.ExpectQuery(`SELECT.+FROM.+preset`).WillReturnRows(presetRows().RowError(0, assert.AnError))
-		_, err = readerWriter.GetMetrics()
-		a.Error(err)
+		_, err := rw.GetMetrics()
+		assert.Error(t, err)
 	})
 
-	t.Run("WriteMetrics", func(*testing.T) {
+	t.Run("WriteMetrics", func(t *testing.T) {
 		conn.ExpectBegin().WillReturnError(assert.AnError)
-		err = readerWriter.WriteMetrics(&metrics.Metrics{})
-		a.Error(err)
+		assert.Error(t, rw.WriteMetrics(&metrics.Metrics{}))
 	})
 
-	t.Run("DeleteMetric", func(*testing.T) {
+	t.Run("DeleteMetric", func(t *testing.T) {
 		conn.ExpectExec(`DELETE.+metric`).WithArgs("test").WillReturnResult(pgxmock.NewResult("DELETE", 1))
-		err = readerWriter.DeleteMetric("test")
-		a.NoError(err)
+		assert.NoError(t, rw.DeleteMetric("test"))
 	})
 
-	t.Run("UpdateMetric", func(*testing.T) {
+	t.Run("UpdateMetric", func(t *testing.T) {
 		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
-		err = readerWriter.UpdateMetric("test", metrics.Metric{})
-		a.NoError(err)
+		assert.NoError(t, rw.UpdateMetric("test", metrics.Metric{}))
 	})
 
-	t.Run("FailUpdateMetric", func(*testing.T) {
+	t.Run("FailUpdateMetric", func(t *testing.T) {
 		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("UPDATE", 0))
-		err = readerWriter.UpdateMetric("test", metrics.Metric{})
-		a.ErrorIs(err, metrics.ErrMetricNotFound)
+		assert.ErrorIs(t, rw.UpdateMetric("test", metrics.Metric{}), metrics.ErrMetricNotFound)
 	})
 
-	t.Run("DeletePreset", func(*testing.T) {
+	t.Run("DeletePreset", func(t *testing.T) {
 		conn.ExpectExec(`DELETE.+preset`).WithArgs("test").WillReturnResult(pgxmock.NewResult("DELETE", 1))
-		err = readerWriter.DeletePreset("test")
-		a.NoError(err)
+		assert.NoError(t, rw.DeletePreset("test"))
 	})
 
-	t.Run("UpdatePreset", func(*testing.T) {
+	t.Run("UpdatePreset", func(t *testing.T) {
 		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1))
-		err = readerWriter.UpdatePreset("test", metrics.Preset{})
-		a.NoError(err)
+		assert.NoError(t, rw.UpdatePreset("test", metrics.Preset{}))
 	})
 
-	t.Run("FailUpdatePreset", func(*testing.T) {
+	t.Run("FailUpdatePreset", func(t *testing.T) {
 		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 0))
-		err = readerWriter.UpdatePreset("test", metrics.Preset{})
-		a.ErrorIs(err, metrics.ErrPresetNotFound)
+		assert.ErrorIs(t, rw.UpdatePreset("test", metrics.Preset{}), metrics.ErrPresetNotFound)
 	})
 
-	// check all expectations were met
-	a.NoError(conn.ExpectationsWereMet())
+	t.Run("DeleteMetricError", func(t *testing.T) {
+		conn.ExpectExec(`DELETE.+metric`).WithArgs("test").WillReturnError(assert.AnError)
+		assert.Error(t, rw.DeleteMetric("test"))
+	})
+
+	t.Run("UpdateMetricExecError", func(t *testing.T) {
+		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnError(assert.AnError)
+		assert.Error(t, rw.UpdateMetric("test", metrics.Metric{}))
+	})
+
+	t.Run("DeletePresetError", func(t *testing.T) {
+		conn.ExpectExec(`DELETE.+preset`).WithArgs("test").WillReturnError(assert.AnError)
+		assert.Error(t, rw.DeletePreset("test"))
+	})
+
+	t.Run("UpdatePresetExecError", func(t *testing.T) {
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnError(assert.AnError)
+		assert.Error(t, rw.UpdatePreset("test", metrics.Preset{}))
+	})
+
+	assert.NoError(t, conn.ExpectationsWereMet())
 }
 
-// Additional tests for GetMetrics, WriteMetrics, DeleteMetric, UpdateMetric, DeletePreset, and UpdatePreset follow a similar pattern.
+func TestCreateMetric(t *testing.T) {
+	conn, rw := newTestReaderWriter(t)
+
+	t.Run("Success", func(t *testing.T) {
+		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		assert.NoError(t, rw.CreateMetric("new_metric", metrics.Metric{}))
+	})
+
+	t.Run("Duplicate", func(t *testing.T) {
+		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnError(&pgconn.PgError{Code: "23505"})
+		assert.ErrorIs(t, rw.CreateMetric("existing_metric", metrics.Metric{}), metrics.ErrMetricExists)
+	})
+
+	t.Run("ExecError", func(t *testing.T) {
+		conn.ExpectExec(`INSERT.+metric`).WithArgs(AnyArgs(8)...).WillReturnError(assert.AnError)
+		err := rw.CreateMetric("fail_metric", metrics.Metric{})
+		assert.Error(t, err)
+		assert.NotErrorIs(t, err, metrics.ErrMetricExists)
+	})
+
+	assert.NoError(t, conn.ExpectationsWereMet())
+}
+
+func TestCreatePreset(t *testing.T) {
+	conn, rw := newTestReaderWriter(t)
+
+	t.Run("Success", func(t *testing.T) {
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		assert.NoError(t, rw.CreatePreset("new_preset", metrics.Preset{}))
+	})
+
+	t.Run("Duplicate", func(t *testing.T) {
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnError(&pgconn.PgError{Code: "23505"})
+		assert.ErrorIs(t, rw.CreatePreset("existing_preset", metrics.Preset{}), metrics.ErrPresetExists)
+	})
+
+	t.Run("ExecError", func(t *testing.T) {
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(AnyArgs(3)...).WillReturnError(assert.AnError)
+		err := rw.CreatePreset("fail_preset", metrics.Preset{})
+		assert.Error(t, err)
+		assert.NotErrorIs(t, err, metrics.ErrPresetExists)
+	})
+
+	assert.NoError(t, conn.ExpectationsWereMet())
+}
