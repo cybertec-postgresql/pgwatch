@@ -326,7 +326,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 			}
 
 			if _, ok = metricDefs.GetMetricDef(metricName); !ok {
-				l.Error("Could not get metric version properties")
+				l.WithField("source", md.Name).Error("metric definition not found")
 				return
 			}
 		}
@@ -500,7 +500,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 		default:
 			sql = metric.GetSQL(md.Version)
 			if sql == "" {
-				l.Warning("Ignoring fetching because of empty SQL")
+				l.WithField("source", md.Name).WithField("version", md.Version).Warning("no SQL found for metric version")
 				return nil, nil
 			}
 			data, err = QueryMeasurements(ctx, md, sql)
