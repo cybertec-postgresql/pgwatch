@@ -169,7 +169,7 @@ Here is the structure of a metric definition in YAML format:
 
     One can invent and install such *helpers* on the monitored databases
     freely to expose any information needed via Python,
-    or any other procedure language supported by Postgres.
+    or any other procedural language supported by Postgres.
 
 - *sqls*
 
