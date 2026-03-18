@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
@@ -244,14 +243,12 @@ func TestReaper_LoadSources(t *testing.T) {
 				mockConn.ExpectClose()
 				r.monitoredSources[0].Conn = mockConn
 
-				// Add a mock cancel function for a metric gatherer
+				// Add a mock cancel function for the source reaper
 				cancelCalled := make(map[string]bool)
-				for metric := range initialSource.Metrics {
-					dbMetric := initialSource.Name + "¤¤¤" + metric
-					r.cancelFuncs[dbMetric] = func() {
-						cancelCalled[dbMetric] = true
-					}
+				r.cancelFuncs[initialSource.Name] = func() {
+					cancelCalled[initialSource.Name] = true
 				}
+				r.sourceReapers[initialSource.Name] = &SourceReaper{}
 
 				// Create modified source
 				modifiedSource := *baseSource.Clone()
@@ -269,14 +266,11 @@ func TestReaper_LoadSources(t *testing.T) {
 				a.Equal(1, len(r.monitoredSources), "Expected one monitored source after reload")
 				a.Equal(modifiedSource, r.monitoredSources[0].Source)
 
-				for metric := range initialSource.Metrics {
-					dbMetric := initialSource.Name + "¤¤¤" + metric
-					a.Equal(tc.expectCancel, cancelCalled[dbMetric])
-					if tc.expectCancel {
-						a.Nil(mockConn.ExpectationsWereMet(), "Expected all mock expectations to be met")
-						_, exists := r.cancelFuncs[dbMetric]
-						a.False(exists, "Expected cancel func to be removed from map after cancellation")
-					}
+				assert.Equal(t, tc.expectCancel, cancelCalled[initialSource.Name])
+				if tc.expectCancel {
+					assert.Nil(t, mockConn.ExpectationsWereMet(), "Expected all mock expectations to be met")
+					_, exists := r.cancelFuncs[initialSource.Name]
+					assert.False(t, exists, "Expected cancel func to be removed from map after cancellation")
 				}
 			})
 		}
@@ -319,8 +313,10 @@ func TestReaper_LoadSources(t *testing.T) {
 
 		source1Cancelled := false
 		source2Cancelled := false
-		r.cancelFuncs[source1.Name+"¤¤¤"+"cpu"] = func() { source1Cancelled = true }
-		r.cancelFuncs[source2.Name+"¤¤¤"+"memory"] = func() { source2Cancelled = true }
+		r.cancelFuncs[source1.Name] = func() { source1Cancelled = true }
+		r.cancelFuncs[source2.Name] = func() { source2Cancelled = true }
+		r.sourceReapers[source1.Name] = &SourceReaper{}
+		r.sourceReapers[source2.Name] = &SourceReaper{}
 
 		// Only modify source1
 		modifiedSource1 := *source1.Clone()
