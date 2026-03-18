@@ -27,7 +27,7 @@ const (
 var specialMetrics = map[string]bool{specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 
 var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
-var metricsConfig map[string]float64                      // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
+var metricsConfig metrics.MetricIntervals                 // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 var metricDefs = NewConcurrentMetricDefs()
 
 // Reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks
@@ -246,7 +246,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[str
 	// or state change makes it uninteresting
 	logger.Debug("checking if any workers need to be shut down...")
 	for dbMetric, cancelFunc := range r.cancelFuncs {
-		var currentMetricConfig map[string]float64
+		var currentMetricConfig metrics.MetricIntervals
 		var md *sources.SourceConn
 		var dbRemovedFromConfig bool
 		var metricRemovedFromPreset bool

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 )
 
@@ -32,12 +33,12 @@ func TestKind_IsValid(t *testing.T) {
 }
 
 func TestSource_Equal(t *testing.T) {
-	var correctInterval float64 = 60
-	var incorrectInterval float64 = 10
+	var correctInterval = 60
+	var incorrectInterval = 10
 
 	s1 := sources.Source{
-		Metrics:        map[string]float64{"wal": correctInterval},
-		MetricsStandby: map[string]float64{"wal": correctInterval},
+		Metrics:        metrics.MetricIntervals{"wal": correctInterval},
+		MetricsStandby: metrics.MetricIntervals{"wal": correctInterval},
 	}
 
 	srcs := sources.Sources{
@@ -48,26 +49,26 @@ func TestSource_Equal(t *testing.T) {
 		{
 			PresetMetrics:        "basic",
 			PresetMetricsStandby: "basic",
-			Metrics:              map[string]float64{"wal": correctInterval},
-			MetricsStandby:       map[string]float64{"wal": correctInterval},
+			Metrics:              metrics.MetricIntervals{"wal": correctInterval},
+			MetricsStandby:       metrics.MetricIntervals{"wal": correctInterval},
 		},
 		{
 			PresetMetrics:        "basic",
 			PresetMetricsStandby: "basic",
-			Metrics:              map[string]float64{"wal": incorrectInterval},
-			MetricsStandby:       map[string]float64{"wal": incorrectInterval},
+			Metrics:              metrics.MetricIntervals{"wal": incorrectInterval},
+			MetricsStandby:       metrics.MetricIntervals{"wal": incorrectInterval},
 		},
 		{
-			Metrics:        map[string]float64{"wal": incorrectInterval},
-			MetricsStandby: map[string]float64{"wal": incorrectInterval},
+			Metrics:        metrics.MetricIntervals{"wal": incorrectInterval},
+			MetricsStandby: metrics.MetricIntervals{"wal": incorrectInterval},
 		},
 		{
-			Metrics:        map[string]float64{"wal": correctInterval, "db_size": correctInterval},
-			MetricsStandby: map[string]float64{"wal": correctInterval, "db_size": correctInterval},
+			Metrics:        metrics.MetricIntervals{"wal": correctInterval, "db_size": correctInterval},
+			MetricsStandby: metrics.MetricIntervals{"wal": correctInterval, "db_size": correctInterval},
 		},
 		{
-			Metrics:        map[string]float64{"wal": correctInterval},
-			MetricsStandby: map[string]float64{"wal": correctInterval},
+			Metrics:        metrics.MetricIntervals{"wal": correctInterval},
+			MetricsStandby: metrics.MetricIntervals{"wal": correctInterval},
 		},
 	}
 
@@ -81,8 +82,8 @@ func TestSource_Equal(t *testing.T) {
 	s1 = sources.Source{
 		PresetMetrics:        "basic",
 		PresetMetricsStandby: "basic",
-		Metrics:              map[string]float64{"wal": correctInterval},
-		MetricsStandby:       map[string]float64{"wal": correctInterval},
+		Metrics:              metrics.MetricIntervals{"wal": correctInterval},
+		MetricsStandby:       metrics.MetricIntervals{"wal": correctInterval},
 	}
 
 	srcs = sources.Sources{
@@ -93,8 +94,8 @@ func TestSource_Equal(t *testing.T) {
 		{
 			PresetMetrics:        "basic",
 			PresetMetricsStandby: "basic",
-			Metrics:              map[string]float64{"wal": incorrectInterval},
-			MetricsStandby:       map[string]float64{"wal": incorrectInterval},
+			Metrics:              metrics.MetricIntervals{"wal": incorrectInterval},
+			MetricsStandby:       metrics.MetricIntervals{"wal": incorrectInterval},
 		},
 		{
 			PresetMetrics:        "azure",
@@ -103,12 +104,12 @@ func TestSource_Equal(t *testing.T) {
 		{
 			PresetMetrics:        "azure",
 			PresetMetricsStandby: "azure",
-			Metrics:              map[string]float64{"wal": correctInterval},
-			MetricsStandby:       map[string]float64{"wal": correctInterval},
+			Metrics:              metrics.MetricIntervals{"wal": correctInterval},
+			MetricsStandby:       metrics.MetricIntervals{"wal": correctInterval},
 		},
 		{
-			Metrics:        map[string]float64{"wal": correctInterval},
-			MetricsStandby: map[string]float64{"wal": correctInterval},
+			Metrics:        metrics.MetricIntervals{"wal": correctInterval},
+			MetricsStandby: metrics.MetricIntervals{"wal": correctInterval},
 		},
 	}
 

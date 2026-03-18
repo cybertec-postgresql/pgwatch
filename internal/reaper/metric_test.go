@@ -35,14 +35,14 @@ var (
 		"metric1": metrics.Metric{Description: "metric1"},
 	}
 	initialPresetDefs = metrics.PresetDefs{
-		"preset1": metrics.Preset{Description: "preset1", Metrics: map[string]float64{"metric1": 1.0}},
+		"preset1": metrics.Preset{Description: "preset1", Metrics: metrics.MetricIntervals{"metric1": 1.0}},
 	}
 
 	newMetricDefs = metrics.MetricDefs{
 		"metric2": metrics.Metric{Description: "metric2"},
 	}
 	newPresetDefs = metrics.PresetDefs{
-		"preset2": metrics.Preset{Description: "preset2", Metrics: map[string]float64{"metric2": 2.0}},
+		"preset2": metrics.Preset{Description: "preset2", Metrics: metrics.MetricIntervals{"metric2": 2.0}},
 	}
 )
 
@@ -139,7 +139,7 @@ func TestReaper_LoadMetrics(t *testing.T) {
 	t.Run("updates metricDefs on success", func(t *testing.T) {
 		defs := &metrics.Metrics{
 			MetricDefs: metrics.MetricDefs{"m1": {Description: "M1"}},
-			PresetDefs: metrics.PresetDefs{"p1": {Description: "P1", Metrics: map[string]float64{"m1": 1.0}}},
+			PresetDefs: metrics.PresetDefs{"p1": {Description: "P1", Metrics: metrics.MetricIntervals{"m1": 1.0}}},
 		}
 		r := NewReaper(ctx, &cmdopts.Options{
 			MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
@@ -197,8 +197,8 @@ func TestReaper_LoadMetrics(t *testing.T) {
 				"m2": {Description: "M2"},
 			},
 			PresetDefs: metrics.PresetDefs{
-				"preset1":  {Metrics: map[string]float64{"m1": 10.0}},
-				"standby1": {Metrics: map[string]float64{"m2": 20.0}},
+				"preset1":  {Metrics: metrics.MetricIntervals{"m1": 10.0}},
+				"standby1": {Metrics: metrics.MetricIntervals{"m2": 20.0}},
 			},
 		}
 		r := NewReaper(ctx, &cmdopts.Options{
@@ -216,12 +216,12 @@ func TestReaper_LoadMetrics(t *testing.T) {
 		assert.NoError(t, r.LoadMetrics())
 
 		sc := r.monitoredSources[0]
-		assert.Equal(t, map[string]float64{"m1": 10.0}, sc.Metrics)
-		assert.Equal(t, map[string]float64{"m2": 20.0}, sc.MetricsStandby)
+		assert.Equal(t, metrics.MetricIntervals{"m1": 10.0}, sc.Metrics)
+		assert.Equal(t, metrics.MetricIntervals{"m2": 20.0}, sc.MetricsStandby)
 	})
 
 	t.Run("skips preset resolution for sources without presets", func(t *testing.T) {
-		customMetrics := map[string]float64{"cpu": 5.0}
+		customMetrics := metrics.MetricIntervals{"cpu": 5.0}
 		defs := &metrics.Metrics{
 			MetricDefs: metrics.MetricDefs{"cpu": {Description: "CPU"}},
 			PresetDefs: metrics.PresetDefs{},
@@ -249,7 +249,7 @@ func TestReaper_LoadMetrics(t *testing.T) {
 		initialDefs := &metrics.Metrics{
 			MetricDefs: metrics.MetricDefs{"test_metric": {}},
 			PresetDefs: metrics.PresetDefs{
-				"test_preset": {Metrics: map[string]float64{"test_metric": 1}},
+				"test_preset": {Metrics: metrics.MetricIntervals{"test_metric": 1}},
 			},
 		}
 		src := sources.Source{
@@ -272,7 +272,7 @@ func TestReaper_LoadMetrics(t *testing.T) {
 		})
 		require.NoError(t, r.LoadSources(ctx))
 		require.NoError(t, r.LoadMetrics())
-		assert.Equal(t, map[string]float64{"test_metric": 1}, r.monitoredSources[0].Metrics)
+		assert.Equal(t, metrics.MetricIntervals{"test_metric": 1}, r.monitoredSources[0].Metrics)
 
 		// Attach a mock connection so CloseResourcesForRemovedMonitoredDBs doesn't panic
 		// when the custom_tags change triggers a full source restart.
@@ -288,14 +288,14 @@ func TestReaper_LoadMetrics(t *testing.T) {
 		updatedDefs := &metrics.Metrics{
 			MetricDefs: metrics.MetricDefs{"test_metric": {}},
 			PresetDefs: metrics.PresetDefs{
-				"test_preset": {Metrics: map[string]float64{"test_metric": 2}},
+				"test_preset": {Metrics: metrics.MetricIntervals{"test_metric": 2}},
 			},
 		}
 		getMetricsFn = func() (*metrics.Metrics, error) { return updatedDefs, nil }
 
 		require.NoError(t, r.LoadSources(ctx))
 		require.NoError(t, r.LoadMetrics())
-		assert.Equal(t, map[string]float64{"test_metric": 2}, r.monitoredSources[0].Metrics,
+		assert.Equal(t, metrics.MetricIntervals{"test_metric": 2}, r.monitoredSources[0].Metrics,
 			"preset interval should be updated after source config change triggered a restart")
 	})
 }

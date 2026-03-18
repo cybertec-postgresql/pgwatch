@@ -151,7 +151,7 @@ func TestRPCDefineMetric(t *testing.T) {
 		PresetDefs: metrics.PresetDefs{
 			"test_preset": metrics.Preset{
 				Description: "Test preset",
-				Metrics:     map[string]float64{"test_metric": 30.0},
+				Metrics:     metrics.MetricIntervals{"test_metric": 30.0},
 			},
 		},
 	}

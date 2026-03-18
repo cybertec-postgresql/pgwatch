@@ -41,7 +41,7 @@ func (cmd *ConcurrentMetricDefs) GetPresetDef(name string) (m metrics.Preset, ok
 	return
 }
 
-func (cmd *ConcurrentMetricDefs) GetPresetMetrics(name string) (m map[string]float64) {
+func (cmd *ConcurrentMetricDefs) GetPresetMetrics(name string) (m metrics.MetricIntervals) {
 	cmd.RLock()
 	defer cmd.RUnlock()
 	return cmd.PresetDefs[name].Metrics

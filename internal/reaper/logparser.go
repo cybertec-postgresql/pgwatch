@@ -43,7 +43,7 @@ type LogParser struct {
 	ctx              context.Context
 	LogsMatchRegex   *regexp.Regexp
 	SourceConn       *sources.SourceConn
-	Interval         float64
+	Interval         int
 	StoreCh          chan<- metrics.MeasurementEnvelope
 	eventCounts      map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	eventCountsTotal map[string]int64 // for the whole instance

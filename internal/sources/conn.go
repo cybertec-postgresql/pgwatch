@@ -128,7 +128,7 @@ func (md *SourceConn) GetDatabaseName() string {
 }
 
 // GetMetricInterval returns the metric interval for the connection
-func (md *SourceConn) GetMetricInterval(name string) float64 {
+func (md *SourceConn) GetMetricInterval(name string) int {
 	md.RLock()
 	defer md.RUnlock()
 	if md.IsInRecovery && len(md.MetricsStandby) > 0 {

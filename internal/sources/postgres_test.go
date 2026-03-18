@@ -7,6 +7,7 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 )
 
@@ -47,7 +48,7 @@ func TestGetMonitoredDatabases(t *testing.T) {
 		"custom_tags", "only_if_master", "is_enabled",
 	}).AddRow(
 		"db1", "group1", sources.Kind("postgres"), "postgres://user:pass@localhost:5432/db1",
-		map[string]float64{"metric": 60}, map[string]float64{"standby_metric": 60}, "exhaustive", "exhaustive",
+		metrics.MetricIntervals{"metric": 60}, metrics.MetricIntervals{"standby_metric": 60}, "exhaustive", "exhaustive",
 		".*", `\_.+`, map[string]string{"tag": "value"}, true, true,
 	))
 	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
@@ -90,8 +91,8 @@ func TestUpdateDatabase(t *testing.T) {
 		Group:          "group1",
 		Kind:           sources.Kind("postgres"),
 		ConnStr:        "postgres://user:pass@localhost:5432/db1",
-		Metrics:        map[string]float64{"metric": 60},
-		MetricsStandby: map[string]float64{"standby_metric": 60},
+		Metrics:        metrics.MetricIntervals{"metric": 60},
+		MetricsStandby: metrics.MetricIntervals{"standby_metric": 60},
 		IncludePattern: ".*",
 		ExcludePattern: `\_.+`,
 		CustomTags:     map[string]string{"tag": "value"},
@@ -125,8 +126,8 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 		Group:          "group1",
 		Kind:           sources.Kind("postgres"),
 		ConnStr:        "postgres://user:pass@localhost:5432/db1",
-		Metrics:        map[string]float64{"metric": 60},
-		MetricsStandby: map[string]float64{"standby_metric": 60},
+		Metrics:        metrics.MetricIntervals{"metric": 60},
+		MetricsStandby: metrics.MetricIntervals{"standby_metric": 60},
 		IncludePattern: ".*",
 		ExcludePattern: `\_.+`,
 		CustomTags:     map[string]string{"tag": "value"},
